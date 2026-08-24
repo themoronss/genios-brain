@@ -1,0 +1,31 @@
+# Load-set for customer_support.support_operations.cost_to_serve — REFERENCES ONLY,
+# never an inline object.
+#
+# core   -> objects/core/     loaded by more than one capability
+# scoped -> objects/<capability>/     loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.support_operations.cost_to_serve
+
+core:
+  # Cost is meaningless until it is attributed to somebody. Ticket carries the effort and
+  # customer_account is the unit the answer must be expressed in — a total cost of support with
+  # no account dimension has never changed a decision.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.customer_account
+  # entitlement says what was paid for against what is being consumed, which is where an
+  # unprofitable segment usually turns out to be a mis-sold plan; resolution and support_agent
+  # supply what the effort was spent on and at what seniority; knowledge_article is the
+  # counterfactual — the cheapest version of this cost is the contact that never happened.
+  optional:
+    - customer_support.obj.core.entitlement
+    - customer_support.obj.core.resolution
+    - customer_support.obj.core.support_agent
+    - customer_support.obj.core.knowledge_article
+
+scoped:
+  required: []
+  optional: []

@@ -1,0 +1,38 @@
+identity:
+  id: sales.heu.market_research.a_much_longer_cycle_is_a_different_business
+  name: If the observed cycle in a segment is several times our current one, t…
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "If the observed cycle in a segment is several times our current one, that is not a harder\
+    \ version of our market. It is a different business with different cash requirements.\n Cycle length\
+    \ sets working capital, quota ramp, headcount shape and the compensation plan. Treating it as a\
+    \ territory to be worked harder is how a company enters enterprise with a transactional cost base\
+    \ and runs out of runway"
+heuristic:
+  statement: 'If the observed cycle in a segment is several times our current one, that is not a harder
+    version of our market. It is a different business with different cash requirements.
+
+    '
+  why: 'Cycle length sets working capital, quota ramp, headcount shape and the compensation plan. Treating
+    it as a territory to be worked harder is how a company enters enterprise with a transactional cost
+    base and runs out of runway while winning.
+
+    '
+  reads:
+  - sales.obj.market_research.market_map
+  - sales.obj.core.timeline
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

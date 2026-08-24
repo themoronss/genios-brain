@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.business_continuity_administration.continuity_is_tested_by_inconvenience_first
+  name: Continuity is tested by inconvenience first
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.business_continuity_administration
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Before the disaster, small disruptions — an outage, a storm week — audit your continuity
+    for free. Treat every minor disruption as a live drill and harvest its lessons.
+  answers:
+  - When does continuity planning get tested?

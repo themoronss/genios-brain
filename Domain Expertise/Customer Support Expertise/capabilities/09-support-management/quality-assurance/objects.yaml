@@ -1,0 +1,33 @@
+# Load-set for customer_support.support_management.quality_assurance — REFERENCES ONLY,
+# never an inline object.
+#
+# core   -> objects/core/     loaded by more than one capability
+# scoped -> objects/<capability>/     loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.support_management.quality_assurance
+
+core:
+  # The three that make a review possible at all. quality_scorecard is the rubric being applied —
+  # without it a review is one person's taste, and taste does not survive an appeal. ticket is the
+  # unit sampled. conversation is what is actually scored: QA reads the interaction, not the
+  # outcome, because outcomes are contaminated by which tickets an agent happened to draw.
+  required:
+    - customer_support.obj.core.quality_scorecard
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.conversation
+  # resolution says whether the thing worked, which is a separate question from whether it was
+  # handled well and must not be allowed to answer it. support_agent carries tenure and queue mix,
+  # the two variables that most distort a raw score. knowledge_article is the standard the answer
+  # should have matched — an agent penalised for contradicting a doc that is itself wrong is being
+  # taught the wrong lesson.
+  optional:
+    - customer_support.obj.core.resolution
+    - customer_support.obj.core.support_agent
+    - customer_support.obj.core.knowledge_article
+
+scoped:
+  required: []
+  optional: []

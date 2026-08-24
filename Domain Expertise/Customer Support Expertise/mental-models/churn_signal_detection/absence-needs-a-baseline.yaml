@@ -1,0 +1,41 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.voice_of_customer.churn_signal_detection — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.churn_signal_detection.absence_needs_a_baseline
+  name: Absence needs a baseline
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.churn_signal_detection
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Absence is a signal, but only against a stored expectation.
+
+
+    Nothing arrives when a customer goes quiet, so there is no event for a rule to match on. Detection
+    requires a remembered picture of that account''s normal behaviour, which makes this a baseline capability
+    rather than an event capability and explains why it degrades badly on new accounts.'
+dimensions:
+- name: Absence needs a baseline
+  asks: Absence is a signal, but only against a stored expectation.
+how_to_apply:
+- Absence is a signal, but only against a stored expectation.
+- Nothing arrives when a customer goes quiet, so there is no event for a rule to match on. Detection
+  requires a remembered picture of that account's normal behaviour, which makes this a baseline capability
+  rather than an event capability and explains why it degrades badly on new accounts.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

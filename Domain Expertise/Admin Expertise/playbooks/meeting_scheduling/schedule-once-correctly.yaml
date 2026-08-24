@@ -1,0 +1,30 @@
+identity:
+  id: admin.pb.meeting_scheduling.schedule_once_correctly
+  name: Schedule once, correctly
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.meeting_scheduling
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A meeting is scheduled with everything it needs to happen well — right people, agenda line,
+    timezone-checked slot, room/link — in one pass, because every reschedule multiplies coordination cost
+    across all attendees.
+steps:
+- order: 1
+  name: Confirm the must-attend list first
+  description: The meeting happens when the decision-makers can. Optional attendees flex; required ones
+    anchor.
+  actor: human
+- order: 2
+  name: Propose concrete options, hold them briefly
+  description: Two or three held slots, decided within a day. Open-ended polls across ten calendars die
+    of combinatorics.
+  actor: human
+- order: 3
+  name: Send the invite complete
+  description: Purpose line, agenda, join details, prep links. An invite that answers every logistics
+    question prevents its own reply-thread.
+  actor: human

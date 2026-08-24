@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.escalation_and_incident.postmortem
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.postmortem.blameless_actioned_verified
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.postmortem.blame_ends_learning_instantly
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

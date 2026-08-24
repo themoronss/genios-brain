@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.forecasting.evidence_based_commit
+  name: Evidence-based commit
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.forecasting
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A forecast category is a claim about evidence, not confidence. 'Commit' means paper is moving
+    and the buyer has said the date; 'best case' means a credible path exists; everything else is pipeline.
+    Feelings are not a category.
+steps:
+- order: 1
+  name: Define categories behaviourally
+  description: Commit = verbal yes + contract in motion + date from the buyer's mouth. Written definitions,
+    applied identically to every deal, every week.
+  actor: human
+- order: 2
+  name: Interrogate deltas, not levels
+  description: The learning is in what MOVED this week and why. A static forecast review is a reading;
+    a delta review is management.
+  actor: human
+- order: 3
+  name: Track forecast vs actual per person
+  description: Systematic over/under per rep is a correctable bias worth more than any new tool. Measure
+    it, show it, coach it.
+  actor: human

@@ -1,0 +1,39 @@
+# Enterprise Sales — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: sales.model.enterprise_sales
+  name: Enterprise Sales
+  kind: model
+  domain: sales
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Large organisations, large contracts, formal process. A SEGMENT rather than a distinct
+  motion — it overlaps b2b heavily and is kept separate because tenants segment their teams
+  this way.
+
+characteristics:
+  buyer: "a large organisation"
+  typical_cycle_days: 120
+  typical_acv: "six figures and above"
+  committee_size: "5-12"
+
+capabilities:
+  emphasises:
+    - sales.qualification.buying_committee_analysis
+    - sales.closing.procurement
+    - sales.sales_management.deal_review
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

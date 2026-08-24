@@ -1,0 +1,44 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_management.quality_assurance — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.quality_assurance.framework_behaviourally_anchored
+  name: Framework behaviourally anchored
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.quality_assurance
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Behaviourally anchored rating — each mark on each dimension is described by what the agent
+    observably did, never by an adjective.
+
+
+    Adjectival scales (excellent / good / fair) drift per reviewer and per mood, and cannot be calibrated
+    because there is nothing concrete to disagree about. Behavioural anchors make the disagreement locatable
+    and therefore fixable.'
+criteria:
+- name: Framework behaviourally anchored
+  description: Behaviourally anchored rating — each mark on each dimension is described by what the
+    agent observably did, never by an adjective.
+how_to_apply:
+- Behaviourally anchored rating — each mark on each dimension is described by what the agent observably
+  did, never by an adjective.
+- Adjectival scales (excellent / good / fair) drift per reviewer and per mood, and cannot be calibrated
+  because there is nothing concrete to disagree about. Behavioural anchors make the disagreement locatable
+  and therefore fixable.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

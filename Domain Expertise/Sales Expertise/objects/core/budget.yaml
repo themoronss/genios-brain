@@ -1,0 +1,377 @@
+identity:
+  id: sales.obj.core.budget
+  scope: core
+  name: Budget
+  domain: sales
+  subdomain: qualification
+  owner_capability: sales.qualification.lead_qualification
+  version: 1.0.0
+  status: draft
+  aliases: ["Funding", "Spend Authority"]
+purpose:
+  statement: >
+    Money that exists, is allocated to this problem, and can be spent within a timeframe that
+    matters. All three clauses are load-bearing. "They have money" is not a budget; a fully
+    funded line item that unlocks next fiscal year is a timeline object, not a budget one.
+    The most expensive qualification error in sales is treating an unknown budget as a
+    present one, and the second most expensive is treating it as absent.
+attributes:
+  - name: existence
+    purpose: Whether funding is allocated at all, and how firmly.
+    type: composite
+    contains:
+      - budget_state
+      - is_allocated
+      - source_of_funds
+  - name: size
+    purpose: Groups the Size attributes.
+    type: composite
+    contains:
+      - amount
+      - currency
+      - amount_confidence_bp
+      - range_low
+      - range_high
+  - name: timing
+    purpose: When the money is actually spendable. Independently fatal to a forecast.
+    type: composite
+    contains:
+      - fiscal_period
+      - available_from
+      - expires_at
+      - use_it_or_lose_it
+  - name: authority
+    purpose: Groups the Authority attributes.
+    type: composite
+    contains:
+      - owner_ref
+      - approval_required_above
+      - approval_chain
+  - name: pressure
+    purpose: Evidence the budget is under strain — the leading indicator of a slipped deal.
+    type: composite
+    contains:
+      - discount_pressure_observed
+      - freeze_observed
+      - competing_priorities
+  - name: budget_state
+    purpose: '`unknown` and `none` are deliberately separate values. Collapsing them is how a deal with
+      no discovery done reads identically to one where the buyer said no money exists. `unfunded_intent`
+      — they want it and are willing to go find money — is the state most often mistaken for `approved`.'
+    type: value
+    data_type: enum
+    allowed_values: [unknown, none, unfunded_intent, requested, approved, frozen, spent]
+    required: true
+    description: >
+      `unknown` and `none` are deliberately separate values. Collapsing them is how a deal
+      with no discovery done reads identically to one where the buyer said no money exists.
+      `unfunded_intent` — they want it and are willing to go find money — is the state most
+      often mistaken for `approved`.
+  - name: is_allocated
+    purpose: The is_allocated of this object.
+    type: value
+    data_type: boolean
+  - name: source_of_funds
+    purpose: The source_of_funds of this object.
+    type: value
+    data_type: enum
+    allowed_values: [departmental, project, capex, opex, discretionary, new_request, unknown]
+  - name: amount
+    purpose: The amount of this object.
+    type: value
+    data_type: money
+  - name: currency
+    purpose: The currency of this object.
+    type: value
+    data_type: string
+  - name: amount_confidence_bp
+    purpose: How sure we are of the figure. A number sourced from a rep's guess and one from an
+      approval email must not read the same.
+    type: value
+    data_type: integer
+    description: How sure we are of the figure. A number sourced from a rep's guess and one from an
+      approval email must not read the same.
+  - name: range_low
+    purpose: The range_low of this object.
+    type: value
+    data_type: money
+  - name: range_high
+    purpose: Buyers give ranges long before they give numbers. Forcing a point estimate discards the
+      only honest signal available.
+    type: value
+    data_type: money
+    description: Buyers give ranges long before they give numbers. Forcing a point estimate discards
+      the only honest signal available.
+  - name: fiscal_period
+    purpose: The fiscal_period of this object.
+    type: value
+    data_type: string
+  - name: available_from
+    purpose: The available_from of this object.
+    type: value
+    data_type: timestamp
+  - name: expires_at
+    purpose: The expires_at of this object.
+    type: value
+    data_type: timestamp
+  - name: use_it_or_lose_it
+    purpose: When true, the buyer's urgency exceeds ours and the correct play inverts — stop
+      discounting, start scheduling. Rare, and worth a great deal when detected.
+    type: value
+    data_type: boolean
+    description: >
+      When true, the buyer's urgency exceeds ours and the correct play inverts — stop
+      discounting, start scheduling. Rare, and worth a great deal when detected.
+  - name: owner_ref
+    purpose: The owner_ref of this object.
+    type: reference
+    ref: sales.obj.core.decision_maker
+    data_type: ref
+  - name: approval_required_above
+    purpose: The approval_required_above of this object.
+    type: value
+    data_type: money
+  - name: approval_chain
+    purpose: The approval_chain of this object.
+    type: value
+    data_type: list
+  - name: discount_pressure_observed
+    purpose: The discount_pressure_observed of this object.
+    type: value
+    data_type: boolean
+  - name: freeze_observed
+    purpose: The freeze_observed of this object.
+    type: value
+    data_type: boolean
+  - name: competing_priorities
+    purpose: The competing_priorities of this object.
+    type: value
+    data_type: list
+states:
+  initial: unknown
+  values:
+    - {name: unknown, description: "No discovery done. Not the same as none."}
+    - {name: none, description: "The buyer has stated there is no money."}
+    - {name: unfunded_intent, description: "They want it and intend to find money. The state most often\
+        over-read."}
+    - {name: requested, description: "An internal budget request is in flight."}
+    - {name: approved, description: "Money is allocated and spendable.", entered_when: [has_obs: budget_approved]}
+    - {name: frozen, description: "Allocated then withdrawn or held.", entered_when: [has_obs: budget_freeze]}
+    - {name: spent, description: "Consumed, by us or by someone else."}
+  transitions:
+    - {from: unknown, to: unfunded_intent}
+    - {from: unknown, to: none}
+    - {from: unfunded_intent, to: requested}
+    - {from: requested, to: approved, when: [has_obs: budget_approved]}
+    - {from: approved, to: frozen, when: [has_obs: budget_freeze]}
+    - {from: frozen, to: approved}
+    - {from: approved, to: spent}
+
+relationships:
+  - {type: belongs_to, target: sales.obj.core.decision_maker, cardinality: one, description: "Every budget\
+      has exactly one owner. A budget nobody owns is not a budget."}
+  - {type: gates, target: sales.obj.core.deal, cardinality: zero_or_one}
+  - {type: requires, target: sales.obj.core.timeline, cardinality: zero_or_one, description: "Availability\
+      window. Money that arrives after the decision is not funding."}
+  - {type: influences, target: sales.obj.core.pricing, cardinality: zero_or_one}
+
+inference_patterns:
+
+  deterministic:
+    - id: bg.approval_observed
+      statement: "A budget-approval observation fired on this thread."
+      status: executable
+      when: [has_obs: budget_approved]
+      yields: {confidence_bp: 9600, attribute: budget_state, value: approved}
+      evidence_fields: [thread.last_inbound]
+
+    - id: bg.freeze_observed
+      statement: "A budget-freeze observation fired."
+      status: executable
+      when: [has_obs: budget_freeze]
+      yields: {confidence_bp: 9600, attribute: budget_state, value: frozen}
+      note: Overrides any prior approved state. A freeze is newer information about the same fact, not
+        corroborating evidence.
+
+    - id: bg.amount_in_crm
+      statement: "The CRM deal record carries a budget figure."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: amount, value: null}
+      requires_signals:
+        - {kind: fact_path, name: crm.deal.budget, owner_layer: L1, note: "deal.value is projected today,\
+            but deal value is what WE proposed, not what THEY have. Conflating the two is the reason forecasts
+            read high."}
+
+    - id: bg.fiscal_period_declared
+      statement: "A fiscal period or availability date is stated for the funds."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: fiscal_period, value: null}
+      requires_signals:
+        - {kind: obs_kind, name: budget_period_stated, owner_layer: L2}
+
+  heuristic:
+    - id: bg.priced_and_objected
+      statement: "Pricing was discussed and a price objection followed — money exists, and it is smaller
+        than our number."
+      status: executable
+      when:
+        - {has_obs: pricing_discussed}
+        - {has_obs: objection_price}
+      yields: {confidence_bp: 7000, attribute: budget_state, value: unfunded_intent}
+      note: >
+        A price objection is evidence of a budget, not of its absence. A buyer with no money
+        does not haggle; they disengage. This pattern routinely reads backwards to reps.
+
+    - id: bg.discount_pressure_signals_constraint
+      statement: "Sustained discount pressure while the ball sits with them."
+      status: executable
+      when:
+        - {has_obs: discount_pressure}
+        - {path: thread.ball_in_court, op: "=", value: them}
+      yields: {confidence_bp: 6500, attribute: discount_pressure_observed, value: true}
+
+    - id: bg.contract_stage_implies_funding
+      statement: "They asked for the contract — organisations do not request paper without funding."
+      status: executable
+      when: [has_obs: contract_requested]
+      yields: {confidence_bp: 8000, attribute: budget_state, value: approved}
+
+    - id: bg.procurement_involvement_implies_size
+      statement: "Legal review and security review both started, which in most organisations only happens
+        above a spend threshold."
+      status: executable
+      when:
+        - {has_obs: legal_review}
+        - {has_obs: security_review_started}
+      yields: {confidence_bp: 6000, attribute: null}
+
+    - id: bg.competing_priority_detected
+      statement: "Budget was approved and then a competing initiative absorbed it."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: budget_state, value: frozen}
+      requires_signals:
+        - {kind: obs_kind, name: competing_initiative, owner_layer: L2, note: "Distinguishes a deprioritised\
+            deal from a stalled one. They need opposite responses and currently look identical."}
+
+inputs:
+  - {source: email, signal: budget approval and freeze language}
+  - {source: email, signal: price objections and discount asks}
+  - {source: crm, signal: "declared budget field, close date, amount"}
+  - {source: meeting_transcript, signal: "stated ranges, fiscal constraints, approval process"}
+  - {source: contract, signal: final committed value}
+  - {source: derived, signal: negotiation sentiment, path: derived.sentiment}
+
+outputs:
+  - {name: budget_confidence_bp, type: integer, consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: funded_range, type: string, description: "range_low..range_high with its confidence.", consumed_by: [
+      L4.reasoning_unit]}
+  - {name: spendable_from, type: timestamp, description: "Earliest date money can move. Bounds every close\
+      date.", consumed_by: [L5.execution_planning]}
+  - {name: forecast_eligibility, type: boolean, description: "Whether this deal may enter the committed\
+      forecast.", consumed_by: [L4.decision_maker]}
+
+constraints:
+  - {id: bg.cannot_spend_before_available, statement: "Funds cannot be committed before available_from.",
+      hard: true}
+  - {id: bg.cannot_exceed_owner_limit, statement: "Amount above approval_required_above requires the chain,\
+      not the owner.", hard: true}
+  - {id: bg.frozen_blocks_close, statement: "budget_state = frozen blocks any close action.", hard: true}
+  - {id: bg.unknown_blocks_committed_forecast, statement: "budget_state = unknown blocks committed forecast.\
+      Fails closed by design.", hard: true}
+
+business_rules:
+  - id: bg.unknown_is_not_present
+    statement: budget_state = unknown must never satisfy a qualification check that requires funding.
+      Unknown fails closed.
+    severity: blocking
+  - id: bg.no_proposal_without_range
+    statement: A priced proposal requires at least range_low and range_high. Pricing into an unknown
+      budget is guessing at the one number the buyer already knows.
+    severity: warning
+  - id: bg.freeze_halts_forecast
+    statement: On budget_freeze the deal must leave the committed forecast in the same pass, not at
+      the next review.
+    when: [has_obs: budget_freeze]
+    then: remove_from_committed_forecast
+    severity: blocking
+  - id: bg.amount_above_limit_needs_chain
+    statement: If amount exceeds the owner's approval_required_above, an approval_chain must be
+      populated before the deal can be forecast as committed.
+    severity: blocking
+  - id: bg.expiry_is_leverage_not_pressure
+    statement: When use_it_or_lose_it is true, discount concessions must not be offered — the buyer's
+      deadline is tighter than ours.
+    severity: warning
+
+decision_factors:
+  - {name: budget_certainty, weight_bp: 3500, direction: increases, reads: [budget_state, amount_confidence_bp],
+    description: "The largest single weight on this object. Everything else is arithmetic on a number that
+      may not exist."}
+  - {name: size_vs_ask, weight_bp: 2500, direction: context, reads: [amount, range_low, range_high]}
+  - {name: timing_alignment, weight_bp: 2000, direction: context, reads: [fiscal_period, available_from,
+      expires_at]}
+  - {name: authority_alignment, weight_bp: 1000, direction: increases, reads: [owner_ref, approval_required_above]}
+  - {name: budget_pressure, weight_bp: 1000, direction: decreases, reads: [discount_pressure_observed,
+      freeze_observed, competing_priorities]}
+
+evidence:
+  - {source: contract, strength_bp: 10000, description: "Signed value. Definitive."}
+  - {source: email, strength_bp: 8500, description: "Written approval or written freeze."}
+  - {source: crm, strength_bp: 7000, description: "Declared budget field. Frequently the rep's estimate\
+      rather than the buyer's number."}
+  - {source: meeting_transcript, strength_bp: 7500, description: "Buyer states a figure or a range aloud."}
+  - {source: derived, strength_bp: 4500, description: "Inferred from objection and discount behaviour.\
+      Corroborating only."}
+
+metrics:
+  - {name: budget_qualification_rate, unit: percent, description: "Share of open deals with budget_state\
+      above unknown.", owner_layer: L6}
+  - {name: budget_accuracy, unit: percent, description: "Inferred amount vs final contract value. Calibrates\
+      every heuristic above.", owner_layer: L6}
+  - {name: freeze_to_loss_rate, unit: percent, description: "How often a freeze becomes a loss. Determines\
+      whether a freeze should cancel or defer.", owner_layer: L6}
+  - {name: unknown_budget_win_rate, unit: percent, description: "Win rate for deals that reached proposal\
+      with budget_state = unknown. The evidence for bg.no_proposal_without_range.", owner_layer: L6}
+
+events:
+  - {id: bg.approved, name: Budget Approved, emitted_when: [has_obs: budget_approved], payload: [
+        amount, fiscal_period]}
+  - {id: bg.frozen, name: Budget Frozen, emitted_when: [has_obs: budget_freeze], payload: [
+        prior_state], description: "Must remove the deal from the committed forecast in the same pass. A
+      freeze discovered at the next review is a missed quarter."}
+  - {id: bg.range_learned, name: Budget Range Learned, payload: [range_low, range_high, amount_confidence_bp]}
+  - {id: bg.expiring, name: Budget Expiring, payload: [expires_at, use_it_or_lose_it]}
+
+actions:
+  - {id: bg.qualify_budget, name: Establish whether funding exists, actor: human, effect: "Ask directly.\
+      The question reps most avoid and the one that shortens cycles most."}
+  - {id: bg.confirm_range, name: Confirm the spendable range, actor: human}
+  - {id: bg.map_approval_chain, name: Map the approval chain above the owner's limit, actor: human}
+  - {id: bg.reprice_to_budget, name: Reshape scope to fit the funded range, actor: human, preconditions: [
+      has_obs: objection_price], effect: "Change what is bought, not what it costs. Discounting to fit a
+      budget trains the buyer and destroys the next renewal."}
+  - {id: bg.escalate_freeze, name: Escalate a frozen budget, actor: human, preconditions: [has_obs: budget_freeze]}
+
+examples:
+  - {label: "Approved departmental budget, current fiscal year", note: "The clean case. Rare."}
+  - {label: "Unfunded intent", note: "They want it and will go ask. Reads as approved in most CRMs and\
+      is the single biggest source of forecast inflation."}
+  - {label: "Use-it-or-lose-it year-end budget", note: "Their deadline is tighter than ours. Stop discounting,\
+      start scheduling."}
+  - {label: "Frozen after approval", note: "budget_freeze fires. Deal is not lost, but it is not this\
+      quarter."}
+  - {label: "Budget exists, sits one level up", note: "owner_ref points at someone we have never met.\
+      The deal is an access problem, not a money problem."}
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Six of nine patterns are executable — this object is unusually well served by the existing
+    observation vocabulary, because budget_approved and budget_freeze already exist. The
+    important gap is crm.deal.budget: today the engine only has deal.value, which is what we
+    proposed, not what they have.

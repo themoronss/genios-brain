@@ -1,0 +1,30 @@
+identity:
+  id: customer_support.pb.workaround_management.workaround_with_an_expiry
+  name: Workaround with an expiry
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.workaround_management
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A workaround buys time — it is a loan, not a fix. Every issued workaround carries the real
+    fix's ticket, a review date, and honest labelling, so relief today does not silently become the permanent
+    state.
+steps:
+- order: 1
+  name: Label it a workaround, in those words
+  description: Customers plan around what they think is permanent. Honesty about temporariness is what
+    earns patience for the fix.
+  actor: human
+- order: 2
+  name: Link and track the underlying fix
+  description: The workaround's ticket references the root-cause work. When the fix ships, every workaround
+    holder gets told.
+  actor: human
+- order: 3
+  name: Review standing workarounds monthly
+  description: A workaround past its review date is a decision nobody made — either promote the fix or
+    re-justify the wait.
+  actor: human

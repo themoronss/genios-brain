@@ -1,0 +1,35 @@
+identity:
+  id: sales.pb.negotiation.give_get_ledger_negotiation
+  name: Give-get ledger negotiation
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.negotiation
+  subdomain: proposal_and_commercials
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Enter negotiation with three lists: what you must have, what you can trade, and what you
+    will walk from. Every buyer ask meets a counter-ask from the trade list; the ledger keeps concessions
+    deliberate instead of dribbled away.'
+steps:
+- order: 1
+  name: Write floors before the call
+  description: Minimum price, maximum scope, non-negotiables — decided cold. Floors invented under pressure
+    are not floors.
+  actor: human
+- order: 2
+  name: Name their full list first
+  description: '''Beyond price, what else needs to work for you?'' Solving items one-by-one lets the list
+    regrow; the full list gets one packaged trade.'
+  actor: human
+- order: 3
+  name: Trade explicitly
+  description: '''We can do X if you can do Y'' — every time. It keeps respect and teaches that value
+    flows both ways.'
+  actor: human
+- order: 4
+  name: Keep the walk-away alive
+  description: 'A deal you cannot leave is a deal you cannot negotiate. Below floor: state it kindly,
+    offer the smaller scope, and mean it.'
+  actor: human

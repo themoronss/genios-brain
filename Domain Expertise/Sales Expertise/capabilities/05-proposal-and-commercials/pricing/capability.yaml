@@ -1,0 +1,28 @@
+identity:
+  id: sales.proposal_and_commercials.pricing
+  name: Pricing
+  domain: sales
+  subdomain: proposal_and_commercials
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Price level, packaging, term and discount policy. The structural decisions — what is
+  metered, what is committed — outlast any single negotiation and are usually made
+  carelessly.
+
+question: "What should this cost, and how should it be structured?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

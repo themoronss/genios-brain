@@ -1,0 +1,202 @@
+# Proactive Support — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from canonical. No capability file and no
+# object file is copied into this branch; resolution is vertical -> model -> canonical.
+#
+# READING THE CAPABILITY DIFF
+#   activates    canonical capabilities a default support org runs nominally or not at all,
+#                and that this branch cannot function without.
+#   deactivates  canonical capabilities that do not exist in this motion at all.
+#   emphasises   present either way, disproportionately load-bearing here.
+
+identity:
+  id: customer_support.model.proactive_support
+  name: Proactive Support
+  kind: model
+  domain: customer_support
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  We contact the customer before they contact us. That is the inversion of the entire domain:
+  every other branch begins with a contact, a stated problem and implicit permission to reply,
+  and this one begins with none of the three. There is no ticket, no question, no consent and no
+  waiting customer — only a detection, an assumption about what it means to somebody, and a
+  decision to interrupt them.
+  .
+  The characteristic failure is being indistinguishable from marketing, and it is not a tone
+  problem. It is what the message actually is when the detection was wrong. If we contact someone
+  about a problem they were going to contact us about, we are support and the value is enormous:
+  we saved them the discovery, the frustration and the ticket. If we contact them about a problem
+  they do not have, or would not have noticed, or had already worked around, then we are a vendor
+  sending unsolicited mail about our own product — which is marketing, arriving in a channel the
+  customer trusted for a different reason, and spending credibility that belongs to the whole
+  company rather than to this programme.
+  .
+  That credibility is a shared, exhaustible budget and nobody owns it. The same inbox receives
+  the release notes, the upsell, the survey and the outage notification, and support's ability to
+  be believed during a genuine incident is drawn from the same account as a well-meaning
+  proactive nudge about an expiring API key. Three teams contacting the same customer in one week
+  is this branch's signature failure, and it is nobody's fault individually because no individual
+  can see the other two.
+  .
+  The precision requirement is inverted relative to reactive support, and this is the part
+  operators consistently underestimate. A reactive false positive is cheap: we ask a clarifying
+  question and the customer corrects us in one line. A proactive false positive is expensive and
+  invisible — nobody writes back to say "that did not apply to me", they simply read the next one
+  less carefully, and the decay shows up nowhere until an important message goes unread. The
+  threshold for firing has to be far higher than anything a reactive branch would tolerate, and
+  the instinct to widen it once the programme needs numbers is what kills it.
+  .
+  Timing is a narrow window with a failure on each side. Too early and the customer had not
+  noticed, so we have introduced a problem into their week and created the contact we claimed to
+  prevent. Too late and we are apologising, which is reactive support with worse optics — the
+  customer already knows, and now also knows we knew.
+  .
+  Measurement is counterfactual and therefore permanently contestable. Success is a contact that
+  never happened, which cannot be observed and can only be estimated against a control group most
+  organisations will not maintain because withholding help feels wrong. This makes the branch
+  uniquely easy to claim victory in and uniquely hard to defend at budget time, and both of those
+  are true simultaneously.
+  .
+  What an operator carries over wrongly from a reactive queue: assuming a reply path is free. A
+  proactive message with no reply path is a broadcast and will be treated as one. A proactive
+  message with a reply path generates inbound — often more inbound than it prevents, because it
+  reminds people of adjacent things they had been living with. That can be an excellent trade if
+  the contacts are cheaper and better-timed, but it is not the trade that was described to
+  finance, and discovering it in month two is how the programme gets cancelled.
+
+characteristics:
+  requester: "nobody — there is no requester in this motion, which is the branch's defining property; the recipient is a customer selected by us who has asked for nothing"
+  typical_resolution_hours: 0
+  volume_shape: "entirely supply-driven and self-set — volume is whatever the trigger population and contact-frequency budget allow, and it does not respond to demand at all"
+  staffing_model: "a small programme team owning triggers, content and frequency, with the reactive queue absorbing every reply the outreach generates"
+  coverage: "send-window rather than coverage — messages must land at a defensible local hour and the reply must be catchable when it arrives, which usually constrains sending more than the trigger does"
+  automation_level: "very high on selection and sending, and necessarily human on anything the customer sends back"
+  primary_channels: [email, in_app, chat, phone]
+  notes: >
+    The reply is where this branch ends. The moment a customer responds, the contact leaves this
+    motion and re-enters the reactive one, carrying context the reactive queue did not generate
+    and usually cannot see — the agent receives a reply to a message they did not send about a
+    detection they cannot inspect. That handover is where proactive programmes actually die, far
+    more often than at the targeting step everyone worries about.
+
+capabilities:
+
+  # proactive_status_updates is a courtesy on open tickets in every other branch and is the entire
+  # motion here — the difference between "keeping someone informed about work we already owe them"
+  # and "initiating contact about work they never asked for" is the whole file.
+  # support_analytics is activated because its role changes from reporting to operating: the query
+  # that defines the trigger population is the thing that decides who hears from us. That puts an
+  # analyst in the position of making a customer-facing decision, usually without knowing it and
+  # without any of the review a customer-facing decision would normally get.
+  activates:
+    - customer_support.customer_communication.proactive_status_updates
+    - customer_support.support_operations.support_analytics
+
+  # These two have no input in this motion. We wrote the message, so there is no channel to
+  # receive on and no intent to infer — the intent is ours and it is known. The deletion is worth
+  # stating because it marks the exact boundary of the branch: the instant the customer replies,
+  # both capabilities switch back on and the contact belongs to the reactive motion again.
+  deactivates:
+    - customer_support.intake_and_triage.channel_intake
+    - customer_support.intake_and_triage.intent_classification
+
+  emphasises:
+    - customer_support.customer_communication.expectation_setting
+    - customer_support.customer_communication.response_drafting
+    - customer_support.customer_communication.tone_and_localization
+    - customer_support.entitlement_and_sla.commitment_tracking
+    - customer_support.intake_and_triage.duplicate_and_merge
+    - customer_support.voice_of_customer.sentiment_analysis
+    - customer_support.voice_of_customer.churn_signal_detection
+    - customer_support.knowledge_and_deflection.content_gap_analysis
+    - customer_support.knowledge_and_deflection.knowledge_authoring
+    - customer_support.support_operations.cost_to_serve
+
+  # Two of those need their unusual reading stated.
+  # duplicate_and_merge is emphasised with the unit reversed: the duplicate to detect is not two
+  # tickets about one issue, it is three outbound contacts to one customer in one week from three
+  # programmes. Nothing else in the library counts that, and it is this branch's signature harm.
+  # content_gap_analysis is emphasised because the best possible outcome of a proactive message is
+  # that it stops being necessary. A message we have to send every month is a product defect or a
+  # documentation gap with a stamp on it, and treating the sending as the achievement is how the
+  # programme becomes permanent instead of successful.
+
+objects:
+  extends:
+    - object: customer_support.obj.core.customer_sentiment
+      require_properties: [read_confidence_bp, measured_on, attributed_to, sample_size_messages]
+      note: >
+        Silence after outbound is the dominant response and it is unreadable. It is not consent,
+        not satisfaction and not indifference — it is the absence of a reason to reply to
+        something nobody asked for. The canonical read treats no-response as weakly neutral, which
+        is defensible when we owe someone an answer and indefensible here, so read_confidence on
+        any sentiment inferred from a proactive thread should be substantially lower than the same
+        inference on a reactive one, and `sample_size_messages` is usually one.
+    - object: customer_support.obj.core.commitment
+      require_properties: [due_at, state, breach_was_silent]
+      note: >
+        Proactive messages contain promises nobody asked for — "we will let you know when this is
+        fixed", "we are monitoring it and will follow up on Friday" — and they are promises in
+        exactly the way a promise made in a ticket is. They are also the ones most reliably
+        forgotten, because there is no open ticket ageing on a board to remind anyone. An
+        unfulfilled proactive commitment is worse than never having written, since it converted a
+        gesture of competence into evidence of the opposite.
+    - object: customer_support.obj.core.requester
+      require_properties: [preferred_channel, timezone, working_hours, language]
+      note: >
+        Outbound without permission has to be defensible on every axis that is available: the
+        right channel, a reasonable local hour, the language they use with us. None of this makes
+        an unwanted message wanted, but each of them is a way of making a wanted message land as
+        support rather than as a campaign, and getting the hour wrong is enough on its own to move
+        a message from one category to the other.
+    - object: customer_support.obj.core.ticket
+      require_properties: [created_at, channel, requester_ref]
+      note: >
+        A ticket opened by us is not a demand signal, and any volume series that mixes self-opened
+        contacts with customer-raised ones is corrupted at the source — the branch will appear to
+        increase support demand while reducing it. Keep the two populations separable at creation;
+        it cannot be reconstructed afterwards, and every analysis this branch is judged on depends
+        on the distinction.
+    - object: customer_support.obj.core.knowledge_article
+      require_properties: [intent_covered, findability, last_verified_at]
+      note: >
+        Every proactive message should point at a durable version of its own explanation. Without
+        one, the same reasoning is rewritten into each send, drifts between them, cannot be
+        corrected once sent, and leaves the customer nowhere to go when they return to it three
+        weeks later — which is the point at which they most want to reread it.
+    - object: customer_support.obj.core.churn_risk
+      require_properties: [confidence_bp, primary_driver, driver_evidence]
+      note: >
+        This branch is where churn risk stops being a report and becomes a trigger for contacting
+        a specific person, which is a much higher bar. A risk score good enough to rank accounts
+        for a QBR is not good enough to justify an unsolicited message, because the cost of being
+        wrong is paid in the relationship being scored rather than in a slide.
+
+overrides:
+  capabilities.customer_support.customer_communication.proactive_status_updates.initiated_by: "us"
+  capabilities.customer_support.customer_communication.proactive_status_updates.requires_named_trigger: true
+  capabilities.customer_support.customer_communication.proactive_status_updates.reply_path_required: true
+  capabilities.customer_support.intake_and_triage.duplicate_and_merge.dedupe_unit: "outbound_contact_per_customer"
+  capabilities.customer_support.support_operations.support_analytics.selects_contact_population: true
+  capabilities.customer_support.support_operations.support_analytics.ticket_volume_includes_self_opened: true
+  capabilities.customer_support.support_operations.cost_to_serve.benefit_is_counterfactual: true
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    This is the branch the current substrate starves most completely. Everything it runs on is a
+    detection — usage falling away, an error rate rising for one tenant, an expiry approaching, a
+    known defect matched to the customers exposed to it — and Layer 1 and 2 emit none of those
+    today. What the engine can see is a thread and a promise, which supports exactly one honest
+    proactive motion: following up on something we already said we would do. That is a narrow
+    branch of this branch, it is genuinely valuable, and it is the only part of this file that can
+    run before a support pack ships.

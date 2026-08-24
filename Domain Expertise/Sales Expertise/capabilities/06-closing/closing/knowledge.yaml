@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.closing.closing
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.closing.assume_forward__confirm_the_path
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.closing.time_kills_deals
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

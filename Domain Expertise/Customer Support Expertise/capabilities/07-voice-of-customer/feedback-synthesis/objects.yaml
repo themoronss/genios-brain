@@ -1,0 +1,26 @@
+# Load-set for customer_support.voice_of_customer.feedback_synthesis
+# REFERENCES ONLY, never an inline object.
+
+capability: customer_support.voice_of_customer.feedback_synthesis
+
+core:
+  # issue is required because it is the only object in the model that makes "many tickets, one
+  # problem" expressible; without it every report is a fresh surprise and synthesis degrades
+  # into counting words. satisfaction_score is required as the consequence side of the ledger —
+  # it is what stops the summary from ranking themes purely by how often they are mentioned.
+  required:
+    - customer_support.obj.core.satisfaction_score
+    - customer_support.obj.core.issue
+
+  # customer_sentiment supplies the language customers actually used, which is what makes a
+  # theme survive contact with a product team. content_gap catches the large class of feedback
+  # that is a documentation failure rather than a product one. product_area is the axis the
+  # receiving team is organised around, and a synthesis that cannot name one gets returned.
+  optional:
+    - customer_support.obj.core.customer_sentiment
+    - customer_support.obj.core.content_gap
+    - customer_support.obj.core.product_area
+
+scoped:
+  required: []
+  optional: []

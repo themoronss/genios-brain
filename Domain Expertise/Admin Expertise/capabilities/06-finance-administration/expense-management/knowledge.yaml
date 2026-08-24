@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.finance_administration.expense_management
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.expense_management.expenses_easy_to_do_right
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.expense_management.slow_reimbursement_is_a_loan_from_staff
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.closing.contract_management
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.contract_management.contract_velocity
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.contract_management.unsigned_is_unwon
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

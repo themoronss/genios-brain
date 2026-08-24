@@ -1,0 +1,44 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.diagnosis_and_resolution.root_cause_analysis — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.root_cause_analysis.fault_tree
+  name: Fault tree
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.root_cause_analysis
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Fault tree analysis — start from the undesired outcome and decompose into the combinations
+    of conditions that could produce it, then eliminate branches with evidence.
+
+
+    Handles the branching and multi-cause structure that Five Whys cannot express, and makes the unexamined
+    branches visible so an investigation can be reviewed for what it did not check. Expensive; earn
+    it on high-severity or recurring issues.'
+criteria:
+- name: Fault tree
+  description: Fault tree analysis — start from the undesired outcome and decompose into the combinations
+    of conditions that could produce it, then eliminate branches with evidence.
+how_to_apply:
+- Fault tree analysis — start from the undesired outcome and decompose into the combinations of conditions
+  that could produce it, then eliminate branches with evidence.
+- Handles the branching and multi-cause structure that Five Whys cannot express, and makes the unexamined
+  branches visible so an investigation can be reviewed for what it did not check. Expensive; earn it
+  on high-severity or recurring issues.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

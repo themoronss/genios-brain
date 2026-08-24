@@ -1,0 +1,43 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.customer_communication.de_escalation — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.de_escalation.anger_has_a_floor
+  name: Anger has a floor
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.de_escalation
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Temperature falls with predictability, not with concessions. Concessions move the floor,
+    not the trajectory.
+
+
+    Teams reach for discounts and credits because those are the levers they control unilaterally. They
+    buy a step change and no slope. The slope only comes from a sequence of promises that were kept,
+    which is why the third on-time update matters more than the first credit.'
+dimensions:
+- name: Anger has a floor
+  asks: Temperature falls with predictability, not with concessions. Concessions move the floor, not
+    the trajectory.
+how_to_apply:
+- Temperature falls with predictability, not with concessions. Concessions move the floor, not the trajectory.
+- Teams reach for discounts and credits because those are the levers they control unilaterally. They
+  buy a step change and no slope. The slope only comes from a sequence of promises that were kept, which
+  is why the third on-time update matters more than the first credit.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

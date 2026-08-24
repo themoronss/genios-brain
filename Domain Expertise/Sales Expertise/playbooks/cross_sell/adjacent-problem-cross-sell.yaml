@@ -1,0 +1,29 @@
+identity:
+  id: sales.pb.cross_sell.adjacent_problem_cross_sell
+  name: Adjacent-problem cross-sell
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.cross_sell
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Cross-sell rides the workflow: the second product is offered where the first product''s
+    users visibly hit the adjacent problem. The bridge is the observed workflow gap, never the catalogue.'
+steps:
+- order: 1
+  name: Spot the adjacent pain in their usage
+  description: Where does their process leave your product for a spreadsheet or a rival tool? That seam
+    is the cross-sell's natural home.
+  actor: human
+- order: 2
+  name: Pilot small inside the existing trust
+  description: A scoped pilot with the existing champion beats a new sales cycle. Let product two earn
+    its own proof the way product one did.
+  actor: human
+- order: 3
+  name: Keep separate value ledgers
+  description: Product two gets its own outcome definition and its own numbers — blended value stories
+    make BOTH renewals harder to defend.
+  actor: human

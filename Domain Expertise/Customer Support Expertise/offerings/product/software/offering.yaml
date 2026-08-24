@@ -1,0 +1,102 @@
+# Software — offering type under Product.
+#
+# Declares only what differs from customer_support.offering.product. The parent's emphasis on
+# aggregation, deflection and root cause is inherited and not restated.
+
+identity:
+  id: customer_support.offering.product.software
+  name: Software
+  kind: offering_type
+  domain: customer_support
+  parent: customer_support.offering.product
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Software sold as a running service or as an installed application. The defining structural
+  fact is that we hold the source and, in the hosted case, the deployment: we can make the
+  fault stop without the customer doing anything at all, and their only obligation is to wait.
+  That is the strongest position in support and it quietly shapes every conversation.
+  Expectation-setting stops being a negotiation and becomes a statement about our own release
+  train; the honest answer to "when" is a date we control; and a promise made here is a promise
+  we can actually keep unilaterally, which is why software support tolerates specific
+  commitments that would be reckless in any other branch of this tree.
+  It inverts the moment the software is self-hosted. The fix is still ours, but landing it
+  needs the customer's change window, their regression testing and their approval — so a
+  self-hosted ticket is a customer-environment job wearing a software label, and every
+  resolution is a negotiation about an upgrade the customer has reasons to refuse. Operators
+  who move from hosted to on-premise keep quoting fix dates out of habit and keep being wrong
+  by a quarter, because they are quoting the date the code was ready rather than the date it
+  ran anywhere.
+  Volume is release-shaped, and the release calendar is ours. A support function that is not
+  told about deploys is being asked to predict the weather without a window.
+
+characteristics:
+  delivery: "continuously running and updated by us on our own cadence when hosted; versioned builds the customer installs when self-hosted — two different offerings sharing a codebase"
+  pricing_shape: "per-seat or usage-based recurring; support is bundled into the subscription, so it appears as a cost against renewal rather than as a revenue line"
+  margin_profile: "high gross margin, which means cost-to-serve per account is the variable that decides whether a whole segment is profitable — the cheapest plan can be the one losing money"
+  post_sale_load: "continuous; the product is consumed every day and the renewal is decided by the accumulated experience of that, not by the last ticket"
+  support_load: "a steady baseline proportional to active users, with sharp correlated spikes on our own release boundaries and on third-party changes nobody scheduled with us. A single bad deploy puts the entire install base in the queue within the hour, so the incident path here is a volume path and not an exception"
+  resolution_locus: "our codebase, deployed by us — we can fix it unilaterally and the customer's only job is to wait. Self-hosted inverts it: the code is ours, the change window is theirs, and the ticket sits in `waiting_on_customer` while looking exactly like an open defect"
+  notes: >
+    Hosted and self-hosted are close enough commercially to be sold as one SKU and far enough
+    apart operationally that a queue mixing them without a flag will systematically misjudge
+    every fix-date question it is asked.
+
+capabilities:
+  emphasises:
+    # Most hard software tickets do not end at an answer. They end at an engineer, and the
+    # quality of that handoff — not the quality of the diagnosis — decides the resolution time.
+    - customer_support.escalation_and_incident.engineering_handoff
+    - customer_support.escalation_and_incident.major_incident_communication
+    - customer_support.escalation_and_incident.postmortem
+    # A workaround is a first-class resolution here and is routinely confused with a fix. The
+    # ticket closes, the issue stays open, and the reopen arrives with the next release.
+    - customer_support.diagnosis_and_resolution.workaround_management
+    - customer_support.diagnosis_and_resolution.resolution_delivery
+    - customer_support.diagnosis_and_resolution.verification_and_closure
+    # Software is the one offering where a machine can genuinely resolve a contact end to end,
+    # because the artefact is queryable and the fix is often a setting.
+    - customer_support.knowledge_and_deflection.ai_deflection
+    # The clock is usually contractual at the top of the plan ladder and self-imposed below it,
+    # and both are enforceable in the customer's memory.
+    - customer_support.entitlement_and_sla.breach_prevention
+
+objects:
+  extends:
+    - object: customer_support.obj.core.ticket
+      require_properties: [resolution_type, verified_by_customer, reopen_count]
+      note: >
+        These three exist to stop the most expensive lie in software support: closing on a
+        workaround and recording it as a fix. `resolution_type` says what actually made the
+        problem stop, `verified_by_customer` says whether anyone but us believes it, and
+        `reopen_count` is the only field that catches the pattern where the same ticket is
+        closed three times by three agents who each thought they were first.
+    - object: customer_support.obj.core.incident
+      require_properties: [status_page_published, last_broadcast_at, sla_clock_policy]
+      note: >
+        With a shared install base, silence is itself a message and the queue that fills during
+        an incident is proportional to how long it lasted. `sla_clock_policy` is required
+        because incident-covered tickets otherwise breach en masse against clocks nobody
+        intended to run, and the resulting credit exposure is discovered by finance weeks later.
+    - object: customer_support.obj.core.knowledge_article
+      require_properties: [verified_against_version, last_verified_at]
+      note: >
+        In self-hosted estates several versions are live at once and the customer's version is
+        rarely the newest. An article that does not say what it was verified against is not
+        just stale, it is unsafe to serve to an audience whose version we cannot see.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Deliberately no deactivations. Software is the offering the canonical capability set was
+    implicitly modelled on, so a diff here is almost entirely a matter of weight. The genuinely
+    interesting divergence — hosted versus self-hosted resolution locus — sits inside one
+    offering rather than between two, which is a modelling wrinkle worth revisiting if enough
+    tenants run both.

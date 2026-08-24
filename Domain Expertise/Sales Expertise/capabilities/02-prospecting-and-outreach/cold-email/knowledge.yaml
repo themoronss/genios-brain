@@ -1,0 +1,20 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.prospecting_and_outreach.cold_email
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.cold_email.one_reader_cold_email
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.cold_email.personalisation_is_evidence__not_a_merge_field
+  - sales.heu.cold_email.reply_rate_beats_open_rate__always
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

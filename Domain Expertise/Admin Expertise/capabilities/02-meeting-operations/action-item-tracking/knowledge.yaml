@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.meeting_operations.action_item_tracking
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.action_item_tracking.one_register_across_meetings
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.action_item_tracking.completion_rate_is_meeting_roi
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

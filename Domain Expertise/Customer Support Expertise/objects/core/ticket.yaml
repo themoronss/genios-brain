@@ -1,0 +1,2090 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# REFERENCE OBJECT — copy this file's SHAPE when authoring any other Customer
+# Support object.
+#
+# Seventeen of the schema's twenty-three sections are present and populated. Seven are
+# required (identity, purpose, attributes, relationships, inference_patterns, evidence,
+# metadata); the rest are here because this is the reference, not because a first pass
+# must fill them. Still absent, and worth adding on the next pass: preconditions,
+# dependencies, exceptions, best_practices, anti_patterns, references.
+#
+# The one thing to copy above all others: every inference pattern carries BOTH a human
+# `statement` and a machine `when`. Eight of the seventeen below are executable against
+# the pipeline as it exists today — every one of them by reading the CONVERSATION, because
+# that is the only thing Layer 2 can currently see. Nine are not, and say so. Those nine
+# are the specification of a support_v1 pack, not decoration.
+#
+# The uncomfortable fact this file makes concrete: THE central object of this domain has
+# not one executable pattern that reads a ticket. There is no ticket.status, no SLA clock,
+# no CSAT. Everything that fires today fires off thread.*, commitment.*, meeting.*,
+# derived.* and graph degree. That is the honest floor and pretending otherwise would make
+# every dashboard downstream of here a lie.
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# MIGRATED to the 23-section object schema: description -> purpose.statement,
+# components + properties -> attributes, relationships[].verb -> .type,
+# yields.property -> yields.attribute. Prose carried across unchanged.
+
+identity:
+  id: customer_support.obj.core.ticket
+  scope: core
+  name: Ticket
+  domain: customer_support
+  subdomain: intake_and_triage
+  owner_capability: customer_support.intake_and_triage.ticket_triage
+  version: 1.0.0
+  status: draft
+  aliases:
+  - Case
+  - Support Request
+  - Incident Ticket
+  - Work Item
+  - Contact
+purpose:
+  statement: 'One unit of promised work with a state, an owner and a clock. Those three things are the
+    whole definition: if it has no state it is a note, if it has no owner it is a wish, and if it has
+    no clock it is not a support ticket at all.
+
+    A Ticket is NOT the Conversation and it is NOT the Issue, and confusing it with either is the most
+    common modelling failure in support software — every major ticketing product on the market has made
+    at least one of the two. The Conversation is the message thread with the human; one conversation routinely
+    spawns several tickets ("also, while I have you...") and one ticket can span several conversations
+    across email, chat and phone. Collapse them and the second question is silently lost, which is why
+    customers say they "already asked about this". The Issue is the underlying defect; hundreds of tickets
+    can point at one issue. Collapse them and you can never answer "how many customers hit this", so the
+    queue can tell you how busy it is but never what to fix. The tell that a system has made this mistake
+    is that closing the ticket closes the bug, or that a merge destroys a requester.
+
+    A ticket can be closed while the issue behind it is wide open. That is not a bug in the model; it
+    is exactly what "resolved" means when we shipped a workaround, and a model that cannot express it
+    forces agents to keep tickets open to keep an engineer honest, which wrecks every duration metric
+    in the queue.'
+attributes:
+- name: identification
+  purpose: 'What this ticket is and what it points at. The three refs — conversation, issue, duplicate
+    — are the object''s whole thesis. If they were fields on the same record instead of edges, the three
+    concepts would have been collapsed.
+
+    '
+  type: composite
+  contains:
+  - ticket_ref
+  - external_ref
+  - subject
+  - channel
+  - conversation_ref
+  - issue_ref
+  - duplicate_of_ref
+- name: classification
+  purpose: 'How bad it is and what kind of thing it is. Severity and priority live here together and are
+    deliberately two fields — see the business rule that forbids deriving one from the other.
+
+    '
+  type: composite
+  contains:
+  - ticket_type
+  - severity
+  - priority
+  - product_area_ref
+  - intent_ref
+  - tags
+- name: ownership
+  purpose: 'Exactly one accountable human at a time. A queue is where a ticket waits, not who owns it;
+    a ticket sitting in a queue is unowned and should read as such.
+
+    '
+  type: composite
+  contains:
+  - assignee_ref
+  - queue_ref
+  - team
+  - assignment_count
+  - escalation_ref
+  - is_escalated
+- name: timing
+  purpose: 'The clock and its pauses. Every number here is contested, because every one of them is a metric
+    somebody is measured on. `paused_minutes_total` exists specifically so that pause abuse is visible
+    rather than merely suspected.
+
+    '
+  type: composite
+  contains:
+  - created_at
+  - first_response_at
+  - first_response_target_at
+  - resolution_target_at
+  - resolved_at
+  - closed_at
+  - clock_state
+  - paused_minutes_total
+  - age_hours
+  - promise_status
+  - commitment_ref
+- name: customer_context
+  purpose: 'What we owe this customer and who they are. Entitlement bounds what may be promised and is
+    checked, never assumed — an agent promising a four-hour response to an account that bought next-business-day
+    has created a breach that did not previously exist.
+
+    '
+  type: composite
+  contains:
+  - requester_ref
+  - account_ref
+  - entitlement_ref
+  - sla_target_ref
+  - is_named_account
+  - account_arr
+- name: resolution
+  purpose: 'What made the problem stop, which is not the same as what fixed it. A refund, a workaround,
+    a documentation link and a code change are all resolutions and only the last one closes the issue.
+
+    '
+  type: composite
+  contains:
+  - resolution_ref
+  - resolution_type
+  - workaround_ref
+  - knowledge_article_ref
+  - reopen_count
+  - verified_by_customer
+- name: engagement
+  purpose: 'Observed interaction, as opposed to declared state. This is the only component the pipeline
+    can populate today, and it is therefore where every executable pattern in this file reads from. When
+    declared state and observed engagement disagree, the observation is usually right and the declared
+    state is usually stale.
+
+    '
+  type: composite
+  contains:
+  - ball_in_court
+  - last_inbound_at
+  - engagement_trend
+  - sentiment_score
+  - momentum
+  - participant_count
+  - agent_touch_count
+- name: ticket_ref
+  purpose: The human-facing identifier. The thing the customer quotes back at you six weeks later.
+  type: value
+  data_type: string
+  required: true
+- name: external_ref
+  purpose: 'Identifier in the customer''s own system. Enterprise accounts run their own ITSM and will
+    reconcile against this; without it, joint incident reviews turn into two people reading different
+    spreadsheets at each other.
+
+    '
+  type: value
+  data_type: string
+- name: subject
+  purpose: The customer's own words, not ours. Rewriting it into internal vocabulary destroys the best
+    training data for intent classification the queue has.
+  type: value
+  data_type: string
+- name: channel
+  purpose: 'Where it arrived, not where it now lives. Channel predicts expected latency more strongly
+    than priority does — a chat left for two hours reads as abandonment and an email answered in two hours
+    reads as fast, for identical work.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - email
+  - chat
+  - phone
+  - portal
+  - in_product
+  - api
+  - social
+  - community
+  - walk_in
+  - unknown
+  source_paths:
+  - ticket.channel
+- name: conversation_ref
+  purpose: 'The thread this ticket was cut from. Deliberately a reference and not an embedded field: one
+    conversation can spawn several tickets, and a system that models them as one object loses every question
+    after the first.
+
+    '
+  type: reference
+  ref: customer_support.obj.core.conversation
+  data_type: ref
+- name: issue_ref
+  purpose: 'The underlying defect, if there is one. Many tickets, one issue. Null is a legitimate and
+    common value — a how-do-I question has no defect behind it.
+
+    '
+  type: reference
+  ref: customer_support.obj.core.issue
+  data_type: ref
+- name: duplicate_of_ref
+  purpose: 'Self-referential. Set on merge. The merged ticket keeps its requester and its clock even after
+    merging, because two customers who reported the same thing are still two people owed an answer.
+
+    '
+  type: reference
+  ref: customer_support.obj.core.ticket
+  data_type: ref
+- name: ticket_type
+  purpose: 'Type drives routing more reliably than severity does. `complaint` is separate from `incident`
+    on purpose — a complaint about how we handled something has no technical fault behind it and diagnosing
+    it as one is how a recoverable relationship is lost.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - question
+  - incident
+  - bug
+  - feature_request
+  - billing
+  - access
+  - complaint
+  - task
+  - unknown
+- name: severity
+  purpose: 'How broken it is. A property of the fault, assessable without knowing who reported it. If
+    knowing the account name changes the answer, that was priority, not severity.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - sev1
+  - sev2
+  - sev3
+  - sev4
+  - unknown
+  source_paths:
+  - ticket.severity
+- name: priority
+  purpose: 'What we work on first. A decision about scarce attention, not a property of the fault. A sev1
+    on a free trial and a sev3 on an account renewing next week routinely invert and should be allowed
+    to.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - urgent
+  - high
+  - normal
+  - low
+  source_paths:
+  - ticket.priority
+- name: product_area_ref
+  purpose: The surface the problem lives on. The single most useful field for content-gap analysis and
+    the one most often left as "General".
+  type: reference
+  ref: customer_support.obj.core.product_area
+  data_type: ref
+- name: intent_ref
+  purpose: What the customer is actually trying to do, as distinct from what they asked for.
+  type: reference
+  ref: customer_support.obj.core.intent
+  data_type: ref
+- name: tags
+  purpose: 'Free-form. Useful and untrustworthy in equal measure — tag vocabularies drift within weeks
+    and nothing should route on them without a human having recently looked.
+
+    '
+  type: value
+  data_type: list
+- name: assignee_ref
+  purpose: The one accountable human right now. Exactly one at a time — shared ownership reliably means
+    none, and a ticket owned by a team is a ticket owned by nobody until someone picks it up.
+  type: reference
+  ref: customer_support.obj.core.support_agent
+  data_type: ref
+- name: queue_ref
+  purpose: Where it waits. Not an owner. A ticket that has sat in a queue for a day has been owned by
+    nobody for a day.
+  type: reference
+  ref: customer_support.obj.core.queue
+  data_type: ref
+- name: team
+  purpose: The group accountable when no individual is. Useful for load and routing analysis; useless
+    as an answer to 'who is working this', which is the question it is most often mistaken for.
+  type: value
+  data_type: string
+- name: assignment_count
+  purpose: 'How many times this ticket has changed hands. The cheapest available proxy for triage quality
+    and the one most predictive of a bad CSAT — every reassignment restarts the customer''s explanation
+    from zero.
+
+    '
+  type: value
+  data_type: integer
+  unit: count
+- name: escalation_ref
+  purpose: Present only when ownership actually transferred with a reason. Anger without a transfer is
+    not an escalation.
+  type: reference
+  ref: customer_support.obj.core.escalation
+  data_type: ref
+- name: is_escalated
+  purpose: Whether an Escalation object is currently attached. A denormalised convenience flag, and one
+    that goes stale the moment an escalation resolves — read the edge when the answer matters, read this
+    only to filter a list cheaply.
+  type: value
+  data_type: boolean
+- name: created_at
+  purpose: The start of the clock, unless entitlement coverage hours say otherwise.
+  type: value
+  data_type: timestamp
+  source_paths:
+  - ticket.created_at
+- name: first_response_at
+  purpose: 'First substantive human reply. An auto-acknowledgement is not a first response, and counting
+    it as one is the oldest way to make an SLA report look healthy.
+
+    '
+  type: value
+  data_type: timestamp
+  source_paths:
+  - ticket.first_response_at
+- name: first_response_target_at
+  purpose: The timestamp the first-response clock is due, computed from entitlement against the bound
+    calendar. Business-hours and calendar-hours targets produce wildly different values from identical
+    inputs, which is where nearly every SLA dispute actually originates.
+  type: value
+  data_type: timestamp
+  source_paths:
+  - sla.target_first_response_at
+- name: resolution_target_at
+  purpose: The timestamp the resolution clock is due. A separate clock from first response with a different
+    stop event — first public comment versus transition to Resolved — and collapsing the two into one
+    field is a common and expensive modelling error.
+  type: value
+  data_type: timestamp
+  source_paths:
+  - sla.target_resolution_at
+- name: resolved_at
+  purpose: When we claimed it was fixed, which is not when the customer agreed it was. The gap between
+    this and verification is where reopens are born, and a system that treats them as the same instant
+    cannot measure its own accuracy.
+  type: value
+  data_type: timestamp
+  source_paths:
+  - ticket.resolved_at
+- name: closed_at
+  purpose: Distinct from resolved_at. The gap between them is the verification window, and a system with
+    no gap has no verification.
+  type: value
+  data_type: timestamp
+- name: clock_state
+  purpose: 'Whether the promise is currently ticking. The most consequential field on the object and the
+    most manipulated. `paused_on_customer` should be derivable from the conversation rather than declared
+    by the agent who benefits from it — see the inference patterns.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - running
+  - paused_on_customer
+  - paused_out_of_hours
+  - stopped
+  - breached
+  - unknown
+  required: true
+  source_paths:
+  - sla.clock_state
+- name: paused_minutes_total
+  purpose: 'Cumulative pause. Exists so that a ticket resolved "within SLA" after eleven days of pause
+    is legible as what it is. Report it next to resolution time or do not report resolution time.
+
+    '
+  type: value
+  data_type: integer
+  unit: minutes
+- name: age_hours
+  purpose: Wall-clock age, ignoring pauses. The number the customer experiences.
+  type: value
+  data_type: number
+  unit: hours
+- name: promise_status
+  purpose: 'Whether an explicit commitment made on this ticket — "I''ll come back to you Thursday" — was
+    honoured. Tracked separately from the SLA because a kept SLA and a broken promise is the shape of
+    most bad support experiences.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - none
+  - open
+  - kept
+  - missed
+  - unknown
+- name: commitment_ref
+  purpose: 'Promises made to the customer on this ticket, in a human''s own words and outside any SLA.
+    Emotionally these outrank the SLA every time: a met target with a missed callback still reads as a
+    broken promise.'
+  type: reference
+  ref: customer_support.obj.core.commitment
+  data_type: ref
+- name: requester_ref
+  purpose: The human who asked. Survives merges. Survives reassignment. Never null.
+  type: reference
+  ref: customer_support.obj.core.requester
+  data_type: ref
+  required: true
+- name: account_ref
+  purpose: Null for consumer and free-tier motions, and that is a real state rather than missing data.
+  type: reference
+  ref: customer_support.obj.core.customer_account
+  data_type: ref
+- name: entitlement_ref
+  purpose: What this customer is contractually owed. Bounds what may be promised on this ticket.
+  type: reference
+  ref: customer_support.obj.core.entitlement
+  data_type: ref
+- name: sla_target_ref
+  purpose: The specific clock instance — a timestamp, a pause condition and a deadline — as opposed to
+    the entitlement that says such a clock exists.
+  type: reference
+  ref: customer_support.obj.core.sla_target
+  data_type: ref
+- name: is_named_account
+  purpose: Whether a named TAM or CSM owns this relationship. Changes who must be told, not how fast we
+    must respond.
+  type: value
+  data_type: boolean
+- name: account_arr
+  purpose: 'Revenue at stake. A legitimate priority input and an illegitimate severity input. Placed on
+    the ticket rather than fetched at read time because triage decisions must be auditable against what
+    was known at the time.
+
+    '
+  type: value
+  data_type: money
+  source_paths:
+  - account.arr
+- name: resolution_ref
+  purpose: What actually made the problem stop. Distinct from the fix — a refund, a workaround, a documentation
+    link and a code change are all resolutions, and only one of them closes the underlying issue.
+  type: reference
+  ref: customer_support.obj.core.resolution
+  data_type: ref
+- name: resolution_type
+  purpose: '`expired` means we closed it because the customer stopped replying. It is a distinct outcome
+    from `answered` and folding the two together is how auto-close inflates resolution rate while the
+    customer quietly gives up.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - fixed
+  - workaround
+  - answered
+  - documented
+  - refunded
+  - duplicate
+  - no_fault_found
+  - withdrawn
+  - expired
+  - unknown
+- name: workaround_ref
+  purpose: Present when the ticket closed but the issue did not. The most important ref for spotting a
+    queue that is treating symptoms.
+  type: reference
+  ref: customer_support.obj.core.workaround
+  data_type: ref
+- name: knowledge_article_ref
+  purpose: The article that answered it, or that should have and did not exist.
+  type: reference
+  ref: customer_support.obj.core.knowledge_article
+  data_type: ref
+- name: reopen_count
+  purpose: 'Reopens are the truest quality signal support has, because unlike CSAT the customer has to
+    act rather than merely feel. One reopen is noise; a second is a diagnostic failure.
+
+    '
+  type: value
+  data_type: integer
+  unit: count
+  source_paths:
+  - ticket.reopen_count
+- name: verified_by_customer
+  purpose: Whether the customer confirmed it, as opposed to us deciding they were happy. Almost always
+    false in practice, which is itself the finding.
+  type: value
+  data_type: boolean
+- name: ball_in_court
+  purpose: 'Who is blocking, observed from the thread. The single most useful live field on this object
+    today and the one most likely to contradict clock_state. When it does, believe this one.
+
+    '
+  type: value
+  data_type: enum
+  allowed_values:
+  - us
+  - them
+  - nobody
+  source_paths:
+  - thread.ball_in_court
+- name: last_inbound_at
+  purpose: One of the very few properties with a live Layer 2 source today.
+  type: value
+  data_type: timestamp
+  source_paths:
+  - thread.last_inbound
+- name: engagement_trend
+  purpose: Engine-computed. <= 0.5 means two-way volume has halved against the prior fortnight.
+  type: value
+  data_type: number
+  source_paths:
+  - derived.engagement
+- name: sentiment_score
+  purpose: 'Engine-computed observation balance, signed around zero. Calibrated on commercial correspondence,
+    so it reads a frustrated but polite enterprise admin as neutral. Useful as a direction, not as a level.
+
+    '
+  type: value
+  data_type: number
+  source_paths:
+  - derived.sentiment
+- name: momentum
+  purpose: 'Engine-computed trajectory. Built for deal progression and borrowed here, which is why every
+    pattern that reads it is scored low.
+
+    '
+  type: value
+  data_type: number
+  source_paths:
+  - derived.momentum
+- name: participant_count
+  purpose: 'People attached to the ticket, from graph degree. Grows when a thing escalates and also when
+    somebody cc''s a distribution list, which is exactly why it is a weak signal rather than a trigger.
+
+    '
+  type: value
+  data_type: integer
+  unit: count
+- name: agent_touch_count
+  purpose: 'Agent replies on this ticket. Paired with resolution time it separates "hard problem" from
+    "nobody looked at it for three days".
+
+    '
+  type: value
+  data_type: integer
+  unit: count
+states:
+  initial: new
+  values:
+  - name: new
+    description: Arrived, unread, unowned. Every hour spent here is charged to the first-response clock
+      and belongs to nobody.
+  - name: triaged
+    description: 'Type, severity, priority and owner decided. Triage is complete when the ticket could
+      be handed to a stranger without conversation — anything less is a queue with extra steps.
+
+      '
+  - name: in_progress
+    description: An assigned human is actively working it. The only state in which the queue is doing
+      what it exists to do.
+  - name: waiting_on_customer
+    description: 'We are blocked on the customer and the SLA clock is PAUSED. That pause is what makes
+      this the most abused state in the queue: it is the only state an agent can enter unilaterally that
+      stops the number they are measured on. The classic abuse is a question asked purely to trigger the
+      pause, often one already answered earlier in the thread. Treat a ticket in this state whose last
+      message asked nothing as a defect.
+
+      '
+    entered_when:
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+  - name: waiting_on_engineering
+    description: 'Blocked on a fix we do not control. The clock keeps RUNNING, and it must — the customer
+      did not choose our engineering backlog. Tickets die here quietly because nobody owns a queue they
+      cannot influence.
+
+      '
+  - name: resolved
+    description: 'We believe it is fixed. An assertion by us, not a confirmation by them. Most systems
+      treat this as the end and that is where reopens come from. Deliberately carries no `entered_when`:
+      a quiet thread is not a fixed problem, and binding this state to ball_in_court = nobody because
+      it is the nearest available predicate would silently resolve every ticket a customer gave up on.
+
+      '
+  - name: verified
+    description: 'The customer confirmed it. Rare, valuable, and the only honest input to a first-contact-resolution
+      number. A queue with no verified state cannot tell a fixed problem from an abandoned one.
+
+      '
+  - name: closed
+    description: Terminal for this ticket. Says nothing about the issue behind it, which may be wide open.
+  - name: reopened
+    description: 'The customer came back on the same problem. The truest quality signal support has, because
+      unlike a survey it costs the customer effort. A reopen from `verified` is a far worse finding than
+      a reopen from `resolved`.
+
+      '
+  - name: escalated
+    description: 'Ownership transferred upward or sideways WITH a named receiving owner and a reason.
+      Not a synonym for urgent and not a synonym for the customer being angry — both can be true without
+      this state, and an escalation with no receiving owner is a complaint wearing a workflow.
+
+      '
+  - name: breached
+    description: 'A promise was missed. A real state and not a flag, because what happens next differs:
+      breach handling is its own motion with its own owner. Recording it as an attribute is how organisations
+      discover their breach rate at quarter end.
+
+      '
+  transitions:
+  - from: new
+    to: triaged
+  - from: new
+    to: closed
+  - from: triaged
+    to: in_progress
+  - from: triaged
+    to: escalated
+  - from: in_progress
+    to: waiting_on_customer
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+  - from: in_progress
+    to: waiting_on_engineering
+  - from: in_progress
+    to: resolved
+  - from: in_progress
+    to: escalated
+  - from: waiting_on_customer
+    to: in_progress
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+  - from: waiting_on_customer
+    to: closed
+  - from: waiting_on_engineering
+    to: in_progress
+  - from: waiting_on_engineering
+    to: escalated
+  - from: waiting_on_engineering
+    to: resolved
+  - from: resolved
+    to: verified
+  - from: resolved
+    to: closed
+  - from: resolved
+    to: reopened
+  - from: verified
+    to: closed
+  - from: closed
+    to: reopened
+  - from: reopened
+    to: in_progress
+  - from: escalated
+    to: in_progress
+  - from: escalated
+    to: resolved
+  - from: in_progress
+    to: breached
+  - from: waiting_on_engineering
+    to: breached
+  - from: breached
+    to: in_progress
+  - from: breached
+    to: resolved
+relationships:
+- target: customer_support.obj.core.conversation
+  cardinality: zero_or_many
+  description: Many-to-many in reality and the reason both objects exist. One conversation spawns several
+    tickets; one ticket spans several conversations when a customer moves from chat to email mid-problem.
+    High confidence because the thread is the one artefact that always exists — the ticket is frequently
+    created from it.
+  type: belongs_to
+  weight_bp: 7500
+  confidence_bp: 9000
+  priority: 5
+  direction: outbound
+- target: customer_support.obj.core.issue
+  cardinality: zero_or_one
+  description: Hundreds of tickets, one issue. This edge is what makes "forty customers hit this" expressible;
+    without it every report is a fresh surprise and the queue can report load but never cause. The lowest
+    confidence of any high-weight edge here. Linking a ticket to its underlying issue is the step teams
+    skip under load, which is exactly why blast radius is discovered by engineering rather than by the
+    queue.
+  type: caused_by
+  weight_bp: 8500
+  confidence_bp: 4500
+  priority: 3
+  direction: outbound
+- target: customer_support.obj.core.requester
+  cardinality: one
+  description: Exactly one asker, always. A merge may redirect the ticket but never orphans the person.
+    Weight is near the top because there is no such thing as answering a ticket without the person; confidence
+    is the highest in the object because the asker is the one field every intake path records.
+  type: belongs_to
+  weight_bp: 9000
+  confidence_bp: 9800
+  priority: 1
+  direction: outbound
+- target: customer_support.obj.core.customer_account
+  cardinality: zero_or_one
+  type: belongs_to
+  weight_bp: 6500
+  confidence_bp: 7500
+  priority: 10
+  direction: outbound
+  description: Absent for anonymous and pre-signup contacts, which is a population most support systems
+    model badly.
+- target: customer_support.obj.core.entitlement
+  cardinality: zero_or_one
+  description: 'Read as "this ticket is covered by that entitlement". Zero is a real and dangerous state
+    — an out-of-entitlement ticket that nobody checked will still be worked, and the cost lands somewhere
+    invisible. Confidence is deliberately far below weight: it matters enormously and is checked far less
+    often than anyone admits. That gap is the whole argument for entitlement_verification being its own
+    capability.'
+  type: covers
+  weight_bp: 8000
+  confidence_bp: 6000
+  priority: 2
+  direction: outbound
+- target: customer_support.obj.core.sla_target
+  cardinality: zero_or_many
+  description: Several clocks can run on one ticket — first response, next response, resolution — and
+    they breach independently. Weight rises with entitlement tier and falls to near nothing on a best-effort
+    plan, so treat the number as the enterprise case.
+  type: gates
+  weight_bp: 8000
+  confidence_bp: 7000
+  priority: 4
+  direction: outbound
+- target: customer_support.obj.core.support_agent
+  cardinality: zero_or_one
+  description: Zero while it waits in a queue. That is not a gap in the data; it is a ticket nobody owns.
+    Zero while queued. Reassignment history matters more than the current holder for anything diagnostic.
+  type: assigned_to
+  weight_bp: 7000
+  confidence_bp: 8500
+  priority: 7
+  direction: outbound
+- target: customer_support.obj.core.queue
+  cardinality: zero_or_one
+  type: attaches_to
+  weight_bp: 5000
+  confidence_bp: 9000
+  priority: 12
+  direction: outbound
+  description: Almost always recorded and rarely explanatory. A queue is where a ticket waits, not who
+    owns it.
+- target: customer_support.obj.core.escalation
+  cardinality: zero_or_many
+  description: An escalation is an object because it has a receiving owner and a reason. Without both
+    it is a complaint. Weight understates the case where it is set — an escalated ticket is a different
+    object behaviourally — but most tickets never carry one.
+  type: escalates_to
+  weight_bp: 6000
+  confidence_bp: 7000
+  priority: 9
+  direction: outbound
+- target: customer_support.obj.core.resolution
+  cardinality: zero_or_one
+  description: What made the problem stop for this customer. Not necessarily what fixed the issue. Present
+    on any closed ticket by construction; the confidence discount is for tickets closed without one being
+    recorded, which is a real and common data defect.
+  type: resolves
+  weight_bp: 7000
+  confidence_bp: 8000
+  priority: 6
+  direction: outbound
+- target: customer_support.obj.core.knowledge_article
+  cardinality: zero_or_many
+  description: Both directions of value — the article that answered it, and the article whose absence
+    caused it. KCS treats the link as the unit of value — reuse is review — so a low confidence here is
+    a direct measurement of how little of the Solve loop is actually running.
+  type: references
+  weight_bp: 4500
+  confidence_bp: 5000
+  priority: 13
+  direction: outbound
+- target: customer_support.obj.core.commitment
+  cardinality: zero_or_many
+  description: Every "I'll get back to you by Thursday" is an object with a clock, tracked apart from
+    the SLA. The lowest confidence in the object and the most interesting number in it. Verbal and in-message
+    promises are almost never captured as structured data, which is precisely why the Commitment object
+    exists.
+  type: produces
+  weight_bp: 5500
+  confidence_bp: 3000
+  priority: 11
+  direction: outbound
+- target: customer_support.obj.core.ticket
+  cardinality: zero_or_one
+  description: 'Self-referential. Merge is a link, never a delete — the second reporter is still owed
+    an answer. Self-referential: the duplicate edge. Set only on merge, and a merge that destroys the
+    second requester is the classic implementation bug.'
+  type: merges_into
+  weight_bp: 3500
+  confidence_bp: 6000
+  priority: 15
+  direction: outbound
+- target: customer_support.obj.core.incident
+  cardinality: zero_or_one
+  description: 'During a major incident hundreds of tickets attach to one incident and are answered once,
+    which is the whole point of the incident object. Rarely set and dominant when it is: an attached incident
+    overrides essentially every other reading of the ticket, including its SLA.'
+  type: attaches_to
+  weight_bp: 6500
+  confidence_bp: 5000
+  priority: 8
+  direction: outbound
+- target: customer_support.obj.core.customer_sentiment
+  cardinality: zero_or_one
+  description: Sentiment observed on this ticket, distinct from a submitted satisfaction score. Derived
+    rather than recorded, and thread-scoped, so it cannot say which participant is unhappy.
+  type: measures
+  weight_bp: 4000
+  confidence_bp: 4000
+  priority: 14
+  direction: outbound
+- target: customer_support.obj.core.churn_risk
+  cardinality: zero_or_one
+  description: Support is the only function that talks to unhappy customers by default, so it sees churn
+    earlier than anyone. One bad ticket is not churn risk; a pattern of them is. Weakest edge in the object
+    and deliberately so. One ticket almost never moves an account's churn reading; a pattern of them does,
+    and that inference belongs to Churn Risk rather than here.
+  type: influences
+  weight_bp: 3000
+  confidence_bp: 3500
+  priority: 16
+  direction: outbound
+inference_patterns:
+  deterministic:
+  - id: ticket.waiting_on_customer_observed
+    statement: The thread says the ball is in the customer's court, so we are genuinely blocked on them
+      and the clock may legitimately pause.
+    status: executable
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+    yields:
+      confidence_bp: 7800
+      value: paused_on_customer
+      attribute: clock_state
+    evidence_fields:
+    - thread.ball_in_court
+    - thread.last_inbound
+    note: 'This is the most valuable pattern in the file and not because it is clever. Pause is normally
+      declared by the agent whose response time the pause protects; deriving it from the observed thread
+      instead gives an independent second opinion on the one field nobody should be allowed to mark their
+      own homework on. Deliberately 7800 rather than higher: ball_in_court is computed from correspondence
+      only, so a customer who replied by phone or in a chat widget looks like silence to it, and the ticket
+      would be paused against a customer who has already answered. Where this pattern and the declared
+      clock_state disagree, the disagreement itself is the finding — surface both.
+
+      '
+  - id: ticket.clock_running_customer_awaiting_us
+    statement: The ball is in our court and a full day has passed since the customer's last message —
+      the clock is running and they are waiting on us.
+    status: executable
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    - fn: hours_since
+      path: thread.last_inbound
+      op: '>='
+      value: 24
+    yields:
+      confidence_bp: 8200
+      value: running
+      attribute: clock_state
+    evidence_fields:
+    - thread.ball_in_court
+    - thread.last_inbound
+    note: 'Higher than its mirror above because asserting the clock IS running is the safe error and asserting
+      it is paused is the dangerous one. Twenty-four hours is a floor, not a target — it is chosen to
+      be long enough that it never fires on a ticket somebody is actively typing a reply to, which makes
+      this a detector of neglect rather than of latency. A queue with a four-hour first-response entitlement
+      needs the relative pattern below, not this one.
+
+      '
+  - id: ticket.promise_passed_with_nothing_sent
+    statement: A commitment made on this ticket is at least a day overdue and no follow-up observation
+      exists — nothing went back to the customer.
+    status: executable
+    when:
+    - fn: days_since
+      path: commitment.due_at
+      op: '>='
+      value: 1
+    - no_obs: followup_sent
+    yields:
+      confidence_bp: 8600
+      value: missed
+      attribute: promise_status
+    evidence_fields:
+    - commitment.due_at
+    - commitment.action
+    note: 'The strongest executable pattern here, and the one that fires on the failure customers actually
+      complain about. Note it is deliberately independent of the SLA: a ticket can be comfortably inside
+      every contractual clock and still have broken the only promise the customer remembers, which was
+      a named day. `no_obs: followup_sent` is the honest half — it proves no outbound was OBSERVED, not
+      that none was sent, so a reply made by phone reads as silence. That asymmetry is acceptable here
+      because the cost of chasing a promise that was already kept is an apology, and the cost of missing
+      one is trust.
+
+      '
+  - id: ticket.support_contact_without_a_recap
+    statement: A meeting or call on this ticket happened at least a day ago and nothing has gone back
+      to the customer in writing since.
+    status: executable
+    when:
+    - fn: days_since
+      path: meeting.start_at
+      op: '>='
+      value: 1
+    - no_obs: followup_sent
+    yields:
+      confidence_bp: 7000
+      value: open
+      attribute: promise_status
+    evidence_fields:
+    - meeting.start_at
+    note: 'Support calls generate more unwritten commitments than any other channel, because the agreements
+      are made verbally and the ticket is updated from memory or not at all. Not higher than 7000: the
+      calendar entry proves a meeting was scheduled, not that it happened or that this ticket was what
+      it was about. A recurring team standup attached to the same graph node would fire this every week,
+      which is the failure mode to watch for before trusting it as a trigger.
+
+      '
+  - id: ticket.status_declared_by_the_system_of_record
+    statement: The ticketing system's own status field says where this ticket is.
+    status: needs_signal
+    yields:
+      confidence_bp: 10000
+      value: null
+      attribute: clock_state
+    requires_signals:
+    - kind: fact_path
+      name: ticket.status
+      owner_layer: L1
+      note: The single most embarrassing gap in this domain. The declared state of THE central object
+        is not projected into a typed fact, so a support brain has to infer from email what the ticketing
+        system already knows for certain. Everything else in this backlog is worth less than this one
+        line.
+    - kind: fact_path
+      name: ticket.assignee
+      owner_layer: L1
+      note: Status without an owner cannot distinguish 'in progress' from 'sitting in a queue', which
+        are the two states an operator most needs told apart.
+  - id: ticket.first_response_overdue
+    statement: The first-response deadline has passed and no first response has been recorded.
+    status: needs_signal
+    yields:
+      confidence_bp: 9800
+      value: breached
+      attribute: clock_state
+    requires_signals:
+    - kind: fact_path
+      name: sla.target_first_response_at
+      owner_layer: L1
+    - kind: fact_path
+      name: ticket.first_response_at
+      owner_layer: L1
+      note: Must record the first SUBSTANTIVE reply, not the auto-acknowledgement. If the connector projects
+        the autoresponder timestamp, this pattern will report perfect first-response attainment on a queue
+        that has answered nothing, and it will do so convincingly.
+  - id: ticket.clock_breached
+    statement: The SLA clock has passed its resolution target while in a running state.
+    status: needs_signal
+    yields:
+      confidence_bp: 10000
+      value: breached
+      attribute: clock_state
+    requires_signals:
+    - kind: fact_path
+      name: sla.clock_state
+      owner_layer: L1
+      note: Without clock_state, elapsed time cannot be distinguished from owed time, and every pause
+        looks like negligence.
+    - kind: fact_path
+      name: sla.target_resolution_at
+      owner_layer: L1
+  - id: ticket.reopened_by_the_customer
+    statement: The customer came back on the same ticket after it was resolved or closed.
+    status: needs_signal
+    yields:
+      confidence_bp: 9500
+      value: null
+      attribute: reopen_count
+    requires_signals:
+    - kind: obs_kind
+      name: ticket_reopened
+      owner_layer: L2
+      note: Reopens are the only quality signal that costs the customer effort to send, which makes them
+        harder to game than any survey. Cheaper to emit than CSAT and more informative, and currently
+        emitted by nothing.
+    - kind: fact_path
+      name: ticket.reopen_count
+      owner_layer: L1
+  - id: ticket.entitlement_lapsed_at_intake
+    statement: This ticket arrived after the account's entitlement expired.
+    status: needs_signal
+    yields:
+      confidence_bp: 9700
+      attribute: null
+    requires_signals:
+    - kind: fact_path
+      name: entitlement.expires_at
+      owner_layer: L1
+      note: Checked, never assumed — and today not checkable at all. An expired-entitlement ticket gets
+        worked anyway because refusing it in the moment feels worse than absorbing the cost, so the cost
+        lands in a margin nobody attributes to support.
+    - kind: fact_path
+      name: ticket.created_at
+      owner_layer: L1
+  heuristic:
+  - id: ticket.dissatisfaction_while_we_owe_a_reply
+    statement: Sentiment has turned negative on a thread where the ball is in our court — the unhappiness
+      is about us, not about the fault.
+    status: executable
+    when:
+    - path: derived.sentiment
+      op: <
+      value: 0.0
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    yields:
+      confidence_bp: 6200
+      attribute: null
+    evidence_fields:
+    - derived.sentiment
+    - thread.ball_in_court
+    note: 'The ball_in_court condition is what makes this worth having. Negative sentiment alone is ambiguous
+      — a customer reporting a serious fault sounds negative and may be perfectly happy with us — but
+      negative sentiment while WE are the blocker points at the handling rather than the problem, and
+      handling is the part support can fix today. Capped at 6200 because derived.sentiment was calibrated
+      on commercial correspondence: it reads a furious but professionally worded enterprise admin as roughly
+      neutral, and those are precisely the customers who escalate without warning.
+
+      '
+  - id: ticket.customer_stopped_replying_while_owing_us
+    statement: Two-way volume has halved and the ball is in the customer's court — this ticket is being
+      abandoned rather than resolved.
+    status: executable
+    when:
+    - path: derived.engagement
+      op: <=
+      value: 0.5
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+    yields:
+      confidence_bp: 5500
+      value: expired
+      attribute: resolution_type
+    evidence_fields:
+    - derived.engagement
+    - thread.ball_in_court
+    note: 'Deliberately weak at 5500 and it should never auto-close anything. The pattern cannot tell
+      abandonment from satisfaction — a customer who solved it themselves and a customer who gave up on
+      us produce the identical trace, and those two outcomes want opposite responses. Its real use is
+      as a prompt to ask before closing, which is the step auto-close exists to skip. Treat a queue where
+      this fires often as a content-gap finding, not a hygiene one.
+
+      '
+  - id: ticket.crowded_thread_is_escalation_shaped
+    statement: An unusually large number of people are attached to this ticket, which is what an escalation
+      looks like before anyone declares one.
+    status: executable
+    when:
+    - fn: edge_count
+      op: '>='
+      value: 5
+    yields:
+      confidence_bp: 5000
+      value: true
+      attribute: is_escalated
+    evidence_fields:
+    - thread.ball_in_court
+    note: 'Five is a guess and is meant to be tuned per organisation — in a swarming model it is Tuesday,
+      and in a tiered one it is a fire. Kept at 5000 because participant count also rises when somebody
+      cc''s an alias, and because escalation properly means ownership transferred with a reason, which
+      degree alone can never show. Useful as a queue-level sort and actively misleading as a per-ticket
+      trigger.
+
+      '
+  - id: ticket.going_nowhere_on_our_watch
+    statement: Trajectory has collapsed while the ball is in our court — the ticket is stalled and it
+      is our stall.
+    status: executable
+    when:
+    - path: derived.momentum
+      op: <=
+      value: 0.3
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    yields:
+      confidence_bp: 4500
+      attribute: null
+    evidence_fields:
+    - derived.momentum
+    - thread.ball_in_court
+    note: 'The weakest executable pattern here and knowingly so. derived.momentum was built to score deal
+      progression through stages; a ticket has no stages, so what it actually measures on a support node
+      is correspondence tempo. That still catches the real thing — a ticket nobody has touched in a fortnight
+      — but it will also flag a hard engineering-blocked ticket that is being handled correctly and slowly.
+      4500 says "look", not "act". If it ever needs to say "act", it needs derived.backlog_age.
+
+      '
+  - id: ticket.silence_past_this_customers_own_cadence
+    statement: This customer has waited far longer than their own established reply rhythm, with the ball
+      in our court.
+    status: executable
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    - fn: days_since
+      path: thread.last_inbound
+      op: '>='
+      value:
+        baseline: reply_cadence
+        mult: 2
+        floor: 1
+    yields:
+      confidence_bp: 6800
+      attribute: null
+    evidence_fields:
+    - thread.last_inbound
+    - thread.ball_in_court
+    note: 'The relative counterpart to the fixed 24-hour pattern, and the better of the two where a baseline
+      exists. Support latency is judged against expectation, not against a constant: a daily-contact enterprise
+      admin experiences six hours as neglect and a quarterly user experiences two days as prompt. Deliberately
+      uses days_since rather than hours_since — reply_cadence is expressed in days everywhere else it
+      is consumed, and mixing the unit against an hours-elapsed comparison would produce a threshold so
+      low the pattern fires on every open ticket while looking perfectly reasonable in review. The floor
+      of 1 day exists because a cold-start baseline resolves to the floor, and a lower floor would fire
+      on every overnight ticket in a follow-the-sun queue. The coarseness is the honest cost: this measures
+      habit, and an SLA measures obligation.
+
+      '
+  - id: ticket.repeat_contact_from_the_same_account
+    statement: This account has contacted us repeatedly in a short window — the aggregate is the signal,
+      not any one ticket.
+    status: needs_signal
+    yields:
+      confidence_bp: 7500
+      attribute: null
+    requires_signals:
+    - kind: derived
+      name: derived.contact_frequency
+      owner_layer: L2
+      note: Repeat contact is where support stops being reactive. Three tickets from one account in a
+        week is a different object from three unrelated tickets, and today the queue cannot see the difference
+        — each one is read as a fresh surprise by a different agent.
+    - kind: baseline
+      name: contact_rate_per_account
+      owner_layer: L2
+      note: Needed to make 'repeatedly' relative. A hundred-seat account opening four tickets a week is
+        normal; a two-seat account doing the same is a churn signal.
+  - id: ticket.priority_should_outrank_severity_here
+    statement: A low-severity ticket on an account near renewal should be worked before a high-severity
+      one on a trial.
+    status: needs_signal
+    yields:
+      confidence_bp: 7000
+      value: high
+      attribute: priority
+    requires_signals:
+    - kind: fact_path
+      name: account.renewal_at
+      owner_layer: L1
+      note: 'The severity/priority inversion is the most valuable judgement in triage and it is entirely
+        unavailable to the engine today: nothing commercial about the account is visible on a support
+        node.'
+    - kind: fact_path
+      name: account.arr
+      owner_layer: L1
+    - kind: fact_path
+      name: entitlement.plan
+      owner_layer: L1
+  - id: ticket.escalation_pressure_building
+    statement: The customer has used cancellation or escalation language before any escalation was formally
+      raised.
+    status: needs_signal
+    yields:
+      confidence_bp: 8000
+      value: true
+      attribute: is_escalated
+    requires_signals:
+    - kind: obs_kind
+      name: cancellation_threat
+      owner_layer: L2
+      note: The single highest-value missing observation for this domain. It is the moment support stops
+        being a cost centre question and becomes a revenue one, it is stated in plain language in the
+        thread, and the extractor whitelist does not include it.
+    - kind: obs_kind
+      name: angry_language
+      owner_layer: L2
+    - kind: derived
+      name: derived.escalation_pressure
+      owner_layer: L2
+      note: A single angry message is not pressure. Accumulation over a thread is, and only L2 can accumulate
+        it.
+  - id: ticket.closed_on_a_workaround_over_an_open_issue
+    statement: This ticket was resolved with a workaround while the underlying defect stayed open.
+    status: needs_signal
+    yields:
+      confidence_bp: 8500
+      value: workaround
+      attribute: resolution_type
+    requires_signals:
+    - kind: obs_kind
+      name: workaround_provided
+      owner_layer: L2
+      note: Distinguishing a fix from a workaround is what stops a queue from congratulating itself. Without
+        it, resolution rate counts a symptom suppressed the same as a fault removed, and the same fault
+        reaches the next forty customers with the metrics looking excellent throughout.
+    - kind: obs_kind
+      name: bug_filed
+      owner_layer: L2
+  - id: ticket.detractor_after_resolution
+    statement: The customer scored this interaction badly after we resolved it.
+    status: needs_signal
+    yields:
+      confidence_bp: 9000
+      value: false
+      attribute: verified_by_customer
+    requires_signals:
+    - kind: fact_path
+      name: csat.score
+      owner_layer: L1
+      note: Ranked below reopens deliberately. A survey score is cheap for the customer to give and cheap
+        to game with a well-timed ask; a reopen costs them effort and cannot be prompted. Both are worth
+        having and the reopen is worth more.
+    - kind: obs_kind
+      name: csat_submitted
+      owner_layer: L2
+inputs:
+- source: email
+  signal: who is waiting on whom
+  path: thread.ball_in_court
+- source: email
+  signal: last message from the customer
+  path: thread.last_inbound
+- source: derived
+  signal: two-way volume against the prior fortnight
+  path: derived.engagement
+- source: derived
+  signal: observation balance across the thread
+  path: derived.sentiment
+- source: derived
+  signal: correspondence tempo
+  path: derived.momentum
+  description: Borrowed from deal trajectory. It measures correspondence tempo rather than anything ticket-shaped,
+    so it is corroborating evidence here and never sole grounds.
+- source: email
+  signal: promises made in writing and their due dates
+  path: commitment.due_at
+- source: calendar
+  signal: support calls and their timing
+  path: meeting.start_at
+- source: ticket
+  signal: status, priority, severity, assignee, timestamps
+  description: The system of record for this object, and not projected into typed L2 facts at all — see
+    the needs_signal patterns. This one line is the domain's largest gap.
+- source: chat
+  signal: live conversation and abandonment
+  description: Chat transcripts are not ingested; a customer answered by widget looks silent to every
+    pattern above.
+- source: phone
+  signal: call outcome and callback promises
+  description: The channel that generates the most unwritten commitments and the least evidence.
+- source: survey
+  signal: CSAT, CES and NPS responses
+- source: crm
+  signal: account value, renewal date, plan
+- source: telemetry
+  signal: error rates and feature usage around the reported fault
+- source: status_page
+  signal: whether a known incident already explains this ticket
+outputs:
+- name: triage_confidence_bp
+  type: integer
+  description: How sure we are the type, severity, priority and owner are right. Low confidence should
+    route to a human, not to a queue.
+  consumed_by:
+  - L4.reasoning_unit
+  - L4.decision_maker
+- name: breach_risk_bp
+  type: integer
+  description: Likelihood this ticket breaches a promise before it resolves. Today derivable only from
+    conversation shape, which makes it a rough prior rather than a forecast.
+  consumed_by:
+  - L4.reasoning_unit
+- name: blocked_on
+  type: string
+  description: us | them | nobody | engineering. The one-word answer to 'why is this still open'.
+  consumed_by:
+  - L4.reasoning_unit
+  - L5.execution_planning
+- name: next_customer_update
+  type: string
+  description: What the customer should be told next and by when, given what was already promised.
+  consumed_by:
+  - L5.communication_planning
+  - L5.2.channel_planner
+- name: escalation_candidacy
+  type: boolean
+  description: Whether this ticket is escalation-shaped before anyone has declared one.
+  consumed_by:
+  - L4.decision_maker
+- name: knowledge_gap_flag
+  type: boolean
+  description: True when the ticket was answerable from content that did not exist. The input to deflection
+    work.
+  consumed_by:
+  - L4.reasoning_unit
+  - L6.learning_unit
+- name: cost_to_serve_signal
+  type: number
+  description: Touches, reassignments and elapsed handling on this ticket, for the account-level aggregate.
+  consumed_by:
+  - L6.learning_unit
+preconditions:
+- id: ticket.requester_resolved
+  statement: A Requester must be resolved before the ticket can be meaningfully reasoned about.
+  requires:
+  - customer_support.obj.core.requester
+  if_unmet: block
+- id: ticket.entitlement_checked
+  statement: Entitlement must be looked up before any promise about timing is made.
+  requires:
+  - customer_support.obj.core.entitlement
+  - customer_support.obj.core.customer_account
+  if_unmet: degrade
+- id: ticket.classification_attempted
+  statement: Type and severity must have been attempted, even if the answer is explicitly unknown.
+  if_unmet: degrade
+- id: ticket.not_superseded_by_incident
+  statement: No open Incident may already explain this ticket.
+  requires:
+  - customer_support.obj.core.incident
+  if_unmet: degrade
+constraints:
+- id: ticket.one_accountable_owner
+  statement: Exactly one assignee at a time. A queue is a waiting room, not an owner.
+  hard: true
+- id: ticket.clock_cannot_pause_on_us
+  statement: The SLA clock cannot be paused while we are the blocker.
+  when:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  hard: true
+- id: ticket.cannot_promise_beyond_entitlement
+  statement: No response or resolution commitment may exceed what the entitlement covers.
+  hard: true
+- id: ticket.cannot_close_with_reply_owed
+  statement: Cannot close while the observed ball is in our court.
+  when:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  hard: true
+- id: ticket.merge_preserves_both_requesters
+  statement: A merge may not orphan a requester or discard the merged ticket's clock.
+  hard: true
+- id: ticket.workaround_leaves_issue_open
+  statement: Resolving with a workaround cannot close the linked issue.
+  hard: true
+- id: ticket.escalation_needs_a_receiver
+  statement: Cannot enter the escalated state without a named receiving owner.
+  hard: true
+- id: ticket.severity_independent_of_account
+  statement: Severity may not be altered by account size. Priority may. Enforcing this is the only thing
+    that keeps severity comparable across a queue.
+  hard: false
+business_rules:
+- id: ticket.severity_is_not_priority
+  statement: 'Priority must not be derived from severity alone, and severity must not be raised because
+    the account is large. They are separate decisions with separate inputs, and collapsing them is the
+    single most expensive triage error there is.
+
+    '
+  then: reject_derived_priority
+  severity: blocking
+- id: ticket.pause_requires_a_real_customer_dependency
+  statement: 'The SLA clock may not be paused while the thread says the ball is in our court. A pause
+    entered when we are the blocker is a metric edit, not a state change.
+
+    '
+  when:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  then: reject_pause
+  severity: blocking
+- id: ticket.no_close_while_we_owe_a_reply
+  statement: A ticket must not be closed while the observed ball is in our court. Closing a ticket the
+    customer is waiting on is the fastest way to manufacture a reopen and a detractor.
+  when:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  then: block_close
+  severity: blocking
+- id: ticket.entitlement_bounds_the_promise
+  statement: 'No response or resolution commitment may be made that exceeds what the entitlement covers.
+    An agent promising four hours to a next-business-day account has created a breach that did not exist
+    before they typed.
+
+    '
+  then: require_entitlement_check
+  severity: blocking
+- id: ticket.exactly_one_owner
+  statement: A ticket in any state other than new has exactly one assignee. Two owners is zero owners,
+    and a shared queue is not an owner.
+  severity: warning
+- id: ticket.merge_never_destroys_a_requester
+  statement: 'Merging tickets links them and never deletes the merged one''s requester or its clock. Two
+    people who reported the same thing are two people owed an answer.
+
+    '
+  then: preserve_requester_on_merge
+  severity: blocking
+- id: ticket.missed_promise_is_a_breach_of_trust
+  statement: 'A commitment whose due time has passed with nothing sent outbound is a broken promise regardless
+    of SLA state. Customers forgive slow far more readily than they forgive silence after a specific date
+    was given.
+
+    '
+  when:
+  - fn: days_since
+    path: commitment.due_at
+    op: '>='
+    value: 1
+  - no_obs: followup_sent
+  then: flag_missed_promise
+  severity: warning
+- id: ticket.reopen_invalidates_verification
+  statement: A reopen sets verified_by_customer back to false and must not be counted as a first-contact
+    resolution retrospectively.
+  severity: warning
+- id: ticket.workaround_does_not_close_the_issue
+  statement: 'Resolving a ticket with resolution_type = workaround must leave the linked issue open. A
+    queue that closes issues on workarounds looks healthy and ships the same fault to the next forty customers.
+
+    '
+  then: keep_issue_open
+  severity: blocking
+- id: ticket.escalation_requires_a_receiving_owner
+  statement: A ticket may not enter the escalated state without a named receiving owner. An escalation
+    without one is a complaint and should be handled as one.
+  severity: blocking
+decision_factors:
+- name: entitlement_and_clock_pressure
+  weight_bp: 2200
+  direction: increases
+  description: 'What we promised and how much of it is left. Ranked first deliberately — an operator under
+    load triages against obligation, not against interest, and a queue that prioritises the most interesting
+    fault breaches on the boring ones.
+
+    '
+  reads:
+  - entitlement_ref
+  - sla_target_ref
+  - clock_state
+  - first_response_target_at
+  - resolution_target_at
+- name: fault_severity
+  weight_bp: 1800
+  direction: increases
+  description: How broken it actually is, assessed without knowing who reported it. Kept separate from
+    priority so that the inversion between them stays visible instead of being averaged away.
+  reads:
+  - severity
+  - ticket_type
+  - issue_ref
+  - product_area_ref
+- name: customer_wait_time
+  weight_bp: 1600
+  direction: increases
+  description: 'How long they have actually waited, wall-clock, not clock-adjusted. The number the customer
+    experiences is the one that predicts their reaction; the paused number is the one that predicts our
+    report.
+
+    '
+  reads:
+  - age_hours
+  - last_inbound_at
+  - ball_in_court
+  - paused_minutes_total
+- name: account_value_at_risk
+  weight_bp: 1400
+  direction: increases
+  description: 'Legitimate as a priority input and illegitimate as a severity input. Weighted below wait
+    time on purpose: a queue that always serves the largest account teaches every other customer that
+    the way to get help is to threaten to leave.
+
+    '
+  reads:
+  - account_arr
+  - is_named_account
+  - account_ref
+- name: sentiment_trajectory
+  weight_bp: 1200
+  direction: context
+  description: 'Direction beats level. A neutral customer becoming negative outranks a customer who has
+    been curt since the first message, and the underlying signal is too coarsely calibrated to be read
+    as an absolute anyway.
+
+    '
+  reads:
+  - sentiment_score
+  - engagement_trend
+  - momentum
+- name: resolution_uncertainty
+  weight_bp: 1000
+  direction: context
+  description: 'Whether anyone knows what is wrong yet. High uncertainty argues for reproduction and diagnostics
+    rather than for a faster reply, so it should change the plan without necessarily changing the position
+    in the queue.
+
+    '
+  reads:
+  - issue_ref
+  - workaround_ref
+  - resolution_ref
+  - assignment_count
+- name: repeat_and_reopen_history
+  weight_bp: 800
+  direction: increases
+  description: 'Second and third contacts on the same problem. Weighted low not because it matters little
+    but because it is the factor with the weakest data behind it until reopen and contact-frequency signals
+    exist.
+
+    '
+  reads:
+  - reopen_count
+  - duplicate_of_ref
+  - verified_by_customer
+evidence:
+- source: ticket
+  strength_bp: 10000
+  description: The system of record. Nothing outranks the ticket's own state — and nothing in this brain
+    can read it today.
+- source: telemetry
+  strength_bp: 9000
+  description: Product data showing the fault occurring. The only source that can contradict both the
+    customer and the agent and be right.
+- source: email
+  strength_bp: 8000
+  description: Written thread. Strong, timestamped, and the only source the pipeline actually has.
+- source: chat
+  strength_bp: 7500
+  description: Verbatim and timestamped, but routinely abandoned mid-sentence, so absence of a reply proves
+    less here than in email.
+- source: survey
+  strength_bp: 6500
+  description: The customer's own verdict. Cheap for them to give, easy for us to time favourably, and
+    biased toward the extremes.
+- source: phone
+  strength_bp: 6000
+  description: High-signal, badly evidenced. What was actually promised on the call survives only in whatever
+    the agent typed afterwards.
+- source: crm
+  strength_bp: 6000
+  description: Account context. Someone typed it once and it has aged since.
+- source: status_page
+  strength_bp: 5500
+  description: Proves a known incident existed. Does not prove this customer was affected by it.
+- source: help_center
+  strength_bp: 4000
+  description: Article views before contact. Circumstantial, and the strongest available hint that content
+    existed but did not land.
+- source: derived
+  strength_bp: 4000
+  description: Inferred from conversation shape. Corroborating only, never sole grounds for a state change.
+- source: manual_entry
+  strength_bp: 3000
+  description: An agent's own note. Honest, unverifiable, and written by the person being measured.
+metrics:
+- name: first_response_time
+  unit: hours
+  description: Created to first substantive reply. Meaningless if autoresponders are counted, which is
+    the default failure.
+  owner_layer: L2
+- name: resolution_time
+  unit: hours
+  description: Report it beside paused_minutes_total or do not report it. A clock-adjusted resolution
+    time is a statement about our process, not the customer's wait.
+  owner_layer: L2
+- name: wall_clock_wait
+  unit: hours
+  description: Elapsed time ignoring pauses. The number the customer actually experienced.
+  owner_layer: L2
+- name: reopen_rate
+  unit: percent
+  description: The truest quality signal in support, because the customer has to act rather than merely
+    feel.
+  owner_layer: L6
+- name: sla_attainment
+  unit: percent
+  description: Share of tickets meeting their promised clocks. Trivially inflated by pause abuse, which
+    is why the next metric exists.
+  owner_layer: L6
+- name: paused_time_share
+  unit: percent
+  description: Share of ticket life spent paused. A queue whose paused share climbs while attainment holds
+    is gaming the clock, not improving.
+  owner_layer: L6
+- name: reassignment_rate
+  unit: percent
+  description: Share of tickets that changed hands more than once. Measures triage quality, not agent
+    quality.
+  owner_layer: L6
+- name: touches_per_resolution
+  unit: count
+  description: Agent replies per resolved ticket. The cost side of every deflection argument.
+  owner_layer: L6
+- name: workaround_close_share
+  unit: percent
+  description: Share of resolutions that suppressed a symptom rather than removed a fault. Rises quietly
+    and predicts repeat contact.
+  owner_layer: L6
+- name: verified_close_share
+  unit: percent
+  description: Share of closures the customer actually confirmed. Usually embarrassing, and the honest
+    denominator for first-contact resolution.
+  owner_layer: L6
+events:
+- id: ticket.opened
+  name: Ticket Opened
+  payload:
+  - ticket_ref
+  - channel
+  - requester_ref
+  - created_at
+  description: Starts the first-response clock. No executable trigger exists for it today, which is why
+    nothing downstream can time a first response.
+- id: ticket.triaged
+  name: Ticket Triaged
+  payload:
+  - ticket_type
+  - severity
+  - priority
+  - assignee_ref
+- id: ticket.first_response_sent
+  name: First Response Sent
+  payload:
+  - first_response_at
+  - agent_touch_count
+  description: Must fire on the first substantive human reply and never on an autoresponder. The distinction
+    is the whole value of the metric.
+- id: ticket.paused_on_customer
+  name: Clock Paused On Customer
+  emitted_when:
+  - path: thread.ball_in_court
+    op: '='
+    value: them
+  payload:
+  - clock_state
+  - ball_in_court
+  - last_inbound_at
+  description: Fires from the observed thread rather than the agent's declaration, which is the point
+    — it is the only independent check on the queue's most manipulated field.
+- id: ticket.customer_waiting_too_long
+  name: Customer Waiting Too Long
+  emitted_when:
+  - path: thread.ball_in_court
+    op: '='
+    value: us
+  - fn: hours_since
+    path: thread.last_inbound
+    op: '>='
+    value: 24
+  payload:
+  - age_hours
+  - last_inbound_at
+  - assignee_ref
+- id: ticket.promise_missed
+  name: Promise Missed
+  emitted_when:
+  - fn: days_since
+    path: commitment.due_at
+    op: '>='
+    value: 1
+  - no_obs: followup_sent
+  payload:
+  - commitment_ref
+  - promise_status
+  description: The most damaging uncaught event on a ticket. A missed SLA is a contractual matter; a missed
+    named date is a personal one, and customers narrate the second.
+- id: ticket.sentiment_turned
+  name: Sentiment Turned Negative
+  emitted_when:
+  - path: derived.sentiment
+    op: <
+    value: 0.0
+  payload:
+  - sentiment_score
+  - engagement_trend
+- id: ticket.escalated
+  name: Ticket Escalated
+  payload:
+  - escalation_ref
+  - severity
+  - account_ref
+  description: Requires a named receiving owner in the payload. An escalation event with no receiver is
+    a complaint and should be routed as one.
+- id: ticket.breached
+  name: SLA Breached
+  payload:
+  - sla_target_ref
+  - clock_state
+  - paused_minutes_total
+- id: ticket.resolved
+  name: Ticket Resolved
+  payload:
+  - resolution_ref
+  - resolution_type
+  - resolved_at
+- id: ticket.reopened
+  name: Ticket Reopened
+  payload:
+  - reopen_count
+  - resolution_type
+  - assignee_ref
+  description: Should be treated as louder than any survey response. It is the customer telling us we
+    were wrong, at their own cost.
+- id: ticket.closed
+  name: Ticket Closed
+  payload:
+  - closed_at
+  - verified_by_customer
+  - resolution_type
+actions:
+- id: ticket.triage
+  name: Triage the ticket
+  actor: human
+  effect: Set type, severity, priority and owner. Complete when a stranger could pick it up without asking
+    anything.
+- id: ticket.acknowledge
+  name: Send a substantive acknowledgement
+  actor: agent
+  effect: A real first response, not an autoresponder. Stops the first-response clock honestly.
+- id: ticket.check_entitlement
+  name: Verify entitlement before promising
+  actor: system
+  effect: Bounds what may be committed. Skipping it is how a breach is created at the moment of reassurance.
+- id: ticket.request_information
+  name: Ask the customer for what is missing
+  actor: agent
+  effect: Legitimately pauses the clock. Asking a question purely to trigger the pause is the abuse this
+    action's audit trail exists to expose.
+- id: ticket.chase_customer
+  name: Chase a non-responding customer
+  actor: agent
+  preconditions:
+  - path: thread.ball_in_court
+    op: '='
+    value: them
+  - fn: days_since
+    path: thread.last_inbound
+    op: '>='
+    value:
+      baseline: reply_cadence
+      mult: 3
+      floor: 5
+  effect: One chase before any close. The step auto-close is designed to skip, and the reason auto-closed
+    tickets reopen.
+- id: ticket.send_status_update
+  name: Send a proactive status update
+  actor: agent
+  preconditions:
+  - no_obs: followup_sent
+  - fn: days_since
+    path: commitment.due_at
+    op: '>='
+    value: 1
+  effect: Closes a broken promise before the customer has to chase. Cheapest available recovery of trust
+    and the least-used move in support.
+- id: ticket.reassign
+  name: Reassign to another owner
+  actor: human
+  effect: Costs the customer a re-explanation every time. Track assignment_count, because the third reassignment
+    is a triage failure and not a routing one.
+- id: ticket.escalate
+  name: Escalate with a named receiving owner
+  actor: human
+  effect: Transfers ownership with a reason. Without a named receiver this is a complaint and must not
+    enter the escalated state.
+- id: ticket.attach_workaround
+  name: Provide a workaround
+  actor: agent
+  effect: Stops the customer's pain and leaves the issue open. Both halves are required; doing only the
+    first is how the same fault ships repeatedly.
+- id: ticket.merge
+  name: Merge into another ticket
+  actor: human
+  effect: Links, never deletes. Both requesters keep their clocks and both get told.
+- id: ticket.resolve
+  name: Mark resolved
+  actor: agent
+  effect: An assertion by us. Not the end of the ticket and never the end of the issue.
+- id: ticket.verify_and_close
+  name: Confirm with the customer, then close
+  actor: agent
+  effect: The step that separates a fixed problem from an abandoned one. Almost always skipped, which
+    is where reopen rate comes from.
+- id: ticket.reopen
+  name: Reopen on the same problem
+  actor: system
+  effect: Resets verification and preserves the original clock history. A reopen that starts a fresh ticket
+    hides the failure.
+dependencies:
+- target: customer_support.obj.core.requester
+  kind: requires
+  strength: hard
+  description: No asker, no ticket. The compile cannot proceed.
+- target: customer_support.obj.core.entitlement
+  kind: requires
+  strength: soft
+  description: Bounds what may be promised. Absent, the compile degrades to best-effort rather than blocking.
+- target: customer_support.obj.core.issue
+  kind: enriches
+  strength: soft
+  description: Turns one report into a population. Everything about blast radius depends on it.
+- target: customer_support.obj.core.sla_target
+  kind: derived_from
+  strength: soft
+  description: The clocks on this ticket are computed from entitlement, not stored independently.
+- target: customer_support.obj.core.incident
+  kind: invalidated_by
+  strength: hard
+  description: An attached incident voids the individual priority reading. Working the ticket on its own
+    merits is the classic error.
+- target: customer_support.obj.core.resolution
+  kind: blocks
+  strength: hard
+  description: Closure without a recorded resolution makes every downstream accuracy metric unreadable.
+exceptions:
+- id: ticket.hold_open_for_the_engineering_thread
+  statement: A ticket whose customer-facing work is finished may legitimately be held open when closing
+    it would sever the only link to an unresolved Issue.
+  overrides:
+  - ticket.close_when_resolved
+  why: Support systems routinely lose the engineering thread on closure. Holding open is a workaround
+    for a modelling failure and wrecks duration metrics, so it should be visible and argued rather than
+    done quietly.
+  frequency: common
+- id: ticket.do_not_merge_distinct_requesters
+  statement: Two tickets reporting the same fault must NOT be merged when the requesters are different
+    people who each need an answer.
+  overrides:
+  - ticket.merge_duplicates
+  why: Deduplication optimises the queue's view and destroys the customer's. Link them to one Issue instead
+    — that captures the blast radius without silencing a person.
+  frequency: common
+- id: ticket.suspend_individual_handling_during_an_incident
+  statement: While an Incident is attached, individual triage, SLA and priority readings are suspended
+    in favour of the incident's own clock and broadcast.
+  overrides:
+  - ticket.priority_from_impact_and_urgency
+  why: During a major incident, per-ticket SLAs are simultaneously all breaching and all meaningless.
+    Continuing to work them individually is the single most expensive error available.
+  frequency: occasional
+- id: ticket.unknown_severity_routes_upward
+  statement: An unestablished severity routes toward attention rather than defaulting downward.
+  why: Unknown is unmeasured, not low. The contacts that become incidents are disproportionately the ones
+    nobody could classify in the first minute, because unusual shape is exactly what a taxonomy fails
+    on.
+  frequency: common
+- id: ticket.request_not_incident
+  statement: An ITIL service request — a password reset, an access grant, an information ask — is not
+    judged by incident severity at all.
+  why: Nothing is broken, so blast radius is undefined. Judging a request on severity makes every request
+    look trivial and quietly starves the queue that fulfils them.
+  frequency: common
+- id: ticket.deliberately_unresolved_as_evidence
+  statement: A ticket may be held open deliberately as the account team's evidence in a renewal or credit
+    conversation.
+  why: A legitimate commercial use of the record and invisible to every support metric. Worth stating
+    so nobody 'cleans it up'.
+  frequency: rare
+best_practices:
+- id: ticket.separate_severity_from_priority
+  statement: Record severity and priority as two answers, always, even when they agree.
+  why: ITIL's priority = impact x urgency only works if impact is established independently. Once they
+    are one field, the enterprise account with a cosmetic defect and the trial user with data loss receive
+    the same verdict and the organisation loses the ability even to express the inversion.
+- id: ticket.measure_from_submission
+  statement: Measure first response from submission, never from when an agent opened the ticket.
+  why: The second version hides the entire queueing problem, which is usually the larger half of what
+    the customer experienced.
+- id: ticket.link_the_article_at_the_moment_of_use
+  statement: Attach the knowledge article to the ticket while answering, not afterwards.
+  why: 'KCS: capture in the workflow. Linking later never happens, and the link is what makes reuse measurable
+    — reuse is review.'
+  applies_when: Any ticket answered with existing knowledge.
+- id: ticket.write_the_assumption
+  statement: Record what was assumed and what would change the verdict, not just the verdict.
+  why: A receiving agent can falsify an assumption in seconds and cannot falsify a conclusion at all.
+    Notes carrying only the verdict are why misroutes survive three owners.
+- id: ticket.close_with_the_customer_not_at_them
+  statement: Treat resolution and verification as two events, and let the customer supply the second.
+  why: Closure without confirmation is the largest single source of reopens, and a reopen costs far more
+    than the extra day of an open ticket.
+anti_patterns:
+- id: ticket.one_ticket_type_for_everything
+  statement: Modelling incidents and service requests as one undifferentiated ticket type.
+  why_it_happens: It genuinely simplifies the tool, the reporting and the training, and on day one the
+    two look alike from the queue.
+  cost: They have different clocks, different success conditions and different staffing. A single type
+    silently optimises whichever is more numerous, and request fulfilment is the one that starves.
+  instead: Carry ITIL's split on the type attribute and let severity apply only to incidents.
+  detectable_by:
+  - ticket.type
+  - resolution_target_at
+- id: ticket.tone_sorts_the_queue
+  statement: Letting the loudest sentence in the ticket set its position in the queue.
+  why_it_happens: Anger is the most legible signal in an unread queue, and de-prioritising a furious customer
+    feels reckless.
+  cost: It teaches customers that escalation language works, which increases the supply of escalation
+    language until it carries no information at all — and it systematically penalises the polite and the
+    non-native speaker.
+  instead: Sort on entitlement and blast radius; route tone to de_escalation, which is the capability
+    that can actually use it.
+  detectable_by:
+  - cs.ticket.sentiment_negative_on_this_thread
+- id: ticket.autoresponder_satisfies_first_response
+  statement: Counting an automated acknowledgement as the first response.
+  why_it_happens: It is technically a response, it is trivially cheap, and it makes the hardest metric
+    in support go green.
+  cost: The metric stops measuring anything. Worse, it removes the pressure that the metric existed to
+    create, so real first-response time drifts upward invisibly.
+  instead: Stop the first-response clock only on a human public comment, which is what the platform default
+    actually means.
+  detectable_by:
+  - first_response_at
+- id: ticket.reopen_recorded_as_a_status_change
+  statement: Treating a reopen as a state transition rather than as a signal.
+  why_it_happens: In the data model it IS a state transition, and the tooling presents it that way.
+  cost: It is the highest-information event in support — the customer has told us our resolution was wrong
+    and spent patience doing it — and recording it as a status change throws away both the correction
+    and the confidence penalty owed to whatever produced that resolution.
+  instead: Emit an event, invalidate the resolution, and let Layer 6 lower the confidence of the pattern
+    that produced it.
+  detectable_by:
+  - reopen_count
+  - ticket.reopened
+- id: ticket.cherry_picking
+  statement: Working the easiest ticket in the queue rather than the oldest or the most entitled.
+  why_it_happens: Every individual dashboard improves — throughput up, average handle time down, CSAT
+    up — and each choice is locally rational.
+  cost: Backlog age grows at the tail while every headline metric says the team is doing well. The customers
+    who waited longest keep waiting, and they are the ones who churn.
+  instead: Measure backlog age distribution rather than backlog size, and route rather than let agents
+    self-select.
+  detectable_by:
+  - age_hours
+  - queue_ref
+examples:
+- label: Password reset via chat, resolved in four minutes
+  note: A real ticket with a real clock. The argument for deflection is made entirely by tickets like
+    this one, and the argument against auto-closing them is made by the ones where the reset did not work.
+- label: Sev1 outage on a free trial account
+  note: Maximum severity, low priority. The inversion is correct and it is the thing triage most often
+    gets wrong under pressure.
+- label: Sev3 UI defect on an account renewing in three weeks
+  note: The mirror case. Low severity, high priority, and unavailable to the engine today because nothing
+    commercial is visible on a support node.
+- label: One conversation that spawned three tickets
+  note: '''Also, while I have you...'' — the sentence that proves ticket and conversation are different
+    objects. Systems that model them as one lose everything after the first question.'
+- label: Four hundred tickets against one incident
+  note: Answered once through the incident object rather than four hundred times. The moment where the
+    ticket/issue distinction stops being pedantry and starts being staffing.
+- label: Closed on a workaround with the bug still open
+  note: Correctly resolved and correctly unfixed at the same time. A model that cannot express this forces
+    agents to hold tickets open to keep engineering honest, which wrecks every duration metric in the
+    queue.
+- label: Paused for eleven days on 'awaiting customer'
+  note: Resolved inside SLA. The customer had replied by phone. This is the ticket the pause-derivation
+    pattern exists for.
+- label: Reopened twice after being marked verified
+  note: Worse than a detractor survey. The customer confirmed it was fixed, then came back, twice — a
+    diagnostic failure rather than a communication one.
+references:
+- title: ITIL 4 — incident, service request, problem and known error
+  kind: standard
+  note: Supplies the taxonomy this object sits inside. What we call a Ticket, ITIL splits into an incident
+    (unplanned interruption or reduced quality of service) and a service request (a formal request for
+    something to be provided). Our Issue is ITIL's problem — a cause of one or more incidents — and a
+    known error is a problem with a documented root cause and a workaround, which is exactly the state
+    a ticket occupies when we ship a workaround and close it while the Issue stays open.
+- title: ITIL priority model — priority = impact x urgency
+  kind: framework
+  note: The source of this object holding severity and priority as separate attributes. Impact is how
+    much of the customer's business is affected; urgency is how fast the damage grows.
+- title: KCS v6 Practices Guide
+  kind: methodology
+  author: Consortium for Service Innovation
+  url: https://www.serviceinnovation.org/included/docs/KCS_v6_Practices_Guide_2023_06_08.pdf
+  note: Governs the knowledge_article edge. Capture happens in the workflow while responding, and 'reuse
+    is review' is why the link from ticket to article is the unit of value rather than an afterthought.
+- title: First contact resolution — definition and benchmarks
+  kind: research
+  url: https://www.geckoboard.com/best-practice/kpi-examples/first-contact-resolution-rate/
+  note: FCR of roughly 70-79% is considered good and top performers reach about 74% or better, with SQM
+    reporting close to a 1:1 relationship between FCR gain and CSAT gain. It correlates with retention
+    more tightly than any other operational metric, which is why reopen_count and verification are modelled
+    here rather than left to reporting.
+- title: Deflection is not first contact resolution
+  kind: practitioner
+  url: https://www.inbenta.com/articles/first-contact-resolution-vs-deflection
+  note: Deflection only asks whether a contact reached a live agent, so an abandonment counts as success.
+    Cited here because it is the reason this object treats a ticket that was never created as unobservable
+    rather than as a good outcome.
+- title: SLA calendars, pause conditions and stop events
+  kind: practitioner
+  url: https://www.resumelens.org/blog/jira/jira-service-management-sla
+  note: Business-hours versus calendar-hours clocks, and the fact that first-response and resolution targets
+    have different stop events, are the reason first_response_target_at and resolution_target_at are separate
+    attributes.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: 'Reference object for the Customer Support brain — copy this file''s shape, and copy in particular
+    the discipline that every pattern carries both a human statement and, where it can run, a machine
+    `when`.
+
+    Eight of seventeen patterns are executable today. Not one of them reads a ticket field, because none
+    exists in the substrate: they read thread.ball_in_court, thread.last_inbound, commitment.due_at, meeting.start_at,
+    derived.sentiment, derived.engagement, derived.momentum and graph degree. The best of them — deriving
+    the clock pause from the observed thread rather than from the agent''s declaration — is genuinely
+    useful and would be worth keeping even after a support pack ships, because it is an independent check
+    on the field the queue most wants to manipulate.
+
+    The nine needs_signal patterns are ranked by what they would unlock. `ticket.status` is first and
+    by a distance: the declared state of the central object of this domain is not projected into a typed
+    fact, so the brain infers from email what the ticketing system knows for certain. `cancellation_threat`
+    is second, because it is the moment support becomes a revenue question and it is stated in plain language
+    in threads we already ingest. `ticket_reopened` is third, on the argument that it is the only quality
+    signal a customer has to spend effort to send.
+
+    '
+  completeness: complete

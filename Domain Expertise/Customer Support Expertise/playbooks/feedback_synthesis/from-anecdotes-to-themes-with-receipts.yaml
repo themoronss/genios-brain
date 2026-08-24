@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.feedback_synthesis.from_anecdotes_to_themes_with_receipts
+  name: From anecdotes to themes with receipts
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.feedback_synthesis
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Feedback synthesis clusters raw customer statements into few themes, each carrying its verbatim
+    quotes, counts and revenue-weight — so product hears patterns with evidence instead of the loudest
+    recent anecdote.
+steps:
+- order: 1
+  name: Collect verbatims with their context
+  description: The exact words plus who/plan/moment. Paraphrase early and the synthesis launders itself.
+  actor: human
+- order: 2
+  name: Cluster by underlying need, not by feature word
+  description: '''Export'', ''API'' and ''reports'' asks may all be one need: getting data out. Cluster
+    the job, not the vocabulary.'
+  actor: human
+- order: 3
+  name: Weight themes by count AND revenue AND trend
+  description: Five enterprise logos rising beats forty free-tier flat. Present all three numbers; let
+    the reader see the weighting.
+  actor: human

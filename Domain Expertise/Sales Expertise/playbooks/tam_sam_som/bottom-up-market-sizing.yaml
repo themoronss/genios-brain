@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.tam_sam_som.bottom_up_market_sizing
+  name: Bottom-up market sizing
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.tam_sam_som
+  subdomain: market_and_targeting
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A market size built top-down from an analyst number is a slide; one built bottom-up from
+    countable buyers and a real price is a plan. Count the accounts that match the ICP, multiply by achievable
+    ACV, and let the number be smaller and true.
+steps:
+- order: 1
+  name: Count matching accounts, do not estimate them
+  description: Build the actual list for the beachhead segment. If the list cannot be built, the segment
+    is not defined enough to sell into.
+  actor: human
+- order: 2
+  name: Price from evidence
+  description: Use closed deals or the nearest comparable, not aspiration. Multiply list by price by a
+    defensible win share — every assumption written next to its number.
+  actor: human
+- order: 3
+  name: Size the beachhead first, expansion second
+  description: SOM before SAM before TAM. Investors and roadmaps forgive a small honest number; sellers
+    cannot execute against a large fictional one.
+  actor: human

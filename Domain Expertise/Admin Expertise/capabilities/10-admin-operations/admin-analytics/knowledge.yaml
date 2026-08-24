@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.admin_operations.admin_analytics
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.admin_analytics.measure_the_service_publish_the_story
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.admin_analytics.invisible_work_gets_cut_first
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

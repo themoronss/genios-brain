@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.finance_administration.budget_tracking
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.budget_tracking.budget_vs_actual_with_owners
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.budget_tracking.small_overruns_rehearse_big_ones
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

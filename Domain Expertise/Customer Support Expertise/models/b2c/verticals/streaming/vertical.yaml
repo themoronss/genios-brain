@@ -1,0 +1,104 @@
+# Streaming support — vertical branch under customer_support.model.b2c.
+#
+# INHERITANCE: declares only what DIFFERS from the parent. Resolution is vertical -> model ->
+# canonical.
+
+identity:
+  id: customer_support.model.b2c.streaming
+  name: Streaming Support
+  kind: vertical
+  domain: customer_support
+  parent: customer_support.model.b2c
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Supporting viewers of a subscription media service. Volume is almost entirely outage-shaped:
+  in steady state a streaming service generates remarkably few contacts per subscriber, and then
+  a playback failure during a live event or a tentpole release produces more contacts in twenty
+  minutes than the previous month combined. Capacity planned against average load is therefore
+  planned against a number that never occurs.
+  What is specific here is that the customer usually cannot tell whose fault it is, and neither
+  can we from inside a ticket. Playback failures decompose into our platform, the CDN, the ISP,
+  the device, the app version and the television's own firmware, and the subscriber experiences
+  all six identically as "it does not work". A large fraction of the queue is therefore
+  diagnostic triage across a chain we mostly do not own, and the honest resolution for many
+  tickets is a workaround rather than a fix. Third-party resolution locus is the normal case
+  rather than the exception.
+  The second fact is that entitlement is unusually visible and unusually contested — device
+  limits, simultaneous streams, regional licensing and offline downloads are all restrictions the
+  subscriber experiences as faults. "Not available in your region" is a correctly functioning
+  system and reads to the customer as a broken one, which makes a substantial share of contacts
+  unresolvable by construction.
+  The error carried in from ecommerce is reflexive refund-and-apologise. Streaming churn is
+  monthly and frictionless, so credits neither retain nor compensate meaningfully; what retains
+  is telling people what is happening during an outage, quickly, on the status surface they will
+  actually look at.
+
+characteristics:
+  requester: "a subscriber part-way through watching something, contacting from a TV, phone or console, with low tolerance and a cancel button one screen away"
+  typical_resolution_hours: 4
+  volume_shape: "flat baseline with extreme outage- and event-driven spikes; a live sports or premiere failure is the design load, not the exception"
+  staffing_model: "large pooled tier-1 on chat and social with a small platform-facing escalation pod; surge capacity aligned to the content calendar"
+  coverage: "24x7 — viewing peaks are evenings across every timezone we sell into"
+  automation_level: "very high on billing, account and device-limit intents; moderate on playback, where automated troubleshooting genuinely resolves a real share before a human is needed"
+  notes: >
+    The content calendar is a capacity plan. Premieres and live events are known months ahead,
+    which makes being under-staffed for one an planning failure rather than a surprise.
+
+capabilities:
+  deactivates:
+    # Inherited from B2C and reaffirmed: there is no account relationship to manage. A subscriber
+    # is one of millions with a monthly rolling contract and no named contact on either side.
+    - customer_support.support_management.account_relationship_management
+  emphasises:
+    # The entire vertical is shaped by correlated failure and by telling people about it.
+    - customer_support.escalation_and_incident.incident_management
+    - customer_support.escalation_and_incident.major_incident_communication
+    - customer_support.support_operations.capacity_planning
+    - customer_support.support_operations.queue_management
+    # Most tickets are diagnosis across a chain we do not own, ending in a workaround.
+    - customer_support.diagnosis_and_resolution.diagnostics
+    - customer_support.diagnosis_and_resolution.workaround_management
+    # A large share of contacts are entitlement restrictions experienced as faults.
+    - customer_support.entitlement_and_sla.entitlement_verification
+    # At this volume, deflection is the only economically viable first line.
+    - customer_support.knowledge_and_deflection.self_service_deflection
+    - customer_support.knowledge_and_deflection.ai_deflection
+
+objects:
+  extends:
+    - object: customer_support.obj.core.incident
+      require_properties: [is_customer_visible, affected_customer_count, closing_broadcast_sent]
+      note: >
+        The status page IS the support channel during an outage here — it absorbs more contacts
+        than every agent combined, and updating it late is the difference between a spike and a
+        flood. The closing broadcast matters as much as the opening one, because subscribers who
+        never learn it was fixed keep contacting.
+    - object: customer_support.obj.core.entitlement
+      require_properties: [plan, coverage_hours]
+      note: >
+        Device limits, concurrent streams and regional licensing are the entitlement dimensions
+        that generate contacts, and they are experienced as defects rather than as terms. The
+        agent needs the entitlement in the first screen or the conversation starts with a
+        diagnosis of a system that is working correctly.
+    - object: customer_support.obj.core.ticket
+      require_properties: [channel, product_area_ref]
+      note: >
+        Product area here means the failure surface — playback, billing, account, availability —
+        and it is the only way to separate a platform incident from a device-specific fault while
+        the spike is still happening. Channel matters because the device the subscriber is
+        watching on is usually not the device they contact from, which breaks reproduction.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    The claim most worth arguing with is that credits do not retain here. It is well supported for
+    monthly consumer subscriptions and becomes false for annual plans and for bundled telecom
+    subscriptions, where the cancel decision is neither monthly nor frictionless.

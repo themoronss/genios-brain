@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.revenue_operations.pipeline_management
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.pipeline_management.weekly_pipeline_hygiene
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.pipeline_management.pipeline_coverage_lies_without_hygiene
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

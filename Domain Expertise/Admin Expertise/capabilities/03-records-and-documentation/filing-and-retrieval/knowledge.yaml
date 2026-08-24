@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.records_and_documentation.filing_and_retrieval
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.filing_and_retrieval.file_for_the_finder
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.filing_and_retrieval.search_does_not_replace_structure
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

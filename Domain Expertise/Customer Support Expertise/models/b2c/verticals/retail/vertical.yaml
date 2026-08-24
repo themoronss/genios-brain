@@ -1,0 +1,94 @@
+# Retail support — vertical branch under customer_support.model.b2c.
+#
+# INHERITANCE: declares only what DIFFERS from the parent. Resolution is vertical -> model ->
+# canonical.
+
+identity:
+  id: customer_support.model.b2c.retail
+  name: Retail Support
+  kind: vertical
+  domain: customer_support
+  parent: customer_support.model.b2c
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Supporting consumers of an omnichannel retailer — stores, online, click-and-collect, and every
+  combination customers invent between them. This vertical shares most of its queue with consumer
+  ecommerce; what genuinely differs is that the contact centre is not where the resolution
+  happens.
+  A store is both a channel and a resolution locus that support does not manage. The customer can
+  walk in, and whatever we told them online will be tested at a till by a colleague who never saw
+  the ticket, has different information, and has their own opinion about the policy. A very large
+  share of "resolved" here means "told the customer to go to the store", which is an out-of-system
+  handoff with no acknowledgement, no clock and no closure — and it is the single largest source
+  of repeat contact in this vertical.
+  Inventory truth is per-location and stale. The stock figure the customer saw, the one the agent
+  sees and the one on the shelf are three different numbers, and none of them is authoritative
+  enough to promise on.
+  The knowledge layer carries the whole operation because the people do not persist. Peak is
+  staffed by temporary agents ramped in days, so the macro library and the article set are
+  effectively the standard of service, and a policy change that does not reach them has not
+  happened.
+  The error carried in from pure-play ecommerce is assuming the queue owns the outcome. The error
+  carried in from B2B is investing in individual agent expertise: here the durable asset is the
+  content, because the agent will be gone in eleven weeks.
+
+characteristics:
+  requester: "a shopper who may have bought in store, online or both, and who does not distinguish between the two even when our systems do"
+  typical_resolution_hours: 5
+  volume_shape: "high volume with pronounced trading-calendar peaks, promotional and pricing-error spikes, and a post-holiday returns and gift-card wave"
+  staffing_model: "pooled contact centre plus store colleagues who resolve without ever touching the queue, heavy seasonal temporary staffing"
+  coverage: "aligned to trading hours across regions, seven days, extended through peak"
+  automation_level: "high on order and returns intents, low on anything involving a specific store's stock or a colleague's decision"
+  notes: >
+    The out-of-system resolution rate — contacts closed by sending the customer to a store — is
+    the metric this vertical most needs and least often has. Without it, repeat contact looks
+    like a customer problem rather than a handoff problem.
+
+capabilities:
+  emphasises:
+    # The content is the service standard when the workforce turns over every season.
+    - customer_support.knowledge_and_deflection.macro_management
+    - customer_support.knowledge_and_deflection.knowledge_authoring
+    - customer_support.knowledge_and_deflection.content_gap_analysis
+    # Ramp is continuous and short. Coaching has to work on someone in their second week.
+    - customer_support.support_management.agent_coaching
+    - customer_support.support_management.quality_assurance
+    # Peak is a known date with a known multiple and a hiring lead time.
+    - customer_support.support_operations.capacity_planning
+    # A store handoff is a promise about what will happen when they arrive.
+    - customer_support.customer_communication.expectation_setting
+
+objects:
+  extends:
+    - object: customer_support.obj.core.ticket
+      require_properties: [channel, resolution_type]
+      note: >
+        Resolution type needs a value for "handed to a store", explicitly and separately from
+        resolved. Collapsing the two is what makes the repeat contact three days later look like
+        a new problem, and it is why the same customer is asked to explain themselves twice.
+    - object: customer_support.obj.core.knowledge_article
+      require_properties: [audience, locale, last_verified_at]
+      note: >
+        Audience separates the customer-facing policy page from the agent-facing macro, and they
+        drift apart constantly: a promotion changes, the public page is updated, the macro is not,
+        and for two weeks the contact centre contradicts the website in writing.
+    - object: customer_support.obj.core.customer_sentiment
+      require_properties: [public_exposure, channel_switch]
+      note: >
+        Channel switching is the escalation ladder here — chat, then phone, then walking into a
+        store, then a review. Each step widens the audience and lowers the chance of a clean
+        resolution, so a switch is worth reading as a warning rather than as a preference.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Overlaps heavily with the ecommerce vertical by design. The only claims made here are the
+    ones that survive the presence of physical stores; everything else is inherited from B2C.

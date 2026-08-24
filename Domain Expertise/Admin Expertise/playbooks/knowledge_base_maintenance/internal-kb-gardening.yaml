@@ -1,0 +1,28 @@
+identity:
+  id: admin.pb.knowledge_base_maintenance.internal_kb_gardening
+  name: Internal KB gardening
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.knowledge_base_maintenance
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The internal knowledge base stays alive through scheduled gardening — owners per section,
+    review dates, dead-link sweeps, usage-informed pruning — because an unmaintained wiki converges on
+    confidently wrong.
+steps:
+- order: 1
+  name: Assign section owners with review dates
+  description: Ownerless sections rot first. The owner's job is truth, not volume.
+  actor: human
+- order: 2
+  name: Prune by usage and age
+  description: Unvisited-in-a-year pages get archived. A smaller true KB beats a larger doubtful one.
+  actor: human
+- order: 3
+  name: Fix at point of discovery
+  description: Anyone finding a stale page fixes or flags it in the moment. Deferred corrections never
+    happen.
+  actor: human

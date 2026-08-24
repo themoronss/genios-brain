@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.people_administration.payroll_input_administration
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.payroll_input_administration.payroll_inputs_on_a_locked_calendar
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.payroll_input_administration.payroll_errors_echo_beyond_their_size
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

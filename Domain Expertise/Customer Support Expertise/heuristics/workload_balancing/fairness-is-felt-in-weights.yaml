@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.workload_balancing.fairness_is_felt_in_weights
+  name: Fairness is felt in weights
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.workload_balancing
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Agents know exactly whose queue is heavy regardless of what the count dashboard says. Count-based
+    'fairness' that ignores weight corrodes morale precisely because everyone can see it is false.
+  answers:
+  - Why do equal ticket counts still feel unfair?

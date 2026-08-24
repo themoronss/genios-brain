@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.filing_and_retrieval.file_for_the_finder
+  name: File for the finder
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.filing_and_retrieval
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Documents are filed under predictable names in predictable places — a published convention,
+    applied at creation — because filing exists for retrieval, and retrieval is by someone else, later,
+    under time pressure.
+steps:
+- order: 1
+  name: Publish one naming convention
+  description: date_type_counterparty_subject — boring, universal, sorted-by-default. Creativity in filenames
+    is retrieval debt.
+  actor: human
+- order: 2
+  name: File at creation, not in batches
+  description: The Friday filing pile is where documents get lost. Creation and filing are one motion.
+  actor: human
+- order: 3
+  name: Test retrieval quarterly
+  description: Can a newcomer find the vendor contract in two minutes? The test, not the taxonomy, proves
+    the system.
+  actor: human

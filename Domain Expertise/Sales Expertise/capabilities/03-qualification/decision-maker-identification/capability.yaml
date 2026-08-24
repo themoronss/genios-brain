@@ -1,0 +1,28 @@
+identity:
+  id: sales.qualification.decision_maker_identification
+  name: Decision Maker Identification
+  domain: sales
+  subdomain: qualification
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Establishing authority from evidence rather than from title. In most B2B motions the
+  approver is discovered, never announced, so this capability leans almost entirely on
+  inference patterns.
+
+question: "Who can actually approve this, and how do we know?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

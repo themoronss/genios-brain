@@ -1,0 +1,47 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.intake_and_triage.ticket_triage — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.ticket_triage.impact_times_urgency
+  name: Impact times urgency
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.ticket_triage
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Impact times urgency, inherited from service management — impact is how much of the customer''s
+    business is affected, urgency is how fast the damage grows.
+
+
+    It travels well into support because it separates size from rate of change, which the naive severity
+    scale does not. It fails whenever urgency quietly becomes a property of the person reporting rather
+    than of the damage, and that drift is silent.'
+criteria:
+- name: Impact times urgency
+  description: Impact times urgency, inherited from service management — impact is how much of the customer's
+    business is affected, urgency is how fast the damage grows.
+how_to_apply:
+- Impact times urgency, inherited from service management — impact is how much of the customer's business
+  is affected, urgency is how fast the damage grows.
+- It travels well into support because it separates size from rate of change, which the naive severity
+  scale does not. It fails whenever urgency quietly becomes a property of the person reporting rather
+  than of the damage, and that drift is silent.
+when_to_use:
+  situations:
+  - The organisation already runs an incident practice and the vocabulary is shared with engineering.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

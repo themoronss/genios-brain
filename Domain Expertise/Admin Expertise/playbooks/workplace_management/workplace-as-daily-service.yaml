@@ -1,0 +1,27 @@
+identity:
+  id: admin.pb.workplace_management.workplace_as_daily_service
+  name: Workplace as daily service
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.workplace_management
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The workplace runs on service rhythms — supplies stocked by par levels, spaces bookable,
+    issues reported and closed visibly — because environment friction taxes everyone's day in unmeasured
+    minutes.
+steps:
+- order: 1
+  name: Stock by par level, not by complaint
+  description: Consumables refill at thresholds. The coffee running out is a process failure, not a surprise.
+  actor: human
+- order: 2
+  name: Make space booking self-service and honest
+  description: Rooms and desks bookable with no-show release. Ghost bookings are the commonest space complaint.
+  actor: human
+- order: 3
+  name: Close reported issues with feedback
+  description: '''Fixed, thanks for flagging'' — visible closure keeps the reporting habit alive.'
+  actor: human

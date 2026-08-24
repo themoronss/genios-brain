@@ -1,0 +1,15 @@
+identity:
+  id: sales.heu.relationship_management.the_relationship_account_is_drawn_down_by_asks
+  name: The relationship account is drawn down by asks
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.sales_management.relationship_management
+  subdomain: sales_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every ask spends balance; every give deposits. Accounts contacted only at renewal and upsell
+    time run permanently overdrawn — and overdrawn relationships answer RFPs instead of taking calls.
+  answers:
+  - Why did the key account go to RFP without a heads-up?

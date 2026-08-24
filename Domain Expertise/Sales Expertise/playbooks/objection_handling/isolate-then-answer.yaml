@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.objection_handling.isolate__then_answer
+  name: Isolate, then answer
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.objection_handling
+  subdomain: proposal_and_commercials
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: An objection answered before it is understood multiplies. First acknowledge, then isolate
+    — 'if we solve this, is anything else in the way?' — then answer the real, whole list with evidence
+    rather than argument.
+steps:
+- order: 1
+  name: Acknowledge without conceding
+  description: '''Fair question'' buys thinking time and keeps the buyer talking. Defensiveness converts
+    a question into a position.'
+  actor: human
+- order: 2
+  name: Isolate the full set
+  description: The stated objection is often the comfortable one. 'Apart from X, what else?' surfaces
+    the real blocker while it is still cheap to address.
+  actor: human
+- order: 3
+  name: Answer with evidence, confirm closure
+  description: 'A customer story or a number beats adjectives. Then: ''does that settle X?'' — an objection
+    not closed returns at signature time with friends.'
+  actor: human

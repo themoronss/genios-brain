@@ -1,0 +1,16 @@
+identity:
+  id: customer_support.heu.entitlement_verification.over_serving_silently_rewrites_the_contract
+  name: Over-serving silently rewrites the contract
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.entitlement_verification
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Consistently giving P1 treatment to P3 contracts teaches the customer their real tier is
+    fiction — and makes the eventual enforcement feel like a downgrade. Kindness beyond contract should
+    be explicit and occasional, not ambient.
+  answers:
+  - What is the cost of quietly exceeding entitlement?

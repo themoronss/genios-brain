@@ -1,0 +1,40 @@
+identity:
+  id: sales.mm.icp_definition.profile_is_a_classifier
+  name: An ICP is a classifier and every classifier has two error types. Narro…
+  kind: mental_model
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "An ICP is a classifier and every classifier has two error types. Narrowing it trades wasted\
+    \ effort for missed accounts; widening it trades the reverse.\n Which error costs more is a business\
+    \ decision that changes with capacity — a team with spare capacity and a full quarter should run\
+    \ wide; a team at capacity should run narrow. Arguing about the profile's width without naming which\
+    \ error you are cu"
+dimensions:
+- name: An ICP is a classifier and every classifier has two error types. Narro…
+  asks: 'Which error costs more is a business decision that changes with capacity — a team with spare
+    capacity and a full quarter should run wide; a team at capacity should run narrow. Arguing about
+    the profile''s width without naming which error you are currently paying for is how these debates
+    run for a year without resolving.
+
+    '
+how_to_apply:
+- 'Which error costs more is a business decision that changes with capacity — a team with spare capacity
+  and a full quarter should run wide; a team at capacity should run narrow. Arguing about the profile''s
+  width without naming which error you are currently paying for is how these debates run for a year
+  without resolving.
+
+  '
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

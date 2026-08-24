@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.post_sale_and_growth.expansion
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.expansion.earned_expansion
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.expansion.expand_on_proof__not_on_access
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

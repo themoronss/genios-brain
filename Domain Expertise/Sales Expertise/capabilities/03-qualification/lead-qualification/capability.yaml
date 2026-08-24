@@ -1,0 +1,73 @@
+identity:
+  id: sales.qualification.lead_qualification
+  name: Lead Qualification
+  domain: sales
+  subdomain: qualification
+  version: 1.0.0
+  status: draft
+  stub: false
+description: 'Establishing whether a real purchase is possible: whether money exists, whether someone
+  can approve it, whether there is a reason to act now, and whether the account is one we should want.
+  Qualification is a filter, not a stage — its output is as often a disqualification as a next step,
+  and a capability that only ever says yes is not qualifying anything.
+
+  '
+question: Is a real purchase possible here, with whom, and by when?
+outcomes:
+- Budget state established above `unknown` — funded, unfunded intent, or explicitly none.
+- A Decision Maker identified at 60% confidence or better, with authority verified rather than inferred
+  from title.
+- A compelling event established, or its absence recorded as an absence.
+- Fit scored against the ICP, with disqualifiers checked.
+- 'An explicit verdict: pursue, nurture, or disqualify. `Continue by default` is not an outcome.'
+kpis:
+- name: qualification_rate
+  unit: percent
+  description: Share of leads reaching a verdict either way.
+- name: disqualification_rate
+  unit: percent
+  description: If this is near zero the capability is not running, whatever the dashboard says.
+- name: time_to_verdict
+  unit: days
+- name: qualified_to_won
+  unit: percent
+  description: Win rate of qualified deals. Measures whether the bar is real.
+- name: false_qualification_rate
+  unit: percent
+  description: Qualified deals later lost to budget or authority. Calibrates the gates.
+handoffs:
+  upstream:
+  - sales.prospecting_and_outreach.lead_generation
+  - sales.prospecting_and_outreach.account_research
+  downstream:
+  - sales.qualification.decision_maker_identification
+  - sales.qualification.buying_committee_analysis
+  - sales.discovery_and_solution.discovery
+  - sales.discovery_and_solution.need_analysis
+applies_to:
+  models:
+  - b2b
+  - b2b2c
+  - enterprise
+  - mid_market
+  - smb
+  - inside_sales
+  - government
+  - channel
+  - partner
+  offerings:
+  - product
+  - service
+  - hybrid
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: 'Note what is NOT here: no thresholds, no scores, no rules. Those are Layer 4''s arithmetic
+    and live in the pack manifest. This file declares which knowledge to load and what the capability
+    is for. The moment a number appears in a capability file, the Layer 3/4 boundary has leaked.
+
+    '

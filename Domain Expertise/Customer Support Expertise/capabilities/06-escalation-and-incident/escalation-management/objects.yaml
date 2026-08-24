@@ -1,0 +1,33 @@
+# Load-set for customer_support.escalation_and_incident.escalation_management —
+# REFERENCES ONLY, never an inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.escalation_and_incident.escalation_management
+
+core:
+  # The required three are the escalation event itself, the work it is about, and the person
+  # receiving it. escalation_owner is required and not optional on purpose: this capability's
+  # central claim is that an escalation without a named receiver is a complaint, so a compile
+  # that cannot see the receiver is not looking at an escalation and should refuse rather than
+  # answer at lower confidence.
+  required:
+    - customer_support.obj.core.escalation
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.escalation_owner
+  # Optional because each changes the ANSWER but none is needed to recognise the situation.
+  # entitlement bounds what may be promised on the way up — the moment over-promising happens.
+  # customer_sentiment separates the relationship-triggered escalation from the process one.
+  # churn_risk is what turns a repeat escalation from a ticket problem into an account problem.
+  optional:
+    - customer_support.obj.core.entitlement
+    - customer_support.obj.core.customer_sentiment
+    - customer_support.obj.core.churn_risk
+
+scoped:
+  # Nothing scoped. Every object this capability needs is loaded by at least one of
+  # executive_escalation, de_escalation, breach_prevention or churn_signal_detection, so a
+  # scoped copy here would be the exact drift the core/scoped rule exists to prevent.
+  required: []
+  optional: []

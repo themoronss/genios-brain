@@ -1,0 +1,44 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.customer_communication.de_escalation — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.de_escalation.grievance_ledger
+  name: Grievance ledger
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.de_escalation
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'There is a ledger. Every unanswered message, every retelling, every reassignment, every
+    missed promise is an entry — and the anger is the balance, not the last line.
+
+
+    It explains the response that looks disproportionate to the current ticket, and it explains why
+    one good reply rarely settles it. The ledger is paid down entry by entry through kept commitments;
+    it cannot be zeroed with a gesture.'
+dimensions:
+- name: Grievance ledger
+  asks: There is a ledger. Every unanswered message, every retelling, every reassignment, every missed
+    promise is an entry — and the anger is the balance, not the last line.
+how_to_apply:
+- There is a ledger. Every unanswered message, every retelling, every reassignment, every missed promise
+  is an entry — and the anger is the balance, not the last line.
+- It explains the response that looks disproportionate to the current ticket, and it explains why one
+  good reply rarely settles it. The ledger is paid down entry by entry through kept commitments; it
+  cannot be zeroed with a gesture.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

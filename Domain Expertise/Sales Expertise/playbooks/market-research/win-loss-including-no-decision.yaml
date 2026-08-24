@@ -1,0 +1,37 @@
+identity:
+  id: sales.pb.market_research.win_loss_including_no_decision
+  name: 'Run win/loss across three outcomes, not two: won, lost to a named vend…'
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Run win/loss across three outcomes, not two: won, lost to a named vendor, and lost to\
+    \ no decision. Interview the third group hardest.\n No-decision is usually the largest single competitor\
+    \ in an immature category and it appears in no CRM field, so it is invisible to exactly the reporting\
+    \ a market map is usually built from. A map that omits it overstates every reachable-share estimate\
+    \ in the same di"
+when_to_use:
+  situations: []
+  conditions: []
+steps:
+- order: 1
+  name: 'Run win/loss across three outcomes, not two: won, lost to a named vend…'
+  description: 'No-decision is usually the largest single competitor in an immature category and it
+    appears in no CRM field, so it is invisible to exactly the reporting a market map is usually built
+    from. A map that omits it overstates every reachable-share estimate in the same direction.
+
+    '
+  done_when: UNAUTHORED — this playbook is a skeleton.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

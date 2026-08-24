@@ -1,0 +1,28 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs.
+
+identity:
+  id: admin.contract_and_vendor.contract_administration
+  name: Contract Administration
+  domain: admin
+  subdomain: contract_and_vendor
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Owning the contract as a live instrument rather than a signed PDF: extracting the
+  obligations, dates and notice periods, holding the executed copy, tracking amendments, and
+  surfacing the clauses that impose work on us. The signature is where most organisations stop
+  paying attention and where the obligations start.
+
+question: "What have we actually agreed, and what does it require us to do and by when?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

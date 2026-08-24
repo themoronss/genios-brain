@@ -1,0 +1,40 @@
+identity:
+  id: sales.mm.market_research.maturity_sets_the_motion
+  name: Category maturity chooses the sales motion; the motion cannot choose t…
+  kind: mental_model
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Category maturity chooses the sales motion; the motion cannot choose the maturity.\n Unaware\
+    \ buyers need education, long cycles and content, and they cannot be closed by a differentiation\
+    \ pitch. Vendor-aware buyers need difference and proof, and they will not sit through the education.\
+    \ Running the wrong motion into a market is the single most expensive mistake available in a new\
+    \ segment, and it is "
+dimensions:
+- name: Category maturity chooses the sales motion; the motion cannot choose t…
+  asks: 'Unaware buyers need education, long cycles and content, and they cannot be closed by a differentiation
+    pitch. Vendor-aware buyers need difference and proof, and they will not sit through the education.
+    Running the wrong motion into a market is the single most expensive mistake available in a new segment,
+    and it is invisible for a quarter.
+
+    '
+how_to_apply:
+- 'Unaware buyers need education, long cycles and content, and they cannot be closed by a differentiation
+  pitch. Vendor-aware buyers need difference and proof, and they will not sit through the education.
+  Running the wrong motion into a market is the single most expensive mistake available in a new segment,
+  and it is invisible for a quarter.
+
+  '
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

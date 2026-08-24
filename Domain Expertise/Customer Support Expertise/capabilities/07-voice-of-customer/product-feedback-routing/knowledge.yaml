@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.voice_of_customer.product_feedback_routing
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.product_feedback_routing.route_with_receipts_close_the_loop_back
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.product_feedback_routing.a_closed_loop_multiplies_future_signal
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

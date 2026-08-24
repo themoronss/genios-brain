@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.team_health.attrition_lags_the_damage_by_two_quarters
+  name: Attrition lags the damage by two quarters
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.team_health
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The team that burned out in March resigns in September. When exits cluster, the cause is
+    upstream in the load curve — and the fix must aim there, not at the exit interviews.
+  answers:
+  - Why do retention fixes at resignation time fail?

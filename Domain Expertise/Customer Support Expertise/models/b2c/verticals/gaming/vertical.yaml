@@ -1,0 +1,108 @@
+# Gaming support — vertical branch under customer_support.model.b2c.
+#
+# INHERITANCE: declares only what DIFFERS from the parent. Resolution is vertical -> model ->
+# canonical.
+
+identity:
+  id: customer_support.model.b2c.gaming
+  name: Gaming Support
+  kind: vertical
+  domain: customer_support
+  parent: customer_support.model.b2c
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Supporting players of live-service games. Volume is outage-shaped and calendar-shaped at the
+  same time: launches, patches and timed events are known dates that produce order-of-magnitude
+  surges, and unplanned downtime produces the same surge without the warning. What is specific
+  to this vertical is what an outage costs — not access, but progress. A player who could not
+  log in during a limited-time event did not lose an evening's entertainment, they lost
+  progression they had earned, and the remediation is a compensation decision applied to a
+  population rather than an apology written to a person.
+  A second, larger part of the queue is adversarial by construction. Account theft, chargebacks,
+  ban appeals and item-restoration requests all involve a claimant whose account of events
+  cannot be taken at face value, where the correct answer is frequently no, and where saying no
+  consistently across millions of cases is the actual quality bar. This is the inverse of the
+  service reflex every consumer support agent is trained on, and agents who cannot hold it get
+  farmed.
+  The audience is organised and instantaneous. A single inconsistent ruling is screenshotted,
+  posted and compared against every other ruling within minutes, so consistency between agents
+  matters more than the quality of any individual response.
+  This branch reactivates account_relationship_management, which B2C switches off. In a game with
+  a heavy-spend tail, the top accounts genuinely are named accounts with dedicated handling, and
+  the capability's object graph has a real referent here that it does not have in streaming or
+  retail.
+  The error carried in from streaming is treating an outage as purely a communications problem.
+  The error carried in from ecommerce is reflexive goodwill: in a virtual economy, granting items
+  to settle a complaint is inflation and it is permanent.
+
+characteristics:
+  requester: "a player, frequently young, usually contacting from a console or phone mid-session, and part of a community that will compare our answer with everyone else's"
+  typical_resolution_hours: 8
+  volume_shape: "event-driven and violently spiky — launches, patches, timed events and downtime each produce multiples of baseline within minutes"
+  staffing_model: "pooled agents with specialist pods for account security, payments/chargebacks and appeals, plus VIP handling for the heavy-spend tail"
+  coverage: "24x7 — the playerbase is global and peak play is everyone else's night"
+  automation_level: "high on account, billing and known-issue intents; deliberately low on appeals, where an automated no is the most inflammatory possible output"
+  notes: >
+    Compensation decisions are made once and applied to millions of accounts. They belong to
+    incident command rather than to individual agents, and every attempt to devolve them has
+    produced inconsistency that outlived the outage.
+
+capabilities:
+  activates:
+    # B2C deactivates this because a consumer is not an account. In a game with a heavy-spend
+    # tail that is false: the top accounts have names, histories and dedicated handling, and the
+    # capability's object graph has a genuine referent.
+    - customer_support.support_management.account_relationship_management
+  emphasises:
+    # Downtime during a timed event is the defining incident shape here.
+    - customer_support.escalation_and_incident.incident_management
+    - customer_support.escalation_and_incident.major_incident_communication
+    # Surges are on a calendar we publish ourselves, which makes being surprised by them
+    # indefensible.
+    - customer_support.support_operations.capacity_planning
+    - customer_support.support_operations.queue_management
+    # Consistency across agents is the product when every ruling is compared in public.
+    - customer_support.support_management.quality_assurance
+    - customer_support.customer_communication.de_escalation
+    - customer_support.voice_of_customer.sentiment_analysis
+
+objects:
+  extends:
+    - object: customer_support.obj.core.ticket
+      require_properties: [intent_ref, resolution_type]
+      note: >
+        Intent has to separate the adversarial classes — appeal, chargeback, account recovery,
+        item restoration — from ordinary service contacts at intake, because they need different
+        evidence standards, different agents and a different default answer. Routing them into
+        the general queue is how a bans queue becomes a refunds queue.
+    - object: customer_support.obj.core.incident
+      require_properties: [is_customer_visible, affected_customer_count, closing_broadcast_sent]
+      note: >
+        The closing broadcast is load-bearing here because the compensation decision usually
+        rides on it. Players who miss it open tickets asking whether they were included, and that
+        second wave is frequently larger than the first.
+    - object: customer_support.obj.core.customer_sentiment
+      require_properties: [public_exposure, audience_widening]
+      note: >
+        Audience widening in gaming is not one thread acquiring recipients; it is a ruling being
+        posted to a forum where thousands of players evaluate it. The sentiment reading that
+        matters is community-level, and an individual conversation can look calm while the
+        aggregate is on fire.
+    - object: customer_support.obj.core.escalation
+      require_properties: [origin, is_repeat_escalation]
+      note: >
+        Repeat escalation is the signal that separates a genuine grievance from an appeal being
+        re-rolled until an agent says yes. Both look identical in a single ticket and only the
+        history tells them apart, which is why the history has to be on the object rather than
+        in an agent's memory.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional

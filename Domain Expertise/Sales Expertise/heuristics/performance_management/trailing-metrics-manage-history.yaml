@@ -1,0 +1,15 @@
+identity:
+  id: sales.heu.performance_management.trailing_metrics_manage_history
+  name: Trailing metrics manage history
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.sales_management.performance_management
+  subdomain: sales_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: By the time revenue misses, the causes are eight weeks old. A management rhythm built on
+    trailing numbers is a post-mortem rhythm — accountability without the possibility of rescue.
+  answers:
+  - Why do revenue-only reviews fail as management?

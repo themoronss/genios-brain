@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.capacity_planning.deflection_is_capacity_too
+  name: Deflection is capacity too
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.capacity_planning
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Before hiring for a rising curve, check whether the top driver is deflectable — an article
+    or product fix that kills a driver adds capacity with no payroll and no ramp time.
+  answers:
+  - What are the options when demand outgrows the team?

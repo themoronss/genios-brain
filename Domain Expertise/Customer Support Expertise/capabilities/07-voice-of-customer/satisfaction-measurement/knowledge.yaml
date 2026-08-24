@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.voice_of_customer.satisfaction_measurement
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.satisfaction_measurement.measure_less_read_verbatims_more
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.satisfaction_measurement.response_bias_bends_both_tails
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

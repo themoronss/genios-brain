@@ -1,0 +1,27 @@
+identity:
+  id: admin.pb.attendance_and_leave.leave_as_visible_rule_based_flow
+  name: Leave as visible, rule-based flow
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.attendance_and_leave
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Leave runs on self-service requests, rule-based balances, calendar visibility and clean payroll
+    handoff — because leave disputes are almost always record disputes, and morale leaks where balances
+    are mysterious.
+steps:
+- order: 1
+  name: Automate balance arithmetic
+  description: Accruals, carry-overs, caps — computed by rule, visible to the employee always.
+  actor: human
+- order: 2
+  name: Approve against team calendar visibility
+  description: The approver sees overlaps at request time — coverage clashes caught before, not during.
+  actor: human
+- order: 3
+  name: Feed payroll from the same record
+  description: Unpaid leave and encashments flow from the leave system, not a month-end spreadsheet reconciliation.
+  actor: human

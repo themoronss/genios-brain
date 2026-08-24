@@ -1,0 +1,103 @@
+# B2B fintech support — vertical branch under customer_support.model.b2b.
+#
+# INHERITANCE: declares only what DIFFERS from the parent. Resolution is vertical -> model ->
+# canonical.
+
+identity:
+  id: customer_support.model.b2b.fintech
+  name: B2B Fintech Support
+  kind: vertical
+  domain: customer_support
+  parent: customer_support.model.b2b
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Supporting businesses whose money moves through us — payments infrastructure, banking-as-a-
+  service, lending and treasury platforms. Three structural facts change the work.
+  The ticket is a regulated record. Whatever an agent writes may be read later by an auditor, a
+  regulator or opposing counsel, and the reconstruction has to hold years after everyone who
+  touched it has left. That makes the audit trail a deliverable of support rather than a
+  by-product of it, and it makes "I fixed it quietly" a compliance failure even when the customer
+  is delighted.
+  The clock is frequently statutory rather than contractual. A regulated complaint and a
+  reportable incident both carry externally-set deadlines that outrank whatever the support plan
+  promised, and missing one is an enforcement matter, not a CSAT dip.
+  Money movement is close to irreversible and agents cannot touch it. Support diagnoses and
+  routes; a funds action requires dual control from a team that does not report into the queue.
+  The naive retry — the reflex every software support agent has — can duplicate a payment, and
+  the second payment is somebody's actual money.
+  The error carried in from B2B SaaS is treating diagnosis data as freely shareable. Card data,
+  account numbers and personal data cannot be pasted into a ticket or a Slack thread, so the
+  normal "send me a screenshot" loop is unavailable and the reproduction discipline has to be
+  built out of sanitised references instead.
+
+characteristics:
+  requester: "an engineer, operations analyst or compliance officer at the customer; the compliance requester is not asking a technical question and answering them technically fails"
+  typical_resolution_hours: 16
+  volume_shape: "moderate and steady, with hard spikes at settlement cutoffs, month-end reconciliation and any payment-network incident"
+  staffing_model: "tiered, with a segregated funds-operations team support can route to but never act as, plus a named compliance liaison"
+  coverage: "extended hours aligned to settlement windows, on-call around clearing cycles and for any money-movement severity-1"
+  automation_level: "low to moderate — deflection is capped by the fact that most questions are about one specific transaction that only we can see"
+  notes: >
+    Deliberately no automation of the resolution itself. Reading a balance is deflectable;
+    changing one is not, and every attempt to automate the second has ended as an incident.
+
+capabilities:
+  emphasises:
+    # The record is the product of the work. Sampling and review here are a control, not coaching.
+    - customer_support.support_management.quality_assurance
+    - customer_support.support_management.ticket_review
+    # Statutory clocks and reportable incidents. Both are externally timed and both start before
+    # anyone internally agrees there is a problem.
+    - customer_support.entitlement_and_sla.commitment_tracking
+    - customer_support.escalation_and_incident.incident_management
+    - customer_support.escalation_and_incident.major_incident_communication
+    # An escalation here has a compliance meaning as well as a service one, and the receiving
+    # owner is sometimes a function rather than a person.
+    - customer_support.escalation_and_incident.escalation_management
+    # Wording is regulated. What an agent may state as fact about a transaction is narrower than
+    # what they know.
+    - customer_support.customer_communication.response_drafting
+
+objects:
+  extends:
+    - object: customer_support.obj.core.ticket
+      require_properties: [created_at, first_response_at, assignee_ref, resolution_type]
+      note: >
+        These four are the minimum reconstructible record — when it arrived, when we first
+        answered, who held it, and what we actually did about it. They are mandatory here not
+        because the queue needs them but because an audit does, and a field that is optional is
+        a field that is empty on the one ticket someone eventually asks about.
+    - object: customer_support.obj.core.escalation
+      require_properties: [origin, reason, receiving_owner_ref]
+      note: >
+        Origin has to distinguish a customer asking for a manager from a regulated complaint
+        being raised, because the second starts a statutory clock and the first does not. An
+        escalation logged without that distinction is indistinguishable from an ordinary
+        unhappy customer until the deadline has already passed.
+    - object: customer_support.obj.core.incident
+      require_properties: [is_customer_visible, declared_at, affected_account_count]
+      note: >
+        Reportability is assessed from these. Regulatory notification windows run from the point
+        of detection rather than the point of resolution, so an incident whose declaration time
+        is reconstructed afterwards from chat scrollback is already a finding.
+    - object: customer_support.obj.core.sla_target
+      require_properties: [is_contractual]
+      note: >
+        Here it separates two clocks that look the same on a board: the one we sold and the one
+        a regulator imposes. When they conflict the statutory one wins, and an agent who does not
+        know which they are looking at will prioritise the wrong ticket with total confidence.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Regulatory specifics are deliberately unnamed — the obligations differ by jurisdiction and
+    licence, and hardcoding one regime's deadline into a domain brain would be wrong everywhere
+    else. The structural claim is only that an external clock exists and outranks ours.

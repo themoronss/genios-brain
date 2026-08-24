@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.version_control.one_canonical_everything_else_labelled
+  name: One canonical, everything else labelled
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.version_control
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every important document has ONE canonical location and version; drafts are named as drafts;
+    superseded versions are marked, not deleted — because two files both believing they are final is how
+    contradicting commitments happen.
+steps:
+- order: 1
+  name: Name the canonical home per document type
+  description: Contracts live HERE, policies HERE. The canonical copy's location is part of the document's
+    identity.
+  actor: human
+- order: 2
+  name: Version visibly
+  description: v1, v2, draft-for-review — in the name, not in someone's memory of which is newer.
+  actor: human
+- order: 3
+  name: Supersede explicitly
+  description: Old versions get marked superseded with a pointer forward. Deletion destroys history; unmarked
+    coexistence destroys certainty.
+  actor: human

@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.satisfaction_measurement.measure_less_read_verbatims_more
+  name: Measure less, read verbatims more
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.satisfaction_measurement
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: CSAT works when it is short, in-moment, and its comments are actually read weekly — the number
+    trends the dashboard, but the verbatims contain every improvement the number is hinting at.
+steps:
+- order: 1
+  name: Ask one question at the moment of closure
+  description: One tap plus optional comment, inside the resolution flow. Surveys sent days later measure
+    survey tolerance.
+  actor: human
+- order: 2
+  name: Read every comment weekly, tag drivers
+  description: Twenty minutes of verbatim reading beats an hour of chart-gazing. Tag into the same themes
+    synthesis uses.
+  actor: human
+- order: 3
+  name: Close the loop on the worst
+  description: A human follow-up on very-negative responses recovers accounts AND teaches more than a
+    hundred averages.
+  actor: human

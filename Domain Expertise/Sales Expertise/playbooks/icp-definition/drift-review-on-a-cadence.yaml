@@ -1,0 +1,36 @@
+identity:
+  id: sales.pb.icp_definition.drift_review_on_a_cadence
+  name: Recompute against the most recent closed business each quarter and rai…
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Recompute against the most recent closed business each quarter and raise the delta as\
+    \ a finding, with a named owner, rather than as an edit.\n Drift detected is information about a\
+    \ changing market. Drift absorbed by widening the profile is the mechanism by which the profile\
+    \ stops meaning anything, and it happens one reasonable exception at a time.\n"
+when_to_use:
+  situations: []
+  conditions: []
+steps:
+- order: 1
+  name: Recompute against the most recent closed business each quarter and rai…
+  description: 'Drift detected is information about a changing market. Drift absorbed by widening the
+    profile is the mechanism by which the profile stops meaning anything, and it happens one reasonable
+    exception at a time.
+
+    '
+  done_when: UNAUTHORED — this playbook is a skeleton.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

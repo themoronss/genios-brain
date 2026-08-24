@@ -1,0 +1,115 @@
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Virtual Environment
+venv/
+env/
+.env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Databases
+*.db
+*.sqlite3
+*.sqlite
+
+# §7 experiment — real customer deal data + generated results (never commit)
+modules/sales/golden/real_cases.jsonl
+section7_*_results.json
+**/section7_*_results.json
+
+# Python build files
+build/
+dist/
+*.egg-info/
+*.egg
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Mac & Windows OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Coverage & Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+.hypothesis/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# FastAPI specific
+*.pid
+
+# Node (if using Node/Next.js)
+node_modules/
+.next/
+npm-debug.log
+yarn-error.log
+.pnpm-debug.log
+
+# Uploads & Generated files
+uploads/
+storage/
+dist/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# Poetry/Pipenv
+poetry.lock
+Pipfile.lock
+
+# Redis
+dump.rdb
+
+# Docker
+.dockerignore
+
+# OS specific
+.vscode/settings.json
+.vs/
+
+# Local development
+local_config.py
+config.local.py
+*.local
+
+# Editor backup files
+*.bak
+
+# Local env backups (added after secret leak prevention)
+.env.upstash_backup
+.env.bak
+.env.*.backup

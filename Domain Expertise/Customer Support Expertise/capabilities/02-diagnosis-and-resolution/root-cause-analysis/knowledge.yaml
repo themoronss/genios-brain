@@ -1,0 +1,58 @@
+# Knowledge manifest — references the definition pages whose identity.owner_capability
+# names this capability. Auto-linked from the pages' own declarations: the pages were
+# written and the index never was, so the engine opened an empty list above a full shelf.
+capability: customer_support.diagnosis_and_resolution.root_cause_analysis
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.root_cause_analysis.bisect_between_good_and_bad
+  - customer_support.pb.root_cause_analysis.blast_radius_before_depth
+  - customer_support.pb.root_cause_analysis.cannot_reproduce_branches
+  - customer_support.pb.root_cause_analysis.change_first_search
+  - customer_support.pb.root_cause_analysis.is_and_is_not
+  - customer_support.pb.root_cause_analysis.pull_in_the_owner_early
+  - customer_support.pb.root_cause_analysis.separate_the_two_closures
+  - customer_support.pb.root_cause_analysis.terminate_on_a_control
+  - customer_support.pb.root_cause_analysis.timeline_before_hypothesis
+  - customer_support.pb.root_cause_analysis.write_it_falsifiable
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.root_cause_analysis.a_cause_that_explains_only_one_ticket
+  - customer_support.heu.root_cause_analysis.a_person_is_not_a_root_cause
+  - customer_support.heu.root_cause_analysis.ask_the_goal_not_only_the_steps
+  - customer_support.heu.root_cause_analysis.cannot_reproduce_is_a_finding
+  - customer_support.heu.root_cause_analysis.deploy_correlation_is_a_lead_not_a_verdict
+  - customer_support.heu.root_cause_analysis.disjoint_contexts_beat_volume
+  - customer_support.heu.root_cause_analysis.escalate_on_radius_not_volume
+  - customer_support.heu.root_cause_analysis.intermittent_means_state_dependent
+  - customer_support.heu.root_cause_analysis.obvious_causes_deserve_more_suspicion
+  - customer_support.heu.root_cause_analysis.symptom_is_not_the_fault
+  - customer_support.heu.root_cause_analysis.the_defect_predates_the_report
+  - customer_support.heu.root_cause_analysis.the_fix_does_not_confirm_the_cause
+  - customer_support.heu.root_cause_analysis.timebox_before_you_know
+  - customer_support.heu.root_cause_analysis.workaround_without_an_issue_record_is_invisible
+  - customer_support.heu.root_cause_analysis.your_environment_is_evidence_about_your_environment
+mental_models:
+  core: []
+  scoped:
+  - customer_support.mm.root_cause_analysis.blame_is_an_analysis_terminator
+  - customer_support.mm.root_cause_analysis.blast_radius_is_the_hypothesis
+  - customer_support.mm.root_cause_analysis.customer_is_an_uncalibrated_instrument
+  - customer_support.mm.root_cause_analysis.rca_is_archaeology
+  - customer_support.mm.root_cause_analysis.reproduction_is_a_lever_not_a_gate
+  - customer_support.mm.root_cause_analysis.symptom_fault_cause
+  - customer_support.mm.root_cause_analysis.two_clocks
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped:
+  - customer_support.df.root_cause_analysis.blameless_framing
+  - customer_support.df.root_cause_analysis.closure_ledger
+  - customer_support.df.root_cause_analysis.differential_diagnosis
+  - customer_support.df.root_cause_analysis.fault_tree
+  - customer_support.df.root_cause_analysis.five_whys
+  - customer_support.df.root_cause_analysis.is_is_not_specification
+  - customer_support.df.root_cause_analysis.ishikawa_for_support

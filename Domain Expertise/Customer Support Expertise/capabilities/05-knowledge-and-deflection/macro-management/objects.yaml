@@ -1,0 +1,28 @@
+# Load-set for customer_support.knowledge_and_deflection.macro_management
+# REFERENCES ONLY — never an inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.knowledge_and_deflection.macro_management
+
+core:
+  # Knowledge Article is required because a macro and an article are two renderings of the same
+  # answer — one sent, one published. When they are maintained separately they diverge, and the
+  # customer who reads both concludes we do not know our own product.
+  required:
+    - customer_support.obj.core.knowledge_article
+  # Intent is what a macro is selected against; without it, selection is by keyword and the
+  # wrong-question failure becomes structural. Conversation carries what was actually asked,
+  # which is the only check on whether the macro fits.
+  optional:
+    - customer_support.obj.core.intent
+    - customer_support.obj.core.conversation
+
+scoped:
+  # Macro lives here rather than in core because exactly one capability owns it. It is noise in
+  # incident response and would invite reply-template reasoning in capabilities that should be
+  # writing from scratch.
+  required:
+    - customer_support.obj.macro_management.macro
+  optional: []

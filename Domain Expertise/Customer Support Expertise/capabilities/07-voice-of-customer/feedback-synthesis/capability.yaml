@@ -1,0 +1,37 @@
+identity:
+  id: customer_support.voice_of_customer.feedback_synthesis
+  name: Feedback Synthesis
+  domain: customer_support
+  subdomain: voice_of_customer
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Turning many individual contacts into a claim about the product that someone outside support
+  will act on. The hard part is not clustering — it is resisting the loudest theme: volume
+  measures how easy something is to complain about, not how much it costs the business, and a
+  frequent trivial annoyance will always outrank a rare catastrophe unless the synthesis
+  weights consequence rather than counts. What survives the summary must keep at least one
+  customer's own words attached, because an engineering team argues with a percentage and
+  cannot argue with a sentence.
+
+question: "What are all these contacts collectively saying that no single one of them says?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Stub — identity, description, question and load-set only. Promote by adding the failure
+    modes first (frequency mistaken for importance, themes that dissolve the moment anyone asks
+    what to build, synthesis that arrives after the roadmap was set, and the survivorship
+    problem where the customers who left are absent from every input), then heuristics with a
+    `why`, the weighting framework that trades volume against consequence and account value,
+    KPIs on whether synthesis changed anything, and handoffs into product_feedback_routing and
+    content_gap_analysis. Executable today only in the weakest sense: nothing in the substrate
+    groups tickets by issue, so the clustering step is a needs_signal against issue-level
+    identity rather than a pattern.

@@ -1,0 +1,28 @@
+identity:
+  id: customer_support.pb.support_analytics.drivers_first_averages_second
+  name: Drivers first, averages second
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.support_analytics
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Support analytics starts with WHAT is driving tickets — categories, trends, per-account spikes
+    — because volume drivers are actionable while org-wide averages mostly hide the story inside them.
+steps:
+- order: 1
+  name: Rank categories by volume × trend
+  description: Rising small categories beat stable big ones for attention. The slope is the news.
+  actor: human
+- order: 2
+  name: Break averages by segment before believing them
+  description: A healthy mean response time can hide one tier being failed consistently. Segment, then
+    conclude.
+  actor: human
+- order: 3
+  name: Publish one page the team actually reads
+  description: Top drivers, breach risk, reopen hotspots, one insight. The forty-chart dashboard is where
+    attention goes to die.
+  actor: human

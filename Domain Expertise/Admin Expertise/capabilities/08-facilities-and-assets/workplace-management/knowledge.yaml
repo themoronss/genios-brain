@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.facilities_and_assets.workplace_management
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.workplace_management.workplace_as_daily_service
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.workplace_management.small_frictions_compound_into_culture
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

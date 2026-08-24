@@ -1,0 +1,295 @@
+# Sales — domain root
+#
+# The one question this domain answers, in Layer 3 terms:
+#   "How would a seasoned sales operator read this situation?"
+#
+# Not what is true (Layer 2). Not what to do (Layer 4). Only how an expert would understand it.
+#
+# ARCHITECTURE v2
+#
+#   objects/core/<name>.yaml              shared — loaded by MORE THAN ONE capability
+#   objects/<capability>/<name>.yaml      scoped — loaded by EXACTLY ONE
+#
+#   capabilities/<NN-subdomain>/<capability>/
+#       capability.yaml     purpose, expertise, KPIs, handoffs
+#       objects.yaml        the load-set — references only, core and scoped split
+#       situations/         the situations this capability owns
+#
+# Sales MODELS (B2B, PLG, channel...) and OFFERINGS (product, service, hybrid) do not
+# re-list capabilities. They live under models/ and offerings/ and change how these
+# capabilities behave, never whether the profession has them.
+
+identity:
+  id: sales
+  name: Sales
+  version: 2.0.0
+  status: draft
+
+description: >
+  The revenue-generating motion: finding a market, reaching the people in it, establishing
+  whether a real purchase is possible, proving value, agreeing commercial terms, closing,
+  and growing the account afterwards — plus the operations and management disciplines that
+  keep the motion measurable.
+
+question: "How would a seasoned sales operator read this situation?"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Subdomains — the revenue lifecycle, in order
+# ─────────────────────────────────────────────────────────────────────────────
+subdomains:
+
+  - id: market_and_targeting
+    dir: "01-market-and-targeting"
+    name: Market & Targeting
+    question: "Who is worth selling to at all?"
+    capabilities: [market_research, icp_definition, tam_sam_som]
+
+  - id: prospecting_and_outreach
+    dir: "02-prospecting-and-outreach"
+    name: Prospecting & Outreach
+    question: "How do we reach them and earn a first conversation?"
+    capabilities: [lead_generation, account_research, outreach, cold_email, cold_calling,
+                   linkedin_outreach, follow_up, meeting_booking]
+    note: >
+      cold_email, cold_calling and linkedin_outreach are CHANNELS inside outreach, not peers
+      of it. They stay capabilities because each carries genuinely distinct expertise —
+      deliverability, opening mechanics, platform limits — and declare
+      `parent_capability: sales.prospecting_and_outreach.outreach`.
+
+  - id: qualification
+    dir: "03-qualification"
+    name: Qualification
+    question: "Is a real purchase possible here, and with whom?"
+    capabilities: [lead_qualification, stakeholder_mapping, decision_maker_identification,
+                   champion_identification, buying_committee_analysis]
+
+  - id: discovery_and_solution
+    dir: "04-discovery-and-solution"
+    name: Discovery & Solution
+    question: "What problem are they actually trying to solve, and does our thing solve it?"
+    capabilities: [discovery, need_analysis, demo, value_proposition]
+
+  - id: proposal_and_commercials
+    dir: "05-proposal-and-commercials"
+    name: Proposal & Commercials
+    question: "On what terms would both sides say yes?"
+    capabilities: [objection_handling, proposal_creation, pricing, negotiation]
+
+  - id: closing
+    dir: "06-closing"
+    name: Closing
+    question: "What stands between agreement and signature?"
+    capabilities: [legal_review, procurement, closing, contract_management]
+
+  - id: post_sale_and_growth
+    dir: "07-post-sale-and-growth"
+    name: Post-Sale & Growth
+    question: "Does the customer succeed, stay, and buy more?"
+    capabilities: [onboarding, customer_success, expansion, upsell, cross_sell, renewal,
+                   churn_prevention]
+
+  - id: revenue_operations
+    dir: "08-revenue-operations"
+    name: Revenue Operations
+    question: "Is the motion measurable, predictable and correctly resourced?"
+    capabilities: [forecasting, revenue_intelligence, pipeline_management, territory_planning,
+                   quota_planning, sales_operations, sales_analytics]
+
+  - id: sales_management
+    dir: "09-sales-management"
+    name: Sales Management
+    question: "Are the people and the deals being run well?"
+    capabilities: [deal_review, sales_coaching, performance_management, relationship_management]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Naming — enforced by _tools/validate.py
+# ─────────────────────────────────────────────────────────────────────────────
+id_scheme:
+  domain: "sales"
+  subdomain: "sales.<subdomain>"
+  capability: "sales.<subdomain>.<capability>"
+  situation: "sales.sit.<name>"
+  core_object: "sales.obj.core.<name>"
+  scoped_object: "sales.obj.<capability>.<name>"
+  playbook: "sales.pb.<core|capability>.<name>"
+  heuristic: "sales.heu.<core|capability>.<name>"
+  mental_model: "sales.mm.<core|capability>.<name>"
+  rule: "sales.rule.<core|capability>.<name>"
+  decision_framework: "sales.df.<core|capability>.<name>"
+  model: "sales.model.<model>[.<vertical>]"
+  offering: "sales.offering.<family>[.<type>]"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The five knowledge artifact kinds — Atlas Expert Brain content that is NOT an object
+#
+# These were inline string lists on capability.yaml in the first cut. Three things broke:
+#
+#   1. Layer 6 Unit 10 emits Playbook Suggestions. A suggestion needs a target with an id and
+#      a version — `sales.pb.core.outbound_sequence v2 supersedes v1`. You cannot say that
+#      about the third bullet in a YAML list, so Rule 06's suggest-then-merge loop had nothing
+#      to point at.
+#   2. MEDDICC was referenced by four capabilities and therefore existed four times.
+#   3. A rule spanning two objects had no home; written inside each, every copy could only
+#      see half its own condition.
+#
+# They obey the same core/scoped rule as objects, enforced the same way from the graph.
+# ─────────────────────────────────────────────────────────────────────────────
+artifact_kinds:
+  playbooks:           {dir: playbooks,           prefix: pb,   holds: "an ordered, owned procedure with observable done-conditions"}
+  heuristics:          {dir: heuristics,          prefix: heu,  holds: "a rule of thumb with its reasoning AND the regime where it breaks down"}
+  mental_models:       {dir: mental-models,       prefix: mm,   holds: "the axes a model makes you look along — MEDDICC, the buying-committee lens"}
+  rules:               {dir: rules,               prefix: rule, holds: "a deterministic rule spanning two or more objects"}
+  decision_frameworks: {dir: decision-frameworks, prefix: df,   holds: "weighted criteria for choosing between options"}
+  terminology:         {dir: terminology,         prefix: null, holds: "the domain vocabulary, grouped by area; Layer 5.2 renders cards in it"}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The core / scoped rule
+#
+# CORE      loaded by MORE THAN ONE capability   -> objects/core/
+# SCOPED    loaded by EXACTLY ONE                -> objects/<capability>/
+#
+# This is decided by the reference graph, not by intent, and validate.py enforces it in both
+# directions: a scoped object that two capabilities load is an ERROR telling you to promote
+# it; a core object that one capability loads is a WARNING telling you it may want demoting.
+#
+# The rule exists because the alternative is a folder convention that decays. Six months in,
+# `core/` becomes "objects we authored early" and the distinction stops carrying information.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The core knowledge artifact roster — the shared library every capability draws on.
+#
+# Pinned here BEFORE authoring so a capability's knowledge.yaml can reference MEDDICC
+# on the day MEDDICC does not exist yet. Unauthored entries are tracked warnings via
+# planned_objects, not dead links.
+#
+# These are the profession's real instruments, not invented ones. If a name here is not
+# something a working seller would recognise, it does not belong in the Expert Brain —
+# it belongs in the Organization Brain as one company's habit.
+# ─────────────────────────────────────────────────────────────────────────────
+core_artifacts:
+  mental_models:
+    - meddicc
+    - bant
+    - spin_selling
+    - challenger_sale
+    - jobs_to_be_done
+    - value_pyramid
+    - status_quo_bias
+    - buying_committee_lens
+    - gap_selling
+    - command_of_the_message
+  decision_frameworks:
+    - qualification_scorecard
+    - forecast_categorisation
+    - pursue_or_disqualify
+    - discount_approval
+    - deal_inspection
+  playbooks:
+    - mutual_action_plan
+    - multithreading
+    - re_engage_gone_dark
+    - executive_alignment
+    - competitive_displacement
+    - proof_of_concept
+  rules:
+    - no_proposal_without_decision_maker
+    - no_commit_without_compelling_event
+    - budget_freeze_exits_committed_forecast
+    - second_slip_downgrades_forecast
+    - single_threaded_caps_forecast
+    - veto_seat_blocks_close
+    - unknown_budget_fails_closed
+    - discount_requires_reciprocity
+  heuristics:
+    - price_objection_implies_budget
+    - title_is_not_authority
+    - date_without_event_is_preference
+    - two_slips_means_something_untrue
+    - silence_after_proposal_is_information
+    - champion_without_access_converts_nothing
+    - status_quo_is_the_main_competitor
+    - disqualify_early_is_cheapest
+    - coverage_predicts_enterprise_outcomes
+    - relative_cadence_beats_absolute
+
+core_objects:
+  # The shared library. Every one of these is loaded by at least two capabilities.
+  people_and_orgs: [contact, persona, lead, stakeholder, decision_maker, champion,
+                    buying_committee, account, company]
+  commercial:      [deal, opportunity, budget, pricing, proposal, contract]
+  context:         [icp, timeline, pain_point, business_need, buying_signal, objection,
+                    competitor, risk, next_action]
+
+# Referenced but not yet authored. A reference to an id here is a tracked WARNING; a
+# reference to an id that appears nowhere is an ERROR. Regenerate with:
+#   python "Domain Expertise/_tools/plan.py"
+planned_objects: []
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Glossary — terms that mean something specific HERE and are routinely confused
+# ─────────────────────────────────────────────────────────────────────────────
+glossary:
+
+  - term: Object
+    means: >
+      The smallest reusable knowledge unit. Authored once and referenced by id. Carries
+      eighteen sections, of which inference_patterns does most of the work.
+
+  - term: Core object
+    means: >
+      An object loaded by more than one capability. Lives in objects/core/ and is authored
+      once — Decision Maker is needed by five capabilities and five copies would drift apart
+      within a month.
+
+  - term: Scoped object
+    means: >
+      An object loaded by exactly one capability. Lives in objects/<capability>/ beside
+      nothing else, because nothing else needs it. Concession belongs to negotiation and
+      would be noise anywhere near prospecting.
+
+  - term: Situation
+    means: >
+      The load-set selector between a capability and its objects. Exists so a compile loads
+      five objects instead of forty. Lives in situations/ inside its owning capability.
+
+  - term: Business Situation (Layer 2)
+    means: >
+      A DIFFERENT thing with a similar name — the BusinessSituationObject Layer 2 emits,
+      typed stalled_deal or champion_quiet. Our situation files bind to it explicitly through
+      `matches.l2_situation_types`; an unbound situation can never be looked up and fails
+      silently, producing nothing and logging nothing.
+
+  - term: Capability
+    means: >
+      A unit of professional competence, authored as a folder. Owns no knowledge inline; it
+      declares a load-set in objects.yaml and owns the situations that route into it.
+
+  - term: Sales Model
+    means: >
+      HOW the motion runs — B2B, PLG, channel, government. Changes thresholds, committee size
+      and which capabilities are in play. Never changes what the profession knows.
+
+  - term: Offering
+    means: >
+      WHAT is sold — product, service, hybrid. Orthogonal to model: B2B x Service is real and
+      neither branch owns the other. The commercial discriminator is how much revenue depends
+      on work done AFTER signature.
+
+  - term: Inference Pattern
+    means: >
+      How an object is discovered when nobody states it. Carries a human `statement` and a
+      machine `when` in the engine's whitelisted grammar. Prose alone cannot fire.
+
+  - term: needs_signal
+    means: >
+      An authored pattern whose fact paths or observation kinds the pipeline does not emit
+      yet. Not a defect — it is the Layer 1/2 backlog, ranked by _tools/backlog.py.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional

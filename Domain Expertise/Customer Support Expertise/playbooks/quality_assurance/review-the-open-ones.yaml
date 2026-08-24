@@ -1,0 +1,42 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_management.quality_assurance — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.quality_assurance.review_the_open_ones
+  name: Review the open ones
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.quality_assurance
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Include still-open and long-running tickets in the eligible population, not only closed
+    ones.
+
+
+    Closure is correlated with competence. A population defined by closure is a population that has
+    already excluded the cases the programme most needs to see.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: Include still-open and long-running tickets in the eligible population, not only closed ones.
+  actor: human
+  description: Closure is correlated with competence. A population defined by closure is a population
+    that has already excluded the cases the programme most needs to see.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

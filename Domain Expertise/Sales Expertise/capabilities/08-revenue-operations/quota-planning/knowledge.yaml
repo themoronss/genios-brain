@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.revenue_operations.quota_planning
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.quota_planning.bottom_up_quota_sanity
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.quota_planning.a_missed_quota_everyone_missed_is_a_planning_error
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

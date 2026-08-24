@@ -1,0 +1,36 @@
+identity:
+  id: sales.pb.market_research.write_the_falsifier_first
+  name: For every load-bearing claim, write the observation that would overtur…
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "For every load-bearing claim, write the observation that would overturn it before going\
+    \ to look — then go looking for that observation specifically.\n Research designed to confirm always\
+    \ confirms. Naming the falsifier in advance converts a map from a narrative into something that\
+    \ can be checked, and it makes the later argument about evidence rather than about who is more senior.\n"
+when_to_use:
+  situations: []
+  conditions: []
+steps:
+- order: 1
+  name: For every load-bearing claim, write the observation that would overtur…
+  description: 'Research designed to confirm always confirms. Naming the falsifier in advance converts
+    a map from a narrative into something that can be checked, and it makes the later argument about
+    evidence rather than about who is more senior.
+
+    '
+  done_when: UNAUTHORED — this playbook is a skeleton.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

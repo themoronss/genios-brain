@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.compliance_and_governance.board_and_secretarial
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.board_and_secretarial.board_rhythm_and_record
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.board_and_secretarial.governance_is_retrospective_evidence
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

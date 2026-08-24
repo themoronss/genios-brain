@@ -1,0 +1,30 @@
+identity:
+  id: admin.pb.calendar_management.calendar_as_strategy_not_tetris
+  name: Calendar as strategy, not tetris
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.calendar_management
+  subdomain: executive_support
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The calendar is managed against the executive's stated priorities — protected deep-work blocks,
+    meeting-worthiness screening, recovery buffers — because a calendar that accepts everything optimises
+    for other people's agendas.
+steps:
+- order: 1
+  name: Block the priorities first
+  description: Deep work, key relationships, thinking time — scheduled before requests arrive, defended
+    like meetings with the CEO.
+  actor: human
+- order: 2
+  name: Screen every request against worthiness
+  description: Does it need THEM, live, this week? Decline-with-alternative (a delegate, a doc, an async
+    answer) serves better than default-accept.
+  actor: human
+- order: 3
+  name: Buffer transitions and overruns
+  description: Back-to-back is a plan for being late and depleted. Ten-minute buffers are the difference
+    between a schedule and a stampede.
+  actor: human

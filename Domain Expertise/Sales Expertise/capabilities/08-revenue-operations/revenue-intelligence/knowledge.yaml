@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.revenue_operations.revenue_intelligence
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.revenue_intelligence.signal_over_anecdote_deal_review
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.revenue_intelligence.latency_is_the_earliest_honest_signal
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

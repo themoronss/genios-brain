@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.sales_management.relationship_management
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.relationship_management.key_account_relationship_cadence
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.relationship_management.the_relationship_account_is_drawn_down_by_asks
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

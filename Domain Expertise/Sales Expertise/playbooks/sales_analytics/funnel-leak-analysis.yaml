@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.sales_analytics.funnel_leak_analysis
+  name: Funnel leak analysis
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.sales_analytics
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Aggregate win rate hides where deals actually die. Conversion is measured stage-to-stage,
+    sliced by source and segment — the sharpest drop is the constraint, and this quarter's coaching and
+    process work aims there, not everywhere.
+steps:
+- order: 1
+  name: Instrument stage conversion and time-in-stage
+  description: Both numbers per stage. A stage that converts poorly OR holds deals twice as long as its
+    peers is the leak.
+  actor: human
+- order: 2
+  name: Slice before concluding
+  description: A healthy average can hide one segment bleeding out. Source × segment × size first; conclusions
+    second.
+  actor: human
+- order: 3
+  name: Fix one constraint per quarter
+  description: The biggest leak gets the process change, the enablement, the review focus. Fixing everything
+    at once fixes nothing measurably.
+  actor: human

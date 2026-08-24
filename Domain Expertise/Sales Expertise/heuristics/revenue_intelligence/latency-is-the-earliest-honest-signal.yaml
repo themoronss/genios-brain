@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.revenue_intelligence.latency_is_the_earliest_honest_signal
+  name: Latency is the earliest honest signal
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.revenue_intelligence
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Before a buyer says no, they slow down. Reply latency stretching from hours to days is the
+    record's first warning — visible weeks before any stage regresses, and worth acting on while the deal
+    is still warm.
+  answers:
+  - What is the earliest measurable sign a deal is cooling?

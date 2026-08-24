@@ -1,0 +1,38 @@
+identity:
+  id: customer_support.intake_and_triage.intent_classification
+  name: Intent Classification
+  domain: customer_support
+  subdomain: intake_and_triage
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Deciding what the customer is actually trying to get done, which is regularly not what they
+  wrote. The durable signal is the outcome they would accept rather than the words they used —
+  "how do I export this" and "your export is broken" are the same intent when the feature exists
+  and cannot be found, and different intents when it does not exist at all. A taxonomy only earns
+  its cost if two agents independently pick the same label, and every taxonomy drifts past that
+  point unless somebody is actively deleting categories rather than only adding them. The failure
+  worth watching for is the catch-all bucket quietly becoming the largest one, because at that
+  point classification has stopped carrying information while still costing a decision per ticket.
+
+question: "What is this customer actually trying to get done?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Stub — identity, purpose and load-set only. Promote by adding failure_modes (catch-all
+    growth, label-per-team rather than label-per-customer-outcome, classification that mirrors the
+    org chart and therefore cannot survive a reorg), heuristics for collapsing near-duplicate
+    labels, and mental_models for the relationship between intent and deflection — a taxonomy that
+    cannot be joined to knowledge articles cannot answer the only question leadership asks of it,
+    which is what to write next. KPIs should include inter-rater agreement before volume-by-label,
+    because volume-by-label with poor agreement is confidently wrong. Handoffs: upstream from
+    channel_intake, downstream into ticket_triage, self_service_deflection and
+    content_gap_analysis.

@@ -1,0 +1,41 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.knowledge_and_deflection.self_service_deflection — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.self_service_deflection.knowledge_is_a_liability_with_a_maintenance_cost
+  name: Knowledge is a liability with a maintenance cost
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.self_service_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Knowledge is a liability with a maintenance cost, not an asset that accrues.
+
+
+    Every published answer is a promise to keep it true. A help center that only grows is a help center
+    whose average article is getting more wrong every quarter, and whose search results are getting
+    worse for the answers that are still right.'
+dimensions:
+- name: Knowledge is a liability with a maintenance cost
+  asks: Knowledge is a liability with a maintenance cost, not an asset that accrues.
+how_to_apply:
+- Knowledge is a liability with a maintenance cost, not an asset that accrues.
+- Every published answer is a promise to keep it true. A help center that only grows is a help center
+  whose average article is getting more wrong every quarter, and whose search results are getting worse
+  for the answers that are still right.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

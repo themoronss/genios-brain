@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.admin_operations.request_intake
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.request_intake.one_front_door_for_admin
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.request_intake.untracked_requests_punish_the_polite
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

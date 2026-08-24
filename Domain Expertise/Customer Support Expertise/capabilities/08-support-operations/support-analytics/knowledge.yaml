@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.support_operations.support_analytics
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.support_analytics.drivers_first_averages_second
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.support_analytics.ticket_volume_is_a_product_metric
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

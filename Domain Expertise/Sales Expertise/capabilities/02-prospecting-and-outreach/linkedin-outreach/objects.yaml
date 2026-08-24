@@ -1,0 +1,22 @@
+# Load-set for sales.prospecting_and_outreach.linkedin_outreach — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/linkedin-outreach/      loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.prospecting_and_outreach.linkedin_outreach
+
+core:
+  required:
+    - sales.obj.core.lead
+  optional:
+    - sales.obj.core.buying_signal
+    - sales.obj.core.persona
+
+scoped:
+  required: []
+  optional: []

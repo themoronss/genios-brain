@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.support_management.performance_management
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.performance_management.balanced_scorecard_no_single_metric_worship
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.performance_management.speed_pressure_surfaces_as_reopens
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

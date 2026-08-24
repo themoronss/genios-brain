@@ -1,0 +1,24 @@
+# Load-set for admin.facilities_and_assets.asset_issuance_and_recovery — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/                    loaded by more than one capability
+# scoped -> objects/asset-issuance-and-recovery/loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce the answer the
+#            requester is waiting on, at a lower confidence, not withhold it.
+
+capability: admin.facilities_and_assets.asset_issuance_and_recovery
+
+core:
+  required:
+    - admin.obj.core.asset
+    - admin.obj.core.employee_record
+  optional:
+    - admin.obj.core.access_right
+    - admin.obj.core.approval
+    - admin.obj.core.document
+
+scoped:
+  required: []
+  optional: []

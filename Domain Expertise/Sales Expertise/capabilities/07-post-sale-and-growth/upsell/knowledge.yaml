@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.post_sale_and_growth.upsell
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.upsell.usage_triggered_upsell
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.upsell.an_unfelt_limit_cannot_be_sold
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

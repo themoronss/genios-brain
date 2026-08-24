@@ -1,0 +1,31 @@
+identity:
+  id: sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria
+  name: MEDDICC — metrics, economic buyer, decision criteria, decision process…
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.lead_qualification
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: MEDDICC — metrics, economic buyer, decision criteria, decision process, paper process,
+    identified pain, champion.
+when_to_use:
+  situations: []
+  conditions: []
+steps:
+- order: 1
+  name: MEDDICC — metrics, economic buyer, decision criteria, decision process…
+  description: MEDDICC — metrics, economic buyer, decision criteria, decision process, paper process,
+    identified pain, champion.
+  done_when: UNAUTHORED — this playbook is a skeleton.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.qualification.lead_qualification. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

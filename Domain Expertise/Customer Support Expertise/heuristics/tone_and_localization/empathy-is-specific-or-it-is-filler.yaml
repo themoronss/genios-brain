@@ -1,0 +1,16 @@
+identity:
+  id: customer_support.heu.tone_and_localization.empathy_is_specific_or_it_is_filler
+  name: Empathy is specific or it is filler
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.tone_and_localization
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: '''We understand your frustration'' understood nothing. Empathy that works names the actual
+    situation — ''a week before your launch, this is the wrong time for an outage'' — and can only be
+    written by someone who read the ticket.'
+  answers:
+  - What separates real empathy from template empathy?

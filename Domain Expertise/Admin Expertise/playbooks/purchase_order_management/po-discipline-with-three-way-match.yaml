@@ -1,0 +1,26 @@
+identity:
+  id: admin.pb.purchase_order_management.po_discipline_with_three_way_match
+  name: PO discipline with three-way match
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.purchase_order_management
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Committed spend gets a PO before the vendor starts; invoices match PO and receipt before
+    payment — the three-way match that catches over-billing, duplicates and never-ordered charges mechanically.
+steps:
+- order: 1
+  name: Raise the PO before work starts
+  description: The PO is the commitment record. After-the-fact POs are receipts cosplaying as controls.
+  actor: human
+- order: 2
+  name: Match invoice to PO to receipt
+  description: Quantity, price, delivery — mismatches queue for a human; matches flow to payment.
+  actor: human
+- order: 3
+  name: Close POs and review the open tail
+  description: Delivered POs close; the aging-open list is where disputes and forgotten commitments hide.
+  actor: human

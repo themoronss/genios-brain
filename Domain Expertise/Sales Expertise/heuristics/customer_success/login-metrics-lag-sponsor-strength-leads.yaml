@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.customer_success.login_metrics_lag__sponsor_strength_leads
+  name: Login metrics lag; sponsor strength leads
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.customer_success
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Usage dashboards tell you what already happened. The leading indicator is the strength of
+    your sponsor: their standing, their engagement, their renewal at the company. A healthy dashboard
+    with a departed sponsor is an at-risk account.'
+  answers:
+  - Which account-health signal deserves the most weight?

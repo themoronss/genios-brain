@@ -1,0 +1,22 @@
+# Load-set for sales.revenue_operations.quota_planning — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/quota-planning/         loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.revenue_operations.quota_planning
+
+core:
+  required:
+    - sales.obj.core.account
+  optional:
+    - sales.obj.core.deal
+    - sales.obj.core.opportunity
+
+scoped:
+  required: []
+  optional: []

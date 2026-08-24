@@ -1,0 +1,28 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
+
+identity:
+  id: admin.admin_operations.sop_management
+  name: SOP Management
+  domain: admin
+  subdomain: admin_operations
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Authoring and maintaining standard operating procedures: capturing the real process,
+  assigning ownership, versioning, and reviewing when the process changes rather than on a
+  calendar. An SOP that has drifted from practice is worse than none, because it is what the
+  new joiner follows.
+
+question: "Is there a written, current procedure for this, and does it match what we actually do?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

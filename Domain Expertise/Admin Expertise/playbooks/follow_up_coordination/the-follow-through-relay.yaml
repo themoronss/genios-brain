@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.follow_up_coordination.the_follow_through_relay
+  name: The follow-through relay
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.follow_up_coordination
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'After decisions, someone owns the relay: informing the affected, connecting the assigned,
+    confirming starts — because decisions do not implement themselves and the gap between decided and
+    begun is where momentum dies.'
+steps:
+- order: 1
+  name: Notify the affected-but-absent within a day
+  description: People discover decisions about their work from the follow-up, not the grapevine.
+  actor: human
+- order: 2
+  name: Confirm every action actually started
+  description: '48h check: does the owner have what they need? Blocked-at-start is the commonest silent
+    failure.'
+  actor: human
+- order: 3
+  name: Close the loop to the decider
+  description: '''All three actions moving; X blocked on budget'' — the summary that keeps decisions from
+    evaporating.'
+  actor: human

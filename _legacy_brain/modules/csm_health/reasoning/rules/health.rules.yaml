@@ -1,0 +1,118 @@
+# CSM (customer-success) health rules — designed for B2B SaaS startups
+# watching their book of business for churn risk and expansion signals.
+# Each rule fires on a single account's facts as of today.
+#
+# Facts the engine expects per account (mapped from a CSV upload):
+#   - status                   (str: active | trial | paused | churned)
+#   - mrr_usd                  (int, monthly recurring revenue $)
+#   - days_to_renewal          (int, days until contract end)
+#   - days_since_last_login    (int, last active user login)
+#   - nps_score                (int 0-10, last survey, -1 if never surveyed)
+#   - open_tickets             (int, currently-open support tickets)
+#   - usage_drop_pct_30d       (int, % drop in active usage vs prior 30 days)
+#
+# Priorities follow the same convention as AR/HR — high = today;
+# medium = this week.
+
+- id: csm_renewal_at_risk
+  module: csm_health
+  priority: 90
+  when:
+    all:
+      - fact: status
+        op: "=="
+        value: "active"
+      - fact: days_to_renewal
+        op: "<="
+        value: 60
+      - fact: days_to_renewal
+        op: ">="
+        value: 0
+      - fact: nps_score
+        op: "<="
+        value: 7
+      - fact: nps_score
+        op: ">="
+        value: 0
+  then:
+    conclusion: renewal_executive_checkin
+    recommend: schedule_exec_call
+    reason: "Renewal within 60 days AND most recent NPS <=7. Exec-level check-in lifts renewal conversion significantly."
+  hard: false
+
+- id: csm_nps_detractor_high_mrr
+  module: csm_health
+  priority: 85
+  when:
+    all:
+      - fact: status
+        op: "=="
+        value: "active"
+      - fact: nps_score
+        op: "<"
+        value: 7
+      - fact: nps_score
+        op: ">="
+        value: 0
+      - fact: mrr_usd
+        op: ">="
+        value: 500
+  then:
+    conclusion: detractor_high_revenue
+    recommend: save_call_with_csm
+    reason: "Account paying $500+ MRR with NPS<7 is the highest-yield save opportunity in CSM economics."
+  hard: false
+
+- id: csm_ticket_backlog
+  module: csm_health
+  priority: 80
+  when:
+    all:
+      - fact: status
+        op: "=="
+        value: "active"
+      - fact: open_tickets
+        op: ">="
+        value: 5
+  then:
+    conclusion: ticket_backlog_escalation
+    recommend: escalate_to_support_lead
+    reason: ">=5 open tickets on one account signals the support team is not keeping up. Escalation prevents a churn-cascade."
+  hard: false
+
+- id: csm_usage_drop
+  module: csm_health
+  priority: 70
+  when:
+    all:
+      - fact: status
+        op: "=="
+        value: "active"
+      - fact: usage_drop_pct_30d
+        op: ">"
+        value: 40
+  then:
+    conclusion: usage_collapse
+    recommend: discovery_call
+    reason: "Active usage dropped >40% in 30 days. Treat as a leading churn indicator — discovery call within 7 days."
+  hard: false
+
+- id: csm_dormant_paying_account
+  module: csm_health
+  priority: 60
+  when:
+    all:
+      - fact: status
+        op: "=="
+        value: "active"
+      - fact: days_since_last_login
+        op: ">"
+        value: 14
+      - fact: mrr_usd
+        op: ">="
+        value: 100
+  then:
+    conclusion: paying_account_dormant
+    recommend: friendly_health_check
+    reason: "Paying account ($100+ MRR) hasn't logged in for >14 days. Friendly check-in surfaces the blocker without sounding alarmed."
+  hard: false

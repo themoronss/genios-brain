@@ -1,0 +1,28 @@
+identity:
+  id: sales.market_and_targeting.tam_sam_som
+  name: TAM / SAM / SOM
+  domain: sales
+  subdomain: market_and_targeting
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Sizing total, serviceable and obtainable market against the ICP rather than against the
+  whole industry. The number that matters is obtainable, and it is the one most commonly
+  replaced by total in a board deck.
+
+question: "How much of this market can we actually reach and win?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

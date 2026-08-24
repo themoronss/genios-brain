@@ -1,0 +1,37 @@
+# Hybrid — offering_family branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is type -> family -> canonical.
+
+identity:
+  id: sales.offering.hybrid
+  name: Hybrid
+  kind: offering_family
+  domain: sales
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Product plus attached service. The commercial trap is pricing the service as an accessory to
+  win the product deal, then discovering the service consumes the margin the product earned.
+
+characteristics:
+  delivery: "artefact plus an engagement"
+  pricing_shape: "product subscription with attached implementation or success fees"
+  margin_profile: "blended, and only visible after the first delivery cycle"
+  post_sale_load: "moderate to high, and routinely underestimated at proposal"
+
+capabilities:
+  emphasises:
+    - sales.proposal_and_commercials.pricing
+    - sales.post_sale_and_growth.onboarding
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

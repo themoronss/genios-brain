@@ -1,0 +1,25 @@
+# Audit Assurance — offering_type branch node under assurance.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent.
+
+identity:
+  id: admin.offering.assurance.audit
+  name: Audit Assurance
+  kind: offering_type
+  domain: admin
+  parent: admin.offering.assurance
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Point-in-time examination. Judged on how quickly evidence can be produced, not on whether
+  the control existed.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

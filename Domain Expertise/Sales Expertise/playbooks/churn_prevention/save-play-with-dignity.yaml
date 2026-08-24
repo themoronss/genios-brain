@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.churn_prevention.save_play_with_dignity
+  name: Save-play with dignity
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.churn_prevention
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: When churn risk is live, speed and honesty outperform discounts. Diagnose the real driver
+    — value, sponsor, budget, or product — because each has a different save, and a discount only saves
+    exactly one of them.
+steps:
+- order: 1
+  name: Diagnose before offering anything
+  description: '''Help me understand what changed'' — listen. Value-gap, sponsor-loss, budget-cut and
+    product-gap each have different plays; guessing wrong burns the one save conversation.'
+  actor: human
+- order: 2
+  name: Bring the right save to the right driver
+  description: Value-gap → re-onboarding sprint. Sponsor-loss → re-sell the new person from zero. Budget
+    → smaller scope, not smaller price. Product-gap → roadmap honesty and a bridge.
+  actor: human
+- order: 3
+  name: If it is lost, lose it well
+  description: A graceful exit with easy data export and a genuine thank-you keeps the door open. Churned
+    customers return and refer — exit friction forecloses both.
+  actor: human

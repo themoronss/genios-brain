@@ -1,0 +1,28 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
+
+identity:
+  id: admin.records_and_documentation.retention_and_archival
+  name: Retention & Archival
+  domain: admin
+  subdomain: records_and_documentation
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Applying the retention schedule: what is kept, for how long, where it goes when it leaves
+  active use, and what must be defensibly destroyed. Retention has two failure modes with
+  opposite consequences — discarding something a regulator will ask for, and keeping personal
+  data past the point we were allowed to.
+
+question: "How long must we keep this, and when are we obliged to destroy it?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

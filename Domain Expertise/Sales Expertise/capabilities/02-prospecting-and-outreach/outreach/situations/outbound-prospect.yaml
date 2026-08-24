@@ -1,0 +1,66 @@
+identity:
+  id: sales.sit.outbound_prospect
+  name: Outbound Prospect
+  domain: sales
+  owner_capability: sales.prospecting_and_outreach.outreach
+  version: 1.0.0
+  status: draft
+
+description: >
+  We went to them. No intent exists yet and the entire job is to earn a first conversation,
+  which means fit matters more than qualification and the expensive objects stay unloaded.
+  The failure mode this situation guards against is treating a two-message outbound thread
+  like a deal: mapping committees, chasing budget, and burning attention on an account that
+  has not agreed to talk.
+
+matches:
+  l2_situation_types:
+    - prospect_relationship
+    - relationship
+  scope: person
+  when:
+    # Outbound means we are waiting on them and there is no live deal behind the contact.
+    - {path: thread.ball_in_court, op: "=", value: them}
+    - {fn: edge_count, op: "<=", value: 1}
+
+also_serves:
+  - sales.prospecting_and_outreach.follow_up
+  - sales.prospecting_and_outreach.account_research
+  - sales.market_and_targeting.icp_definition
+
+objects:
+  load:
+    - sales.obj.core.icp
+  optional:
+    - sales.obj.core.decision_maker
+  never_load:
+    # All three answer questions that do not exist before a first conversation. Loading them
+    # here is how an outbound sequence starts producing deal-shaped noise.
+    - sales.obj.core.budget
+    - sales.obj.core.buying_committee
+    - sales.obj.core.timeline
+
+priority_bp: 4000
+typical_duration_days: 30
+
+signals_of_progress:
+  - introduction
+  - demo_requested
+  - followup_sent
+
+signals_of_decay:
+  - closed_lost_mention
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    One object loaded. The `never_load` list is doing more work here than the `load` list,
+    which is the correct shape for an early-stage situation.
+    Note the deliberate overlap with inbound-lead: both bind Layer 2 types that describe
+    silence, and the `when` narrowing on ball_in_court is what separates them. Two situations
+    may bind the same L2 type — the registry resolves to a set, not to one winner.

@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.request_intake.untracked_requests_punish_the_polite
+  name: Untracked requests punish the polite
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.request_intake
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Without a queue, the loud get served and the patient get forgotten — inverting fairness.
+    The intake channel is an equity instrument as much as an efficiency one.
+  answers:
+  - Who loses when requests are untracked?

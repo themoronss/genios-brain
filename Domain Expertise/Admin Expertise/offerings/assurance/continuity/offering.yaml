@@ -1,0 +1,25 @@
+# Continuity Assurance — offering_type branch node under assurance.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent.
+
+identity:
+  id: admin.offering.assurance.continuity
+  name: Continuity Assurance
+  kind: offering_type
+  domain: admin
+  parent: admin.offering.assurance
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Demonstrating that the organisation can keep operating through disruption — which requires
+  the plan to have been tested, not merely written.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

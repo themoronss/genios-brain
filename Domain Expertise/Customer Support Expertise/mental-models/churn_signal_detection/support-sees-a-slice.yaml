@@ -1,0 +1,41 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.voice_of_customer.churn_signal_detection — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.churn_signal_detection.support_sees_a_slice
+  name: Support sees a slice
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.churn_signal_detection
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Support sees the part of the relationship that went wrong, and only that part.
+
+
+    The queue is a biased sample by construction — it contains failures and questions and nothing else.
+    That makes it superb at detecting deterioration and structurally incapable of measuring health,
+    and a churn read that forgets this will call every heavy user a risk.'
+dimensions:
+- name: Support sees a slice
+  asks: Support sees the part of the relationship that went wrong, and only that part.
+how_to_apply:
+- Support sees the part of the relationship that went wrong, and only that part.
+- The queue is a biased sample by construction — it contains failures and questions and nothing else.
+  That makes it superb at detecting deterioration and structurally incapable of measuring health, and
+  a churn read that forgets this will call every heavy user a risk.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

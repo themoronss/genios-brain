@@ -1,0 +1,15 @@
+identity:
+  id: sales.heu.pipeline_management.pipeline_coverage_lies_without_hygiene
+  name: Pipeline coverage lies without hygiene
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.pipeline_management
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 3x coverage of quota means nothing if a third of it is zombies. Hygiene comes before arithmetic
+    — clean first, then count, or the comfort of the ratio is the most expensive comfort in sales.
+  answers:
+  - Is a 3x pipeline actually enough?

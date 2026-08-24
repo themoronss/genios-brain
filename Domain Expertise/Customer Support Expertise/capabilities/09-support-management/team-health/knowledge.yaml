@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.support_management.team_health
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.team_health.watch_the_burnout_leading_indicators
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.team_health.attrition_lags_the_damage_by_two_quarters
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

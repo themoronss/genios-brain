@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.discovery.talk_time_is_a_diagnostic
+  name: Talk-time is a diagnostic
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.discovery
+  subdomain: discovery_and_solution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: If the seller talked more than a third of a discovery call, discovery did not happen — a
+    pitch did, wearing discovery's calendar slot. Review talk ratio before reviewing anything else about
+    the call.
+  answers:
+  - Was that discovery call actually discovery?

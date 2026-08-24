@@ -1,0 +1,25 @@
+# Load-set for sales.proposal_and_commercials.negotiation — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/negotiation/            loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.proposal_and_commercials.negotiation
+
+core:
+  required:
+    - sales.obj.core.decision_maker
+    - sales.obj.core.pricing
+  optional:
+    - sales.obj.core.budget
+    - sales.obj.core.contract
+    - sales.obj.core.proposal
+    - sales.obj.core.timeline
+
+scoped:
+  required: []
+  optional: []

@@ -1,0 +1,28 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
+
+identity:
+  id: admin.compliance_and_governance.data_protection_administration
+  name: Data Protection Administration
+  domain: admin
+  subdomain: compliance_and_governance
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  The administrative half of data protection: processing records, retention alignment, access
+  reviews, processor agreements, subject request handling and breach logging. It is
+  administration rather than law — the obligation is drafted elsewhere and lives or dies on
+  whether someone maintains the register behind it.
+
+question: "What personal data do we hold, on what basis, and who can reach it?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

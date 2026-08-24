@@ -1,0 +1,41 @@
+# Load-set for customer_support.intake_and_triage.ticket_triage — REFERENCES ONLY, never an
+# inline object.
+#
+# core   -> objects/core/                 loaded by more than one capability
+# scoped -> objects/ticket_triage/        loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a triager
+#            waiting on the compile would rather have a lower-confidence verdict now than a
+#            perfect one after the clock has run.
+
+capability: customer_support.intake_and_triage.ticket_triage
+
+core:
+  # Three, and the third is the one people forget. Ticket is the unit of promised work being
+  # placed; Requester is who is owed the answer and how much prior experience they bring;
+  # Entitlement is what may legitimately be promised, and it is the only input here that the
+  # ticket text cannot contain. Triage without Entitlement is triage on the customer's framing
+  # alone, which is the characteristic failure of this capability.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.requester
+    - customer_support.obj.core.entitlement
+
+  # Each of these changes the verdict when present and does not stop it when absent. Issue is
+  # how a second report becomes blast-radius evidence rather than a second ticket. Product area
+  # is the routing hypothesis. Customer sentiment is loaded deliberately as OPTIONAL and never
+  # as required, because sentiment must inform how we respond and must not be allowed to set
+  # severity — making it required would invite exactly the substitution this capability warns
+  # against.
+  optional:
+    - customer_support.obj.core.issue
+    - customer_support.obj.core.product_area
+    - customer_support.obj.core.customer_sentiment
+
+scoped:
+  # Nothing is unique to triage. Everything triage reasons over is read again downstream by
+  # routing, SLA management and escalation, so a scoped object here would be a core object
+  # waiting to be promoted the first time anyone else needed it.
+  required: []
+  optional: []

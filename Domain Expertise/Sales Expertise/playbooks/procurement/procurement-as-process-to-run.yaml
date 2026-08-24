@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.procurement.procurement_as_process_to_run
+  name: Procurement as process to run
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.procurement
+  subdomain: closing
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Procurement is a checklist with its own SLA, not a person to persuade. Ask for the checklist
+    early — vendor form, security questionnaire, insurance, payment terms — and run it in parallel with
+    the sale instead of discovering it after the yes.
+steps:
+- order: 1
+  name: Get the requirements at proposal time
+  description: '''If we go ahead, what does onboarding a vendor involve?'' Every item known early is a
+    week not lost later.'
+  actor: human
+- order: 2
+  name: Pre-package the standard answers
+  description: Security doc, insurance certs, references, W-9/GST — one folder, ready. Same-day answers
+    halve the calendar.
+  actor: human
+- order: 3
+  name: Run it parallel, never serial
+  description: Security review during legal, vendor setup during signature. Serial procurement is how
+    a Q3 deal becomes a Q4 deal.
+  actor: human

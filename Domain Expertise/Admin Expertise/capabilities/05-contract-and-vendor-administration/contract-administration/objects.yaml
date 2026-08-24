@@ -1,0 +1,26 @@
+# Load-set for admin.contract_and_vendor.contract_administration — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/                    loaded by more than one capability
+# scoped -> objects/contract-administration/loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce the answer the
+#            requester is waiting on, at a lower confidence, not withhold it.
+
+capability: admin.contract_and_vendor.contract_administration
+
+core:
+  required:
+    - admin.obj.core.contract
+    - admin.obj.core.vendor
+    - admin.obj.core.deadline
+  optional:
+    - admin.obj.core.approval
+    - admin.obj.core.document
+    - admin.obj.core.policy
+    - admin.obj.core.budget_line
+
+scoped:
+  required: []
+  optional: []

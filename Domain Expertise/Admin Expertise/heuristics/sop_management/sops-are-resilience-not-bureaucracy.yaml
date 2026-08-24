@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.sop_management.sops_are_resilience_not_bureaucracy
+  name: SOPs are resilience, not bureaucracy
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.sop_management
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The test of an admin function is whether it survives its people being on leave. SOPs are
+    how competence stops being hostage to attendance.
+  answers:
+  - What are SOPs actually protecting against?

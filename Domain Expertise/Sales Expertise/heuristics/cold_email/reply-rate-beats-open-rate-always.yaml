@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.cold_email.reply_rate_beats_open_rate__always
+  name: Reply rate beats open rate, always
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.cold_email
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Opens measure subject lines; replies measure relevance. Optimising opens grows a list of
+    people who glanced; optimising replies grows a pipeline. Judge every cold-email change by replies
+    per hundred sends and ignore the rest.
+  answers:
+  - Which outreach metric should decide what changes?

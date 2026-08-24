@@ -1,0 +1,27 @@
+identity:
+  id: sales.discovery_and_solution.need_analysis
+  name: Need Analysis
+  domain: sales
+  subdomain: discovery_and_solution
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Mapping stated pains onto capability, honestly, including where we do not fit. A need
+  analysis that never finds a gap is a pitch.
+
+question: "Which of their problems does our thing genuinely solve, and how well?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

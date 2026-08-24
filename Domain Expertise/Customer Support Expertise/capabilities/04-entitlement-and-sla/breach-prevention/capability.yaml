@@ -1,0 +1,43 @@
+# STUB — identity, purpose and load-set only. See ../sla-management/capability.yaml for shape.
+
+identity:
+  id: customer_support.entitlement_and_sla.breach_prevention
+  name: Breach Prevention
+  domain: customer_support
+  subdomain: entitlement_and_sla
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  The work of not breaching, which happens hours before the breach and while nothing about the
+  ticket looks different yet. It is a separate capability from sla_management because managing
+  a clock is bookkeeping and preventing a breach is forecasting: the useful signal is not the
+  time remaining but the assignee's other open deadlines, the coverage handover the deadline
+  falls across, and whether the last outbound message actually asked the customer for anything.
+  The characteristic failure is a queue that alerts at the moment of breach, which is not a
+  warning but a notification about the past — and the second is alerting so early and so often
+  that the warning becomes background noise and every ticket is permanently amber.
+
+question: "Which tickets will breach if nobody changes anything, and what is the earliest cheap intervention?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
+    decision_frameworks, kpis and handoffs, following ../sla-management/capability.yaml, and by
+    authoring situations/sla-breach-imminent.yaml (customer_support.sit.sla_breach_imminent),
+    which this capability owns and which binds to the pending L2 types sla_breach_imminent and
+    first_response_overdue.
+
+    The expertise to capture on promotion: the intervention ladder, cheapest first — reply,
+    reassign, borrow, escalate, renegotiate — and the fact that its rungs get dramatically more
+    expensive as the deadline approaches, which is the entire argument for acting early. Also
+    the alert-fatigue trade-off, why an unassigned ticket is a stronger predictor than an old
+    one, and why a deadline landing inside a coverage handover deserves attention before the
+    handover rather than after.

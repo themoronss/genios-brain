@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.proposal_and_commercials.proposal_creation
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.proposal_creation.proposal_as_decision_document
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.proposal_creation.sent_proposals_are_read_aloud_without_you
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

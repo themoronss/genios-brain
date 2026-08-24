@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.entitlement_and_sla.coverage_and_on_call
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.coverage_and_on_call.coverage_follows_the_contract_map
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.coverage_and_on_call.on_call_that_always_fires_is_a_staffing_bug
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

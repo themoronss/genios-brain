@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.discovery_and_solution.value_proposition
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.value_proposition.quantified_value_narrative
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.value_proposition.value_in_their_unit_of_account
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

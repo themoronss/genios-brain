@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.itinerary_management.the_itinerary_is_cognitive_offload
+  name: The itinerary is cognitive offload
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.travel_and_events.itinerary_management
+  subdomain: travel_and_events
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A traveller checking six apps for the next step is spending meeting-preparation attention
+    on logistics. The single itinerary exists to buy that attention back.
+  answers:
+  - What is an itinerary actually for?

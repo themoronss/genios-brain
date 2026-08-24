@@ -1,0 +1,33 @@
+# Load-set for customer_support.support_operations.queue_management — REFERENCES ONLY,
+# never an inline object.
+#
+# core   -> objects/core/     loaded by more than one capability
+# scoped -> objects/<capability>/     loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.support_operations.queue_management
+
+core:
+  # Queue, ticket and backlog are required because the capability's whole claim is that a
+  # queue is a rate mismatch: queue supplies the boundary being measured, ticket supplies the
+  # units arriving and leaving, and backlog supplies the age distribution that distinguishes a
+  # busy day from a broken selection policy. Drop backlog and this degrades into counting.
+  required:
+    - customer_support.obj.core.queue
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.backlog
+  # Optional and not required on purpose. sla_target gives the queue a contractual order that
+  # competes with its operational one — valuable, but a queue with no entitled work is still a
+  # queue. support_agent turns service rate from an abstraction into a rota; without it the
+  # capability can still say the queue is losing, just not who could change that.
+  optional:
+    - customer_support.obj.core.sla_target
+    - customer_support.obj.core.support_agent
+
+scoped:
+  # Nothing here belongs to this capability alone. Every operations object is read by at least
+  # workload_balancing or capacity_planning as well, which is precisely why they are core.
+  required: []
+  optional: []

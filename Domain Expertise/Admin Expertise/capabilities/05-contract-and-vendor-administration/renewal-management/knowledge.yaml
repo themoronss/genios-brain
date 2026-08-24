@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.contract_and_vendor.renewal_management
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.renewal_management.renewals_as_annual_re_decisions
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.renewal_management.vendors_price_your_inertia
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

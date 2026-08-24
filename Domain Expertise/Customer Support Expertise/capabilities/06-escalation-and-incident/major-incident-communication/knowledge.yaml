@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.escalation_and_incident.major_incident_communication
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.major_incident_communication.one_voice_on_the_clock
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.major_incident_communication.underpromise_the_eta_in_public
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

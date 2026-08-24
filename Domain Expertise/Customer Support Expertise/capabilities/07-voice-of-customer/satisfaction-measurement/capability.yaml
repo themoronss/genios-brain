@@ -1,0 +1,36 @@
+identity:
+  id: customer_support.voice_of_customer.satisfaction_measurement
+  name: Satisfaction Measurement
+  domain: customer_support
+  subdomain: voice_of_customer
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Asking the customer how it went, and knowing what the answer is worth. The measurement is
+  never a sample of the population — it is a sample of the emotionally aroused, so the score
+  moves when the furious stop answering rather than when the service improves, and a team that
+  manages the score directly will learn to survey selectively long before it learns to serve
+  better. Effort is the more honest question because it asks what the interaction cost rather
+  than how it felt, and it is the one that predicts whether the customer stays.
+
+question: "What did the customer say about that interaction, and what is that answer actually evidence of?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Stub — identity, description, question and load-set only. Promote by adding outcomes and
+    failure_modes first: the failure modes here are unusually well known (surveying after a
+    save rather than after a struggle, agent-level attribution of a product problem, response
+    bias treated as signal) and they carry more of the expertise than the outcomes do. Then
+    heuristics with a `why`, the survey-instrument decision framework, KPIs that include
+    response representativeness rather than only response rate, and handoffs to
+    churn_signal_detection and agent_coaching. It also needs the csat_detractor situation, which
+    it owns. Nothing here can fire until a support pack emits csat.score and csat_submitted;
+    see the domain header.

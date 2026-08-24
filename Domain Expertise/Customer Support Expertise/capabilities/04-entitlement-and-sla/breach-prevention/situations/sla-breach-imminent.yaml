@@ -1,0 +1,207 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# THIS SITUATION ROUTES NOTHING. That is the point of the file.
+#
+# It is the sharpest case in the domain for pending_l2_situation_types. "SLA breach imminent"
+# is the single most requested support alert in existence, every ticketing product ships one,
+# and this brain cannot emit it — because the shipped Layer 2 packs were built for a revenue
+# motion and contain no clock, no entitlement and no ticket.
+#
+# The available compromise is to bind it to `unanswered_email`, which is genuinely the closest
+# thing the pipeline emits. Doing so would light up a dashboard, produce alerts, and satisfy
+# every reviewer who checks whether SLA coverage exists. It would also be wrong in a way that
+# is close to undetectable from the outside, and it would stay wrong forever, because a
+# populated dashboard is nobody's backlog item. See the notes below for the specific mechanics
+# of why — they are the argument this whole file exists to record.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.sit.sla_breach_imminent
+  name: SLA Breach Imminent
+  domain: customer_support
+  owner_capability: customer_support.entitlement_and_sla.breach_prevention
+  version: 1.0.0
+  status: draft
+
+description: >
+  A clock that a contract created is going to run out before anyone is scheduled to touch the
+  ticket, and there is still time to change that. This is forecasting rather than bookkeeping:
+  the useful signal is not the time remaining but everything around it — how many other
+  deadlines the assignee holds in the same window, whether the deadline falls across a coverage
+  handover, and whether the last outbound message actually asked the customer for anything or
+  merely looked like it did. The intervention ladder runs cheapest first (reply, reassign,
+  borrow, escalate, renegotiate) and every rung gets dramatically more expensive as the
+  deadline approaches, which is the whole argument for firing early. The characteristic
+  failure at the other end is alerting at the moment of breach, which is not a warning but a
+  notification about the past.
+
+matches:
+  # No real binding exists. Not empty because nothing matters here — empty because everything
+  # that matters is in the list below and none of it ships yet.
+  l2_situation_types: []
+
+  pending_l2_situation_types:
+
+    - type: sla_breach_imminent
+      owner_layer: L2
+      nearest_today: unanswered_email
+      note: >
+        WHAT THE TYPE MUST MEAN. A specific named clock on a specific ticket is forecast to
+        expire before the ticket is next scheduled to be touched, measured in the entitlement's
+        COVERED time rather than wall-clock time, and emitted with enough lead that the cheap
+        rungs of the intervention ladder still exist. The payload must carry which clock (first
+        response, next response, restoration, resolution), how much covered time remains, and
+        the current clock state — a bare boolean produces the permanently amber queue, where
+        every ticket is warning and therefore none is.
+
+        WHAT WOULD EMIT IT. Layer 1 must supply sla.target_first_response_at,
+        sla.target_resolution_at, sla.clock_state and entitlement.coverage_hours (all present
+        in planned_substrate.fact_paths and emitted by nothing). Layer 2 then evaluates
+        remaining covered time against the clock state, which requires it to understand
+        business calendars and holidays — that is the genuinely hard part and the reason this
+        cannot be faked with a days_since predicate. The sla_clock_started, sla_clock_paused
+        and sla_breach observation kinds are the audit trail that makes the forecast
+        reviewable after the fact.
+
+        WHAT GOES WRONG TODAY. Nothing fires. Breach prevention has no trigger at all, so the
+        earliest anyone learns about a miss is when the customer raises it — at which point
+        the work is apology rather than prevention, and the capability that owns this file has
+        no surface to act on.
+
+        WHY BINDING TO unanswered_email WOULD BE WRONG, specifically. (1) It measures elapsed
+        silence on a thread with no knowledge of what was promised, so an entitled four-hour
+        first response and a casual question look identical. Every quiet thread in the company
+        becomes an SLA warning: too loud. (2) It has no working calendar. A four-hour target
+        that started at 09:00 is breached at 13:00, and no tuning of a silence detector that
+        survives contact with a real inbox treats four hours of quiet as remarkable — so the
+        alert lands, if at all, after the deadline it was supposed to prevent: too quiet, at
+        the same time, on the same tickets. (3) It has no notion of a pause. A ticket
+        legitimately waiting on the customer has a stopped clock and is not at risk, and a
+        silence detector cannot tell that state from neglect. (4) The compound failure: bound
+        this way, the system reports SLA coverage it does not have. That is worse than a gap,
+        because a gap gets fixed and a green dashboard does not.
+
+    - type: first_response_overdue
+      owner_layer: L2
+      nearest_today: unanswered_email
+      note: >
+        WHAT THE TYPE MUST MEAN. A ticket entitled to a first response has passed its
+        first-response target with no SUBSTANTIVE human reply. Two constraints have to live
+        inside the type or it is worse than nothing. First, substantive: an autoresponder, a
+        "we have received your request" macro or any reply that could have been sent without
+        reading the ticket must NOT satisfy it — the moment the field is satisfiable without
+        reading, the queue learns to satisfy it that way and the metric detaches from the
+        experience it was measuring. Second, distinct: first response is its own promise with
+        its own target, usually far tighter than resolution, and a type that collapses the two
+        hides the clock that is missed most often.
+
+        WHAT WOULD EMIT IT. ticket.created_at, ticket.first_response_at and
+        sla.target_first_response_at from Layer 1, plus a first_response_sent observation
+        carrying a substantiveness judgement — which is a Layer 2 classification problem, not
+        a timestamp comparison, and should be specified as one.
+
+        WHAT GOES WRONG TODAY. The most commonly promised and most commonly measured
+        commitment in support is invisible to this brain. Every downstream capability that
+        depends on it — expectation_setting, queue_management, the whole of breach_prevention
+        — is authored against a trigger that does not exist.
+
+        WHY BINDING TO unanswered_email WOULD BE WRONG, specifically. It fires on any
+        unanswered inbound, including the fifth message of a long thread, and cannot tell a
+        first contact from an ongoing exchange — which is the ONLY distinction this type is
+        about. It also lives entirely on email: chat, phone and portal contacts are where
+        first response is most often promised in minutes rather than hours, and they are
+        exactly the channels a mail-shaped signal cannot see. Binding here would produce a
+        first-response metric that is silent on the channels with the tightest first-response
+        promises.
+
+  # No `scope`. The enum offers person, deal, meeting and account; the natural scope of an SLA
+  # clock is a TICKET, and there is no such value because the enum was written for a revenue
+  # motion. `person` would be the usual fudge and it is wrong in a specific way: one requester
+  # routinely holds several tickets with different clocks and different entitlements, so
+  # scoping to the person merges promises that must not be merged. Fixing this is a one-word
+  # addition to situation.schema.json and it should happen in the same commit as the support
+  # pack.
+
+# sla_management owns the ledger this forecast reads from; queue_management because the
+# cheapest intervention is usually a reassignment rather than heroics by the current assignee;
+# escalation_management because a breach that cannot be prevented should be escalated before
+# it happens rather than explained after.
+also_serves:
+  - customer_support.entitlement_and_sla.sla_management
+  - customer_support.support_operations.queue_management
+  - customer_support.escalation_and_incident.escalation_management
+
+objects:
+  # The clock, the work it is attached to, and the contract that created it. Three, and the
+  # third is not optional: a deadline without its entitlement cannot be computed in covered
+  # hours, and computing it in wall-clock hours is the arithmetic error that generates real
+  # weekend breaches and phantom holiday ones.
+  load:
+    - customer_support.obj.core.sla_target
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.entitlement
+  optional:
+    # queue and support_agent are what make the forecast a forecast rather than a countdown —
+    # the assignee's other deadlines in the same window are the actual predictor.
+    # coverage_window for deadlines that fall across a handover. escalation when the ladder
+    # has already been climbed once and the cheap rungs are gone.
+    - customer_support.obj.core.queue
+    - customer_support.obj.core.support_agent
+    - customer_support.obj.core.coverage_window
+    - customer_support.obj.core.escalation
+  never_load:
+    # knowledge_article: the intervention here is never "find the answer". It is reply,
+    # reassign, borrow, escalate or renegotiate. Loading article content turns a routing
+    # decision into a drafting task, and drafting takes longer than the time remaining — the
+    # ticket breaches while someone writes a good reply to it.
+    - customer_support.obj.core.knowledge_article
+    # customer_sentiment: a breach costs the same whether the customer is calm or furious, and
+    # loading the mood read reliably reprioritises attention toward the loud ones. The
+    # systematic consequence is that quiet entitled accounts get breached first and
+    # repeatedly, which is precisely the pattern nobody notices until renewal.
+    - customer_support.obj.core.customer_sentiment
+
+# The highest priority in this author's set. It is also entirely theoretical until the pack
+# ships, which is a useful thing for a reviewer to hold in mind: priority_bp here ranks
+# nothing today.
+priority_bp: 9200
+typical_duration_days: 1
+
+signals_of_progress:
+  - first_response_sent
+  - followup_sent
+  - escalation_accepted
+  - agent_reassigned
+
+signals_of_decay:
+  - sla_clock_paused
+  - sla_breach
+  - escalation_requested
+  - angry_language
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Every observation kind in the signal lists except followup_sent is support-native and sits
+    in planned_substrate.obs_kinds. That is consistent with the situation itself: nothing here
+    fires today. The lists are unvalidated so this is legal, and it is recorded rather than
+    left implicit.
+
+    sla_clock_paused is under DECAY and not progress, deliberately, and it is the most
+    arguable line in the file. A pause is legitimate when a real question is outstanding with
+    the customer. But a pause applied within sight of a deadline is far more often the
+    parking-space failure — the ticket is set waiting-on-customer with a question they already
+    answered, the clock stops, the queue reports health and the ticket rots. Treating a
+    late pause as progress would make this situation an instrument for hiding the thing it
+    exists to prevent. If it turns out that late pauses are mostly honest in a given team,
+    this is the line to change, and the evidence to change it on is sla_management's
+    invalid_pause_rate.
+
+    agent_reassigned is under progress here and under decay in support-call-no-recap.yaml.
+    That is not an inconsistency: a reassignment before a deadline is an intervention, and a
+    reassignment before a call is written up is a loss of custody. Same event, opposite
+    meaning, decided by what it interrupts.

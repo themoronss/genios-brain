@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.meeting_operations.agenda_preparation
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.agenda_preparation.decision_first_agendas
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.agenda_preparation.no_decision_no_meeting
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

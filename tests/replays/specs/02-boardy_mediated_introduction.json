@@ -1,0 +1,140 @@
+{
+  "replay_id": "02",
+  "slug": "boardy_mediated_introduction",
+  "title": "Boardy-Mediated Introduction",
+  "failure_class": "Connector-as-target collapse: a mediated-introduction transport sender is rendered as the business subject and every separate introduction, thread, meeting and fact connected to that connector is pooled into one aggregate situation instead of one relationship/request-scoped situation per introduced contact.",
+  "summary": "Boardy is an introduction connector that brokers introductions between Rohit and multiple separate contacts. The product today collapses all of those distinct people and distinct asks into a single connector-centred card: Boardy becomes the apparent entity to reply to, dozens of meeting proposals, unrelated calendar events and a large fact dump are pooled together, and one generic \"deliver\" instruction cannot say which person, thread or unresolved request it belongs to — pushing reconstruction and target selection back onto the founder. The replay requires that Boardy stays a relationship edge and provenance actor only, that each introduced contact gets its own BSO keyed by relationship/request/thread/opportunity, that resolved contacts are suppressed while unresolved contacts get at most one current decision, and that any Boardy-directed nudge exists only as a separately justified candidate with its own request ID. The evidence boundary is explicit: the screenshot proves a rendered wrong-scope symptom, not a cause; the code facts (transport actors survive L1 but typed requester/connector/target roles are not mandatory; situation_bso.py:69-166 emits a single anchor with hardcoded org visibility and can reconstruct membership from person/high-degree context; identity.py:134-145 first-claim alias behavior) establish a credible risk boundary only.",
+  "business_subject": "Exactly one introduced contact plus the scoped opportunity/request belonging to that contact. Boardy is typed separately as connector and is never the default business subject or recipient. Missing or ambiguous introduced identity or thread ⇒ Review source; connector/target collapse ⇒ split required, no action.",
+  "current_failure": "Separate people and separate asks are collapsed into one connector-centred card. Boardy — the transport sender — becomes the apparent entity to reply to. Unrelated introductions, meeting proposals, calendar events and facts are pooled into one aggregate situation, and a single generic \"deliver\" instruction is emitted that cannot name which person, thread or unresolved request it belongs to. The founder must do the reconstruction and target selection the product was supposed to do.",
+  "expected_behavior": "Boardy remains a relationship edge and provenance actor: one connector node/edge, never a business subject or recipient. Each introduced contact receives a distinct situation keyed by relationship/request/thread/opportunity, with exact membership, target, requester, owner, lifecycle, missing/conflicts and a version fence. Contacts whose specific request is externally resolved are suppressed; unresolved contacts receive at most one current decision each; a Boardy escalation appears only as a separately justified candidate with its own request ID and its own evidence — never as a substitute recipient.",
+  "open_loop": "The unresolved ask for this one introduced contact only — reply, confirm meeting, deliver the agreed next step, wait, or stop. A person-wide \"ball in court\" flag or an aggregate intro history is not an open loop and is not actionable. Completion requires that this matching contact's exact request is externally resolved; a reply to Boardy or to another introduced contact cannot close it.",
+  "why_now": "A contact-specific request is genuinely unresolved: the exact intro message, the introduced address, the parent/forwarded thread, the replies and the current meeting/outcome state are all present and source-ready, and no external resolution for that contact exists. If membership is synthetic or reconstructed-only, the situation is Observation only, not actionable.",
+  "passes_today": false,
+  "prohibited_behaviors": [
+    "Do not render Boardy as the person to pursue merely because Boardy is the transport sender.",
+    "Do not aggregate every introduction, meeting, fact or commitment connected to Boardy into one operational situation.",
+    "Do not close or reopen multiple requests through a single person-wide state transition.",
+    "Do not infer the target from display name, company, calendar title, high-degree graph proximity or an LLM guess.",
+    "Do not let generic expertise or generic reasoning bypass a `split_required`, a missing-role result or an unsupported result.",
+    "Do not treat a connector reply, a card click, a send receipt or another contact's outcome as this contact's Completion or value."
+  ],
+  "layer_obligations": [
+    {
+      "layer": "L1",
+      "required_output": "From deterministic input (connector email with From/To/Cc, quoted/forwarded segments, introduced identities, message/thread IDs, attachments, source versions, visibility, freshness): preserve every transport actor and every exact span, and emit no inferred business-role equality. Acceptance evidence = provider/event/version, parent/forward chain, character offsets, actors and readiness receipts.",
+      "fail_closed": "Park or Review source if the quoted boundary, the introduced address, the source version or the source window is missing."
+    },
+    {
+      "layer": "L2",
+      "required_output": "From qualified intro receipts plus identity/graph/policy versions and contact-specific replies/calendar state: emit one Boardy connector node/edge plus ONE BSO per introduced relationship/open loop, each carrying exact membership, target, requester, owner, lifecycle, missing/conflicts and a version fence. Acceptance evidence = stable relationship/request IDs, zero shared commitments, bounded slices with explicit exclusion reasons.",
+      "fail_closed": "Return `split_required` for an aggregate/chimera situation; Review source when the target is ambiguous; Suppress only the specific matching resolved request, never the person."
+    },
+    {
+      "layer": "L3",
+      "required_output": "From a contact-specific BSO and a permission-resolved four-brain snapshot: select the contact's accepted capability/domain — never a \"Boardy\" domain — and return explicit unsupported when accepted closure is absent. Acceptance evidence = capability/package/snapshot IDs, accepted closure, role-scope and authoritative mode.",
+      "fail_closed": "Observation only; a legacy generic pack must not override the target or a coverage block."
+    },
+    {
+      "layer": "L4",
+      "required_output": "From one valid contact BSO and an authoritative package: produce contact-specific candidates — direct reply/action, wait/stop, or a permission-safe connector escalation — and hard-eliminate wrong recipients. Acceptance evidence = decision/candidate/elimination trace, recipient intent, stakes, Alternative and Completion.",
+      "fail_closed": "No action CTA when the target or the request cannot be named; no single decision may span more than one contact."
+    },
+    {
+      "layer": "L5",
+      "required_output": "From the current decision, contact target, owner/approver, dependencies and exact success predicate: create one ExecutionObject per accepted contact action, with claim, approval and completion independent of one another. Acceptance evidence = one decision→execution→action chain per relationship/request.",
+      "fail_closed": "Block or cancel on ambiguous target, stale BSO, already-resolved request or missing approval."
+    },
+    {
+      "layer": "L6",
+      "required_output": "From an approved action with exact introduced recipient/thread, purpose, visibility and send-time fence: materialize and send only to the intended contact; a connector nudge must use a separate approved action and a separate payload. Acceptance evidence = canonical DeliveryResult tied to that contact's execution/action and to the provider ID.",
+      "fail_closed": "Suppress on recipient mismatch, lifecycle closure or stale authority; reconcile any ambiguous send attempt rather than retrying."
+    },
+    {
+      "layer": "L7",
+      "required_output": "From per-contact decision, delivery, completion and outcome plus connector lineage: learn each contact outcome separately; a connector-effectiveness pattern requires independent support and must not merge private contact facts. Acceptance evidence = contact/request outcome, counterfactual, support/population/use class and future package receipt.",
+      "fail_closed": "No learning from aggregate tags, from a single introduction, from a click/send event, or from another contact's success."
+    }
+  ],
+  "mutations": [
+    {
+      "mutation": "Boardy introduces three contacts in three separate threads; all three introductions are unresolved.",
+      "expected_decision": "Produce three distinct BSOs and at most three contact-specific decisions — one per introduced relationship/request.",
+      "prohibited": "Emitting a single Boardy person dump or one connector-centred card that pools all three introductions.",
+      "pass_condition": "Target precision is 100% (every decision names exactly one introduced contact), and no commitment or evidence is shared across the three situations except via the explicit connector edge.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No counterparty role model — connector vs. introduced target cannot be typed, and L2 emits a single anchor per situation (situation_bso.py:69-166) rather than one BSO per relationship/open loop."
+    },
+    {
+      "mutation": "All three introduced contacts appear inside one forwarded/quoted thread instead of separate threads.",
+      "expected_decision": "The parser preserves the quoted/forwarded spans, and Layer 2 either splits the situation by introduced identity/request or returns `split_required`.",
+      "prohibited": "Treating the whole quoted body as one single ask.",
+      "pass_condition": "Every membership assertion carries an exact evidence span and a reason; where identity is uncertain, the uncertainty blocks any action.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No thread-level state (extraction is one message at a time, no From/To visible to the LLM, observations carry no actor) and no `split_required` outcome in the abstention vocabulary — cards.level only carries prescriptive/predictive."
+    },
+    {
+      "mutation": "One of the three contacts has replied; the other two remain silent.",
+      "expected_decision": "Suppress only the replied contact's now-resolved request, and evaluate the other two independently.",
+      "prohibited": "Closing all three requests, or leaving the replied contact flagged as overdue.",
+      "pass_condition": "Wrong-close rate is zero and each of the three carries a distinct lifecycle receipt.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No per-request lifecycle state and no suppress/observation state — abstention vocabulary is absent, so a resolved request cannot be expressed as suppressed while siblings stay live."
+    },
+    {
+      "mutation": "One introduced contact has a confirmed meeting; another has only proposed a time.",
+      "expected_decision": "Keep the meeting states and the expertise inputs separate per contact.",
+      "prohibited": "Copying one contact's meeting or status onto the other contacts.",
+      "pass_condition": "No cross-contact calendar fact appears in any bounded context slice.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L2 reconstructs membership from person/high-degree context into a single anchor with hardcoded org visibility (situation_bso.py:69-166); there is no bounded per-relationship slice to keep calendar facts apart."
+    },
+    {
+      "mutation": "Boardy explicitly asks Rohit for a connector update (Boardy is now the one making a bounded ask).",
+      "expected_decision": "Create a separate Boardy-as-target request with its own evidence and its own decision.",
+      "prohibited": "Reusing an introduced contact's action or Completion to satisfy the Boardy request.",
+      "pass_condition": "The Boardy request ID differs from every introduction request ID.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No requester/connector/target role typing exists, so the same person node cannot be connector in one request and target in another; no direction in extraction to establish who made the ask."
+    },
+    {
+      "mutation": "The introduced contact's email address is missing or ambiguous in the intro message.",
+      "expected_decision": "Return Review source with the exact discriminating question.",
+      "prohibited": "Guessing the address from company, domain or display name.",
+      "pass_condition": "No BSO is promoted to expertise and no action button is rendered.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No Review source / observation abstention state exists; DEFER is mathematically unreachable because confidence_floor_bp defaults to 0 in every live manifest, so nothing can gate the action CTA."
+    },
+    {
+      "mutation": "The same display name maps to two separately anchored people.",
+      "expected_decision": "Return an ambiguity result / candidate set and hold until anchored or reviewed.",
+      "prohibited": "Letting the first claimant silently win the alias.",
+      "pass_condition": "No graph attachment and no action occurs before a discriminator resolves the identity.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "identity.py:134-145 implements first-claim alias behavior — exactly the prohibited path; there is no ambiguity/candidate-set return type and no abstention state to hold on."
+    },
+    {
+      "mutation": "One of the introductions is explicitly declined, or the relationship is closed.",
+      "expected_decision": "Stop/suppress that opportunity while retaining the connector and relationship history.",
+      "prohibited": "Emitting a \"last chance\" nudge or reopening the opportunity from old activity.",
+      "pass_condition": "A closed opportunity cannot become actionable again without authoritative new state.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No suppress/stop level in cards.level and no per-opportunity closure state; closure cannot be distinguished from silence, so old activity can still drive a card."
+    },
+    {
+      "mutation": "The connector thread contains private facts about a different introduced contact.",
+      "expected_decision": "Exclude those facts from the unrelated contact's BSO and preserve the narrowest visibility/use scope.",
+      "prohibited": "Allowing high-degree neighbor context to leak the private facts across situations.",
+      "pass_condition": "Selected-context leakage is zero and an explicit exclusion receipt is present.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L2 hardcodes org visibility and can pull person/high-degree context into the anchor (situation_bso.py:69-166); there is no per-fact visibility/use scope and no exclusion-receipt output."
+    },
+    {
+      "mutation": "A direct send to the introduced contact already occurred, but the provider result is unknown.",
+      "expected_decision": "Reconcile that exact send attempt before any retry.",
+      "prohibited": "Asking Boardy instead, or resending blindly.",
+      "pass_condition": "Idempotency plus the provider receipt yields at most one direct external impression on the contact.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L5 has never produced an execution row and card actions do not touch the execution subsystem; the L6 delivery control plane has never run (delivery_outbox is empty across all orgs), so there is no attempt record to reconcile against."
+    }
+  ]
+}

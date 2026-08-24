@@ -1,0 +1,35 @@
+identity:
+  id: customer_support.escalation_and_incident.incident_management
+  name: Incident Management
+  domain: customer_support
+  subdomain: escalation_and_incident
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Running a fault that has stopped being one customer's problem. The hard part is the
+  declaration, not the response: declaring is expensive and feels like admitting fault, so
+  teams spend the opening period arguing about whether this qualifies while the impact
+  compounds and the tickets arrive. An incident needs a commander whose job is coordination
+  rather than debugging — the moment the commander picks up the fault, nobody is running the
+  incident — and ticket volume must be read as the lagging indicator it is, because the
+  customers who did not write in have already formed an opinion by the time the queue shows it.
+
+question: "Is this still a ticket, and if it is not, who is running it and who is telling the customers?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Stub — identity, judgement and load-set only. Promote by adding outcomes, failure_modes
+    (start with under-declaration, the commander who debugs, and closing the incident while the
+    customer-side cleanup is still open), playbooks, heuristics with a why on each,
+    mental_models, decision_frameworks, kpis and handoffs, following escalation-management/
+    capability.yaml in this folder. It also owns the situation major-incident-declared.yaml,
+    which binds under pending_l2_situation_types (major_incident_declared, incident_unresolved)
+    because no shipped pack emits an incident signal — write that file in the same pass.

@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.travel_expense_administration.open_trip_advances_age_badly
+  name: Open trip advances age badly
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.travel_and_events.travel_expense_administration
+  subdomain: travel_and_events
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Unreconciled advances drift toward write-offs and awkwardness. The week-after-return closure
+    window is where trip finance stays clean at trivial cost.
+  answers:
+  - Why close trip expenses fast?

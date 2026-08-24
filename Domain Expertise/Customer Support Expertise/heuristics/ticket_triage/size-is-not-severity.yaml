@@ -1,0 +1,37 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.intake_and_triage.ticket_triage — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.ticket_triage.size_is_not_severity
+  name: Size is not severity
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.ticket_triage
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Do not raise priority because the account is large. Raise it because the account is entitled,
+    or because the fault is spreading.
+heuristic:
+  statement: Do not raise priority because the account is large. Raise it because the account is entitled,
+    or because the fault is spreading.
+  why: Revenue-weighted triage feels commercially obvious and quietly converts the support queue into
+    an account-management queue. The predictable second-order effect is that customers without commercial
+    leverage learn that shouting is the only lever they have.
+  reads:
+  - customer_support.obj.core.entitlement
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

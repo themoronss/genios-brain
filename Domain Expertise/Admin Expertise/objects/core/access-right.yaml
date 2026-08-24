@@ -1,0 +1,1579 @@
+identity:
+  id: admin.obj.core.access_right
+  scope: core
+  name: Access Right
+  domain: admin
+  subdomain: people_administration
+  owner_capability: admin.people_administration.access_and_identity_administration
+  version: 2.0.0
+  status: draft
+  aliases:
+    - Entitlement
+    - Permission
+    - Grant
+    - Authorisation
+    - Membership
+    - Licence Seat
+
+purpose:
+  statement: >
+    A single, named permission held by a single, named identity, granted for a stated reason, in
+    force until somebody removes it. The object is not the permission — permissions are defined
+    once by whoever built the system and are the same for everyone. The object is the GRANT: who
+    holds it, who authorised it, why, when it was last actually used, and when anybody last asked
+    whether the reason still holds. Access is the only administrative asset that costs nothing to
+    hold and accumulates by default, which is why an organisation's entitlement count only ever
+    goes up and why the number nobody can produce on request is how many of them are still needed.
+  discriminator: >
+    The grant REASON, not the permission. If nobody can say why this identity holds this
+    entitlement, it is not an Access Right — it is a finding waiting for an auditor, because
+    review means asking whether the reason still holds and a reviewer handed a list with no
+    reasons has exactly two options: rubber-stamp everything, or break something. They pick the
+    first, every time, which is why recertification campaigns approve upwards of ninety per cent
+    of what they are shown and change almost nothing.
+  answers:
+    - Who can do this, in which system, and on whose authority?
+    - Why do they have it, and does that reason still exist?
+    - When was it last used — and has it ever been used at all?
+    - When was it last reviewed, by whom, and did the review actually look?
+    - If this identity turned hostile tomorrow, what exactly could it reach?
+  not:
+    - >
+      NOT the identity or the account. The account is WHO; this is WHAT THEY MAY DO. One identity
+      holds many access rights, and conflating them is why "we disabled his account" is offered as
+      proof of revocation when the federated SaaS seats, the shared service credential he knew and
+      the building pass in his drawer are all untouched.
+    - >
+      NOT a role. A role is a BUNDLE of entitlements maintained by somebody else. Roles are how
+      access is granted efficiently and are the reason nobody can answer what an individual can
+      actually do — the entitlement is the unit of risk, the role is the unit of convenience.
+    - >
+      NOT a policy. `admin.obj.core.policy` states the rule ("access is granted on least
+      privilege, reviewed quarterly"). This object is one instance the rule is supposed to govern,
+      and the gap between the two is the whole of access administration.
+    - >
+      NOT an approval. `admin.obj.core.approval` is the one-time decision that let the grant
+      happen. This object is what that decision left behind and what outlives it, usually by years.
+
+attributes:
+
+  - name: identity_and_scope
+    purpose: What the entitlement actually permits, and where.
+    type: composite
+    contains: [entitlement_ref, system_ref, permission_name, scope_description, access_type,
+               privilege_level, granted_via]
+
+  - name: holder
+    purpose: Who holds it, and whether that is a person at all.
+    type: composite
+    contains: [holder_ref, holder_known, identity_type, shared_account, holder_employment_state]
+
+  - name: grant
+    purpose: Why it exists, who authorised it, and whether it was ever meant to be permanent.
+    type: composite
+    contains: [granted_at, granted_by_ref, grant_reason, grant_reason_recorded, grant_ticket_ref,
+               approval_ref, tenure, expires_at]
+
+  - name: usage
+    purpose: Whether the entitlement is doing anything. The cheapest and least-collected signal here.
+    type: composite
+    contains: [last_used_at, days_since_last_use, ever_used, usage_evidence_available]
+
+  - name: review
+    purpose: When anybody last asked whether the reason still holds, and whether they looked.
+    type: composite
+    contains: [last_reviewed_at, reviewed_by_ref, review_outcome, next_review_due_at,
+               review_method, recertification_cycle_days, review_is_current]
+
+  - name: risk
+    purpose: What this entitlement could do in the wrong hands, and what it must not be held with.
+    type: composite
+    contains: [data_classification, blast_radius, sod_conflict, conflicting_entitlement_refs,
+               break_glass, mfa_required, privileged]
+
+  - name: lifecycle
+    purpose: The revocation half — the half that fails.
+    type: composite
+    contains: [state, revocation_due_at, revoked_at, revocation_method, revocation_evidenced,
+               orphaned]
+
+  - name: provenance
+    purpose: How we know this record is true, and when we last checked.
+    type: composite
+    contains: [source_of_truth, discovered_by, last_verified_at, verification_method]
+
+  - name: entitlement_ref
+    purpose: The system's own identifier for this grant, so the record can be reconciled back.
+    type: value
+    data_type: string
+    description: >
+      Frequently absent, because the grant was made in a UI that issues no identifier. An
+      entitlement with no system-side reference cannot be proven revoked — only asserted revoked.
+
+  - name: system_ref
+    purpose: The system, application or physical space the entitlement acts on.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      Includes physical space deliberately. A building pass is an access right with the same
+      lifecycle, the same leaver failure and, in most organisations, an even worse register.
+
+  - name: permission_name
+    purpose: The permission as the system names it, not as we would describe it.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      Recorded verbatim on purpose. Translating `db_owner` into "can edit data" at capture time is
+      how an entitlement gets reviewed as if it were smaller than it is.
+
+  - name: scope_description
+    purpose: What the permission reaches — which records, which tenant, which floor.
+    type: value
+    data_type: string
+    description: >
+      The same permission name over a sandbox and over production are different risks entirely, and
+      almost no register distinguishes them.
+
+  - name: access_type
+    purpose: The kind of thing being permitted.
+    type: value
+    data_type: enum
+    allowed_values: [read, write, approve, administer, physical, delegate, impersonate]
+    required: true
+    description: >
+      `approve` and `delegate` are separated from `write` because they are the two that create
+      segregation-of-duties exposure. `impersonate` is listed because it exists, is usually
+      undocumented, and defeats every attribution control the organisation believes it has.
+
+  - name: privilege_level
+    purpose: How far above ordinary user this sits.
+    type: value
+    data_type: enum
+    allowed_values: [standard, elevated, administrative, superuser]
+    default: standard
+
+  - name: privileged
+    purpose: Whether this falls inside the organisation's privileged-access regime.
+    type: derived
+    data_type: boolean
+    derived_from: [privilege_level, access_type, data_classification]
+    description: >
+      Derived rather than declared, because self-declared privilege registers are always shorter
+      than reality — the entitlements nobody thought to classify are the ones that matter.
+
+  - name: granted_via
+    purpose: The mechanism that produced the grant.
+    type: value
+    data_type: enum
+    allowed_values: [role, group_membership, direct_grant, inherited, self_service, unknown]
+    default: unknown
+    description: >
+      `direct_grant` is the one to watch. It is what people use when the role model does not fit,
+      it bypasses whatever review the role gets, and it is invisible in any report built by role.
+
+  - name: holder_ref
+    purpose: The individual who holds it.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.employee_record
+    description: >
+      A team is not a holder. If the answer to "who do I revoke" is a group, the entitlement is
+      already effectively unrevocable.
+
+  - name: holder_known
+    purpose: Whether a named individual can be produced for this grant.
+    type: derived
+    data_type: boolean
+    derived_from: [holder_ref, identity_type, shared_account]
+
+  - name: identity_type
+    purpose: What kind of identity holds it.
+    type: value
+    data_type: enum
+    allowed_values: [employee, contractor, service_account, shared_account, vendor, system, unknown]
+    default: unknown
+    description: >
+      Contractors and vendors carry the leaver risk without the HR trigger that catches employees.
+      Service accounts carry it without any human noticing at all.
+
+  - name: shared_account
+    purpose: Whether the credential is known to more than one person.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      A shared account destroys attribution: every action it takes is unassignable, and it cannot
+      be revoked on a leaver without breaking whatever else depends on it. It is almost always
+      created for a good short-term reason and never retired.
+
+  - name: holder_employment_state
+    purpose: Whether the holder is still with the organisation.
+    type: derived
+    data_type: enum
+    allowed_values: [active, on_leave, notice_period, departed, unknown]
+    derived_from: [holder_ref]
+
+  - name: granted_at
+    purpose: When the grant was made.
+    type: value
+    data_type: timestamp
+
+  - name: granted_by_ref
+    purpose: Who authorised it.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approver
+
+  - name: grant_reason
+    purpose: The business reason the entitlement exists.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      "Joiner", "same as Priya" and "requested" are not reasons — they are the absence of one, and
+      they are what the field contains in practice. A usable reason names the work that cannot be
+      done without it, because that is the thing a reviewer can later test.
+
+  - name: grant_reason_recorded
+    purpose: Whether a testable reason exists at all.
+    type: derived
+    data_type: boolean
+    derived_from: [grant_reason, grant_ticket_ref, approval_ref]
+
+  - name: grant_ticket_ref
+    purpose: The request this grant answered.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.request
+
+  - name: approval_ref
+    purpose: The approval that authorised it.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approval
+
+  - name: tenure
+    purpose: Whether the grant was meant to end.
+    type: value
+    data_type: enum
+    allowed_values: [permanent, fixed_term, just_in_time, break_glass, unknown]
+    default: permanent
+    description: >
+      `permanent` is the default in every system and is almost never the truth. Just-in-time access
+      is the single largest available reduction in standing entitlement count, and it is unpopular
+      because it moves cost from the invisible column to the visible one.
+
+  - name: expires_at
+    purpose: When it lapses without anyone acting.
+    type: value
+    data_type: timestamp
+    description: >
+      Null on the overwhelming majority of grants. A null here is the mechanical reason entitlement
+      counts only rise.
+
+  - name: last_used_at
+    purpose: The last time the entitlement was actually exercised.
+    type: value
+    data_type: timestamp
+    source_paths: []
+    description: >
+      The highest-value field on this object and the one least often collected. An entitlement
+      unused for ninety days is removable with near-certainty and no argument, which makes this the
+      only route to reducing access without a negotiation.
+
+  - name: days_since_last_use
+    purpose: Dormancy, as a number a queue can sort on.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [last_used_at]
+
+  - name: ever_used
+    purpose: Whether it has been exercised even once since it was granted.
+    type: derived
+    data_type: boolean
+    derived_from: [last_used_at, granted_at]
+    description: >
+      Never-used grants are the cleanest possible removals and typically a double-digit share of any
+      real entitlement set — provisioned from a template, for a job the person never actually did.
+
+  - name: usage_evidence_available
+    purpose: Whether the system can tell us about use at all.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Distinguishes "unused" from "unobservable". Treating an unobservable entitlement as dormant is
+      how a quarterly job silently revokes the disaster-recovery access nobody exercises until the day
+      they need it.
+
+  - name: last_reviewed_at
+    purpose: When somebody last confirmed the reason still holds.
+    type: value
+    data_type: timestamp
+
+  - name: reviewed_by_ref
+    purpose: Who confirmed it.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approver
+
+  - name: review_outcome
+    purpose: What the review concluded.
+    type: value
+    data_type: enum
+    allowed_values: [retained, reduced, revoked, deferred, not_reviewed]
+    default: not_reviewed
+
+  - name: next_review_due_at
+    purpose: When it must be looked at again.
+    type: value
+    data_type: timestamp
+
+  - name: review_method
+    purpose: How the review was carried out.
+    type: value
+    data_type: enum
+    allowed_values: [line_manager_attestation, system_owner_review, risk_based_sample,
+                     automated_dormancy, none]
+    default: none
+    description: >
+      Method predicts outcome almost perfectly. Line-manager attestation over a long list produces
+      near-total retention; risk-based sampling and automated dormancy produce actual removals.
+
+  - name: recertification_cycle_days
+    purpose: The required interval between reviews.
+    type: value
+    data_type: integer
+    unit: days
+
+  - name: review_is_current
+    purpose: Whether the review obligation is being met right now.
+    type: derived
+    data_type: boolean
+    derived_from: [last_reviewed_at, recertification_cycle_days, next_review_due_at]
+
+  - name: data_classification
+    purpose: The sensitivity of what the entitlement can reach.
+    type: value
+    data_type: enum
+    allowed_values: [public, internal, confidential, personal, special_category]
+    default: internal
+    sensitivity: internal
+    description: >
+      `special_category` is the GDPR Article 9 class — health, biometrics, union membership. It is
+      not a stronger flavour of `personal`; it carries a separate lawful-basis test, and an
+      entitlement reaching it should never be granted by a role template.
+
+  - name: blast_radius
+    purpose: What this could do if the identity were hostile or compromised.
+    type: value
+    data_type: enum
+    allowed_values: [single_record, team_scope, department_scope, organisation_scope, external_impact]
+    description: >
+      Deliberately expressed as reach rather than as a risk score. "Could read every employee's
+      salary" survives a conversation with a system owner; "risk 7.4" does not.
+
+  - name: sod_conflict
+    purpose: Whether holding this alongside something else the identity holds breaks a duty split.
+    type: derived
+    data_type: boolean
+    derived_from: [conflicting_entitlement_refs, access_type]
+    description: >
+      The classic administrative pair: the identity that can raise a purchase order and also release
+      the payment. Neither entitlement is wrong; the combination is, and no per-entitlement review
+      can ever see it.
+
+  - name: conflicting_entitlement_refs
+    purpose: The entitlements this one must not be held together with.
+    type: reference
+    data_type: list
+    ref: admin.obj.core.access_right
+
+  - name: break_glass
+    purpose: Whether this is emergency access meant to be held only during an incident.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Break-glass access that is never withdrawn after the incident is standing administrative
+      access wearing an exception's name, and it reviews as if it were temporary.
+
+  - name: mfa_required
+    purpose: Whether strong authentication is mandated for this entitlement.
+    type: value
+    data_type: boolean
+
+  - name: state
+    purpose: Where the grant is in its life.
+    type: value
+    data_type: enum
+    allowed_values: [requested, pending_approval, active, on_hold, overdue, revoked, expired, orphaned]
+    default: requested
+
+  - name: revocation_due_at
+    purpose: When removal became or becomes obligatory.
+    type: derived
+    data_type: timestamp
+    derived_from: [expires_at, holder_employment_state, tenure]
+
+  - name: revoked_at
+    purpose: When removal was actually carried out.
+    type: value
+    data_type: timestamp
+
+  - name: revocation_method
+    purpose: How it was removed.
+    type: value
+    data_type: enum
+    allowed_values: [automated, manual, account_disabled, group_removed, not_revoked]
+    default: not_revoked
+    description: >
+      `account_disabled` is recorded separately because it is routinely offered as revocation and is
+      not. Federated SaaS seats, API tokens, physical passes and shared credentials all survive it.
+
+  - name: revocation_evidenced
+    purpose: Whether removal can be proven rather than asserted.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: orphaned
+    purpose: Whether the entitlement has no resolvable owner.
+    type: derived
+    data_type: boolean
+    derived_from: [holder_ref, holder_known, holder_employment_state]
+
+  - name: source_of_truth
+    purpose: Which system's answer we treat as authoritative for this row.
+    type: value
+    data_type: enum
+    allowed_values: [target_system, iam_platform, hris, spreadsheet, ticket_history, unknown]
+    default: unknown
+    description: >
+      When the register and the target system disagree, the target system is right by definition —
+      it is the thing that will actually let the person in.
+
+  - name: discovered_by
+    purpose: How this grant came to be known.
+    type: value
+    data_type: enum
+    allowed_values: [provisioning_record, system_export, access_review, incident, audit_finding]
+    description: >
+      Anything discovered by `incident` or `audit_finding` was, until that moment, access the
+      organisation held and could not have told you about.
+
+  - name: last_verified_at
+    purpose: When the record was last checked against the target system.
+    type: value
+    data_type: timestamp
+
+  - name: verification_method
+    purpose: How that check was done.
+    type: value
+    data_type: enum
+    allowed_values: [system_export_reconciliation, manual_spot_check, holder_attestation, none]
+    default: none
+
+states:
+  initial: requested
+  terminal: [revoked, expired]
+  values:
+    - name: requested
+      description: Asked for, not yet authorised.
+    - name: pending_approval
+      description: With an approver. The clock is running and a named person owes an answer.
+      implies: Somebody is blocked from doing their job, and the delay is attributable.
+    - name: active
+      description: In force. The steady state, and the one nothing ever leaves without being pushed.
+      implies: A review obligation and a future revocation obligation now both exist.
+    - name: on_hold
+      description: >
+        Suspended without being removed — long-term leave, secondment, suspension. Distinct from
+        revoked because the reason is expected to return.
+    - name: overdue
+      description: >
+        Past the point at which it should have been reviewed or removed. The state most real
+        entitlements are in, and the one no system reports.
+      implies: The organisation is out of compliance with its own policy and does not know it.
+    - name: orphaned
+      description: >
+        No resolvable owner — the holder left, the service account's creator left, or the record
+        never had one.
+      entered_when:
+        - has_obs: champion_change
+      implies: >
+        Cannot be reviewed, because there is nobody to ask; cannot be safely revoked, because
+        nobody knows what depends on it. This is the terminal failure of access administration
+        and it is reached by inaction alone.
+    - name: revoked
+      description: Removed, with evidence.
+    - name: expired
+      description: Lapsed on its own clock. Rare, because `expires_at` is usually null.
+  transitions:
+    - {from: requested, to: pending_approval}
+    - {from: pending_approval, to: active}
+    - {from: active, to: on_hold}
+    - {from: on_hold, to: active}
+    - {from: active, to: overdue}
+    - {from: overdue, to: active}
+    - {from: active, to: orphaned, when: [{has_obs: champion_change}]}
+    - {from: overdue, to: orphaned, when: [{has_obs: champion_change}]}
+    - {from: active, to: revoked}
+    - {from: overdue, to: revoked}
+    - {from: orphaned, to: revoked}
+    - {from: active, to: expired}
+
+relationships:
+
+  - type: issued_to
+    target: admin.obj.core.employee_record
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 3000
+    confidence_bp: 8500
+    priority: 1
+    evidence: [hris, access_log, register]
+    description: >
+      The accountability edge. `zero_or_one` deliberately: a service account has no holder, and the
+      moment this edge is absent on an entitlement that should have one, the grant is orphaned and
+      nothing in the pipeline currently notices.
+
+  - type: requires
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1500
+    confidence_bp: 7500
+    priority: 2
+    evidence: [portal, ticket, email]
+    description: >
+      The one-time authorisation. Its absence on a privileged entitlement is the finding an auditor
+      opens with, because it means the grant cannot be attributed to a decision anyone made.
+
+  - type: governed_by
+    target: admin.obj.core.policy
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1200
+    confidence_bp: 8000
+    priority: 3
+    evidence: [document, portal]
+    description: >
+      Least privilege, joiner-mover-leaver and the recertification cycle all reach this object
+      through here. A policy with no reachable entitlements is a policy nobody is enforcing.
+
+  - type: covers
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1200
+    confidence_bp: 6000
+    priority: 4
+    conditions:
+      - {path: thread.ball_in_court, op: "!=", value: nobody}
+    evidence: [access_log, register]
+    description: >
+      What the entitlement can actually reach. This is the edge Rule 10 runs on — an insight derived
+      from a record can never reach a wider audience than the entitlement over that record permits.
+
+  - type: references
+    target: admin.obj.core.compliance_obligation
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1000
+    confidence_bp: 7000
+    priority: 5
+    evidence: [regulator, document]
+    description: >
+      The external duty that makes review mandatory rather than good practice — ISO 27001 A.5.18,
+      SOX ITGC access controls, GDPR Article 32.
+
+  - type: blocks
+    target: admin.obj.core.access_right
+    direction: bidirectional
+    cardinality: zero_or_many
+    weight_bp: 1000
+    confidence_bp: 6500
+    priority: 6
+    description: >
+      The segregation-of-duties edge, self-referential and deliberately bidirectional: neither
+      entitlement in a toxic pair is the offender. Only per-identity traversal of this edge can find
+      the conflict, which is why per-entitlement review never does.
+
+  - type: requires
+    target: admin.obj.core.sop
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 500
+    confidence_bp: 6000
+    priority: 7
+    description: The joiner-mover-leaver procedure this grant is supposed to be created and destroyed by.
+
+  - type: escalates_to
+    target: admin.obj.core.escalation
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 400
+    confidence_bp: 6000
+    priority: 8
+    description: Where an unrevoked leaver entitlement goes when the owning team does not act.
+
+  - type: evidences
+    target: admin.obj.core.audit_evidence
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 200
+    confidence_bp: 5500
+    priority: 9
+    description: >
+      Recertification records and revocation proofs. The artefact an auditor asks for, and the one
+      that is reconstructed after the request rather than kept.
+
+inference_patterns:
+
+  deterministic:
+
+    - id: acr.holder_role_changed
+      statement: "The holder's role changed — every entitlement they hold is now unverified."
+      status: executable
+      when:
+        - {has_obs: champion_change}
+      yields: {confidence_bp: 8000, attribute: review_is_current, value: false}
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        The observation fires on any detected role or ownership change, including a counterparty's.
+        On an internal identity it is exactly right; on an external one it is noise.
+      note: >
+        The MOVER case, and the only one of joiner-mover-leaver the shipped substrate can see at all.
+        It matters most because it is the one that goes wrong: joiners are provisioned because
+        somebody is waiting, leavers are deprovisioned because HR raises a ticket, and movers simply
+        accumulate — they gain the new access and keep the old, forever.
+
+    - id: acr.revocation_promised_and_overdue
+      statement: "A revocation was promised in writing and the promised date has passed."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 8500, attribute: state, value: overdue}
+      evidence_fields: [commitment.due_at, commitment.action]
+      false_positive: >
+        The revocation was carried out and nobody closed the commitment. Removals are recorded in an
+        IAM console or a ticket, never as a typed event, so the closing half of the cycle is
+        invisible and this will keep firing on entitlements already gone.
+      note: >
+        The only genuinely administrative clock the current substrate provides for this object. It
+        sees only revocations promised in prose, which excludes every one driven by a leaver date —
+        that is to say, almost all of them.
+
+    - id: acr.access_review_underway
+      statement: "A security review has been opened against this identity or system."
+      status: executable
+      when:
+        - {has_obs: security_review_started}
+      yields: {confidence_bp: 7000, attribute: review_outcome, value: deferred}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Repurposed from a vendor-security signal, and honest about it: it tells us a review is in
+        flight, not what it found. Enough to suppress a duplicate nudge, not enough to close the row.
+
+  heuristic:
+
+    - id: acr.revocation_chase_unanswered
+      statement: "A revocation request has sat with the owning team well past their normal reply pace."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: them}
+        - {fn: days_since, path: thread.last_inbound, op: ">=",
+           value: {baseline: reply_cadence, mult: 3, floor: 7}}
+      yields: {confidence_bp: 7000, attribute: state, value: overdue, corroborates: [acr.revocation_promised_and_overdue]}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        Leave, or a system owner who has themselves left. The second case is the dangerous one — the
+        chase is going into a mailbox nobody will open, and the silence is indistinguishable from
+        being ignored.
+      note: >
+        Baseline-relative rather than absolute. A platform team that answers within the hour and an
+        outsourced service desk on a weekly cycle are not equally worrying at day four.
+
+    - id: acr.densely_connected_identity
+      statement: "This entitlement sits on an identity connected to an unusual number of objects."
+      status: executable
+      when:
+        - {fn: edge_count, op: ">=", value: 8}
+      yields: {confidence_bp: 5500, attribute: privileged, value: true}
+      note: >
+        Deliberately weak at 5500. Graph degree is a poor proxy for privilege — it finds the busy as
+        readily as the powerful — but it is the only privilege signal available today, and it is
+        right often enough to be worth surfacing for a human to dismiss.
+
+    - id: acr.dormant_entitlement
+      statement: "Not exercised in ninety days while usage logging is available."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: state, value: overdue}
+      requires_signals:
+        - {kind: fact_path, name: access.last_used_at, owner_layer: L1,
+           note: "The single highest-value signal this object generates. Present in every IAM platform and most SaaS admin APIs, read by nobody. It converts access reduction from a negotiation into an observation, because a ninety-day dormant entitlement is removable without an argument."}
+        - {kind: fact_path, name: access.granted_at, owner_layer: L1,
+           note: "Needed to separate never-used from not-recently-used. The two are different conversations."}
+
+    - id: acr.leaver_still_entitled
+      statement: "The holder's employment has ended and the entitlement is still in force."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: state, value: orphaned}
+      requires_signals:
+        - {kind: obs_kind, name: leaver_confirmed, owner_layer: L2,
+           note: "Reaches HR weeks before it reaches anyone who can revoke. Shared with employee_record and asset — one event, three objects, and the highest-consequence gap in the Admin brain."}
+        - {kind: fact_path, name: employee.end_at, owner_layer: L1}
+
+    - id: acr.review_overdue
+      statement: "Past its recertification interval with no review recorded."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: review_is_current, value: false}
+      requires_signals:
+        - {kind: fact_path, name: access.reviewed_at, owner_layer: L1}
+        - {kind: obs_kind, name: access_granted, owner_layer: L2,
+           note: "Without a grant event there is no clock to start the interval from."}
+
+    - id: acr.no_recorded_reason
+      statement: "No grant reason, ticket or approval can be produced for a live entitlement."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: grant_reason_recorded, value: false}
+      requires_signals:
+        - {kind: fact_path, name: approval.state, owner_layer: L1}
+        - {kind: derived, name: derived.grant_provenance_completeness, owner_layer: L2,
+           note: "Cheap to compute once grants and approvals are joined, and it is the field that decides whether a recertification campaign can do anything at all."}
+
+    - id: acr.segregation_of_duties_breach
+      statement: "The identity holds two entitlements a duty split says it must not hold together."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: sod_conflict, value: true}
+      requires_signals:
+        - {kind: derived, name: derived.entitlement_set_by_identity, owner_layer: L2,
+           note: "The conflict is a property of the SET, never of a member. No per-entitlement review can find it, which is why every organisation that reviews access quarterly still fails an SoD test."}
+        - {kind: fact_path, name: sod.conflict_pairs, owner_layer: L1,
+           note: "The toxic-combination matrix. Usually exists as a spreadsheet held by internal audit and is never connected to anything."}
+
+    - id: acr.orphaned_service_account
+      statement: "A non-human identity whose creator has left and whose purpose nobody records."
+      status: needs_signal
+      yields: {confidence_bp: 8800, attribute: orphaned, value: true}
+      requires_signals:
+        - {kind: fact_path, name: access.granted_at, owner_layer: L1}
+        - {kind: derived, name: derived.identity_owner_resolvable, owner_layer: L2,
+           note: "Service accounts fail every control designed for people: no leaver event, no manager to attest, no mailbox to chase. They are the entitlements most likely to be both over-privileged and unowned."}
+
+    - id: acr.break_glass_never_withdrawn
+      statement: "Emergency access granted during an incident and still in force after it closed."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: state, value: overdue}
+      requires_signals:
+        - {kind: obs_kind, name: access_granted, owner_layer: L2}
+        - {kind: fact_path, name: access.granted_at, owner_layer: L1}
+        - {kind: derived, name: derived.incident_window, owner_layer: L2,
+           note: "Break-glass is granted under pressure, correctly, and withdrawn under no pressure at all — which is to say, not withdrawn. The withdrawal has no owner because the incident that justified it is closed."}
+
+    - id: acr.physical_pass_outlives_account
+      statement: "A building pass still active after the corporate account was disabled."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: state, value: orphaned}
+      requires_signals:
+        - {kind: obs_kind, name: access_revoked, owner_layer: L2}
+        - {kind: fact_path, name: access.last_used_at, owner_layer: L1,
+           note: "Physical access sits in a separate system owned by facilities, and the leaver process that disables the account almost never reaches it. The pass in the drawer is the most common unrevoked entitlement in any organisation with an office."}
+
+inputs:
+  - source: portal
+    signal: the IAM platform's entitlement export — holder, permission, grant date, group membership
+    fills: [entitlement_ref, system_ref, permission_name, holder_ref, granted_at, granted_via]
+    reliability_bp: 8500
+    description: >
+      Authoritative where it exists and blind to everything federated or granted in a product's own
+      admin UI, which in most organisations is the majority of the estate.
+  - source: access_log
+    signal: whether the entitlement has actually been exercised, and when
+    fills: [last_used_at, ever_used, usage_evidence_available]
+    reliability_bp: 9000
+    description: >
+      The most valuable input on this object. Present almost everywhere, collected almost nowhere.
+  - source: hris
+    signal: employment state, start and end dates, manager, role changes
+    fills: [holder_employment_state, identity_type]
+    reliability_bp: 9000
+    description: >
+      Knows about a leaver weeks before anyone who can revoke does. The joiner-mover-leaver trigger
+      lives here and does not currently travel.
+  - source: ticket
+    signal: the request and the stated business reason
+    fills: [grant_ticket_ref, grant_reason]
+    reliability_bp: 6000
+    description: >
+      Reasons here are usually "as per Priya" or "joiner". Present, and rarely testable.
+  - source: signed_form
+    signal: acceptable-use and privileged-access acknowledgements
+    fills: [approval_ref]
+    reliability_bp: 9500
+  - source: register
+    signal: the physical access register — passes, keys, floors
+    fills: [system_ref, scope_description]
+    reliability_bp: 5000
+    description: >
+      Almost always a separate spreadsheet owned by facilities, disconnected from every identity system.
+  - source: regulator
+    signal: the review obligation and its required interval
+    fills: [recertification_cycle_days]
+    reliability_bp: 9500
+  - source: attestation
+    signal: the outcome of a recertification campaign
+    fills: [last_reviewed_at, reviewed_by_ref, review_outcome, review_method]
+    reliability_bp: 6500
+    description: >
+      Weak on purpose. An attestation records that someone clicked approve, not that they looked, and
+      the retention rate of a long list is close to a hundred per cent regardless of its contents.
+  - source: derived
+    signal: dormancy, orphan status and duty-split conflict computed across the identity's set
+    fills: [days_since_last_use, orphaned, sod_conflict, privileged]
+    reliability_bp: 6000
+
+outputs:
+  - name: removal_confidence_bp
+    type: integer
+    derived_from: [days_since_last_use, ever_used, grant_reason_recorded, holder_employment_state]
+    description: >
+      How safely this entitlement could be removed today. The number that turns access reduction
+      from a negotiation into a queue.
+    consumed_by: [L4.reasoning_unit, L4.decision_maker]
+  - name: exposure_bp
+    type: integer
+    derived_from: [blast_radius, data_classification, privilege_level, mfa_required]
+    description: What is at stake if this identity is compromised.
+    consumed_by: [L4.reasoning_unit]
+  - name: review_debt_days
+    type: integer
+    derived_from: [last_reviewed_at, recertification_cycle_days]
+    description: How far past its own review obligation the organisation is on this row.
+    consumed_by: [L4.reasoning_unit, L6.learning_unit]
+  - name: revocation_path
+    type: list
+    derived_from: [system_ref, granted_via, source_of_truth]
+    description: >
+      The ordered steps that would actually remove it — which is not "disable the account" for
+      anything federated, physical or shared.
+    consumed_by: [L5.execution_planning]
+  - name: sod_conflict_set
+    type: list
+    derived_from: [conflicting_entitlement_refs, sod_conflict]
+    consumed_by: [L4.reasoning_unit, L4.decision_maker]
+  - name: notification_target
+    type: string
+    derived_from: [holder_ref, granted_by_ref, source_of_truth]
+    description: Who should actually be told, which is the system owner far more often than the holder.
+    consumed_by: ["L5.2.channel_planner"]
+  - name: orphan_flag
+    type: boolean
+    derived_from: [orphaned, holder_known]
+    consumed_by: [L4.reasoning_unit, L6.learning_unit]
+
+events:
+  - id: acr.granted
+    name: Access Granted
+    severity: notable
+    payload: [entitlement_ref, holder_ref, granted_by_ref, grant_reason, privilege_level]
+  - id: acr.holder_moved
+    name: Holder Changed Role
+    emitted_when: [{has_obs: champion_change}]
+    severity: critical
+    payload: [holder_ref, entitlement_ref, review_is_current]
+    invalidates: [last_reviewed_at, review_outcome, grant_reason]
+    description: >
+      The mover event. Every entitlement the identity holds becomes unverified at once, and nothing
+      downstream currently learns about it.
+  - id: acr.leaver_detected
+    name: Holder Left
+    severity: critical
+    payload: [holder_ref, entitlement_ref, revocation_due_at]
+    invalidates: [holder_employment_state]
+  - id: acr.review_completed
+    name: Access Review Completed
+    severity: info
+    payload: [last_reviewed_at, reviewed_by_ref, review_outcome, review_method]
+  - id: acr.revoked
+    name: Access Revoked
+    severity: notable
+    payload: [revoked_at, revocation_method, revocation_evidenced]
+  - id: acr.became_orphaned
+    name: Entitlement Orphaned
+    emitted_when: [{has_obs: champion_change}]
+    severity: critical
+    payload: [entitlement_ref, system_ref, privilege_level, blast_radius]
+  - id: acr.sod_conflict_detected
+    name: Duty Split Breached
+    severity: critical
+    payload: [conflicting_entitlement_refs, holder_ref, access_type]
+  - id: acr.break_glass_opened
+    name: Emergency Access Opened
+    severity: notable
+    payload: [entitlement_ref, holder_ref, granted_at, revocation_due_at]
+
+actions:
+  - id: acr.grant
+    name: Grant the entitlement
+    actor: human
+    cost: low
+    reversible: true
+    effect: >
+      Create the grant with a testable reason and a tenure. A grant recorded without both is a grant
+      that can never be reviewed.
+  - id: acr.revoke
+    name: Revoke the entitlement
+    actor: human
+    cost: low
+    reversible: true
+    effect: Remove it at the target system and capture evidence, not merely a ticket closure.
+  - id: acr.reduce
+    name: Reduce the entitlement
+    actor: human
+    cost: moderate
+    reversible: true
+    effect: >
+      Replace an over-broad grant with a narrower one. Almost always the right outcome of a review
+      and almost never the one recorded, because retain and revoke are the only buttons offered.
+  - id: acr.recertify
+    name: Recertify
+    actor: human
+    cost: moderate
+    reversible: false
+    effect: >
+      Confirm the reason still holds. Irreversible in the sense that matters — the attestation
+      becomes the evidence, and a careless one is worse than none because it stops the clock.
+  - id: acr.request_owner
+    name: Find an owner for an orphaned entitlement
+    actor: human
+    cost: high
+    reversible: true
+    effect: >
+      The only route out of `orphaned`, and expensive precisely because the cheap route — asking the
+      person who created it — is gone.
+  - id: acr.convert_to_jit
+    name: Convert standing access to just-in-time
+    actor: human
+    cost: high
+    reversible: true
+    effect: >
+      The largest available reduction in standing entitlement count. Unpopular because it moves cost
+      from a column nobody measures into one everybody feels.
+  - id: acr.escalate_unrevoked_leaver
+    name: Escalate an unrevoked leaver entitlement
+    actor: human
+    cost: low
+    reversible: true
+  - id: acr.dormancy_sweep
+    name: Sweep dormant entitlements
+    actor: system
+    cost: trivial
+    reversible: true
+    effect: >
+      Propose removal of everything unused past the threshold WHERE usage is observable. Running it
+      over unobservable entitlements is how disaster-recovery access gets revoked the quarter before
+      it is needed.
+  - id: acr.close_break_glass
+    name: Withdraw emergency access
+    actor: human
+    cost: trivial
+    reversible: true
+  - id: acr.verify_against_system
+    name: Reconcile the record against the target system
+    actor: agent
+    cost: low
+    reversible: true
+    effect: When the register and the system disagree, the system is right and the register is updated.
+
+preconditions:
+  - id: acr.reason_before_grant
+    statement: A testable business reason exists before the entitlement is created.
+    requires: [grant_reason, grant_ticket_ref]
+    if_unmet: >
+      Block the grant. This is the cheapest control in the whole domain and the one most often
+      skipped: a reason costs thirty seconds at grant time and is unrecoverable afterwards, because
+      the only people who knew it have moved on.
+  - id: acr.named_individual_holder
+    statement: A named individual holds the entitlement, or the identity is explicitly registered as non-human with an owner.
+    requires: [holder_ref, identity_type]
+    if_unmet: Route to the system owner. An entitlement with no accountable party cannot be reviewed or safely revoked.
+  - id: acr.approval_before_privileged_grant
+    statement: Privileged and administrative entitlements carry a recorded approval before they take effect.
+    requires: [approval_ref, privilege_level]
+    if_unmet: Block. This is the specific control every access-related audit tests first.
+  - id: acr.tenure_declared
+    statement: Every grant declares whether it is permanent, fixed-term, just-in-time or break-glass.
+    requires: [tenure]
+    if_unmet: >
+      Default to fixed_term with a short expiry rather than to permanent. Defaulting to permanent is
+      the mechanical reason entitlement counts only ever rise.
+  - id: acr.classification_known
+    statement: The sensitivity of what the entitlement reaches is recorded before it is granted.
+    requires: [data_classification]
+    if_unmet: >
+      Treat as confidential and require review. Rule 10 cannot be enforced downstream on an
+      entitlement whose reach is unclassified.
+  - id: acr.revocation_path_known
+    statement: How this entitlement would be removed is known at the moment it is granted.
+    requires: [system_ref, source_of_truth, granted_via]
+    if_unmet: >
+      Flag the grant. An entitlement nobody knows how to remove is a permanent one however it is
+      labelled, and the discovery is always made on a leaver's last day.
+
+constraints:
+  - id: acr.no_sod_pair
+    statement: An identity may not hold two entitlements a duty split forbids together.
+    hard: true
+    why: >
+      The pairing, not the entitlement, is the control failure. It is invisible to per-entitlement
+      review and is the standard test in any financial controls audit.
+  - id: acr.no_shared_privileged_credential
+    statement: A privileged entitlement may not be held by a shared account.
+    hard: true
+    why: Attribution is impossible and revocation breaks unknown dependents. Both are unacceptable at privilege.
+  - id: acr.special_category_needs_named_basis
+    statement: An entitlement reaching special-category personal data requires a recorded lawful basis and a named individual holder.
+    hard: true
+    why: GDPR Article 9 imposes a separate test from ordinary personal data. A role template cannot satisfy it.
+  - id: acr.break_glass_time_bounded
+    statement: Break-glass access carries a mandatory expiry set at the moment it is granted.
+    hard: true
+    why: It is granted under pressure and withdrawn under none. Only a pre-set clock closes it.
+  - id: acr.no_revocation_without_evidence
+    statement: An entitlement may not be recorded as revoked without evidence from the target system.
+    hard: true
+    why: "'Account disabled' is asserted revocation. Federated seats, tokens, shared credentials and physical passes all survive it."
+  - id: acr.review_by_someone_who_can_judge
+    statement: Recertification is performed by someone who knows what the holder does, not by whoever owns the system.
+    hard: false
+    why: >
+      System owners can see the permission and not the job; line managers can see the job and not the
+      permission. Assigning review to the wrong one produces attestation without judgement.
+  - id: acr.no_dormancy_sweep_without_usage_data
+    statement: Automated dormancy removal runs only where usage logging is available.
+    hard: true
+    why: Unobservable is not unused. Sweeping it revokes exactly the access that exists for rare events.
+
+business_rules:
+  - id: acr.privileged_requires_mfa
+    statement: A privileged or administrative entitlement requires enrolled strong authentication.
+    then: block_activation
+    severity: blocking
+  - id: acr.leaver_revocation_is_immediate
+    statement: On confirmed departure every entitlement held by that identity moves to overdue at once, not at the next review.
+    when: [{has_obs: champion_change}]
+    then: mark_overdue
+    severity: blocking
+  - id: acr.mover_invalidates_review
+    statement: A role change invalidates every prior recertification for that identity.
+    when: [{has_obs: champion_change}]
+    then: invalidate_review
+    severity: blocking
+  - id: acr.no_permanent_contractor_access
+    statement: Contractor and vendor entitlements are fixed-term and expire with the engagement.
+    then: require_expiry
+    severity: blocking
+  - id: acr.direct_grant_needs_justification
+    statement: A direct grant outside the role model carries a written justification and a shorter review interval.
+    then: require_justification
+    severity: warning
+  - id: acr.orphan_cannot_be_recertified
+    statement: An orphaned entitlement cannot be recertified; it must be owned or removed.
+    then: block_recertification
+    severity: blocking
+  - id: acr.never_used_after_ninety_days_is_removable
+    statement: An entitlement never exercised within ninety days of grant is proposed for removal by default.
+    then: propose_removal
+    severity: advisory
+  - id: acr.account_disable_is_not_revocation
+    statement: Disabling the account does not close the revocation obligation for federated, physical or shared entitlements.
+    then: keep_open
+    severity: blocking
+
+decision_factors:
+  - name: grant_reason_integrity
+    weight_bp: 2500
+    direction: increases
+    description: >
+      Whether a testable reason exists and still holds. Ranked first because every other judgement
+      collapses without it — an entitlement with no reason cannot be reviewed, only re-approved.
+    reads: [grant_reason, grant_reason_recorded, grant_ticket_ref, approval_ref]
+  - name: usage_evidence
+    weight_bp: 2000
+    direction: context
+    description: >
+      Context rather than increases, because absence of use argues for removal and absence of
+      LOGGING argues for nothing at all. Collapsing the two is the most expensive available mistake
+      on this object.
+    reads: [last_used_at, days_since_last_use, ever_used, usage_evidence_available]
+  - name: blast_radius
+    weight_bp: 2000
+    direction: decreases
+    description: What is reachable if this identity is compromised. Expressed as reach, not as a score.
+    reads: [blast_radius, data_classification, privilege_level, access_type]
+  - name: review_currency
+    weight_bp: 1500
+    direction: increases
+    description: >
+      Whether the review obligation is being met, weighted by method — an automated dormancy check is
+      worth more than a line manager attesting to a list of four hundred rows.
+    reads: [last_reviewed_at, review_is_current, review_method, recertification_cycle_days]
+  - name: duty_split_exposure
+    weight_bp: 1200
+    direction: decreases
+    description: Whether the identity's entitlement SET breaks a separation of duties.
+    reads: [sod_conflict, conflicting_entitlement_refs, access_type]
+  - name: holder_status
+    weight_bp: 800
+    direction: context
+    description: >
+      Context because a departed holder is urgent, a mover is urgent for a different reason, and an
+      active holder is not urgent at all — one field, three opposite conclusions.
+    reads: [holder_employment_state, identity_type, orphaned, shared_account]
+
+evidence:
+  - source: access_log
+    strength_bp: 10000
+    independent_of: [attestation, ticket, derived]
+    decays: false
+    description: >
+      The target system's own record of what was exercised and when. Nothing outranks it, because it
+      is the only source that observes behaviour rather than intent.
+  - source: portal
+    strength_bp: 9000
+    independent_of: [hris, signed_form]
+    decays: true
+    description: The IAM platform export. Strong, and blind to everything federated or granted in a product's own admin UI.
+  - source: signed_form
+    strength_bp: 9000
+    independent_of: [portal, access_log]
+    decays: false
+    description: A privileged-access acknowledgement or acceptable-use form. Survives a dispute.
+  - source: hris
+    strength_bp: 8500
+    independent_of: [portal, access_log]
+    decays: false
+    description: Employment state. Authoritative for the leaver and mover triggers and for nothing else here.
+  - source: regulator
+    strength_bp: 9500
+    independent_of: [portal, hris]
+    decays: false
+    description: The review obligation and its interval.
+  - source: register
+    strength_bp: 5000
+    independent_of: [portal]
+    decays: true
+    description: The physical access register. Usually a spreadsheet, usually stale, usually the only record of the pass in someone's drawer.
+  - source: attestation
+    strength_bp: 4500
+    independent_of: [access_log]
+    decays: true
+    description: >
+      Deliberately ranked below the physical register. An attestation records a click, not a
+      judgement, and a campaign that retains ninety-eight per cent of what it sees has produced
+      almost no evidence about any individual row.
+  - source: ticket
+    strength_bp: 5500
+    independent_of: [portal, access_log]
+    decays: true
+    description: The request and its stated reason. Present far more often than it is testable.
+  - source: derived
+    strength_bp: 4000
+    independent_of: []
+    decays: true
+    description: Dormancy, orphan status and duty-split conflict computed across the set. Corroborating only.
+
+metrics:
+  - name: orphaned_entitlement_share
+    unit: percent
+    direction: lower_is_better
+    owner_layer: L6
+    description: Share of live entitlements with no resolvable owner. The headline number, and one almost nobody can produce.
+    calibrates: [acr.leaver_still_entitled, acr.orphaned_service_account]
+  - name: leaver_revocation_lag
+    unit: hours
+    direction: lower_is_better
+    owner_layer: L6
+    description: >
+      Hours from confirmed departure to evidenced revocation. The number a regulator asks for, and the
+      one that is measured in weeks wherever it has never been looked at.
+    calibrates: [acr.leaver_still_entitled]
+  - name: dormant_entitlement_share
+    unit: percent
+    direction: lower_is_better
+    owner_layer: L6
+    description: Share unused in ninety days where usage is observable.
+    calibrates: [acr.dormant_entitlement]
+  - name: recertification_removal_rate
+    unit: percent
+    direction: target_band
+    owner_layer: L6
+    description: >
+      Share of reviewed entitlements actually removed or reduced. A rate near zero does not mean the
+      estate is clean; it means the review is not running, whatever the completion dashboard says.
+    calibrates: [acr.review_overdue]
+  - name: grant_reason_completeness
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L6
+    description: Share of live entitlements with a testable recorded reason. Bounds what any review can achieve.
+    calibrates: [acr.no_recorded_reason]
+  - name: privileged_entitlement_count
+    unit: count
+    direction: lower_is_better
+    owner_layer: L6
+  - name: sod_conflict_count
+    unit: count
+    direction: lower_is_better
+    owner_layer: L6
+    calibrates: [acr.segregation_of_duties_breach]
+  - name: revocation_evidence_rate
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L6
+    description: Share of revocations proven at the target system rather than asserted in a ticket.
+
+dependencies:
+  - target: admin.obj.core.employee_record
+    kind: requires
+    strength: hard
+    description: >
+      Without a resolvable holder this object cannot leave `requested`, and the leaver and mover
+      triggers have nothing to fire on.
+  - target: admin.obj.core.approval
+    kind: requires
+    strength: hard
+    description: A privileged entitlement cannot reach `active` without a recorded authorisation.
+  - target: admin.obj.core.policy
+    kind: enriches
+    strength: soft
+    description: Supplies the recertification interval, the least-privilege rule and the joiner-mover-leaver expectation.
+  - target: admin.obj.core.compliance_obligation
+    kind: enriches
+    strength: hard
+    description: Turns review from good practice into a dated duty with an external consequence.
+  - target: admin.obj.core.sop
+    kind: enriches
+    strength: soft
+    description: The procedure this grant is supposed to be created and destroyed by.
+  - target: admin.obj.core.asset
+    kind: enriches
+    strength: soft
+    description: >
+      Shares one leaver event and one failure shape. A returned laptop with live credentials on it is
+      two objects failing together and being reported as one success.
+  - target: admin.obj.core.access_right
+    kind: invalidated_by
+    strength: hard
+    description: >
+      Self-referential. A duty-split conflict is a property of the identity's SET, so this object's
+      risk is invalidated by what else the same identity holds.
+  - target: admin.obj.core.escalation
+    kind: enriches
+    strength: soft
+    description: Where an unrevoked leaver entitlement goes when the owning team will not act.
+  - target: admin.obj.core.request
+    kind: derived_from
+    strength: soft
+    description: Most grants originate as an intake request, and the reason — where one exists — is captured there.
+
+exceptions:
+  - id: acr.break_glass_during_incident
+    statement: >
+      Elevated access may be granted without prior approval during a declared incident, provided it
+      carries an expiry set at grant time and is ratified within two working days.
+    overrides: [acr.approval_before_privileged_grant]
+    why: >
+      A control that cannot be bypassed at three in the morning gets bypassed permanently instead of
+      temporarily — the shared root credential appears and never leaves. The pre-set expiry is what
+      keeps the exception an exception rather than a new default.
+    frequency: occasional
+  - id: acr.disaster_recovery_dormancy
+    statement: Access existing solely for recovery or continuity is exempt from dormancy-based removal.
+    overrides: [acr.never_used_after_ninety_days_is_removable]
+    why: >
+      Its value is precisely that it has never been needed. Sweeping it is the classic own goal: the
+      quarterly job looks efficient right up to the quarter it matters.
+    frequency: rare
+  - id: acr.regulated_role_minimum
+    statement: >
+      Some supervised roles are required to hold specific access; it cannot be reduced on
+      least-privilege grounds without breaching the regime that mandates it.
+    overrides: [acr.no_sod_pair]
+    why: >
+      Least privilege is a principle, not a statute. Where a regulator mandates a capability, the
+      correct response is a compensating control and a documented acceptance, not a removal.
+    frequency: rare
+  - id: acr.small_organisation_duty_split
+    statement: >
+      Below a headcount threshold a duty split may be impossible, and a compensating detective
+      control replaces the preventive one.
+    overrides: [acr.no_sod_pair]
+    why: >
+      In a ten-person company the same person raises and pays the invoice because there is nobody
+      else. Pretending otherwise produces a policy everybody breaches daily, which is worse than a
+      review control everybody follows.
+    frequency: common
+  - id: acr.notice_period_retention
+    statement: An identity serving notice retains access, under heightened monitoring, until the last working day.
+    overrides: [acr.leaver_revocation_is_immediate]
+    why: >
+      Revoking at resignation stops the handover that is the entire point of a notice period. The
+      correct control is monitoring plus immediate removal of exfiltration-capable entitlements, not
+      blanket removal.
+    frequency: common
+  - id: acr.service_account_no_holder
+    statement: A registered service account may hold entitlements with no individual holder, provided a named owning team lead is recorded.
+    overrides: [acr.named_individual_holder]
+    why: >
+      The alternative is a fiction — assigning the account to whoever created it, who then leaves and
+      orphans it. A named owner who inherits by role survives the departure.
+    frequency: common
+
+best_practices:
+  - id: acr.reason_at_grant_time
+    statement: Capture a testable business reason at the moment of grant, in the requester's words, naming the work that cannot be done without it.
+    why: >
+      It costs thirty seconds then and is unrecoverable later. Every organisation that cannot reduce
+      access is one that did not do this, because review means testing the reason and there is
+      nothing to test.
+    applies_when: Every grant, without exception.
+  - id: acr.expire_by_default
+    statement: Default new grants to fixed-term with a short expiry, and require an argument for permanence.
+    why: >
+      Reverses the ratchet. Permanent-by-default is the single mechanical cause of monotonically
+      rising entitlement counts, and no amount of review effort compensates for it.
+  - id: acr.review_by_dormancy_first
+    statement: Run automated dormancy review before human recertification, and put only what survives in front of a person.
+    why: >
+      Dormancy removes the uncontroversial third of the estate at no human cost and shortens the list
+      a reviewer sees, which is the only variable that predicts whether they will actually look.
+    applies_when: Wherever usage logging exists.
+  - id: acr.review_the_set_not_the_row
+    statement: Review a whole identity's entitlements together, not one row at a time across many identities.
+    why: >
+      Duty-split conflicts and privilege creep are properties of the set. Row-at-a-time review cannot
+      see either, which is why organisations pass every recertification and still fail an SoD test.
+  - id: acr.mover_triggers_full_review
+    statement: Treat a role change as a full re-review of everything the identity holds, not as an additive provisioning event.
+    why: >
+      Movers are where privilege accumulates. Joiners are provisioned because someone is waiting;
+      leavers are deprovisioned because HR raises a ticket; movers just gain and never lose.
+    applies_when: Any internal transfer, promotion or secondment.
+  - id: acr.prove_revocation_at_the_system
+    statement: Close a revocation on evidence from the target system, never on a ticket status.
+    why: >
+      Federated seats, API tokens, shared credentials and physical passes all survive account
+      disablement, and every one of them has been produced as evidence of removal at some point.
+  - id: acr.separate_physical_from_logical_deliberately
+    statement: Hold physical access in the same register as logical, or accept that leavers keep their pass.
+    why: >
+      Facilities and IT run different systems with different leaver processes. The pass in the drawer
+      is the most common unrevoked entitlement in any organisation with an office.
+  - id: acr.name_an_owner_for_every_non_human_identity
+    statement: Every service account carries a named owning role, inherited on departure rather than attached to a person.
+    why: >
+      Service accounts fail every control designed for people. Role-inherited ownership is the only
+      one that survives the creator leaving.
+
+anti_patterns:
+  - id: acr.recertification_theatre
+    statement: A quarterly review that retains almost everything it looks at, reported as a completed control.
+    why_it_happens: >
+      Reviewers are given long lists, no grant reasons and two buttons. Retaining is free and instant;
+      revoking risks breaking someone's job and generating a complaint that lands on the reviewer. The
+      incentives produce the observed outcome exactly.
+    cost: >
+      The full cost of the control with none of the benefit, plus a completion metric that actively
+      conceals the problem — the dashboard is green precisely because nothing changed.
+    instead: >
+      Measure removal rate rather than completion rate. Run dormancy first so the human list is short.
+      Show the grant reason next to every row and let the reviewer see when it was last exercised.
+    detectable_by: [recertification_removal_rate, acr.review_overdue]
+  - id: acr.account_disabled_equals_revoked
+    statement: Treating disablement of the primary account as the completion of the leaver process.
+    why_it_happens: >
+      It is one action, it is visible, it feels total, and the directory is the system everyone thinks
+      of first. Everything else lives in a product nobody in IT administers.
+    cost: >
+      Federated SaaS seats stay billable and reachable, API tokens keep working, the building pass
+      keeps opening the door, and the shared credential the leaver knew is unchanged. Every real
+      unauthorised-access incident involving a former employee runs through exactly one of these.
+    instead: >
+      Enumerate the entitlement set per identity and close each one on system-side evidence. Track
+      leaver_revocation_lag against the last entitlement closed, not the first.
+    detectable_by: [leaver_revocation_lag, revocation_evidence_rate, acr.physical_pass_outlives_account]
+  - id: acr.role_bundle_as_least_privilege
+    statement: Granting a role template and reporting it as least privilege because nobody got a direct grant.
+    why_it_happens: >
+      Roles are the efficient way to provision and the honest way to report. The template was sized
+      for the most demanding member of the job family and is never resized downwards.
+    cost: >
+      Everyone in the family holds the union of what any of them ever needed. The report says
+      compliant and the estate is uniformly over-privileged, which is harder to fix than a few
+      obvious direct grants.
+    instead: >
+      Size templates to the median and handle the exceptions as short-lived direct grants. Compare
+      template contents against actual usage per member annually.
+    detectable_by: [dormant_entitlement_share, privileged_entitlement_count]
+  - id: acr.joiner_cloned_from_a_colleague
+    statement: "\"Give them the same access as Priya\" as the provisioning instruction."
+    why_it_happens: >
+      It is fast, it is what the requester actually knows, and it works on day one. Nobody involved
+      knows what Priya holds or why.
+    cost: >
+      Priya's accumulated eight years of entitlements, including everything from two previous roles,
+      are copied wholesale — and the copy has no recorded reason at all, so it can never be reviewed
+      down. Privilege creep becomes hereditary.
+    instead: >
+      Provision from a role template and require named additions with reasons. If cloning is
+      unavoidable, clone and immediately schedule a thirty-day review of the copy.
+    detectable_by: [grant_reason_completeness, acr.no_recorded_reason]
+  - id: acr.break_glass_that_never_closes
+    statement: Emergency access granted during an incident and still live months later.
+    why_it_happens: >
+      It is granted under maximum pressure and would have to be withdrawn under none. The incident
+      closes, the ticket closes, and the withdrawal has no owner because the thing that justified it
+      no longer exists to remind anyone.
+    cost: Standing administrative access that reviews as temporary and is held by whoever happened to be on call that night.
+    instead: A mandatory expiry set at grant time, so closure requires nobody to remember.
+    detectable_by: [acr.break_glass_never_withdrawn, privileged_entitlement_count]
+  - id: acr.orphan_nobody_dares_touch
+    statement: An entitlement whose owner left, which nobody removes because nobody knows what depends on it.
+    why_it_happens: >
+      Removing it risks breaking something visible; leaving it risks nothing visible. The asymmetry is
+      complete and it is the correct individual decision every single time.
+    cost: >
+      A permanent, unowned, unreviewable credential — usually privileged, because the people who
+      created service accounts were the people with rights to. It accumulates until an incident
+      forces the question.
+    instead: >
+      Time-box it: disable rather than delete, watch for breakage for a fixed period, then remove.
+      Disablement makes the removal reversible, which is what makes the decision possible at all.
+    detectable_by: [orphaned_entitlement_share, acr.orphaned_service_account]
+  - id: acr.access_reduction_as_a_project
+    statement: Running entitlement cleanup as a one-off remediation programme rather than as a standing process.
+    why_it_happens: >
+      An audit finding creates funding and a deadline. A project delivers a number, closes, and
+      returns the team to their previous work.
+    cost: >
+      The count falls, the grant defaults are unchanged, and the estate returns to its prior level
+      within about eighteen months — at which point the finding recurs and is more expensive, because
+      the second one reads as a failure to remediate.
+    instead: >
+      Fix the ratchet instead of the count: expire by default, require reasons at grant, and run
+      dormancy continuously. The count then falls as a side effect and stays down.
+    detectable_by: [dormant_entitlement_share, grant_reason_completeness]
+
+examples:
+  - label: Finance analyst who moved to Treasury
+    kind: typical
+    note: >
+      Kept ledger-posting rights, gained payment-release rights. Neither grant is wrong; together
+      they are the textbook duty-split breach, and both passed their last recertification because
+      each was reviewed on its own row.
+  - label: Service account created for a 2019 migration
+    kind: edge
+    note: >
+      identity_type service_account, creator departed, privilege administrative, purpose unrecorded,
+      last used unknown because logging was never enabled. Orphaned by every definition and untouched
+      because nobody will risk the removal.
+  - label: Building pass held by a leaver
+    kind: typical
+    note: >
+      Account disabled on the last working day, pass never collected, facilities register never
+      reconciled against HRIS. Still opens the door eleven months later.
+  - label: Break-glass root credential from a Sunday-night incident
+    kind: edge
+    note: >
+      Granted correctly and never withdrawn. Reviews as an exception, behaves as standing
+      administrative access, and is held by whoever happened to be on call.
+  - label: Contractor whose engagement ended
+    kind: edge
+    note: >
+      No HRIS leaver record because they were never an employee. The purchase order lapsed silently
+      and the access did not. Contractors carry the leaver risk without the trigger that catches it.
+  - label: Disaster-recovery access unused for four years
+    kind: counterexample
+    note: >
+      Reads as dormant on every metric and must never be swept. Its value is precisely that it has
+      never been needed — the exemption exists for exactly this row.
+  - label: Shared support mailbox credential
+    kind: misclassification
+    note: >
+      Routinely registered as one entitlement with one holder. It is one credential known to eleven
+      people, unattributable and unrevocable without breaking a rota.
+  - label: Read-only reporting access reaching salary data
+    kind: misclassification
+    note: >
+      Classified `internal` because it is read-only. `read` is an access_type, not a sensitivity —
+      data_classification here is `personal` and the blast radius is organisation-wide.
+
+references:
+  - title: ISO/IEC 27001:2022 Annex A 5.15-5.18 — access control, identity management, authentication information, access rights
+    kind: standard
+    note: >
+      A.5.18 is the specific control this object serves: access rights reviewed, adjusted on change of
+      role, and removed on termination. The three verbs map to review, mover and leaver.
+  - title: NIST SP 800-53 — Access Control (AC) family
+    kind: standard
+    note: AC-2 account management and AC-6 least privilege are the two most cited in access findings.
+  - title: Least privilege — Saltzer and Schroeder, "The Protection of Information in Computer Systems" (1975)
+    kind: research
+    note: >
+      The original statement of the principle. Worth citing because it is fifty years old and still
+      the control most organisations describe as aspirational.
+  - title: Joiner-Mover-Leaver (JML)
+    kind: framework
+    note: >
+      The standard identity lifecycle. The point worth remembering is that the middle letter is where
+      it fails, and it is the one with no natural trigger.
+  - title: Role-Based Access Control — NIST RBAC model
+    kind: framework
+    note: The role/entitlement distinction this object depends on, and the source of the template-sizing problem.
+  - title: Segregation of duties matrices
+    kind: framework
+    note: >
+      The toxic-combination pairing. Usually maintained by internal audit in a spreadsheet and
+      connected to no operational system, which is why conflicts are found annually rather than daily.
+  - title: SOX IT general controls — access to programs and data
+    kind: standard
+    note: The regime that made leaver revocation lag an externally-audited number in listed companies.
+  - title: GDPR Article 32 (security of processing) and Article 9 (special category data)
+    kind: standard
+    note: >
+      Article 32 makes access control a legal obligation rather than a practice; Article 9 imposes a
+      separate lawful-basis test that a role template cannot satisfy.
+  - title: Just-in-time and zero standing privilege
+    kind: practitioner
+    note: >
+      The largest available reduction in standing entitlement count, and the reason it is resisted:
+      it converts an invisible aggregate risk into a visible per-request friction.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Five of fourteen patterns are executable today and none of them is access-shaped — they run on
+    generic thread, commitment and graph-degree primitives, which is the honest state of play rather
+    than a gap in authoring. The ranked Layer 1/2 ask this object generates is: (1) access.last_used_at,
+    the single highest-value signal in the Admin brain, because it converts access reduction from a
+    negotiation into an observation; (2) leaver_confirmed, shared with employee_record and asset —
+    one event, three objects, and the highest-consequence gap in the domain; (3) access.reviewed_at
+    plus access.granted_at, without which no review clock can start; (4) derived.entitlement_set_by_identity,
+    because duty-split conflict is a property of the set and no per-row review can ever see it;
+    (5) sod.conflict_pairs, which already exists as an internal-audit spreadsheet connected to nothing.
+    Authored as the third of the custody trio with admin.obj.core.asset and
+    admin.obj.core.employee_record — the three share one failure shape (the grant nobody removed when
+    the reason ended) and one missing event.

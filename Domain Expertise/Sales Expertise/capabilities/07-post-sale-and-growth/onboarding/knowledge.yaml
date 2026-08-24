@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.post_sale_and_growth.onboarding
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.onboarding.time_to_first_value_sprint
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.onboarding.silent_onboarding_is_failing_onboarding
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

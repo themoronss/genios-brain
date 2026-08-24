@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.sales_management.performance_management
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.performance_management.leading_indicator_scorecard
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.performance_management.trailing_metrics_manage_history
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

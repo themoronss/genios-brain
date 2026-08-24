@@ -1,0 +1,28 @@
+identity:
+  id: admin.pb.payables_administration.payables_on_terms_on_purpose
+  name: Payables on terms, on purpose
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.payables_administration
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Payables are scheduled to terms — not early by accident, not late by neglect — with cash
+    position visibility and early-payment discounts taken deliberately, because payables timing is working-capital
+    management done daily.
+steps:
+- order: 1
+  name: Pay on the term date by default
+  description: Early payment is a free loan to vendors; late is reputation spend. The term IS the schedule.
+  actor: human
+- order: 2
+  name: Batch runs with a cash check
+  description: Payment runs on fixed days against visible cash position — the rhythm that prevents both
+    surprises and fire-drills.
+  actor: human
+- order: 3
+  name: Escalate disputes out of the payment path
+  description: Disputed invoices divert to resolution without freezing the vendor's clean invoices.
+  actor: human

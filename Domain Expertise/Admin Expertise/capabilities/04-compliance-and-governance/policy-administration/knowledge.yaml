@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.compliance_and_governance.policy_administration
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.policy_administration.policies_people_can_actually_follow
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.policy_administration.policy_count_inversely_predicts_compliance
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

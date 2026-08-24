@@ -1,0 +1,27 @@
+identity:
+  id: admin.pb.admin_analytics.measure_the_service_publish_the_story
+  name: Measure the service, publish the story
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.admin_analytics
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Admin analytics tracks the function as a service — volumes, SLA hits, cost per request class,
+    friction themes — one honest page monthly, because an unmeasured support function is invisible until
+    it is blamed.
+steps:
+- order: 1
+  name: Instrument the intake queue
+  description: Volume, class mix, resolution times — the queue is the dataset; keep it clean.
+  actor: human
+- order: 2
+  name: Report the one page
+  description: Served, hit-rate, top frictions, one improvement shipped. Readable in two minutes, monthly.
+  actor: human
+- order: 3
+  name: Use it for capacity conversations
+  description: Growth in request volume is the staffing case, in numbers, before burnout makes it in resignations.
+  actor: human

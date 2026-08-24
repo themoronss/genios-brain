@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.retention_and_archival.retain_by_rule_destroy_by_rule
+  name: Retain by rule, destroy by rule
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.retention_and_archival
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every record class has a stated retention period from legal and business need; expiry triggers
+    review-then-destruction, logged — because keep-everything-forever is a liability strategy and delete-at-whim
+    is a compliance incident.
+steps:
+- order: 1
+  name: Map record classes to retention rules
+  description: Financial, contractual, HR, correspondence — each with its statutory minimum and business
+    maximum.
+  actor: human
+- order: 2
+  name: Archive out of the active space
+  description: 'Post-active records move to archive: cheaper, indexed, out of daily search noise.'
+  actor: human
+- order: 3
+  name: Destroy on schedule with a log
+  description: What was destroyed, when, under which rule. The destruction log is what makes disposal
+    defensible.
+  actor: human

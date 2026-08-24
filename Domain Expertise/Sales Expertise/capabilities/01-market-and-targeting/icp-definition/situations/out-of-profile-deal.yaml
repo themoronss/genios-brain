@@ -1,0 +1,92 @@
+# A decaying deal, read as a fit question rather than as a rescue problem. This is the second
+# and last runtime moment ICP Definition genuinely owns, and it is the one that produces the
+# evidence every other part of the capability depends on.
+
+identity:
+  id: sales.sit.out_of_profile_deal
+  name: Out-of-Profile Deal
+  domain: sales
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 1.0.0
+  status: draft
+
+description: >
+  A live deal decaying in the way accounts outside the profile characteristically decay:
+  interest without economics, engagement without a funded buyer, effort scaling faster than
+  the contract value. What distinguishes it from the stalled-deal situations its neighbours
+  own is the question asked, not the symptoms observed — deal review and pipeline management
+  ask how to un-stall it, and this asks whether it should have been in pipeline at all. Both
+  readings are legitimate on the same deal and they lead opposite ways, which is why this
+  situation deliberately loads none of the relationship objects a rescue plan would need. The
+  second purpose is calibration: a deal ending is the only moment the profile receives
+  evidence, and a stall closed out without a fit reading is a lesson thrown away.
+
+matches:
+  l2_situation_types:
+    - deal
+    - opportunity
+  scope: deal
+  when:
+    # Only on live deals. Once the deal closes the reading becomes calibration, which is a
+    # different job with a different confidence and no urgency attached to it.
+    - {path: deal.status, op: "=", value: open}
+
+also_serves:
+  - sales.sales_management.deal_review
+  - sales.revenue_operations.pipeline_management
+  - sales.qualification.lead_qualification
+
+objects:
+  load:
+    - sales.obj.core.icp
+    - sales.obj.icp_definition.disqualifier
+    - sales.obj.icp_definition.fit_analysis
+    - sales.obj.core.account
+    - sales.obj.core.deal
+  optional:
+    - sales.obj.core.company
+    - sales.obj.core.competitor
+  never_load:
+    # Excluded because loading them answers the wrong question convincingly. Champion and
+    # committee are the raw material of a rescue plan, and a compile holding both will
+    # produce one — a well-reasoned multithreading sequence for an account that should be
+    # closed out. The failure this situation exists to catch is a team working an
+    # out-of-profile deal competently for another two quarters, and the surest way to cause
+    # it is to hand them a good plan for doing so.
+    - sales.obj.core.champion
+    - sales.obj.core.buying_committee
+
+priority_bp: 5500
+typical_duration_days: 14
+
+# Progress here means the fit reading was wrong in the useful direction — which is a finding,
+# not an embarrassment, and the only kind of evidence that ever narrows a bad profile.
+signals_of_progress:
+  - budget_approved
+  - proposal_sent
+  - verbal_yes
+  - contract_requested
+
+signals_of_decay:
+  - timeline_slip
+  - discount_pressure
+  - budget_freeze
+  - competitor
+  - closed_lost_mention
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Bound to three deal-decay types, all shared with capabilities that will read them
+    differently — that overlap is intended, because a stalling deal genuinely has two honest
+    readings and the expensive error is running only the rescue one. Unlike the inbound
+    situation, most of the knowledge loaded here can actually fire today: the executable
+    patterns on Fit Analysis and Disqualifier all key off deal behaviour, which is exactly
+    what Layer 2 emits. The gap that would improve this situation most is a loss REASON on
+    closed_lost_mention — without it every reading taken here dies with the deal instead of
+    grouping into the loss cohort that would evidence a disqualifier.

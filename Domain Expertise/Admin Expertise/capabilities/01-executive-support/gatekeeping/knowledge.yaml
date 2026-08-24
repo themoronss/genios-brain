@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.executive_support.gatekeeping
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.gatekeeping.gatekeeping_with_grace
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.gatekeeping.the_gatekeeper_is_the_brand_s_first_draft
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

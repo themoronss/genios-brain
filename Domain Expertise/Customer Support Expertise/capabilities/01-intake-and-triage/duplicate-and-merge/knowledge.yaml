@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.intake_and_triage.duplicate_and_merge
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.duplicate_and_merge.merge_with_a_paper_trail
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.duplicate_and_merge.a_duplicate_spike_is_telemetry
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.finance_administration.invoice_processing
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.invoice_processing.invoice_pipeline_with_clean_stages
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.invoice_processing.duplicate_invoices_arrive_confidently
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

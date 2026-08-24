@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.follow_up_coordination.momentum_decays_in_days
+  name: Momentum decays in days
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.follow_up_coordination
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A decision not acted on within a week begins to feel optional; within a month, historical.
+    Follow-up speed is not administrative nicety — it is what keeps decisions decided.
+  answers:
+  - How fast must follow-up move to hold a decision?

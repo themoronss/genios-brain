@@ -1,0 +1,28 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs.
+
+identity:
+  id: admin.executive_support.briefing_and_preparation
+  name: Briefing & Preparation
+  domain: admin
+  subdomain: executive_support
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Assembling the minimum sufficient context before a meeting, a call or a decision: who is in
+  the room and what they want, what was last said to them, what is outstanding on both sides,
+  and the one thing that would embarrass us if it were not known. A brief that restates the
+  agenda is not a brief.
+
+question: "Will the principal walk into this knowing what they need to know?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

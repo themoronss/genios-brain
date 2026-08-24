@@ -1,0 +1,36 @@
+capability: sales.market_and_targeting.icp_definition
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.icp_definition.checkable_from_a_domain_name
+  - sales.pb.icp_definition.drift_review_on_a_cadence
+  - sales.pb.icp_definition.negative_list_first
+  - sales.pb.icp_definition.retrofit_the_open_pipeline
+  - sales.pb.icp_definition.tri_cohort_analysis
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.icp_definition.a_win_is_not_permission
+  - sales.heu.icp_definition.anti_fit_pays_first
+  - sales.heu.icp_definition.behaviour_beats_firmographics
+  - sales.heu.icp_definition.contrast_not_description
+  - sales.heu.icp_definition.disqualified_is_not_worthless
+  - sales.heu.icp_definition.n_is_smaller_than_it_looks
+  - sales.heu.icp_definition.retained_not_merely_won
+  - sales.heu.icp_definition.unfalsifiable_is_useless
+mental_models:
+  core: []
+  scoped:
+  - sales.mm.icp_definition.fit_is_a_joint_property
+  - sales.mm.icp_definition.past_evidence_future_bet
+  - sales.mm.icp_definition.profile_is_a_classifier
+  - sales.mm.icp_definition.the_ruler_and_the_reading
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped:
+  - sales.df.icp_definition.fit_scorecard
+  - sales.df.icp_definition.segmentation_triad
+  - sales.df.icp_definition.tri_cohort

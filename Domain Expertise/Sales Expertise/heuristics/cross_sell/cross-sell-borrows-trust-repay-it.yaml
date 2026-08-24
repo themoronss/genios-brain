@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.cross_sell.cross_sell_borrows_trust___repay_it
+  name: Cross-sell borrows trust — repay it
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.cross_sell
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'A failed cross-sell does not stay contained: it spends the first product''s credibility.
+    Cross-sell only what genuinely fits, because the downside is not a lost add-on but a weakened core
+    renewal.'
+  answers:
+  - What is actually at stake in a cross-sell attempt?

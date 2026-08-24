@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.post_sale_and_growth.customer_success
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.customer_success.outcome_cadence_reviews
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.customer_success.login_metrics_lag__sponsor_strength_leads
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

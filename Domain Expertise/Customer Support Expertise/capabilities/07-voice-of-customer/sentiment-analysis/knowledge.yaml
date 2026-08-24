@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.voice_of_customer.sentiment_analysis
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.sentiment_analysis.track_the_trajectory_not_the_snapshot
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.sentiment_analysis.politeness_can_be_the_last_stage_of_leaving
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

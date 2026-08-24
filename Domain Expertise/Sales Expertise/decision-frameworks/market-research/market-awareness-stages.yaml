@@ -1,0 +1,35 @@
+identity:
+  id: sales.df.market_research.market_awareness_stages
+  name: The awareness ladder — unaware, problem-aware, solution-aware, vendor-…
+  kind: decision_framework
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "The awareness ladder — unaware, problem-aware, solution-aware, vendor-aware, most-aware\
+    \ — applied to the segment rather than to the individual.\n It converts a vague sense that a market\
+    \ is early or late into a statement about what a first conversation has to accomplish, and therefore\
+    \ about cycle length and cost to serve.\n"
+criteria:
+- name: The awareness ladder — unaware, problem-aware, solution-aware, vendor-…
+  description: 'It converts a vague sense that a market is early or late into a statement about what
+    a first conversation has to accomplish, and therefore about cycle length and cost to serve.
+
+    '
+how_to_apply:
+- 'It converts a vague sense that a market is early or late into a statement about what a first conversation
+  has to accomplish, and therefore about cycle length and cost to serve.
+
+  '
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

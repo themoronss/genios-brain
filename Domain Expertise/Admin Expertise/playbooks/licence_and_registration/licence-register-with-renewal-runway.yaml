@@ -1,0 +1,28 @@
+identity:
+  id: admin.pb.licence_and_registration.licence_register_with_renewal_runway
+  name: Licence register with renewal runway
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.licence_and_registration
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every licence, registration and certificate lives in a register with expiry dates and renewal
+    lead-times — alerted well before, renewed without drama — because operating on a lapsed licence converts
+    routine paperwork into legal exposure.
+steps:
+- order: 1
+  name: Register everything that can expire
+  description: Business registrations, professional licences, certifications — each with expiry and renewal
+    lead time.
+  actor: human
+- order: 2
+  name: Alert at the renewal runway, not the expiry
+  description: The alert fires when renewal takes as long as remains. Expiry-day alerts are archaeology.
+  actor: human
+- order: 3
+  name: Verify the renewal landed
+  description: Renewed means the new certificate is in hand and filed — not that a form was sent.
+  actor: human

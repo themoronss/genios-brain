@@ -1,0 +1,16 @@
+identity:
+  id: admin.heu.receivables_follow_up.awkwardness_is_expensive
+  name: Awkwardness is expensive
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.receivables_follow_up
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Founders under-chase receivables to protect relationships — but professional, systematic
+    follow-up is respected while cash gaps kill companies. The system removes the personal awkwardness
+    that causes the gap.
+  answers:
+  - Why do startups under-collect?

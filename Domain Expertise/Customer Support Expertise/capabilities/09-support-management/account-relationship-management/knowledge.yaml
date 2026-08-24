@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.support_management.account_relationship_management
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.account_relationship_management.support_side_account_cadence
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.account_relationship_management.support_sees_churn_first
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

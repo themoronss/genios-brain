@@ -1,0 +1,42 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_management.quality_assurance — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.quality_assurance.framework_blind_double_scoring
+  name: Framework blind double scoring
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.quality_assurance
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Calibration by independent blind double-scoring, reconciled into a rubric edit rather
+    than a reviewer instruction.
+
+
+    It is the only method that measures the programme''s own accuracy. A programme that has never double-scored
+    has no idea what its numbers mean and cannot know that.'
+criteria:
+- name: Framework blind double scoring
+  description: Calibration by independent blind double-scoring, reconciled into a rubric edit rather
+    than a reviewer instruction.
+how_to_apply:
+- Calibration by independent blind double-scoring, reconciled into a rubric edit rather than a reviewer
+  instruction.
+- It is the only method that measures the programme's own accuracy. A programme that has never double-scored
+  has no idea what its numbers mean and cannot know that.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

@@ -1,0 +1,132 @@
+# Situation — Escalation Requested.
+#
+# The load-set is built around the owning capability's central claim: an escalation is a
+# TRANSFER OF OWNERSHIP with a named receiver, not a flag on a ticket. So Escalation Owner is
+# loaded, not optional. A compile that cannot see who is receiving this is not looking at an
+# escalation, it is looking at a complaint, and it should reason about it as one.
+#
+# Nothing here routes today. There is no escalation observation kind and no escalation_requested
+# situation type in any shipped pack — see matches.pending_l2_situation_types, which is the
+# specification for the pack that would make this file live.
+
+identity:
+  id: customer_support.sit.escalation_requested
+  name: Escalation Requested
+  domain: customer_support
+  owner_capability: customer_support.escalation_and_incident.escalation_management
+  version: 1.0.0
+  status: draft
+
+description: >
+  Someone has asked for this to leave its current owner. Usually the customer — "can I speak to
+  your manager", "who is your VP", "I am taking this to our account team" — and sometimes an
+  agent who has recognised that normal handling will not finish it. The two look identical in a
+  ticket and need opposite first moves, which is why the trigger side is the first thing this
+  situation wants to establish. The defining property is that the request exists and nobody has
+  yet accepted it: for as long as that is true the work has two owners in principle and none in
+  practice, and the interval before a named person says yes is the interval where escalations
+  actually go wrong. What is being asked for is rarely speed. It is almost always confidence,
+  which is why replying faster to the same person is the reflex that makes it worse.
+
+matches:
+  # No shipped pack emits anything escalation-shaped, so l2_situation_types is empty rather than
+  # bound to the nearest plausible type. Binding this to unanswered_email would produce a system
+  # that nudges an agent to reply faster to the customer who has just told us that replying is
+  # not the problem.
+  l2_situation_types: []
+
+  pending_l2_situation_types:
+    - type: escalation_requested
+      owner_layer: L2
+      nearest_today: unanswered_email
+      note: >
+        Must mean: a request for ownership of a piece of work to move, carrying (a) the trigger
+        side — customer_initiated or internally_triggered, because those are different events
+        sharing a word — (b) the specific ask being made of the receiver, and (c) the named
+        receiver where one has been proposed. It must remain live until a receiver ACCEPTS, not
+        until someone replies. That distinction is the whole value of the type: the harmful
+        interval is between raising and acceptance, and every existing product closes it by
+        setting a flag, which nobody has to accept.
+        What would emit it: Layer 1 extraction of escalation language in an inbound message
+        (manager, escalate, VP, account team, unacceptable, formal complaint) plus a Layer 2
+        rule over a ticket-owner change accompanied by a stated reason. The obs kind pair
+        escalation_requested / escalation_accepted in planned_substrate is the real ask — either
+        alone is close to useless, because the whole point is measuring the gap between them.
+        Why unanswered_email is not good enough: an escalation request only resembles an
+        unanswered email while it is unanswered, which is the shortest part of its life. The
+        moment any agent sends any reply, the compromise binding falls silent — while the
+        escalation is still unaccepted, still unowned and still running. Worse, the two types
+        prescribe opposite handling: unanswered_email asks for a reply from the current owner,
+        and this situation exists because a reply from the current owner is exactly what the
+        customer has already rejected. Today the escalation is invisible until it arrives as an
+        executive email, at which point it is an account event rather than a ticket one.
+
+  # Account rather than person on purpose. An escalation attaches to the relationship, not to the
+  # human who happened to send the message; the second escalation from a different contact at the
+  # same company is the same event continuing, and a person-scoped reading loses that entirely.
+  scope: account
+
+also_serves:
+  - customer_support.customer_communication.de_escalation
+  - customer_support.escalation_and_incident.executive_escalation
+  - customer_support.support_management.account_relationship_management
+
+objects:
+  load:
+    - customer_support.obj.core.escalation
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.escalation_owner
+    - customer_support.obj.core.customer_sentiment
+  optional:
+    - customer_support.obj.core.entitlement
+    - customer_support.obj.core.churn_risk
+    - customer_support.obj.core.customer_account
+  never_load:
+    # A knowledge article is an answer, and this situation is not short of answers — the
+    # customer has usually been given several. Loading it invites the system to propose a link
+    # when what is missing is a named person who has accepted the work, which is the most common
+    # way an escalation is handled badly by a human and would be the most common way a machine
+    # handled it badly too.
+    - customer_support.obj.core.knowledge_article
+    # Backlog reframes an escalation as a capacity problem. It sometimes is one, but that finding
+    # belongs to queue_management operating over many tickets; applied to this one it produces
+    # the explanation ("we are busy") instead of the transfer.
+    - customer_support.obj.core.backlog
+
+priority_bp: 8800
+typical_duration_days: 5
+
+signals_of_progress:
+  # escalation_accepted is the one that matters: a named person took it. The others are the
+  # observable evidence that the transfer was real rather than announced.
+  - escalation_accepted
+  - callback_promised
+  - followup_sent
+  - workaround_provided
+  - ticket_resolved
+
+signals_of_decay:
+  - cancellation_threat
+  - angry_language
+  - agent_reassigned
+  - refund_requested
+  - champion_change
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Six of the ten strings in signals_of_progress/decay are support-native obs kinds from
+    planned_substrate (escalation_accepted, callback_promised, workaround_provided,
+    ticket_resolved, cancellation_threat, angry_language, refund_requested, agent_reassigned)
+    and are not emitted today. They are unvalidated free-form strings by schema, so this file
+    loads, but a reader should treat the progress and decay lists as aspirational until a
+    support pack ships. followup_sent and champion_change are real substrate kinds and would
+    fire.
+    agent_reassigned sits under decay rather than progress deliberately. Reassignment during a
+    live escalation usually means the request was absorbed by the rota instead of accepted by a
+    person, and the customer reads a second unfamiliar name as being passed around.

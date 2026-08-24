@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.intake_and_triage.intent_classification
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.intent_classification.classify_to_route_not_to_file
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.intent_classification.the_customer_s_words_beat_the_form_s_dropdown
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

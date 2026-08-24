@@ -1,0 +1,51 @@
+# Knowledge manifest — references the definition pages whose identity.owner_capability
+# names this capability. Auto-linked from the pages' own declarations: the pages were
+# written and the index never was, so the engine opened an empty list above a full shelf.
+capability: customer_support.customer_communication.de_escalation
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.de_escalation.acknowledge_then_explain
+  - customer_support.pb.de_escalation.change_channel_when_unheard
+  - customer_support.pb.de_escalation.keep_the_cadence_when_empty
+  - customer_support.pb.de_escalation.name_it_back
+  - customer_support.pb.de_escalation.one_owner_for_the_duration
+  - customer_support.pb.de_escalation.say_the_bad_news_first
+  - customer_support.pb.de_escalation.separate_grievance_from_ticket
+  - customer_support.pb.de_escalation.trade_apology_for_time
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.de_escalation.acknowledgement_precedes_explanation
+  - customer_support.heu.de_escalation.anger_is_uncertainty
+  - customer_support.heu.de_escalation.do_not_correct_while_hot
+  - customer_support.heu.de_escalation.escalation_needs_a_capability_not_a_rank
+  - customer_support.heu.de_escalation.handled_around_hurts_more
+  - customer_support.heu.de_escalation.heat_is_borrowed
+  - customer_support.heu.de_escalation.money_before_acknowledgement_backfires
+  - customer_support.heu.de_escalation.policy_word_is_a_failure
+  - customer_support.heu.de_escalation.repetition_means_unheard
+  - customer_support.heu.de_escalation.silence_is_a_message
+  - customer_support.heu.de_escalation.specific_time_beats_apology
+  - customer_support.heu.de_escalation.the_angry_are_still_trying
+  - customer_support.heu.de_escalation.urgency_not_emotion
+mental_models:
+  core: []
+  scoped:
+  - customer_support.mm.de_escalation.anger_has_a_floor
+  - customer_support.mm.de_escalation.customer_as_narrator
+  - customer_support.mm.de_escalation.grievance_ledger
+  - customer_support.mm.de_escalation.the_defect_is_the_smaller_half
+  - customer_support.mm.de_escalation.two_clocks
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped:
+  - customer_support.df.de_escalation.acknowledge_align_assure
+  - customer_support.df.de_escalation.heard
+  - customer_support.df.de_escalation.learn
+  - customer_support.df.de_escalation.recovery_paradox_check
+  - customer_support.df.de_escalation.separation_test
+  - customer_support.df.de_escalation.three_questions

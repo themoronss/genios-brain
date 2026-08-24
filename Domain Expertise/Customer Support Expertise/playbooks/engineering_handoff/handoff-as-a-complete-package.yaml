@@ -1,0 +1,30 @@
+identity:
+  id: customer_support.pb.engineering_handoff.handoff_as_a_complete_package
+  name: Handoff as a complete package
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.engineering_handoff
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A ticket crosses to engineering with repro, environment, impact, and what support already
+    ruled out — one self-sufficient package, because every missing piece returns as a round-trip through
+    the customer.
+steps:
+- order: 1
+  name: Meet the handoff bar before sending
+  description: Minimal repro (or honest bracket), versions, blast radius, tried-and-failed list. Below
+    the bar, support keeps digging.
+  actor: human
+- order: 2
+  name: Keep customer ownership in support
+  description: Engineering owns the bug; support owns the human. The customer never gets silence because
+    'it is with engineering now'.
+  actor: human
+- order: 3
+  name: Agree update cadence at handoff
+  description: When engineering will update support, so support can promise updates downstream without
+    inventing them.
+  actor: human

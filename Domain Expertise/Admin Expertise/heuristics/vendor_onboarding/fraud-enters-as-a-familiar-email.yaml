@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.vendor_onboarding.fraud_enters_as_a_familiar_email
+  name: Fraud enters as a familiar email
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.vendor_onboarding
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Vendor payment fraud rarely hacks systems; it impersonates a known vendor announcing new
+    bank details. The out-of-band verification habit is the whole defence.
+  answers:
+  - Where does vendor payment fraud actually enter?

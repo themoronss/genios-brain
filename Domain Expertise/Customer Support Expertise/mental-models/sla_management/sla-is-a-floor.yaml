@@ -1,0 +1,42 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.entitlement_and_sla.sla_management — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.sla_management.sla_is_a_floor
+  name: Sla is a floor
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.sla_management
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'An SLA is an insurance policy, not a service standard. It states the worst acceptable
+    case.
+
+
+    A team that treats the floor as the target has converted its worst acceptable performance into its
+    normal performance, which is precisely what the customer will then experience and then renegotiate.
+    The clock exists to bound a wait, not to describe an ambition.'
+dimensions:
+- name: Sla is a floor
+  asks: An SLA is an insurance policy, not a service standard. It states the worst acceptable case.
+how_to_apply:
+- An SLA is an insurance policy, not a service standard. It states the worst acceptable case.
+- A team that treats the floor as the target has converted its worst acceptable performance into its
+  normal performance, which is precisely what the customer will then experience and then renegotiate.
+  The clock exists to bound a wait, not to describe an ambition.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

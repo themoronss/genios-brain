@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.value_proposition.quantified_value_narrative
+  name: Quantified value narrative
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.value_proposition
+  subdomain: discovery_and_solution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'A value proposition is an equation in the buyer''s units: what this costs them today, what
+    changes, what that is worth per year — built from THEIR discovery numbers, credible enough for the
+    champion to defend without you.'
+steps:
+- order: 1
+  name: Build from their numbers only
+  description: 'Cost-of-today from what they told you: hours, rates, misses, churn. Industry benchmarks
+    pad decks; buyers only defend their own arithmetic.'
+  actor: human
+- order: 2
+  name: State the delta conservatively
+  description: Claim less than best-case and say so. A conservative number survives finance review; an
+    inflated one takes your credibility with it when trimmed.
+  actor: human
+- order: 3
+  name: Write the one-line equation
+  description: '''Costs you roughly A/yr today; conservative impact B/yr; investment C.'' If B/C is not
+    obviously attractive, the proposal is not ready to send.'
+  actor: human

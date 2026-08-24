@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.decision_maker_identification.title_inflation_hides_the_signer
+  name: Title inflation hides the signer
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.decision_maker_identification
+  subdomain: qualification
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: '''Decision maker'' on a title or a form is aspiration half the time. Authority is proven
+    by past behaviour — who signed the last comparable purchase — not by what anyone, including them,
+    says about the next one.'
+  answers:
+  - Is my contact actually the signer?

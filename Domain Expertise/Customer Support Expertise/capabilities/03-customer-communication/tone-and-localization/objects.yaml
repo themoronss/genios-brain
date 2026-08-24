@@ -1,0 +1,31 @@
+# Load-set for customer_support.customer_communication.tone_and_localization — REFERENCES ONLY,
+# never an inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.customer_communication.tone_and_localization
+
+core:
+  # The smallest required set in the subdomain, and correctly so: register is decided by who is
+  # being written to (Requester) and by what has already been said in what language and at what
+  # formality (Conversation). Notably Ticket is NOT required — tone does not depend on the state of
+  # the work, and requiring it would silence this capability on pre-ticket and community contacts
+  # where tone matters most because the exchange is public.
+  required:
+    - customer_support.obj.core.conversation
+    - customer_support.obj.core.requester
+  # CustomerSentiment is the state input that turns locale-correct into person-correct — the same
+  # localised phrasing is fine for a routine question and condescending to someone angry.
+  # KnowledgeArticle matters because linked content carries its own register and language, and a
+  # warm reply pointing at a curt untranslated article undoes itself.
+  optional:
+    - customer_support.obj.core.customer_sentiment
+    - customer_support.obj.core.knowledge_article
+
+scoped:
+  # Nothing scoped. A locale/style-guide object would be the obvious candidate, but it would be
+  # read by macro_management and knowledge_authoring too, so it belongs in core if it is ever
+  # authored — the core/scoped split is decided by the reference graph, not by intent.
+  required: []
+  optional: []

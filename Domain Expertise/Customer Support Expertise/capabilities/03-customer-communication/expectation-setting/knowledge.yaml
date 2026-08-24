@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.customer_communication.expectation_setting
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.expectation_setting.promise_the_process_not_the_outcome
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.expectation_setting.silence_is_the_promise_breaker
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.diagnosis_and_resolution.verification_and_closure
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.verification_and_closure.close_with_consent_or_timeout
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.verification_and_closure.fast_closure_is_a_vanity_metric
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

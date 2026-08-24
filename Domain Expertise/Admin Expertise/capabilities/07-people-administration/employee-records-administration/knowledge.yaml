@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.people_administration.employee_records_administration
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.employee_records_administration.one_file_per_person_current_and_confidential
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.employee_records_administration.the_file_is_the_employer_s_memory_in_disputes
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

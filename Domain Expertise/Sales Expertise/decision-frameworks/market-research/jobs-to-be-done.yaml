@@ -1,0 +1,37 @@
+identity:
+  id: sales.df.market_research.jobs_to_be_done
+  name: 'Jobs To Be Done, with the four forces of switching: push of the curren…'
+  kind: decision_framework
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Jobs To Be Done, with the four forces of switching: push of the current situation, pull\
+    \ of the new, habit of the present, and anxiety about the new.\n It is the only common framework\
+    \ that models why a buyer with an obvious problem does nothing anyway. Habit and anxiety are the\
+    \ two forces our own materials never address and they are why the no-decision competitor keeps winning.\n"
+criteria:
+- name: 'Jobs To Be Done, with the four forces of switching: push of the curren…'
+  description: 'It is the only common framework that models why a buyer with an obvious problem does
+    nothing anyway. Habit and anxiety are the two forces our own materials never address and they are
+    why the no-decision competitor keeps winning.
+
+    '
+how_to_apply:
+- 'It is the only common framework that models why a buyer with an obvious problem does nothing anyway.
+  Habit and anxiety are the two forces our own materials never address and they are why the no-decision
+  competitor keeps winning.
+
+  '
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

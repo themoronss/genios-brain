@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.filing_and_retrieval.search_does_not_replace_structure
+  name: Search does not replace structure
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.filing_and_retrieval
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Search finds what you can name; structure finds what you forgot exists. The contract you
+    do not remember signing is only findable by walking the vendor folder — keep both paths alive.
+  answers:
+  - Does good search make filing conventions obsolete?

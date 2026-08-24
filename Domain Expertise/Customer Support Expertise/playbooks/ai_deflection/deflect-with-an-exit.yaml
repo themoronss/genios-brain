@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.ai_deflection.deflect_with_an_exit
+  name: Deflect with an exit
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.ai_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Automated answers attempt the known and hand off the unknown gracefully — with full context
+    carried over, so the human never asks the customer to repeat what the bot already collected.
+steps:
+- order: 1
+  name: Scope deflection to proven intents
+  description: The bot answers where the KB demonstrably resolves — password, billing basics, how-tos.
+    Everything else routes fast.
+  actor: human
+- order: 2
+  name: Make the human exit one action away
+  description: Visible, immediate, no guilt-loop of 'are you sure'. A trapped customer is angrier than
+    an unserved one.
+  actor: human
+- order: 3
+  name: Hand off the transcript, not just the customer
+  description: The agent opens with the bot's collected context. Repeat-yourself handoffs convert deflection
+    savings into satisfaction debt.
+  actor: human

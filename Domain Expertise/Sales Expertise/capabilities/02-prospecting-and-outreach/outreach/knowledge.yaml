@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.prospecting_and_outreach.outreach
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.outreach.multi_channel_sequence_design
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.outreach.the_sequence_is_for_the_seller__the_buyer_sees_a_person
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.knowledge_and_deflection.ai_deflection
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.ai_deflection.deflect_with_an_exit
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.ai_deflection.a_failed_deflection_is_a_hotter_ticket
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

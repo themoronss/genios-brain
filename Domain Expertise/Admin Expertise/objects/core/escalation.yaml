@@ -1,0 +1,1501 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Escalation — the route taken when an approval or a commitment stops moving.
+#
+# Every organisation believes escalation is over-used. In fifteen years of running
+# administrative functions I have never once seen that be true. The observable pattern is
+# the opposite: the person who needs the answer chases the same rung eleven times, because
+# chasing costs them nothing and escalating costs them something real, while the lateness
+# costs a third party who is not in the room. Escalation is priced in credibility and paid
+# by the person who raises it, which is exactly why it is under-used, and why an
+# administrative brain that treats it as a free routing primitive will produce advice no
+# competent administrator will follow.
+#
+# The object therefore carries three things a status field cannot: a LADDER with a named
+# person on every rung, an ASK the rung can actually decide, and a COST with a named bearer.
+# Remove any one and what is left is a complaint with a distribution list.
+#
+# Six of fourteen patterns below are executable. The eight that are not cluster on one
+# absence: the pipeline can see that a promise is late and never that a decision is stalled,
+# because approval.state and approval.requested_at do not exist as typed facts.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.escalation
+  name: Escalation
+  domain: admin
+  scope: core
+  owner_capability: admin.admin_operations.service_level_management
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+  aliases: ["Raise", "Chase-Up", "Referral Upward", "Hierarchic Escalation", "Exception Raise"]
+
+purpose:
+  statement: >
+    A deliberate, recorded move of a stalled decision to a person with more authority or
+    more information than the person currently holding it. It has a ladder, one named owner
+    per rung, a decision it is asking for, a date that decision protects, and a credibility
+    cost that lands on somebody specific. An escalation is an EVENT with an outcome, not a
+    status an item drifts into; the moment it becomes a standing line on a weekly report it
+    has stopped being an escalation and started being a description of the problem.
+  discriminator: >
+    Escalation moves the DECISION, not the information. If the rung already had the
+    authority and only lacked a fact, sending it upward is a routing error dressed as
+    urgency — that case is a functional escalation sideways, or simply an answer. And if
+    nothing was ever formally asked, in writing, with a date, then what is being raised is
+    not an escalation but a grievance.
+  answers:
+    - "This has been sitting for nine days. Is escalating the right move now, or in three days?"
+    - "Who is the next rung, by name — and is the current rung merely absent rather than refusing?"
+    - "What exactly am I asking this person to decide, and by when?"
+    - "What does raising this cost, and who pays it — me, my principal, or the requester?"
+    - "We have escalated this rung four times this quarter. Is that a person problem or a design problem?"
+    - "The ladder is exhausted and nothing moved. What is this now?"
+  not:
+    - "Not the stalled item itself — the approval, commitment or request is a separate object; this is the move made about it."
+    - "Not the authority structure — who may approve what lives on admin.obj.core.approver; the escalation only walks it."
+    - "Not a reminder or a chase. A chase asks the same person again; an escalation asks a different person. Collapsing the two makes the escalation count meaningless."
+    - "Not a risk. When the ladder is exhausted and nothing moves, the item becomes an admin risk owned by name, and this object closes."
+    - "Not a whistleblowing or safeguarding channel. Concerns about conduct have their own route and must never travel through the line the concern is about."
+
+# ── Attributes — structure and data in one list ─────────────────────────────────────────
+attributes:
+
+  - name: grounds
+    purpose: Why this is legitimately escalatable, as opposed to merely annoying.
+    type: composite
+    contains: [trigger_reason, blocked_object_kind, blocked_approval_ref, blocked_commitment_ref,
+               blocked_request_ref, stalled_since, chase_count, grounds_recorded, business_impact]
+
+  - name: ladder
+    purpose: The route upward, expressed as named people rather than as roles.
+    type: composite
+    contains: [ladder_source, escalation_axis, current_rung, ladder_depth, rung_owner_ref,
+               next_rung_owner_ref, rung_time_box_hours, rung_skipped, rung_absent]
+
+  - name: ask
+    purpose: What the rung is being asked to decide, and the date the decision protects.
+    type: composite
+    contains: [decision_required, recommended_option, response_by, protects_deadline_ref]
+
+  - name: cost
+    purpose: The price of raising it and who pays. The half of escalation nobody models.
+    type: composite
+    contains: [credibility_cost, cost_bearer, prior_escalations_against_rung, reversible]
+
+  - name: record
+    purpose: What was raised, by whom, through what channel, and what came back.
+    type: composite
+    contains: [state, raised_at, raised_by_ref, raised_on_behalf_of_ref, channel,
+               rung_responded_at, outcome, resolution_note]
+
+  - name: signals
+    purpose: Computed reads that Layer 4 weighs rather than a human typing them.
+    type: composite
+    contains: [stall_hours, rung_response_latency_hours, escalation_warranted_bp,
+               ladder_exhausted, route_resolvable]
+
+  - name: trigger_reason
+    purpose: The category of failure being escalated, because the right rung differs by category.
+    type: value
+    data_type: enum
+    allowed_values: [no_response, refusal, capacity, conflicting_priority, missing_authority,
+                     policy_breach, deadline_at_risk, quality_failure, unknown]
+    required: true
+    default: unknown
+    sensitivity: internal
+    description: >
+      missing_authority is the one that matters most and gets recorded least. When nobody on
+      the ladder is empowered to make the decision, climbing it is theatre — the correct
+      output is a governance gap, not another rung. Separating refusal from no_response is
+      the second: a refusal is an answer and needs a different move entirely.
+
+  - name: blocked_object_kind
+    purpose: Which object is stuck, so the route and the language differ appropriately.
+    type: value
+    data_type: enum
+    allowed_values: [approval, commitment, request, invoice, contract, access_right, other]
+    required: true
+    description: >
+      Exactly one of the three blocked_*_ref attributes is populated, and this says which.
+      A stalled approval escalates to authority; a stalled commitment escalates to the
+      owner's manager; a stalled request escalates to the service owner. Same verb, three
+      different ladders.
+
+  - name: blocked_approval_ref
+    purpose: The approval that will not close.
+    type: reference
+    ref: admin.obj.core.approval
+
+  - name: blocked_commitment_ref
+    purpose: The promise that was not kept.
+    type: reference
+    ref: admin.obj.core.commitment
+
+  - name: blocked_request_ref
+    purpose: The intake item ageing in a queue.
+    type: reference
+    ref: admin.obj.core.request
+
+  - name: stalled_since
+    purpose: When the item last actually moved, as distinct from when it was created.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound, commitment.due_at]
+    description: >
+      Age since creation is the number every queue report shows and it is the wrong one. An
+      item three weeks old that moved yesterday is healthy; an item four days old that has
+      not moved since it was raised is stuck. Escalation is priced off movement, not age.
+
+  - name: chase_count
+    purpose: How many times we have asked the current rung, in writing.
+    type: value
+    data_type: integer
+    default: 0
+    validation: ">= 0"
+    description: >
+      The single field that decides whether an escalation is legitimate, and almost no system
+      stores it. Two written chases with a stated date is the conventional floor; one is
+      premature, five means the administrator is absorbing a failure that belongs upward.
+
+  - name: grounds_recorded
+    purpose: Whether the asks that preceded this escalation exist in writing.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      You cannot escalate what you cannot show you asked for. An escalation without a paper
+      trail turns into a dispute about whether the request was clear, which the rung wins.
+
+  - name: business_impact
+    purpose: What actually happens downstream if this stays stuck.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: >
+      Stated in the other party's currency — a missed payroll cut-off, a lapsed licence, a
+      supplier stopping delivery. "It has been open a long time" is not an impact and is why
+      most escalations are read as impatience.
+
+  - name: ladder_source
+    purpose: What legitimises this rung order.
+    type: value
+    data_type: enum
+    allowed_values: [delegation_of_authority_matrix, policy, service_level, contract,
+                     org_chart, custom, none]
+    default: none
+    description: >
+      `none` is the commonest value in real organisations, and it is precisely why escalation
+      gets improvised and then resented. A ladder taken from the org chart is a fallback, not
+      a source — line management and approval authority are different structures and diverge
+      most sharply in matrixed and shared-service models.
+
+  - name: escalation_axis
+    purpose: Whether this needs more authority, more skill, or a different function entirely.
+    type: value
+    data_type: enum
+    allowed_values: [hierarchic, functional, lateral, external]
+    required: true
+    default: hierarchic
+    description: >
+      Straight from the ITIL distinction and consistently the highest-value field on this
+      object. Hierarchic escalation buys authority; functional escalation buys competence.
+      Sending a "they do not know the answer" problem upward produces a manager asking the
+      same person the same question two days later. `external` covers escalating to a vendor's
+      account manager under a contract, where the ladder is contractual rather than internal.
+
+  - name: current_rung
+    purpose: Which step of the ladder this escalation currently sits on.
+    type: value
+    data_type: integer
+    default: 0
+    validation: ">= 0"
+    description: "0 = grounds exist, nothing raised. The state most escalations quietly die in."
+
+  - name: ladder_depth
+    purpose: How many rungs exist before the ladder is exhausted.
+    type: value
+    data_type: integer
+    description: >
+      Knowing the depth changes the pacing. Two rungs means each one must be given real time;
+      six rungs means the first three are formalities and the deadline maths should skip them.
+
+  - name: rung_owner_ref
+    purpose: The named person currently holding the decision.
+    type: reference
+    ref: admin.obj.core.approver
+    required: true
+
+  - name: next_rung_owner_ref
+    purpose: The named person this escalates to next.
+    type: reference
+    ref: admin.obj.core.approver
+
+  - name: rung_time_box_hours
+    purpose: How long this rung gets before the escalation moves on by prior agreement.
+    type: value
+    data_type: duration
+    unit: hours
+    description: >
+      A pre-agreed time-box is the only known way to make escalation cheap: when the ladder
+      advances on a clock everybody agreed to in advance, no individual is choosing to raise
+      it and nobody's credibility is spent. Building this is worth more than any nudge.
+
+  - name: rung_skipped
+    purpose: Whether a rung was bypassed, and therefore whether a relationship was spent.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: >
+      Skipping works once. The skipped rung learns that answering the administrator is
+      optional because the answer arrives from above anyway, and the ladder collapses to its
+      top step — which is then unusable for anything routine.
+
+  - name: rung_absent
+    purpose: Whether the rung is out of office, on leave, or otherwise unable to answer.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Silence from an absent approver is not refusal and escalating past it is a routing
+      error that reads as an accusation. Check the absence record before the ladder.
+
+  - name: decision_required
+    purpose: The specific decision the rung is being asked to make.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      Phrased as a question with a yes/no or a pick-one answer. "Please approve the attached
+      PO for £14,200 against cost centre 4410, or tell me who should" is an escalation.
+      "This is still outstanding" is an announcement.
+
+  - name: recommended_option
+    purpose: The option the raiser recommends, so the rung can decide rather than investigate.
+    type: value
+    data_type: string
+    description: >
+      An escalation carrying a recommendation resolves several times faster than one carrying
+      a problem, because the rung's work drops from analysis to assent. Withholding the
+      recommendation to appear neutral is the most expensive politeness in administration.
+
+  - name: response_by
+    purpose: The date by which an answer is needed, derived from the protected deadline.
+    type: value
+    data_type: timestamp
+    description: >
+      Must be earlier than the deadline by the execution time still required. An escalation
+      whose response_by equals the deadline has already failed.
+
+  - name: protects_deadline_ref
+    purpose: The external date this escalation exists to protect.
+    type: reference
+    ref: admin.obj.core.deadline
+    description: >
+      The single strongest legitimising fact available. "This needs a decision by Thursday
+      because the filing window closes Friday" converts an escalation from impatience into
+      arithmetic, and non-negotiable dates are the only reason a rung reliably reorders its
+      day.
+
+  - name: credibility_cost
+    purpose: What raising this spends, on a scale a human recognises.
+    type: value
+    data_type: enum
+    allowed_values: [none, low, moderate, high, terminal]
+    default: moderate
+    sensitivity: internal
+    description: >
+      `none` is real and should be the design goal — a time-boxed automatic advance costs
+      nobody anything. `terminal` means the working relationship does not survive it, which
+      is occasionally still the correct choice and should be made with open eyes.
+
+  - name: cost_bearer
+    purpose: Who actually pays the credibility cost, which is rarely the person deciding to raise.
+    type: value
+    data_type: enum
+    allowed_values: [administrator, principal, requester, function, vendor]
+    default: administrator
+    sensitivity: internal
+    description: >
+      An EA escalating in an executive's name spends the executive's capital, not their own,
+      and must therefore not do it without them knowing. Getting this attribute wrong is how
+      an assistant becomes described as difficult for doing their job correctly.
+
+  - name: prior_escalations_against_rung
+    purpose: How often this rung has had to be escalated past, in the current period.
+    type: value
+    data_type: integer
+    default: 0
+    sensitivity: confidential
+    description: >
+      Three or more against the same rung in a quarter is not a series of incidents, it is a
+      design fault — the rung is over-allocated, under-delegated or in the wrong place on the
+      matrix. This is person-level performance data and must never widen its audience.
+
+  - name: reversible
+    purpose: Whether the escalation can be undone once raised.
+    type: value
+    data_type: boolean
+    default: false
+    description: "It cannot. The item may resolve; the rung remembers being escalated past."
+
+  - name: state
+    purpose: Where this escalation is in its own lifecycle.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, identified, submitted, escalated, on_hold, resolved, cancelled, breached]
+    required: true
+    default: unknown
+
+  - name: raised_at
+    purpose: When the escalation was actually sent, as opposed to when grounds first existed.
+    type: value
+    data_type: timestamp
+    description: >
+      The gap between grounds and raise is the credibility tax, measured in days. In most
+      functions it runs to a week and nobody has ever put a number on it.
+
+  - name: raised_by_ref
+    purpose: Who raised it.
+    type: reference
+    ref: admin.obj.core.employee_record
+
+  - name: raised_on_behalf_of_ref
+    purpose: Whose authority it is raised under, when that is not the raiser.
+    type: reference
+    ref: admin.obj.core.employee_record
+
+  - name: channel
+    purpose: How it was raised, which changes both the speed and the offence taken.
+    type: value
+    data_type: enum
+    allowed_values: [email, workflow_tool, meeting, call, chat, in_person]
+    default: email
+    description: >
+      Written channels create the record; spoken channels preserve the relationship. The
+      practitioner move is spoken first, written immediately after — "as discussed, I am
+      raising this so it is on the record" — which gets both.
+
+  - name: rung_responded_at
+    purpose: When the rung answered, if it did.
+    type: value
+    data_type: timestamp
+
+  - name: outcome
+    purpose: What the escalation produced. Escalations without recorded outcomes teach nothing.
+    type: value
+    data_type: enum
+    allowed_values: [unblocked, decided_against, delegated, deferred, no_response, withdrawn,
+                     accepted_as_risk]
+    description: >
+      `decided_against` is a success — the item was resolved, and a no is an answer. Systems
+      that count only `unblocked` as success push administrators towards escalating things
+      they expect to win, which is the opposite of what escalation is for.
+
+  - name: resolution_note
+    purpose: What actually moved it, in one line, for the next person.
+    type: value
+    data_type: string
+    sensitivity: confidential
+
+  - name: stall_hours
+    purpose: How long since the blocked item last moved.
+    type: derived
+    data_type: number
+    unit: hours
+    derived_from: [stalled_since]
+    source_paths: [thread.last_inbound, commitment.due_at]
+
+  - name: rung_response_latency_hours
+    purpose: How long this rung took to answer once escalated.
+    type: derived
+    data_type: number
+    unit: hours
+    derived_from: [raised_at, rung_responded_at]
+    description: >
+      Feeds the ladder back into itself. A rung that answers escalations in two hours and
+      first requests in three weeks is not busy, it is prioritising by pressure, and the fix
+      is a time-box rather than another escalation.
+
+  - name: escalation_warranted_bp
+    purpose: How strongly the evidence supports raising this now rather than waiting.
+    type: derived
+    data_type: integer
+    derived_from: [stall_hours, chase_count, protects_deadline_ref, credibility_cost,
+                   grounds_recorded]
+
+  - name: ladder_exhausted
+    purpose: Whether there is anywhere left to go.
+    type: derived
+    data_type: boolean
+    derived_from: [current_rung, ladder_depth]
+    description: >
+      True is a terminal condition for this object and a creation condition for a named,
+      owned risk. An exhausted ladder left as an open escalation is the commonest way an
+      organisation discovers it accepted a risk without ever deciding to.
+
+  - name: route_resolvable
+    purpose: Whether a real named person exists to escalate to at all.
+    type: derived
+    data_type: boolean
+    derived_from: [rung_owner_ref, next_rung_owner_ref, ladder_source]
+    description: >
+      False far more often than anyone expects, because ladders are recorded as roles and
+      roles are vacant, seconded or renamed. Escalating to a job title escalates to nobody.
+
+# ── States ───────────────────────────────────────────────────────────────────────────────
+states:
+  initial: unknown
+  terminal: [resolved, cancelled, breached]
+  values:
+    - name: unknown
+      description: No grounds established. Most items live and die here, correctly.
+    - name: identified
+      description: >
+        Grounds exist and nothing has been raised. The state this object exists to make
+        visible — the queue of escalations that are warranted and unspoken.
+      entered_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+      implies: "Someone is absorbing a failure that belongs upward, and the clock is still running."
+    - name: submitted
+      description: Raised to the first rung, awaiting a response.
+      implies: "The credibility cost has been paid. It cannot be refunded by the item resolving."
+    - name: escalated
+      description: Moved beyond the first rung. Each further rung raises the cost non-linearly.
+    - name: on_hold
+      description: >
+        Paused by agreement — the rung is on leave and a delegate is being routed to, or the
+        underlying item is itself waiting on a third party.
+    - name: resolved
+      description: The rung answered and the blocked item moved. Includes a recorded refusal.
+      implies: "Log the outcome. This is the only data that tells you where authority is missing."
+    - name: cancelled
+      description: >
+        Withdrawn because the underlying item unblocked itself or stopped mattering. A
+        surprisingly large share, and each one is a lesson about escalating too early.
+    - name: breached
+      description: >
+        The ladder was exhausted and nothing moved. No longer an escalation; convert to a
+        named risk with an accepting owner.
+      implies: "The organisation is now carrying a risk it never explicitly agreed to carry."
+  transitions:
+    - {from: unknown, to: identified, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
+    - {from: identified, to: submitted, trigger: escalation_raised, reversible: false}
+    - {from: identified, to: cancelled, trigger: item_unblocked_itself}
+    - {from: submitted, to: resolved, when: [{path: thread.ball_in_court, op: "=", value: us}]}
+    - {from: submitted, to: escalated, trigger: rung_time_box_expired}
+    - {from: submitted, to: on_hold, trigger: rung_absent_confirmed}
+    - {from: on_hold, to: submitted, trigger: delegate_engaged}
+    - {from: escalated, to: resolved}
+    - {from: escalated, to: breached, trigger: ladder_exhausted}
+    - {from: submitted, to: cancelled, trigger: withdrawn}
+
+# ── Relationships ────────────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: escalates_to
+    target: admin.obj.core.approver
+    direction: outbound
+    cardinality: many
+    weight_bp: 3000
+    confidence_bp: 6000
+    priority: 1
+    evidence: [document, register, hris]
+    description: >
+      The ladder itself, and the edge that most often does not exist. Confidence is 6000
+      rather than 9000 because approval ladders are recorded against roles and people move;
+      an unverified next rung is the commonest cause of an escalation landing on someone who
+      left in March.
+
+  - type: attaches_to
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1600
+    confidence_bp: 9000
+    priority: 2
+    conditions: [{path: approval.state, op: "=", value: pending}]
+    description: >
+      The commonest thing escalated. The edge carries the value and the authority basis,
+      which together decide whether the next rung can actually act.
+
+  - type: attaches_to
+    target: admin.obj.core.commitment
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1200
+    confidence_bp: 9000
+    priority: 3
+    conditions: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    description: >
+      A commitment was consented to, so it can be renegotiated with the person it was made
+      to. Renegotiation is nearly always cheaper than escalation and is the move that gets
+      skipped.
+
+  - type: attaches_to
+    target: admin.obj.core.request
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 800
+    confidence_bp: 8500
+    priority: 4
+
+  - type: references
+    target: admin.obj.core.deadline
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1400
+    confidence_bp: 7000
+    priority: 2
+    description: >
+      The external date being protected. This edge is what converts escalation from a
+      judgement about patience into arithmetic about slack, and it is the difference between
+      an escalation that is respected and one that is resented.
+
+  - type: governed_by
+    target: admin.obj.core.policy
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 900
+    confidence_bp: 6500
+    evidence: [document]
+    description: >
+      The escalation policy or delegation-of-authority matrix that makes the rung order
+      legitimate rather than personal. Where it is absent, every escalation is read as an
+      opinion about the person being escalated past.
+
+  - type: governed_by
+    target: admin.obj.core.service_level
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 800
+    confidence_bp: 5000
+    description: >
+      The rung time-box. An SLA-driven ladder advances on a clock nobody has to defend,
+      which removes the credibility cost entirely — the only known structural fix for
+      under-escalation.
+
+  - type: delegates_to
+    target: admin.obj.core.delegate
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 700
+    confidence_bp: 5500
+    conditions: [{exists: approval.approver}]
+    description: >
+      Where an absent rung has a recorded delegate, the delegate is the route and the ladder
+      does not advance. Treating leave as refusal is the fastest way to make an enemy of
+      someone who was on a beach.
+
+  - type: produces
+    target: admin.obj.core.audit_evidence
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 500
+    confidence_bp: 7000
+    description: >
+      In a regulated function the escalation record is frequently the only proof the control
+      operated — that the breach was seen, raised and owned rather than missed.
+
+  - type: precedes
+    target: admin.obj.core.admin_risk
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 600
+    confidence_bp: 6000
+    description: >
+      What an exhausted ladder becomes. Every organisation has risks it accepted by running
+      out of escalation rather than by deciding, and this edge is the only place that
+      transition can be caught.
+
+# ── Inference Patterns ⭐ ────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: esc.overdue_and_they_owe_us
+      statement: "A commitment is past its due date and the ball is in their court."
+      status: executable
+      when:
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+        - {path: thread.ball_in_court, op: "=", value: them}
+      yields: {confidence_bp: 7500, attribute: state, value: identified}
+      evidence_fields: [commitment.due_at, commitment.action, thread.ball_in_court]
+      false_positive: >
+        The item was delivered out of band — handed over in a corridor, done in a system that
+        does not write back — and nothing closed the loop. This is the largest single source
+        of a wrong escalation nudge in the domain, and it is why the first move must always be
+        a confirmation rather than a raise.
+
+    - id: esc.overdue_past_the_rungs_own_pace
+      statement: "Past due, they owe us, and they have now been silent well past their normal reply pace."
+      status: executable
+      when:
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+        - {path: thread.ball_in_court, op: "=", value: them}
+        - {fn: days_since, path: thread.last_inbound, op: ">=",
+           value: {baseline: reply_cadence, mult: 2.5, floor: 7}}
+      yields: {confidence_bp: 8200, attribute: escalation_warranted_bp, value: 8200,
+               corroborates: [esc.overdue_and_they_owe_us]}
+      evidence_fields: [thread.last_inbound, commitment.due_at]
+      note: >
+        Baselined against the rung's own cadence rather than a fixed number of days, because
+        a finance director who answers weekly and a facilities manager who answers hourly are
+        not equally silent at day five. Fixed-threshold escalation rules are the reason
+        escalation feels arbitrary to the people receiving it.
+
+    - id: esc.chased_and_still_stuck
+      statement: "We have already followed up in writing and the item is a full week past due."
+      status: executable
+      when:
+        - {has_obs: followup_sent}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 7}
+      yields: {confidence_bp: 7800, attribute: grounds_recorded, value: true}
+      evidence_fields: [commitment.due_at]
+      false_positive: >
+        The engine sees that a follow-up exists, never how many. One chase is not grounds and
+        five is an administrator absorbing someone else's failure, and both look identical
+        here. A follow-up count is the cheapest high-value signal Layer 2 could add for this
+        object.
+
+    - id: esc.route_not_resolvable
+      statement: "The item is overdue and nothing else is attached to it — there is no visible ladder."
+      status: executable
+      when:
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+        - {fn: edge_count, op: "<=", value: 1}
+      yields: {confidence_bp: 7000, attribute: route_resolvable, value: false}
+      note: >
+        The correct output here is not an escalation but a question: who is the next rung?
+        An isolated overdue item with no approver, no policy and no service level attached
+        cannot be escalated, and pretending otherwise produces advice to email nobody.
+
+  heuristic:
+
+    - id: esc.forum_that_would_have_cleared_it_was_cancelled
+      statement: "The meeting where this would have been unblocked was cancelled and the item is now overdue."
+      status: executable
+      when:
+        - {path: meeting.status, op: "=", value: cancelled}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 6500, attribute: null, corroborates: [esc.overdue_and_they_owe_us]}
+      evidence_fields: [meeting.status, meeting.start_at]
+      note: >
+        A cancelled forum is an under-read administrative signal. Half of what a weekly
+        governance meeting does is unblock decisions nobody would escalate, and when it drops
+        the queue behind it goes silently stale rather than visibly late.
+
+    - id: esc.engagement_collapse_while_they_hold_it
+      statement: "Two-way volume has halved while the decision sits with them."
+      status: executable
+      when:
+        - {path: derived.engagement, op: "<=", value: 0.5}
+        - {path: thread.ball_in_court, op: "=", value: them}
+      yields: {confidence_bp: 6000, attribute: null}
+      evidence_fields: [derived.engagement, thread.ball_in_court]
+      false_positive: >
+        Annual leave, a reorganisation, or quarter-end. Deliberately weak at 6000 and it must
+        never be the sole grounds — this is the pattern that, unchecked, escalates past people
+        for being on holiday.
+
+    - id: esc.approval_pending_past_its_own_turnaround
+      statement: "The approval has been pending materially longer than this approver's normal turnaround."
+      status: needs_signal
+      yields: {confidence_bp: 8800, attribute: escalation_warranted_bp, value: 8800}
+      requires_signals:
+        - {kind: fact_path, name: approval.state, owner_layer: L1,
+           note: "No typed approval state exists. Everything administrative about stalled decisions is currently inferred from email shape, which is why this object leans so hard on commitment.due_at."}
+        - {kind: fact_path, name: approval.requested_at, owner_layer: L1}
+        - {kind: baseline, name: approval_turnaround, owner_layer: L2,
+           note: "Per-approver, per-value-band. The band matters: the same person clears £500 in a day and £50,000 in a fortnight."}
+
+    - id: esc.explicitly_asked_for
+      statement: "Someone has explicitly requested escalation."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: state, value: identified}
+      requires_signals:
+        - {kind: obs_kind, name: escalation_requested, owner_layer: L2,
+           note: "The strongest possible grounds and the pipeline drops it. When a requester asks to escalate, the object exists at near certainty and no inference is required."}
+
+    - id: esc.rung_is_absent_not_refusing
+      statement: "The rung is on leave, so silence is absence and the delegate is the route."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: rung_absent, value: true}
+      requires_signals:
+        - {kind: fact_path, name: employee.end_at, owner_layer: L1,
+           note: "Absence and delegation records live in HRIS and the calendar out-of-office, neither of which is projected. This is the highest-value false-positive suppressor on the object: it stops the system escalating past people who are asleep in a different timezone."}
+        - {kind: obs_kind, name: approval_delegated, owner_layer: L2}
+
+    - id: esc.protected_deadline_inside_the_ladder_time
+      statement: "The external date the item protects is closer than the ladder takes to climb."
+      status: needs_signal
+      yields: {confidence_bp: 9200, attribute: escalation_warranted_bp, value: 9200}
+      requires_signals:
+        - {kind: fact_path, name: obligation.due_at, owner_layer: L1,
+           note: "Escalate to the deadline, not to the elapsed time. Without an external date the system can only reason about patience, which is exactly the reasoning administrators are told to stop using."}
+        - {kind: derived, name: derived.approval_latency, owner_layer: L2}
+
+    - id: esc.repeat_stall_against_the_same_rung
+      statement: "This rung has stalled three or more items this quarter."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: prior_escalations_against_rung, value: null}
+      requires_signals:
+        - {kind: fact_path, name: approval.approver, owner_layer: L1}
+        - {kind: derived, name: derived.escalation_pressure, owner_layer: L2,
+           note: "Turns a sequence of incidents into a design finding. The output is not another escalation but a delegation change, and no organisation can see this today."}
+
+    - id: esc.request_ageing_against_service_level
+      statement: "An intake request has aged past its published service level with no owner response."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: state, value: identified}
+      requires_signals:
+        - {kind: fact_path, name: request.created_at, owner_layer: L1}
+        - {kind: fact_path, name: request.priority, owner_layer: L1}
+        - {kind: fact_path, name: request.state, owner_layer: L1,
+           note: "Admin queues publish response targets and measure nothing against them. Three fields would make the whole of service-level escalation automatic and remove the credibility cost from it."}
+
+    - id: esc.missing_authority_not_missing_answer
+      statement: "No rung on the recorded ladder has authority for this value or decision type."
+      status: needs_signal
+      yields: {confidence_bp: 8600, attribute: trigger_reason, value: missing_authority}
+      requires_signals:
+        - {kind: fact_path, name: approval.threshold_value, owner_layer: L1,
+           note: "The governance gap that masquerades as a delay. Climbing a ladder whose top rung still cannot sign wastes weeks and ends in an improvised approval that fails audit later."}
+
+    - id: esc.prior_escalation_accepted_and_nothing_moved
+      statement: "A previous escalation on this item was accepted by the rung and the item still has not moved."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: state, value: escalated}
+      requires_signals:
+        - {kind: obs_kind, name: escalation_accepted, owner_layer: L2,
+           note: "Acceptance without movement is worse than silence: it consumes the escalation, resets everyone's patience, and produces no decision. It should advance the ladder immediately rather than restart the clock."}
+
+# ── Inputs ───────────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: "who is waiting on whom", path: thread.ball_in_court,
+     fills: [stalled_since, state], reliability_bp: 7000}
+  - {source: email, signal: "written chases and their dates", path: thread.last_inbound,
+     fills: [chase_count, grounds_recorded], reliability_bp: 6500,
+     description: "Chases are visible as messages and invisible as a count. The count is what legitimises the raise."}
+  - {source: derived, signal: "collapse in two-way volume while they hold the decision",
+     path: derived.engagement, fills: [stall_hours], reliability_bp: 4000}
+  - {source: document, signal: "delegation-of-authority matrix and escalation policy",
+     fills: [ladder_source, ladder_depth, next_rung_owner_ref], reliability_bp: 8000}
+  - {source: register, signal: "escalation log — what was raised, to whom, and what came back",
+     fills: [prior_escalations_against_rung, outcome], reliability_bp: 9000,
+     description: "Almost never exists. Where it does, this object is largely known rather than inferred."}
+  - {source: hris, signal: "absence, leave and recorded delegation",
+     fills: [rung_absent], reliability_bp: 8500}
+  - {source: portal, signal: "workflow tool timestamps on approval steps",
+     fills: [stalled_since, rung_responded_at], reliability_bp: 8500}
+  - {source: meeting_transcript, signal: "the forum where a blockage is named out loud",
+     fills: [trigger_reason, business_impact], reliability_bp: 6000}
+  - {source: slack, signal: "where most escalations actually happen",
+     fills: [raised_at, channel], reliability_bp: 4000,
+     description: "High volume, no record, no outcome. The gap between where escalation happens and where it is logged is why escalation data does not exist."}
+
+# ── Outputs ──────────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: escalation_warranted_bp, type: integer,
+     description: "How strongly the evidence supports raising this now rather than waiting three more days.",
+     derived_from: [stall_hours, chase_count, protects_deadline_ref, grounds_recorded],
+     consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: next_rung, type: ref,
+     description: "The named person to raise to, or null — and null is an answer that changes the plan.",
+     derived_from: [next_rung_owner_ref, route_resolvable],
+     consumed_by: [L5.execution_planning]}
+  - {name: raise_by_at, type: timestamp,
+     description: "The latest moment escalation can still protect the deadline, given the ladder's own latency.",
+     derived_from: [protects_deadline_ref, rung_time_box_hours, ladder_depth],
+     consumed_by: [L5.execution_planning]}
+  - {name: escalation_framing, type: string,
+     description: "The ask, the recommendation and the date — the three-part shape that resolves fastest.",
+     derived_from: [decision_required, recommended_option, response_by],
+     consumed_by: [L5.communication_planning]}
+  - {name: channel_and_tone, type: string,
+     description: "Spoken first where the relationship matters, written immediately after for the record.",
+     derived_from: [channel, credibility_cost, cost_bearer],
+     consumed_by: ["L5.2.channel_planner"]}
+  - {name: credibility_cost_estimate, type: string,
+     description: "What raising this spends and who pays. Layer 4 must weigh it, not ignore it.",
+     derived_from: [credibility_cost, cost_bearer, rung_skipped],
+     consumed_by: [L4.decision_maker]}
+  - {name: ladder_gap, type: boolean,
+     description: "True when no rung has authority for the decision. A governance finding, not a delay.",
+     derived_from: [route_resolvable, trigger_reason],
+     consumed_by: [L6.learning_unit]}
+
+# ── Preconditions — what must be true before this object can be acted on ─────────────────
+preconditions:
+
+  - id: esc.route_is_a_person
+    statement: "The next rung resolves to a named individual, not to a role, a mailbox or a team."
+    requires: [admin.obj.core.approver, next_rung_owner_ref]
+    when: [{exists: approval.approver}]
+    if_unmet: >
+      Do not escalate. Route to the owner of the delegation-of-authority matrix and ask who
+      holds the rung today. Escalating to a job title escalates to nobody and burns the
+      window while looking like action.
+
+  - id: esc.ask_was_made_in_writing
+    statement: "At least one written request with a stated date exists against the current rung."
+    requires: [chase_count, grounds_recorded]
+    if_unmet: >
+      Chase once, in writing, naming the decision and the date. Then escalate. Skipping this
+      converts the escalation into an argument about whether the request was ever clear,
+      which the rung wins and the administrator loses twice.
+
+  - id: esc.rung_is_present
+    statement: "The current rung is not on recorded leave or otherwise unavailable."
+    requires: [rung_absent, admin.obj.core.delegate]
+    if_unmet: >
+      Route to the recorded delegate and hold the ladder. Escalating past an absent person is
+      not an escalation, it is a routing error, and it is remembered as an accusation.
+
+  - id: esc.ask_is_decidable_at_this_rung
+    statement: "The decision being asked for is within the next rung's authority."
+    requires: [decision_required, admin.obj.core.approver]
+    if_unmet: >
+      Stop climbing. Where no rung can decide, the finding is a missing authority — raise it
+      as a governance gap to the matrix owner rather than as an escalation to a manager who
+      will also be unable to sign.
+
+  - id: esc.underlying_item_still_matters
+    statement: "The blocked item is still required and still has a live downstream consequence."
+    requires: [blocked_object_kind, business_impact]
+    when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    if_unmet: >
+      Close it. A meaningful share of aged queue items stopped mattering weeks ago, and
+      escalating one costs real credibility for nothing — which is then unavailable for the
+      item that does matter.
+
+  - id: esc.principal_consented
+    statement: "Where the escalation is raised in someone else's name, that person knows."
+    requires: [raised_on_behalf_of_ref, cost_bearer]
+    if_unmet: >
+      Ask first. The capital being spent is theirs, and an executive who learns from the
+      recipient that they escalated something stops delegating escalation entirely.
+
+# ── Constraints ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - id: esc.cannot_exceed_the_top_rung
+    statement: "An escalation cannot go above the accountable owner of the decision."
+    hard: true
+    why: >
+      Past that point there is no more authority to buy. What exists instead is a risk that
+      must be accepted by name, and dressing it as a further escalation hides the acceptance.
+
+  - id: esc.never_through_the_subject
+    statement: "A concern about a person's conduct must never be escalated through that person's line."
+    hard: true
+    why: >
+      This is how conduct concerns die, and every speak-up framework in existence exists to
+      provide the separate route. Line escalation is for stalled work, not for behaviour.
+
+  - id: esc.cannot_manufacture_authority
+    statement: "Escalation cannot create an approval right that the delegation matrix does not grant."
+    hard: true
+    why: >
+      An escalated approval taken by someone outside their limit fails audit later and is
+      worse than the original delay, because it converts a visible wait into an invisible
+      control failure.
+
+  - id: esc.cannot_be_unraised
+    statement: "An escalation, once sent, cannot be withdrawn from the recipient's memory."
+    hard: true
+
+  - id: esc.confidential_grounds_stay_confidential
+    statement: "Escalation of an item containing personal or special-category data must not widen its audience."
+    hard: true
+    why: >
+      The commonest accidental disclosure in administration is a grievance, medical
+      adjustment or salary item escalated by forwarding the whole thread upward. Escalate the
+      decision; do not escalate the file.
+
+# ── Business Rules — deterministic. No model evaluates these. ────────────────────────────
+business_rules:
+
+  - id: esc.no_raise_without_a_named_rung
+    statement: An escalation cannot be raised while next_rung_owner_ref is unresolved.
+    then: block_raise
+    severity: blocking
+
+  - id: esc.no_raise_without_a_recorded_ask
+    statement: An escalation cannot be raised while grounds_recorded is false.
+    when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    then: require_written_chase_first
+    severity: blocking
+    why: "The paper trail is the difference between an escalation and an accusation."
+
+  - id: esc.must_carry_a_decision
+    statement: An escalation must name a specific decision_required. Status updates are not escalations.
+    then: block_raise
+    severity: blocking
+
+  - id: esc.absent_rung_routes_to_delegate
+    statement: Where rung_absent is true and a delegate exists, the escalation routes to the delegate and the ladder does not advance.
+    then: route_to_delegate
+    severity: blocking
+
+  - id: esc.skipping_a_rung_needs_a_reason
+    statement: Setting rung_skipped requires a recorded justification.
+    then: require_justification
+    severity: warning
+    why: >
+      Skipping is sometimes correct — a hard external deadline, an absent rung with no
+      delegate — and is permanently damaging when habitual. Requiring a sentence is enough to
+      make it deliberate.
+
+  - id: esc.hard_deadline_makes_escalation_mandatory
+    statement: Where the protected deadline is non-negotiable and remaining slack is less than the ladder's own latency, escalation is required rather than discretionary.
+    then: mandate_escalation
+    severity: warning
+    why: >
+      This is the single rule that fixes under-escalation. It removes the individual judgement
+      call, and with it the credibility cost, by making the raise a consequence of arithmetic.
+
+  - id: esc.must_close_with_an_outcome
+    statement: An escalation cannot move to a terminal state without a recorded outcome.
+    then: require_outcome
+    severity: warning
+    why: "Escalation data is the only honest map of where authority is missing, and it is only produced at closure."
+
+  - id: esc.exhausted_ladder_becomes_a_risk
+    statement: When ladder_exhausted is true, an admin risk with a named accepting owner must be created.
+    then: create_risk
+    severity: blocking
+
+# ── Decision Factors — advisory inputs to Layer 4, never a decision ─────────────────────
+decision_factors:
+
+  - name: consequence_of_not_escalating
+    weight_bp: 2000
+    direction: increases
+    description: >
+      What breaks downstream, in the recipient's currency. A non-negotiable external date
+      attached to the blocked item outweighs every other factor here combined, and is the
+      only argument that reliably reorders a senior person's day.
+    reads: [protects_deadline_ref, business_impact, blocked_object_kind]
+
+  - name: stall_severity
+    weight_bp: 2200
+    direction: increases
+    description: >
+      Measured against this rung's own pace, not against a calendar. Time since the item last
+      MOVED, never time since it was created.
+    reads: [stall_hours, stalled_since, chase_count]
+
+  - name: legitimacy_of_grounds
+    weight_bp: 1800
+    direction: increases
+    description: >
+      Written asks, a policy-backed ladder and a decidable question. Legitimacy is what makes
+      the difference between an escalation that is answered and one that is resented.
+    reads: [grounds_recorded, ladder_source, decision_required]
+
+  - name: credibility_cost
+    weight_bp: 1500
+    direction: decreases
+    description: >
+      The factor most systems omit, which is why their escalation advice is ignored. Cost
+      falls to near zero where a pre-agreed rung time-box exists, and that is the design goal.
+    reads: [credibility_cost, cost_bearer, rung_skipped, rung_time_box_hours]
+
+  - name: rung_responsiveness
+    weight_bp: 1200
+    direction: context
+    description: >
+      A rung that historically answers in four hours deserves one more day. A rung that has
+      never answered an escalation should be skipped by design rather than by frustration.
+    reads: [rung_response_latency_hours, prior_escalations_against_rung]
+
+  - name: rung_availability
+    weight_bp: 800
+    direction: decreases
+    description: "Absence is not refusal. This factor exists solely to stop the system escalating past people on leave."
+    reads: [rung_absent]
+
+  - name: route_quality
+    weight_bp: 500
+    direction: context
+    description: "Whether a real named person exists at the next rung at all."
+    reads: [route_resolvable, next_rung_owner_ref, ladder_depth]
+
+# ── Evidence — what counts as a receipt, and what each source is worth ──────────────────
+evidence:
+  - {source: register, strength_bp: 9200, decays: false,
+     independent_of: [email, slack, derived],
+     description: "The escalation log. Where one exists this object is known rather than guessed; almost nowhere does."}
+  - {source: portal, strength_bp: 8800, decays: false,
+     independent_of: [email, meeting_transcript],
+     description: "Workflow-tool timestamps on the approval step. Machine-generated, so it does not flatter anybody's recollection."}
+  - {source: email, strength_bp: 8500, decays: false,
+     independent_of: [register, hris],
+     description: "The written ask, with the date in it. The evidential backbone of every legitimate escalation."}
+  - {source: hris, strength_bp: 8000, decays: true,
+     independent_of: [email, portal],
+     description: "Absence and delegation. Proves whether silence meant refusal or annual leave."}
+  - {source: document, strength_bp: 7800, decays: true,
+     description: "The delegation-of-authority matrix or escalation policy that makes the ladder legitimate. Decays fast — matrices are reviewed annually and reorganisations are not."}
+  - {source: meeting_transcript, strength_bp: 6000, decays: false,
+     description: "The blockage named out loud, with a witness. Strong on grounds, weak on dates."}
+  - {source: derived, strength_bp: 3800, decays: true,
+     description: "Engagement collapse and stall shape. Corroborating only — never sole grounds for raising."}
+  - {source: slack, strength_bp: 3500, decays: true,
+     description: "Where most escalation genuinely happens, and it leaves no outcome behind. High volume, low evidential value."}
+  - {source: manual_entry, strength_bp: 3000, decays: true,
+     description: "Somebody's recollection of having chased. Believe the mailbox instead."}
+
+# ── Metrics ──────────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: grounds_to_raise_days, unit: days, direction: lower_is_better, owner_layer: L6,
+     calibrates: [esc.overdue_past_the_rungs_own_pace, esc.chased_and_still_stuck],
+     description: "Days between escalation being warranted and being raised. The credibility tax, quantified. In most functions it is over a week and nobody has ever measured it."}
+  - {name: under_escalation_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Share of breached deadlines with no prior escalation. The honest measure of this object, and the one that shows escalation is under-used rather than over-used."}
+  - {name: escalation_resolution_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Share reaching a recorded outcome — including a refusal. Counting only unblocked as success teaches people to escalate only what they will win."}
+  - {name: rung_response_time, unit: hours, direction: lower_is_better, owner_layer: L2,
+     calibrates: [esc.approval_pending_past_its_own_turnaround]}
+  - {name: repeat_stall_rate_per_rung, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Escalations against the same rung per period. Above roughly three a quarter it is a delegation design problem, not a person problem."}
+  - {name: rung_skip_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Share where a rung was bypassed. Rising skip rate is the leading indicator of a ladder about to become unusable."}
+  - {name: escalation_withdrawal_rate, unit: percent, direction: target_band, owner_layer: L6,
+     description: "Share withdrawn because the item resolved itself or stopped mattering. Zero means escalating far too late; high means far too early."}
+  - {name: ladder_exhaustion_count, unit: count, direction: lower_is_better, owner_layer: L6,
+     description: "Escalations that ran out of rungs. Each one is a risk the organisation accepted without deciding to."}
+
+# ── Events ───────────────────────────────────────────────────────────────────────────────
+events:
+  - {id: esc.grounds_met, name: Escalation Grounds Met, severity: notable,
+     emitted_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0},
+                    {path: thread.ball_in_court, op: "=", value: them}],
+     payload: [blocked_object_kind, stall_hours, chase_count],
+     description: "Fires long before anybody raises anything. The gap between this event and esc.raised is the whole problem."}
+  - {id: esc.raised, name: Escalation Raised, severity: notable,
+     payload: [current_rung, rung_owner_ref, decision_required, response_by, cost_bearer]}
+  - {id: esc.rung_responded, name: Rung Responded, severity: info,
+     payload: [rung_responded_at, outcome]}
+  - {id: esc.rung_time_box_expired, name: Rung Time Box Expired, severity: notable,
+     payload: [current_rung, next_rung_owner_ref],
+     description: "The cheap escalation. Advancing on a pre-agreed clock costs nobody credibility because nobody chose it."}
+  - {id: esc.rung_skipped, name: Rung Skipped, severity: notable,
+     payload: [current_rung, rung_skipped],
+     invalidates: [rung_response_latency_hours],
+     description: "The skipped rung's future responsiveness data is now meaningless — they have learned that answering is optional."}
+  - {id: esc.ladder_exhausted, name: Ladder Exhausted, severity: critical,
+     payload: [ladder_depth, outcome],
+     invalidates: [route_resolvable, escalation_warranted_bp],
+     description: "No authority remains. Convert to a named risk with an accepting owner, today, not at the next review."}
+  - {id: esc.withdrawn, name: Escalation Withdrawn, severity: info,
+     payload: [outcome],
+     description: "The item unblocked itself. Worth logging — a run of these means the escalation trigger is set too early."}
+  - {id: esc.resolved, name: Escalation Resolved, severity: info,
+     payload: [outcome, resolution_note, rung_response_latency_hours]}
+
+# ── Actions — what Layer 5 may operationalise. Naming one here does not authorise it. ────
+actions:
+  - {id: esc.confirm_before_raising, name: Confirm the item is genuinely outstanding, actor: agent,
+     cost: trivial, reversible: true,
+     effect: "One message to the rung asking whether it is already done. Catches the out-of-band completion that is this object's largest false positive."}
+  - {id: esc.warn_before_escalating, name: Tell the rung you are about to escalate, actor: human,
+     cost: trivial, reversible: true,
+     effect: "Resolves a large share of cases without the escalation and preserves the relationship in the rest. The cheapest and least-used move in the domain."}
+  - {id: esc.chase_in_writing, name: Chase in writing with a stated date, actor: agent,
+     cost: trivial, reversible: true,
+     preconditions: [{path: thread.ball_in_court, op: "=", value: them}],
+     effect: "Builds the grounds. Without it there is no legitimate escalation."}
+  - {id: esc.functional_escalate, name: Route sideways for information rather than upward for authority,
+     actor: human, cost: low, reversible: true,
+     effect: "The correct move when the rung has the authority and lacks a fact. Costs nothing and is skipped because escalation is imagined as vertical."}
+  - {id: esc.route_to_delegate, name: Route to the recorded delegate, actor: agent,
+     cost: trivial, reversible: true,
+     effect: "Holds the ladder where the rung is absent. Prevents the accusatory escalation."}
+  - {id: esc.raise, name: Raise to the next rung, actor: human,
+     cost: moderate, reversible: false,
+     preconditions: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}],
+     effect: "Moves the decision. Spends credibility belonging to whoever cost_bearer names."}
+  - {id: esc.timebox_the_rung, name: Agree a rung time-box in advance, actor: human,
+     cost: low, reversible: true,
+     effect: "Converts every future escalation on this route from a judgement into a schedule. The structural fix for under-escalation."}
+  - {id: esc.renegotiate_instead, name: Renegotiate the date with the person owed, actor: human,
+     cost: low, reversible: true,
+     effect: "Available only for commitments, which were consented to. Nearly always cheaper than escalation and routinely forgotten."}
+  - {id: esc.withdraw, name: Withdraw the escalation, actor: human,
+     cost: low, reversible: false,
+     effect: "Closes it when the item resolves. The rung still remembers."}
+  - {id: esc.record_outcome, name: Record the outcome against the rung, actor: agent,
+     cost: trivial, reversible: true,
+     effect: "Produces the only data that shows where authority is genuinely missing."}
+  - {id: esc.convert_to_risk, name: Convert an exhausted ladder to a named risk, actor: human,
+     cost: high, reversible: false,
+     effect: "Forces an explicit acceptance by a named owner instead of an implicit one by exhaustion."}
+
+# ── Dependencies — facts about the compile, not about the world ──────────────────────────
+dependencies:
+  - {target: admin.obj.core.approver, kind: requires, strength: hard,
+     description: "Without a named person at the next rung this object cannot leave state identified. The ladder IS the object."}
+  - {target: admin.obj.core.approval, kind: requires, strength: soft,
+     description: "The commonest blocked item. Its state and authority basis decide whether the next rung can act at all."}
+  - {target: admin.obj.core.commitment, kind: requires, strength: soft,
+     description: "Supplies due date and owner, and carries the consent that makes renegotiation available as a cheaper alternative."}
+  - {target: admin.obj.core.deadline, kind: enriches, strength: hard,
+     description: "Converts escalation timing from patience into arithmetic. Without it the system can only reason about how long is too long, which is the reasoning to be replaced."}
+  - {target: admin.obj.core.policy, kind: enriches, strength: soft,
+     description: "Legitimises the rung order. Absent it, every escalation is read as a personal judgement about the person escalated past."}
+  - {target: admin.obj.core.service_level, kind: enriches, strength: soft,
+     description: "Supplies the rung time-box that makes escalation automatic and therefore free."}
+  - {target: admin.obj.core.delegate, kind: requires, strength: soft,
+     description: "Needed to distinguish an absent rung from a refusing one — the difference between correct routing and a public accusation."}
+  - {target: admin.obj.core.employee_record, kind: enriches, strength: soft,
+     description: "Absence, leaver status and reporting line. A rung who left last month is the classic dead escalation."}
+  - {target: admin.obj.core.admin_risk, kind: blocks, strength: hard,
+     description: "An exhausted ladder cannot close as an escalation; it must become a risk with an accepting owner first."}
+  - {target: admin.obj.core.request, kind: enriches, strength: soft,
+     description: "Intake priority and service-level clock, for queue-driven escalation."}
+
+# ── Exceptions — where the rules above are legitimately wrong ────────────────────────────
+exceptions:
+
+  - id: esc.conduct_bypasses_the_ladder
+    statement: "A safeguarding, fraud, bribery, safety or regulatory-breach concern bypasses the ladder entirely and goes to the named channel."
+    overrides: [esc.no_raise_without_a_recorded_ask, esc.skipping_a_rung_needs_a_reason,
+                esc.never_through_the_subject]
+    why: >
+      Sequential escalation of a concern ABOUT a link in the chain routes the concern through
+      the person it concerns. Every speak-up and whistleblowing framework exists for exactly
+      this case, and organisations that lack a separate route discover their problems from a
+      regulator instead.
+    frequency: rare
+
+  - id: esc.statutory_deadline_overrides_credibility
+    statement: "Where a non-negotiable external date is at risk, escalate immediately and at full cost, including skipping rungs."
+    overrides: [esc.skipping_a_rung_needs_a_reason]
+    when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    why: >
+      Credibility is recoverable; a missed filing deadline, a lapsed licence or an
+      auto-renewed contract is not. Administrators who understand this trade are the ones who
+      look unreasonable for a week and correct for a year.
+    frequency: occasional
+
+  - id: esc.no_ladder_at_all
+    statement: "In a founder-led or very small organisation there is one rung and it is the founder; the ladder concept does not apply."
+    overrides: [esc.no_raise_without_a_named_rung, esc.skipping_a_rung_needs_a_reason]
+    why: >
+      Depth-one ladders behave completely differently: cost per raise is high, frequency must
+      be low, and the correct technique is batching several decisions into one conversation
+      rather than escalating each. Applying enterprise escalation logic here reads as
+      pestering and is how an assistant loses standing in week two.
+    frequency: common
+
+  - id: esc.vendor_ladder_is_contractual
+    statement: "Escalation to a supplier follows the contract's escalation clause and its named contacts, not the internal ladder."
+    overrides: [esc.cannot_exceed_the_top_rung]
+    why: >
+      The contractual route has legal effect that an internal one does not — it can start a
+      cure period or preserve a termination right. Escalating to whoever answers the phone
+      instead can waive a remedy the organisation paid for.
+    frequency: occasional
+
+  - id: esc.first_offence_gets_grace
+    statement: "A rung that has never previously stalled gets one additional cycle before escalation, regardless of the arithmetic."
+    overrides: [esc.hard_deadline_makes_escalation_mandatory]
+    when: [{no_obs: followup_sent}]
+    why: >
+      A reliable person who is suddenly unresponsive is usually in trouble, not ignoring you.
+      One direct human check — call, do not email — resolves most of these and buys standing
+      that the escalation would have spent. Does not apply when the protected date cannot
+      absorb another cycle.
+    frequency: common
+
+  - id: esc.principal_forbids_it
+    statement: "An executive may decline to have something escalated in their name for reasons they will not explain."
+    overrides: [esc.hard_deadline_makes_escalation_mandatory]
+    why: >
+      They are frequently managing a relationship the administrator cannot see. The correct
+      response is to record that the escalation was declined and by whom, not to escalate
+      anyway and not to let the item silently rot. The record protects everybody later.
+    frequency: occasional
+
+# ── Best Practices ───────────────────────────────────────────────────────────────────────
+best_practices:
+
+  - id: esc.agree_the_ladder_when_calm
+    statement: "Establish the escalation route at the moment the commitment or approval is set up, not when it fails."
+    why: >
+      "Who do I go to if this slips?" asked on day one costs nothing and is answered honestly.
+      The same question asked in week three is heard as a threat. Pre-agreement is the only
+      thing that makes the later raise impersonal.
+    applies_when: "Any recurring approval route, service level or vendor relationship."
+
+  - id: esc.timebox_each_rung
+    statement: "Give every rung a published time-box and advance automatically when it expires."
+    why: >
+      This is the structural fix for under-escalation. When the ladder advances on a clock
+      everybody agreed to, no individual chose to escalate, so no individual's credibility is
+      spent — and the raise happens on the day it should rather than a week later.
+    applies_when: "Any repeatable route with more than one rung."
+    evidence: "Observable in the difference between grounds_to_raise_days on time-boxed routes and discretionary ones."
+
+  - id: esc.warn_the_rung_first
+    statement: "Tell the current rung you are about to escalate, and when."
+    why: >
+      It resolves a substantial share without the escalation ever being sent, and where it
+      does not, the rung is not ambushed. One email. The most reliably profitable move in this
+      object.
+    applies_when: "Always, except conduct concerns and cases where the rung is themselves the problem."
+
+  - id: esc.escalate_to_the_date_not_the_elapsed_time
+    statement: "Trigger on remaining slack against the protected deadline, not on days elapsed."
+    why: >
+      Elapsed-time rules escalate healthy items and miss urgent ones. Slack-based triggers
+      escalate a two-day-old item when the filing window closes on Friday and leave a
+      three-week-old one alone when nothing downstream depends on it.
+    applies_when: "Whenever the blocked item is attached to an external date."
+
+  - id: esc.separate_functional_from_hierarchic
+    statement: "Ask whether the rung lacks authority or lacks information, and route accordingly."
+    why: >
+      The ITIL distinction, and it halves the escalation volume in most functions. Sending a
+      knowledge problem upward produces a manager asking the same person the same question
+      two days later, with everybody now irritated.
+    applies_when: "Before every raise. It is one question and it takes ten seconds."
+
+  - id: esc.carry_a_recommendation
+    statement: "State the decision required, the option you recommend, and the date."
+    why: >
+      It changes the rung's task from investigation to assent, which is the difference between
+      an hour and a fortnight. Withholding the recommendation in order to appear neutral is
+      the most expensive politeness in administration.
+    applies_when: "Every escalation without exception."
+
+  - id: esc.log_every_outcome
+    statement: "Record what was raised, to whom, and what came back — including refusals."
+    why: >
+      Escalation data is the only honest map of where authority is missing, where the matrix
+      is wrong, and which rungs are over-allocated. Without it, the same structural failure
+      is rediscovered every quarter as a series of individual incidents.
+    applies_when: "Always. A shared sheet beats no register."
+
+  - id: esc.check_the_absence_before_the_ladder
+    statement: "Confirm the rung is present before treating silence as refusal."
+    why: >
+      Out-of-office, leave and time zones account for a large share of apparent stonewalling.
+      Escalating past someone who was on annual leave is remembered for years, and the check
+      costs one glance at a calendar.
+    applies_when: "Before any raise, particularly across regions and in August."
+
+  - id: esc.batch_in_flat_organisations
+    statement: "Where the ladder has one rung, batch decisions into a single scheduled conversation."
+    why: >
+      A founder cannot be escalated to eleven times a week. Batching converts eleven
+      escalations into one ten-minute agenda and preserves the ability to raise something
+      urgently when it genuinely is.
+    applies_when: "Small, founder-led or single-approver organisations."
+
+# ── Anti-Patterns — the failure an administrator actually sees ───────────────────────────
+anti_patterns:
+
+  - id: esc.chase_forever
+    statement: "The same rung is chased eight, ten, twelve times and never escalated past."
+    why_it_happens: >
+      Chasing is free to the administrator and escalating is not. The lateness is paid by a
+      third party who is not in the conversation, so the incentives point directly at
+      absorbing the failure indefinitely. Every function rewards the person who "just keeps
+      on top of it" and none of them measure what that costs.
+    cost: >
+      The deadline is missed anyway, three weeks later, with the administrator now
+      implicated in the delay because the record shows they knew and said nothing upward.
+    instead: >
+      Time-box the rung and advance automatically. Where that is not possible, cap chases at
+      two and make the third message an escalation with a warning attached.
+    detectable_by: [grounds_to_raise_days, under_escalation_rate, esc.chased_and_still_stuck]
+
+  - id: esc.cc_the_boss
+    statement: "Escalation by adding a senior person to the CC line of the fourth chase."
+    why_it_happens: >
+      It feels less confrontational than a direct raise and it does often produce movement,
+      which teaches everybody it works. Nobody has to write the uncomfortable sentence.
+    cost: >
+      No named ask, no decision requested, no record of an outcome, and a rung who has been
+      publicly embarrassed and now answers slower on purpose. The senior person also learns to
+      ignore CCs, disarming the mechanism for everyone.
+    instead: >
+      Write to the rung directly with the decision, the recommendation and the date; copy
+      nobody. If it must go up, send a separate message that says what is being asked and why.
+    detectable_by: [rung_skip_rate, esc.overdue_past_the_rungs_own_pace]
+
+  - id: esc.escalation_without_an_ask
+    statement: "The escalation describes the problem at length and never states what the recipient must decide."
+    why_it_happens: >
+      The raiser is anxious about appearing to tell a senior person what to do, so they supply
+      context and leave the conclusion implied out of deference.
+    cost: >
+      The rung reads it as information, files it, and the item does not move. The
+      administrator concludes that escalation does not work and reverts to chasing.
+    instead: "One sentence at the top: the decision, the recommended option, the date."
+    detectable_by: [escalation_resolution_rate, rung_response_time]
+
+  - id: esc.standing_escalation
+    statement: "An item that has been on the weekly escalation report for eleven consecutive weeks."
+    why_it_happens: >
+      Adding a line to a report feels like action and nobody owns removing lines. The report
+      becomes the place where unresolvable items are stored rather than resolved.
+    cost: >
+      Escalation degrades into a status. Everyone stops reading the report, and the genuinely
+      urgent item added in week twelve is invisible among the furniture.
+    instead: >
+      Escalations expire. An item that has survived the full ladder is a risk with a named
+      accepting owner, and it moves off the escalation report onto the risk register.
+    detectable_by: [ladder_exhaustion_count, escalation_resolution_rate]
+
+  - id: esc.wrong_axis
+    statement: "Escalating upward when the rung had the authority and only lacked a fact."
+    why_it_happens: >
+      Escalation is imagined as inherently vertical, so the question of what is actually
+      missing — authority or information — is never asked.
+    cost: >
+      The manager asks the same person the same question two days later. Two days lost, one
+      relationship dented, nothing learned, and the underlying knowledge gap still there.
+    instead: "Ask what is missing. If it is information, route sideways to whoever has it."
+    detectable_by: [rung_response_time, escalation_resolution_rate]
+
+  - id: esc.skip_straight_to_the_top
+    statement: "Going directly to the most senior person because it reliably works."
+    why_it_happens: >
+      It does work, immediately and visibly, and the cost is deferred and diffuse. Under
+      deadline pressure the immediate result always wins.
+    cost: >
+      The skipped rungs learn that answering the administrator is optional, because the answer
+      arrives from above regardless. The ladder collapses to its top step, which is then
+      unavailable for anything routine, and the administrator has one move left for
+      everything.
+    instead: >
+      Skip only against a hard external date, record that you did, and tell the skipped rung
+      afterwards why. The telling is what preserves the rung for next time.
+    detectable_by: [rung_skip_rate]
+
+  - id: esc.escalating_our_own_lateness
+    statement: "Escalating an item that is late because we were late giving the rung what they needed."
+    why_it_happens: >
+      The queue shows an overdue item and the trigger fires on elapsed time without checking
+      which side the ball was on for most of it.
+    cost: >
+      Credibility spent on an escalation the rung can refute in one line, and every future
+      raise from the same person is discounted.
+    instead: "Check ball_in_court history before raising. If we held it, apologise and re-baseline the date."
+    detectable_by: [esc.overdue_and_they_owe_us, escalation_withdrawal_rate]
+
+  - id: esc.escalate_the_whole_file
+    statement: "Forwarding the entire thread upward, including personal or confidential content, to escalate one decision."
+    why_it_happens: >
+      Forwarding is one click and summarising is ten minutes, and the raiser wants the
+      recipient to have the full context.
+    cost: >
+      The commonest accidental disclosure in administration — grievances, medical adjustments
+      and salary detail travelling up a distribution list. A control failure that is
+      considerably more serious than the delay being escalated.
+    instead: "Escalate the decision in a fresh message. Attach only what the decision requires."
+    detectable_by: [esc.confidential_grounds_stay_confidential]
+
+  - id: esc.escalation_as_punishment
+    statement: "Raising it to make a point about the rung rather than to move the item."
+    why_it_happens: >
+      Accumulated frustration after weeks of being ignored, plus the entirely human wish for
+      the failure to be visible to somebody.
+    cost: >
+      The rung stops engaging with first requests at all, since answering only ever precedes
+      being reported. The administrator has converted a slow route into a hostile one.
+    instead: >
+      Separate the two problems. Escalate the item with a neutral ask; raise the pattern of
+      non-response separately, later, with data rather than with an example.
+    detectable_by: [repeat_stall_rate_per_rung, escalation_resolution_rate]
+
+# ── Examples ─────────────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Invoice unpaid at day 40, approver silent through two written chases",
+     kind: typical,
+     note: "Raised to the approver's line manager with the amount, the cost centre, the supplier's stop-supply date and a recommendation to approve. Resolved in four hours.",
+     attributes: {trigger_reason: no_response, escalation_axis: hierarchic, chase_count: 2, credibility_cost: low}}
+
+  - {label: "Rung time-box expires at 48 hours and the ladder advances automatically",
+     kind: typical,
+     note: "Nobody decided to escalate, so nobody spent anything. This is what the object should be designed towards and it is rare in practice.",
+     attributes: {ladder_source: service_level, rung_time_box_hours: 48, credibility_cost: none}}
+
+  - {label: "Routed sideways to the contracts team, who had the answer the approver was missing",
+     kind: edge,
+     note: "Functional escalation. No authority was needed and none was sought; the ITIL distinction saved two days and a manager's afternoon.",
+     attributes: {escalation_axis: functional, trigger_reason: unknown}}
+
+  - {label: "Approver on annual leave with a recorded delegate",
+     kind: edge,
+     note: "Not an escalation at all. Route to the delegate and hold the ladder. Treating this as refusal is the most memorable mistake a new administrator makes.",
+     attributes: {rung_absent: true, state: on_hold}}
+
+  - {label: "CFO added to the CC line of the fourth chase",
+     kind: misclassification,
+     note: "Recorded by most systems as an escalation. It has no named rung, no decision, no date and no outcome. It is a public complaint with an audience."}
+
+  - {label: "Item on the escalation report for eleven consecutive weeks",
+     kind: misclassification,
+     note: "A status, not an escalation. The ladder was exhausted in week three and nobody converted it to an owned risk, so the organisation accepted the risk by attrition."}
+
+  - {label: "Raised because the requester rang twice and was angry",
+     kind: counterexample,
+     note: "Volume is not grounds. The grounds are a stalled decision against a date. Escalating on emotion spends credibility on whoever shouts loudest and teaches everyone to shout."}
+
+  - {label: "Suspected expenses fraud by the approver themselves",
+     kind: edge,
+     note: "Leaves this object entirely. Goes to the speak-up channel, never up the line the concern is about, and none of the preconditions above apply."}
+
+  - {label: "Vendor missing an SLA, escalated under the contract's escalation clause",
+     kind: edge,
+     note: "The ladder is contractual and its rungs are named in the agreement. Using it correctly can start a cure period; using the wrong route can waive a remedy that was paid for."}
+
+  - {label: "Founder-led company, one rung, eleven open decisions",
+     kind: edge,
+     note: "Batched into a single ten-minute standing slot. Eleven separate escalations here would end the administrator's standing inside a fortnight."}
+
+# ── References ───────────────────────────────────────────────────────────────────────────
+references:
+  - {title: "ITIL 4 — functional versus hierarchic escalation", kind: framework,
+     note: "The distinction between escalating for skill and escalating for authority. The single most useful borrowed idea on this object, and it comes from service management rather than administration."}
+  - {title: "Delegation of Authority matrix", kind: framework,
+     note: "The instrument that makes a rung order legitimate. Where it is absent, escalation is improvised and therefore personal."}
+  - {title: "RACI", kind: framework,
+     note: "Escalation goes to the Accountable, not to the Consulted or the Informed. Most escalations that fail were sent to somebody Informed."}
+  - {title: "ISO/IEC 20000-1 — Service management system requirements", kind: standard,
+     note: "Requires documented escalation procedures and their measurement. The measurement half is what almost no administrative function does."}
+  - {title: "The IIA Three Lines Model (2020)", kind: framework,
+     note: "Where escalation crosses from operational management to oversight, and why the second line is a different route rather than a further rung."}
+  - {title: "Crew Resource Management — graded assertiveness and the two-challenge rule", kind: framework,
+     note: "Aviation's answer to the same problem: a junior person must challenge twice and then act. Built precisely because the credibility cost of speaking up kills people, which is the same mechanism operating at lower stakes here."}
+  - {title: "Andon cord, Toyota Production System", kind: practitioner,
+     note: "An escalation designed to be cheap to pull, with the manager arriving to help rather than to judge. The contrast with administrative escalation — expensive, upward, and read as complaint — is the whole design problem."}
+  - {title: "Speak-up and whistleblowing channels (e.g. EU Whistleblower Directive 2019/1937)", kind: standard,
+     note: "The legally protected route that must exist separately from line escalation, precisely because conduct concerns cannot travel through the line they concern."}
+  - {title: "Service level and operational level agreements", kind: framework,
+     note: "The source of the rung time-box. An OLA between internal teams is what turns escalation from a judgement call into a schedule."}
+
+# ── Metadata ─────────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Six of fourteen patterns are executable today, all of them leaning on commitment.due_at,
+    thread.ball_in_court and the reply_cadence baseline. The eight needs_signal entries cluster
+    tightly and the ranking is clear: approval.state and approval.requested_at first, because
+    without them every stalled decision has to be inferred from the shape of an email thread;
+    then absence and delegation from HRIS, which is the highest-value false-positive suppressor
+    on the object — it is what stops the system escalating past people who are on leave; then
+    escalation_requested as an observation kind, which would give this object near-certain
+    grounds for free whenever a human asks. The deliberate editorial position of the file is
+    that escalation is UNDER-used, that the reason is a real cost borne by the wrong person,
+    and that the fix is structural — a pre-agreed rung time-box — rather than exhortation.

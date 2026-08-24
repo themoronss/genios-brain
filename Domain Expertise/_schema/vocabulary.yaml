@@ -1,0 +1,544 @@
+# Domain Expertise — the closed vocabulary
+#
+# This file is the contract between AUTHORED expertise and the RUNNING engine.
+#
+# Everything under `closed:` is enforced by _tools/validate.py as an ERROR. Everything under
+# `open:` is enforced as a WARNING — author outside it freely, but you will be told, so the
+# list stays a real census rather than a wish.
+#
+# The predicate grammar and the substrate below are transcribed from the live engine, not
+# invented here. If they drift, the authored brain silently stops firing. Sources:
+#   genios_engine/reason/engine.py       _eval_condition / _cmp / _resolve_value
+#   genios_engine/packs/sales_v1.py      schema.fields · schema.signal_vocab
+#   genios_engine/packs/general_v1.py    schema.fields · schema.signal_vocab
+
+version: 1.0.0
+transcribed_from_engine_at: "2026-08-08"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CLOSED — validator errors on anything outside these sets
+# ─────────────────────────────────────────────────────────────────────────────
+closed:
+
+  # The comparison operators _cmp() understands. Note IN is UPPERCASE: engine.py:71 tests
+  # `op == "IN"`, so a lowercase `in` falls through to the numeric branch and silently
+  # evaluates False forever. That is the single easiest way to author a dead pattern.
+  predicate_ops: ["=", "!=", "IN", ">", ">=", "<", "<="]
+
+  # The ten predicate forms _eval_condition() dispatches on, in its own dispatch order.
+  # A dict that matches none of them returns False — it does not raise.
+  predicate_forms:
+    - form: "{exists: <path>}"
+      reads: "the fact path is present on this node"
+    - form: "{absent: <path>}"
+      reads: "the fact path is not present on this node"
+    - form: "{has_obs: <obs_kind>}"
+      reads: "this node carries at least one observation of that kind"
+    - form: "{no_obs: <obs_kind>}"
+      reads: "this node carries no observation of that kind"
+    - form: "{neighbor_has_obs: <obs_kind>}"
+      reads: "some 1-hop neighbour carries that observation kind"
+    - form: "{neighbor_no_obs: <obs_kind>}"
+      reads: "no 1-hop neighbour carries that observation kind"
+    - form: "{neighbor_fact: <path>, op: <op>, value: <v>}"
+      reads: "latest value of that fact across neighbours compares true"
+    - form: "{fn: edge_count, op: <op>, value: <v>}"
+      reads: "graph degree of this node compares true"
+    - form: "{fn: days_since | hours_since, path: <path>, op: <op>, value: <v>}"
+      reads: "time elapsed since that timestamp fact compares true"
+    - form: "{path: <path>, op: <op>, value: <v>}"
+      reads: "the typed fact compares true"
+
+  # A threshold is a literal, or baseline-derived. _resolve_value() computes
+  # max(floor, mult · baseline); a cold-start baseline falls back to floor.
+  value_forms:
+    - "<literal>"
+    - "{baseline: <baseline_name>, mult: <number>, floor: <number>}"
+
+  # Object property types the compiler can emit.
+  property_types: [string, integer, number, boolean, enum, timestamp, duration, money, ref, list]
+
+  # Authoring lifecycle of a file. `stable` is the only state the compiler will emit.
+  status_values: [draft, review, stable, deprecated]
+
+  # Where an object or knowledge artifact lives, decided by the reference graph rather than
+  # by intent.
+  #   core       referenced by MORE THAN ONE capability  -> <kind>/core/
+  #   capability referenced by EXACTLY ONE               -> <kind>/<capability>/
+  # validate.py enforces both directions for objects AND artifacts; see domain.yaml.
+  object_scopes: [core, capability]
+
+  # The five Atlas knowledge types that are not objects, their folder, and their id prefix.
+  # One schema (artifact.schema.json) discriminated by `kind`; the folder is checked against
+  # it so a heuristic cannot quietly sit in playbooks/.
+  artifact_kinds:
+    - {kind: playbook,           dir: playbooks,           prefix: pb}
+    - {kind: heuristic,          dir: heuristics,          prefix: heu}
+    - {kind: mental_model,       dir: mental-models,       prefix: mm}
+    - {kind: rule,               dir: rules,               prefix: rule}
+    - {kind: decision_framework, dir: decision-frameworks, prefix: df}
+
+  # An object attribute is one of four shapes. `composite` groups others and carries no data;
+  # the rest hold or point at data. This replaced the old Components/Properties pair, where
+  # every real field appeared in both lists and the two copies disagreed within a week.
+  attribute_types: [composite, value, derived, reference]
+
+  # Whether an inference pattern can run today. `executable` means every path and obs kind
+  # it names exists in `substrate` below. `needs_signal` means it cannot fire yet and is
+  # reported by _tools/backlog.py as a requirement on Layers 1 and 2.
+  pattern_status: [executable, needs_signal]
+
+  pattern_kinds: [deterministic, heuristic]
+
+  # Every score is an integer basis point, 0–10000. Atlas Rule 03 + packs/snapshot.py:
+  # floats do not hash reproducibly across machines, so a threshold met on one worker is
+  # missed on another. Any field ending _bp is validated to this range.
+  score_range_bp: {min: 0, max: 10000}
+
+  layers: [L0, L1, L2, L3, L4, L5, "L5.2", L6]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SUBSTRATE — what the engine can actually evaluate TODAY
+#
+# This is the honest floor. An inference pattern that names anything outside this section
+# is marked `status: needs_signal` and becomes a Layer 1/2 backlog item rather than dead
+# authoring. Grow these lists only when the pipeline genuinely emits the thing.
+# ─────────────────────────────────────────────────────────────────────────────
+substrate:
+
+  # Typed fact paths declared by the shipped packs' schema.fields. Eleven. That is all.
+  fact_paths:
+    - deal.status
+    - deal.last_inbound
+    - deal.value
+    - thread.last_inbound
+    - thread.ball_in_court
+    - commitment.due_at
+    - commitment.action
+    - meeting.status
+    - meeting.start_at
+    - derived.momentum        # engine-computed trajectory
+    - derived.engagement      # engine-computed two-way volume vs prior fortnight
+    - derived.sentiment       # engine-computed observation balance
+
+  # Observation kinds Layer 2 emits today, union of both shipped packs.
+  obs_kinds:
+    - budget_approved
+    - budget_freeze
+    - champion_change
+    - closed_lost_mention
+    - competitor
+    - contract_requested
+    - demo_requested
+    - discount_pressure
+    - followup_sent
+    - introduction
+    - legal_review
+    - objection
+    - objection_price
+    - pricing_discussed
+    - proposal_sent
+    - security_review_started
+    - timeline_slip
+    - verbal_yes
+
+  # Learned per-entity baselines available to {baseline: ...} thresholds.
+  baselines:
+    - reply_cadence
+
+  # Layer 2 situation types a situation file may bind to via `matches.l2_situation_types`.
+  # Union of both packs' schema.signal_vocab. A situation naming a type outside this list
+  # can never be looked up at runtime — validate.py errors.
+  # Layer 2 situation types a situation file may bind to via `matches.l2_situation_types`.
+  #
+  # GENERATED FROM `genios_engine/context/domain_spec.py` — the ONLY producer of the value the
+  # compiler looks up (`capability_resolver` does `domain.routes.get(situation.type)`).
+  #
+  # This list used to be the union of both packs' `schema.signal_vocab` — Layer 3 SIGNAL REASON
+  # CODES, which Layer 2 never emits. Validating against it meant "0 errors, 715 warnings"
+  # certified nothing about whether a single route could ever be reached, and live compilation
+  # returned NoExpertiseRoute for 73 of 73 situations. A vocabulary check is only worth running
+  # against the substrate that actually produces the value.
+  l2_situation_types:
+    - deal                      # sales, anchored on a deal
+    - opportunity               # sales, anchored on a company
+    - prospect_relationship     # sales, anchored on a person
+    - support_case              # support, anchored on a company
+    - support_contact           # support, anchored on a person
+    - account_admin             # admin, anchored on a company
+    - investor_relationship     # fundraising, anchored on a company
+    - investor_contact          # fundraising, anchored on a person
+    - relationship              # general, anchored on a company or a person
+# ─────────────────────────────────────────────────────────────────────────────
+# PLANNED SUBSTRATE — asked for by authored expertise, emitted by nothing yet.
+#
+# `substrate` above is what the engine can evaluate TODAY. This section is what the authored
+# brain has asked it to evaluate and it cannot. Nothing here is executable, and putting a name
+# here does not make it so — it makes the ask countable.
+#
+# It exists because the Sales brain was authored against packs that already shipped, and the
+# Customer Support brain was not. Support has no pack: of the 26 L2 situation types above,
+# exactly five are domain-neutral (commitment_overdue, unanswered_email, champion_quiet,
+# meeting_no_followup, intro_followup) and ZERO observation kinds are support-native. A support
+# brain restricted to those five would be a sales brain wearing a support hat.
+#
+# So a situation whose real trigger does not exist declares it under
+# `matches.pending_l2_situation_types`, exactly as an inference pattern declares
+# `status: needs_signal`. The rule is the same in both places and it is the rule the whole
+# library turns on: AUTHOR THE TRUTH, MARK WHAT CANNOT FIRE. The alternative — binding
+# "SLA breach imminent" to `unanswered_email` because it is the closest thing available — is
+# the failure this section prevents, and it is worse than a gap because it looks like coverage.
+#
+# A name moves from here into `substrate` in the same commit that ships the pack emitting it.
+# validate.py WARNS (never errors) when a pending type is absent here, so the list stays a
+# real census rather than a wish; it ERRORS when a pending type is already in `substrate`,
+# because that one belongs in `l2_situation_types` and is silently routing nothing.
+planned_substrate:
+
+  # Would be shipped by a support_v1 pack's schema.signal_vocab.
+  l2_situation_types:
+    - sla_breach_imminent
+    - sla_breached
+    - first_response_overdue
+    - ticket_reopened
+    - ticket_aging
+    - repeat_contact
+    - escalation_requested
+    - major_incident_declared
+    - incident_unresolved
+    - csat_detractor
+    - entitlement_expired
+    - entitlement_mismatch
+    - knowledge_gap
+    - deflection_failed
+    - queue_overloaded
+    - bug_awaiting_engineering
+    - workaround_only
+    - churn_risk_from_support
+    - coverage_gap
+    - quality_review_failed
+
+
+  # ── Added by Admin ────────────────────────────────────────────────────────────────────
+  # Would be shipped by an admin_v1 pack's schema.signal_vocab. Admin has more pending types
+  # than any domain so far, and the reason is structural rather than incidental: the shipped
+  # packs were built for a revenue motion, so the pipeline can see an unanswered email but not
+  # an unreturned laptop, an overdue promise but not an overdue statutory filing. Every entry
+  # below is a trigger an administrator acts on daily and Layer 2 cannot currently express.
+    - approval_pending_overdue
+    - renewal_window_open
+    - auto_renewal_imminent
+    - filing_due
+    - filing_overdue
+    - licence_expiring
+    - invoice_mismatch
+    - invoice_overdue
+    - duplicate_invoice_suspected
+    - budget_overcommitted
+    - expense_claim_unsubmitted
+    - access_orphaned
+    - access_review_due
+    - asset_unreturned
+    - asset_custody_unknown
+    - onboarding_task_overdue
+    - start_date_approaching
+    - policy_attestation_due
+    - policy_review_overdue
+    - document_review_overdue
+    - document_version_conflict
+    - retention_period_elapsed
+    - admin_request_aging
+    - admin_sla_breach_imminent
+    - meeting_prep_due
+
+  # Would be shipped by a support_v1 pack's L2 extraction whitelist.
+  obs_kinds:
+    - ticket_created
+    - ticket_reopened
+    - ticket_resolved
+    - ticket_closed
+    - first_response_sent
+    - sla_clock_started
+    - sla_clock_paused
+    - sla_breach
+    - escalation_requested
+    - escalation_accepted
+    - incident_declared
+    - incident_resolved
+    - csat_submitted
+    - nps_submitted
+    - ces_submitted
+    - refund_requested
+    - refund_issued
+    - bug_filed
+    - bug_fixed
+    - workaround_provided
+    - knowledge_article_linked
+    - self_service_attempted
+    - self_service_abandoned
+    - entitlement_checked
+    - entitlement_expired
+    - cancellation_threat
+    - angry_language
+    - callback_promised
+    - reproduction_confirmed
+    - reproduction_failed
+    - root_cause_identified
+    - handoff_to_engineering
+    - agent_reassigned
+
+
+  # ── Added by Admin ────────────────────────────────────────────────────────────────────
+    - approval_requested
+    - approval_granted
+    - approval_rejected
+    - approval_delegated
+    - document_signed
+    - document_published
+    - document_superseded
+    - filing_submitted
+    - filing_accepted
+    - filing_rejected
+    - policy_acknowledged
+    - invoice_received
+    - invoice_approved
+    - payment_released
+    - po_raised
+    - po_exhausted
+    - goods_receipted
+    - asset_issued
+    - asset_returned
+    - access_granted
+    - access_revoked
+    - joiner_confirmed
+    - leaver_confirmed
+    - handover_completed
+    - minutes_circulated
+    - agenda_circulated
+    - prebrief_delivered
+    - retention_review_due
+    - audit_request_received
+    - evidence_provided
+    - contract_countersigned
+    - notice_served
+
+  # Would be shipped by a support_v1 pack's schema.fields.
+  fact_paths:
+    - ticket.status
+    - ticket.priority
+    - ticket.severity
+    - ticket.created_at
+    - ticket.first_response_at
+    - ticket.resolved_at
+    - ticket.reopen_count
+    - ticket.channel
+    - ticket.queue
+    - ticket.assignee
+    - sla.target_first_response_at
+    - sla.target_resolution_at
+    - sla.clock_state
+    - entitlement.plan
+    - entitlement.expires_at
+    - entitlement.coverage_hours
+    - account.arr
+    - account.health_score
+    - account.renewal_at
+    - csat.score
+    - csat.submitted_at
+    - incident.severity
+    - incident.status
+    - incident.started_at
+    - derived.contact_frequency
+    - derived.escalation_pressure
+    - derived.backlog_age
+
+
+  # ── Added by Admin ────────────────────────────────────────────────────────────────────
+    - commitment.owner
+    - commitment.recipient
+    - commitment.state
+    - approval.state
+    - approval.approver
+    - approval.requested_at
+    - approval.threshold_value
+    - contract.end_at
+    - contract.notice_period_days
+    - contract.auto_renew
+    - contract.counterparty
+    - obligation.due_at
+    - obligation.authority
+    - obligation.jurisdiction
+    - document.version
+    - document.approved_at
+    - document.review_due_at
+    - document.classification
+    - document.retention_until
+    - invoice.due_at
+    - invoice.amount
+    - invoice.po_ref
+    - invoice.state
+    - budget.committed
+    - budget.allocated
+    - budget.consumed
+    - asset.custodian
+    - asset.issued_at
+    - asset.due_back_at
+    - access.granted_at
+    - access.last_used_at
+    - access.reviewed_at
+    - employee.start_at
+    - employee.end_at
+    - request.created_at
+    - request.priority
+    - request.state
+    - derived.approval_latency
+    - derived.obligation_pressure
+
+  baselines:
+    - first_response_time
+    - resolution_time
+    - contact_rate_per_account
+    - ticket_volume
+    # ── Added by Admin ──
+    - approval_turnaround
+    - commitment_delivery_rate
+    - admin_request_volume
+    - invoice_cycle_time
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OPEN — validator warns, does not error. Extend by editing this file in the same
+# commit that first uses the new term, so the warning stays meaningful.
+# ─────────────────────────────────────────────────────────────────────────────
+open:
+
+  # Typed edges between objects. Read as: <subject> <verb> <target>.
+  relationship_verbs:
+    - owns
+    - belongs_to
+    - member_of
+    - works_with
+    - reports_to
+    - approves
+    - blocks
+    - influences
+    - requires
+    - produces
+    - attaches_to
+    - competes_with
+    - references
+    - precedes
+    - supersedes
+    - gates
+    # added by Customer Support — an edge set built only for a pipeline motion cannot express
+    # a resolution motion, where the load-bearing relations are causal and custodial.
+    - resolves
+    - caused_by
+    - escalates_to
+    - assigned_to
+    - covers
+    - documents
+    - deflects
+    - merges_into
+    - measures
+    # added by Admin — an administrative graph is custodial and evidential rather than
+    # causal. `owns` cannot express "Priya is the named custodian of this laptop until she
+    # returns it", and losing that distinction is how an asset register becomes a list.
+    - custodian_of
+    - issued_to
+    - governed_by
+    - evidences
+    - renews
+    - allocated_to
+    - files_with
+    - delegates_to
+
+  # Recommended lifecycle states. An object declares its own subset in `states.values`.
+  object_states:
+    - unknown
+    - identified
+    - contacted
+    - engaged
+    - qualified
+    - active
+    - at_risk
+    - dormant
+    - inactive
+    - disqualified
+    - closed
+    # added by Customer Support. `waiting_on_customer` is not a flavour of `dormant`: the SLA
+    # clock is paused in one and running in the other, and collapsing them is how a queue
+    # reports health it does not have.
+    - new
+    - open
+    - triaged
+    - in_progress
+    - waiting_on_customer
+    - waiting_on_engineering
+    - escalated
+    - breached
+    - resolved
+    - verified
+    - reopened
+    - archived
+    # added by Admin. `pending_approval` is not `waiting_on_customer` and not `blocked`: the
+    # obligation clock keeps running, a named person owes an answer, and the queue reports
+    # health it does not have if the three are collapsed. `expired` and `revoked` are likewise
+    # different endings — one lapsed, one was taken away, and Layer 6 learns opposite lessons.
+    - draft
+    - submitted
+    - pending_approval
+    - approved
+    - rejected
+    - published
+    - superseded
+    - issued
+    - returned
+    - overdue
+    - expired
+    - revoked
+    - retained
+    - disposed
+    - cancelled
+    - on_hold
+
+  # Where evidence for a claim comes from. Feeds `evidence[].source`.
+  evidence_sources:
+    - email
+    - calendar
+    - meeting_transcript
+    - call_recording
+    - crm
+    - slack
+    - document
+    - contract
+    - website
+    - manual_entry
+    - derived
+    # added by Customer Support
+    - ticket
+    - chat
+    - phone
+    - help_center
+    - knowledge_base
+    - survey
+    - status_page
+    - telemetry
+    # added by Admin — the systems of record an administrative claim is proven against.
+    - erp
+    - hris
+    - payroll
+    - portal
+    - signed_form
+    - register
+    - access_log
+    - regulator
+    - attestation
+
+  # Who consumes an object's outputs.
+  consumers:
+    - L4.reasoning_unit
+    - L4.decision_maker
+    - L5.execution_planning
+    - L5.communication_planning
+    - "L5.2.channel_planner"
+    - L6.learning_unit

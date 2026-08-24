@@ -1,0 +1,30 @@
+identity:
+  id: customer_support.pb.priority_and_severity.two_axis_triage
+  name: Two-axis triage
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.priority_and_severity
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Severity is the blast radius (how broken, for how many); priority is the response order (who
+    is entitled, what breaches when). Keeping the axes separate stops a chatty low-impact VIP from outranking
+    a silent outage.
+steps:
+- order: 1
+  name: Score severity from impact facts
+  description: Users affected, revenue path blocked, workaround exists? — three questions, answered from
+    the ticket, not the tone.
+  actor: human
+- order: 2
+  name: Overlay entitlement and SLA clocks
+  description: Priority = severity × contract. The same bug is a P1 with a breach clock for one tier and
+    a P3 for another, and that is correct, not unfair.
+  actor: human
+- order: 3
+  name: Re-triage on new evidence only
+  description: Priorities move when facts move — an update from monitoring or the customer. Squeaking
+    alone does not re-rank.
+  actor: human

@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.executive_support.commitment_tracking
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.commitment_tracking.the_executive_s_promise_ledger
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.commitment_tracking.forgotten_beats_broken_for_damage
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.major_incident_communication.one_voice_on_the_clock
+  name: One voice, on the clock
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.major_incident_communication
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: During a major incident, updates come from one owner, on a stated cadence, saying what is
+    known, impacted, being done, and when next — the comms discipline that keeps a technical event from
+    becoming a trust event.
+steps:
+- order: 1
+  name: Publish first within the golden thirty minutes
+  description: Acknowledged-and-investigating beats silent-and-hoping. The first update's speed sets everyone's
+    anxiety level.
+  actor: human
+- order: 2
+  name: Update on cadence even without progress
+  description: '''Still investigating, ruled out X, next update 15:00'' — the rhythm IS the reassurance.'
+  actor: human
+- order: 3
+  name: Match blast radius to audience
+  description: Status page for all, direct outreach for the badly hit, internal brief for sales facing
+    customer calls. One truth, three renderings.
+  actor: human

@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.need_analysis.separate_stated_want_from_underlying_need
+  name: Separate stated want from underlying need
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.need_analysis
+  subdomain: discovery_and_solution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Buyers arrive asking for a feature; the sale lives in the outcome behind it. 'We need an
+    export button' means someone upstream demands a report. Solve the report and the button becomes negotiable;
+    ship the button and the need survives untouched.
+steps:
+- order: 1
+  name: Ask what the want is for
+  description: '''What would you do with that?'' — twice if needed. Each ''why'' moves from feature to
+    workflow to business outcome; stop at the outcome.'
+  actor: human
+- order: 2
+  name: Rank needs by consequence, with them
+  description: Ask which of the named problems, left unsolved for a year, hurts most. Their ranking —
+    not your product's strengths — orders the solution story.
+  actor: human
+- order: 3
+  name: Write the need in outcome language
+  description: '''Reduce weekly reporting from 6 hours to 30 minutes'' survives committee scrutiny; ''needs
+    export'' does not. The outcome sentence is what travels to people you never meet.'
+  actor: human

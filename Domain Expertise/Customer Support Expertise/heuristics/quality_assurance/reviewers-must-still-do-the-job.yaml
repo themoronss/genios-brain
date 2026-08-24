@@ -1,0 +1,33 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_management.quality_assurance — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.quality_assurance.reviewers_must_still_do_the_job
+  name: Reviewers must still do the job
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.quality_assurance
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A reviewer who no longer works the queue is scoring a memory of the job.
+heuristic:
+  statement: A reviewer who no longer works the queue is scoring a memory of the job.
+  why: Product changes, tooling changes and the actual difficulty of the current backlog are invisible
+    from outside it. Reviewers who have stopped handling tickets drift toward scoring the ideal reply
+    rather than the achievable one, and agents can tell immediately.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

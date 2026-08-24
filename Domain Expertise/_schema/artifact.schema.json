@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "genios://domain-expertise/artifact.schema.json",
+  "title": "Expert Brain Knowledge Artifact",
+  "description": "The five Atlas knowledge types that are NOT objects: playbook, heuristic, mental_model, rule, decision_framework. One schema, five folders, discriminated by `kind`.\n\nWHY THESE ARE FILES AND NOT FIELDS ON A CAPABILITY. Three reasons, each of which bit us:\n\n1. Layer 6 Unit 10 emits Playbook Suggestions. A suggestion needs a target with an id and a version — you can say `sales.pb.outbound_sequence v2 supersedes v1`, you cannot say that about the third string in a YAML list. Rule 06's loop (system suggests, human merges) is unbuildable against inline prose.\n\n2. MEDDICC is used by lead qualification, buying committee analysis, deal review and forecasting. Inline meant four copies that drift — the same argument that made objects shared.\n\n3. A rule spanning two objects (\"no proposal without an identified decision maker AND an approved budget\") had no home. Written inside each object, each copy could only see half its own condition.\n\nSCOPE works exactly as it does for objects: core when more than one capability references it, capability when exactly one. validate.py enforces it from the reference graph.\n\n  playbooks/core/<name>.yaml            kind: playbook\n  heuristics/core/<name>.yaml           kind: heuristic\n  mental-models/core/<name>.yaml        kind: mental_model\n  rules/core/<name>.yaml                kind: rule\n  decision-frameworks/core/<name>.yaml  kind: decision_framework",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["identity", "purpose", "metadata"],
+
+  "allOf": [
+    {
+      "if": { "properties": { "identity": { "properties": { "kind": { "const": "playbook" } }, "required": ["kind"] } }, "required": ["identity"] },
+      "then": { "required": ["when_to_use", "steps"] }
+    },
+    {
+      "if": { "properties": { "identity": { "properties": { "kind": { "const": "heuristic" } }, "required": ["kind"] } }, "required": ["identity"] },
+      "then": { "required": ["heuristic"] }
+    },
+    {
+      "if": { "properties": { "identity": { "properties": { "kind": { "const": "mental_model" } }, "required": ["kind"] } }, "required": ["identity"] },
+      "then": { "required": ["dimensions", "how_to_apply"] }
+    },
+    {
+      "if": { "properties": { "identity": { "properties": { "kind": { "const": "rule" } }, "required": ["kind"] } }, "required": ["identity"] },
+      "then": { "required": ["rule"] }
+    },
+    {
+      "if": { "properties": { "identity": { "properties": { "kind": { "const": "decision_framework" } }, "required": ["kind"] } }, "required": ["identity"] },
+      "then": { "required": ["criteria", "how_to_apply"] }
+    },
+    {
+      "if": { "properties": { "identity": { "properties": { "scope": { "const": "capability" } }, "required": ["scope"] } }, "required": ["identity"] },
+      "then": { "properties": { "identity": { "required": ["owner_capability"] } } }
+    }
+  ],
+
+  "properties": {
+
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "kind", "domain", "scope", "version", "status"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+\\.(pb|heu|mm|rule|df)\\.[a-z0-9_]+\\.[a-z0-9_]+$",
+          "description": "<domain>.<prefix>.<scope>.<name>. Prefixes: pb playbook · heu heuristic · mm mental_model · rule rule · df decision_framework. The prefix keeps a playbook and an object of the same name apart, and the scope segment makes the id self-locating."
+        },
+        "name": { "type": "string" },
+        "kind": { "enum": ["playbook", "heuristic", "mental_model", "rule", "decision_framework"] },
+        "domain": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "scope": { "enum": ["core", "capability"] },
+        "owner_capability": { "type": "string", "description": "Required when scope = capability." },
+        "subdomain": { "type": "string" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "status": { "enum": ["draft", "review", "stable", "deprecated"] },
+        "aliases": { "type": "array", "items": { "type": "string" } },
+        "supersedes": { "type": "string", "description": "The artifact id and version this replaces. This field is what makes a Layer 6 suggestion addressable." }
+      }
+    },
+
+    "purpose": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement"],
+      "properties": {
+        "statement": { "type": "string", "minLength": 30 },
+        "answers": { "type": "array", "items": { "type": "string" } },
+        "not": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "when_to_use": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Playbooks especially. A playbook with no stated trigger gets run at the wrong moment, which is worse than not having it.",
+      "properties": {
+        "situations": { "type": "array", "items": { "type": "string" }, "description": "Situation ids." },
+        "conditions": { "type": "array", "items": { "$ref": "object.schema.json#/$defs/predicate" } },
+        "signals": { "type": "array", "items": { "type": "string" } },
+        "do_not_use_when": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "steps": {
+      "type": "array",
+      "description": "Playbook only. Ordered, owned, and each with an observable done-condition — a step nobody can tell is finished is a wish.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["order", "name"],
+        "properties": {
+          "order": { "type": "integer", "minimum": 1 },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "actor": { "enum": ["human", "agent", "system"] },
+          "objects_read": { "type": "array", "items": { "type": "string" } },
+          "produces": { "type": "string" },
+          "done_when": { "type": "string" },
+          "typical_duration_days": { "type": "integer", "minimum": 0 },
+          "optional": { "type": "boolean" },
+          "skip_when": { "type": "string" }
+        }
+      }
+    },
+
+    "heuristic": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Heuristic only. A rule of thumb with its reasoning, its bounds, and the case where it is wrong. All three are required for it to be improvable rather than merely repeatable.",
+      "required": ["statement", "why"],
+      "properties": {
+        "statement": { "type": "string" },
+        "why": { "type": "string", "description": "Why an experienced operator believes it. A heuristic without a why cannot be argued with, and therefore cannot be corrected." },
+        "confidence_bp": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "applies_when": { "type": "string" },
+        "breaks_down_when": { "type": "string", "description": "The regime where it stops holding. The single most useful field here." },
+        "reads": { "type": "array", "items": { "type": "string" }, "description": "Object ids or attribute names." },
+        "contradicts": { "type": "array", "items": { "type": "string" }, "description": "Other artifact ids this is in tension with. Real expertise contains genuine tensions and hiding them makes the brain read more confident than the profession is." },
+        "pattern_ref": { "type": "array", "items": { "type": "string" }, "description": "Inference pattern ids that operationalise this heuristic. A heuristic with no pattern is prose; a pattern with no heuristic is unexplained." }
+      }
+    },
+
+    "dimensions": {
+      "type": "array",
+      "description": "Mental model only. The axes the model makes you look along — MEDDICC's Metrics, Economic buyer, Decision criteria, and so on.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "asks"],
+        "properties": {
+          "name": { "type": "string" },
+          "asks": { "type": "string", "description": "The question this dimension forces." },
+          "objects": { "type": "array", "items": { "type": "string" }, "description": "Object ids that answer it." },
+          "weak_signal": { "type": "string", "description": "What a bad answer looks like." },
+          "strong_signal": { "type": "string" }
+        }
+      }
+    },
+
+    "criteria": {
+      "type": "array",
+      "description": "Decision framework only. What is being weighed, and how.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "weight_bp": { "type": "integer", "minimum": 0, "maximum": 10000 },
+          "reads": { "type": "array", "items": { "type": "string" } },
+          "disqualifying": { "type": "boolean", "description": "True when failing this criterion ends the evaluation rather than lowering the score." }
+        }
+      }
+    },
+
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Rule only. A cross-object deterministic rule — the thing that had no home when rules lived inside objects and each copy could see half its own condition.",
+      "required": ["statement", "severity"],
+      "properties": {
+        "statement": { "type": "string" },
+        "spans": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Object ids the rule reads across. Two or more is the reason this file exists; one means it belongs in that object's business_rules."
+        },
+        "when": { "type": "array", "items": { "$ref": "object.schema.json#/$defs/predicate" } },
+        "then": { "type": "string" },
+        "severity": { "enum": ["blocking", "warning", "advisory"] },
+        "why": { "type": "string" },
+        "enforced_by": { "enum": ["L3_compile", "L4_constraint", "L5_validation", "L5_2_gate"], "description": "Which layer actually stops it. A rule nobody enforces is a comment." },
+        "exceptions": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "how_to_apply": {
+      "type": "array",
+      "description": "Mental models and decision frameworks. The procedure, not the philosophy.",
+      "items": { "type": "string" }
+    },
+
+    "objects_used": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Object ids this artifact reads. Checked for link integrity."
+    },
+
+    "outcomes": { "type": "array", "items": { "type": "string" } },
+
+    "failure_modes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "How this artifact is characteristically misapplied by someone who has read it."
+    },
+
+    "limits": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Where the artifact stops being useful. Every methodology has a regime outside which it misleads, and the ones that do not say so are the dangerous ones."
+    },
+
+    "variants": {
+      "type": "array",
+      "description": "How this changes by sales model or offering. Keeps one artifact instead of one per branch.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["applies_to", "change"],
+        "properties": {
+          "applies_to": { "type": "string", "description": "Model or offering id." },
+          "change": { "type": "string" },
+          "why": { "type": "string" }
+        }
+      }
+    },
+
+    "metrics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "unit": { "type": "string" },
+          "description": { "type": "string" },
+          "direction": { "enum": ["higher_is_better", "lower_is_better", "target_band"] }
+        }
+      }
+    },
+
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title"],
+        "properties": {
+          "title": { "type": "string" },
+          "kind": { "enum": ["methodology", "book", "framework", "standard", "internal", "research", "practitioner"] },
+          "author": { "type": "string" },
+          "url": { "type": "string" },
+          "note": { "type": "string" }
+        }
+      }
+    },
+
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "last_updated", "review_status"],
+      "properties": {
+        "owner": { "type": "string" },
+        "created_by": { "enum": ["human", "ai", "ai_human_reviewed"] },
+        "reviewed_by": { "type": "string" },
+        "last_updated": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "review_status": { "enum": ["unreviewed", "in_review", "approved"] },
+        "confidence": { "enum": ["experimental", "provisional", "stable"] },
+        "completeness": { "enum": ["skeleton", "partial", "complete"] },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

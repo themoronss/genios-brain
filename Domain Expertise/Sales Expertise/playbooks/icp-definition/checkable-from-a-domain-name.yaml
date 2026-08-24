@@ -1,0 +1,36 @@
+identity:
+  id: sales.pb.icp_definition.checkable_from_a_domain_name
+  name: Reduce the profile to a checklist an SDR can run from a domain name an…
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Reduce the profile to a checklist an SDR can run from a domain name and a public profile\
+    \ in a couple of minutes, and delete any dimension that fails that test.\n A dimension that can\
+    \ only be evaluated after discovery has already consumed the effort the profile exists to save.\
+    \ Unevaluable dimensions are why profiles are agreed in a workshop and never applied afterwards.\n"
+when_to_use:
+  situations: []
+  conditions: []
+steps:
+- order: 1
+  name: Reduce the profile to a checklist an SDR can run from a domain name an…
+  description: 'A dimension that can only be evaluated after discovery has already consumed the effort
+    the profile exists to save. Unevaluable dimensions are why profiles are agreed in a workshop and
+    never applied afterwards.
+
+    '
+  done_when: UNAUTHORED — this playbook is a skeleton.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

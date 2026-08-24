@@ -1,0 +1,38 @@
+# STUB — identity, purpose and load-set only. Promote against
+# capabilities/05-knowledge-and-deflection/self-service-deflection/capability.yaml.
+
+identity:
+  id: customer_support.knowledge_and_deflection.knowledge_authoring
+  name: Knowledge Authoring
+  domain: customer_support
+  subdomain: knowledge_and_deflection
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Writing the answer once, in the words the customer used to ask it, while the ticket that
+  proved it was missing is still open. Authoring is a resolution activity rather than a
+  documentation project: an article written weeks later by someone who did not solve the case
+  reliably describes the product instead of the problem, which is why it reads fluently and
+  deflects nothing. The judgement that matters is subtractive — which of the answers already
+  in agents' heads is worth making public, given that every published article is a promise to
+  keep it true and a competitor to the other articles in search.
+
+question: "What did we just learn that should never have to be worked out again?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Promote by adding outcomes, failure_modes (start with the two that dominate: authoring
+    from the product's vocabulary rather than the customer's, and treating publication as
+    completion rather than as the start of a maintenance obligation), playbooks, heuristics,
+    mental_models, kpis and handoffs. The upstream is resolution_delivery and
+    content_gap_analysis; the downstream is self_service_deflection and macro_management. It
+    stays a stub until there is a real position on who authors — the solver, a writer, or a
+    reviewer — because every other decision in the file follows from that one.

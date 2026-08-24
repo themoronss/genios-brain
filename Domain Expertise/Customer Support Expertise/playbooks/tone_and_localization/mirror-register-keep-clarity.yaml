@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.tone_and_localization.mirror_register_keep_clarity
+  name: Mirror register, keep clarity
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.tone_and_localization
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Match the customer's formality and language where possible, but never at clarity's expense
+    — a warm reply that is misunderstood is a failed reply with good manners.
+steps:
+- order: 1
+  name: Read their register before writing
+  description: Terse engineer gets precise brevity; anxious founder gets structure and reassurance. One
+    voice, tuned per reader.
+  actor: human
+- order: 2
+  name: Localise meaning, not word-by-word
+  description: Dates, currency, idiom — translated for THEIR context. A literal translation of an idiom
+    is a small embarrassment shipped internationally.
+  actor: human
+- order: 3
+  name: Keep product terms canonical
+  description: Feature names stay in product language across locales, or documentation and support stop
+    agreeing with each other.
+  actor: human

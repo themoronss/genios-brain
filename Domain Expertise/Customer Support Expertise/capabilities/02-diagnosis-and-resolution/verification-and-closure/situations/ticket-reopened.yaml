@@ -1,0 +1,206 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# THE HIGHEST-INFORMATION EVENT IN SUPPORT, RECORDED BY ALMOST EVERY SYSTEM AS A STATUS
+# CHANGE. This situation routes nothing today. It should be at the top of the pack backlog
+# anyway, and the argument is worth spelling out because it is not the usual one.
+#
+# WHY IT IS THE BEST SIGNAL THE DOMAIN HAS.
+# Every other quality measurement in support is solicited and therefore biased. CSAT surveys
+# the people who still answer surveys, measures the interaction as much as the outcome, and
+# arrives with single-digit response rates. Quality scorecards measure whether an agent
+# followed process, which is a proxy chosen because it is observable. A reopen is none of
+# that: it is unsolicited, behavioural, effectively 100%-coverage ground truth on the only
+# question that matters — did the problem stop — and the customer paid to produce it, in the
+# most reliable currency there is, by having to come back.
+#
+# It also arrives with the counterexample attached. The customer's description of what still
+# does not work is the precise evidence needed to correct the diagnosis, and it will never be
+# cheaper to obtain than in the moment it is volunteered.
+#
+# WHAT A REOPEN INVALIDATES. Two things, and support tooling handles the first and drops the
+# second on the floor.
+#
+#   1. THE RESOLUTION. Obvious and universally implemented. The thing recorded as the answer
+#      was not the answer — it addressed a different problem, or it worked and regressed, or
+#      it worked for one case out of three.
+#
+#   2. THE CONFIDENCE OF WHATEVER PRODUCED IT. Almost never implemented. If a macro, a
+#      knowledge article, a suggested resolution or an inference pattern led to that closure,
+#      then that artifact's confidence was too high by exactly the amount this reopen
+#      demonstrates. A system that records `status: reopened` on the ticket and stops has
+#      filed the correction in the one place where nothing else can read it: the ticket is
+#      reworked, someone fixes it, and the article that gave the wrong answer keeps its
+#      confidence and gives the same wrong answer to the next forty people with the same
+#      symptom. A reopen that does not propagate BACKWARDS to the artifact that produced the
+#      closure is a learning event thrown away — and it is the only reliably negative evidence
+#      this library will ever receive. Without it, confidence in an authored brain can only
+#      ever go up, which is not learning, it is drift.
+#
+# THE THIRD, QUIETER DAMAGE: the original closure's metrics survive. Most systems keep the
+# closed ticket and the reopened one as separate records, so measured resolution time halves
+# while the customer's real wait doubles. The queue gets faster on paper by failing.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.sit.ticket_reopened
+  name: Ticket Reopened
+  domain: customer_support
+  owner_capability: customer_support.diagnosis_and_resolution.verification_and_closure
+  version: 1.0.0
+  status: draft
+
+description: >
+  Something we declared resolved was not resolved, and the customer has come back to say so.
+  The correct first move is not to answer again — it is to work out which of four categorically
+  different failures this is, because they carry opposite lessons and averaging them into a
+  reopen rate is why that metric is useless in most organisations. It was never fixed (closure
+  without verification, usually an auto-close on silence). It fixed the wrong problem (a
+  diagnosis error, and the most instructive of the four). It was fixed and regressed (a product
+  defect, and not a support failure at all). Or it was fixed for some cases and not others (a
+  scope error, which means other customers are affected and have not written in). The second
+  attempt also starts from a worse position than the first: the customer's patience is already
+  spent and their belief that anyone is tracking their problem is already damaged, so the reply
+  has to acknowledge the first attempt before it does anything else. Answering a reopen as
+  though it were a fresh question is the response most likely to produce an escalation.
+
+matches:
+  # Nothing real to bind. Every candidate today is a silence detector, and this event is the
+  # opposite of silence — it is a customer speaking, precisely and unprompted.
+  l2_situation_types: []
+
+  pending_l2_situation_types:
+
+    - type: ticket_reopened
+      owner_layer: L2
+      nearest_today: unanswered_email
+      note: >
+        WHAT THE TYPE MUST MEAN. A ticket previously in a resolved, closed or verified state
+        has been returned to open BY THE CUSTOMER. The actor distinction is not a detail: a
+        large share of state changes back to open are our own housekeeping — bulk edits,
+        automation firing on a stale rule, an agent reopening to add a note — and a type that
+        counts those is measuring our workflow rather than our correctness. The payload must
+        carry the reopen index and the elapsed time since closure. Both change the meaning
+        completely: a reopen an hour after closure is a verification failure, a reopen three
+        weeks later is usually a regression, and a third reopen on one ticket is a categorically
+        different event from a first that a system treating them alike has stopped learning
+        from.
+
+        WHAT WOULD EMIT IT. Layer 1 must supply ticket.status, ticket.resolved_at and
+        ticket.reopen_count (all in planned_substrate.fact_paths, emitted by nothing today).
+        Layer 2 emits the ticket_reopened observation kind with the actor attached, and should
+        emit it alongside the resolution and article ids that the closure referenced —
+        otherwise the invalidation described at the top of this file has nothing to propagate
+        to, and the signal loses most of its value while looking complete.
+
+        WHAT GOES WRONG TODAY. The domain's single best piece of ground truth is unobservable.
+        verification_and_closure cannot measure the failure it exists to prevent.
+        root_cause_analysis never learns which of its conclusions were wrong. knowledge_authoring
+        has no mechanism by which a wrong article is ever demoted. And Layer 6 receives no
+        negative evidence about resolutions at all, so every confidence in this library is free
+        to rise and none can fall.
+
+        WHY BINDING TO unanswered_email WOULD BE WRONG, specifically — and this is the most
+        seductive bad binding in the domain, because it half works. A reopen usually does
+        arrive as a new inbound on an old thread, so the silence detector genuinely fires on
+        many of them. What it drops is the entire information content: that this thread was
+        previously declared resolved. Strip that and the event becomes another customer
+        waiting, indistinguishable from a first contact — and the two demand opposite
+        responses. A first contact wants a fast answer. A reopen wants someone to work out why
+        the last answer was wrong BEFORE sending another one, and a system that optimises for
+        speed here produces a second wrong answer faster. It also cannot see reopens that
+        arrive on a fresh thread or through a portal, chat or phone, which in any organisation
+        with a help centre is most of them, and it can never see the reopen count. The result
+        would be a partial, channel-biased, context-stripped view of the one signal worth
+        having most.
+
+  scope: person
+
+  # No `when`. Every narrowing this situation actually wants — reopen count, time since
+  # resolution, whether the closure was an auto-close — lives in planned_substrate, and a
+  # narrowing written against the substrate that does exist would be decoration: precision
+  # about elapsed email silence on a situation whose subject is not silence. An honest empty
+  # is better than a predicate that would have to be rewritten the day the pack ships.
+
+# resolution_delivery because the recorded resolution is now known to be wrong and should stop
+# being offered. root_cause_analysis because a reopen is the cheapest available falsifier for a
+# stated cause. knowledge_authoring because the article that produced the closure is the thing
+# that must lose confidence — see the header; this is the consumer nobody wires up.
+# quality_assurance because reopens are the only sampling frame for review that is not chosen
+# by us.
+also_serves:
+  - customer_support.diagnosis_and_resolution.resolution_delivery
+  - customer_support.diagnosis_and_resolution.root_cause_analysis
+  - customer_support.knowledge_and_deflection.knowledge_authoring
+  - customer_support.support_management.quality_assurance
+
+objects:
+  # Three. The work, the answer that failed, and the person who told us it failed. The
+  # resolution is required rather than optional because it is the object under examination —
+  # a reopen with no resolution attached cannot be classified into the four failure types, and
+  # the classification is the entire first move.
+  load:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.resolution
+    - customer_support.obj.core.requester
+  optional:
+    # knowledge_article first among the optionals and for once not as reference material: if
+    # an article produced this closure, it is a defendant here. issue when the reopen suggests
+    # the underlying defect was never closed. customer_sentiment and satisfaction_score to
+    # tell a patient second attempt from one that is about to become an escalation.
+    - customer_support.obj.core.knowledge_article
+    - customer_support.obj.core.issue
+    - customer_support.obj.core.customer_sentiment
+    - customer_support.obj.core.satisfaction_score
+  never_load:
+    # A reopen is not an escalation, and loading the escalation machinery here trains the
+    # system to route the second contact upward instead of re-diagnosing it. An escalated
+    # reopen becomes a conversation about the first attempt — who closed it, why, whether the
+    # process was followed — while the customer's problem, which is still not fixed, waits for
+    # that conversation to finish. If this genuinely needs escalating, escalation-requested
+    # says so on its own evidence.
+    - customer_support.obj.core.escalation
+
+# Just below sla-breach-imminent. A breach is a promise about to break; a reopen is a promise
+# already broken, but the customer is at least still talking to us, and the second attempt has
+# more room than the first deadline does.
+priority_bp: 8800
+typical_duration_days: 3
+
+signals_of_progress:
+  - reproduction_confirmed
+  - root_cause_identified
+  - followup_sent
+  - ticket_resolved
+
+signals_of_decay:
+  - ticket_reopened
+  - escalation_requested
+  - angry_language
+  - cancellation_threat
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Only followup_sent is a real substrate observation kind. reproduction_confirmed,
+    root_cause_identified, ticket_resolved, ticket_reopened, escalation_requested,
+    angry_language and cancellation_threat are support-native and sit in
+    planned_substrate.obs_kinds. These lists are unvalidated, so the mixture is legal —
+    recorded here so nobody reads it as coverage.
+
+    ticket_reopened appears in both the pending binding and signals_of_decay. That is
+    deliberate and not a copy-paste: the trigger is the first reopen, and a FURTHER reopen
+    while this situation is live is the decay signal, because it means the second attempt
+    failed too. Second reopens are where a support relationship actually breaks, and they are
+    the strongest available argument for changing who works the ticket rather than how.
+
+    The backward-invalidation described in the header is not something this file can perform.
+    Layer 3 states that a reopen impeaches the resolution and the artifact that produced it;
+    actually lowering a knowledge article's or an inference pattern's confidence is Layer 6's
+    job, and it needs the closure's artifact ids carried on the ticket_reopened observation to
+    do it. If the support pack ships this type without those ids, the loop stays open and this
+    situation delivers a fraction of what it is for. That dependency should be recorded on the
+    backlog item, not discovered afterwards.

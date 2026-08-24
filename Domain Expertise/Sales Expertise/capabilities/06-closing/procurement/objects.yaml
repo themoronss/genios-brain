@@ -1,0 +1,23 @@
+# Load-set for sales.closing.procurement — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/procurement/            loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.closing.procurement
+
+core:
+  required:
+    - sales.obj.core.contract
+  optional:
+    - sales.obj.core.buying_committee
+    - sales.obj.core.pricing
+    - sales.obj.core.timeline
+
+scoped:
+  required: []
+  optional: []

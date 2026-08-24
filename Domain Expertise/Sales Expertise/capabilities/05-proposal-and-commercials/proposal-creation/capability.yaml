@@ -1,0 +1,27 @@
+identity:
+  id: sales.proposal_and_commercials.proposal_creation
+  name: Proposal Creation
+  domain: sales
+  subdomain: proposal_and_commercials
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Assembling scope, pricing and terms into a document the champion can circulate without
+  editing. The audience is the room we are not in.
+
+question: "What exactly are we proposing, at what price, on what terms?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

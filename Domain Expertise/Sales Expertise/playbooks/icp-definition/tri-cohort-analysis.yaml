@@ -1,0 +1,38 @@
+identity:
+  id: sales.pb.icp_definition.tri_cohort_analysis
+  name: 'Build the profile from three cohorts, not one: won-and-retained, lost,…'
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Build the profile from three cohorts, not one: won-and-retained, lost, and churned. Score\
+    \ each candidate dimension by how sharply it separates them.\n A single-cohort study produces a\
+    \ description of your customers, which is not the same object as a predictor of who will become\
+    \ one. The churned cohort is where anti-fit lives and it is the cohort teams routinely omit, because\
+    \ it sits with Customer Su"
+when_to_use:
+  situations: []
+  conditions: []
+steps:
+- order: 1
+  name: 'Build the profile from three cohorts, not one: won-and-retained, lost,…'
+  description: 'A single-cohort study produces a description of your customers, which is not the same
+    object as a predictor of who will become one. The churned cohort is where anti-fit lives and it
+    is the cohort teams routinely omit, because it sits with Customer Success and the analysis is run
+    by Sales.
+
+    '
+  done_when: UNAUTHORED — this playbook is a skeleton.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

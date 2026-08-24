@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.executive_support.approval_coordination
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.approval_coordination.approvals_as_a_fast_lane
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.approval_coordination.slow_approvals_teach_workarounds
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

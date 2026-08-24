@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.executive_support.briefing_and_preparation
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.briefing_and_preparation.the_brief_is_the_meeting_s_first_half
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

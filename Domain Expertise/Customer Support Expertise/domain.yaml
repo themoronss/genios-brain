@@ -1,0 +1,314 @@
+# Customer Support — domain root
+#
+# The one question this domain answers, in Layer 3 terms:
+#   "How would a seasoned support operator read this situation?"
+#
+# Not what is true (Layer 2). Not what to do (Layer 4). Only how an expert would understand it.
+#
+# ARCHITECTURE v2 — identical to Sales, deliberately. A second domain is the first real test
+# of whether the layout was a structure or a habit.
+#
+#   objects/core/<name>.yaml              shared — loaded by MORE THAN ONE capability
+#   objects/<capability>/<name>.yaml      scoped — loaded by EXACTLY ONE
+#
+#   capabilities/<NN-subdomain>/<capability>/
+#       capability.yaml     purpose, expertise, KPIs, handoffs
+#       objects.yaml        the load-set — references only, core and scoped split
+#       situations/         the situations this capability owns
+#
+# Support MODELS (tiered, swarming, follow-the-sun, AI-first...) and OFFERINGS (product,
+# service, hybrid) do not re-list capabilities. They live under models/ and offerings/ and
+# change how these capabilities behave, never whether the profession has them.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# READ THIS BEFORE JUDGING THE COVERAGE NUMBERS
+#
+# Sales was authored against packs that already shipped. Customer Support was not: there is
+# no support_v1 pack. Of the 26 Layer 2 situation types in the substrate, exactly FIVE are
+# domain-neutral — commitment_overdue, unanswered_email, champion_quiet, meeting_no_followup,
+# intro_followup — and ZERO observation kinds are support-native. No ticket, no SLA clock, no
+# CSAT, no escalation, no incident.
+#
+# That leaves two honest options and one dishonest one. The dishonest one is to bind
+# "SLA breach imminent" to `unanswered_email` because it is the closest thing available; the
+# situation then routes, the dashboard shows coverage, and the system nudges about the wrong
+# thing forever. It is worse than a gap because it looks like the opposite of one.
+#
+# So this domain does what the library already does at the pattern level. Six situations bind
+# to types Layer 2 genuinely emits and run today. The rest declare their real trigger under
+# `matches.pending_l2_situation_types`, route nothing, and appear in registry/signal-backlog.md
+# as the concrete specification of what a support_v1 pack must emit.
+#
+# The backlog is the deliverable here, not an apology for one.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support
+  name: Customer Support
+  version: 1.0.0
+  status: draft
+
+description: >
+  The promise-keeping motion: receiving what a customer asks, deciding how urgent it is and
+  who owns it, working out what is actually wrong, fixing it or routing it to whoever can,
+  keeping the human informed while that happens, honouring whatever was contractually
+  promised about how fast — and then making sure the same question does not have to be asked
+  again. Plus the operations and management disciplines that keep a queue staffed, measurable
+  and survivable.
+
+question: "How would a seasoned support operator read this situation?"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Subdomains — the resolution lifecycle, in order
+#
+# The ordering is the life of one contact, not an org chart. Intake before diagnosis because
+# a misrouted ticket is unfixable downstream; knowledge before voice-of-customer because
+# deflection is a resolution activity and satisfaction is a measurement one.
+# ─────────────────────────────────────────────────────────────────────────────
+subdomains:
+
+  - id: intake_and_triage
+    dir: "01-intake-and-triage"
+    name: Intake & Triage
+    question: "What came in, how bad is it, and who should own it?"
+    capabilities: [channel_intake, intent_classification, ticket_triage, priority_and_severity,
+                   routing_and_assignment, duplicate_and_merge]
+    note: >
+      priority_and_severity is one capability and not two on purpose. They are different
+      things — severity is how broken it is, priority is what we do about it first — and the
+      expertise is entirely in holding them apart under pressure. Splitting them into separate
+      capabilities loses exactly the knowledge that matters.
+
+  - id: diagnosis_and_resolution
+    dir: "02-diagnosis-and-resolution"
+    name: Diagnosis & Resolution
+    question: "What is actually wrong, and what makes it stop being wrong?"
+    capabilities: [issue_reproduction, diagnostics, root_cause_analysis, workaround_management,
+                   resolution_delivery, verification_and_closure]
+
+  - id: customer_communication
+    dir: "03-customer-communication"
+    name: Customer Communication
+    question: "Does the human on the other end know where they stand?"
+    capabilities: [response_drafting, expectation_setting, proactive_status_updates,
+                   de_escalation, tone_and_localization]
+
+  - id: entitlement_and_sla
+    dir: "04-entitlement-and-sla"
+    name: Entitlement & SLA
+    question: "What did we promise this customer, and are we about to break it?"
+    capabilities: [entitlement_verification, sla_management, breach_prevention,
+                   coverage_and_on_call, commitment_tracking]
+
+  - id: knowledge_and_deflection
+    dir: "05-knowledge-and-deflection"
+    name: Knowledge & Deflection
+    question: "How does this stop being asked?"
+    capabilities: [knowledge_authoring, macro_management, self_service_deflection,
+                   content_gap_analysis, ai_deflection]
+
+  - id: escalation_and_incident
+    dir: "06-escalation-and-incident"
+    name: Escalation & Incident
+    question: "This is bigger than one ticket — now what?"
+    capabilities: [escalation_management, incident_management, major_incident_communication,
+                   engineering_handoff, executive_escalation, postmortem]
+
+  - id: voice_of_customer
+    dir: "07-voice-of-customer"
+    name: Voice of Customer
+    question: "What is the aggregate telling us that no single ticket can?"
+    capabilities: [satisfaction_measurement, sentiment_analysis, feedback_synthesis,
+                   product_feedback_routing, churn_signal_detection]
+
+  - id: support_operations
+    dir: "08-support-operations"
+    name: Support Operations
+    question: "Is the queue staffed, measurable and affordable?"
+    capabilities: [queue_management, workload_balancing, capacity_planning, support_analytics,
+                   cost_to_serve]
+
+  - id: support_management
+    dir: "09-support-management"
+    name: Support Management
+    question: "Are the people, the queues and the named accounts being run well?"
+    capabilities: [agent_coaching, quality_assurance, performance_management, ticket_review,
+                   team_health, account_relationship_management]
+    note: >
+      team_health is a capability and not an HR concern. Support is the only function in a
+      company where the job is absorbing other people's frustration all day, attrition is the
+      dominant cost driver, and burnout is visible in queue data weeks before it is visible in
+      a resignation. An expert reads it from the tickets.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Naming — enforced by _tools/validate.py
+# ─────────────────────────────────────────────────────────────────────────────
+id_scheme:
+  domain: "customer_support"
+  subdomain: "customer_support.<subdomain>"
+  capability: "customer_support.<subdomain>.<capability>"
+  situation: "customer_support.sit.<name>"
+  core_object: "customer_support.obj.core.<name>"
+  scoped_object: "customer_support.obj.<capability>.<name>"
+  model: "customer_support.model.<model>[.<vertical>]"
+  offering: "customer_support.offering.<family>[.<type>]"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The core / scoped rule
+#
+# CORE      loaded by MORE THAN ONE capability   -> objects/core/
+# SCOPED    loaded by EXACTLY ONE                -> objects/<capability>/
+#
+# Decided by the reference graph, not by intent, and validate.py enforces it in both
+# directions. See Sales domain.yaml for the full argument; it is the same rule and it does not
+# get a second opinion here.
+# ─────────────────────────────────────────────────────────────────────────────
+core_objects:
+  people_and_orgs: [requester, customer_account, support_agent, stakeholder, escalation_owner,
+                    named_contact]
+  work:            [ticket, conversation, issue, resolution, workaround, root_cause,
+                    bug_report, commitment, escalation, incident]
+  contract:        [entitlement, sla_target, support_plan, coverage_window]
+  experience:      [customer_sentiment, satisfaction_score, effort_score, churn_risk]
+  knowledge:       [knowledge_article, intent, product_area, content_gap]
+  operations:      [queue, backlog, capacity_plan, quality_scorecard]
+
+# Referenced but not yet authored. A reference to an id here is a tracked WARNING; a
+# reference to an id that appears nowhere is an ERROR. Regenerate with:
+#   python "Domain Expertise/_tools/plan.py"
+planned_objects:
+  - {id: customer_support.obj.core.backlog, scope: core, referenced_by: 8}
+  - {id: customer_support.obj.core.bug_report, scope: core, referenced_by: 6}
+  - {id: customer_support.obj.core.capacity_plan, scope: core, referenced_by: 4}
+  - {id: customer_support.obj.core.content_gap, scope: core, referenced_by: 9}
+  - {id: customer_support.obj.core.conversation, scope: core, referenced_by: 23}
+  - {id: customer_support.obj.core.coverage_window, scope: core, referenced_by: 7}
+  - {id: customer_support.obj.core.customer_account, scope: core, referenced_by: 16}
+  - {id: customer_support.obj.core.effort_score, scope: core, referenced_by: 5}
+  - {id: customer_support.obj.core.escalation_owner, scope: core, referenced_by: 9}
+  - {id: customer_support.obj.core.intent, scope: core, referenced_by: 11}
+  - {id: customer_support.obj.core.issue, scope: core, referenced_by: 22}
+  - {id: customer_support.obj.core.named_contact, scope: core, referenced_by: 4}
+  - {id: customer_support.obj.core.product_area, scope: core, referenced_by: 17}
+  - {id: customer_support.obj.core.quality_scorecard, scope: core, referenced_by: 5}
+  - {id: customer_support.obj.core.queue, scope: core, referenced_by: 13}
+  - {id: customer_support.obj.core.resolution, scope: core, referenced_by: 11}
+  - {id: customer_support.obj.core.root_cause, scope: core, referenced_by: 6}
+  - {id: customer_support.obj.core.satisfaction_score, scope: core, referenced_by: 14}
+  - {id: customer_support.obj.core.support_agent, scope: core, referenced_by: 21}
+  - {id: customer_support.obj.core.support_plan, scope: core, referenced_by: 3}
+  - {id: customer_support.obj.core.workaround, scope: core, referenced_by: 5}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Glossary — terms that mean something specific HERE and are routinely confused
+#
+# The first four exist because conflating them is the most common modelling error in support
+# software, and every ticketing product on the market has made at least one of them.
+# ─────────────────────────────────────────────────────────────────────────────
+glossary:
+
+  - term: Ticket
+    means: >
+      One unit of promised work with a state, an owner and a clock. It is NOT the conversation
+      and it is NOT the problem. A ticket can be closed while the issue behind it is wide open,
+      which is exactly what "resolved" means when we shipped a workaround.
+
+  - term: Conversation
+    means: >
+      The message thread with the human. One conversation can spawn several tickets ("also,
+      while I have you...") and one ticket can span several conversations across channels.
+      Modelling them as the same object is why so many systems lose the second question.
+
+  - term: Issue
+    means: >
+      The underlying defect or gap. Many tickets, one issue. This is the object that makes
+      "forty customers hit this" expressible; without it every report is a fresh surprise and
+      the queue can never tell you what to fix.
+
+  - term: Resolution
+    means: >
+      What made the customer's problem stop. Distinct from a fix: a refund, a workaround, a
+      documentation link and a code change are all resolutions, and only one of them closes
+      the issue.
+
+  - term: Severity vs Priority
+    means: >
+      Severity is how broken it is — a property of the fault. Priority is what we work on
+      first — a decision about scarce attention. A sev-1 on a free trial account and a sev-3
+      on a customer renewing next week routinely invert. Collapsing the two is the single
+      most expensive triage error there is.
+
+  - term: Entitlement
+    means: >
+      What this customer is contractually owed — channels, hours, response targets, named
+      contacts. It bounds what may be promised. It is checked, never assumed, and it expires.
+
+  - term: SLA target
+    means: >
+      A specific clock with a start, a pause condition and a deadline. Entitlement says a
+      four-hour first response exists; the SLA target is the timestamp four hours from now on
+      this ticket, and whether the clock is currently running.
+
+  - term: Escalation
+    means: >
+      A transfer of ownership upward or sideways, with a reason. Not a synonym for "urgent"
+      and not a synonym for "the customer is angry" — both of those can be true without one,
+      and an escalation without a named receiving owner is a complaint.
+
+  - term: Deflection
+    means: >
+      A contact that never became a ticket because the answer was already reachable. The only
+      support metric that improves by the work not existing, and therefore the only one that
+      is routinely gamed by making help hard to find.
+
+  - term: Object
+    means: >
+      The smallest reusable knowledge unit. Authored once and referenced by id. Carries
+      eighteen sections, of which inference_patterns does most of the work.
+
+  - term: Core object
+    means: >
+      An object loaded by more than one capability. Lives in objects/core/ and is authored
+      once — Ticket is needed by twenty capabilities and twenty copies would drift apart
+      within a week.
+
+  - term: Scoped object
+    means: >
+      An object loaded by exactly one capability. Lives in objects/<capability>/. Macro
+      belongs to macro_management and would be noise anywhere near incident response.
+
+  - term: Situation
+    means: >
+      The load-set selector between a capability and its objects. Exists so a compile loads
+      five objects instead of forty. Lives in situations/ inside its owning capability.
+
+  - term: Business Situation (Layer 2)
+    means: >
+      A DIFFERENT thing with a similar name — the BusinessSituationObject Layer 2 emits. Our
+      situation files bind to it through `matches.l2_situation_types`; an unbound situation can
+      never be looked up and fails silently, producing nothing and logging nothing.
+
+  - term: pending_l2_situation_types
+    means: >
+      A situation whose real trigger no shipped pack emits. Routes nothing today, states
+      exactly what Layer 1 or 2 must emit, and is ranked in registry/signal-backlog.md. The
+      situation-level twin of an inference pattern's `needs_signal`, and for this domain it
+      is the majority of the file set — see the header.
+
+  - term: needs_signal
+    means: >
+      An authored inference pattern whose fact paths or observation kinds the pipeline does
+      not emit yet. Not a defect — it is the Layer 1/2 backlog, ranked by _tools/backlog.py.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Authored second, against a pipeline built for the first domain. Every structural decision
+    here is a copy of Sales except where support genuinely differs, and where it differs the
+    file says why. The one mechanism this domain added — pending_l2_situation_types — was
+    added because the alternative was a brain that could only see email.

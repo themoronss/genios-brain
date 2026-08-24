@@ -1,0 +1,198 @@
+{
+  "replay_id": "11",
+  "slug": "revenue_impact_and_counterfactual_proof",
+  "title": "Revenue Impact, Missed Opportunity, and Counterfactual Proof",
+  "failure_class": "Economic proof by proxy — the product either under-reports value as hardcoded zero or overclaims a card display / click / send / temporally-later deal movement as attributed revenue, because no joined recommendation→exposure→claim→execution→delivery→outcome→counterfactual ledger exists and counterfactuals can be invented after the result.",
+  "summary": "One exact opportunity `opp-42` has a verified current state, a named counterparty and a time-bounded open loop. Before GeniOS surfaces anything, the fixture pre-registers the founder's otherwise-action (no task exists, no equivalent message scheduled, founder would only review the account in the normal weekly pipeline pass); GeniOS then emits a versioned decision with primary action, materially distinct Alternative, wait/stop option, expected consequence, expiry, Completion predicate, outcome window and attribution plan. The replay then records each later boundary independently — exposure, accept/modify/reject claim, actual execution, provider delivery, counterparty response, declared Completion, stage/cash result, competing causes, and the counterfactual/control observation — and mutates each boundary to prove no stage can be inferred from the stage before it. Attribution may only land as caused / assisted / associated / unknown / neutral-cancelled-by-world under the declared method, with associated and unknown amounts excluded from attributed ROI and every negative, neutral, never-delivered and modified case retained in the denominator.",
+  "business_subject": "One exact opportunity `opp-42` and its relationship-scoped unresolved decision (the named counterparty's time-bounded open loop) — explicitly NOT a contact node, not an account-wide activity stream, not a card, not a delivery, and not a later revenue row.",
+  "current_failure": "[CODE] harsh/mvp@b739bd5 has structured outcomes, deterministic learning units and usable execution/delivery primitives, but the canonical vertical identity is fragmented: card acceptance is not atomically welded to ExecutionObject progress; legacy and v2 delivery truth disagree; client receipts can overstate execution; the value API is hardcoded to zero even while outcome paths exist; and no joined recommendation→exposure→action→delivery→external-result→counterfactual ledger is proved anywhere. Consequently the product can under-report real value as zero, or overclaim a displayed card, a click, a send or a later deal movement as revenue impact — while hindsight turns any positive result into \"would have missed\" and negative, never-delivered and founder-modified cases vanish from the denominator.",
+  "expected_behavior": "The decision and the otherwise-action are pre-registered and frozen before exposure. Every transition carries one canonical event identity with source aliases, version and timestamp; missing stages stay unknown and are never inferred from an earlier stage. A counterparty reply or stage change qualifies only when it matches the exact opportunity, action, relationship and declared window; delivery, Completion, business outcome and revenue remain four separate facts. Attribution is conservative and explicit: `caused` requires a declared counterfactual/control design plus evidence the outcome would probably not have occurred without the intervention; `assisted` means GeniOS materially changed discovery, timing, content or execution but another route might have produced it; `associated` means exposure merely preceded the result; `unknown` means action, result, window, otherwise-action or competing-cause evidence is incomplete; `neutral/cancelled-by-world` covers acquisition, role change or external events that make efficacy unevaluable. \"Would-have-missed\" is a pre-registered candidate class — the absence of a prior task plus a delayed baseline review can support assisted/causal evaluation, but a good outcome alone never proves it. Comparable negative and no-outcome cases stay in the eligible cohort, and revenue is counted only from an authoritative finance/CRM receipt, never because an opportunity advanced.",
+  "why_now": "The opportunity has a verified current state and a time-bounded open loop at `t0`, and the founder's baseline behaviour is measurable before any exposure — so the counterfactual can legitimately be pre-registered rather than reconstructed. This is the only window in which a \"would-have-missed\" claim can ever be honest: once the result is known, the otherwise-action can no longer be recorded without hindsight contamination.",
+  "passes_today": false,
+  "prohibited_behaviors": [
+    "Card display, view, click, \"I'll do it\", send, delivered/opened or meeting-booked MUST NOT be counted as automatic revenue value.",
+    "Execution MUST NOT be inferred from acceptance, Completion MUST NOT be inferred from delivery, and business outcome MUST NOT be inferred from Completion.",
+    "The counterfactual MUST NOT be created after the result has been observed.",
+    "A case MUST NOT be classified \"would have missed\" because the card was old, high-scoring, or followed by a win.",
+    "Outcomes MUST NOT be joined person-wide, account-wide, or outside the declared opportunity and window.",
+    "Rejected, modified, failed-delivery, negative, neutral and unknown cases MUST NOT be excluded from the denominator.",
+    "Temporal order, model confidence and salesperson belief MUST NOT be treated as causality.",
+    "Associated and unknown value MUST NOT be summed into attributed ROI, and a modelled target MUST NOT be converted into Live proof."
+  ],
+  "layer_obligations": [
+    {
+      "layer": "L1",
+      "required_output": "Immutable source and event receipts capturing pre-exposure opportunity state, source readiness, baseline task/intent evidence, and every action/provider/CRM/finance event and correction with version and timestamp; no \"no task / no reply / no revenue\" claim without a complete scoped window.",
+      "fail_closed": "Park or Review incomplete sources; mark negative predicates (no task, no reply, no revenue) as unknown rather than false."
+    },
+    {
+      "layer": "L2",
+      "required_output": "A version-fenced BSO binding all evidence to `opp-42`, its exact relationship and open loop, carrying Business subject, otherwise-action evidence, current state, conflicts, membership and source readiness; hindsight and unrelated-account joins prevented.",
+      "fail_closed": "Split or Review the source; never attach a person-wide or account-wide result to the opportunity."
+    },
+    {
+      "layer": "L3",
+      "required_output": "Authoritative ExpertisePackage ID/hash recording the accepted capability and four-brain version that governed the recommendation, plus coverage and exclusions; unsupported decisions never enter the efficacy cohort.",
+      "fail_closed": "Observation-only / unsupported; generic advice is never evaluated as deep expertise."
+    },
+    {
+      "layer": "L4",
+      "required_output": "An immutable pre-result decision and evaluation-plan receipt containing candidates, primary / Alternative / wait, expected consequence, expiry, confidence vector, Completion predicate, outcome window and counterfactual method — with no future evidence embedded.",
+      "fail_closed": "Defer or Observation-only when stakes, Completion predicate or measurement plan is missing."
+    },
+    {
+      "layer": "L5",
+      "required_output": "One ExecutionObject / action identity linked to the decision, recording acceptance / modification / rejection, the exact action, actor and approval, execution attempts, observable completion and result window, without collapsing states.",
+      "fail_closed": "Accepted-unexecuted and completed-unproven remain distinct states; never report false success."
+    },
+    {
+      "layer": "L6",
+      "required_output": "A canonical DeliveryResult with provider and idempotency identity plus audience, recording whether the recommendation was exposed and whether the exact action was attempted, accepted, delivered, unknown or failed; ambiguous attempts reconciled.",
+      "fail_closed": "Unknown or failed delivery is not action success; no blind retry and no inferred impression."
+    },
+    {
+      "layer": "L7",
+      "required_output": "A canonical outcome/evaluation version joining exposure, action, delivery, external result, otherwise-action, alternative causes and the comparable cohort — emitting attribution class, denominator eligibility, attribution confidence, counterfactual evidence and API reconciliation.",
+      "fail_closed": "No ROI figure and no brain promotion when lineage, use permission, window or counterfactual is missing; report unknown honestly."
+    }
+  ],
+  "mutations": [
+    {
+      "mutation": "Card is displayed but never opened.",
+      "expected_decision": "Exposure is recorded as unknown or absent; zero action and zero value attributed.",
+      "prohibited": "Counting card creation as impact.",
+      "pass_condition": "No execution and no outcome attribution is produced for `opp-42`.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No attribution ledger and no authenticated exposure/impression receipt exist; delivery control plane (L6) has never run (delivery_outbox empty across all orgs), so 'displayed but not opened' cannot be distinguished from 'never delivered'."
+    },
+    {
+      "mutation": "Card is opened and \"I'll do it\" is clicked, but no execution ever occurs.",
+      "expected_decision": "Claim stage only; no positive efficacy is recorded.",
+      "prohibited": "Marking the case completed or won.",
+      "pass_condition": "The ledger funnel stops at Claim and advances no further.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "Card acceptance is not welded to execution — L5 has never produced an execution row and card actions do not touch the execution subsystem, so an accepted-unexecuted state has no representation."
+    },
+    {
+      "mutation": "The action is attempted and the provider returns a definite failure.",
+      "expected_decision": "Classified as infrastructure failure; recommendation efficacy stays unknown.",
+      "prohibited": "Penalizing the play as rejected or failed.",
+      "pass_condition": "The delivery metric changes while the outcome metric does not.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L6 delivery control plane has never executed; there is no canonical DeliveryResult carrying provider outcome, so infrastructure failure cannot be separated from recommendation failure."
+    },
+    {
+      "mutation": "The provider accepts the action and then times out (ambiguous outcome).",
+      "expected_decision": "The ambiguous attempt is reconciled before any retry.",
+      "prohibited": "Duplicating the action, or assuming either success or failure.",
+      "pass_condition": "Exactly one canonical attempt exists and no premature outcome is written.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No provider/idempotency identity or attempt-reconciliation path exists in the live delivery layer (never run), so ambiguous attempts have no canonical form."
+    },
+    {
+      "mutation": "The message is delivered but no counterparty response arrives within the complete declared window.",
+      "expected_decision": "Recorded as delivered / no external response; attribution remains no-outcome, not rejection.",
+      "prohibited": "Automatically claiming revenue loss or play failure.",
+      "pass_condition": "A complete-window receipt is stored and the case is labelled neutral/unknown.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No abstention/neutral vocabulary exists (cards.level only ever carries prescriptive/predictive) and no declared outcome window or completeness receipt is tracked."
+    },
+    {
+      "mutation": "The counterparty replies, but on an unrelated thread.",
+      "expected_decision": "Do not join the reply to the decision; Review the source if the identity is ambiguous.",
+      "prohibited": "Recording a person-wide success.",
+      "pass_condition": "`opp-42` remains unresolved after the unrelated reply.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No thread-level state (extraction is one message at a time) and no opportunity-scoped join key; every person node is interchangeable, so a reply cannot be scoped to a specific open loop."
+    },
+    {
+      "mutation": "A meeting was already scheduled before the card existed.",
+      "expected_decision": "The outcome is associated with the baseline, not caused by the card.",
+      "prohibited": "Claiming \"GeniOS booked the meeting\".",
+      "pass_condition": "The pre-exposure calendar receipt is present and defeats the causal claim.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No pre-registration of otherwise-action / baseline state before exposure, and no attribution class vocabulary (caused/assisted/associated) anywhere in the engine."
+    },
+    {
+      "mutation": "The founder already had an equivalent scheduled task covering the same action.",
+      "expected_decision": "Otherwise-action evidence indicates the founder would likely have acted anyway; classify assisted or associated.",
+      "prohibited": "Classifying the case as \"would have missed\".",
+      "pass_condition": "The baseline task is retained in the evaluation record rather than discarded.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No otherwise-action capture and no discovery-increment check against the founder's existing task/alert systems."
+    },
+    {
+      "mutation": "The founder materially modifies the recommendation before executing it.",
+      "expected_decision": "Evaluate the executed action variant, keeping the original decision's quality as a separate judgement.",
+      "prohibited": "Attributing the full result to the original recommendation text.",
+      "pass_condition": "A modification receipt exists and the contribution is labelled as bounded.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No claim/modification receipt at L5 (accept/modify/reject is not recorded against an action identity), so an executed variant cannot be distinguished from the original decision."
+    },
+    {
+      "mutation": "An unrelated inbound event advances the opportunity during the window.",
+      "expected_decision": "The competing cause is recorded; attribution downgrades to associated or unknown.",
+      "prohibited": "Treating temporal order as causality.",
+      "pass_condition": "The outcome record links the competing source.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No competing-cause registry and no attribution computation at L7 (no human verdicts, calibration has never executed)."
+    },
+    {
+      "mutation": "The opportunity closes lost even though the recommended action was correct.",
+      "expected_decision": "Retain the case as an eligible negative outcome.",
+      "prohibited": "Hiding the case, or calling the action a failure without causal evidence.",
+      "pass_condition": "The cohort denominator includes this negative case.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No eligible-cohort / denominator concept exists; L7 has no outcome-evaluation ledger to retain negative cases in."
+    },
+    {
+      "mutation": "The company is acquired, or the contact leaves their role, mid-window.",
+      "expected_decision": "Classify as neutral / cancelled-by-world.",
+      "prohibited": "Penalizing the play for the world event.",
+      "pass_condition": "The case is excluded from the efficacy denominator with an explicit recorded reason.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No neutral/cancelled-by-world label exists (no abstention vocabulary) and no reason-coded denominator exclusion mechanism."
+    },
+    {
+      "mutation": "A positive result arrives after the declared outcome window has closed.",
+      "expected_decision": "Append the late evidence and issue a superseding evaluation; do not mutate the prior result.",
+      "prohibited": "Silently rewriting the old dashboard number.",
+      "pass_condition": "Two versioned evaluation receipts exist — the original and the superseding one.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No versioned outcome/evaluation records and no declared window enforcement; nothing to supersede or append to."
+    },
+    {
+      "mutation": "The same counterparty reply appears via Gmail, via the agent, and in the UI.",
+      "expected_decision": "Resolve to one canonical outcome carrying three source aliases.",
+      "prohibited": "Counting triple support or triple value.",
+      "pass_condition": "The dedup count equals exactly one.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No canonical outcome identity with source aliases exists; the outcome ledger this dedup would operate on is not built."
+    },
+    {
+      "mutation": "Finance records a payment but the opportunity identity conflicts with the decision's subject.",
+      "expected_decision": "Hold the revenue attribution pending identity resolution.",
+      "prohibited": "Attaching the payment by company or contact name.",
+      "pass_condition": "The source is marked Review and the attributed amount stays zero.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No authoritative finance/CRM receipt ingestion, no Review state for conflicting identities, and the value API is hardcoded to zero rather than computing from a ledger."
+    },
+    {
+      "mutation": "A randomized or otherwise credible holdout arm shows similar lift to the treated arm.",
+      "expected_decision": "Report the estimated incremental difference together with its uncertainty.",
+      "prohibited": "Claiming every treated win as product-caused.",
+      "pass_condition": "Cohort sizes, assignment method and the confidence interval are all visible in the output.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No holdout/control assignment, no cohort machinery, and no incremental-lift computation anywhere in the engine."
+    },
+    {
+      "mutation": "No counterfactual data exists at all for the case.",
+      "expected_decision": "Report associated/unknown value only.",
+      "prohibited": "Summing the amount into ROI.",
+      "pass_condition": "Attributed ROI explicitly excludes this case.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No counterfactual method field, no attribution classes, and no ROI aggregation separating attributed from associated/unknown value."
+    }
+  ],
+  "open_loop": "Whether a \"would-have-missed\" case can be promoted beyond associated/unknown remains unresolved: the replay only proves accounting logic deterministically, and `caused` requires a credible pre-registered counterfactual/control (holdout, stepped rollout, matched cohort or documented within-subject baseline) that does not exist in the system. Outcome-proven status therefore stays open pending measured design-partner evidence over the 2–4 week result window and the 60–90 day economic window — both of which the document explicitly labels evaluation hypotheses, not guaranteed causal horizons. Also open: reconciling the fragmented legacy vs v2 delivery truth and the hardcoded-zero value API so that API totals can equal the canonical ledger by class and window."
+}

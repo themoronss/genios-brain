@@ -1,0 +1,28 @@
+identity:
+  id: sales.post_sale_and_growth.onboarding
+  name: Onboarding
+  domain: sales
+  subdomain: post_sale_and_growth
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  The handover from sale to delivery and the path to first realised value. Time to first
+  value is the strongest predictor of first-year retention, which makes onboarding a revenue
+  capability rather than a support one.
+
+question: "How does the customer get to first value, and how fast?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

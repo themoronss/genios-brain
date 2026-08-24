@@ -1,0 +1,16 @@
+identity:
+  id: customer_support.heu.account_relationship_management.support_sees_churn_first
+  name: Support sees churn first
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.account_relationship_management
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Sponsor changes, frustration patterns, competitor mentions — all surface in tickets months
+    before renewal. Support's account notes are the CS team's earliest warning system, if anyone writes
+    them.
+  answers:
+  - Which team usually holds the earliest churn signal?

@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.sales_management.sales_coaching
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.sales_coaching.one_skill_coaching_cadence
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.sales_coaching.coach_the_pattern__manage_the_number
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

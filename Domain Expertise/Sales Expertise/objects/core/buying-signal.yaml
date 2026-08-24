@@ -1,0 +1,760 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Buying Signal — core. Loaded by lead generation, account research, outreach, follow-up,
+# lead qualification, pipeline management and revenue intelligence.
+#
+# Unlike the other context objects, this one is mostly executable: the substrate's eighteen
+# observation kinds ARE buyer behaviours, so five of eleven patterns fire today. What is
+# missing is everything outside email and calendar — web, product and forwarding behaviour —
+# which is where the earliest and highest-yield signals live.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: sales.obj.core.buying_signal
+  scope: core
+  name: Buying Signal
+  domain: sales
+  subdomain: revenue_operations
+  owner_capability: sales.revenue_operations.revenue_intelligence
+  version: 1.0.0
+  status: draft
+  aliases: ["Intent Signal", "Buying Intent", "Engagement Signal", "Purchase Indicator"]
+purpose:
+  statement: >
+    An observable behaviour indicating purchase intent, attributed to a person and stamped with
+    a time. Distinct from a trigger event on agency: a trigger happens TO the account — funding
+    round, acquisition, new regulation — while a signal is something they DO. Triggers justify
+    building a list; signals justify sending a message today, and conflating them produces
+    outreach that references a press release nobody in the account has thought about for a
+    month. The second property that defines the object is decay. Signals lose value on a curve,
+    not a cliff, and a signal acted on a fortnight late is indistinguishable from cold outreach
+    that happens to mention something the buyer did — which lands worse than cold outreach,
+    because it reads as surveillance rather than research.
+attributes:
+  - name: identity
+    purpose: What the behaviour was, and where we saw it.
+    type: composite
+    contains:
+      - kind
+      - category
+      - statement
+      - source_channel
+      - is_first_party
+  - name: attribution
+    purpose: >
+      Who did it, and how much their doing it means. The section that separates an actionable
+      signal from an account-level statistic.
+    type: composite
+    contains:
+      - actor_ref
+      - actor_authority
+      - account_ref
+      - deal_ref
+      - is_deal_attached
+  - name: strength
+    purpose: Intrinsic weight of the behaviour, before and after time decay.
+    type: composite
+    contains:
+      - direction
+      - strength_bp
+      - decayed_strength_bp
+  - name: decay
+    purpose: The clock. Every field here exists because signal value is a function of age.
+    type: composite
+    contains:
+      - observed_at
+      - half_life_hours
+      - response_window_hours
+      - age_hours
+  - name: corroboration
+    purpose: Whether this behaviour stands alone or belongs to a cluster.
+    type: composite
+    contains:
+      - corroborating_count
+      - cluster_window_hours
+      - supersedes_ref
+  - name: disposition
+    purpose: What we did about it, and whether we deliberately did nothing.
+    type: composite
+    contains:
+      - acted_on
+      - acted_on_at
+      - response_latency_hours
+      - suppressed
+      - suppression_reason
+  - name: kind
+    purpose: "Aligned to the Layer 2 observation vocabulary wherever one exists. Note what is deliberately
+      absent: proposal_sent and followup_sent are in that vocabulary and are OUR behaviours, not theirs.
+      Scoring a seller's own follow-up as buyer intent is the most common way an intent score inflates itself
+      into uselessness."
+    type: value
+    data_type: enum
+    allowed_values: [demo_requested, pricing_discussed, contract_requested, budget_approved,
+        verbal_yes, introduction, legal_review, security_review_started, discount_pressure, competitor,
+      objection, objection_price, timeline_slip, closed_lost_mention, other]
+    required: true
+    description: >
+      Aligned to the Layer 2 observation vocabulary wherever one exists. Note what is
+      deliberately absent: proposal_sent and followup_sent are in that vocabulary and are
+      OUR behaviours, not theirs. Scoring a seller's own follow-up as buyer intent is the
+      most common way an intent score inflates itself into uselessness.
+  - name: category
+    purpose: '`procedural` — legal review, security review — is the most under-rated. It is slower and less
+      exciting than a demo request and far more predictive, because nobody starts a security review for
+      a purchase they are not seriously considering.'
+    type: value
+    data_type: enum
+    allowed_values: [engagement, commercial, procedural, competitive, negative]
+    description: >
+      `procedural` — legal review, security review — is the most under-rated. It is slower
+      and less exciting than a demo request and far more predictive, because nobody starts
+      a security review for a purchase they are not seriously considering.
+  - name: statement
+    purpose: The behaviour in one line, naming who did what. Written so it can be read aloud in a
+      pipeline review without the reader consulting a dashboard.
+    type: value
+    data_type: string
+    description: The behaviour in one line, naming who did what. Written so it can be read aloud in a
+      pipeline review without the reader consulting a dashboard.
+  - name: source_channel
+    purpose: Where we observed it. Determines both provenance strength and whether it may be
+      referenced back to the buyer.
+    type: value
+    data_type: enum
+    allowed_values: [email, calendar, meeting_transcript, website, product, crm, slack,
+        third_party_intent, manual_entry]
+    description: Where we observed it. Determines both provenance strength and whether it may be
+      referenced back to the buyer.
+  - name: is_first_party
+    purpose: Observed in our own channels, versus purchased intent data. First-party behaviour is a
+      fact about a person; third-party intent is a probabilistic claim about an account. They are
+      different types of evidence and averaging them into one score destroys both.
+    type: value
+    data_type: boolean
+    required: true
+    description: >
+      Observed in our own channels, versus purchased intent data. First-party behaviour is a
+      fact about a person; third-party intent is a probabilistic claim about an account. They
+      are different types of evidence and averaging them into one score destroys both.
+  - name: actor_ref
+    purpose: Who did it. A signal attributed to a company and not a person cannot be replied to, and
+      an unrepliable signal is telemetry, not a signal.
+    type: reference
+    ref: sales.obj.core.stakeholder
+    data_type: ref
+    description: >
+      Who did it. A signal attributed to a company and not a person cannot be replied to, and
+      an unrepliable signal is telemetry, not a signal.
+  - name: actor_authority
+    purpose: A demo request from an intern and one from the CFO are the same observation and
+      completely different signals. Weighting by kind alone treats them identically.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, user, influencer, approver]
+    description: A demo request from an intern and one from the CFO are the same observation and
+      completely different signals. Weighting by kind alone treats them identically.
+  - name: account_ref
+    purpose: The account_ref of this object.
+    type: reference
+    ref: sales.obj.core.account
+    data_type: ref
+  - name: deal_ref
+    purpose: The deal_ref of this object.
+    type: reference
+    ref: sales.obj.core.deal
+    data_type: ref
+  - name: is_deal_attached
+    purpose: Counter-intuitively, false is where the value is. Signals on live deals mostly confirm
+      what the rep already knows; signals on accounts with no open opportunity are the ones that
+      create pipeline, and they are the ones routing rules usually filter out.
+    type: value
+    data_type: boolean
+    description: >
+      Counter-intuitively, false is where the value is. Signals on live deals mostly confirm
+      what the rep already knows; signals on accounts with no open opportunity are the ones
+      that create pipeline, and they are the ones routing rules usually filter out.
+  - name: direction
+    purpose: Negative signals — discount pressure before value is agreed, a competitor named late, a
+      slip — are buying signals. They say a purchase is being considered, just not necessarily ours.
+      Filtering them out is how a pipeline review becomes optimistic.
+    type: value
+    data_type: enum
+    allowed_values: [positive, negative]
+    description: >
+      Negative signals — discount pressure before value is agreed, a competitor named late,
+      a slip — are buying signals. They say a purchase is being considered, just not
+      necessarily ours. Filtering them out is how a pipeline review becomes optimistic.
+  - name: strength_bp
+    purpose: Intrinsic intent implied by this behaviour at the moment of observation, before decay and
+      before authority weighting.
+    type: value
+    data_type: integer
+    unit: basis_points
+    description: Intrinsic intent implied by this behaviour at the moment of observation, before decay
+      and before authority weighting.
+  - name: decayed_strength_bp
+    purpose: strength_bp after decay at the current age. The number Layer 4 should read; strength_bp
+      alone will keep a fortnight-old demo request at the top of a queue forever.
+    type: value
+    data_type: integer
+    unit: basis_points
+    description: strength_bp after decay at the current age. The number Layer 4 should read;
+      strength_bp alone will keep a fortnight-old demo request at the top of a queue forever.
+  - name: observed_at
+    purpose: When the behaviour happened, not when we noticed it. The gap between the two is the part
+      of response latency nobody measures.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound, deal.last_inbound]
+    description: When the behaviour happened, not when we noticed it. The gap between the two is the
+      part of response latency nobody measures.
+  - name: half_life_hours
+    purpose: How fast this kind loses value. A demo request halves in roughly a day; a security review
+      in weeks; third-party intent in about a month. Running one SLA across all of them is why most
+      signal programmes underperform — the fast signals go stale while the queue works through slow
+      ones that would have kept.
+    type: value
+    data_type: duration
+    unit: hours
+    description: >
+      How fast this kind loses value. A demo request halves in roughly a day; a security
+      review in weeks; third-party intent in about a month. Running one SLA across all of
+      them is why most signal programmes underperform — the fast signals go stale while the
+      queue works through slow ones that would have kept.
+  - name: response_window_hours
+    purpose: The window inside which acting still reads as responsiveness. Beyond it the same message
+      reads as coincidence, and well beyond it as surveillance.
+    type: value
+    data_type: duration
+    unit: hours
+    description: The window inside which acting still reads as responsiveness. Beyond it the same
+      message reads as coincidence, and well beyond it as surveillance.
+  - name: age_hours
+    purpose: Computed from observed_at. Kept as a field so decay is auditable rather than hidden
+      inside a scoring function.
+    type: value
+    data_type: number
+    unit: hours
+    description: Computed from observed_at. Kept as a field so decay is auditable rather than hidden
+      inside a scoring function.
+  - name: corroborating_count
+    purpose: Independent signals in the same cluster. One behaviour is noise; three inside a week from
+      two people is a buying process, and the second person matters more than the third behaviour.
+    type: value
+    data_type: integer
+    description: Independent signals in the same cluster. One behaviour is noise; three inside a week
+      from two people is a buying process, and the second person matters more than the third
+      behaviour.
+  - name: cluster_window_hours
+    purpose: The window within which separate behaviours count as one cluster rather than as
+      independent evidence.
+    type: value
+    data_type: duration
+    unit: hours
+    description: The window within which separate behaviours count as one cluster rather than as
+      independent evidence.
+  - name: supersedes_ref
+    purpose: A later, stronger signal of the same kind from the same actor replaces the earlier one
+      rather than adding to it. Without this, one buyer visiting a page four times looks like four
+      buyers, which is the most common inflation in any intent score.
+    type: reference
+    ref: sales.obj.core.buying_signal
+    data_type: ref
+    description: >
+      A later, stronger signal of the same kind from the same actor replaces the earlier one
+      rather than adding to it. Without this, one buyer visiting a page four times looks like
+      four buyers, which is the most common inflation in any intent score.
+  - name: acted_on
+    purpose: The acted_on of this object.
+    type: value
+    data_type: boolean
+  - name: acted_on_at
+    purpose: The acted_on_at of this object.
+    type: value
+    data_type: timestamp
+  - name: response_latency_hours
+    purpose: observed_at to acted_on_at, measured against response_window_hours rather than against a
+      team-wide SLA.
+    type: value
+    data_type: number
+    unit: hours
+    description: observed_at to acted_on_at, measured against response_window_hours rather than
+      against a team-wide SLA.
+  - name: suppressed
+    purpose: 'Deliberately not acted on. Distinct from unactioned, and the distinction is load-bearing:
+      without it the same account receives three approaches in a day from three systems that each believed
+      nobody had responded.'
+    type: value
+    data_type: boolean
+    description: >
+      Deliberately not acted on. Distinct from unactioned, and the distinction is load-bearing:
+      without it the same account receives three approaches in a day from three systems that
+      each believed nobody had responded.
+  - name: suppression_reason
+    purpose: Records why we stayed quiet, so the decision can be reviewed rather than rediscovered.
+    type: value
+    data_type: enum
+    allowed_values: [already_in_sequence, recent_touch, do_not_contact, duplicate_of_cluster,
+        owned_by_partner, none]
+    description: Records why we stayed quiet, so the decision can be reviewed rather than
+      rediscovered.
+states:
+  initial: detected
+  values:
+    - name: detected
+      description: Observed and stored. No score, no owner.
+    - name: scored
+      description: strength_bp and half_life_hours assigned from the kind and the actor's authority.
+    - name: routed
+      description: Assigned to a person or a play, with a response window running.
+    - name: acted_on
+      description: A message or action went out against it.
+      entered_when: [has_obs: followup_sent]
+    - name: converted
+      description: The signal produced a meeting or a stage change. The only state that validates the
+        scoring.
+      entered_when: [exists: meeting.start_at]
+    - name: suppressed
+      description: Deliberately not acted on, with a reason recorded. Not a failure state.
+    - name: decayed
+      description: >
+        Past the point where acting on it reads as responsiveness. A fortnight is the working
+        threshold for conversational signals — beyond it the reference to their behaviour is
+        the thing that makes the outreach worse, not better.
+      entered_when: [{fn: hours_since, path: thread.last_inbound, op: ">=", value: 336}]
+  transitions:
+    - {from: detected, to: scored}
+    - {from: scored, to: routed}
+    - {from: routed, to: acted_on, when: [has_obs: followup_sent]}
+    - {from: routed, to: suppressed}
+    - {from: acted_on, to: converted, when: [exists: meeting.start_at]}
+    - {from: routed, to: decayed, when: [{fn: hours_since, path: thread.last_inbound, op: ">=", value:
+            336}]}
+    - {from: scored, to: decayed, when: [{fn: hours_since, path: thread.last_inbound, op: ">=", value:
+            336}]}
+    - {from: acted_on, to: decayed, when: [{fn: hours_since, path: thread.last_inbound, op: ">=", value:
+            336}]}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: belongs_to
+    target: sales.obj.core.stakeholder
+    cardinality: one
+    description: The actor. A signal with no person behind it may prioritise a territory but can never
+      produce a message.
+
+  - type: attaches_to
+    target: sales.obj.core.account
+    cardinality: one
+
+  - type: attaches_to
+    target: sales.obj.core.deal
+    cardinality: zero_or_one
+    description: Optional, and the unattached ones are the valuable ones.
+
+  - type: precedes
+    target: sales.obj.core.next_action
+    cardinality: zero_or_one
+    description: >
+      A signal with no action attached is telemetry. The object exists to be acted on inside
+      its half-life, and an unrouted signal is worse than an undetected one because it creates
+      the belief that the account is covered.
+
+  - type: influences
+    target: sales.obj.core.opportunity
+    cardinality: zero_or_one
+    description: A cluster of signals on an account with no opportunity is the case for creating one.
+      That is the highest-yield use of this object and the one most routing rules exclude.
+
+  - type: references
+    target: sales.obj.core.competitor
+    cardinality: zero_or_one
+    description: A competitor mention is a buying signal that happens to be bad news. The purchase is
+      live; the question is only whose.
+
+  - type: supersedes
+    target: sales.obj.core.buying_signal
+    cardinality: zero_or_one
+    description: Self-referential deduplication. The same behaviour observed twice is one signal, not
+      two.
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: bs.contract_requested_is_terminal_intent
+      statement: "The buyer asked for the contract."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+      yields: {confidence_bp: 9600, attribute: strength_bp, value: 9600}
+      evidence_fields: [thread.last_inbound, deal.status]
+      note: >
+        The strongest behaviour in the vocabulary and the one with the shortest half-life of
+        all. Buyers who ask for paper are ready that week; a three-day response converts a
+        signal into a re-sell. Category is procedural rather than commercial — the commercial
+        decision already happened somewhere we could not see.
+
+    - id: bs.demo_request_is_high_intent_engagement
+      statement: "A demo was requested."
+      status: executable
+      when:
+        - {has_obs: demo_requested}
+      yields: {confidence_bp: 9000, attribute: category, value: engagement}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Highest-intent inbound the pipeline can currently see, and the one where latency is
+        most punishing: the buyer is comparing us against whoever replies first, not against
+        whoever demos best. Half-life is measured in hours.
+
+    - id: bs.competitor_named_means_a_purchase_is_live
+      statement: "A competitor was mentioned on the deal."
+      status: executable
+      when:
+        - {has_obs: competitor}
+      yields: {confidence_bp: 7200, attribute: direction, value: negative}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Reads backwards and is filed here for that reason. A competitor mention is bad news
+        about us and unambiguous good news about the purchase — nobody evaluates alternatives
+        for a thing they are not buying. Recorded as direction negative so it lowers our win
+        probability while still raising purchase probability, which is the distinction most
+        pipelines collapse. The failure mode this guards against is sellers going quiet on
+        hearing a competitor named, at the exact moment engagement matters most.
+
+    - id: bs.pricing_page_visited
+      statement: "Someone from the account viewed the pricing page."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: category, value: commercial}
+      requires_signals:
+        - {kind: obs_kind, name: page_view, owner_layer: L1, note: "The single most-used commercial signal\
+            in the industry and the pipeline cannot see it at all. There is no web connector, so every website
+            behaviour — pricing, docs, careers, repeat visits — is invisible."}
+        - {kind: fact_path, name: web.page_path, owner_layer: L1, note: "Path plus identified visitor. Anonymous\
+            visits are account-level at best and must set is_first_party true but actor_ref null, which the
+            routing rule then blocks."}
+
+    - id: bs.email_forwarded_internally
+      statement: "Our email was forwarded to someone else inside the account."
+      status: needs_signal
+      yields: {confidence_bp: 8800, attribute: actor_authority, value: influencer}
+      requires_signals:
+        - {kind: obs_kind, name: forwarded_internally, owner_layer: L2, note: "The highest-signal behaviour\
+            in enterprise email and completely invisible. A buyer forwarding our note to their boss is stronger
+            evidence than any reply they could write, because it is them selling internally rather than us
+            selling externally. Detectable from reply-chain quoting and new participants appearing on a thread."}
+
+  heuristic:
+
+    - id: bs.faster_than_their_own_baseline
+      statement: "Their last inbound arrived well inside their own usual reply cadence."
+      status: executable
+      when:
+        - {fn: hours_since, path: thread.last_inbound, op: "<=", value: {baseline: reply_cadence, mult: 0.5,
+            floor: 2}}
+      yields: {confidence_bp: 6800, attribute: category, value: engagement}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Acceleration against their own baseline, not against an absolute. A buyer who normally
+        replies in four days replying within one is a far stronger signal than one who always
+        replies within the hour doing it again — the second is a personality trait and the
+        first is a change of behaviour. This is the only pattern here that uses the learned
+        baseline, and it is the reason reply_cadence exists.
+
+    - id: bs.two_commercial_behaviours_cluster
+      statement: "A demo was requested and pricing was discussed on the same deal."
+      status: executable
+      when:
+        - {has_obs: demo_requested}
+        - {has_obs: pricing_discussed}
+      yields: {confidence_bp: 8600, attribute: corroborating_count, value: 2}
+      evidence_fields: [thread.last_inbound, deal.value]
+      note: >
+        Two independent behaviours across the engagement and commercial categories beat one
+        strong behaviour in either. The substrate cannot tell whether the same person did both,
+        which is the difference between one interested individual and a buying process — hence
+        8600 rather than higher, and hence the standing ask for participant attribution.
+
+    - id: bs.product_usage_accelerated
+      statement: "Usage of the free tier or trial rose sharply against the account's own baseline."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: is_first_party, value: true}
+      requires_signals:
+        - {kind: fact_path, name: product.active_users_7d, owner_layer: L1}
+        - {kind: derived, name: derived.usage_delta_vs_baseline, owner_layer: L2, note: "In any product-led\
+            motion this is the strongest first-party signal that exists and there is no connector for it.
+            The delta matters, not the level — a flat high-usage account is a customer, a rising one is a
+            buyer."}
+
+    - id: bs.third_party_intent_surge
+      statement: "Purchased intent data shows the account researching our category."
+      status: needs_signal
+      yields: {confidence_bp: 4500, attribute: is_first_party, value: false}
+      requires_signals:
+        - {kind: fact_path, name: intent.topic_surge, owner_layer: L1, note: "Deliberately low confidence.\
+            Account-level and never person-level, so it is useful for ranking a territory and useless for
+            writing a message. Authored mainly so the routing rule that forbids quoting it has something to
+            attach to."}
+
+    - id: bs.a_more_senior_person_joined_the_thread
+      statement: "Someone more senior than the existing participants appeared on the conversation."
+      status: needs_signal
+      yields: {confidence_bp: 8200, attribute: actor_authority, value: approver}
+      requires_signals:
+        - {kind: fact_path, name: person.seniority, owner_layer: L1, note: "Requires title normalisation."}
+        - {kind: derived, name: derived.thread_participant_delta, owner_layer: L2, note: "A new senior participant\
+            is an internal escalation we did not cause, which outranks every behaviour the buyer performs
+            towards us directly."}
+
+    - id: bs.repeat_engagement_with_no_open_deal
+      statement: "An account with no open opportunity keeps engaging across multiple contacts."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: is_deal_attached, value: false}
+      requires_signals:
+        - {kind: derived, name: derived.account_engagement_no_deal, owner_layer: L2, note: "The highest-yield\
+            pattern in the object and the one with no route to execution today. Engagement is deal-scoped
+            in the substrate, so an account behaving like a buyer before anyone creates an opportunity is
+            invisible — precisely the population where a signal changes the outcome rather than confirming
+            it."}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: inbound recency and reply acceleration, path: thread.last_inbound}
+  - {source: email, signal: who owes whom a reply, path: thread.ball_in_court}
+  - {source: calendar, signal: meeting booked or attended, path: meeting.start_at}
+  - {source: derived, signal: deal-level interaction volume, path: derived.engagement}
+  - {source: crm, signal: "stage changes, opportunity creation, contact additions"}
+  - {source: website, signal: "pricing, docs and repeat-visit behaviour — no connector exists today"}
+  - {source: slack, signal: "shared-channel activity in a customer or partner workspace"}
+  - {source: meeting_transcript, signal: "unprompted mentions of timelines, procurement steps or internal\
+      approvals"}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: decayed_strength_bp, type: integer, description: "Age-adjusted intent. The only strength figure\
+      any queue should sort on.", consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: response_deadline, type: timestamp, description: "observed_at plus response_window_hours. After\
+      this, acting on the signal makes the outreach worse rather than better.", consumed_by: [
+        L5.execution_planning, "L5.2.channel_planner"]}
+  - {name: routing_target, type: string, description: "Who should act, derived from actor_ref and account\
+      ownership.", consumed_by: [L5.execution_planning]}
+  - {name: quotable, type: boolean, description: "Whether the behaviour may be referenced in a message.\
+      False for all third-party intent, without exception.", consumed_by: [L5.communication_planning, "L5.2.channel_planner"]}
+  - {name: cluster_id, type: string, description: "Groups related behaviours so one buying process is\
+      counted once.", consumed_by: [L4.reasoning_unit]}
+  - {name: signal_precision, type: number, description: "Historical conversion of this kind at this authority\
+      level. The feedback that stops strength_bp being a guess forever.", consumed_by: [
+        L6.learning_unit]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: bs.no_third_party_quoting, statement: "A signal with is_first_party false may never be referenced\
+      in any message to the buyer.", hard: true}
+  - {id: bs.actor_required_to_route, statement: "Routing for outreach requires actor_ref. Account-only\
+      signals prioritise, they do not message.", hard: true}
+  - {id: bs.one_behaviour_one_signal, statement: "The same behaviour by the same actor inside cluster_window_hours\
+      counts once.", hard: true}
+  - {id: bs.seller_actions_are_not_signals, statement: "proposal_sent and followup_sent are our behaviours\
+      and may never be scored as buyer intent, despite appearing in the same observation vocabulary.",
+      hard: true}
+  - {id: bs.decay_is_monotonic, statement: "decayed_strength_bp never rises with age. A new behaviour\
+      creates a new signal; it does not refresh an old one.", hard: true}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: bs.score_on_decayed_strength
+    statement: >
+      A signal older than half_life_hours must be ranked on decayed_strength_bp, never on
+      strength_bp. Queues sorted on intrinsic strength surface stale high-value signals ahead
+      of fresh actionable ones indefinitely.
+    then: rank_on_decayed_strength
+    severity: blocking
+
+  - id: bs.no_routing_without_an_actor
+    statement: A signal with no actor_ref may raise account priority but may not be routed for
+      outreach. There is nobody to write to.
+    then: block_routing
+    severity: blocking
+
+  - id: bs.third_party_intent_is_never_quoted
+    statement: >
+      Where is_first_party is false, the signal may inform targeting and must never be
+      referenced in a message. Telling a buyer we know their team researched a topic is the
+      fastest way to sound like surveillance and lose the account outright.
+    then: block_reference_in_message
+    severity: blocking
+
+  - id: bs.deduplicate_within_the_cluster_window
+    statement: Two signals of the same kind from the same actor inside cluster_window_hours are one
+      signal. Counting both is how an intent score doubles without a buyer doing anything new.
+    then: merge_into_cluster
+    severity: warning
+
+  - id: bs.negative_signals_still_route
+    statement: >
+      A signal with direction negative must still produce a next action. Going quiet after
+      discount pressure or a competitor mention is how a deal is lost without anyone
+      recording a decision.
+    when: [has_obs: competitor]
+    then: require_next_action
+    severity: warning
+
+  - id: bs.suppression_needs_a_reason
+    statement: suppressed may not be true with suppression_reason of none. Unexplained silence is
+      indistinguishable from a missed signal at review time.
+    severity: warning
+
+# ── 8 · Decision Factors — sums to 10000 ─────────────────────────────────────────────────
+decision_factors:
+
+  - name: recency_against_half_life
+    weight_bp: 2600
+    direction: increases
+    description: The heaviest factor, because it is the one that changes fastest. Measured against the
+      kind's own half-life, not against a fixed number of days.
+    reads: [observed_at, age_hours, half_life_hours, decayed_strength_bp]
+
+  - name: actor_authority
+    weight_bp: 2000
+    direction: increases
+    description: Who did it, weighted above what they did. An approver reading a pricing page outranks
+      a user requesting a demo.
+    reads: [actor_ref, actor_authority]
+
+  - name: corroboration
+    weight_bp: 1800
+    direction: increases
+    description: A second person outweighs a third behaviour. Multiple people is a buying process;
+      multiple actions is one interested person.
+    reads: [corroborating_count, cluster_window_hours]
+
+  - name: provenance
+    weight_bp: 1600
+    direction: increases
+    description: First-party behaviour over purchased intent, always. They are different evidence
+      types and only one is quotable.
+    reads: [is_first_party, source_channel]
+
+  - name: intrinsic_strength
+    weight_bp: 1200
+    direction: increases
+    reads: [kind, category, strength_bp, direction]
+
+  - name: already_handled
+    weight_bp: 800
+    direction: decreases
+    description: Suppresses re-approach. Without this the account receives three messages from three
+      systems that each believed they were first.
+    reads: [acted_on, suppressed, response_latency_hours, supersedes_ref]
+
+# ── 9 · Inference Patterns ⭐ ─────────────────────────────────────────────────────────────
+evidence:
+  - {source: email, strength_bp: 8500, description: "First-party, person-attributed, timestamped. The\
+      best evidence the pipeline currently produces for this object."}
+  - {source: calendar, strength_bp: 8000, description: "A booked meeting is behaviour with a cost attached.\
+      Weaker only because the booking is often ours."}
+  - {source: meeting_transcript, strength_bp: 7500, description: "Unprompted mentions of procurement steps\
+      or internal timelines. Rich, and currently unmined for intent."}
+  - {source: crm, strength_bp: 6000, description: "Stage changes and contact additions. Reflects rep behaviour\
+      as much as buyer behaviour."}
+  - {source: slack, strength_bp: 5500, description: "Shared-channel activity. Strong where it exists,\
+      and it exists in a minority of accounts."}
+  - {source: website, strength_bp: 5000, description: "First-party if the visitor is identified, near\
+      worthless if not. No connector today."}
+  - {source: derived, strength_bp: 4000, description: "Engagement and momentum. Corroborates a cluster;\
+      never constitutes one."}
+  - {source: manual_entry, strength_bp: 3500, description: "A rep recording something they heard. Honest,\
+      unverifiable, and systematically over-optimistic."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: median_response_latency, unit: hours, description: "observed_at to acted_on_at. The number\
+      that moves inbound conversion more than any message change.", owner_layer: L6}
+  - {name: in_window_action_rate, unit: percent, description: "Share acted on inside response_window_hours,\
+      measured per kind rather than in aggregate.", owner_layer: L6}
+  - {name: signal_precision, unit: percent, description: "Share of signals of each kind that convert.\
+      The feedback loop that turns strength_bp from a guess into a weight.", owner_layer: L6}
+  - {name: unattached_cluster_rate, unit: percent, description: "Clusters on accounts with no opportunity.\
+      Directly measures pipeline the routing rules are discarding.", owner_layer: L6}
+  - {name: duplicate_rate, unit: percent, description: "Signals later merged by supersedes_ref. Rising\
+      values mean the intent score is inflating.", owner_layer: L6}
+  - {name: decay_before_action_rate, unit: percent, description: "Share reaching the decayed state unactioned.\
+      The honest measure of whether detection is worth anything.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: bs.detected, name: Buying Signal Detected, payload: [kind, actor_ref, observed_at, source_channel]}
+  - {id: bs.cluster_formed, name: Signal Cluster Formed, emitted_when: [has_obs: demo_requested,
+          has_obs: pricing_discussed], payload: [corroborating_count, account_ref], description: "A cluster
+      is the unit that should create pipeline. Individual signals rarely justify an opportunity; two behaviours
+      from two people almost always do."}
+  - {id: bs.window_closing, name: Response Window Closing, payload: [response_deadline, decayed_strength_bp],
+    description: "Emitted before decay, not after. A notification that a signal has expired is a report;
+      one sent while it is still actionable is a system."}
+  - {id: bs.decayed, name: Signal Decayed, emitted_when: [{fn: hours_since, path: thread.last_inbound,
+        op: ">=", value: 336}], payload: [kind, age_hours, acted_on]}
+  - {id: bs.superseded, name: Signal Superseded, payload: [supersedes_ref, kind]}
+  - {id: bs.converted, name: Signal Converted, emitted_when: [exists: meeting.start_at], payload: [
+        kind, response_latency_hours], description: "The only event that calibrates strength_bp. Without
+      it every weight in this object stays an opinion."}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: bs.respond_now, name: Respond inside the response window, actor: human, preconditions: [has_obs:
+          demo_requested], effect: "Converts the signal. Latency beats content on inbound: the buyer is
+      comparing reply times, not messages."}
+  - {id: bs.reference_the_behaviour, name: Reference the behaviour in the message, actor: human, effect: "Permitted
+      only for first-party signals inside the window. Outside it, referencing the behaviour is what makes
+      the outreach land badly."}
+  - {id: bs.multithread_on_the_cluster, name: Approach the second person in the cluster, actor: human,
+    preconditions: [{fn: edge_count, op: ">=", value: 2}], effect: "A second engaged person is stronger
+      evidence than a third behaviour from the first."}
+  - {id: bs.create_opportunity, name: Create an opportunity from an unattached cluster, actor: human,
+      effect: "The highest-yield use of this object, and the one routing rules usually filter out by requiring
+      a deal id."}
+  - {id: bs.suppress, name: Suppress with a recorded reason, actor: system, effect: "Prevents three systems\
+      approaching the same account on the same day. Requires suppression_reason."}
+  - {id: bs.escalate_negative, name: Address a negative signal directly, actor: human, preconditions: [
+        has_obs: discount_pressure], effect: "Negative signals decay too. A competitor mention left unanswered
+      for a week is conceded, not neutral."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "A VP of Operations requests a demo at 09:14 and it is answered at 09:31", note: "The shape\
+      that converts. First-party, person-attributed, approver-adjacent, and answered inside a half-life
+      measured in hours."}
+  - {label: "The account announced a Series B last month", note: "THE CLASSIC MISCLASSIFICATION. A trigger,\
+      not a signal — it happened TO them and nobody in the account did anything. It justifies putting them
+      on a list; it does not justify a message claiming relevance today, and every recipient has already
+      had eleven of those."}
+  - {label: "Security review started, four weeks after the last demo", note: "Procedural, unexciting,\
+      and the most predictive item on this page. Nobody runs a security review for a purchase they are not
+      serious about."}
+  - {label: "Purchased intent shows the account surging on our category", note: "is_first_party false.\
+      Legitimate for ranking a territory this week; quoting it back to the buyer would end the relationship."}
+  - {label: "The champion forwards our email to the CFO with two lines of endorsement", note: "The strongest\
+      behaviour on this list and entirely invisible today. It is the buyer selling internally, which no
+      reply we receive can match."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Eleven inference patterns: five executable today, six blocked. This object scores better
+    than its siblings only because the substrate's observation vocabulary is itself a list of
+    buyer behaviours — but every executable pattern lives inside email and calendar, which
+    means the engine can only see signals from accounts already in a conversation with us. The
+    single highest-value signal gap is obs_kind `page_view` with fact_path `web.page_path`
+    (L1): a website connector is the only route to pre-conversation intent, it is the most
+    widely used commercial signal in the profession, and without it this object can never do
+    the one job it exists for — telling a seller about an account before that account tells
+    them. Close behind is obs_kind `forwarded_internally` (L2), derivable from existing email
+    data with no new connector, which would surface the strongest enterprise behaviour there
+    is: the buyer selling on our behalf in a room we are not in.

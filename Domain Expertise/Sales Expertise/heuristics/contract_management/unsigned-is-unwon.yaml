@@ -1,0 +1,15 @@
+identity:
+  id: sales.heu.contract_management.unsigned_is_unwon
+  name: Unsigned is unwon
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.contract_management
+  subdomain: closing
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'A verbal yes changes nothing in the world — budgets freeze, sponsors leave, priorities shift
+    right up to the signature. Forecast and behave accordingly: celebrate on ink, not on intent.'
+  answers:
+  - When is a deal actually won?

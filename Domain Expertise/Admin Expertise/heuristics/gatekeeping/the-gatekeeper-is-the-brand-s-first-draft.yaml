@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.gatekeeping.the_gatekeeper_is_the_brand_s_first_draft
+  name: The gatekeeper is the brand's first draft
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.gatekeeping
+  subdomain: executive_support
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: For most people, the assistant IS the executive's personality at first contact. Warm-and-firm
+    at the gate reflects onto the principal; cold-and-obstructive does too.
+  answers:
+  - What impression does gatekeeping style create?

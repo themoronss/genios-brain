@@ -1,0 +1,243 @@
+"""Business Situation -> domain situations -> capability plan."""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+
+from genios_engine.contracts.domain_expertise import (
+    BusinessSituationObject,
+    SituationContextSlice,
+)
+
+from .authoring import ExpertBrainCatalog
+from .context_adapter import ContextAdapter, PredicateState
+from .errors import (
+    AuthoringIntegrityError,
+    NoExpertiseRoute,
+    SituationContextIncomplete,
+    UnsupportedCoverage,
+)
+from .models import RoutePlan
+
+#: Corpus domain folder names that differ from the Layer 2 domain id for the same thing.
+#:
+#: `context/domain_spec.py` registers `support`; the authored corpus folder is "Customer Support
+#: Expertise" and declares `customer_support`. Both name one domain, and the mismatch alone sent
+#: 56 of one tenant's 73 situations to NoExpertiseRoute before any situation type was compared.
+#: Aliasing at the boundary keeps each side free to use its own natural name — the corpus is
+#: written by humans and reads better as `customer_support`, while L2's id is a registry key.
+DOMAIN_ALIASES: dict[str, str] = {
+    "support": "customer_support",
+}
+
+#: Layer 2 domain ids that are NOT a domain — they mean "no domain was identified".
+#:
+#: `context/correlation.py` falls back to `general` whenever its keyword hints produce nothing,
+#: which is 53 of one tenant's 73 situations. Treating that as a domain NAME sends the lookup
+#: hunting for a "general" corpus that does not and should not exist; treating it as an absent
+#: hint lets the resolver do what it already does for an unhinted situation — consider every
+#: domain and let the `when` predicates decide. Unclassified must mean "look everywhere",
+#: never "look nowhere".
+UNCLASSIFIED_DOMAINS: frozenset[str] = frozenset({"general", "unknown", ""})
+
+
+def _load_set(manifest: dict) -> tuple[set[str], set[str]]:
+    required: set[str] = set()
+    optional: set[str] = set()
+    for bucket in ("core", "scoped"):
+        block = manifest.get(bucket) or {}
+        required.update(block.get("required") or ())
+        optional.update(block.get("optional") or ())
+    optional -= required
+    return required, optional
+
+
+
+def _admission_reason(capability) -> str | None:
+    """None = admitted. Else the named reason this capability may not carry authority."""
+    content = capability.content
+    identity = content.get("identity") or {}
+    metadata = content.get("metadata") or {}
+    admission = content.get("admission") or {}
+    if identity.get("stub"):
+        return "stub"
+    if str(identity.get("status") or "") != "stable":
+        return f"identity_status_{identity.get('status') or 'absent'}"
+    if str(metadata.get("review_status") or "") != "approved":
+        return "review_not_approved"
+    if not str(metadata.get("reviewed_by") or "").strip():
+        return "no_named_reviewer"
+    accepted_hash = str(admission.get("accepted_content_hash") or "")
+    if not accepted_hash:
+        return "no_accepted_hash"
+    # Hash of the content MINUS the admission block: the reviewer accepted the capability, and
+    # the acceptance record is not part of what they reviewed — hashing it in would make
+    # self-consistent acceptance impossible (the record would have to contain its own hash).
+    from genios_engine.platform.canonical import semantic_hash
+    reviewed = {k: v for k, v in content.items() if k != "admission"}
+    if accepted_hash != semantic_hash(reviewed):
+        return "content_changed_since_acceptance"
+    return None
+
+class CapabilityResolver:
+    """Uses the generated reverse index, then narrows it with authored situation predicates."""
+
+    def __init__(self, catalog: ExpertBrainCatalog, *, max_capabilities: int = 64,
+                 max_objects: int = 128, require_admission: bool = True) -> None:
+        self.catalog = catalog
+        self.max_capabilities = max_capabilities
+        self.max_objects = max_objects
+        #: Fail-closed default. False is for MEASUREMENT compiles only (the shadow pass, the
+        #: corpus tests): unadmitted content may flow, but the plan says so (`admitted=False` +
+        #: per-capability gaps), and the delivery layer's abstention gate keeps anything built
+        #: from it non-prescriptive. What False must never do is silently grant authority —
+        #: which is why it is a constructor argument, not a per-call escape hatch.
+        self.require_admission = require_admission
+
+    def resolve(self, situation: BusinessSituationObject,
+                context: SituationContextSlice | None = None) -> RoutePlan:
+        hints = {DOMAIN_ALIASES.get(h, h) for h in situation.domain_hints
+                 if h not in UNCLASSIFIED_DOMAINS}
+        unknown_hints = hints - set(self.catalog.domains)
+        if unknown_hints:
+            raise NoExpertiseRoute(
+                f"situation {situation.id!r} names unknown domains {sorted(unknown_hints)}")
+        domain_ids = sorted(hints or self.catalog.domains.keys())
+        adapter = ContextAdapter(situation, context)
+        selected_domains: set[str] = set()
+        situation_ids: set[str] = set()
+        capability_ids: set[str] = set()
+        required: set[str] = set()
+        optional: set[str] = set()
+        never: set[str] = set()
+        unresolved: set[str] = set()
+        skipped_capabilities: set[str] = set()
+        skipped_reasons: dict[str, str] = {}
+        admission_gaps: list[str] = []
+        saw_index_route = False
+
+        for domain_id in domain_ids:
+            domain = self.catalog.domain(domain_id)
+            route = domain.routes.get(situation.type)
+            if not isinstance(route, Mapping):
+                continue
+            saw_index_route = True
+            selected_here: list[str] = []
+            for situation_id in route.get("situations") or ():
+                source = domain.situations.get(situation_id)
+                if source is None:
+                    raise AuthoringIntegrityError(
+                        f"registry route references missing situation {situation_id!r}")
+                matches = source.content.get("matches") or {}
+                conditions = matches.get("when") or ()
+                verdict = adapter.matches(conditions)
+                if verdict.state is PredicateState.TRUE:
+                    selected_here.append(situation_id)
+                elif verdict.state is PredicateState.UNKNOWN:
+                    unresolved.update(f"{situation_id}:{item}" for item in verdict.missing)
+
+            if not selected_here:
+                continue
+            selected_domains.add(domain_id)
+            situation_ids.update(selected_here)
+            local_capabilities: set[str] = set()
+            for situation_id in selected_here:
+                authored = domain.situations[situation_id].content
+                owner = (authored.get("identity") or {}).get("owner_capability")
+                serving = ([owner] if owner else []) + list(authored.get("also_serves") or ())
+                local_capabilities.update(value for value in serving if value)
+                objects = authored.get("objects") or {}
+                required.update(objects.get("load") or ())
+                optional.update(objects.get("optional") or ())
+                never.update(objects.get("never_load") or ())
+
+            for capability_id in tuple(local_capabilities):
+                capability = domain.capabilities.get(capability_id)
+                if capability is None:
+                    raise AuthoringIntegrityError(
+                        f"routed capability {capability_id!r} is not authored")
+                # ADMISSION, not just non-stubness. `identity.stub` was the entire production-
+                # admission ceremony: an author flipping `stub: true → false` in a text editor
+                # granted production authority, and the first content to gain customer authority
+                # on activation would have been 12 machine-written unreviewed drafts
+                # (`metadata.created_by: ai`). A capability routes only when a named human
+                # ACCEPTED the exact bytes being routed:
+                #   identity.status == 'stable'
+                #   metadata.review_status == 'approved' with a non-empty reviewed_by
+                #   admission.accepted_content_hash == the catalog's computed content hash
+                # The hash pin is the difference between accepting a FILE and accepting its
+                # CONTENT — an edit after review silently un-accepts, which is the point.
+                verdict_reason = _admission_reason(capability)
+                if verdict_reason is not None:
+                    admission_gaps.append(f"{capability_id}:{verdict_reason}")
+                    if self.require_admission or verdict_reason == "stub":
+                        # A stub is skipped in EVERY mode — there is nothing to measure. Other
+                        # admission gaps route in measurement mode, flagged, never silently.
+                        local_capabilities.remove(capability_id)
+                        skipped_capabilities.add(capability_id)
+                        skipped_reasons[capability_id] = verdict_reason
+                        continue
+                manifest = domain.object_manifests[capability_id].content
+                manifest_required, manifest_optional = _load_set(dict(manifest))
+                required.update(manifest_required)
+                optional.update(manifest_optional)
+                never.update(manifest.get("never_load") or ())
+
+            capability_ids.update(local_capabilities)
+
+            generated_caps = set(route.get("capabilities") or ())
+            if not local_capabilities <= generated_caps:
+                stale = sorted(local_capabilities - generated_caps)
+                raise AuthoringIntegrityError(
+                    f"generated registry is stale for {domain_id}:{situation.type}; "
+                    f"missing capabilities {stale}")
+
+        if not selected_domains:
+            if unresolved:
+                raise SituationContextIncomplete(
+                    f"situation {situation.id!r} cannot resolve authored routes; missing "
+                    f"{sorted(unresolved)}")
+            if saw_index_route:
+                raise NoExpertiseRoute(
+                    f"situation {situation.id!r} matched the type index but no authored "
+                    "situation predicate")
+            scope = f" in domains {domain_ids}" if hints else ""
+            raise NoExpertiseRoute(
+                f"no expertise route for situation type {situation.type!r}{scope}")
+
+        required -= never
+        optional -= never | required
+        if not required:
+            raise AuthoringIntegrityError("an expertise route resolved no required objects")
+        if not capability_ids:
+            # Abstention, not an authoring defect — see UnsupportedCoverage's docstring. The
+            # sibling raises below (no required objects, over the capability/object limit) stay
+            # AuthoringIntegrityError: those ARE something wrong with the route.
+            reasons = sorted(set(skipped_reasons.values()))
+            raise UnsupportedCoverage(
+                "unreviewed" if reasons and all(r != "stub" for r in reasons) else "all_stub",
+                f"no routed capability is admitted: { {c: skipped_reasons.get(c, 'stub') for c in sorted(skipped_capabilities)} }")
+        if len(capability_ids) > self.max_capabilities:
+            raise AuthoringIntegrityError(
+                f"route expands to {len(capability_ids)} capabilities; limit is "
+                f"{self.max_capabilities}")
+        if len(required | optional) > self.max_objects:
+            raise AuthoringIntegrityError(
+                f"route expands to {len(required | optional)} objects; limit is "
+                f"{self.max_objects}")
+
+        return RoutePlan(
+            domain_ids=tuple(sorted(selected_domains)),
+            situation_ids=tuple(sorted(situation_ids)),
+            capability_ids=tuple(sorted(capability_ids)),
+            required_object_ids=tuple(sorted(required)),
+            optional_object_ids=tuple(sorted(optional)),
+            never_object_ids=tuple(sorted(never)),
+            unresolved_predicates=tuple(sorted(unresolved)),
+            skipped_capability_ids=tuple(sorted(skipped_capabilities)),
+            admitted=not admission_gaps,
+            admission_gaps=tuple(sorted(admission_gaps)),
+        )
+
+
+__all__ = ["CapabilityResolver"]

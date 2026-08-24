@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.people_administration.offboarding_administration
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.offboarding_administration.same_day_offboarding_sweep
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.offboarding_administration.offboarding_rigour_protects_both_sides
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

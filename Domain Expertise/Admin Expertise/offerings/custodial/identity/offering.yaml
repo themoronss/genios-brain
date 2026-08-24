@@ -1,0 +1,25 @@
+# Identity & Entitlement Custody — offering_type branch node under custodial.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent.
+
+identity:
+  id: admin.offering.custodial.identity
+  name: Identity & Entitlement Custody
+  kind: offering_type
+  domain: admin
+  parent: admin.offering.custodial
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Who is allowed to do what, kept current. The entitlement nobody removed is the one that gets
+  used.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

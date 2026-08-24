@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.post_sale_and_growth.churn_prevention
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.churn_prevention.save_play_with_dignity
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.churn_prevention.the_save_window_opens_before_the_cancel_email
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

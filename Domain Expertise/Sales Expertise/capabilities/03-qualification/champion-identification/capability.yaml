@@ -1,0 +1,27 @@
+identity:
+  id: sales.qualification.champion_identification
+  name: Champion Identification
+  domain: sales
+  subdomain: qualification
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Separating a real advocate from a friendly contact. The test is internal risk taken on our
+  behalf, not warmth — and advocacy without access to the approver converts nothing.
+
+question: "Who inside the account will spend their own credibility on us?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

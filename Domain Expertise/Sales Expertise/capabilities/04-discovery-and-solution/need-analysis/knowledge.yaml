@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.discovery_and_solution.need_analysis
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.need_analysis.separate_stated_want_from_underlying_need
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.need_analysis.feature_requests_are_symptoms
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

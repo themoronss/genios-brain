@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.contract_and_vendor.purchase_order_management
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.purchase_order_management.po_discipline_with_three_way_match
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.purchase_order_management.the_match_defeats_the_confident_invoice
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.vendor_onboarding.vendor_onboarding_gauntlet_right_sized
+  name: Vendor onboarding gauntlet, right-sized
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.vendor_onboarding
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: New vendors pass through a proportionate gauntlet — legitimacy, security posture where relevant,
+    terms, payment details verified out-of-band — because vendor fraud and vendor risk both enter at onboarding.
+steps:
+- order: 1
+  name: Verify identity and bank details out-of-band
+  description: Payment details confirmed via a known channel, not the email that sent the invoice. This
+    one step defeats most invoice fraud.
+  actor: human
+- order: 2
+  name: Scale diligence to risk
+  description: A stationery supplier and a data processor do not get the same questionnaire. Proportionality
+    keeps the gauntlet respected.
+  actor: human
+- order: 3
+  name: Onboard into the register with an owner
+  description: Every vendor gets an internal owner and a review date at birth — ownerless vendors become
+    zombie spend.
+  actor: human

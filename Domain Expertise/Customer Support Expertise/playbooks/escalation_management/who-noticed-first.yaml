@@ -1,0 +1,47 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.escalation_and_incident.escalation_management — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.escalation_management.who_noticed_first
+  name: Who noticed first
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.escalation_management
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Before anything else, ask who noticed. Customer noticed first — repair the relationship,
+    then the fault. We noticed first — fix the fault, and tell the customer only where there is something
+    for them to know, decide or do.
+
+
+    The two triggers share a word and nothing else. Running the wrong branch is not merely inefficient:
+    it either leaves a broken relationship behind a fixed ticket, or invents a worry in a customer who
+    was perfectly content.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: Before anything else, ask who noticed. Customer noticed first — repair the relationship, then
+    the fault. We noticed first — fix the fault, and tell the customer only where there is something
+    for them to know, decide or do.
+  actor: human
+  description: 'The two triggers share a word and nothing else. Running the wrong branch is not merely
+    inefficient: it either leaves a broken relationship behind a fixed ticket, or invents a worry in
+    a customer who was perfectly content.'
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.revenue_operations.sales_operations
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.sales_operations.friction_audit
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.sales_operations.process_serves_selling__or_it_is_theatre
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

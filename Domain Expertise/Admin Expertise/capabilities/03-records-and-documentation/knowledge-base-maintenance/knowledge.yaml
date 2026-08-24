@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.records_and_documentation.knowledge_base_maintenance
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.knowledge_base_maintenance.internal_kb_gardening
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.knowledge_base_maintenance.trust_is_the_kb_s_only_metric
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

@@ -1,0 +1,32 @@
+# Load-set for customer_support.intake_and_triage.duplicate_and_merge — REFERENCES ONLY, never
+# an inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.intake_and_triage.duplicate_and_merge
+
+core:
+  # Issue is required, not optional, and that is the whole design of this capability. Two tickets
+  # are duplicates only with respect to something they are both about; without an Issue to hang
+  # them from, "duplicate" collapses into "similar text", which is how unrelated reports of the
+  # same error message get merged and one customer's clock silently absorbs another's.
+  # Conversation is required because the merge decision is frequently visible only in the thread —
+  # the same person writing twice through two channels is a merge, two people writing once each
+  # is a link.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.conversation
+    - customer_support.obj.core.issue
+
+  # Requester decides which side of the link/merge line a candidate falls on, and is optional
+  # rather than required only because bulk duplicate detection over an incident's inbound wave
+  # runs before requester identity has been resolved on every ticket.
+  optional:
+    - customer_support.obj.core.requester
+
+scoped:
+  # Nothing here belongs to this capability alone; the same three objects are read by triage,
+  # incident management and content gap analysis.
+  required: []
+  optional: []

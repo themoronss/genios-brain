@@ -1,0 +1,36 @@
+identity:
+  id: sales.pb.icp_definition.negative_list_first
+  name: Publish the disqualifier list before publishing the profile
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Publish the disqualifier list before publishing the profile.\n Anti-fit is cheaper to\
+    \ agree on, cheaper to check, and immediately actionable — an SDR can apply it to a list the same\
+    \ afternoon. Waiting for the full profile means shipping nothing for a quarter while the same bad\
+    \ accounts keep entering pipeline.\n"
+when_to_use:
+  situations: []
+  conditions: []
+steps:
+- order: 1
+  name: Publish the disqualifier list before publishing the profile
+  description: 'Anti-fit is cheaper to agree on, cheaper to check, and immediately actionable — an SDR
+    can apply it to a list the same afternoon. Waiting for the full profile means shipping nothing for
+    a quarter while the same bad accounts keep entering pipeline.
+
+    '
+  done_when: UNAUTHORED — this playbook is a skeleton.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.icp_definition. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

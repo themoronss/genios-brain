@@ -1,0 +1,29 @@
+# Load-set for customer_support.customer_communication.proactive_status_updates —
+# REFERENCES ONLY, never an inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.customer_communication.proactive_status_updates
+
+core:
+  # Only two required, and that is deliberate. An update needs something to report on (Ticket) and
+  # the promise that says one is due (Commitment). Everything else shapes the message; these two
+  # decide whether it is owed at all. Without Commitment there is no cadence, and a capability with
+  # no cadence is just replying quickly.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.commitment
+  # Incident changes the audience from one requester to many and changes the update from a reply
+  # into a broadcast. Requester decides what the customer can forward internally. Conversation is
+  # how we avoid repeating an update they already have, which is the fastest way to make a cadence
+  # feel automated and worthless.
+  optional:
+    - customer_support.obj.core.incident
+    - customer_support.obj.core.requester
+    - customer_support.obj.core.conversation
+
+scoped:
+  # Nothing scoped — this capability owns no private structure, only a rhythm applied to shared ones.
+  required: []
+  optional: []

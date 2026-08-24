@@ -1,0 +1,27 @@
+# Load-set for customer_support.entitlement_and_sla.entitlement_verification — REFERENCES ONLY.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.entitlement_and_sla.entitlement_verification
+
+core:
+  # The three required objects are the three places the answer can disagree with itself.
+  # support_plan is what was sold, entitlement is what the system currently believes, and
+  # customer_account is who the promise actually attaches to — which is rarely the person in
+  # the ticket. Verification IS the reconciliation of those three; drop any one and the
+  # capability degenerates into reading a field.
+  required:
+    - customer_support.obj.core.entitlement
+    - customer_support.obj.core.customer_account
+    - customer_support.obj.core.support_plan
+  # requester matters because named-contact entitlements are person-level, not account-level:
+  # the account is covered and this human may still not be. ticket is optional because
+  # verification is often run before a ticket exists, at the moment of contact.
+  optional:
+    - customer_support.obj.core.requester
+    - customer_support.obj.core.ticket
+
+scoped:
+  required: []
+  optional: []

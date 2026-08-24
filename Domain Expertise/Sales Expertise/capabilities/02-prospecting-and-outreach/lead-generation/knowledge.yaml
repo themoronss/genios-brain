@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.prospecting_and_outreach.lead_generation
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.lead_generation.source_quality_ledger
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.lead_generation.a_referral_outranks_ten_cold_leads
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

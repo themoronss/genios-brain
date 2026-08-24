@@ -1,0 +1,168 @@
+# Named TAM — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from canonical. No capability file and no
+# object file is copied into this branch; resolution is vertical -> model -> canonical.
+#
+# READING THE CAPABILITY DIFF
+#   activates    canonical capabilities a default support org runs nominally or not at all,
+#                and that this branch cannot function without.
+#   deactivates  canonical capabilities that do not exist in this motion at all.
+#   emphasises   present either way, disproportionately load-bearing here.
+
+identity:
+  id: customer_support.model.named_tam
+  name: Named Technical Account Manager
+  kind: model
+  domain: customer_support
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  One named human owns an account's entire support relationship. The customer has a person,
+  not a queue: they mail them directly, they have their mobile number, and they stop
+  re-explaining their environment because the person on the other end already knows it. That
+  is the product, and it is genuinely valuable — the cost of re-establishing context is the
+  largest invisible tax in pooled support, and this model deletes it.
+  .
+  It deletes it by concentrating it. Everything the TAM knows is in one head and almost none
+  of it is in the ticket, because writing it down has no local benefit to the only person who
+  reads the ticket. Leave, illness and resignation are therefore not staffing events, they are
+  outages, and they are outages the dashboard cannot show. The handoff of a TAM account is the
+  highest-risk operation in this branch and it is a relationship event before it is a records
+  event: the successor inherits the tickets and none of the standing.
+  .
+  The second structural fact is that the service level actually delivered drifts far above the
+  service level sold. A contract carries a four-hour first response; a TAM who likes the
+  customer answers in nine minutes for a year. Nothing was renegotiated, but the customer's
+  expectation now sits at nine minutes, and the first four-hour response — which is compliant —
+  reads as abandonment and produces an escalation about a contract we did not breach. This is
+  why entitlement is emphasised in a branch where nobody ever checks it: the gap between
+  entitlement and habit is the branch's characteristic complaint.
+  .
+  Third: work arrives out of band. Direct mail, a shared Slack channel, a phone call on the way
+  to something else. That work is real, consumes the TAM's day, and is invisible to every
+  operational instrument the company owns, so cost-to-serve on a TAM account is systematically
+  understated and the model always looks cheaper than it is.
+  .
+  What an operator carries over wrongly from a pooled queue: capacity intuition. In a pool the
+  marginal ticket is absorbed by whoever is free, and adding an account degrades service at the
+  margin. Here the marginal account is added to a specific person's book and degrades every
+  account in that book simultaneously, because the resource being divided is one human's
+  attention and their memory of eleven environments. Portfolio size is the only real lever in
+  this branch, and it is usually set by a sales forecast rather than by anyone who has run one.
+
+characteristics:
+  requester: "a small named set of technical contacts per account, known personally, who route around any process that is slower than mailing the TAM"
+  typical_resolution_hours: 6
+  typical_acv: "high — a named TAM is either a premium SKU or an unpriced concession made during a renewal, and which of the two it is decides whether it can ever be withdrawn"
+  volume_shape: "low ticket count, high touch count; volume tracks the account's own project calendar — upgrades, migrations, audits — not the product's release cycle"
+  staffing_model: "one named technical account manager per account or small portfolio, with a backline of specialists they pull in by name rather than by queue"
+  coverage: "the TAM's working hours, plus an informal willingness to answer outside them that is not a coverage model and cannot be rostered"
+  automation_level: "very low, and deliberately so — a named contact who is sent a help-centre link reads it as being handed back to the queue they paid to leave"
+  primary_channels: [email, phone, chat, ticket_portal]
+  notes: >
+    The failure this branch is most often killed by is not cost, it is concentration. One TAM
+    leaving takes three accounts' worth of unwritten context with them, and the resulting
+    churn is booked against the accounts rather than against the model. Anything that forces
+    context into the record — even a thin handoff note — is worth more here than in any other
+    branch, and is exactly what nobody does because the person who would benefit does not
+    exist yet.
+
+capabilities:
+
+  # Dormant or nominal in a pooled org, structural here. Coverage in this branch is not a
+  # rota over a queue, it is the question "what happens to eleven accounts on the day this
+  # person is unreachable" — and the honest answer in most implementations is nothing.
+  # Capacity is not headcount against volume, it is accounts per TAM, which is the only lever
+  # the model actually has and the one least often held by support.
+  activates:
+    - customer_support.entitlement_and_sla.coverage_and_on_call
+    - customer_support.support_operations.capacity_planning
+    - customer_support.support_management.team_health
+
+  # Work does not pool here, so both of these lose their object. There is no shared queue to
+  # shape and no way to move work between people without moving the relationship with it —
+  # rebalancing a TAM's load means reassigning an account, which is a customer-facing event
+  # requiring a conversation, not an operations decision made on a Monday. The load problem
+  # does not disappear; it reappears as capacity_planning and team_health, which is precisely
+  # why those two are activated above.
+  deactivates:
+    - customer_support.support_operations.queue_management
+    - customer_support.support_operations.workload_balancing
+
+  emphasises:
+    - customer_support.support_management.account_relationship_management
+    - customer_support.entitlement_and_sla.entitlement_verification
+    - customer_support.entitlement_and_sla.commitment_tracking
+    - customer_support.customer_communication.expectation_setting
+    - customer_support.escalation_and_incident.executive_escalation
+    - customer_support.voice_of_customer.churn_signal_detection
+    - customer_support.support_operations.cost_to_serve
+    - customer_support.support_management.ticket_review
+
+objects:
+  extends:
+    - object: customer_support.obj.core.entitlement
+      require_properties: [has_technical_account_manager, named_contacts, named_contact_limit, plan]
+      note: >
+        The named contact list is the branch's only enforceable boundary and the one nobody
+        enforces. A TAM answers whoever mails them, the list drifts from four people to
+        nineteen over a term, and the account is then receiving a service several times what
+        was sold — which is invisible until renewal, when withdrawing it is impossible without
+        a fight. `has_technical_account_manager` matters because it distinguishes a TAM that
+        was bought from a TAM that was conceded, and only the first can be repriced.
+    - object: customer_support.obj.core.requester
+      require_properties: [is_named_contact, role_title, vip_flag]
+      note: >
+        In a pooled branch these are useful; here they are the routing table. The relationship
+        is with specific humans, so a new name appearing on a thread is a material event — it
+        is either the account expanding beyond what was sold or, more often, the beginning of
+        a personnel change that will cost the TAM their standing.
+    - object: customer_support.obj.core.ticket
+      require_properties: [assignee_ref, agent_touch_count]
+      note: >
+        The assignee carries almost no information in this branch — it is the same person on
+        everything — so the attribute that means something is how many OTHER people have
+        touched the ticket. Zero is normal. A rising number means the TAM is out, overloaded,
+        or has hit the edge of what they can hold, and it is the earliest available reading of
+        the model's real failure mode.
+    - object: customer_support.obj.core.commitment
+      require_properties: [origin_channel, wording_verbatim, made_by_ref]
+      note: >
+        A promise made by a named person is personal in a way a queue's promise is not, and it
+        is kept at a higher rate and remembered far longer when broken. It is also usually made
+        in a channel that keeps no record. The commitment object is the mechanism by which
+        anything said on a phone call survives the call; without it this branch's promises exist
+        only in the customer's notes, and they will be quoted from those notes.
+    - object: customer_support.obj.core.escalation
+      require_properties: [receiving_owner_ref, reason]
+      note: >
+        There is no ladder above a TAM — escalation goes sideways to engineering or upward to
+        an executive, and either way it routes around the named owner. The customer understands
+        exactly what they are doing when they do it, which is why an escalation on a TAM account
+        is a statement about the relationship and not only about the ticket. Treat a first-ever
+        escalation from a named contact as a higher-severity signal than a fifth escalation from
+        a pooled account.
+
+overrides:
+  capabilities.customer_support.intake_and_triage.routing_and_assignment.assignment_mode: "fixed_by_account"
+  capabilities.customer_support.support_operations.capacity_planning.unit: "accounts_per_tam"
+  capabilities.customer_support.support_operations.support_analytics.queue_coverage: "partial_out_of_band_traffic_uncounted"
+  capabilities.customer_support.support_operations.cost_to_serve.unit: "cost_per_account"
+  capabilities.customer_support.knowledge_and_deflection.self_service_deflection.customer_facing: false
+  capabilities.customer_support.entitlement_and_sla.sla_management.delivered_level_exceeds_sold_level: true
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    The out-of-band traffic problem is the one thing in this file a Layer 1/2 engineer should
+    read: the substrate can see mail and threads, so a TAM branch is unusually well served by
+    what already exists, and unusually badly served by what does not — a phone call and a
+    shared Slack channel are where most of this model's work happens and neither is emitted.

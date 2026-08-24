@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.executive_support.calendar_management
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.calendar_management.calendar_as_strategy_not_tetris
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.calendar_management.an_open_calendar_is_a_priorities_leak
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

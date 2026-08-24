@@ -1,0 +1,16 @@
+identity:
+  id: customer_support.heu.engineering_handoff.thin_handoffs_boomerang
+  name: Thin handoffs boomerang
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.engineering_handoff
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: An underspecified escalation returns in two days as questions — having burned the queue time
+    twice and the customer's patience once. Slower complete handoffs beat fast thin ones on every real
+    clock.
+  answers:
+  - Why do fast escalations often resolve slower?

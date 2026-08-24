@@ -1,0 +1,279 @@
+from __future__ import annotations
+
+from genios_engine.capture.connectors.base import SourceConnector
+from genios_engine.capture.source_registry import BUILDABLE_SOURCES
+from genios_engine.capture.landing.repository import (InMemorySourceEventRepository,
+                                                      SourceEventRepository)
+from genios_engine.platform.config import get_settings
+from genios_engine.platform.logging import get_logger
+
+_log = get_logger("genios.platform.wiring")
+
+# The switch between REAL and dev is here, driven entirely by .env — no code change.
+#   DATABASE_URL set   → Postgres/Supabase repo   (else in-memory)
+#   COMPOSIO keys set  → real Composio Gmail       (else fake connector)
+
+
+def make_repo() -> SourceEventRepository:
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.landing.pg_repository import PostgresSourceEventRepository
+        return PostgresSourceEventRepository(s.database_url)
+    return InMemorySourceEventRepository()
+
+
+# Source types make_connector_for can actually build. The integrations UI reads this
+# so a "Connect" button never starts an OAuth flow that ends in a 502 — advertising a
+# connector that raises ValueError was a customer-visible lie.
+#
+# Derived from the source registry (`buildable=True`) rather than hand-listed here: a
+# second hand-maintained list of sources is exactly how this drifted out of step with
+# the family taxonomy and the coverage capabilities. Adding a connector means flipping
+# `buildable` on its descriptor AND wiring the branch in make_connector_for below —
+# tests/test_source_registry.py asserts those two agree.
+IMPLEMENTED_SOURCE_TYPES: frozenset[str] = BUILDABLE_SOURCES
+
+# The dispatch table make_connector_for branches on, as DATA so it can be compared with
+# the registry. In dev (no Composio key) the function falls back to a fake connector for
+# every source_type, so a test cannot discover the real dispatch by calling it — these
+# two names make the agreement checkable instead of hopeful.
+DIRECT_SOURCE_TYPES: frozenset[str] = frozenset({"postgres", "database", "mysql"})
+COMPOSIO_SOURCE_TYPES: frozenset[str] = frozenset({
+    "gmail", "gcal", "calendar", "google_calendar", "notion",
+    "gdrive", "drive", "google_drive", "hubspot",
+})
+
+
+def make_connector_for(connection, relevance=None) -> SourceConnector:
+    """Build the right connector for ONE org's connection, dispatched by source_type.
+    Composio API key is global (GeniOS's); per-org identity is composio_user_id. Every
+    source sits behind the same SourceConnector interface — the pipeline is agnostic.
+
+    `relevance` (optional): the SAME S2 classifier the pipeline uses. Passed to Gmail so it can
+    gate on the list snippet and skip full-body fetches for confident drops (huge speedup)."""
+    s = get_settings()
+    st = connection.source_type
+    # Client's own database — no Composio; read-only pull → structured route.
+    if st in DIRECT_SOURCE_TYPES:
+        from genios_engine.capture.connectors.database import ClientDatabaseConnector
+        cfg = connection.config or {}
+        return ClientDatabaseConnector(
+            database_url=cfg["db_url"], table=cfg["table"],
+            identity_field=cfg["identity_field"],
+            watermark_col=cfg.get("watermark_col", "updated_at"), source=st)
+    if not s.use_real_composio:
+        # The fake is a GMAIL fixture. Returning it for every source_type meant a local run or
+        # demo could "prove" Notion, Drive, HubSpot or Calendar coverage using Gmail data —
+        # unfalsifiable in exactly the setting where it gets shown to someone. Refuse instead:
+        # a missing fixture is a fact worth surfacing, not one worth papering over.
+        if st not in ("gmail", "google_mail"):
+            raise ValueError(
+                f"no offline fixture for source_type={st!r}; set GENIOS_USE_REAL_COMPOSIO to "
+                "exercise it, or add a fixture connector. The Gmail fake must not stand in for "
+                "another source.")
+        from genios_engine.capture.connectors.fake import FakeGmailConnector
+        return FakeGmailConnector(org_id=connection.org_id,
+                                  connection_id=connection.connection_id)
+    key, uid = s.composio_api_key, connection.composio_user_id
+    if st == "gmail":
+        from genios_engine.capture.connectors.composio import ComposioGmailConnector
+        ocr = make_ocr()                        # scanned-PDF attachments need OCR (native-only if off)
+        return ComposioGmailConnector(api_key=key, user_id=uid,
+                                      connected_account_id=s.composio_gmail_account or None, ocr=ocr,
+                                      relevance=relevance)
+    if st in ("gcal", "calendar", "google_calendar"):
+        from genios_engine.capture.connectors.calendar import ComposioCalendarConnector
+        return ComposioCalendarConnector(api_key=key, user_id=uid)
+    if st == "notion":
+        from genios_engine.capture.connectors.notion import ComposioNotionConnector
+        return ComposioNotionConnector(api_key=key, user_id=uid)
+    if st in ("gdrive", "drive", "google_drive"):
+        from genios_engine.capture.connectors.drive import ComposioDriveConnector
+        ocr = make_ocr()
+        return ComposioDriveConnector(api_key=key, user_id=uid, ocr=ocr)
+    if st == "hubspot":
+        from genios_engine.capture.connectors.hubspot import ComposioHubspotConnector
+        return ComposioHubspotConnector(api_key=key, user_id=uid)
+    raise ValueError(f"no connector wired for source_type={st!r}")
+
+
+# backward-compatible alias
+make_gmail_connector_for = make_connector_for
+
+
+def make_ocr():
+    """The OCR engine (Tesseract) when enabled in settings, else None (native-text-only). Shared by
+    the Gmail/Drive attachment path AND dashboard uploads, so a scanned file reads the same way no
+    matter which door it arrives through."""
+    s = get_settings()
+    if getattr(s, "enable_ocr", False):
+        from genios_engine.capture.documents.tesseract import TesseractOcr
+        return TesseractOcr()
+    # Deliberately-off is a legitimate state, but a silent None is how 369 documents came to be
+    # labelled `unsupported` — a terminal-sounding verdict for files the router never tried to
+    # read. `route_document` now returns `ocr_unavailable` for those; log once so the operator
+    # side of that story is visible too.
+    _log.info("OCR disabled (enable_ocr=false): scanned documents will park as ocr_unavailable")
+    return None
+
+
+def make_agent_registry_store():
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.events_store import PostgresAgentRegistryStore
+        return PostgresAgentRegistryStore(s.database_url)
+    from genios_engine.capture.events_store import InMemoryAgentRegistryStore
+    return InMemoryAgentRegistryStore()
+
+
+def make_human_event_store():
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.events_store import PostgresHumanEventStore
+        return PostgresHumanEventStore(s.database_url)
+    from genios_engine.capture.events_store import InMemoryHumanEventStore
+    return InMemoryHumanEventStore()
+
+
+def make_agent_event_store():
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.events_store import PostgresAgentEventStore
+        return PostgresAgentEventStore(s.database_url)
+    from genios_engine.capture.events_store import InMemoryAgentEventStore
+    return InMemoryAgentEventStore()
+
+
+def make_cursor_store():
+    """Sync watermark/cursor per connection (no-miss). Postgres if DATABASE_URL set."""
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.acquire.cursor_store import PostgresCursorStore
+        return PostgresCursorStore(s.database_url)
+    from genios_engine.capture.acquire.cursor_store import InMemoryCursorStore
+    return InMemoryCursorStore()
+
+
+def make_connection_store():
+    """Per-org connections. Postgres if DATABASE_URL set (multi-tenant, survives
+    restarts), else in-memory."""
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.connections.store import PostgresConnectionStore
+        return PostgresConnectionStore(s.database_url)
+    from genios_engine.capture.connections.store import InMemoryConnectionStore
+    return InMemoryConnectionStore()
+
+
+def make_parked_store():
+    """Parked ('maybe') queue. Postgres if DATABASE_URL set, else in-memory."""
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.parked.store import PostgresParkedStore
+        return PostgresParkedStore(s.database_url)
+    from genios_engine.capture.parked.store import InMemoryParkedStore
+    return InMemoryParkedStore()
+
+
+def make_document_job_store():
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.documents.store import PostgresDocumentJobStore
+        return PostgresDocumentJobStore(s.database_url)
+    from genios_engine.capture.documents.store import InMemoryDocumentJobStore
+    return InMemoryDocumentJobStore()
+
+
+def make_payload_store():
+    """Raw content store — encrypted + short TTL, KEPT-only. Postgres if DATABASE_URL
+    set, else in-memory. This is where L2 reads the body of emitted events."""
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.payload_store import PostgresRawPayloadStore
+        return PostgresRawPayloadStore(s.database_url, s.crypto_key)
+    from genios_engine.capture.payload_store import InMemoryRawPayloadStore
+    return InMemoryRawPayloadStore()
+
+
+def make_prepared_store():
+    """PreparedContent store — the persisted L1→L2 seam (PII-masked text + offset map).
+    Retained longer than the raw payload: it is the replayable form."""
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.prepared_store import PostgresPreparedContentStore
+        return PostgresPreparedContentStore(s.database_url)
+    from genios_engine.capture.prepared_store import InMemoryPreparedContentStore
+    return InMemoryPreparedContentStore()
+
+
+def make_trace_repo():
+    """Decision-trace persistence. Postgres/Supabase if DATABASE_URL is set, else
+    in-memory. Every event's per-stage path lands in event_trace for debugging."""
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.trace_store import PostgresTraceRepository
+        return PostgresTraceRepository(s.database_url)
+    from genios_engine.capture.trace_store import InMemoryTraceRepository
+    return InMemoryTraceRepository()
+
+
+def make_llm_client():
+    """L2's Anthropic client (the single combined call). None if no key configured."""
+    s = get_settings()
+    if not s.use_real_llm:
+        return None
+    from genios_engine.context.llm.client import LLMClient
+    return LLMClient(api_key=s.anthropic_api_key, model=s.anthropic_model)
+
+
+def make_graph_store():
+    """L2 context-graph store (Postgres). None in pure in-memory dev (needs the DB)."""
+    s = get_settings()
+    if not s.use_real_db:
+        return None
+    from genios_engine.context.graph_store import GraphStore
+    return GraphStore(s.database_url)
+
+
+def make_card_store():
+    """L5 delivery card store (Postgres). None in pure in-memory dev (needs the DB)."""
+    s = get_settings()
+    if not s.use_real_db:
+        return None
+    from genios_engine.deliver.store import CardStore
+    return CardStore(s.database_url)
+
+
+def make_pack_registry():
+    """L4 pack registry (Postgres) with every built-in pack registered. None without DB."""
+    s = get_settings()
+    if not s.use_real_db:
+        return None
+    from genios_engine.packs.wiring import make_registry
+    return make_registry(s.database_url)
+
+
+def make_relevance_classifier(org_id: str | None = None):
+    """The L1 S2 relevance gate. Prefers the LLM junk-gate whenever an Anthropic key is present
+    (production) — it is the one reliable filter that keeps noise OUT of the graph, replacing the
+    over-aggressive regex drops. Falls back to the deterministic classifier only when explicitly
+    opted in (dev), and to None (off) otherwise — so the hermetic test suite is unchanged.
+
+    Pass `org_id` wherever the caller knows the tenant: the gate then writes its token usage to
+    llm_costs like every other LLM call. Without it the gate still works, it just spends money
+    invisibly — which is how reported spend drifted below the real Anthropic bill."""
+    s = get_settings()
+    if s.l1_llm_gate and s.use_real_llm:
+        from genios_engine.capture.gate.relevance import LLMRelevanceClassifier
+        from genios_engine.context.llm.client import LLMClient
+        gate = LLMRelevanceClassifier(
+            LLMClient(api_key=s.anthropic_api_key, model=s.anthropic_model))
+        if org_id:
+            store = make_graph_store()
+            if store is not None:
+                gate.bind_costs(store.record_cost, org_id)
+        return gate
+    if s.enable_l1_relevance:
+        from genios_engine.capture.gate.relevance import DeterministicRelevanceClassifier
+        return DeterministicRelevanceClassifier()
+    return None

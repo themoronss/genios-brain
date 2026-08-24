@@ -1,0 +1,28 @@
+identity:
+  id: sales.closing.legal_review
+  name: Legal Review
+  domain: sales
+  subdomain: closing
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Navigating contract review, redlines and the buyer's legal function. Legal is a veto seat:
+  it can stop the deal and cannot start it, and it appears on the critical path far later
+  than anyone plans for.
+
+question: "What in the paper stands between agreement and signature?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

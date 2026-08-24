@@ -1,0 +1,19 @@
+// real_cases.template.jsonl — copy to real_cases.jsonl and replace the rows below.
+// Lines starting with // are ignored by the harness. One JSON object per line.
+//
+// REQUIRED fields per case:
+//   facts        : dict of the deal's real fact set (same keys the rules read)
+//   human_label  : the conclusion a REAL salesperson actually reached/took (ground truth)
+// OPTIONAL:
+//   case_id      : stable id (auto-filled if omitted)
+//   scenario     : one-line human description of the situation
+//   source       : where it came from (design_partner_crm | own_deal | labeled_by_<name>)
+//   human_recommend : the action the human took (for your own notes; not scored)
+//
+// Use human_label = "" when the correct answer is "no action needed".
+// Target 15-20 cases. Do NOT reuse the synthetic golden labeled_cases.jsonl — those are circular.
+//
+// --- EXAMPLE ROWS (delete these, put your real ones) ---
+{"case_id": "real_001", "source": "design_partner_crm", "scenario": "usage cratered, gone silent 3 weeks before renewal", "facts": {"usage_drop_pct_30d": 65, "days_since_last_contact": 22, "days_to_renewal": 30}, "human_label": "churn_risk_high", "human_recommend": "exec called the champion, booked save-call"}
+{"case_id": "real_002", "source": "own_deal", "scenario": "verbal yes, contract sent, waiting 4 days", "facts": {"verbal_commit": true, "contract_sent": true, "days_since_send": 4}, "human_label": "deal_hot", "human_recommend": "rep nudged for signature, closed in 2 days"}
+{"case_id": "real_003", "source": "labeled_by_rohan", "scenario": "steady usage, just quiet — no real risk", "facts": {"usage_drop_pct_30d": 8, "days_since_last_contact": 18}, "human_label": "", "human_recommend": "no action; left alone"}

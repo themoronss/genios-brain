@@ -1,0 +1,129 @@
+# Service — offering family node.
+#
+# INHERITANCE: an offering file declares a DIFF and never a copy. Capability and object files
+# are not duplicated into this branch; resolution is type -> family -> canonical.
+#
+# The question this tree answers for support is: WHERE DOES A FIX LAND? For the product family
+# the answer is "in the artefact". Here it is "in somebody's hands, again" — and that single
+# difference inverts most of what a product support organisation believes.
+
+identity:
+  id: customer_support.offering.service
+  name: Service
+  kind: offering_family
+  domain: customer_support
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Work performed for one client at a time. The support consequence of "one at a time" is that
+  demand is a series of individuals rather than a population: two clients reporting what sounds
+  like the same complaint are usually reporting two genuinely different failures, because the
+  engagements differ, the people differ and the deliverables differ. The fortieth ticket
+  therefore carries as much new information as the first, which is the exact inverse of the
+  product family and the reason nearly every product-support instinct misfires here.
+  A fix is labour, not an asset. Retiring a class of future contact is largely impossible —
+  there is no code change that helps the next client — so effort spent resolving does not
+  compound, and the marginal cost of the forty-first resolution is the same as the first. That
+  makes cost-to-serve a margin question rather than an efficiency question: a defect in a
+  product costs a deploy, and a defect in a service costs the work being done twice by people
+  who are billing.
+  The second structural fact is that the boundary between support and delivery is contested and
+  moves under commercial pressure. "Is this a bug or is it a change request?" has no technical
+  answer; it is a scope conversation with a price attached, and it is the single most common
+  source of dispute in this family. Support is frequently the function that discovers scope
+  creep, and almost never the function permitted to price it.
+  The habit an operator carries in from products and gets punished for is reflexive deflection.
+  Writing an article, building a macro or pushing a client toward self-service reads as
+  efficiency in a product queue and as neglect here — the client is paying for judgement applied
+  to their situation, and a link to documentation is a refusal to supply it.
+
+characteristics:
+  delivery: "people doing work for one client at a time; value sits in the engagement rather than in an artefact, and stops the moment the work stops"
+  pricing_shape: "time and materials, retainer, or fixed-fee against milestones — priced per hour or per outcome, never per copy"
+  margin_profile: "gross margin bounded by utilisation, so every hour of unbilled support is margin taken directly off the engagement it belongs to"
+  post_sale_load: "essentially all of the revenue depends on work done after signature; there is no point at which the deliverable is finished and safe"
+  support_load: "uncorrelated across clients and concentrated in a handful of engagements — usually the ones that were mis-scoped at sale. Volume tracks the number of live engagements and their health, not the number of users"
+  resolution_locus: "a human redoing or extending work. Occasionally the fix is in an artefact we built for this client alone, which is still not reusable — it helps exactly one account and the next client's version of the same problem starts from zero"
+  notes: >
+    The commercially useful test for whether something is a service in the support sense is not
+    how it is priced but whether the fix is reusable. Software sold on a retainer is still a
+    product to support if one code change helps the next client; bespoke work billed as a
+    subscription is still a service.
+
+capabilities:
+  activates:
+    # Support in a service business is an account relationship with a queue attached, not a
+    # queue with accounts attached. This capability is optional in the product tree and load-
+    # bearing here: the named contacts, the engagement history and the commercial context are
+    # the working context for every ticket.
+    - customer_support.support_management.account_relationship_management
+  deactivates:
+    # Deflection assumes recurring questions. In a bespoke engagement the same question does not
+    # recur across clients, so a self-service programme has nothing to point at — and pointing a
+    # paying client at documentation is read as a refusal to do the work. This is one of the few
+    # honest deactivations in the library, and it is switched back on in managed_services, where
+    # the platform genuinely is shared.
+    - customer_support.knowledge_and_deflection.self_service_deflection
+    - customer_support.knowledge_and_deflection.ai_deflection
+  emphasises:
+    # Scope is the discipline of this family. Expectation setting is where a change request stops
+    # being mistaken for a defect, and it happens in the first reply or it does not happen.
+    - customer_support.customer_communication.expectation_setting
+    - customer_support.customer_communication.proactive_status_updates
+    # Entitlement here means the statement of work, and reading it is the difference between
+    # help and unbilled delivery.
+    - customer_support.entitlement_and_sla.entitlement_verification
+    - customer_support.entitlement_and_sla.commitment_tracking
+    # Margin is consumed one hour at a time and shows up nowhere else.
+    - customer_support.support_operations.cost_to_serve
+    # A service relationship fails socially long before it fails technically.
+    - customer_support.voice_of_customer.churn_signal_detection
+    - customer_support.escalation_and_incident.executive_escalation
+
+objects:
+  extends:
+    - object: customer_support.obj.core.entitlement
+      require_properties: [plan, coverage_hours, expires_at]
+      note: >
+        Entitlement in a service business is the statement of work, and it is the object that
+        answers the family's defining question — is this covered, or is it a change request? A
+        support organisation that cannot read the SOW at ticket time will do unbilled delivery
+        and discover it at the end of the quarter, which is the characteristic financial failure
+        of this family.
+    - object: customer_support.obj.core.commitment
+      require_properties: [promised_at, due_at, owner_ref]
+      note: >
+        Promises made in a service relationship are made by named people to named people and are
+        remembered as personal undertakings rather than as contractual clocks. This is the object
+        the client will quote back, and it outranks the SLA in every conversation that goes badly.
+    - object: customer_support.obj.core.ticket
+      require_properties: [requester_ref, customer_account_ref]
+      note: >
+        Aggregation across the install base — the product family's central move — buys almost
+        nothing here, because two clients' versions of the same complaint are usually different
+        failures. What must be resolvable instead is the engagement: which account, which
+        contract, which people. A service ticket without account context is unanswerable.
+    - object: customer_support.obj.core.churn_risk
+      require_properties: [renewal_at]
+      note: >
+        Service revenue is renewed as a whole engagement rather than lost a seat at a time, so
+        churn is lumpy, binary and visible in the relationship long before it appears in usage
+        data. The renewal date is the horizon every other signal has to be read against.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    The two deactivations above are the most arguable claims in this file and should be argued
+    with. They are correct for genuinely bespoke work and become wrong the moment a services firm
+    productises — the same firm can have one engagement where deflection is an insult and another
+    running on a shared platform where it is essential. That is what the managed_services type
+    below exists to express, and it is why the deactivation sits at the family and is reversed at
+    the type rather than being hedged in both places.

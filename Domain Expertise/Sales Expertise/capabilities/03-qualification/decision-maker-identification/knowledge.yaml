@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.qualification.decision_maker_identification
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.decision_maker_identification.find_the_economic_buyer_early
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.decision_maker_identification.title_inflation_hides_the_signer
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

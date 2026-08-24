@@ -1,0 +1,24 @@
+# Asset Custody — offering_type branch node under custodial.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent.
+
+identity:
+  id: admin.offering.custodial.assets
+  name: Asset Custody
+  kind: offering_type
+  domain: admin
+  parent: admin.offering.custodial
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Physical and digital property held against a named custodian, reconciled rather than listed.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

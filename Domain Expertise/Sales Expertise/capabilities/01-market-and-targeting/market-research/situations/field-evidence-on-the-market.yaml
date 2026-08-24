@@ -1,0 +1,99 @@
+# The only situation this capability can honestly own.
+#
+# Market research mostly happens before any deal exists, and nothing Layer 2 emits fires
+# before a deal exists — all twenty-six types describe live purchases. So there is no
+# situation for "we are entering a new segment", and inventing a binding to look complete
+# would produce a file that can never be looked up.
+#
+# What DOES bind is the reverse direction: a live deal producing evidence about the market
+# rather than about itself. A competitor nobody had on the map, a price fight in a segment
+# recorded as insensitive, a loss with no rival named. Those are the cheapest primary research
+# available and they are the mechanism by which a map stays alive instead of going stale —
+# which is this capability's characteristic failure mode.
+
+identity:
+  id: sales.sit.field_evidence_on_the_market
+  name: Field Evidence On The Market
+  domain: sales
+  owner_capability: sales.market_and_targeting.market_research
+  version: 1.0.0
+  status: draft
+
+description: >
+  A live deal has produced evidence about the market rather than about itself: an unmapped
+  competitor named, price contested in a segment the map called insensitive, discount pressure
+  where differentiation was assumed, or a loss shaping up with no rival present. What
+  distinguishes this from its neighbours is what the evidence is for. Objection Handling reads
+  the same observation as a thing to answer on this deal; Competitive Positioning reads it as a
+  battlecard to deploy. This situation reads it as a datum about a population — the question is
+  not how to save the deal but which recorded claim just moved, and whether the map above it
+  still holds.
+
+matches:
+  l2_situation_types:
+    - deal
+    - opportunity
+  scope: deal
+  when:
+    # Only from live deals. A post-mortem on a closed deal is win/loss work and belongs to
+    # revenue_intelligence, which feeds this capability rather than being triggered by it.
+    - {path: deal.status, op: "=", value: open}
+
+also_serves:
+  - sales.market_and_targeting.icp_definition
+  - sales.proposal_and_commercials.pricing
+  - sales.revenue_operations.revenue_intelligence
+
+objects:
+  load:
+    - sales.obj.market_research.market_map
+    - sales.obj.market_research.market_finding
+    - sales.obj.core.competitor
+    - sales.obj.core.pricing
+  optional:
+    - sales.obj.core.icp
+    - sales.obj.core.company
+  never_load:
+    # These three describe one purchase. Loading them here invites the compile to start running
+    # the deal that produced the evidence, which is precisely the wrong altitude: the deal is
+    # the sample, not the subject, and it already has its own capabilities compiled against it.
+    - sales.obj.core.buying_committee
+    - sales.obj.core.decision_maker
+    - sales.obj.core.timeline
+
+priority_bp: 4000
+typical_duration_days: 14
+
+# From the eighteen observation kinds only. Read carefully: progress here does not mean the
+# deal is won, it means the market evidence resolved. A deal that keeps moving after the
+# contradicting signal is itself the finding — the segment tolerated our price or our
+# positioning, and the claim survives.
+signals_of_progress:
+  - pricing_discussed
+  - budget_approved
+  - proposal_sent
+  - verbal_yes
+
+# And decay means the evidence hardened against us: the claim the map rests on is being
+# falsified rather than corroborated.
+signals_of_decay:
+  - closed_lost_mention
+  - budget_freeze
+  - timeline_slip
+  - champion_change
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    One situation, four of the twenty-six Layer 2 types, and all four are field-feedback types.
+    That is the honest coverage for a pre-deal capability: the discipline's real work — segment
+    definition, incumbent teardown, switch interviews, the entry verdict — happens where the
+    pipeline emits nothing at all, because there is no deal yet to observe. The signal that
+    would change this is not another situation type but an account-level one: a segment key
+    plus a trigger-event feed would let a situation fire on a market rather than only on a
+    deal inside it.

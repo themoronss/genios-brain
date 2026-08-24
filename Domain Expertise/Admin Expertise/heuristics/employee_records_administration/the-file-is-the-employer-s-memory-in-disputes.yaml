@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.employee_records_administration.the_file_is_the_employer_s_memory_in_disputes
+  name: The file is the employer's memory in disputes
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.employee_records_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Employment disagreements are decided on documentation — the contract version, the signed
+    amendment, the recorded warning. An incomplete file argues for the other side by default.
+  answers:
+  - What decides employment disputes?

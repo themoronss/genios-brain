@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.closing.procurement
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.procurement.procurement_as_process_to_run
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.procurement.procurement_measures_compliance__not_enthusiasm
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

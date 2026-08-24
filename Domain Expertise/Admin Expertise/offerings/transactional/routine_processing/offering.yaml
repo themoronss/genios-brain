@@ -1,0 +1,25 @@
+# Routine Processing — offering_type branch node under transactional.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent.
+
+identity:
+  id: admin.offering.transactional.routine_processing
+  name: Routine Processing
+  kind: offering_type
+  domain: admin
+  parent: admin.offering.transactional
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  The clean path. Judged on cycle time and first-pass yield, and improved by removing steps
+  rather than by working faster.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

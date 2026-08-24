@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.knowledge_and_deflection.macro_management
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.macro_management.macros_as_starting_points
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.macro_management.customers_detect_templates_instantly
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

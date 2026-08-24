@@ -1,0 +1,1788 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# REQUEST — the front door of the administrative function.
+#
+# Everything else in this brain is an obligation the organisation already carries.
+# A Request is the one object that arrives from outside and asks the function to take
+# a new one on. The whole object turns on a distinction the requester cannot see and
+# the administrator forgets to make explicit: RECEIVED is not ACCEPTED. Between those
+# two moments sits most of the domain's invisible failure.
+#
+# Intake is also where an administrative function either becomes measurable or stays a
+# set of favours asked of individuals. A function with a queue can say no, can price its
+# work, and can prove what it did. A function without one is judged on the last thing it
+# was late with, by whoever was inconvenienced.
+#
+# Five of fifteen patterns are executable today. The pipeline can see an inbound message,
+# whose court the ball sits in, a dated promise made in reply, and whether anything went
+# back out. It cannot see a category, a published target, or the same ask arriving twice
+# through two channels — which is exactly the backlog the needs_signal entries name.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.request
+  scope: core
+  name: Request
+  domain: admin
+  subdomain: admin_operations
+  owner_capability: admin.admin_operations.request_intake
+  version: 2.0.0
+  status: draft
+  aliases: ["Admin Request", "Service Request", "Ask", "Intake Item", "Ticket", "Job"]
+
+# ── 2 · Purpose ──────────────────────────────────────────────────────────────────────────
+purpose:
+  statement: >
+    An inbound ask directed at the administrative function — book it, approve it, find it,
+    fix it, issue it, chase it. A Request is not yet an obligation. It becomes one at the
+    moment an administrator accepts it, and the gap between those two moments is where
+    requests die: the requester believes the ask landed when they pressed send, the function
+    believes nothing exists until someone picks it up, and both are behaving reasonably.
+    The object exists to make acceptance an event rather than an assumption, and to hold the
+    two urgencies apart — the one the requester claims and the one the function assesses.
+  discriminator: >
+    A Request is an ask the function has not yet agreed to. The moment a named administrator
+    puts a date on it, the obligation lives on a Commitment and the Request becomes the
+    container it arrived in. Asked, not yet owed — that is the test. If somebody already owes
+    it, you are looking at a Commitment or an Action Item, not a Request.
+  answers:
+    - "Has this actually been accepted by anyone, or has it merely been received?"
+    - "Who owes the answer, by name — not which team, which mailbox or which rota?"
+    - "What should be worked next, on grounds other than who shouted loudest or sat nearest?"
+    - "Is this ask ours to answer at all, and if not, where does it go and who tells the requester?"
+    - "Is there a written procedure that already answers this, and if not, should there be?"
+    - "Is the requester chasing us, and how many times have they had to?"
+    - "When we said no, what were the grounds and what is the route to an exception?"
+  not:
+    - "NOT the promise made in reply — that is admin.obj.core.commitment, which has its own owner and date and outlives the request."
+    - "NOT the internal task breakdown — that is admin.obj.core.action_item."
+    - "NOT the sign-off a non-standard ask needs — that is admin.obj.core.approval. Routing an exception to an operator instead of an approver is how policy erodes without anyone deciding to erode it."
+    - "NOT the published standard it is measured against — that is admin.obj.core.service_level. The request holds the clock; the service level sets it."
+    - "NOT the escalation route — that is admin.obj.core.escalation. Escalation is a route, not a mood."
+
+# ── 3 · Attributes ───────────────────────────────────────────────────────────────────────
+attributes:
+
+  # ── composites: folders over the fields below ──
+  - name: origin
+    purpose: How the ask arrived and from whom. The channel predicts the failure mode.
+    type: composite
+    contains: [channel, received_at, requester_ref, requester_seniority, raw_ask, arrived_off_queue]
+
+  - name: classification
+    purpose: What kind of ask this is, and whether a written procedure already answers it.
+    type: composite
+    contains: [request_category, request_type, classified_by, sop_ref, is_repeat, entitlement_checked]
+
+  - name: urgency_and_service_level
+    purpose: >
+      Two urgencies, deliberately separate. urgency_claimed is evidence about the requester;
+      priority is a decision made by the function.
+    type: composite
+    contains: [urgency_claimed, priority, sla_target_at, sla_state, service_level_ref, breach_risk]
+
+  - name: ownership
+    purpose: Who owes the answer. A team is not an owner.
+    type: composite
+    contains: [owner_ref, owner_team, assigned_at, reassignment_count, ball_in_court]
+
+  - name: progress
+    purpose: The state of the work, as distinct from the state of the requester's belief about the work.
+    type: composite
+    contains: [accepted, acknowledged, acknowledged_at, first_touch_at, promised_action,
+               promised_due_at, on_hold_reason, resolved_at, time_to_acknowledge]
+
+  - name: requester_experience
+    purpose: What the requester has had to do to get an answer. Every entry here is a service failure already recorded.
+    type: composite
+    contains: [chase_count, engagement_trend, requester_confirmed, reopen_count, age_hours]
+
+  - name: outcome_and_evidence
+    purpose: How it ended, what proves it, and how long the proof must survive.
+    type: composite
+    contains: [resolution_type, evidence_ref, closed_by_policy_ref, retention_until]
+
+  # ── origin ──
+  - name: channel
+    purpose: The route the ask travelled. Determines what record exists and therefore what can be proven later.
+    type: value
+    data_type: enum
+    allowed_values: [email, chat, phone, form, portal, ticket, calendar_invite, in_person, corridor, unknown]
+    required: true
+    default: unknown
+    validation: "must be one of allowed_values"
+    sensitivity: internal
+    description: >
+      `corridor` is a real value and the most important one on the field. An ask made while
+      walking to the lift has no timestamp, no record and no owner, and it is the class of
+      request most likely to be delivered and least likely to be counted. Every mature intake
+      process is, in the end, a machine for converting corridor into form.
+
+  - name: received_at
+    purpose: When the ask arrived, not when someone noticed it.
+    type: value
+    data_type: timestamp
+    required: true
+    source_paths: [thread.last_inbound]
+    sensitivity: internal
+    description: One of the very few attributes on this object with a live Layer 2 source today.
+
+  - name: requester_ref
+    purpose: Who asked. Identity, not name — the same person asking twice is the most useful fact the function can compute.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.employee_record
+    sensitivity: internal
+    description: >
+      Null for an external requester — a candidate, an auditor, a supplier, a data subject.
+      That is a different risk posture and a different statutory clock, not a missing field.
+
+  - name: requester_seniority
+    purpose: Recorded so that queue-jumping is visible, not so that it is obeyed.
+    type: value
+    data_type: enum
+    allowed_values: [unknown, individual, manager, executive, board, external]
+    default: unknown
+    sensitivity: internal
+    description: >
+      The field earns its place the day a report shows that the function's median turnaround
+      is excellent and its statutory work is late. Until then it looks like a way of being
+      deferential, which is precisely how it gets used.
+
+  - name: raw_ask
+    purpose: The requester's own words, kept verbatim.
+    type: value
+    data_type: string
+    sensitivity: confidential
+    description: >
+      Paraphrasing at intake is where half of all rework originates — the administrator
+      records what they think was meant, works that, and delivers something adjacent.
+      Confidential because an ask about pay, health, immigration status or a grievance
+      arrives through the same front door as a room booking.
+
+  - name: arrived_off_queue
+    purpose: Whether work started before a record existed.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: Off-queue work is invisible to capacity planning, uncountable in demand analysis, and indefensible at audit.
+
+  # ── classification ──
+  - name: request_category
+    purpose: The class of ask, which determines route, owner, target and evidence.
+    type: value
+    data_type: enum
+    allowed_values: [access, facilities, travel, finance, people, records, procurement,
+                     meeting, compliance, contract, it_adjacent, other]
+    sensitivity: internal
+    description: >
+      The cheapest field in the domain and the one most often absent. The requester already
+      knows the answer and would type it. An unclassified queue is triaged by whoever reads
+      it first, which means it is triaged by arrival order wearing a lanyard.
+
+  - name: request_type
+    purpose: Whether this is routine work, a departure from a rule, or merely a question.
+    type: value
+    data_type: enum
+    allowed_values: [standard, non_standard, exception, information_only]
+    default: standard
+    sensitivity: internal
+    description: >
+      `exception` is not a harder version of `standard` — it is a request to depart from a
+      rule, and it needs an approver rather than an operator. The enum exists to make that
+      routing decision at intake rather than at the point somebody has already been helpful.
+
+  - name: classified_by
+    purpose: Who decided the category, which is how you calibrate whether to trust it.
+    type: value
+    data_type: enum
+    allowed_values: [requester, intake_rule, administrator, unclassified]
+    default: unclassified
+    sensitivity: internal
+    description: >
+      `requester` is the least reliable and the most common. `intake_rule` is the only value
+      that scales, because it is the only one that costs nothing per request.
+
+  - name: sop_ref
+    purpose: The written procedure that already answers this class of ask.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.sop
+    sensitivity: internal
+    description: >
+      Null here is either a genuine novelty or an undocumented routine, and the two need
+      opposite responses. The third time null appears for the same category it is not a
+      novelty.
+
+  - name: is_repeat
+    purpose: Whether this requester has asked for this before.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: A repeat is a defect report about the last answer, not a new request. Counting it as new demand flatters the function twice.
+
+  - name: entitlement_checked
+    purpose: Whether the requester is actually entitled to what they are asking for.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: >
+      The step skipped most often under time pressure and the one that turns a helpful
+      administrator into the proximate cause of an access finding. Entitlement is a property
+      of the role, not of the request and not of how reasonable the person sounded.
+
+  # ── urgency and service level ──
+  - name: urgency_claimed
+    purpose: What the requester said about timing.
+    type: value
+    data_type: enum
+    allowed_values: [none, soon, today, now]
+    default: none
+    sensitivity: internal
+    description: Evidence about the requester's situation and about their habits. Never an input to priority on its own.
+
+  - name: priority
+    purpose: What the function decided, and the only one of the two urgencies that schedules anything.
+    type: value
+    data_type: enum
+    allowed_values: [low, normal, high, critical]
+    required: true
+    default: normal
+    validation: "must be one of allowed_values"
+    sensitivity: internal
+
+  - name: sla_target_at
+    purpose: The published answer-by time for this category.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+    description: >
+      Distinct from promised_due_at, which is what one administrator said to one requester
+      under pressure. The two disagree constantly and the requester holds the promise.
+
+  - name: sla_state
+    purpose: Whether the clock is running, and whether stopping it was honest.
+    type: value
+    data_type: enum
+    allowed_values: [no_sla, not_started, running, paused, met, breached]
+    default: no_sla
+    sensitivity: internal
+    description: >
+      `paused` is legitimate only when the requester or a third party owes us something. A
+      clock paused because the function is busy is a clock being edited, and a queue that
+      reports attainment on edited clocks reports health it does not have.
+
+  - name: service_level_ref
+    purpose: The published standard this request is measured against.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.service_level
+    sensitivity: internal
+    description: Unpublished standards are aspirations and cannot be breached, which is exactly why so many functions never publish one.
+
+  - name: breach_risk
+    purpose: Likelihood of missing the nearer of the promise and the published target.
+    type: derived
+    data_type: number
+    derived_from: [promised_due_at, sla_target_at, sla_state, ball_in_court, age_hours]
+    sensitivity: internal
+    description: Computed against the nearer deadline, which is nearly always the promise rather than the catalogue.
+
+  # ── ownership ──
+  - name: owner_ref
+    purpose: The one named person who owes the answer.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.employee_record
+    sensitivity: internal
+    description: A shared mailbox is a location, not an owner. So is a rota, a channel and a team name.
+
+  - name: owner_team
+    purpose: The team accountable when the individual owner is absent.
+    type: value
+    data_type: string
+    sensitivity: internal
+    description: Kept because cover matters, and kept subordinate to owner_ref because cover is not ownership.
+
+  - name: assigned_at
+    purpose: When the request acquired a named owner. The gap from received_at is the acceptance gap made numeric.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+
+  - name: reassignment_count
+    purpose: How many times this has been passed on.
+    type: value
+    data_type: integer
+    default: 0
+    sensitivity: internal
+    description: >
+      Correlates with requester dissatisfaction more tightly than elapsed time does. Being
+      passed around is experienced as being refused slowly.
+
+  - name: ball_in_court
+    purpose: Who the next move belongs to.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+    sensitivity: internal
+    description: >
+      `them` covers the requester and any third party we are waiting on; the substrate cannot
+      yet tell them apart, and it matters, because only the first legitimately pauses the
+      clock. `nobody` is the dangerous value — nobody is waiting because nobody is doing
+      anything, and it is the state in which requests age out unnoticed.
+
+  # ── progress ──
+  - name: accepted
+    purpose: Whether an administrator has taken this on.
+    type: value
+    data_type: boolean
+    required: true
+    default: false
+    sensitivity: internal
+    description: >
+      The single most load-bearing field on the object. Received-and-unaccepted is the state
+      in which requests are silently lost, and it is invisible from both ends — the requester
+      assumes yes, the function assumes not yet, and nothing in either system disagrees.
+
+  - name: acknowledged
+    purpose: Whether anything at all has gone back to the requester.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: >
+      Deliberately separate from `accepted`. An acknowledgement is not progress; it is the
+      thing that stops the ask being re-sent through a second channel and becoming two
+      records with two owners and two different answers.
+
+  - name: acknowledged_at
+    purpose: When the first response went back.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+
+  - name: first_touch_at
+    purpose: When someone in the function first did anything about it.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+    description: Frequently earlier than acknowledged_at, which is the exact shape of the problem — work happening that the requester cannot see.
+
+  - name: promised_action
+    purpose: What was actually promised, in the promiser's words.
+    type: value
+    data_type: string
+    source_paths: [commitment.action]
+    sensitivity: internal
+    description: Live today. The verbatim promise is what the requester will quote back, so the verbatim promise is what gets stored.
+
+  - name: promised_due_at
+    purpose: The date given to the requester.
+    type: value
+    data_type: timestamp
+    source_paths: [commitment.due_at]
+    sensitivity: internal
+    description: Frequently earlier than sla_target_at, and it is the one the requester remembers. Breaching it is a service failure even inside a met target.
+
+  - name: on_hold_reason
+    purpose: Why the clock stopped, recorded so that stopping it can be audited.
+    type: value
+    data_type: enum
+    allowed_values: [awaiting_requester, awaiting_third_party, awaiting_approval,
+                     awaiting_budget, blocked_by_policy, seasonal_freeze, none]
+    default: none
+    sensitivity: internal
+    description: There is no member of this enum that means "we are busy", and that absence is the design.
+
+  - name: resolved_at
+    purpose: When the answer was delivered to the requester.
+    type: value
+    data_type: timestamp
+    sensitivity: internal
+    description: Delivered, not completed internally. Work finished and unsent is not finished.
+
+  - name: time_to_acknowledge
+    purpose: Receipt to first response. Governs the requester's experience more than resolution time does.
+    type: derived
+    data_type: duration
+    derived_from: [received_at, acknowledged_at]
+    unit: minutes
+    sensitivity: internal
+
+  # ── requester experience ──
+  - name: chase_count
+    purpose: How many times the requester has had to ask again.
+    type: value
+    data_type: integer
+    default: 0
+    sensitivity: internal
+    description: >
+      The truest quality metric the function has and the one nobody publishes. Every chase is
+      demand the function created for itself by failing to answer the first time.
+
+  - name: engagement_trend
+    purpose: Two-way volume against the prior fortnight. Rising volume with the ball on our side is a chase, not enthusiasm.
+    type: derived
+    data_type: number
+    source_paths: [derived.engagement]
+    derived_from: [received_at, chase_count]
+    sensitivity: internal
+
+  - name: requester_confirmed
+    purpose: Whether the requester agreed it was done.
+    type: value
+    data_type: boolean
+    default: false
+    sensitivity: internal
+    description: Closure asserted by the function alone is the commonest cause of a reopen, and a reopen retrospectively converts a counted success into a counted failure.
+
+  - name: reopen_count
+    purpose: How many times this was closed and came back.
+    type: value
+    data_type: integer
+    default: 0
+    sensitivity: internal
+
+  - name: age_hours
+    purpose: Elapsed time in the queue, for ageing against a peer group rather than against a fixed number.
+    type: derived
+    data_type: number
+    derived_from: [received_at, resolved_at]
+    unit: hours
+    sensitivity: internal
+
+  # ── outcome and evidence ──
+  - name: resolution_type
+    purpose: How it ended. All six endings are real and Layer 6 must be able to tell them apart.
+    type: value
+    data_type: enum
+    allowed_values: [completed, deflected_to_self_service, routed_elsewhere,
+                     refused_by_policy, withdrawn, expired_unanswered]
+    sensitivity: internal
+    description: >
+      `expired_unanswered` exists because pretending it does not is how a function reports 98%
+      attainment. A request that aged out is a resolution type, and refusing to name it does
+      not make the requester forget.
+
+  - name: evidence_ref
+    purpose: What proves the request was answered.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.document
+    sensitivity: internal
+    description: In a governed context this is the deliverable, not a by-product of it. Work performed correctly and undocumented did not happen.
+
+  - name: closed_by_policy_ref
+    purpose: The grounds for a refusal.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.policy
+    sensitivity: internal
+    description: A refusal that cannot name its policy is a personal preference wearing a uniform, and the requester will test it against the next administrator.
+
+  - name: retention_until
+    purpose: How long the record and its attachments must survive.
+    type: value
+    data_type: timestamp
+    sensitivity: confidential
+    description: >
+      Inherited from the most sensitive attachment, not from the request. A room booking that
+      carries a medical note inherits the medical note's retention and its access control.
+
+# ── 4 · States ───────────────────────────────────────────────────────────────────────────
+states:
+  initial: new
+  terminal: [resolved, cancelled]
+  values:
+    - name: new
+      description: Received. Nothing has been decided, including whether we will do it at all.
+      entered_when: [{exists: thread.last_inbound}]
+      implies: The requester believes this is in hand. Nobody in the function has agreed that it is.
+    - name: triaged
+      description: Classified, prioritised and owned. The first state in which the request is safe.
+      implies: There is now a named person who can be asked about it.
+    - name: in_progress
+      description: Work is happening and the ball is ours.
+      entered_when: [{path: thread.ball_in_court, op: "=", value: us}]
+    - name: pending_approval
+      description: >
+        Stopped on someone's sign-off. Not the same as waiting on the requester and not the
+        same as blocked — the obligation clock keeps running and a named person owes an answer.
+      implies: The delay is now attributable to an approver, and the approver usually does not know it.
+    - name: waiting_on_customer
+      description: >
+        Waiting on the requester or a third party. The only state in which pausing the clock
+        is honest. Named `waiting_on_customer` because that is the shared vocabulary; the
+        customer here is the colleague who asked.
+      entered_when: [{path: thread.ball_in_court, op: "=", value: them}]
+    - name: on_hold
+      description: Suspended for a reason outside the request — a budget freeze, a seasonal cut-off, an unavailable counterparty.
+    - name: escalated
+      description: Raised above the owner, whether by the defined route or by the requester going over someone's head.
+      implies: Either the route worked or the route did not exist. Layer 6 should be able to tell which.
+    - name: breached
+      description: Past the promised date or the published target.
+      entered_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    - name: resolved
+      description: Answered, with the answer delivered. Not the same as done internally.
+    - name: reopened
+      description: The requester came back. Every reopen is a false resolution that was counted as a real one.
+    - name: cancelled
+      description: Withdrawn by the requester or refused on policy grounds. Both are legitimate endings and they teach opposite lessons.
+  transitions:
+    - {from: new, to: triaged, trigger: classification_and_assignment}
+    - {from: new, to: cancelled, trigger: withdrawn_or_refused}
+    - {from: triaged, to: in_progress, when: [{path: thread.ball_in_court, op: "=", value: us}]}
+    - {from: in_progress, to: pending_approval, trigger: exception_routed_to_approver}
+    - {from: in_progress, to: waiting_on_customer, when: [{path: thread.ball_in_court, op: "=", value: them}], reversible: true}
+    - {from: waiting_on_customer, to: in_progress, when: [{path: thread.ball_in_court, op: "=", value: us}]}
+    - {from: pending_approval, to: in_progress, trigger: approval_recorded}
+    - {from: in_progress, to: on_hold, reversible: true}
+    - {from: on_hold, to: in_progress}
+    - {from: in_progress, to: breached, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
+    - {from: breached, to: escalated}
+    - {from: in_progress, to: escalated}
+    - {from: escalated, to: resolved}
+    - {from: in_progress, to: resolved}
+    - {from: resolved, to: reopened, reversible: false}
+    - {from: reopened, to: in_progress}
+
+# ── 5 · Relationships ────────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: produces
+    target: admin.obj.core.commitment
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 2200
+    confidence_bp: 9000
+    priority: 1
+    conditions: [{exists: commitment.action}]
+    evidence: [email, ticket]
+    description: >
+      The moment an administrator writes "I'll have it by Thursday", the request has spawned a
+      commitment with its own owner and its own date. The request may close; the commitment
+      does not close with it. Treating them as one record is how a clean queue coexists with
+      a reputation for not delivering.
+
+  - type: requires
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1300
+    confidence_bp: 8000
+    priority: 2
+    conditions: [{exists: thread.last_inbound}]
+    evidence: [signed_form, email]
+    description: >
+      Non-standard and exception requests need an approver before an operator. Most intake
+      designs discover this the wrong way round, after an operator has been helpful once and
+      set a precedent that is now cited by everyone.
+
+  - type: governed_by
+    target: admin.obj.core.sop
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1400
+    confidence_bp: 7000
+    priority: 3
+    evidence: [document]
+    description: >
+      The procedure that answers this class of ask. Its absence for a high-volume category is
+      the strongest available argument for writing one, and that absence is only visible if
+      the category is recorded.
+
+  - type: governed_by
+    target: admin.obj.core.service_level
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1200
+    confidence_bp: 5000
+    priority: 4
+    evidence: [document, portal]
+    description: The published standard. Confidence is low because in most organisations the standard exists in a slide, not in a system.
+
+  - type: assigned_to
+    target: admin.obj.core.employee_record
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1200
+    confidence_bp: 8500
+    priority: 5
+    evidence: [ticket, email]
+    description: One named owner. The edge is zero_or_one on purpose — two owners is the same as none, and everybody involved knows it.
+
+  - type: escalates_to
+    target: admin.obj.core.escalation
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 900
+    confidence_bp: 6000
+    priority: 6
+    description: Escalation is a route, not a mood. Undefined at intake, it will be invented at the point of failure, by the requester, upward, and at the worst possible moment.
+
+  - type: references
+    target: admin.obj.core.policy
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 700
+    confidence_bp: 7000
+    priority: 7
+    description: The grounds for a refusal, a limit, or a required approval. Populated on every no, and on every yes that departed from the default.
+
+  - type: gates
+    target: admin.obj.core.access_right
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 500
+    confidence_bp: 7500
+    priority: 8
+    conditions: [{exists: thread.last_inbound}]
+    evidence: [signed_form, access_log]
+    description: >
+      Access is the highest-volume administrative request class and the one where a helpful
+      answer is the failure. The edge exists so that entitlement is checked against the role
+      rather than against the plausibility of the ask.
+
+  - type: produces
+    target: admin.obj.core.action_item
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 400
+    confidence_bp: 6000
+    priority: 9
+    description: The internal task breakdown, where the request is bigger than one move. Distinct from the commitment, which is the external promise.
+
+  - type: precedes
+    target: admin.obj.core.deadline
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 500
+    confidence_bp: 5000
+    priority: 10
+    description: >
+      A request sitting on the critical path of a dated obligation. Nothing in the request's
+      own text says so — the laptop request is a laptop request until it is the regulator's
+      on-site visit on Monday.
+
+  - type: merges_into
+    target: admin.obj.core.request
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 400
+    confidence_bp: 4000
+    priority: 11
+    description: >
+      Self-referential. One ask arriving by email on Monday and in person on Tuesday becomes
+      two records, two answers and one annoyed requester. The duplicate almost always exists
+      because the first arrival went unacknowledged.
+
+  - type: attaches_to
+    target: admin.obj.core.document
+    direction: bidirectional
+    cardinality: zero_or_many
+    weight_bp: 300
+    confidence_bp: 8000
+    priority: 12
+    description: Attachments in, evidence out. Both directions carry retention and classification with them, and neither may widen the audience of what it came from.
+
+# ── 6 · Inference Patterns ⭐ ─────────────────────────────────────────────────────────────
+#
+# ANDed within a pattern. Express OR as two patterns — that is exactly how the engine works,
+# so authoring it any other way produces something that cannot run.
+inference_patterns:
+
+  deterministic:
+
+    - id: req.accepted_with_a_dated_promise
+      statement: "A dated commitment exists against this thread — the request has been accepted, not merely received."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {exists: commitment.due_at}
+      yields: {confidence_bp: 9000, attribute: accepted, value: true}
+      evidence_fields: [commitment.action, commitment.due_at]
+      false_positive: >
+        The promise may be a holding reply — "I'll look at this Thursday" — which accepts the
+        looking rather than the doing. Acceptance of a triage slot reads identical to
+        acceptance of the work, and only the requester notices the difference, later.
+      note: >
+        The cleanest administrative signal the current substrate carries. A promise with a
+        date is the act of acceptance; everything before it is receipt.
+
+    - id: req.promise_passed_its_date
+      statement: "The promised date is behind us and the ball is still ours."
+      status: executable
+      when:
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+        - {path: thread.ball_in_court, op: "=", value: us}
+      yields: {confidence_bp: 9500, attribute: sla_state, value: breached}
+      evidence_fields: [commitment.due_at, thread.ball_in_court]
+      false_positive: >
+        A request satisfied out of band — delivered in person, closed in a corridor, handled
+        by somebody else — still reads breached until something closes the record. This is
+        the single largest source of a wrong nudge in this domain.
+      note: >
+        Honest about its scope. commitment.due_at is the date one administrator gave one
+        requester, not the contracted service level, which the engine cannot see at all. So
+        this detects a broken promise — which happens to be the only deadline the requester
+        actually remembers.
+
+    - id: req.intake_form_classification
+      statement: "The intake form or service desk recorded a category for this request."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: request_category, value: null}
+      requires_signals:
+        - kind: fact_path
+          name: request.category
+          owner_layer: L1
+          note: >
+            No service-desk or form connector exists. Category is the cheapest field in the
+            whole domain — the requester types it — and it does not reach Layer 2, so every
+            request arrives unclassified and is triaged by whoever opens the inbox first.
+
+    - id: req.state_from_the_service_desk
+      statement: "The service desk holds the authoritative status, priority and arrival time of this request."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: null}
+      requires_signals:
+        - kind: fact_path
+          name: request.state
+          owner_layer: L1
+          note: >
+            Where a ticketing tool exists it is the system of record and the engine cannot
+            read it, so Layer 3 is reasoning about a copy of the queue held in email.
+        - kind: fact_path
+          name: request.created_at
+          owner_layer: L1
+          note: >
+            thread.last_inbound approximates arrival only while the ask lives in a mail
+            thread. A portal submission has no thread at all, and a corridor ask has neither.
+        - {kind: fact_path, name: request.priority, owner_layer: L1}
+
+    - id: req.published_service_level
+      statement: "A published service level supplies the answer-by target for this category."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: sla_target_at, value: null}
+      requires_signals:
+        - kind: fact_path
+          name: sla.target_resolution_at
+          owner_layer: L1
+          note: >
+            Service catalogues exist as documents, not as data. Until the target is a fact,
+            every breach the engine can see is a broken personal promise and every published
+            standard is unenforceable — which is a fair description of most administrative
+            functions.
+
+    - id: req.acknowledgement_recorded
+      statement: "A first response to the requester is timestamped in the system of record."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: acknowledged_at, value: null}
+      requires_signals:
+        - kind: fact_path
+          name: request.acknowledged_at
+          owner_layer: L1
+          note: >
+            The single number that governs requester experience, and there is no field for
+            it. Acknowledgement is currently inferred from an observation that cannot tell an
+            acknowledgement from any other outbound message.
+
+    - id: req.exception_worked_without_approval
+      statement: "A request marked as an exception is being worked without a recorded approval."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: request_type, value: exception}
+      requires_signals:
+        - {kind: fact_path, name: request.type, owner_layer: L1}
+        - kind: fact_path
+          name: approval.state
+          owner_layer: L1
+          note: >
+            The control that matters most in intake — an exception worked by an operator
+            rather than routed to an approver — is undetectable, because neither half of the
+            comparison exists as a fact.
+
+    - id: req.entitlement_not_checked_before_grant
+      statement: "An access or benefit request was fulfilled without an entitlement check against the role."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: entitlement_checked, value: false}
+      requires_signals:
+        - {kind: obs_kind, name: access_granted, owner_layer: L2}
+        - kind: fact_path
+          name: access.granted_at
+          owner_layer: L1
+          note: >
+            Least privilege is enforced at intake or it is not enforced at all. The grant is
+            visible in the access log and the entitlement question is recorded nowhere, so
+            the control is unauditable by construction.
+
+  heuristic:
+
+    - id: req.no_acknowledgement_against_our_own_cadence
+      statement: "Nothing has gone back to the requester in twice this thread's normal turnaround, and the ball is ours."
+      status: executable
+      when:
+        - {exists: thread.last_inbound}
+        - {path: thread.ball_in_court, op: "=", value: us}
+        - {fn: hours_since, path: thread.last_inbound, op: ">",
+           value: {baseline: reply_cadence, mult: 2, floor: 24}}
+      yields: {confidence_bp: 7000, attribute: acknowledged, value: false}
+      evidence_fields: [thread.last_inbound, thread.ball_in_court]
+      false_positive: >
+        A reply sent from a different mailbox, delivered in person, or made by phone leaves no
+        trace on the thread. The function did the right thing and reads as silent.
+      note: >
+        Measured against the learned cadence rather than a fixed number of hours, on purpose.
+        A function that normally replies in twenty minutes and has been silent for a day is
+        failing; one that normally replies in two days is not. A single global SLA clock
+        cannot tell those apart and will alert on the wrong one, every time.
+
+    - id: req.acknowledgement_probably_sent
+      statement: "Something went back out on this thread and the ball moved to the requester."
+      status: executable
+      when:
+        - {has_obs: followup_sent}
+        - {path: thread.ball_in_court, op: "=", value: them}
+      yields: {confidence_bp: 6500, attribute: acknowledged, value: true,
+               corroborates: [req.accepted_with_a_dated_promise]}
+      evidence_fields: [thread.ball_in_court]
+      false_positive: >
+        followup_sent cannot distinguish an acknowledgement from an unrelated message on the
+        same thread, or from a request for information that is really a way of stopping the
+        clock. It proves contact, never content.
+      note: >
+        The corroboration declared here is real but PARTIAL, and Rule 11 should treat it as
+        such: the observation classifier and the commitment extractor are different
+        computations, but they read the same mailbox. Same-channel corroboration must be
+        capped well below the sum of its parts. Declaring that honestly is the point of the
+        field.
+
+    - id: req.requester_is_chasing
+      statement: "Inbound volume is rising sharply while the ball sits with us — that is a chase, not enthusiasm."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: us}
+        - {path: derived.engagement, op: ">", value: 1.5}
+        - {fn: days_since, path: thread.last_inbound, op: "<=", value: 2}
+      yields: {confidence_bp: 6800, attribute: priority, value: high,
+               corroborates: [req.no_acknowledgement_against_our_own_cadence]}
+      evidence_fields: [derived.engagement, thread.ball_in_court]
+      false_positive: >
+        A genuinely collaborative thread — the requester supplying documents we asked for —
+        looks identical to a chase from the outside. The tell is who asked last, and
+        ball_in_court is too coarse to carry it.
+      note: >
+        The one place where escalating on the requester's behaviour is correct: not because
+        they are senior, but because the cost of the chase is already being paid, by them,
+        repeatedly. Raises priority, never the classification.
+
+    - id: req.aging_against_its_peer_group
+      statement: "This request has been open materially longer than others of its class and priority."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: priority, value: high}
+      requires_signals:
+        - kind: derived
+          name: derived.backlog_age
+          owner_layer: L2
+          note: >
+            Age is meaningless without a peer group. Ageing must be computed per category and
+            per service level, and neither category nor service level is a fact today.
+        - {kind: fact_path, name: request.created_at, owner_layer: L1}
+
+    - id: req.duplicate_of_an_open_request
+      statement: "The same ask is already open under another record."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: null}
+      requires_signals:
+        - kind: derived
+          name: derived.request_similarity
+          owner_layer: L2
+          note: >
+            Multi-channel intake guarantees duplicates — the same person asks by email on
+            Monday and in person on Tuesday because the first went unacknowledged. Nothing
+            dedupes them, so demand is over-reported and the requester receives two different
+            answers, one of which is wrong.
+
+    - id: req.jumped_the_queue_on_seniority
+      statement: "A senior requester's ask has overtaken older work carrying a harder deadline."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: null}
+      requires_signals:
+        - {kind: fact_path, name: person.seniority, owner_layer: L1,
+           note: "Requires title normalisation from the directory."}
+        - kind: fact_path
+          name: obligation.due_at
+          owner_layer: L1
+          note: >
+            The comparison becomes possible only when the statutory deadline is visible
+            alongside the diary query. Today only one side of it is, which is precisely why
+            the queue-jump is invisible and universal. This is the pattern that would let a
+            function prove its median turnaround is excellent AND its statutory work is late,
+            which are the two facts nobody currently sees together.
+
+    - id: req.arrived_off_queue
+      statement: "Work began on this request before any record of it existed."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: arrived_off_queue, value: true}
+      requires_signals:
+        - kind: obs_kind
+          name: verbal_request_captured
+          owner_layer: L2
+          note: >
+            The corridor ask leaves no artefact by definition. The only realistic capture is
+            an administrator retro-logging it, which means the signal must come from a
+            deliberate act rather than from extraction — an honest limit, not a missing parser.
+
+    - id: req.repeat_ask_means_a_broken_answer
+      statement: "This requester has asked for the same thing before and is asking again."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: is_repeat, value: true}
+      requires_signals:
+        - kind: derived
+          name: derived.request_repeat_rate
+          owner_layer: L2
+          note: >
+            Repeat rate per requester and per category is the single most useful
+            process-improvement signal the function could have. It needs a category and a
+            stable requester identity, and neither exists yet. It is also the only route to
+            Seddon's failure-demand share — chases, repeats and reopens as a proportion of
+            total volume. Administrative queues are typically majority failure demand and
+            almost none measure it, so every capacity argument is fought on total volume,
+            which is the wrong number.
+        - {kind: baseline, name: admin_request_volume, owner_layer: L2}
+
+# ── 7 · Inputs ───────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: "the ask itself, and every chase after it", path: thread.last_inbound,
+     fills: [received_at, raw_ask, chase_count], reliability_bp: 8000}
+  - {source: email, signal: "who is waiting on whom", path: thread.ball_in_court,
+     fills: [ball_in_court], reliability_bp: 7000}
+  - {source: derived, signal: "rising inbound volume as a chase indicator", path: derived.engagement,
+     fills: [engagement_trend], reliability_bp: 5500}
+  - {source: derived, signal: "the dated promise made in reply", path: commitment.due_at,
+     fills: [promised_due_at, promised_action, accepted], reliability_bp: 8000}
+  - {source: ticket, signal: "category, priority, state, assignee, timestamps",
+     fills: [request_category, priority, owner_ref, sla_state], reliability_bp: 9500,
+     description: "System of record where one exists. No connector reads it today, which is the largest single gap on this object."}
+  - {source: portal, signal: "structured intake fields submitted by the requester",
+     fills: [request_category, urgency_claimed, raw_ask], reliability_bp: 9000}
+  - {source: signed_form, signal: "requests that are also authorisations — access, expense, leave",
+     fills: [entitlement_checked, evidence_ref], reliability_bp: 9000}
+  - {source: hris, signal: "requester identity, role and manager, for entitlement checks",
+     fills: [requester_ref, requester_seniority, entitlement_checked], reliability_bp: 9000}
+  - {source: chat, signal: "asks made in a channel and never ticketed — high volume, zero record",
+     fills: [raw_ask, received_at], reliability_bp: 5000}
+  - {source: calendar, signal: "scheduling asks arriving as invitations rather than as requests",
+     fills: [request_category, received_at], reliability_bp: 6000}
+  - {source: manual_entry, signal: "corridor requests retro-logged into the queue",
+     fills: [arrived_off_queue, raw_ask], reliability_bp: 5000}
+  - {source: phone, signal: "verbal asks", fills: [raw_ask], reliability_bp: 3000,
+     description: "Recoverable only by the administrator writing them down immediately, which is the moment they are least inclined to."}
+
+# ── 8 · Outputs ──────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: handling_priority_bp, type: integer,
+     description: "Assessed priority as a basis point, distinct from what the requester claimed.",
+     derived_from: [priority, breach_risk, request_category, chase_count],
+     consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: breach_risk_bp, type: integer,
+     description: "Likelihood of missing the nearer of promise and published target.",
+     derived_from: [breach_risk, promised_due_at, sla_target_at, sla_state],
+     consumed_by: [L4.reasoning_unit]}
+  - {name: acceptance_gap, type: boolean,
+     description: "Received but not accepted. The state in which requests are silently lost.",
+     derived_from: [accepted, acknowledged, received_at, assigned_at],
+     consumed_by: [L4.reasoning_unit, L5.execution_planning]}
+  - {name: deflection_candidate, type: string,
+     description: "The SOP that already answers this, when one exists.",
+     derived_from: [sop_ref, request_category, request_type],
+     consumed_by: [L5.execution_planning]}
+  - {name: owner_recommendation, type: string,
+     description: "Suggested single named owner, given category, entitlement and current load.",
+     derived_from: [request_category, owner_team],
+     consumed_by: [L5.execution_planning]}
+  - {name: acknowledgement_due, type: boolean,
+     description: "Nothing has gone back to the requester yet, measured against this thread's own cadence.",
+     derived_from: [acknowledged, time_to_acknowledge, ball_in_court],
+     consumed_by: [L5.communication_planning, "L5.2.channel_planner"]}
+  - {name: escalation_required, type: boolean,
+     description: "Route defined at intake rather than invented at the point of failure.",
+     derived_from: [breach_risk, reassignment_count, request_type],
+     consumed_by: [L4.decision_maker]}
+  - {name: approval_required, type: boolean,
+     description: "This is an exception and needs an approver, not a willing operator.",
+     derived_from: [request_type, entitlement_checked, closed_by_policy_ref],
+     consumed_by: [L4.decision_maker, L5.execution_planning]}
+  - {name: demand_signal, type: string,
+     description: "Category, repeat status, channel and failure-demand share, for process improvement.",
+     derived_from: [request_category, is_repeat, reopen_count, channel],
+     consumed_by: [L6.learning_unit]}
+
+# ── 9 · Preconditions ────────────────────────────────────────────────────────────────────
+preconditions:
+
+  - id: req.record_exists_before_work
+    statement: A record of the ask exists before any work starts on it.
+    requires: [channel, received_at, raw_ask]
+    when: [{exists: thread.last_inbound}]
+    if_unmet: >
+      Degrade, do not block: retro-log the ask into the queue in front of the requester, then
+      work it. Refusing a corridor request until it is submitted properly is technically
+      correct and makes the function hated, which is a slower route to the same failure.
+
+  - id: req.owner_is_named
+    statement: A request in progress has exactly one named owner, and that owner is a person.
+    requires: [admin.obj.core.employee_record, owner_ref]
+    when: [{path: thread.ball_in_court, op: "=", value: us}]
+    if_unmet: >
+      Block progress and route by category rota, not to whoever last replied. Assigning to the
+      last replier is how the most responsive administrator in the team acquires the whole
+      queue and then leaves.
+
+  - id: req.category_resolved
+    statement: The request is classified before it is prioritised.
+    requires: [request_category, classified_by]
+    if_unmet: >
+      Degrade: treat as `other` at normal priority and flag for classification within the
+      acknowledgement window. Do not block — an unclassified request still ages, and blocking
+      makes the ageing invisible as well as unmanaged.
+
+  - id: req.entitlement_resolved
+    statement: For any request granting access, spend or a benefit, entitlement is checked against the role before fulfilment.
+    requires: [admin.obj.core.policy, admin.obj.core.access_right, entitlement_checked]
+    if_unmet: >
+      Block. Route to the entitlement owner named in the policy. An administrator is not
+      authorised to decide entitlement merely because they are able to perform the grant, and
+      the distinction between capability and authority is the whole of least privilege.
+
+  - id: req.scope_is_ours
+    statement: The ask belongs to this function at all.
+    requires: [request_category, sop_ref]
+    if_unmet: >
+      Route once, to a named receiving owner, and tell the requester where it went and who now
+      has it. A silent forward is a request abandoned with extra steps, and the requester
+      discovers it a fortnight later while chasing the wrong person.
+
+  - id: req.exception_route_known
+    statement: For a non-standard or exception request, the approver is resolved to a named person before work begins.
+    requires: [admin.obj.core.approval, admin.obj.core.approver]
+    if_unmet: >
+      Block and route to the delegation-of-authority matrix owner, not back to the requester.
+      Sending an exception back to the person who asked for it produces a better-worded
+      version of the same exception.
+
+# ── 10 · Constraints ─────────────────────────────────────────────────────────────────────
+constraints:
+  - id: req.no_work_off_queue
+    statement: No work may start before a record exists.
+    hard: true
+    why: Off-queue work is invisible to capacity planning, uncountable in demand analysis, and indefensible at audit. It is also the work the function is most proud of.
+
+  - id: req.cannot_bypass_approval
+    statement: An exception request cannot be completed by an operator without the recorded approval it needs.
+    hard: true
+    why: An exception granted once by a helpful operator is cited as precedent by the next twenty requesters, and the operator is the one asked to explain it.
+
+  - id: req.cannot_pause_own_clock
+    statement: sla_state may enter `paused` only when the ball is not with us.
+    when: [{path: thread.ball_in_court, op: "=", value: us}]
+    hard: true
+    why: A clock paused because the function is busy is a clock being edited.
+
+  - id: req.closure_requires_delivery
+    statement: A request cannot be resolved before its answer has been delivered to the requester.
+    hard: true
+    why: Internal completion is not resolution. The requester's clock stops when they receive something, not when the work finishes.
+
+  - id: req.no_self_service_of_own_entitlement
+    statement: An administrator may not fulfil a request that grants themselves access, spend or a benefit.
+    hard: true
+    why: Segregation of duties. Trivial to state, trivial to breach, and the breach is always discovered from the other end.
+
+  - id: req.personal_data_minimisation
+    statement: A request touching personal data carries only the fields the answer requires, and its attachments inherit the record's retention period and access control.
+    hard: true
+    why: >
+      A request queue is the least-governed personal-data store in most organisations.
+      Special-category data under GDPR Art. 9 arrives as an attachment to a room booking and
+      is then retained for as long as the room booking is.
+
+  - id: req.channel_of_record
+    statement: Reply on the channel the request arrived on unless the record demands otherwise.
+    hard: false
+    why: Moving a requester to your preferred channel is a cost you are transferring to them, and it is the most common reason a request is chased through a third channel.
+
+# ── 11 · Business Rules ──────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: req.acknowledge_before_triage
+    statement: >
+      Every request is acknowledged before it is triaged. An unacknowledged request is, from
+      the requester's side, indistinguishable from a lost one — so they re-send it through a
+      second channel, and one ask becomes three records with three owners.
+    then: require_acknowledgement
+    severity: blocking
+    why: Acknowledgement costs seconds and removes the single largest source of duplicate demand.
+
+  - id: req.owner_is_a_person
+    statement: A request in progress has exactly one named owner. A team, a queue and a shared mailbox are locations, not owners.
+    when: [{path: thread.ball_in_court, op: "=", value: us}]
+    then: block_progress_without_owner
+    severity: blocking
+
+  - id: req.priority_is_assessed_not_claimed
+    statement: >
+      urgency_claimed must never set priority on its own. Claimed urgency is evidence about
+      the requester; priority is a decision by the function. The day the two are wired
+      together, everything becomes urgent within a fortnight and priority stops carrying
+      information.
+    severity: warning
+
+  - id: req.fifo_within_priority
+    statement: Within a priority band, work is taken oldest first.
+    then: order_queue_by_age_within_band
+    severity: advisory
+    why: >
+      Any other discipline inside a band is a discretion, and discretions are exercised in
+      favour of whoever is nearest, loudest or most senior. FIFO within band is the only rule
+      that makes the exceptions visible as exceptions.
+
+  - id: req.refusal_must_name_its_grounds
+    statement: A request refused cites closed_by_policy_ref and states the route to an exception.
+    severity: blocking
+    why: A refusal without a named policy is a personal preference wearing a uniform, and it will be tested against the next administrator until one of them says yes.
+
+  - id: req.verbal_request_must_be_written
+    statement: A request received in the corridor is written into the queue before any work starts.
+    severity: warning
+
+  - id: req.overdue_promise_is_a_breach
+    statement: A promise past its date is a breach whether or not the published target has been missed.
+    when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    then: flag_breach
+    severity: warning
+    why: The requester is holding the promise, not the service catalogue.
+
+  - id: req.clock_pauses_only_on_the_requester
+    statement: sla_state may enter `paused` only when ball_in_court is not `us`.
+    when: [{path: thread.ball_in_court, op: "=", value: us}]
+    then: forbid_pause
+    severity: blocking
+
+  - id: req.closure_needs_the_requester
+    statement: A request whose outcome is visible to the requester may not be recorded as resolved on the function's assertion alone.
+    severity: advisory
+    why: Self-certified closure is the commonest source of reopens, and a reopen costs more than the original request because trust is now part of the work.
+
+  - id: req.repeat_triggers_a_process_question
+    statement: The third occurrence of the same category from the same requester raises a process defect, not a third request.
+    severity: advisory
+    why: Answering the same question repeatedly and quickly is indistinguishable from good service until somebody counts it.
+
+# ── 12 · Decision Factors ────────────────────────────────────────────────────────────────
+decision_factors:
+
+  - name: sla_pressure
+    weight_bp: 2500
+    direction: increases
+    description: Distance to the promised date and to the published target, whichever is nearer. The promise usually is.
+    reads: [promised_due_at, sla_target_at, sla_state, breach_risk]
+
+  - name: obligation_linkage
+    weight_bp: 1800
+    direction: increases
+    description: >
+      Whether this request sits on the critical path of an external obligation. A laptop
+      request is a laptop request until it is the regulator's on-site visit on Monday, and
+      nothing in the request's own text says so.
+    reads: [request_category, sop_ref]
+
+  - name: requester_dependency
+    weight_bp: 1200
+    direction: context
+    description: How much other work is stopped behind this one. Blast radius, not seniority.
+    reads: [requester_seniority, request_category]
+
+  - name: standardisation
+    weight_bp: 1200
+    direction: decreases
+    description: >
+      A request with a matching SOP is cheaper, safer and faster. It should fall to the bottom
+      of the thinking queue and the top of the doing queue — those are different queues and
+      most functions run only one.
+    reads: [sop_ref, request_type, classified_by]
+
+  - name: ownership_clarity
+    weight_bp: 1200
+    direction: context
+    description: Unowned and repeatedly reassigned requests need routing attention before they need work.
+    reads: [owner_ref, reassignment_count, ball_in_court]
+
+  - name: repeat_and_reopen
+    weight_bp: 1100
+    direction: increases
+    description: Third time of asking. A repeat is a defect report about the previous answer and carries the cost of both.
+    reads: [is_repeat, reopen_count, chase_count]
+
+  - name: authority_or_policy_block
+    weight_bp: 1000
+    direction: context
+    description: Whether the answer is ours to give. Exceptions need an approver, not an operator, and working one anyway is how policy erodes.
+    reads: [request_type, entitlement_checked, closed_by_policy_ref]
+
+# ── 13 · Evidence ────────────────────────────────────────────────────────────────────────
+evidence:
+  - {source: ticket, strength_bp: 9500, decays: false, independent_of: [email, chat, phone],
+     description: "System of record with a timestamped state history. Nothing administrative outranks it."}
+  - {source: signed_form, strength_bp: 9200, decays: false, independent_of: [email, chat, derived],
+     description: "Where the request is also an authorisation — access, expense, leave. A signature proves the ask and the entitlement claim behind it."}
+  - {source: portal, strength_bp: 9000, decays: false, independent_of: [email, phone],
+     description: "Structured submission by the requester, in their own words, with a clock that started without anyone deciding to start it."}
+  - {source: hris, strength_bp: 8500, decays: false, independent_of: [email, chat, ticket],
+     description: "Authoritative for who the requester is and what their role entitles them to. The only independent check on an entitlement claim."}
+  - {source: access_log, strength_bp: 8500, decays: false, independent_of: [email, ticket],
+     description: "Proves what was actually granted, as opposed to what was asked for or recorded. The two diverge more often than anyone expects."}
+  - {source: email, strength_bp: 8000, decays: true, independent_of: [portal, ticket, signed_form],
+     description: "The default intake channel and a genuine record, but threaded, forwardable and easy to lose inside a personal mailbox nobody else can search."}
+  - {source: chat, strength_bp: 5500, decays: true, independent_of: [email, portal],
+     description: "High volume, real requests, retention usually shorter than the obligation they create — a records problem disguised as a convenience."}
+  - {source: manual_entry, strength_bp: 5000, decays: true,
+     description: "A corridor ask retro-logged. Worth having; it is a memory, not a record."}
+  - {source: derived, strength_bp: 4000, decays: true,
+     description: "Inferred from thread shape. Corroborating only, never sole grounds for asserting a request exists."}
+  - {source: phone, strength_bp: 3000, decays: true,
+     description: "The ask most often delivered and least often counted. Only as good as the note taken afterwards, which is to say usually not good."}
+
+# ── 14 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: acknowledgement_time, unit: minutes, direction: lower_is_better, owner_layer: L2,
+     description: "Receipt to first response. Governs the requester's experience more than resolution time does.",
+     calibrates: [req.no_acknowledgement_against_our_own_cadence, req.acknowledgement_probably_sent]}
+  - {name: acceptance_gap_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Share of requests received and not accepted within the acknowledgement window.",
+     calibrates: [req.accepted_with_a_dated_promise]}
+  - {name: time_to_resolution, unit: hours, direction: lower_is_better, owner_layer: L2}
+  - {name: sla_attainment, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Measured against published targets, not against promises made under pressure. If the two are ever equal, somebody is editing one of them."}
+  - {name: promise_attainment, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Share of dated promises kept. The number the requester actually experiences.",
+     calibrates: [req.promise_passed_its_date]}
+  - {name: chase_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Share of requests the requester had to chase at least once.",
+     calibrates: [req.requester_is_chasing]}
+  - {name: failure_demand_share, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Chases, repeats and reopens as a share of total volume. Usually the majority, and usually unmeasured.",
+     calibrates: [req.repeat_ask_means_a_broken_answer, req.requester_is_chasing]}
+  - {name: reassignment_rate, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Predicts dissatisfaction better than duration. Being passed around is experienced as being refused slowly."}
+  - {name: deflection_rate, unit: percent, direction: higher_is_better, owner_layer: L6,
+     description: "Share answered directly from an SOP. The only lever that scales the function without headcount."}
+  - {name: reopen_rate, unit: percent, direction: lower_is_better, owner_layer: L6}
+  - {name: off_queue_share, unit: percent, direction: lower_is_better, owner_layer: L6,
+     description: "Estimated share of work with no record. Necessarily an estimate, and the number most worth arguing about.",
+     calibrates: [req.arrived_off_queue]}
+  - {name: exception_rate_by_category, unit: percent, direction: target_band, owner_layer: L6,
+     description: "Zero exceptions means the rule is never tested; a high rate means the rule is wrong. Both are findings.",
+     calibrates: [req.exception_worked_without_approval]}
+
+# ── 15 · Events ──────────────────────────────────────────────────────────────────────────
+events:
+  - {id: req.received, name: Request Received, severity: info,
+     emitted_when: [{exists: thread.last_inbound}], payload: [channel, received_at, requester_ref]}
+  - {id: req.acknowledged, name: Request Acknowledged, severity: info,
+     emitted_when: [{has_obs: followup_sent}, {path: thread.ball_in_court, op: "=", value: them}],
+     payload: [acknowledged_at, owner_ref],
+     description: "The event that stops the same ask arriving again through a second channel."}
+  - {id: req.accepted, name: Request Accepted, severity: notable,
+     emitted_when: [{exists: commitment.action}, {exists: commitment.due_at}],
+     payload: [promised_action, promised_due_at, owner_ref],
+     description: "Acceptance made explicit. Everything before it is receipt, and the requester cannot tell the difference from outside."}
+  - {id: req.reassigned, name: Request Reassigned, severity: info,
+     payload: [owner_ref, reassignment_count], invalidates: [assigned_at, promised_due_at],
+     description: "A reassignment voids the previous owner's promise. Almost nobody tells the requester that, which is why the promise is quoted back weeks later."}
+  - {id: req.promise_overdue, name: Promise Overdue, severity: notable,
+     emitted_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}],
+     payload: [promised_due_at, owner_ref]}
+  - {id: req.escalated, name: Request Escalated, severity: notable,
+     payload: [owner_ref, reassignment_count, breach_risk]}
+  - {id: req.refused, name: Request Refused on Policy, severity: notable,
+     payload: [closed_by_policy_ref, resolution_type],
+     description: "A clean no with grounds and an exception route is a better service than a slow yes, and it should be counted as a resolution rather than hidden."}
+  - {id: req.resolved, name: Request Resolved, severity: info,
+     payload: [resolution_type, resolved_at, evidence_ref]}
+  - {id: req.reopened, name: Request Reopened, severity: notable,
+     payload: [reopen_count, resolution_type], invalidates: [resolved_at, requester_confirmed],
+     description: "A reopen retrospectively converts a counted success into a counted failure. Layer 6 must be allowed to do that arithmetic."}
+  - {id: req.expired, name: Request Expired Unanswered, severity: critical,
+     payload: [received_at, channel, owner_ref],
+     description: "The ending most functions do not instrument, and the one that best predicts the next reorganisation of the intake process."}
+
+# ── 16 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - id: req.acknowledge
+    name: Acknowledge receipt with an owner and a date
+    actor: agent
+    preconditions: [{exists: thread.last_inbound}, {path: thread.ball_in_court, op: "=", value: us}]
+    effect: "Stops the ask being re-sent through a second channel."
+    cost: trivial
+    reversible: true
+    description: The cheapest action in the domain and the most often skipped, because it feels like doing nothing.
+
+  - id: req.classify
+    name: Classify and prioritise
+    actor: human
+    effect: "Sets request_category, request_type and priority. Priority is set here, never inherited from urgency_claimed."
+    cost: low
+    reversible: true
+
+  - id: req.deflect_to_sop
+    name: Answer from the written procedure
+    actor: agent
+    effect: "Where an SOP already answers it, the answer is the SOP delivered — not a link to it."
+    cost: trivial
+    reversible: true
+    description: Sending someone a link to a document they must then interpret is a refusal with a helpful tone.
+
+  - id: req.assign_owner
+    name: Assign a single named owner
+    actor: system
+    effect: "Moves the request from unowned to owned, by rota and entitlement rather than by who replied last."
+    cost: trivial
+    reversible: true
+
+  - id: req.check_entitlement
+    name: Check entitlement against the role
+    actor: system
+    effect: "Confirms the requester is entitled to what they asked for, independently of how reasonable the ask sounded."
+    cost: low
+    reversible: true
+
+  - id: req.request_information
+    name: Ask the requester for what is missing
+    actor: agent
+    effect: "Legitimately moves the ball and legitimately pauses the clock."
+    cost: trivial
+    reversible: true
+    description: Doing it late, after a week of internal effort, is a service failure dressed as diligence.
+
+  - id: req.route_for_approval
+    name: Route an exception to its approver
+    actor: system
+    effect: "Exceptions go to an approver, not to an operator."
+    cost: low
+    reversible: true
+
+  - id: req.refuse_on_policy
+    name: Refuse, citing the policy and the exception route
+    actor: human
+    effect: "Closes the request with named grounds and a route, rather than leaving it to age."
+    cost: low
+    reversible: true
+
+  - id: req.escalate
+    name: Escalate along the defined route
+    actor: human
+    effect: "Raises the request to the next named level with the breach reason attached."
+    cost: moderate
+    reversible: false
+
+  - id: req.close_with_evidence
+    name: Close and file the evidence
+    actor: human
+    effect: "Records resolution_type and attaches what proves it, under the correct retention."
+    cost: low
+    reversible: true
+
+  - id: req.merge_duplicate
+    name: Merge into the original record
+    actor: system
+    effect: "Collapses two records into one so the requester receives one answer."
+    cost: trivial
+    reversible: true
+
+  - id: req.raise_process_defect
+    name: Raise a process defect on a repeat category
+    actor: human
+    effect: "Converts a fast answer given three times into a request to stop the question being asked."
+    cost: moderate
+    reversible: true
+
+# ── 17 · Dependencies ────────────────────────────────────────────────────────────────────
+dependencies:
+  - target: admin.obj.core.employee_record
+    kind: requires
+    strength: hard
+    description: >
+      Stable requester and owner identity. Without it, repeat rate, chase rate and every
+      per-requester metric on this object are fiction, and entitlement cannot be checked at all.
+
+  - target: admin.obj.core.policy
+    kind: requires
+    strength: hard
+    description: A refusal cannot be resolved without a named policy, and an entitlement cannot be checked without one.
+
+  - target: admin.obj.core.commitment
+    kind: enriches
+    strength: hard
+    description: >
+      The commitment carries the only date the engine can currently see. Without it this
+      object has no clock at all, which is why the acceptance pattern is built on it.
+
+  - target: admin.obj.core.approval
+    kind: blocks
+    strength: hard
+    description: An exception request cannot leave pending_approval without a recorded approval. One that leaves anyway is a control failure recorded as good service.
+
+  - target: admin.obj.core.service_level
+    kind: requires
+    strength: soft
+    description: >
+      Without a published target, sla_state can only ever read `no_sla` and every breach the
+      system reports is a broken personal promise. The object still functions; it simply
+      cannot be held to a standard.
+
+  - target: admin.obj.core.sop
+    kind: enriches
+    strength: soft
+    description: Turns triage into execution. Its absence for a repeated category is itself the finding.
+
+  - target: admin.obj.core.escalation
+    kind: enriches
+    strength: soft
+    description: Supplies the route. Absent, escalation still happens — it just happens over the owner's head and out of the record.
+
+  - target: admin.obj.core.access_right
+    kind: enriches
+    strength: soft
+    description: For the access category — the largest by volume — the entitlement question lives on the access right, not on the request.
+
+# ── 18 · Exceptions ──────────────────────────────────────────────────────────────────────
+exceptions:
+
+  - id: req.safety_and_incident_bypass
+    statement: A request touching personal safety, building security or an active incident is worked before it is classified, prioritised or approved.
+    overrides: [req.record_exists_before_work, req.acknowledge_before_triage, req.fifo_within_priority]
+    why: >
+      The record is written afterwards and it is written properly. A control that cannot be
+      broken under fire gets bypassed permanently instead of temporarily, and the retro-log is
+      what keeps this an exception rather than a habit.
+    frequency: rare
+
+  - id: req.statutory_deadline_outranks_the_queue
+    statement: A request on the critical path of a statutory deadline is worked ahead of its priority band and ahead of older work.
+    overrides: [req.fifo_within_priority]
+    why: >
+      Fairness inside the queue is not the objective; discharging the organisation's
+      obligations is. The failure this prevents is the one nobody sees — a function with
+      excellent median turnaround and a late filing, both true at once.
+    frequency: occasional
+
+  - id: req.executive_office_standing_exception
+    statement: An executive or board office request may be worked ahead of its band by standing written agreement.
+    overrides: [req.fifo_within_priority, req.priority_is_assessed_not_claimed]
+    why: >
+      Queue-jumping happens whether or not it is sanctioned. An unwritten exception is
+      invisible to capacity planning; a written one is a measurable cost that can be argued
+      about at budget time, which is the only place it can actually be changed.
+    frequency: common
+
+  - id: req.leaver_revocation_pre_empts_acknowledgement
+    statement: Access revocation for a confirmed leaver executes on the effective date whether or not anyone has acknowledged the request.
+    overrides: [req.acknowledge_before_triage, req.owner_is_a_person]
+    when: [{path: thread.ball_in_court, op: "=", value: us}]
+    why: >
+      The joiner-mover-leaver control has a date, not a queue position. An orphaned account is
+      the single most common audit finding in this domain and it is created by politeness —
+      waiting for someone to confirm what the HR system already said.
+    frequency: occasional
+
+  - id: req.regulator_and_data_subject_clock
+    statement: A request from a regulator, an auditor, or a data subject exercising a statutory right runs on the statutory clock, not on the service level.
+    overrides: [req.fifo_within_priority, req.priority_is_assessed_not_claimed]
+    why: >
+      The statutory clock does not pause because we asked a clarifying question, and it is
+      usually shorter than anyone assumes — one calendar month under GDPR Art. 12, not a
+      working month. Treating it as ordinary intake is how a routine request becomes a
+      reportable breach.
+    frequency: rare
+
+  - id: req.freeze_period_queues_rather_than_refuses
+    statement: During year-end close, a payroll cut-off or a change freeze, requests in the affected category are queued with a dated restart, not refused.
+    overrides: [req.closure_requires_delivery]
+    when: [{has_obs: budget_freeze}]
+    why: >
+      A refusal during a freeze is re-submitted the moment the freeze lifts, at the back of a
+      queue that has grown for a month. Queuing with a restart date preserves order and the
+      requester's place in it.
+    frequency: common
+
+  - id: req.emergency_access_ratified_after
+    statement: Emergency access may be granted before entitlement is confirmed, and must be reviewed and either confirmed or revoked within five working days.
+    overrides: [req.entitlement_resolved, req.cannot_bypass_approval, req.no_self_service_of_own_entitlement]
+    why: >
+      Break-glass access exists in every serious access model for the same reason: the
+      alternative is an unusable control that people route around permanently. The five-day
+      review window is the whole of what makes it an exception rather than a hole.
+    frequency: rare
+
+# ── 19 · Best Practices ──────────────────────────────────────────────────────────────────
+best_practices:
+
+  - id: req.single_front_door_and_a_kind_one
+    statement: Publish one intake route per category, and convert corridor asks by writing them into the queue in front of the requester rather than refusing them.
+    why: >
+      Multi-channel intake is the root cause of duplicates, unowned work and unprovable
+      volume. But an intake process defended by refusal gets bypassed, and the bypass is
+      invisible. Convert, do not refuse.
+    applies_when: Any function receiving requests through more than two channels.
+
+  - id: req.acknowledge_with_an_owner_and_a_date
+    statement: An acknowledgement carrying a named owner and a date is worth ten that say "received".
+    why: >
+      Chasing is driven by uncertainty, not by duration. A requester who knows who has it and
+      when it is due will wait; a requester who knows only that it was received will chase on
+      day two, and every chase is work the function created for itself.
+    applies_when: Every request, without exception.
+    evidence: chase_rate
+
+  - id: req.two_queues_not_one
+    statement: Run a thinking queue and a doing queue, and route standardised requests straight to the second.
+    why: >
+      A request with a matching SOP needs execution, not triage. Mixing them means the
+      cheapest work waits behind the hardest decisions, and the function's throughput ends up
+      set by its most ambiguous item.
+    applies_when: More than about thirty requests a week across more than three categories.
+
+  - id: req.classify_by_rule_at_intake
+    statement: Classify by intake rule at the point of arrival, and let the administrator correct rather than originate the category.
+    why: Correcting a suggestion costs seconds; originating a classification costs a decision, and decisions are what a busy queue skips first.
+    applies_when: Any queue with a form or portal front end.
+
+  - id: req.publish_the_chase_number
+    statement: Publish chase rate and failure-demand share alongside resolution time.
+    why: >
+      Resolution time can be improved by closing things faster, which is also how it is gamed.
+      Chase rate cannot be gamed by the function, because it is generated entirely by the
+      requester's experience of being ignored.
+    applies_when: Any function with a published service level.
+    evidence: failure_demand_share
+
+  - id: req.refuse_early_with_grounds_and_a_route
+    statement: Say no on day one, cite the policy, and name the route to an exception.
+    why: A clean no with grounds is a better service than a slow yes, and it is the only refusal that survives being escalated.
+    applies_when: The answer is already known to be outside policy.
+
+  - id: req.review_the_top_five_categories_quarterly
+    statement: Review the five highest-volume categories every quarter and ask what would remove the demand rather than route it faster.
+    why: >
+      The point of classification is elimination, not routing. A category that grows every
+      quarter and is answered faster every quarter is a process defect being managed
+      beautifully.
+    applies_when: Any function with a quarter or more of stable classified volume.
+
+  - id: req.retention_inherits_from_the_attachment
+    statement: A request's retention and access control inherit from its most sensitive attachment, not from its category.
+    why: >
+      A room booking with a fit-note attached is a special-category personal data record under
+      GDPR Art. 9, and it will be retained under the room-booking schedule unless somebody
+      wrote this rule down.
+    applies_when: Any queue that accepts attachments, which is all of them.
+
+  - id: req.close_the_loop_with_the_requester
+    statement: Close on the requester's confirmation where the outcome is visible to them, and on evidence where it is not.
+    why: Self-certified closure produces reopens, and a reopen costs more than the original because trust is now part of the work.
+    applies_when: Any request whose outcome the requester can observe.
+
+# ── 20 · Anti-Patterns ───────────────────────────────────────────────────────────────────
+anti_patterns:
+
+  - id: req.shared_mailbox_as_owner
+    statement: A shared inbox treated as the owner of the work.
+    why_it_happens: >
+      It is the cheapest possible routing, it genuinely works while the team is three people
+      who can see each other, and it survives long past that because nothing visibly breaks —
+      the failures are silent by construction.
+    cost: "Diffusion of responsibility. Requests read by four people and picked up by none, and no way to answer 'who has it?' without asking four people."
+    instead: "One named owner per request, assigned by rota within a category, with the mailbox as the arrival point and never as the destination."
+    detectable_by: [req.no_acknowledgement_against_our_own_cadence, reassignment_rate]
+
+  - id: req.priority_inflation
+    statement: Every request arrives marked urgent, and priority stops carrying information.
+    why_it_happens: >
+      urgency_claimed was wired to priority because it looked like respecting the requester.
+      Requesters learn the mapping within a fortnight and mark everything `now`, entirely
+      rationally.
+    cost: "The function loses the ability to schedule. Ordering reverts to whoever is loudest, which is the state the priority field was introduced to fix."
+    instead: "Keep the two urgencies as separate fields. Publish the distribution of claimed against assessed urgency once a quarter and the inflation ends by itself."
+    detectable_by: [req.requester_is_chasing, exception_rate_by_category]
+
+  - id: req.stopping_the_clock_to_protect_the_number
+    statement: Pausing the SLA clock because the function is busy, or reclassifying an ageing request to reset it.
+    why_it_happens: The number is reported and the workload is not. Every incentive points at the number, and pausing is a single click that nobody reviews.
+    cost: "Attainment is reported on edited clocks. The reported queue is healthy, the actual queue is not, and the gap surfaces as a complaint rather than as a report."
+    instead: "Pause only when ball_in_court is not us, log every pause with a reason from a closed enum, and report paused time as a separate column rather than netting it off."
+    detectable_by: [req.promise_passed_its_date, sla_attainment]
+
+  - id: req.closed_on_our_word
+    statement: Recording a request as resolved on internal completion rather than on delivered answer.
+    why_it_happens: The work genuinely is finished, and the last step — telling the person — feels like admin rather than work.
+    cost: "Reopens, chases, and a requester who believes the function is slower than it is. The gap between finishing and telling is invisible in every report."
+    instead: "Resolution requires delivery. Where the outcome is visible to the requester, it requires their confirmation."
+    detectable_by: [reopen_rate, req.acknowledgement_probably_sent]
+
+  - id: req.helpfulness_as_a_control_bypass
+    statement: An administrator granting an exception because the requester said someone senior had approved it.
+    why_it_happens: >
+      Refusing feels like obstruction, the requester is credible, and the request is small.
+      Every individual instance is defensible and the aggregate is a control that no longer
+      exists.
+    cost: "The exception becomes precedent and is cited by the next twenty requesters. The administrator who granted it is the one asked to explain it, months later, alone."
+    instead: "Route every exception to a named approver and record the approval. 'Someone said it was fine' is a request for an approval, not an approval."
+    detectable_by: [req.exception_worked_without_approval, req.entitlement_not_checked_before_grant]
+
+  - id: req.the_ghost_queue
+    statement: Work done off-queue as a favour, for the people who ask nicely or sit nearby.
+    why_it_happens: It is faster, it builds goodwill, and it is the part of the job that feels like being good at the job.
+    cost: >
+      The function's real workload is unprovable at budget time. The administrator who does
+      most of it looks least productive on the report, and is usually the first to burn out.
+    instead: "Log it, then do it. Ninety seconds of record buys the only defence the function has when its headcount is questioned."
+    detectable_by: [req.arrived_off_queue, off_queue_share]
+
+  - id: req.triage_by_inbox_order
+    statement: Whoever opens the mailbox first sets the day's priorities by scrolling.
+    why_it_happens: There is no classification, so there is no basis for any other ordering, and scrolling is what a mailbox affords.
+    cost: "Statutory and dated work sits below whatever arrived at nine o'clock. The failure surfaces as a missed deadline that appears to come from nowhere."
+    instead: "Classify at intake, order FIFO within priority band, and make every departure from that order an explicit written exception."
+    detectable_by: [req.jumped_the_queue_on_seniority, req.aging_against_its_peer_group]
+
+  - id: req.answer_the_ask_not_the_need
+    statement: Booking the room that was asked for rather than asking what the meeting is.
+    why_it_happens: Taking the ask literally is faster, feels respectful, and is exactly what the queue metrics reward.
+    cost: "Rework. The requester returns, the second request is counted as new demand, and the function's volume grows while its usefulness does not."
+    instead: "For non-standard requests, one clarifying question at intake — before the work, not after it."
+    detectable_by: [req.repeat_ask_means_a_broken_answer, reopen_rate]
+
+  - id: req.sla_theatre
+    statement: A published service level with a target nobody has ever measured against a clock anybody trusts.
+    why_it_happens: Publishing a standard is a governance deliverable; instrumenting one is an engineering project, and only the first has a deadline.
+    cost: "Requesters cite a target the function cannot see, and the function defends itself with anecdotes. Both sides are arguing from memory."
+    instead: "Publish only what is measured. One category with a real clock is worth twelve with aspirational ones."
+    detectable_by: [req.published_service_level, sla_attainment]
+
+# ── 21 · Examples ────────────────────────────────────────────────────────────────────────
+examples:
+  - label: "Access for a new joiner starting Monday"
+    kind: typical
+    note: >
+      Standard, SOP exists, deadline external and fixed, entitlement checkable against the
+      role. Late means the joiner spends day one watching someone else's screen, and that is
+      the impression the organisation gets to make exactly once.
+    attributes: {request_category: access, request_type: standard, priority: high, entitlement_checked: true}
+
+  - label: "Can you just move my 3pm — said in the corridor"
+    kind: edge
+    note: >
+      channel = corridor, no record, delivered anyway. The class of request that makes the
+      function look effortless and its workload unprovable, and the reason off_queue_share is
+      worth estimating even though it cannot be measured.
+    attributes: {channel: corridor, arrived_off_queue: true, request_category: meeting}
+
+  - label: "Expense claim outside policy, submitted with a note saying the CFO said it was fine"
+    kind: misclassification
+    note: >
+      Reads as a standard finance request and is an exception. It needs an approver and a
+      written record of the CFO's view, not an operator willing to be helpful. Classified as
+      standard, it becomes precedent within a month.
+    attributes: {request_category: finance, request_type: exception, classified_by: requester}
+
+  - label: "Where is the signed 2023 lease?"
+    kind: typical
+    note: >
+      Records retrieval. Turnaround is set entirely by filing discipline eighteen months ago;
+      nothing done today improves it. The right response to a slow answer here is a records
+      programme, not a faster administrator.
+    attributes: {request_category: records, request_type: information_only}
+
+  - label: "Third chase on an unanswered visa letter"
+    kind: typical
+    note: >
+      chase_count = 3, engagement rising, ball ours. Priority high on behaviour, not on
+      seniority — the cost of the chase is already being paid by the requester, three times.
+    attributes: {chase_count: 3, priority: high, ball_in_court: us}
+
+  - label: "Subject access request arriving as a two-line email to the office manager"
+    kind: misclassification
+    note: >
+      Looks like a records question; is a statutory obligation with a one-calendar-month clock
+      that started the moment it was sent, not when somebody recognised it. The most expensive
+      misclassification in the whole object and the easiest to make.
+    attributes: {request_category: records, requester_seniority: external, priority: critical}
+
+  - label: "Board pack request, six days before the meeting, papers due in two"
+    kind: edge
+    note: >
+      Looks like a document request; is actually the critical path of a governance obligation.
+      Nothing in its text says so, and nothing in the substrate can see it.
+    attributes: {request_category: meeting, priority: critical}
+
+  - label: "Leaver's manager asks for the accounts to be kept open for a couple of weeks"
+    kind: counterexample
+    note: >
+      Not a request the function may grant. It is a request to suspend a control, and correct
+      handling is to route it as an exception with a named approver and a dated end, or to
+      refuse it citing the access policy. Being helpful here creates the orphaned account that
+      appears in next year's audit.
+    attributes: {request_category: access, request_type: exception, entitlement_checked: false}
+
+# ── 22 · References ──────────────────────────────────────────────────────────────────────
+references:
+  - {title: "ITIL 4 — Service Request Management", kind: framework,
+     note: "The request-versus-incident split, and the principle that a standard request is pre-approved, pre-costed and pre-routed. Administrative intake is the same practice without the tooling or the vocabulary."}
+  - {title: "ISO/IEC 20000-1 — Service management system requirements", kind: standard,
+     note: "Requires a documented service catalogue and agreed service levels. Cited here because most administrative functions operate a catalogue they have never written down."}
+  - {title: "Failure demand and value demand", kind: methodology, author: "John Seddon",
+     note: "Failure demand is demand caused by a failure to do something, or to do something right, for the customer. Administrative queues are typically majority failure demand and almost never measure it, so every capacity argument is fought on total volume — the wrong number."}
+  - {title: "Little's Law", kind: framework,
+     note: "Queue length equals arrival rate times time in system. The only rigorous defence a swamped function has at a budget meeting, and the reason removing demand beats working faster."}
+  - {title: "Service catalogue and service level agreement", kind: framework,
+     note: "The instrument that turns an implicit set of favours into a stated standard. Unpublished standards cannot be breached, which is exactly why so many functions never publish one."}
+  - {title: "RACI", kind: framework,
+     note: "One accountable name per request. The whole of the owner_ref design is the A in RACI applied to a queue."}
+  - {title: "Segregation of duties", kind: framework,
+     note: "An administrator may not fulfil a request that benefits themselves. Trivially stated, routinely breached, always discovered from the other end."}
+  - {title: "Least privilege and access recertification", kind: framework,
+     note: "Entitlement is a property of the role, not of how reasonable the request sounded. Intake is where least privilege is enforced or abandoned."}
+  - {title: "Joiner-mover-leaver", kind: framework,
+     note: "The access request lifecycle. The leaver leg fails silently, because nobody is inconvenienced by an account that still works."}
+  - {title: "GDPR Art. 12 — response to data subject requests within one month", kind: standard,
+     note: "A calendar month from receipt, not from recognition. The clock starts on an email nobody classified."}
+  - {title: "GDPR Art. 9 — special category personal data", kind: standard,
+     note: "Health, union membership and biometric data arrive as attachments to ordinary administrative requests and inherit the wrong retention unless a rule says otherwise."}
+  - {title: "Queueing discipline and priority inversion", kind: research,
+     note: "A high-priority item blocked behind a low-priority one holding a shared resource. In an administrative queue the shared resource is usually the one person who knows how the system works."}
+
+# ── 23 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Five of fifteen patterns are executable. The live substrate is unusually kind to this
+    object — thread.last_inbound, thread.ball_in_court, derived.engagement and the commitment
+    pair express receipt, direction, chasing and acceptance without stretching a single sales
+    fact into an administrative meaning. What it cannot express is anything structural about
+    the queue: category, published target, age against a peer group, duplication, or whether
+    an exception ever reached an approver. request.category is the highest-value single field
+    in the entire Admin backlog — the requester already types it and it is discarded before
+    Layer 2 sees it. The second is request.acknowledged_at, because acknowledgement is
+    currently inferred from followup_sent, which proves contact and nothing else; the
+    corroborates declaration on req.acknowledgement_probably_sent states that limit rather
+    than hiding it.

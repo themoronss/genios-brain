@@ -1,0 +1,156 @@
+{
+  "replay_id": "03",
+  "slug": "counterparty_availability_and_reschedule_actor_ownership",
+  "title": "Counterparty Availability and Reschedule Actor Ownership",
+  "failure_class": "A quoted scheduling utterance is converted into an owned, overdue deliverable assigned to the wrong actor, because speech act (proposal), direction (who offered), lifecycle state (accepted/superseded/cancelled) and action (who must respond) are conflated.",
+  "summary": "Supplied cards quote scheduling language (\"could we push the call…\", \"I am available to meet…\") and render it as an overdue `Deliver <quote>` action, sometimes labelled \"You promised\", and show past-scheduled calendar items whose occurrence is unverified or whose calendar is disconnected. The replay mutates author, proposal, acceptance, supersession, time zone and event state explicitly, because the screenshot alone proves neither who authored the message, which event revision is authoritative, nor which code branch produced the card. GeniOS must first state the current meeting state and actor ownership: if the counterparty proposed a still-valid time and Rohit has not answered, the action is \"Rohit: accept or decline the counterparty's proposal\" with conflict evidence and a counter-propose Alternative; if Rohit proposed, the ball is with the counterparty and GeniOS waits unless a separate agreed follow-up trigger exists. Any later confirmation, cancellation, reschedule or completion suppresses the old proposal.",
+  "business_subject": "The scoped counterparty and the meeting/reschedule decision itself — not the quoted sentence. If the counterparty or the meeting identity is ambiguous, the decision class is Review source. Actor roles (speaker/proposer, recipient, scheduling owner, organizer, approver) must be distinct typed roles; direction inferred from content or the From header alone forces Review source.",
+  "current_failure": "The card copies availability language into `Deliver <quote>`, calls the utterance overdue, and can assign it to the wrong owner. It conflates speech act (proposal), actor direction (who offered), state (accepted/superseded) and action (who must respond). The founder must reopen the thread and the calendar to discover whether anything actually remains open.",
+  "expected_behavior": "State the current meeting state and actor ownership first. Counterparty proposed a still-valid time and Rohit has not answered → \"Rohit: accept or decline the counterparty's proposal\", with conflict evidence and a counter-propose Alternative. Rohit proposed the time → the ball is with the counterparty; GeniOS waits unless a separate agreed follow-up trigger exists. Any later confirmation, cancellation, reschedule or completion suppresses the old proposal.",
+  "open_loop": "Whether a current proposal awaits Rohit's response, awaits the counterparty, is confirmed, was superseded, cancelled, completed or expired. If no current-state winner can be established, the output is Observation only.",
+  "why_now": "An evidence-linked response deadline, a calendar conflict, an approaching valid proposal, or an authoritative schedule change. The age of an old quote alone is never urgency.",
+  "passes_today": false,
+  "mutations": [
+    {
+      "mutation": "Counterparty proposes a valid time; Rohit has not replied; calendar is fresh and free",
+      "expected_decision": "Actionable card: Rohit accepts or declines the counterparty's proposal, carrying a counter-propose Alternative",
+      "prohibited": "Rendering \"Deliver their sentence\", or assigning the response action to the counterparty instead of Rohit",
+      "pass_condition": "Card names the correct proposer, correct responder and correct target, and cites the exact proposal evidence span",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No counterparty role model (proposer/responder/target are not typed anywhere) and no direction in extraction — the LLM sees a body with no From/To and observations carry no actor; L4 also emits exactly one candidate and never produces an Alternative"
+    },
+    {
+      "mutation": "Rohit proposes availability; the counterparty has not replied",
+      "expected_decision": "Wait/stop until a reply arrives or an explicit cadence fires; the ball remains with the counterparty",
+      "prohibited": "\"You promised — overdue: deliver availability\" (treating Rohit's own proposal as a task he owes)",
+      "pass_condition": "No outbound action is emitted unless a separate follow-up trigger is independently evidenced",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No abstention vocabulary — cards.level only carries prescriptive/predictive, so there is no wait/suppress state; and no direction in extraction to establish that Rohit was the proposer"
+    },
+    {
+      "mutation": "A later message accepts the proposal and the current calendar confirms it",
+      "expected_decision": "Suppress the proposal-response loop; report current state as confirmed",
+      "prohibited": "Continuing to show a \"confirm/decline\" card after acceptance",
+      "pass_condition": "The matching completion closes the exact request ID and cancels any queued execution",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No thread-level state (extraction is one message at a time, so a relationship arc cannot be derived), no suppress state, and L5 has never produced an execution row so nothing exists to cancel"
+    },
+    {
+      "mutation": "A later counter-proposal supersedes the original proposal",
+      "expected_decision": "Evaluate only the newest authoritative proposal while preserving the full history",
+      "prohibited": "Acting on the old, superseded time",
+      "pass_condition": "The old decision/action loses authority via the version fence",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No thread state and no ordered proposal/supersession lifecycle in L2; no version fence over decisions/actions"
+    },
+    {
+      "mutation": "The meeting is cancelled after acceptance",
+      "expected_decision": "Suppress the confirmation and represent the cancellation, plus any separate still-unresolved rebook ask",
+      "prohibited": "Showing \"Meeting confirmed\", or emitting a recap of a meeting that did not occur",
+      "pass_condition": "Cancellation wins by source authority and event ordering; no recap is emitted without occurrence evidence",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No meeting lifecycle state (cancellation/occurrence certainty) in L2 and no suppress state in cards.level"
+    },
+    {
+      "mutation": "A past scheduled event exists but occurrence/attendance is unverified",
+      "expected_decision": "Observation only / Review source",
+      "prohibited": "Claiming \"Met N days ago\" or sending a recap",
+      "pass_condition": "No action button is rendered, and an explicit missing-occurrence/missing-attendance code is present on the output",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No observation / review vocabulary exists — cards.level only carries prescriptive/predictive, and there is no missing-evidence code channel on the card"
+    },
+    {
+      "mutation": "Calendar is disconnected, or the sync window is incomplete",
+      "expected_decision": "Defer / Review source; make no feasibility claim and no claim of silence",
+      "prohibited": "Emitting high confidence or 100% urgency on top of an unreadable calendar",
+      "pass_condition": "A source-readiness hard gate blocks any prescriptive decision",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "DEFER is mathematically unreachable — confidence_floor_bp defaults to 0 in every live manifest; there is also no source-readiness gate wired ahead of the prescriptive path"
+    },
+    {
+      "mutation": "The same two people have two meetings running in parallel",
+      "expected_decision": "Two distinct meeting/request IDs, or an explicit `split_required` signal",
+      "prohibited": "Collapsing both into one merged timeline/state",
+      "pass_condition": "Zero cross-meeting proposal or status leakage",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L2's BSO path emits one anchor with reconstructed/synthetic membership and `missing_fields=()` (genios_engine/context/situation_bso.py:69-166); there is no per-meeting request identity and no proven split_required emission"
+    },
+    {
+      "mutation": "Time zone / DST parsing of the proposed slot is ambiguous",
+      "expected_decision": "Clarify / Review source, presenting both interpretations",
+      "prohibited": "Silently selecting one of the candidate times",
+      "pass_condition": "No calendar mutation occurs until the normalized instant is verified",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No clarify/review decision class exists in the abstention vocabulary; L6 delivery control plane has never run so there is no calendar-mutation gate to assert against"
+    },
+    {
+      "mutation": "An assistant proposes a time on the executive's behalf",
+      "expected_decision": "Preserve assistant as delegate/proposer while keeping the executive's and the organization's authority as separate typed roles",
+      "prohibited": "Treating the assistant as the business target, or inferring unlimited delegated authority",
+      "pass_condition": "Delegation scope and the named approver are explicit before any action is taken",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No counterparty role model — every person node is interchangeable, with no delegate/executive/approver distinction anywhere"
+    },
+    {
+      "mutation": "The reply send was accepted by the provider but the provider then timed out",
+      "expected_decision": "Reconcile the exact send attempt before doing anything else",
+      "prohibited": "Blindly re-sending a duplicate reply or re-applying the event update",
+      "pass_condition": "One idempotency key yields at most one external response and at most one event mutation",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L6 delivery control plane has never run (delivery_outbox is empty across all orgs); no DeliveryResult, no reconciliation path and no idempotency key in the live send path"
+    },
+    {
+      "mutation": "The meeting occurred and a separate deliverable was agreed during it",
+      "expected_decision": "Close the scheduling loop, and create a new deliverable request only when an owner and supporting evidence exist",
+      "prohibited": "Keeping the reschedule action overdue, or emitting a generic recap",
+      "pass_condition": "The new deliverable carries its own request ID, its own accepted capability and its own Completion predicate",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No thread state to detect occurrence and no request identity to split loops; L3 domain compiler is dark and unroutable (73/73 NoExpertiseRoute, 140/152 capabilities are stubs, zero accepted) so no capability can be attached to a new request"
+    }
+  ],
+  "prohibited_behaviors": [
+    "Do not convert a quoted availability statement or question into a deliverable without first resolving its speaker, its recipient and its speech act.",
+    "Do not label the counterparty's proposal as Rohit's promise, and do not label Rohit's proposal as a task already owed to the counterparty.",
+    "Do not use elapsed days, a past scheduled timestamp, invitation text, or a scalar confidence value as proof of occurrence or attendance.",
+    "Do not act on a superseded proposal, a cancelled event, a different meeting, a stale calendar window, or an ambiguous time zone.",
+    "Do not let an LLM or a generic expertise rule choose actor ownership or the current lifecycle state.",
+    "Do not treat a claim, a sent response, provider delivery confirmation, or a calendar update as meeting occurrence or business success."
+  ],
+  "layer_obligations": [
+    {
+      "layer": "L1",
+      "required_output": "Immutable directional receipts for every proposal, reply and event revision — provider/event/version identifiers, speaker and recipient headers, calendar revision and sync-health receipts — from email/chat messages with From/To/Cc and exact quoted spans, plus calendar create/update/cancel status, organizer, attendees, time zone and recurrence. No promise or attendance inference at this layer.",
+      "fail_closed": "Park / Review source whenever the author, the quoted boundary, the event revision, the time zone, or the source window is incomplete."
+    },
+    {
+      "layer": "L2",
+      "required_output": "One scoped meeting lifecycle from qualified directional receipts plus identity, meeting/request keys and graph/policy versions: typed proposer/responder/organizer/owner roles, ordered proposals, acceptance, supersession, cancellation and occurrence certainty, with conflicts and missing fields declared. Emits a BSO carrying the exact request ID, the roles, the lifecycle, evidence membership and a version fence.",
+      "fail_closed": "Review source on any actor or event conflict; Suppress a superseded or closed proposal; raise `split_required` when distinct meetings have been merged."
+    },
+    {
+      "layer": "L3",
+      "required_output": "An accepted scheduling/open-question capability — requiring a current proposal, a named responder, feasibility/calendar readiness and an expiry — selected from a valid meeting BSO plus the four-brain snapshot, with capability/package/snapshot identifiers, accepted closure, coverage and an exclusion receipt.",
+      "fail_closed": "Observation only / Defer when the capability or the calendar/actor dependency is incomplete; a generic commitment rule may never override the scheduling capability."
+    },
+    {
+      "layer": "L4",
+      "required_output": "Compare accept, decline, counter-propose, clarify and wait/stop against the current BSO plus the authoritative expertise package; eliminate infeasible and stale moves; name the correct actor, target, timing, stakes and Completion. Emit a decision trace, the eliminated candidates, an Alternative, the stop/expiry rule and a confidence vector.",
+      "fail_closed": "Emit no imperative and no action button when the responder or the current proposal cannot be proved."
+    },
+    {
+      "layer": "L5",
+      "required_output": "Exactly one execution for the exact current response or event update, from the accepted decision plus owner/approver, target, calendar dependency and success predicate — keeping the claim distinct from the response, from the event update and from the confirmation. Emit decision/execution/action IDs, the approval, dependency versions and the completion predicate.",
+      "fail_closed": "Block or cancel the execution when the proposal has been superseded, when authority has changed, or when the current calendar conflicts."
+    },
+    {
+      "layer": "L6",
+      "required_output": "Send the approved response once to the exact thread and recipient, apply the approved calendar mutation under send-time authority, reconcile the calendar/provider result, and update only the intended event. Emit a canonical DeliveryResult and a calendar mutation receipt tied to the execution and action IDs.",
+      "fail_closed": "Suppress a stale or revoked response; reconcile any unknown provider result before retrying."
+    },
+    {
+      "layer": "L7",
+      "required_output": "Learn a bounded scheduling preference only from sufficient verified outcomes, using the decision, the actual response, the authoritative meeting state and the counterfactual — keeping actor correction as a separate lineage. Emit outcome/window, correction lineage, support/TTL and evidence of future package consumption.",
+      "fail_closed": "Form no preference from a single availability quote, from a click or send, or from inferred attendance."
+    }
+  ]
+}

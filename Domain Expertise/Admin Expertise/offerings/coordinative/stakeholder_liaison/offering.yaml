@@ -1,0 +1,25 @@
+# Stakeholder Liaison — offering_type branch node under coordinative.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent.
+
+identity:
+  id: admin.offering.coordinative.stakeholder_liaison
+  name: Stakeholder Liaison
+  kind: offering_type
+  domain: admin
+  parent: admin.offering.coordinative
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Holding a conversation together across parties who are not talking to each other directly,
+  and keeping a record that all sides accept.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

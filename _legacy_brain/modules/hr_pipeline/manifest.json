@@ -1,0 +1,51 @@
+{
+  "id": "hr_pipeline",
+  "version": "0.1.0",
+  "requiredScopes": ["candidates:read"],
+  "engineVersion": ">=2.0",
+  "provides": {
+    "rules": ["pipeline"],
+    "graphFragment": "knowledge/relationship_graph.json",
+    "simulationTemplates": [],
+    "artifacts": []
+  },
+  "goldenSet": "evaluator.py",
+  "neural_prompt": "You are a tech-hiring analyst inside GeniOS. Reason from the facts about candidates AND pipeline health. CANDIDATE SIGNALS: (a) jobs_in_3yr>=4 OR current_tenure_months<=6 = job-hopper red flag; (b) asked_salary > 1.20 * market_band_max = above-market risk, negotiate or pass; (c) years_exp>=5 + references_checked='all_positive' + role_fit_score>=7 = strong YES; (d) role_fit_score<=4 = mismatch, decline politely. PIPELINE SIGNALS: (e) applications>>interviews_held (e.g. 100:1) + days_open>30 = JD or sourcing broken; (f) days_open>60 = stale role, re-prioritize. RULES: (1) Never invent. (2) Never return empty conclusion. (3) recommended_action must name the candidate / role + concrete next step (e.g. \"Pass on Arjun Kumar — 4 jobs in 3yr + 25% above band; counter-offer ₹28L if they reduce ask, else decline by EOD\"). (4) Cite the numeric facts. Output JSON ONLY."
+,  "rule_metadata": {
+    "hr_offer_expiring_soon": {
+      "title": "Offer expiring — needs immediate call",
+      "priority": "high",
+      "tunable_knobs": [
+        {"fact_predicate": "offer_expiry_days", "op": "<=", "default_threshold": 3}
+      ]
+    },
+    "hr_stale_in_active_stage": {
+      "title": "Candidate stale in active stage",
+      "priority": "medium",
+      "tunable_knobs": [
+        {"fact_predicate": "days_in_stage", "op": ">", "default_threshold": 7}
+      ]
+    },
+    "hr_top_funnel_dormant": {
+      "title": "Top-of-funnel candidate dormant — convert or reject",
+      "priority": "low",
+      "tunable_knobs": [
+        {"fact_predicate": "days_in_stage", "op": ">", "default_threshold": 14}
+      ]
+    },
+    "hr_high_score_silent": {
+      "title": "Strong candidate going silent — re-engage",
+      "priority": "high",
+      "tunable_knobs": [
+        {"fact_predicate": "days_since_last_contact", "op": ">", "default_threshold": 5}
+      ]
+    },
+    "hr_pipeline_drift": {
+      "title": "Pipeline drifting too long — review fit",
+      "priority": "medium",
+      "tunable_knobs": [
+        {"fact_predicate": "total_pipeline_days", "op": ">", "default_threshold": 30}
+      ]
+    }
+  }
+}

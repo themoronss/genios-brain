@@ -1,0 +1,105 @@
+# GENERATED FILE — do not hand-edit.
+#   regenerate:  python "Domain Expertise/_tools/index.py"
+#
+# The reverse index: Layer 2 emits a situation type, this map says which capabilities apply and
+# which objects to load. Without it the compiler would scan every capability in the domain; with
+# it the lookup is O(1) into the relevant slice — the single biggest performance win in Layer 3
+# once a domain grows past a handful of capabilities.
+#
+# `load` is the union of the situation's own load-set and every serving capability's required
+# objects, minus anything either marks never_load.
+
+domain: Admin Expertise
+
+map:
+# ── Blocked on Layers 1 and 2 ─────────────────────────────────────────────
+# These situations are authored and route NOTHING, because the type that would
+# trigger them is not in any shipped pack's signal_vocab. Not a defect in the
+# authoring — it is the requirement list, stated where the compiler can count it.
+pending_l2_types: {}
+
+# ── Coverage ──────────────────────────────────────────────────────────────
+# Types this domain routes.
+routed_l2_types: []
+
+# Layer 2 emits these and NO situation in ANY domain binds them. Each is a signal
+# that compiles to nothing, silently. Global, not this domain's fault.
+unrouted_l2_types:
+  - account_admin
+
+# Authored but unreachable — no situation routes into them.
+orphan_capabilities:
+  - admin.admin_operations.admin_analytics
+  - admin.admin_operations.business_continuity_administration
+  - admin.admin_operations.process_improvement
+  - admin.admin_operations.request_intake
+  - admin.admin_operations.service_level_management
+  - admin.admin_operations.sop_management
+  - admin.compliance_and_governance.audit_support
+  - admin.compliance_and_governance.board_and_secretarial
+  - admin.compliance_and_governance.data_protection_administration
+  - admin.compliance_and_governance.licence_and_registration
+  - admin.compliance_and_governance.policy_administration
+  - admin.compliance_and_governance.statutory_filing
+  - admin.contract_and_vendor.contract_administration
+  - admin.contract_and_vendor.procurement_administration
+  - admin.contract_and_vendor.purchase_order_management
+  - admin.contract_and_vendor.renewal_management
+  - admin.contract_and_vendor.vendor_onboarding
+  - admin.contract_and_vendor.vendor_performance_management
+  - admin.executive_support.approval_coordination
+  - admin.executive_support.briefing_and_preparation
+  - admin.executive_support.calendar_management
+  - admin.executive_support.commitment_tracking
+  - admin.executive_support.delegation_and_task_routing
+  - admin.executive_support.gatekeeping
+  - admin.executive_support.inbox_and_correspondence
+  - admin.facilities_and_assets.asset_issuance_and_recovery
+  - admin.facilities_and_assets.asset_register
+  - admin.facilities_and_assets.health_and_safety_administration
+  - admin.facilities_and_assets.maintenance_coordination
+  - admin.facilities_and_assets.workplace_management
+  - admin.finance_administration.budget_tracking
+  - admin.finance_administration.expense_management
+  - admin.finance_administration.invoice_processing
+  - admin.finance_administration.payables_administration
+  - admin.finance_administration.receivables_follow_up
+  - admin.finance_administration.reimbursement_processing
+  - admin.meeting_operations.action_item_tracking
+  - admin.meeting_operations.agenda_preparation
+  - admin.meeting_operations.follow_up_coordination
+  - admin.meeting_operations.meeting_scheduling
+  - admin.meeting_operations.minutes_and_documentation
+  - admin.people_administration.access_and_identity_administration
+  - admin.people_administration.attendance_and_leave
+  - admin.people_administration.employee_records_administration
+  - admin.people_administration.offboarding_administration
+  - admin.people_administration.onboarding_administration
+  - admin.people_administration.payroll_input_administration
+  - admin.records_and_documentation.document_control
+  - admin.records_and_documentation.filing_and_retrieval
+  - admin.records_and_documentation.knowledge_base_maintenance
+  - admin.records_and_documentation.retention_and_archival
+  - admin.records_and_documentation.version_control
+  - admin.travel_and_events.event_coordination
+  - admin.travel_and_events.itinerary_management
+  - admin.travel_and_events.travel_booking
+  - admin.travel_and_events.travel_expense_administration
+  - admin.travel_and_events.visa_and_documentation
+
+# Authored but no capability's objects.yaml loads them.
+unreachable_objects: []
+
+stats:
+  l2_types_total: 7
+  l2_types_routed_here: 0
+  l2_types_unrouted_globally: 1
+  l2_types_pending: 0
+  situations: 0
+  capabilities: 57
+  capabilities_stub: 57
+  capabilities_complete: 0
+  capabilities_routed: 0
+  objects_total: 25
+  objects_core: 20
+  objects_scoped: 5

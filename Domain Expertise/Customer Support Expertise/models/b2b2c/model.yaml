@@ -1,0 +1,83 @@
+# B2B2C support — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: customer_support.model.b2b2c
+  name: B2B2C Support
+  kind: model
+  domain: customer_support
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  We supply a partner, the partner serves consumers, and support has to serve both. The
+  structural fact that makes this its own model and not a blend of the other two: there are
+  two customers with genuinely conflicting interests, and only one of them has a contract
+  with us. The partner owns the end-user relationship and does not want us in it; the end
+  user owns the pain and does not care about our contracting chain. Entitlement is inherited
+  rather than held — an end user has no plan of their own, only whatever their partner bought
+  — so entitlement verification requires resolving identity upward through the partner before
+  anything can be promised. During an incident this inverts: the partner's support team
+  becomes a queue of its own, contacting us on behalf of thousands, and their tickets are all
+  the same ticket.
+  Two habits break here in opposite directions. A B2C operator answers the end user directly
+  because it is faster, and in doing so destroys the partner's ability to run their own
+  support and their record of it. A B2B operator refuses to speak to anyone but the partner,
+  which is correct on a Tuesday and indefensible during an outage the partner cannot explain.
+
+characteristics:
+  requester: "either the partner's own support or operations team, or the partner's end customer — and frequently we cannot tell which from the ticket alone"
+  typical_resolution_hours: 12
+  volume_shape: "low steady volume from a handful of partner teams, punctuated by correlated mass volume when a partner has an incident and its consumers overflow to us"
+  staffing_model: "partner-facing pooled team with named contacts per partner, plus an escalation path that can reach engineering fast"
+  coverage: "aligned to the partner's own coverage commitments, which are usually wider than ours"
+  automation_level: "moderate for partner teams, who are technical and repeat contacts; near zero for end users, who arrive confused about who we even are"
+
+capabilities:
+  emphasises:
+    # Whose entitlement, and who is actually asking, are the same question here and it is the
+    # first question, not a formality.
+    - customer_support.entitlement_and_sla.entitlement_verification
+    - customer_support.intake_and_triage.routing_and_assignment
+    # Partner-side incidents arrive as N identical tickets from N of their agents.
+    - customer_support.intake_and_triage.duplicate_and_merge
+    - customer_support.escalation_and_incident.major_incident_communication
+    - customer_support.escalation_and_incident.engineering_handoff
+    # What we may promise the end user is bounded by what the partner has promised them,
+    # which we do not control and frequently have not read.
+    - customer_support.customer_communication.expectation_setting
+    - customer_support.support_management.account_relationship_management
+    - customer_support.support_operations.cost_to_serve
+
+objects:
+  extends:
+    - object: customer_support.obj.core.requester
+      require_properties: [role]
+      note: >
+        Partner-agent or end-user is the single most consequential property in this branch.
+        Everything downstream — tone, entitlement, what may be disclosed, whether we reply at
+        all — resolves off it, and the canonical object treats it as descriptive.
+    - object: customer_support.obj.core.entitlement
+      require_properties: [plan]
+      note: >
+        Inherited entitlement. The end user's rights are a projection of the partner's
+        contract, so the entitlement object must resolve through a party who is not in the
+        conversation. An unresolved chain means nothing may be promised, not that the default
+        applies.
+    - object: customer_support.obj.core.incident
+      note: >
+        An incident here has two comms audiences on different clocks: the partner needs
+        engineering-grade detail immediately so they can hold their own line, and the end
+        users need reassurance they will mostly receive from the partner, not from us.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional

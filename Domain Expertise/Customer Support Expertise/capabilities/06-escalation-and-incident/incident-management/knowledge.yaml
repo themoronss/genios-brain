@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.escalation_and_incident.incident_management
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.incident_management.declare_early_roles_fast
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.incident_management.coordination_is_the_scarce_resource
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

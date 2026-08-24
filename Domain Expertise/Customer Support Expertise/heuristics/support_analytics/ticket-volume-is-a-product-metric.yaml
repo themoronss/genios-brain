@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.support_analytics.ticket_volume_is_a_product_metric
+  name: Ticket volume is a product metric
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.support_analytics
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Support volume is the product's error rate as experienced by humans. A rising driver category
+    is a product defect report written in tickets — analytics' highest use is routing it there.
+  answers:
+  - What is ticket-driver analysis really measuring?

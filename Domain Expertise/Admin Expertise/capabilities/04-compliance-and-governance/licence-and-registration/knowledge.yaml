@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.compliance_and_governance.licence_and_registration
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.licence_and_registration.licence_register_with_renewal_runway
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.licence_and_registration.lapse_gaps_are_retroactively_expensive
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

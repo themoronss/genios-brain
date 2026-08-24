@@ -1,0 +1,28 @@
+identity:
+  id: admin.pb.visa_and_documentation.documents_on_the_longest_lead_time
+  name: Documents on the longest lead time
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.travel_and_events.visa_and_documentation
+  subdomain: travel_and_events
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Visa and document work starts the moment travel is probable — validity checks, requirement
+    research, applications with buffer — because document lead times are the one part of a trip that cannot
+    be expedited by caring harder.
+steps:
+- order: 1
+  name: Check passport validity at trip conception
+  description: Six-month validity rules kill trips at the airport. First check, always.
+  actor: human
+- order: 2
+  name: Confirm entry requirements from primary sources
+  description: Embassy/official sources, current — requirements change and blogs lag.
+  actor: human
+- order: 3
+  name: Apply with buffer and track
+  description: Application in with time to spare, status tracked, escalation path known. A visa in process
+    is a trip at risk.
+  actor: human

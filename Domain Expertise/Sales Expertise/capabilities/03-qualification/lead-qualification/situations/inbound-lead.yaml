@@ -1,0 +1,68 @@
+identity:
+  id: sales.sit.inbound_lead
+  name: Inbound Lead
+  domain: sales
+  owner_capability: sales.qualification.lead_qualification
+  version: 1.0.0
+  status: draft
+
+description: >
+  Someone came to us. They raised their hand — requested a demo, replied to a campaign, or
+  arrived through an introduction. The defining property is that intent already exists and
+  our job is to qualify it quickly rather than manufacture it. Speed dominates: inbound
+  intent decays faster than any other kind, and the load-set below is deliberately small so
+  the first response is not waiting on a full committee map.
+
+matches:
+  # ── The join to Layer 2 ──────────────────────────────────────────────────────────────
+  # Every type below is a real member of the shipped packs' signal_vocab. Naming anything
+  # else here is an ERROR, because the registry lookup would never resolve and the failure
+  # would be silent — the capability simply never compiles and nobody sees why.
+  l2_situation_types:
+    - prospect_relationship
+    - opportunity
+  scope: person
+  when:
+    # Inbound means the ball arrived with us. Without this narrowing the situation also
+    # catches outbound sequences that happened to produce one reply.
+    - {path: thread.ball_in_court, op: "=", value: us}
+
+also_serves:
+  - sales.prospecting_and_outreach.follow_up
+  - sales.prospecting_and_outreach.meeting_booking
+
+objects:
+  load:
+    - sales.obj.core.budget
+    - sales.obj.core.timeline
+    - sales.obj.core.icp
+  optional:
+    - sales.obj.core.decision_maker
+    - sales.obj.core.champion
+  never_load:
+    # Committee analysis on a first inbound touch is expensive and answers a question nobody
+    # is asking yet. It loads at the enterprise-deal situation, once there is a deal to map.
+    - sales.obj.core.buying_committee
+
+priority_bp: 7500
+typical_duration_days: 14
+
+signals_of_progress:
+  - demo_requested
+  - budget_approved
+  - pricing_discussed
+  - proposal_sent
+
+signals_of_decay:
+  - closed_lost_mention
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Three objects loaded instead of the twenty the qualification subdomain will eventually
+    own. That reduction is the entire reason this file exists.

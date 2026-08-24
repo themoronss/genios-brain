@@ -1,0 +1,34 @@
+# Competitive-threat rules. Reversible recommendations (no hard).
+# Grounded in B2B deal-health practice: an active competitor evaluation is a
+# leading loss/churn signal even when usage looks stable.
+
+- id: competitor_poc_active
+  module: sales
+  priority: 85
+  when:
+    all:
+      - fact: competitor_poc_active
+        op: "=="
+        value: true
+  then:
+    conclusion: competitive_threat
+    recommend: schedule_differentiation_call_with_champion
+    reason: "Prospect is actively running a competitor POC — win-back/defend now"
+  hard: false
+
+- id: competitor_named_going_quiet
+  module: sales
+  priority: 75
+  when:
+    all:
+      - fact: competing_vendor_named
+        op: "=="
+        value: true
+      - fact: days_since_last_contact
+        op: ">"
+        value: 7
+  then:
+    conclusion: competitive_threat
+    recommend: reengage_before_competitor_locks_in
+    reason: "Named competitor in play and we've gone quiet >7 days — momentum risk"
+  hard: false

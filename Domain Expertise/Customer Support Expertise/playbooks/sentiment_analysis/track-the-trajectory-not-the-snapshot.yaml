@@ -1,0 +1,28 @@
+identity:
+  id: customer_support.pb.sentiment_analysis.track_the_trajectory_not_the_snapshot
+  name: Track the trajectory, not the snapshot
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.sentiment_analysis
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Account sentiment is a moving line — each interaction scored small, trends watched — because
+    a single angry ticket means little while a three-month slide from warm to terse means everything.
+steps:
+- order: 1
+  name: Score per interaction, lightly
+  description: Coarse positive/neutral/negative beats a fragile fine scale. Consistency across scorers
+    matters more than precision.
+  actor: human
+- order: 2
+  name: Alert on slope, not on level
+  description: Warm→neutral→terse across a quarter is the churn precursor; one bad day is Tuesday.
+  actor: human
+- order: 3
+  name: Pair the score with its cause
+  description: Sentiment without a named driver is a mood ring. 'Falling since the March billing bug'
+    is actionable; '6.2' is not.
+  actor: human

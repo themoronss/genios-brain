@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.post_sale_and_growth.renewal
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.renewal.renewal_starts_at_day_one
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.renewal.auto_renew_is_a_mechanism__not_a_motion
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

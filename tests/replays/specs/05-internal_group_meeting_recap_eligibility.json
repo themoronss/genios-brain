@@ -1,0 +1,156 @@
+{
+  "replay_id": "05",
+  "slug": "internal_group_meeting_recap_eligibility",
+  "title": "Internal or Group Meeting Recap Eligibility",
+  "failure_class": "A past calendar event is treated as proof of occurrence, attendance and an external recap obligation, producing a high-confidence \"Send a recap\" CTA built from boilerplate invitation text.",
+  "summary": "A calendar event sits in the past — `[Session] Building Your MVP | Launchpad 30`, Rohit plus a large attendee cohort, a boilerplate Zoom join description, and nothing else: no transcript, no notes, no attendance receipt, no promised deliverable. The observed product surface renders \"Met N days ago\" alongside a \"Send a recap of the meeting\" recommendation at 93–94% displayed confidence, collapsing four separate truths (scheduled, occurred, attended, produced an external obligation) into one. The replay requires each truth to be an independent field and every unproved one to fail closed, so the base fixture yields Observation only or suppression with no send action and at most a permission-safe \"Review calendar/source\" route. An actionable follow-up may appear only once occurrence, relevant attendance, a permitted recipient, an exact unresolved obligation, owner/approval, appropriate content and an observable Completion are all proven — and when the real obligation is a promised deck or answer, the recommendation must name that deliverable, not \"send recap\".",
+  "business_subject": "The bounded meeting relationship or the exact post-meeting commitment — not the organizer, not the attendee list, not the calendar title, and not every person in the cohort.",
+  "current_failure": "The surface presents \"Met N days ago\", the Zoom invitation detail and a recap recommendation together at 93–94% displayed confidence, treating a scheduled past event as evidence of occurrence, attendance and an external obligation. For an internal workshop, a self-owned block, a cancelled/no-show call or a cohort session with no promised follow-up, this manufactures outbound work and can expose attendee information. The screenshot proves only the rendered symptom; it does not establish whether the cause is capture, context reduction, reasoning or projection, so the replay mutates each truth independently.",
+  "expected_behavior": "The base fixture produces Observation only or suppression, stating \"Past group session found; occurrence, attendance and external recap obligation are unverified.\" No send/recap action button exists. A permission-safe \"Review calendar/source\" route may be offered that asks exactly whether the event occurred and whether an external deliverable was agreed. An actionable recap/follow-up appears only after evidence proves every gate: occurrence, relevant attendance, a permitted external recipient or bounded group, an exact unresolved follow-up, owner/approval, appropriate content/source, and observable Completion. Where the real obligation is a promised deck or answer, the recommendation names that deliverable.",
+  "open_loop": "None in the base fixture — no verified external decision-maker, unresolved question, deliverable, owner or completion predicate exists; `open_loop` must be carried as explicitly missing, independent of `scheduled`, `occurred`, `attended` and `external_counterparty`.",
+  "why_now": "Nothing legitimately makes the base fixture actionable — calendar age alone is not a trigger. \"Why now\" becomes valid only when an evidence-grounded unresolved obligation exists (e.g. a deck promised on the call with a named external recipient and a date), and it must be stated in the decision trace rather than derived from days-since-meeting.",
+  "passes_today": false,
+  "prohibited_behaviors": [
+    "Attendance or discussion is never inferred from the existence of a past scheduled event.",
+    "No recap is sent to the organizer, to self, to the internal team, or to the whole cohort merely because their addresses exist on the invitation.",
+    "Boilerplate invitation/Zoom join text is never copied forward or presented as meeting intelligence.",
+    "Key points, next steps, recipient, owner or outcome are never invented when no source evidence supplies them.",
+    "A calendar-derived priority or recency score is never labelled or displayed as decision confidence.",
+    "Learning never generalises from clicks or sends that every past meeting should trigger outreach."
+  ],
+  "layer_obligations": [
+    {
+      "layer": "L1",
+      "required_output": "Immutable calendar receipts carrying event id/version, organizer, invitees, response/status transitions, cancellations, recurrence, start/end, title/description and source readiness, with current provider state, visibility/use, and the explicit absence of transcript or attendance evidence recorded. L1 never creates attendance.",
+      "fail_closed": "If event version, status or source freshness is stale, park the item or route to Review source; publish only the `scheduled` state and nothing downstream of it."
+    },
+    {
+      "layer": "L2",
+      "required_output": "A BusinessSituationObject bounding exactly one meeting occurrence, with the meeting subject, roleful participants, verified state, exact evidence membership, internal/external/mixed classification derived only from grounded identities, and `attendance`, `external_counterparty`, `outcome` and `open_loop` carried as explicitly missing.",
+      "fail_closed": "Emit Observation only or Suppress; never aggregate across the attendee cohort into person-wide conclusions."
+    },
+    {
+      "layer": "L3",
+      "required_output": "An ExpertisePackage naming an accepted recap/follow-up capability and version, with four-brain snapshot, visibility and coverage — selected only when the capability's required occurrence, audience, purpose and obligation objects are all complete.",
+      "fail_closed": "Return unsupported/incomplete and authorize no playbook; falling back to a generic Sales package is forbidden."
+    },
+    {
+      "layer": "L4",
+      "required_output": "A decision trace comparing the exact deliverable, a clarification, internal documentation, wait/stop and no-action candidates, with rejections, why-now, owner, expiry, confidence vector, stakes and Completion, and an explicit no-action candidate when gates fail.",
+      "fail_closed": "Return `INSUFFICIENT_CONTEXT`, `NO_ACTION` or Review source; never emit a generic \"Send recap\"."
+    },
+    {
+      "layer": "L5",
+      "required_output": "An ExecutionObject only for a named recipient and named deliverable with an accountable owner after authority/approval, carrying scoped action, dependencies, content/asset version, approval and a success predicate.",
+      "fail_closed": "No execution is created for the base fixture; any existing execution is cancelled if the event state later becomes cancelled or no-show."
+    },
+    {
+      "layer": "L6",
+      "required_output": "A canonical DeliveryResult linked to its execution/action and to a provider receipt, produced only after audience, permission, event/decision authority and payload are revalidated immediately before send.",
+      "fail_closed": "Suppress materialization of any stale, internal-only, wrong-audience or unverified recap."
+    },
+    {
+      "layer": "L7",
+      "required_output": "Learning joins decision exposure, actual action, delivery, external acceptance/result and permitted use; bounded efficacy claims only after repeated verified follow-up outcomes.",
+      "fail_closed": "No proposal may be formed from calendar age or clicks alone; no promotion occurs, and cancelled/no-show/internal cases are recorded as neutral or suppressed, never as failed Sales plays."
+    }
+  ],
+  "mutations": [
+    {
+      "mutation": "Internal-only team workshop, occurrence verified",
+      "expected_decision": "Suppress any outbound recap; create an internal note or internal action only if an exact internal commitment exists",
+      "prohibited": "Emailing everyone on the invite because the meeting demonstrably occurred",
+      "pass_condition": "No external delivery is produced; any internal completion is receipted separately from external delivery",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No counterparty role model and no grounded internal/external classification — every person node is interchangeable, so an internal-only audience cannot be distinguished from an external one; and there is no suppress state in cards.level."
+    },
+    {
+      "mutation": "Self-only focus block (no other participants)",
+      "expected_decision": "Suppress",
+      "prohibited": "Recommending \"Send a recap to yourself\"",
+      "pass_condition": "Zero card and zero action are produced for the event",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No self/owner role distinction exists; the org_seats-based self-filter is dead, and there is no suppress vocabulary — the engine cannot express a deliberate suppression as distinct from an accidental absence."
+    },
+    {
+      "mutation": "Event cancelled before its start time",
+      "expected_decision": "Suppress, while preserving the cancellation receipt",
+      "prohibited": "Rendering \"Met N days ago\" for an event that never took place",
+      "pass_condition": "No ExecutionObject and no DeliveryObject exist for the event",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No event/thread state model: status transitions and cancellations are not tracked across messages, so `scheduled` cannot be separated from `occurred`; suppression vocabulary is also absent."
+    },
+    {
+      "mutation": "External invitee declined; no attendance evidence anywhere",
+      "expected_decision": "Observation only, or a Review-source route",
+      "prohibited": "Assuming the meeting happened because the event is in the past",
+      "pass_condition": "The missing `attendance` field remains visible on the card rather than being silently filled",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No abstention vocabulary — cards.level only carries prescriptive/predictive, there is no observation/review state, and DEFER is unreachable because confidence_floor_bp defaults to 0 in every live manifest. Response/decline status is also not modelled."
+    },
+    {
+      "mutation": "External meeting verified attended, but no open obligation exists",
+      "expected_decision": "No action / stop, with an explicit no-action decision trace",
+      "prohibited": "Emitting a generic courtesy recap by default",
+      "pass_condition": "An explicit no-action trace is produced and recorded",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L4 produces exactly one candidate per run and never eliminates; there is no do-nothing candidate and priority_override short-circuits the weighted formula, so an explicit no-action decision cannot be represented."
+    },
+    {
+      "mutation": "External meeting where a deck was explicitly promised",
+      "expected_decision": "Recommend delivery of that exact deck, naming the recipient and date, and offer a clarify/renegotiate Alternative",
+      "prohibited": "Substituting a generic recap for the specific promised deliverable",
+      "pass_condition": "Completion is defined as delivery and acceptance of that exact deck, not as message-sent",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No Alternative candidate exists (single-candidate L4), no counterparty role model to name the recipient, no thread state to derive the promise, and L5 has never produced an execution row so a deliverable-scoped action cannot be created."
+    },
+    {
+      "mutation": "Group cohort session where the organizer explicitly promised shared notes",
+      "expected_decision": "Governed group follow-up to eligible attendees only, with approved content and a privacy-safe audience",
+      "prohibited": "Exposing the full attendee list, or sending to people who declined or did not participate",
+      "pass_condition": "Exactly one deduplicated delivery per lawful recipient, with receipt reconciliation",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L6 delivery control plane has never run (delivery_outbox is empty across all orgs); there is no audience eligibility model, no dedupe-per-recipient path, and no provider receipt reconciliation."
+    },
+    {
+      "mutation": "Mixed internal/external event containing one confidential segment",
+      "expected_decision": "Narrow the content and audience, or require explicit approval before any send",
+      "prohibited": "Sending one common recap that carries restricted facts to the whole audience",
+      "pass_condition": "A visibility intersection is computed and enforced on the outgoing content",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No role or visibility model on participants and no approval gate; content-level visibility intersection has no representation anywhere in the pipeline, and L6 revalidation has never executed."
+    },
+    {
+      "mutation": "Recurring event where only one occurrence actually happened",
+      "expected_decision": "Scope evidence and any action to the specific occurrence id",
+      "prohibited": "Producing one card that blends all recurrences together",
+      "pass_condition": "Exactly one decision, bound to the current occurrence",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No occurrence/thread-level state — extraction is one message at a time, so recurrence instances cannot be individuated or bound to a per-occurrence decision."
+    },
+    {
+      "mutation": "Transcript exists and explicitly records no next steps",
+      "expected_decision": "No action / stop, even though attendance is proven",
+      "prohibited": "Recommending a recap merely because a transcript source exists",
+      "pass_condition": "The decision cites the explicit absence of an obligation in the transcript, not the absence of a source",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No do-nothing candidate in L4 and no abstention vocabulary; the engine also cannot distinguish \"evidence says no obligation\" from \"no evidence\", since observations carry no such negative-finding state."
+    },
+    {
+      "mutation": "Meeting outcome already recorded in another tool",
+      "expected_decision": "Suppress the duplicate follow-up when the completion predicate is satisfied",
+      "prohibited": "Resurfacing the calendar-derived task after the loop is already closed elsewhere",
+      "pass_condition": "A cross-channel completion receipt closes the loop and is visible in the trace",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No completion predicate and no cross-channel resolution state; L5 has never produced an execution row and L7 has no verdicts, so nothing can mark a loop closed."
+    },
+    {
+      "mutation": "Calendar source disconnected after the invitation was captured",
+      "expected_decision": "Observation only; freshness is reported as unknown",
+      "prohibited": "Treating the absence of a cancellation or update as confirmation the meeting stands",
+      "pass_condition": "The source-readiness hard gate fails and blocks any action",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No abstention/observation state to route into, and no source-readiness hard gate that fails closed on stale provider state — absence of an update is currently indistinguishable from a confirmed state."
+    }
+  ]
+}

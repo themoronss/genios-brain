@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.renewal.auto_renew_is_a_mechanism__not_a_motion
+  name: Auto-renew is a mechanism, not a motion
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.renewal
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: An auto-renew clause collects signatures, not commitment — accounts that renew by default
+    and disengage churn violently at the first budget review. Treat every renewal as re-earned, clause
+    or no clause.
+  answers:
+  - Does an auto-renewal clause make renewal safe?

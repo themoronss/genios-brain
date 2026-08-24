@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.admin_operations.sop_management
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.sop_management.sops_from_real_runs
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.sop_management.sops_are_resilience_not_bureaucracy
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

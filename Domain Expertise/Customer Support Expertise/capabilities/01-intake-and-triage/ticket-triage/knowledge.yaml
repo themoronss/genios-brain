@@ -1,0 +1,48 @@
+# Knowledge manifest — references the definition pages whose identity.owner_capability
+# names this capability. Auto-linked from the pages' own declarations: the pages were
+# written and the index never was, so the engine opened an empty list above a full shelf.
+capability: customer_support.intake_and_triage.ticket_triage
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.ticket_triage.blast_radius_before_depth
+  - customer_support.pb.ticket_triage.entitlement_before_complaint
+  - customer_support.pb.ticket_triage.hand_off_with_the_assumption
+  - customer_support.pb.ticket_triage.name_the_finishing_queue
+  - customer_support.pb.ticket_triage.one_question_then_route
+  - customer_support.pb.ticket_triage.state_the_coin_flip
+  - customer_support.pb.ticket_triage.two_questions_in_order
+  - customer_support.pb.ticket_triage.workaround_test
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.ticket_triage.asymmetric_revision
+  - customer_support.heu.ticket_triage.deadlines_are_claims
+  - customer_support.heu.ticket_triage.quiet_channels_are_not_low_priority
+  - customer_support.heu.ticket_triage.reopen_is_a_triage_signal
+  - customer_support.heu.ticket_triage.reported_cause_is_evidence_about_the_reporter
+  - customer_support.heu.ticket_triage.second_report_changes_severity
+  - customer_support.heu.ticket_triage.size_is_not_severity
+  - customer_support.heu.ticket_triage.slow_triage_means_missing_fact
+  - customer_support.heu.ticket_triage.tone_is_not_severity
+  - customer_support.heu.ticket_triage.two_hops_means_escalate
+  - customer_support.heu.ticket_triage.unknown_fails_toward_attention
+mental_models:
+  core: []
+  scoped:
+  - customer_support.mm.ticket_triage.bet_with_someone_elses_money
+  - customer_support.mm.ticket_triage.measurement_versus_allocation
+  - customer_support.mm.ticket_triage.one_way_door_with_a_hidden_hinge
+  - customer_support.mm.ticket_triage.queue_as_hypothesis
+  - customer_support.mm.ticket_triage.taxonomy_is_a_compression
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped:
+  - customer_support.df.ticket_triage.blast_radius_ladder
+  - customer_support.df.ticket_triage.entitlement_first
+  - customer_support.df.ticket_triage.impact_times_urgency
+  - customer_support.df.ticket_triage.severity_priority_matrix
+  - customer_support.df.ticket_triage.workaround_ladder

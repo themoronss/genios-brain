@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.incident_management.coordination_is_the_scarce_resource
+  name: Coordination is the scarce resource
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.incident_management
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Mid-incident, more engineers rarely speeds resolution — clearer ownership does. When progress
+    stalls, check who is deciding before adding who is typing.
+  answers:
+  - What does a stalled incident usually lack?

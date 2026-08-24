@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.service_level_management.a_stated_sla_changes_both_sides
+  name: A stated SLA changes both sides
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.service_level_management
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Publishing targets disciplines the provider AND calms the requester — most chasing is uncertainty,
+    not urgency. The SLA's biggest product is the silence of people who know when to expect.
+  answers:
+  - What do published admin SLAs change?

@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.proposal_and_commercials.objection_handling
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.objection_handling.isolate__then_answer
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.objection_handling.objections_are_engagement
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

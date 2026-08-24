@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.champion_identification.test_the_champion__dont_crown_them
+  name: Test the champion, don't crown them
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.champion_identification
+  subdomain: qualification
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A champion is not the friendliest contact — it is the person who sells when you are not in
+    the room, with personal stake in the outcome and real standing. Champions are verified by what they
+    DO between meetings, never by warmth in them.
+steps:
+- order: 1
+  name: Give a small internal task
+  description: Ask them to forward a one-pager to the economic buyer, or book the security review. A champion
+    does it within days; a fan apologises next call.
+  actor: human
+- order: 2
+  name: Check standing, kindly
+  description: Do colleagues seek their view? Have they shipped internal changes before? A junior enthusiast
+    can be a scout, not a champion — treat accordingly.
+  actor: human
+- order: 3
+  name: Confirm the personal win
+  description: Champions carry risk for a reason — a metric they own, a promotion path, a pain they personally
+    feel. If you cannot name their win, you have a contact, not a champion.
+  actor: human

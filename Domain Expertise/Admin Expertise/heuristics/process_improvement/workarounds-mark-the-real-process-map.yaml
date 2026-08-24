@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.process_improvement.workarounds_mark_the_real_process_map
+  name: Workarounds mark the real process map
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.process_improvement
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Wherever staff built a workaround, the official process failed them. The workaround inventory
+    is the most honest process-improvement backlog available.
+  answers:
+  - Where should process improvement look first?

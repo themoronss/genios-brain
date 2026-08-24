@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.finance_administration.receivables_follow_up
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.receivables_follow_up.collections_as_courteous_system
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.receivables_follow_up.awkwardness_is_expensive
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

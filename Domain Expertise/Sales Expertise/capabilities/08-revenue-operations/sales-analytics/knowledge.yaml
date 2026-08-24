@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.revenue_operations.sales_analytics
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.sales_analytics.funnel_leak_analysis
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.sales_analytics.activity_metrics_measure_effort__funnel_metrics_measure_trut
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

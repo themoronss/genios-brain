@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.commitment_tracking.forgotten_beats_broken_for_damage
+  name: Forgotten beats broken for damage
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.commitment_tracking
+  subdomain: executive_support
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A renegotiated promise shows respect; a forgotten one shows the person did not register.
+    People forgive the first almost indefinitely and remember the second almost permanently.
+  answers:
+  - Which failure mode of promises costs more trust?

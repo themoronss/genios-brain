@@ -1,0 +1,27 @@
+identity:
+  id: sales.prospecting_and_outreach.linkedin_outreach
+  name: LinkedIn Outreach
+  domain: sales
+  subdomain: prospecting_and_outreach
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  A channel inside outreach. Distinct expertise: warm-path discovery through mutual
+  connections, profile-signal reading, and the platform's own volume limits.
+
+question: "How do we use a social graph to earn a conversation?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

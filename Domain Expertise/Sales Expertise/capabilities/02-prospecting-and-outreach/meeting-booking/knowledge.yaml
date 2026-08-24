@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.prospecting_and_outreach.meeting_booking
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.meeting_booking.frictionless_scheduling
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.meeting_booking.the_proposer_holds_the_ball
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

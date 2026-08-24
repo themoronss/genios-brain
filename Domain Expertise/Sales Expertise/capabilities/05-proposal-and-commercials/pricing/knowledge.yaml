@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.proposal_and_commercials.pricing
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.pricing.anchor_and_hold_with_reasons
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.pricing.discounting_is_a_signal__not_a_lever
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

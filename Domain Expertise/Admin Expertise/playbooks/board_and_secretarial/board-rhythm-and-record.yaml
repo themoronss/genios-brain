@@ -1,0 +1,30 @@
+identity:
+  id: admin.pb.board_and_secretarial.board_rhythm_and_record
+  name: Board rhythm and record
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.board_and_secretarial
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Board operations run on rhythm — scheduled meetings, packs out days ahead, minutes and resolutions
+    filed properly — because governance quality is judged later, from the record, by people who were not
+    there.
+steps:
+- order: 1
+  name: Calendar the year, pack the week before
+  description: Dates set annually; materials out 3-5 days ahead. A pack read in the room is a briefing,
+    not a board meeting.
+  actor: human
+- order: 2
+  name: Minute decisions and dissent precisely
+  description: Resolutions verbatim, material dissent recorded. Board minutes are legal documents wearing
+    meeting-notes clothing.
+  actor: human
+- order: 3
+  name: Keep the statutory registers current
+  description: Directors, shareholdings, resolutions filed where law requires — diligence-ready always,
+    because diligence arrives unannounced.
+  actor: human

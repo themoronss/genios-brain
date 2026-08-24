@@ -1,0 +1,15 @@
+identity:
+  id: sales.heu.legal_review.redlines_mean_the_deal_is_real
+  name: Redlines mean the deal is real
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.legal_review
+  subdomain: closing
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Legal does not review contracts for products the business rejected. Redlines are cost, not
+    threat — the decision has been made; what remains is price-of-risk housekeeping.
+  answers:
+  - Should heavy redlining worry the seller?

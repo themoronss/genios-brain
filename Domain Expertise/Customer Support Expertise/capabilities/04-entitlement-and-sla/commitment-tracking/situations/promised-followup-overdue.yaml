@@ -1,0 +1,124 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ONE OF THE FIVE THAT ROUTE ON DAY ONE — and the one with the best claim to being first.
+#
+# THE ARGUMENT THIS FILE EXISTS TO MAKE: a broken personal promise outranks a breached SLA,
+# and every support tool on the market is built the other way round.
+#
+# An SLA breach is institutional. A number was in a contract, a clock ran out, the customer
+# may not know it happened, and if they do it is often settled with a credit. Nobody feels
+# betrayed by a percentile. A promised follow-up is different in kind: a named human said a
+# specific thing would happen at a specific time to another named human, who then arranged
+# their day around it. When it does not arrive, the customer does not conclude that we are
+# slow. They conclude that we forgot them — and forgotten is the judgement that survives the
+# resolution, poisons the CSAT of a ticket that was eventually fixed well, and turns up
+# months later as the reason a renewal conversation is cold.
+#
+# The cruelty of the current tooling is that the SLA has a clock, a dashboard and an alert,
+# while the promise that actually carries the relationship lives in the middle of a sentence
+# in a reply and is watched by nobody. This situation is the correction, and it is the one
+# place in this domain where the borrowed sales substrate is not a compromise at all:
+# commitment.due_at and commitment.action mean exactly what support needs them to mean.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.sit.promised_followup_overdue
+  name: Promised Follow-up Overdue
+  domain: customer_support
+  owner_capability: customer_support.entitlement_and_sla.commitment_tracking
+  version: 1.0.0
+  status: draft
+
+description: >
+  Someone on our side said they would do a specific thing by a specific time, and that time
+  has passed with nothing sent. The callback before end of day, the update on Friday, the bug
+  that was going to be filed with engineering. These are the promises no contract created and
+  no clock is watching, and they are the ones customers remember most sharply, because a human
+  said them directly. The load-bearing expert judgement here is that the promise is discharged
+  by CONTACT, not by COMPLETION: an update saying there is no news yet keeps the relationship
+  whole, while silence — even silence spent working hard on the problem — is read as being
+  forgotten. So the correct response to this situation is almost never to rush the underlying
+  work. It is to write, today, with whatever is true, and to re-promise a date that will
+  survive.
+
+matches:
+  # commitment_overdue is a real, shipped, domain-neutral type over commitment.due_at and
+  # commitment.action. It fires on a promise extracted from conversational language, which is
+  # precisely what a support commitment is — nobody ever writes "I hereby commit".
+  l2_situation_types:
+    - support_case
+    - support_contact
+
+  scope: person
+
+  when:
+    # A commitment with no recorded action is not chaseable: you cannot close a loop you
+    # cannot name, and a nudge that says "you promised something" and not WHAT teaches agents
+    # to dismiss the alert. Narrowing on the action being present costs a small number of real
+    # commitments and buys the credibility of every one that survives.
+    - {exists: commitment.action}
+
+# The message itself is drafted by response_drafting; de_escalation needs to know because a
+# missed personal promise is the most common precursor to an escalation that has no technical
+# cause at all — the ticket is fine and the customer is furious about being forgotten.
+also_serves:
+  - customer_support.customer_communication.response_drafting
+  - customer_support.customer_communication.de_escalation
+
+objects:
+  # The promise, the work it was made about, and the person it was made to. Three. Anything
+  # more and the compile starts answering the technical question instead of the human one.
+  load:
+    - customer_support.obj.core.commitment
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.requester
+  optional:
+    # sla_target only to check whether the personal promise was tighter than the contractual
+    # one, which it usually is and which is the thing agents forget. conversation for the
+    # exact wording promised — re-promising in different words reads as backing out.
+    - customer_support.obj.core.sla_target
+    - customer_support.obj.core.conversation
+    - customer_support.obj.core.customer_sentiment
+  never_load:
+    # The knowledge article answers the question. This situation is not about the question.
+    # Loading it reliably produces a reply that supplies an answer and never acknowledges the
+    # missed promise, which is the single worst response available here — it reads as
+    # pretending the lapse did not happen, and customers who were merely disappointed become
+    # customers who feel handled.
+    - customer_support.obj.core.knowledge_article
+
+# Deliberately above customer_awaiting_reply (8200). An unanswered message is a customer
+# waiting; an overdue promise is a customer who was given a time and believed it. The gap is
+# the cost of the belief.
+priority_bp: 9000
+typical_duration_days: 1
+
+signals_of_progress:
+  - followup_sent
+  - callback_promised
+  - first_response_sent
+
+signals_of_decay:
+  - angry_language
+  - escalation_requested
+  - cancellation_threat
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    followup_sent is a real substrate observation kind. callback_promised,
+    first_response_sent, angry_language, escalation_requested and cancellation_threat are
+    support-native and live in planned_substrate.obs_kinds — they will not fire until a
+    support pack emits them. Noted because these lists are not validated and a reader could
+    otherwise mistake them for working coverage.
+
+    A second-order effect worth watching once this routes: a system that reliably surfaces
+    overdue promises changes how promises are made. The first observable consequence is
+    usually agents becoming vaguer — "I'll get back to you as soon as I can" — which evades
+    the alert and is worse for the customer than a missed specific date. If commitment
+    extraction rates fall while ticket volume holds, that is what is happening, and it is a
+    coaching problem rather than a signal problem.

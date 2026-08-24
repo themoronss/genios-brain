@@ -1,0 +1,31 @@
+# Load-set for customer_support.intake_and_triage.channel_intake — REFERENCES ONLY, never an
+# inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.intake_and_triage.channel_intake
+
+core:
+  # The three things that must exist before anything can be called an arrival: the unit of
+  # promised work being created, the thread it was created from, and the human who is now owed
+  # something. Conversation is required and not optional precisely because intake is where the
+  # conversation/ticket distinction is made — without it this capability degenerates into
+  # ticket creation and silently loses the second question in a message.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.conversation
+    - customer_support.obj.core.requester
+
+  # Intent is optional here and required in intent_classification, on purpose. Intake benefits
+  # from a rough read of what is being asked when one is cheaply available, but making it
+  # required would pull classification forward into the moment of arrival, where there is least
+  # evidence and most time pressure.
+  optional:
+    - customer_support.obj.core.intent
+
+scoped:
+  # No objects belong to intake alone. Everything it touches is read again by classification,
+  # triage and response drafting.
+  required: []
+  optional: []

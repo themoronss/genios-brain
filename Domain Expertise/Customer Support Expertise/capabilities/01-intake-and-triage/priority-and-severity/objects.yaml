@@ -1,0 +1,32 @@
+# Load-set for customer_support.intake_and_triage.priority_and_severity — REFERENCES ONLY, never
+# an inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.intake_and_triage.priority_and_severity
+
+core:
+  # The three inputs to the two decisions. Ticket carries the fault; Entitlement is what may be
+  # promised and is the load-bearing input to priority; SLA target is the live clock, which is
+  # what makes priority a decision about now rather than a preference in general. Severity can
+  # be argued from Ticket alone. Priority cannot be argued from Ticket at all, which is the whole
+  # point of this capability.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.entitlement
+    - customer_support.obj.core.sla_target
+
+  # Context that legitimately moves priority and must never move severity. Incident is here
+  # because an active incident reorders everything around it; churn risk because the commercial
+  # consequence of being slow is real and belongs in the allocation, not in the measurement.
+  optional:
+    - customer_support.obj.core.customer_account
+    - customer_support.obj.core.incident
+    - customer_support.obj.core.churn_risk
+
+scoped:
+  # A severity scale looks like a scoped object and is not one: it is a set of bands with
+  # thresholds, which is Layer 4 configuration. Modelling it here would put numbers in Layer 3.
+  required: []
+  optional: []

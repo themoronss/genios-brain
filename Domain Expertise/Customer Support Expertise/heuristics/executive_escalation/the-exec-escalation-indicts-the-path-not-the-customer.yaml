@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.executive_escalation.the_exec_escalation_indicts_the_path_not_the_customer
+  name: The exec escalation indicts the path, not the customer
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.executive_escalation
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: By the time a founder emails a founder, the normal path failed visibly enough to justify
+    the social cost. Treat each one as a free audit of where the ordinary process lost them.
+  answers:
+  - What does an executive escalation actually signal?

@@ -1,0 +1,41 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.intake_and_triage.ticket_triage — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.ticket_triage.queue_as_hypothesis
+  name: Queue as hypothesis
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.ticket_triage
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'A queue assignment is a hypothesis about who can finish the work.
+
+
+    Every reassignment is that hypothesis being falsified. Reassignment rate is therefore a measurement
+    of the taxonomy first and of the triager second, and organisations that read it the other way around
+    coach individuals for a structural problem.'
+dimensions:
+- name: Queue as hypothesis
+  asks: A queue assignment is a hypothesis about who can finish the work.
+how_to_apply:
+- A queue assignment is a hypothesis about who can finish the work.
+- Every reassignment is that hypothesis being falsified. Reassignment rate is therefore a measurement
+  of the taxonomy first and of the triager second, and organisations that read it the other way around
+  coach individuals for a structural problem.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.event_coordination.events_fail_in_the_handoffs
+  name: Events fail in the handoffs
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.travel_and_events.event_coordination
+  subdomain: travel_and_events
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The AV was fine and the catering was fine — the gap where each assumed the other had the
+    extension cords is where events wobble. The run-sheet's real product is explicit handoffs.
+  answers:
+  - Where do organised events still go wrong?

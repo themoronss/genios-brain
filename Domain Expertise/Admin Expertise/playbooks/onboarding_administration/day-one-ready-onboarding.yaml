@@ -1,0 +1,30 @@
+identity:
+  id: admin.pb.onboarding_administration.day_one_ready_onboarding
+  name: Day-one-ready onboarding
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.onboarding_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A new joiner's accounts, equipment, access and paperwork are ready BEFORE day one, from a
+    standing checklist per role — because the first day's competence signal sets the employment relationship's
+    tone.
+steps:
+- order: 1
+  name: Trigger the checklist at offer acceptance
+  description: Equipment ordered, accounts queued, docs prepared — the runway starts weeks out, not Monday
+    morning.
+  actor: human
+- order: 2
+  name: Provision access by role template
+  description: Each role has a standard access set — no ad-hoc guessing, no over-provisioning that security
+    later unwinds.
+  actor: human
+- order: 3
+  name: Confirm readiness the Friday before
+  description: 'A pre-flight check: laptop, logins, workspace, buddy. Day-one scrambles are always a skipped
+    Friday check.'
+  actor: human

@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.procurement_administration.buying_with_guardrails_not_gates_everywhere
+  name: Buying with guardrails, not gates everywhere
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.procurement_administration
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Procurement admin gives routine purchases a fast compliant path — thresholds, preferred vendors,
+    simple approvals — saving the heavy process for heavy spend, because over-gated small purchases breed
+    shadow buying.
+steps:
+- order: 1
+  name: Publish thresholds and their paths
+  description: 'Under X: manager click. X to Y: budget-owner. Above Y: full process. Known lanes keep
+    traffic on the road.'
+  actor: human
+- order: 2
+  name: Prefer the pre-vetted list
+  description: Buying from onboarded vendors skips re-diligence. The list is the fast lane's pavement.
+  actor: human
+- order: 3
+  name: Reconcile purchases to approvals monthly
+  description: Spend without approval trail surfaces monthly, small — while it is a coaching note, not
+    an investigation.
+  actor: human

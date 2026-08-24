@@ -1,0 +1,28 @@
+identity:
+  id: sales.revenue_operations.sales_analytics
+  name: Sales Analytics
+  domain: sales
+  subdomain: revenue_operations
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Measuring conversion, velocity, cohort behaviour and attribution. Distinct from revenue
+  intelligence: analytics answers questions that were asked, intelligence surfaces ones that
+  were not.
+
+question: "What do the numbers actually say?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

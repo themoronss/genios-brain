@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.document_control.authority_needs_maintenance
+  name: Authority needs maintenance
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.document_control
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A document's bindingness decays as reality moves. The review date is not bureaucracy — it
+    is the renewal fee on the document's right to be obeyed.
+  answers:
+  - Why do controlled documents need review dates?

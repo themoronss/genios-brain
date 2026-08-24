@@ -1,0 +1,36 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_management.quality_assurance — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.quality_assurance.score_the_interaction
+  name: Score the interaction
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.quality_assurance
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Score the interaction, not the outcome.
+heuristic:
+  statement: Score the interaction, not the outcome.
+  why: Outcomes are contaminated by draw — which tickets the agent happened to get, whether the customer
+    was reasonable, whether a fix existed at all. The only thing the agent controls is what they did
+    with what arrived, so that is the only thing a fair instrument can measure.
+  reads:
+  - customer_support.obj.core.ticket
+  - customer_support.obj.core.knowledge_article
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

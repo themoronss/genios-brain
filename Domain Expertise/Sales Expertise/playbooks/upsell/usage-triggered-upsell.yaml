@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.upsell.usage_triggered_upsell
+  name: Usage-triggered upsell
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.upsell
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The best upsell moment is when the customer bumps against a real limit — seats full, volume
+    caps, a premium feature attempted. Sell the removal of a felt constraint, not the abstract merits
+    of a higher tier.
+steps:
+- order: 1
+  name: Instrument the limit-events
+  description: Know the moment an account hits 80% of anything. That signal, same-week, is the whole timing
+    model.
+  actor: human
+- order: 2
+  name: Frame as unblock, not upgrade
+  description: '''Your team hit X limit twice this month — here is what removing it costs'' meets a felt
+    pain. Tier-brochure language meets a budget reflex.'
+  actor: human
+- order: 3
+  name: Price the step, not the staircase
+  description: Show the increment from today, in their billing rhythm. Re-anchoring on the full new total
+    re-opens the whole price debate.
+  actor: human

@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.forecasting.the_slip_pattern_is_the_signal
+  name: The slip pattern is the signal
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.forecasting
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A deal that slips one quarter happens; a deal slipping its second quarter is telling you
+    it is not a commit — buyer urgency this weak usually never signs. Two slips = downgrade by rule, not
+    by debate.
+  answers:
+  - How should a twice-slipped deal be categorised?

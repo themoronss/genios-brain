@@ -1,0 +1,688 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Persona — a class, not an instance.
+#
+# This is the only object in the core roster that is authored at design time rather than
+# discovered at runtime. Its states carry almost no machine predicates and that is honest:
+# a persona DEFINITION is written by a human from real conversations. What the engine infers
+# is persona ASSIGNMENT — which archetype is in play on this node — and that is what the
+# inference patterns below are about.
+#
+# Four of ten patterns are executable. All four work the same way: they read BEHAVIOUR rather
+# than title, because the substrate can see what someone did in a thread and cannot see what
+# their business card says.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: sales.obj.core.persona
+  scope: core
+  name: Persona
+  domain: sales
+  subdomain: market_and_targeting
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 1.0.0
+  status: draft
+  aliases: ["Buyer Persona", "Role Archetype", "Buyer Profile"]
+purpose:
+  statement: >
+    A repeatable role archetype — VP Engineering, Head of RevOps — carrying the goals, pains,
+    objections and language typical of it. Distinct from Contact along one clean line: a persona
+    is a class and a contact is an instance, so everything on a persona is a prior and nothing
+    on it is evidence about any individual. Distinct from ICP along another: an ICP describes the
+    ACCOUNT worth selling to, a persona describes the PERSON inside it, and a perfect ICP match
+    staffed by the wrong persona is a deal that dies in month three. Personas are how outreach and
+    discovery become relevant before anything is known about the individual, which is precisely
+    why treating a persona attribute as a discovered fact is the most expensive mistake available here.
+attributes:
+  - name: definition
+    purpose: What the archetype is and where it applies. The join keys.
+    type: composite
+    contains:
+      - persona_key
+      - display_name
+      - function
+      - seniority_band
+      - typical_titles
+      - company_size_band
+      - icp_ref
+  - name: motivation
+    purpose: What they are trying to achieve and what they are measured on.
+    type: composite
+    contains:
+      - primary_goals
+      - success_metrics
+      - pain_refs
+  - name: buying_behaviour
+    purpose: How this archetype behaves inside a purchase — the part that predicts deal shape.
+    type: composite
+    contains:
+      - typical_authority
+      - typical_committee_role
+      - evaluation_criteria
+      - typical_objections
+      - evidence_preference
+  - name: language
+    purpose: How to sound like an insider, and the words that give away an outsider.
+    type: composite
+    contains:
+      - vocabulary
+      - anti_vocabulary
+      - tone_preference
+  - name: reachability
+    purpose: Channel and timing priors, read by Layer 5.2.
+    type: composite
+    contains:
+      - preferred_channel
+      - best_contact_window
+      - responsiveness_band
+  - name: calibration
+    purpose: How much this archetype is actually known, versus asserted. The section that keeps the
+      object honest.
+    type: composite
+    contains:
+      - sample_size
+      - win_rate_bp
+      - last_calibrated_at
+  - name: persona_key
+    purpose: Stable snake-case join key. Separate from display_name because renaming a persona breaks
+      every historical outcome attached to it, and the display name is the thing people want to change
+      every time marketing reruns a positioning exercise.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      Stable snake-case join key. Separate from display_name because renaming a persona breaks
+      every historical outcome attached to it, and the display name is the thing people want to
+      change every time marketing reruns a positioning exercise.
+  - name: display_name
+    purpose: The display_name of this object.
+    type: value
+    data_type: string
+    required: true
+  - name: function
+    purpose: More predictive of behaviour than seniority. Function decides what they fear; seniority
+      only decides how loudly they can say it.
+    type: value
+    data_type: enum
+    allowed_values: [engineering, product, revenue, marketing, finance, operations, it, security,
+        legal, hr, executive, procurement, other]
+    description: More predictive of behaviour than seniority. Function decides what they fear;
+      seniority only decides how loudly they can say it.
+  - name: seniority_band
+    purpose: The seniority_band of this object.
+    type: value
+    data_type: enum
+    allowed_values: [individual_contributor, manager, director, vp, c_level, founder]
+  - name: typical_titles
+    purpose: The raw title strings that map here. Matching is fuzzy and regional — "Head of" lands at
+      director level in the UK and VP level in the US — so this is a list of observed strings, not a
+      rule.
+    type: value
+    data_type: list
+    description: >
+      The raw title strings that map here. Matching is fuzzy and regional — "Head of" lands at
+      director level in the UK and VP level in the US — so this is a list of observed strings,
+      not a rule.
+  - name: company_size_band
+    purpose: The same title is a different persona at forty people and four thousand. A Head of RevOps
+      at forty does the work themselves and buys to save their own evenings; at four thousand they buy
+      for a team and are judged on adoption. Same words, opposite pitch.
+    type: value
+    data_type: enum
+    allowed_values: [smb, mid_market, enterprise, any]
+    description: >
+      The same title is a different persona at forty people and four thousand. A Head of RevOps at
+      forty does the work themselves and buys to save their own evenings; at four thousand they buy
+      for a team and are judged on adoption. Same words, opposite pitch.
+  - name: icp_ref
+    purpose: The account profile this persona is defined inside. A persona outside its ICP is a
+      different persona.
+    type: reference
+    ref: sales.obj.core.icp
+    data_type: ref
+    description: The account profile this persona is defined inside. A persona outside its ICP is a
+      different persona.
+  - name: primary_goals
+    purpose: What they are trying to achieve this year, in their words rather than ours.
+    type: value
+    data_type: list
+    description: What they are trying to achieve this year, in their words rather than ours.
+  - name: success_metrics
+    purpose: What they are personally measured on. The single most useful field for writing an opening
+      line, and the one left empty most often — which is why so much outreach describes the product's
+      benefits instead of the reader's review.
+    type: value
+    data_type: list
+    description: >
+      What they are personally measured on. The single most useful field for writing an opening
+      line, and the one left empty most often — which is why so much outreach describes the
+      product's benefits instead of the reader's review.
+  - name: pain_refs
+    purpose: Typed pains this archetype reliably has. Priors for discovery questions, never findings.
+    type: reference
+    ref: sales.obj.core.pain_point
+    data_type: ref
+    description: Typed pains this archetype reliably has. Priors for discovery questions, never
+      findings.
+  - name: typical_authority
+    purpose: Mirrors Decision Maker's field on purpose so the comparison is easy — and it is a PRIOR.
+      It tells outreach what to expect in the room. Copying it onto a Contact as a fact is the failure
+      this object is most often responsible for.
+    type: value
+    data_type: enum
+    allowed_values: [none, recommender, approver, final_approver, veto_only]
+    description: >
+      Mirrors Decision Maker's field on purpose so the comparison is easy — and it is a PRIOR.
+      It tells outreach what to expect in the room. Copying it onto a Contact as a fact is the
+      failure this object is most often responsible for.
+  - name: typical_committee_role
+    purpose: Predicts which seat this persona fills, which is what makes an empty seat visible before
+      the deal stalls in it.
+    type: value
+    data_type: enum
+    allowed_values: [user, technical_evaluator, economic_buyer, champion, gatekeeper, blocker, none]
+    description: Predicts which seat this persona fills, which is what makes an empty seat visible
+      before the deal stalls in it.
+  - name: evaluation_criteria
+    purpose: What they compare vendors on. Rarely the same list the seller thinks it is.
+    type: value
+    data_type: list
+    description: What they compare vendors on. Rarely the same list the seller thinks it is.
+  - name: typical_objections
+    purpose: The objections this archetype raises almost every time. Predictable objections should be
+      pre-empted in the deck, not handled in the room.
+    type: reference
+    ref: sales.obj.core.objection
+    data_type: ref
+    description: The objections this archetype raises almost every time. Predictable objections should
+      be pre-empted in the deck, not handled in the room.
+  - name: evidence_preference
+    purpose: What actually moves them. An engineer given an analyst report and a CFO given a sandbox
+      are both being sold to competently and neither is being sold to.
+    type: value
+    data_type: enum
+    allowed_values: [reference_customers, roi_model, technical_proof, analyst_report, peer_benchmark,
+        free_trial]
+    description: >
+      What actually moves them. An engineer given an analyst report and a CFO given a sandbox are
+      both being sold to competently and neither is being sold to.
+  - name: vocabulary
+    purpose: The words this persona uses for the problem. Using the seller's term instead of the
+      buyer's is the fastest way to read as an outsider.
+    type: value
+    data_type: list
+    description: The words this persona uses for the problem. Using the seller's term instead of the
+      buyer's is the fastest way to read as an outsider.
+  - name: anti_vocabulary
+    purpose: Words that mark the sender as not one of them. "Synergy" to an engineer, "stack" to a
+      CFO, "solutioning" to almost anyone. Treated as a hard pre-send filter rather than a style note.
+    type: value
+    data_type: list
+    description: >
+      Words that mark the sender as not one of them. "Synergy" to an engineer, "stack" to a CFO,
+      "solutioning" to almost anyone. Treated as a hard pre-send filter rather than a style note.
+  - name: tone_preference
+    purpose: The tone_preference of this object.
+    type: value
+    data_type: enum
+    allowed_values: [terse, formal, conversational, data_led]
+  - name: preferred_channel
+    purpose: The preferred_channel of this object.
+    type: value
+    data_type: enum
+    allowed_values: [email, phone, slack, teams, linkedin, in_person, unknown]
+  - name: best_contact_window
+    purpose: Local-time window with the best observed reply rate for this archetype, e.g. "07:00-08:30
+      local".
+    type: value
+    data_type: string
+    description: Local-time window with the best observed reply rate for this archetype, e.g.
+      "07:00-08:30 local".
+  - name: responsiveness_band
+    purpose: Sets the expected cadence before any individual baseline exists. Prevents a two-week
+      silence from a CFO being read as disengagement.
+    type: value
+    data_type: enum
+    allowed_values: [fast, normal, slow, unresponsive]
+    description: Sets the expected cadence before any individual baseline exists. Prevents a two-week
+      silence from a CFO being read as disengagement.
+  - name: sample_size
+    purpose: How many real contacts this archetype was built from. Below roughly thirty it is one
+      seller's opinion with a schema wrapped around it, and should be labelled as such rather than
+      quietly used to rank a territory.
+    type: value
+    data_type: integer
+    unit: contacts
+    description: >
+      How many real contacts this archetype was built from. Below roughly thirty it is one
+      seller's opinion with a schema wrapped around it, and should be labelled as such rather
+      than quietly used to rank a territory.
+  - name: win_rate_bp
+    purpose: Historical win rate of deals where this persona was the primary contact. Meaningless
+      without sample_size beside it.
+    type: value
+    data_type: integer
+    unit: basis_points
+    description: Historical win rate of deals where this persona was the primary contact. Meaningless
+      without sample_size beside it.
+  - name: last_calibrated_at
+    purpose: When the archetype was last checked against real outcomes. Personas rot faster than ICPs
+      because roles are reorganised more often than markets are.
+    type: value
+    data_type: timestamp
+    description: When the archetype was last checked against real outcomes. Personas rot faster than
+      ICPs because roles are reorganised more often than markets are.
+states:
+  initial: unknown
+  values:
+    - name: unknown
+      description: The archetype has been named and nothing sits behind the name.
+    - name: drafted
+      description: Goals, pains and language written from desk research and seller intuition.
+        sample_size is zero and the object should say so loudly.
+    - name: active
+      description: In use by outreach and discovery. Being applied to real contacts.
+    - name: validated
+      description: Enough closed outcomes attached that win_rate_bp means something. Most persona
+        libraries never reach this state and are used as though they had.
+    - name: at_risk
+      description: Outcomes decaying against the rest of the roster. Usually means the market moved,
+        or the archetype was always two personas wearing one name.
+    - name: retired
+      description: Superseded or abandoned. Outreach must not compile against it, and its history
+        stays attached to the key.
+  transitions:
+    - {from: unknown, to: drafted}
+    - {from: drafted, to: active}
+    - {from: active, to: validated}
+    - {from: validated, to: at_risk}
+    - {from: at_risk, to: validated}
+    - {from: at_risk, to: retired}
+    - {from: active, to: retired}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: references
+    target: sales.obj.core.icp
+    cardinality: zero_or_one
+    description: The account profile this persona lives inside.
+
+  - type: influences
+    target: sales.obj.core.contact
+    cardinality: zero_or_many
+    description: >
+      The arrow points class -> instance and never back. A persona shapes how a contact is
+      approached; a contact's behaviour may recalibrate the persona definition through Layer 6,
+      but only through a human merge.
+
+  - type: references
+    target: sales.obj.core.pain_point
+    cardinality: zero_or_many
+
+  - type: references
+    target: sales.obj.core.objection
+    cardinality: zero_or_many
+
+  - type: influences
+    target: sales.obj.core.buying_committee
+    cardinality: zero_or_many
+    description: Committee composition is predicted persona by persona. That prediction is the only
+      thing that makes a missing seat noticeable before it blocks.
+
+  - type: works_with
+    target: sales.obj.core.champion
+    cardinality: zero_or_many
+    description: >
+      Some personas make good champions and some structurally cannot — a security lead can veto
+      and rarely advocates. Mapping only seats that cannot champion is a deal with no internal seller.
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+#
+# Almost no entered_when predicates here, and that is deliberate rather than lazy. A persona's
+# lifecycle is a calibration lifecycle driven by closed outcomes, and the pipeline does not join
+# outcomes back to personas today — see the needs_signal patterns below.
+inference_patterns:
+
+  deterministic:
+
+    - id: persona.assigned_from_normalised_title
+      statement: "The contact's normalised title matches this persona's typical_titles."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: persona_key, value: null}
+      requires_signals:
+        - {kind: fact_path, name: crm.contact.title_normalised, owner_layer: L1, note: "The obvious route\
+            to assignment and the one that does not exist. Without it every contact starts unclassified and
+            outreach falls back to generic copy, which is the failure this object was built to prevent."}
+
+    - id: persona.inherited_from_the_account_segment
+      statement: "The account's ICP segment implies which persona roster applies."
+      status: needs_signal
+      yields: {confidence_bp: 6000, attribute: icp_ref, value: null}
+      requires_signals:
+        - {kind: fact_path, name: account.icp_segment, owner_layer: L2, note: "Segment is decided in the\
+            ICP capability and never lands as a typed fact on the account node, so the persona roster cannot
+            be narrowed before outreach starts."}
+
+    - id: persona.security_reviewer_is_the_security_persona
+      statement: "Whoever starts a security review is doing the security persona's job."
+      status: executable
+      when:
+        - {has_obs: security_review_started}
+      yields: {confidence_bp: 7500, attribute: function, value: security}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Behaviour identifies a persona more reliably than a title does. The person who opens a
+        security review is filling that seat whatever their business card says, and it is usually
+        the seat the account map has no name for until it blocks the deal.
+
+    - id: persona.legal_reviewer_is_the_legal_persona
+      statement: "Whoever opens legal review is filling the legal seat."
+      status: executable
+      when:
+        - {has_obs: legal_review}
+      yields: {confidence_bp: 7500, attribute: function, value: legal}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Same mechanism as the security pattern and a separate entry because the grammar ANDs and
+        never ORs. Worth the duplication: legal and security fail deals for completely different
+        reasons and want completely different evidence.
+
+    - id: persona.split_into_two
+      statement: "Outcomes inside one persona key form two distinct clusters — it is two archetypes sharing
+        a name."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: null}
+      requires_signals:
+        - {kind: derived, name: derived.persona_outcome_variance, owner_layer: L2, note: "The most common\
+            defect in a persona library and completely invisible without outcome joins. A bimodal persona
+            averages to an archetype that describes nobody and quietly caps conversion for both halves."}
+
+  heuristic:
+
+    - id: persona.demo_requester_is_the_evaluator
+      statement: "The person who asks to see the product is usually the person who will have to make it
+        work."
+      status: executable
+      when:
+        - {has_obs: demo_requested}
+      yields: {confidence_bp: 5500, attribute: typical_committee_role, value: technical_evaluator}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Reads backwards to a naive reader, who treats a demo request as buying intent from a buyer.
+        It is usually intent from an evaluator, and pitching commercial value at them wastes the
+        one meeting where technical credibility was available.
+
+    - id: persona.sustained_discount_pressure_is_procurement
+      statement: "Pushing on price with no product questions is procurement behaviour, not buyer behaviour."
+      status: executable
+      when:
+        - {has_obs: discount_pressure}
+        - {has_obs: pricing_discussed}
+      yields: {confidence_bp: 6000, attribute: typical_committee_role, value: gatekeeper}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Deliberately weak. In an SMB deal a founder does the procurement job and the buying job in
+        the same thread, and this pattern will mislabel them. Its value is in enterprise threads,
+        where a new voice arriving to talk only about price is nearly always a gate.
+
+    - id: persona.calibrated_from_closed_outcomes
+      statement: "win_rate_bp and sample_size recomputed from deals where this persona was primary."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: win_rate_bp, value: null}
+      requires_signals:
+        - {kind: derived, name: derived.persona_win_rate, owner_layer: L2, note: "Every closed outcome already\
+            exists in the CRM and none of them are joined back to the persona that was targeted. As a result
+            every win_rate_bp in the library is a guess, permanently, and the calibration state validated
+            is unreachable."}
+        - {kind: fact_path, name: deal.outcome, owner_layer: L2, note: "deal.status exists; a terminal won/lost\
+            outcome does not."}
+
+    - id: persona.language_learned_from_their_own_replies
+      statement: "Vocabulary and anti-vocabulary derived from the words this archetype actually uses back
+        to us."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: vocabulary, value: null}
+      requires_signals:
+        - {kind: derived, name: derived.reply_term_frequency, owner_layer: L2, note: "Reply bodies are already\
+            parsed for observations and discarded afterwards. Term frequency per persona is nearly free from
+            the same pass and would replace the guessed vocabulary lists with observed ones."}
+
+    - id: persona.missing_seat_on_the_committee
+      statement: "A persona this deal shape always contains is absent from the mapped committee."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: typical_committee_role, value: null}
+      requires_signals:
+        - {kind: derived, name: derived.committee_persona_coverage, owner_layer: L2, note: "Predicting the\
+            seats and comparing them to the mapped contacts is the single most valuable thing a persona library
+            can do, and it needs a per-deal coverage computation that does not exist. Today an unmapped economic
+            buyer is discovered when the deal stops, not before."}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: meeting_transcript, signal: "the words this archetype uses for the problem, unprompted"}
+  - {source: call_recording, signal: "objections raised, and in what order"}
+  - {source: email, signal: behavioural seat evidence in a live thread, path: thread.last_inbound}
+  - {source: crm, signal: "title, department, closed outcomes by primary contact"}
+  - {source: manual_entry, signal: "seller-authored archetype from real conversations — the primary source,\
+      and correctly so"}
+  - {source: website, signal: "public titles across the target segment, for typical_titles"}
+  - {source: document, signal: "job specifications and org announcements, for what the role is accountable\
+      for"}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: message_frame, type: string, description: "Goals, pains and vocabulary to write against before\
+      anything individual is known.", consumed_by: [L5.communication_planning]}
+  - {name: banned_terms, type: list, description: "anti_vocabulary, enforced as a pre-send gate.", consumed_by: [
+      "L5.2.channel_planner"]}
+  - {name: expected_objections, type: list, description: "Pre-empt in the deck rather than handle in the\
+      room.", consumed_by: [L5.execution_planning]}
+  - {name: expected_authority, type: string, description: "A prior on what this seat can approve. Advisory\
+      to reasoning, never evidence.", consumed_by: [L4.reasoning_unit]}
+  - {name: predicted_committee, type: list, description: "Which seats this deal shape should contain —\
+      the basis for spotting an empty one.", consumed_by: [L4.reasoning_unit]}
+  - {name: channel_prior, type: string, description: "Channel and contact window before an individual\
+      baseline exists.", consumed_by: ["L5.2.channel_planner"]}
+  - {name: calibration_health, type: integer, description: "sample_size and age of last calibration. Tells\
+      the consumer how much to trust the rest.", consumed_by: [L6.learning_unit]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: persona.no_authority_transfer, statement: "typical_authority may never be written to a Contact\
+      or Decision Maker as an observed value.", hard: true}
+  - {id: persona.key_is_immutable, statement: "persona_key cannot change once outcomes are attached to\
+      it. Rename display_name instead.", hard: true}
+  - {id: persona.one_per_contact, statement: "A contact carries exactly one active persona assignment.\
+      Two means the archetypes need splitting or merging.", hard: true}
+  - {id: persona.retired_not_assignable, statement: "A retired persona cannot be assigned to a new contact.",
+      hard: true}
+  - {id: persona.sample_gates_ranking, statement: "win_rate_bp may not drive prioritisation below a minimum\
+      sample size set in the pack.", hard: false}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: persona.prior_never_becomes_fact
+    statement: >
+      A persona attribute may never be written onto a Contact, Stakeholder or Decision Maker as an
+      observed value. typical_authority informs the opening line and can never raise Decision Maker
+      confidence. This is the rule the object exists to enforce; every other rule here is hygiene.
+    then: reject_prior_as_evidence
+    severity: blocking
+
+  - id: persona.anti_vocabulary_is_a_pre_send_filter
+    statement: >
+      A generated message containing an anti_vocabulary term is rejected before send, not scored
+      down. A single wrong word costs the reply that the rest of the message earned, so this is a
+      gate rather than a weight.
+    then: block_send_pending_rewrite
+    severity: blocking
+
+  - id: persona.retired_blocks_compilation
+    statement: Outreach and discovery may not compile against a persona in state retired.
+    then: block_compile
+    severity: blocking
+
+  - id: persona.low_sample_cannot_rank
+    statement: >
+      Below roughly thirty attached contacts, win_rate_bp may describe the archetype and may not
+      prioritise a territory. A high win rate on a sample of eight is an accident, and pointing a
+      quarter of outreach at an accident is how a whole team's pipeline goes thin at once.
+    severity: warning
+
+  - id: persona.title_plus_size_is_the_key
+    statement: The same title in two company_size_bands is two personas, not one. Merging them
+      produces an archetype that describes nobody.
+    severity: warning
+
+  - id: persona.calibration_expires
+    statement: A persona not recalibrated within a year is advisory only. Roles are reorganised more
+      often than markets are.
+    severity: advisory
+
+# ── 8 · Decision Factors — must sum to 10000 ─────────────────────────────────────────────
+decision_factors:
+
+  - name: title_match
+    weight_bp: 2500
+    direction: increases
+    description: Strongest available assignment signal, and still only a signal — title matching is
+      fuzzy across regions and company sizes.
+    reads: [typical_titles, seniority_band, function]
+
+  - name: size_band_match
+    weight_bp: 2000
+    direction: increases
+    description: A title match in the wrong size band is a mismatch. This factor exists to stop the
+      previous one from being trusted alone.
+    reads: [company_size_band, icp_ref]
+
+  - name: historical_win_rate
+    weight_bp: 2000
+    direction: context
+    description: >
+      Context rather than increases, on purpose. A win rate is only evidence beside its sample
+      size, and weighting it as though it were always evidence is how one lucky quarter redirects
+      a year of targeting.
+    reads: [win_rate_bp, sample_size, last_calibrated_at]
+
+  - name: pain_resonance
+    weight_bp: 1500
+    direction: increases
+    reads: [pain_refs, success_metrics, primary_goals]
+
+  - name: objection_load
+    weight_bp: 1000
+    direction: decreases
+    description: A persona that reliably raises three structural objections costs more cycles per win
+      even at identical fit.
+    reads: [typical_objections, evidence_preference]
+
+  - name: reachability
+    weight_bp: 1000
+    direction: context
+    reads: [preferred_channel, responsiveness_band, best_contact_window]
+
+# ── 9 · Inference Patterns ⭐ ─────────────────────────────────────────────────────────────
+#
+# Read every pattern here as persona ASSIGNMENT — which archetype is in play on this node —
+# not as an edit to the persona definition. Definitions are authored; assignment is inferred on
+# every single deal.
+#
+# Note the two near-identical security and legal patterns. They exist as two patterns because
+# the grammar has no OR; that is the engine's shape and authoring it any other way produces
+# something that cannot run.
+evidence:
+  - {source: meeting_transcript, strength_bp: 9000, description: "The archetype describing its own goals\
+      in its own words. Nothing else is close."}
+  - {source: call_recording, strength_bp: 8500, description: "Objections in their natural order, including\
+      the ones nobody writes down."}
+  - {source: crm, strength_bp: 8000, description: "Closed outcomes by primary contact. The only source\
+      that can validate rather than describe."}
+  - {source: manual_entry, strength_bp: 7000, description: "Seller-authored definition. High signal, and\
+      systematically over-confident about authority."}
+  - {source: email, strength_bp: 6000, description: "Behavioural seat evidence in a live thread. What\
+      the four executable patterns run on."}
+  - {source: document, strength_bp: 5000, description: "Job specifications. Accurate about accountability,\
+      silent about how they buy."}
+  - {source: website, strength_bp: 3500, description: "Public titles across a segment. Useful for typical_titles\
+      and nothing else."}
+  - {source: derived, strength_bp: 4500, description: "Inferred assignment. Corroborating, and never a\
+      substitute for the person telling you what they do."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: assignment_coverage, unit: percent, description: "Share of live contacts with a persona assigned\
+      above a confidence floor. Currently low, for the title reason above.", owner_layer: L6}
+  - {name: assignment_accuracy, unit: percent, description: "Share of assignments a human later confirms.\
+      Calibrates every executable pattern here.", owner_layer: L6}
+  - {name: reply_rate_by_persona, unit: percent, description: "The fastest read on whether the language\
+      fields are right.", owner_layer: L6}
+  - {name: win_rate_by_persona, unit: percent, description: "Needs the outcome join. Until it exists this\
+      metric is unmeasurable, not merely unmeasured.", owner_layer: L6}
+  - {name: sample_size, unit: count, description: "Contacts behind the archetype. Reported beside every\
+      other number here or none of them mean anything.", owner_layer: L6}
+  - {name: calibration_age, unit: days, description: "Days since last_calibrated_at.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: persona.assigned, name: Persona Assigned, emitted_when: [has_obs: security_review_started],
+      payload: [persona_key, confidence_bp, contact_ref]}
+  - {id: persona.reassigned, name: Persona Reassigned, payload: [previous_key, new_key, reason],
+      description: "Every piece of message framing built on the old assignment is now wrong. Cheap to catch
+      here, expensive to catch in the next send."}
+  - {id: persona.calibrated, name: Persona Calibrated, payload: [win_rate_bp, sample_size, last_calibrated_at]}
+  - {id: persona.win_rate_decayed, name: Persona Win Rate Decayed, payload: [win_rate_bp, previous_win_rate_bp],
+    description: "Either the market moved or the archetype is two personas. Both need a human, neither needs
+      a model."}
+  - {id: persona.retired, name: Persona Retired, payload: [persona_key, superseded_by]}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: persona.draft, name: Draft the archetype, actor: human, effect: "From real conversations, not\
+      from a template. A persona written from a template describes the template."}
+  - {id: persona.assign, name: Assign to a contact, actor: system, effect: "Attach with a confidence.\
+      Assignment is a claim and carries one."}
+  - {id: persona.validate, name: Validate against outcomes, actor: human, effect: "Requires the outcome\
+      join that does not exist yet — see the needs_signal patterns."}
+  - {id: persona.split, name: Split into two personas, actor: human, effect: "The correct response to\
+      bimodal outcomes. Averaging them instead is the default and the mistake."}
+  - {id: persona.recalibrate, name: Recalibrate the definition, actor: human, effect: "Annual at minimum,\
+      and immediately after a customer reorganisation wave."}
+  - {id: persona.retire, name: Retire the persona, actor: human, effect: "Blocks compilation; history\
+      stays attached to persona_key."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "VP Engineering at a 400-person SaaS company", note: "Technical evaluator, recommender at\
+      most, measured on reliability and team velocity. Prefers technical proof and is repelled by an ROI
+      model."}
+  - {label: "Head of RevOps at a 40-person company", note: "Same title as the enterprise persona and a\
+      different archetype entirely — they do the work themselves, buy to save their own evenings, and can
+      often approve the spend."}
+  - {label: "CFO in a mid-market deal", note: "Economic buyer, data_led, evidence_preference roi_model.\
+      Two-week reply latency is normal for the band and is routinely misread as the deal cooling."}
+  - {label: "Head of Information Security", note: "typical_authority veto_only, typical_committee_role\
+      blocker. Structurally cannot champion, and a deal whose only mapped seat is this one has no internal
+      seller."}
+  - {label: "\"Decision maker\" as a persona", note: "The classic misclassification. That is an authority\
+      finding about an individual, not an archetype — it belongs on Decision Maker with evidence behind
+      it, and as a persona it describes nobody and predicts nothing."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Ten patterns: four executable, six blocked. All four executable ones read behaviour rather
+    than title, because behaviour is what the substrate can see. The highest-value signal gap is
+    derived.persona_win_rate together with a terminal deal.outcome fact — every closed deal already
+    records who it was sold to and nothing joins that back to the persona targeted, so every
+    win_rate_bp in the library is permanently a guess and the validated calibration state is
+    unreachable by construction. crm.contact.title_normalised is the second: without it assignment
+    coverage stays low and outreach falls back to generic copy, which is the exact failure the
+    object exists to prevent.

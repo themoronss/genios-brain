@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.customer_communication.tone_and_localization
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.tone_and_localization.mirror_register_keep_clarity
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.tone_and_localization.empathy_is_specific_or_it_is_filler
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.admin_analytics.invisible_work_gets_cut_first
+  name: Invisible work gets cut first
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.admin_analytics
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Admin done well disappears — which is exactly why it must be measured and narrated. The monthly
+    page is the function's existence proof at budget time.
+  answers:
+  - Why must smooth admin still report?

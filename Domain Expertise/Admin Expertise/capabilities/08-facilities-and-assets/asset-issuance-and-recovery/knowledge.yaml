@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.facilities_and_assets.asset_issuance_and_recovery
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.asset_issuance_and_recovery.issue_and_recover_with_signatures
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.asset_issuance_and_recovery.the_signature_is_for_both_parties
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

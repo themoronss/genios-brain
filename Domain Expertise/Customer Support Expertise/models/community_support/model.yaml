@@ -1,0 +1,175 @@
+# Community Support — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from canonical. No capability file and no
+# object file is copied into this branch; resolution is vertical -> model -> canonical.
+#
+# READING THE CAPABILITY DIFF
+#   activates    canonical capabilities a default support org runs nominally or not at all,
+#                and that this branch cannot function without.
+#   deactivates  canonical capabilities that do not exist in this motion at all.
+#   emphasises   present either way, disproportionately load-bearing here.
+
+identity:
+  id: customer_support.model.community_support
+  name: Community Support
+  kind: model
+  domain: customer_support
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Users answer each other in public, and the company curates rather than responds. This is the
+  only branch in the tree with no owner and no clock by construction — not by neglect, by
+  design. A question posted to a forum is assigned to nobody, breaches nothing when it is
+  ignored, and simply sinks down the page. The characteristic failure is therefore not slowness,
+  which announces itself, but silence, which does not: an unanswered thread produces no alert,
+  no ageing metric and no unhappy customer in any system we own, because the unhappy customer
+  left without telling us.
+  .
+  The second structural fact is that answer authority is unknown and answer permanence is total.
+  A confident wrong answer from a well-regarded member looks identical to a correct one, is
+  indexed within days, and will be the first thing the next thousand people with that problem
+  read — for years, including after the product changed. Correction cost is asymmetric: fixing
+  a wrong ticket costs one reply, fixing a wrong thread means editing a public record that other
+  people have already linked to, and the community will read the edit as the company overruling
+  its own members.
+  .
+  Third: the audience is not the asker. Most of the value accrues to people who search, read and
+  leave without posting, so any measurement built on threads-answered or time-to-first-reply is
+  measuring a rounding error of the actual benefit — and, worse, will justify staffing decisions
+  that optimise for the visible tenth.
+  .
+  Fourth: the labour is volunteered, so it cannot be managed. The scarce resource is the goodwill
+  of a dozen or so unpaid experts, and every mechanism a support org reaches for by reflex —
+  targets, coverage rotas, quality scores, performance conversations — spends that goodwill
+  faster than it improves anything. They can be recognised, informed and given early access.
+  They cannot be assigned.
+  .
+  What an operator carries over wrongly from a queue: the idea that a paying customer in the
+  forum is being served. Entitlement does not exist here, so a customer with a four-hour
+  contractual response can post, wait three days, and get an answer from a stranger — and there
+  is no mechanism in this branch that notices, because noticing requires the one capability the
+  branch does not have. Lifting entitled customers out of the community and into the queue is a
+  boundary that must be built deliberately at intake; it does not emerge.
+
+characteristics:
+  requester: "self-selected users, mostly unauthenticated or loosely identified, ranging from the most sophisticated power users in the base to people who found the thread from a search engine and never used the product"
+  typical_resolution_hours: 72
+  volume_shape: "high thread volume with an extremely long tail of near-duplicates; readership outweighs participation by orders of magnitude and peaks long after the thread went quiet"
+  staffing_model: "a small moderation and curation team plus unpaid expert members; nobody is assigned to anything and answering is voluntary on both sides"
+  coverage: "whenever someone happens to be reading — which correlates with the community's own timezone concentration, not with ours"
+  automation_level: "high by side effect rather than by design — the archive deflects far more than the live threads resolve, and search is the real product"
+  primary_channels: [community_forum, help_center, chat]
+  notes: >
+    The median time to resolution is a meaningless statistic in this branch and quoting it is a
+    reliable sign the community is being run by someone from a queue. The distribution is
+    bimodal: answered within an hour by someone who happened to be online, or never answered at
+    all. There is no middle, so an average sits in a region where no thread actually lives.
+
+capabilities:
+
+  # In a queue-based org the gap list is a quarterly exercise assembled from ticket tags. Here
+  # the unanswered threads and the zero-result searches ARE the gap list, unfiltered, in public,
+  # timestamped, and readable by competitors — which makes this the single most valuable output
+  # of the branch and the reason to run it even when deflection numbers disappoint.
+  # Sentiment is activated for the same reason: it is public. A frustrated thread in a ticket
+  # queue costs one relationship; a frustrated thread in a forum is a durable, searchable
+  # artefact that a competitor's sales team will find.
+  activates:
+    - customer_support.knowledge_and_deflection.content_gap_analysis
+    - customer_support.voice_of_customer.sentiment_analysis
+
+  # The largest deactivation list in the tree, and the point of the branch. These five are not
+  # weak here, they have no referent at all: there is no contract to verify, no clock to run,
+  # no breach to prevent, no rota that could change an outcome, and no assignment step in
+  # which ownership could be given to anyone. Authoring an SLA policy for a forum is the
+  # standard way a support leader spends a quarter producing nothing.
+  deactivates:
+    - customer_support.entitlement_and_sla.entitlement_verification
+    - customer_support.entitlement_and_sla.sla_management
+    - customer_support.entitlement_and_sla.breach_prevention
+    - customer_support.entitlement_and_sla.coverage_and_on_call
+    - customer_support.intake_and_triage.routing_and_assignment
+
+  emphasises:
+    - customer_support.knowledge_and_deflection.knowledge_authoring
+    - customer_support.knowledge_and_deflection.self_service_deflection
+    - customer_support.intake_and_triage.duplicate_and_merge
+    - customer_support.support_management.quality_assurance
+    - customer_support.customer_communication.tone_and_localization
+    - customer_support.voice_of_customer.feedback_synthesis
+    - customer_support.voice_of_customer.product_feedback_routing
+    - customer_support.escalation_and_incident.escalation_management
+
+  # Note on the two above that look surprising. quality_assurance here scores a public answer
+  # rather than an agent's handling — accuracy of what is standing in the archive is the only
+  # quality question this branch has, and it is asked of content nobody employed wrote.
+  # escalation_management is emphasised because the bridge OUT of the community — the moment a
+  # thread is recognised as a real defect, an outage or a paying customer in the wrong place —
+  # is where this model does almost all of its damage when it is missing.
+
+objects:
+  extends:
+    - object: customer_support.obj.core.knowledge_article
+      require_properties: [accuracy_state, last_verified_at, findability, audience]
+      note: >
+        A high-ranking thread is a knowledge article that nobody owns, nobody verified and
+        nobody will retire. The canonical object assumes an owner and a verification date; here
+        both are legitimately absent, and the object must be able to say "unowned" rather than
+        default to someone. `findability` outranks accuracy in practice — a correct answer that
+        does not surface in search has no effect on anything, and an incorrect one that does is
+        the branch's largest liability.
+    - object: customer_support.obj.core.requester
+      require_properties: [technical_fluency, is_affected_user]
+      note: >
+        Almost every identity attribute the canonical object carries is unavailable here: no
+        account, no plan, no role, frequently not even a verified email. What remains is what can
+        be read from the post itself — how fluent they are and whether the problem is actually
+        theirs. Inferring anything more from a forum handle is invention, and the confidence on
+        any such read should reflect that.
+    - object: customer_support.obj.core.customer_sentiment
+      require_properties: [public_exposure, expression_style]
+      note: >
+        Sentiment expressed in public behaves differently from sentiment in a ticket: it is
+        performed for an audience, it recruits agreement, and a thread of eleven people saying
+        "same here" is one problem and eleven relationships. `public_exposure` is the attribute
+        that separates a complaint from an incident in this branch.
+    - object: customer_support.obj.core.escalation
+      require_properties: [origin, reason]
+      note: >
+        The only escalation that exists here is outward: from a thread into a real ticket, an
+        incident, or engineering. There is no receiving owner inside the community to name, so
+        an escalation that is not accepted by a named person on the company side has not
+        happened — it is a moderator hoping somebody reads the channel.
+
+  # Neither of these has any meaning in a public forum, and loading them invites a reasoning
+  # unit to compute a breach against a contract that does not exist for a person we cannot
+  # identify. The absence is the fact worth carrying; a null entitlement would be read as an
+  # unentitled customer rather than as an unanswerable question.
+  never_load:
+    - customer_support.obj.core.sla_target
+    - customer_support.obj.core.entitlement
+
+overrides:
+  capabilities.customer_support.support_management.quality_assurance.scoring_unit: "public_answer"
+  capabilities.customer_support.support_management.quality_assurance.scored_party: "unmanaged_volunteer"
+  capabilities.customer_support.support_operations.support_analytics.primary_unit: "reader_not_asker"
+  capabilities.customer_support.knowledge_and_deflection.self_service_deflection.deflection_attribution: "search_landing"
+  capabilities.customer_support.intake_and_triage.duplicate_and_merge.merge_is_public: true
+  capabilities.customer_support.escalation_and_incident.escalation_management.direction: "outward_to_owned_channel"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    This branch is the clearest case in the domain for pending signals over borrowed ones. The
+    triggers that matter — a thread with no reply, a thread whose accepted answer is now wrong,
+    a zero-result search, an entitled customer posting in public — have no analogue in the
+    shipped substrate, and the nearest available type (unanswered_email) is about a message we
+    owe a reply to, which is exactly the relationship a forum does not have.

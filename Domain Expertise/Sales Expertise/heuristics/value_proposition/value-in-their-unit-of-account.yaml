@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.value_proposition.value_in_their_unit_of_account
+  name: Value in their unit of account
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.value_proposition
+  subdomain: discovery_and_solution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Founders think in runway and growth, CFOs in payback months, ops leaders in hours and errors.
+    The same true value lands or dies by choosing the audience's native unit — translate the equation
+    per stakeholder.
+  answers:
+  - How should the same ROI be presented to different stakeholders?

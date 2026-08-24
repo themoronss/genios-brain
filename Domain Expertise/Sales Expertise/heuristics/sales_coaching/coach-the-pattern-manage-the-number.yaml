@@ -1,0 +1,15 @@
+identity:
+  id: sales.heu.sales_coaching.coach_the_pattern__manage_the_number
+  name: Coach the pattern, manage the number
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.sales_management.sales_coaching
+  subdomain: sales_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Numbers say WHO needs help; only the recorded behaviour says WHAT to change. Coaching from
+    dashboards alone produces pep talks; coaching from calls produces skill.
+  answers:
+  - What separates coaching from performance management?

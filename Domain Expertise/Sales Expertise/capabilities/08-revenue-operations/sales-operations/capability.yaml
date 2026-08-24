@@ -1,0 +1,27 @@
+identity:
+  id: sales.revenue_operations.sales_operations
+  name: Sales Operations
+  domain: sales
+  subdomain: revenue_operations
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Process, tooling, data hygiene, compensation mechanics and enablement infrastructure.
+  Invisible when it works and the sole explanation for the quarter when it does not.
+
+question: "Does the machinery of selling work?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

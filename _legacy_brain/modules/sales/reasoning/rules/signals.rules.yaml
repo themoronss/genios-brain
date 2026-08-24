@@ -1,0 +1,107 @@
+# Signal-driven sales rules — fire on the neural/symbolic signals joined onto a
+# deal from its ACCOUNT entity (momentum / buying_intent / sentiment / ball_in_court
+# + open objection / competitor / commitment). These make the deep signals
+# ACTIONABLE (surface their own alerts) instead of only decorating other insights.
+# All reversible (no hard). A signal that's absent (CSV-only deal, no email) simply
+# never matches, so these fire only when we actually have relationship evidence.
+
+- id: deal_cooling_from_engagement
+  module: sales
+  priority: 80
+  when:
+    all:
+      - fact: momentum
+        op: "<="
+        value: -0.4
+  then:
+    conclusion: deal_cooling
+    recommend: trigger_reengagement_sequence
+    reason: "Engagement momentum has gone negative — this deal is cooling; re-engage before it stalls"
+  hard: false
+
+- id: buying_intent_spike
+  module: sales
+  priority: 82
+  when:
+    all:
+      - fact: buying_intent
+        op: ">="
+        value: 0.7
+  then:
+    conclusion: buying_signal
+    recommend: book_mutual_next_step_now
+    reason: "Strong buying intent detected — lock a concrete next step while they're leaning in"
+  hard: false
+
+- id: unaddressed_objection
+  module: sales
+  priority: 88
+  when:
+    all:
+      - fact: objection
+        op: "!="
+        value: ""
+  then:
+    conclusion: open_objection
+    recommend: schedule_differentiation_call_with_champion
+    reason: "An open objection is on the table and still unresolved — address it head-on before it hardens"
+  hard: false
+
+- id: competitor_in_live_deal
+  module: sales
+  priority: 90
+  when:
+    all:
+      - fact: competitor
+        op: "!="
+        value: ""
+  then:
+    conclusion: competitive_threat
+    recommend: reengage_before_competitor_locks_in
+    reason: "A competitor was named in this deal — differentiate and defend before they lock in"
+  hard: false
+
+- id: we_owe_reply_and_cooling
+  module: sales
+  priority: 86
+  when:
+    all:
+      - fact: ball_in_court
+        op: ">="
+        value: 1
+      - fact: momentum
+        op: "<="
+        value: 0
+  then:
+    conclusion: overdue_reply
+    recommend: send_lightweight_check_in
+    reason: "The ball is in our court and momentum is fading — reply now to keep the deal alive"
+  hard: false
+
+- id: open_commitment_pending
+  module: sales
+  priority: 84
+  when:
+    all:
+      - fact: commitment
+        op: "!="
+        value: ""
+  then:
+    conclusion: unfulfilled_commitment
+    recommend: book_mutual_next_step_now
+    reason: "We owe them something we haven't delivered yet — close the loop to rebuild trust"
+  hard: false
+
+- id: deal_cycle_overrun
+  module: sales
+  priority: 78
+  when:
+    all:
+      - fact: deal_cycle_ratio
+        op: ">="
+        value: 1.5
+  then:
+    conclusion: deal_aging_vs_benchmark
+    recommend: schedule_pipeline_review
+    reason: "This deal has run well past the typical cycle for its size — pressure-test whether it's still real or escalate"
+  hard: false

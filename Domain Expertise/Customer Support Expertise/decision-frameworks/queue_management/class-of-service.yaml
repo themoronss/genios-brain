@@ -1,0 +1,42 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_operations.queue_management — exactly one capability references it. Promote to
+# decision-frameworks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.df.queue_management.class_of_service
+  name: Class of service
+  kind: decision_framework
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.queue_management
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Class of service — declare named classes of work (aged, entitled, blocking, routine) and
+    a published order between them.
+
+
+    It converts prioritisation from a thousand individual judgements under pressure into one reviewable
+    policy. It also makes exceptions visible, which is the only way a standing exception ever gets challenged.'
+criteria:
+- name: Class of service
+  description: Class of service — declare named classes of work (aged, entitled, blocking, routine)
+    and a published order between them.
+how_to_apply:
+- Class of service — declare named classes of work (aged, entitled, blocking, routine) and a published
+  order between them.
+- It converts prioritisation from a thousand individual judgements under pressure into one reviewable
+  policy. It also makes exceptions visible, which is the only way a standing exception ever gets challenged.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

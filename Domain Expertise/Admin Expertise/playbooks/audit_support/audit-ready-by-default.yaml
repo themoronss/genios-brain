@@ -1,0 +1,28 @@
+identity:
+  id: admin.pb.audit_support.audit_ready_by_default
+  name: Audit-ready by default
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.audit_support
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Audit support is a standing evidence discipline — organised records, reconciled registers,
+    a known request-response routine — so an audit is retrieval, not archaeology, and the team's month
+    is not consumed by reconstruction.
+steps:
+- order: 1
+  name: Maintain the evidence map
+  description: 'For each auditable area: where its records live, who owns them. The map is half the audit.'
+  actor: human
+- order: 2
+  name: Run one point of contact
+  description: All auditor requests through one coordinator — logged, tracked, consistent. Scattered responses
+    create contradictions.
+  actor: human
+- order: 3
+  name: Close findings like commitments
+  description: Each finding gets owner, date, verification. Repeat findings are the true audit failure.
+  actor: human

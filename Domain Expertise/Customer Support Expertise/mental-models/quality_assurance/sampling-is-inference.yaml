@@ -1,0 +1,36 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_management.quality_assurance — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.quality_assurance.sampling_is_inference
+  name: Sampling is inference
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.quality_assurance
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: You are estimating the quality of thousands of interactions from a handful. How the handful
+    was chosen therefore matters more than how carefully each one was read.
+dimensions:
+- name: Sampling is inference
+  asks: You are estimating the quality of thousands of interactions from a handful. How the handful
+    was chosen therefore matters more than how carefully each one was read.
+how_to_apply:
+- You are estimating the quality of thousands of interactions from a handful. How the handful was chosen
+  therefore matters more than how carefully each one was read.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

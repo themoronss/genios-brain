@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.intake_and_triage.routing_and_assignment
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.routing_and_assignment.skill_and_load_routing
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.routing_and_assignment.ownership_beats_ping_pong
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

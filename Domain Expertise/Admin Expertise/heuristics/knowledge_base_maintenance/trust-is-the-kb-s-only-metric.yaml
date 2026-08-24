@@ -1,0 +1,16 @@
+identity:
+  id: admin.heu.knowledge_base_maintenance.trust_is_the_kb_s_only_metric
+  name: Trust is the KB's only metric
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.knowledge_base_maintenance
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The moment people are burned twice by stale pages, they stop consulting the KB and start
+    interrupting colleagues — the failure mode the KB existed to prevent. Every page's accuracy defends
+    every other page's usage.
+  answers:
+  - What actually kills internal knowledge bases?

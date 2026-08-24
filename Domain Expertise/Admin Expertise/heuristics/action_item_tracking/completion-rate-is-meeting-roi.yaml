@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.action_item_tracking.completion_rate_is_meeting_roi
+  name: Completion rate is meeting ROI
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.action_item_tracking
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A meeting culture's worth is its action completion rate. Meetings that generate actions nobody
+    completes are expensive ways to feel productive — track the rate and the feeling becomes a fact.
+  answers:
+  - How is meeting effectiveness actually measured?

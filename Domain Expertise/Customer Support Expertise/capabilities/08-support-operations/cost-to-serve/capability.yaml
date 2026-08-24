@@ -1,0 +1,41 @@
+# Stub. Identity, purpose and load-set only — see queue-management in this subdomain for the
+# shape a promoted capability takes.
+
+identity:
+  id: customer_support.support_operations.cost_to_serve
+  name: Cost to Serve
+  domain: customer_support
+  subdomain: support_operations
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Working out what it actually costs to support a given customer, plan or product area, and
+  what that fact obliges someone to do. The cost is almost never spread the way people expect —
+  it concentrates in a handful of accounts, a couple of product areas and a small set of
+  endlessly repeated questions — and until the total is split by cause it justifies nothing
+  except hiring. The finding usually belongs to somebody else: a segment that is unprofitable to
+  serve is normally a product gap or a mis-sold plan, so cutting service to fix it treats the
+  symptom that is visible instead of the cause that is not.
+
+question: "What does serving this customer really cost us, and is that cost a support problem or somebody else's?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
+    decision_frameworks, kpis and handoffs, following the queue-management capability in this
+    subdomain. Promotion needs the attribution model settled first, because every version of
+    this capability lives or dies on how contact effort is allocated to accounts and how much
+    overhead is loaded onto it — get that wrong and the output is precise, defensible and
+    useless. The expertise worth encoding is the set of moves available once the number exists:
+    price change, plan redesign, product fix, documentation, proactive outreach and, last and
+    most often reached for, service reduction. It is also the capability most likely to be used
+    against the support team that produced it, which is a fact about how it should be written
+    rather than a reason not to write it.

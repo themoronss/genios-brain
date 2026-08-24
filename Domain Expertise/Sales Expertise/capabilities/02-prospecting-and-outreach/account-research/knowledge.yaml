@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.prospecting_and_outreach.account_research
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.account_research.fifteen_minute_account_brief
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.account_research.research_decays__ship_it_the_same_day
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

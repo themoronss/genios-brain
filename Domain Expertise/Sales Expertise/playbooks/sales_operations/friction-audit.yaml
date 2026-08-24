@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.sales_operations.friction_audit
+  name: Friction audit
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.sales_operations
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Sales ops exists to buy back selling hours. The quarterly audit asks reps where the hours
+    actually go — CRM ritual, approval chains, doc assembly — and deletes, automates or delegates the
+    top time-thieves.
+steps:
+- order: 1
+  name: Measure where the week goes
+  description: A one-week honest log per rep, quarterly. The result always surprises; the surprise is
+    the roadmap.
+  actor: human
+- order: 2
+  name: Delete before automating
+  description: Half the reported ritual serves nobody — fields no one reads, reports no one opens. Deletion
+    is free automation.
+  actor: human
+- order: 3
+  name: Automate what survives deletion
+  description: What remains and repeats gets tooling. Automating a broken ritual just makes the waste
+    faster.
+  actor: human

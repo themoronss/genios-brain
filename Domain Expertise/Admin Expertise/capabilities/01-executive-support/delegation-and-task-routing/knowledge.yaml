@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.executive_support.delegation_and_task_routing
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.delegation_and_task_routing.route_to_owners_with_deadlines
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.delegation_and_task_routing.delegation_is_trust_plus_verification
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

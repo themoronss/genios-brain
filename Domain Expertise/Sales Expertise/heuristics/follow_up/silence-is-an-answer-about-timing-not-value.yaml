@@ -1,0 +1,17 @@
+identity:
+  id: sales.heu.follow_up.silence_is_an_answer_about_timing__not_value
+  name: Silence is an answer about timing, not value
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.follow_up
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A prospect who went quiet mostly did not reject you — they deprioritised you. The correct
+    read is 'not now' rather than 'no', so the correct move is a scheduled return with new context, not
+    a louder repeat of the old pitch.
+  answers:
+  - Should a quiet thread be chased this week or parked with a date?
+  - Does silence after a good call mean the deal is dead?

@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.sop_management.sops_from_real_runs
+  name: SOPs from real runs
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.sop_management
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: SOPs are written from actual executions — screenshots, edge cases, the real order — owned,
+    dated, and tested by someone who was not the author, because an SOP that only its author can follow
+    is a memoir, not a procedure.
+steps:
+- order: 1
+  name: Document while doing
+  description: The SOP is captured during a real run of the task. From-memory SOPs skip the steps that
+    matter.
+  actor: human
+- order: 2
+  name: Test on a stranger
+  description: Someone new follows it cold. Where they stall is exactly what needs rewriting.
+  actor: human
+- order: 3
+  name: Review on schedule or on change
+  description: Process changed = SOP updated same week. The signature of dead SOP culture is 'oh, we do
+    it differently now'.
+  actor: human

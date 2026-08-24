@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.duplicate_and_merge.a_duplicate_spike_is_telemetry
+  name: A duplicate spike is telemetry
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.duplicate_and_merge
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Five identical tickets in an hour are not five annoyances — they are an outage announcement
+    arriving by customer. The merge queue is the earliest incident detector many teams have.
+  answers:
+  - What does a sudden duplicate cluster mean?

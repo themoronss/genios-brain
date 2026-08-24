@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.entitlement_and_sla.commitment_tracking
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.commitment_tracking.every_promise_gets_a_clock
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.commitment_tracking.the_small_promises_carry_the_relationship
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

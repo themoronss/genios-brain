@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "genios://domain-expertise/offering.schema.json",
+  "title": "Offering branch node",
+  "description": "WHAT the domain acts on — product, service, or hybrid — and its subtypes. Sales sells it; Support supports it; the taxonomy is the same object seen from two ends. Same inheritance discipline as the models tree: a file exists in a branch only when it differs. An offering is orthogonal to a model: B2B x Service is a real combination and neither branch owns the other.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["identity", "description", "metadata"],
+
+  "properties": {
+
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "kind", "domain", "version", "status"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9_]+\\.offering\\.[a-z0-9_.]+$" },
+        "name": { "type": "string" },
+        "kind": { "enum": ["offering_family", "offering_type"] },
+        "domain": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "parent": { "type": ["string", "null"] },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "status": { "enum": ["draft", "review", "stable", "deprecated"] },
+        "stub": { "type": "boolean", "default": false }
+      }
+    },
+
+    "description": { "type": "string", "minLength": 20 },
+
+    "characteristics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "delivery": { "type": "string", "description": "How value reaches the buyer after signature." },
+        "pricing_shape": { "type": "string", "description": "e.g. per-seat recurring, time and materials, fixed-fee milestone." },
+        "margin_profile": { "type": "string" },
+        "post_sale_load": { "type": "string", "description": "How much of the revenue depends on work done AFTER closing. This is what actually differentiates service from product in a sales motion." },
+
+        "support_load": { "type": "string", "description": "Shape and volume of the support demand this offering generates. The same fact post_sale_load names from the revenue side, seen from the queue." },
+        "resolution_locus": { "type": "string", "description": "Where a fix actually lands: our codebase, the customer's environment, a third party, or a human redoing the work. This is the real discriminator for support — an offering we can fix unilaterally and one we cannot are different jobs however similar they look on a price list." },
+
+        "notes": { "type": "string" }
+      }
+    },
+
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "activates": { "type": "array", "items": { "type": "string" } },
+        "deactivates": { "type": "array", "items": { "type": "string" } },
+        "emphasises": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "objects": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "extends": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["object"],
+            "properties": {
+              "object": { "type": "string" },
+              "add_properties": { "type": "array", "items": { "type": "object" } },
+              "add_patterns": { "type": "array", "items": { "type": "object" } },
+              "require_properties": { "type": "array", "items": { "type": "string" } },
+              "note": { "type": "string" }
+            }
+          }
+        },
+        "never_load": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "overrides": { "type": "object", "additionalProperties": true },
+
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "last_updated", "review_status"],
+      "properties": {
+        "owner": { "type": "string" },
+        "created_by": { "enum": ["human", "ai", "ai_human_reviewed"] },
+        "reviewed_by": { "type": "string" },
+        "last_updated": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "review_status": { "enum": ["unreviewed", "in_review", "approved"] },
+        "confidence": { "enum": ["experimental", "provisional", "stable"] },
+        "notes": { "type": "string" }
+      }
+    }
+  },
+
+  "allOf": [
+    {
+      "if": { "properties": { "identity": { "properties": { "kind": { "const": "offering_type" } }, "required": ["kind"] } }, "required": ["identity"] },
+      "then": { "properties": { "identity": { "required": ["parent"], "properties": { "parent": { "type": "string" } } } } }
+    }
+  ]
+}

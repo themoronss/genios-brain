@@ -1,0 +1,738 @@
+identity:
+  id: sales.obj.core.stakeholder
+  scope: core
+  name: Stakeholder
+  domain: sales
+  subdomain: qualification
+  owner_capability: sales.qualification.stakeholder_mapping
+  version: 1.0.0
+  status: draft
+  aliases: ["Interested Party", "Buying Group Member", "Influencer"]
+purpose:
+  statement: >
+    Anyone with a stake in the outcome, including people with no vote whose objection still
+    routes through someone who has one. Broader than Decision Maker and Champion, and
+    deliberately so: the unmapped stakeholder is how a deal dies without anyone we spoke to
+    ever turning negative. Decision Maker is the subset with authority; Champion is the subset
+    selling on our behalf; Stakeholder is everyone the outcome touches, including the security
+    reviewer who cannot buy anything and the team lead whose rota changes in week one. The
+    discriminating question is not "can they decide?" but "does the outcome move something
+    they care about?" — if yes, their silence is a gap in the map, not an absence of risk.
+attributes:
+  - name: identity_and_role
+    purpose: Who they are inside the organisation, and what part they play in the purchase.
+    type: composite
+    contains:
+      - stakeholder_type
+      - process_role
+      - department
+      - seniority_band
+      - tenure_months
+      - reports_to
+  - name: stake
+    purpose: What they personally gain or lose. The half of stakeholder mapping most reps skip.
+    type: composite
+    contains:
+      - stake_type
+      - stake_strength
+      - personal_win
+      - impacted_by_change
+  - name: position
+    purpose: Where they currently stand, and how much that reading is worth.
+    type: composite
+    contains:
+      - stance
+      - stance_confidence_bp
+      - stance_source
+      - is_silent
+  - name: power
+    purpose: Their ability to affect the outcome, which is not the same as their authority to decide
+      it.
+    type: composite
+    contains:
+      - formal_authority
+      - veto_scope
+      - influence_level
+      - influence_route
+  - name: discovery_and_coverage
+    purpose: How we found them and how complete the picture is. Tracks the map, not the person.
+    type: composite
+    contains:
+      - mapping_state
+      - discovered_via
+  - name: engagement
+    purpose: Observed interaction, as opposed to declared attributes.
+    type: composite
+    contains:
+      - last_engaged_at
+      - engagement_trend
+      - ball_in_court
+      - sentiment_trend
+  - name: stakeholder_type
+    purpose: Functional lens on the purchase, not job title. `external_advisor` exists because
+      consultants, incumbent vendors' account teams and board observers shape decisions from outside
+      the org chart and never appear in any CRM.
+    type: value
+    data_type: enum
+    allowed_values: [economic, technical, user, security, legal, procurement, finance, operations,
+        executive, external_advisor, unknown]
+    required: true
+    description: >
+      Functional lens on the purchase, not job title. `external_advisor` exists because
+      consultants, incumbent vendors' account teams and board observers shape decisions from
+      outside the org chart and never appear in any CRM.
+  - name: process_role
+    purpose: Role in the buying process, deliberately separate from stakeholder_type. A security
+      engineer is `security` by type and `gatekeeper` by process — the type tells you what they care
+      about, the role tells you where in the sequence they can stop you.
+    type: value
+    data_type: enum
+    allowed_values: [none, evaluator, gatekeeper, ratifier, implementer, budget_holder, unknown]
+    description: >
+      Role in the buying process, deliberately separate from stakeholder_type. A security
+      engineer is `security` by type and `gatekeeper` by process — the type tells you what
+      they care about, the role tells you where in the sequence they can stop you.
+  - name: department
+    purpose: The department of this object.
+    type: value
+    data_type: string
+  - name: seniority_band
+    purpose: Recorded because it predicts reachability and meeting cadence. It does not predict
+      authority.
+    type: value
+    data_type: enum
+    allowed_values: [ic, manager, director, vp, c_level, board, unknown]
+    description: Recorded because it predicts reachability and meeting cadence. It does not predict
+      authority.
+  - name: tenure_months
+    purpose: The tenure_months of this object.
+    type: value
+    data_type: integer
+    unit: months
+  - name: reports_to
+    purpose: Self-referential. The reporting line is the default route an objection travels along.
+    type: reference
+    ref: sales.obj.core.stakeholder
+    data_type: ref
+    description: Self-referential. The reporting line is the default route an objection travels along.
+  - name: stake_type
+    purpose: What the outcome moves for them. `none_apparent` is a real and useful value — a
+      stakeholder with no stake is safe to under-serve, and saying so explicitly is how you justify
+      not covering them.
+    type: value
+    data_type: enum
+    allowed_values: [budget, headcount, workflow_change, risk_ownership, career, compliance,
+        none_apparent, unknown]
+    description: >
+      What the outcome moves for them. `none_apparent` is a real and useful value — a
+      stakeholder with no stake is safe to under-serve, and saying so explicitly is how you
+      justify not covering them.
+  - name: stake_strength
+    purpose: '`existential` means the change threatens their role, headcount or budget line. This is the
+      value most correlated with a late, anonymous no, and it is almost never volunteered.'
+    type: value
+    data_type: enum
+    allowed_values: [peripheral, moderate, material, existential]
+    description: >
+      `existential` means the change threatens their role, headcount or budget line. This is
+      the value most correlated with a late, anonymous no, and it is almost never volunteered.
+  - name: personal_win
+    purpose: What this person gets if the deal goes ahead, phrased as they would phrase it. The field
+      most often left empty and the most predictive when populated — a stakeholder with no articulated
+      personal win will not spend political capital when the deal needs it.
+    type: value
+    data_type: string
+    description: >
+      What this person gets if the deal goes ahead, phrased as they would phrase it. The
+      field most often left empty and the most predictive when populated — a stakeholder with
+      no articulated personal win will not spend political capital when the deal needs it.
+  - name: impacted_by_change
+    purpose: Whether their day-to-day work changes on implementation. Users who lose a workflow they
+      like do not object in the evaluation; they object during rollout, to their manager, and the
+      renewal is where it surfaces.
+    type: value
+    data_type: boolean
+    description: >
+      Whether their day-to-day work changes on implementation. Users who lose a workflow they
+      like do not object in the evaluation; they object during rollout, to their manager, and
+      the renewal is where it surfaces.
+  - name: stance
+    purpose: '`sceptical` and `opposed` are separate because they need opposite treatment. A sceptic is
+      engaging and can be won with evidence; an opponent has decided and must be routed around or neutralised.
+      `blocker` is narrower still — they need not be against us, only able and willing to stop the process.'
+    type: value
+    data_type: enum
+    allowed_values: [unknown, advocate, supportive, neutral, sceptical, opposed, blocker]
+    required: true
+    description: >
+      `sceptical` and `opposed` are separate because they need opposite treatment. A sceptic
+      is engaging and can be won with evidence; an opponent has decided and must be routed
+      around or neutralised. `blocker` is narrower still — they need not be against us, only
+      able and willing to stop the process.
+  - name: stance_confidence_bp
+    purpose: How sure we are of the stance reading. A stance heard from the champion and a stance
+      stated to us directly must not score the same, or the room map becomes one person's opinion
+      wearing the costume of data.
+    type: value
+    data_type: integer
+    description: >
+      How sure we are of the stance reading. A stance heard from the champion and a stance
+      stated to us directly must not score the same, or the room map becomes one person's
+      opinion wearing the costume of data.
+  - name: stance_source
+    purpose: The stance_source of this object.
+    type: value
+    data_type: enum
+    allowed_values: [stated_to_us, inferred_from_behaviour, reported_by_third_party, assumed, unknown]
+  - name: is_silent
+    purpose: True when this person has never communicated with us directly. Silence is not neutrality
+      — the silent stakeholder is the one whose objection arrives via someone else, at the point of
+      signature, with no thread we can answer it in.
+    type: value
+    data_type: boolean
+    description: >
+      True when this person has never communicated with us directly. Silence is not neutrality
+      — the silent stakeholder is the one whose objection arrives via someone else, at the
+      point of signature, with no thread we can answer it in.
+  - name: formal_authority
+    purpose: Deliberately mirrors Decision Maker's authority_level so that promoting a stakeholder to
+      a decision maker is a field change rather than a re-modelling exercise. Most stakeholders sit at
+      `none` or `advisory` and still decide outcomes.
+    type: value
+    data_type: enum
+    allowed_values: [none, advisory, recommender, approver, veto_only]
+    description: >
+      Deliberately mirrors Decision Maker's authority_level so that promoting a stakeholder to
+      a decision maker is a field change rather than a re-modelling exercise. Most stakeholders
+      sit at `none` or `advisory` and still decide outcomes.
+  - name: veto_scope
+    purpose: What specifically they can stop. Scoped rather than boolean because the remedy differs
+      entirely — a security veto is answered with a questionnaire and a SOC 2 report, a procurement
+      veto with a paper process, and confusing the two burns two weeks.
+    type: value
+    data_type: enum
+    allowed_values: [none, security, legal, procurement, technical_fit, commercial, data_privacy,
+        unknown]
+    description: >
+      What specifically they can stop. Scoped rather than boolean because the remedy differs
+      entirely — a security veto is answered with a questionnaire and a SOC 2 report, a
+      procurement veto with a paper process, and confusing the two burns two weeks.
+  - name: influence_level
+    purpose: Standing inside the buying organisation, independent of any formal authority.
+    type: value
+    data_type: enum
+    allowed_values: [low, moderate, high, dominant]
+    description: Standing inside the buying organisation, independent of any formal authority.
+  - name: influence_route
+    purpose: 'Whose ear they have. This is the field that makes a powerless stakeholder dangerous: a team
+      lead with no vote whose weekly one-to-one is with the approver has a shorter path to the decision
+      than we do.'
+    type: reference
+    ref: sales.obj.core.decision_maker
+    data_type: ref
+    description: >
+      Whose ear they have. This is the field that makes a powerless stakeholder dangerous: a
+      team lead with no vote whose weekly one-to-one is with the approver has a shorter path
+      to the decision than we do.
+  - name: mapping_state
+    purpose: '`mapped` requires three things together — a named person, their stake, and their stance from
+      a source better than assumption. Two out of three is `engaged`, not `mapped`, and collapsing them
+      is how a room looks covered on a dashboard and is not.'
+    type: value
+    data_type: enum
+    allowed_values: [unknown, identified, contacted, engaged, mapped, at_risk, inactive]
+    required: true
+    description: >
+      `mapped` requires three things together — a named person, their stake, and their stance
+      from a source better than assumption. Two out of three is `engaged`, not `mapped`, and
+      collapsing them is how a room looks covered on a dashboard and is not.
+  - name: discovered_via
+    purpose: Provenance matters for coverage arithmetic. Stakeholders discovered by
+      `mentioned_by_third_party` are the ones we have never spoken to, and counting them the same as a
+      live contact inflates the coverage number that risk decisions read.
+    type: value
+    data_type: enum
+    allowed_values: [introduction, cc_on_thread, meeting_attendance, mentioned_by_third_party, crm,
+        website, manual_entry, unknown]
+    description: >
+      Provenance matters for coverage arithmetic. Stakeholders discovered by
+      `mentioned_by_third_party` are the ones we have never spoken to, and counting them the
+      same as a live contact inflates the coverage number that risk decisions read.
+  - name: last_engaged_at
+    purpose: The last_engaged_at of this object.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+  - name: engagement_trend
+    purpose: Engine-computed two-way volume against the prior fortnight.
+    type: value
+    data_type: number
+    source_paths: [derived.engagement]
+    description: Engine-computed two-way volume against the prior fortnight.
+  - name: ball_in_court
+    purpose: The ball_in_court of this object.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+  - name: sentiment_trend
+    purpose: Engine-computed observation balance, roughly -1 to 1. Read as a delta, never as a level —
+      a sceptical evaluator sits at a permanently low absolute value and that is normal.
+    type: value
+    data_type: number
+    source_paths: [derived.sentiment]
+    description: >
+      Engine-computed observation balance, roughly -1 to 1. Read as a delta, never as a level
+      — a sceptical evaluator sits at a permanently low absolute value and that is normal.
+states:
+  initial: unknown
+  values:
+    - name: unknown
+      description: Not on the map at all. The state that does the damage, and the only one that is
+        invisible by definition.
+    - name: identified
+      description: A named person exists, from a CC line, an attendee list or someone else's mention.
+    - name: contacted
+      description: We have written to them. One-way. Not the same as engaged.
+    - name: engaged
+      description: Two-way contact has occurred.
+      entered_when: [{path: thread.ball_in_court, op: "=", value: them}]
+    - name: mapped
+      description: Named, stake known, stance known from better than assumption. The only state that
+        counts towards coverage.
+    - name: at_risk
+      description: Previously engaged, now decaying. Applies to the relationship, not to their
+        opinion.
+      entered_when: [{path: derived.engagement, op: "<=", value: 0.5}]
+    - name: inactive
+      description: Left the role, or the process moved past them.
+      entered_when: [neighbor_has_obs: champion_change]
+  transitions:
+    - {from: unknown, to: identified}
+    - {from: identified, to: contacted}
+    - {from: contacted, to: engaged, when: [{path: thread.ball_in_court, op: "=", value: them}]}
+    - {from: engaged, to: mapped}
+    - {from: engaged, to: at_risk, when: [{path: derived.engagement, op: "<=", value: 0.5}]}
+    - {from: mapped, to: at_risk, when: [{path: derived.engagement, op: "<=", value: 0.5}]}
+    - {from: at_risk, to: engaged}
+    - {from: mapped, to: inactive, when: [neighbor_has_obs: champion_change]}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: belongs_to
+    target: sales.obj.core.account
+    cardinality: one
+    description: Always the account, never the deal. A stakeholder outlives the deal they were mapped
+      in.
+
+  - type: member_of
+    target: sales.obj.core.buying_committee
+    cardinality: zero_or_one
+    description: >
+      Committee membership is a formal subset of stakeholding. Every committee member is a
+      stakeholder; most stakeholders are not on the committee and are omitted from the map
+      for exactly that reason.
+
+  - type: influences
+    target: sales.obj.core.decision_maker
+    cardinality: zero_or_many
+    description: >
+      The route by which their view reaches a vote. A stakeholder with no route is noise; a
+      stakeholder with a short route and a negative stance is the deal.
+
+  - type: blocks
+    target: sales.obj.core.deal
+    cardinality: zero_or_one
+    description: Populated only when veto_scope is not `none`. Distinct from a negative stance.
+
+  - type: reports_to
+    target: sales.obj.core.stakeholder
+    cardinality: zero_or_one
+
+  - type: works_with
+    target: sales.obj.core.champion
+    cardinality: zero_or_many
+    description: The champion is our only observation instrument for stakeholders we cannot reach
+      directly.
+
+  - type: owns
+    target: sales.obj.core.pain_point
+    cardinality: zero_or_many
+    description: The pain they personally carry. A stakeholder who owns no pain has no reason to spend
+      capital.
+
+  - type: produces
+    target: sales.obj.core.objection
+    cardinality: zero_or_many
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: sh.arrived_by_introduction
+      statement: "An introduction observation fired on this person's thread."
+      status: executable
+      when:
+        - {has_obs: introduction}
+      yields: {confidence_bp: 9000, attribute: discovered_via, value: introduction}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        An introduction is the cleanest stakeholder-creation event the pipeline emits: someone
+        inside the account decided this person needed to be in the conversation, which is
+        itself evidence of a stake. It says nothing about stance.
+
+    - id: sh.owns_the_security_gate
+      statement: "A security review started on this person's thread — they hold a scoped veto."
+      status: executable
+      when:
+        - {has_obs: security_review_started}
+      yields: {confidence_bp: 8000, attribute: veto_scope, value: security}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Security reviewers can stop a deal and can never start one, so they are structurally
+        invisible to any model that scores people by their ability to advance the sale. This
+        pattern exists to make them visible before the questionnaire arrives, not after.
+
+    - id: sh.owns_the_legal_gate
+      statement: "Legal review started on this person's thread — they hold a legal veto."
+      status: executable
+      when:
+        - {has_obs: legal_review}
+      yields: {confidence_bp: 8000, attribute: veto_scope, value: legal}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Kept separate from the security gate rather than merged, because the grammar has no OR
+        and because the remedies share nothing — redlines are negotiated, questionnaires are
+        answered, and the people who own them rarely speak to each other.
+
+    - id: sh.crm_buying_role_declared
+      statement: "The CRM contact record carries an explicit buying-group role."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: process_role}
+      requires_signals:
+        - {kind: fact_path, name: crm.contact.buying_role, owner_layer: L1, note: "The CRM connector reads\
+            contacts but does not project role or buying-group membership into a typed L2 fact, so the one
+            place a human already wrote the answer is unreadable."}
+
+    - id: sh.reports_to_from_org_chart
+      statement: "The reporting line is known, giving the default route an objection travels."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: reports_to}
+      requires_signals:
+        - {kind: fact_path, name: person.reports_to, owner_layer: L1, note: "Without a reporting line, influence_route\
+            can only ever be guessed, and route length is the property that separates a harmless dissenter
+            from a fatal one."}
+
+  heuristic:
+
+    - id: sh.owns_the_objection
+      statement: "Raised an objection and the reply is now owed by us — they are engaged, not opposed."
+      status: executable
+      when:
+        - {has_obs: objection}
+        - {path: thread.ball_in_court, op: "=", value: us}
+      yields: {confidence_bp: 7000, attribute: stance, value: sceptical}
+      evidence_fields: [thread.ball_in_court]
+      note: >
+        This reads backwards to most reps. Someone bothering to write an objection is spending
+        their own time on our deal; people who have decided against us stop replying. Mark
+        them sceptical, which is winnable, and reserve `opposed` for a stated position.
+
+    - id: sh.silent_on_a_live_deal
+      statement: "Attached to an open deal, one edge only, and no outbound follow-up has ever been sent
+        to them."
+      status: executable
+      when:
+        - {fn: edge_count, op: "<=", value: 1}
+        - {neighbor_fact: deal.status, op: "=", value: open}
+        - {no_obs: followup_sent}
+      yields: {confidence_bp: 6000, attribute: is_silent, value: true}
+      note: >
+        Deliberately weak at 6000 because graph degree is a coarse proxy for human contact —
+        it counts edges, not conversations. It is nonetheless the only observable handle on
+        the object's whole reason for existing, and a false positive here costs one email.
+
+    - id: sh.champion_change_voids_every_stance
+      statement: "The champion changed on a neighbouring deal node, so every stance learned through them
+        is now hearsay."
+      status: executable
+      when:
+        - {neighbor_has_obs: champion_change}
+      yields: {confidence_bp: 7500, attribute: stance_confidence_bp, value: 2500}
+      note: >
+        Not a stance change — a confidence collapse. Most of what we know about a room reaches
+        us through one person, and when that person leaves the map does not become wrong, it
+        becomes unsourced. Re-verification is cheap; discovering at signature that it was
+        never true is not.
+
+    - id: sh.owns_the_procurement_gate
+      statement: "Procurement has engaged on this deal and this person is running it."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: veto_scope, value: procurement}
+      requires_signals:
+        - {kind: obs_kind, name: procurement_engaged, owner_layer: L2, note: "L2 emits legal_review and\
+            security_review_started but nothing for procurement, which in most enterprises is the gate that
+            actually sets the signature date."}
+
+    - id: sh.named_by_a_third_party
+      statement: "Somebody in the account named this person in a thread we can read, but they have never
+        written to us."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: discovered_via, value: mentioned_by_third_party}
+      requires_signals:
+        - {kind: obs_kind, name: person_mentioned, owner_layer: L2, note: "The highest-value gap on this\
+            object. An unmapped stakeholder is by construction someone who never appears as a sender or recipient,
+            so the ONLY way the pipeline can ever see them is by extracting third-party name mentions from
+            message bodies. Without it every pattern here is confined to people already in our address book,
+            which is precisely the population that was never the risk."}
+
+    - id: sh.attends_but_never_replies
+      statement: "Present on every deal meeting invite and absent from every thread — the classic silent
+        veto."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: is_silent, value: true}
+      requires_signals:
+        - {kind: fact_path, name: calendar.attendees, owner_layer: L1, note: "Calendar is connected and\
+            meeting.start_at is projected, but the attendee roster is discarded. Attendance without correspondence
+            is the strongest cheap signal of a stakeholder being managed by someone else."}
+        - {kind: derived, name: derived.reply_ratio, owner_layer: L2}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: CC lines and forwarded threads, path: thread.last_inbound}
+  - {source: email, signal: who is waiting on whom, path: thread.ball_in_court}
+  - {source: email, signal: "introductions, objections, review kick-offs"}
+  - {source: calendar, signal: "meeting attendee rosters — not yet projected into facts"}
+  - {source: meeting_transcript, signal: "who defers to whom, who is spoken about in absentia"}
+  - {source: crm, signal: "contact records, buying-group roles, reporting lines"}
+  - {source: slack, signal: shared-channel participation in the account}
+  - {source: document, signal: "security questionnaires and redlines name their owners"}
+  - {source: derived, signal: two-way interaction trajectory, path: derived.engagement}
+  - {source: derived, signal: observation balance for this person, path: derived.sentiment}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: stance_map, type: list, description: "Every known stakeholder with stance and the confidence\
+      behind it.", consumed_by: [L4.reasoning_unit]}
+  - {name: coverage_bp, type: integer, description: "Share of identified stakeholders in mapping_state\
+      = mapped. A floor, never a total.", consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: blocker_list, type: list, description: "Stakeholders with a non-null veto_scope or stance =\
+      blocker, with the scope named.", consumed_by: [L4.decision_maker, L5.execution_planning]}
+  - {name: unmapped_risk_bp, type: integer, description: "Exposure from silent and third-party-sourced\
+      stakeholders.", consumed_by: [L4.reasoning_unit]}
+  - {name: outreach_route, type: string, description: "Whether to approach directly or via the champion,\
+      and on which channel.", consumed_by: ["L5.2.channel_planner", L5.communication_planning]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: sh.veto_cannot_approve, statement: "A stakeholder whose formal_authority is veto_only or none\
+      can never be recorded as the approving party.", hard: true}
+  - {id: sh.no_bypass_in_procurement_led, statement: "Where the account runs a procurement-led process,\
+      direct contact outside the sanctioned channel may breach their policy and forfeit the deal.",
+      hard: true}
+  - {id: sh.assumed_stance_caps_confidence, statement: "stance_source = assumed caps stance_confidence_bp;\
+      an assumption may never be promoted by repetition.", hard: true}
+  - {id: sh.coverage_is_a_lower_bound, statement: "Any coverage figure derived from this object is a lower\
+      bound and must be reported as such.", hard: true}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: sh.veto_outranks_influence
+    statement: >
+      A stakeholder with veto_scope other than `none` must be treated as deal-blocking
+      regardless of influence_level or seniority. A junior security engineer with a scoped
+      veto stops more deals than a supportive VP starts.
+    then: flag_gate_owner
+    severity: blocking
+
+  - id: sh.blocker_requires_a_named_mitigation
+    statement: >
+      A deal carrying any stakeholder at stance = blocker must not enter the committed
+      forecast without a recorded mitigation naming who addresses it and how.
+    then: block_committed_forecast
+    severity: blocking
+
+  - id: sh.silence_on_a_live_deal_is_a_gap
+    statement: >
+      An identified stakeholder with no direct two-way contact on an open deal raises a
+      coverage gap. The absence of an objection from someone we have never spoken to is not
+      evidence of agreement.
+    when:
+      - {no_obs: followup_sent}
+      - {neighbor_fact: deal.status, op: "=", value: open}
+    then: flag_coverage_gap
+    severity: warning
+
+  - id: sh.stance_goes_stale
+    statement: >
+      A stance older than one reply-cadence multiple must be down-weighted rather than
+      carried forward. Positions move quietly, and the map degrades faster than anyone
+      updates it.
+    when:
+      - {fn: days_since, path: thread.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 4, floor:
+            21}}
+    then: decay_stance_confidence
+    severity: advisory
+
+  - id: sh.count_is_a_floor_not_a_total
+    statement: >
+      The number of mapped stakeholders is a lower bound on the room, never a measure of it.
+      Any coverage metric derived from this object must be expressed as "at least N", because
+      the population we care about most is the one we cannot enumerate.
+    severity: advisory
+
+  - id: sh.third_party_stance_is_not_confirmation
+    statement: >
+      A stance sourced from reported_by_third_party may not raise stance_confidence_bp above
+      the champion's own reliability. Everything the champion tells us about the room is one
+      person's account of a meeting we were not in.
+    severity: warning
+
+# ── 8 · Decision Factors ─────────────────────────────────────────────────────────────────
+decision_factors:
+
+  - name: stance_and_its_confidence
+    weight_bp: 2500
+    direction: context
+    description: >
+      Stance weighted by how it was learned. A confident neutral outranks an assumed
+      supporter, because the second is a guess wearing the costume of coverage.
+    reads: [stance, stance_confidence_bp, stance_source]
+
+  - name: veto_exposure
+    weight_bp: 2000
+    direction: decreases
+    description: Scoped ability to stop the process. The only factor here that can be individually
+      fatal.
+    reads: [veto_scope, formal_authority, process_role]
+
+  - name: coverage_completeness
+    weight_bp: 2000
+    direction: increases
+    description: How much of the room is mapped rather than merely named. Silent stakeholders
+      subtract.
+    reads: [mapping_state, is_silent, discovered_via]
+
+  - name: influence_weight
+    weight_bp: 1500
+    direction: context
+    description: Standing plus the shortness of the route to the approver. Either alone is weak.
+    reads: [influence_level, influence_route, seniority_band]
+
+  - name: stake_materiality
+    weight_bp: 1200
+    direction: context
+    description: >
+      Direction depends on stance. A material stake behind an advocate is the strongest asset
+      in the deal; the identical stake behind a sceptic is the strongest threat.
+    reads: [stake_type, stake_strength, personal_win, impacted_by_change]
+
+  - name: engagement_direction
+    weight_bp: 800
+    direction: context
+    reads: [engagement_trend, last_engaged_at, sentiment_trend]
+
+# ── 9 · Inference Patterns ⭐ ────────────────────────────────────────────────────────────
+evidence:
+  - {source: meeting_transcript, strength_bp: 8500, description: "The person states their own position\
+      aloud. The strongest routinely available source, because stance is self-reported by nature."}
+  - {source: email, strength_bp: 8000, description: "A written position from the person themselves."}
+  - {source: document, strength_bp: 7500, description: "A signed-off questionnaire or redline names its\
+      owner unambiguously."}
+  - {source: crm, strength_bp: 6500, description: "Declared buying-group role. Accurate when maintained,\
+      and it usually is not."}
+  - {source: calendar, strength_bp: 5500, description: "Attendance proves involvement and nothing about\
+      stance."}
+  - {source: slack, strength_bp: 5000, description: "Shared-channel participation. Good for engagement,\
+      poor for position."}
+  - {source: derived, strength_bp: 4000, description: "Inferred from observation and engagement shape.\
+      Corroborating only."}
+  - {source: manual_entry, strength_bp: 3500, description: "A rep's reading of the room, most often relayed\
+      from the champion. Useful, and the weakest thing here that people treat as strong."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: mapped_stakeholders_per_deal, unit: count, description: "Count in mapping_state = mapped. Correlates\
+      with win rate more reliably than any activity metric.", owner_layer: L6}
+  - {name: silent_stakeholder_share, unit: percent, description: "Share identified but never in two-way\
+      contact. The number this object exists to move.", owner_layer: L6}
+  - {name: late_blocker_rate, unit: percent, description: "Deals where a blocker was first detected after\
+      proposal_sent. Measures whether mapping happens early enough to matter.", owner_layer: L6}
+  - {name: stance_accuracy, unit: percent, description: "Inferred stance against stance later confirmed.\
+      Calibrates every heuristic above.", owner_layer: L6}
+  - {name: time_to_full_map, unit: days, description: "Deal creation to all identified stakeholders reaching\
+      mapped.", owner_layer: L6}
+  - {name: gate_lead_time, unit: days, description: "Days between detecting a gate owner and the gate\
+      clearing.", owner_layer: L2}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: sh.identified, name: Stakeholder Identified, emitted_when: [has_obs: introduction], payload: [
+      stakeholder_type, discovered_via]}
+  - {id: sh.stance_changed, name: Stance Changed, payload: [previous_stance, stance, stance_source, stance_confidence_bp]}
+  - {id: sh.gate_detected, name: Gate Owner Detected, emitted_when: [has_obs: security_review_started],
+    payload: [veto_scope, process_role], description: "The event most often noticed late. A gate owner appearing
+      in week six moves the close date by weeks, not days."}
+  - {id: sh.went_silent, name: Stakeholder Went Silent, emitted_when: [{path: derived.engagement, op: "<=",
+          value: 0.5}], payload: [last_engaged_at, engagement_trend]}
+  - {id: sh.map_invalidated, name: Room Map Invalidated, emitted_when: [neighbor_has_obs: champion_change],
+    payload: [affected_stakeholders, stance_source], description: "Fires when the source of most of our
+      stance readings leaves. Every third-party-sourced stance in the account drops to unsourced in the
+      same pass."}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: sh.ask_who_else, name: Ask the champion who else is involved, actor: human, effect: "One question,\
+      asked once, typically surfaces two stakeholders nobody had named. The cheapest coverage move available
+      and the least used."}
+  - {id: sh.map_the_room, name: Build the stakeholder map explicitly, actor: human, effect: "Name, stake,\
+      stance, route. A map with names only is a contact list."}
+  - {id: sh.contact_directly, name: Open a direct thread, actor: human, preconditions: [no_obs: followup_sent],
+    effect: "Converts a silent stakeholder into an observable one. Check the champion is not being bypassed
+      first — in procurement-led accounts this move can cost the deal."}
+  - {id: sh.serve_the_gate_owner, name: Serve the gate owner before they ask, actor: human, preconditions: [
+      has_obs: security_review_started], effect: "Send the questionnaire, SOC 2 report or redline pack unprompted.
+      Turns a two-week gate into a two-day one."}
+  - {id: sh.neutralise_blocker, name: Neutralise a blocker, actor: human, effect: "Address the scoped\
+      concern, or build a route around them through a higher authority. Deciding which is the judgement
+      call; doing neither is the default and it loses."}
+  - {id: sh.reverify_stance, name: Re-verify a stance learned second-hand, actor: human, effect: "Required\
+      after champion_change. Everything the departed champion told us about the room is now unsourced."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Security engineer, three levels down, never on a call", note: "stakeholder_type security,\
+      formal_authority none, veto_scope security. No vote and total stopping power. The clearest case for
+      why this object is broader than Decision Maker."}
+  - {label: "Team lead whose rota changes on rollout", note: "stake_type workflow_change, stake_strength\
+      existential, stance unknown, is_silent true. Never objects during the evaluation and objects loudly
+      during implementation."}
+  - {label: "Supportive VP with no route to the approver", note: "influence_level high, influence_route\
+      null. Feels like progress and moves nothing. Warmth is not coverage."}
+  - {label: "External consultant running the vendor selection", note: "stakeholder_type external_advisor.\
+      Appears in no CRM and shapes the shortlist. Systematically missed by any mapping driven off the customer's
+      own directory."}
+  - {label: "Champion counted as the stakeholder map", note: "THE classic misclassification. One mapped\
+      person and a coverage figure of 100 per cent, because the denominator is only the people we already
+      knew about."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Six of eleven patterns are executable today; five are blocked. The highest-value signal
+    gap by a wide margin is the person_mentioned observation kind — an unmapped stakeholder
+    is by construction someone who never appears as a sender or recipient, so extracting
+    third-party name mentions from message bodies is the only mechanism by which the pipeline
+    could ever see the population this object exists to catch. Every executable pattern here
+    is confined to people already in our address book, which is exactly the group that was
+    never the risk. Second-ranked is calendar.attendees, discarded today despite the calendar
+    connector being live.

@@ -1,0 +1,36 @@
+invoice_id,client_name,client_email,client_phone,amount_inr,issue_date,due_date,payment_terms,project_name,payment_status,last_reminder_sent,is_vip_client,notes
+INV-001,Acme Tech Solutions,ar@acmetech.in,+919876500001,45000,2026-05-08,2026-06-07,net-30,Website redesign,unpaid,,false,Mid-cycle UI sprint
+INV-002,Bombay Threads,finance@bombaythreads.com,+919876500002,38000,2026-05-10,2026-06-09,net-30,Brand identity refresh,unpaid,,false,
+INV-003,Lotus Foods Pvt Ltd,accounts@lotusfoods.in,+919876500003,52000,2026-05-09,2026-06-08,net-30,Packaging design,unpaid,,false,
+INV-004,Verma Realty,accounts@vermarealty.in,+919876500004,28000,2026-05-12,2026-06-11,net-30,Logo + brochure,unpaid,,false,
+INV-005,Sandalwood Coffee Co,billing@sandalwoodcoffee.com,+919876500005,75000,2026-04-25,2026-06-04,net-40,Cafe interior signage,unpaid,2026-06-08,false,Polite reminder already sent
+INV-006,Tech Bharat Foundation,ngo@techbharat.org,+919876500006,60000,2026-04-22,2026-06-01,net-40,Annual report design,unpaid,2026-06-06,false,
+INV-007,Mehta Imports,ar@mehtaimports.in,+919876500007,90000,2026-04-20,2026-05-30,net-40,Catalogue + ecom assets,unpaid,2026-06-08,true,VIP client - retainer
+INV-008,GoBlue Logistics,finance@goblue.co.in,+919876500008,120000,2026-04-14,2026-05-23,net-39,App UI sprint,unpaid,2026-05-30,false,3 weeks late
+INV-009,Saffron Ventures,accounts@saffronventures.in,+919876500009,180000,2026-04-10,2026-05-20,net-40,Pitch deck + investor site,unpaid,2026-06-01,true,VIP - third reminder needed
+INV-010,Patel Pharmacies,billing@patelpharmacies.com,+919876500010,65000,2026-04-12,2026-05-22,net-40,Storefront branding,unpaid,2026-06-02,false,21 days late
+INV-011,Indigo Travels,finance@indigotravels.in,+919876500011,150000,2026-05-13,2026-06-13,net-31,Microsite + booking flow,unpaid,,true,Large invoice - due tomorrow
+INV-012,Rasa Restaurants,ar@rasarestaurants.in,+919876500012,220000,2026-05-12,2026-06-12,net-31,Menu + interior signage,unpaid,,true,Large invoice - due today
+INV-013,Konkan Coast Stays,finance@konkancoast.com,+919876500013,75000,2026-05-14,2026-06-13,net-30,Property listing visuals,unpaid,,false,Due tomorrow - moderate
+INV-014,Khaki Outdoor Gear,billing@khakigear.in,+919876500014,140000,2026-05-15,2026-06-14,net-30,Product packaging,unpaid,,false,Due in 2 days - large
+INV-015,Mehta Imports,ar@mehtaimports.in,+919876500015,40000,2026-02-28,2026-03-30,net-30,Newsletter template,paid,2026-04-05,true,Late payer history #1
+INV-016,Mehta Imports,ar@mehtaimports.in,+919876500016,55000,2026-03-15,2026-04-14,net-30,Product line illustrations,paid,2026-04-25,true,Late payer history #2
+INV-017,Mehta Imports,ar@mehtaimports.in,+919876500017,42000,2026-04-05,2026-05-05,net-30,Diwali campaign creatives,paid,2026-05-18,true,Late payer history #3 - 3rd time in 90d
+INV-018,GoBlue Logistics,finance@goblue.co.in,+919876500018,38000,2026-03-01,2026-03-31,net-30,Driver onboarding deck,paid,2026-04-05,false,Late history
+INV-019,GoBlue Logistics,finance@goblue.co.in,+919876500019,62000,2026-03-22,2026-04-21,net-30,Route map redesign,paid,2026-05-02,false,Late history
+INV-020,GoBlue Logistics,finance@goblue.co.in,+919876500020,48000,2026-04-08,2026-05-08,net-30,Annual review brochure,paid,2026-05-20,false,Late history (3rd in 90d)
+INV-021,Sunshine Pediatrics,billing@sunshinepediatrics.in,+919876500021,32000,2026-06-01,2026-07-01,net-30,Reception area mural,unpaid,,false,Not yet due
+INV-022,Westside Architects,ar@westsideArchitects.com,+919876500022,95000,2026-05-25,2026-06-24,net-30,Portfolio site,unpaid,,false,Not yet due
+INV-023,Konark Solar,finance@konarksolar.in,+919876500023,68000,2026-06-04,2026-07-04,net-30,Pitch deck design,unpaid,,false,Healthy
+INV-024,Spice Route Cafes,accounts@spicercafes.com,+919876500024,55000,2026-06-02,2026-07-02,net-30,Menu redesign,unpaid,,false,Healthy
+INV-025,Atlas Movers,ar@atlasmovers.in,+919876500025,72000,2026-06-06,2026-07-06,net-30,Truck wrap creative,unpaid,,false,Healthy
+INV-026,Ardent Edutech,billing@ardentedutech.in,+919876500026,35000,2026-06-08,2026-07-08,net-30,Course brochure,unpaid,,false,Healthy
+INV-027,Marigold Salons,accounts@marigoldsalons.in,+919876500027,28000,2026-06-09,2026-07-09,net-30,Pricelist + flyers,unpaid,,false,Healthy
+INV-028,Saffron Ventures,accounts@saffronventures.in,+919876500028,85000,2026-06-05,2026-07-05,net-30,Annual report,unpaid,,true,Healthy VIP
+INV-029,Acme Tech Solutions,ar@acmetech.in,+919876500029,40000,2026-05-25,2026-06-09,net-15,Banner ads pack,unpaid,2026-06-10,false,Polite reminder already 2d ago
+INV-030,Lotus Foods Pvt Ltd,accounts@lotusfoods.in,+919876500030,48000,2026-05-20,2026-06-04,net-15,Festive packaging,unpaid,2026-06-08,false,Polite already sent
+INV-031,Bombay Threads,finance@bombaythreads.com,+919876500031,32000,2026-05-27,2026-06-11,net-15,Lookbook print,unpaid,,false,Just 1d late - too early
+INV-032,Verma Realty,accounts@vermarealty.in,+919876500032,15000,2026-05-15,2026-05-29,net-14,Brochure quick edit,paid,2026-06-01,false,Already paid
+INV-033,Patel Pharmacies,billing@patelpharmacies.com,+919876500033,18000,2026-05-12,2026-05-26,net-14,Window decals,paid,2026-06-01,false,Already paid
+INV-034,Tech Bharat Foundation,ngo@techbharat.org,+919876500034,25000,2026-05-18,2026-06-01,net-14,Social media kit,partial,2026-06-08,false,50% received
+INV-035,Sandalwood Coffee Co,billing@sandalwoodcoffee.com,+919876500035,12000,2026-05-19,2026-06-02,net-14,Quick web update,paid,2026-06-04,false,Paid

@@ -1,0 +1,48 @@
+# Knowledge manifest — references the definition pages whose identity.owner_capability
+# names this capability. Auto-linked from the pages' own declarations: the pages were
+# written and the index never was, so the engine opened an empty list above a full shelf.
+capability: customer_support.knowledge_and_deflection.self_service_deflection
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.self_service_deflection.answer_at_the_point_of_friction
+  - customer_support.pb.self_service_deflection.confirmed_resolution_prompt
+  - customer_support.pb.self_service_deflection.deflection_failure_review
+  - customer_support.pb.self_service_deflection.escape_hatch_walk
+  - customer_support.pb.self_service_deflection.intent_first_inventory
+  - customer_support.pb.self_service_deflection.release_coupled_review
+  - customer_support.pb.self_service_deflection.search_log_triage
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.self_service_deflection.a_self_service_surface_without_a_visible_escape
+  - customer_support.heu.self_service_deflection.an_abandoned_self_service_session_is_a_churn_sig
+  - customer_support.heu.self_service_deflection.an_article_nobody_reports_as_wrong_is_not_theref
+  - customer_support.heu.self_service_deflection.deflect_the_second_occurrence_not_the_first
+  - customer_support.heu.self_service_deflection.deflection_that_rises_while_contact_volume_stays
+  - customer_support.heu.self_service_deflection.if_the_metric_can_be_improved_by_making_the_cont
+  - customer_support.heu.self_service_deflection.measure_per_intent_never_as_one_company_number
+  - customer_support.heu.self_service_deflection.never_count_an_answer_viewed_during_an_open_tick
+  - customer_support.heu.self_service_deflection.self_service_only_works_on_questions_that_have_o
+  - customer_support.heu.self_service_deflection.the_customer_must_be_able_to_describe_the_proble
+  - customer_support.heu.self_service_deflection.when_an_intent_deflects_well_and_its_contact_vol
+  - customer_support.heu.self_service_deflection.zero_result_searches_are_the_most_valuable_line
+mental_models:
+  core: []
+  scoped:
+  - customer_support.mm.self_service_deflection.containment_and_resolution_are_different_things
+  - customer_support.mm.self_service_deflection.deflection_is_a_funnel_not_a_rate_the_question_f
+  - customer_support.mm.self_service_deflection.demand_destruction_has_two_flavours_answered_and
+  - customer_support.mm.self_service_deflection.knowledge_is_a_liability_with_a_maintenance_cost
+  - customer_support.mm.self_service_deflection.the_ceiling_on_deflection_is_set_by_product_clar
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped:
+  - customer_support.df.self_service_deflection.answerability_sort
+  - customer_support.df.self_service_deflection.deflection_quality_quadrant
+  - customer_support.df.self_service_deflection.escape_before_deflect
+  - customer_support.df.self_service_deflection.jobs_to_be_done_on_the_query
+  - customer_support.df.self_service_deflection.kcs_capture_in_the_flow

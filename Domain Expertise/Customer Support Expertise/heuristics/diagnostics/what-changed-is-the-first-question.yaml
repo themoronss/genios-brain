@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.diagnostics.what_changed_is_the_first_question
+  name: What changed is the first question
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.diagnostics
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Systems that worked yesterday and fail today were changed — by a deploy, a config, a limit,
+    an expiry. 'What changed?' finds more root causes per minute than any other diagnostic question.
+  answers:
+  - Where should diagnosis start on a was-working issue?

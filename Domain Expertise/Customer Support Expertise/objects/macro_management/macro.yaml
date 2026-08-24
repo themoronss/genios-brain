@@ -1,0 +1,2222 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Macro — a canned response with variables.
+#
+# SCOPED, not core, and the reason is worth stating rather than assuming. A macro is an
+# artefact of HOW ONE TEAM ANSWERS. It has no meaning to triage (which decides what a thing
+# is, before anyone has written a word), none to incident response (where the reply is
+# composed once, by a named human, and reused deliberately through the incident object), and
+# none at all to capacity planning (which counts contacts, not the phrasing of their
+# replies). Putting it in objects/core/ would put a reply template in front of capabilities
+# whose correct behaviour is to write from scratch — and an object in the load-set is a
+# suggestion. Exactly one capability loads it, so it lives here.
+#
+# The expertise this object exists to carry:
+#
+#   1. A macro saves time and destroys trust in the SAME MOTION. The macro that answers a
+#      question nobody asked is the most damaging message support sends — not because it is
+#      wrong, but because it is proof that nobody read the message. A slow reply says we are
+#      busy. A confident irrelevant reply says we are not listening, and no better second
+#      reply recovers it.
+#
+#   2. A macro used on more than a small share of a queue is usually a missing product fix or
+#      a missing knowledge article wearing a disguise. High usage is read everywhere as an
+#      efficiency win. It is a bill: the gap is being permanently financed by support labour
+#      and never appears as a product cost.
+#
+#   3. Sprawl is real and it is structural. Adding a macro is free and visibly helpful;
+#      deleting one can break somebody's workflow and is visibly a loss. Nobody owns the
+#      library as a whole, so every local decision is rational and the aggregate is a picker
+#      with four versions of the same refund reply. Agents then search near-duplicates under
+#      time pressure and pick badly, and no individual macro accumulates enough volume to be
+#      worth measuring.
+#
+#   4. The best macros are PARTIAL — a skeleton the agent must complete. Libraries drift
+#      toward complete ones anyway, because complete ones are faster and speed is the number
+#      agents are held to. Nobody reports unedited_send_rate, so the person writing a
+#      skeleton is optimising a metric that does not exist.
+#
+# Almost every pattern below is needs_signal, and the shape of the gap is specific: the
+# helpdesk knows which macro was applied and whether a single character was changed before it
+# was sent, and it projects neither. That one join — macro applied, edit distance, outcome —
+# is what would turn this object from a set of arguments into a set of measurements.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.obj.macro_management.macro
+  scope: capability
+  name: Macro
+  domain: customer_support
+  subdomain: knowledge_and_deflection
+  owner_capability: customer_support.knowledge_and_deflection.macro_management
+  version: 1.0.0
+  status: draft
+  aliases:
+    - Canned Response
+    - Saved Reply
+    - Quick Text
+    - Reply Template
+    - Snippet
+    - Signature Response
+    - Predefined Reply
+
+purpose:
+  statement: >
+    A pre-written reply with variables, stored in a library and selected by an agent at the
+    moment of answering. Three things make it an object rather than a string: it carries a
+    claim about how the product behaves, it is sent by a human who may or may not have
+    changed it, and it is reused — so every property it has is multiplied by its volume,
+    including being wrong.
+
+    The stored template is not the sent message. The difference between them is the agent's
+    edit, and that difference is the only thing about a macro genuinely worth measuring. A
+    library reported by usage and reviewed by wording is a library nobody has measured.
+
+  discriminator: >
+    An article is written for the CUSTOMER TO FIND; a macro is written for the AGENT TO SEND —
+    and content that is excellent as one is almost always poor as the other, because an
+    article must survive being read cold by a stranger with no context, while a macro must
+    survive being read immediately after the customer's own words, by someone who has just
+    explained their situation and is checking whether we heard it.
+
+  answers:
+    - "Is there a canned reply that fits this contact, and how much must the agent change before sending it is honest?"
+    - "Is this macro still true, or does it describe behaviour the product stopped having?"
+    - "Is this macro's volume a support efficiency, or a product defect being financed by support labour?"
+    - "Which macros in this library are near-duplicates nobody uses — and which of them is the agent about to pick?"
+    - "Did the reply that used this macro end the contact, or start a second one?"
+
+  not:
+    - >
+      NOT the Knowledge Article. An article is published for a customer to find; a macro is
+      selected by an agent to send. Same answer, opposite readers, and maintaining them as
+      one document produces a macro that reads like documentation or an article that
+      presumes context the reader does not have.
+    - >
+      NOT the Resolution. The macro is the vehicle; the resolution is what made the problem
+      stop. A macro can carry a fix, an apology, a workaround or a stalling message, and
+      nothing on this object can tell you which — Resolution owns that.
+    - >
+      NOT the Conversation. This object is the template in the library, not the message that
+      went out. Conversation owns what was actually said.
+    - >
+      NOT a generated AI answer. A generated reply is composed per contact and governed by
+      what the model was allowed to see; a macro is a fixed artefact somebody approved once.
+      ai_deflection owns the generated case, and conflating them means neither gets the
+      review it needs.
+    - >
+      NOT signatures, greetings or internal note templates. Those carry no claim about the
+      product and therefore cannot be wrong in the way this object is about.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Attributes — deliberately tighter than a core object. Six groupings, and only fields that
+# change a decision. `body` and `completion_shape` carry the whole thesis; everything in
+# `consequence` is currently uncomputable and is here as the specification of what would
+# make this object measurable rather than merely arguable.
+# ─────────────────────────────────────────────────────────────────────────────
+attributes:
+
+  - name: identification
+    purpose: >
+      What this macro is and what it says. `body` is the stored template and never the sent
+      message — keeping that distinction in the model is what makes the edit measurable.
+    type: composite
+    contains: [macro_ref, title, body, locale, macro_type, audience_scope]
+
+  - name: fit
+    purpose: >
+      What this macro is FOR, and how narrowly. `applies_when` is usually empty in real
+      libraries, and that emptiness is the mechanism behind the wrong-question send: with no
+      recorded fit condition, selection collapses to keyword matching against the title.
+    type: composite
+    contains: [intent_ref, product_area_ref, knowledge_article_ref, applies_when, personalisation_depth]
+
+  - name: shape
+    purpose: >
+      How much the agent must do before this can go out. The single most predictive group on
+      the object and the one no macro library models — a macro that can be sent with zero
+      edits will be, on the busiest day, to the customer who least deserves it.
+    type: composite
+    contains: [completion_shape, variable_count, required_edit_count, unedited_send_rate_bp]
+
+  - name: usage
+    purpose: >
+      How much of the queue runs through this one string. Read as blast radius and as a
+      product finding, never as a performance number.
+    type: composite
+    contains: [use_count_30d, queue_share_bp, distinct_sender_count, last_used_at,
+               near_duplicate_count, library_state]
+
+  - name: consequence
+    purpose: >
+      What happened to the people who received it. Every field here is currently
+      uncomputable, and their absence is why macro libraries are reviewed by wording — a
+      wording review is the only review available when no outcome is joined to the send.
+    type: composite
+    contains: [followup_contact_rate_bp, reopen_rate_after_bp, csat_after_bp,
+               escalation_after_rate_bp, effectiveness_bp]
+
+  - name: custody
+    purpose: >
+      Who is accountable for it still being true. Macros sit outside every documentation
+      review that exists, so they decay faster than articles and are noticed later — an
+      article is at least read by strangers, whereas a macro only ever fails inside one live
+      reply, one customer at a time.
+    type: composite
+    contains: [owner_ref, ownership_state, last_verified_at, verified_against_version,
+               maintenance_state, promised_update_due_at, promised_update_action]
+
+  - name: macro_ref
+    purpose: The identifier in the helpdesk's macro library. The join key that would make every field in `consequence` computable.
+    type: value
+    data_type: string
+    required: true
+
+  - name: title
+    purpose: >
+      The name in the picker. Treat it as a findability field, not a label. Agents search
+      this under queue pressure, and a picker indexed by OUR answer rather than the
+      CUSTOMER'S question is the direct mechanism of the wrong-question send — one word
+      matches, the match feels like a decision, and the reply goes out.
+    type: value
+    data_type: string
+    required: true
+
+  - name: body
+    purpose: >
+      The template as stored, NOT the message that was sent. Modelling only the stored form
+      is why no support org knows its unedited send rate: the sent form exists, in the
+      thread, and is never compared against the template it came from.
+    type: value
+    data_type: string
+    sensitivity: internal
+
+  - name: locale
+    purpose: >
+      A locale variant is a separate macro with its own verification, not a rendering of
+      this one. Translated macros inherit the source's claims and add a fluency failure of
+      their own, and they are re-verified approximately never.
+    type: value
+    data_type: string
+
+  - name: macro_type
+    purpose: >
+      `closing` is separated deliberately. A macro written to close a ticket rather than to
+      answer a question is a different object with a different failure mode, and folding it
+      in with `answer` is how the most damaging category in the library becomes invisible.
+      `known_issue` and `workaround` are born with an expiry date and almost never given one.
+    type: value
+    data_type: enum
+    allowed_values:
+      - answer
+      - acknowledgement
+      - request_for_information
+      - workaround
+      - known_issue
+      - policy
+      - closing
+      - escalation_notice
+      - internal_note
+
+  - name: audience_scope
+    purpose: >
+      `agent_only` macros exist for internal notes and are one mis-click from a customer.
+      Marking them is cheap; not marking them is the most common macro incident there is.
+    type: value
+    data_type: enum
+    allowed_values: [customer, agent_only, partner]
+
+  - name: intent_ref
+    purpose: >
+      What this macro answers, in the customer's terms. Selection should happen against
+      classified intent, never against title keywords — this ref is the difference between
+      the two.
+    type: reference
+    ref: customer_support.obj.core.intent
+    data_type: ref
+
+  - name: product_area_ref
+    purpose: The surface this macro makes claims about. Required for the only real accuracy test there is — did this area ship a change since the macro was verified.
+    type: reference
+    ref: customer_support.obj.core.product_area
+    data_type: ref
+
+  - name: knowledge_article_ref
+    purpose: >
+      The article this macro should LINK rather than restate. When the two carry the same
+      answer separately they diverge within weeks, and the macro wins because it is edited
+      in the moment by whoever noticed. The article then rots while looking maintained.
+    type: reference
+    ref: customer_support.obj.core.knowledge_article
+    data_type: ref
+
+  - name: applies_when
+    purpose: >
+      The conditions under which sending this is honest — plan, product version, channel,
+      what the customer must already have said. Empty on almost every macro in every library,
+      and its emptiness is not a documentation gap but the actual cause of misfit sends.
+    type: value
+    data_type: string
+
+  - name: personalisation_depth
+    purpose: >
+      How much of the sent message is about THIS customer. `salutation_only` is the
+      dangerous value and the most common one: a first name at the top of an otherwise
+      untouched template reads worse than no name at all, because it demonstrates that
+      personalisation was available and was not used on the part that mattered.
+    type: value
+    data_type: enum
+    allowed_values: [none, salutation_only, situational, substantive]
+
+  - name: completion_shape
+    purpose: >
+      Whether this macro can be sent as-is. The object's central field. `skeleton` and
+      `partial` require the agent to write something before sending; `complete` does not, and
+      a library measured on handle time converges on `complete` without anyone deciding to.
+    type: value
+    data_type: enum
+    allowed_values: [skeleton, partial, complete]
+
+  - name: variable_count
+    purpose: Placeholders in the body. Counts intent, not enforcement — an optional variable left as {{first_name}} in a sent reply is worse than having had none.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: required_edit_count
+    purpose: >
+      Variables the agent cannot leave empty. The only structural defence against the
+      unedited send, and the field most macro libraries do not have at all. Zero here is the
+      strongest single predictor of the failure this whole object is written about.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: unedited_send_rate_bp
+    purpose: >
+      Share of sends where not one character was changed. The number this object exists to
+      produce. Trivially computable by every helpdesk on the market — the template and the
+      sent body are both stored — and reported by none of them.
+    type: value
+    data_type: integer
+    unit: basis_points
+    source_paths: [macro.edit_distance_at_send]
+
+  - name: use_count_30d
+    purpose: Raw sends. On its own it moves no decision, and publishing it alone is how macro usage gets reported as productivity.
+    type: value
+    data_type: integer
+    unit: count
+    source_paths: [macro.use_count_30d]
+
+  - name: queue_share_bp
+    purpose: >
+      Share of a queue's replies that ran through this one macro. THE number on this object.
+      Past a modest share it stops being a statement about the reply and becomes a statement
+      about the product: one string is carrying a defect, a pricing surprise or a missing
+      article, and support is paying for it in labour every day.
+    type: value
+    data_type: integer
+    unit: basis_points
+
+  - name: distinct_sender_count
+    purpose: >
+      How many different agents use it. The discriminator between a coaching finding and a
+      product finding: one agent sending a macro heavily is a habit, forty agents sending it
+      heavily is a queue telling you what is broken.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: last_used_at
+    purpose: The sprawl field. A macro nobody has sent in a year is still in the picker, still competing for the agent's attention, and still occasionally chosen by mistake.
+    type: value
+    data_type: timestamp
+
+  - name: near_duplicate_count
+    purpose: >
+      Other macros in the library that answer substantially the same question. Directly
+      measurable from the bodies and measured nowhere, which is why sprawl is discussed as a
+      feeling rather than a number.
+    type: value
+    data_type: integer
+    unit: count
+
+  - name: library_state
+    purpose: >
+      Where this macro sits in the library's economy. `orphaned` is deliberately separate
+      from archived — an orphaned macro has not been retired, it is simply unused and still
+      selectable, which is the exact combination that produces a bad pick.
+    type: derived
+    data_type: enum
+    allowed_values: [in_rotation, rarely_used, orphaned, unknown]
+    derived_from: [use_count_30d, last_used_at, near_duplicate_count]
+
+  - name: followup_contact_rate_bp
+    purpose: >
+      Share of sends followed by another message from the same customer on the same intent.
+      The wrong-question rate, in one number. A macro with high volume and a high rate here
+      is not saving time — it is spending the customer's patience and then spending an
+      agent's second reply.
+    type: value
+    data_type: integer
+    unit: basis_points
+
+  - name: reopen_rate_after_bp
+    purpose: Reopens on tickets where this macro carried the resolution. Harder to game than any survey, because the customer has to act rather than merely feel.
+    type: value
+    data_type: integer
+    unit: basis_points
+
+  - name: csat_after_bp
+    purpose: Satisfaction on interactions where this macro was sent. Weight below reopens — cheap for the customer to give, and easy for us to time favourably.
+    type: value
+    data_type: integer
+    unit: basis_points
+    source_paths: [csat.score]
+
+  - name: escalation_after_rate_bp
+    purpose: >
+      Share of sends followed by an escalation request. Small numbers here matter more than
+      large ones elsewhere: a macro that reliably precedes "can I speak to a manager" has
+      found the exact sentence that ends people's patience.
+    type: value
+    data_type: integer
+    unit: basis_points
+
+  - name: effectiveness_bp
+    purpose: >
+      Composite verdict. Must be dominated by the follow-up and reopen rates and must be
+      unmoved by use_count_30d, or it reproduces the error it exists to correct.
+    type: derived
+    data_type: integer
+    unit: basis_points
+    derived_from: [followup_contact_rate_bp, reopen_rate_after_bp, csat_after_bp,
+                   unedited_send_rate_bp]
+
+  - name: owner_ref
+    purpose: The named human accountable for this macro still being true. Almost always null, and null is a finding rather than a blank.
+    type: reference
+    ref: customer_support.obj.core.support_agent
+    data_type: ref
+
+  - name: ownership_state
+    purpose: >
+      `team_owned` behaves identically to `unowned` in practice — a team cannot be asked
+      whether a macro is still accurate. It is what a macro becomes when its author leaves
+      and nobody is willing to say so.
+    type: value
+    data_type: enum
+    allowed_values: [named_owner, team_owned, unowned, owner_departed]
+
+  - name: last_verified_at
+    purpose: When a human last checked this macro's claim against the shipping product. Distinct from when it was last edited, and distinct again from when it was last SENT — which is the only one anybody knows.
+    type: value
+    data_type: timestamp
+
+  - name: verified_against_version
+    purpose: Without a version the verification date has no referent, and a date with no referent is what makes a recently-touched, entirely wrong macro look healthy.
+    type: value
+    data_type: string
+
+  - name: maintenance_state
+    purpose: >
+      `update_unscheduled` means a change was agreed with no date attached. Treat it as a
+      decision not to update — undated macro work is never done, because there is no macro
+      review cycle to sweep it up.
+    type: value
+    data_type: enum
+    allowed_values: [current, update_scheduled, update_unscheduled, update_overdue, abandoned]
+
+  - name: promised_update_due_at
+    purpose: >
+      Live today, and the only maintenance signal the pipeline can see. When somebody writes
+      "I'll fix that macro by Friday", the promise is a commitment in the graph. It catches
+      only decay that somebody already noticed and said out loud, which is the minority of it.
+    type: value
+    data_type: timestamp
+    source_paths: [commitment.due_at]
+
+  - name: promised_update_action
+    purpose: The text of the promised change. Useful mainly for separating a rewrite from a one-line correction.
+    type: value
+    data_type: string
+    source_paths: [commitment.action]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# States
+#
+# `dormant` is a real state and not a step toward `archived`, which is the whole point: in
+# every real library the overwhelming majority of macros are dormant and selectable at the
+# same time. Modelling dormancy as a transient state on the way to retirement describes a
+# library that does not exist.
+# ─────────────────────────────────────────────────────────────────────────────
+states:
+  initial: draft
+  terminal: [archived]
+  values:
+    - name: draft
+      description: Written, not reviewed. Usually written by an agent mid-shift because the same question came up twice, which is the right reason and the wrong process.
+    - name: submitted
+      description: >
+        Awaiting review by someone who can check the CLAIM, not the prose. Macro review is
+        almost always a wording review, because wording is the only thing reviewable without
+        outcome data.
+    - name: published
+      description: In the picker and selectable. Reachable by every agent immediately — macros have no staged rollout, which is why a wrong one propagates faster than a wrong article.
+    - name: active
+      description: Genuinely in rotation. The only state in which the outcome fields mean anything, because everything else has too little volume to measure.
+      implies: This macro is carrying real queue volume, and any claim it makes is being made to customers at scale today.
+    - name: dormant
+      description: >
+        In the library, effectively unused, and still selectable. The steady state of most
+        macros and the substance of sprawl. Nothing is broken, nobody is harmed, and the
+        picker gets slightly worse for everyone.
+    - name: at_risk
+      description: >
+        Something concrete says it is now wrong — a release in its product area, the fix of
+        the issue it describes, or an outcome profile that turned. Never entered from age
+        alone; a policy macro can be correct for years.
+      entered_when:
+        - exists: commitment.due_at
+        - fn: days_since
+          path: commitment.due_at
+          op: '>'
+          value: 30
+    - name: superseded
+      description: >
+        A newer macro carries the answer and both are still in the picker. The dangerous
+        window, and in practice a permanent one — supersession is recorded and retirement is
+        not, so the old macro keeps being chosen by whoever searched a word it happens to
+        contain.
+    - name: archived
+      description: Removed from the picker. The rarest transition in this object's lifecycle, and the one that would fix most of what is wrong with macro libraries.
+  transitions:
+    - from: draft
+      to: submitted
+    - from: submitted
+      to: draft
+    - from: submitted
+      to: published
+    - from: published
+      to: active
+    - from: published
+      to: dormant
+    - from: active
+      to: dormant
+    - from: dormant
+      to: active
+    - from: active
+      to: at_risk
+    - from: dormant
+      to: at_risk
+    - from: published
+      to: at_risk
+      when:
+        - exists: commitment.due_at
+        - fn: days_since
+          path: commitment.due_at
+          op: '>'
+          value: 30
+    - from: at_risk
+      to: active
+      reversible: true
+    - from: at_risk
+      to: superseded
+    - from: active
+      to: superseded
+    - from: superseded
+      to: archived
+    - from: dormant
+      to: archived
+    - from: at_risk
+      to: archived
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Relationships
+#
+# The two load-bearing edges are `references knowledge_article` and `documents issue`. The
+# first is what stops the same answer being maintained twice; the second is what makes
+# "this bug is fixed, so eleven macros just became wrong" a query instead of a surprise.
+# ─────────────────────────────────────────────────────────────────────────────
+relationships:
+
+  - target: customer_support.obj.core.knowledge_article
+    type: references
+    cardinality: zero_or_one
+    direction: outbound
+    weight_bp: 2400
+    confidence_bp: 6000
+    priority: 1
+    evidence: [knowledge_base, email]
+    description: >
+      The macro should LINK the article, not restate it. When both carry the answer
+      independently they diverge, the macro wins because it is edited in the moment, and the
+      public artefact is the one that rots. Zero here is common and is exactly the state
+      that produces two versions of our own product behaviour in the world.
+
+  - target: customer_support.obj.core.intent
+    type: covers
+    cardinality: zero_or_many
+    weight_bp: 2200
+    confidence_bp: 5000
+    priority: 2
+    description: >
+      What the macro is a valid answer to, in customer language. This is the edge selection
+      should run on. Where it is absent, selection runs on title keywords instead — and the
+      wrong-question failure stops being an agent mistake and becomes a structural property
+      of the library.
+
+  - target: customer_support.obj.core.issue
+    type: documents
+    cardinality: zero_or_many
+    weight_bp: 1600
+    confidence_bp: 5500
+    description: >
+      Workaround and known-issue macros make a standing claim about a specific defect. The
+      moment that defect is fixed, every macro on this edge is simultaneously wrong — and
+      today nothing tells them so, which is why customers are still walked through
+      workarounds for bugs closed two releases ago.
+
+  - target: customer_support.obj.core.conversation
+    type: attaches_to
+    cardinality: zero_or_many
+    weight_bp: 1400
+    confidence_bp: 4000
+    evidence: [email, chat, ticket]
+    description: >
+      Where it was actually sent. The only place the EDITED body exists, which makes this
+      edge the sole route to an honest unedited-send rate — the library stores the template
+      and the thread stores what went out.
+
+  - target: customer_support.obj.core.ticket
+    type: attaches_to
+    cardinality: zero_or_many
+    weight_bp: 1000
+    confidence_bp: 4000
+    description: >
+      Tickets this macro was used on. Deliberately not `resolves`: a macro is a vehicle, and
+      whether it resolved anything is a property of the Resolution, not of the template.
+
+  - target: customer_support.obj.core.content_gap
+    type: caused_by
+    cardinality: zero_or_one
+    weight_bp: 600
+    confidence_bp: 3500
+    description: >
+      The gap this macro was written to paper over. Reading the edge in this direction is
+      the whole argument of the object — a heavily-used macro is a gap with a workaround
+      attached, and the workaround is being paid for in agent time forever.
+
+  - target: customer_support.obj.core.escalation
+    type: influences
+    cardinality: zero_or_many
+    weight_bp: 400
+    confidence_bp: 3000
+    description: >
+      A macro that answers the wrong question is a leading cause of escalation, and the
+      escalation is never attributed to it. This edge exists so the attribution can be made
+      once the send is observable.
+
+  - target: customer_support.obj.macro_management.macro
+    type: supersedes
+    cardinality: zero_or_one
+    weight_bp: 200
+    confidence_bp: 5000
+    description: >
+      Self-referential. Superseding without retiring leaves both in the picker, and the
+      older one is often chosen because it has the more obvious title. Recorded supersession
+      with unrecorded retirement is the precise mechanism of sprawl.
+
+  - target: customer_support.obj.core.support_agent
+    type: assigned_to
+    cardinality: zero_or_one
+    weight_bp: 100
+    confidence_bp: 4500
+    description: The named owner. A team is not an owner — a team cannot be asked whether a claim is still true.
+
+  - target: customer_support.obj.core.product_area
+    type: belongs_to
+    cardinality: zero_or_one
+    weight_bp: 100
+    confidence_bp: 5000
+    description: The surface it makes claims about. Needed to join a release against a verification date, which is the only mechanical accuracy test available.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Inference patterns
+#
+# Five executable, eight needs_signal. Not one of the five can see that a macro was sent —
+# they read the conversation shape around a reply, graph degree, and a maintenance
+# commitment, because those are the only things in today's substrate that touch this object
+# at all. Every one of them is scored as what it is: corroborating, aggregate, and unsafe as
+# a per-send trigger.
+#
+# The pattern deliberately NOT authored: `has_obs: followup_sent` alone as a proxy for
+# "a macro was sent". It is grammatical, it would have made the headline metric look
+# covered, and it measures outbound email. That is the same error as binding "SLA breach
+# imminent" to unanswered_email, which this domain exists to refuse.
+# ─────────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: macro.rewrite_promised_and_overdue
+      statement: Someone committed to fixing this macro and the date has passed.
+      status: executable
+      when:
+        - exists: commitment.due_at
+        - fn: days_since
+          path: commitment.due_at
+          op: '>'
+          value: 0
+      yields:
+        confidence_bp: 7500
+        attribute: maintenance_state
+        value: update_overdue
+      evidence_fields:
+        - commitment.due_at
+        - commitment.action
+      false_positive: >
+        The commitment on this graph node is about the TICKET, not the macro — "I'll come
+        back to you Friday" and "I'll fix that macro by Friday" are the same shape to the
+        pipeline. On a busy thread the ticket commitment is far more likely, so this fires
+        wrongly more often than it fires rightly unless commitment.action is read.
+      note: >
+        Deliberately 1300 basis points below the equivalent pattern on Knowledge Article.
+        The mechanism is identical, but the base rate is not: documentation updates get
+        promised in writing because someone is chasing them, whereas macro fixes are just
+        done — an agent edits the template and tells nobody. So this pattern sees a small,
+        unrepresentative slice of macro decay, and the slice it sees is the half somebody
+        already cared about. Its real value is not detection but escalation: a macro whose
+        fix was promised out loud and then missed is a macro with an ownership problem, and
+        that is a different intervention from a stale one.
+
+    - id: macro.sent_without_a_single_edit
+      statement: The agent sent this macro with not one character changed.
+      status: needs_signal
+      yields:
+        confidence_bp: 9800
+        attribute: unedited_send_rate_bp
+        corroborates:
+          - macro.answered_and_they_came_straight_back
+      requires_signals:
+        - kind: obs_kind
+          name: macro_applied
+          owner_layer: L2
+          note: >
+            The foundational miss for this object. Every helpdesk records which macro an
+            agent inserted; none of it reaches Layer 2, so a support brain cannot tell a
+            written reply from a pasted one. Without this observation every other pattern
+            here is inferring from thread shape what the tool knows for certain.
+        - kind: fact_path
+          name: macro.edit_distance_at_send
+          owner_layer: L1
+          note: >
+            Characters changed between the stored template and the sent body. Both strings
+            already exist in the helpdesk and the subtraction is trivial. This single
+            integer is the difference between a macro library reviewed by wording — the only
+            review possible today — and one reviewed by whether agents actually thought
+            before sending. Highest-leverage ask on this object.
+        - kind: fact_path
+          name: macro.macro_ref
+          owner_layer: L1
+          note: The join key. Without it the edit distance cannot be attributed to a macro and becomes an anonymous statistic about typing.
+      note: >
+        Near-deterministic once it exists — an edit distance of zero is a fact, not an
+        inference — which is why the confidence is 9800 rather than lower. The 200 points of
+        doubt are for the legitimate cases: an incident notice or a regulated refund
+        statement SHOULD go out untouched, and those live in the `exceptions` section rather
+        than being scored away here.
+
+    - id: macro.carrying_an_outsized_share_of_a_queue
+      statement: This one macro accounts for a substantial share of a queue's replies.
+      status: needs_signal
+      yields:
+        confidence_bp: 8500
+        attribute: queue_share_bp
+      requires_signals:
+        - kind: fact_path
+          name: macro.use_count_30d
+          owner_layer: L1
+          note: Sends per macro per window. The numerator, and the only half anybody currently reports.
+        - kind: fact_path
+          name: ticket.queue
+          owner_layer: L1
+          note: >
+            The denominator has to be a queue, not the whole org. A macro at four percent of
+            all replies and forty percent of the billing queue is a billing product finding,
+            and the org-wide number hides it completely.
+        - kind: baseline
+          name: ticket_volume
+          owner_layer: L2
+          note: >
+            So "substantial" is relative to the queue's own size and season. A fixed
+            threshold fires constantly on small queues and never on large ones, which is the
+            opposite of useful.
+      note: >
+        The headline needs_signal on this object. It is the pattern that turns a support
+        efficiency story into a product bill: past some share, one string is carrying a
+        defect, a pricing surprise or a missing article, and the cost has been quietly moved
+        onto the support line where nobody will look for it. Confidence is 8500 rather than
+        higher because share alone cannot distinguish the three causes — product defect,
+        content gap, and genuinely repetitive-but-fine work such as password resets — and
+        those want three different owners.
+
+    - id: macro.followed_by_a_reopen
+      statement: Tickets where this macro carried the resolution are reopened more than the queue's norm.
+      status: needs_signal
+      yields:
+        confidence_bp: 8800
+        attribute: reopen_rate_after_bp
+      requires_signals:
+        - kind: obs_kind
+          name: ticket_reopened
+          owner_layer: L2
+          note: >
+            The quality signal a customer has to spend effort to send, which is what makes
+            it harder to game than any survey. Joined to a macro, it is the closest thing
+            available to proof that a canned answer did not hold.
+        - kind: obs_kind
+          name: macro_applied
+          owner_layer: L2
+        - kind: fact_path
+          name: ticket.reopen_count
+          owner_layer: L1
+      note: >
+        Ranked above the CSAT-based pattern below on purpose. A reopen is behavioural and
+        unprompted; a survey score is solicited, timed by us, and answered by the delighted
+        and the furious. Where they disagree about a macro, believe the reopen.
+
+    - id: macro.near_duplicate_of_another_macro
+      statement: Another macro in the library answers substantially the same question.
+      status: needs_signal
+      yields:
+        confidence_bp: 8000
+        attribute: near_duplicate_count
+      requires_signals:
+        - kind: fact_path
+          name: macro.body_text
+          owner_layer: L1
+          note: The bodies are sitting in the helpdesk. Duplicate detection over them is a solved problem and is performed by nobody, which is why sprawl is discussed as a feeling rather than a number.
+        - kind: derived
+          name: derived.macro_similarity
+          owner_layer: L2
+          note: >
+            Pairwise similarity across the library. Must be computed over the BODY and not
+            the title — the duplicates that hurt are the ones with different titles and the
+            same content, because those are the ones that survive every review.
+      note: >
+        Duplicates are not a tidiness problem. They split volume, so no single macro ever
+        accumulates enough sends to be worth measuring, which means the library becomes
+        permanently unmeasurable at exactly the moment it becomes large enough to matter.
+        8000 rather than higher because two macros with similar bodies can legitimately
+        differ on plan, region or regulatory language — the fix is a merge with a variable,
+        not a delete.
+
+    - id: macro.describes_behaviour_that_shipped_away
+      statement: The product area this macro makes claims about changed after the macro was last verified.
+      status: needs_signal
+      yields:
+        confidence_bp: 8600
+        attribute: maintenance_state
+        value: abandoned
+      requires_signals:
+        - kind: fact_path
+          name: product.released_at
+          owner_layer: L1
+          note: Release timestamps per product area. Present in every deploy pipeline, connected to no macro library anywhere.
+        - kind: fact_path
+          name: product.surface_version
+          owner_layer: L1
+          note: So verified_against_version has something to compare against.
+        - kind: obs_kind
+          name: bug_fixed
+          owner_layer: L2
+          note: >
+            The sharper half. A release is circumstantial; a FIX to the specific issue a
+            workaround macro documents makes that macro wrong immediately and with
+            certainty. That edge already exists in the model and nothing walks it.
+      note: >
+        This is the macro-side version of the freshness illusion, and it is worse here than
+        on an article. An article is at least read by strangers who can notice it is wrong;
+        a macro is only ever read inside one live reply, so the first person to discover
+        that we are still recommending a workaround for a bug fixed in March is a customer
+        being confidently misled. Should demote to at_risk and queue a check, never
+        auto-retire — a release in an area often touches nothing the macro describes.
+
+  heuristic:
+
+    - id: macro.answered_and_they_came_straight_back
+      statement: >
+        We sent something, and the customer replied inside a day with the ball back in our
+        court — the round-trip shape of a reply that did not answer the question.
+      status: executable
+      when:
+        - has_obs: followup_sent
+        - path: thread.ball_in_court
+          op: '='
+          value: us
+        - fn: hours_since
+          path: thread.last_inbound
+          op: '<='
+          value: 24
+      yields:
+        confidence_bp: 4500
+        attribute: followup_contact_rate_bp
+      evidence_fields:
+        - thread.ball_in_court
+        - thread.last_inbound
+      false_positive: >
+        A good clarifying question produces exactly this trace. We send "which account is
+        this on?", the customer answers within the hour, the ball returns to us — a
+        well-handled ticket and this pattern reads it as a misfire. It is also blind to
+        whether a macro was involved at all: it detects a fast round trip after any
+        outbound, canned or hand-written.
+      note: >
+        4500 says look, not act, and it must never demote a macro on a single firing. Its
+        legitimate use is aggregate: across many contacts, a macro whose sends are followed
+        by immediate return traffic at a rate above its queue's norm has found the sentence
+        that fails to land. The reason this weak pattern is worth authoring at all is that
+        the strong version — join `macro_applied` to the next inbound — is unavailable, and
+        the shape it detects is real. Treat it as a prior that the proper signal would
+        sharpen, not as a finding.
+
+    - id: macro.attached_to_an_unusual_share_of_the_graph
+      statement: An unusually large number of graph neighbours point at this macro.
+      status: executable
+      when:
+        - fn: edge_count
+          op: '>='
+          value: 8
+      yields:
+        confidence_bp: 5500
+        attribute: null
+        corroborates:
+          - macro.carrying_an_outsized_share_of_a_queue
+      evidence_fields:
+        - use_count_30d
+      false_positive: >
+        Degree counts every edge, including the article, the intent, the product area and
+        the owner. A well-modelled macro with rich metadata and three sends can outrank a
+        barely-modelled one with three hundred, so this ranks documentation quality as
+        readily as it ranks volume.
+      note: >
+        The only executable proxy for the object's central claim — that a macro carrying a
+        large share of a queue is a product or content finding wearing a disguise. It is a
+        poor proxy and it is declared as corroborating rather than as evidence in its own
+        right; it exists to reorder a review queue and nothing else. Eight is a guess and
+        should be tuned per organisation. This is genuinely independent of
+        macro.carrying_an_outsized_share_of_a_queue — one reads the knowledge graph, the
+        other would read helpdesk counters — which is why the corroborates link is honest
+        under Rule 11 and why the two together are worth more than either alone.
+
+    - id: macro.no_trace_anywhere_in_the_graph
+      statement: Nothing in the graph points at this macro — no conversation, no article, no intent, no owner.
+      status: executable
+      when:
+        - fn: edge_count
+          op: '='
+          value: 0
+      yields:
+        confidence_bp: 5000
+        attribute: library_state
+        value: orphaned
+      evidence_fields:
+        - last_used_at
+        - near_duplicate_count
+      false_positive: >
+        The dominant case, and it is the reason this is scored at 5000 rather than 9000.
+        Macro usage happens entirely inside the helpdesk picker, which we do not ingest, so
+        a macro sent four hundred times a month has a graph degree of zero unless somebody
+        happened to model it. Absence of evidence here is very nearly guaranteed, so the
+        pattern is far better at proving nothing than at proving disuse.
+      note: >
+        Kept despite the weakness because sprawl is the second-largest thing wrong with
+        macro libraries and this is the only executable handle on it that exists. The
+        correct response to a firing is to ASK — put the macro on a review list — never to
+        retire it. If it ever needs to say "retire", it needs macro.use_count_30d, at which
+        point this pattern becomes redundant and should be deleted rather than promoted.
+
+    - id: macro.sentiment_fell_around_our_reply
+      statement: Sentiment on the thread is negative and we have sent an outbound — the canned answer is landing badly.
+      status: executable
+      when:
+        - has_obs: followup_sent
+        - path: derived.sentiment
+          op: '<'
+          value: 0.0
+      yields:
+        confidence_bp: 4000
+        attribute: null
+      evidence_fields:
+        - derived.sentiment
+      false_positive: >
+        derived.sentiment is cumulative across the whole thread, so a customer who arrived
+        furious about a genuine outage fires this identically to one made furious by our
+        reply. The pattern cannot see the order of events, which is the only thing that
+        would make it mean what its statement says.
+      note: >
+        The weakest pattern on the object and deliberately included, because the alternative
+        — leaving the sentiment signal unused — implies this object has no view on tone, and
+        it has a strong one. Capped at 4000 for a second reason beyond the ordering problem:
+        derived.sentiment was calibrated on commercial correspondence and reads a
+        politely-worded complaint from an enterprise admin as roughly neutral, which is
+        precisely the customer whose next move is an escalation nobody saw coming.
+
+    - id: macro.detractor_after_a_canned_reply
+      statement: Interactions where this macro was sent score worse than the queue's norm.
+      status: needs_signal
+      yields:
+        confidence_bp: 6500
+        attribute: csat_after_bp
+      requires_signals:
+        - kind: obs_kind
+          name: macro_applied
+          owner_layer: L2
+        - kind: fact_path
+          name: csat.score
+          owner_layer: L1
+        - kind: obs_kind
+          name: csat_submitted
+          owner_layer: L2
+          note: Needed with the send so the score can be attributed to the reply that produced it rather than to the ticket in general.
+      note: >
+        6500, below the reopen pattern, and the gap is the point. Survey scores on macro
+        replies are systematically confounded: macros are used most on high-volume, low-
+        complexity contacts, which score well for reasons unrelated to the macro, and are
+        used least on the hard tickets that score badly. Comparing a macro's raw CSAT to the
+        queue average will therefore flatter almost every macro in the library. Only a
+        within-intent comparison means anything, and stating that here is the point of the
+        pattern.
+
+    - id: macro.preceded_an_escalation
+      statement: This macro appears on the path of contacts that shortly afterwards ask for a manager.
+      status: needs_signal
+      yields:
+        confidence_bp: 7000
+        attribute: escalation_after_rate_bp
+      requires_signals:
+        - kind: obs_kind
+          name: macro_applied
+          owner_layer: L2
+        - kind: obs_kind
+          name: escalation_requested
+          owner_layer: L2
+          note: Needed with a path back to what the customer was actually shown before they asked for someone else. Escalations are recorded with a reason field that never contains the reply that caused them.
+        - kind: obs_kind
+          name: cancellation_threat
+          owner_layer: L2
+          note: >
+            The louder version of the same event. A macro that reliably precedes
+            cancellation language has found the exact sentence at which a customer decides
+            we are not worth talking to, and that is the single most valuable thing this
+            object could ever tell anyone.
+      note: >
+        Small numbers here outweigh large numbers anywhere else on the object. Below the
+        reopen pattern because escalation has many upstream causes and reply quality is only
+        one of them — but a macro appearing repeatedly on escalated paths is not noise, and
+        it is the case where retiring the macro before understanding it is the correct move.
+
+    - id: macro.diverged_from_its_article
+      statement: This macro and the article it should mirror now give different answers.
+      status: needs_signal
+      yields:
+        confidence_bp: 7200
+        attribute: null
+      requires_signals:
+        - kind: fact_path
+          name: macro.body_text
+          owner_layer: L1
+        - kind: fact_path
+          name: knowledge.body_text
+          owner_layer: L1
+          note: Both bodies, so the claims can be compared rather than the timestamps. Comparing edit dates tells you which was touched most recently, which is not the same question.
+        - kind: obs_kind
+          name: knowledge_article_linked
+          owner_layer: L2
+          note: Establishes that the two are meant to be the same answer. Without it, divergence cannot be distinguished from two macros that were never related.
+      note: >
+        The divergence is directional and predictable: the macro is edited in the moment by
+        whoever noticed the problem, the article needs a review cycle, so the macro becomes
+        right first and the article rots while looking maintained. The customer who reads
+        both — and enterprise customers routinely do, because they forward our replies
+        internally and then check the docs — concludes we do not know our own product. That
+        conclusion is expensive and it is invisible to every metric either side currently
+        has.
+
+# ─────────────────────────────────────────────────────────────────────────────
+inputs:
+
+  - source: knowledge_base
+    signal: the macro library — body, title, variables, locale, owner
+    fills: [body, title, variable_count, locale, owner_ref]
+    reliability_bp: 9000
+    description: >
+      The catalogue. Tells you exactly what exists and nothing whatsoever about what is
+      sent, which is the gap the whole object turns on.
+
+  - source: ticket
+    signal: which macro was applied, and how much of it was changed
+    fills: [unedited_send_rate_bp, use_count_30d, queue_share_bp, distinct_sender_count, last_used_at]
+    reliability_bp: 9500
+    description: >
+      The system of record for the send. Every helpdesk on the market has this and none of
+      it is projected into a typed fact, so the highest-value fields on this object are all
+      null. One connector would populate five attributes and six patterns.
+
+  - source: email
+    signal: whether we replied, and whether they came straight back
+    path: thread.ball_in_court
+    reliability_bp: 6000
+    description: The only live source touching this object today. It can see the shape of a reply round-trip and cannot see that a macro was involved.
+
+  - source: email
+    signal: when the customer last wrote
+    path: thread.last_inbound
+    reliability_bp: 6000
+
+  - source: derived
+    signal: observation balance across the thread
+    path: derived.sentiment
+    reliability_bp: 3500
+    description: Calibrated on commercial correspondence. A direction, never a level, and blind to the order of events.
+
+  - source: manual_entry
+    signal: a promised macro fix and its date
+    path: commitment.due_at
+    fills: [promised_update_due_at]
+    reliability_bp: 5000
+
+  - source: manual_entry
+    signal: what the promised fix was
+    path: commitment.action
+    fills: [promised_update_action]
+
+  - source: survey
+    signal: satisfaction on interactions where a macro was sent
+    fills: [csat_after_bp]
+    reliability_bp: 4000
+    description: Confounded by which contacts get macros in the first place. Only meaningful within an intent.
+
+  - source: telemetry
+    signal: releases in the product area this macro describes
+    reliability_bp: 9000
+    description: The only source that can prove a macro WRONG rather than merely old. Lives in the deploy pipeline, connected to nothing.
+
+  - source: help_center
+    signal: the article this macro should mirror
+    reliability_bp: 5000
+
+  - source: chat
+    signal: macros sent in live conversation, where the pressure to send unedited is highest
+    description: Not ingested. Chat is where the unedited send is most likely and least observable, because the agent is holding three conversations and the template is one keystroke away.
+
+# ─────────────────────────────────────────────────────────────────────────────
+outputs:
+
+  - name: fit_confidence_bp
+    type: integer
+    description: How well this macro matches the contact in front of us. Low confidence must route to writing, not to the next-best macro.
+    derived_from: [intent_ref, applies_when, personalisation_depth]
+    consumed_by: [L4.decision_maker, L5.communication_planning]
+
+  - name: requires_agent_completion
+    type: boolean
+    description: >
+      Whether the agent must write something before this can go out. The single most useful
+      boolean this object produces, and the one a send button should be wired to.
+    derived_from: [completion_shape, required_edit_count]
+    consumed_by: [L5.communication_planning, "L5.2.channel_planner"]
+
+  - name: send_ready
+    type: boolean
+    description: Whether this may be sent right now at all. False on an overdue maintenance promise, a post-verification release, or an escalated thread.
+    consumed_by: [L5.communication_planning, "L5.2.channel_planner"]
+
+  - name: product_gap_signal
+    type: string
+    description: >
+      The finding hidden inside this macro's volume. Emitted so it reaches the product
+      backlog rather than the wording queue, which is where it currently goes.
+    derived_from: [queue_share_bp, distinct_sender_count, issue_ref]
+    consumed_by: [L4.reasoning_unit, L6.learning_unit]
+
+  - name: content_gap_signal
+    type: string
+    description: Demand this macro is absorbing that an article should be answering without a human at all.
+    consumed_by: [L4.reasoning_unit]
+
+  - name: retirement_candidate
+    type: boolean
+    description: Whether this macro should leave the picker. The output nobody acts on, which is why every library grows monotonically.
+    derived_from: [library_state, near_duplicate_count, last_used_at]
+    consumed_by: [L5.execution_planning]
+
+  - name: library_health_contribution
+    type: number
+    description: This macro's contribution to how hard the picker is to search. Only meaningful in aggregate, and the aggregate is the thing worth managing.
+    consumed_by: [L6.learning_unit]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Preconditions — what must be true before asking "which macro?" at all.
+#
+# Distinct from constraints: these gate whether the question is even answerable. Every one
+# of them is routinely skipped, and skipping the first is the direct cause of the failure
+# this object is named for.
+# ─────────────────────────────────────────────────────────────────────────────
+preconditions:
+
+  - id: macro.intent_must_be_classified_first
+    statement: >
+      A macro may not be selected before the contact's intent has been resolved. Selecting
+      against title keywords instead is not a weaker version of the same act — it is a
+      different act, and it is the mechanism that produces the wrong-question send.
+    requires:
+      - customer_support.obj.core.intent
+      - customer_support.obj.core.conversation
+    if_unmet: block
+
+  - id: macro.customers_own_words_must_be_available
+    statement: >
+      The customer's actual message must be resolvable, not just its classification. Intent
+      says what kind of question it is; only the message says whether this particular person
+      has already tried the thing the macro is about to tell them to try.
+    requires:
+      - customer_support.obj.core.conversation
+    if_unmet: degrade
+
+  - id: macro.entitlement_required_when_the_body_promises
+    statement: >
+      A macro whose body contains a response time, a remedy or a refund term may not be sent
+      until entitlement is resolved. The promise is real the moment it is sent, and it was
+      written months ago by someone who did not know who would receive it.
+    requires:
+      - customer_support.obj.core.entitlement
+    if_unmet: block
+
+  - id: macro.linked_article_must_resolve
+    statement: >
+      If the macro links an article, the article must be resolvable and reachable by THIS
+      requester. Degrade rather than block: sending the answer without the link is worse
+      than sending it with a link, and both are better than sending a link to a page the
+      customer cannot open.
+    requires:
+      - customer_support.obj.core.knowledge_article
+    if_unmet: degrade
+
+  - id: macro.locale_must_match_the_requester
+    statement: A macro in a locale the requester does not read is not a faster reply, it is a second contact with a translation problem attached.
+    if_unmet: block
+
+  - id: macro.no_macro_selection_while_they_owe_us
+    statement: >
+      When the observed ball is in the customer's court there is nothing to answer, and any
+      macro selected in that state is a chase or a close — both of which are different acts
+      with different rules.
+    when:
+      - path: thread.ball_in_court
+        op: '='
+        value: them
+    if_unmet: degrade
+
+# ─────────────────────────────────────────────────────────────────────────────
+dependencies:
+
+  - target: customer_support.obj.core.intent
+    kind: requires
+    strength: hard
+    description: Selection substrate. Without it this object degrades into a searchable list of strings, which is what most macro libraries actually are.
+
+  - target: customer_support.obj.core.knowledge_article
+    kind: requires
+    strength: hard
+    description: The macro is the sending-side rendering of an answer the article publishes. Reasoning about one without the other is how the two diverge.
+
+  - target: customer_support.obj.core.conversation
+    kind: enriches
+    strength: soft
+    description: Carries what was actually asked — the only available check on whether the macro fits.
+
+  - target: customer_support.obj.core.issue
+    kind: invalidated_by
+    strength: hard
+    description: >
+      When the issue a macro documents is fixed, the macro is wrong from that instant. This
+      is a fact about the compile, not about the world: any cached judgement that this macro
+      is send-ready must be discarded on that event.
+
+  - target: customer_support.obj.core.product_area
+    kind: invalidated_by
+    strength: soft
+    description: A release in the documented area demotes accuracy to unverified. Soft because most releases touch nothing the macro claims.
+
+  - target: customer_support.obj.core.content_gap
+    kind: derived_from
+    strength: soft
+    description: A heavily-used macro is a gap with a workaround attached. content_gap_analysis is where that reading belongs, and this edge is how it gets there.
+
+  - target: customer_support.obj.core.entitlement
+    kind: requires
+    strength: soft
+    description: Needed only for macros whose bodies promise something. That is more of them than anyone expects, because "we'll get back to you within 24 hours" is in half of every library.
+
+  - target: customer_support.obj.core.escalation
+    kind: blocks
+    strength: hard
+    description: An open escalation blocks macro selection outright. The escalation exists because the standard motion already failed, and the standard motion is what a macro is.
+
+# ─────────────────────────────────────────────────────────────────────────────
+constraints:
+
+  - id: macro.body_promise_may_not_exceed_entitlement
+    statement: No macro containing a response-time or remedy promise may be sent to an account whose entitlement does not cover it.
+    hard: true
+    why: >
+      The promise is written once and sent thousands of times. A breach authored into a
+      template is not an agent error, it is a manufacturing defect, and it will produce
+      breaches at a steady rate for as long as the macro exists.
+
+  - id: macro.agent_only_never_reaches_a_customer
+    statement: A macro with audience_scope = agent_only may not be sent on a customer-facing channel.
+    hard: true
+    why: Internal note templates carry internal language about the customer. This is the most common real incident a macro library produces.
+
+  - id: macro.no_customer_identifiers_in_the_body
+    statement: A macro drafted from a real case may not carry the originating account's name, hostname, ticket text or reproduction data.
+    hard: true
+    why: >
+      Caused by the correct instinct — writing from a real case — and multiplied by reuse. A
+      leaked identifier in an article is one exposure; in a macro it is one per send.
+
+  - id: macro.locale_variant_verified_separately
+    statement: A translated macro does not inherit the source macro's verification. It carries its own, or it is unverified.
+    hard: false
+
+  - id: macro.no_macro_as_the_substantive_reply_on_an_escalation
+    statement: Once a thread is escalated, a macro may not be the substantive reply.
+    hard: true
+    why: >
+      An escalation means the standard motion has already failed for this person. Answering
+      it with the standard motion is the clearest possible statement that nobody read the
+      escalation, and it is where recoverable relationships stop being recoverable.
+
+  - id: macro.completion_tokens_must_be_resolved_before_send
+    statement: A sent message may not contain an unresolved placeholder token.
+    hard: true
+    why: A visible {{first_name}} is not a small error. It is a receipt proving the message was generated rather than written, delivered by us, in writing.
+
+  - id: macro.no_auto_send_without_resolved_intent
+    statement: A macro may not be sent automatically on inferred intent alone, at any confidence.
+    when:
+      - path: thread.ball_in_court
+        op: '='
+        value: us
+    hard: true
+    why: >
+      Auto-send removes the one control that makes macros safe — a human who has read the
+      message deciding this one fits. The saving is a few seconds; the failure is the most
+      damaging message support sends, at machine volume.
+
+# ─────────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: macro.every_customer_facing_macro_has_a_required_edit
+    statement: >
+      A customer-facing macro of type `answer` must carry at least one variable the agent
+      cannot leave empty. A macro that can be sent with zero thought will be, on the busiest
+      day, to the customer who can least afford it.
+    then: require_completion_token
+    severity: warning
+    why: >
+      Warning rather than blocking because the exceptions are real — incident notices and
+      regulated statements are complete on purpose. But the default must lean the other way,
+      because every other force in the system pushes toward complete macros and nothing
+      pushes back.
+
+  - id: macro.high_share_is_raised_before_it_is_rewritten
+    statement: >
+      A macro above a small share of its queue must be raised as a product or content
+      finding before any wording change is made to it. The rewrite is the consolation prize,
+      not the response.
+    then: raise_product_finding
+    severity: warning
+    why: >
+      Rewriting is available to the support team this afternoon; filing the product fix is
+      somebody else's roadmap and a six-month argument. The local move is always available
+      and always feels productive, which is exactly why the rule has to exist.
+
+  - id: macro.supersede_requires_retirement
+    statement: Publishing a replacement must retire the predecessor from the picker in the same action. Marking it superseded while leaving it selectable is not retirement.
+    then: retire_predecessor
+    severity: blocking
+    why: The single mechanism of sprawl. Every library that grew to four hundred macros did it one un-retired predecessor at a time, and each one was individually defensible.
+
+  - id: macro.issue_fix_invalidates_the_macro
+    statement: When the issue a macro documents is resolved, the macro moves to at_risk immediately and may not be sent until re-verified.
+    then: block_send_pending_verification
+    severity: blocking
+    why: >
+      Otherwise we walk customers through workarounds for bugs we already fixed. This is the
+      confidently-wrong reply, which costs more than the slow one, and it is the failure
+      mode macros produce that articles largely do not.
+
+  - id: macro.a_promise_inside_a_macro_is_still_a_commitment
+    statement: >
+      A macro body containing a time-bound promise must create a tracked commitment on send.
+      A macro that promises and records nothing is the cheapest way there is to manufacture
+      broken promises at scale.
+    then: create_commitment_on_send
+    severity: warning
+    why: >
+      Customers forgive slow far more readily than they forgive silence after a specific
+      date was given — and the date in a macro was given by a template, so nobody feels
+      personally responsible for it. Half of every library says "within 24 hours" and almost
+      none of it creates a clock.
+
+  - id: macro.must_not_contradict_its_linked_article
+    statement: A macro whose claims contradict the article it links may not be sent until one of them is corrected.
+    severity: blocking
+    why: The customer can read both. Enterprise customers routinely do, because they forward our replies internally and then check the docs.
+
+  - id: macro.closing_macros_may_not_claim_resolution
+    statement: >
+      A macro of type `closing` sent after customer silence must state that we are closing
+      for lack of response and must invite a reply. It may not assert that the problem was
+      resolved.
+    then: block_resolution_claim
+    severity: blocking
+    why: >
+      Auto-close macros that claim resolution move an abandonment out of the queue metrics
+      and into the churn metrics, where support is not measured. The queue looks healthier
+      and the company is not.
+
+  - id: macro.maintenance_promise_overdue_flags_before_reuse
+    statement: A macro with an overdue promised fix must be flagged to the agent before it is sent again.
+    when:
+      - exists: commitment.due_at
+      - fn: days_since
+        path: commitment.due_at
+        op: '>'
+        value: 0
+    then: flag_stale_for_reuse
+    severity: warning
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Decision factors — what Layer 4 weighs when a macro is in play.
+#
+# thread_specificity is second by weight and is a NEGATIVE factor, which is the argument
+# this section exists to make: the better the customer explained their particular situation,
+# the higher the bar any canned reply has to clear.
+# ─────────────────────────────────────────────────────────────────────────────
+decision_factors:
+
+  - name: intent_fit
+    weight_bp: 2600
+    direction: increases
+    description: >
+      Does this macro answer the question that was actually asked. Ranked first because
+      every other property is irrelevant when the answer is to a different question — a
+      perfectly accurate, beautifully maintained macro about the wrong thing is the worst
+      artefact in the library.
+    reads: [intent_ref, applies_when, knowledge_article_ref, macro_type]
+
+  - name: thread_specificity
+    weight_bp: 1800
+    direction: decreases
+    description: >
+      How much of this contact is about this person in particular. A long, specific,
+      well-explained message raises the bar for any canned reply, because the customer has
+      demonstrably invested effort and will detect instantly that we did not. Negative by
+      design: specificity should suppress macro candidacy, not select for a better macro.
+    reads: [personalisation_depth, applies_when, escalation_after_rate_bp]
+
+  - name: answer_accuracy
+    weight_bp: 1800
+    direction: increases
+    description: Verified against a named product version, not recently edited. A wrong answer delivered instantly is the worst outcome this object can produce.
+    reads: [last_verified_at, verified_against_version, maintenance_state, product_area_ref]
+
+  - name: completion_shape
+    weight_bp: 1400
+    direction: context
+    description: >
+      Context rather than increases, and the distinction is load-bearing. A complete macro
+      is right for an incident notice and wrong for a support answer; scoring completeness
+      as a virtue is precisely the drift this object is trying to arrest.
+    reads: [completion_shape, required_edit_count, variable_count, unedited_send_rate_bp]
+
+  - name: downstream_outcome
+    weight_bp: 1200
+    direction: decreases
+    description: >
+      What happened to the people who got this before. Weighted below accuracy only because
+      none of it is computable today; on the day the send is observable this should be the
+      heaviest factor here, because it is the only one that is measured rather than asserted.
+    reads: [followup_contact_rate_bp, reopen_rate_after_bp, csat_after_bp, escalation_after_rate_bp]
+
+  - name: queue_share
+    weight_bp: 800
+    direction: context
+    description: >
+      Deliberately context and never increases. High share is a finding, not a
+      recommendation — a macro carrying a third of a queue should be surfaced to whoever
+      owns the underlying gap and should not thereby become more likely to be sent again.
+    reads: [queue_share_bp, use_count_30d, distinct_sender_count]
+
+  - name: library_hygiene
+    weight_bp: 400
+    direction: context
+    description: Duplicates, dormancy and ownership. Small weight per macro and the dominant factor in aggregate — it decides how hard the picker is to search, which decides what agents actually send.
+    reads: [near_duplicate_count, library_state, ownership_state, last_used_at]
+
+# ─────────────────────────────────────────────────────────────────────────────
+evidence:
+
+  - source: ticket
+    strength_bp: 9000
+    independent_of: [survey, telemetry]
+    decays: false
+    description: >
+      The helpdesk record of which macro was applied and what was changed before sending.
+      The receipt this object needs, the receipt no support brain currently has, and the
+      reason nine of thirteen patterns here cannot fire.
+
+  - source: telemetry
+    strength_bp: 8000
+    independent_of: [ticket, survey, knowledge_base, email]
+    decays: false
+    description: Release and version data for the surface the macro makes claims about. The only source that can prove a macro wrong rather than merely old.
+
+  - source: email
+    strength_bp: 7500
+    independent_of: [knowledge_base, manual_entry]
+    decays: true
+    description: >
+      The reply as actually sent, and the only place the edited body survives outside the
+      helpdesk. Strong, timestamped, and the only source the pipeline actually reads today.
+
+  - source: chat
+    strength_bp: 6500
+    decays: true
+    description: Where the unedited send is most likely and least observed. Not ingested, so its absence quietly biases every measurement here toward the more careful channel.
+
+  - source: survey
+    strength_bp: 5500
+    independent_of: [ticket, email]
+    decays: true
+    description: The customer's verdict on a reply. Confounded by which contacts receive macros at all, so it is only readable within an intent.
+
+  - source: knowledge_base
+    strength_bp: 5000
+    decays: true
+    description: The macro library itself. Proves the template exists and says nothing about what was sent — the source most often mistaken for proof.
+
+  - source: help_center
+    strength_bp: 4000
+    decays: true
+    description: The published article this macro should mirror. Establishes what the customer-facing claim is, so divergence becomes visible.
+
+  - source: derived
+    strength_bp: 3500
+    decays: true
+    description: Graph degree and thread sentiment. Corroborating only — it reorders a review queue and decides nothing.
+
+  - source: manual_entry
+    strength_bp: 2500
+    decays: true
+    description: An agent's note or a promised fix. Honest, unverifiable, and written by the person who would have to do the work.
+
+# ─────────────────────────────────────────────────────────────────────────────
+metrics:
+
+  - name: unedited_send_rate
+    unit: percent
+    direction: lower_is_better
+    description: >
+      Share of sends where not one character changed. The number this object exists to
+      produce, computable by any helpdesk from two strings it already stores, and reported
+      by none of them.
+    owner_layer: L6
+    calibrates: [macro.sent_without_a_single_edit, macro.answered_and_they_came_straight_back]
+
+  - name: macro_share_of_replies
+    unit: percent
+    direction: target_band
+    description: >
+      Share of a queue's replies running through one macro. A target band and not a maximum:
+      too low means the library is unusable and agents are retyping the same answer, too
+      high means a gap is being financed by labour.
+    owner_layer: L6
+    calibrates: [macro.carrying_an_outsized_share_of_a_queue, macro.attached_to_an_unusual_share_of_the_graph]
+
+  - name: macro_to_followup_rate
+    unit: percent
+    direction: lower_is_better
+    description: Sends followed by another message from the same customer on the same intent. The wrong-question rate.
+    owner_layer: L6
+    calibrates: [macro.answered_and_they_came_straight_back]
+
+  - name: macro_reopen_rate
+    unit: percent
+    direction: lower_is_better
+    description: Reopens on tickets a macro resolved, against the queue's own norm. Harder to game than any survey, because the customer has to act.
+    owner_layer: L6
+    calibrates: [macro.followed_by_a_reopen]
+
+  - name: near_duplicate_share
+    unit: percent
+    direction: lower_is_better
+    description: Share of the library with a close counterpart. The sprawl number, computable from the bodies today, computed nowhere.
+    owner_layer: L6
+    calibrates: [macro.near_duplicate_of_another_macro]
+
+  - name: dormant_macro_share
+    unit: percent
+    direction: lower_is_better
+    description: >
+      Share of published macros not sent in the last quarter. Rises monotonically in every
+      organisation because the retirement action exists and is never taken.
+    owner_layer: L6
+    calibrates: [macro.no_trace_anywhere_in_the_graph]
+
+  - name: median_days_since_verification
+    unit: days
+    direction: lower_is_better
+    description: >
+      Use the median, never the mean. A handful of hot macros edited weekly hides a long
+      tail nobody has checked since the product looked different.
+    owner_layer: L6
+    calibrates: [macro.describes_behaviour_that_shipped_away]
+
+  - name: escalation_rate_after_macro
+    unit: percent
+    direction: lower_is_better
+    description: Sends shortly followed by an escalation request. Small numbers here matter more than large numbers anywhere else on this object.
+    owner_layer: L6
+    calibrates: [macro.preceded_an_escalation]
+
+# ─────────────────────────────────────────────────────────────────────────────
+events:
+
+  - id: macro.published
+    name: Macro Published
+    severity: info
+    payload: [title, macro_type, intent_ref, completion_shape, audience_scope]
+    description: No staged rollout exists for macros. Publication makes a claim available to every agent instantly, which is why a wrong macro propagates faster than a wrong article.
+
+  - id: macro.sent_unedited
+    name: Macro Sent Unedited
+    severity: notable
+    payload: [macro_ref, unedited_send_rate_bp, personalisation_depth]
+    description: >
+      Cannot be emitted today. The most informative uncaught event on this object — both
+      halves of it are stored by every helpdesk and neither is compared.
+
+  - id: macro.answered_and_bounced
+    name: Reply Answered And Bounced
+    severity: notable
+    emitted_when:
+      - has_obs: followup_sent
+      - path: thread.ball_in_court
+        op: '='
+        value: us
+      - fn: hours_since
+        path: thread.last_inbound
+        op: '<='
+        value: 24
+    payload: [followup_contact_rate_bp]
+    description: >
+      The executable approximation of the event above. Fires on any fast round-trip after
+      any outbound, so it is an aggregate signal and must not be attributed to a macro on a
+      single occurrence.
+
+  - id: macro.rewrite_promise_missed
+    name: Promised Macro Fix Missed
+    severity: notable
+    emitted_when:
+      - exists: commitment.due_at
+      - fn: days_since
+        path: commitment.due_at
+        op: '>'
+        value: 0
+    payload: [promised_update_action, promised_update_due_at, owner_ref]
+
+  - id: macro.orphaned
+    name: Macro Orphaned
+    severity: info
+    emitted_when:
+      - fn: edge_count
+        op: '='
+        value: 0
+    payload: [library_state, last_used_at, near_duplicate_count]
+    description: Weak by construction — macro usage happens inside a picker we do not ingest. Emit to a review list, never to a retirement queue.
+
+  - id: macro.contradicted_by_a_fix
+    name: Contradicted By A Fix
+    severity: critical
+    payload: [macro_ref, product_area_ref, verified_against_version]
+    invalidates: [last_verified_at, verified_against_version, maintenance_state, body]
+    description: >
+      The issue this macro documents has been fixed, so the macro is wrong from this
+      instant. Cannot be emitted today, and its absence is why customers are still being
+      walked through workarounds for bugs closed two releases ago.
+
+  - id: macro.superseded_without_retirement
+    name: Superseded Without Retirement
+    severity: notable
+    payload: [macro_ref, library_state]
+    description: >
+      The exact moment sprawl is created, and there is no system anywhere that emits it.
+      Every four-hundred-macro library was built one of these at a time.
+
+  - id: macro.share_crossed_the_finding_line
+    name: Macro Share Crossed The Finding Line
+    severity: critical
+    payload: [queue_share_bp, distinct_sender_count, product_area_ref]
+    description: >
+      One macro has taken over enough of a queue that it is now a product statement. Route
+      it to whoever owns the gap, not to whoever owns the wording.
+
+# ─────────────────────────────────────────────────────────────────────────────
+actions:
+
+  - id: macro.select_against_intent
+    name: Select a macro against the classified intent
+    actor: agent
+    cost: trivial
+    reversible: true
+    preconditions:
+      - path: thread.ball_in_court
+        op: '='
+        value: us
+    effect: Narrows the picker to macros that claim this intent. The alternative — searching titles by keyword — is the wrong-question failure in its raw form.
+
+  - id: macro.complete_required_variables
+    name: Complete the required variables
+    actor: agent
+    cost: low
+    effect: The step this entire object exists to protect. It costs seconds and is the whole difference between a fast reply and a message proving nobody read theirs.
+
+  - id: macro.rewrite_the_opening_line
+    name: Rewrite the first sentence in the customer's own terms
+    actor: agent
+    cost: low
+    effect: >
+      The cheapest available defence. A customer decides whether they were heard in the
+      first sentence; everything after it can be canned without being detected.
+
+  - id: macro.send
+    name: Send the completed reply
+    actor: agent
+    cost: trivial
+    reversible: false
+    effect: Irreversible and multiplied by volume. Every property of the template becomes a property of a relationship at this moment.
+
+  - id: macro.split_into_a_skeleton
+    name: Convert a complete macro into a partial one
+    actor: human
+    cost: moderate
+    effect: >
+      The highest-yield and least popular fix in the library, because it deliberately makes
+      agents slower on a number they are measured on in order to improve one nobody reports.
+      Expect it to be resisted for entirely rational reasons.
+
+  - id: macro.link_to_its_article
+    name: Replace restated content with a link to the article
+    actor: agent
+    cost: low
+    effect: Collapses two maintained copies into one. When they are maintained separately the macro wins and the public article rots.
+
+  - id: macro.merge_near_duplicates
+    name: Merge near-duplicates into one macro with a variable
+    actor: human
+    cost: moderate
+    effect: Merge rather than delete. The differences between duplicates are usually a plan or a region, which is a variable, not a separate macro.
+
+  - id: macro.retire_and_redirect
+    name: Retire the macro and point its users at the survivor
+    actor: human
+    cost: low
+    effect: The action that would fix most of what is wrong with macro libraries and is almost never taken, because retiring visibly removes something and adding visibly gives something.
+
+  - id: macro.raise_as_a_product_finding
+    name: Raise the macro's volume as a product or content finding
+    actor: human
+    cost: moderate
+    preconditions:
+      - fn: edge_count
+        op: '>='
+        value: 8
+    effect: >
+      Moves the cost from the support line to the line that owns it. Slower and less
+      satisfying than a rewrite, and the only one of the two that ever makes the macro
+      unnecessary.
+
+  - id: macro.verify_against_product
+    name: Re-verify the macro's claim against the shipping product
+    actor: human
+    cost: moderate
+    effect: Sets last_verified_at AND verified_against_version. Either alone is theatre — a date with no referent is not a verification.
+
+  - id: macro.write_from_the_second_occurrence
+    name: Write a new macro only on the second occurrence
+    actor: agent
+    cost: low
+    effect: >
+      Drafting from one case produces a macro about one customer. The second occurrence is
+      what proves the question is general, and it is also the gate that keeps the library
+      from growing on enthusiasm.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Exceptions — where everything above is legitimately wrong.
+#
+# Every experienced macro owner carries these and no macro policy writes them down, which is
+# why a system that enforces "always personalise" feels stupid to a support lead within a
+# day.
+# ─────────────────────────────────────────────────────────────────────────────
+exceptions:
+
+  - id: macro.major_incident_suspends_personalisation
+    statement: >
+      During a declared major incident, sending the identical unedited message to four
+      hundred customers is correct.
+    overrides:
+      - macro.every_customer_facing_macro_has_a_required_edit
+      - macro.no_macro_as_the_substantive_reply_on_an_escalation
+      - macro.sent_without_a_single_edit
+    why: >
+      When the fact is the same for everyone, consistency IS the personalisation. Four
+      hundred individually-worded versions of the same outage produce four hundred slightly
+      different accounts of what happened, which customers compare on social media within
+      the hour. The incident object exists precisely to make this the default, and an agent
+      editing an incident notice to sound warmer is committing the error, not avoiding it.
+    frequency: occasional
+
+  - id: macro.regulated_language_is_complete_on_purpose
+    statement: >
+      Refund terms, privacy responses, security disclosures and legally reviewed statements
+      are complete macros by design, and editing them is the defect.
+    overrides:
+      - macro.every_customer_facing_macro_has_a_required_edit
+    why: >
+      The wording was approved as a whole by someone who is accountable for it. An agent
+      improving the tone of a data-deletion confirmation has changed a legal statement. The
+      correct shape here is a complete, locked body with a personal sentence ABOVE it, not a
+      body with blanks in it.
+    frequency: occasional
+
+  - id: macro.agents_working_outside_their_first_language
+    statement: >
+      An agent answering in a language they do not write fluently should use MORE complete
+      macros, not fewer.
+    why: >
+      The usual argument runs one way — personalise more — and it is wrong here. A partial
+      macro completed in halting phrasing reads as less competent than a complete one used
+      well, and the customer attributes the awkwardness to the company rather than to a
+      second-language speaker doing something difficult. The right fix is a properly
+      localised complete macro plus a personal opening line the agent can manage.
+    frequency: common
+
+  - id: macro.acknowledgements_may_be_fully_canned
+    statement: A first-response acknowledgement may be entirely canned, provided it is unmistakably an acknowledgement and a substantive reply follows.
+    overrides:
+      - macro.no_auto_send_without_resolved_intent
+    why: >
+      The failure is never that the acknowledgement was templated — it is passing a
+      template off as an answer. An honest "we have this, a human is looking, here is the
+      reference" is useful precisely because it makes no claim. What it must never do is
+      stop a first-response clock while pretending to have answered something.
+    frequency: common
+
+  - id: macro.temporary_spike_is_not_a_product_finding
+    statement: >
+      A macro carrying an unusually large share of a queue during a known migration,
+      pricing change or seasonal window is correct and temporary.
+    overrides:
+      - macro.high_share_is_raised_before_it_is_rewritten
+      - macro.carrying_an_outsized_share_of_a_queue
+    when:
+      - fn: edge_count
+        op: '>='
+        value: 8
+    why: >
+      Raising it as a product finding wastes the finding and trains whoever receives it to
+      ignore the next one. The discriminator is whether the share is DECLINING on its own —
+      a spike resolves without intervention, a gap does not — which needs a time series
+      nobody currently keeps, so the judgement stays human for now.
+    frequency: occasional
+
+  - id: macro.the_customer_who_wants_the_boilerplate
+    statement: >
+      Some requesters explicitly want the standard text — procurement, security
+      questionnaires, compliance contacts forwarding our answer to a third party.
+    why: >
+      Personalising a security-posture reply for someone whose actual job is to paste it
+      into a vendor assessment makes their job harder and ours slower. The tell is a
+      requester who asks in formal, reusable language and never reacts to tone. Read the
+      request, not the policy.
+    frequency: occasional
+
+# ─────────────────────────────────────────────────────────────────────────────
+best_practices:
+
+  - id: macro.write_the_skeleton_not_the_answer
+    statement: Every customer-facing answer macro carries at least one blank the agent cannot leave empty.
+    why: >
+      It is the only structural defence against the unedited send. Policy and training are
+      not defences — they are asks made of the person under the most time pressure in the
+      company.
+    applies_when: macro_type is answer or workaround and audience_scope is customer
+    evidence: unedited_send_rate falls immediately and permanently when required variables are introduced, because the mechanism is mechanical rather than motivational.
+
+  - id: macro.first_sentence_is_never_canned
+    statement: The opening sentence names this customer's specific situation and is written fresh every time. Everything below it may be templated.
+    why: >
+      Customers decide whether they were heard in the first sentence and then read the rest
+      with that verdict already made. This buys most of the benefit of personalisation for a
+      fraction of the cost, which is why it survives contact with a busy queue.
+
+  - id: macro.name_macros_by_the_question
+    statement: Title macros in the customer's words — the question they asked — not in ours, the answer we give.
+    why: >
+      Agents search the picker under pressure. A library indexed by our answers means the
+      search that finds a macro is a search for our vocabulary, and the wrong-question send
+      becomes a property of the library rather than a mistake by a person.
+
+  - id: macro.one_in_one_out
+    statement: Publishing a macro requires retiring one. The library has a cap and the cap is enforced.
+    why: >
+      Nothing else stops sprawl, because every individual addition is justified and every
+      individual retirement is contested. A cap converts an unwinnable argument about each
+      macro into a decidable comparison between two.
+    applies_when: Any library past roughly the size one person can hold in their head.
+
+  - id: macro.review_by_outcome_never_by_wording
+    statement: Macro reviews look at follow-up rate, reopen rate and escalation rate. Wording is reviewed only for macros the outcomes have already flagged.
+    why: >
+      Wording reviews are cheap, satisfying, infinitely repeatable and uncorrelated with
+      anything. A team can rewrite a library twice a year and change no customer's
+      experience at all.
+    evidence: Requires the send to be observable — see macro.sent_without_a_single_edit. Until then this practice is aspirational and should be labelled as such rather than faked with a wording audit.
+
+  - id: macro.link_the_article_do_not_restate_it
+    statement: A macro points at the article rather than duplicating its content.
+    why: One maintained copy instead of two that diverge. When both exist the macro is corrected first and the public article silently becomes the wrong one.
+
+  - id: macro.known_issue_macros_get_an_expiry_not_a_review
+    statement: Macros of type known_issue and workaround are created with an expiry date and disappear from the picker on it.
+    why: >
+      A review date requires somebody to act for the macro to stop; an expiry requires
+      somebody to act for it to continue. Given that nobody acts, the two defaults produce
+      opposite outcomes, and only one of them is safe.
+
+  - id: macro.measure_the_library_not_the_macro
+    statement: Report library size, dormant share and near-duplicate share alongside any macro-level number.
+    why: >
+      Every macro can look reasonable while the library is unusable. The thing agents
+      actually experience is the picker, and no per-macro metric describes it.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Anti-patterns — the richest section on this object, because macros fail in ways that are
+# individually rational. Every `why_it_happens` below describes a decision a competent
+# person makes for good reasons.
+# ─────────────────────────────────────────────────────────────────────────────
+anti_patterns:
+
+  - id: macro.the_wrong_question_send
+    statement: A macro is chosen because a word in its title matched a word in the customer's message, and it answers something they did not ask.
+    why_it_happens: >
+      The picker is searched by keyword under queue pressure, with the customer's message
+      still on screen. One word matches, the match feels like a decision, and selecting is
+      indistinguishable from deciding when both take the same two seconds. Nothing in the
+      tool marks the difference.
+    cost: >
+      The most damaging message support sends. Not because it is wrong — a wrong answer can
+      be corrected — but because it is proof that nobody read theirs. It converts a solvable
+      product problem into an unrecoverable relationship one, and no better second reply
+      undoes it.
+    instead: >
+      Select against classified intent, never against title keywords; title macros by the
+      customer's question; make the first sentence non-canned so the mismatch is caught
+      while writing it.
+    detectable_by:
+      - macro.answered_and_they_came_straight_back
+      - macro.preceded_an_escalation
+      - macro_to_followup_rate
+
+  - id: macro.the_library_drifts_complete
+    statement: Over time every macro in the library becomes sendable with zero edits.
+    why_it_happens: >
+      Complete macros are measurably faster and handle time is measured. Whoever writes a
+      skeleton is optimising unedited_send_rate, which nobody reports; whoever completes a
+      skeleton is optimising handle time, which everyone reports. The drift needs no
+      advocate — it happens through ordinary editing by people doing their jobs well.
+    cost: The unedited send at scale, which the customer detects instantly, and a second contact that costs more than the first would have.
+    instead: Mandatory variables enforced by the tool; report unedited_send_rate beside handle time or do not report handle time.
+    detectable_by:
+      - macro.sent_without_a_single_edit
+      - unedited_send_rate
+      - macro.answered_and_they_came_straight_back
+
+  - id: macro.optimising_the_macro_instead_of_reading_the_finding
+    statement: A macro carrying a third of a queue gets a wording rewrite, three times, over a year.
+    why_it_happens: >
+      Rewriting is a decision the support team can make alone this afternoon. Filing the
+      product fix is somebody else's roadmap and a six-month argument that support usually
+      loses. The local move is always available, always feels productive, and produces a
+      visible artefact.
+    cost: >
+      The underlying gap is permanently financed by support labour and never appears as a
+      product cost. The macro's excellence becomes the reason the gap survives — it is being
+      handled, so it is not a problem.
+    instead: Raise the volume as a product or content finding first. The rewrite is the consolation prize.
+    detectable_by:
+      - macro.carrying_an_outsized_share_of_a_queue
+      - macro.attached_to_an_unusual_share_of_the_graph
+      - macro_share_of_replies
+
+  - id: macro.nobody_deletes
+    statement: The library grows monotonically until agents are searching four versions of the same refund reply.
+    why_it_happens: >
+      Adding is free and visibly helpful; deleting can break somebody's workflow and is
+      visibly a loss. No one owns the library as a whole, so every local decision is correct
+      and the aggregate is a picker nobody can search. Supersession is recorded; retirement
+      is not.
+    cost: >
+      Agents pick badly under time pressure and the answer a customer gets becomes a
+      lottery. Worse structurally: duplicates split volume, so no single macro accumulates
+      enough sends to be worth measuring, and the library becomes permanently unmeasurable
+      exactly when it becomes large enough to matter.
+    instead: A named library owner, one-in-one-out, retirement enforced on supersede, and near-duplicate share reported monthly.
+    detectable_by:
+      - macro.near_duplicate_of_another_macro
+      - macro.no_trace_anywhere_in_the_graph
+      - near_duplicate_share
+      - dormant_macro_share
+
+  - id: macro.outlived_the_behaviour_it_describes
+    statement: A workaround macro is still being sent months after the bug it works around was fixed.
+    why_it_happens: >
+      Macros sit outside every documentation review that exists. They have no owner, no
+      review cycle and no reader — unlike an article, nobody ever reads a macro as a
+      customer would. It fails only inside one live reply, one customer at a time, which is
+      the slowest possible way to discover anything.
+    cost: >
+      We instruct customers to perform a workaround that no longer works, confidently, in
+      writing. The confidently-wrong reply costs more than the slow one, and it is the
+      failure mode macros produce that articles largely do not.
+    instead: Expiry dates on known-issue and workaround macros; wire the issue-fixed event to every macro on that edge.
+    detectable_by:
+      - macro.describes_behaviour_that_shipped_away
+      - macro.rewrite_promised_and_overdue
+      - median_days_since_verification
+
+  - id: macro.usage_reported_as_productivity
+    statement: Macro usage is presented as an efficiency metric, and rising usage as a maturing team.
+    why_it_happens: >
+      Usage is the only macro number that is free to collect, and it goes up. It makes a
+      good slide, it flatters the team, and no one has to argue with it because the
+      alternative numbers do not exist.
+    cost: >
+      It rewards precisely the behaviour that produces the wrong-question send, and it makes
+      a rising macro share read as maturity rather than as an unfixed product. A support org
+      can improve this number every quarter while getting worse at support.
+    instead: Publish usage only joined to reopen and follow-up rates on the same replies. An unjoined usage number should not leave the team that produced it.
+    detectable_by:
+      - macro.followed_by_a_reopen
+      - macro.detractor_after_a_canned_reply
+      - macro_to_followup_rate
+
+  - id: macro.macro_and_article_maintained_separately
+    statement: The same answer is kept in a macro and in an article, and they diverge.
+    why_it_happens: >
+      The macro is edited in the moment by whoever noticed the problem; the article needs a
+      review cycle and an owner who may have left. So the macro becomes right first and the
+      article rots while looking maintained, and the divergence is always in the same
+      direction.
+    cost: >
+      Two answers about our own product exist in the world and the wrong one is the public
+      one. Enterprise customers hit this reliably, because they forward our replies
+      internally and then check the docs.
+    instead: The macro links the article rather than restating it. One copy, one owner, one verification date.
+    detectable_by:
+      - macro.diverged_from_its_article
+      - macro.describes_behaviour_that_shipped_away
+
+  - id: macro.closing_macro_used_as_a_resolution
+    statement: '"We haven''t heard back, so we''re closing this" is sent at volume and counted as resolved work.'
+    why_it_happens: >
+      It converts an aging ticket into a resolved one with a single click, it is defensible
+      in every individual case, and the alternative — chasing properly and holding the
+      ticket open — makes every duration metric on the queue look worse.
+    cost: >
+      Manufactures reopens and detractors at scale, and moves the abandonment out of the
+      queue metrics into the churn metrics, where support is not measured. The queue looks
+      healthier and the company is not.
+    instead: One genuine chase before any close; a closing macro that explicitly invites a reply and never asserts the problem was resolved.
+    detectable_by:
+      - macro.followed_by_a_reopen
+      - macro.answered_and_they_came_straight_back
+      - macro_reopen_rate
+
+# ─────────────────────────────────────────────────────────────────────────────
+examples:
+
+  - label: Password reset macro, one required variable, sent 400 times a month, reopen rate at the queue norm
+    kind: typical
+    note: >
+      A macro working exactly as intended. High volume here is not a product finding — the
+      task is genuinely repetitive and self-service already covers it for those who look.
+      This is the case that makes the blanket rule "high share means a product gap" wrong,
+      and why queue_share is a context factor rather than an increasing one.
+
+  - label: Refund policy macro sent to a customer asking why their approved refund had not arrived
+    kind: misclassification
+    note: >
+      The canonical wrong-question send. The word "refund" matched, the macro was accurate,
+      well-written and recently verified, and it explained the policy to someone who had
+      already read it and was asking about a payment. The customer's next message was to
+      cancel. Nothing on this object other than the intent ref could have prevented it.
+
+  - label: Identical outage notice sent unedited to 400 customers during a declared major incident
+    kind: edge
+    note: >
+      Correct, and it violates the object's headline practice. Consistency is the
+      personalisation when the fact is the same for everyone — see the major-incident
+      exception. An agent warming up the wording here is committing the error, not avoiding
+      it.
+
+  - label: Billing macro rewritten four times in a year while the invoice bug it explains stayed open
+    kind: counterexample
+    note: >
+      Every rewrite made the macro clearer and none of them reduced the volume by anything.
+      The macro's excellence became the reason the gap survived: the problem was being
+      handled, so it was not a problem. The finding was available from month one in the
+      share number nobody looked at.
+
+  - label: Four refund macros in the picker; three last used eleven months ago, all still selectable
+    kind: edge
+    note: >
+      Sprawl in its normal state. Nothing is broken and nobody is harmed until an agent in a
+      hurry picks the 2023 one with the old policy in it. The duplicates also split the
+      volume four ways, which is why none of them ever looked significant enough to review.
+
+  - label: Known-issue workaround macro still in rotation two releases after the fix shipped
+    kind: misclassification
+    note: >
+      We told customers, confidently and in writing, to do something that no longer works,
+      for a problem that no longer exists. Discovered by a customer. This is the failure
+      macros produce that articles largely do not, because an article is at least read by
+      strangers who can notice.
+
+  - label: '"We haven''t heard back so we''re closing this" — 900 sends a quarter, reopen rate four times the queue norm'
+    kind: counterexample
+    note: >
+      The highest-volume macro in many libraries and the least examined, because it is
+      classified as hygiene rather than as an answer. It is the single clearest case for
+      separating macro_type = closing from macro_type = answer.
+
+  - label: Onboarding macro promising a callback within 24 hours, sent 200 times, creating no commitment record
+    kind: edge
+    note: >
+      A promise made two hundred times by a template that nobody feels personally
+      responsible for. Half of every library contains a sentence like this and almost none
+      of it starts a clock. Customers forgive slow; they do not forgive a named commitment
+      followed by silence.
+
+# ─────────────────────────────────────────────────────────────────────────────
+references:
+
+  - title: Knowledge-Centered Service (KCS v6)
+    kind: methodology
+    author: Consortium for Service Innovation
+    note: >
+      KCS is rigorous about the article side — capture in the flow of work, demand-driven
+      content, structured health. It has no equivalent discipline for the sending side, and
+      that absence is the gap this object is written into. Borrow its demand-driven
+      principle for macros; do not assume its review model covers them, because macros are
+      not in anybody's review model.
+
+  - title: The Effortless Experience
+    kind: book
+    author: Dixon, Toman and DeLisi
+    note: >
+      The source of the argument that reducing customer effort beats attempting to delight.
+      A macro that answers the wrong question is a pure effort event — the customer must
+      re-explain everything they already explained — which is why the follow-up rate, not
+      the satisfaction score, is the honest measure of a macro.
+
+  - title: ITIL service desk practice — response templates
+    kind: standard
+    note: >
+      Treats templates purely as a response-time instrument and is silent on content
+      accuracy, ownership and retirement. Cited here as the source of the default this
+      object argues against: templates as a speed control with no quality control attached.
+
+  - title: One-in-one-out macro library caps
+    kind: practitioner
+    note: >
+      Common practice in mature support organisations and written down almost nowhere. Its
+      value is not the cap itself but that it converts an unwinnable argument about whether
+      each macro deserves to exist into a decidable comparison between two of them.
+
+  - title: customer_support.knowledge_and_deflection.macro_management
+    kind: internal
+    note: The owning capability. Currently a stub; it and this object should be promoted together, since the capability's failure modes are all expressed in this object's anti_patterns.
+
+# ─────────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    SCOPED rather than core, and the argument is the reference graph rather than taste. A
+    macro is an artefact of how ONE TEAM ANSWERS. Triage decides what a thing is before any
+    reply exists and has no use for a reply template; incident response composes its message
+    once, deliberately, through the incident object; capacity planning counts contacts and is
+    indifferent to their phrasing. Exactly one capability — macro_management — loads it, so
+    objects/core/ would be wrong in the mechanical sense the domain enforces, and wrong in a
+    second sense too: an object in the load-set is a suggestion, and suggesting a reply
+    template to a capability whose correct behaviour is to write from scratch is an active
+    harm rather than harmless noise.
+
+    Thirteen patterns: FIVE executable, EIGHT needs_signal. Not one of the five can see that
+    a macro was sent. They read a maintenance commitment, graph degree twice, the shape of a
+    reply round-trip, and thread sentiment — the only things in today's substrate that touch
+    this object at all. Every one is scored between 4000 and 7500 and every one carries a
+    named false_positive, because the honest description of all five is "aggregate prior",
+    not "finding". macro.no_trace_anywhere_in_the_graph is the most compromised of them and
+    is kept anyway, because sprawl is the second-largest thing wrong with macro libraries and
+    this is the only executable handle on it that exists; it should be DELETED, not promoted,
+    on the day macro.use_count_30d lands.
+
+    The eight needs_signal entries are ranked by what they unlock, and the first two are not
+    close. macro_applied joined to macro.edit_distance_at_send is the whole object: both
+    strings are stored by every helpdesk on the market, the subtraction is trivial, and the
+    result is the difference between a library reviewable only by wording and one reviewable
+    by whether anybody thought before sending. Second is macro.use_count_30d over
+    ticket.queue, because that is what turns a support efficiency story into a product bill.
+    Everything else here is downstream of those two.
+
+    Signal names proposed by this object and not yet in vocabulary planned_substrate:
+    macro_applied (obs_kind), macro.macro_ref, macro.edit_distance_at_send,
+    macro.use_count_30d, macro.body_text, knowledge.body_text, derived.macro_similarity.
+    product.released_at, product.surface_version and knowledge.body_text overlap with asks
+    already made by knowledge_article — one emitter serves both, and they should be counted
+    once in the backlog rather than twice.
+
+    One executable pattern was considered and deliberately NOT authored: `has_obs:
+    followup_sent` alone, as a proxy for "a macro was sent". It is grammatical, it would have
+    put the object's headline metric under a green tick, and it measures outbound email. That
+    is structurally identical to binding "SLA breach imminent" to unanswered_email, which the
+    domain header names as the failure this architecture exists to prevent.
+
+    anti_patterns is the longest section here on purpose. Macros fail in ways that are
+    individually rational — every why_it_happens describes a decision a competent person
+    makes for good reasons — so a system that treats these as carelessness will be ignored by
+    the people it is advising. exceptions matters for the mirror reason: five of the six are
+    cases where "always personalise" is actively wrong, and an assistant that does not know
+    them will be dismissed by a support lead inside a day.

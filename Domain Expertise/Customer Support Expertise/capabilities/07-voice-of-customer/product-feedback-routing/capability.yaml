@@ -1,0 +1,37 @@
+identity:
+  id: customer_support.voice_of_customer.product_feedback_routing
+  name: Product Feedback Routing
+  domain: customer_support
+  subdomain: voice_of_customer
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Getting a customer problem in front of the team that can actually change it, in a form they
+  will accept, and getting the answer back to the customer who raised it. Routing fails far
+  more often at the return leg than at the send: support files the report, hears nothing, and
+  within a quarter stops filing — which is why the health of this capability is measured by
+  whether feedback comes back, not by how much goes out. The other standing failure is
+  submitting a solution instead of a problem, since a request phrased as a feature is a
+  guess about the fix that discards the evidence support was uniquely holding.
+
+question: "Who needs to know about this, in what form will they act on it, and did the customer ever hear back?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Stub — identity, description, question and load-set only. Promote by adding the failure
+    modes (the silent black hole, feature-request framing that hides the underlying job, the
+    same issue filed repeatedly under different names, and routing by whoever answers rather
+    than by ownership), heuristics with a `why` on what makes a report credible to an engineer,
+    a decision framework for when a contact becomes a bug report versus a documentation gap
+    versus a roadmap input, KPIs weighted to the return leg, and handoffs from
+    feedback_synthesis and into engineering_handoff. Nothing here is executable until bug_filed
+    and handoff_to_engineering are emitted; today the closed-loop half of this capability is
+    entirely a human practice.

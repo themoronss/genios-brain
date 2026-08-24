@@ -1,0 +1,28 @@
+identity:
+  id: customer_support.pb.content_gap_analysis.mine_the_searches_that_found_nothing
+  name: Mine the searches that found nothing
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.content_gap_analysis
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The KB roadmap is written by failed searches and deflection misses — what customers looked
+    for and did not find, ranked by frequency, becomes next month's authoring list.
+steps:
+- order: 1
+  name: Log zero-result and low-click searches
+  description: The query text IS the customer's vocabulary for the gap. Keep it verbatim.
+  actor: human
+- order: 2
+  name: Cross-reference with ticket drivers
+  description: Top ticket categories with no matching article = the expensive gaps. Fill by ticket volume,
+    not by writing comfort.
+  actor: human
+- order: 3
+  name: Verify the fill worked
+  description: 'After publishing: did the target search start succeeding, did the category''s tickets
+    dip? Authoring without this loop is content for content''s sake.'
+  actor: human

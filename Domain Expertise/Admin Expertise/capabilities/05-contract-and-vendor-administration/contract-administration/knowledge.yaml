@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.contract_and_vendor.contract_administration
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.contract_administration.one_contract_register_all_obligations
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.contract_administration.auto_renewals_are_decisions_by_default
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

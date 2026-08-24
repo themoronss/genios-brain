@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.qualification.stakeholder_mapping
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.stakeholder_mapping.living_stakeholder_map
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.stakeholder_mapping.single_threaded_is_one_resignation_from_dead
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.sales_management.deal_review
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.deal_review.evidence_first_deal_review
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.deal_review.the_best_story_needs_the_most_scrutiny
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

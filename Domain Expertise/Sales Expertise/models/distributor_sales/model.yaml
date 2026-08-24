@@ -1,0 +1,35 @@
+# Distributor Sales — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: sales.model.distributor_sales
+  name: Distributor Sales
+  kind: model
+  domain: sales
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Selling volume into a distributor who resells onward. Terms, stocking and logistics
+  dominate; the end customer is invisible from here.
+
+characteristics:
+  buyer: "a distributor"
+  decision_style: "commercial and logistical"
+
+capabilities:
+  emphasises:
+    - sales.proposal_and_commercials.pricing
+    - sales.closing.contract_management
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

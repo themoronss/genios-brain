@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "nodes": [
+    {"id": "account", "type": "entity_class", "label": "Account"},
+    {"id": "owner", "type": "entity_class", "label": "CSM Owner"}
+  ],
+  "edges": [
+    {
+      "from": "account",
+      "to": "owner",
+      "predicate": "owned_by",
+      "status": "asserted"
+    }
+  ]
+}

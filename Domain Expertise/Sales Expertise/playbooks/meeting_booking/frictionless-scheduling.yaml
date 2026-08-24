@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.meeting_booking.frictionless_scheduling
+  name: Frictionless scheduling
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.meeting_booking
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Every extra step between ''yes'' and a calendar invite loses a real fraction of yeses. The
+    moment intent is expressed, the seller does the work: propose two concrete slots in the buyer''s timezone,
+    and send the invite the moment one is picked.'
+steps:
+- order: 1
+  name: Offer two named slots, not a link alone
+  description: '''Tue 11:00 or Wed 16:00 your time?'' respects the buyer more than homework with a booking
+    link. Include the link as the fallback, never the only path.'
+  actor: human
+- order: 2
+  name: Confirm in their timezone, with an agenda line
+  description: The invite states in one line what will be decided — a meeting with a stated purpose survives
+    calendar triage; 'Intro call' does not.
+  actor: human
+- order: 3
+  name: Guard the no-show
+  description: A morning-of reminder with the one-line agenda halves no-shows. A no-show gets ONE graceful
+    rebook offer, then the thread returns to follow_up.
+  actor: human

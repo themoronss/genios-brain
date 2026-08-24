@@ -1,0 +1,130 @@
+# Situation — CSAT Detractor.
+#
+# Written around one property of the instrument that changes how every reading should be used:
+# a satisfaction survey is not a sample of the customer base, it is a sample of the emotionally
+# aroused. The people who answer are the delighted and the furious. That makes a detractor a
+# strong, cheap and unusually specific signal — someone paid attention long enough to tell us —
+# and it makes the silent middle uninformative rather than content. A rising score can mean the
+# furious have stopped answering, and nothing in the number itself can tell you which happened.
+#
+# The consequence for this file: the free-text comment is the payload and the score is only the
+# index that found it, which is why the load-set reaches for the ticket and the conversation
+# behind the response rather than for anything that aggregates.
+
+identity:
+  id: customer_support.sit.csat_detractor
+  name: CSAT Detractor
+  domain: customer_support
+  owner_capability: customer_support.voice_of_customer.satisfaction_measurement
+  version: 1.0.0
+  status: draft
+
+description: >
+  A customer has answered a survey and answered it badly. The interaction is over, the ticket is
+  usually closed, and someone has taken the trouble to say it did not work — which is rarer than
+  the response rate suggests, because most unhappy customers simply leave. The window is short
+  and unusually favourable: a detractor who is contacted quickly, by someone who has read the
+  ticket, about the specific thing they complained about, is one of the few recoverable states in
+  support. The window closes fast, and the two ways it is habitually wasted are ignoring the
+  response entirely because the ticket is closed, and answering it with a templated apology that
+  proves nobody read the comment.
+
+matches:
+  l2_situation_types: []
+
+  pending_l2_situation_types:
+    - type: csat_detractor
+      owner_layer: L2
+      nearest_today: champion_quiet
+      note: >
+        Must mean: a submitted satisfaction or effort response landing in the detractor band of
+        the instrument that was used, carried together with the ticket and interaction it judged,
+        the human who answered, and — critically — the free-text comment. The comment is the
+        content of this signal; the number is a sort key. A type that carries only a score will
+        be used to build a trend line, which is the one use of it that cannot act on anything.
+        The band must be a property of the instrument, not a constant: 1-2 on a five-point CSAT,
+        0-6 on NPS, and a high-effort answer on CES are different arithmetic and Layer 2 must not
+        hard-code one of them.
+        What would emit it: Layer 1 ingesting survey webhooks as the csat_submitted /
+        nps_submitted / ces_submitted obs kinds with the csat.score and csat.submitted_at fact
+        paths from planned_substrate, and Layer 2 banding per instrument.
+        Why champion_quiet is not good enough: it is what actually happens today, and it happens
+        weeks late and stripped of the reason. A detractor who has given up stops replying, the
+        contact eventually ages into champion_quiet, and the system reports that a relationship
+        has gone cold without knowing that it went cold because of a specific ticket that a
+        specific person told us about in writing. Binding here would also invert the timing that
+        makes this situation worth anything: the recoverable moment is the day of the response,
+        and champion_quiet cannot fire until enough silence has accumulated to prove the moment
+        was missed.
+
+  # Person, and deliberately not account. The response belongs to the human who submitted it —
+  # rolling it to the account is how a detractor becomes a percentage and a percentage becomes a
+  # quarterly review item that nobody calls back.
+  scope: person
+
+also_serves:
+  - customer_support.customer_communication.de_escalation
+  - customer_support.voice_of_customer.churn_signal_detection
+
+objects:
+  load:
+    - customer_support.obj.core.satisfaction_score
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.requester
+    - customer_support.obj.core.customer_sentiment
+  optional:
+    # effort_score outranks the satisfaction reading wherever it exists — "how hard was this"
+    # predicts staying far better than "how did that feel" — and is optional only because it is
+    # rarely collected. churn_risk turns one bad response into an account question. resolution
+    # is what the customer is actually rating.
+    - customer_support.obj.core.effort_score
+    - customer_support.obj.core.churn_risk
+    - customer_support.obj.core.resolution
+    - customer_support.obj.core.support_agent
+  never_load:
+    # The reflex on a detractor is to score the agent, and it is a bad reflex: most detractor
+    # responses are about a product failure, a wait, or a promise the agent could not make, and
+    # the agent is simply the person who delivered the news. Loading the scorecard makes the
+    # first question an attribution question, which is both the least useful reading and the one
+    # that teaches a team to survey selectively. Quality review of this ticket is a real activity
+    # and it belongs to quality_assurance, deliberately downstream and deliberately later.
+    - customer_support.obj.core.quality_scorecard
+    # A detractor is not a routing problem. Loading the queue invites the answer "we were busy",
+    # which is true, unhelpful, and cannot be said to the customer.
+    - customer_support.obj.core.queue
+
+priority_bp: 6200
+typical_duration_days: 7
+
+signals_of_progress:
+  - followup_sent
+  - callback_promised
+  - ticket_resolved
+  - csat_submitted
+
+signals_of_decay:
+  - cancellation_threat
+  - escalation_requested
+  - refund_requested
+  - ticket_reopened
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    All strings in these lists except followup_sent are support-native obs kinds from
+    planned_substrate and are emitted by nothing today. They are not schema-validated, so the
+    file loads; it does not run.
+    csat_submitted appears under progress with a caveat a reviewer should apply: a second
+    response is only progress if it is a better one, and this file cannot express that condition.
+    The genuinely reliable progress signal is a human contact that references the comment, which
+    no obs kind currently distinguishes from any other outbound message.
+    One thing this situation deliberately does not do is fire on the absence of a response.
+    Non-response is the domain's largest blind spot and it is not a detractor — treating silence
+    as dissatisfaction would flood the queue, and treating it as satisfaction is the error that
+    makes the headline number rise while the service gets worse. Neither reading is available
+    from the instrument, and the honest position is that the middle is unmeasured.

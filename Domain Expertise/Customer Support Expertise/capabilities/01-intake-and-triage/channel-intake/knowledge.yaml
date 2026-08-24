@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.intake_and_triage.channel_intake
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.channel_intake.single_queue_many_doors
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.channel_intake.the_loud_channel_is_not_the_urgent_one
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

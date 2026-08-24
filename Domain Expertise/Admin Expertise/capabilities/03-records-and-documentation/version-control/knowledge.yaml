@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.records_and_documentation.version_control
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.version_control.one_canonical_everything_else_labelled
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.version_control.the_copy_is_where_truth_forks
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

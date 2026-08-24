@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.admin_operations.business_continuity_administration
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.business_continuity_administration.continuity_basics_rehearsed
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.business_continuity_administration.continuity_is_tested_by_inconvenience_first
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

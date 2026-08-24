@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.facilities_and_assets.health_and_safety_administration
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.health_and_safety_administration.safety_basics_always_current
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.health_and_safety_administration.near_misses_are_the_cheapest_teachers
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

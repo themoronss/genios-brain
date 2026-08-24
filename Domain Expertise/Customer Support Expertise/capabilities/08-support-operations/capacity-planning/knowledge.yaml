@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.support_operations.capacity_planning
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.capacity_planning.plan_on_drivers_not_headcount_ratios
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.capacity_planning.deflection_is_capacity_too
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

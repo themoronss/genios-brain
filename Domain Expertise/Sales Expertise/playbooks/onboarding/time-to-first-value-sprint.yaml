@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.onboarding.time_to_first_value_sprint
+  name: Time-to-first-value sprint
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.onboarding
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'The clock that matters after signature is days-to-first-value: the moment the customer sees
+    the outcome they bought. Everything in onboarding is sequenced to shorten that clock, because renewal
+    odds are set in the first thirty days.'
+steps:
+- order: 1
+  name: Define first-value with the customer at kickoff
+  description: 'One sentence: ''you will know this worked when X''. Taken from the sales-cycle promise
+    — onboarding inherits the deal''s why, not a generic checklist.'
+  actor: human
+- order: 2
+  name: Sequence ruthlessly toward that X
+  description: Everything needed for first-value goes first; everything else waits. Config completeness
+    is not the goal; the customer's visible win is.
+  actor: human
+- order: 3
+  name: Mark the moment and tell the sponsor
+  description: 'When X happens, say so to the person who signed: ''the outcome you bought is live''. This
+    message is renewal insurance bought at week three.'
+  actor: human

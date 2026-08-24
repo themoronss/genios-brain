@@ -1,31 +1,33 @@
-fastapi
-uvicorn
-sqlalchemy
-psycopg2-binary
-pgvector
-redis
-celery[redis]
-python-dotenv
-pydantic
-requests
-google-generativeai
-groq
-anthropic>=0.40.0,<1.0.0
-google-auth-oauthlib
-google-api-python-client
-bcrypt
-PyJWT
-rapidfuzz
-python-louvain
-networkx
-sse-starlette
-python-multipart
-PyMuPDF
-python-docx
-razorpay
-posthog
-sentry-sdk
-# Phase 1 — dev dep for CI CVE scanning
-pip-audit==2.7.3
-# Phase 4 — calibration (Platt scaling over recommendation outcomes)
-scikit-learn==1.5.2
+# GeniOS Engine — Python 3.11. Install:  python3.11 -m venv .venv && .venv/bin/pip install -r requirements.txt
+# Versions pinned to the proven-working set.
+
+# ── web / server ───────────────────────────────────────────────
+fastapi==0.141.1
+uvicorn[standard]==0.52.0            # [standard] = watchfiles (for --reload) + websockets
+starlette==1.3.1                     # FastAPI's ASGI core (CORS middleware)
+python-multipart==0.0.20             # multipart/form-data parsing — file uploads (/api/org/{org}/upload)
+
+# ── data / db ──────────────────────────────────────────────────
+SQLAlchemy==2.0.51
+psycopg[binary]==3.3.4               # Postgres driver (postgresql+psycopg://) — Supabase
+
+# ── config / models / crypto ───────────────────────────────────
+pydantic==2.13.4
+pydantic-settings==2.14.2
+python-dotenv==1.2.2                 # .env loading
+cryptography==49.0.0                 # Fernet — raw-payload encryption at rest
+
+# ── intelligence + connectors ──────────────────────────────────
+anthropic==0.120.2                   # L2 extraction / L5 render (Haiku)
+composio==0.18.0                     # Gmail / Calendar / Notion / Drive auth + data
+httpx==0.28.1                        # outbound proactive push (GeniOS -> agent webhook); ships via anthropic too
+
+# ── document text extraction (L1 native, no OCR binary needed) ──
+python-docx==1.2.0                   # .docx
+pypdf==6.14.2                        # .pdf
+
+# ── optional: production Redis cache (engine falls back to a no-op NullCache if absent) ──
+# Set GENIOS_REDIS_URL to enable. Uncomment to install:
+# redis==5.2.1
+razorpay>=1.4  # billing (optional; lazy-imported)
+stripe>=7.0  # billing (optional; lazy-imported)

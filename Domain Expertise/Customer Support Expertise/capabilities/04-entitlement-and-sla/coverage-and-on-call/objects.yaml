@@ -1,0 +1,28 @@
+# Load-set for customer_support.entitlement_and_sla.coverage_and_on_call — REFERENCES ONLY.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.entitlement_and_sla.coverage_and_on_call
+
+core:
+  # Coverage is a claim about an hour and a person, so both are required. coverage_window
+  # without support_agent is a policy nobody is standing behind; support_agent without
+  # coverage_window is a headcount list. Notably ticket is NOT here — this capability reasons
+  # about hours, not about work items, and pulling tickets in would quietly turn it into
+  # workload_balancing.
+  required:
+    - customer_support.obj.core.coverage_window
+    - customer_support.obj.core.support_agent
+  # entitlement says which hours we actually owe, which is what separates a real coverage gap
+  # from an unstaffed hour nobody bought. incident is here because on-call is mostly dormant
+  # until one, and it is the object that makes acknowledgement and callout expressible. queue
+  # gives the volume the roster is supposed to absorb.
+  optional:
+    - customer_support.obj.core.entitlement
+    - customer_support.obj.core.incident
+    - customer_support.obj.core.queue
+
+scoped:
+  required: []
+  optional: []

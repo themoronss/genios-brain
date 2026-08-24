@@ -1,0 +1,26 @@
+# Load-set for customer_support.escalation_and_incident.postmortem —
+# REFERENCES ONLY, never an inline object.
+
+capability: customer_support.escalation_and_incident.postmortem
+
+core:
+  # incident and root_cause are the two halves of the review: what happened, and why it was
+  # possible. root_cause is required rather than optional because a postmortem that cannot name
+  # one has not finished — the honest output in that case is a stated unknown attached to a
+  # root_cause object, not a missing object.
+  required:
+    - customer_support.obj.core.incident
+    - customer_support.obj.core.root_cause
+  # issue for the defect that outlives the incident and must be tracked to a fix; bug_report for
+  # the engineering-side artefact when there is one.
+  optional:
+    - customer_support.obj.core.issue
+    - customer_support.obj.core.bug_report
+
+scoped:
+  # The postmortem document itself: the timeline, the contributing conditions, the actions with
+  # owners. Scoped because exactly one capability reads it — see the note in capability.yaml on
+  # why a second reader would be a warning sign rather than a promotion trigger.
+  required:
+    - customer_support.obj.postmortem.postmortem
+  optional: []

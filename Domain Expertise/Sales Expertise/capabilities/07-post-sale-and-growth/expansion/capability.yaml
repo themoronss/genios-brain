@@ -1,0 +1,28 @@
+identity:
+  id: sales.post_sale_and_growth.expansion
+  name: Expansion
+  domain: sales
+  subdomain: post_sale_and_growth
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Growing existing accounts through new teams, use cases or geographies. The parent
+  capability for upsell and cross-sell, and the one that requires a fresh discovery rather
+  than a renewal conversation.
+
+question: "Where else in this account is there unserved need?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

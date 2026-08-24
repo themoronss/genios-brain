@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.finance_administration.reimbursement_processing
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.reimbursement_processing.reimbursement_sla
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.reimbursement_processing.reimbursement_is_finance_s_storefront
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

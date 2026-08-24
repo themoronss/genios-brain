@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.meeting_scheduling.reschedules_cost_more_than_they_show
+  name: Reschedules cost more than they show
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.meeting_scheduling
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: One move touches every attendee's calendar, prep and adjacent bookings. Chronic rescheduling
+    — anyone's — is a priority signal everyone reads, whatever the stated reasons.
+  answers:
+  - What does frequent rescheduling communicate?

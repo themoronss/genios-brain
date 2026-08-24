@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.records_and_documentation.retention_and_archival
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.retention_and_archival.retain_by_rule_destroy_by_rule
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.retention_and_archival.everything_kept_is_discoverable
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

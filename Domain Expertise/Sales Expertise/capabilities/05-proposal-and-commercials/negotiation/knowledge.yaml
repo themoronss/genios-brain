@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.proposal_and_commercials.negotiation
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.negotiation.give_get_ledger_negotiation
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.negotiation.procurements_job_is_the_last_squeeze
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

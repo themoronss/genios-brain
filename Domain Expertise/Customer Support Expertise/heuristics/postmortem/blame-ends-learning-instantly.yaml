@@ -1,0 +1,16 @@
+identity:
+  id: customer_support.heu.postmortem.blame_ends_learning_instantly
+  name: Blame ends learning instantly
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.postmortem
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The moment fault attaches to a person, everyone's memory develops gaps and the next incident's
+    facts arrive pre-laundered. Psychological safety is not kindness here — it is the price of accurate
+    timelines.
+  answers:
+  - Why must postmortems be blameless to work?

@@ -1,0 +1,25 @@
+# Healthcare B2B — vertical branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: sales.model.b2b.healthcare
+  name: Healthcare B2B
+  kind: vertical
+  domain: sales
+  parent: sales.model.b2b
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Clinical and administrative buyers with compliance review as a first-class veto seat.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

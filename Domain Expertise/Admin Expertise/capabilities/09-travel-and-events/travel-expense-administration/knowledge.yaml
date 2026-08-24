@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.travel_and_events.travel_expense_administration
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.travel_expense_administration.trip_scoped_expense_closure
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.travel_expense_administration.open_trip_advances_age_badly
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

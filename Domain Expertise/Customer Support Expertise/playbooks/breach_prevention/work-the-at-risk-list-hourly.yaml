@@ -1,0 +1,29 @@
+identity:
+  id: customer_support.pb.breach_prevention.work_the_at_risk_list_hourly
+  name: Work the at-risk list hourly
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.breach_prevention
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Breach prevention is a standing sweep of tickets nearest their SLA edge — re-prioritised,
+    unblocked, or escalated while minutes still exist, because a breach prevented at 80% costs a nudge
+    and one at 100% costs a credit.
+steps:
+- order: 1
+  name: Surface the closest-to-breach continuously
+  description: A live list ordered by time-remaining÷time-allowed, visible to the whole shift.
+  actor: human
+- order: 2
+  name: Unblock the stuck ones specifically
+  description: At-risk usually means waiting — on customer, on engineering, on info. Name the wait and
+    attack it; generic urgency fixes nothing.
+  actor: human
+- order: 3
+  name: Escalate at the threshold, by rule
+  description: 'At 85% with no path: team lead pulls it. Automatic, not heroic — heroics are the failure
+    mode of missing process.'
+  actor: human

@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.knowledge_and_deflection.content_gap_analysis
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.content_gap_analysis.mine_the_searches_that_found_nothing
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.content_gap_analysis.gaps_are_measured_not_brainstormed
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

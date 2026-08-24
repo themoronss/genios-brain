@@ -1,0 +1,38 @@
+identity:
+  id: sales.heu.market_research.status_quo_is_the_market_leader
+  name: In most markets the incumbent is a spreadsheet and somebody's Tuesday …
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "In most markets the incumbent is a spreadsheet and somebody's Tuesday afternoon. Put status\
+    \ quo on the competitor map by name.\n Leave it off and every win-rate and reachable-share estimate\
+    \ is wrong in the same direction, because the largest holder of the budget is missing from the model.\
+    \ It also changes the pitch: displacing a habit needs a trigger and a cost of inaction, while displacing\
+    \ a vendor"
+heuristic:
+  statement: 'In most markets the incumbent is a spreadsheet and somebody''s Tuesday afternoon. Put
+    status quo on the competitor map by name.
+
+    '
+  why: 'Leave it off and every win-rate and reachable-share estimate is wrong in the same direction,
+    because the largest holder of the budget is missing from the model. It also changes the pitch: displacing
+    a habit needs a trigger and a cost of inaction, while displacing a vendor needs a difference.
+
+    '
+  reads:
+  - sales.obj.core.competitor
+  - sales.obj.market_research.market_map
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

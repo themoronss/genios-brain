@@ -1,0 +1,151 @@
+# Situation — Entitlement Expired.
+#
+# The thing to understand before reading the load-set: this is at least as much a commercial
+# signal as a support one, and it arrives through the support door because support is where the
+# customer still behaves as though they are covered. Somebody's renewal did not complete, or a
+# plan was downgraded, or a term ended and nobody noticed — and the first system to find out is
+# the one being asked for help.
+#
+# The correct handling is almost never to stop helping mid-conversation. Enforcement at the point
+# of contact is cheap to implement, feels principled, and reliably converts a renewable customer
+# into a former one over the price of one ticket. What is owed here is a conversation with
+# somebody commercial; the ticket in front of the agent is finished on goodwill and recorded as
+# such, which is a decision, not an oversight.
+
+identity:
+  id: customer_support.sit.entitlement_expired
+  name: Entitlement Expired
+  domain: customer_support
+  owner_capability: customer_support.entitlement_and_sla.entitlement_verification
+  version: 1.0.0
+  status: draft
+
+description: >
+  The coverage this customer is being served under has lapsed, or the system's belief about it no
+  longer matches what was actually sold. It surfaces almost always at the worst possible moment —
+  mid-ticket, with someone already waiting — because entitlement expires quietly and is checked
+  reactively. There are two distinct sub-cases underneath and they need different first moves: a
+  clean expiry, where the term genuinely ended and there is a renewal conversation to have, and a
+  mismatch, where the contract and the configuration disagree and the customer is very likely
+  right. Both are discovered by an angry customer rather than by an audit, and in both the
+  expensive error is the same one: telling the person in front of you what they are not entitled
+  to, in the middle of the work, as though it were their mistake.
+
+matches:
+  l2_situation_types: []
+
+  pending_l2_situation_types:
+    - type: entitlement_expired
+      owner_layer: L2
+      nearest_today: commitment_overdue
+      note: >
+        Must mean: the coverage attached to this account has passed its end date, carrying what
+        expired (channels, hours, response targets, named contacts), when, and whether anything
+        replaced it. It must be emittable BEFORE the expiry as well as after — the useful moment
+        is the approach, where a renewal conversation is still ordinary, not the aftermath, where
+        it is a recovery. It must also distinguish lapsed from cancelled from downgraded, because
+        those are three different commercial conversations and only one of them is bad news.
+        What would emit it: Layer 1 reading entitlement.expires_at and entitlement.plan from the
+        billing or CRM side, with the entitlement_expired and entitlement_checked obs kinds in
+        planned_substrate marking when the check actually happened. account.renewal_at makes the
+        approach case computable.
+        Why commitment_overdue is not good enough: structurally it is the closest thing the
+        pipeline has — a date passed and nobody looked — and semantically it is the reverse.
+        commitment_overdue's subject is a promise WE made and can still keep, and its prescribed
+        action is to go and keep it late. An expired entitlement is a promise that has stopped
+        existing, and the correct action is not support work performed late but a commercial
+        conversation started early. Binding here would produce a system that chases the agent to
+        deliver coverage the company is no longer being paid for, and would still say nothing to
+        anyone who could renew it. What goes wrong today is simply that nothing fires at all:
+        expiry is silent by construction, and the discovery event is a customer being told no.
+    - type: entitlement_mismatch
+      owner_layer: L2
+      nearest_today: commitment_overdue
+      note: >
+        Must mean: the entitlement the ticketing system is enforcing differs from the entitlement
+        the signed contract describes. It must carry both readings and their sources, because the
+        finding is the disagreement and an alert that names only one side is unactionable — and
+        because the contract is usually the richer and more correct of the two. The drift is
+        ordinary rather than exceptional: plans get renegotiated in a document and configured in
+        a product by different people at different times, and nobody reconciles them until
+        somebody is upset.
+        What would emit it: Layer 2 comparing entitlement.plan and entitlement.coverage_hours
+        against the contract record, ideally continuously rather than at the moment of contact.
+        Why commitment_overdue is not good enough: it is downstream of the damage by definition.
+        A mismatch becomes visible today only when someone has promised something under the wrong
+        plan and then cannot keep it — at which point a commitment goes overdue and the pipeline
+        finally has something to say. The entire value of this type is firing before anything has
+        been promised, so the nearest available signal is guaranteed to arrive after the only
+        moment it could have helped.
+
+  # Account. Entitlement attaches to the contracting entity, never to the person in the ticket —
+  # and the named-contact case is precisely where treating it as a person-level property causes
+  # an agent to refuse a colleague who is in fact covered.
+  scope: account
+
+also_serves:
+  - customer_support.support_management.account_relationship_management
+  - customer_support.support_operations.cost_to_serve
+
+objects:
+  load:
+    - customer_support.obj.core.entitlement
+    - customer_support.obj.core.customer_account
+    - customer_support.obj.core.support_plan
+    - customer_support.obj.core.ticket
+  optional:
+    # requester because named-contact entitlements are person-level: the account can be covered
+    # while this human is not, and that is the case most often got wrong in both directions.
+    # churn_risk because a lapse discovered this way is frequently the first visible symptom of a
+    # renewal that was already in trouble.
+    - customer_support.obj.core.requester
+    - customer_support.obj.core.churn_risk
+    - customer_support.obj.core.customer_sentiment
+  never_load:
+    # An expired entitlement has no clock. Loading SLA Target invites the single most damaging
+    # inference available here — that because no target applies, nothing is owed — and it is
+    # wrong on both the human and the commercial reading. It also drags the reasoning towards
+    # measurement at the exact moment the useful question is who should be talking to this
+    # customer about their contract.
+    - customer_support.obj.core.sla_target
+    # Escalation is the wrong shape. This is not a transfer of ownership upward within support;
+    # it is a handoff sideways into a commercial conversation, and escalation machinery would
+    # move it to a senior support person who has no more authority to fix it than the agent did.
+    - customer_support.obj.core.escalation
+
+priority_bp: 5500
+typical_duration_days: 21
+
+signals_of_progress:
+  - entitlement_checked
+  - followup_sent
+  - ticket_resolved
+  - contract_countersigned
+
+signals_of_decay:
+  - cancellation_threat
+  - escalation_requested
+  - angry_language
+  - refund_requested
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Only followup_sent is a real substrate obs kind; the rest are support-native or admin-native
+    names from planned_substrate (entitlement_checked, ticket_resolved, contract_countersigned,
+    cancellation_threat, escalation_requested, angry_language, refund_requested) and are emitted
+    by nothing today. The strings are unvalidated, so the file loads and does not run.
+    priority_bp is set lower than the escalation and incident situations on purpose, and a
+    reviewer should push back on it if they disagree. The argument for the lower number: this is
+    rarely urgent within the hour and the wrong kind of urgency here produces enforcement, which
+    is the failure mode. The argument against: an expiry discovered late is a renewal that was
+    already lost, so the priority is genuinely high and merely slow. The number is Layer 4's
+    input either way, and it is advisory.
+    typical_duration_days is 21 because it is measured against the commercial resolution — a
+    renewal or a correction to the record — not against the ticket, which will be finished on
+    goodwill the same day and should be.

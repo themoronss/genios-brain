@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.approval_coordination.slow_approvals_teach_workarounds
+  name: Slow approvals teach workarounds
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.approval_coordination
+  subdomain: executive_support
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: When the approval path is slow, people learn to avoid it — splitting purchases, acting first,
+    asking forgiveness. Approval speed is control's price; slowness buys shadow processes.
+  answers:
+  - What does chronic approval delay actually produce?

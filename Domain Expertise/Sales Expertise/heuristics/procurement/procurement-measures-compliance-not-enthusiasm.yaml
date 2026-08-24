@@ -1,0 +1,15 @@
+identity:
+  id: sales.heu.procurement.procurement_measures_compliance__not_enthusiasm
+  name: Procurement measures compliance, not enthusiasm
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.procurement
+  subdomain: closing
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Procurement KPIs are cost and process adherence — your product's brilliance is not their
+    concern. Give them completeness and speed; save the value story for people paid to care about value.
+  answers:
+  - What does procurement actually respond to?

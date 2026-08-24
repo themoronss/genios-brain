@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.reimbursement_processing.reimbursement_is_finance_s_storefront
+  name: Reimbursement is finance's storefront
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.reimbursement_processing
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Most employees judge the whole finance function by their reimbursement experience. A smooth
+    process buys goodwill for every future finance ask — expense policies, budget discipline, audit requests.
+  answers:
+  - Why does reimbursement UX matter beyond itself?

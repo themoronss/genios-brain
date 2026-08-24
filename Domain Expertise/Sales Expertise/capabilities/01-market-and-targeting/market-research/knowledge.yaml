@@ -1,0 +1,36 @@
+capability: sales.market_and_targeting.market_research
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.market_research.incumbent_teardown
+  - sales.pb.market_research.segment_on_behaviour_then_test_firmographics
+  - sales.pb.market_research.switch_interview
+  - sales.pb.market_research.win_loss_including_no_decision
+  - sales.pb.market_research.write_the_falsifier_first
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.market_research.a_much_longer_cycle_is_a_different_business
+  - sales.heu.market_research.analysts_measure_volume_not_wins
+  - sales.heu.market_research.budget_owner_defines_the_segment
+  - sales.heu.market_research.crowded_beats_empty
+  - sales.heu.market_research.haggling_proves_a_budget
+  - sales.heu.market_research.status_quo_is_the_market_leader
+  - sales.heu.market_research.undated_findings_are_liabilities
+  - sales.heu.market_research.willingness_to_pay_is_already_being_spent
+mental_models:
+  core: []
+  scoped:
+  - sales.mm.market_research.markets_are_behaviours
+  - sales.mm.market_research.maturity_sets_the_motion
+  - sales.mm.market_research.research_is_bet_sizing
+  - sales.mm.market_research.three_competitors
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped:
+  - sales.df.market_research.five_forces
+  - sales.df.market_research.jobs_to_be_done
+  - sales.df.market_research.market_awareness_stages

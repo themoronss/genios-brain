@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.people_administration.attendance_and_leave
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.attendance_and_leave.leave_as_visible_rule_based_flow
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.attendance_and_leave.untaken_leave_is_a_liability_twice
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

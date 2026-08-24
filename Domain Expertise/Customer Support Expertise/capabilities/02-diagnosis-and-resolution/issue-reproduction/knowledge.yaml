@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.diagnosis_and_resolution.issue_reproduction
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.issue_reproduction.minimal_repro_discipline
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.issue_reproduction.cannot_reproduce_is_a_finding_not_a_closure
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

@@ -1,0 +1,30 @@
+identity:
+  id: customer_support.pb.executive_escalation.receive_own_de_escalate
+  name: Receive, own, de-escalate
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.executive_escalation
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: An executive escalation is claimed by a named senior owner within the hour, with a direct
+    line and a plan — because at this altitude the product problem has become a trust problem, and only
+    visible ownership repairs trust.
+steps:
+- order: 1
+  name: Acknowledge personally, immediately
+  description: A named human with authority replies fast — the escalating exec is testing whether anyone
+    owns this.
+  actor: human
+- order: 2
+  name: Rebuild the story before the callback
+  description: Full history read, internal misses acknowledged internally. Walking in unbriefed confirms
+    their thesis.
+  actor: human
+- order: 3
+  name: Close with cause AND change
+  description: Executives escalate to change the pattern, not just this ticket. 'Here is what we changed
+    so this class stops' is the actual deliverable.
+  actor: human

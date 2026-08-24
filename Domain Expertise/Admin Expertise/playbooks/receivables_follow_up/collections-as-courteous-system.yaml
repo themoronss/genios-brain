@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.receivables_follow_up.collections_as_courteous_system
+  name: Collections as courteous system
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.receivables_follow_up
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Receivables are chased on an escalating cadence — reminder before due, follow-ups after,
+    human call at aging thresholds — polite, consistent, unembarrassed, because unasked-for money arrives
+    last.
+steps:
+- order: 1
+  name: Remind before due date
+  description: A friendly upcoming-invoice note catches the lost and the forgetful — most lateness is
+    disorganisation, not refusal.
+  actor: human
+- order: 2
+  name: Escalate on a stated ladder
+  description: Day 3 note, day 14 firmer, day 30 call, then terms review. The ladder removes both awkwardness
+    and inconsistency.
+  actor: human
+- order: 3
+  name: Read aging weekly by customer
+  description: Slow-shifting payers get terms conversations early. Aging drift is churn's financial twin.
+  actor: human

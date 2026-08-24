@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.executive_support.inbox_and_correspondence
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.inbox_and_correspondence.triage_to_five_outcomes
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.inbox_and_correspondence.response_speed_is_reputation
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

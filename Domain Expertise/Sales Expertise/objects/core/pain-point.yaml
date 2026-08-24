@@ -1,0 +1,745 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Pain Point — core. Loaded by discovery, need analysis, value proposition, demo,
+# objection handling, proposal creation, deal review and churn prevention.
+#
+# The whole object turns on one field: owner_ref. Everything else describes a problem;
+# owner_ref is what makes the problem someone's job. Five of the eleven patterns below
+# fire against the pipeline as it stands. The other six are the discovery half of the
+# sale, which Layer 2 currently cannot see at all.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: sales.obj.core.pain_point
+  scope: core
+  name: Pain Point
+  domain: sales
+  subdomain: discovery_and_solution
+  owner_capability: sales.discovery_and_solution.discovery
+  version: 1.0.0
+  status: draft
+  aliases: ["Problem", "Challenge", "Identified Pain", "Business Problem"]
+purpose:
+  statement: >
+    A specific problem the buyer experiences, carrying a cost and an owner. The discriminator
+    is ownership, not severity: a pain with no owner is an observation, and observations do
+    not fund purchases. "Reporting is manual" is an observation; "the Head of Finance spends
+    three days a month rebuilding the board pack and is measured on close time" is a pain
+    point, because there is a person, a number and a consequence. The second discriminator is
+    against Business Need — pain is what hurts now, need is what better looks like. Sellers
+    who collect pain and never convert it into a need have a compelling story and nothing to
+    be measured against after the sale.
+attributes:
+  - name: definition
+    purpose: What the problem is, and how sharply it has been stated.
+    type: composite
+    contains:
+      - statement
+      - category
+      - specificity
+      - severity
+      - frequency
+  - name: ownership
+    purpose: >
+      Who is accountable, who merely suffers, and how many people said the same thing.
+      The section that decides whether this object can fund anything.
+    type: composite
+    contains:
+      - owner_ref
+      - owner_is_economic
+      - felt_by
+      - corroboration_count
+  - name: cost
+    purpose: What the problem costs per year, in whose units, and on whose authority.
+    type: composite
+    contains:
+      - annual_cost
+      - cost_basis
+      - metric_affected
+      - workaround_cost
+  - name: status_quo
+    purpose: >
+      What they do instead today. The workaround is simultaneously the proof the pain is
+      real and the strongest competitor in the deal.
+    type: composite
+    contains:
+      - current_workaround
+      - consequence_of_inaction
+      - priority_rank
+  - name: urgency
+    purpose: Whether anything external forces resolution, and when it was last alive in the
+      conversation.
+    type: composite
+    contains:
+      - has_compelling_event
+      - first_observed_at
+      - last_referenced_at
+      - sentiment_at_last_mention
+  - name: provenance_and_fit
+    purpose: Whether the buyer named it or we did, and whether our thing actually answers it.
+    type: composite
+    contains:
+      - raised_by_buyer
+      - addressed_by_us
+      - differentiated
+      - deal_ref
+  - name: statement
+    purpose: The problem in the buyer's own words, kept verbatim. A pain restated in vendor language
+      stops being theirs and stops surviving the internal meeting we are not in.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      The problem in the buyer's own words, kept verbatim. A pain restated in vendor
+      language stops being theirs and stops surviving the internal meeting we are not in.
+  - name: category
+    purpose: Grouping for pattern analysis across deals. Never shown to the buyer — they own the
+      words, we own the taxonomy.
+    type: value
+    data_type: enum
+    allowed_values: [cost, revenue, risk, compliance, speed, quality, capacity, customer_experience,
+        morale, unknown]
+    description: Grouping for pattern analysis across deals. Never shown to the buyer — they own the
+      words, we own the taxonomy.
+  - name: specificity
+    purpose: '`vague` is a category of complaint ("reporting is painful"). `situational` names a concrete
+      instance with a frequency. `quantified` carries a number the buyer supplied. Only `quantified` survives
+      a procurement review, and most pipelines are full of `vague` recorded as if it were more.'
+    type: value
+    data_type: enum
+    allowed_values: [vague, situational, quantified]
+    required: true
+    description: >
+      `vague` is a category of complaint ("reporting is painful"). `situational` names a
+      concrete instance with a frequency. `quantified` carries a number the buyer supplied.
+      Only `quantified` survives a procurement review, and most pipelines are full of `vague`
+      recorded as if it were more.
+  - name: severity
+    purpose: Tolerable is the dangerous value, not trivial. A tolerable pain generates meetings,
+      discovery calls and a proposal, and then loses to doing nothing.
+    type: value
+    data_type: enum
+    allowed_values: [trivial, tolerable, painful, critical]
+    description: >
+      Tolerable is the dangerous value, not trivial. A tolerable pain generates meetings,
+      discovery calls and a proposal, and then loses to doing nothing.
+  - name: frequency
+    purpose: Frequency multiplied by unit cost is the honest way to reach annual_cost. Sellers usually
+      reach it by asking for a total and accepting the first number offered.
+    type: value
+    data_type: enum
+    allowed_values: [one_off, occasional, monthly, weekly, daily, continuous]
+    description: Frequency multiplied by unit cost is the honest way to reach annual_cost. Sellers
+      usually reach it by asking for a total and accepting the first number offered.
+  - name: owner_ref
+    purpose: The person accountable for the cost of this problem — not the person who complained about
+      it. Null here is the single most common defect in a qualified pipeline.
+    type: reference
+    ref: sales.obj.core.stakeholder
+    data_type: ref
+    description: >
+      The person accountable for the cost of this problem — not the person who complained
+      about it. Null here is the single most common defect in a qualified pipeline.
+  - name: owner_is_economic
+    purpose: Whether the owner also controls the money. When false, every deal built on this pain
+      requires a second sale inside the account that we will not be in the room for.
+    type: value
+    data_type: boolean
+    description: >
+      Whether the owner also controls the money. When false, every deal built on this pain
+      requires a second sale inside the account that we will not be in the room for.
+  - name: felt_by
+    purpose: Roles or teams that experience the problem without being accountable for it. Useful for
+      multithreading, useless for funding.
+    type: value
+    data_type: list
+    description: Roles or teams that experience the problem without being accountable for it. Useful
+      for multithreading, useless for funding.
+  - name: corroboration_count
+    purpose: Number of independent people in the account who named the same problem unprompted. One is
+      an opinion. Three across two functions is an organisational pain and will survive the owner
+      going on holiday.
+    type: value
+    data_type: integer
+    description: >
+      Number of independent people in the account who named the same problem unprompted.
+      One is an opinion. Three across two functions is an organisational pain and will
+      survive the owner going on holiday.
+  - name: annual_cost
+    purpose: Cost of the problem per year. Null means uncosted, which is not the same as small.
+    type: value
+    data_type: money
+    description: Cost of the problem per year. Null means uncosted, which is not the same as small.
+  - name: cost_basis
+    purpose: Where the number came from. A vendor_estimated cost is a hypothesis wearing a decimal
+      point; quoting it back as though the buyer said it is the fastest way to lose the business-case
+      review.
+    type: value
+    data_type: enum
+    allowed_values: [buyer_stated, buyer_calculated, jointly_calculated, vendor_estimated, assumed,
+        unknown]
+    description: >
+      Where the number came from. A vendor_estimated cost is a hypothesis wearing a decimal
+      point; quoting it back as though the buyer said it is the fastest way to lose the
+      business-case review.
+  - name: metric_affected
+    purpose: The buyer's own KPI this problem degrades. The bridge from Pain Point to Business Need —
+      without it the two objects never connect.
+    type: value
+    data_type: string
+    description: The buyer's own KPI this problem degrades. The bridge from Pain Point to Business
+      Need — without it the two objects never connect.
+  - name: current_workaround
+    purpose: 'What they do instead today. Its presence proves the pain is real and simultaneously identifies
+      the incumbent: "do nothing, carefully" wins more deals than any vendor.'
+    type: value
+    data_type: string
+    description: >
+      What they do instead today. Its presence proves the pain is real and simultaneously
+      identifies the incumbent: "do nothing, carefully" wins more deals than any vendor.
+  - name: workaround_cost
+    purpose: Usually loaded staff time. Frequently larger than the contract value, and almost never
+      calculated by the buyer unless we do it with them.
+    type: value
+    data_type: money
+    description: Usually loaded staff time. Frequently larger than the contract value, and almost
+      never calculated by the buyer unless we do it with them.
+  - name: consequence_of_inaction
+    purpose: What happens to the owner personally if this is still true in twelve months.
+      Institutional consequences do not move deals; personal ones do.
+    type: value
+    data_type: string
+    description: What happens to the owner personally if this is still true in twelve months.
+      Institutional consequences do not move deals; personal ones do.
+  - name: has_compelling_event
+    purpose: Whether an external, dated obligation forces resolution. A date without one of these is a
+      preference, and preferences slip.
+    type: value
+    data_type: boolean
+    description: Whether an external, dated obligation forces resolution. A date without one of these
+      is a preference, and preferences slip.
+  - name: priority_rank
+    purpose: The buyer's own ranking of this problem among their problems. Being their number four is
+      a loss dressed up as a pipeline entry — it will be funded in a fiscal year we are not
+      forecasting.
+    type: value
+    data_type: integer
+    description: >
+      The buyer's own ranking of this problem among their problems. Being their number four
+      is a loss dressed up as a pipeline entry — it will be funded in a fiscal year we are
+      not forecasting.
+  - name: raised_by_buyer
+    purpose: True when the buyer volunteered it, false when we named it and they agreed. Agreement is
+      politeness at a discount; only volunteered pain reliably reappears in their internal business
+      case.
+    type: value
+    data_type: boolean
+    description: >
+      True when the buyer volunteered it, false when we named it and they agreed. Agreement
+      is politeness at a discount; only volunteered pain reliably reappears in their internal
+      business case.
+  - name: first_observed_at
+    purpose: When this pain first appeared in the record. Distance from here to a quantified cost is
+      the cleanest measure of discovery quality.
+    type: value
+    data_type: timestamp
+    description: When this pain first appeared in the record. Distance from here to a quantified cost
+      is the cleanest measure of discovery quality.
+  - name: last_referenced_at
+    purpose: Best available proxy today. Thread recency is not pain recency, but it is what the
+      pipeline can see.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+    description: Best available proxy today. Thread recency is not pain recency, but it is what the
+      pipeline can see.
+  - name: sentiment_at_last_mention
+    purpose: Engine-computed observation balance around the last mention. Corroborating only —
+      sentiment tracks how they feel about us at least as much as about their problem.
+    type: value
+    data_type: number
+    source_paths: [derived.sentiment]
+    description: Engine-computed observation balance around the last mention. Corroborating only —
+      sentiment tracks how they feel about us at least as much as about their problem.
+  - name: addressed_by_us
+    purpose: Honest mapping to our capability. `partially` recorded as `fully` is where implementation
+      disputes begin.
+    type: value
+    data_type: enum
+    allowed_values: [fully, partially, not_at_all, unknown]
+    description: Honest mapping to our capability. `partially` recorded as `fully` is where
+      implementation disputes begin.
+  - name: differentiated
+    purpose: Whether we answer this pain in a way the alternatives do not. A pain every vendor solves
+      equally is a reason to buy, not a reason to buy us, and belongs in the qualification narrative
+      rather than the differentiation one.
+    type: value
+    data_type: boolean
+    description: Whether we answer this pain in a way the alternatives do not. A pain every vendor
+      solves equally is a reason to buy, not a reason to buy us, and belongs in the qualification
+      narrative rather than the differentiation one.
+  - name: deal_ref
+    purpose: The deal this pain is being sold against, when one exists. Pains discovered with no deal
+      attached are the raw material for the next quarter.
+    type: reference
+    ref: sales.obj.core.deal
+    data_type: ref
+    description: The deal this pain is being sold against, when one exists. Pains discovered with no
+      deal attached are the raw material for the next quarter.
+states:
+  initial: unknown
+  values:
+    - name: unknown
+      description: No problem recorded for this account.
+    - name: hypothesised
+      description: >
+        We believe this pain exists from research or pattern-matching. The buyer has not said
+        it. Everything built on a hypothesised pain is a guess with confident formatting.
+    - name: identified
+      description: The buyer has stated the problem in their own words.
+    - name: quantified
+      description: A cost is attached with a buyer-supplied basis.
+    - name: owned
+      description: A named person is accountable for that cost. The state that makes a business case
+        possible.
+    - name: qualified
+      description: Owned, quantified, and carrying a compelling event or a ranked priority.
+    - name: dormant
+      description: Nobody has referenced it in weeks. Not resolved — deprioritised.
+      entered_when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: 21}]
+    - name: disqualified
+      description: The buyer has explicitly deprioritised it, or it turned out to belong to someone
+        who left.
+      entered_when: [has_obs: closed_lost_mention]
+  transitions:
+    - {from: unknown, to: hypothesised}
+    - {from: hypothesised, to: identified}
+    - {from: identified, to: quantified}
+    - {from: quantified, to: owned}
+    - {from: owned, to: qualified}
+    - {from: identified, to: dormant, when: [{fn: days_since, path: thread.last_inbound, op: ">=", value:
+            21}]}
+    - {from: quantified, to: dormant, when: [{fn: days_since, path: thread.last_inbound, op: ">=", value:
+            21}]}
+    - {from: dormant, to: identified}
+    - {from: qualified, to: disqualified, when: [has_obs: closed_lost_mention]}
+    - {from: owned, to: hypothesised, when: [has_obs: champion_change]}
+
+# ── 7 · Business Rules — deterministic ───────────────────────────────────────────────────
+relationships:
+
+  - type: belongs_to
+    target: sales.obj.core.stakeholder
+    cardinality: one
+    description: The owner. This edge is the object's reason to exist — without it the pain is
+      telemetry about an account, not a lever in a deal.
+
+  - type: attaches_to
+    target: sales.obj.core.account
+    cardinality: one
+
+  - type: attaches_to
+    target: sales.obj.core.deal
+    cardinality: zero_or_one
+    description: Optional by design. The best-qualified deals are built from pains that predate them.
+
+  - type: precedes
+    target: sales.obj.core.business_need
+    cardinality: zero_or_many
+    description: >
+      Pain is what hurts, need is what better looks like. A need with no pain behind it is
+      an aspiration and is the first thing cut in a budget round; a pain with no need in
+      front of it produces a sale nobody can measure at renewal.
+
+  - type: requires
+    target: sales.obj.core.budget
+    cardinality: zero_or_one
+    description: Resolution costs money. An owned, quantified, unfunded pain is a nurture with a date
+      on it, not a deal.
+
+  - type: competes_with
+    target: sales.obj.core.pain_point
+    cardinality: zero_or_many
+    description: Self-referential. The buyer's other problems compete for the same budget and the same
+      attention, and usually win on account of being older.
+
+  - type: competes_with
+    target: sales.obj.core.competitor
+    cardinality: zero_or_many
+    description: The incumbent or manual process currently absorbing this pain. Recording "no
+      competitor" when a workaround exists is a mis-scoped deal.
+
+  - type: influences
+    target: sales.obj.core.proposal
+    cardinality: zero_or_many
+    description: A proposal that does not name this pain in the buyer's own words will be read as a
+      product brochure.
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: pp.budget_freeze_suspends_funding_not_pain
+      statement: "A budget freeze was observed: funding stopped, the problem did not."
+      status: executable
+      when:
+        - {has_obs: budget_freeze}
+      yields: {confidence_bp: 8800, attribute: null}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        This pattern exists to stop the wrong reflex. The naive move on a freeze is to close
+        the opportunity and let the pain object die with it, which means re-running discovery
+        from zero when the fiscal period turns. The pain survives the freeze; only the timeline
+        changes. Keeping the object alive is the difference between a diarised re-approach and
+        a cold restart against a competitor who kept theirs.
+
+    - id: pp.loss_language_reprices_the_severity
+      statement: "The buyer used closed-lost or 'not this year' language about this deal."
+      status: executable
+      when:
+        - {has_obs: closed_lost_mention}
+      yields: {confidence_bp: 7500, attribute: severity, value: tolerable}
+      evidence_fields: [deal.status, thread.last_inbound]
+      note: >
+        Reads backwards on purpose. A buyer walking away has just told us the problem was
+        survivable, whatever severity the discovery notes claimed. Downgrading severity here
+        rather than blaming budget is what makes the next forecast honest — critical pains do
+        not get postponed, they get escalated.
+
+    - id: pp.buyer_stated_the_problem
+      statement: "The buyer named a problem in their own words during a call or thread."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: raised_by_buyer, value: true}
+      requires_signals:
+        - {kind: obs_kind, name: pain_stated, owner_layer: L2, note: "The largest single hole in the substrate.\
+            Layer 2 emits objection, objection_price and discount_pressure — every commercial reaction to
+            our price — and nothing at all for a buyer describing a problem. The entire discovery half of
+            the sale is invisible, so this object can currently only be inferred from the commercial signals
+            that come after it."}
+        - {kind: fact_path, name: pain.statement_span, owner_layer: L2, note: "The verbatim span matters\
+            as much as the flag. A paraphrase cannot be quoted back."}
+
+    - id: pp.cost_quantified_by_the_buyer
+      statement: "The buyer supplied a figure for what the problem costs them."
+      status: needs_signal
+      yields: {confidence_bp: 9200, attribute: cost_basis, value: buyer_stated}
+      requires_signals:
+        - {kind: obs_kind, name: quantification_stated, owner_layer: L2}
+        - {kind: fact_path, name: pain.annual_cost, owner_layer: L2, note: "Number plus unit plus period.\
+            A figure without a period is the most common way a business case inflates by twelve."}
+
+    - id: pp.owner_named_explicitly
+      statement: "Someone stated who is accountable for the problem, or the owner claimed it themselves."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: owner_ref, value: null}
+      requires_signals:
+        - {kind: obs_kind, name: accountability_stated, owner_layer: L2, note: "Transcripts carry this constantly\
+            — 'that sits with me', 'Priya owns that number' — and it is dropped. It is the field the whole
+            object turns on."}
+
+  heuristic:
+
+    - id: pp.objection_after_a_proposal_is_unanswered_pain
+      statement: "An objection was raised after the proposal went out and the ball is with us."
+      status: executable
+      when:
+        - {has_obs: proposal_sent}
+        - {has_obs: objection}
+        - {path: thread.ball_in_court, op: "=", value: us}
+      yields: {confidence_bp: 6200, attribute: addressed_by_us, value: partially}
+      evidence_fields: [thread.ball_in_court]
+      note: >
+        Post-proposal objections are usually a pain the proposal did not answer, misread as a
+        commercial problem because it surfaces near a price. Treating it as a discount
+        conversation solves the wrong thing and teaches the buyer that pressure works.
+
+    - id: pp.silence_on_an_open_deal_prices_the_pain
+      statement: "Three weeks of no inbound on an open deal."
+      status: executable
+      when:
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: 21}
+        - {neighbor_fact: deal.status, op: "=", value: open}
+      yields: {confidence_bp: 6500, attribute: severity, value: tolerable}
+      evidence_fields: [thread.last_inbound, deal.status]
+      note: >
+        Sellers read silence as busyness. It is a price quotation: the buyer has valued
+        resolving this problem below the cost of writing two sentences. Deliberately only
+        6500 — holidays, reorganisations and a champion in hospital all produce the same shape.
+
+    - id: pp.a_dated_commitment_is_a_proxy_compelling_event
+      statement: "A commitment with a due date is attached to this deal."
+      status: executable
+      when:
+        - {exists: commitment.due_at}
+        - {exists: commitment.action}
+      yields: {confidence_bp: 5500, attribute: has_compelling_event, value: true}
+      evidence_fields: [commitment.due_at, commitment.action]
+      note: >
+        Weak at 5500 and honestly so: the substrate cannot tell whose commitment it is, and
+        most commitments in a thread are the seller's own follow-ups. A rep's promise to send
+        a deck is not a compelling event. Corroborate against owner_ref before acting.
+
+    - id: pp.pressure_on_price_before_the_cost_is_known
+      statement: "Discount pressure with no budget approval anywhere on the deal."
+      status: executable
+      when:
+        - {has_obs: discount_pressure}
+        - {no_obs: budget_approved}
+      yields: {confidence_bp: 6000, attribute: specificity, value: vague}
+      evidence_fields: [deal.value]
+      note: >
+        A buyer who knows what the problem costs them negotiates against that number. A buyer
+        who does not negotiates against zero, and no discount ever closes that gap. Discount
+        pressure arriving before any budget event is therefore diagnostic of failed
+        quantification, not of a pricing problem.
+
+    - id: pp.same_problem_named_across_stakeholders
+      statement: "Two or more people in the account independently described the same problem."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: corroboration_count, value: 2}
+      requires_signals:
+        - {kind: obs_kind, name: pain_stated, owner_layer: L2}
+        - {kind: derived, name: derived.pain_topic_cluster, owner_layer: L2, note: "Needs topic clustering\
+            across threads and participants — the same problem is rarely described in the same words twice,
+            so string matching will under-count and quietly favour the loudest stakeholder."}
+
+    - id: pp.owner_is_outside_the_buying_committee
+      statement: "The person accountable for the pain is not on the buying committee."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: owner_is_economic, value: false}
+      requires_signals:
+        - {kind: fact_path, name: committee.member_ids, owner_layer: L2, note: "The most expensive silent\
+            failure in enterprise: the pain owner is in operations and the committee is finance and IT, so
+            the business case is presented by people who do not feel the problem."}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: meeting_transcript, signal: "the buyer describing a problem, and who claims accountability\
+      for it"}
+  - {source: call_recording, signal: "frustration markers and repeated topics across calls"}
+  - {source: email, signal: recency of the last mention, path: thread.last_inbound}
+  - {source: email, signal: who owes whom a reply, path: thread.ball_in_court}
+  - {source: derived, signal: observation balance around the problem, path: derived.sentiment}
+  - {source: crm, signal: "notes fields, prior discovery, historical pains on the account"}
+  - {source: document, signal: "RFP problem statements, internal business cases shared with us"}
+  - {source: website, signal: "published strategy, annual report risk sections, job adverts describing\
+      the gap"}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: pain_confidence_bp, type: integer, description: "How sure we are this is a real, owned problem\
+      rather than a polite agreement.", consumed_by: [L4.reasoning_unit]}
+  - {name: quantified_value, type: money, description: "Annualised cost of the problem, tagged with cost_basis\
+      so a vendor estimate never travels as a buyer number.", consumed_by: [L4.reasoning_unit,
+        L5.communication_planning]}
+  - {name: owner_gap, type: boolean, description: "True when the pain is stated but unowned — the single\
+      highest-yield discovery question available.", consumed_by: [L4.decision_maker,
+        L5.execution_planning]}
+  - {name: status_quo_risk_bp, type: integer, description: "Likelihood of losing to 'do nothing', derived\
+      from workaround strength and priority_rank.", consumed_by: [L4.reasoning_unit]}
+  - {name: discovery_gaps, type: list, description: "Which of statement, cost, owner and compelling event\
+      are still missing.", consumed_by: [L5.execution_planning]}
+  - {name: buyer_language, type: list, description: "Verbatim phrases to reuse. Reflecting their words\
+      back is the cheapest credibility available.", consumed_by: [L5.communication_planning, "L5.2.channel_planner"]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: pp.cost_requires_a_basis, statement: "annual_cost may not be asserted without cost_basis. An\
+      unattributed number is indefensible in the review it was written for.", hard: true}
+  - {id: pp.owner_must_be_a_person, statement: "owner_ref points to a named individual, never to a team\
+      or a function. Teams do not approve spend.", hard: true}
+  - {id: pp.no_pain_no_proposal, statement: "A proposal must reference at least one pain point in the\
+      buyer's own language.", hard: true}
+  - {id: pp.hypothesised_is_not_identified, statement: "A hypothesised pain may not be reported to the\
+      buyer as something they told us. Being corrected on this costs the discovery relationship outright.",
+    hard: true}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: pp.no_owner_no_business_case
+    statement: >
+      A pain point with no owner_ref must not be used as the primary justification in a
+      proposal. Procurement asks whose budget line this comes from, and "the team" is not
+      an answer anyone can sign.
+    then: block_use_as_primary_justification
+    severity: blocking
+
+  - id: pp.vendor_estimated_cost_must_be_labelled
+    statement: >
+      Where cost_basis is vendor_estimated or assumed, annual_cost must be labelled as our
+      estimate wherever it appears. An unlabelled vendor number that the buyer's finance
+      team disproves discredits every other number in the document.
+    severity: blocking
+
+  - id: pp.tolerable_pain_with_a_workaround_names_do_nothing
+    statement: >
+      When current_workaround is present and severity is trivial or tolerable, "do nothing"
+      must be recorded as the leading competitor rather than leaving the competitor field empty.
+    then: register_status_quo_as_competitor
+    severity: warning
+
+  - id: pp.price_objection_without_a_cost
+    statement: >
+      A price objection raised against an uncosted pain means the buyer is comparing our
+      price to zero. The correct response is to quantify, not to discount.
+    when: [has_obs: objection_price]
+    then: require_cost_quantification
+    severity: warning
+
+  - id: pp.single_source_pain_is_an_opinion
+    statement: A pain with corroboration_count of one may not raise deal confidence on its own,
+      whatever the seniority of the person who said it.
+    severity: warning
+
+  - id: pp.owner_departure_invalidates_the_pain
+    statement: When champion_change is observed, owner_ref must be re-verified before the pain is
+      treated as live. Pains do not transfer with roles; accountability does not either, until someone
+      says so.
+    when: [has_obs: champion_change]
+    then: require_owner_reverification
+    severity: blocking
+
+# ── 8 · Decision Factors — Layer 4's weighting. Sums to 10000. ───────────────────────────
+decision_factors:
+
+  - name: pain_ownership
+    weight_bp: 2500
+    direction: increases
+    description: The discriminating factor. An owned pain outranks a larger unowned one every time,
+      because only the owned one has a route to money.
+    reads: [owner_ref, owner_is_economic]
+
+  - name: quantified_cost
+    weight_bp: 2000
+    direction: increases
+    description: Weighted by cost_basis, not by magnitude. A modest buyer_calculated number beats a
+      large vendor_estimated one.
+    reads: [annual_cost, cost_basis, metric_affected]
+
+  - name: urgency
+    weight_bp: 1800
+    direction: increases
+    reads: [has_compelling_event, severity, frequency]
+
+  - name: corroboration
+    weight_bp: 1500
+    direction: increases
+    reads: [corroboration_count, felt_by, raised_by_buyer]
+
+  - name: status_quo_strength
+    weight_bp: 1200
+    direction: decreases
+    description: A comfortable workaround is a live competitor and should reduce confidence, not sit
+      unrecorded as neutral.
+    reads: [current_workaround, workaround_cost, priority_rank]
+
+  - name: solution_fit
+    weight_bp: 1000
+    direction: context
+    reads: [addressed_by_us, differentiated]
+
+# ── 9 · Inference Patterns ⭐ ─────────────────────────────────────────────────────────────
+#
+# Conditions are ANDed. There is no OR — alternatives are separate patterns, because that is
+# exactly how the engine evaluates them.
+evidence:
+  - {source: document, strength_bp: 9500, description: "The buyer's own written business case or RFP problem\
+      statement. They wrote it for an internal audience, so it is what they actually believe."}
+  - {source: meeting_transcript, strength_bp: 8500, description: "Verbatim description with an owner claiming\
+      it. The richest source, and currently unmined."}
+  - {source: call_recording, strength_bp: 8000, description: "Same content, weaker attribution when several\
+      people speak."}
+  - {source: email, strength_bp: 7000, description: "Written by the buyer, so quotable — but email under-reports\
+      pain, since nobody types their worst problem to a vendor."}
+  - {source: crm, strength_bp: 5500, description: "Prior discovery notes. Decays fast and is written in\
+      vendor language."}
+  - {source: website, strength_bp: 3500, description: "Annual reports and job adverts. Good for hypothesising,\
+      never for asserting."}
+  - {source: derived, strength_bp: 3000, description: "Inferred from commercial signals arriving after\
+      the pain. Corroborating only."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: owned_pain_rate, unit: percent, description: "Share of pains carrying an owner_ref. The clearest\
+      single measure of discovery quality.", owner_layer: L6}
+  - {name: quantification_rate, unit: percent, description: "Share carrying a buyer-supplied cost basis.",
+      owner_layer: L6}
+  - {name: time_to_quantify, unit: days, description: "First mention to quantified cost. Long tails here\
+      predict deals that die at the business-case stage.", owner_layer: L6}
+  - {name: corroboration_depth, unit: count, description: "Average independent confirmations per pain.",
+      owner_layer: L6}
+  - {name: do_nothing_loss_rate, unit: percent, description: "Share of losses to no-decision. Reads directly\
+      on status_quo_strength.", owner_layer: L6}
+  - {name: pain_reuse_at_renewal, unit: percent, description: "Share of renewals where the original pain\
+      is still the stated reason to stay.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: pp.identified, name: Pain Point Identified, payload: [statement, category, raised_by_buyer]}
+  - {id: pp.quantified, name: Pain Point Quantified, payload: [annual_cost, cost_basis, metric_affected]}
+  - {id: pp.owner_set, name: Pain Owner Established, payload: [owner_ref, owner_is_economic],
+      description: "The state change that converts an account insight into a sellable position."}
+  - {id: pp.went_dormant, name: Pain Point Went Dormant, emitted_when: [{fn: days_since, path: thread.last_inbound,
+        op: ">=", value: 21}], payload: [last_referenced_at, severity]}
+  - {id: pp.deprioritised, name: Pain Point Deprioritised, emitted_when: [has_obs: closed_lost_mention],
+    payload: [priority_rank, consequence_of_inaction], description: "Emit rather than delete. A pain deprioritised
+      this year is the warmest lead available next year, and only if the record survived."}
+  - {id: pp.owner_lost, name: Pain Owner Departed, emitted_when: [has_obs: champion_change], payload: [
+      owner_ref], description: "Everything downstream — the cost basis, the consequence, the ranking — was
+      that person's account of the world and is now unverified."}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: pp.ask_who_owns_it, name: Ask who is accountable for the cost, actor: human, effect: "Converts\
+      an observation into a pain point. One question, and it is skipped in most discovery calls because
+      it feels blunt."}
+  - {id: pp.quantify_with_the_buyer, name: Build the cost model together, actor: human, effect: "Moves\
+      cost_basis from vendor_estimated to jointly_calculated. A number the buyer helped produce is one they
+      will defend internally."}
+  - {id: pp.cost_the_workaround, name: Cost the existing workaround, actor: human, effect: "Prices 'do\
+      nothing' explicitly, which is the only way to compete with it."}
+  - {id: pp.find_the_compelling_event, name: Test for an external deadline, actor: human, effect: "Separates\
+      a real date from a preference. Two slips means the answer was always preference."}
+  - {id: pp.corroborate, name: Test the pain with a second stakeholder, actor: human, preconditions: [{
+        fn: edge_count, op: ">=", value: 2}], effect: "Raises corroboration_count, or reveals that one person's
+      irritation was mistaken for an organisational problem."}
+  - {id: pp.reawaken, name: Re-approach a dormant pain at the fiscal turn, actor: human, preconditions: [
+      has_obs: budget_freeze], effect: "The highest-conversion outbound available, because discovery is
+      already done and the competitor's is not."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Support triage costs 40 hours a week and the Head of Support carries the SLA", note: "The\
+      shape you want: statement, frequency, cost, owner, and a metric the owner is measured on. Everything
+      downstream has something to attach to."}
+  - {label: "\"We're growing fast\"", note: "THE CLASSIC MISCLASSIFICATION. Context recorded as pain.\
+      Nobody owns growth, nothing costs anything, and no proposal can be measured against it. It gets logged
+      because it feels like momentum."}
+  - {label: "\"Our reporting is manual\"", note: "Real, common, and unowned. Until someone is accountable\
+      for the hours, this funds nothing — it is the second most-logged non-pain after the one above."}
+  - {label: "SOC 2 evidence collection before an audit dated in March", note: "Compliance category, dated\
+      compelling event, personally liable owner. The fastest-closing shape in B2B and the one where discount
+      pressure is weakest."}
+  - {label: "The CTO finds the integration painful; nobody else mentions it", note: "corroboration_count\
+      of one. One senior person's irritation is not an organisational pain and will not survive their next
+      reorganisation, however loudly it is stated."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Eleven inference patterns: five executable against the substrate today, six blocked. The
+    executable five all read pain indirectly, through the commercial reactions that follow it
+    — objections, discount pressure, silence, freezes — because the substrate has eighteen
+    observation kinds for how a buyer reacts to a price and none for a buyer describing a
+    problem. The single highest-value signal gap is therefore obs_kind `pain_stated` with a
+    verbatim statement span (L2): it unblocks three patterns here directly, is the precondition
+    for `derived.pain_topic_cluster`, and without it the discovery half of the sales motion is
+    permanently invisible to the engine. Second in line is obs_kind `accountability_stated`,
+    which populates owner_ref — the one field this entire object turns on.

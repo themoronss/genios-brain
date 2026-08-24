@@ -1,0 +1,30 @@
+identity:
+  id: admin.pb.data_protection_administration.data_protection_as_living_admin
+  name: Data protection as living admin
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.data_protection_administration
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The processing register, consent records, DSR handling and breach clock are maintained as
+    operational routines — not annual panics — because data protection failures are administrative failures
+    long before they are legal ones.
+steps:
+- order: 1
+  name: Keep the processing register real
+  description: What data, where, why, how long, shared with whom — updated when systems change, not when
+    auditors visit.
+  actor: human
+- order: 2
+  name: Run DSRs on a stopwatch
+  description: Access/deletion requests have statutory clocks. Logged intake, owned execution, documented
+    completion.
+  actor: human
+- order: 3
+  name: Rehearse the breach protocol
+  description: Who assesses, who notifies, within what hours — decided before, because the first real
+    breach is the wrong classroom.
+  actor: human

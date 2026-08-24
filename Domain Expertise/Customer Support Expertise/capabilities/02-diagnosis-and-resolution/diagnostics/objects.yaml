@@ -1,0 +1,24 @@
+# Load-set for customer_support.diagnosis_and_resolution.diagnostics
+# REFERENCES ONLY — never an inline object.
+
+capability: customer_support.diagnosis_and_resolution.diagnostics
+
+core:
+  # The thinnest required set in the subdomain, deliberately. Diagnostics runs on every ticket
+  # with an issue behind it, including the ones where nothing else is known yet, and a heavy
+  # required list would make the capability uncompilable in exactly the situation it is for.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.issue
+  # product_area decides which evidence bundle applies — the single most useful optional here.
+  # knowledge_article often contains the diagnostic procedure already. root_cause is optional
+  # rather than absent because a known cause turns evidence gathering into confirmation, which
+  # is a much cheaper and much narrower job.
+  optional:
+    - customer_support.obj.core.product_area
+    - customer_support.obj.core.knowledge_article
+    - customer_support.obj.core.root_cause
+
+scoped:
+  required: []
+  optional: []

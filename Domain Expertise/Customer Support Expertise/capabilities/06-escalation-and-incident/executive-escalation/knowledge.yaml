@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.escalation_and_incident.executive_escalation
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.executive_escalation.receive_own_de_escalate
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.executive_escalation.the_exec_escalation_indicts_the_path_not_the_customer
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

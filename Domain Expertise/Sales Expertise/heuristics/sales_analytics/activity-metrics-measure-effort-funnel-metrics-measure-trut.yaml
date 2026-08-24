@@ -1,0 +1,15 @@
+identity:
+  id: sales.heu.sales_analytics.activity_metrics_measure_effort__funnel_metrics_measure_trut
+  name: Activity metrics measure effort, funnel metrics measure truth
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.sales_analytics
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Calls made and emails sent are inputs a team can inflate at will; stage conversion cannot
+    be inflated without lying to the pipeline. When the two disagree, the funnel is right.
+  answers:
+  - Which dashboard settles a performance disagreement?

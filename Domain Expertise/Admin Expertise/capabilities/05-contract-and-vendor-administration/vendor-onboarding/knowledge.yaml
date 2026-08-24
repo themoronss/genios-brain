@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.contract_and_vendor.vendor_onboarding
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.vendor_onboarding.vendor_onboarding_gauntlet_right_sized
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.vendor_onboarding.fraud_enters_as_a_familiar_email
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

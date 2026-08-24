@@ -1,0 +1,82 @@
+# Product-led / self-serve support — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: customer_support.model.plg_self_serve
+  name: Product-Led / Self-Serve Support
+  kind: model
+  domain: customer_support
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Users arrive without ever speaking to anyone, and support is the first human contact the
+  company has with most of them. That single fact reorganises the function. Contact volume
+  tracks the signup and activation curves rather than the installed base, so the queue grows
+  with marketing spend and not with revenue. Most contacts are not defects but comprehension
+  failures — the product did not explain itself — which makes the support queue the highest
+  resolution instrument the product team has and content_gap_analysis a product capability
+  wearing a support badge. Cost to serve is measured against a self-serve price point that
+  cannot absorb a long investigation, so the economics only close if documentation, in-product
+  help and automated answers carry the mass.
+  The habit that breaks here is treating deflection as pure savings. A confused new user
+  deflected into a help article they do not understand is not a saved contact, it is churn
+  with better metrics — and in a self-serve motion nobody will phone to tell you. The
+  inverse error, imported from enterprise, is staffing to answer everything: at these prices
+  a queue built on human throughput has no floor to stand on.
+
+characteristics:
+  requester: "a self-signed-up user, often on a free or trial plan, frequently evaluating rather than committed"
+  typical_resolution_hours: 8
+  volume_shape: "high volume tracking signup and activation curves rather than revenue, spiking on release and on pricing or packaging changes"
+  staffing_model: "small pooled team behind heavy self-service, generalists with product depth rather than tiers"
+  coverage: "business hours with explicitly async expectations, set in-product before the contact is made"
+  automation_level: "very high — docs, in-product help and automated answers are expected to resolve most contacts before a human sees them"
+
+capabilities:
+  emphasises:
+    - customer_support.knowledge_and_deflection.self_service_deflection
+    - customer_support.knowledge_and_deflection.ai_deflection
+    - customer_support.knowledge_and_deflection.knowledge_authoring
+    # The gap list is the product backlog here. In no other branch does this capability have
+    # a direct line into what gets built next quarter.
+    - customer_support.knowledge_and_deflection.content_gap_analysis
+    - customer_support.intake_and_triage.intent_classification
+    - customer_support.voice_of_customer.product_feedback_routing
+    - customer_support.voice_of_customer.feedback_synthesis
+    - customer_support.support_operations.cost_to_serve
+  deactivates:
+    # No named accounts and no named contacts. There is nothing for this capability to hold
+    # onto, and running it here means inventing an account relationship the customer has not
+    # agreed to have.
+    - customer_support.support_management.account_relationship_management
+
+objects:
+  extends:
+    - object: customer_support.obj.core.knowledge_article
+      note: >
+        In this branch the article is not documentation of the resolution, it IS the
+        resolution channel — the primary place a fix is delivered. Coverage, findability and
+        reading level are operational properties here, not editorial ones.
+    - object: customer_support.obj.core.requester
+      note: >
+        Tenure matters more than seniority. A user in their first session and a user two
+        years in produce identical-looking tickets that mean opposite things: one is an
+        onboarding defect, the other a genuine bug.
+    - object: customer_support.obj.core.churn_risk
+      note: >
+        Churn here is silent and fast. There is no renewal conversation in which the risk
+        surfaces — the account simply stops being used — so the only leading indicator
+        available is what the user asked and whether they came back.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional

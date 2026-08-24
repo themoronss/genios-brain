@@ -1,0 +1,35 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.voice_of_customer.churn_signal_detection — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.churn_signal_detection.flag_before_you_can_prove_it
+  name: Flag before you can prove it
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.churn_signal_detection
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Raise the flag while it is still arguable, not once it is defensible.
+heuristic:
+  statement: Raise the flag while it is still arguable, not once it is defensible.
+  why: A churn signal is only useful while there is time to act on it, and the level of proof a reviewer
+    would accept arrives after the decision has been taken. A false positive costs a conversation; a
+    false negative costs the account. The asymmetry should be deliberate.
+  reads:
+  - customer_support.obj.core.churn_risk
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

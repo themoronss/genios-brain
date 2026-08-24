@@ -1,0 +1,39 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_operations.queue_management — exactly one capability references it. Promote to
+# mental-models/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.mm.queue_management.queue_as_sample_of_the_product
+  name: Queue as sample of the product
+  kind: mental_model
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.queue_management
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'The queue is the highest-fidelity, worst-organised product research the company owns.
+
+
+    It is a continuous census of what customers could not do by themselves. Treating it only as a workload
+    to be cleared throws away the one dataset that would reduce the workload.'
+dimensions:
+- name: Queue as sample of the product
+  asks: The queue is the highest-fidelity, worst-organised product research the company owns.
+how_to_apply:
+- The queue is the highest-fidelity, worst-organised product research the company owns.
+- It is a continuous census of what customers could not do by themselves. Treating it only as a workload
+  to be cleared throws away the one dataset that would reduce the workload.
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

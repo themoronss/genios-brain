@@ -1,0 +1,16 @@
+identity:
+  id: admin.heu.statutory_filing.late_filings_compound_beyond_the_fine
+  name: Late filings compound beyond the fine
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.statutory_filing
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The penalty is the visible cost; the invisible ones — lost good-standing, banking friction,
+    diligence red flags at fundraise — surface at the worst moments. Statutory punctuality is cheap reputation
+    insurance.
+  answers:
+  - What does a late filing actually cost?

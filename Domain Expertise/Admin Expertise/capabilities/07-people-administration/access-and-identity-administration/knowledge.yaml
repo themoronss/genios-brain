@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.people_administration.access_and_identity_administration
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.access_and_identity_administration.access_by_role_reviewed_by_calendar
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.access_and_identity_administration.access_accumulates_never_evaporates
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

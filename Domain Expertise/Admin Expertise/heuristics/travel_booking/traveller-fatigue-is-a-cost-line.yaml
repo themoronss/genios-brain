@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.travel_booking.traveller_fatigue_is_a_cost_line
+  name: Traveller fatigue is a cost line
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.travel_and_events.travel_booking
+  subdomain: travel_and_events
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Savings that exhaust the traveller before the meeting spend more than they save — the trip
+    exists for the meeting. Policy should price performance, not just tickets.
+  answers:
+  - What does the cheapest flight sometimes cost?

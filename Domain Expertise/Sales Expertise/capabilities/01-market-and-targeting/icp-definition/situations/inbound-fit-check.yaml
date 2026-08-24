@@ -1,0 +1,87 @@
+# The one pre-deal moment where ICP expertise is genuinely runtime-triggered: interest arrives
+# and somebody has to decide whether to spend a quarter on it. Every other part of this
+# capability is planning work no Layer 2 signal fires for.
+
+identity:
+  id: sales.sit.inbound_fit_check
+  name: Inbound Fit Check
+  domain: sales
+  owner_capability: sales.market_and_targeting.icp_definition
+  version: 1.0.0
+  status: draft
+
+description: >
+  Interest has arrived from an account nobody has assessed, and the question before any other
+  question is whether this account is one we should want. What distinguishes it from
+  qualification, which fires on the same signals: qualification asks whether THIS purchase can
+  happen — money, authority, timing — and it is the right question about a good-fit account.
+  This situation asks the prior one, whether the account belongs in the pipeline at all, and it
+  is answerable in minutes from public data where qualification takes a discovery call. Running
+  them in the wrong order is how teams qualify their way carefully into accounts they should
+  never have replied to.
+
+matches:
+  l2_situation_types:
+    - opportunity
+    - prospect_relationship
+  scope: account
+  # No narrowing predicate. Deliberately: a fit check must fire before a deal record exists,
+  # so any condition on deal.* would suppress the situation at exactly the moment it is
+  # cheapest to act on.
+
+also_serves:
+  - sales.qualification.lead_qualification
+  - sales.prospecting_and_outreach.lead_generation
+  - sales.prospecting_and_outreach.account_research
+
+objects:
+  load:
+    - sales.obj.core.icp
+    # Anti-fit resolves before the score — a match ends the assessment, and ending early is
+    # the entire economic case for running this situation at all.
+    - sales.obj.icp_definition.disqualifier
+    - sales.obj.icp_definition.fit_analysis
+    - sales.obj.core.company
+  optional:
+    - sales.obj.core.account
+    - sales.obj.core.persona
+  never_load:
+    # Nothing about committee structure, authority, money or dates is knowable before the
+    # first conversation. Loading these objects does not merely waste a compile: each carries
+    # inference patterns that will happily resolve to `unknown` and be read downstream as
+    # "assessed and absent" rather than "never checked". A confident, empty committee map on
+    # an account nobody has spoken to is worse than no map, because the seller stops looking.
+    - sales.obj.core.buying_committee
+    - sales.obj.core.decision_maker
+    - sales.obj.core.budget
+    - sales.obj.core.timeline
+
+priority_bp: 6500
+typical_duration_days: 2
+
+signals_of_progress:
+  - demo_requested
+  - introduction
+  - pricing_discussed
+  - budget_approved
+
+signals_of_decay:
+  - budget_freeze
+  - objection_price
+  - closed_lost_mention
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Bound to three of the twenty-six Layer 2 types, and all three are inbound-interest types
+    rather than deal-state types — the binding is narrow on purpose, because a targeting
+    capability that claims deal signals ends up second-guessing qualification. Nearly all the
+    knowledge loaded here is currently blocked on firmographic enrichment: with no
+    account.industry, account.employee_count or account.geography reaching the engine, the
+    disqualifier list cannot fire and the fit reading is limited to what the first reply
+    reveals, which arrives after the effort this situation exists to save.

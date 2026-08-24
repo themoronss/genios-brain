@@ -1,0 +1,25 @@
+# Load-set for sales.post_sale_and_growth.renewal — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/renewal/                loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.post_sale_and_growth.renewal
+
+core:
+  required:
+    - sales.obj.core.contract
+    - sales.obj.core.timeline
+  optional:
+    - sales.obj.core.account
+    - sales.obj.core.decision_maker
+    - sales.obj.core.pricing
+    - sales.obj.core.risk
+
+scoped:
+  required: []
+  optional: []

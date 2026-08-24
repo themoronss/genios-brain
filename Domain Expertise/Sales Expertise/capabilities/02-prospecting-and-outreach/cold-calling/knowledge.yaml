@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.prospecting_and_outreach.cold_calling
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.cold_calling.permission_based_opener
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.cold_calling.calls_are_for_conversations_email_cannot_start
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

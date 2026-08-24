@@ -1,0 +1,41 @@
+# Executive Office — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: admin.model.executive_office
+  name: Executive Office
+  kind: model
+  domain: admin
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  A chief-of-staff or executive-assistant function organised around one principal or a small
+  leadership team. Everything is prioritised by proximity to that person, and the scarce
+  resource being administered is their attention rather than a process queue.
+
+characteristics:
+  typical_cycle_days: 1
+  committee_size: "1 approver — the principal"
+  decision_style: "principal-centric; the EA holds delegated authority by convention rather than by policy"
+  primary_channels: [email, calendar, chat, in_person]
+
+capabilities:
+  emphasises:
+    - admin.executive_support.calendar_management
+    - admin.executive_support.inbox_and_correspondence
+    - admin.executive_support.briefing_and_preparation
+    - admin.executive_support.gatekeeping
+    - admin.executive_support.commitment_tracking
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

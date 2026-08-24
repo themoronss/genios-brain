@@ -1,0 +1,16 @@
+identity:
+  id: customer_support.heu.breach_prevention.breaches_cluster_so_prevention_compounds
+  name: Breaches cluster, so prevention compounds
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.breach_prevention
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: SLA breaches are not evenly spread — they pile in the same categories, shifts and wait-states.
+    Fixing the top clustering cause prevents a season's breaches at once; chasing them one-by-one prevents
+    only one.
+  answers:
+  - Where should breach-prevention effort concentrate?

@@ -1,0 +1,39 @@
+identity:
+  id: customer_support.escalation_and_incident.postmortem
+  name: Postmortem
+  domain: customer_support
+  subdomain: escalation_and_incident
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Turning something that already went wrong into a system that fails differently next time. The
+  output is a changed system, not a document: a postmortem carrying actions with no named owner
+  and no date is a memoir, and it will be cited approvingly for years while the same incident
+  recurs. Blamelessness is not politeness — it is the only mechanism that produces a true
+  timeline, because people who expect consequences report a defensible version rather than an
+  accurate one. Support postmortems characteristically stop at the technical cause and skip the
+  detection and communication failures, which is why the second occurrence is handled just as
+  badly as the first even though the bug was genuinely fixed.
+
+question: "What made this possible, what made it last as long as it did, and what changes so the next one is shorter?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Stub — identity, judgement and load-set only. Promote by adding outcomes, failure_modes (the
+    ownerless action list, the single root cause where there were several contributing conditions,
+    the timeline reconstructed from memory rather than artefacts, the review that examines the fix
+    and never the detection lag, and the action that is "add more monitoring" with no named
+    signal), playbooks, heuristics with a why on each, mental_models, decision_frameworks, kpis
+    and handoffs, following escalation-management/capability.yaml in this folder. This is the only
+    capability in the subdomain with a scoped object — customer_support.obj.postmortem.postmortem
+    — and it is scoped rather than core precisely because nothing else in the domain should be
+    reading a postmortem document; the moment a second capability wants it, that is a signal the
+    findings are not flowing back as issues and root_causes the way they should.

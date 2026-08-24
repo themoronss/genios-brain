@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.customer_communication.proactive_status_updates
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.proactive_status_updates.update_on_the_clock_not_on_progress
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.proactive_status_updates.anxiety_scales_with_silence_squared
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

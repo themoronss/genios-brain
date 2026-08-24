@@ -1,0 +1,28 @@
+identity:
+  id: admin.pb.service_level_management.admin_slas_published_and_reviewed
+  name: Admin SLAs, published and reviewed
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.service_level_management
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Admin services carry published response and completion targets by request type, tracked and
+    reviewed — because 'as soon as possible' is a promise nobody can keep and everybody resents.
+steps:
+- order: 1
+  name: Set targets per request class
+  description: Same-day for access, 3 days for letters, week for procurements — realistic and stated.
+  actor: human
+- order: 2
+  name: Track against them honestly
+  description: 'Hit rates by class, visible. Missed classes get root-caused: volume, staffing, or wrong
+    target.'
+  actor: human
+- order: 3
+  name: Renegotiate targets openly
+  description: If a target is chronically missed, fix capacity or change the promise publicly — silent
+    misses corrode the whole system's credibility.
+  actor: human

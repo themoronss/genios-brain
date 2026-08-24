@@ -1,0 +1,28 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs.
+
+identity:
+  id: admin.executive_support.approval_coordination
+  name: Approval Coordination
+  domain: admin
+  subdomain: executive_support
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Moving a decision through the people who are allowed to make it. The work is routing against
+  real authority rather than against the org chart, sequencing approvers so a rejection at the
+  end does not waste the queue, and knowing the difference between an approval that is pending
+  and one that is stuck. Most administrative delay is one unchased approver.
+
+question: "Who must sign this, in what order, and where exactly is it stuck?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.admin_operations.service_level_management
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.service_level_management.admin_slas_published_and_reviewed
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.service_level_management.a_stated_sla_changes_both_sides
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

@@ -1,0 +1,23 @@
+# Load-set for customer_support.escalation_and_incident.major_incident_communication —
+# REFERENCES ONLY, never an inline object.
+
+capability: customer_support.escalation_and_incident.major_incident_communication
+
+core:
+  # incident is what is being communicated about; commitment is required because every update is
+  # itself a promise — the next-update time is a commitment with a clock, and a capability that
+  # cannot see its own outstanding promises will make the one mistake that costs the most here.
+  required:
+    - customer_support.obj.core.incident
+    - customer_support.obj.core.commitment
+  # customer_account to decide who gets a named human rather than the status page,
+  # knowledge_article for the workaround being pointed at, conversation for the individual
+  # threads that must stay consistent with the broadcast.
+  optional:
+    - customer_support.obj.core.customer_account
+    - customer_support.obj.core.knowledge_article
+    - customer_support.obj.core.conversation
+
+scoped:
+  required: []
+  optional: []

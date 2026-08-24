@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.admin_operations.process_improvement
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.process_improvement.fix_the_friction_log
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.process_improvement.workarounds_mark_the_real_process_map
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

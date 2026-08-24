@@ -1,0 +1,36 @@
+identity:
+  id: customer_support.voice_of_customer.sentiment_analysis
+  name: Sentiment Analysis
+  domain: customer_support
+  subdomain: voice_of_customer
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Reading the emotional state of a conversation, and holding it apart from the state of the
+  relationship. Polite is not satisfied and blunt is not hostile — the customer who writes
+  short, factual, unfailingly civil messages after a long ordeal has usually already decided,
+  while the one shouting is still bargaining. Sentiment is most useful as a change detector
+  against how this particular person normally writes, and least useful as an absolute label,
+  which is exactly the way most tooling reports it.
+
+question: "What is the tone of this conversation telling us, and how much of it should we believe?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Stub — identity, description, question and load-set only. Promote by adding the heuristics
+    that separate tone from risk (the going-polite signal, per-writer baselining, the flattening
+    effect of an incident on everyone's tone at once, and the cultural and language differences
+    that make absolute sentiment labels unusable across regions), then the failure modes around
+    routing on sentiment alone, KPIs, and handoffs into de_escalation and churn_signal_detection.
+    Executability is limited: derived.sentiment exists in the substrate, but it is computed from
+    an observation balance built for a sales motion and has no support-native inputs, so any
+    pattern that means support tone should be marked needs_signal against angry_language and
+    cancellation_threat rather than bound to it.

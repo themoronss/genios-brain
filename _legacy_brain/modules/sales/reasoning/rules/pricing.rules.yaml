@@ -1,0 +1,65 @@
+# Pricing rules. Includes HARD constraints that fusion CANNOT override.
+# Per MD g-i-2 §2.1.2: hard: true rules block neural outputs that violate them.
+
+- id: pricing_discount_margin_guard
+  module: sales
+  priority: 100
+  when:
+    all:
+      - fact: discount_pct
+        op: ">"
+        value: 20
+      - fact: gross_margin_pct
+        op: "<"
+        value: 40
+  then:
+    conclusion: block_or_escalate
+    recommend: require_finance_approval
+    reason: "Discount >20% with margin <40% breaches margin floor"
+  hard: true
+
+- id: pricing_extreme_discount
+  module: sales
+  priority: 110
+  when:
+    all:
+      - fact: discount_pct
+        op: ">"
+        value: 50
+  then:
+    conclusion: block_or_escalate
+    recommend: require_cfo_approval
+    reason: "Discount >50% is an automatic CFO escalation regardless of margin"
+  hard: true
+
+- id: pricing_volume_discount_eligible
+  module: sales
+  priority: 50
+  when:
+    all:
+      - fact: deal_value
+        op: ">="
+        value: 100000
+      - fact: discount_pct
+        op: "<="
+        value: 15
+  then:
+    conclusion: volume_discount_approved
+    recommend: apply_standard_volume_terms
+    reason: "Deal >=$100K with <=15% discount falls inside standard volume policy"
+  hard: false
+
+- id: pricing_steep_discount_any_margin
+  module: sales
+  priority: 105
+  when:
+    all:
+      - fact: discount_pct
+        op: ">"
+        value: 35
+  then:
+    conclusion: block_or_escalate
+    recommend: require_sales_lead_approval
+    reason: "Discount >35% always escalates regardless of margin — protects price integrity"
+  hard: true
+

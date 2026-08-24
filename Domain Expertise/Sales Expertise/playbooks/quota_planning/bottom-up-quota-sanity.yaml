@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.quota_planning.bottom_up_quota_sanity
+  name: Bottom-up quota sanity
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.quota_planning
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'A quota is credible when the arithmetic under it is: territory potential × expected win
+    rate × capacity, reconciled against the top-down number in the open. Quotas asserted without arithmetic
+    get gamed instead of chased.'
+steps:
+- order: 1
+  name: Build the bottom-up number first
+  description: 'Per territory: realistic pipeline × historical conversion. This number exists BEFORE anyone
+    sees the board target.'
+  actor: human
+- order: 2
+  name: Reconcile gaps explicitly
+  description: Top-down exceeds bottom-up → the gap is a named strategy (new segment, new motion, headcount)
+    — not a silent stretch spread across reps.
+  actor: human
+- order: 3
+  name: Set attainability on purpose
+  description: Design for most-reps-can-hit (60-70% attainment). Quotas most of the team misses stop functioning
+    as targets and start functioning as attrition.
+  actor: human

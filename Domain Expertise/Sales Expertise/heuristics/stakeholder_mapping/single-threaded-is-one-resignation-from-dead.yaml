@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.stakeholder_mapping.single_threaded_is_one_resignation_from_dead
+  name: Single-threaded is one resignation from dead
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.stakeholder_mapping
+  subdomain: qualification
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A deal with one internal contact has a single point of failure with two legs. The map's first
+    job is to make single-threading visible early, while adding a second thread is a warm intro instead
+    of a cold rescue.
+  answers:
+  - How exposed is this deal to one person leaving?

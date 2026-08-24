@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.post_sale_and_growth.cross_sell
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.cross_sell.adjacent_problem_cross_sell
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.cross_sell.cross_sell_borrows_trust___repay_it
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

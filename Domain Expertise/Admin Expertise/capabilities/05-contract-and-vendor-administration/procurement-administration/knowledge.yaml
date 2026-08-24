@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.contract_and_vendor.procurement_administration
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.procurement_administration.buying_with_guardrails_not_gates_everywhere
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.procurement_administration.friction_begets_shadow_procurement
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

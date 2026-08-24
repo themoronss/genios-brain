@@ -1,0 +1,27 @@
+identity:
+  id: admin.pb.maintenance_coordination.preventive_calendar_plus_fault_queue
+  name: Preventive calendar plus fault queue
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.maintenance_coordination
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Maintenance runs two lanes — scheduled preventive work from a calendar, and a fault queue
+    with triage — because equipment maintained on failure costs multiples of equipment maintained on schedule.
+steps:
+- order: 1
+  name: Calendar the preventive work
+  description: Servicing intervals per asset class, booked ahead. The AC serviced in February does not
+    fail in June.
+  actor: human
+- order: 2
+  name: Triage faults by impact
+  description: Blocking-work faults jump the queue; cosmetic ones batch. One intake, honest priorities.
+  actor: human
+- order: 3
+  name: Log work against the asset
+  description: Every repair on the asset's history — the record that reveals the lemon worth replacing.
+  actor: human

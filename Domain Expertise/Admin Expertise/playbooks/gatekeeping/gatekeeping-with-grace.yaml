@@ -1,0 +1,29 @@
+identity:
+  id: admin.pb.gatekeeping.gatekeeping_with_grace
+  name: Gatekeeping with grace
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.gatekeeping
+  subdomain: executive_support
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Access to the executive is filtered by stated criteria — decision-needed, relationship-critical,
+    time-sensitive — with every 'no' offered an alternative path, because a gate that only blocks breeds
+    resentment while a gate that redirects builds respect.
+steps:
+- order: 1
+  name: Publish the access logic to insiders
+  description: 'What gets time: decisions only they can make, key externals, emergencies. Known criteria
+    stop the lobbying meta-game.'
+  actor: human
+- order: 2
+  name: Redirect, never just refuse
+  description: '''Not them, but X owns this and can decide'' — the requester leaves served, not blocked.'
+  actor: human
+- order: 3
+  name: Keep an exceptions log
+  description: Who got through outside criteria and why — reviewed monthly. The gate's drift is measured
+    in its exceptions.
+  actor: human

@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.meeting_operations.follow_up_coordination
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.follow_up_coordination.the_follow_through_relay
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.follow_up_coordination.momentum_decays_in_days
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

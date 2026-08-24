@@ -1,0 +1,27 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
+
+identity:
+  id: admin.compliance_and_governance.audit_support
+  name: Audit Support
+  domain: admin
+  subdomain: compliance_and_governance
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Preparing for and running audits: mapping requests to evidence, assembling samples,
+  maintaining the audit trail between cycles, and tracking findings to closure. Most audit
+  pain is retrieval pain — the control was operating, and nobody kept the proof.
+
+question: "Can we produce the evidence for this control, on request, without a scramble?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

@@ -1,0 +1,113 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ONE OF THE FIVE THAT ROUTE ON DAY ONE.
+#
+# Fourteen situations are authored for this domain; five bind to Layer 2 types the shipped
+# packs genuinely emit and therefore compile and route today. This is one of them, and it is
+# the most ordinary of the five, which is exactly why it matters: the single most common
+# support failure is not a mis-triaged sev-1, it is a person who wrote in and is still
+# waiting. That failure needs no ticket object, no SLA clock and no CSAT survey to detect —
+# only a thread whose last message came from them.
+#
+# So this file is the domain's proof that a support brain built on an email-shaped substrate
+# is not useless, only narrow. It sees the waiting. It cannot see the promise.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.sit.customer_awaiting_reply
+  name: Customer Awaiting Reply
+  domain: customer_support
+  owner_capability: customer_support.customer_communication.response_drafting
+  version: 1.0.0
+  status: draft
+
+description: >
+  A customer has written and the next move is ours. Nothing else is known — not whether a
+  clock is running, not whether the question is hard, not whether anyone has started on it.
+  The only fact in evidence is that a human asked something and the silence since then belongs
+  to us. That is enough to act on, and treating it as insufficient is how threads rot: teams
+  wait for the ticket record to catch up before replying, and the customer experiences the lag
+  as being ignored rather than as being processed. The expert reading is that the reply owed
+  here is not necessarily the answer — an acknowledgement that names what was asked, what
+  happens next and who owns it discharges most of the obligation, and can be written before
+  the diagnosis exists.
+
+matches:
+  # ── The join to Layer 2 ──────────────────────────────────────────────────────────────
+  # unanswered_email is one of the five domain-neutral types in the substrate, and for once
+  # the neutral type means in support almost exactly what it means in sales: the ball is with
+  # us and time is passing. This is the only situation in the domain where the borrowed
+  # binding is not a compromise.
+  l2_situation_types:
+    - support_case
+    - support_contact
+
+  scope: person
+
+  when:
+    # Without this the situation also fires on threads where WE wrote last and the customer
+    # has not replied — which is the opposite problem, belongs to proactive_status_updates,
+    # and would produce a queue full of nudges to chase people who owe us nothing.
+    - {path: thread.ball_in_court, op: "=", value: us}
+
+# The reply is drafted here, but three other capabilities need to know a customer is waiting:
+# a promise made in this thread is now visibly late, and an unanswered thread is the raw
+# material of every breach forecast.
+also_serves:
+  - customer_support.entitlement_and_sla.commitment_tracking
+  - customer_support.entitlement_and_sla.breach_prevention
+
+objects:
+  # Three objects, not the twenty this subdomain will eventually own. Everything needed to
+  # write a truthful holding reply: what the work is, who is waiting, and what has already
+  # been said to them so we do not repeat it or contradict it.
+  load:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.requester
+    - customer_support.obj.core.conversation
+  optional:
+    # Loaded when the question looks answerable from existing material, when the tone of the
+    # thread has turned, or when what may be promised is bounded by a contract.
+    - customer_support.obj.core.knowledge_article
+    - customer_support.obj.core.customer_sentiment
+    - customer_support.obj.core.entitlement
+  never_load:
+    # An unanswered message is not an incident and not an escalation. Loading either teaches
+    # the system to reach for the machinery of severity before anyone has read the question,
+    # and the observable result is a queue where routine waiting is dressed up as emergency —
+    # which raises the cost of every real one. If this thread IS an incident, a different
+    # situation says so.
+    - customer_support.obj.core.incident
+    - customer_support.obj.core.escalation
+
+priority_bp: 8200
+typical_duration_days: 2
+
+signals_of_progress:
+  - followup_sent
+  - first_response_sent
+  - callback_promised
+
+signals_of_decay:
+  - angry_language
+  - escalation_requested
+  - cancellation_threat
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    signals_of_progress and signals_of_decay mix real and planned observation kinds.
+    followup_sent is in the substrate today; first_response_sent, callback_promised,
+    angry_language, escalation_requested and cancellation_threat are support-native kinds in
+    planned_substrate.obs_kinds and will not fire until a support pack emits them. These
+    lists are not validated, so the mixture is legal — recording it here so nobody later
+    reads the list as evidence of coverage.
+
+    The honest limitation of this situation is that it fires on elapsed silence and knows
+    nothing about what was promised. It cannot distinguish a customer owed a four-hour first
+    response from one who asked a nice-to-have question on a Friday. That distinction is
+    sla-breach-imminent.yaml, and it does not route yet.

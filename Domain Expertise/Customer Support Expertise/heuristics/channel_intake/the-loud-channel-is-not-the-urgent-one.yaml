@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.channel_intake.the_loud_channel_is_not_the_urgent_one
+  name: The loud channel is not the urgent one
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.channel_intake
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Phone and social feel urgent because they interrupt; severity lives in the impact, not the
+    medium. Triage that privileges interruptive channels trains customers to escalate theatrically.
+  answers:
+  - Should a phone ticket outrank an email ticket by default?

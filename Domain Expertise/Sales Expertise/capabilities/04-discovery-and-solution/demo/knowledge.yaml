@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.discovery_and_solution.demo
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.demo.discovery_anchored_demo
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.demo.show_less_to_sell_more
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

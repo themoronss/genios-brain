@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.outreach.multi_channel_sequence_design
+  name: Multi-channel sequence design
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.outreach
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A sequence is one conversation across channels, not three parallel campaigns. Email, LinkedIn
+    and phone each carry the SAME thread — each touch aware of the last, each channel doing what it is
+    best at.
+steps:
+- order: 1
+  name: Lead with the channel they live in
+  description: 'Developers: not the phone. Founders: email and warm intros. Field roles: the phone works.
+    The persona picks the channel; the seller''s comfort does not.'
+  actor: human
+- order: 2
+  name: Space touches by days, escalate value not volume
+  description: Six to eight touches over three weeks, each ADDING something new. Repeating the same ask
+    louder is how domains get blocked and names get remembered badly.
+  actor: human
+- order: 3
+  name: End with the breakup, then recycle on a date
+  description: The sequence has a stated end. Silence at the end parks the account with a return date
+    — sequences that never end become background radiation.
+  actor: human

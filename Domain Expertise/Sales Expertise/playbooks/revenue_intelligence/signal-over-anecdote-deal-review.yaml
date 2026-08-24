@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.revenue_intelligence.signal_over_anecdote_deal_review
+  name: Signal-over-anecdote deal review
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.revenue_intelligence
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Deal risk is read from recorded behaviour — response latency stretching, meetings pushed,
+    champion gone quiet, single-threading — not from the owner's narrative. The record outvotes the story,
+    kindly and every time.
+steps:
+- order: 1
+  name: Watch the four leading signals
+  description: Reply latency trend, meeting cadence, thread count, stakeholder breadth. Each measurable
+    from the communication record; each degrades before the story does.
+  actor: human
+- order: 2
+  name: Challenge divergence with data, not doubt
+  description: '''Confident, but no buyer touch in 19 days — what am I missing?'' The number makes the
+    conversation factual instead of personal.'
+  actor: human
+- order: 3
+  name: Feed outcomes back to the signals
+  description: Post-mortem lost deals against what the signals said and when. The gap between signal and
+    action is the process improvement.
+  actor: human

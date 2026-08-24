@@ -1,0 +1,29 @@
+identity:
+  id: sales.pb.performance_management.leading_indicator_scorecard
+  name: Leading-indicator scorecard
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.sales_management.performance_management
+  subdomain: sales_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Manage inputs weeks before outputs can move: pipeline created, buyer meetings held, stage
+    conversion, deal velocity. Revenue is the trailing echo of these — a scorecard of leading indicators
+    makes intervention possible while it is still cheap.'
+steps:
+- order: 1
+  name: Pick 3-4 indicators that predict YOUR funnel
+  description: 'From history: which early numbers actually correlated with quarter outcomes here? Generic
+    dashboards import someone else''s business.'
+  actor: human
+- order: 2
+  name: Review weekly at the trend level
+  description: A bad week is noise; a three-week slide is a conversation. React to slopes, not points.
+  actor: human
+- order: 3
+  name: Intervene on the input, early and small
+  description: 'Pipeline-creation slide → this week: sourcing block, not quarter-end escalation. Small
+    early corrections replace large late ones.'
+  actor: human

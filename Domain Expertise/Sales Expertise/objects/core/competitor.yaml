@@ -1,0 +1,721 @@
+# CORE OBJECT — Competitor
+#
+# Loaded by market_research, icp_definition, value_proposition, discovery, demo, pricing,
+# negotiation, objection_handling, closing, deal_review and renewal. Core by a wide margin.
+#
+# The thesis this file exists to enforce: `competitor_type` has a value called `status_quo`
+# and it is the default, not the fallback. Sellers instrument themselves against named rivals
+# because named rivals are visible; the alternative that actually takes the deal — doing
+# nothing, deferring to next year, letting the internal team build a spreadsheet — never
+# appears in a battlecard and never gets a counter-strategy written for it.
+
+identity:
+  id: sales.obj.core.competitor
+  scope: core
+  name: Competitor
+  domain: sales
+  subdomain: market_and_targeting
+  owner_capability: sales.market_and_targeting.market_research
+  version: 1.0.0
+  status: draft
+  aliases: ["Alternative", "Rival", "Incumbent", "Status Quo"]
+purpose:
+  statement: >
+    An alternative the buyer is weighing, including the status quo. The discriminator is the
+    buyer's decision set, not the market: a vendor who sells to the same market but is not in
+    this evaluation is a market peer and belongs in ICP work, while an internal build, a
+    half-working spreadsheet, and "we will revisit in Q3" are all competitors here because
+    each one is a live alternative to signing. The status quo is the most frequently
+    underweighted competitor in sales and wins more deals than any named rival — it costs the
+    buyer nothing to choose, requires no internal approval, and never sends a losing email.
+    This object is scoped to a deal or account, not to the company we compete with globally.
+attributes:
+  - name: identity
+    purpose: What the alternative actually is. `competitor_type` carries the whole discriminator.
+    type: composite
+    contains:
+      - competitor_type
+      - name
+      - is_incumbent
+      - company_ref
+  - name: presence
+    purpose: Evidence they are in this deal, and how strong that evidence is.
+    type: composite
+    contains:
+      - is_present
+      - presence_confidence_bp
+      - introduced_by
+      - first_detected_at
+      - last_mentioned_at
+  - name: position
+    purpose: Where we stand against them right now, as opposed to where marketing says we stand.
+    type: composite
+    contains:
+      - competitive_position
+      - their_price_position
+      - differentiators_ours
+      - differentiators_theirs
+  - name: buyer_economics
+    purpose: >
+      What it costs the buyer to choose them, and what it costs the buyer to choose nothing.
+      The second number is the one that decides most deals and the one nobody calculates.
+    type: composite
+    contains:
+      - switching_cost_to_buyer
+      - cost_of_inaction
+      - effort_to_do_nothing
+  - name: counter_strategy
+    purpose: What we do about it. Empty here means the competitor is being noticed rather than
+      handled.
+    type: composite
+    contains:
+      - counter_positioning
+      - landmines_they_set
+      - trap_questions
+      - is_stalking_horse
+  - name: history
+    purpose: What has happened before against this alternative, which is the only calibration
+      available.
+    type: composite
+    contains:
+      - historical_win_rate_bp
+      - last_outcome
+      - deals_faced
+  - name: competitor_type
+    purpose: 'The most important field on this object. `status_quo` and `no_decision` are separate values
+      on purpose — the status quo is an alternative that already works well enough, whereas no_decision
+      is an organisation that cannot make any decision this quarter. They look identical in a CRM and require
+      opposite responses: one needs a cost-of-inaction case, the other needs a smaller first purchase or
+      a walk.'
+    type: value
+    data_type: enum
+    allowed_values: [status_quo, no_decision, internal_build, named_vendor, incumbent_vendor,
+        adjacent_tool, budget_reallocation, unknown]
+    required: true
+    description: >
+      The most important field on this object. `status_quo` and `no_decision` are separate
+      values on purpose — the status quo is an alternative that already works well enough,
+      whereas no_decision is an organisation that cannot make any decision this quarter.
+      They look identical in a CRM and require opposite responses: one needs a cost-of-inaction
+      case, the other needs a smaller first purchase or a walk.
+  - name: name
+    purpose: Null for status_quo and internal_build, which is exactly why competitor tracking keyed on
+      a name systematically loses sight of the alternatives that win most often.
+    type: value
+    data_type: string
+    description: >
+      Null for status_quo and internal_build, which is exactly why competitor tracking keyed on
+      a name systematically loses sight of the alternatives that win most often.
+  - name: is_incumbent
+    purpose: Already installed and being paid for. An incumbent competes with a switching cost we must
+      overcome, which is a materially different problem from beating a fellow challenger.
+    type: value
+    data_type: boolean
+    description: >
+      Already installed and being paid for. An incumbent competes with a switching cost we must
+      overcome, which is a materially different problem from beating a fellow challenger.
+  - name: company_ref
+    purpose: The rival as a firm, when one exists. Absent for the non-vendor types.
+    type: reference
+    ref: sales.obj.core.company
+    data_type: ref
+    description: The rival as a firm, when one exists. Absent for the non-vendor types.
+  - name: is_present
+    purpose: In this specific evaluation. A rival we lose to elsewhere but who is not in this deal is
+      not present.
+    type: value
+    data_type: boolean
+    required: true
+    description: In this specific evaluation. A rival we lose to elsewhere but who is not in this deal
+      is not present.
+  - name: presence_confidence_bp
+    purpose: 'How sure we are they are in the deal at all. Kept explicit because the common failure is binary
+      thinking: a single offhand mention becomes a confirmed bake-off in the deal review.'
+    type: value
+    data_type: integer
+    unit: basis_points
+    description: >
+      How sure we are they are in the deal at all. Kept explicit because the common failure is
+      binary thinking: a single offhand mention becomes a confirmed bake-off in the deal review.
+  - name: introduced_by
+    purpose: Procurement introducing a second vendor is a compliance exercise. The buyer introducing
+      one is a genuine evaluation. The same competitor name means two different things.
+    type: value
+    data_type: enum
+    allowed_values: [buyer, champion, procurement, us, unknown]
+    description: >
+      Procurement introducing a second vendor is a compliance exercise. The buyer introducing
+      one is a genuine evaluation. The same competitor name means two different things.
+  - name: first_detected_at
+    purpose: The first_detected_at of this object.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+  - name: last_mentioned_at
+    purpose: The last_mentioned_at of this object.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+  - name: competitive_position
+    purpose: Our standing as evidenced by buyer behaviour, not by our own product opinion. Defaults to
+      `unknown`, never to `leading` — an unassessed competitive deal is not a deal we are winning.
+    type: value
+    data_type: enum
+    allowed_values: [leading, level, trailing, losing, unknown]
+    required: true
+    description: >
+      Our standing as evidenced by buyer behaviour, not by our own product opinion. Defaults to
+      `unknown`, never to `leading` — an unassessed competitive deal is not a deal we are winning.
+  - name: their_price_position
+    purpose: '`free` is a distinct value because internal build and status quo both present as free at the
+      point of decision, while carrying costs the buyer has never itemised.'
+    type: value
+    data_type: enum
+    allowed_values: [cheaper, comparable, more_expensive, free, unknown]
+    description: >
+      `free` is a distinct value because internal build and status quo both present as free at
+      the point of decision, while carrying costs the buyer has never itemised.
+  - name: differentiators_ours
+    purpose: Only those the buyer has confirmed they value. A differentiator nobody scored is a
+      feature.
+    type: value
+    data_type: list
+    description: Only those the buyer has confirmed they value. A differentiator nobody scored is a
+      feature.
+  - name: differentiators_theirs
+    purpose: The differentiators_theirs of this object.
+    type: value
+    data_type: list
+  - name: switching_cost_to_buyer
+    purpose: Cost of moving off the incumbent to us. Against a status quo this is the entire contest.
+    type: value
+    data_type: enum
+    allowed_values: [none, low, moderate, high, prohibitive]
+    description: Cost of moving off the incumbent to us. Against a status quo this is the entire
+      contest.
+  - name: cost_of_inaction
+    purpose: What the buyer loses per period by doing nothing. The only argument that beats a status
+      quo, and the field most often left null — which is itself the diagnosis.
+    type: value
+    data_type: money
+    description: >
+      What the buyer loses per period by doing nothing. The only argument that beats a status
+      quo, and the field most often left null — which is itself the diagnosis.
+  - name: effort_to_do_nothing
+    purpose: Almost always `trivial`, which is why the status quo wins. Recorded so that Layer 4 can
+      weigh the asymmetry rather than treating all alternatives as requiring a decision.
+    type: value
+    data_type: enum
+    allowed_values: [trivial, moderate, hard]
+    description: >
+      Almost always `trivial`, which is why the status quo wins. Recorded so that Layer 4 can
+      weigh the asymmetry rather than treating all alternatives as requiring a decision.
+  - name: counter_positioning
+    purpose: The specific frame we use against this alternative in this deal, not a generic battlecard
+      line.
+    type: value
+    data_type: string
+    description: The specific frame we use against this alternative in this deal, not a generic
+      battlecard line.
+  - name: landmines_they_set
+    purpose: Doubts they plant about us. Answering these before the buyer raises them is worth more
+      than answering them after.
+    type: value
+    data_type: list
+    description: Doubts they plant about us. Answering these before the buyer raises them is worth
+      more than answering them after.
+  - name: trap_questions
+    purpose: Questions they coach the buyer to ask us. Their arrival verbatim is strong evidence of
+      active presence.
+    type: value
+    data_type: list
+    description: Questions they coach the buyer to ask us. Their arrival verbatim is strong evidence
+      of active presence.
+  - name: is_stalking_horse
+    purpose: A competitor named purely to create price pressure, sometimes not in the evaluation at
+      all. The tell is that they are mentioned only alongside commercial terms and never alongside
+      requirements.
+    type: value
+    data_type: boolean
+    description: >
+      A competitor named purely to create price pressure, sometimes not in the evaluation at
+      all. The tell is that they are mentioned only alongside commercial terms and never
+      alongside requirements.
+  - name: historical_win_rate_bp
+    purpose: Our win rate against this alternative across prior deals. The only calibration this
+      object has.
+    type: value
+    data_type: integer
+    unit: basis_points
+    description: Our win rate against this alternative across prior deals. The only calibration this
+      object has.
+  - name: last_outcome
+    purpose: The last_outcome of this object.
+    type: value
+    data_type: enum
+    allowed_values: [won, lost, no_decision, unknown]
+  - name: deals_faced
+    purpose: The deals_faced of this object.
+    type: value
+    data_type: integer
+  - name: deal_status
+    purpose: The deal_status of this object.
+    type: value
+    data_type: enum
+    allowed_values: [open, won, lost, unknown]
+    source_paths: [deal.status]
+  - name: deal_momentum
+    purpose: The deal_momentum of this object.
+    type: value
+    data_type: number
+    source_paths: [derived.momentum]
+  - name: deal_sentiment
+    purpose: The deal_sentiment of this object.
+    type: value
+    data_type: number
+    source_paths: [derived.sentiment]
+states:
+  initial: unknown
+  values:
+    - name: unknown
+      description: >
+        Not assessed. Deliberately distinct from `absent` — no live deal has zero alternatives,
+        so `unknown` means we have not looked, never that there is nothing there.
+    - name: suspected
+      description: Behaviour implies an alternative that nobody has named — discount pressure with no
+        competitor mention is the archetype.
+      entered_when: [has_obs: discount_pressure, no_obs: competitor]
+    - name: identified
+      description: A competitor observation has fired on this node.
+      entered_when: [has_obs: competitor]
+    - name: active
+      description: Present and the deal is live. The state that should drive counter-positioning work.
+      entered_when: [has_obs: competitor, {path: deal.status, op: "=", value: open}]
+    - name: dormant
+      description: Named once, not mentioned since. Frequently a stalking horse that has served its
+        purpose.
+    - name: closed
+      description: The evaluation resolved. Outcome recorded in last_outcome.
+      entered_when: [has_obs: closed_lost_mention]
+  transitions:
+    - {from: unknown, to: suspected, when: [has_obs: discount_pressure, no_obs: competitor]}
+    - {from: unknown, to: identified, when: [has_obs: competitor]}
+    - {from: suspected, to: identified, when: [has_obs: competitor]}
+    - {from: identified, to: active, when: [{path: deal.status, op: "=", value: open}]}
+    - {from: active, to: dormant}
+    - {from: dormant, to: active, when: [has_obs: competitor]}
+    - {from: active, to: closed, when: [has_obs: closed_lost_mention]}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: attaches_to
+    target: sales.obj.core.deal
+    cardinality: zero_or_many
+    description: A competitor record is per-deal. The same rival is a different object in a different
+      evaluation.
+
+  - type: competes_with
+    target: sales.obj.core.opportunity
+    cardinality: zero_or_many
+
+  - type: produces
+    target: sales.obj.core.objection
+    cardinality: zero_or_many
+    description: >
+      Most feature objections originate in a rival's battlecard and arrive as the buyer's own
+      question. This edge is how a product complaint gets re-read as a competitive move.
+
+  - type: produces
+    target: sales.obj.core.risk
+    cardinality: zero_or_many
+
+  - type: influences
+    target: sales.obj.core.pricing
+    cardinality: zero_or_one
+    description: A named, evidenced competitor may move price. An unnamed one is a negotiation tactic
+      and may not.
+
+  - type: influences
+    target: sales.obj.core.timeline
+    cardinality: zero_or_one
+    description: A parallel evaluation adds their sales cycle to ours, and nobody schedules for it.
+
+  - type: references
+    target: sales.obj.core.company
+    cardinality: zero_or_one
+
+  - type: blocks
+    target: sales.obj.core.proposal
+    cardinality: zero_or_many
+    description: An unaddressed incumbent switching cost makes a proposal an invitation to compare
+      rather than to buy.
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: comp.named_in_this_thread
+      statement: "A competitor observation fired on this node."
+      status: executable
+      when:
+        - {has_obs: competitor}
+      yields: {confidence_bp: 9200, attribute: is_present, value: true}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Presence is near-certain; identity is not, because the observation is an untyped flag
+        with no name attached. That distinction is the object's main signal gap.
+
+    - id: comp.present_on_the_account
+      statement: "A competitor observation fired on a neighbouring node — present in the deal even if not
+        in this thread."
+      status: executable
+      when:
+        - {neighbor_has_obs: competitor}
+      yields: {confidence_bp: 8000, attribute: is_present, value: true}
+      note: >
+        Kept separate from the node-level pattern rather than merged. Competitors are usually
+        mentioned to one contact and not to the person we speak to most, so deal-level presence
+        is routinely invisible from the main thread.
+
+    - id: comp.identity_extracted
+      statement: "The competitor's actual name was extracted from the mention."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: name, value: null}
+      requires_signals:
+        - kind: fact_path
+          name: competitor.name
+          owner_layer: L2
+          note: >
+            The highest-value gap on this object. Layer 2 knows a competitor was mentioned and
+            not which one, so historical_win_rate_bp can never be joined, counter_positioning
+            can never be selected, and every competitive deal is handled generically. One named
+            entity would activate the entire counter-strategy half of this file.
+
+    - id: comp.loss_attributed
+      statement: "A closed-lost was attributed to a specific alternative."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: last_outcome, value: lost}
+      requires_signals:
+        - kind: obs_kind
+          name: closed_lost_reason
+          owner_layer: L2
+          note: >
+            closed_lost_mention exists but carries no reason, so losses to the status quo and
+            losses to a rival are indistinguishable. Without this the win-rate calibration that
+            justifies competitive weighting can never be computed.
+
+  heuristic:
+
+    - id: comp.silence_after_proposal_is_the_status_quo
+      statement: "A proposal went out, no rival was ever named, and the account has gone quiet past three
+        times its own reply cadence."
+      status: executable
+      when:
+        - {has_obs: proposal_sent}
+        - {no_obs: competitor}
+        - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 3, floor:
+              10}}
+      yields: {confidence_bp: 6200, attribute: competitor_type, value: status_quo}
+      evidence_fields: [deal.last_inbound]
+      note: >
+        The pattern this entire object was written for. Nothing was lost to a rival; the buyer
+        simply stopped, and stopping is a choice that requires no meeting, no approval and no
+        email to us. Instantiating the status quo as a real competitor with a real
+        counter-strategy is the only way this deal re-enters anyone's attention.
+
+    - id: comp.discount_pressure_implies_an_unnamed_alternative
+      statement: "Discount pressure with no competitor ever named — an alternative is being used as leverage."
+      status: executable
+      when:
+        - {has_obs: discount_pressure}
+        - {no_obs: competitor}
+      yields: {confidence_bp: 6500, attribute: is_stalking_horse, value: true}
+      evidence_fields: [thread.ball_in_court]
+      note: >
+        Buyers do not ask for discounts in a vacuum. Either they hold a competing quote, or
+        they are bluffing, and both are competitive positions requiring the same first move —
+        ask who else they are considering. Note this yields is_stalking_horse rather than
+        is_present, because conceding to an alternative nobody can name is how margin leaves
+        without a competitor ever being in the deal.
+
+    - id: comp.competitor_plus_stalling_means_trailing
+      statement: "A competitor is present and momentum has collapsed — we are not the front-runner."
+      status: executable
+      when:
+        - {has_obs: competitor}
+        - {path: derived.momentum, op: "<", value: 0.3}
+      yields: {confidence_bp: 7000, attribute: competitive_position, value: trailing}
+      evidence_fields: [derived.momentum]
+      note: >
+        In a competitive deal the leader gets urgency and the follower gets politeness. Slowing
+        cadence with a rival in play is not the buyer being busy; it is the buyer working with
+        somebody else and keeping us warm as a fallback.
+
+    - id: comp.parallel_evaluation_slips_the_date
+      statement: "A competitor is present and the timeline has slipped — they are running our rival's cycle
+        alongside ours."
+      status: executable
+      when:
+        - {has_obs: competitor}
+        - {has_obs: timeline_slip}
+      yields: {confidence_bp: 7200, attribute: competitive_position, value: level}
+      note: >
+        Yields `level` rather than `trailing` on purpose. A slip with a rival present usually
+        means the buyer is waiting to compare rather than having already decided — which is
+        recoverable, and is exactly the moment to influence the evaluation criteria.
+
+    - id: comp.incumbent_from_renewal_window
+      statement: "An existing vendor contract is approaching renewal at this account — the incumbent is
+        the competitor."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: is_incumbent, value: true}
+      requires_signals:
+        - kind: fact_path
+          name: account.incumbent_vendor
+          owner_layer: L1
+          note: >
+            Requires the CRM or contract store to project the current vendor and renewal date.
+            Without it, every displacement deal is run as a greenfield sale and the switching
+            cost is discovered at the redline stage, which is the most expensive place to find it.
+
+    - id: comp.trap_questions_arrive_verbatim
+      statement: "The buyer asked a question phrased in a rival's own framing."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: is_present, value: true}
+      requires_signals:
+        - kind: obs_kind
+          name: comparison_requested
+          owner_layer: L2
+          note: >
+            Requires matching buyer language against known competitor framing. The clearest
+            evidence of an active, coached evaluation and it currently produces nothing.
+
+    - id: comp.win_rate_from_history
+      statement: "Our historical outcomes against this named alternative set the baseline expectation."
+      status: needs_signal
+      yields: {confidence_bp: 7500, attribute: historical_win_rate_bp, value: null}
+      requires_signals:
+        - kind: derived
+          name: derived.competitor_win_rate
+          owner_layer: L2
+          note: >
+            Blocked twice over — it needs competitor.name to join on and closed_lost_reason to
+            count. Listed anyway because it is the only pattern here that could ever tell a
+            reviewer whether the competitive weighting is calibrated or invented.
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: competitor mentions and comparison requests, path: thread.last_inbound}
+  - {source: email, signal: discount pressure with no named rival}
+  - {source: derived, signal: momentum collapse while a rival is present, path: derived.momentum}
+  - {source: derived, signal: sentiment shift after a competitor mention, path: derived.sentiment}
+  - {source: meeting_transcript, signal: "trap questions, rival framing, and who repeats it"}
+  - {source: crm, signal: "prior outcomes against this alternative, incumbent vendor on the account"}
+  - {source: contract, signal: "existing vendor, renewal window and notice period"}
+  - {source: website, signal: public customer logos and comparison pages}
+  - {source: document, signal: RFP vendor lists and scoring matrices}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: competitive_presence_bp, type: integer, description: "Confidence an alternative is live in\
+      this deal, status quo included.", consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: position_assessment, type: string, description: "Leading, level, trailing or losing, with the\
+      behavioural evidence.", consumed_by: [L4.reasoning_unit]}
+  - {name: status_quo_flag, type: boolean, description: "True when the alternative is inaction. Routes\
+      to a cost-of-inaction play rather than a differentiation play.", consumed_by: [L4.decision_maker,
+      L5.execution_planning]}
+  - {name: counter_positioning, type: string, description: "The frame to use in the next message.", consumed_by: [
+      L5.communication_planning]}
+  - {name: concession_guardrail, type: boolean, description: "False when a discount is being requested\
+      against an unnamed alternative.", consumed_by: [L4.decision_maker]}
+  - {name: competitive_outcome, type: string, description: "Result against this alternative, for win-rate\
+      calibration.", consumed_by: [L6.learning_unit]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: comp.no_disparagement, statement: "Never attack a competitor by name to the buyer. It transfers\
+      credibility to them and reliably reads as insecurity.", hard: true}
+  - {id: comp.named_before_conceding, statement: "No competitive concession without competitor_type =\
+      named_vendor and an evidenced price.", hard: true}
+  - {id: comp.status_quo_cannot_be_absent, statement: "An open deal may not record zero competitors; the\
+      minimum is a status-quo record.", hard: true}
+  - {id: comp.position_is_behavioural, statement: "competitive_position must be evidenced by buyer behaviour,\
+      never by internal product comparison.", hard: false}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: comp.status_quo_is_always_present
+    statement: >
+      Every open deal carries a status-quo competitor whether or not one has been named. A deal
+      with no competitor record is under-assessed, not uncontested.
+    when: [{path: deal.status, op: "=", value: open}, no_obs: competitor]
+    then: instantiate_status_quo_competitor
+    severity: warning
+
+  - id: comp.discount_requires_a_named_alternative
+    statement: >
+      A concession justified by competitive pressure requires competitor_type = named_vendor
+      with a name and evidence of their price. Otherwise the discount is being granted to an
+      alternative that may not exist.
+    when: [has_obs: discount_pressure, no_obs: competitor]
+    then: block_competitive_concession
+    severity: blocking
+
+  - id: comp.no_commit_without_position
+    statement: A deal with an active competitor and competitive_position = unknown must not be
+      forecast as committed.
+    when: [has_obs: competitor, {path: deal.status, op: "=", value: open}]
+    then: cap_forecast_category
+    severity: blocking
+
+  - id: comp.incumbent_requires_a_switching_case
+    statement: >
+      Where is_incumbent is true, a switching-cost case must exist before proposal. Beating an
+      incumbent on features while ignoring migration cost loses to inertia, not to the rival.
+    then: require_switching_case
+    severity: warning
+
+  - id: comp.cost_of_inaction_required_for_status_quo
+    statement: >
+      Where competitor_type is status_quo or no_decision, cost_of_inaction must be quantified.
+      A null value means the only competitor in the deal has no counter-argument prepared.
+    then: require_cost_of_inaction
+    severity: warning
+
+# ── 8 · Decision Factors — weights sum to 10000 ──────────────────────────────────────────
+decision_factors:
+
+  - name: competitive_position
+    weight_bp: 2500
+    direction: context
+    description: Where we stand by buyer behaviour, not by product opinion. Context rather than
+      decreases — leading is as informative as losing.
+    reads: [competitive_position, differentiators_ours, differentiators_theirs]
+
+  - name: presence_strength
+    weight_bp: 2200
+    direction: decreases
+    reads: [is_present, presence_confidence_bp, last_mentioned_at, introduced_by]
+
+  - name: status_quo_inertia
+    weight_bp: 2000
+    direction: decreases
+    description: >
+      Weighted third and above price on purpose. The asymmetry between the effort of deciding
+      and the effort of deferring is the largest single force in a B2B deal, and the one least
+      represented in most pipeline arithmetic.
+    reads: [competitor_type, effort_to_do_nothing, cost_of_inaction]
+
+  - name: switching_cost
+    weight_bp: 1500
+    direction: context
+    description: Cuts both ways. High switching cost protects an incumbent from us and protects us at
+      renewal.
+    reads: [switching_cost_to_buyer, is_incumbent]
+
+  - name: historical_outcome
+    weight_bp: 1000
+    direction: context
+    reads: [historical_win_rate_bp, last_outcome, deals_faced]
+
+  - name: price_position
+    weight_bp: 800
+    direction: context
+    description: Weighted last. Price position changes far fewer outcomes than sellers believe, and it
+      is the field they reach for first.
+    reads: [their_price_position, is_stalking_horse]
+
+# ── 9 · Inference Patterns ⭐ ────────────────────────────────────────────────────────────
+evidence:
+  - {source: document, strength_bp: 9500, description: "An RFP vendor list or scoring matrix. Names the\
+      field explicitly and is rarely wrong."}
+  - {source: meeting_transcript, strength_bp: 8800, description: "The buyer using a rival's framing. Strong\
+      evidence of an active, coached evaluation."}
+  - {source: email, strength_bp: 8000, description: "A written mention. Reliable for presence, silent\
+      on identity."}
+  - {source: crm, strength_bp: 6500, description: "Rep-logged competitor field. Biased toward named vendors\
+      and blind to the status quo."}
+  - {source: derived, strength_bp: 5500, description: "Silence and momentum collapse. The only source\
+      that can see the status quo at all."}
+  - {source: website, strength_bp: 3500, description: "Public comparison pages and logos. Says who they\
+      target, not who is in this deal."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: competitive_deal_share, unit: percent, description: "Share of open deals with an identified\
+      alternative. If this is under half, the object is not being used.", owner_layer: L6}
+  - {name: status_quo_loss_share, unit: percent, description: "Share of losses to no-decision rather than\
+      to a rival. Usually the largest bucket and usually untracked.", owner_layer: L6}
+  - {name: win_rate_by_competitor, unit: percent, description: "Calibrates historical_win_rate_bp. Requires\
+      competitor identity, which is why it is currently uncomputable.", owner_layer: L6}
+  - {name: detection_lead_time, unit: days, description: "Days from deal creation to first competitor\
+      detection. Late detection correlates with losing.", owner_layer: L6}
+  - {name: concession_to_unnamed_share, unit: percent, description: "Discounts granted against an alternative\
+      nobody could name. Direct measure of leverage given away.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: comp.detected, name: Competitor Detected, emitted_when: [has_obs: competitor], payload: [
+        competitor_type, presence_confidence_bp]}
+  - {id: comp.detected_nearby, name: Competitor Detected on Account, emitted_when: [neighbor_has_obs: competitor],
+    payload: [competitor_type]}
+  - {id: comp.suspected_unnamed, name: Unnamed Alternative Suspected, emitted_when: [has_obs: discount_pressure,
+      no_obs: competitor], payload: [is_stalking_horse], description: "Fires before any rival is named.
+      The moment to ask who else they are talking to, which is far cheaper than discovering it in the loss
+      review."}
+  - {id: comp.position_deteriorated, name: Competitive Position Deteriorated, emitted_when: [has_obs: competitor,
+      {path: derived.momentum, op: "<", value: 0.3}], payload: [competitive_position, deal_momentum]}
+  - {id: comp.status_quo_winning, name: Status Quo Winning, emitted_when: [has_obs: proposal_sent,
+          no_obs: competitor, {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline:
+            reply_cadence, mult: 3, floor: 10}}], payload: [competitor_type, cost_of_inaction],
+      description: "The most under-emitted event in sales tooling. No rival, no bad news, and the deal is
+      being lost."}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: comp.ask_who_else, name: Ask who else they are evaluating, actor: human, effect: "Direct, cheap,\
+      and routinely avoided out of a fear of introducing the idea. The buyer already had the idea."}
+  - {id: comp.quantify_inaction, name: Quantify the cost of doing nothing, actor: human, effect: "The\
+      only argument that beats a status quo. Turns an invisible competitor into a number on a page."}
+  - {id: comp.shape_criteria, name: Influence the evaluation criteria, actor: human, effect: "Higher yield\
+      than out-featuring a rival. Whoever writes the scorecard usually wins it."}
+  - {id: comp.build_switching_case, name: Build the migration and switching case, actor: human, effect: "Required
+      against an incumbent. Inertia, not the rival's product, is what actually holds the account."}
+  - {id: comp.pre_empt_landmines, name: Pre-empt their landmines, actor: human, effect: "Answering a planted\
+      doubt before the buyer raises it removes it. Answering it afterwards confirms it was worth raising."}
+  - {id: comp.refuse_blind_discount, name: Refuse a concession to an unnamed alternative, actor: human,
+    preconditions: [has_obs: discount_pressure, no_obs: competitor], effect: "Requires the buyer to name
+      the alternative before the price moves. Frequently ends the pressure outright."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Doing nothing", note: "competitor_type = status_quo, name null, their_price_position free,\
+      effort_to_do_nothing trivial. The most common winner and the one with no battlecard."}
+  - {label: "The incumbent renewing in four months", note: "is_incumbent true, switching_cost high. We\
+      are not selling a product, we are selling a migration."}
+  - {label: "The named rival in a three-way bake-off", note: "The competitor sellers actually instrument\
+      for, and the least dangerous of the four listed here."}
+  - {label: "\"We might just build it internally\"", note: "competitor_type = internal_build. Free at\
+      the point of decision, wildly expensive afterwards, and almost never costed by the buyer."}
+  - {label: "The rival named only next to a price", note: "The classic misclassification. Logged as a\
+      competitive deal and given a discount; is_stalking_horse true, and they were never in the evaluation."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Six of eleven patterns are executable, resting on the competitor, discount_pressure,
+    proposal_sent and timeline_slip observation kinds plus derived.momentum. The highest-value
+    gap is competitor.name — Layer 2 knows a competitor was mentioned but never which one, so
+    win rates cannot be joined, counter-positioning cannot be selected, and every competitive
+    deal is handled generically. closed_lost_reason is second and compounds it: losses to a
+    rival and losses to the status quo are currently the same event, which means the single
+    most important number this object could produce cannot be produced at all.

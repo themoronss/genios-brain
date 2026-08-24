@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.expansion.expand_on_proof__not_on_access
+  name: Expand on proof, not on access
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.expansion
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Having the badge and the relationships tempts premature expansion pitches. Access without
+    a delivered result reads as upselling; the same pitch after a hit outcome reads as partnership. Sequence
+    is everything.
+  answers:
+  - When is an expansion conversation earned?

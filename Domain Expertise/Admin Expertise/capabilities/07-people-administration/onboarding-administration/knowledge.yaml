@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.people_administration.onboarding_administration
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.onboarding_administration.day_one_ready_onboarding
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.onboarding_administration.day_one_is_remembered_forever
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

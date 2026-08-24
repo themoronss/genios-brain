@@ -1,0 +1,30 @@
+identity:
+  id: sales.pb.customer_success.outcome_cadence_reviews
+  name: Outcome cadence reviews
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.customer_success
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Success reviews exist to renew the business case, not to tour dashboards. Each cadence answers
+    one question with the customer: are you still getting the outcome you bought — and if not, what changes
+    this quarter?'
+steps:
+- order: 1
+  name: Anchor every review on the bought outcome
+  description: Open with the deal's original why and today's numbers against it. Usage stats support the
+    story; they are not the story.
+  actor: human
+- order: 2
+  name: Surface risk while it is conversational
+  description: Sponsor changes, budget season, stalled adoption — asked about directly, kindly, every
+    review. Risks named early are projects; named late they are churn.
+  actor: human
+- order: 3
+  name: Leave with owned actions on both sides
+  description: A review without follow-ups was a presentation. Two or three actions, owners, dates — theirs
+    and yours.
+  actor: human

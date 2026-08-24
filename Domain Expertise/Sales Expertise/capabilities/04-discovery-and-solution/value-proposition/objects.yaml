@@ -1,0 +1,23 @@
+# Load-set for sales.discovery_and_solution.value_proposition — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/value-proposition/      loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.discovery_and_solution.value_proposition
+
+core:
+  required:
+    - sales.obj.core.business_need
+  optional:
+    - sales.obj.core.competitor
+    - sales.obj.core.pain_point
+    - sales.obj.core.pricing
+
+scoped:
+  required: []
+  optional: []

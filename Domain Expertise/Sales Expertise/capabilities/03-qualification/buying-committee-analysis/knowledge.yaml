@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.qualification.buying_committee_analysis
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.buying_committee_analysis.map_the_committee_before_it_maps_you
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.buying_committee_analysis.the_unseen_skeptic_kills_late
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

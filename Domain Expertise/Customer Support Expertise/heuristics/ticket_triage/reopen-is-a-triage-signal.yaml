@@ -1,0 +1,36 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.intake_and_triage.ticket_triage — exactly one capability references it. Promote to
+# heuristics/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.heu.ticket_triage.reopen_is_a_triage_signal
+  name: Reopen is a triage signal
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.ticket_triage
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A reopened ticket enters triage at higher priority than a new one describing the same thing.
+heuristic:
+  statement: A reopened ticket enters triage at higher priority than a new one describing the same thing.
+  why: A reopen means a previous resolution was wrong and the customer has already spent patience once.
+    The fault is not more severe, but the relationship cost of a second miss is substantially higher,
+    and priority is the field that is allowed to carry that.
+  reads:
+  - customer_support.obj.core.ticket
+  - customer_support.obj.core.customer_sentiment
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

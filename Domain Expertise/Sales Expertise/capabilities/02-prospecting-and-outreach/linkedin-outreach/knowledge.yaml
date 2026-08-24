@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.prospecting_and_outreach.linkedin_outreach
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.linkedin_outreach.comment_first_linkedin_approach
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.linkedin_outreach.warm_channel__same_discipline
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

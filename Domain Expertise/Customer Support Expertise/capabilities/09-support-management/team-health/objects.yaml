@@ -1,0 +1,30 @@
+# Load-set for customer_support.support_management.team_health — REFERENCES ONLY,
+# never an inline object.
+#
+# core   -> objects/core/     loaded by more than one capability
+# scoped -> objects/<capability>/     loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.support_management.team_health
+
+core:
+  # The two halves of the question. support_agent is who is carrying it; backlog is what they are
+  # carrying. Neither is readable alone — a heavy backlog spread evenly is a staffing problem and
+  # a light one landing on two people is a retention problem, and only the pair distinguishes them.
+  required:
+    - customer_support.obj.core.support_agent
+    - customer_support.obj.core.backlog
+  # queue shows how the work is distributed rather than how much there is. customer_sentiment is
+  # here for an unobvious reason: this is the one capability that reads it as a measure of what
+  # the team is absorbing rather than of how the customer feels. capacity_plan says whether anyone
+  # ever expected this to be survivable.
+  optional:
+    - customer_support.obj.core.queue
+    - customer_support.obj.core.customer_sentiment
+    - customer_support.obj.core.capacity_plan
+
+scoped:
+  required: []
+  optional: []

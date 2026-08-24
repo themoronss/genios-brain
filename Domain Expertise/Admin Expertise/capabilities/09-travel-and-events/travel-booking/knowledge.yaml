@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.travel_and_events.travel_booking
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.travel_booking.booking_within_policy_optimised_for_the_trip
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.travel_booking.traveller_fatigue_is_a_cost_line
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

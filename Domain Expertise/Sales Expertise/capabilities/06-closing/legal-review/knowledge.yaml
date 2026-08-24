@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.closing.legal_review
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.legal_review.legal_as_gate__not_opponent
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.legal_review.redlines_mean_the_deal_is_real
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

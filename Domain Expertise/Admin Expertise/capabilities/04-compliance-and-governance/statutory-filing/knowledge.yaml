@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.compliance_and_governance.statutory_filing
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.statutory_filing.filing_calendar_worked_backwards
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.statutory_filing.late_filings_compound_beyond_the_fine
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

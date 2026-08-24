@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.facilities_and_assets.asset_register
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.asset_register.register_at_purchase_reconcile_on_rhythm
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.asset_register.assets_vanish_in_the_gaps_between_owners
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

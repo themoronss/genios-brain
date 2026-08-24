@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.contract_and_vendor.vendor_performance_management
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.vendor_performance_management.vendor_scorecards_that_inform_renewals
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.vendor_performance_management.undocumented_vendor_pain_repeats
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.vendor_performance_management.undocumented_vendor_pain_repeats
+  name: Undocumented vendor pain repeats
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.vendor_performance_management
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Vendor failures that live only in team grumbles get forgiven by contract-time amnesia. The
+    incident log is what converts sympathy into leverage.
+  answers:
+  - Why do bad vendors keep getting renewed?

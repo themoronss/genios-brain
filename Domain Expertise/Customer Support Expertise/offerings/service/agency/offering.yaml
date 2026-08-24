@@ -1,0 +1,103 @@
+# Agency — offering type under customer_support.offering.service.
+#
+# INHERITANCE: declares only what DIFFERS from the parent. Resolution is type -> family ->
+# canonical.
+
+identity:
+  id: customer_support.offering.service.agency
+  name: Agency
+  kind: offering_type
+  domain: customer_support
+  parent: customer_support.offering.service
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Ongoing creative and campaign execution on retainer — marketing, design, content, media. Two
+  structural facts make this type unlike its siblings.
+  The first is that the deliverable is subjective and revision is the normal mode of work. A
+  client saying "this is not right" is not reporting a defect; it is the process functioning as
+  designed. Support-shaped thinking fails immediately here, because the concept of a correct
+  output that can be verified does not exist — there is only agreement, and agreement is reached
+  by iterating. The genuine failure mode is not a wrong deliverable but an unbounded number of
+  revisions, which is why scope is measured in rounds rather than in tickets.
+  The second is that the clock is external and unforgiving. Campaigns launch on dates set by
+  media buys, seasons, product launches and events that will not move. A missed deadline is not
+  a late ticket, it is a paid placement running with the wrong creative, and it cannot be
+  recovered by working faster afterwards. Urgency in this type is almost entirely calendar-driven
+  and almost never severity-driven.
+  A third, quieter fact: the client contact is usually a marketer being judged internally on the
+  work we produce. Their escalations are frequently about their own exposure rather than about
+  the deliverable, and reading them as quality complaints produces confidently wrong responses.
+  The habit carried in from professional services and punished here is treating a revision request
+  as a change request. Some are; most are the work.
+
+characteristics:
+  delivery: "continuous creative output against a retainer, delivered in rounds and agreed rather than verified"
+  pricing_shape: "monthly retainer sized to a volume of work, plus project fees and pass-through media spend"
+  margin_profile: "bounded by utilisation and destroyed by revision creep; the difference between a profitable and unprofitable account is usually rounds, not rates"
+  post_sale_load: "the whole engagement is post-sale load, delivered continuously with no terminal state"
+  support_load: "calendar-shaped and deadline-clustered. Contact rate spikes before every launch and in the hours after anything goes live, and is near zero in between"
+  resolution_locus: "a human redoing creative work. There is no fix, only another round, and every round consumes margin that cannot be recovered"
+  notes: >
+    Revisions are the unit that matters. An account can look healthy on every satisfaction
+    measure and be losing money purely on round count, and round count appears in no standard
+    support metric.
+
+capabilities:
+  deactivates:
+    # Subjective, per-client creative output has no recurring answer to publish and nothing a
+    # self-service surface could resolve.
+    - customer_support.knowledge_and_deflection.self_service_deflection
+    - customer_support.knowledge_and_deflection.ai_deflection
+    - customer_support.knowledge_and_deflection.knowledge_authoring
+  emphasises:
+    # Rounds are scope, and scope is agreed in the reply rather than in a contract review.
+    - customer_support.customer_communication.expectation_setting
+    - customer_support.entitlement_and_sla.entitlement_verification
+    # An immovable launch date makes every promise a dependency in someone's campaign plan.
+    - customer_support.entitlement_and_sla.commitment_tracking
+    - customer_support.customer_communication.proactive_status_updates
+    # The relationship is the account, and it is with a person whose own standing is on the line.
+    - customer_support.support_management.account_relationship_management
+    - customer_support.voice_of_customer.sentiment_analysis
+    - customer_support.customer_communication.de_escalation
+    # Revision creep is a cost-to-serve problem wearing a service-quality costume.
+    - customer_support.support_operations.cost_to_serve
+
+objects:
+  extends:
+    - object: customer_support.obj.core.entitlement
+      require_properties: [plan, coverage_hours]
+      note: >
+        Entitlement here is the retainer, and the unit it bounds is rounds of revision rather
+        than hours or incidents. An agency that cannot answer "how many rounds does this account
+        get" at ticket time will discover the answer in the margin report, and by then the
+        precedent is set.
+    - object: customer_support.obj.core.commitment
+      require_properties: [promised_at, due_at, owner_ref]
+      note: >
+        Deadlines here are external and irreversible. A missed commitment means a placement runs
+        with the wrong creative, which cannot be fixed by delivering later — so this object
+        carries more consequence in this type than an SLA does anywhere in the tree.
+    - object: customer_support.obj.core.customer_sentiment
+      require_properties: [trajectory]
+      note: >
+        Dissatisfaction in an agency relationship is expressed as increasing revision demands
+        long before it is expressed as a complaint. Trajectory across rounds is the leading
+        indicator; the complaint, when it comes, is a lagging one.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Deactivating knowledge_authoring is the arguable call. Agencies do maintain brand guidelines,
+    tone-of-voice documents and asset libraries, and those are genuine reusable knowledge — but
+    they are client-owned deliverables produced by the creative team, not support knowledge
+    produced to reduce contacts. Modelling them here would put the support function in charge of
+    an artefact it does not author and cannot maintain.

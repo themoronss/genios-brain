@@ -1,0 +1,732 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Deal — the central commercial object.
+#
+# Every fact path the engine emits today is deal- or thread-scoped, so this is the
+# best-served object in the library. That is a property of the substrate, not a
+# template: seven of twelve patterns here run today, and no other object should be
+# expected to match that.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: sales.obj.core.deal
+  scope: core
+  name: Deal
+  domain: sales
+  subdomain: revenue_operations
+  owner_capability: sales.revenue_operations.pipeline_management
+  version: 1.0.0
+  status: draft
+  aliases: ["Live Deal", "Working Deal", "Pipeline Deal"]
+purpose:
+  statement: >
+    A specific purchase being worked, with a value, a stage and a close date. The discriminator
+    against Opportunity is commitment, not size and not probability: an opportunity is a
+    possibility we have identified, a deal is a process both sides have agreed to be in. The
+    test is whether the buyer has accepted a dated next step. Until they have, the record is
+    one-sided and belongs in Opportunity — moving it early is how a pipeline comes to report
+    hope as process, and why a forecast built from stage counts reads high every quarter.
+attributes:
+  - name: commercial_shape
+    purpose: What is being bought, for how much, and of what kind. The fields a forecast sums.
+    type: composite
+    contains:
+      - deal_status
+      - stage
+      - deal_type
+      - value
+      - win_probability_bp
+      - forecast_category
+  - name: timing
+    purpose: >
+      When it is expected to close and how many times that has moved. Slip history is kept
+      separately from the current date because re-baselining a close date erases the only
+      honest evidence that the deal is not understood.
+    type: composite
+    contains:
+      - expected_close_date
+      - original_close_date
+      - close_date_slips
+      - created_at
+  - name: trajectory
+    purpose: Observed movement, as distinct from declared stage. The two disagree constantly and
+      trajectory is the one that is measured.
+    type: composite
+    contains:
+      - last_inbound_at
+      - ball_in_court
+      - momentum
+      - engagement
+      - sentiment
+  - name: health
+    purpose: The synthesised read, and the two structural failure modes worth naming on their own.
+    type: composite
+    contains:
+      - health_state
+      - is_stalled
+      - is_single_threaded
+      - contact_count
+  - name: coverage
+    purpose: Which of the objects a deal needs to be real are actually attached.
+    type: composite
+    contains:
+      - budget_ref
+      - champion_ref
+      - competitor_present
+  - name: provenance_and_outcome
+    purpose: Where it came from, and how it ended.
+    type: composite
+    contains:
+      - origin_opportunity_ref
+      - loss_reason
+  - name: deal_status
+    purpose: Coarse lifecycle. `on_hold` and `abandoned` are separate from `lost` on purpose — a deal
+      the buyer paused is a future opportunity and a deal we walked away from is not, and collapsing
+      them destroys the win-back list.
+    type: value
+    data_type: enum
+    allowed_values: [open, won, lost, on_hold, abandoned]
+    required: true
+    source_paths: [deal.status]
+    description: >
+      Coarse lifecycle. `on_hold` and `abandoned` are separate from `lost` on purpose — a deal
+      the buyer paused is a future opportunity and a deal we walked away from is not, and
+      collapsing them destroys the win-back list.
+  - name: stage
+    purpose: The seller-managed pipeline stage. Not projected by the engine today — every stage
+      inference below reconstructs it from observations, which is why they carry confidence well short
+      of 10000.
+    type: value
+    data_type: enum
+    allowed_values: [qualification, discovery, solution, proposal, negotiation, legal, closing, closed]
+    required: true
+    description: >
+      The seller-managed pipeline stage. Not projected by the engine today — every stage
+      inference below reconstructs it from observations, which is why they carry confidence
+      well short of 10000.
+  - name: deal_type
+    purpose: Determines almost everything about how the deal should be read. A renewal that goes quiet
+      is a churn event; a new-business deal that goes quiet is a normal Tuesday.
+    type: value
+    data_type: enum
+    allowed_values: [new_business, expansion, upsell, cross_sell, renewal, replacement, win_back]
+    description: >
+      Determines almost everything about how the deal should be read. A renewal that goes
+      quiet is a churn event; a new-business deal that goes quiet is a normal Tuesday.
+  - name: value
+    purpose: What WE proposed, not what THEY have. The single most misread number in the pipeline — it
+      is our quote, and treating it as evidence of budget is the reason forecasts inflate.
+    type: value
+    data_type: money
+    source_paths: [deal.value]
+    description: >
+      What WE proposed, not what THEY have. The single most misread number in the pipeline —
+      it is our quote, and treating it as evidence of budget is the reason forecasts inflate.
+  - name: win_probability_bp
+    purpose: Likelihood of closing, in basis points. Stage-implied probability is a modelling
+      convenience and not the same thing; where the two disagree, this field is the claim being made
+      and the stage is the label.
+    type: value
+    data_type: integer
+    description: >
+      Likelihood of closing, in basis points. Stage-implied probability is a modelling
+      convenience and not the same thing; where the two disagree, this field is the claim
+      being made and the stage is the label.
+  - name: forecast_category
+    purpose: The commitment a seller is making to their manager. Distinct from win_probability_bp,
+      which is a belief.
+    type: value
+    data_type: enum
+    allowed_values: [omitted, pipeline, best_case, commit, closed]
+    description: The commitment a seller is making to their manager. Distinct from win_probability_bp,
+      which is a belief.
+  - name: expected_close_date
+    purpose: The expected_close_date of this object.
+    type: value
+    data_type: timestamp
+  - name: original_close_date
+    purpose: The first date ever recorded. Kept because slip is only measurable against the original;
+      once a rep re-baselines, the deal looks on time and the pattern that predicts the loss
+      disappears.
+    type: value
+    data_type: timestamp
+    description: >
+      The first date ever recorded. Kept because slip is only measurable against the original;
+      once a rep re-baselines, the deal looks on time and the pattern that predicts the loss
+      disappears.
+  - name: close_date_slips
+    purpose: Count of times expected_close_date moved outward. Two slips is not a timing problem —
+      something else in the deal is untrue, usually an unmapped approver or a budget that was never
+      actually approved.
+    type: value
+    data_type: integer
+    description: >
+      Count of times expected_close_date moved outward. Two slips is not a timing problem —
+      something else in the deal is untrue, usually an unmapped approver or a budget that was
+      never actually approved.
+  - name: created_at
+    purpose: The created_at of this object.
+    type: value
+    data_type: timestamp
+  - name: last_inbound_at
+    purpose: Last thing the buyer sent us. Outbound activity is not evidence of a live deal; it is
+      evidence of a busy rep.
+    type: value
+    data_type: timestamp
+    source_paths: [deal.last_inbound]
+    description: Last thing the buyer sent us. Outbound activity is not evidence of a live deal; it is
+      evidence of a busy rep.
+  - name: ball_in_court
+    purpose: '`nobody` is the dangerous value and the one most systems lack. A deal where neither side owes
+      the other anything is not waiting; it is over and nobody has said so.'
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+    description: >
+      `nobody` is the dangerous value and the one most systems lack. A deal where neither side
+      owes the other anything is not waiting; it is over and nobody has said so.
+  - name: momentum
+    purpose: Engine-computed trajectory. Direction over the last fortnight, not absolute activity.
+    type: value
+    data_type: number
+    source_paths: [derived.momentum]
+    description: Engine-computed trajectory. Direction over the last fortnight, not absolute activity.
+  - name: engagement
+    purpose: Two-way volume against the prior fortnight. Around 0.5 means it has halved.
+    type: value
+    data_type: number
+    source_paths: [derived.engagement]
+    description: Two-way volume against the prior fortnight. Around 0.5 means it has halved.
+  - name: sentiment
+    purpose: Observation balance, roughly -1..1. Weak alone; useful as a tiebreaker against momentum.
+    type: value
+    data_type: number
+    source_paths: [derived.sentiment]
+    description: Observation balance, roughly -1..1. Weak alone; useful as a tiebreaker against
+      momentum.
+  - name: health_state
+    purpose: The health_state of this object.
+    type: value
+    data_type: enum
+    allowed_values: [healthy, watch, at_risk, critical]
+  - name: is_stalled
+    purpose: "No buyer-side movement for longer than this deal's own reply cadence. Deliberately separate
+      from health_state: a deal can be stalled and healthy (August), or moving and critical (a competitor
+      bake-off at pace)."
+    type: value
+    data_type: boolean
+    description: >
+      No buyer-side movement for longer than this deal's own reply cadence. Deliberately
+      separate from health_state: a deal can be stalled and healthy (August), or moving and
+      critical (a competitor bake-off at pace).
+  - name: is_single_threaded
+    purpose: Exactly one human contact on a live deal. The strongest structural predictor of a lost
+      enterprise deal, and the one most reliably absent from CRM reporting.
+    type: value
+    data_type: boolean
+    description: >
+      Exactly one human contact on a live deal. The strongest structural predictor of a lost
+      enterprise deal, and the one most reliably absent from CRM reporting.
+  - name: contact_count
+    purpose: Distinct humans on the buying side who have exchanged a message with us. Not thread count
+      and not edge count.
+    type: value
+    data_type: integer
+    description: Distinct humans on the buying side who have exchanged a message with us. Not thread
+      count and not edge count.
+  - name: competitor_present
+    purpose: The competitor_present of this object.
+    type: value
+    data_type: boolean
+  - name: budget_ref
+    purpose: A deal with no budget object attached is not a deal with no money — it is a deal with no
+      discovery. The two must not score the same.
+    type: reference
+    ref: sales.obj.core.budget
+    data_type: ref
+    description: A deal with no budget object attached is not a deal with no money — it is a deal with
+      no discovery. The two must not score the same.
+  - name: champion_ref
+    purpose: An attached champion is not the same as an active one. This field records existence; the
+      champion object records whether they are still in post and still selling for us.
+    type: reference
+    ref: sales.obj.core.champion
+    data_type: ref
+    description: >
+      An attached champion is not the same as an active one. This field records existence;
+      the champion object records whether they are still in post and still selling for us.
+  - name: origin_opportunity_ref
+    purpose: The opportunity this deal was converted from. Kept so pipeline creation can be attributed
+      to a source rather than to a stage change.
+    type: reference
+    ref: sales.obj.core.opportunity
+    data_type: ref
+    description: The opportunity this deal was converted from. Kept so pipeline creation can be
+      attributed to a source rather than to a stage change.
+  - name: loss_reason
+    purpose: '`no_decision` is the largest real category in most B2B businesses and is almost always miscoded
+      as `price` or `timing`. Losing to nothing is a qualification failure; losing to a competitor is a
+      positioning failure, and they need opposite fixes.'
+    type: value
+    data_type: enum
+    allowed_values: [price, no_decision, competitor, timing, budget_pulled, champion_left, poor_fit,
+        unknown]
+    description: >
+      `no_decision` is the largest real category in most B2B businesses and is almost always
+      miscoded as `price` or `timing`. Losing to nothing is a qualification failure; losing to
+      a competitor is a positioning failure, and they need opposite fixes.
+states:
+  initial: qualified
+  values:
+    - name: qualified
+      description: Converted from an opportunity. Both sides have agreed to a dated next step; nothing
+        has been proposed yet.
+    - name: active
+      description: Being worked, with buyer-side movement inside the last cadence window.
+      entered_when: [{path: deal.status, op: "=", value: open}]
+    - name: at_risk
+      description: Still open, trajectory negative. The state most deals pass through unlabelled.
+      entered_when: [{path: derived.momentum, op: "<=", value: 0.5}]
+    - name: dormant
+      description: >
+        Open in the CRM, silent in reality. Kept distinct from at_risk because the remedies
+        differ — a dormant deal needs a reason to re-engage, an at-risk deal needs the
+        objection found.
+      entered_when: [{fn: days_since, path: deal.last_inbound, op: ">=", value: 21}]
+    - name: closed_won
+      description: Signed. Not verbal — signed.
+      entered_when: [{path: deal.status, op: "=", value: won}]
+    - name: closed_lost
+      entered_when: [{path: deal.status, op: "=", value: lost}]
+  transitions:
+    - {from: qualified, to: active}
+    - {from: active, to: at_risk, when: [{path: derived.momentum, op: "<=", value: 0.5}]}
+    - {from: at_risk, to: active, when: [{path: derived.momentum, op: ">", value: 0.8}]}
+    - {from: at_risk, to: dormant, when: [{fn: days_since, path: deal.last_inbound, op: ">=", value: 21}]}
+    - {from: dormant, to: active}
+    - {from: active, to: closed_won, when: [{path: deal.status, op: "=", value: won}]}
+    - {from: at_risk, to: closed_lost, when: [{path: deal.status, op: "=", value: lost}]}
+    - {from: dormant, to: closed_lost, when: [{path: deal.status, op: "=", value: lost}]}
+
+# ── 7 · Business Rules — deterministic ───────────────────────────────────────────────────
+relationships:
+
+  - type: belongs_to
+    target: sales.obj.core.account
+    cardinality: one
+    description: Exactly one. A deal spanning two legal entities is two deals with a shared narrative.
+
+  - type: supersedes
+    target: sales.obj.core.opportunity
+    cardinality: zero_or_one
+    description: >
+      Conversion is a replacement, not a copy. An opportunity left open beside its deal is
+      double-counted pipeline, and it is the most common cause of a coverage ratio nobody
+      believes.
+
+  - type: requires
+    target: sales.obj.core.budget
+    cardinality: zero_or_one
+
+  - type: requires
+    target: sales.obj.core.timeline
+    cardinality: zero_or_one
+    description: Their fiscal calendar and approval process set the achievable close date. Ours sets
+      the desired one.
+
+  - type: works_with
+    target: sales.obj.core.buying_committee
+    cardinality: zero_or_one
+
+  - type: works_with
+    target: sales.obj.core.champion
+    cardinality: zero_or_many
+
+  - type: produces
+    target: sales.obj.core.proposal
+    cardinality: zero_or_many
+
+  - type: produces
+    target: sales.obj.core.contract
+    cardinality: zero_or_one
+
+  - type: produces
+    target: sales.obj.core.next_action
+    cardinality: zero_or_many
+
+  - type: competes_with
+    target: sales.obj.core.competitor
+    cardinality: zero_or_many
+
+  - type: references
+    target: sales.obj.core.risk
+    cardinality: zero_or_many
+
+  - type: influences
+    target: sales.obj.core.pricing
+    cardinality: zero_or_one
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: dl.proposal_sent_sets_stage
+      statement: "A proposal has gone out on this deal."
+      status: executable
+      when:
+        - {has_obs: proposal_sent}
+      yields: {confidence_bp: 9200, attribute: stage, value: proposal}
+      evidence_fields: [deal.last_inbound]
+      note: >
+        Not 10000: a pricing sheet and a formal proposal both trip this observation, and only
+        one of them means the buyer has something to sign.
+
+    - id: dl.contract_requested_is_closing
+      statement: "The buyer asked for paper."
+      status: executable
+      when:
+        - {has_obs: contract_requested}
+      yields: {confidence_bp: 9000, attribute: stage, value: closing}
+      note: >
+        The single highest-quality stage signal available. Organisations do not request
+        contracts out of curiosity — legal time is expensive on their side too.
+
+    - id: dl.silence_marks_stall
+      statement: "Open deal, no buyer-side inbound for three weeks."
+      status: executable
+      when:
+        - {path: deal.status, op: "=", value: open}
+        - {fn: days_since, path: deal.last_inbound, op: ">=", value: 21}
+      yields: {confidence_bp: 8500, attribute: is_stalled, value: true}
+      evidence_fields: [deal.last_inbound]
+      note: >
+        Twenty-one days is a fixed floor rather than a cadence multiple on purpose. Cadence
+        baselines are per-thread; a deal that never had a rhythm has no baseline to fall
+        below, and those are precisely the deals that die quietly.
+
+    - id: dl.crm_stage_is_authoritative
+      statement: "The CRM records an explicit pipeline stage for this deal."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: stage}
+      requires_signals:
+        - {kind: fact_path, name: crm.deal.stage, owner_layer: L1, note: "deal.status is projected but is\
+            only open/won/lost. The stage a seller actually manages the deal by is not projected at all, so
+            every stage above is reconstructed from observations that were never designed to carry it."}
+
+    - id: dl.won_on_signature
+      statement: "A contract was executed."
+      status: needs_signal
+      yields: {confidence_bp: 10000, attribute: deal_status, value: won}
+      requires_signals:
+        - {kind: obs_kind, name: contract_signed, owner_layer: L2, note: "L2 emits contract_requested and\
+            never contract_signed. The system can see a deal reach for paper and cannot see it close."}
+
+    - id: dl.loss_reason_recorded
+      statement: "A structured loss reason exists on the closed deal."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: loss_reason}
+      requires_signals:
+        - {kind: fact_path, name: crm.deal.loss_reason, owner_layer: L1, note: "Without it, Layer 6 cannot\
+            separate a qualification failure from a positioning failure, and every loss is coached the same
+            way."}
+
+  heuristic:
+
+    - id: dl.verbal_yes_without_paper
+      statement: "A verbal yes was given and nobody has asked for the contract."
+      status: executable
+      when:
+        - {has_obs: verbal_yes}
+        - {no_obs: contract_requested}
+      yields: {confidence_bp: 7500, attribute: is_stalled, value: true}
+      evidence_fields: [thread.ball_in_court]
+      note: >
+        The most over-forecast state in sales. A yes that has not moved to paper is a yes from
+        someone who cannot sign, or a yes given to end a meeting. Both look identical in a
+        pipeline report and both slip a quarter.
+
+    - id: dl.momentum_collapse_after_proposal
+      statement: "Proposal sent, and momentum has fallen away since."
+      status: executable
+      when:
+        - {has_obs: proposal_sent}
+        - {path: derived.momentum, op: "<=", value: 0.4}
+      yields: {confidence_bp: 7800, attribute: health_state, value: at_risk}
+      evidence_fields: [derived.momentum, deal.last_inbound]
+      note: >
+        Going quiet after a proposal is almost never diary congestion. It is an internal
+        conversation we are not in, and the correct response is to arm the champion rather
+        than to chase the buyer.
+
+    - id: dl.bake_off_not_negotiation
+      statement: "A competitor is named and discount pressure is running at the same time."
+      status: executable
+      when:
+        - {has_obs: competitor}
+        - {has_obs: discount_pressure}
+      yields: {confidence_bp: 7200, attribute: competitor_present, value: true}
+      note: >
+        Reads backwards to most reps. This combination is a bake-off, not a negotiation, and
+        conceding price buys nothing — the other vendor will match whatever we give. The
+        move is to change the comparison, not the number.
+
+    - id: dl.self_inflicted_stall
+      statement: "The ball has sat in our court while the deal went quiet."
+      status: executable
+      when:
+        - {neighbor_fact: thread.ball_in_court, op: "=", value: us}
+        - {fn: days_since, path: deal.last_inbound, op: ">=", value: 7}
+      yields: {confidence_bp: 6800, attribute: is_stalled, value: true}
+      evidence_fields: [thread.ball_in_court]
+      note: >
+        The cheapest stall to fix and the least reported. The CRM note will say the buyer went
+        quiet; the graph says we owe them something.
+
+    - id: dl.single_threaded_open_deal
+      statement: "Exactly one human contact on a live deal."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: is_single_threaded, value: true}
+      requires_signals:
+        - {kind: derived, name: derived.deal_contact_count, owner_layer: L2, note: "fn:edge_count is raw\
+            graph degree — threads, meetings and commitments all count — so a busy single-threaded deal looks
+            well covered and a quiet three-contact deal looks single-threaded. Distinct human contacts on
+            the buying side is the number every enterprise risk model needs and nothing emits it."}
+
+    - id: dl.repeated_close_date_slip
+      statement: "The close date has moved outward more than once."
+      status: needs_signal
+      yields: {confidence_bp: 8200, attribute: health_state, value: critical}
+      requires_signals:
+        - {kind: derived, name: derived.close_date_slip_count, owner_layer: L2, note: "timeline_slip fires\
+            on language in a thread, which catches the buyer saying it and misses the rep quietly editing
+            the date. Slip counted from the record itself is the more honest of the two and does not exist."}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: buyer-side inbound and reply latency, path: deal.last_inbound}
+  - {source: email, signal: who owes whom the next move, path: thread.ball_in_court}
+  - {source: derived, signal: trajectory over the last fortnight, path: derived.momentum}
+  - {source: derived, signal: two-way volume against prior fortnight, path: derived.engagement}
+  - {source: derived, signal: observation balance, path: derived.sentiment}
+  - {source: crm, signal: "stage, amount, close date, loss reason", description: "Only amount and a coarse\
+      open/won/lost status are projected today."}
+  - {source: calendar, signal: meeting cadence and attendance breadth, path: meeting.start_at}
+  - {source: meeting_transcript, signal: "stated timelines, decision process, competitor mentions"}
+  - {source: contract, signal: executed value and signature date}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: deal_health_bp, type: integer, description: "Synthesised health, basis points. The number a\
+      deal review should open with.", consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: forecast_eligibility, type: string, description: "Highest forecast_category this deal's evidence\
+      supports, which is often below the one the rep entered.", consumed_by: [L4.decision_maker]}
+  - {name: stall_reason, type: string, description: "Whether the stall is ours, theirs, or mutual. Determines\
+      who gets the next action.", consumed_by: [L5.execution_planning]}
+  - {name: close_date_confidence_bp, type: integer, description: "Confidence in the stated close date,\
+      discounted by slip history.", consumed_by: [L4.reasoning_unit]}
+  - {name: coverage_gaps, type: list, description: "Which required objects — budget, champion, committee\
+      — are unattached.", consumed_by: [L4.reasoning_unit, L5.execution_planning]}
+  - {name: outcome_record, type: string, description: "Won or lost with reason, for calibration.", consumed_by: [
+      L6.learning_unit]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: dl.no_won_without_paper, statement: "deal_status may not be won without an executed contract.",
+      hard: true}
+  - {id: dl.no_commit_when_single_threaded, statement: "forecast_category may not be commit while is_single_threaded\
+      is true.", hard: true}
+  - {id: dl.no_commit_without_budget, statement: "forecast_category may not be commit while budget_ref\
+      is unattached or its state is unknown. Unknown fails closed.", hard: true}
+  - {id: dl.close_date_bounded_by_process, statement: "expected_close_date cannot precede the buyer's\
+      known legal and procurement duration.", hard: true}
+  - {id: dl.one_deal_per_opportunity, statement: "An opportunity may produce at most one open deal at\
+      a time.", hard: true}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: dl.commitment_makes_the_deal
+    statement: >
+      A record may not be created as a Deal until the buyer has accepted a dated next step.
+      Without that test the boundary with Opportunity is a matter of rep optimism and the
+      pipeline stops meaning anything.
+    then: reject_conversion
+    severity: blocking
+
+  - id: dl.verbal_yes_is_not_won
+    statement: A verbal yes may not move deal_status to won. Only executed paper closes a deal.
+    when: [has_obs: verbal_yes]
+    then: block_status_won
+    severity: blocking
+
+  - id: dl.dormant_leaves_committed_forecast
+    statement: >
+      An open deal with no buyer-side inbound for thirty days must leave the committed
+      forecast in the same pass, not at the next review. A stale commit discovered at
+      quarter-end is a missed quarter.
+    when:
+      - {path: deal.status, op: "=", value: open}
+      - {fn: days_since, path: deal.last_inbound, op: ">=", value: 30}
+    then: remove_from_committed_forecast
+    severity: blocking
+
+  - id: dl.second_slip_forces_requalification
+    statement: >
+      Two outward moves of expected_close_date require re-qualification before the deal may
+      re-enter commit. Two slips are never a timing problem; something in the deal is untrue.
+    then: require_requalification
+    severity: warning
+
+  - id: dl.single_threaded_cannot_commit
+    statement: An open deal with one contact may sit in best_case but never in commit, whatever its
+      stage.
+    when: [{path: deal.status, op: "=", value: open}]
+    then: cap_forecast_category_at_best_case
+    severity: warning
+
+  - id: dl.value_is_our_number
+    statement: >
+      deal.value is what we proposed and must never be read as the buyer's budget. Any rule
+      that treats it as budget evidence is inflating the forecast by construction.
+    severity: advisory
+
+# ── 8 · Decision Factors — advisory inputs to Layer 4, never a decision ──────────────────
+decision_factors:
+
+  - name: momentum_direction
+    weight_bp: 2500
+    direction: context
+    description: >
+      The largest weight, and deliberately `context` rather than `increases` — a deal
+      accelerating towards a competitor's paper is moving fast in the wrong direction.
+    reads: [momentum, engagement, last_inbound_at, ball_in_court]
+
+  - name: stage_progression
+    weight_bp: 2000
+    direction: increases
+    description: Stage advanced by buyer action, not by rep edit. Time in stage matters more than the
+      stage.
+    reads: [stage, created_at, forecast_category]
+
+  - name: threading_breadth
+    weight_bp: 1500
+    direction: increases
+    reads: [contact_count, is_single_threaded, champion_ref]
+
+  - name: commercial_certainty
+    weight_bp: 1500
+    direction: increases
+    reads: [value, budget_ref, win_probability_bp]
+
+  - name: timing_credibility
+    weight_bp: 1500
+    direction: context
+    description: A close date that has already moved twice is data about the rep, not about the buyer.
+    reads: [expected_close_date, original_close_date, close_date_slips]
+
+  - name: competitive_pressure
+    weight_bp: 1000
+    direction: decreases
+    reads: [competitor_present, sentiment]
+
+# ── 9 · Inference Patterns ⭐ ─────────────────────────────────────────────────────────────
+#
+# ANDed within a pattern. There is no OR — alternatives are separate patterns, because that
+# is exactly how the engine evaluates them.
+evidence:
+  - {source: contract, strength_bp: 10000, description: "Executed paper. Ends every argument about stage,\
+      value and outcome at once."}
+  - {source: email, strength_bp: 8000, description: "Buyer-side written commitment to a step or a date."}
+  - {source: crm, strength_bp: 7000, description: "Stage and amount. Authoritative in form, frequently\
+      aspirational in content — someone edited it to survive a pipeline review."}
+  - {source: meeting_transcript, strength_bp: 7500, description: "Buyer stating process, timeline or competitor.\
+      Better than the CRM because nobody was optimising it."}
+  - {source: calendar, strength_bp: 5500, description: "Meeting cadence and who attends. Circumstantial,\
+      but attendance breadth is hard to fake."}
+  - {source: derived, strength_bp: 4500, description: "Momentum and engagement. Corroborating only — never\
+      grounds on its own to move a forecast."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: win_rate, unit: percent, description: "By deal_type. A blended win rate hides that renewals\
+      carry the number.", owner_layer: L6}
+  - {name: average_cycle_days, unit: days, description: "Created to closed. Measured from conversion,\
+      not from first contact.", owner_layer: L6}
+  - {name: slip_rate, unit: percent, description: "Share of deals whose close date moved at least once.\
+      The honest measure of forecast quality.", owner_layer: L6}
+  - {name: stall_recovery_rate, unit: percent, description: "Share of stalled deals that resume. Determines\
+      whether a stall should trigger a nudge or a close-out.", owner_layer: L6}
+  - {name: single_threaded_loss_rate, unit: percent, description: "Loss rate of single-threaded deals\
+      against multi-threaded. The evidence for dl.no_commit_when_single_threaded.", owner_layer: L6}
+  - {name: forecast_accuracy, unit: percent, description: "Committed value against closed value, by rep\
+      and by quarter.", owner_layer: L6}
+  - {name: no_decision_share, unit: percent, description: "Losses coded no_decision. If this is near zero\
+      the loss reasons are not being recorded honestly.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: dl.created, name: Deal Created, payload: [origin_opportunity_ref, value, expected_close_date],
+    description: "Emitted at conversion from an opportunity, never at first contact. The distinction is
+      what makes pipeline creation measurable."}
+  - {id: dl.stage_advanced, name: Stage Advanced, emitted_when: [has_obs: proposal_sent], payload: [
+        stage, days_in_previous_stage]}
+  - {id: dl.went_quiet, name: Deal Went Quiet, emitted_when: [{fn: days_since, path: deal.last_inbound,
+        op: ">=", value: 21}], payload: [last_inbound_at, ball_in_court]}
+  - {id: dl.momentum_lost, name: Momentum Lost, emitted_when: [{path: derived.momentum, op: "<=", value:
+          0.4}], payload: [momentum, engagement]}
+  - {id: dl.competitor_entered, name: Competitor Entered, emitted_when: [has_obs: competitor],
+      payload: [competitor_present, stage]}
+  - {id: dl.close_date_slipped, name: Close Date Slipped, emitted_when: [has_obs: timeline_slip],
+      payload: [original_close_date, expected_close_date, close_date_slips], description: "The event most
+      worth surfacing to a manager and least worth surfacing to the rep, who already knows."}
+  - {id: dl.closed, name: Deal Closed, payload: [deal_status, value, loss_reason]}
+
+# ── 13 · Actions — naming one here does not authorise it ─────────────────────────────────
+actions:
+  - {id: dl.requalify, name: Re-qualify the deal, actor: human, effect: "Re-run money, authority and urgency.\
+      The correct response to a second slip, and the one reps skip because it risks losing the deal from
+      the forecast."}
+  - {id: dl.multithread, name: Open a second contact, actor: human, effect: "Reduce single-threading.\
+      Cheapest risk reduction available on an enterprise deal."}
+  - {id: dl.arm_the_champion, name: Brief the champion for the internal conversation, actor: human, preconditions: [
+      has_obs: proposal_sent], effect: "Correct move when the deal goes quiet after a proposal. The decision
+      is being made in a room we are not in."}
+  - {id: dl.confirm_next_step, name: Secure a dated next step, actor: human, effect: "The single action\
+      that separates a deal from an opportunity. Without a date the deal reverts."}
+  - {id: dl.escalate_to_manager, name: Escalate for a deal review, actor: human, preconditions: [{fn: days_since,
+        path: deal.last_inbound, op: ">=", value: 21}]}
+  - {id: dl.close_out, name: Close the deal out as lost, actor: human, effect: "Recording a loss early\
+      is free and recording it late costs a quarter of forecast credibility."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Enterprise new-business deal, six contacts, legal in review", note: "The healthy shape. Slow,\
+      wide, and boring — which is what a deal that closes looks like."}
+  - {label: "Verbal yes given eight weeks ago, no contract requested", note: "Sits in commit at 90% in\
+      every CRM in the world. is_stalled is true and the yes came from someone who cannot sign."}
+  - {label: "Opportunity carried in the pipeline as a deal", note: "THE classic misclassification. A discovery\
+      call happened, nobody agreed a next step, and the record was promoted because the quarter needed coverage.
+      Everything downstream — forecast, capacity, quota — is now wrong by the size of this deal."}
+  - {label: "Renewal that went quiet", note: "Reads as a low-effort deal and is actually a churn event.\
+      deal_type is what makes silence mean the opposite of what it usually means."}
+  - {label: "Deal accelerating with a competitor named and discount pressure running", note: "High momentum,\
+      falling health. This is why momentum_direction is weighted `context` and not `increases`."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Twelve patterns: seven executable, five needs_signal. The executable share is unusually
+    high and should not be read as a target for other objects — every fact path the engine
+    emits is deal- or thread-scoped, so this object is the one the substrate was built
+    around. The highest-value gap is crm.deal.stage: deal.status is only open/won/lost, so
+    the pipeline stage a seller actually manages the deal by is reconstructed from
+    observations that were never designed to carry it, and every stage-dependent rule
+    downstream inherits that guess. contract_signed is a close second — the system can watch
+    a deal reach for paper and cannot watch it close.

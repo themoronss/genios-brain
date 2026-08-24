@@ -1,0 +1,106 @@
+# Consulting — offering type under customer_support.offering.service.
+#
+# INHERITANCE: declares only what DIFFERS from the parent. Resolution is type -> family ->
+# canonical.
+
+identity:
+  id: customer_support.offering.service.consulting
+  name: Consulting
+  kind: offering_type
+  domain: customer_support
+  parent: customer_support.offering.service
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Advice as the deliverable. The client is buying judgement, analysis and recommendation rather
+  than a built artefact, and the structural consequence for support is severe: there is very
+  often no system to break. Most of what a support function does — reproduce, diagnose, fix,
+  verify — assumes a thing that is malfunctioning, and consulting frequently has none.
+  What arrives instead is disagreement. The client disputes a finding, wants the analysis
+  re-run against different assumptions, or believes the recommendation does not fit their
+  situation. That is not a defect and it is not a change request; it is an intellectual
+  disagreement between a client and the person they hired for their opinion, and no triage
+  taxonomy built for tickets handles it. Treating it as a defect ("we will investigate") is
+  worse than useless, because it implies the finding was an error rather than a judgement.
+  The second fact is that the deliverable's correctness is contested and frequently unfalsifiable
+  in the timeframe. A recommendation is right or wrong over quarters, so satisfaction detaches
+  entirely from outcome and attaches to the relationship, the clarity of the reasoning and
+  whether the client felt heard. That makes sentiment, not resolution, the primary reading.
+  Because of all this, consulting is the type where a support function is smallest and most
+  likely to be an anti-pattern: routing a partner's client into a ticket queue is itself the
+  failure. Support here mostly means keeping commitments and noticing relationships going wrong
+  early, which is why the capabilities emphasised below are almost entirely relational.
+
+characteristics:
+  delivery: "analysis, recommendation and advice, delivered by named senior people whose judgement is the product"
+  pricing_shape: "time and materials, day rate, or fixed fee per engagement — priced on the seniority of who does the thinking"
+  margin_profile: "highest gross margin in the service family and entirely dependent on utilisation of a small number of expensive people"
+  post_sale_load: "low in volume and high in seniority. Few contacts, each of which usually requires the person who did the original work"
+  support_load: "sparse, unpredictable and non-delegable. Contacts cluster around delivery of findings and around the moments the client tries to act on them"
+  resolution_locus: "a human rethinking, re-explaining or defending a judgement. There is no artefact to change and frequently nothing that can be called a fix"
+  notes: >
+    The most useful question at intake is whether the contact is a misunderstanding, a
+    disagreement or a scope request. All three arrive phrased identically and the correct
+    responses are, respectively, explain, discuss, and price.
+
+capabilities:
+  deactivates:
+    # There is no reusable artefact and no recurring question, so these have nothing to point at.
+    # Authoring knowledge about one client's strategy is not knowledge, it is a leak.
+    - customer_support.knowledge_and_deflection.knowledge_authoring
+    - customer_support.knowledge_and_deflection.macro_management
+    - customer_support.knowledge_and_deflection.content_gap_analysis
+    # Nothing recurs across clients often enough for aggregate defect analysis to have a subject.
+    - customer_support.voice_of_customer.product_feedback_routing
+  emphasises:
+    # Support here is relationship maintenance with a ticket system attached.
+    - customer_support.support_management.account_relationship_management
+    - customer_support.voice_of_customer.sentiment_analysis
+    - customer_support.voice_of_customer.churn_signal_detection
+    # Disagreement, not malfunction, is the dominant contact class.
+    - customer_support.customer_communication.de_escalation
+    - customer_support.customer_communication.expectation_setting
+    # The promises made by a named partner are the whole of what is trackable here.
+    - customer_support.entitlement_and_sla.commitment_tracking
+    - customer_support.escalation_and_incident.executive_escalation
+
+objects:
+  extends:
+    - object: customer_support.obj.core.customer_sentiment
+      require_properties: [trajectory, public_exposure]
+      note: >
+        Sentiment is the primary reading in this type because outcome is unfalsifiable in the
+        timeframe. A client who disagrees with a finding and is engaged is healthy; one who has
+        stopped arguing has usually stopped listening, and the trajectory is the only thing that
+        separates them.
+    - object: customer_support.obj.core.commitment
+      require_properties: [promised_at, due_at, owner_ref]
+      note: >
+        With no artefact and no SLA, the commitment is very nearly the only objective obligation
+        in the engagement. Missing one here is disproportionately damaging precisely because
+        there is nothing else to be measured on.
+    - object: customer_support.obj.core.escalation
+      require_properties: [origin, escalation_owner_ref]
+      note: >
+        Escalation in consulting is almost always partner-to-partner rather than tier-to-tier.
+        The correct receiver is the person with the relationship, not the person with deeper
+        technical expertise, and routing it as a technical escalation reads to the client as
+        being handed off.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Four deactivations makes this the thinnest branch in the library, and that is the honest
+    reading rather than an unfinished one: consulting is the offering where a support function is
+    least applicable, and a file that pretended otherwise would be inventing structure to look
+    complete. The claim worth arguing with is deactivating knowledge_authoring — large firms do
+    build genuine reusable methodology assets. The counterargument is that those are practice
+    development, authored by the practice for its own consultants, and running them through a
+    support knowledge programme mislabels who owns them.

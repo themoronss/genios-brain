@@ -1,0 +1,30 @@
+# Load-set for customer_support.support_operations.support_analytics — REFERENCES ONLY,
+# never an inline object.
+#
+# core   -> objects/core/     loaded by more than one capability
+# scoped -> objects/<capability>/     loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.support_operations.support_analytics
+
+core:
+  # Deliberately a thin required pair. Ticket is the unit of record and backlog is the only
+  # thing that stops a report being a flattering snapshot of what was closed. Everything else
+  # about support measurement is a join onto these two.
+  required:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.backlog
+  # Each optional here exists to catch the abuse of a headline number: satisfaction_score
+  # against throughput, sla_target against speed, queue against the all-company average that
+  # describes nobody, resolution against closures that did not resolve anything.
+  optional:
+    - customer_support.obj.core.satisfaction_score
+    - customer_support.obj.core.sla_target
+    - customer_support.obj.core.queue
+    - customer_support.obj.core.resolution
+
+scoped:
+  required: []
+  optional: []

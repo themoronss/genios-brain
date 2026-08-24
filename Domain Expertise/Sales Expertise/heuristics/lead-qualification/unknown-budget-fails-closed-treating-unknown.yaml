@@ -1,0 +1,26 @@
+identity:
+  id: sales.heu.lead_qualification.unknown_budget_fails_closed_treating_unknown
+  name: '`Unknown` budget fails closed. Treating unknown as present is the larg…'
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.lead_qualification
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: '`Unknown` budget fails closed. Treating unknown as present is the largest single source
+    of forecast inflation.'
+heuristic:
+  statement: '`Unknown` budget fails closed. Treating unknown as present is the largest single source
+    of forecast inflation.'
+  why: UNAUTHORED — the reasoning was not captured when this was an inline string.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.qualification.lead_qualification. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

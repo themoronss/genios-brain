@@ -1,0 +1,51 @@
+# Knowledge manifest — references the definition pages whose identity.owner_capability
+# names this capability. Auto-linked from the pages' own declarations: the pages were
+# written and the index never was, so the engine opened an empty list above a full shelf.
+capability: customer_support.support_operations.queue_management
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.queue_management.cap_open_work_per_agent
+  - customer_support.pb.queue_management.declare_the_degradation
+  - customer_support.pb.queue_management.find_the_cause_before_the_capacity
+  - customer_support.pb.queue_management.handover_by_exception
+  - customer_support.pb.queue_management.oldest_end_sweep
+  - customer_support.pb.queue_management.publish_the_selection_order
+  - customer_support.pb.queue_management.read_the_queue_as_rates
+  - customer_support.pb.queue_management.split_by_service_time
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.queue_management.age_over_size
+  - customer_support.heu.queue_management.burstiness_over_volume
+  - customer_support.heu.queue_management.composition_is_a_product_report
+  - customer_support.heu.queue_management.everything_improving_is_a_warning
+  - customer_support.heu.queue_management.first_response_and_resolution_trade
+  - customer_support.heu.queue_management.named_owner_or_landfill
+  - customer_support.heu.queue_management.nearly_full_is_not_nearly_fine
+  - customer_support.heu.queue_management.oldest_is_most_expensive
+  - customer_support.heu.queue_management.one_cause_not_many_customers
+  - customer_support.heu.queue_management.reopens_are_a_queue_metric
+  - customer_support.heu.queue_management.unstated_order_is_an_order
+  - customer_support.heu.queue_management.waiting_on_customer_is_a_promise
+mental_models:
+  core: []
+  scoped:
+  - customer_support.mm.queue_management.queue_as_rate_mismatch
+  - customer_support.mm.queue_management.queue_as_sample_of_the_product
+  - customer_support.mm.queue_management.the_tail_is_the_product
+  - customer_support.mm.queue_management.two_clocks
+  - customer_support.mm.queue_management.utilisation_buys_throughput_sells_resilience
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped:
+  - customer_support.df.queue_management.class_of_service
+  - customer_support.df.queue_management.erlang_style_staffing
+  - customer_support.df.queue_management.littles_law
+  - customer_support.df.queue_management.selection_orders_and_their_casualties
+  - customer_support.df.queue_management.theory_of_constraints
+  - customer_support.df.queue_management.utilisation_curve
+  - customer_support.df.queue_management.wip_limits

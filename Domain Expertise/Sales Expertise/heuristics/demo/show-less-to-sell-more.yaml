@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.demo.show_less_to_sell_more
+  name: Show less to sell more
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.demo
+  subdomain: discovery_and_solution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every feature shown beyond the buyer's needs adds surface for confusion and price anxiety,
+    not desire. The demo that closes is remembered as 'it does exactly what we need' — a memory long feature-tours
+    cannot produce.
+  answers:
+  - How much of the product should a demo show?

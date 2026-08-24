@@ -1,0 +1,1514 @@
+identity:
+  id: admin.obj.attendance_and_leave.leave_request
+  scope: capability
+  name: Leave Request
+  domain: admin
+  subdomain: people_administration
+  owner_capability: admin.people_administration.attendance_and_leave
+  version: 1.0.0
+  status: draft
+  aliases:
+    - Absence Request
+    - Time-Off Request
+    - Holiday Booking
+    - PTO Request
+
+purpose:
+  statement: >
+    One person's request to be absent for a stated period under a stated category, and everything
+    that flows from it: whether the organisation may lawfully refuse, what balance it consumes, what
+    evidence it requires, what it costs in pay, and who covers the work. The request is
+    administrative in appearance and legal in substance — the same fifteen-minute form produces a
+    discretionary business decision under one category and an unlawful act under another, and the
+    form does not tell the approver which one they are in.
+  discriminator: >
+    The CATEGORY, not the absence. Annual leave, sickness, statutory parental leave, jury service,
+    bereavement and unpaid leave differ in who may refuse, what evidence is required, how pay is
+    treated, whether the balance is consumed, and whether an approval step lawfully exists at all.
+    An approval workflow that treats them identically is not simplifying — it is quietly asserting
+    that a manager may decline maternity leave for coverage reasons, and it will do so without
+    anybody noticing until it matters.
+  answers:
+    - What kind of absence is this, and may we lawfully refuse it?
+    - Is there entitlement left, and does this category consume any?
+    - What evidence is required, and by when?
+    - Who covers the work, and what did we promise anyone during that window?
+    - Is this person's absence pattern one the organisation should be paying attention to?
+  not:
+    - >
+      NOT an out-of-office. An out-of-office is a notification produced downstream by an approved
+      absence. Treating the notification as the record is why absence data is always shorter than
+      reality.
+    - >
+      NOT a calendar entry. The calendar is a consequence, and it is the one artefact most
+      organisations rely on — which is why leave taken but never booked is invisible and leave
+      booked but never taken sits on the balance sheet unnoticed.
+    - >
+      NOT an approval. `admin.obj.core.approval` is the decision step, and for several categories
+      here it does not lawfully exist. This object carries the request, the entitlement, the
+      evidence and the coverage; the approval is one attribute of it, sometimes absent by law.
+    - >
+      NOT an absence record. This is the forward-looking request. What it becomes afterwards —
+      taken, cancelled, converted to sickness mid-holiday — is the record, and the two diverge
+      often enough that conflating them corrupts every absence statistic downstream.
+
+attributes:
+
+  - name: classification
+    purpose: What kind of absence this is, which decides almost everything else.
+    type: composite
+    contains: [category, statutory_basis, jurisdiction, refusable, consumes_entitlement, paid_status]
+
+  - name: period
+    purpose: When, and how much.
+    type: composite
+    contains: [start_at, end_at, working_days, part_day, half_day_slot, notice_given_days,
+               notice_required_days, notice_sufficient]
+
+  - name: requester
+    purpose: Who is asking, and under which contract.
+    type: composite
+    contains: [requester_ref, employment_basis, working_pattern, contracted_days_per_week,
+               continuous_service_months]
+
+  - name: entitlement
+    purpose: Whether there is any left, and what happens to what is not used.
+    type: composite
+    contains: [entitlement_days_annual, taken_days, booked_days, remaining_days,
+               carry_over_days, carry_over_expires_at, accrual_to_date, would_exceed_entitlement]
+
+  - name: decision
+    purpose: The approval half — where one lawfully exists.
+    type: composite
+    contains: [state, approval_ref, decided_by_ref, decided_at, decision_reason,
+               refusal_ground, counter_notice_served]
+
+  - name: evidence
+    purpose: What must be produced, and whether it has been.
+    type: composite
+    contains: [evidence_required, evidence_type, evidence_received_at, evidence_due_at,
+               self_certified, evidence_overdue]
+
+  - name: coverage
+    purpose: Who does the work. The real reason requests are refused and the thing least often recorded.
+    type: composite
+    contains: [cover_ref, cover_confirmed, coverage_gap, clashing_absence_count,
+               commitments_in_window, delegation_ref]
+
+  - name: pattern
+    purpose: Whether this absence, in context, is something the organisation should look at.
+    type: composite
+    contains: [absence_occasions_12m, absence_days_12m, bradford_factor, trigger_breached,
+               return_to_work_due]
+
+  - name: category
+    purpose: The absence category as the policy and the law name it.
+    type: value
+    data_type: enum
+    allowed_values: [annual_leave, sickness, statutory_parental, compassionate_bereavement,
+                     jury_or_public_duty, unpaid, study, sabbatical, time_off_in_lieu,
+                     medical_appointment, dependant_emergency, other]
+    required: true
+    description: >
+      The load-bearing field on this object. Each member carries a different answer to "may we
+      refuse", "does it consume balance", "what evidence" and "how is it paid" — and no two of those
+      four answers are correlated, which is why a single generic workflow gets at least one of them
+      wrong for every category it touches.
+
+  - name: statutory_basis
+    purpose: The instrument that creates the right, where one does.
+    type: value
+    data_type: string
+    description: >
+      Recorded as free text because it varies by jurisdiction and changes. Its presence is what
+      turns `refusable` from an opinion into a citation, and it is the field an employment tribunal
+      asks about first.
+
+  - name: jurisdiction
+    purpose: The legal jurisdiction whose rules apply to this request.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      Not the office location — the employment jurisdiction. A multi-entity group cannot run one
+      leave policy, and the single most common administrative error in an international organisation
+      is applying the head-office entitlement rules to everybody.
+
+  - name: refusable
+    purpose: Whether the organisation may lawfully decline this request at all.
+    type: derived
+    data_type: enum
+    allowed_values: [discretionary, refusable_with_counter_notice, deferrable_only, not_refusable]
+    derived_from: [category, statutory_basis, jurisdiction]
+    description: >
+      Four states, not two. Annual leave is discretionary. Some jurisdictions allow refusal only by
+      serving a counter-notice of a defined length. Statutory parental leave is typically deferrable
+      in narrow circumstances and not otherwise. Jury service is not refusable at all. Collapsing
+      these into "approve/reject" is the defect this object exists to prevent.
+
+  - name: consumes_entitlement
+    purpose: Whether the absence draws down the annual balance.
+    type: derived
+    data_type: boolean
+    derived_from: [category, jurisdiction]
+    description: >
+      Sickness generally does not, and in several jurisdictions annual leave continues to accrue
+      during it — which is why long-term sickness produces a large untaken balance that surprises
+      everyone at the point of termination.
+
+  - name: paid_status
+    purpose: How the absence is treated in pay.
+    type: value
+    data_type: enum
+    allowed_values: [full_pay, statutory_rate, partial, unpaid, unknown]
+    default: unknown
+    description: >
+      Feeds payroll input directly and has a cut-off that does not move. A category resolved after
+      the payroll deadline is a correction next month, visible to the employee.
+
+  - name: start_at
+    purpose: First day of absence.
+    type: value
+    data_type: timestamp
+    required: true
+    source_paths: [meeting.start_at]
+    description: >
+      `meeting.start_at` is the nearest live substrate path and is a poor proxy — it is populated
+      only when the absence has been mirrored into a calendar, which is exactly the case where the
+      request was already recorded properly.
+
+  - name: end_at
+    purpose: Last day of absence.
+    type: value
+    data_type: timestamp
+    required: true
+
+  - name: working_days
+    purpose: How much is actually being consumed, in working days.
+    type: derived
+    data_type: number
+    unit: days
+    derived_from: [start_at, end_at, working_pattern, contracted_days_per_week]
+    description: >
+      Calendar span is not the answer. Part-time patterns, public holidays and shift rotas all sit
+      between the two dates and the balance, and getting this wrong is the commonest source of
+      leave-balance disputes.
+
+  - name: part_day
+    purpose: Whether this is a partial-day absence.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: half_day_slot
+    purpose: Which half, when the absence is partial.
+    type: value
+    data_type: enum
+    allowed_values: [morning, afternoon, not_applicable]
+    default: not_applicable
+
+  - name: notice_given_days
+    purpose: How much warning was given.
+    type: derived
+    data_type: integer
+    unit: days
+    derived_from: [start_at]
+
+  - name: notice_required_days
+    purpose: How much warning the policy or the statute requires.
+    type: value
+    data_type: integer
+    unit: days
+    description: >
+      In several jurisdictions the statutory default is twice the length of the leave requested.
+      Policies routinely state a flat number that is shorter, which is unenforceable in the
+      direction that matters.
+
+  - name: notice_sufficient
+    purpose: Whether notice met the requirement.
+    type: derived
+    data_type: boolean
+    derived_from: [notice_given_days, notice_required_days, category]
+
+  - name: requester_ref
+    purpose: Who is asking.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.employee_record
+    required: true
+
+  - name: employment_basis
+    purpose: The contractual basis, which changes entitlement entirely.
+    type: value
+    data_type: enum
+    allowed_values: [permanent, fixed_term, part_time, casual, agency, contractor, apprentice]
+    default: permanent
+    description: >
+      Casual and agency workers accrue leave in most jurisdictions and are the population most often
+      administered as though they do not.
+
+  - name: working_pattern
+    purpose: Which days the person actually works.
+    type: value
+    data_type: string
+    description: >
+      Free text on purpose — compressed hours, annualised hours, rotating shifts and term-time-only
+      patterns do not fit an enum, and every one of them breaks a naive day-count.
+
+  - name: contracted_days_per_week
+    purpose: The divisor for pro-rata entitlement.
+    type: value
+    data_type: number
+
+  - name: continuous_service_months
+    purpose: Length of service, which gates several statutory rights.
+    type: value
+    data_type: integer
+    unit: months
+
+  - name: entitlement_days_annual
+    purpose: Full-year entitlement for this person.
+    type: value
+    data_type: number
+    unit: days
+
+  - name: taken_days
+    purpose: Days already taken this leave year.
+    type: value
+    data_type: number
+    unit: days
+
+  - name: booked_days
+    purpose: Days approved but not yet taken.
+    type: value
+    data_type: number
+    unit: days
+    description: >
+      The number that is a liability rather than a statistic. Approved-and-untaken leave is an
+      accrued cost under IAS 19 and is carried by almost every organisation without being reported.
+
+  - name: remaining_days
+    purpose: What is genuinely left.
+    type: derived
+    data_type: number
+    unit: days
+    derived_from: [entitlement_days_annual, taken_days, booked_days, carry_over_days]
+
+  - name: carry_over_days
+    purpose: Days brought forward from the previous year.
+    type: value
+    data_type: number
+    unit: days
+
+  - name: carry_over_expires_at
+    purpose: When carried-over days lapse.
+    type: value
+    data_type: timestamp
+    description: >
+      A deadline with a financial consequence and no owner. Nobody is accountable for an employee
+      losing five days, so nothing warns them, and the resulting December scramble is a coverage
+      problem the organisation created for itself in January.
+
+  - name: accrual_to_date
+    purpose: Entitlement accrued so far this year, for a mid-year leaver calculation.
+    type: derived
+    data_type: number
+    unit: days
+    derived_from: [entitlement_days_annual, continuous_service_months]
+
+  - name: would_exceed_entitlement
+    purpose: Whether granting this takes the balance negative.
+    type: derived
+    data_type: boolean
+    derived_from: [remaining_days, working_days]
+
+  - name: state
+    purpose: Where the request is.
+    type: value
+    data_type: enum
+    allowed_values: [draft, submitted, pending_approval, approved, rejected, cancelled, taken,
+                     overdue, expired]
+    default: draft
+
+  - name: approval_ref
+    purpose: The approval record, where the category admits of one.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approval
+
+  - name: decided_by_ref
+    purpose: Who decided.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.approver
+
+  - name: decided_at
+    purpose: When the decision was made.
+    type: value
+    data_type: timestamp
+
+  - name: decision_reason
+    purpose: Why, in the decider's words.
+    type: value
+    data_type: string
+
+  - name: refusal_ground
+    purpose: The ground relied on, where a request was refused.
+    type: value
+    data_type: enum
+    allowed_values: [coverage, notice_insufficient, entitlement_exhausted, blackout_period,
+                     conflicting_absence, not_refused]
+    default: not_refused
+    description: >
+      Recorded as an enum so refusals can be counted by ground. `coverage` dominating the
+      distribution is a resourcing finding, not a leave finding, and it is invisible while refusals
+      are free text.
+
+  - name: counter_notice_served
+    purpose: Whether the formal counter-notice required to refuse was actually served.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Where a jurisdiction permits refusal only by counter-notice of a defined length, a refusal
+      without one is ineffective — the leave stands. Almost no leave system records this at all.
+
+  - name: evidence_required
+    purpose: Whether documentary evidence is needed.
+    type: derived
+    data_type: boolean
+    derived_from: [category, working_days, jurisdiction]
+
+  - name: evidence_type
+    purpose: What kind of evidence.
+    type: value
+    data_type: enum
+    allowed_values: [none, self_certification, fit_note, jury_summons, death_certificate,
+                     appointment_letter, birth_or_matching_certificate, other]
+    default: none
+
+  - name: evidence_received_at
+    purpose: When it arrived.
+    type: value
+    data_type: timestamp
+
+  - name: evidence_due_at
+    purpose: When it must arrive.
+    type: value
+    data_type: timestamp
+
+  - name: self_certified
+    purpose: Whether the absence is within the self-certification window.
+    type: derived
+    data_type: boolean
+    derived_from: [category, working_days, jurisdiction]
+
+  - name: evidence_overdue
+    purpose: Whether required evidence is late.
+    type: derived
+    data_type: boolean
+    derived_from: [evidence_required, evidence_received_at, evidence_due_at]
+
+  - name: cover_ref
+    purpose: Who is covering the work.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.employee_record
+
+  - name: cover_confirmed
+    purpose: Whether the cover has actually agreed.
+    type: value
+    data_type: boolean
+    default: false
+    description: >
+      Named cover who was never asked is the normal case. It looks like a control and provides none,
+      because the first the cover hears of it is a forwarded email on day one.
+
+  - name: coverage_gap
+    purpose: Whether the work is genuinely uncovered.
+    type: derived
+    data_type: boolean
+    derived_from: [cover_ref, cover_confirmed, clashing_absence_count]
+
+  - name: clashing_absence_count
+    purpose: How many others in the same team are absent in this window.
+    type: derived
+    data_type: integer
+    derived_from: [start_at, end_at, requester_ref]
+
+  - name: commitments_in_window
+    purpose: What this person owes someone during the absence.
+    type: derived
+    data_type: integer
+    derived_from: [start_at, end_at, requester_ref]
+    source_paths: [commitment.due_at]
+    description: >
+      The genuinely useful administrative insight this object can produce today: a promise falling
+      due inside an approved absence, visible before the absence starts rather than after it is
+      broken.
+
+  - name: delegation_ref
+    purpose: The approval authority delegated for the absence period.
+    type: reference
+    data_type: ref
+    ref: admin.obj.core.delegate
+    description: >
+      An approver going on leave without a recorded delegate is a single point of failure the
+      organisation created deliberately and did not record.
+
+  - name: absence_occasions_12m
+    purpose: Separate spells of absence in the last twelve months.
+    type: derived
+    data_type: integer
+    derived_from: [requester_ref, category]
+
+  - name: absence_days_12m
+    purpose: Total absence days in the last twelve months.
+    type: derived
+    data_type: number
+    unit: days
+    derived_from: [requester_ref, category, working_days]
+
+  - name: bradford_factor
+    purpose: Occasions squared times total days — the standard short-term absence index.
+    type: derived
+    data_type: integer
+    derived_from: [absence_occasions_12m, absence_days_12m]
+    sensitivity: confidential
+    description: >
+      Weights frequency far above duration, which is the point and also the hazard: it flags a
+      person with a chronic condition or a disability-related pattern as sharply as it flags
+      unreliability, and used as an automatic trigger it walks into a discrimination claim.
+
+  - name: trigger_breached
+    purpose: Whether a policy absence trigger has been reached.
+    type: derived
+    data_type: boolean
+    derived_from: [bradford_factor, absence_occasions_12m]
+    sensitivity: confidential
+
+  - name: return_to_work_due
+    purpose: Whether a return-to-work conversation is outstanding.
+    type: derived
+    data_type: boolean
+    derived_from: [category, end_at]
+    description: >
+      The single most effective absence control there is, and the one most consistently skipped
+      because it is a conversation rather than a form.
+
+states:
+  initial: draft
+  terminal: [taken, cancelled, rejected, expired]
+  values:
+    - name: draft
+      description: Started and not submitted. Frequently where a request dies.
+    - name: submitted
+      description: Lodged, awaiting routing.
+    - name: pending_approval
+      description: >
+        With a decider. For non-refusable categories this state is a notification with a clock, not
+        a gate — and systems that model it as a gate create an unlawful step by accident.
+      implies: A named person owes an answer, and the notice clock is running against the start date.
+    - name: approved
+      description: Granted. Balance is committed even though nothing has been taken.
+      implies: An accrued liability now exists and a coverage obligation now exists.
+    - name: rejected
+      description: >
+        Declined on a recorded ground. Only lawful where `refusable` permits it, and only effective
+        where any required counter-notice was served.
+    - name: cancelled
+      description: Withdrawn before it was taken, by either side. Balance returns.
+    - name: taken
+      description: The absence happened. This is where the request becomes a record.
+    - name: overdue
+      description: >
+        Required evidence is late, or the request is unanswered past the point where the person must
+        make plans.
+      implies: Either pay treatment is unresolved or somebody is about to travel on an unapproved absence.
+    - name: expired
+      description: Start date passed with no decision. The worst ending — nobody chose anything.
+      implies: >
+        The employee either took it anyway or lost it. Both outcomes are the organisation's fault and
+        neither is recorded as such.
+  transitions:
+    - {from: draft, to: submitted}
+    - {from: submitted, to: pending_approval}
+    - {from: pending_approval, to: approved}
+    - {from: pending_approval, to: rejected}
+    - {from: pending_approval, to: overdue}
+    - {from: pending_approval, to: expired}
+    - {from: overdue, to: approved}
+    - {from: overdue, to: rejected}
+    - {from: approved, to: cancelled}
+    - {from: approved, to: taken}
+    - {from: approved, to: overdue}
+    - {from: submitted, to: cancelled}
+
+relationships:
+
+  - type: belongs_to
+    target: admin.obj.core.employee_record
+    direction: outbound
+    cardinality: one
+    weight_bp: 3000
+    confidence_bp: 9000
+    priority: 1
+    evidence: [hris, portal]
+    description: >
+      The entitlement, the working pattern and the service length all resolve through here. Without
+      it the day-count cannot be computed and the request cannot be assessed at all.
+
+  - type: requires
+    target: admin.obj.core.approval
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 1800
+    confidence_bp: 7500
+    priority: 2
+    conditions:
+      - {path: thread.ball_in_court, op: "=", value: them}
+    evidence: [portal, email]
+    description: >
+      `zero_or_one` is doing real work. For jury service and several statutory categories there is no
+      lawful approval step, and modelling one as mandatory is how a system quietly asserts a right the
+      organisation does not have.
+
+  - type: governed_by
+    target: admin.obj.core.policy
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1400
+    confidence_bp: 8000
+    priority: 3
+    evidence: [document, portal]
+    description: The internal rules — notice periods, blackout windows, carry-over limits, trigger points.
+
+  - type: references
+    target: admin.obj.core.compliance_obligation
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1400
+    confidence_bp: 8500
+    priority: 4
+    evidence: [regulator, document]
+    description: >
+      The statutory floor beneath the policy. Where the two disagree the obligation wins, and a
+      policy stating a shorter entitlement than the statute is unenforceable in that direction only.
+
+  - type: blocks
+    target: admin.obj.core.commitment
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 1200
+    confidence_bp: 7000
+    priority: 5
+    conditions:
+      - {fn: days_since, path: commitment.due_at, op: "<=", value: 0}
+    evidence: [email, calendar]
+    description: >
+      Promises falling due inside the absence window. The most useful thing this object can tell the
+      rest of the system, and the reason a leave record belongs in an administrative brain rather
+      than only in an HR system.
+
+  - type: delegates_to
+    target: admin.obj.core.delegate
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 700
+    confidence_bp: 6000
+    priority: 6
+    description: The authority handed over for the period, where the requester holds any.
+
+  - type: attaches_to
+    target: admin.obj.core.document
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 700
+    confidence_bp: 7000
+    priority: 7
+    description: Fit notes, summonses, certificates. Personal data with a shorter retention than the leave record itself.
+
+  - type: escalates_to
+    target: admin.obj.core.escalation
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 500
+    confidence_bp: 6000
+    priority: 8
+    description: Where an undecided request goes as the start date approaches.
+
+  - type: precedes
+    target: admin.obj.core.deadline
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 300
+    confidence_bp: 6500
+    priority: 9
+    description: >
+      The payroll cut-off and the carry-over expiry. Both are dates this object must clear and
+      neither moves.
+
+inference_patterns:
+
+  deterministic:
+
+    - id: lvr.commitment_falls_in_window
+      statement: "A commitment owed by this person comes due while they are recorded as absent."
+      status: executable
+      when:
+        - {exists: commitment.due_at}
+        - {exists: commitment.action}
+      yields: {confidence_bp: 7000, attribute: commitments_in_window, value: 1}
+      evidence_fields: [commitment.due_at, commitment.action]
+      false_positive: >
+        Without a leave-window fact path the engine can see the commitment but not that it lies inside
+        the absence, so this fires on any live commitment held by the requester. It is a candidate for
+        a human to confirm, not a finding.
+      note: >
+        Deliberately kept as an executable at modest confidence rather than deferred to needs_signal,
+        because even the weak form catches the case that actually costs something: a promise made to a
+        third party by somebody who will not be there to keep it. Promotes to near-certainty the moment
+        `leave.start_at` and `leave.end_at` exist.
+
+    - id: lvr.approver_role_changed
+      statement: "The approver's role changed while the request was pending — the routing is now stale."
+      status: executable
+      when:
+        - {has_obs: champion_change}
+      yields: {confidence_bp: 7500, attribute: state, value: overdue}
+      evidence_fields: [thread.last_inbound]
+      false_positive: The observation fires on any detected role change nearby, including a counterparty's.
+      note: >
+        Leave requests routed to a line manager who has moved sit unanswered until the start date,
+        because the queue belongs to a person rather than to a role and nobody inherits it.
+
+  heuristic:
+
+    - id: lvr.approval_chase_unanswered
+      statement: "The request has sat with the decider well past their normal reply pace."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: them}
+        - {fn: days_since, path: thread.last_inbound, op: ">=",
+           value: {baseline: reply_cadence, mult: 2, floor: 3}}
+      yields: {confidence_bp: 7500, attribute: state, value: overdue}
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: The decider is themselves absent — the commonest case, and the one with no delegate recorded.
+      note: >
+        A tighter multiplier and floor than elsewhere in this brain on purpose. Leave is the one
+        administrative request where the requester has to make personal plans, so three days of
+        silence is already a cost being borne by a person rather than by a process.
+
+    - id: lvr.silent_through_to_start
+      statement: "Nobody has touched the thread and the start date is imminent."
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: them}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: 7}
+        - {no_obs: followup_sent}
+      yields: {confidence_bp: 7000, attribute: state, value: expired, corroborates: [lvr.approval_chase_unanswered]}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        The `expired` ending rather than the `rejected` one, and the distinction matters to Layer 6:
+        nobody decided anything. Treating it as a refusal teaches the system that the request was
+        judged and found wanting, when in fact the process simply stopped.
+
+    - id: lvr.statutory_category_refused
+      statement: "A non-refusable category was declined."
+      status: needs_signal
+      yields: {confidence_bp: 9800, attribute: refusal_ground, value: coverage}
+      requires_signals:
+        - {kind: fact_path, name: leave.category, owner_layer: L1,
+           note: "The single most valuable signal this object generates. Without the category, every downstream rule about refusability, evidence, pay and balance is guesswork — and the specific failure it prevents is a manager declining statutory leave for coverage reasons, which is unlawful and currently invisible."}
+        - {kind: fact_path, name: leave.state, owner_layer: L1}
+
+    - id: lvr.entitlement_would_go_negative
+      statement: "Approving this takes the balance below zero."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: would_exceed_entitlement, value: true}
+      requires_signals:
+        - {kind: fact_path, name: leave.balance_remaining, owner_layer: L1}
+        - {kind: fact_path, name: leave.start_at, owner_layer: L1}
+        - {kind: fact_path, name: leave.end_at, owner_layer: L1,
+           note: "Start and end are also what turn lvr.commitment_falls_in_window from a candidate into a finding."}
+
+    - id: lvr.evidence_overdue
+      statement: "Required documentary evidence has not arrived within the window."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: evidence_overdue, value: true}
+      requires_signals:
+        - {kind: obs_kind, name: leave_evidence_received, owner_layer: L2}
+        - {kind: fact_path, name: leave.evidence_due_at, owner_layer: L1,
+           note: "Drives pay treatment. Missing evidence past the window usually converts paid absence to unpaid, and doing that retrospectively is visible to the employee in the worst possible way."}
+
+    - id: lvr.carry_over_about_to_lapse
+      statement: "Carried-over days expire soon and are not booked."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: carry_over_expires_at, value: null}
+      requires_signals:
+        - {kind: fact_path, name: leave.carry_over_expires_at, owner_layer: L1}
+        - {kind: fact_path, name: leave.balance_remaining, owner_layer: L1,
+           note: "A deadline with a financial consequence and no owner. Nobody is accountable for an employee losing days, so nothing warns them — and the December scramble that follows is a coverage problem the organisation created for itself."}
+
+    - id: lvr.coverage_gap_in_team
+      statement: "Several people in the same team are absent across the same window."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: coverage_gap, value: true}
+      requires_signals:
+        - {kind: derived, name: derived.team_absence_overlap, owner_layer: L2,
+           note: "Coverage is the ground most refusals actually rest on and the one nobody can evidence, which makes every refusal an argument rather than a calculation."}
+        - {kind: fact_path, name: leave.start_at, owner_layer: L1}
+
+    - id: lvr.absence_trigger_reached
+      statement: "The requester's short-term absence pattern has reached a policy trigger."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: trigger_breached, value: true}
+      requires_signals:
+        - {kind: derived, name: derived.absence_occasions_12m, owner_layer: L2}
+        - {kind: fact_path, name: leave.category, owner_layer: L1,
+           note: "Must be computed on sickness occasions only and must never fire automatically as an action. A trigger surfaced to a human is a management prompt; a trigger wired to a consequence is a discrimination claim, because the index cannot distinguish unreliability from a chronic condition."}
+
+    - id: lvr.approver_absent_no_delegate
+      statement: "The approver is themselves on leave and no delegate is recorded."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: state, value: overdue}
+      requires_signals:
+        - {kind: derived, name: derived.approver_availability, owner_layer: L2,
+           note: "The highest-value false-positive suppressor across the whole Admin brain. It stops the system chasing, escalating and eventually alarming about people who are demonstrably not there — and it is shared with approval, escalation and commitment."}
+
+    - id: lvr.return_to_work_outstanding
+      statement: "A sickness absence ended and no return-to-work conversation was recorded."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: return_to_work_due, value: true}
+      requires_signals:
+        - {kind: fact_path, name: leave.end_at, owner_layer: L1}
+        - {kind: obs_kind, name: return_to_work_recorded, owner_layer: L2,
+           note: "The single most effective absence control there is, consistently skipped because it is a conversation rather than a form, and therefore leaves no artefact unless one is deliberately created."}
+
+inputs:
+  - source: hris
+    signal: entitlement, balance, working pattern, service length, employment basis
+    fills: [entitlement_days_annual, taken_days, booked_days, working_pattern,
+            contracted_days_per_week, continuous_service_months, employment_basis]
+    reliability_bp: 9000
+    description: Authoritative for everything the balance calculation needs, and not currently readable by this system.
+  - source: portal
+    signal: the request itself — dates, category, state, decision
+    fills: [start_at, end_at, category, state, decided_by_ref, decided_at]
+    reliability_bp: 9000
+  - source: calendar
+    signal: the absence as mirrored into a diary, and clashes with meetings
+    fills: [start_at, end_at, clashing_absence_count]
+    reliability_bp: 5500
+    description: >
+      Present only when somebody remembered to mirror it. Leave taken and never booked is invisible
+      here, which is precisely the population an absence report most needs.
+  - source: email
+    signal: the request and chase thread where no system exists
+    path: thread.ball_in_court
+    fills: [state]
+    reliability_bp: 5000
+  - source: signed_form
+    signal: self-certification on return
+    fills: [self_certified, evidence_received_at]
+    reliability_bp: 9000
+  - source: document
+    signal: fit notes, summonses, certificates
+    fills: [evidence_type, evidence_received_at]
+    reliability_bp: 9500
+  - source: regulator
+    signal: statutory entitlement, notice rules and refusal grounds for the jurisdiction
+    fills: [statutory_basis, notice_required_days]
+    reliability_bp: 9500
+  - source: payroll
+    signal: how the absence was actually paid
+    fills: [paid_status]
+    reliability_bp: 9000
+    description: The retrospective check on whether the category was resolved before the cut-off.
+  - source: derived
+    signal: day counts, balance projection, overlap and absence pattern
+    fills: [working_days, remaining_days, coverage_gap, bradford_factor, commitments_in_window]
+    reliability_bp: 6000
+
+outputs:
+  - name: refusability_verdict
+    type: string
+    derived_from: [category, statutory_basis, jurisdiction, refusable]
+    description: >
+      Whether this may lawfully be declined, and on what basis. The output that stops a generic
+      workflow producing an unlawful decision.
+    consumed_by: [L4.reasoning_unit, L4.decision_maker]
+  - name: balance_after_days
+    type: number
+    derived_from: [remaining_days, working_days, carry_over_days]
+    consumed_by: [L4.reasoning_unit]
+  - name: coverage_risk_bp
+    type: integer
+    derived_from: [coverage_gap, clashing_absence_count, cover_confirmed, commitments_in_window]
+    description: The honest version of the reason most requests are actually refused.
+    consumed_by: [L4.reasoning_unit, L5.execution_planning]
+  - name: commitments_at_risk
+    type: list
+    derived_from: [commitments_in_window]
+    description: >
+      Promises due inside the absence, surfaced before the absence starts. The one genuinely
+      proactive output this object produces.
+    consumed_by: [L5.execution_planning, L5.communication_planning]
+  - name: payroll_impact
+    type: string
+    derived_from: [paid_status, working_days, evidence_overdue]
+    description: What payroll must be told, and by when. The cut-off does not move.
+    consumed_by: [L5.execution_planning]
+  - name: evidence_outstanding
+    type: boolean
+    derived_from: [evidence_required, evidence_received_at, evidence_due_at]
+    consumed_by: [L4.reasoning_unit, "L5.2.channel_planner"]
+  - name: decision_latency_hours
+    type: integer
+    derived_from: [decided_at]
+    consumed_by: [L6.learning_unit]
+
+events:
+  - id: lvr.submitted
+    name: Leave Requested
+    severity: info
+    payload: [requester_ref, category, start_at, end_at, working_days]
+  - id: lvr.approved
+    name: Leave Approved
+    severity: notable
+    payload: [decided_by_ref, decided_at, working_days, cover_ref]
+    invalidates: [remaining_days, coverage_gap]
+  - id: lvr.refused
+    name: Leave Refused
+    severity: notable
+    payload: [refusal_ground, counter_notice_served, refusable]
+    description: >
+      Carries `refusable` and `counter_notice_served` in the payload deliberately, so a refusal that
+      was not lawfully available is visible at the moment it happens rather than at a tribunal.
+  - id: lvr.expired_undecided
+    name: Leave Request Expired Undecided
+    severity: critical
+    payload: [start_at, decided_by_ref, notice_given_days]
+    description: >
+      The start date arrived and nobody chose. Distinct from a refusal and far worse, because the
+      employee has to act on no information at all.
+  - id: lvr.evidence_overdue
+    name: Absence Evidence Overdue
+    severity: notable
+    payload: [evidence_type, evidence_due_at, paid_status]
+  - id: lvr.trigger_reached
+    name: Absence Trigger Reached
+    severity: notable
+    payload: [absence_occasions_12m, bradford_factor]
+    description: Surfaced to a human, never wired to a consequence. See the exception on trigger handling.
+  - id: lvr.carry_over_lapsing
+    name: Carry-Over About To Lapse
+    severity: notable
+    payload: [carry_over_days, carry_over_expires_at]
+  - id: lvr.cover_unconfirmed
+    name: Cover Never Confirmed
+    severity: info
+    payload: [cover_ref, start_at]
+
+actions:
+  - id: lvr.submit
+    name: Submit the request
+    actor: human
+    cost: trivial
+    reversible: true
+  - id: lvr.approve
+    name: Approve
+    actor: human
+    cost: trivial
+    reversible: true
+    effect: Commits the balance and creates a coverage obligation the same day.
+  - id: lvr.refuse
+    name: Refuse
+    actor: human
+    cost: low
+    reversible: true
+    effect: >
+      Lawful only where `refusable` permits, and effective only where any required counter-notice was
+      served. Record the ground as an enum so refusals can be counted.
+  - id: lvr.serve_counter_notice
+    name: Serve counter-notice
+    actor: human
+    cost: low
+    reversible: false
+    effect: The formal step that makes a refusal effective in jurisdictions that require it.
+  - id: lvr.request_evidence
+    name: Request documentary evidence
+    actor: agent
+    cost: trivial
+    reversible: true
+  - id: lvr.confirm_cover
+    name: Confirm cover with the named person
+    actor: human
+    cost: low
+    reversible: true
+    effect: >
+      Converts a name on a form into an arrangement. Named-but-unasked cover is the normal state and
+      provides nothing.
+  - id: lvr.reassign_commitments
+    name: Reassign commitments falling in the window
+    actor: human
+    cost: moderate
+    reversible: true
+    effect: >
+      The action this object exists to prompt. Cheap before the absence and irrecoverable during it.
+  - id: lvr.delegate_authority
+    name: Record a delegate for the period
+    actor: human
+    cost: trivial
+    reversible: true
+    effect: Prevents the requester's own approval queue from silently stopping.
+  - id: lvr.escalate_undecided
+    name: Escalate an undecided request as the start date approaches
+    actor: system
+    cost: trivial
+    reversible: true
+  - id: lvr.schedule_return_to_work
+    name: Schedule the return-to-work conversation
+    actor: human
+    cost: low
+    reversible: true
+  - id: lvr.notify_payroll
+    name: Send the absence to payroll before the cut-off
+    actor: system
+    cost: trivial
+    reversible: false
+    effect: Irreversible in the sense that matters — after the cut-off it is a visible correction next month.
+
+preconditions:
+  - id: lvr.category_before_routing
+    statement: The absence category is established before the request is routed to anyone.
+    requires: [category, jurisdiction]
+    if_unmet: >
+      Do not route. Routing without a category is what produces an approval step for a category that
+      admits of none, and the error is invisible because the workflow looks identical either way.
+  - id: lvr.entitlement_resolvable
+    statement: The requester's entitlement, working pattern and service length can be resolved.
+    requires: [requester_ref, entitlement_days_annual, contracted_days_per_week]
+    if_unmet: >
+      Degrade rather than block — surface the request without a balance and mark it unverified. A
+      request held because a balance could not be computed is a request that expires undecided.
+  - id: lvr.day_count_by_pattern
+    statement: Working days are computed against the person's actual pattern, not the calendar span.
+    requires: [working_pattern, contracted_days_per_week]
+    if_unmet: Flag for manual calculation. Part-time and shift patterns are where balance disputes originate.
+  - id: lvr.decider_available
+    statement: The routed decider is present, or a delegate is recorded.
+    requires: [decided_by_ref, delegation_ref]
+    if_unmet: Route to the delegate or one level up. Most expired-undecided requests were sent to somebody on leave.
+  - id: lvr.evidence_expectation_stated_up_front
+    statement: What evidence is required, and by when, is stated when the absence is first recorded.
+    requires: [evidence_required, evidence_type, evidence_due_at]
+    if_unmet: >
+      Assume none and record the assumption. Retrospectively demanding evidence to justify unpaid
+      treatment is the version of this that ends in a grievance.
+
+constraints:
+  - id: lvr.no_refusal_of_non_refusable
+    statement: A request in a non-refusable category cannot be recorded as refused.
+    hard: true
+    why: >
+      Jury service and several statutory leaves carry no discretion. A system that offers the button
+      will eventually have it pressed, and the record will then evidence the breach.
+  - id: lvr.statute_floors_policy
+    statement: Policy entitlement cannot be recorded below the statutory minimum for the jurisdiction.
+    hard: true
+    why: A policy stating less than the statute is unenforceable in that direction and misleads everyone who reads it.
+  - id: lvr.no_negative_balance_without_approval
+    statement: Balance cannot go negative without an explicit recorded authorisation.
+    hard: true
+    why: Overtaken leave is recovered from final pay, which is lawful only where it was agreed in advance.
+  - id: lvr.medical_evidence_is_special_category
+    statement: Fit notes and medical evidence are special-category personal data and are held separately from the leave record.
+    hard: true
+    why: >
+      GDPR Article 9. Health data attached to a record every line manager can read is the commonest
+      data-protection failure in absence administration.
+  - id: lvr.trigger_never_automatic
+    statement: An absence trigger may prompt a human review and may never itself cause a consequence.
+    hard: true
+    why: >
+      The index cannot distinguish unreliability from a disability-related or pregnancy-related
+      pattern. Automating the consequence automates the discrimination.
+  - id: lvr.payroll_cutoff_is_immovable
+    statement: Absences affecting pay must reach payroll before the cut-off.
+    hard: true
+    why: The one administrative deadline that is visible to every employee simultaneously when missed.
+  - id: lvr.no_blackout_over_statutory_right
+    statement: A blackout period cannot override a statutory entitlement.
+    hard: false
+    why: >
+      Blackouts are a legitimate coverage tool for discretionary leave and have no force against a
+      statutory right. Applying them uniformly is the usual mistake.
+
+business_rules:
+  - id: lvr.category_determines_refusability
+    statement: Refusability, evidence requirement, balance consumption and pay treatment are all derived from category and jurisdiction, never from the approver's discretion.
+    then: derive_from_category
+    severity: blocking
+  - id: lvr.refusal_requires_recorded_ground
+    statement: A refusal must carry a ground from the enumerated list.
+    then: require_ground
+    severity: blocking
+  - id: lvr.counter_notice_or_no_refusal
+    statement: Where the jurisdiction requires a counter-notice, a refusal without one is ineffective and the leave stands.
+    then: void_refusal
+    severity: blocking
+  - id: lvr.sickness_is_notified_not_requested
+    statement: Sickness absence is a notification with an evidence obligation, not a request for permission.
+    then: skip_approval
+    severity: blocking
+  - id: lvr.undecided_at_start_is_expired_not_rejected
+    statement: A request still undecided at the start date is expired, never rejected.
+    when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: 7}]
+    then: mark_expired
+    severity: warning
+  - id: lvr.approved_leave_is_a_liability
+    statement: Approved and untaken leave is an accrued cost and must be reported as one.
+    then: accrue
+    severity: advisory
+  - id: lvr.cover_named_is_not_cover_confirmed
+    statement: A named cover who has not confirmed does not satisfy the coverage check.
+    then: flag_unconfirmed
+    severity: warning
+  - id: lvr.medical_evidence_restricted
+    statement: Medical evidence is visible only to those with a recorded need, never to the approving line manager by default.
+    then: restrict_visibility
+    severity: blocking
+
+decision_factors:
+  - name: legal_refusability
+    weight_bp: 3000
+    direction: context
+    description: >
+      Ranked first and marked context rather than increases, because the answer is not a magnitude —
+      it is a gate. Where the category is non-refusable, every other factor here is irrelevant, and a
+      weighting scheme that lets coverage outvote a statutory right is the specific failure this
+      object exists to prevent.
+    reads: [category, refusable, statutory_basis, jurisdiction]
+  - name: coverage_risk
+    weight_bp: 2200
+    direction: decreases
+    description: The ground most refusals actually rest on, and the only one that is a genuine business judgement.
+    reads: [coverage_gap, clashing_absence_count, cover_confirmed, commitments_in_window]
+  - name: entitlement_position
+    weight_bp: 1800
+    direction: increases
+    description: Whether the balance supports it, including carry-over about to lapse.
+    reads: [remaining_days, would_exceed_entitlement, carry_over_days, carry_over_expires_at]
+  - name: notice_adequacy
+    weight_bp: 1200
+    direction: increases
+    reads: [notice_given_days, notice_required_days, notice_sufficient]
+  - name: evidence_position
+    weight_bp: 1000
+    direction: increases
+    reads: [evidence_required, evidence_received_at, evidence_overdue, self_certified]
+  - name: decision_timeliness
+    weight_bp: 800
+    direction: context
+    description: >
+      How close the start date is. Context because urgency cuts both ways — near the start date the
+      cost of deciding wrongly falls and the cost of not deciding at all rises sharply.
+    reads: [start_at, decided_at, state]
+
+evidence:
+  - source: regulator
+    strength_bp: 10000
+    independent_of: [hris, portal, derived]
+    decays: false
+    description: The statute. Nothing outranks it and it does not go stale between reviews.
+  - source: document
+    strength_bp: 9500
+    independent_of: [portal, derived]
+    decays: false
+    description: A fit note, jury summons or certificate. Definitive for the category and the pay treatment.
+  - source: hris
+    strength_bp: 9000
+    independent_of: [portal, calendar]
+    decays: false
+    description: Entitlement, balance, working pattern and service. The system of record for everything the calculation needs.
+  - source: signed_form
+    strength_bp: 9000
+    independent_of: [portal]
+    decays: false
+    description: Self-certification on return.
+  - source: payroll
+    strength_bp: 9000
+    independent_of: [hris, portal]
+    decays: false
+    description: How it was actually paid — the retrospective proof the category was resolved in time.
+  - source: portal
+    strength_bp: 8000
+    independent_of: [hris, calendar]
+    decays: true
+    description: The request record. Strong for dates and state, weak for anything requiring judgement.
+  - source: email
+    strength_bp: 5500
+    independent_of: [portal, hris]
+    decays: true
+    description: Where no system exists. Common in smaller organisations and for contractors.
+  - source: calendar
+    strength_bp: 4500
+    independent_of: [hris]
+    decays: true
+    description: >
+      Present only when somebody mirrored it. Ranked low on purpose — the population it misses is
+      exactly the population an absence report most needs to see.
+  - source: derived
+    strength_bp: 4000
+    independent_of: []
+    decays: true
+    description: Day counts, overlap and absence pattern. Corroborating only.
+
+metrics:
+  - name: decision_latency_hours
+    unit: hours
+    direction: lower_is_better
+    owner_layer: L6
+    description: >
+      Submission to decision. The number employees actually experience, and the one that predicts
+      whether they will book leave properly next time.
+    calibrates: [lvr.approval_chase_unanswered]
+  - name: expired_undecided_rate
+    unit: percent
+    direction: lower_is_better
+    owner_layer: L6
+    description: Share of requests that reached the start date with no decision. Purely an administrative failure.
+    calibrates: [lvr.silent_through_to_start]
+  - name: unrecorded_absence_estimate
+    unit: percent
+    direction: lower_is_better
+    owner_layer: L6
+    description: >
+      Absence visible in calendars or threads and absent from the leave system. The gap between what
+      the organisation believes about its absence and what is true.
+  - name: carry_over_forfeited_days
+    unit: days
+    direction: lower_is_better
+    owner_layer: L6
+    calibrates: [lvr.carry_over_about_to_lapse]
+  - name: untaken_liability_days
+    unit: days
+    direction: target_band
+    owner_layer: L6
+    description: >
+      Approved and untaken. A target band rather than a minimum — near zero means people are not
+      taking leave, which is a different and worse problem than an accrual.
+  - name: evidence_compliance_rate
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L6
+    calibrates: [lvr.evidence_overdue]
+  - name: refusal_rate_by_ground
+    unit: percent
+    direction: target_band
+    owner_layer: L6
+    description: Coverage dominating this distribution is a resourcing finding, not a leave finding.
+  - name: return_to_work_completion
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L6
+    calibrates: [lvr.return_to_work_outstanding]
+
+dependencies:
+  - target: admin.obj.core.employee_record
+    kind: requires
+    strength: hard
+    description: Entitlement, pattern and service length all resolve through it. Without them there is no day count and no balance.
+  - target: admin.obj.core.compliance_obligation
+    kind: requires
+    strength: hard
+    description: Supplies the statutory floor beneath the policy, and the refusability answer for each category.
+  - target: admin.obj.core.policy
+    kind: enriches
+    strength: soft
+    description: Notice periods, blackout windows, carry-over limits, trigger points.
+  - target: admin.obj.core.approval
+    kind: enriches
+    strength: soft
+    description: >
+      Soft on purpose. For several categories the approval step does not lawfully exist, so a hard
+      dependency would encode an unlawful gate into the object graph.
+  - target: admin.obj.core.commitment
+    kind: invalidated_by
+    strength: soft
+    description: >
+      Commitments falling inside the window are the thing this object most usefully surfaces, and a
+      reassignment invalidates the coverage assessment.
+  - target: admin.obj.core.delegate
+    kind: enriches
+    strength: soft
+    description: Where the requester holds approval authority of their own.
+  - target: admin.obj.core.deadline
+    kind: requires
+    strength: hard
+    description: The payroll cut-off and the carry-over expiry. Neither moves and both bind this object.
+  - target: admin.obj.core.document
+    kind: enriches
+    strength: soft
+    description: Fit notes and certificates, held under a shorter retention and a tighter access rule than the request itself.
+
+exceptions:
+  - id: lvr.emergency_dependant_leave
+    statement: Time off to deal with a dependant emergency is taken first and recorded afterwards.
+    overrides: [lvr.category_before_routing]
+    why: >
+      The right exists precisely because there was no time to ask. A process that requires prior
+      approval for it does not delay the absence — it just guarantees the absence is recorded under
+      the wrong category, or not at all.
+    frequency: common
+  - id: lvr.sickness_during_booked_leave
+    statement: Sickness falling inside approved annual leave converts the affected days back to sickness and returns them to the balance.
+    overrides: [lvr.approved_leave_is_a_liability]
+    why: >
+      Annual leave is for rest, and in most jurisdictions a person who is ill has not had it. The
+      conversion is a statutory right in much of Europe and is almost never implemented, because the
+      request has already left the workflow.
+    frequency: occasional
+  - id: lvr.long_term_sickness_accrual
+    statement: Annual leave continues to accrue during long-term sickness absence and may be carried beyond the normal limit.
+    overrides: [lvr.carry_over_about_to_lapse]
+    why: >
+      Established in EU and UK case law. The practical consequence is a large untaken balance payable
+      on termination, which is a foreseeable cost that organisations reliably fail to foresee.
+    frequency: occasional
+  - id: lvr.retrospective_recording_after_outage
+    statement: Absence may be recorded retrospectively where the system was unavailable or the person was unreachable.
+    overrides: [lvr.evidence_expectation_stated_up_front]
+    why: >
+      The alternative is unrecorded absence, which is worse than late-recorded absence in every
+      direction — pay, coverage and statistics.
+    frequency: rare
+  - id: lvr.shutdown_leave
+    statement: Mandated shutdown periods consume entitlement without an individual request.
+    overrides: [lvr.category_before_routing]
+    why: >
+      A Christmas closure or a factory shutdown is a legitimate use of entitlement in many
+      jurisdictions provided notice rules are met. It has no requester and no approval step, so it
+      breaks any model that assumes both.
+    frequency: common
+  - id: lvr.regulated_minimum_staffing
+    statement: In safety-critical or regulated operations, minimum staffing may lawfully bound even non-refusable leave through deferral rather than refusal.
+    overrides: [lvr.no_refusal_of_non_refusable]
+    why: >
+      The distinction between deferring and refusing is the whole of it, and it is the distinction
+      systems collapse first. Deferral moves the date; refusal denies the right.
+    frequency: rare
+
+best_practices:
+  - id: lvr.resolve_category_first
+    statement: Establish the category before anything else happens to the request.
+    why: >
+      Refusability, evidence, pay and balance all follow from it and none of them follow from each
+      other. A workflow that routes first and classifies later has already made four decisions by
+      accident.
+    applies_when: Every absence, without exception.
+  - id: lvr.decide_within_the_notice_window
+    statement: Decide inside the notice period the policy itself demands of the employee.
+    why: >
+      Requiring four weeks' notice and taking three weeks to answer is the asymmetry that teaches
+      people to book late or not at all, which destroys the coverage planning the notice period
+      existed to enable.
+  - id: lvr.confirm_cover_with_the_cover
+    statement: Ask the named cover to confirm, and record the confirmation.
+    why: >
+      Named-but-unasked cover looks like a control and is not. The first the cover usually hears is a
+      forwarded email on the first morning of the absence.
+  - id: lvr.surface_commitments_before_the_absence
+    statement: List what the person owes anyone during the window at the point of approval, not at the point of breach.
+    why: >
+      Reassignment is cheap the week before and impossible the week during. This is the single most
+      valuable thing an administrative system can do with a leave record.
+  - id: lvr.warn_on_lapsing_carry_over
+    statement: Warn well before carried-over days expire, at a horizon that still allows them to be booked and covered.
+    why: >
+      Nobody owns the employee's balance, so nothing warns them. The forfeiture is silent and the
+      December scramble it causes is a coverage problem of the organisation's own making.
+  - id: lvr.separate_medical_evidence
+    statement: Store medical evidence apart from the leave record, with its own access rule and its own retention.
+    why: >
+      Article 9 special-category data. A fit note attached to a record every line manager can open is
+      the commonest data-protection failure in this area.
+  - id: lvr.trigger_prompts_a_conversation
+    statement: Use absence triggers to prompt a human conversation and never to fire a consequence.
+    why: >
+      The index weights frequency over duration and cannot distinguish unreliability from a chronic
+      condition, a disability or a pregnancy. The conversation is safe; the automation is not.
+  - id: lvr.record_the_delegate_before_the_absence
+    statement: Anyone holding approval authority records a delegate before going on leave.
+    why: >
+      An absent approver with no delegate silently stops every queue they own, and the failure is
+      only visible once things have already expired.
+
+anti_patterns:
+  - id: lvr.one_workflow_for_every_category
+    statement: A single approve/reject workflow applied to annual leave, sickness, jury service and statutory parental leave alike.
+    why_it_happens: >
+      It is one form, one routing rule and one report, and it works perfectly for the eighty per cent
+      of requests that are annual leave. The categories where it is wrong are rare enough that nobody
+      encounters the failure during design.
+    cost: >
+      A manager is offered a reject button for leave they may not lawfully refuse, and the system
+      records the breach in the manager's own name. It is discovered in a grievance or a tribunal,
+      never in a review.
+    instead: >
+      Derive refusability, evidence, balance and pay from category and jurisdiction, and hide the
+      controls the category does not admit of. The approver should not have to know the law.
+    detectable_by: [refusal_rate_by_ground, lvr.statutory_category_refused]
+  - id: lvr.calendar_as_the_absence_record
+    statement: Treating the shared calendar as the record of who is off.
+    why_it_happens: >
+      It is where coverage is actually checked, it is free, and it is the only view a team looks at.
+      The HR system is somewhere else and answers a different question.
+    cost: >
+      Absence taken and never booked is invisible; balances drift; the absence statistics that reach
+      the board are consistently understated; and the population most likely to be under-recorded is
+      the one a wellbeing programme most needs to find.
+    instead: >
+      Keep the calendar as a projection of the record, never as the record, and measure the gap
+      between the two as a metric in its own right.
+    detectable_by: [unrecorded_absence_estimate]
+  - id: lvr.silent_expiry
+    statement: Requests that reach the start date undecided and are then treated as if they had been refused.
+    why_it_happens: >
+      The queue belongs to a person rather than a role, that person is themselves away, and nothing
+      escalates because the request is not technically overdue against any deadline the system knows.
+    cost: >
+      The employee either takes the leave without approval or cancels plans. Both are the
+      organisation's failure and neither is recorded as one, so it recurs indefinitely — and Layer 6
+      learns "requests like this get refused" when nothing was ever decided.
+    instead: >
+      Escalate on approach to the start date, not on elapsed time; route to a delegate when the
+      decider is away; and record the ending as `expired`, never as `rejected`.
+    detectable_by: [expired_undecided_rate, lvr.silent_through_to_start]
+  - id: lvr.bradford_wired_to_a_consequence
+    statement: An absence index that automatically triggers a formal stage.
+    why_it_happens: >
+      It is objective, it is consistent, and it removes an uncomfortable judgement from a manager who
+      does not want to make it. Consistency is exactly what it appears to offer.
+    cost: >
+      It flags a chronic condition, a disability or a pregnancy-related pattern as sharply as
+      unreliability. Automating the consequence automates the discrimination and produces a paper
+      trail showing the organisation did it deliberately.
+    instead: Use it to prompt a conversation. Keep the judgement with a human and record why they exercised it.
+    detectable_by: [lvr.absence_trigger_reached]
+  - id: lvr.approver_on_leave_with_no_delegate
+    statement: Approval authority that simply stops for two weeks.
+    why_it_happens: >
+      Delegation is a five-minute task with no deadline and no visible consequence, done by the one
+      person who is about to stop reading their queue.
+    cost: >
+      Every request routed to them expires; the chases go into a mailbox nobody opens; and the
+      silence is indistinguishable from being ignored, so the system escalates at exactly the person
+      least able to respond.
+    instead: >
+      Make the delegate a precondition of the approver's own leave being approved. It is the one
+      place the constraint enforces itself.
+    detectable_by: [expired_undecided_rate, lvr.approver_absent_no_delegate]
+  - id: lvr.leave_as_a_purely_hr_concern
+    statement: Holding absence entirely inside the HR system, disconnected from commitments and coverage.
+    why_it_happens: >
+      Absence is an employment matter, the HR system owns employment matters, and the boundary looks
+      obvious from inside either system.
+    cost: >
+      Nobody sees that a promise to a customer falls inside somebody's approved holiday until the
+      promise is broken. The information existed in two systems and in neither together.
+    instead: Join the absence window to the commitment set. It is the highest-value join available in this domain.
+    detectable_by: [lvr.commitment_falls_in_window]
+
+examples:
+  - label: Two weeks' annual leave booked six weeks ahead
+    kind: typical
+    note: Discretionary, refusable on coverage, consumes balance, no evidence. The case every workflow is designed for.
+  - label: Jury summons for an unknown duration
+    kind: edge
+    note: >
+      Not refusable, does not consume annual entitlement, evidence is the summons, pay treatment
+      depends on jurisdiction and length. Every field differs from the typical case.
+  - label: Three days' sickness self-certified
+    kind: misclassification
+    note: >
+      Routinely modelled as a request requiring approval. It is a notification with an evidence
+      obligation — there is nothing to approve and offering the button is the error.
+  - label: Falls ill on day two of a booked fortnight
+    kind: edge
+    note: >
+      Days from the illness onward convert to sickness and return to the balance. Almost never
+      implemented, because the request has already left the workflow and nothing brings it back.
+  - label: Christmas shutdown
+    kind: edge
+    note: Consumes entitlement, has no requester and no approval step. Breaks any model assuming both.
+  - label: Part-time employee, three days a week, taking "a week off"
+    kind: misclassification
+    note: >
+      Three working days, not five. Calendar-span arithmetic is the origin of most balance disputes
+      and it always errs against the employee.
+  - label: Long-term sickness spanning a leave-year boundary
+    kind: counterexample
+    note: >
+      Entitlement continues to accrue and carry-over limits do not apply in the usual way. The
+      resulting balance is a termination cost nobody forecast.
+  - label: Approver books their own leave without recording a delegate
+    kind: edge
+    note: >
+      The request that stops every other request. Detectable in advance and prevented by making the
+      delegate a precondition of their own approval.
+
+references:
+  - title: ILO Holidays with Pay Convention, 1970 (No. 132)
+    kind: standard
+    note: The international floor beneath national entitlement rules.
+  - title: EU Working Time Directive 2003/88/EC
+    kind: standard
+    note: Source of the minimum annual leave entitlement and of the case law on accrual during sickness.
+  - title: UK Working Time Regulations 1998
+    kind: standard
+    note: >
+      The worked example this object is calibrated against — notice of twice the length of leave
+      requested, and refusal only by counter-notice of a defined length.
+  - title: IAS 19 — Employee Benefits (short-term compensated absences)
+    kind: standard
+    note: Why approved and untaken leave is an accrued liability rather than a diary entry.
+  - title: Bradford Factor
+    kind: framework
+    note: >
+      Occasions squared times total days. Widely used, widely misused; its weighting of frequency
+      over duration is both the reason it works and the reason it must never fire a consequence.
+  - title: ACAS guidance on absence management and return-to-work discussions
+    kind: practitioner
+    note: The evidence base for return-to-work conversations being the single most effective control here.
+  - title: GDPR Article 9 — processing of special category data
+    kind: standard
+    note: Health data attached to an absence record, and why it is held separately with its own access rule.
+  - title: Joiner-Mover-Leaver
+    kind: framework
+    note: >
+      Shares its trigger with this object. A leaver's untaken balance is a payment, and a mover's
+      entitlement is usually recalculated by nobody.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Four of thirteen patterns are executable today and none of them can see a leave window, because
+    no leave fact path exists — they run on thread cadence, commitment presence and role-change
+    observations. The ranked Layer 1/2 ask is: (1) leave.category, which alone determines
+    refusability, evidence, balance and pay, and whose absence is what lets a workflow refuse
+    statutory leave; (2) leave.start_at and leave.end_at, which promote lvr.commitment_falls_in_window
+    from a candidate to a finding and unlock the whole coverage picture; (3) leave.balance_remaining;
+    (4) derived.approver_availability, the highest-value false-positive suppressor in the whole Admin
+    brain and shared with approval, escalation and commitment; (5) derived.team_absence_overlap,
+    without which coverage — the ground most refusals actually rest on — can never be evidenced.
+    Scoped to attendance_and_leave deliberately: the entitlement arithmetic, the statutory category
+    table and the trigger index are meaningless anywhere else, and promoting this to core would drag
+    jurisdiction-specific employment law into objects that have no use for it.

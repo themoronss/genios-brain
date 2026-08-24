@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.revenue_operations.territory_planning
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.territory_planning.coverage_balanced_territories
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.territory_planning.unworked_accounts_are_nobodys_win
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

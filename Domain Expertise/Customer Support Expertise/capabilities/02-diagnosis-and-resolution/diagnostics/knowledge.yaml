@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.diagnosis_and_resolution.diagnostics
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.diagnostics.evidence_before_hypothesis
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.diagnostics.what_changed_is_the_first_question
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

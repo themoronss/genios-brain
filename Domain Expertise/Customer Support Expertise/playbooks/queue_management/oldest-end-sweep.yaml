@@ -1,0 +1,49 @@
+# Extracted from the capability that used to carry this inline. Scoped to
+# customer_support.support_operations.queue_management — exactly one capability references it. Promote to
+# playbooks/core/ the moment a second one does; validate.py enforces that
+# from the reference graph rather than from intent.
+
+identity:
+  id: customer_support.pb.queue_management.oldest_end_sweep
+  name: Oldest end sweep
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.queue_management
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Run a standing pass over the oldest end of the queue as a separate assignment, given to
+    someone who is not simultaneously measured on volume that shift.
+
+
+    Anything that competes with throughput loses to throughput. Aged tickets are slow, context has been
+    lost, and the customer is already unhappy — an agent choosing rationally will never pick one. The
+    tail only gets worked when working the tail is somebody''s actual job for the day.'
+when_to_use:
+  do_not_use_when:
+  - The preceding step in this capability has not produced its artefact yet.
+steps:
+- order: 1
+  name: Run a standing pass over the oldest end of the queue as a separate assignment, given to someone
+    who is not simultaneously measured on volume that shift.
+  actor: human
+  description: Anything that competes with throughput loses to throughput. Aged tickets are slow, context
+    has been lost, and the customer is already unhappy — an agent choosing rationally will never pick
+    one. The tail only gets worked when working the tail is somebody's actual job for the day.
+  objects_read: &id001
+  - customer_support.obj.core.backlog
+  - customer_support.obj.core.ticket
+objects_used: *id001
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  notes: Extracted from an inline capability list, where it was a single statement plus a rationale.
+    The structured body below therefore has one entry — it is the whole of what was authored, not a
+    summary of something longer. Decomposing it into real steps, dimensions or criteria is the promotion
+    work.

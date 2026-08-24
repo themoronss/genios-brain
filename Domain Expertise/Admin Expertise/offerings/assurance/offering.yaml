@@ -1,0 +1,48 @@
+# Assurance — offering_family branch node.
+#
+# An Admin 'offering' is a SERVICE LINE: what kind of thing the administrative function
+# delivers. It is orthogonal to the operating model — Shared Services x Custodial is real,
+# and neither branch owns the other.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is type -> family -> canonical.
+
+identity:
+  id: admin.offering.assurance
+  name: Assurance
+  kind: offering_family
+  domain: admin
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Producing evidence that an obligation has been met. The deliverable is not the activity but
+  the proof of it, which means work performed correctly and undocumented has no value in this
+  service line at all.
+
+characteristics:
+  delivery: "evidence, on demand, to a third party"
+  pricing_shape: "fixed cost per obligation or per cycle"
+  margin_profile: "dominated by retrieval cost, not by the control itself"
+  post_sale_load: "high — evidence must survive long after the control ran"
+  notes: >
+    Consumers: regulators, auditors, boards, insurers and counterparties. Funded by allocated
+    overhead, occasionally recharged to the entity. An internal function with no chargeback
+    has no natural brake on demand, which changes which capabilities matter and is why this
+    line is recorded.
+
+capabilities:
+  emphasises:
+    - admin.compliance_and_governance.audit_support
+    - admin.compliance_and_governance.statutory_filing
+    - admin.compliance_and_governance.policy_administration
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

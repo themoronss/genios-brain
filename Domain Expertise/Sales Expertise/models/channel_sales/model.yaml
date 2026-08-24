@@ -1,0 +1,38 @@
+# Channel Sales — model branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+
+identity:
+  id: sales.model.channel_sales
+  name: Channel Sales
+  kind: model
+  domain: sales
+  parent: null
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Selling through a channel rather than to an end customer. The immediate buyer is a partner
+  whose motivation is margin and enablement, not the end problem — so discovery targets the
+  partner's economics, not the customer's pain.
+
+characteristics:
+  buyer: "a channel partner"
+  decision_style: "commercial, margin-driven"
+
+capabilities:
+  deactivates:
+    - sales.qualification.champion_identification
+  emphasises:
+    - sales.discovery_and_solution.value_proposition
+    - sales.post_sale_and_growth.onboarding
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

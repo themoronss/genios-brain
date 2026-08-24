@@ -1,0 +1,102 @@
+# Professional services — offering type under customer_support.offering.service.
+#
+# INHERITANCE: declares only what DIFFERS from the parent. Resolution is type -> family ->
+# canonical.
+
+identity:
+  id: customer_support.offering.service.professional_services
+  name: Professional Services
+  kind: offering_type
+  domain: customer_support
+  parent: customer_support.offering.service
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Bounded, scoped work delivered against a statement of work — implementation, migration,
+  integration, training — usually attached to a product the same company sells. The defining
+  structural fact is the deadline: professional services work has a go-live, and the go-live is
+  frequently the client's, not ours. That converts every support contact inside the delivery
+  window into a schedule risk, and it means urgency here is set by a date on someone else's
+  calendar rather than by the severity of the fault.
+  The second fact is that this type sits directly on the product/service seam and is where the
+  hybrid family's sorting problem actually lands. A client hitting a defect during
+  implementation is hitting OUR product, but they are hitting it inside work WE scoped, so the
+  question "is this a bug or is this scope?" arrives with a commercial answer attached and a
+  deadline pressing on it. Support is usually the first function to see the answer and the last
+  to be allowed to give it.
+  The third is that the engagement ends. Unlike managed services, there is a handover, and the
+  handover is where support inherits an account it did not build, configured in ways nobody
+  documented, with expectations set by people who have moved to the next project. Most
+  post-implementation support pain is a documentation failure committed months earlier by a team
+  that was measured on delivery date.
+  The habit carried in from managed services and punished here is assuming continuity. There is
+  no standing relationship after go-live unless someone deliberately built one.
+
+characteristics:
+  delivery: "scoped work against a statement of work, with a defined start, a defined end and a go-live"
+  pricing_shape: "fixed fee against milestones, or time and materials with a cap — priced per engagement, and change requests priced separately"
+  margin_profile: "set at scoping and largely fixed thereafter; unbilled support inside the delivery window is the main way a profitable engagement becomes an unprofitable one"
+  post_sale_load: "concentrated and time-boxed — heavy through delivery, spiking at go-live, then dropping to near zero at handover unless a support contract picks it up"
+  support_load: "deadline-shaped rather than volume-shaped. Contact rate tracks proximity to go-live far more than it tracks the number of users, and the same defect reported eight weeks out and two days out are different-severity events"
+  resolution_locus: "genuinely split — our product, the client's environment, the configuration we built, or the scope we agreed. Naming which one is a commercial act as much as a technical one"
+  notes: >
+    The scope conversation is the one that actually decides margin, and it is decided in the
+    first reply to the ticket rather than in a later negotiation. An agent who answers "yes we
+    can do that" has priced a change request without knowing it.
+
+capabilities:
+  emphasises:
+    # Scope is the discipline and it is exercised in the first response, not in a change-control
+    # meeting after the work is done.
+    - customer_support.customer_communication.expectation_setting
+    - customer_support.entitlement_and_sla.entitlement_verification
+    # A go-live date makes every commitment a schedule dependency for somebody else.
+    - customer_support.entitlement_and_sla.commitment_tracking
+    - customer_support.customer_communication.proactive_status_updates
+    # The bug-or-scope question is a diagnosis question with money attached.
+    - customer_support.diagnosis_and_resolution.root_cause_analysis
+    - customer_support.escalation_and_incident.engineering_handoff
+    # Handover is the failure point of the type, and it is a knowledge problem.
+    - customer_support.knowledge_and_deflection.knowledge_authoring
+    # A slipped go-live is an executive conversation on the client's side within a day.
+    - customer_support.escalation_and_incident.executive_escalation
+
+objects:
+  extends:
+    - object: customer_support.obj.core.entitlement
+      require_properties: [plan, expires_at]
+      note: >
+        Entitlement here is the statement of work and it EXPIRES at handover — usually with no
+        event, no notification and no change in how the client behaves. Continuing to serve an
+        expired professional-services engagement is the single most common source of silent
+        unbilled work in this family, and the expiry date is the only thing that catches it.
+    - object: customer_support.obj.core.commitment
+      require_properties: [promised_at, due_at, owner_ref]
+      note: >
+        Commitments made during delivery are schedule dependencies in the client's plan, not
+        courtesies. Missing one moves their go-live, which is why this type treats an unmet
+        commitment as more serious than a missed SLA — the SLA affects our reporting and the
+        commitment affects their launch.
+    - object: customer_support.obj.core.ticket
+      require_properties: [customer_account_ref, resolution_type]
+      note: >
+        resolution_type is where the bug-or-scope answer is recorded. Without it the engagement
+        cannot report how much of its support load was product defect versus scope creep, which
+        is precisely the number needed to scope the next engagement correctly.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    This type inherits the family's deflection deactivations and should. The arguable case is
+    training and enablement content, which genuinely does recur across engagements — but it is
+    authored by delivery for the client's users rather than by support for its own queue, so it
+    is not the same programme wearing a different name. If a firm runs implementations at volume
+    against a single product, revisit this: at that point the type is behaving like
+    managed_services and the reactivation there is the better model.

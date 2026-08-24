@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.facilities_and_assets.maintenance_coordination
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.maintenance_coordination.preventive_calendar_plus_fault_queue
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.maintenance_coordination.deferred_maintenance_is_borrowing
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

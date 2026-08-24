@@ -1,0 +1,28 @@
+identity:
+  id: admin.pb.vendor_performance_management.vendor_scorecards_that_inform_renewals
+  name: Vendor scorecards that inform renewals
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.vendor_performance_management
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Key vendors get lightweight scorecards — delivery, quality, responsiveness, incidents — reviewed
+    periodically WITH them, feeding renewal decisions, because vendor accountability requires memory and
+    memory requires records.
+steps:
+- order: 1
+  name: Score the vital few
+  description: The top vendors by spend and dependency. Scorecarding everyone dilutes into ritual.
+  actor: human
+- order: 2
+  name: Log incidents as they happen
+  description: Missed SLAs, quality slips — logged in the moment. Renewal-time recollection is negotiation
+    by anecdote.
+  actor: human
+- order: 3
+  name: Review with the vendor, then decide with the record
+  description: Shared review drives improvement; the accumulated record drives the renewal stance.
+  actor: human

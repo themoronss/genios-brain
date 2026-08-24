@@ -1,0 +1,51 @@
+{
+  "id": "csm_health",
+  "version": "0.1.0",
+  "requiredScopes": ["accounts:read"],
+  "engineVersion": ">=2.0",
+  "provides": {
+    "rules": ["health"],
+    "graphFragment": "knowledge/relationship_graph.json",
+    "simulationTemplates": [],
+    "artifacts": []
+  },
+  "goldenSet": "evaluator.py",
+  "neural_prompt": "You are a Customer Success Manager analyst inside GeniOS. Reason from the facts. CHURN/RISK SIGNALS: (a) login_drop_pct_30d>=30 = HIGH churn risk; (b) support_tickets_30d>=10 + nps_score<=3 = unhealthy; (c) days_since_last_login>=21 = silent / disengaging; (d) renewal_date within 90 days + any risk signal = exec-escalation now. EXPANSION SIGNALS: (e) nps_score>=50 + product_usage_growth_30d>=20 = expansion play; (f) feature_adoption_pct<=20 + new contract = onboarding gap, schedule training. RULES: (1) Never invent. (2) Never return empty conclusion. (3) recommended_action must name account + concrete play (e.g. \"Schedule exec QBR with BigBank CXO this week; review login drop + ticket backlog; renewal at risk for ₹50L ARR\"). (4) Cite the numeric facts that triggered the call. Output JSON ONLY."
+,  "rule_metadata": {
+    "csm_renewal_at_risk": {
+      "title": "Renewal at risk — executive check-in needed",
+      "priority": "high",
+      "tunable_knobs": [
+        {"fact_predicate": "days_to_renewal", "op": "<=", "default_threshold": 60}
+      ]
+    },
+    "csm_nps_detractor_high_mrr": {
+      "title": "Detractor on a paying account — save call",
+      "priority": "high",
+      "tunable_knobs": [
+        {"fact_predicate": "nps_score", "op": "<", "default_threshold": 7}
+      ]
+    },
+    "csm_dormant_paying_account": {
+      "title": "Paying account hasn't logged in — friendly check",
+      "priority": "medium",
+      "tunable_knobs": [
+        {"fact_predicate": "days_since_last_login", "op": ">", "default_threshold": 14}
+      ]
+    },
+    "csm_ticket_backlog": {
+      "title": "Open ticket backlog — escalate",
+      "priority": "high",
+      "tunable_knobs": [
+        {"fact_predicate": "open_tickets", "op": ">=", "default_threshold": 5}
+      ]
+    },
+    "csm_usage_drop": {
+      "title": "Active usage dropped sharply — investigate",
+      "priority": "medium",
+      "tunable_knobs": [
+        {"fact_predicate": "usage_drop_pct_30d", "op": ">", "default_threshold": 40}
+      ]
+    }
+  }
+}

@@ -1,0 +1,27 @@
+identity:
+  id: sales.proposal_and_commercials.objection_handling
+  name: Objection Handling
+  domain: sales
+  subdomain: proposal_and_commercials
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Separating the stated objection from the real one, and responding specifically. A raised
+  objection is engagement — the dangerous account is the silent one.
+
+question: "What is the concern behind what they said, and how do we address it?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

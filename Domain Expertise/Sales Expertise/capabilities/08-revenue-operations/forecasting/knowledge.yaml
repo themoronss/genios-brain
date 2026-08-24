@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.revenue_operations.forecasting
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.forecasting.evidence_based_commit
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.forecasting.the_slip_pattern_is_the_signal
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

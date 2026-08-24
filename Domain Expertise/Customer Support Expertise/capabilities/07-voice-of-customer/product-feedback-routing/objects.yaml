@@ -1,0 +1,27 @@
+# Load-set for customer_support.voice_of_customer.product_feedback_routing
+# REFERENCES ONLY, never an inline object.
+
+capability: customer_support.voice_of_customer.product_feedback_routing
+
+core:
+  # These two and nothing else are required because routing is the act of matching a problem to
+  # an owner: issue is the problem stated independently of who reported it, product_area is the
+  # ownership boundary. A report that cannot name a product_area has no destination, and a
+  # report that carries only a ticket is a customer anecdote rather than a routable finding.
+  required:
+    - customer_support.obj.core.issue
+    - customer_support.obj.core.product_area
+
+  # bug_report is the artefact the receiving team works from, optional because a great deal of
+  # routed feedback is not a defect. satisfaction_score supplies the consequence that makes a
+  # report worth prioritising against everything else in that team's queue. ticket is the
+  # original contact and is what makes the return leg possible at all — without it there is
+  # nobody to tell when the answer arrives.
+  optional:
+    - customer_support.obj.core.bug_report
+    - customer_support.obj.core.satisfaction_score
+    - customer_support.obj.core.ticket
+
+scoped:
+  required: []
+  optional: []

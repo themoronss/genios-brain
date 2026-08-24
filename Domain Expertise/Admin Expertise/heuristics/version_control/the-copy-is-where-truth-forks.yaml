@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.version_control.the_copy_is_where_truth_forks
+  name: The copy is where truth forks
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.version_control
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every 'let me just save a copy' creates a potential parallel truth. Convenience copies of
+    canonical documents are future disputes with timestamps.
+  answers:
+  - Why do document conflicts happen in careful teams?

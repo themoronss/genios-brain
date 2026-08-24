@@ -1,0 +1,760 @@
+# CORE OBJECT — Risk
+#
+# Loaded by deal_review, forecasting, pipeline_management, revenue_intelligence, closing,
+# legal_review, procurement, churn_prevention, renewal, negotiation and customer_success.
+# Eleven capabilities, which is why it is core.
+#
+# One design decision governs the whole file: `owner_ref` and `owner_side` are required, and
+# `owner_side` has a value called `unowned` rather than defaulting to the rep. A register in
+# which every risk is implicitly the rep's is a register in which no risk is anyone's, and
+# that is the state most deal reviews are actually in. Making unownedness an explicit, visible
+# value is the only mechanism here that changes behaviour.
+
+identity:
+  id: sales.obj.core.risk
+  scope: core
+  name: Risk
+  domain: sales
+  subdomain: sales_management
+  owner_capability: sales.sales_management.deal_review
+  version: 1.0.0
+  status: draft
+  aliases: ["Deal Risk", "Threat", "Exposure", "Red Flag"]
+purpose:
+  statement: >
+    A specific identified threat to a deal or account, with a likelihood, an impact and an
+    owner. The discriminator is specificity plus ownership: "budget risk" is a category and
+    belongs on a dashboard, whereas "the CFO who approves this has not been met and is out of
+    budget until April, owned by the AE, mitigation due Friday" is a Risk. Distinguish it from
+    an Objection — an objection is voiced by the buyer and has an answer; a risk is identified
+    by us and has a mitigation, and the two convert into one another in one direction only,
+    objection to risk, when we cannot answer. A risk register with no owners is a document; this
+    object exists to force the owner field.
+attributes:
+  - name: definition
+    purpose: What the threat actually is, stated concretely enough to be acted on.
+    type: composite
+    contains:
+      - risk_category
+      - statement
+      - triggers
+      - detection_source
+  - name: assessment
+    purpose: How likely, how bad, and the product of the two. Both halves, or neither is useful.
+    type: composite
+    contains:
+      - likelihood
+      - likelihood_bp
+      - impact
+      - value_at_risk
+      - exposure_bp
+  - name: ownership
+    purpose: >
+      The reason this object exists. Every other section degrades gracefully when thin;
+      this one does not.
+    type: composite
+    contains:
+      - owner_ref
+      - owner_side
+      - accepted_by
+      - escalated_to_ref
+  - name: mitigation
+    purpose: What is being done, by when, and whether it worked.
+    type: composite
+    contains:
+      - mitigation_plan
+      - mitigation_action_ref
+      - mitigation_due_at
+      - residual_likelihood
+      - is_mitigated
+  - name: lifecycle
+    purpose: Where the risk is, and how long since anybody looked at it.
+    type: composite
+    contains:
+      - status
+      - detected_at
+      - last_reviewed_at
+      - realised_at
+  - name: linkage
+    purpose: What else this risk touches. An isolated risk record is usually a symptom of one recorded
+      elsewhere.
+    type: composite
+    contains:
+      - linked_objection_ref
+      - linked_competitor_ref
+      - blocks_forecast_commit
+      - deal_momentum
+  - name: risk_category
+    purpose: '`single_thread` is a category in its own right rather than a flavour of champion risk, because
+      its mitigation is structural — build a second relationship — and it has to be started weeks before
+      the risk becomes visible.'
+    type: value
+    data_type: enum
+    allowed_values: [budget, authority, champion, competitive, timing, legal, security, procurement,
+        technical_fit, adoption, commercial, political, single_thread, external]
+    required: true
+    description: >
+      `single_thread` is a category in its own right rather than a flavour of champion risk,
+      because its mitigation is structural — build a second relationship — and it has to be
+      started weeks before the risk becomes visible.
+  - name: statement
+    purpose: The specific threat in one sentence, naming the person, the date or the amount. If it
+      could be written against any deal in the pipeline it is a category, not a risk, and Layer 4 can
+      do nothing with it.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      The specific threat in one sentence, naming the person, the date or the amount. If it
+      could be written against any deal in the pipeline it is a category, not a risk, and
+      Layer 4 can do nothing with it.
+  - name: triggers
+    purpose: The observable events that would mean this has materialised, written in advance. Deciding
+      afterwards what counted as materialising is how a register stays permanently green.
+    type: value
+    data_type: list
+    description: >
+      The observable events that would mean this has materialised, written in advance. Deciding
+      afterwards what counted as materialising is how a register stays permanently green.
+  - name: detection_source
+    purpose: '`absent_signal` is the most valuable value and the one no CRM has. It records a risk detected
+      because something did not happen — no reply, no meeting booked, no security questionnaire returned.'
+    type: value
+    data_type: enum
+    allowed_values: [inferred, stated_by_buyer, observed, absent_signal, manager_review]
+    required: true
+    description: >
+      `absent_signal` is the most valuable value and the one no CRM has. It records a risk
+      detected because something did not happen — no reply, no meeting booked, no security
+      questionnaire returned.
+  - name: likelihood
+    purpose: The likelihood of this object.
+    type: value
+    data_type: enum
+    allowed_values: [remote, possible, likely, near_certain]
+    required: true
+  - name: likelihood_bp
+    purpose: The machine-readable half. Kept alongside the enum so a reviewer reads words and Layer 4
+      reads a number.
+    type: value
+    data_type: integer
+    unit: basis_points
+    description: The machine-readable half. Kept alongside the enum so a reviewer reads words and
+      Layer 4 reads a number.
+  - name: impact
+    purpose: The impact of this object.
+    type: value
+    data_type: enum
+    allowed_values: [minor, material, severe, deal_fatal]
+    required: true
+  - name: value_at_risk
+    purpose: Revenue exposed if it materialises. Not always the whole deal — a slipped date moves
+      revenue rather than losing it.
+    type: value
+    data_type: money
+    source_paths: [deal.value]
+    description: Revenue exposed if it materialises. Not always the whole deal — a slipped date moves
+      revenue rather than losing it.
+  - name: exposure_bp
+    purpose: Likelihood times impact, normalised. The sort key for a deal review. Ranking a register
+      by category instead of exposure is how a remote legal risk gets an hour and a near-certain
+      budget freeze gets a line.
+    type: value
+    data_type: integer
+    unit: basis_points
+    description: >
+      Likelihood times impact, normalised. The sort key for a deal review. Ranking a register
+      by category instead of exposure is how a remote legal risk gets an hour and a near-certain
+      budget freeze gets a line.
+  - name: owner_ref
+    purpose: The named individual accountable for the mitigation. Required, and a team, a function or
+      a role is not a valid value — "sales" owning a risk is identical to nobody owning it.
+    type: reference
+    ref: sales.obj.core.stakeholder
+    data_type: ref
+    required: true
+    description: >
+      The named individual accountable for the mitigation. Required, and a team, a function or
+      a role is not a valid value — "sales" owning a risk is identical to nobody owning it.
+  - name: owner_side
+    purpose: "Defaults to `unowned` and never to the rep. Risks owned on the buyer's side are the ones most
+      often mismanaged: a security review sitting with their IT team has no internal chaser, and the deal
+      slips by exactly as long as their queue is."
+    type: value
+    data_type: enum
+    allowed_values: [us, them, shared, unowned]
+    required: true
+    description: >
+      Defaults to `unowned` and never to the rep. Risks owned on the buyer's side are the ones
+      most often mismanaged: a security review sitting with their IT team has no internal
+      chaser, and the deal slips by exactly as long as their queue is.
+  - name: accepted_by
+    purpose: Who consciously decided to carry this risk rather than mitigate it. Acceptance is a
+      legitimate outcome; silent acceptance is not.
+    type: value
+    data_type: string
+    description: Who consciously decided to carry this risk rather than mitigate it. Acceptance is a
+      legitimate outcome; silent acceptance is not.
+  - name: escalated_to_ref
+    purpose: Populated when mitigation exceeds the owner's authority.
+    type: reference
+    ref: sales.obj.core.decision_maker
+    data_type: ref
+    description: Populated when mitigation exceeds the owner's authority.
+  - name: mitigation_plan
+    purpose: The specific action, not the intention. "Multithread the account" is an intention; "meet
+      the VP Finance on the 14th" is a plan.
+    type: value
+    data_type: string
+    description: The specific action, not the intention. "Multithread the account" is an intention;
+      "meet the VP Finance on the 14th" is a plan.
+  - name: mitigation_action_ref
+    purpose: The commitment that carries the mitigation. Without this edge the plan lives only in
+      prose and nothing chases it.
+    type: reference
+    ref: sales.obj.core.next_action
+    data_type: ref
+    description: The commitment that carries the mitigation. Without this edge the plan lives only in
+      prose and nothing chases it.
+  - name: mitigation_due_at
+    purpose: The mitigation_due_at of this object.
+    type: value
+    data_type: timestamp
+    source_paths: [commitment.due_at]
+  - name: residual_likelihood
+    purpose: Likelihood after mitigation. `unassessed` is the honest default and the common real state
+      — the plan was executed and nobody checked whether it changed anything.
+    type: value
+    data_type: enum
+    allowed_values: [remote, possible, likely, near_certain, unassessed]
+    description: >
+      Likelihood after mitigation. `unassessed` is the honest default and the common real state
+      — the plan was executed and nobody checked whether it changed anything.
+  - name: is_mitigated
+    purpose: The is_mitigated of this object.
+    type: value
+    data_type: boolean
+  - name: status
+    purpose: '`stale` is a real status, not an oversight: a risk untouched since detection is a different
+      object from one actively being worked, and a review that cannot tell them apart is reading a snapshot
+      of what somebody once feared.'
+    type: value
+    data_type: enum
+    allowed_values: [open, mitigating, accepted, transferred, realised, closed, stale]
+    required: true
+    description: >
+      `stale` is a real status, not an oversight: a risk untouched since detection is a
+      different object from one actively being worked, and a review that cannot tell them apart
+      is reading a snapshot of what somebody once feared.
+  - name: detected_at
+    purpose: The detected_at of this object.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+  - name: last_reviewed_at
+    purpose: When a human last looked at this record. The gap between this and now is the single best
+      proxy for whether the register is alive.
+    type: value
+    data_type: timestamp
+    description: When a human last looked at this record. The gap between this and now is the single
+      best proxy for whether the register is alive.
+  - name: realised_at
+    purpose: The realised_at of this object.
+    type: value
+    data_type: timestamp
+  - name: linked_objection_ref
+    purpose: The objection this risk came from, when it came from one.
+    type: reference
+    ref: sales.obj.core.objection
+    data_type: ref
+    description: The objection this risk came from, when it came from one.
+  - name: linked_competitor_ref
+    purpose: The linked_competitor_ref of this object.
+    type: reference
+    ref: sales.obj.core.competitor
+    data_type: ref
+  - name: blocks_forecast_commit
+    purpose: True when exposure alone should cap the forecast category regardless of stage.
+    type: value
+    data_type: boolean
+    description: True when exposure alone should cap the forecast category regardless of stage.
+  - name: deal_momentum
+    purpose: The deal_momentum of this object.
+    type: value
+    data_type: number
+    source_paths: [derived.momentum]
+  - name: deal_status
+    purpose: The deal_status of this object.
+    type: value
+    data_type: enum
+    allowed_values: [open, won, lost, unknown]
+    source_paths: [deal.status]
+states:
+  initial: open
+  values:
+    - name: open
+      description: Identified, unmitigated, and — until owner_side says otherwise — unowned.
+    - name: mitigating
+      description: An owner and a dated action exist. The only state that represents work in progress.
+      entered_when: [exists: commitment.action]
+    - name: accepted
+      description: Consciously carried. Requires accepted_by. A legitimate and under-used outcome.
+    - name: transferred
+      description: Ownership moved to the buyer's side or to another internal function, with the
+        handover acknowledged.
+    - name: stale
+      description: >
+        Untouched past its own mitigation date with nothing recorded. Reads as `open` in most
+        registers, which is precisely the failure this state exists to make visible.
+      entered_when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+    - name: realised
+      description: It happened. The register's only real feedback signal, and the one that calibrates
+        every likelihood above.
+      entered_when: [has_obs: closed_lost_mention]
+    - name: closed
+      description: No longer credible — the condition passed, or the mitigation worked and residual is
+        remote.
+  transitions:
+    - {from: open, to: mitigating, when: [exists: commitment.action]}
+    - {from: open, to: accepted}
+    - {from: open, to: transferred}
+    - {from: mitigating, to: stale, when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]}
+    - {from: stale, to: mitigating}
+    - {from: mitigating, to: closed}
+    - {from: accepted, to: realised, when: [has_obs: closed_lost_mention]}
+    - {from: open, to: realised, when: [has_obs: closed_lost_mention]}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - type: attaches_to
+    target: sales.obj.core.deal
+    cardinality: one
+    description: Every risk hangs off exactly one deal. Account-level threats are recorded once per
+      affected deal, because mitigation is per-deal.
+
+  - type: belongs_to
+    target: sales.obj.core.stakeholder
+    cardinality: zero_or_one
+    description: >
+      The owner. zero_or_one rather than one at the graph level even though owner_ref is a
+      required property, because an unowned risk must still be representable — hiding it would
+      defeat the purpose of the field.
+
+  - type: requires
+    target: sales.obj.core.next_action
+    cardinality: zero_or_many
+    description: The mitigation, as a commitment with a date. A risk with no outgoing edge here is
+      being watched, not managed.
+
+  - type: blocks
+    target: sales.obj.core.timeline
+    cardinality: zero_or_one
+
+  - type: influences
+    target: sales.obj.core.opportunity
+    cardinality: zero_or_one
+    description: Exposure caps the forecast category. This edge is how a deal review changes a number
+      rather than a mood.
+
+  - type: references
+    target: sales.obj.core.objection
+    cardinality: zero_or_many
+    description: Origin, when the risk is an objection we could not answer.
+
+  - type: references
+    target: sales.obj.core.competitor
+    cardinality: zero_or_one
+
+  - type: supersedes
+    target: sales.obj.core.risk
+    cardinality: zero_or_one
+    description: Self-referential. A re-scoped risk replaces its predecessor instead of accumulating
+      alongside it.
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: risk.budget_freeze_is_a_funding_risk
+      statement: "A budget freeze was observed on this deal."
+      status: executable
+      when:
+        - {has_obs: budget_freeze}
+      yields: {confidence_bp: 9500, attribute: risk_category, value: budget}
+      evidence_fields: [deal.last_inbound]
+      note: >
+        Near-certain likelihood, and structural — no discount, urgency or executive sponsor
+        reaches it. The correct mitigation is almost always to re-time the deal rather than to
+        push it, and pushing is what happens when this is filed as a generic budget concern.
+
+    - id: risk.champion_departure_is_fatal
+      statement: "A champion-change observation fired — the person who was selling for us internally has
+        gone."
+      status: executable
+      when:
+        - {has_obs: champion_change}
+      yields: {confidence_bp: 9500, attribute: impact, value: deal_fatal}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Rated deal_fatal rather than severe deliberately. Everything the deal rested on — the
+        internal politics, the timeline, the account of who really decides — came from that
+        person and is now unverified. The deal reverts to a warm outbound and is usually
+        forecast for another two quarters as though it had not.
+
+    - id: risk.overdue_commitment_is_an_execution_risk
+      statement: "A commitment exists and its due date has passed."
+      status: executable
+      when:
+        - {exists: commitment.action}
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+      yields: {confidence_bp: 8500, attribute: risk_category, value: timing}
+      evidence_fields: [commitment.due_at, commitment.action]
+      note: >
+        The cheapest risk in the register to detect and the most frequently missed, because a
+        missed commitment produces no notification — it produces an absence. Whose commitment
+        it was matters more than the slip itself: ours is an execution problem, theirs is
+        usually a priority problem wearing a calendar excuse.
+
+    - id: risk.owner_declared
+      statement: "A named individual is recorded as accountable for this risk."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: owner_side, value: us}
+      requires_signals:
+        - kind: fact_path
+          name: risk.owner
+          owner_layer: L1
+          note: >
+            The highest-value gap on this object, and the one that decides whether it works at
+            all. Nothing in the pipeline can express who owns a risk, so every inferred risk is
+            born unowned and stays that way. Until a risk can carry an owner and that owner can
+            be chased, this object detects threats accurately and changes nothing about them.
+
+    - id: risk.realisation_attributed
+      statement: "A lost deal was attributed to a risk that had been recorded and left open."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: status, value: realised}
+      requires_signals:
+        - kind: obs_kind
+          name: closed_lost_reason
+          owner_layer: L2
+          note: >
+            closed_lost_mention fires with no reason attached, so the register never learns.
+            Without attribution, likelihood_bp is permanently a guess and no category base rate
+            can ever be computed — the whole assessment half of this object stays uncalibrated.
+
+  heuristic:
+
+    - id: risk.single_threaded_deal
+      statement: "An open deal with one contact — every judgement about it rests on one person's account."
+      status: executable
+      when:
+        - {fn: edge_count, op: "<=", value: 1}
+        - {neighbor_fact: deal.status, op: "=", value: open}
+      yields: {confidence_bp: 7500, attribute: risk_category, value: single_thread}
+      note: >
+        Its own category because its mitigation is structural and slow. By the time single
+        threading becomes visible — the contact goes quiet, changes role, or turns out not to
+        decide — building a second relationship takes longer than the deal has left.
+
+    - id: risk.silence_after_proposal
+      statement: "A proposal went out and nothing has come back in three times this account's own reply
+        cadence."
+      status: executable
+      when:
+        - {has_obs: proposal_sent}
+        - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 3, floor:
+              7}}
+      yields: {confidence_bp: 7000, attribute: detection_source, value: absent_signal}
+      evidence_fields: [deal.last_inbound]
+      note: >
+        Baseline-relative rather than a fixed fortnight, because normal silence differs by an
+        order of magnitude across accounts. This is the archetypal absent_signal risk: nothing
+        bad happened, which is the problem.
+
+    - id: risk.verbal_yes_without_paper
+      statement: "A verbal yes was given, no contract has been requested, and the account has gone quiet
+        for a fortnight."
+      status: executable
+      when:
+        - {has_obs: verbal_yes}
+        - {no_obs: contract_requested}
+        - {fn: days_since, path: deal.last_inbound, op: ">", value: 14}
+      yields: {confidence_bp: 7800, attribute: risk_category, value: commercial}
+      evidence_fields: [deal.last_inbound]
+      note: >
+        A verbal yes that has not become paper is a risk, not a win, and it is forecast as a win
+        in almost every pipeline. The gap is nearly always something unresolved the buyer has
+        not mentioned — a procurement queue, an unmet approver, or a second look at a rival.
+
+    - id: risk.repeat_timeline_slip
+      statement: "The date has moved twice — the stated timing problem is not the real problem."
+      status: needs_signal
+      yields: {confidence_bp: 8200, attribute: risk_category, value: authority}
+      requires_signals:
+        - kind: derived
+          name: derived.timeline_slip_count
+          owner_layer: L2
+          note: >
+            The engine can see that timeline_slip fired but not that it fired twice, so the
+            profession's most reliable second-order tell is invisible. One slip is a calendar.
+            Two means something else is untrue — usually an approver nobody has mapped or a
+            budget that was never actually approved — and the risk should be re-categorised
+            away from timing entirely.
+
+    - id: risk.stale_since_detection
+      statement: "Nobody has looked at this risk since it was raised."
+      status: needs_signal
+      yields: {confidence_bp: 7000, attribute: status, value: stale}
+      requires_signals:
+        - kind: fact_path
+          name: risk.last_reviewed_at
+          owner_layer: L1
+          note: >
+            Requires the review surface to write back when a human reads a record. Cheap to
+            build and disproportionately valuable: it is the only way to distinguish a managed
+            register from a decorative one, and the distinction is invisible today.
+
+    - id: risk.mitigation_owner_missed_the_date
+      statement: "The commitment carrying this risk's mitigation is overdue and the owner has not responded."
+      status: needs_signal
+      yields: {confidence_bp: 8000, attribute: is_mitigated, value: false}
+      requires_signals:
+        - kind: fact_path
+          name: commitment.mitigates_risk
+          owner_layer: L2
+          note: >
+            commitment.action and commitment.due_at both exist, but nothing links a commitment
+            to the risk it was meant to close. So an overdue commitment is visible, an unmitigated
+            risk is visible, and the fact that they are the same failure is not.
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: derived, signal: momentum collapse on an open deal, path: derived.momentum}
+  - {source: derived, signal: sentiment turning negative, path: derived.sentiment}
+  - {source: email, signal: "budget freezes, champion changes, timeline slips", path: deal.last_inbound}
+  - {source: email, signal: silence measured against this account's own cadence, path: thread.last_inbound}
+  - {source: calendar, signal: meetings declined or repeatedly rescheduled, path: meeting.status}
+  - {source: crm, signal: overdue commitments and their owners, path: commitment.due_at}
+  - {source: meeting_transcript, signal: "hedging, deferral, and who stops speaking"}
+  - {source: manual_entry, signal: "risks a human sees and the pipeline cannot — reorganisations, politics,\
+      a hiring freeze mentioned in passing"}
+  - {source: document, signal: security questionnaires and redlines returned with blocking items}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: exposure_bp, type: integer, description: "Likelihood times impact, normalised. The sort key\
+      for a deal review.", consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: unowned_risk_count, type: integer, description: "Open risks at owner_side = unowned. The number\
+      this object was built to surface.", consumed_by: [L4.decision_maker, L6.learning_unit]}
+  - {name: forecast_cap, type: string, description: "Maximum forecast category the risk profile permits,\
+      independent of stage.", consumed_by: [L4.decision_maker]}
+  - {name: mitigation_queue, type: list, description: "Dated mitigations with owners, ordered by exposure.",
+      consumed_by: [L5.execution_planning]}
+  - {name: escalation_brief, type: string, description: "What to raise, to whom, and why now.", consumed_by: [
+      L5.communication_planning]}
+  - {name: realisation_record, type: string, description: "Which risks materialised, for likelihood calibration.",
+      consumed_by: [L6.learning_unit]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: risk.owner_must_be_a_person, statement: "owner_ref must resolve to an individual. A function,\
+      team or role is not a valid owner.", hard: true}
+  - {id: risk.no_silent_closure, statement: "A risk may not be closed without either a recorded mitigation\
+      outcome or an attributed acceptance.", hard: true}
+  - {id: risk.statement_must_be_specific, statement: "A statement that could apply to any deal in the\
+      pipeline is a category and must be rejected as a risk.", hard: true}
+  - {id: risk.fatal_caps_forecast, statement: "An open deal_fatal risk at likelihood likely or above caps\
+      the forecast category regardless of stage.", hard: true}
+  - {id: risk.buyer_side_still_needs_a_chaser, statement: "owner_side = them does not remove our obligation\
+      to track it. It is the state in which deals slip furthest.", hard: false}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: risk.owner_is_mandatory
+    statement: >
+      A risk at impact `severe` or `deal_fatal` may not remain at owner_side = unowned past one
+      review cycle. Unowned is a valid state for a few days and a defect after that.
+    then: force_owner_assignment
+    severity: blocking
+
+  - id: risk.fatal_risk_caps_the_forecast
+    statement: >
+      A deal carrying an open risk at impact deal_fatal and likelihood likely or above cannot be
+      forecast as committed, whatever the stage field says.
+    when: [{path: deal.status, op: "=", value: open}]
+    then: cap_forecast_category
+    severity: blocking
+
+  - id: risk.champion_departure_is_automatic
+    statement: >
+      champion_change opens a champion risk at near_certain likelihood without waiting for a
+      human to notice. It is the single most under-recorded deal event because the person who
+      would have told us is the person who left.
+    when: [has_obs: champion_change]
+    then: open_champion_risk
+    severity: blocking
+
+  - id: risk.mitigation_needs_a_date
+    statement: >
+      status may not be `mitigating` without mitigation_due_at. A plan with no date is an
+      intention, and intentions do not appear in any queue.
+    then: require_mitigation_due_date
+    severity: warning
+
+  - id: risk.overdue_mitigation_goes_stale
+    statement: A mitigation past its due date with nothing recorded moves to `stale` and re-enters the
+      review.
+    when: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}, exists: commitment.action]
+    then: mark_stale
+    severity: warning
+
+  - id: risk.acceptance_must_be_signed
+    statement: Moving to `accepted` requires accepted_by. An unattributed acceptance is
+      indistinguishable from having forgotten about it.
+    then: require_accepted_by
+    severity: warning
+
+# ── 8 · Decision Factors — weights sum to 10000 ──────────────────────────────────────────
+decision_factors:
+
+  - name: exposure
+    weight_bp: 3000
+    direction: decreases
+    description: Likelihood times impact. The primary sort for any review, and the field that stops a
+      remote legal query outranking a near-certain budget freeze.
+    reads: [likelihood_bp, impact, value_at_risk, exposure_bp]
+
+  - name: ownership_state
+    weight_bp: 2500
+    direction: context
+    description: >
+      Weighted second, above mitigation progress, on the evidence that unowned risks realise at
+      a far higher rate than owned ones of equal exposure. Ownership is not administration; it
+      is the variable most under our control.
+    reads: [owner_ref, owner_side, accepted_by]
+
+  - name: mitigation_progress
+    weight_bp: 2000
+    direction: increases
+    reads: [status, is_mitigated, residual_likelihood, mitigation_due_at]
+
+  - name: review_recency
+    weight_bp: 1200
+    direction: context
+    description: A register nobody re-reads is a register of what somebody once feared. Staleness is
+      itself a signal about the deal, not just about the record.
+    reads: [last_reviewed_at, detected_at, status]
+
+  - name: category_base_rate
+    weight_bp: 800
+    direction: context
+    description: How often this category has actually realised historically, rather than how alarming
+      it sounds.
+    reads: [risk_category, detection_source]
+
+  - name: competitive_linkage
+    weight_bp: 500
+    direction: decreases
+    reads: [linked_competitor_ref, linked_objection_ref]
+
+# ── 9 · Inference Patterns ⭐ ────────────────────────────────────────────────────────────
+evidence:
+  - {source: contract, strength_bp: 9500, description: "A blocking redline or an unmet condition precedent.\
+      Documented, dated and undeniable."}
+  - {source: document, strength_bp: 8500, description: "A returned security questionnaire with failing\
+      items. Converts a suspicion into a list."}
+  - {source: meeting_transcript, strength_bp: 8000, description: "Stated concerns and, more usefully,\
+      who stopped speaking."}
+  - {source: email, strength_bp: 7500, description: "Freezes, departures and slips in writing."}
+  - {source: derived, strength_bp: 6500, description: "Momentum and silence. The only source that detects\
+      absent_signal risks at all."}
+  - {source: crm, strength_bp: 6000, description: "Overdue commitments. Reliable where logged, and logging\
+      is uneven."}
+  - {source: manual_entry, strength_bp: 7000, description: "A rep's or manager's judgement. Frequently\
+      the best signal available and systematically under-weighted because it is not automatic."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: unowned_risk_share, unit: percent, description: "Open risks with owner_side = unowned. The\
+      headline number for whether this object is being used.", owner_layer: L6}
+  - {name: risk_realisation_rate, unit: percent, description: "Share of open risks that materialised.\
+      Calibrates every likelihood in the register.", owner_layer: L6}
+  - {name: mitigation_completion, unit: percent, description: "Mitigations closed by their due date.",
+      owner_layer: L6}
+  - {name: detection_lead_time, unit: days, description: "Days from risk becoming true to it being recorded.\
+      Late detection is the failure, not high risk counts.", owner_layer: L6}
+  - {name: stale_register_share, unit: percent, description: "Risks untouched since detection. Above a\
+      third, the register is decorative.", owner_layer: L6}
+  - {name: unrecorded_loss_share, unit: percent, description: "Lost deals whose cause was never in the\
+      register. Measures blind spots rather than performance.", owner_layer: L6}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: risk.opened, name: Risk Opened, payload: [risk_category, likelihood, impact, owner_side]}
+  - {id: risk.budget_frozen, name: Budget Freeze Risk Opened, emitted_when: [has_obs: budget_freeze],
+    payload: [risk_category, likelihood]}
+  - {id: risk.champion_lost, name: Champion Risk Opened, emitted_when: [has_obs: champion_change],
+      payload: [impact, value_at_risk], description: "Highest-severity automatic risk in the system. Everything
+      the deal rested on came from that person and is now unverified."}
+  - {id: risk.went_stale, name: Risk Went Stale, emitted_when: [{fn: days_since, path: commitment.due_at,
+        op: ">", value: 0}, exists: commitment.action], payload: [status, mitigation_due_at]}
+  - {id: risk.unowned_too_long, name: Risk Unowned Past Review, payload: [owner_side, exposure_bp, detected_at],
+    description: "The event that makes the missing owner field impossible to ignore. Nothing else in this
+      object changes behaviour on its own."}
+  - {id: risk.realised, name: Risk Realised, emitted_when: [has_obs: closed_lost_mention], payload: [
+      risk_category, value_at_risk, was_mitigated]}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: risk.assign_owner, name: Assign a named owner, actor: human, effect: "The highest-leverage action\
+      on this object. A team is not an owner; a role is not an owner."}
+  - {id: risk.quantify, name: Set likelihood and impact explicitly, actor: human, effect: "Forces the\
+      difference between a worry and a risk. Most register entries do not survive being asked how likely
+      they are."}
+  - {id: risk.plan_mitigation, name: Create a dated mitigation commitment, actor: human, effect: "Converts\
+      a plan into something a queue can chase."}
+  - {id: risk.accept, name: Accept the risk on the record, actor: human, effect: "A legitimate outcome,\
+      and the one that keeps the register credible. A register where nothing is ever accepted grows until
+      it is ignored wholesale."}
+  - {id: risk.escalate, name: Escalate beyond the owner's authority, actor: human, effect: "Correct when\
+      mitigation needs a discount approval, an executive sponsor or legal time the owner cannot commit."}
+  - {id: risk.multithread, name: Build a second relationship, actor: human, preconditions: [{fn: edge_count,
+        op: "<=", value: 1}], effect: "The only mitigation for single_thread, and it must start before the
+      risk is visible or it finishes after the deal."}
+  - {id: risk.retime_the_deal, name: Move the deal to the next period, actor: human, effect: "Correct\
+      response to a budget freeze. Unpopular, honest, and cheaper than three quarters of pushing."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "The CFO nobody has met, out of budget until April", note: "Category authority, likelihood\
+      likely, impact deal_fatal, owner AE, mitigation a dated introduction request. A real risk because
+      every field is answerable."}
+  - {label: "\"Budget risk\"", note: "The classic misclassification. A category typed into a register\
+      and reviewed for two years. No person, no date, no amount, and nothing Layer 4 can weigh."}
+  - {label: "Security review sitting with their IT team", note: "owner_side = them. No internal chaser\
+      exists, the deal slips by exactly the length of their queue, and the register shows it as being handled."}
+  - {label: "Second date slip in one quarter", note: "Recorded as timing and almost never is. Two slips\
+      mean an unmapped approver or a budget that was never approved."}
+  - {label: "Verbal yes, six weeks, no contract requested", note: "Forecast as won in most pipelines.\
+      commercial risk at likelihood likely, and the cause is usually a procurement queue nobody asked about."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Six of eleven patterns are executable, carried by budget_freeze, champion_change,
+    verbal_yes, proposal_sent, edge_count and the commitment fact paths — detection is the
+    well-served half of this object. Management is the blocked half, and the highest-value gap
+    is a risk owner: nothing in the pipeline can express who is accountable, so every inferred
+    risk is born unowned and stays that way. Until an owner can be recorded and chased, this
+    object identifies threats accurately and changes nothing about them, which is exactly the
+    failure mode the discriminator was written against. Second is closed_lost_reason, without
+    which no likelihood in the register can ever be calibrated against what actually happened.

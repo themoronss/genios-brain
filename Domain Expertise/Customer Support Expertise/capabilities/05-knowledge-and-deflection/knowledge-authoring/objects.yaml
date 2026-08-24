@@ -1,0 +1,31 @@
+# Load-set for customer_support.knowledge_and_deflection.knowledge_authoring
+# REFERENCES ONLY — never an inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+
+capability: customer_support.knowledge_and_deflection.knowledge_authoring
+
+core:
+  # Article and Issue are the pair that makes authoring a resolution activity: you are writing
+  # about a specific underlying defect or gap, not about a feature. Without Issue, authoring
+  # drifts into product documentation and stops answering anything.
+  required:
+    - customer_support.obj.core.knowledge_article
+    - customer_support.obj.core.issue
+  # Resolution supplies what actually made the problem stop, which is the article's body.
+  # Product Area decides where it is filed and what release invalidates it. Content Gap is the
+  # commissioning record — the reason this article was written rather than another one.
+  optional:
+    - customer_support.obj.core.resolution
+    - customer_support.obj.core.product_area
+    - customer_support.obj.core.content_gap
+
+scoped:
+  required: []
+  optional: []
+
+notes: >
+  Ticket is deliberately absent. Authoring works from the Issue and the Resolution, not from
+  one customer's instance of them; loading Ticket here is how articles acquire the particulars
+  of the case that happened to prompt them and stop generalising.

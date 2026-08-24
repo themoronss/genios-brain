@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.records_and_documentation.document_control
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.document_control.controlled_documents_lifecycle
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.document_control.authority_needs_maintenance
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

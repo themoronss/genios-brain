@@ -1,0 +1,27 @@
+identity:
+  id: sales.sales_management.performance_management
+  name: Performance Management
+  domain: sales
+  subdomain: sales_management
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Attainment, activity, conversion and ramp measured per seller, with the diagnosis separated
+  from the number. Two reps missing quota for opposite reasons need opposite interventions.
+
+question: "Is each seller on track, and if not, what is the cause?"
+
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
+    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
+    capabilities/03-qualification/lead-qualification.yaml.

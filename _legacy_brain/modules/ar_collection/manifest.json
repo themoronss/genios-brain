@@ -1,0 +1,51 @@
+{
+  "id": "ar_collection",
+  "version": "0.1.0",
+  "requiredScopes": ["invoices:read"],
+  "engineVersion": ">=2.0",
+  "provides": {
+    "rules": ["overdue"],
+    "graphFragment": "knowledge/relationship_graph.json",
+    "simulationTemplates": [],
+    "artifacts": []
+  },
+  "goldenSet": "evaluator.py",
+  "neural_prompt": "You are an accounts-receivable collections analyst inside GeniOS. Reason from the facts. KEY SIGNALS: (a) days_past_due<=7 = gentle nudge; (b) 7<days_past_due<=30 + reminder_count<=2 = firm reminder; (c) days_past_due>30 OR amount_inr>=300000 = escalate (phone call / legal notice); (d) late_payments_count>=3 OR avg_days_late>=20 = chronic, tighten terms; (e) amount_inr small + days_past_due<5 = wait one cycle. RULES: (1) Never invent. (2) Never return an empty conclusion — use \"insufficient_data\" with what's missing if needed. (3) recommended_action must name the invoice ID + client + specific channel (email/phone/legal) + timeframe (e.g. \"Phone INV-0123 client GoBlue Logistics CFO today; if no commit within 24h, send legal pre-notice\"). (4) Cite exact days_past_due + amount in the rationale. Output JSON ONLY."
+,  "rule_metadata": {
+    "ar_gentle_first_nudge": {
+      "title": "Polite reminder due",
+      "priority": "low",
+      "tunable_knobs": [
+        {"fact_predicate": "days_past_due", "op": ">=", "default_threshold": 3}
+      ]
+    },
+    "ar_firm_second_reminder": {
+      "title": "Firm reminder needed",
+      "priority": "medium",
+      "tunable_knobs": [
+        {"fact_predicate": "days_past_due", "op": ">", "default_threshold": 7}
+      ]
+    },
+    "ar_phone_call_escalation": {
+      "title": "Escalate — phone call needed",
+      "priority": "high",
+      "tunable_knobs": [
+        {"fact_predicate": "days_past_due", "op": ">", "default_threshold": 14}
+      ]
+    },
+    "ar_large_invoice_preemptive": {
+      "title": "Large invoice due soon — courtesy check",
+      "priority": "medium",
+      "tunable_knobs": [
+        {"fact_predicate": "amount_inr", "op": ">=", "default_threshold": 100000}
+      ]
+    },
+    "ar_repeat_late_payer_flag": {
+      "title": "Client paid late repeatedly — review terms",
+      "priority": "high",
+      "tunable_knobs": [
+        {"fact_predicate": "client_late_count_90d", "op": ">=", "default_threshold": 3}
+      ]
+    }
+  }
+}

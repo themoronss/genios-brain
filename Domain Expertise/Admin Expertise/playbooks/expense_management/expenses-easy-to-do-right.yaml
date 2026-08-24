@@ -1,0 +1,28 @@
+identity:
+  id: admin.pb.expense_management.expenses_easy_to_do_right
+  name: Expenses easy to do right
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.expense_management
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Expense policy is enforced by an easy compliant path — clear limits, in-flow receipt capture,
+    fast reimbursement — because expense abuse is rare while expense friction is universal, and the system
+    should be built for the honest majority.
+steps:
+- order: 1
+  name: Publish limits people can remember
+  description: Meal caps, travel classes, approval routes — a page, not a policy novel.
+  actor: human
+- order: 2
+  name: Capture receipts at spend time
+  description: Photo-in-app at the moment beats the month-end envelope archaeology.
+  actor: human
+- order: 3
+  name: Reimburse fast, audit by sample
+  description: Quick repayment builds compliance goodwill; risk-based sampling catches the outliers without
+    taxing everyone.
+  actor: human

@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.meeting_operations.meeting_scheduling
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.meeting_scheduling.schedule_once_correctly
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.meeting_scheduling.reschedules_cost_more_than_they_show
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

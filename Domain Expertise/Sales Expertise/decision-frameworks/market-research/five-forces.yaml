@@ -1,0 +1,39 @@
+identity:
+  id: sales.df.market_research.five_forces
+  name: 'Porter''s five forces, read as a question about durability: buyer power…'
+  kind: decision_framework
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.market_research
+  version: 0.1.0
+  status: draft
+purpose:
+  statement: "Porter's five forces, read as a question about durability: buyer power, supplier power,\
+    \ substitutes, new entrants, rivalry.\n It is the standard structure for asking whether margin in\
+    \ a market survives contact with competition. Its weakness here is that it says nothing about buying\
+    \ behaviour, which is what actually decides whether we can sell — so it is used for the durability\
+    \ question only, never "
+criteria:
+- name: 'Porter''s five forces, read as a question about durability: buyer power…'
+  description: 'It is the standard structure for asking whether margin in a market survives contact
+    with competition. Its weakness here is that it says nothing about buying behaviour, which is what
+    actually decides whether we can sell — so it is used for the durability question only, never as
+    the segmentation.
+
+    '
+how_to_apply:
+- 'It is the standard structure for asking whether margin in a market survives contact with competition.
+  Its weakness here is that it says nothing about buying behaviour, which is what actually decides whether
+  we can sell — so it is used for the durability question only, never as the segmentation.
+
+  '
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-08-08'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: skeleton
+  notes: 'Extracted from an inline list on sales.market_and_targeting.market_research. Now addressable:
+    it has an id and a version, so Layer 6 can raise a suggestion against it. The body is a skeleton.'

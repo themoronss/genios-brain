@@ -1,0 +1,16 @@
+identity:
+  id: sales.heu.need_analysis.feature_requests_are_symptoms
+  name: Feature requests are symptoms
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.need_analysis
+  subdomain: discovery_and_solution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A specific feature request is evidence of a real pain and a guessed solution. Honour the
+    pain, stay neutral on the guess — the buyer's solution guess is one hypothesis, and often not the
+    best one available.
+  answers:
+  - How should a feature request in a sales conversation be read?

@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.qualification.champion_identification
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.champion_identification.test_the_champion__dont_crown_them
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.champion_identification.coach_vs_champion
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

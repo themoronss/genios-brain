@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.compliance_and_governance.data_protection_administration
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.data_protection_administration.data_protection_as_living_admin
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.data_protection_administration.the_register_is_the_audit
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

@@ -1,0 +1,15 @@
+identity:
+  id: customer_support.heu.expectation_setting.silence_is_the_promise_breaker
+  name: Silence is the promise-breaker
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.expectation_setting
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Customers forgive slow fixes far more readily than unexplained silence. The absence of an
+    update IS an update — it says 'you are forgotten' — and it is the cheapest thing support can prevent.
+  answers:
+  - 'What damages trust faster: slowness or silence?'

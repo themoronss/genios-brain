@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "nodes": [
+    {"id": "candidate", "type": "entity_class", "label": "Candidate"},
+    {"id": "role", "type": "entity_class", "label": "Role"}
+  ],
+  "edges": [
+    {
+      "from": "candidate",
+      "to": "role",
+      "predicate": "applied_for",
+      "status": "asserted"
+    }
+  ]
+}

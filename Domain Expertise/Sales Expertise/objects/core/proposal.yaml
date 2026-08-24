@@ -1,0 +1,637 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Proposal — core object.
+#
+# The organising idea of this file: a proposal is not a summary of the sales process,
+# it is an artefact that will be read by people who never met us. Every property here
+# earns its place by answering "does this survive being forwarded?".
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: sales.obj.core.proposal
+  scope: core
+  name: Proposal
+  domain: sales
+  subdomain: proposal_and_commercials
+  owner_capability: sales.proposal_and_commercials.proposal_creation
+  version: 1.0.0
+  status: draft
+  aliases: ["Quote", "Offer", "Commercial Proposal", "SOW Draft"]
+purpose:
+  statement: >
+    The document that states scope, price and terms. Its real audience is the room we are not
+    in — the committee meeting, the finance review, the forward to a boss who has never heard
+    of us — which is the single most useful thing to know about it. A proposal is therefore
+    judged on whether it survives being forwarded without us there to explain it, not on
+    whether it read well in the meeting where we walked through it. That discriminator
+    separates a Proposal from a Pricing object: pricing is what a thing costs, a proposal is
+    an argument that ends in a number and must make that argument alone.
+attributes:
+  - name: commercial_substance
+    purpose: What is being bought and for how much. The part every reader skips to.
+    type: composite
+    contains:
+      - scope_summary
+      - line_items
+      - total_value
+      - currency
+      - discount_bp
+      - payment_terms
+      - term_months
+  - name: terms_and_validity
+    purpose: The boundaries of the offer, including how long it is an offer at all.
+    type: composite
+    contains:
+      - valid_until
+      - assumptions
+      - exclusions
+      - renewal_terms
+  - name: circulation
+    purpose: >
+      Who has it and who it reached. The gap between primary_recipient and the committee is
+      where most proposals die, silently and without a reply to tell us.
+    type: composite
+    contains:
+      - primary_recipient_ref
+      - circulated_to
+      - reaches_committee
+      - last_recipient_activity_at
+  - name: standalone_readability
+    purpose: >
+      Whether the document works with nobody narrating it. Tested by almost nobody, and the
+      most common defect in an otherwise strong deal.
+    type: composite
+    contains:
+      - requires_narration
+      - has_executive_summary
+      - quantified_value_case
+      - states_the_problem
+  - name: competitive_position
+    purpose: What else is on the table when this is read side by side with two others.
+    type: composite
+    contains:
+      - known_alternatives
+      - is_sole_source
+      - differentiators_stated
+  - name: lifecycle
+    purpose: Where this version sits, and what replaced it.
+    type: composite
+    contains:
+      - proposal_state
+      - version
+      - sent_at
+      - superseded_by
+      - response_state
+  - name: proposal_state
+    purpose: '`sent` and `viewed` are separate on purpose. Most CRMs collapse them, and the collapse hides
+      the most actionable failure mode in the pipeline — a proposal that was delivered and never opened
+      is a reachability problem, not a commercial one, and the two demand opposite responses.'
+    type: value
+    data_type: enum
+    allowed_values: [draft, internal_review, sent, viewed, under_evaluation, negotiating, accepted,
+        rejected, expired, superseded]
+    required: true
+    description: >
+      `sent` and `viewed` are separate on purpose. Most CRMs collapse them, and the collapse
+      hides the most actionable failure mode in the pipeline — a proposal that was delivered
+      and never opened is a reachability problem, not a commercial one, and the two demand
+      opposite responses.
+  - name: version
+    purpose: Increments on every re-issue. Two live versions is not redundancy — it is the buyer
+      negotiating against us using our own paper.
+    type: value
+    data_type: integer
+    description: >
+      Increments on every re-issue. Two live versions is not redundancy — it is the buyer
+      negotiating against us using our own paper.
+  - name: sent_at
+    purpose: The clock every follow-up cadence is measured from.
+    type: value
+    data_type: timestamp
+    description: The clock every follow-up cadence is measured from.
+  - name: valid_until
+    purpose: An expiry the buyer never sees is not leverage, and one we set and then quietly extend
+      trains them to ignore the next one. Recorded here so the extension is a visible act.
+    type: value
+    data_type: timestamp
+    description: >
+      An expiry the buyer never sees is not leverage, and one we set and then quietly extend
+      trains them to ignore the next one. Recorded here so the extension is a visible act.
+  - name: total_value
+    purpose: What WE proposed, which is not what they have. deal.value is the only monetary path the
+      pipeline emits and conflating it with budget is the reason forecasts read high.
+    type: value
+    data_type: money
+    source_paths: [deal.value]
+    description: >
+      What WE proposed, which is not what they have. deal.value is the only monetary path the
+      pipeline emits and conflating it with budget is the reason forecasts read high.
+  - name: currency
+    purpose: The currency of this object.
+    type: value
+    data_type: string
+  - name: discount_bp
+    purpose: Discount against list, in basis points. Stored as a number rather than buried in prose
+      because it is the baseline every future renewal negotiates down from — a one-off 15% to close a
+      quarter is a permanent 15% by year three.
+    type: value
+    data_type: integer
+    description: >
+      Discount against list, in basis points. Stored as a number rather than buried in prose
+      because it is the baseline every future renewal negotiates down from — a one-off 15%
+      to close a quarter is a permanent 15% by year three.
+  - name: payment_terms
+    purpose: Net terms, milestones, upfront share. Cash timing is a commercial concession that reps
+      give away for free because it does not show up in the discount field.
+    type: value
+    data_type: string
+    description: Net terms, milestones, upfront share. Cash timing is a commercial concession that
+      reps give away for free because it does not show up in the discount field.
+  - name: term_months
+    purpose: The term_months of this object.
+    type: value
+    data_type: integer
+    unit: months
+  - name: scope_summary
+    purpose: What is being delivered, in the buyer's words rather than our product names.
+    type: value
+    data_type: string
+    description: What is being delivered, in the buyer's words rather than our product names.
+  - name: line_items
+    purpose: The line_items of this object.
+    type: value
+    data_type: list
+  - name: assumptions
+    purpose: The clauses that become disputes. An assumption held and not written is a promise made.
+    type: value
+    data_type: list
+    description: >
+      The clauses that become disputes. An assumption held and not written is a promise made.
+  - name: exclusions
+    purpose: What is deliberately not in scope. Absent exclusions are read as included.
+    type: value
+    data_type: list
+    description: What is deliberately not in scope. Absent exclusions are read as included.
+  - name: renewal_terms
+    purpose: The renewal_terms of this object.
+    type: value
+    data_type: string
+  - name: primary_recipient_ref
+    purpose: Who we sent it to. Frequently not who decides on it.
+    type: reference
+    ref: sales.obj.core.decision_maker
+    data_type: ref
+    description: Who we sent it to. Frequently not who decides on it.
+  - name: circulated_to
+    purpose: Everyone known to have received it, however we learned that.
+    type: value
+    data_type: list
+    description: Everyone known to have received it, however we learned that.
+  - name: reaches_committee
+    purpose: Whether the document got in front of the group that actually decides. The single most
+      predictive field on this object and the one we can almost never populate today.
+    type: value
+    data_type: boolean
+    description: >
+      Whether the document got in front of the group that actually decides. The single most
+      predictive field on this object and the one we can almost never populate today.
+  - name: last_recipient_activity_at
+    purpose: Latest inbound on the thread the proposal went out on. A proxy for engagement, not for
+      reading.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+    description: Latest inbound on the thread the proposal went out on. A proxy for engagement, not
+      for reading.
+  - name: requires_narration
+    purpose: True when the document only makes sense with one of us in the room. If a stranger cannot
+      tell what problem is being solved, what it costs and why now, the proposal will lose the
+      committee meeting we are not invited to.
+    type: value
+    data_type: boolean
+    description: >
+      True when the document only makes sense with one of us in the room. If a stranger cannot
+      tell what problem is being solved, what it costs and why now, the proposal will lose the
+      committee meeting we are not invited to.
+  - name: has_executive_summary
+    purpose: The has_executive_summary of this object.
+    type: value
+    data_type: boolean
+  - name: quantified_value_case
+    purpose: A number the buyer's finance function can check. Adjectives do not survive a forward.
+    type: value
+    data_type: boolean
+    description: A number the buyer's finance function can check. Adjectives do not survive a forward.
+  - name: states_the_problem
+    purpose: Whether the document opens with their problem or our product. Proposals that open with
+      the product read as brochures and get filed as brochures.
+    type: value
+    data_type: boolean
+    description: >
+      Whether the document opens with their problem or our product. Proposals that open with
+      the product read as brochures and get filed as brochures.
+  - name: known_alternatives
+    purpose: The known_alternatives of this object.
+    type: value
+    data_type: list
+  - name: is_sole_source
+    purpose: The is_sole_source of this object.
+    type: value
+    data_type: boolean
+  - name: differentiators_stated
+    purpose: The differentiators_stated of this object.
+    type: value
+    data_type: boolean
+  - name: response_state
+    purpose: '`questions` outranks `acknowledged`. A buyer who interrogates the proposal is reading it;
+      a buyer who says "thanks, looks good" has usually not opened the pricing page.'
+    type: value
+    data_type: enum
+    allowed_values: [none, acknowledged, questions, objection, counter, accepted, declined]
+    source_paths: [thread.ball_in_court]
+    description: >
+      `questions` outranks `acknowledged`. A buyer who interrogates the proposal is reading it;
+      a buyer who says "thanks, looks good" has usually not opened the pricing page.
+  - name: superseded_by
+    purpose: Self-referential. The chain of revisions is itself evidence — three versions in a
+      fortnight means the scope was never agreed.
+    type: reference
+    ref: sales.obj.core.proposal
+    data_type: ref
+    description: Self-referential. The chain of revisions is itself evidence — three versions in a
+      fortnight means the scope was never agreed.
+states:
+  initial: draft
+  values:
+    - {name: draft, description: "Being written. Not yet a commitment to a number."}
+    - {name: internal_review, description: "Priced and awaiting our own approval. Where discount governance\
+        happens, or does not."}
+    - {name: sent, description: "Delivered. Says nothing about whether it was read.", entered_when: [
+          has_obs: proposal_sent]}
+    - {name: viewed, description: "Confirmed opened by a named recipient. Requires telemetry we do not\
+        have."}
+    - {name: under_evaluation, description: "Questions or comparison in progress. The healthiest state\
+        on this list."}
+    - {name: negotiating, description: "Price or terms are being moved.", entered_when: [has_obs: discount_pressure]}
+    - {name: accepted, description: "Agreed in principle. Not signed — that is the Contract object.",
+        entered_when: [has_obs: contract_requested]}
+    - {name: rejected, description: "Declined, explicitly or by a competitor's win.", entered_when: [
+          has_obs: closed_lost_mention]}
+    - {name: expired, description: "Passed valid_until without a decision. Usually means the expiry was\
+        never real."}
+    - {name: superseded, description: "Replaced by a later version."}
+  transitions:
+    - {from: draft, to: internal_review}
+    - {from: internal_review, to: sent, when: [has_obs: proposal_sent]}
+    - {from: sent, to: viewed}
+    - {from: sent, to: under_evaluation}
+    - {from: viewed, to: under_evaluation}
+    - {from: under_evaluation, to: negotiating, when: [has_obs: discount_pressure]}
+    - {from: under_evaluation, to: accepted, when: [has_obs: contract_requested]}
+    - {from: negotiating, to: accepted, when: [has_obs: contract_requested]}
+    - {from: negotiating, to: superseded}
+    - {from: sent, to: rejected, when: [has_obs: closed_lost_mention]}
+    - {from: sent, to: expired}
+
+# ── 7 · Business Rules ───────────────────────────────────────────────────────────────────
+relationships:
+
+  - {type: attaches_to, target: sales.obj.core.deal, cardinality: one}
+  - {type: precedes, target: sales.obj.core.contract, cardinality: zero_or_one, description: "The proposal\
+      is the contract's first draft in everything except enforceability. Terms conceded here are conceded
+      for good."}
+  - {type: references, target: sales.obj.core.pricing, cardinality: zero_or_one}
+  - {type: requires, target: sales.obj.core.budget, cardinality: zero_or_one, description: "Pricing into\
+      an unknown budget is guessing at the one number the buyer already knows."}
+  - {type: references, target: sales.obj.core.buying_committee, cardinality: zero_or_one, description: "The
+      room we are not in. The proposal is written for this object, not for the recipient."}
+  - {type: influences, target: sales.obj.core.objection, cardinality: zero_or_many}
+  - {type: supersedes, target: sales.obj.core.proposal, cardinality: zero_or_one}
+  - {type: competes_with, target: sales.obj.core.competitor, cardinality: zero_or_many}
+  - {type: belongs_to, target: sales.obj.core.account, cardinality: one}
+  - {type: produces, target: sales.obj.core.next_action, cardinality: zero_or_many, description: "Sending\
+      a proposal creates an obligation on us to chase it. Proposals that generate no next action are how
+      deals go quiet."}
+
+# ── 6 · States ───────────────────────────────────────────────────────────────────────────
+inference_patterns:
+
+  deterministic:
+
+    - id: pr.sent_observed
+      statement: "A proposal-sent observation fired on this thread."
+      status: executable
+      when: [has_obs: proposal_sent]
+      yields: {confidence_bp: 9600, attribute: proposal_state, value: sent}
+      evidence_fields: [thread.last_inbound]
+      note: Delivery, not readership. Everything downstream that treats this as engagement is wrong.
+
+    - id: pr.accepted_via_contract_request
+      statement: "The proposal went out and they came back asking for the contract."
+      status: executable
+      when:
+        - {has_obs: proposal_sent}
+        - {has_obs: contract_requested}
+      yields: {confidence_bp: 9200, attribute: proposal_state, value: accepted}
+      evidence_fields: [thread.ball_in_court]
+      note: >
+        The cleanest acceptance signal available. Buyers negotiate terms they intend to sign
+        and ignore terms they do not; asking for paper is a costlier act than saying yes.
+
+    - id: pr.expiry_lapsed
+      statement: "The stated validity date passed with no decision."
+      status: needs_signal
+      yields: {confidence_bp: 9000, attribute: proposal_state, value: expired}
+      requires_signals:
+        - {kind: fact_path, name: proposal.valid_until, owner_layer: L1, note: "No expiry date is projected\
+            into a typed fact, so no expiry can ever be enforced automatically — which is precisely why expiries
+            in practice are never enforced."}
+
+    - id: pr.version_superseded
+      statement: "A later version of this proposal was issued."
+      status: needs_signal
+      yields: {confidence_bp: 9500, attribute: proposal_state, value: superseded}
+      requires_signals:
+        - {kind: obs_kind, name: proposal_revised, owner_layer: L2, note: "L2 emits proposal_sent identically\
+            for a first issue and a fourth revision. Revision count is one of the strongest stall indicators
+            in the pipeline and is currently indistinguishable from progress."}
+
+    - id: pr.signature_returned
+      statement: "An executed signature page came back against this proposal."
+      status: needs_signal
+      yields: {confidence_bp: 10000, attribute: proposal_state, value: accepted}
+      requires_signals:
+        - {kind: obs_kind, name: contract_signed, owner_layer: L2, note: "The pipeline sees the paper process\
+            start and never sees it finish."}
+
+  heuristic:
+
+    - id: pr.silence_after_send
+      statement: "Proposal sent and the buyer has been quiet for materially longer than their own reply
+        cadence."
+      status: executable
+      when:
+        - {has_obs: proposal_sent}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3,
+            floor: 7}}
+      yields: {confidence_bp: 7800, attribute: response_state, value: none}
+      evidence_fields: [thread.last_inbound]
+      note: >
+        Measured against this buyer's baseline rather than a fixed week, because a fortnightly
+        replier going quiet for eight days is normal and a same-day replier going quiet for
+        four is an emergency. A fixed threshold gets both cases wrong in opposite directions.
+
+    - id: pr.priced_above_budget
+      statement: "Proposal sent, price objection followed — the number is above what they have, and they
+        still want it."
+      status: executable
+      when:
+        - {has_obs: proposal_sent}
+        - {has_obs: objection_price}
+      yields: {confidence_bp: 8000, attribute: response_state, value: objection}
+      note: >
+        Reads backwards to most reps. This is a good state, not a bad one: a buyer with no
+        money disengages rather than haggles. The correct response is to reshape scope to the
+        funded number, not to discount to it.
+
+    - id: pr.moved_to_paper
+      statement: "Proposal sent and legal review has begun — the document is now being read as a contract."
+      status: executable
+      when:
+        - {has_obs: proposal_sent}
+        - {has_obs: legal_review}
+      yields: {confidence_bp: 8500, attribute: proposal_state, value: negotiating}
+      note: Legal do not review documents nobody intends to sign. This outranks any amount of verbal
+        enthusiasm.
+
+    - id: pr.in_competitive_evaluation
+      statement: "A competitor was named after the proposal went out."
+      status: executable
+      when:
+        - {has_obs: proposal_sent}
+        - {has_obs: competitor}
+      yields: {confidence_bp: 7000, attribute: is_sole_source, value: false}
+      note: >
+        A competitor named after pricing is a comparison in progress, which is different from
+        a competitor named during discovery. At this point the document is being read side by
+        side with someone else's, which is the exact condition requires_narration fails.
+
+    - id: pr.never_left_the_champion
+      statement: "Only the original recipient ever opened it — the committee never saw it."
+      status: needs_signal
+      yields: {confidence_bp: 8500, attribute: reaches_committee, value: false}
+      requires_signals:
+        - {kind: derived, name: derived.document_unique_viewers, owner_layer: L2, note: "Document telemetry\
+            — who opened, how many times, from what domain. This is the highest-value missing signal on this
+            object by a wide margin: it converts the single most predictive field, reaches_committee, from
+            a guess into a fact."}
+        - {kind: obs_kind, name: proposal_viewed, owner_layer: L2}
+
+    - id: pr.forwarded_to_the_room
+      statement: "The document was opened by people we have never emailed."
+      status: needs_signal
+      yields: {confidence_bp: 8800, attribute: reaches_committee, value: true}
+      requires_signals:
+        - {kind: derived, name: derived.document_viewer_identities, owner_layer: L2, note: "The positive\
+            case of the same gap. Unknown viewers are the earliest possible detection of a buying committee
+            that nobody told us about — weeks before the first introduction observation fires."}
+
+# ── 10 · Inputs ──────────────────────────────────────────────────────────────────────────
+inputs:
+  - {source: email, signal: proposal delivery and the reply that follows, path: thread.last_inbound}
+  - {source: email, signal: who is waiting on whom after send, path: thread.ball_in_court}
+  - {source: email, signal: "price objections, discount asks, competitor mentions"}
+  - {source: document, signal: "scope, line items, terms, assumptions and exclusions as written"}
+  - {source: crm, signal: "deal value, stage, close date", path: deal.value}
+  - {source: meeting_transcript, signal: "questions asked at the readout — the best available proxy for\
+      what the document fails to say on its own"}
+  - {source: derived, signal: engagement trajectory after send, path: derived.engagement}
+
+# ── 11 · Outputs ─────────────────────────────────────────────────────────────────────────
+outputs:
+  - {name: proposal_health_bp, type: integer, description: "Composite of reach, readability and response\
+      velocity.", consumed_by: [L4.reasoning_unit, L4.decision_maker]}
+  - {name: reach_confidence_bp, type: integer, description: "How sure we are the decision-making group\
+      has actually seen it.", consumed_by: [L4.reasoning_unit]}
+  - {name: follow_up_due_at, type: timestamp, description: "Next chase date, derived from this buyer's\
+      cadence rather than a fixed rule.", consumed_by: [L5.execution_planning]}
+  - {name: standalone_defects, type: list, description: "Which readability tests the document fails. The\
+      actionable half of this object.", consumed_by: [L5.communication_planning]}
+  - {name: discount_exposure_bp, type: integer, description: "Concession given against list, carried forward\
+      to renewal.", consumed_by: [L6.learning_unit]}
+  - {name: preferred_send_channel, type: string, description: "How this recipient should receive documents.",
+      consumed_by: ["L5.2.channel_planner"]}
+
+# ── 12 · Events ──────────────────────────────────────────────────────────────────────────
+constraints:
+  - {id: pr.cannot_send_without_approver, statement: "Cannot send before a Decision Maker is identified.",
+      hard: true}
+  - {id: pr.cannot_price_below_floor, statement: "discount_bp cannot exceed the approved discount floor\
+      without named internal approval.", hard: true}
+  - {id: pr.one_live_version_only, statement: "Only one non-superseded version may exist per deal.", hard:
+      true}
+  - {id: pr.terms_bind_the_contract, statement: "Anything conceded in a proposal is conceded in the contract.\
+      There is no walking a term back at paper stage without cost.", hard: true}
+  - {id: pr.expiry_must_be_real, statement: "valid_until must be a date we will act on.", hard: false}
+
+# ── 15 · Evidence ────────────────────────────────────────────────────────────────────────
+business_rules:
+
+  - id: pr.no_send_without_identified_approver
+    statement: A proposal must not be sent before a Decision Maker is identified. Sending priced paper
+      to a recommender hands the buyer a document to negotiate against and gives us no one to close.
+    severity: blocking
+
+  - id: pr.no_send_without_budget_range
+    statement: A priced proposal requires at least a budget range on the deal. Pricing blind is the
+      most expensive guess in the cycle and it is made in writing.
+    severity: warning
+
+  - id: pr.must_stand_alone
+    statement: A proposal with requires_narration = true must not be the sole artefact sent. Attach
+      the one-page summary or book the readout — the committee will not ask us to explain it, they
+      will simply not choose us.
+    then: require_standalone_summary
+    severity: warning
+
+  - id: pr.one_live_version
+    statement: Exactly one version may be live at a time. Superseding must mark the prior version
+      superseded in the same pass, or the buyer negotiates against whichever version favours them.
+    then: supersede_prior_version
+    severity: blocking
+
+  - id: pr.discount_requires_reciprocity
+    statement: A change to discount_bp requires a recorded ask in return — term length, timing,
+      references, scope. A concession given for nothing teaches the buyer that the next one is also
+      free.
+    when: [has_obs: discount_pressure]
+    then: require_reciprocal_ask
+    severity: warning
+
+  - id: pr.expiry_is_a_commitment
+    statement: If valid_until is set it must be enforced or explicitly renegotiated. A silently
+      extended expiry destroys the credibility of every future deadline we set with this account.
+    severity: advisory
+
+# ── 8 · Decision Factors ─────────────────────────────────────────────────────────────────
+decision_factors:
+
+  - {name: audience_reach, weight_bp: 2500, direction: increases, reads: [reaches_committee, circulated_to,
+      primary_recipient_ref], description: "Weighted highest because it dominates outcome and is nearly
+      independent of document quality. An excellent proposal read by one person loses to a mediocre one
+      read by five."}
+  - {name: commercial_fit, weight_bp: 2000, direction: context, reads: [total_value, discount_bp, payment_terms,
+      term_months]}
+  - {name: standalone_readability, weight_bp: 1500, direction: increases, reads: [requires_narration,
+        has_executive_summary, quantified_value_case, states_the_problem]}
+  - {name: response_velocity, weight_bp: 1500, direction: context, reads: [response_state, last_recipient_activity_at],
+    description: "Speed relative to this buyer's own cadence, not to a calendar week. A fortnightly replier
+      answering in five days is accelerating."}
+  - {name: competitive_position, weight_bp: 1000, direction: decreases, reads: [known_alternatives, is_sole_source,
+      differentiators_stated]}
+  - {name: validity_pressure, weight_bp: 1000, direction: context, reads: [valid_until]}
+  - {name: revision_churn, weight_bp: 500, direction: decreases, reads: [version, superseded_by],
+      description: "Repeated re-issues signal the scope was never agreed. Small weight, high diagnostic
+      value."}
+
+# ── 9 · Inference Patterns ⭐ ────────────────────────────────────────────────────────────
+#
+# Six of eleven fire today. Note the shape of what is blocked: the pipeline can see that a
+# proposal LEFT, and almost nothing about what happened to it afterwards. That asymmetry is
+# this object's whole backlog.
+evidence:
+  - {source: contract, strength_bp: 10000, description: "Executed paper. Settles what was actually agreed,\
+      including the terms nobody remembers conceding."}
+  - {source: document, strength_bp: 9000, description: "The proposal file itself. Definitive on content,\
+      silent on reception."}
+  - {source: email, strength_bp: 8000, description: "Send confirmation, replies, objections, forwards\
+      visible in the thread."}
+  - {source: meeting_transcript, strength_bp: 7000, description: "Questions asked at the readout. The\
+      best proxy we have for what the document fails to say alone."}
+  - {source: crm, strength_bp: 6000, description: "Stage and value. Frequently updated after the fact\
+      and rounded to something tidy."}
+  - {source: derived, strength_bp: 4500, description: "Silence and engagement shape. Corroborating only\
+      — quiet is ambiguous."}
+
+# ── 16 · Metrics ─────────────────────────────────────────────────────────────────────────
+metrics:
+  - {name: proposal_to_close_rate, unit: percent, description: "Share of sent proposals that reach signature.",
+      owner_layer: L6}
+  - {name: time_to_first_response, unit: hours, description: "Measured against the buyer's own baseline\
+      cadence, not the calendar.", owner_layer: L2}
+  - {name: revision_count_per_win, unit: count, description: "Revisions on won deals versus lost. Separates\
+      healthy iteration from an unagreed scope.", owner_layer: L6}
+  - {name: committee_reach_rate, unit: percent, description: "Share of proposals confirmed seen beyond\
+      the primary recipient. Unmeasurable today; the reason document telemetry is the top ask.",
+      owner_layer: L6}
+  - {name: average_discount_bp, unit: bp, description: "Concession against list, by segment. The number\
+      that predicts next year's renewal margin.", owner_layer: L6}
+  - {name: silent_proposal_share, unit: percent, description: "Sent proposals with no reply beyond three\
+      cadence multiples.", owner_layer: L4}
+
+# ── 17 · Examples ────────────────────────────────────────────────────────────────────────
+events:
+  - {id: pr.sent, name: Proposal Sent, emitted_when: [has_obs: proposal_sent], payload: [version,
+        total_value, sent_at]}
+  - {id: pr.went_quiet, name: Proposal Went Quiet, emitted_when: [has_obs: proposal_sent, {fn:
+          days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3,
+            floor: 7}}], payload: [sent_at, last_recipient_activity_at], description: "The most common terminal
+      state of a losing deal, and the one with the longest window in which it is still recoverable."}
+  - {id: pr.objected, name: Price Objection Raised, emitted_when: [has_obs: objection_price],
+      payload: [total_value, discount_bp]}
+  - {id: pr.revised, name: Proposal Revised, payload: [version, superseded_by, discount_bp]}
+  - {id: pr.accepted, name: Proposal Accepted, emitted_when: [has_obs: contract_requested], payload: [
+      version, total_value]}
+  - {id: pr.expired, name: Proposal Expired, payload: [valid_until, version]}
+
+# ── 13 · Actions ─────────────────────────────────────────────────────────────────────────
+actions:
+  - {id: pr.draft, name: Draft the proposal, actor: human}
+  - {id: pr.readability_check, name: Test it without narration, actor: agent, effect: "Read it as a stranger\
+      would. If the problem, the number and the reason for now are not all findable in two minutes, it will
+      lose the meeting we are not in."}
+  - {id: pr.send, name: Send the proposal, actor: human}
+  - {id: pr.brief_the_forwarder, name: Brief the recipient on how to present it internally, actor: human,
+    effect: "The highest-leverage and least-used action on this object. The champion presents our proposal
+      without us; arming them beats improving the document."}
+  - {id: pr.chase, name: Chase a silent proposal, actor: human, preconditions: [has_obs: proposal_sent,
+      {path: thread.ball_in_court, op: "=", value: them}]}
+  - {id: pr.reshape_scope, name: Reshape scope to the funded number, actor: human, preconditions: [has_obs:
+          objection_price], effect: "Change what is bought, not what it costs. Discounting to fit a budget
+      resets the renewal baseline permanently."}
+  - {id: pr.revise, name: Issue a revised version, actor: human, effect: "Supersede the prior version\
+      explicitly in the same pass."}
+  - {id: pr.withdraw, name: Withdraw the proposal, actor: human, effect: "Rare and occasionally correct.\
+      An offer left open indefinitely is not an offer."}
+
+# ── 14 · Constraints ─────────────────────────────────────────────────────────────────────
+examples:
+  - {label: "Twelve-slide deck with pricing on slide eleven", note: "Reads perfectly with a rep narrating\
+      and is unintelligible forwarded. The classic misclassification — logged as a strong proposal because
+      the meeting went well."}
+  - {label: "Two-page summary plus a detailed appendix", note: "The shape that survives a forward. The\
+      summary is for the committee, the appendix is for the one person who will actually check the numbers."}
+  - {label: "Priced above budget, price objection follows", note: "A good state read as a bad one. They\
+      still want it and have told us the size of the gap for free."}
+  - {label: "Fourth revision in three weeks", note: "Looks like momentum in the activity log. Scope was\
+      never agreed and every version resets the buyer's anchor lower."}
+  - {label: "Sent, opened once, never forwarded", note: "Indistinguishable today from sent-and-under-review.\
+      Opposite responses required: one needs a better document, the other needs a different reader."}
+
+# ── 18 · Metadata ────────────────────────────────────────────────────────────────────────
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Six of eleven patterns are executable; five are blocked. The blocked set has a clear
+    shape — the pipeline can see that a proposal LEFT and almost nothing about what happened
+    to it afterwards. The single highest-value gap is document telemetry
+    (derived.document_unique_viewers plus a proposal_viewed observation): it converts
+    reaches_committee, the most predictive field on this object, from a rep's guess into a
+    fact, and unknown viewers would surface a buying committee weeks before any introduction
+    observation fires. Second is proposal_revised — today a fourth revision and a first issue
+    emit the identical proposal_sent observation, so stalling is indistinguishable from
+    progress.

@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.retention_and_archival.everything_kept_is_discoverable
+  name: Everything kept is discoverable
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.retention_and_archival
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Records retained past requirement remain subpoenaable, breachable and searchable forever.
+    Retention discipline is risk management — the archive you did not keep cannot leak.
+  answers:
+  - What is the liability of keeping everything?

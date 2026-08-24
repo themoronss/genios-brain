@@ -1,0 +1,38 @@
+# STUB — identity, purpose and load-set only. See metadata.notes for how to promote it.
+#
+# This capability owns customer-awaiting-reply.yaml, the one situation in this subdomain that
+# binds to a real Layer 2 type (unanswered_email) and therefore actually routes today.
+
+identity:
+  id: customer_support.customer_communication.response_drafting
+  name: Response Drafting
+  domain: customer_support
+  subdomain: customer_communication
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Turning what we currently know into a message the customer can act on without writing back to
+  ask what it meant. The craft is subtractive: most weak support replies fail by including the
+  internal reasoning, the hedges and the answer to a question nobody asked, so the one sentence
+  that mattered arrives fourth and is read last. A draft is finished when it states what is true,
+  what happens next and who owns it — and contains nothing that only makes sense to us.
+
+question: "What is the shortest message that leaves this customer able to act?"
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
+    decision_frameworks, kpis and handoffs, following the shape of
+    capabilities/03-customer-communication/de-escalation/capability.yaml. The specific expertise
+    to capture first is the ordering rule (answer, then evidence, then next step, never the
+    reverse), the one-question-per-message discipline, and the failure mode where an agent
+    forwards engineering's language untranslated. Also author the customer-awaiting-reply
+    situation here — it is the only one in this subdomain with a real Layer 2 binding.

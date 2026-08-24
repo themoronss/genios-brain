@@ -1,0 +1,28 @@
+# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
+# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
+# and handoffs.
+
+identity:
+  id: admin.executive_support.commitment_tracking
+  name: Commitment Tracking
+  domain: admin
+  subdomain: executive_support
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  Holding the organisation to its own word. Every promise made in an email, a meeting or a
+  corridor has an owner, a recipient and a due date, and the administrative function is the
+  only part of the company whose job is to remember all three. Tracking is not reminding: the
+  output is a verdict on whether the promise was kept, renegotiated, or silently abandoned.
+
+question: "What did we promise, to whom, by when — and has it actually been delivered?"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

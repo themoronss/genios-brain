@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: customer_support.support_management.ticket_review
+playbooks:
+  core: []
+  scoped:
+  - customer_support.pb.ticket_review.calibrated_sampling_review
+heuristics:
+  core: []
+  scoped:
+  - customer_support.heu.ticket_review.review_the_system_through_the_ticket
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

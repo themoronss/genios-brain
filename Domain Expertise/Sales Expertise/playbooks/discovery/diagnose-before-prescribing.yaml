@@ -1,0 +1,35 @@
+identity:
+  id: sales.pb.discovery.diagnose_before_prescribing
+  name: Diagnose before prescribing
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.discovery
+  subdomain: discovery_and_solution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Discovery exists to understand the problem in the buyer's numbers and words — not to queue
+    up pitch openings. A discovery call the buyer experienced as being understood outsells a call they
+    experienced as being processed.
+steps:
+- order: 1
+  name: Open the problem, shut the pitch
+  description: 'First half: their current state, what breaks, what it costs, what they tried. The product
+    stays holstered — every early pitch line converts an informant into an audience.'
+  actor: human
+- order: 2
+  name: Quantify with their numbers
+  description: '''How often? Who fixes it? What does that cost a quarter?'' A problem without their numbers
+    cannot be prioritised by them or defended by you later.'
+  actor: human
+- order: 3
+  name: Play it back and get the correction
+  description: Summarise the problem in their words; let them fix your summary. The corrected summary
+    is the deal's foundation document.
+  actor: human
+- order: 4
+  name: Agree what happens if this is solved — and if it is not
+  description: The consequence question separates a project from a preference, and its answer writes the
+    business case.
+  actor: human

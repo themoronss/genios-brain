@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.meeting_operations.minutes_and_documentation
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.minutes_and_documentation.decisions_and_actions_same_day
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.minutes_and_documentation.unminuted_decisions_dissolve
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

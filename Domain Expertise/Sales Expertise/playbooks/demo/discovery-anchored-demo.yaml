@@ -1,0 +1,34 @@
+identity:
+  id: sales.pb.demo.discovery_anchored_demo
+  name: Discovery-anchored demo
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.demo
+  subdomain: discovery_and_solution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A demo is proof, not a tour. Its script is the three problems discovery surfaced, in the
+    buyer's own words, each answered on-screen in minutes — and everything else in the product left unshown.
+steps:
+- order: 1
+  name: Open with their problems, as a contract
+  description: '''You told us X, Y, Z — today we show exactly how each is handled. Fair?'' The demo now
+    has a definition of done.'
+  actor: human
+- order: 2
+  name: Show the aha inside ten minutes
+  description: The single most valuable moment for THIS buyer goes early, not after setup screens. Attention
+    is highest at the start; spend it on the peak.
+  actor: human
+- order: 3
+  name: Land each segment with their metric
+  description: 'After each problem-solution: ''that is the 6 hours back''. Then a check — ''does this
+    handle it as you imagined?'' Objections surfaced live are objections you can answer.'
+  actor: human
+- order: 4
+  name: Close with the next step scheduled
+  description: A demo that ends with 'we'll be in touch' leaked. The next step is named and calendared
+    before the call ends.
+  actor: human

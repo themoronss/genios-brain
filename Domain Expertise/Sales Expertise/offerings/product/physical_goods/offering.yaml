@@ -1,0 +1,26 @@
+# Physical Goods — offering_type branch node.
+#
+# INHERITANCE: this file declares only what DIFFERS from its parent. Capability and object
+# files are NOT copied into this branch; resolution is type -> family -> canonical.
+
+identity:
+  id: sales.offering.product.physical_goods
+  name: Physical Goods
+  kind: offering_type
+  domain: sales
+  parent: sales.offering.product
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Manufactured or resold items. Inventory and shipping are commercial terms, not operational
+  details.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-08"
+  review_status: unreviewed
+  confidence: experimental

@@ -1,0 +1,26 @@
+# Load-set for sales.sales_management.deal_review — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/            loaded by more than one capability
+# scoped -> objects/deal-review/            loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8) — a
+#            situation the compiler cannot fully feed should still produce advice the seller
+#            is waiting on, at a lower confidence, not withhold it.
+
+capability: sales.sales_management.deal_review
+
+core:
+  required:
+    - sales.obj.core.budget
+    - sales.obj.core.deal
+    - sales.obj.core.decision_maker
+    - sales.obj.core.timeline
+  optional:
+    - sales.obj.core.buying_committee
+    - sales.obj.core.champion
+    - sales.obj.core.risk
+
+scoped:
+  required: []
+  optional: []

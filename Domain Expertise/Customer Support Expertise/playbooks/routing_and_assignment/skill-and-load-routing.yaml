@@ -1,0 +1,28 @@
+identity:
+  id: customer_support.pb.routing_and_assignment.skill_and_load_routing
+  name: Skill and load routing
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.routing_and_assignment
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A ticket goes to the person who can actually resolve it with capacity to do so — skills-first,
+    load-balanced second, round-robin never, because a fast wrong assignment is two assignments.
+steps:
+- order: 1
+  name: Maintain a living skill matrix
+  description: Who resolves what, fast — updated from actual resolutions, not from self-declared expertise.
+  actor: human
+- order: 2
+  name: Check load before assigning
+  description: The best-skilled agent at 130% capacity is a queue, not a resolver. Second-best with room
+    beats best without.
+  actor: human
+- order: 3
+  name: Make reassignment cheap and visible
+  description: A misroute fixed in five minutes is triage working. Track reassignment reasons — they are
+    the routing model's error log.
+  actor: human

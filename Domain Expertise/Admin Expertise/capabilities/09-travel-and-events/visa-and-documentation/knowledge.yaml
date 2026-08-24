@@ -1,0 +1,19 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.travel_and_events.visa_and_documentation
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.visa_and_documentation.documents_on_the_longest_lead_time
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.visa_and_documentation.document_failures_are_binary
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

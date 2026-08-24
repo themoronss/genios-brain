@@ -1,0 +1,15 @@
+identity:
+  id: admin.heu.board_and_secretarial.governance_is_retrospective_evidence
+  name: Governance is retrospective evidence
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.board_and_secretarial
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Fundraises, disputes and exits all read the board record backwards. Every sloppy minute is
+    a future negotiation point; every clean one is credibility banked.
+  answers:
+  - Who is the board record actually for?
