@@ -1,42 +1,39 @@
-# Stub. Identity, purpose and load-set only — see quality-assurance in this subdomain for the
-# shape a promoted capability takes.
-
 identity:
   id: customer_support.support_management.account_relationship_management
   name: Account Relationship Management
   domain: customer_support
   subdomain: support_management
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Holding a support relationship with a named account across time, rather than answering its
+  tickets one at a time. This is the technical-account-management motion: the same people, a known environment,
+  a history of what has already gone wrong, and a standing obligation that does not reset when a ticket
+  closes. The unit of work is the relationship, so the signals that matter are the ones no single ticket
+  contains — an account that has stopped writing in, a new named contact nobody has met, an escalation
+  that was resolved technically and never repaired socially. It is also where support silence is read
+  correctly: from an account that used to file tickets, quiet is a warning rather than a result.
 
-description: >
-  Holding a support relationship with a named account across time, rather than answering its
-  tickets one at a time. This is the technical-account-management motion: the same people, a
-  known environment, a history of what has already gone wrong, and a standing obligation that
-  does not reset when a ticket closes. The unit of work is the relationship, so the signals that
-  matter are the ones no single ticket contains — an account that has stopped writing in, a new
-  named contact nobody has met, an escalation that was resolved technically and never repaired
-  socially. It is also where support silence is read correctly: from an account that used to file
-  tickets, quiet is a warning rather than a result.
-
-question: "Where does the support relationship with this account actually stand, between tickets?"
-
+  '
+question: Where does the support relationship with this account actually stand, between tickets?
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following quality-assurance in this subdomain. This is
-    the capability that owns the two situations in this domain binding `champion_quiet` and
-    `intro_followup`, which makes it one of the few able to route on day one — see
-    situations/named-contact-gone-quiet.yaml and situations/new-account-contact.yaml. The
-    expertise worth encoding first is the inversion against sales: sales reads a quiet contact as
-    neutral and support should read it as decay, because a supported account that has stopped
-    asking for help has usually either solved its problem elsewhere or stopped expecting us to
-    solve it. Second is that contact-handover moments are where entitlement knowledge is lost, and
-    the first experience a new named contact has sets the tone for the remainder of the contract.
+  notes: 'Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, decision_frameworks,
+    kpis and handoffs, following quality-assurance in this subdomain. This is the capability that owns
+    the two situations in this domain binding `champion_quiet` and `intro_followup`, which makes it one
+    of the few able to route on day one — see situations/named-contact-gone-quiet.yaml and situations/new-account-contact.yaml.
+    The expertise worth encoding first is the inversion against sales: sales reads a quiet contact as
+    neutral and support should read it as decay, because a supported account that has stopped asking for
+    help has usually either solved its problem elsewhere or stopped expecting us to solve it. Second is
+    that contact-handover moments are where entitlement knowledge is lost, and the first experience a
+    new named contact has sets the tone for the remainder of the contract.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: c612046f4a494571597c040ed2cc859d7e42bdf83a01101c00cff54614c84ca4

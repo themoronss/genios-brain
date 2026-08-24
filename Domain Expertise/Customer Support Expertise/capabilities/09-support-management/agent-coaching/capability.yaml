@@ -1,39 +1,38 @@
-# Stub. Identity, purpose and load-set only — see quality-assurance in this subdomain for the
-# shape a promoted capability takes.
-
 identity:
   id: customer_support.support_management.agent_coaching
   name: Agent Coaching
   domain: customer_support
   subdomain: support_management
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Turning what a review found into something an agent can actually do differently on their
+  next ticket. Coaching is a separate discipline from measurement and mostly fails for a structural reason
+  rather than a pedagogical one: the same person usually owns both, so the agent cannot tell whether a
+  conversation is help or evidence, and answers accordingly. The useful unit is a single named behaviour
+  tied to one reviewable interaction — feedback that describes a trend gives nobody anything to hold on
+  Monday morning. Most persistent individual weakness turns out on inspection to be a missing article,
+  an unclear macro or a queue nobody can serve well.
 
-description: >
-  Turning what a review found into something an agent can actually do differently on their next
-  ticket. Coaching is a separate discipline from measurement and mostly fails for a structural
-  reason rather than a pedagogical one: the same person usually owns both, so the agent cannot
-  tell whether a conversation is help or evidence, and answers accordingly. The useful unit is a
-  single named behaviour tied to one reviewable interaction — feedback that describes a trend
-  gives nobody anything to hold on Monday morning. Most persistent individual weakness turns out
-  on inspection to be a missing article, an unclear macro or a queue nobody can serve well.
-
-question: "What is the one thing this agent should do differently, and is it actually theirs to fix?"
-
+  '
+question: What is the one thing this agent should do differently, and is it actually theirs to fix?
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following quality-assurance in this subdomain. The
-    expertise worth encoding first is the separation from performance_management — coaching that
-    can be cited in a review stops being coaching, and everything else about the capability
-    follows from protecting that boundary. Second is the diagnosis step that almost never
-    happens: before coaching a behaviour, establish whether the agent could have done better with
-    the tools, the knowledge and the queue they had. Coaching an individual for a systems problem
-    is the most common way support teams burn goodwill while their metrics stay flat.
+  notes: 'Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, decision_frameworks,
+    kpis and handoffs, following quality-assurance in this subdomain. The expertise worth encoding first
+    is the separation from performance_management — coaching that can be cited in a review stops being
+    coaching, and everything else about the capability follows from protecting that boundary. Second is
+    the diagnosis step that almost never happens: before coaching a behaviour, establish whether the agent
+    could have done better with the tools, the knowledge and the queue they had. Coaching an individual
+    for a systems problem is the most common way support teams burn goodwill while their metrics stay
+    flat.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 57f99f5bede4141573448ef75e6203ddecfebd6fbe6b4872c634b8f9bef1d409

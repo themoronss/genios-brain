@@ -1,28 +1,24 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.admin_operations.process_improvement
   name: Process Improvement
   domain: admin
   subdomain: admin_operations
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Taking measured administrative work and making it smaller: eliminating steps, removing approvals
+  that never reject, automating transcription between systems, and converting repeated questions into
+  published answers. Improvement here is subtraction; adding a tracker to a broken process makes it slower.
 
-description: >
-  Taking measured administrative work and making it smaller: eliminating steps, removing
-  approvals that never reject, automating transcription between systems, and converting
-  repeated questions into published answers. Improvement here is subtraction; adding a tracker
-  to a broken process makes it slower.
-
-question: "Which administrative step can be removed, automated or pushed to self-service?"
-
+  '
+question: Which administrative step can be removed, automated or pushed to self-service?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 1bfcf8bc4db3aa8be3263f57989f9ada7243c1b2e64b965ba8bb97876b292068

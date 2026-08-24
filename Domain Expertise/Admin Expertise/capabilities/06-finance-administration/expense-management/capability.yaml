@@ -1,28 +1,24 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.finance_administration.expense_management
   name: Expense Management
   domain: admin
   subdomain: finance_administration
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Administering the expense policy across claims: eligibility, limits, receipts, approvals
+  and coding. Most expense friction comes from a policy that is ambiguous rather than from people trying
+  to cheat, and the administrative fix is usually clarification rather than enforcement.
 
-description: >
-  Administering the expense policy across claims: eligibility, limits, receipts, approvals and
-  coding. Most expense friction comes from a policy that is ambiguous rather than from people
-  trying to cheat, and the administrative fix is usually clarification rather than
-  enforcement.
-
-question: "Is this expense within policy, evidenced, and coded to the right place?"
-
+  '
+question: Is this expense within policy, evidenced, and coded to the right place?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: f0412699f3e30f6b4a8e49dd3b63d8989632aa65409c6e07ab04bd3bd6c8a5e4

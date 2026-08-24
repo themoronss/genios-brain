@@ -4,24 +4,24 @@ identity:
   domain: sales
   subdomain: prospecting_and_outreach
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
-
-description: >
-  Turning a positive reply into a held meeting. The gap between agreed and attended is where
+description: 'Turning a positive reply into a held meeting. The gap between agreed and attended is where
   most inbound intent is lost, and it is almost entirely a scheduling-friction problem.
 
-question: "How do we convert interest into a scheduled conversation?"
-
-
+  '
+question: How do we convert interest into a scheduled conversation?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: e49e399f9a3fdabff989882a2a80b3f4035e8e7014c2a2a490cff19e2905d2dd

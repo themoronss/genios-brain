@@ -4,24 +4,24 @@ identity:
   domain: sales
   subdomain: discovery_and_solution
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Articulating value against the buyer''s own metrics, with the status quo as the real competitor.
+  Most deals are lost to inaction, not to a rival.
 
-description: >
-  Articulating value against the buyer's own metrics, with the status quo as the real
-  competitor. Most deals are lost to inaction, not to a rival.
-
-question: "Why is this worth more than doing nothing?"
-
-
+  '
+question: Why is this worth more than doing nothing?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: fe46bd104087e5a768a111fcfe2e9d89742f0a31b63442165706cc897f8154f9

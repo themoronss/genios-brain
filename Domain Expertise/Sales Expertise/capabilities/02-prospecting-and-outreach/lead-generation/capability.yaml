@@ -4,25 +4,25 @@ identity:
   domain: sales
   subdomain: prospecting_and_outreach
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Producing a repeatable flow of accounts and contacts that match the ICP. Volume without
+  fit is the most expensive form of activity in sales, because it consumes the qualification capacity
+  that real leads need.
 
-description: >
-  Producing a repeatable flow of accounts and contacts that match the ICP. Volume without fit
-  is the most expensive form of activity in sales, because it consumes the qualification
-  capacity that real leads need.
-
-question: "Where does a steady supply of in-profile leads come from?"
-
-
+  '
+question: Where does a steady supply of in-profile leads come from?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: ca3ec55c664dd6cba98ba2ce8f9e7b1837b429564832d3961db16a4c22772b5f

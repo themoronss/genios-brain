@@ -1,38 +1,17 @@
-# FULL capability — the reference file for subdomain 05.
-#
-# Deflection is the only metric in support that improves when the work does not exist. That
-# single property is why it is the most valuable number in the function and the most gamed:
-# every other support metric requires you to do something better, this one only requires the
-# ticket not to appear. Making help hard to find achieves that perfectly.
-#
-# So the whole capability is organised around one distinction that no off-the-shelf dashboard
-# makes: the customer who found the answer and the customer who gave up look identical from
-# the ticket queue. One is a saving. The other is suppressed demand, and suppressed demand in
-# a paying account is a churn signal wearing a success costume.
-#
-# NOTE ON NUMBERS: there are none, deliberately. Thresholds, weights and target rates are
-# Layer 4 arithmetic and live in the pack manifest. See metadata.notes for what this
-# capability cannot yet observe.
-#
-# Playbooks, heuristics, mental models and decision frameworks moved OUT of this
-# file and into knowledge.yaml + the artifact folders. They are files now because a
-# Layer 6 suggestion needs an id and a version to point at, and because a framework
-# used by four capabilities cannot live inline in all four.
-
 identity:
   id: customer_support.knowledge_and_deflection.self_service_deflection
   name: Self-Service Deflection
   domain: customer_support
   subdomain: knowledge_and_deflection
   version: 1.0.0
-  status: draft
+  status: stable
   stub: false
-description: 'Making the answer reachable at the moment the question forms, so the contact never has
-  to become a ticket — and, harder, telling the difference between a customer who found the answer and
-  a customer who gave up. Deflection is not a content problem and not a help-center problem; it is a
-  judgement about which intents can honestly be answered without a human, where those answers must physically
-  sit, and how a customer signals that the attempt worked. A deflection programme that cannot distinguish
-  resolution from abandonment is not measuring deflection, it is measuring silence.
+description: 'Making the answer reachable at the moment the question forms, so the contact never has to
+  become a ticket — and, harder, telling the difference between a customer who found the answer and a
+  customer who gave up. Deflection is not a content problem and not a help-center problem; it is a judgement
+  about which intents can honestly be answered without a human, where those answers must physically sit,
+  and how a customer signals that the attempt worked. A deflection programme that cannot distinguish resolution
+  from abandonment is not measuring deflection, it is measuring silence.
 
   '
 question: Did this customer get their answer without us, and would they say so?
@@ -47,10 +26,10 @@ outcomes:
   has been verified by someone walking it, not assumed from the sitemap.
 - The answer sits in the surface that produced the confusion, not only in the help center the customer
   would have to know to visit.
-- Deflection is reported per intent with contact volume beside it, so a rate that moved because the
-  question mix moved cannot be read as an improvement.
-- Intents that are not generically answerable are recorded as such, so nobody is later rewarded for
-  deflecting them.
+- Deflection is reported per intent with contact volume beside it, so a rate that moved because the question
+  mix moved cannot be read as an improvement.
+- Intents that are not generically answerable are recorded as such, so nobody is later rewarded for deflecting
+  them.
 failure_modes:
 - Defining deflection as tickets-not-filed and then optimising it. This produces a beautiful chart and
   a furious customer base, in that order.
@@ -66,12 +45,12 @@ failure_modes:
   analysis commissions a duplicate that competes with it in search.
 - 'Deflecting intents that were never generically answerable: billing disputes, account-specific breakage,
   anything with an angry human attached.'
-- Letting a macro do an article's job. The customer receives a canned answer to a question they did
-  not ask, and now distrusts both that answer and the next one.
+- Letting a macro do an article's job. The customer receives a canned answer to a question they did not
+  ask, and now distrusts both that answer and the next one.
 - Optimising a single blended company-wide rate, which moves with intent mix and can therefore be improved
   by a marketing campaign about password resets.
-- Owning the number in marketing or in whoever administers the help-center tool, so nobody who reads
-  tickets ever sees the evidence that deflection failed.
+- Owning the number in marketing or in whoever administers the help-center tool, so nobody who reads tickets
+  ever sees the evidence that deflection failed.
 - Declaring victory when contacts fall without checking whether customers fell too. Churned customers
   deflect beautifully.
 kpis:
@@ -97,8 +76,8 @@ kpis:
   direction: lower_is_better
 - name: contact_rate_per_account
   unit: contacts_per_account
-  description: 'Contacts normalised by customers rather than by sessions. The honest counterweight:
-    real deflection lowers this, gamed deflection does not move it.'
+  description: 'Contacts normalised by customers rather than by sessions. The honest counterweight: real
+    deflection lowers this, gamed deflection does not move it.'
   direction: lower_is_better
 - name: repeat_contact_after_self_service
   unit: percent
@@ -155,19 +134,21 @@ applies_to:
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ''
+  reviewed_by: harsh
   last_updated: '2026-08-08'
-  review_status: unreviewed
+  review_status: approved
   confidence: provisional
-  notes: 'Almost nothing in this capability is observable today. There is no self-service telemetry
-    in the substrate at all — self_service_attempted, self_service_abandoned, knowledge_article_linked
-    and deflection_failed are all planned_substrate, as is the contact_rate_per_account baseline. The
-    load-bearing distinction of the whole capability, answered versus abandoned, requires exactly the
-    two observation kinds that do not exist, which is why it is stated here in prose rather than encoded
-    in patterns. Objects loaded by this capability should carry those as needs_signal patterns rather
-    than binding to unanswered_email, which would produce coverage-shaped nonsense. Everything a customer
-    would recognise as evidence — the confirmation prompt, the escape-hatch walk, the deflection-failure
-    sample — is deliberately human-run until then, because a proxy metric here does not degrade gracefully:
-    it inverts.
+  notes: 'Almost nothing in this capability is observable today. There is no self-service telemetry in
+    the substrate at all — self_service_attempted, self_service_abandoned, knowledge_article_linked and
+    deflection_failed are all planned_substrate, as is the contact_rate_per_account baseline. The load-bearing
+    distinction of the whole capability, answered versus abandoned, requires exactly the two observation
+    kinds that do not exist, which is why it is stated here in prose rather than encoded in patterns.
+    Objects loaded by this capability should carry those as needs_signal patterns rather than binding
+    to unanswered_email, which would produce coverage-shaped nonsense. Everything a customer would recognise
+    as evidence — the confirmation prompt, the escape-hatch walk, the deflection-failure sample — is deliberately
+    human-run until then, because a proxy metric here does not degrade gracefully: it inverts.
 
     '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 8101c7f55db84ccb879f612cd66a6b2a20265b6d49abf2f2a9b34e312264db0b

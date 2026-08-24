@@ -4,25 +4,25 @@ identity:
   domain: sales
   subdomain: closing
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Working a formal purchasing function: vendor onboarding, security review, competitive requirements
+  and payment terms. Procurement is measured on savings, which makes it structurally adversarial no matter
+  how good the relationship is.
 
-description: >
-  Working a formal purchasing function: vendor onboarding, security review, competitive
-  requirements and payment terms. Procurement is measured on savings, which makes it
-  structurally adversarial no matter how good the relationship is.
-
-question: "What does their purchasing process require, and how long does it take?"
-
-
+  '
+question: What does their purchasing process require, and how long does it take?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 96600bbc64cabfbad605413602a11b094d22e5b3e0e08c624bb39fd03cf4f343

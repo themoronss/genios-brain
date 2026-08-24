@@ -4,24 +4,24 @@ identity:
   domain: sales
   subdomain: revenue_operations
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
-
-description: >
-  Coverage, stage balance, velocity and hygiene. Most pipeline problems are three quarters
+description: 'Coverage, stage balance, velocity and hygiene. Most pipeline problems are three quarters
   old by the time they show up in a forecast.
 
-question: "Is there enough of the right work in flight?"
-
-
+  '
+question: Is there enough of the right work in flight?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 8b16687d50be3d52caff3c5ce5900ad9384576768e627c2274225f6405178640

@@ -4,25 +4,25 @@ identity:
   domain: sales
   subdomain: sales_management
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Sustained upkeep of key relationships independent of any live deal — investors, partners,
+  executive sponsors, past champions who moved. Almost entirely non-deal-linked, which is why the engine
+  keeps its rules in the general pack rather than the sales one.
 
-description: >
-  Sustained upkeep of key relationships independent of any live deal — investors, partners,
-  executive sponsors, past champions who moved. Almost entirely non-deal-linked, which is why
-  the engine keeps its rules in the general pack rather than the sales one.
-
-question: "Are the relationships that matter being maintained?"
-
-
+  '
+question: Are the relationships that matter being maintained?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 1744786213912520522d2acc7a59fa5bf1a5e046ec34545ab32423f6aceadd2c

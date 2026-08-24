@@ -1,40 +1,37 @@
-# Stub. Identity, purpose and load-set only — see quality-assurance in this subdomain for the
-# shape a promoted capability takes.
-
 identity:
   id: customer_support.support_management.team_health
   name: Team Health
   domain: customer_support
   subdomain: support_management
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Reading whether the people can keep doing this. Support is the only function whose daily
+  work is absorbing other people''s frustration, attrition is its dominant cost driver, and burnout is
+  legible in queue data weeks before it is legible in a resignation — quality drifting down while throughput
+  holds, macro use climbing, the same agent taking every escalation because they are the one who can.
+  This is a capability rather than an HR concern precisely because an expert reads it from the tickets,
+  and by the time it reaches a one-to-one the recoverable window has usually closed.
 
-description: >
-  Reading whether the people can keep doing this. Support is the only function whose daily work
-  is absorbing other people's frustration, attrition is its dominant cost driver, and burnout is
-  legible in queue data weeks before it is legible in a resignation — quality drifting down while
-  throughput holds, macro use climbing, the same agent taking every escalation because they are
-  the one who can. This is a capability rather than an HR concern precisely because an expert
-  reads it from the tickets, and by the time it reaches a one-to-one the recoverable window has
-  usually closed.
-
-question: "Can this team keep doing this, and what in the queue is telling us it cannot?"
-
+  '
+question: Can this team keep doing this, and what in the queue is telling us it cannot?
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following quality-assurance in this subdomain. The
-    expertise worth encoding is the set of leading indicators that live in queue data rather than
-    in a survey: unequal distribution of hard work, quality falling while volume holds, rising
-    reliance on canned responses, one person absorbing every out-of-hours page, and the
-    disappearance of the small unpaid acts — updating an article, correcting a macro — that people
-    stop doing first when they are depleted. Also worth stating: an engagement survey measures
-    what people are willing to say about a team they are still in, which is the last place a
-    problem shows up rather than the first.
+  notes: 'Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, decision_frameworks,
+    kpis and handoffs, following quality-assurance in this subdomain. The expertise worth encoding is
+    the set of leading indicators that live in queue data rather than in a survey: unequal distribution
+    of hard work, quality falling while volume holds, rising reliance on canned responses, one person
+    absorbing every out-of-hours page, and the disappearance of the small unpaid acts — updating an article,
+    correcting a macro — that people stop doing first when they are depleted. Also worth stating: an engagement
+    survey measures what people are willing to say about a team they are still in, which is the last place
+    a problem shows up rather than the first.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 8c6805ee61d43ee410e49946c7406d296bf9841f0a1f93bd67fdc8c4d2a951c7

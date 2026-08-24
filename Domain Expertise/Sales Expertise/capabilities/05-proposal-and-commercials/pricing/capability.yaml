@@ -4,25 +4,24 @@ identity:
   domain: sales
   subdomain: proposal_and_commercials
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Price level, packaging, term and discount policy. The structural decisions — what is metered,
+  what is committed — outlast any single negotiation and are usually made carelessly.
 
-description: >
-  Price level, packaging, term and discount policy. The structural decisions — what is
-  metered, what is committed — outlast any single negotiation and are usually made
-  carelessly.
-
-question: "What should this cost, and how should it be structured?"
-
-
+  '
+question: What should this cost, and how should it be structured?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 198445a7bd8119d350433d296b05f9273061023815e49e303428212980c2d8cd

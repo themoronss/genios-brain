@@ -1,27 +1,24 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.meeting_operations.agenda_preparation
   name: Agenda Preparation
   domain: admin
   subdomain: meeting_operations
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Converting a purpose into a sequenced agenda with pre-read attached, owners named against
+  each item, and a decision stated for each one. A meeting with no agenda is a meeting whose outcome cannot
+  be evaluated afterwards, which is why so many recur.
 
-description: >
-  Converting a purpose into a sequenced agenda with pre-read attached, owners named against
-  each item, and a decision stated for each one. A meeting with no agenda is a meeting whose
-  outcome cannot be evaluated afterwards, which is why so many recur.
-
-question: "What is this meeting for, and what must be in front of people before it starts?"
-
+  '
+question: What is this meeting for, and what must be in front of people before it starts?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 4c9d994a6eae6e3346c7a7eb7994769c674f469e3b4e9658195fa2e056f4742a

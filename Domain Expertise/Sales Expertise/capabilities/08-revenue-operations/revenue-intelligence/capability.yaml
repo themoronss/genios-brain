@@ -4,24 +4,24 @@ identity:
   domain: sales
   subdomain: revenue_operations
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Deriving patterns from activity, conversation and outcome data across the whole pipeline
+  — the cross-deal view no individual rep can hold.
 
-description: >
-  Deriving patterns from activity, conversation and outcome data across the whole pipeline —
-  the cross-deal view no individual rep can hold.
-
-question: "What is the data telling us that nobody has noticed?"
-
-
+  '
+question: What is the data telling us that nobody has noticed?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: ae88c8a6b2a3a65fbd83d69792050cf1d8d26f99f0ad57804bc2bdf41ba605ca

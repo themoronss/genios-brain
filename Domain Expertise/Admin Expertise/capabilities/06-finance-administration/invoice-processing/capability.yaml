@@ -1,28 +1,25 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.finance_administration.invoice_processing
   name: Invoice Processing
   domain: admin
   subdomain: finance_administration
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Taking an inbound invoice from receipt to payment-ready: validation against the purchase
+  order and receipt, coding to the correct budget line, exception handling and approval routing. The discipline
+  is refusal — an invoice that does not match is a query, not a payment, and paying it to keep the peace
+  is how duplicate and phantom invoices survive.
 
-description: >
-  Taking an inbound invoice from receipt to payment-ready: validation against the purchase
-  order and receipt, coding to the correct budget line, exception handling and approval
-  routing. The discipline is refusal — an invoice that does not match is a query, not a
-  payment, and paying it to keep the peace is how duplicate and phantom invoices survive.
-
-question: "Is this invoice valid, matched, coded and approved for payment?"
-
+  '
+question: Is this invoice valid, matched, coded and approved for payment?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 442f24bfd712e3f347e65e30a27b4e137e6d2f75c44d8e367960d35c361e3315

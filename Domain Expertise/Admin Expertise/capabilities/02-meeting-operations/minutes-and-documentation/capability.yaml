@@ -1,28 +1,25 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.meeting_operations.minutes_and_documentation
   name: Minutes & Documentation
   domain: admin
   subdomain: meeting_operations
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Producing the durable record of a meeting: decisions distinguished from discussion, actions
+  with named owners and dates, dissent recorded where it matters, and the whole thing filed where it can
+  be found by someone who was not there. In governed contexts the minute is the evidence, and an undocumented
+  decision did not happen.
 
-description: >
-  Producing the durable record of a meeting: decisions distinguished from discussion, actions
-  with named owners and dates, dissent recorded where it matters, and the whole thing filed
-  where it can be found by someone who was not there. In governed contexts the minute is the
-  evidence, and an undocumented decision did not happen.
-
-question: "What was decided, by whom, and where is that written down?"
-
+  '
+question: What was decided, by whom, and where is that written down?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: c51ecd6d6f4e09f226256696d679ee4e2d8f68607af0225277767972935109ff

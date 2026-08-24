@@ -1,29 +1,25 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.people_administration.offboarding_administration
   name: Offboarding Administration
   domain: admin
   subdomain: people_administration
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Closing an employment cleanly: access revocation, asset recovery, final pay and entitlements,
+  handover of owned work, and record retention. Offboarding is the administrative process with the widest
+  blast radius when it is done badly — a live account and an unreturned laptop belonging to someone who
+  left is a security incident waiting for a date.
 
-description: >
-  Closing an employment cleanly: access revocation, asset recovery, final pay and
-  entitlements, handover of owned work, and record retention. Offboarding is the
-  administrative process with the widest blast radius when it is done badly — a live account
-  and an unreturned laptop belonging to someone who left is a security incident waiting for a
-  date.
-
-question: "Has everything this person held been recovered, revoked, reassigned or handed over?"
-
+  '
+question: Has everything this person held been recovered, revoked, reassigned or handed over?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 5f6340bf13584c2cfab8a21f26a9de58861d3fdbf33532ca0e20f3d26da04534

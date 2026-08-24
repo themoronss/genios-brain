@@ -1,41 +1,39 @@
-# STUB — identity, description, question and metadata only. Promotion instructions in metadata.
-
 identity:
   id: customer_support.diagnosis_and_resolution.workaround_management
   name: Workaround Management
   domain: customer_support
   subdomain: diagnosis_and_resolution
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Giving the customer a way to keep working while the fault is still there, and then holding
+  the fact that it is still there. A workaround is a genuine resolution and a genuine debt at the same
+  time: it closes tickets, drains escalation pressure, and quietly removes the only signal that was keeping
+  the defect funded — which is why the most dangerous workaround is the one that works well. It has to
+  be recorded against the issue with an owner and a condition for retirement, and the customer has to
+  know they are on one, because a workaround they mistake for a fix becomes the behaviour they build on
+  and the thing they complain about when it is finally taken away.
 
-description: >
-  Giving the customer a way to keep working while the fault is still there, and then holding the
-  fact that it is still there. A workaround is a genuine resolution and a genuine debt at the
-  same time: it closes tickets, drains escalation pressure, and quietly removes the only signal
-  that was keeping the defect funded — which is why the most dangerous workaround is the one
-  that works well. It has to be recorded against the issue with an owner and a condition for
-  retirement, and the customer has to know they are on one, because a workaround they mistake
-  for a fix becomes the behaviour they build on and the thing they complain about when it is
-  finally taken away.
-
-question: "What lets them keep working today without letting anyone believe the fault is gone?"
-
+  '
+question: What lets them keep working today without letting anyone believe the fault is gone?
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, kpis and
-    handoffs, following the sibling root-cause-analysis/capability.yaml. The judgement to write
-    down first is when NOT to ship one: a workaround with a worse failure mode than the fault, a
-    workaround that requires the customer to remember something forever, and a workaround
-    offered before the fault is understood well enough to know what it is working around. The
-    kpis should carry the debt view rather than the relief view — count of accounts on live
-    workarounds and their age, not workarounds delivered. This capability is the main producer
-    of the planned obs kind workaround_provided and of the pending L2 type workaround_only;
-    both belong to the situation bug-awaiting-engineering, which is owned by engineering_handoff
+  notes: 'Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, kpis and handoffs,
+    following the sibling root-cause-analysis/capability.yaml. The judgement to write down first is when
+    NOT to ship one: a workaround with a worse failure mode than the fault, a workaround that requires
+    the customer to remember something forever, and a workaround offered before the fault is understood
+    well enough to know what it is working around. The kpis should carry the debt view rather than the
+    relief view — count of accounts on live workarounds and their age, not workarounds delivered. This
+    capability is the main producer of the planned obs kind workaround_provided and of the pending L2
+    type workaround_only; both belong to the situation bug-awaiting-engineering, which is owned by engineering_handoff
     rather than here.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: dbebc042848c8079530617d4b55bf78adff8f78f19c90425e33572556e9c98c5

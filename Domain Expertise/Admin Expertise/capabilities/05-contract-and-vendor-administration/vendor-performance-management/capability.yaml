@@ -1,27 +1,24 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.contract_and_vendor.vendor_performance_management
   name: Vendor Performance Management
   domain: admin
   subdomain: contract_and_vendor
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Holding suppliers to the agreement after the excitement of signing: service levels, delivery
+  against milestones, issue logs, review cadence and the escalation route. The administrative contribution
+  is evidence — a performance conversation without a record is an opinion.
 
-description: >
-  Holding suppliers to the agreement after the excitement of signing: service levels, delivery
-  against milestones, issue logs, review cadence and the escalation route. The administrative
-  contribution is evidence — a performance conversation without a record is an opinion.
-
-question: "Is this supplier delivering what the contract says, and what do we do when they are not?"
-
+  '
+question: Is this supplier delivering what the contract says, and what do we do when they are not?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 76f7bccc0d8cdc63295fbb5692968af59f1a2a71df65599b9d36207f0cac168f

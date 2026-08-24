@@ -4,24 +4,24 @@ identity:
   domain: sales
   subdomain: revenue_operations
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Setting targets from capacity, territory potential and historical conversion. A quota nobody
+  has ever hit is not a target, it is an attrition schedule.
 
-description: >
-  Setting targets from capacity, territory potential and historical conversion. A quota
-  nobody has ever hit is not a target, it is an attrition schedule.
-
-question: "What should each seller be expected to deliver?"
-
-
+  '
+question: What should each seller be expected to deliver?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 34e90a7a2160b50462ce8b08360c6208903747f0391f9717619db71c7c8fa314

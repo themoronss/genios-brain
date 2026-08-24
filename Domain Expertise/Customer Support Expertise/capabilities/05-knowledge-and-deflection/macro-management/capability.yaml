@@ -1,39 +1,36 @@
-# STUB — identity, purpose and load-set only. Promote against
-# capabilities/05-knowledge-and-deflection/self-service-deflection/capability.yaml.
-
 identity:
   id: customer_support.knowledge_and_deflection.macro_management
   name: Macro Management
   domain: customer_support
   subdomain: knowledge_and_deflection
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Curating the canned responses that make an agent fast, and pruning the ones that make the
+  company sound like a wall. A macro saves time and destroys trust in the same motion when it answers
+  a question nobody asked — the customer detects the mismatch instantly, reads it as not having been listened
+  to, and the second contact costs more than the first would have. The governing trade is coverage against
+  dilution: a small, ruthlessly maintained set that agents edit before sending beats a large library that
+  turns every reply into a lottery, and a macro used at high volume with poor satisfaction attached is
+  a stronger signal about the product than about the agent who sent it.
 
-description: >
-  Curating the canned responses that make an agent fast, and pruning the ones that make the
-  company sound like a wall. A macro saves time and destroys trust in the same motion when it
-  answers a question nobody asked — the customer detects the mismatch instantly, reads it as
-  not having been listened to, and the second contact costs more than the first would have.
-  The governing trade is coverage against dilution: a small, ruthlessly maintained set that
-  agents edit before sending beats a large library that turns every reply into a lottery, and
-  a macro used at high volume with poor satisfaction attached is a stronger signal about the
-  product than about the agent who sent it.
-
-question: "Which canned reply makes this faster without making it feel canned?"
-
+  '
+question: Which canned reply makes this faster without making it feel canned?
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Promote by adding outcomes, failure_modes (the first three: unedited sends, macros that
-    outlive the product behaviour they describe, and macros written to close a ticket rather
-    than to answer a question), heuristics with a why, kpis and handoffs. This capability owns
-    the only scoped object in the subdomain — customer_support.obj.macro_management.macro —
-    so promotion should happen alongside that object rather than before it. The measurement
-    that would make this real, macro usage joined to reopen and satisfaction data, needs
-    signals Layer 1 does not emit yet.
+  notes: 'Promote by adding outcomes, failure_modes (the first three: unedited sends, macros that outlive
+    the product behaviour they describe, and macros written to close a ticket rather than to answer a
+    question), heuristics with a why, kpis and handoffs. This capability owns the only scoped object in
+    the subdomain — customer_support.obj.macro_management.macro — so promotion should happen alongside
+    that object rather than before it. The measurement that would make this real, macro usage joined to
+    reopen and satisfaction data, needs signals Layer 1 does not emit yet.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 36768b152a8a58c1662ffdd5575caeeaa5d21c53cf6b71b61d1b895899c4ec84

@@ -1,28 +1,24 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.executive_support.delegation_and_task_routing
   name: Delegation & Task Routing
   domain: admin
   subdomain: executive_support
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Turning an inbound ask into an owned piece of work: identifying the right owner by capacity
+  and authority rather than by convenience, transferring enough context that the owner does not have to
+  re-discover it, and recording the handover so accountability survives the reassignment.
 
-description: >
-  Turning an inbound ask into an owned piece of work: identifying the right owner by capacity
-  and authority rather than by convenience, transferring enough context that the owner does
-  not have to re-discover it, and recording the handover so accountability survives the
-  reassignment.
-
-question: "Who should actually be doing this, and do they know they own it?"
-
+  '
+question: Who should actually be doing this, and do they know they own it?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: eb5229fc9294ad2e16072cf05adf929d995a60f023681d623bbd64c25a3e3567

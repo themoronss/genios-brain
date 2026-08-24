@@ -1,41 +1,39 @@
-# STUB — identity, description, question and metadata only. Promotion instructions in metadata.
-
 identity:
   id: customer_support.diagnosis_and_resolution.issue_reproduction
   name: Issue Reproduction
   domain: customer_support
   subdomain: diagnosis_and_resolution
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Getting the fault to happen on demand, in an environment somebody controls, with the steps
+  written down well enough that a stranger could follow them. Reproduction is not a formality before the
+  real work — it is the moment a customer''s account of events turns into evidence, and the steps that
+  finally trigger the fault are routinely not the steps that were reported, because customers narrate
+  their intention rather than their actions. Failing to reproduce is itself a result and should be recorded
+  as one: it eliminates deterministic universal faults and points at environment, state, data or a misdescription,
+  which are four different next steps and one bad close.
 
-description: >
-  Getting the fault to happen on demand, in an environment somebody controls, with the steps
-  written down well enough that a stranger could follow them. Reproduction is not a formality
-  before the real work — it is the moment a customer's account of events turns into evidence,
-  and the steps that finally trigger the fault are routinely not the steps that were reported,
-  because customers narrate their intention rather than their actions. Failing to reproduce is
-  itself a result and should be recorded as one: it eliminates deterministic universal faults
-  and points at environment, state, data or a misdescription, which are four different next
-  steps and one bad close.
-
-question: "Can we make it happen on demand, and if we cannot, what has that ruled out?"
-
+  '
+question: Can we make it happen on demand, and if we cannot, what has that ruled out?
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, kpis and
-    handoffs, following the shape of the sibling root-cause-analysis/capability.yaml. The
-    expertise worth writing down first is the interviewing: how to extract the real sequence
-    from a customer who is describing their goal, what to capture before it rotates away, and
-    when reproducing on a copy of their data is worth the access request. The failure_modes
-    list is where this capability earns its keep — reproducing a different bug that shares the
-    symptom, and reproducing on an internal environment configured by people who understand the
-    product, are both common and both invisible from the ticket. Note that the observation kinds
-    this capability would fire on, reproduction_confirmed and reproduction_failed, are planned
-    substrate rather than shipped substrate, so nothing here routes yet.
+  notes: 'Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, kpis and handoffs,
+    following the shape of the sibling root-cause-analysis/capability.yaml. The expertise worth writing
+    down first is the interviewing: how to extract the real sequence from a customer who is describing
+    their goal, what to capture before it rotates away, and when reproducing on a copy of their data is
+    worth the access request. The failure_modes list is where this capability earns its keep — reproducing
+    a different bug that shares the symptom, and reproducing on an internal environment configured by
+    people who understand the product, are both common and both invisible from the ticket. Note that the
+    observation kinds this capability would fire on, reproduction_confirmed and reproduction_failed, are
+    planned substrate rather than shipped substrate, so nothing here routes yet.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 283ba448d412449a3c933d2d70886fdb9e71fe559c128e337e5986f14081d9e0

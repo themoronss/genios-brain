@@ -1,42 +1,41 @@
-# STUB — identity, purpose and load-set only. See ../sla-management/capability.yaml for shape.
-
 identity:
   id: customer_support.entitlement_and_sla.coverage_and_on_call
   name: Coverage & On-Call
   domain: customer_support
   subdomain: entitlement_and_sla
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Making sure somebody who can actually help is awake, reachable and accountable for every
+  hour a promise is live. Coverage is the arithmetic that turns a contractual window into a roster, and
+  all of the expertise is in the seams rather than the middle of a shift: the handover between regions,
+  the public holiday that exists in one country and not the next, the on-call engineer who is nominally
+  covering a product area they have never worked on. A coverage gap almost never presents as a gap — it
+  presents hours later and somewhere else, as a breach, an unacknowledged incident, or a customer who
+  called the number on the contract and got nobody.
 
-description: >
-  Making sure somebody who can actually help is awake, reachable and accountable for every hour
-  a promise is live. Coverage is the arithmetic that turns a contractual window into a roster,
-  and all of the expertise is in the seams rather than the middle of a shift: the handover
-  between regions, the public holiday that exists in one country and not the next, the on-call
-  engineer who is nominally covering a product area they have never worked on. A coverage gap
-  almost never presents as a gap — it presents hours later and somewhere else, as a breach, an
-  unacknowledged incident, or a customer who called the number on the contract and got nobody.
-
-question: "Is someone who can actually help awake, reachable and accountable right now?"
-
+  '
+question: Is someone who can actually help awake, reachable and accountable right now?
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following ../sla-management/capability.yaml. This
-    capability owns no situation in the current roster; the nearest pending L2 type is
-    coverage_gap, and a situations/coverage-gap.yaml would be the natural first addition when
-    the roster next grows.
+  notes: 'Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, decision_frameworks,
+    kpis and handoffs, following ../sla-management/capability.yaml. This capability owns no situation
+    in the current roster; the nearest pending L2 type is coverage_gap, and a situations/coverage-gap.yaml
+    would be the natural first addition when the roster next grows.
 
-    The expertise to capture on promotion: nominal versus effective coverage — the roster says
-    covered, the skills matrix says nobody on it can fix this; the difference between reachable
-    and responsive, which is what an acknowledgement target actually measures; handover as a
-    transfer of context rather than of a pager, and why the tickets that fall through are almost
-    always the ones mid-diagnosis; and the on-call load question, since a rota that burns people
-    out is a team_health problem that presents first as a coverage one.
+    The expertise to capture on promotion: nominal versus effective coverage — the roster says covered,
+    the skills matrix says nobody on it can fix this; the difference between reachable and responsive,
+    which is what an acknowledgement target actually measures; handover as a transfer of context rather
+    than of a pager, and why the tickets that fall through are almost always the ones mid-diagnosis; and
+    the on-call load question, since a rota that burns people out is a team_health problem that presents
+    first as a coverage one.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 26b3c56fb3ddbe8746abab6b64f19a9a2b25f79b366d3f54d9686f7441a7aedc

@@ -4,25 +4,25 @@ identity:
   domain: sales
   subdomain: closing
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Navigating contract review, redlines and the buyer''s legal function. Legal is a veto seat:
+  it can stop the deal and cannot start it, and it appears on the critical path far later than anyone
+  plans for.
 
-description: >
-  Navigating contract review, redlines and the buyer's legal function. Legal is a veto seat:
-  it can stop the deal and cannot start it, and it appears on the critical path far later
-  than anyone plans for.
-
-question: "What in the paper stands between agreement and signature?"
-
-
+  '
+question: What in the paper stands between agreement and signature?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 0e4f1f409211a20b34dfa7d7e56d6aad0cc8f9ebcbed2d4bf22abfdbe8f321e1

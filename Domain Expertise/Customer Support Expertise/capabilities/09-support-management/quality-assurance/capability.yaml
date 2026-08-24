@@ -1,35 +1,17 @@
-# FULL capability for 09-support-management. The other five in this subdomain are stubs.
-#
-# The whole of this file turns on one distinction that support organisations get wrong
-# constantly: QA measures HOW an interaction was conducted, and satisfaction measures HOW IT
-# LANDED. They are two different instruments pointed at the same event, and the interesting
-# information is in their disagreement — a well-handled bad situation, or a lucky result from
-# sloppy work. Collapsing them into a single "quality" number destroys both readings.
-#
-# The second distinction, and the one that actually kills programmes, is between QA and
-# performance management. See `failure_modes` and the handoffs comment below: the placement of
-# performance_management under `parallel` rather than `downstream` is a deliberate, arguable
-# editorial decision and not an oversight.
-#
-# Playbooks, heuristics, mental models and decision frameworks moved OUT of this
-# file and into knowledge.yaml + the artifact folders. They are files now because a
-# Layer 6 suggestion needs an id and a version to point at, and because a framework
-# used by four capabilities cannot live inline in all four.
-
 identity:
   id: customer_support.support_management.quality_assurance
   name: Quality Assurance
   domain: customer_support
   subdomain: support_management
   version: 1.0.0
-  status: draft
+  status: stable
   stub: false
 description: 'Judging how an interaction was conducted, deliberately separated from how it turned out.
   QA reads a sample of real conversations against a written standard and produces two things: a specific,
   evidence-anchored account of what happened in each one, and an aggregate read on whether the standard
   is being met across the queue. It is a teaching instrument that emits a number as a by-product, not
-  a measurement instrument that emits teaching as a by-product — and every characteristic failure of
-  the discipline comes from running it the other way round.
+  a measurement instrument that emits teaching as a by-product — and every characteristic failure of the
+  discipline comes from running it the other way round.
 
   '
 question: Was this interaction handled the way we would want it handled, regardless of how it ended?
@@ -44,37 +26,36 @@ outcomes:
   it.
 - Findings routed somewhere that changes behaviour — a coaching conversation, a knowledge edit, a macro
   rewrite, a process change. A score that goes nowhere is pure cost.
-- An explicit standing read on whether the rubric still describes good work for the product as it is
-  now, not as it was when the rubric was written.
+- An explicit standing read on whether the rubric still describes good work for the product as it is now,
+  not as it was when the rubric was written.
 - Agents who will still show you their worst ticket. This is the outcome that makes the others possible
   and the only one that cannot be rebuilt once lost.
 failure_modes:
 - QA output used as evidence in a performance case. This is THE characteristic failure. The instrument
   was built for coaching, and the moment it carries consequence, agents stop surfacing their own hard
   tickets, stop asking for help on the record, and start optimising the rubric instead of the customer.
-  Honest self-reporting ends overnight and does not come back because you promise it will not happen
-  again.
+  Honest self-reporting ends overnight and does not come back because you promise it will not happen again.
 - Sampling that is not random. Reviewing the complained-about, the reopened, or the agents already being
-  watched measures whoever is being watched. It confirms the prior that selected the sample and says
-  nothing about the queue.
+  watched measures whoever is being watched. It confirms the prior that selected the sample and says nothing
+  about the queue.
 - Scoring the outcome instead of the interaction. Agents do not choose their tickets. Someone working
   a queue of billing disputes and unfixable defects will look worse than someone working password resets
   while handling the work better, and the score will be attributed to them.
-- A rubric agents cannot predict their own score against. If an agent reads back their own reply and
-  cannot guess the mark, the rubric has taught nothing and the score is weather.
+- A rubric agents cannot predict their own score against. If an agent reads back their own reply and cannot
+  guess the mark, the rubric has taught nothing and the score is weather.
 - Reviewers who have never calibrated. Two reviewers scoring the same ticket differently is the normal
   state of any rubric; two reviewers who have never discovered that they do are running a scoring system
   with no shared meaning, and reporting reviewer variance as agent variance.
-- Checkbox dimensions that reward form over judgement — greeting present, name used, article linked
-  — because they are cheap to score. Agents comply, the replies get worse, and the score goes up.
+- Checkbox dimensions that reward form over judgement — greeting present, name used, article linked —
+  because they are cheap to score. Agents comply, the replies get worse, and the score goes up.
 - A rubric long enough that it is never fully applied. Whoever is behind silently truncates it, so the
   last dimensions get scored from memory and the programme quietly becomes a different rubric per reviewer.
 - Reviewing only closed tickets. The worst-handled work is disproportionately the work still open, so
   closed-only sampling systematically excludes the failures it exists to find.
 - Review volume set by reviewer capacity and then reported as if it had been designed. The sample size
   is whatever the team had time for; the confidence claimed is whatever sounds credible.
-- Feedback that reaches the agent long after the interaction, when they cannot remember the ticket.
-  That is archaeology, not coaching, and it converts the whole programme into record-keeping.
+- Feedback that reaches the agent long after the interaction, when they cannot remember the ticket. That
+  is archaeology, not coaching, and it converts the whole programme into record-keeping.
 - No appeal path. A score that cannot be challenged turns disagreement into contempt for the programme,
   and loses the single richest source of rubric corrections there is.
 - Auto-fail applied to recoverable things — a tone lapse, a missing sign-off. It converts a graded judgement
@@ -87,8 +68,8 @@ failure_modes:
 kpis:
 - name: review_coverage
   unit: percent
-  description: Share of the eligible population reviewed. Only meaningful when reported next to the
-    drawing rule, because coverage without randomness is not coverage.
+  description: Share of the eligible population reviewed. Only meaningful when reported next to the drawing
+    rule, because coverage without randomness is not coverage.
   direction: target_band
 - name: inter_reviewer_agreement
   unit: percent
@@ -121,13 +102,13 @@ kpis:
   direction: target_band
 - name: coaching_conversion_rate
   unit: percent
-  description: Share of reviews that produced a named coaching action, knowledge edit, macro change
-    or process fix. A score that goes nowhere is cost without product.
+  description: Share of reviews that produced a named coaching action, knowledge edit, macro change or
+    process fix. A score that goes nowhere is cost without product.
   direction: higher_is_better
 - name: rubric_age
   unit: days
-  description: Time since the rubric was last argued against tickets that actually arrived. Rubrics
-    rot silently as the product changes.
+  description: Time since the rubric was last argued against tickets that actually arrived. Rubrics rot
+    silently as the product changes.
   direction: lower_is_better
 - name: quality_to_satisfaction_divergence
   unit: index
@@ -182,25 +163,27 @@ applies_to:
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ''
+  reviewed_by: harsh
   last_updated: '2026-08-08'
-  review_status: unreviewed
+  review_status: approved
   confidence: provisional
   notes: 'No thresholds, no sample sizes, no pass marks anywhere in this file — deliberately. How many
-    interactions to review, what counts as agreement, where the bar sits: all of that is Layer 4''s
-    arithmetic and belongs in the pack manifest, because all of it is different for a swarming team
-    and an outsourced one. This file declares what the discipline is for and how it fails.
+    interactions to review, what counts as agreement, where the bar sits: all of that is Layer 4''s arithmetic
+    and belongs in the pack manifest, because all of it is different for a swarming team and an outsourced
+    one. This file declares what the discipline is for and how it fails.
 
     Two authoring decisions worth challenging on review. First, performance_management sits under `parallel`
     rather than `downstream`, which is a claim about how the world ought to work as much as how it does
     — plenty of real organisations do feed QA into performance cases, and this file says that when they
     do, they have stopped running QA. Second, `outsourced_bpo` is listed under applies_to even though
-    QA there is frequently contractual rather than developmental; the heuristics still hold, but the
-    consequence-free assumption behind them often does not, and a BPO branch under models/ should say
-    so.
+    QA there is frequently contractual rather than developmental; the heuristics still hold, but the consequence-free
+    assumption behind them often does not, and a BPO branch under models/ should say so.
 
     Nothing here is executable against today''s substrate — there is no ticket, conversation, scorecard
-    or satisfaction signal in the pipeline. That constraint lives in the objects and situations, not
-    here; a capability file makes no runtime claims.
+    or satisfaction signal in the pipeline. That constraint lives in the objects and situations, not here;
+    a capability file makes no runtime claims.
 
     '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: da256190657375bac93478aca48e212ce6cf03935680ed2792715741b99e9a88

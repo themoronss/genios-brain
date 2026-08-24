@@ -1,39 +1,37 @@
-# Stub. Identity, purpose and load-set only — see quality-assurance in this subdomain for the
-# shape a promoted capability takes.
-
 identity:
   id: customer_support.support_management.ticket_review
   name: Ticket Review
   domain: customer_support
   subdomain: support_management
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Reading a specific ticket, or a specific set of them, to work out what happened and what
+  it says about the system that produced it. Distinct from quality assurance in both sample and purpose:
+  QA samples randomly to measure a population, review selects deliberately to understand an event — the
+  reopen, the breach, the one the customer wrote in about twice. The subject is the path the ticket took
+  rather than the agent who handled it, and the moment a review starts producing verdicts about people
+  it stops producing findings about the process, because everyone present begins managing their exposure
+  instead of reconstructing the timeline.
 
-description: >
-  Reading a specific ticket, or a specific set of them, to work out what happened and what it
-  says about the system that produced it. Distinct from quality assurance in both sample and
-  purpose: QA samples randomly to measure a population, review selects deliberately to understand
-  an event — the reopen, the breach, the one the customer wrote in about twice. The subject is
-  the path the ticket took rather than the agent who handled it, and the moment a review starts
-  producing verdicts about people it stops producing findings about the process, because everyone
-  present begins managing their exposure instead of reconstructing the timeline.
-
-question: "What actually happened on this ticket, and what does it say about how we work?"
-
+  '
+question: What actually happened on this ticket, and what does it say about how we work?
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following quality-assurance in this subdomain. The
-    expertise worth encoding: selection is the whole method — a review of tickets chosen because
-    they went badly is a census of failure modes, and a review of tickets chosen because a manager
-    noticed them is a census of what managers notice. The highest-yield selections are reopens,
-    tickets with more than two owners, and anything the customer escalated after we thought it was
-    closed. Also worth stating explicitly is that this capability shares almost all its inputs
-    with postmortem and differs only in scope: one ticket rather than one incident.
+  notes: 'Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, decision_frameworks,
+    kpis and handoffs, following quality-assurance in this subdomain. The expertise worth encoding: selection
+    is the whole method — a review of tickets chosen because they went badly is a census of failure modes,
+    and a review of tickets chosen because a manager noticed them is a census of what managers notice.
+    The highest-yield selections are reopens, tickets with more than two owners, and anything the customer
+    escalated after we thought it was closed. Also worth stating explicitly is that this capability shares
+    almost all its inputs with postmortem and differs only in scope: one ticket rather than one incident.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: f1d117ce3555dc0ca00c65c5edcffde63c3d9cb9bc821ebe8867a6c54a7ce625

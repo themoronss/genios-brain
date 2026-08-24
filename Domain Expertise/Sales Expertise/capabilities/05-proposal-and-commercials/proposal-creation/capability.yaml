@@ -4,24 +4,24 @@ identity:
   domain: sales
   subdomain: proposal_and_commercials
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Assembling scope, pricing and terms into a document the champion can circulate without editing.
+  The audience is the room we are not in.
 
-description: >
-  Assembling scope, pricing and terms into a document the champion can circulate without
-  editing. The audience is the room we are not in.
-
-question: "What exactly are we proposing, at what price, on what terms?"
-
-
+  '
+question: What exactly are we proposing, at what price, on what terms?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 5dc0a0f22046eaa14bc063320d90820ed065708fe5d60612a696246d46ac3b33

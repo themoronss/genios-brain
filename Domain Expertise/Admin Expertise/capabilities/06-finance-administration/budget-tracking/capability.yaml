@@ -1,28 +1,24 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.finance_administration.budget_tracking
   name: Budget Tracking
   domain: admin
   subdomain: finance_administration
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Maintaining the administrative view of budget: allocation, committed spend, actuals, forecast
+  and variance. The number that matters is not what has been spent but what has been committed and not
+  yet invoiced, because that is the amount that surprises people at period end.
 
-description: >
-  Maintaining the administrative view of budget: allocation, committed spend, actuals,
-  forecast and variance. The number that matters is not what has been spent but what has been
-  committed and not yet invoiced, because that is the amount that surprises people at period
-  end.
-
-question: "How much of this budget is genuinely left once commitments are counted?"
-
+  '
+question: How much of this budget is genuinely left once commitments are counted?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 76b5ac0608f8a4e884a18a75b36313f87cd88972ddd60ff40b09b4ddc4e1149b

@@ -4,25 +4,24 @@ identity:
   domain: sales
   subdomain: revenue_operations
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Measuring conversion, velocity, cohort behaviour and attribution. Distinct from revenue
+  intelligence: analytics answers questions that were asked, intelligence surfaces ones that were not.
 
-description: >
-  Measuring conversion, velocity, cohort behaviour and attribution. Distinct from revenue
-  intelligence: analytics answers questions that were asked, intelligence surfaces ones that
-  were not.
-
-question: "What do the numbers actually say?"
-
-
+  '
+question: What do the numbers actually say?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: fbfe650a3e53dcafea0289b89f370e81488e26c09a71c4106485c420ecb60d24

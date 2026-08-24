@@ -4,35 +4,36 @@ identity:
   domain: customer_support
   subdomain: intake_and_triage
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Recognising when several tickets are one problem, and deciding which of them is allowed
+  to survive. Merging is destructive in a way that is easy to underestimate: it collapses separate requesters,
+  clocks, entitlements and notification threads into one, so a merge performed for tidiness can quietly
+  break a promise made to whoever was not the survivor. The counter-risk is worse, though — unmerged duplicates
+  hide the fact that a fault is spreading, and contact volume against a single issue is usually the only
+  blast-radius evidence anyone has before engineering reproduces anything. The right instinct is to relate
+  aggressively and merge conservatively: linking is reversible and preserves every clock, merging is neither.
 
-description: >
-  Recognising when several tickets are one problem, and deciding which of them is allowed to
-  survive. Merging is destructive in a way that is easy to underestimate: it collapses separate
-  requesters, clocks, entitlements and notification threads into one, so a merge performed for
-  tidiness can quietly break a promise made to whoever was not the survivor. The counter-risk is
-  worse, though — unmerged duplicates hide the fact that a fault is spreading, and contact volume
-  against a single issue is usually the only blast-radius evidence anyone has before engineering
-  reproduces anything. The right instinct is to relate aggressively and merge conservatively:
-  linking is reversible and preserves every clock, merging is neither.
-
-question: "Is this the same problem we already have, and what is lost if I merge them?"
-
+  '
+question: Is this the same problem we already have, and what is lost if I merge them?
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Stub — identity, purpose and load-set only. Promote by writing the link-versus-merge
-    distinction as a decision_framework first, since everything else depends on it: same
-    requester and same symptom is a merge candidate, different requesters and the same symptom is
-    almost always a link to a shared Issue instead. failure_modes should include merging across
-    accounts (which discloses one customer to another in the wrong tooling), merging away the
-    reopened ticket rather than the newer one, and the opposite failure of leaving duplicates
-    apart so long that severity is discovered by engineering rather than by the queue. Needs the
-    Issue object authored before its heuristics have anything to point at, and cannot be
-    executable until a repeat_contact signal exists — today that type is planned substrate only.
+  notes: 'Stub — identity, purpose and load-set only. Promote by writing the link-versus-merge distinction
+    as a decision_framework first, since everything else depends on it: same requester and same symptom
+    is a merge candidate, different requesters and the same symptom is almost always a link to a shared
+    Issue instead. failure_modes should include merging across accounts (which discloses one customer
+    to another in the wrong tooling), merging away the reopened ticket rather than the newer one, and
+    the opposite failure of leaving duplicates apart so long that severity is discovered by engineering
+    rather than by the queue. Needs the Issue object authored before its heuristics have anything to point
+    at, and cannot be executable until a repeat_contact signal exists — today that type is planned substrate
+    only.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 790fc30ed893647d7967dad663e61388e784c9795c60e959b879779b486ec315

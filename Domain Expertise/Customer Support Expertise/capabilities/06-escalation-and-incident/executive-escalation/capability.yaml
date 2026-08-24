@@ -4,35 +4,38 @@ identity:
   domain: customer_support
   subdomain: escalation_and_incident
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'The point where an escalation leaves the support hierarchy and becomes a conversation between
+  senior people about whether the relationship survives. By the time an executive is in the room the technical
+  issue is rarely the subject — the subject is whether the customer still believes we are competent —
+  so sending an executive in with a status update rather than a decision makes it measurably worse. Their
+  entire value is the ability to commit resource, money or roadmap on the spot; an executive who has to
+  go away and check spends the last credibility the account had. Executive escalations that arrive through
+  the account team instead of through support are a finding about the support process being too slow or
+  too invisible, not about the ticket.
 
-description: >
-  The point where an escalation leaves the support hierarchy and becomes a conversation between
-  senior people about whether the relationship survives. By the time an executive is in the room
-  the technical issue is rarely the subject — the subject is whether the customer still believes
-  we are competent — so sending an executive in with a status update rather than a decision makes
-  it measurably worse. Their entire value is the ability to commit resource, money or roadmap on
-  the spot; an executive who has to go away and check spends the last credibility the account had.
-  Executive escalations that arrive through the account team instead of through support are a
-  finding about the support process being too slow or too invisible, not about the ticket.
-
-question: "What can only a senior sponsor decide or promise here, and are we sending them in able to do it?"
-
+  '
+question: What can only a senior sponsor decide or promise here, and are we sending them in able to do
+  it?
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Stub — identity, judgement and load-set only. Promote by adding outcomes, failure_modes (the
-    executive sent to listen rather than decide, the concession granted without the operational
-    change that prevents a repeat, the sponsor who becomes the permanent support channel for that
-    account, and the internal escalation that never reached support's own path first), playbooks,
-    heuristics with a why on each, mental_models, decision_frameworks, kpis and handoffs,
-    following escalation-management/capability.yaml in this folder. The distinction to hold at
-    promotion: escalation_management transfers ownership to someone who can FINISH the work;
-    this capability transfers it to someone who can DECIDE. Collapsing the two produces the most
-    common form of this failure, which is escalating to seniority when capability was needed.
+  notes: 'Stub — identity, judgement and load-set only. Promote by adding outcomes, failure_modes (the
+    executive sent to listen rather than decide, the concession granted without the operational change
+    that prevents a repeat, the sponsor who becomes the permanent support channel for that account, and
+    the internal escalation that never reached support''s own path first), playbooks, heuristics with
+    a why on each, mental_models, decision_frameworks, kpis and handoffs, following escalation-management/capability.yaml
+    in this folder. The distinction to hold at promotion: escalation_management transfers ownership to
+    someone who can FINISH the work; this capability transfers it to someone who can DECIDE. Collapsing
+    the two produces the most common form of this failure, which is escalating to seniority when capability
+    was needed.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: aba9b526a5e1c1ef58dc26b6e299cf0f5b3a14e619b5dede1f212c2d4b1c3a3a

@@ -4,24 +4,24 @@ identity:
   domain: sales
   subdomain: sales_management
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
-
-description: >
-  Attainment, activity, conversion and ramp measured per seller, with the diagnosis separated
+description: 'Attainment, activity, conversion and ramp measured per seller, with the diagnosis separated
   from the number. Two reps missing quota for opposite reasons need opposite interventions.
 
-question: "Is each seller on track, and if not, what is the cause?"
-
-
+  '
+question: Is each seller on track, and if not, what is the cause?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 3e8bc6db8f6f7250dd56cb1f52ac02ca0456b32c16eb04f7510f6d3bf45ff7dc

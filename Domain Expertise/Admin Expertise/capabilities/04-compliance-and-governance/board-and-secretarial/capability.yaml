@@ -1,28 +1,25 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.compliance_and_governance.board_and_secretarial
   name: Board & Secretarial
   domain: admin
   subdomain: compliance_and_governance
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Company secretarial administration: board and committee calendars, notices, packs, quorum,
+  resolutions, registers and minute books. The test is not whether the board met but whether a third party
+  reading the record a year later can see that the decision was validly made by the people entitled to
+  make it.
 
-description: >
-  Company secretarial administration: board and committee calendars, notices, packs, quorum,
-  resolutions, registers and minute books. The test is not whether the board met but whether a
-  third party reading the record a year later can see that the decision was validly made by
-  the people entitled to make it.
-
-question: "Is the governance record complete, and were the decisions properly taken?"
-
+  '
+question: Is the governance record complete, and were the decisions properly taken?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 2fcb002007f90b6e8afc84d0e6d554ce794e872fe3805ac95cbb9efb77ef0478

@@ -1,28 +1,25 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.compliance_and_governance.statutory_filing
   name: Statutory Filing
   domain: admin
   subdomain: compliance_and_governance
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Running the statutory calendar: annual returns, tax filings, regulatory submissions and
+  registrations, each with a fixed external deadline that does not negotiate. Filing deadlines are the
+  only administrative dates with automatic financial penalties attached, which makes them the ones least
+  tolerant of a manual reminder.
 
-description: >
-  Running the statutory calendar: annual returns, tax filings, regulatory submissions and
-  registrations, each with a fixed external deadline that does not negotiate. Filing deadlines
-  are the only administrative dates with automatic financial penalties attached, which makes
-  them the ones least tolerant of a manual reminder.
-
-question: "What must be filed with which authority, by when, and has it been submitted?"
-
+  '
+question: What must be filed with which authority, by when, and has it been submitted?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 038da474341470ca056a77ca5dce73aa530734ed9e4848d142c6f549fc106d18

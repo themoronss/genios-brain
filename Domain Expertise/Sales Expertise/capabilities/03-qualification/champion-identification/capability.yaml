@@ -4,24 +4,24 @@ identity:
   domain: sales
   subdomain: qualification
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
-
-description: >
-  Separating a real advocate from a friendly contact. The test is internal risk taken on our
+description: 'Separating a real advocate from a friendly contact. The test is internal risk taken on our
   behalf, not warmth — and advocacy without access to the approver converts nothing.
 
-question: "Who inside the account will spend their own credibility on us?"
-
-
+  '
+question: Who inside the account will spend their own credibility on us?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: d6f3f569c3213ddf1c4df1bb6fba8c1a3e933feca98feb1f219a8b8486ea1458

@@ -4,25 +4,25 @@ identity:
   domain: sales
   subdomain: discovery_and_solution
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Structured questioning that surfaces the problem, its cost and its owner. Discovery fails
+  when it becomes qualification in disguise — asking about budget before understanding the problem teaches
+  the buyer we are here to sell, not to solve.
 
-description: >
-  Structured questioning that surfaces the problem, its cost and its owner. Discovery fails
-  when it becomes qualification in disguise — asking about budget before understanding the
-  problem teaches the buyer we are here to sell, not to solve.
-
-question: "What is actually going wrong for them, in their words?"
-
-
+  '
+question: What is actually going wrong for them, in their words?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 386734270cd461bdc06620a9304156e4e1ea1e89db40a72f43f669786129b7ea

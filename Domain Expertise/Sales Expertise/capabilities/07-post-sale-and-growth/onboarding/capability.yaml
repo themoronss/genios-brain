@@ -4,25 +4,25 @@ identity:
   domain: sales
   subdomain: post_sale_and_growth
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'The handover from sale to delivery and the path to first realised value. Time to first value
+  is the strongest predictor of first-year retention, which makes onboarding a revenue capability rather
+  than a support one.
 
-description: >
-  The handover from sale to delivery and the path to first realised value. Time to first
-  value is the strongest predictor of first-year retention, which makes onboarding a revenue
-  capability rather than a support one.
-
-question: "How does the customer get to first value, and how fast?"
-
-
+  '
+question: How does the customer get to first value, and how fast?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: f87c54496da2ba442869a69ee92667b8d7cc295bf5c9d38c27b0e675e460e494

@@ -1,28 +1,24 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.finance_administration.payables_administration
   name: Payables Administration
   domain: admin
   subdomain: finance_administration
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Managing the payables cycle: ageing, payment scheduling, run preparation, bank detail verification
+  and remittance. The single highest-risk moment in the administrative function is a changed bank detail
+  arriving by email, and the control that catches it is procedural rather than technical.
 
-description: >
-  Managing the payables cycle: ageing, payment scheduling, run preparation, bank detail
-  verification and remittance. The single highest-risk moment in the administrative function
-  is a changed bank detail arriving by email, and the control that catches it is procedural
-  rather than technical.
-
-question: "What is due, to whom, when — and is the payment run correct before it goes?"
-
+  '
+question: What is due, to whom, when — and is the payment run correct before it goes?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: d98044d0ed2159085cfcbfc0729d110a41ea5d57991408593fe8cbee1f62632a

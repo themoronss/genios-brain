@@ -4,34 +4,35 @@ identity:
   domain: customer_support
   subdomain: escalation_and_incident
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Telling a lot of customers the same true thing at the same time, repeatedly, while the facts
+  are still moving. During an outage the customer is not buying a fix — they are buying the ability to
+  tell their own boss what is happening, which means cadence beats content: an update that says nothing
+  new but arrives when promised is worth more than a detailed one that is late, because silence is read
+  as loss of control rather than as concentration. Never publish a restoration time you cannot beat; publish
+  the time of the next update instead, which is the one promise that can always be kept and the one that
+  buys the room to keep the others.
 
-description: >
-  Telling a lot of customers the same true thing at the same time, repeatedly, while the facts
-  are still moving. During an outage the customer is not buying a fix — they are buying the
-  ability to tell their own boss what is happening, which means cadence beats content: an update
-  that says nothing new but arrives when promised is worth more than a detailed one that is late,
-  because silence is read as loss of control rather than as concentration. Never publish a
-  restoration time you cannot beat; publish the time of the next update instead, which is the
-  one promise that can always be kept and the one that buys the room to keep the others.
-
-question: "What do we say, to whom, and when exactly do they hear from us next?"
-
+  '
+question: What do we say, to whom, and when exactly do they hear from us next?
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Stub — identity, judgement and load-set only. Promote by adding outcomes, failure_modes
-    (the optimistic ETA, the update that goes quiet exactly when the fix looks close, the
-    all-clear published before the customer-visible backlog has drained, and the status page that
-    is technically accurate and operationally useless), playbooks, heuristics with a why on each,
-    mental_models, decision_frameworks, kpis and handoffs, following escalation-management/
-    capability.yaml in this folder. Worth resolving at promotion: the boundary with
-    proactive_status_updates, which is the same discipline addressed to one customer — the split
-    is real (broadcast versus thread) but the heuristics overlap and should cross-reference
+  notes: 'Stub — identity, judgement and load-set only. Promote by adding outcomes, failure_modes (the
+    optimistic ETA, the update that goes quiet exactly when the fix looks close, the all-clear published
+    before the customer-visible backlog has drained, and the status page that is technically accurate
+    and operationally useless), playbooks, heuristics with a why on each, mental_models, decision_frameworks,
+    kpis and handoffs, following escalation-management/ capability.yaml in this folder. Worth resolving
+    at promotion: the boundary with proactive_status_updates, which is the same discipline addressed to
+    one customer — the split is real (broadcast versus thread) but the heuristics overlap and should cross-reference
     rather than be duplicated.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 6e0ed1a07c6e9c226d36f092632f1681ac556bc5b6f1475dec7897b28ae4af2c

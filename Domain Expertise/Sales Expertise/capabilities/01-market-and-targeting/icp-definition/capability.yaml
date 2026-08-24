@@ -4,16 +4,16 @@ identity:
   domain: sales
   subdomain: market_and_targeting
   version: 1.0.0
-  status: draft
+  status: stable
   stub: false
-description: 'Deriving and validating the profile of an account that wins AND retains, stating it in
-  dimensions that can be evaluated before anyone has spoken to the account, and publishing the anti-fit
-  half — disqualifiers, known loss patterns, churn predictors — which is the operationally useful half
-  and the one most often left unwritten. It is NOT market research (which asks whether a market exists),
-  NOT market sizing (which asks how large it is), and NOT qualification (which asks whether one live
-  opportunity is real). Those three are about the market and the deal; this one is about us — which
-  accounts our product, our price and our delivery model actually serve. The output is a classifier,
-  and its worth is measured by what it rejects.
+description: 'Deriving and validating the profile of an account that wins AND retains, stating it in dimensions
+  that can be evaluated before anyone has spoken to the account, and publishing the anti-fit half — disqualifiers,
+  known loss patterns, churn predictors — which is the operationally useful half and the one most often
+  left unwritten. It is NOT market research (which asks whether a market exists), NOT market sizing (which
+  asks how large it is), and NOT qualification (which asks whether one live opportunity is real). Those
+  three are about the market and the deal; this one is about us — which accounts our product, our price
+  and our delivery model actually serve. The output is a classifier, and its worth is measured by what
+  it rejects.
 
   '
 question: Which accounts reliably succeed with us, and which reliably do not?
@@ -21,8 +21,8 @@ outcomes:
 - A profile stated in dimensions that can be evaluated for an account nobody has spoken to — each dimension
   checkable from public data or an early conversation, not from a discovery call that has already been
   paid for.
-- 'A published, enforced disqualifier list. This is the negative outcome and the one that makes the
-  capability operational: a profile that only says yes cannot say no, and saying no is the entire point.'
+- 'A published, enforced disqualifier list. This is the negative outcome and the one that makes the capability
+  operational: a profile that only says yes cannot say no, and saying no is the entire point.'
 - Every claimed dimension carries its cohort evidence — the won-and-retained, lost and churned accounts
   that put it there. Dimensions with no evidence behind them stay labelled hypothesis rather than quietly
   becoming policy.
@@ -32,25 +32,25 @@ outcomes:
 - A review cadence set, and profile drift raised as a finding for a human rather than absorbed by silently
   widening the profile.
 failure_modes:
-- Building the profile from the accounts the company wishes it had. It reads well, describes nobody
-  in the pipeline, and is therefore never used — the most common outcome of this work.
+- Building the profile from the accounts the company wishes it had. It reads well, describes nobody in
+  the pipeline, and is therefore never used — the most common outcome of this work.
 - Listing what customers have in common instead of what separates them from the accounts that were lost.
-  Every won account has a website, a founder and a budget line; only attributes that DIFFER between
-  cohorts carry any information, and a profile built on shared attributes cannot discriminate.
+  Every won account has a website, a founder and a budget line; only attributes that DIFFER between cohorts
+  carry any information, and a profile built on shared attributes cannot discriminate.
 - Firmographics only. Industry and headcount are the cheapest fields to obtain and among the least predictive,
   so the profile that costs least to build is the one that separates least.
-- No disqualifiers, because agreeing on who to reject is politically harder than agreeing on who to
-  want. The anti-fit list is the part that saves time on day one and the part that gets deferred.
-- Silent widening. Each out-of-profile deal is waved through as a one-off, no exception is recorded,
-  and within two quarters the profile describes nothing and constrains nobody.
-- Written once, then left. A pricing change, a new tier or a shift in the delivery model invalidates
-  half the profile — fit is a joint property of the account and of us — and the document does not move.
+- No disqualifiers, because agreeing on who to reject is politically harder than agreeing on who to want.
+  The anti-fit list is the part that saves time on day one and the part that gets deferred.
+- Silent widening. Each out-of-profile deal is waved through as a one-off, no exception is recorded, and
+  within two quarters the profile describes nothing and constrains nobody.
+- Written once, then left. A pricing change, a new tier or a shift in the delivery model invalidates half
+  the profile — fit is a joint property of the account and of us — and the document does not move.
 kpis:
 - name: in_profile_win_rate_delta
   unit: percentage_points
   direction: higher_is_better
-  description: Win rate inside the profile minus outside. The single test of whether the profile is
-    a classifier. Near zero means everything downstream that depends on it is noise dressed as strategy.
+  description: Win rate inside the profile minus outside. The single test of whether the profile is a
+    classifier. Near zero means everything downstream that depends on it is noise dressed as strategy.
 - name: in_profile_retention_delta
   unit: months
   direction: higher_is_better
@@ -59,13 +59,12 @@ kpis:
 - name: out_of_profile_pipeline_share
   unit: percent
   direction: lower_is_better
-  description: How much of open pipeline ignores the profile. Measures whether it is used or merely
-    published.
+  description: How much of open pipeline ignores the profile. Measures whether it is used or merely published.
 - name: disqualification_rate
   unit: percent
   direction: target_band
-  description: A target band, not a maximum. Near zero means the anti-fit list is not being applied;
-    very high means it has quietly taken over account selection.
+  description: A target band, not a maximum. Near zero means the anti-fit list is not being applied; very
+    high means it has quietly taken over account selection.
 - name: profile_drift
   unit: percent
   direction: lower_is_better
@@ -108,19 +107,22 @@ applies_to:
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ''
+  reviewed_by: harsh
   last_updated: '2026-08-08'
-  review_status: unreviewed
+  review_status: approved
   confidence: provisional
-  notes: 'Promoted from stub. Two scoped objects authored — Fit Analysis and Disqualifier — carrying
-    twenty inference patterns between them, of which nine are executable against the pipeline today
-    and eleven are blocked. The executable half is lopsided in a revealing way: every pattern that runs
-    infers fit from DEAL BEHAVIOUR (graph shape, value band, observation mix) and not one infers it
-    from what the account actually is, because no firmographic fact is projected. The single highest-value
-    gap is account.industry / account.employee_count / account.geography as typed Layer 1 facts — the
-    cheapest enrichment in the stack, absent, and it disables the anti-fit half of this capability entirely.
-    The runner-up is a retention signal: the profession validates a profile on retention, Layer 2 emits
-    contract_requested and nothing about the second contract, so the brain can watch every deal close
-    and never learn whether the account was worth closing.
+  notes: 'Promoted from stub. Two scoped objects authored — Fit Analysis and Disqualifier — carrying twenty
+    inference patterns between them, of which nine are executable against the pipeline today and eleven
+    are blocked. The executable half is lopsided in a revealing way: every pattern that runs infers fit
+    from DEAL BEHAVIOUR (graph shape, value band, observation mix) and not one infers it from what the
+    account actually is, because no firmographic fact is projected. The single highest-value gap is account.industry
+    / account.employee_count / account.geography as typed Layer 1 facts — the cheapest enrichment in the
+    stack, absent, and it disables the anti-fit half of this capability entirely. The runner-up is a retention
+    signal: the profession validates a profile on retention, Layer 2 emits contract_requested and nothing
+    about the second contract, so the brain can watch every deal close and never learn whether the account
+    was worth closing.
 
     '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: c1cfec089bed0808c93e5dc02be0365d431df5d2794ed826dc5e3dc39daa2416

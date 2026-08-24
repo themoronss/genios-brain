@@ -1,40 +1,37 @@
-# Stub. Identity, purpose and load-set only — see queue-management in this subdomain for the
-# shape a promoted capability takes.
-
 identity:
   id: customer_support.support_operations.workload_balancing
   name: Workload Balancing
   domain: customer_support
   subdomain: support_operations
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Deciding who works what, given that agents are not interchangeable units of capacity. An
+  even split of ticket count across an uneven split of difficulty is not balance — it is a slow queue
+  and a quietly resentful team — so the load being balanced is open work in progress and skill match,
+  not throughput. The hard part is the specialist: routing everything difficult to the one person who
+  can do it optimises this week and manufactures a single point of failure, which is why some deliberately
+  inefficient assignment is the price of a team that still functions when that person is on leave.
 
-description: >
-  Deciding who works what, given that agents are not interchangeable units of capacity. An even
-  split of ticket count across an uneven split of difficulty is not balance — it is a slow queue
-  and a quietly resentful team — so the load being balanced is open work in progress and skill
-  match, not throughput. The hard part is the specialist: routing everything difficult to the
-  one person who can do it optimises this week and manufactures a single point of failure, which
-  is why some deliberately inefficient assignment is the price of a team that still functions
-  when that person is on leave.
-
-question: "Who should be working what right now, and who is quietly carrying this queue?"
-
+  '
+question: Who should be working what right now, and who is quietly carrying this queue?
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following the queue-management capability in this
-    subdomain. Promotion is worth doing once the queue-management heuristics are settled, since
-    this capability inherits its selection order from them and would otherwise encode a second,
-    conflicting one. The genuinely novel expertise to capture on promotion is the tension
-    between skill-based routing and skill development — the assignment that resolves fastest is
-    almost never the assignment that grows the team — plus the reading of concentration, where
-    one agent holding a disproportionate share of the hard work is a resourcing risk long before
+  notes: 'Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, decision_frameworks,
+    kpis and handoffs, following the queue-management capability in this subdomain. Promotion is worth
+    doing once the queue-management heuristics are settled, since this capability inherits its selection
+    order from them and would otherwise encode a second, conflicting one. The genuinely novel expertise
+    to capture on promotion is the tension between skill-based routing and skill development — the assignment
+    that resolves fastest is almost never the assignment that grows the team — plus the reading of concentration,
+    where one agent holding a disproportionate share of the hard work is a resourcing risk long before
     it is a performance story.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 3ee2141b08088cdd3d3d0ea48a4cb91c70e5e210e9f391e4136b642a739cd811

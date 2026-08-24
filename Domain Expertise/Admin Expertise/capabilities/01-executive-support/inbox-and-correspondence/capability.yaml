@@ -1,28 +1,25 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.executive_support.inbox_and_correspondence
   name: Inbox & Correspondence
   domain: admin
   subdomain: executive_support
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Running correspondence as a ledger of open obligations rather than a list of unread items:
+  separating what needs the principal from what needs anyone, drafting on their behalf, and making sure
+  nothing that was promised in writing quietly falls out of view. The inbox is where most administrative
+  debt is created and where almost none of it is tracked.
 
-description: >
-  Running correspondence as a ledger of open obligations rather than a list of unread items:
-  separating what needs the principal from what needs anyone, drafting on their behalf, and
-  making sure nothing that was promised in writing quietly falls out of view. The inbox is
-  where most administrative debt is created and where almost none of it is tracked.
-
-question: "Is every message that needs an answer answered, once, by the right person?"
-
+  '
+question: Is every message that needs an answer answered, once, by the right person?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: c07fde3225c5ad7170b1b43cf49d6cd871165b7eb70b9ff89e2ed543da1b67ac

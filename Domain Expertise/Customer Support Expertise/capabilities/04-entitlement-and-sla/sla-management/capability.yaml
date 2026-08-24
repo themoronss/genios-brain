@@ -1,37 +1,19 @@
-# FULL capability — the reference file for subdomain 04.
-#
-# An SLA is a clock with a start, a pause and a deadline. Starts are stamped by a system and
-# deadlines are arithmetic; both are hard to argue with. The pause is a human judgement made
-# under queue pressure, which is why almost every SLA dispute — internal or with the customer —
-# is a dispute about the pause. This file is organised around that fact.
-#
-# NOTE ON THE MISSING NUMBERS. There is not a threshold in here on purpose. "First response
-# within four hours for a platinum plan" is a pack manifest fact and Layer 4's arithmetic; what
-# Layer 3 knows is that a first-response clock exists, what legitimately stops it, and how a
-# team fools itself about whether it was met. The moment a duration appears in this file the
-# Layer 3/4 boundary has leaked and the expertise has been replaced by one customer's contract.
-#
-# Playbooks, heuristics, mental models and decision frameworks moved OUT of this
-# file and into knowledge.yaml + the artifact folders. They are files now because a
-# Layer 6 suggestion needs an id and a version to point at, and because a framework
-# used by four capabilities cannot live inline in all four.
-
 identity:
   id: customer_support.entitlement_and_sla.sla_management
   name: SLA Management
   domain: customer_support
   subdomain: entitlement_and_sla
   version: 1.0.0
-  status: draft
+  status: stable
   stub: false
 description: 'Running the clocks that an entitlement created: knowing which clocks exist on a ticket,
-  which one the ticket is actually judged on, when each started, whether it is legitimately running
-  right now, and when it runs out in the customer''s covered hours rather than the agent''s. SLA management
-  is bookkeeping in the honourable sense — the value is entirely in the ledger being true. It is not
-  the work of avoiding a breach (that is breach_prevention, and it happens hours earlier), and it is
-  not the promise itself (that is entitlement_verification, and it is a contract clause). A team that
-  manages clocks well can still miss every deadline; a team that manages them badly cannot tell whether
-  it missed them at all.
+  which one the ticket is actually judged on, when each started, whether it is legitimately running right
+  now, and when it runs out in the customer''s covered hours rather than the agent''s. SLA management
+  is bookkeeping in the honourable sense — the value is entirely in the ledger being true. It is not the
+  work of avoiding a breach (that is breach_prevention, and it happens hours earlier), and it is not the
+  promise itself (that is entitlement_verification, and it is a contract clause). A team that manages
+  clocks well can still miss every deadline; a team that manages them badly cannot tell whether it missed
+  them at all.
 
   '
 question: Which clock is running on this ticket, is it running for the right reason, and when does it
@@ -41,12 +23,12 @@ outcomes:
   — and never an implied one.
 - 'Every clock names the promise it measures: first response, next response, restoration or resolution.
   Which one the ticket is judged on is decided before the deadline, not after it.'
-- Every pause carries a recorded cause and a recorded restart condition, so the pause can be audited
-  by someone who was not there.
-- Deadlines are computed inside the entitlement's coverage window and quoted to the customer in the
-  customer's local time.
-- A breach is recorded as a breach. It is never dissolved by a retroactive pause, a reclassification
-  or a merge.
+- Every pause carries a recorded cause and a recorded restart condition, so the pause can be audited by
+  someone who was not there.
+- Deadlines are computed inside the entitlement's coverage window and quoted to the customer in the customer's
+  local time.
+- A breach is recorded as a breach. It is never dissolved by a retroactive pause, a reclassification or
+  a merge.
 - The deadline the customer believes in and the deadline the system holds are the same deadline.
 - Attainment is reported next to the pause ratio, so nobody can read the first number without the number
   that qualifies it.
@@ -66,12 +48,11 @@ failure_modes:
   Produces real breaches over weekends and phantom breaches on public holidays that exist in one country
   and not another.
 - Treating met as good. A met clock on a furious customer is a measurement failure — the promise being
-  measured was not the promise they thought they had — and it is invisible to every SLA report ever
-  built.
+  measured was not the promise they thought they had — and it is invisible to every SLA report ever built.
 - Silent pauses. A clock stopped by a status change nobody intended as a pause, most often a bulk update,
   a merge or an automation firing on a stale rule.
-- Internal waiting treated as customer waiting. Waiting on engineering is our problem; the moment it
-  stops the clock, the queue shows a healthy board full of tickets nobody has touched in weeks.
+- Internal waiting treated as customer waiting. Waiting on engineering is our problem; the moment it stops
+  the clock, the queue shows a healthy board full of tickets nobody has touched in weeks.
 - A breach discovered by the customer before it is discovered by the queue. The clock was arithmetically
   perfect and nobody was watching it.
 - Per-ticket clocks during a widespread incident, so one fix breaches many clocks at once and generates
@@ -101,8 +82,8 @@ kpis:
 - name: invalid_pause_rate
   unit: percent
   direction: lower_is_better
-  description: 'Paused tickets with no live unanswered question to the customer. Measures the abuse
-    directly instead of inferring it from attainment.
+  description: 'Paused tickets with no live unanswered question to the customer. Measures the abuse directly
+    instead of inferring it from attainment.
 
     '
 - name: breach_rate
@@ -112,8 +93,8 @@ kpis:
 - name: proactive_breach_disclosure_rate
   unit: percent
   direction: higher_is_better
-  description: 'Share of breaches the customer was told about before the deadline rather than after.
-    The single best predictor of whether a breach becomes an escalation.
+  description: 'Share of breaches the customer was told about before the deadline rather than after. The
+    single best predictor of whether a breach becomes an escalation.
 
     '
 - name: met_but_dissatisfied_rate
@@ -179,15 +160,15 @@ applies_to:
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ''
+  reviewed_by: harsh
   last_updated: '2026-08-08'
-  review_status: unreviewed
+  review_status: approved
   confidence: provisional
   notes: 'This capability is deliberately narrow. It owns the state of the clock and the truthfulness
-    of the ledger, and nothing else. Predicting and averting a miss is breach_prevention, which is a
-    separate capability because that work happens hours before the deadline while nothing about the
-    ticket looks different yet — an alert at the moment of breach is a notification about the past.
-    Deciding what was promised is entitlement_verification. Saying the deadline to a human is expectation_setting.
+    of the ledger, and nothing else. Predicting and averting a miss is breach_prevention, which is a separate
+    capability because that work happens hours before the deadline while nothing about the ticket looks
+    different yet — an alert at the moment of breach is a notification about the past. Deciding what was
+    promised is entitlement_verification. Saying the deadline to a human is expectation_setting.
 
     Nothing here is executable against today''s substrate: there is no ticket, SLA clock or entitlement
     fact path in the shipped packs, so every inference this capability wants sits in planned_substrate
@@ -196,3 +177,6 @@ metadata:
     the backlog, not a defect in this file.
 
     '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: d2feeedd116542a5e1ec41de165fa535694dfbd010e912002feb94159684b1b2

@@ -1,27 +1,24 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.records_and_documentation.filing_and_retrieval
   name: Filing & Retrieval
   domain: admin
   subdomain: records_and_documentation
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Designing and maintaining the structure that makes retrieval independent of the person who
+  filed it: naming conventions, folder taxonomy, metadata and search. Filing is judged entirely by retrieval,
+  and a scheme only its author can navigate has failed.
 
-description: >
-  Designing and maintaining the structure that makes retrieval independent of the person who
-  filed it: naming conventions, folder taxonomy, metadata and search. Filing is judged
-  entirely by retrieval, and a scheme only its author can navigate has failed.
-
-question: "Can the right person find this in minutes, without asking anyone?"
-
+  '
+question: Can the right person find this in minutes, without asking anyone?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 6db64e4961f2f0bdfcf72c87230726dc81f37de1e13f138a1c92b4487d2740aa

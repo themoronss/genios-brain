@@ -4,24 +4,24 @@ identity:
   domain: sales
   subdomain: closing
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Terms, renewal dates, obligations and the commitments made to win. A contract''s non-standard
+  clauses are a liability that outlives the rep who agreed them.
 
-description: >
-  Terms, renewal dates, obligations and the commitments made to win. A contract's
-  non-standard clauses are a liability that outlives the rep who agreed them.
-
-question: "What did we actually agree, and what does it commit us to?"
-
-
+  '
+question: What did we actually agree, and what does it commit us to?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 2f336efbb7daeb36888dbe4050940dae38fe2a866dba6cb58fb311292c77a8ff

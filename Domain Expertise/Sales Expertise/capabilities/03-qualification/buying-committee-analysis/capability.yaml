@@ -4,25 +4,24 @@ identity:
   domain: sales
   subdomain: qualification
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Mapping the set of people whose agreement is jointly necessary, and measuring coverage against
+  it. In most enterprise losses the committee was never wrong about us; it was never fully mapped.
 
-description: >
-  Mapping the set of people whose agreement is jointly necessary, and measuring coverage
-  against it. In most enterprise losses the committee was never wrong about us; it was never
-  fully mapped.
-
-question: "How many seats must agree, and how many have we actually engaged?"
-
-
+  '
+question: How many seats must agree, and how many have we actually engaged?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: c25b203d568bcf5911f4b9fff8f7871d7e32469aa22bd2fa6a8822ea6c69fdac

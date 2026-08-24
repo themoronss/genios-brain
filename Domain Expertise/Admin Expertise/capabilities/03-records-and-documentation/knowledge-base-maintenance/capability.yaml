@@ -1,27 +1,24 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.records_and_documentation.knowledge_base_maintenance
   name: Knowledge Base Maintenance
   domain: admin
   subdomain: records_and_documentation
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Keeping internal documentation alive: ownership per article, review cadence, de-duplication,
+  and retirement of guidance that has quietly become wrong. A knowledge base nobody prunes is more dangerous
+  than none, because it is trusted.
 
-description: >
-  Keeping internal documentation alive: ownership per article, review cadence, de-duplication,
-  and retirement of guidance that has quietly become wrong. A knowledge base nobody prunes is
-  more dangerous than none, because it is trusted.
-
-question: "Is the written answer to this question still correct?"
-
+  '
+question: Is the written answer to this question still correct?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 3301863216d8e330d3644ba258fb8a90a2c06e7db5705c41b9ea7a1ca5e8d8d5

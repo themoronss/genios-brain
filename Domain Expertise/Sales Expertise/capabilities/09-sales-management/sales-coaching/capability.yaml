@@ -4,24 +4,24 @@ identity:
   domain: sales
   subdomain: sales_management
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
-
-description: >
-  Improving individual capability against observed behaviour rather than against outcomes.
+description: 'Improving individual capability against observed behaviour rather than against outcomes.
   Coaching to results tells a seller they lost; coaching to behaviour tells them why.
 
-question: "What specifically should this seller do differently?"
-
-
+  '
+question: What specifically should this seller do differently?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 243424f55bc6dd168a1795c2d4780c40a8eb2e11cfdd112e3a721883279c90d0

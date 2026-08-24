@@ -1,28 +1,24 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.facilities_and_assets.asset_issuance_and_recovery
   name: Asset Issuance & Recovery
   domain: admin
   subdomain: facilities_and_assets
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'The custody chain: issuing equipment against a signed acknowledgement, tracking transfers,
+  and recovering it at the end of the relationship. Recovery is the half that fails, and it fails silently
+  because nobody is inconvenienced by an asset that is not returned except the balance sheet.
 
-description: >
-  The custody chain: issuing equipment against a signed acknowledgement, tracking transfers,
-  and recovering it at the end of the relationship. Recovery is the half that fails, and it
-  fails silently because nobody is inconvenienced by an asset that is not returned except the
-  balance sheet.
-
-question: "Was this issued to a named person, acknowledged, and has it come back?"
-
+  '
+question: Was this issued to a named person, acknowledged, and has it come back?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 74afd6ec74a861a389c75947244e964336b8b55b2d622afc6a721975f0aead29

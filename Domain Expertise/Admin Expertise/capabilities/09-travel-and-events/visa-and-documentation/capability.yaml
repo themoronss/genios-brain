@@ -1,28 +1,24 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.travel_and_events.visa_and_documentation
   name: Visa & Documentation
   domain: admin
   subdomain: travel_and_events
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Managing the documentation that makes travel lawful: passports and validity windows, visas,
+  invitation letters, work permits, insurance and health requirements. These are hard external dependencies
+  with queue times measured in weeks, and they are the reason a trip is cancelled rather than the flights.
 
-description: >
-  Managing the documentation that makes travel lawful: passports and validity windows, visas,
-  invitation letters, work permits, insurance and health requirements. These are hard external
-  dependencies with queue times measured in weeks, and they are the reason a trip is cancelled
-  rather than the flights.
-
-question: "Is this person legally able to enter and work there on these dates?"
-
+  '
+question: Is this person legally able to enter and work there on these dates?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 91e688fd1eb633eed99a68f82c1a67e5c50aad94252af138af75e9fc5701f88e

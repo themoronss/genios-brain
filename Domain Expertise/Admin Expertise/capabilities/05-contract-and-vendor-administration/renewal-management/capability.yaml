@@ -1,28 +1,25 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.contract_and_vendor.renewal_management
   name: Renewal Management
   domain: admin
   subdomain: contract_and_vendor
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Managing the end of the contract term before it manages us. Every agreement has a decision
+  date that precedes its expiry by the length of the notice period, and that earlier date is the real
+  one. Auto-renewal is the default that costs the most money precisely because it requires nobody to do
+  anything.
 
-description: >
-  Managing the end of the contract term before it manages us. Every agreement has a decision
-  date that precedes its expiry by the length of the notice period, and that earlier date is
-  the real one. Auto-renewal is the default that costs the most money precisely because it
-  requires nobody to do anything.
-
-question: "Which agreements auto-renew, when does the notice window open, and do we still want them?"
-
+  '
+question: Which agreements auto-renew, when does the notice window open, and do we still want them?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 562919c9cd80030d9e7b2a8bd32a37bff62eae1086807144d8b2394845715d12

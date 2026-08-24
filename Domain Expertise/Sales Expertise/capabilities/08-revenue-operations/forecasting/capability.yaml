@@ -4,24 +4,24 @@ identity:
   domain: sales
   subdomain: revenue_operations
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
-
-description: >
-  Producing a defensible revenue prediction from deal-level evidence. A forecast is a claim
+description: 'Producing a defensible revenue prediction from deal-level evidence. A forecast is a claim
   about evidence, not a summary of optimism, and the discipline lives in what is excluded.
 
-question: "What will actually close, and how confident should we be?"
-
-
+  '
+question: What will actually close, and how confident should we be?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 3381ed68e713d4744153ef9e1927f77672c39af167a5154451a0e50144913cd2

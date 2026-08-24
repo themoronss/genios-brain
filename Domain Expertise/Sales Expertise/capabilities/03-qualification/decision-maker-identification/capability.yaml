@@ -4,25 +4,24 @@ identity:
   domain: sales
   subdomain: qualification
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Establishing authority from evidence rather than from title. In most B2B motions the approver
+  is discovered, never announced, so this capability leans almost entirely on inference patterns.
 
-description: >
-  Establishing authority from evidence rather than from title. In most B2B motions the
-  approver is discovered, never announced, so this capability leans almost entirely on
-  inference patterns.
-
-question: "Who can actually approve this, and how do we know?"
-
-
+  '
+question: Who can actually approve this, and how do we know?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: efb0064f6b443837ca2814ef58da058738d9e8731d677b996b4d852e56a15a75

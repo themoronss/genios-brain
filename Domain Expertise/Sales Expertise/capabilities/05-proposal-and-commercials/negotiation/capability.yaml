@@ -4,25 +4,24 @@ identity:
   domain: sales
   subdomain: proposal_and_commercials
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Trading across the whole set of terms rather than conceding on price alone. Every unreciprocated
+  discount trains the buyer for the renewal, which is a cost that lands after the quarter closes.
 
-description: >
-  Trading across the whole set of terms rather than conceding on price alone. Every
-  unreciprocated discount trains the buyer for the renewal, which is a cost that lands after
-  the quarter closes.
-
-question: "On what terms will both sides say yes?"
-
-
+  '
+question: On what terms will both sides say yes?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 429566ba5c4f8e1d5122c8265634c0d86d7d6a3fe8f956d5f3a7094fa6a6cc6e

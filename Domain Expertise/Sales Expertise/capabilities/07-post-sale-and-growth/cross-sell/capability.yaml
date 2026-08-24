@@ -4,25 +4,24 @@ identity:
   domain: sales
   subdomain: post_sale_and_growth
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Selling an adjacent product into an existing account. Behaves like a new sale with a warm
+  start: the committee is usually different, and assuming it is the same is the standard error.
 
-description: >
-  Selling an adjacent product into an existing account. Behaves like a new sale with a warm
-  start: the committee is usually different, and assuming it is the same is the standard
-  error.
-
-question: "Is there a different product this account needs?"
-
-
+  '
+question: Is there a different product this account needs?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: fece01a56fc4e8fd0435acd1408c70b7e6725ac79d50f03d7f6cce1dd6057a9b

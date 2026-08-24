@@ -1,28 +1,24 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.records_and_documentation.version_control
   name: Version Control
   domain: admin
   subdomain: records_and_documentation
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Keeping a defensible history of a document: sequential versions, a visible change record,
+  superseded copies withdrawn rather than left in place, and the current version unambiguous. Most damaging
+  document errors are not lost files — they are the previous version, still circulating.
 
-description: >
-  Keeping a defensible history of a document: sequential versions, a visible change record,
-  superseded copies withdrawn rather than left in place, and the current version unambiguous.
-  Most damaging document errors are not lost files — they are the previous version, still
-  circulating.
-
-question: "Which version is authoritative, and what changed between them?"
-
+  '
+question: Which version is authoritative, and what changed between them?
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: a4a39f0704135f08b1501878fba9a301d53acce2017bcbd3aa7e8a0fd008d7a6

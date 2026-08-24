@@ -4,25 +4,24 @@ identity:
   domain: sales
   subdomain: prospecting_and_outreach
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Cadence, value-add and stop rules. Applies across the whole lifecycle, not only prospecting
+  — an unanswered proposal and an unanswered first touch need different content and the same discipline.
 
-description: >
-  Cadence, value-add and stop rules. Applies across the whole lifecycle, not only prospecting
-  — an unanswered proposal and an unanswered first touch need different content and the same
-  discipline.
-
-question: "When and how do we come back to someone who has not replied?"
-
-
+  '
+question: When and how do we come back to someone who has not replied?
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
+    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: d44608dd8205c712333f5275deddd10881120207b77bd5bca60f58946aed0877

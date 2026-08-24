@@ -1,40 +1,38 @@
-# STUB — identity, description, question and metadata only. Promotion instructions in metadata.
-
 identity:
   id: customer_support.diagnosis_and_resolution.diagnostics
   name: Diagnostics
   domain: customer_support
   subdomain: diagnosis_and_resolution
   version: 0.1.0
-  status: draft
+  status: stable
   stub: false
+description: 'Getting what the system already knows about the failure — logs, traces, versions, configuration,
+  the account''s own data, the screenshot nobody asked for — and getting it in one pass rather than in
+  a chain of round trips. The expertise is mostly in restraint: every additional request spends customer
+  patience on evidence that is frequently retrievable from our own side, and a customer who has been asked
+  three times for the same thing stops believing anyone is reading their replies. Diagnostics collected
+  after a hypothesis has formed are collected to confirm it, which is why what to gather is decided before
+  anyone has a theory, and why the log everyone wants is the one that rotated away yesterday.
 
-description: >
-  Getting what the system already knows about the failure — logs, traces, versions,
-  configuration, the account's own data, the screenshot nobody asked for — and getting it in one
-  pass rather than in a chain of round trips. The expertise is mostly in restraint: every
-  additional request spends customer patience on evidence that is frequently retrievable from
-  our own side, and a customer who has been asked three times for the same thing stops believing
-  anyone is reading their replies. Diagnostics collected after a hypothesis has formed are
-  collected to confirm it, which is why what to gather is decided before anyone has a theory,
-  and why the log everyone wants is the one that rotated away yesterday.
-
-question: "What does the evidence actually say, and what do we still need before we can say anything?"
-
+  '
+question: What does the evidence actually say, and what do we still need before we can say anything?
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, kpis and
-    handoffs, following the sibling root-cause-analysis/capability.yaml. Two bodies of knowledge
-    belong here and neither is written yet: the standard evidence bundle per product_area, which
-    is what turns a round trip into a single ask, and the etiquette of asking a customer for
-    access to their environment, which is where trust is most often spent badly. Watch the
-    boundary with root_cause_analysis when promoting — diagnostics gathers and reads evidence,
-    RCA explains it, and a promoted file that starts asserting causes has absorbed its
-    neighbour. Nothing here can route today: derived.contact_frequency and the ticket fact paths
-    this capability would key on are planned substrate.
+  notes: 'Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, kpis and handoffs,
+    following the sibling root-cause-analysis/capability.yaml. Two bodies of knowledge belong here and
+    neither is written yet: the standard evidence bundle per product_area, which is what turns a round
+    trip into a single ask, and the etiquette of asking a customer for access to their environment, which
+    is where trust is most often spent badly. Watch the boundary with root_cause_analysis when promoting
+    — diagnostics gathers and reads evidence, RCA explains it, and a promoted file that starts asserting
+    causes has absorbed its neighbour. Nothing here can route today: derived.contact_frequency and the
+    ticket fact paths this capability would key on are planned substrate.
+
+    '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 13812f1e4415888ce53cdc0f0ac5d3fb35d318c53f1cd2459c6fc503002a9aea
