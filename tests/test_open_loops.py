@@ -119,3 +119,59 @@ def test_situation_fields_enter_the_fact_envelope_rules_already_read():
         assert f'"{field}"' in src
     # setdefault, never overwrite: a captured fact outranks a derived mirror
     assert "ctx.facts.setdefault(_field" in src
+
+
+# ── the two live-data defects the local end-to-end caught ───────────────────────
+def test_a_relationship_must_exist_before_it_can_be_at_risk():
+    """`ball_in_court != them, missing_ok` narrows a population; on its own it also passes for
+    every person we have never exchanged a message with. That is how `hello@forumvc.com` — a
+    newsletter sender — got "Save the deal now" at CRITICAL band on the design partner's real
+    inbox. The same fact is the rule's own urgency clock: without it, elapsed time was being
+    computed from nothing."""
+    from genios_engine.packs.sales_v1 import SALES_V1
+
+    for rule_id in ("closed_lost_risk", "timeline_slip"):
+        rule = next(r for r in SALES_V1["rules"] if r["id"] == rule_id)
+        guarded = [c for c in rule["when"] if c.get("present") == "thread.last_inbound"]
+        assert guarded, f"{rule_id} can fire on a stranger"
+        # and the guard names the very fact the urgency clock reads
+        assert rule["urgency"]["path"] == "thread.last_inbound"
+
+
+def test_the_present_operator_distinguishes_absent_from_permitted():
+    """`missing_ok` makes an absent fact PASS a negative check — correct for narrowing, wrong as
+    a rule's only gate. `present` is the positive counterpart."""
+    from datetime import datetime, timezone
+
+    from genios_engine.reason.engine import NodeContext, evaluate
+    from genios_engine.reason.rules import rule_from_dict
+
+    rule = rule_from_dict({
+        "id": "t", "scope": "person", "reason_code": "t",
+        "when": [{"present": "thread.last_inbound"}],
+        "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 1}})
+    now = datetime(2026, 8, 24, tzinfo=timezone.utc)
+    stranger = NodeContext(node_id="n1", node_type="person", facts={})
+    known = NodeContext(node_id="n2", node_type="person",
+                        facts={"thread.last_inbound": {"value": "2026-08-01T00:00:00+00:00"}})
+    assert evaluate(stranger, rule, now) is False
+    assert evaluate(known, rule, now) is True
+
+
+def test_an_active_promoted_pack_carries_instructing_authority():
+    """The abstention gate read ONLY a compiled expertise package's review_state — a key the
+    legacy pack path never has — so 15 of 15 live cards were downgraded to `observation` while
+    their headlines still read "Reply now". The two halves of every card contradicted each other.
+
+    A tenant's ACTIVE pack is authored, versioned, content-addressed and explicitly promoted:
+    that IS a human saying these rules may instruct. A paused or draft pack still abstains.
+    """
+    from genios_engine.deliver.pipeline import _apply_abstention
+
+    signal = {"level": "prescriptive"}
+    assert _apply_abstention(signal, {"state": "active"})["level"] == "prescriptive"
+    assert _apply_abstention(signal, {"state": "paused"})["level"] == "observation"
+    assert _apply_abstention(signal, {})["level"] == "observation"
+    # a compiled accepted package still authorises on its own
+    assert _apply_abstention(
+        signal, {"expertise": {"review_state": "accepted"}})["level"] == "prescriptive"

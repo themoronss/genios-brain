@@ -81,11 +81,18 @@ def _open_signals_without_cards(graph, org_id: str,
 def _apply_abstention(signal: dict, effective: dict) -> dict:
     """Downgrade an instruction to an observation when nothing authorises instructing.
 
-    Two conditions, and both are about AUTHORITY rather than confidence — a low-confidence
-    prescription is still read and acted on as an instruction:
+    Authority, not confidence — a low-confidence prescription is still read and acted on as an
+    instruction, so the question is only ever "did reviewed expertise back this decision?".
 
-      * the pack backing this rule declares no reviewed expertise for it, or
-      * the decision arrived without a resolved capability at all.
+    TWO authority sources, and reading only the second is what downgraded 15 of 15 live cards:
+
+      * a COMPILED expertise package, whose `review_state` says whether a named human accepted
+        the corpus behind it (`effective["expertise"]`), or
+      * the TENANT'S ACTIVE PACK — which is itself authored, content-addressed, versioned and
+        explicitly promoted per tenant (`tenant_packs.state='active'`). A promoted pack is a
+        human saying "these rules may instruct my org"; treating it as unreviewed made every
+        card carry a "reply now" headline over an `observation` level, so the two halves of the
+        same card contradicted each other on every single row.
 
     The reason travels with the card. An abstention with no stated cause is indistinguishable
     from a bug: the user cannot tell "outside my coverage" from "something broke".
@@ -94,6 +101,11 @@ def _apply_abstention(signal: dict, effective: dict) -> dict:
         return signal
     review_state = str((effective.get("expertise") or {}).get("review_state") or "").lower()
     if review_state in ("accepted", "reviewed"):
+        return signal
+    # The pack path. `state` comes from tenant_packs via registry.effective(); only an ACTIVE
+    # promotion carries instructing authority — a paused or draft pack falls through to the
+    # downgrade below exactly as an unaccepted corpus does.
+    if str(effective.get("state") or "").lower() == "active":
         return signal
     level, reason = downgrade_to_observation(
         signal.get("level"),

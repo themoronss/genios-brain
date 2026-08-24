@@ -103,6 +103,14 @@ def _eval_condition(ctx: NodeContext, cond: dict, eval_time: datetime) -> bool:
         return cond["exists"] in ctx.facts
     if "absent" in cond:
         return cond["absent"] not in ctx.facts
+    if "present" in cond:
+        # "we have actually captured this fact" — the counterpart to `absent`, and the guard a
+        # rule needs when its imperative presumes a RELATIONSHIP exists. `missing_ok` makes an
+        # absent fact PASS a negative check, which is right for narrowing a population and wrong
+        # as the only gate on a rule: closed_lost_risk fired on newsletter senders because
+        # `ball_in_court != them, missing_ok` passes for people we have never exchanged a word
+        # with, and "save the deal now" needs a deal before it needs saving.
+        return cond["present"] in ctx.facts
     if "has_obs" in cond:
         return any(o.get("kind") == cond["has_obs"] for o in ctx.obs)
     if "no_obs" in cond:

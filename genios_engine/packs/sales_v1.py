@@ -5,7 +5,9 @@ declare the artifact + success signal for L5. Constants are HYPs (L6-calibratabl
 
 SALES_V1 = {
     "id": "sales",
-    "version": "1.11.0",             # 1.11.0: push bands calibrated to the live score
+    "version": "1.12.0",             # 1.12.0: closed_lost_risk / timeline_slip require a real
+                                    #   inbound thread — `missing_ok` alone let them fire on
+                                    #   people we have never corresponded with             # 1.11.0: push bands calibrated to the live score
                                     #   distribution — 70/85 sat above the max reachable score,
                                     #   so no card ever pushed             # 1.10.0 staleness guard: timeline_slip/closed_lost_risk fire only when
                                       #   ball_in_court != them (missing_ok) — no "save now" after we've replied
@@ -254,7 +256,15 @@ SALES_V1 = {
         # loses urgency and slips a quarter.
         {"id": "timeline_slip", "level": "predictive", "scope": "person",
          "when": [{"has_obs": "timeline_slip"},
-                  {"path": "thread.ball_in_court", "op": "!=", "value": "them", "missing_ok": True}],
+                  {"path": "thread.ball_in_court", "op": "!=", "value": "them", "missing_ok": True},
+                  # A relationship must EXIST before it can be at risk. `ball_in_court != them,
+                  # missing_ok` narrows a population; on its own it also passes for every person
+                  # we have never exchanged a message with — which is how a newsletter sender
+                  # (hello@forumvc.com) got "Save the deal now" at critical band. This is also
+                  # the rule's own urgency clock: without it the elapsed time is computed from
+                  # nothing.
+                  {"present": "thread.last_inbound"},],
+         
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 8, "slow": True},
          "reason_code": "timeline_slip", "play": "re_engage", "cooldown_hours": 168,
          "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
@@ -282,7 +292,15 @@ SALES_V1 = {
         # to save it with a direct, specific save play before it's gone.
         {"id": "closed_lost_risk", "level": "predictive", "scope": "person",
          "when": [{"has_obs": "closed_lost_mention"},
-                  {"path": "thread.ball_in_court", "op": "!=", "value": "them", "missing_ok": True}],
+                  {"path": "thread.ball_in_court", "op": "!=", "value": "them", "missing_ok": True},
+                  # A relationship must EXIST before it can be at risk. `ball_in_court != them,
+                  # missing_ok` narrows a population; on its own it also passes for every person
+                  # we have never exchanged a message with — which is how a newsletter sender
+                  # (hello@forumvc.com) got "Save the deal now" at critical band. This is also
+                  # the rule's own urgency clock: without it the elapsed time is computed from
+                  # nothing.
+                  {"present": "thread.last_inbound"},],
+         
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 4},
          "reason_code": "closed_lost_risk", "play": "defend_position", "cooldown_hours": 120,
          "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
