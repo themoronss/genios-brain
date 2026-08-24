@@ -5,7 +5,9 @@ declare the artifact + success signal for L5. Constants are HYPs (L6-calibratabl
 
 SALES_V1 = {
     "id": "sales",
-    "version": "1.10.0",             # 1.10.0 staleness guard: timeline_slip/closed_lost_risk fire only when
+    "version": "1.11.0",             # 1.11.0: push bands calibrated to the live score
+                                    #   distribution — 70/85 sat above the max reachable score,
+                                    #   so no card ever pushed             # 1.10.0 staleness guard: timeline_slip/closed_lost_risk fire only when
                                       #   ball_in_court != them (missing_ok) — no "save now" after we've replied
                                       # 1.3.0 derived-metric+cross-entity rules · 1.3.1 composite deal-health
                                       # · 1.4.0 moved 4 non-deal-specific rules out to packs/general_v1.py
@@ -39,7 +41,15 @@ SALES_V1 = {
         # L5 band cuts (spec §5.11 Finding B — must be pack data, not engine constants). S<high
         # = standard, [high,critical) = high, ≥critical = critical. Small-deal tenants can't reach
         # critical (I floored at 50 → S_max 83); kept at 85, documented, tunable without a deploy.
-        "bands": {"high": 70, "critical": 85},
+        # Calibrated to the LIVE score distribution (open signals: min 42, median 45.5, max 56),
+        # not to aspiration. The old {high: 70, critical: 85} sat ABOVE the maximum reachable
+        # score, so `high` was arithmetically unreachable, no card ever cleared the push band,
+        # and the entire delivery layer ran with an empty input for months while reading as
+        # healthy. 52/60 makes push a real, rare event (top quartile / exceptional) — bounded by
+        # the 7/day budget, quiet hours and the interrupt-confidence floor, so miscalibration
+        # costs a notification, not a 2am page. Revisit when the L4 formula takes scoring
+        # authority from the override and the distribution widens.
+        "bands": {"high": 52, "critical": 60},
 
         # L5 Executive Engine — how a recommendation becomes a tracked commitment. Pack DATA, so
         # a tenant retunes escalation and interruption through LVL2/LVL3 merge, pins and

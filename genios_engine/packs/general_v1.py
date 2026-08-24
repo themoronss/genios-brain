@@ -8,7 +8,8 @@ register it here")."""
 
 GENERAL_V1 = {
     "id": "general",
-    "version": "1.3.1",              # 1.3.1: 1.3.0 was published with an over-damped urgency
+    "version": "1.4.0",              # 1.4.0: push bands calibrated to live scores (see sales
+                                    #   1.11.0 — kept in lockstep, shared org-wide budget)              # 1.3.1: 1.3.0 was published with an over-damped urgency
                                     #   half-life (h=24 against meeting.end_at) that made the
                                     #   rule unfireable — peak S=23 against s_min 42. Published
                                     #   bytes are immutable, so the correction is a version, not
@@ -40,7 +41,15 @@ GENERAL_V1 = {
         # why unknown deal value floors at 55.
         "impact": {"i_floor": 55, "i_floor_scope": "deal_linked", "p90_default": 50000},
         "r_half_life": {"countdown_h": 24, "elapsed_h": 72},
-        "bands": {"high": 70, "critical": 85},
+        # Calibrated to the LIVE score distribution (open signals: min 42, median 45.5, max 56),
+        # not to aspiration. The old {high: 70, critical: 85} sat ABOVE the maximum reachable
+        # score, so `high` was arithmetically unreachable, no card ever cleared the push band,
+        # and the entire delivery layer ran with an empty input for months while reading as
+        # healthy. 52/60 makes push a real, rare event (top quartile / exceptional) — bounded by
+        # the 7/day budget, quiet hours and the interrupt-confidence floor, so miscalibration
+        # costs a notification, not a 2am page. Revisit when the L4 formula takes scoring
+        # authority from the override and the distribution widens.
+        "bands": {"high": 52, "critical": 60},
     },
 
 

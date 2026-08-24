@@ -24,16 +24,21 @@ BANDS = SALES_V1["scoring_defaults"]["bands"]
 # ---- E2 band assigner ------------------------------------------------------
 
 def test_bands_cut_from_pack():
-    assert band(54, BANDS) == "standard"
-    assert band(69, BANDS) == "standard"
-    assert band(70, BANDS) == "high"
-    assert band(84, BANDS) == "high"
-    assert band(85, BANDS) == "critical"
+    # 1.11.0 calibrated the cuts to the LIVE score distribution (min 42 / median 45.5 / max 56):
+    # the old 70/85 sat ABOVE the maximum reachable score, so `high` was arithmetically
+    # unreachable and the push layer ran on an empty input for months while reading as healthy.
+    assert band(45, BANDS) == "standard"
+    assert band(51, BANDS) == "standard"
+    assert band(52, BANDS) == "high"
+    assert band(59, BANDS) == "high"
+    assert band(60, BANDS) == "critical"
 
 
-def test_small_deal_supremum_never_reaches_critical():
-    # spec §5.11: small-deal S maxes at 83 → critical (85) is unreachable, by construction
-    assert band(83, BANDS) == "high"
+def test_the_push_band_is_reachable_by_the_live_score_range():
+    """The invariant the old fixture values silently violated: a band nothing can reach is not a
+    threshold, it is a disabled feature wearing one's clothes. Live open signals span 42-56."""
+    assert BANDS["high"] <= 56, "high must be reachable by the live maximum"
+    assert BANDS["critical"] > BANDS["high"]
 
 
 # ---- V-01 length caps ------------------------------------------------------
