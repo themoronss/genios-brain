@@ -6,5 +6,7 @@
 -- key; NULL recipient (org-wide digest, tenant surface) coalesces to '' so those rows keep
 -- exactly their old one-per-card semantics.
 drop index if exists delivery_outbox_once;
-create unique index delivery_outbox_once
+-- if not exists: the drop-create PAIR is idempotent, but a runner that crashed between the two
+-- statements (or a concurrent boot) must not die recreating what the previous attempt built.
+create unique index if not exists delivery_outbox_once
     on delivery_outbox (org_id, card_id, channel, coalesce(recipient, ''));

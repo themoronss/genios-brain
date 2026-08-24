@@ -12,9 +12,17 @@ alter table source_events add column if not exists visibility_scope text;
 alter table source_events add column if not exists visibility_principals text[];
 alter table source_events add column if not exists visibility_derived_from text;
 
-alter table source_events add constraint source_events_visibility_scope_ck
-    check (visibility_scope is null
-           or visibility_scope in ('public', 'org', 'participants', 'private')) not valid;
+-- Guarded like 0064's: the startup migration runner and a manual psql application must both be
+-- able to run this file — a bare ADD CONSTRAINT made the second runner crash the deploy with
+-- DuplicateObject (exactly what took down the first production rollout of this branch).
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'source_events_visibility_scope_ck') then
+    alter table source_events add constraint source_events_visibility_scope_ck
+        check (visibility_scope is null
+               or visibility_scope in ('public', 'org', 'participants', 'private')) not valid;
+  end if;
+end $$;
 
 comment on column source_events.visibility_scope is
   'Who could see the original: public | org | participants | private. NULL = captured before visibility existed.';
