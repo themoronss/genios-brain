@@ -28,6 +28,12 @@ from genios_engine.platform.wiring import (make_agent_event_store,
                                            make_relevance_classifier, make_repo,
                                            make_trace_repo)
 
+# ONE top-level import, deliberately: this module had none and used per-function local imports,
+# and FOUR call sites (mailbox-owner lookup, heartbeat timezone block, kill switch, backfill
+# event cap) used `text` with no local import — each a NameError waiting for its first runtime
+# execution, invisible to every import check and to any test that did not walk that exact line.
+from sqlalchemy import text
+
 from genios_engine.reason import actionability as _decisive
 
 router = APIRouter()

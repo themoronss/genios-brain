@@ -198,5 +198,5 @@ def infer_and_store(conn, org_id: str, *, overwrite: bool = False) -> dict:
     return {"org_id": org_id, "timezone": zone, **evidence}
 
 
-__all__ = ["CANDIDATE_ZONES", "DAY_CENTRE_HOUR", "MAX_AMBIGUOUS_OFFSET_HOURS", "MIN_EVENTS", "awake_fraction",
+__all__ = ["CANDIDATE_ZONES", "MAX_AMBIGUOUS_OFFSET_HOURS", "MIN_EVENTS", "NIGHT_KERNEL", "awake_fraction",
            "infer_zone", "infer_and_store", "outbound_timestamps", "score_zone"]

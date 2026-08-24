@@ -20,6 +20,11 @@ _DET_JUNK_PREFILTER = os.environ.get("GENIOS_L1_DET_JUNK", "true").lower() != "f
 _FETCH_WORKERS = 6
 
 from genios_engine.capture.documents.native import process_document
+# The fetch decision and the gate decision key on the SAME threshold, or they drift — and this
+# import is load-bearing at RUNTIME only (_skip_body), which is exactly how its absence shipped:
+# the module imported cleanly, every test passed, and the first real fetch with a drop verdict
+# raised NameError and took the whole gmail sync down.
+from genios_engine.capture.gate.relevance import DROP_BELOW_RELEVANCE
 
 from .base import RawObject, SourceBatch
 

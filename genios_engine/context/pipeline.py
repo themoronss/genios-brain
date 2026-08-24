@@ -5,6 +5,11 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
+# Load-bearing at RUNTIME only (the ask/reply branches) — exactly how their absence shipped:
+# module imported cleanly, suite green, and the first real extraction with an ask observation
+# would have raised NameError and zeroed the whole L2 processing phase.
+from genios_engine.context.open_loops import close_loops_for_reply, record_ask
+from genios_engine.contracts.open_loop import is_ask, open_loop_id
 from genios_engine.capture.internal_knowledge import authority_rank_for
 from genios_engine.capture.structured.apply import _PERSONAL_DOMAINS
 from genios_engine.context.extract.envelope import Envelope
