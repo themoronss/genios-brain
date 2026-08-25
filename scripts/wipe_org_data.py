@@ -31,12 +31,16 @@ def main() -> int:
     execute = "--execute" in sys.argv
     e = get_engine(os.environ["GENIOS_DATABASE_URL"])
     with e.begin() as c:
-        views = {r[0] for r in c.execute(text(
-            "select table_name from information_schema.views where table_schema='public'"))}
+        # Select base tables POSITIVELY. The old exclusion read information_schema.views,
+        # which omits MATERIALIZED views — `counterfactual_ledger` (0072) slipped through, and
+        # "cannot delete from view" is indistinguishable from an FK block in the loop below.
+        base = {r[0] for r in c.execute(text(
+            "select table_name from information_schema.tables where table_schema='public' "
+            "and table_type='BASE TABLE'"))}
         tables = [r[0] for r in c.execute(text(
             "select distinct table_name from information_schema.columns "
             "where column_name='org_id' and table_schema='public'"))]
-        wipe = [t for t in tables if t not in KEEP and t not in views]
+        wipe = [t for t in tables if t not in KEEP and t in base]
 
         if not execute:
             total = 0
@@ -50,23 +54,25 @@ def main() -> int:
                   f"Re-run with --execute to delete.")
             return 0
 
-        remaining, deleted = set(wipe), {}
+        remaining, deleted, last_error = set(wipe), {}, {}
         for _ in range(8):                          # FK-safe multi-pass
             progressed = False
             for t in sorted(remaining):
                 try:
-                    with c.begin_nested():
-                        n = c.execute(text(f"delete from {t} where org_id=:o"),
-                                      {"o": org}).rowcount
+                    with e.connect() as c2, c2.begin():   # own txn: a failure here cannot
+                        n = c2.execute(text(f"delete from {t} where org_id=:o"),  # roll back the
+                                       {"o": org}).rowcount                       # tables already done
                     deleted[t] = n
                     remaining.discard(t)
+                    last_error.pop(t, None)
                     progressed = True
-                except Exception:
-                    pass
+                except Exception as ex:             # noqa: BLE001 — reported, not swallowed
+                    last_error[t] = str(ex).split("\n")[0][:150]
             if not remaining or not progressed:
                 break
         if remaining:
-            raise RuntimeError(f"could not clear (FK cycle?): {sorted(remaining)}")
+            raise RuntimeError("could not clear: " + "; ".join(
+                f"{t}: {last_error.get(t, '?')}" for t in sorted(remaining)))
         c.execute(text(
             "insert into graph_versions (org_id, graph_version) values (:o, 1) "
             "on conflict (org_id) do update set graph_version = 1"), {"o": org})
