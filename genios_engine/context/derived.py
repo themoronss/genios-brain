@@ -172,8 +172,40 @@ def compute_deal_view(store, org_id: str, *, now: datetime | None = None) -> int
             if held is None or _STAGE_RANK[stage] > _STAGE_RANK[held]:
                 best_stage[company] = stage
 
+        # Commitments sit TWO hops out: company -> person -> commitment. A 1-hop neighbourhood
+        # can never see them, which is why `commitment.action` and `commitment.due_at` were missing
+        # on all 18 companies while the promises themselves were extracted correctly and stored on
+        # their own nodes. The company's open obligation is the soonest-due one among its people —
+        # a roll-up of fact, not a new claim.
+        #
+        # `commitment.action` is also a NAME gap: the pipeline writes the normalised obligation as
+        # `commitment.text`, and both the sales pack and the compiled capabilities ask for
+        # `commitment.action`. Reading the former and publishing the latter closes it here rather
+        # than renaming a field other readers already depend on.
+        commitments = c.execute(text(
+            "select e1.from_node_id as company, "
+            "min(due.value #>> '{}') as due_at, "
+            "min(act.value #>> '{}') as action "
+            "from graph_edges e1 "
+            "join graph_edges e2 on e2.from_node_id = e1.to_node_id and e2.org_id = e1.org_id "
+            "join graph_facts due on due.subject_node_id = e2.to_node_id "
+            "and due.org_id = e1.org_id and due.field = 'commitment.due_at' "
+            "and due.status = 'active' "
+            "left join graph_facts act on act.subject_node_id = e2.to_node_id "
+            "and act.org_id = e1.org_id and act.field = 'commitment.text' "
+            "and act.status = 'active' "
+            "join graph_facts st on st.subject_node_id = e2.to_node_id "
+            "and st.org_id = e1.org_id and st.field = 'commitment.status' "
+            "and st.status = 'active' and st.value #>> '{}' = 'open' "
+            "where e1.org_id = :o group by e1.from_node_id"), {"o": org_id}).all()
+
         written = 0
         pairs: list[tuple[str, str, str]] = []
+        for company, due_at, action in commitments:
+            if due_at:
+                pairs.append((company, "commitment.due_at", due_at))
+            if action:
+                pairs.append((company, "commitment.action", action))
         for company, last_inbound in rows:
             if last_inbound:
                 pairs.append((company, "deal.last_inbound", last_inbound))

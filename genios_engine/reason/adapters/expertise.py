@@ -55,7 +55,41 @@ def _executable_required_fields(package: ExpertisePackage) -> tuple[str, ...]:
     return tuple(sorted(fields))
 
 
-def _default_dag(required_fields: tuple[str, ...]) -> tuple[ReasonerSpec, ...]:
+def _universal_required_fields(package: ExpertisePackage) -> tuple[str, ...]:
+    """Fields EVERY executable pattern needs — the ones without which nothing can run.
+
+    The selector should pull the union of what any pattern might use; the sufficiency gate must
+    ask for far less. Stamping the union onto `core.context` made a single value-dependent pattern
+    veto the whole capability: `expertise.opportunity` requires `deal.value` because one pattern
+    reads it, and almost no email states a deal size, so all 18 situations on the design partner's
+    org returned INSUFFICIENT_CONTEXT while every other field they needed was present.
+
+    That contradicted this DAG's own stated intent — "a thin situation degrades confidence instead
+    of being blocked out of reasoning entirely". A pattern whose inputs are absent simply does not
+    fire; the patterns that CAN fire still should.
+    """
+    per_pattern: list[set[str]] = []
+    for obj in package.objects:
+        definition = obj.get("definition") if isinstance(obj, Mapping) else None
+        patterns = (definition or {}).get("inference_patterns") or {}
+        if not isinstance(patterns, Mapping):
+            continue
+        for group in ("deterministic", "heuristic"):
+            for pattern in patterns.get(group, []) or []:
+                if not isinstance(pattern, Mapping) or pattern.get("status") != "executable":
+                    continue
+                fields = {str(f) for f in pattern.get("evidence_fields", []) or []}
+                fields |= {str(c["path"]) for c in pattern.get("when", []) or []
+                           if isinstance(c, Mapping) and c.get("path")}
+                if fields:
+                    per_pattern.append(fields)
+    if not per_pattern:
+        return ()
+    return tuple(sorted(set.intersection(*per_pattern)))
+
+
+def _default_dag(required_fields: tuple[str, ...],
+                 *, select_fields: tuple[str, ...] = ()) -> tuple[ReasonerSpec, ...]:
     """A conservative, situation-agnostic reasoning DAG that always terminates in a decision.
 
     understand (context) -> evaluate (risk) -> the mandatory REQUIRED constraint -> rank/score
@@ -70,6 +104,11 @@ def _default_dag(required_fields: tuple[str, ...]) -> tuple[ReasonerSpec, ...]:
     risk = ReasonerSpec(
         "core.risk", "1.0.0",
         dependencies=("core.context",),
+        # Carries the SELECTION set: `_selected_fields` unions every reasoner's fields, so the
+        # union still gets pulled into the snapshot even though only the intersection gates. Risk
+        # is where they belong — it is the unit that reads them — and its own gate stays the
+        # intersection because a missing optional field should cost a pattern, not the decision.
+        required_fields=tuple(sorted(set(select_fields) & set(required_fields))) or required_fields,
         failure_policy=_REQUIRED,
     )
     constraint = ReasonerSpec(
@@ -226,6 +265,13 @@ def expertise_capability_manifest(
     domain_ids = package.metadata.get("domain_ids") or ()
     domain = str(domain_ids[0]) if domain_ids else "general"
     required_fields = _executable_required_fields(package)
+    # SELECT the union, GATE on the intersection — two different questions that shared one answer.
+    # The manifest's own `required_fields` is BOTH: the orchestrator gates on it
+    # (`initial_missing`) and native's selector seeds from it. It carries the gate set, and the
+    # union reaches the selector through the reasoner specs and play preconditions, which
+    # `_selected_fields` unions in anyway. So nothing stops being pulled; a capability simply
+    # stops being vetoed by a field only one of its patterns reads.
+    gate_fields = _universal_required_fields(package)
 
     knowledge_hash = semantic_hash({
         "capabilities": package.capabilities,
@@ -243,9 +289,9 @@ def expertise_capability_manifest(
         domain=domain,
         root_entity_type=str(root_entity_type or "entity"),
         goal=_goal(package, situation_type),
-        reasoners=_default_dag(required_fields),
+        reasoners=_default_dag(gate_fields, select_fields=required_fields),
         plays=plays,
-        required_fields=required_fields,
+        required_fields=gate_fields,
         policies=("read_only", "human_approval_required", "evidence_required"),
         live_delivery_enabled=False,          # typed L3->L4 path stays advisory until cutover
         do_nothing_consequence=(
