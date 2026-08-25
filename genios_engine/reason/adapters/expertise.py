@@ -88,8 +88,7 @@ def _universal_required_fields(package: ExpertisePackage) -> tuple[str, ...]:
     return tuple(sorted(set.intersection(*per_pattern)))
 
 
-def _default_dag(required_fields: tuple[str, ...],
-                 *, select_fields: tuple[str, ...] = ()) -> tuple[ReasonerSpec, ...]:
+def _default_dag(required_fields: tuple[str, ...]) -> tuple[ReasonerSpec, ...]:
     """A conservative, situation-agnostic reasoning DAG that always terminates in a decision.
 
     understand (context) -> evaluate (risk) -> the mandatory REQUIRED constraint -> rank/score
@@ -104,11 +103,6 @@ def _default_dag(required_fields: tuple[str, ...],
     risk = ReasonerSpec(
         "core.risk", "1.0.0",
         dependencies=("core.context",),
-        # Carries the SELECTION set: `_selected_fields` unions every reasoner's fields, so the
-        # union still gets pulled into the snapshot even though only the intersection gates. Risk
-        # is where they belong — it is the unit that reads them — and its own gate stays the
-        # intersection because a missing optional field should cost a pattern, not the decision.
-        required_fields=tuple(sorted(set(select_fields) & set(required_fields))) or required_fields,
         failure_policy=_REQUIRED,
     )
     constraint = ReasonerSpec(
@@ -289,9 +283,10 @@ def expertise_capability_manifest(
         domain=domain,
         root_entity_type=str(root_entity_type or "entity"),
         goal=_goal(package, situation_type),
-        reasoners=_default_dag(gate_fields, select_fields=required_fields),
+        reasoners=_default_dag(gate_fields),
         plays=plays,
         required_fields=gate_fields,
+        selection_fields=required_fields,
         policies=("read_only", "human_approval_required", "evidence_required"),
         live_delivery_enabled=False,          # typed L3->L4 path stays advisory until cutover
         do_nothing_consequence=(

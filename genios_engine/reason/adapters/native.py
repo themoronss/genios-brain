@@ -24,7 +24,8 @@ _DEFAULT_ORCHESTRATOR = ReasoningOrchestrator(default_registry())
 
 
 def _selected_fields(capability: CapabilityManifest) -> tuple[tuple[str, ...], tuple[str, ...]]:
-    root = set(capability.required_fields)
+    # Gate set UNION selection set: pull everything available, gate on the core.
+    root = set(capability.required_fields) | set(capability.selection_fields)
     neighbor: set[str] = set()
     for reasoner in capability.reasoners:
         for field in reasoner.required_fields:
