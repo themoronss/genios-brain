@@ -31,9 +31,24 @@ SenderResolver = Callable[[RawObject], bool]        # deterministic "is this a k
 # watermark is an order-independent max), so we run them in parallel to overlap the per-email DB
 # round-trips — the real L1 cost. Kept ≤ the Supabase client cap (L2 uses 5); NO data changes,
 # only faster.
-_CAPTURE_WORKERS = int(os.environ.get("GENIOS_L1_WORKERS", "3"))   # pool-safe default (Supabase
-# session-mode caps total clients at 15; keep L1+L2 workers + the live app well under it). Both are
-# env-overridable — raise once the pooler moves to transaction mode. See genios-graph-capture-gaps.
+def _default_workers() -> int:
+    """Capture concurrency, derived from the pooler we are actually connected to.
+
+    This used to be a flat 3 with a note saying "raise once the pooler moves to transaction
+    mode". The pooler moved; the 3 stayed. Nobody regressed anything — the number simply went
+    stale somewhere nobody looks, and the capture path throttled itself against a 15-client cap
+    that no longer applied. A default that reads the port cannot drift out of sync with it again.
+
+    Session mode holds a client slot for the whole connection, so 3 is right there. Transaction
+    mode returns the backend at the end of each transaction, which is what makes real
+    concurrency safe — and L1 is entirely bound by round-trip latency, not by CPU.
+    """
+    from genios_engine.platform.config import get_settings
+    url = (getattr(get_settings(), "database_url", "") or "")
+    return 10 if ":6543/" in url else 3
+
+
+_CAPTURE_WORKERS = int(os.environ.get("GENIOS_L1_WORKERS", "0")) or _default_workers()
 
 
 @dataclass

@@ -225,3 +225,38 @@ def test_a_new_extraction_shape_cannot_serve_a_cached_old_one():
 
     assert PROMPT_VERSION == "b3-4"
     assert EXTRACTION_SCHEMA_VERSION == "3"
+
+
+# ── concurrency must follow the pooler, not a comment ───────────────────────────
+def test_concurrency_is_derived_from_the_pooler_not_hardcoded():
+    """The 3/3/8+4 budget was the SESSION-pooler answer (15 concurrent clients, hard cap). The
+    deployment moved to the TRANSACTION pooler — the very thing the old comment recommended —
+    and nothing re-read the numbers, so capture throttled itself against a limit that no longer
+    existed. Nobody regressed it; the calibration went stale where it could not be seen.
+    Deriving from the port is what stops that recurring."""
+    import inspect
+
+    from genios_engine.capture.acquire import sync_runner
+    from genios_engine.context import runner as l2_runner
+    from genios_engine.platform import db
+
+    for mod, fn in ((sync_runner, "_default_workers"), (l2_runner, "_default_l2_workers")):
+        src = inspect.getsource(getattr(mod, fn))
+        assert ":6543/" in src, f"{fn} must read the pooler mode"
+        assert src.rstrip().endswith("else 3"), (
+            f"{fn} must stay conservative on the session pooler")
+
+    pool_src = inspect.getsource(db.get_engine)
+    assert 'transaction_pooler = ":6543/" in url' in pool_src
+    assert "(24, 12) if transaction_pooler else (8, 4)" in pool_src
+
+
+def test_the_env_override_still_wins():
+    """A local run sharing the prod DB must be able to dial itself down and not starve the live
+    app — the reason these were env-overridable in the first place."""
+    import inspect
+
+    from genios_engine.capture.acquire import sync_runner
+
+    src = inspect.getsource(sync_runner)
+    assert "GENIOS_L1_WORKERS" in src and "_default_workers()" in src

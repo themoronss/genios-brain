@@ -23,9 +23,20 @@ from genios_engine.platform.crypto import decrypt
 # then rebuilds affected read models. Idempotent: an event already in the extraction
 # ledger is skipped, so it's safe to run after every L1 sync, in the background.
 
-_MAX_WORKERS = int(os.environ.get("GENIOS_L2_WORKERS", "3"))   # concurrent L2 workers; keep total
-                          # DB clients under the Supabase 15-client cap. Env-overridable so a local
-                          # run sharing the prod DB can dial it down and not starve the live app.
+def _default_l2_workers() -> int:
+    """Concurrent extraction workers, derived from the pooler — same reasoning as L1.
+
+    The 15-client cap this was written for belongs to the SESSION pooler. On the transaction
+    pooler a backend is returned per transaction, and L2 is dominated by LLM round-trip wait
+    anyway: three workers left the model idle most of the sweep. Still env-overridable, so a
+    local run sharing the prod DB can dial itself down and not starve the live app.
+    """
+    from genios_engine.platform.config import get_settings
+    url = (getattr(get_settings(), "database_url", "") or "")
+    return 8 if ":6543/" in url else 3
+
+
+_MAX_WORKERS = int(os.environ.get("GENIOS_L2_WORKERS", "0")) or _default_l2_workers()
 _BATCH = 40
 _MAX_ATTEMPTS = 3          # transient extract failures retry up to this, then park model_unavailable
 # outcomes that mean "this event needs no more work" → written to the run ledger as terminal

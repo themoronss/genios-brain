@@ -17,7 +17,9 @@ _DET_JUNK_PREFILTER = os.environ.get("GENIOS_L1_DET_JUNK", "true").lower() != "f
 # message). This is NETWORK-ONLY work — no DB touched here — so it never pressures the DB pool; the
 # ceiling keeps us under Composio's rate limits and avoids a thread explosion inside a background
 # backfill. DB writes stay in run_sync's own separate bounded pool.
-_FETCH_WORKERS = 6
+# Per-page full-body fetches. These are Composio HTTP calls — pure network wait, no DB slot and
+# no local CPU — so the only reason this was 6 is caution inherited from the DB budget next door.
+_FETCH_WORKERS = int(os.environ.get("GENIOS_L1_FETCH_WORKERS", "12"))
 
 from genios_engine.capture.documents.native import process_document
 # The fetch decision and the gate decision key on the SAME threshold, or they drift — and this
