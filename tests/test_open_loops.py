@@ -280,3 +280,44 @@ def test_sweep_skips_a_paused_org():
     guard = inspect.getsource(routes._org_paused)
     assert "kill_switch:" in guard
     assert "return False" in guard.split("except")[-1], "must fail OPEN on infra error"
+
+
+# ── an org-level API key must read the org's queue, not nobody's ────────────────
+def test_org_key_with_no_person_sees_the_org_queue():
+    """The desktop app authenticated correctly, carried `cards.read`, and got an empty list every
+    time. A dashboard-minted key has agent_id and actor_id NULL — it is issued to an ORGANISATION,
+    not a human — so the queue filter bound :a to NULL, `k.assignee = NULL` was never true, and the
+    `assignee is null` fallback matched nothing because L5 routes every card to a seat."""
+    from genios_engine.platform.auth import AuthCtx
+
+    org_key = AuthCtx(org_id="org_1", scopes=["cards.read"])
+    assert org_key.sees_org_queue, "a key with no person must read the org queue"
+
+    assert AuthCtx(org_id="org_1").sees_org_queue, "owner session unchanged"
+    assert not AuthCtx(org_id="org_1", scopes=["cards.read"], actor_id="seat_a").sees_org_queue
+    assert not AuthCtx(org_id="org_1", scopes=["cards.read"], agent_id="agent_a").sees_org_queue
+
+
+def test_queue_does_not_filter_by_a_person_when_there_is_no_person():
+    """`assignee is not None` is the load-bearing half. Without it the SQL still appends
+    `k.assignee = NULL`, which no row satisfies."""
+    import inspect
+
+    from genios_engine.deliver.store import CardStore
+
+    src = inspect.getsource(CardStore.queue)
+    assert "if not admin and assignee is not None:" in src
+
+
+def test_seeing_a_card_and_acting_on_it_use_the_same_rule():
+    """A credential allowed to READ a card must be allowed to ACT on it. Fixing only the read path
+    would surface 13 cards whose buttons all 403."""
+    import inspect
+
+    from genios_engine.api import routes
+
+    for fn in (routes.list_cards, routes.get_card, routes.card_action,
+               routes.context_match, routes.digest):
+        src = inspect.getsource(fn)
+        assert "sees_org_queue" in src, f"{fn.__name__} still uses the old scopes check"
+        assert "ctx.scopes is None" not in src, f"{fn.__name__} has a stale scopes check"

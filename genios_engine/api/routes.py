@@ -2591,7 +2591,7 @@ def list_cards(assignee: str | None = None,
     """Dashboard queue read. org from credential; admin (all queues) only for an owner session
     (JWT / full-scope key), never a caller-supplied flag."""
     _require_l5()
-    admin = ctx.scopes is None                       # owner/dashboard session sees all queues
+    admin = ctx.sees_org_queue                       # owner session OR an org-level API key
     effective_assignee = assignee if admin else (ctx.actor_id or ctx.agent_id)
     return {"cards": _card_store.queue(
         ctx.org_id, assignee=effective_assignee, admin=admin)}
@@ -2603,7 +2603,7 @@ def get_card(card_id: str, ctx: AuthCtx = Depends(require_scope("cards.read"))) 
     _require_l5()
     card = _owns_authoritative_card(card_id, ctx.org_id)
     actor_id = ctx.actor_id or ctx.agent_id
-    if (ctx.scopes is not None and card.get("assignee") is not None
+    if (not ctx.sees_org_queue and card.get("assignee") is not None
             and card.get("assignee") not in {actor_id, ctx.agent_id}):
         raise HTTPException(403, "card is assigned to a different seat")
     # Enrich the detail with the Update-1 decision context: captured profile + relationship signals,
@@ -2636,7 +2636,7 @@ def card_action(card_id: str, body: CardAction,
                         card_id=card_id, actor=actor_id, action=body.action,
                         reason=body.reason, snooze_option=body.snooze_option,
                         custom_until=body.custom_until,
-                        allow_any_assignee=ctx.scopes is None)
+                        allow_any_assignee=ctx.sees_org_queue)
     if not out.get("ok"):
         status = 403 if out.get("error") == "assigned_to_different_seat" else 422
         raise HTTPException(status, out)
@@ -2657,7 +2657,7 @@ def context_match(body: ContextMatch,
     actor_id = ctx.actor_id or ctx.agent_id or "authenticated_principal"
     result = _card_store.surface_context_match(
         ctx.org_id, body.card_id, body.matched_tag, actor_id=actor_id,
-        allow_any_assignee=ctx.scopes is None)
+        allow_any_assignee=ctx.sees_org_queue)
     if not result.get("ok"):
         status = 403 if result.get("error") == "assigned_to_different_seat" else 422
         raise HTTPException(status, result)
@@ -2670,7 +2670,7 @@ def digest(assignee: str | None = None,
     """The 08:30 morning summary (§5.15), scoped to the authenticated tenant."""
     _require_l5()
     from genios_engine.deliver.digest import build_digest
-    admin = ctx.scopes is None
+    admin = ctx.sees_org_queue           # same rule as /cards — the digest IS the queue, summarised
     effective_assignee = assignee if admin else (ctx.actor_id or ctx.agent_id)
     return build_digest(
         _card_store, ctx.org_id, assignee=effective_assignee, admin=admin)

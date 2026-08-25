@@ -304,10 +304,17 @@ class CardStore:
              "and k.expires_at > :authority_time and " + AUTHORITATIVE_SIGNAL_PREDICATE)
         params = {"o": org_id, "states": list(states),
                   "authority_time": datetime.now(timezone.utc)}
-        if not admin:
-            # A non-owner (scoped API key / seat) sees loops routed to it AND the org's UNCLAIMED
-            # loops (assignee null) — an unassigned open loop belongs to whoever picks it up, so a
-            # single-seat app connecting with a scoped key still sees the org's queue, not nothing.
+        if not admin and assignee is not None:
+            # A seat- or agent-bound credential sees loops routed to IT plus the org's UNCLAIMED
+            # loops (assignee null) — an unassigned open loop belongs to whoever picks it up.
+            #
+            # `assignee is not None` is load-bearing. The comment here used to promise that "a
+            # single-seat app connecting with a scoped key still sees the org's queue, not
+            # nothing", and the code delivered the opposite: an org-level API key has no personal
+            # identity, so :a bound to NULL, `k.assignee = NULL` is never true, and the fallback
+            # `k.assignee is null` matched nothing because L5 routes every card to a seat. The
+            # desktop app read an empty queue for as long as it has existed. A caller with no
+            # person to filter by must not be filtered to a person.
             q += " and (k.assignee=:a or k.assignee is null)"
             params["a"] = assignee
         q += (" order by selected_rc.final_utility_bp desc, k.created_at asc, k.card_id "

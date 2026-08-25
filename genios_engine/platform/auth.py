@@ -100,6 +100,27 @@ class AuthCtx:
     def has_scope(self, scope: str) -> bool:
         return self.scopes is None or scope in self.scopes
 
+    @property
+    def sees_org_queue(self) -> bool:
+        """Does this credential read the ORG's card queue rather than one person's?
+
+        Two principals do. An owner session (``scopes is None``) always did. The one that did not,
+        and should have, is an API key with no personal identity: ``agent_id`` and ``actor_id`` are
+        both NULL on a key minted from the dashboard's "API key" button, because a key is issued to
+        an ORGANISATION, not to a human.
+
+        The queue filter asked "which person is this?" and got NULL, so it matched cards assigned
+        to nobody — and L5 assigns every card to a seat. The desktop app therefore authenticated
+        correctly, was authorised correctly, and received an empty list forever. Granting
+        ``cards.read`` to a credential that structurally cannot match any card is a scope that
+        means nothing.
+
+        A key carries the reach of whoever minted it, and only an owner can mint one. So an
+        identity-less key reads the org queue; a key bound to a seat or agent still sees only its
+        own lane.
+        """
+        return self.scopes is None or (self.actor_id is None and self.agent_id is None)
+
 
 def _engine():
     s = get_settings()
