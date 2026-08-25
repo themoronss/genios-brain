@@ -443,6 +443,11 @@ class CapabilityManifest:
                 "domain": self.domain, "root_entity_type": self.root_entity_type,
                 "goal": self.goal, "reasoners": self.reasoners, "plays": self.plays,
                 "required_fields": self.required_fields,
+                # Must be here as well as on the dataclass: the audit store hashes the
+                # RAW fields while `capability_snapshot_id` hashes this dict, and a
+                # field present in one and absent from the other makes every manifest
+                # fail "capability_snapshot_id does not match manifest content".
+                "selection_fields": self.selection_fields,
                 "intelligence_objects": self.intelligence_objects,
                 "ranking_weights": self.ranking_weights, "policies": self.policies,
                 "live_delivery_enabled": self.live_delivery_enabled,
