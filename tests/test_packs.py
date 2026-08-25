@@ -22,7 +22,7 @@ SC = SALES_V1["scoring_defaults"]
 # ---- pack conformance ------------------------------------------------------
 
 def test_sales_pack_is_wellformed():
-    assert SALES_V1["id"] == "sales" and SALES_V1["version"] == "1.12.0"  # 1.12.0: relationship-existence guard on risk rules
+    assert SALES_V1["id"] == "sales" and SALES_V1["version"] == "1.13.0"  # 1.13.0: relationship-lens guard on all deal rules
     assert {"weights", "c_weights", "gate", "budget_per_user_day", "impact",
             "bands", "execution"} <= SC.keys()
     assert SC["weights"]["u"] + SC["weights"]["i"] + SC["weights"]["r"] == 100

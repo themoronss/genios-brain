@@ -5,7 +5,9 @@ declare the artifact + success signal for L5. Constants are HYPs (L6-calibratabl
 
 SALES_V1 = {
     "id": "sales",
-    "version": "1.12.0",             # 1.12.0: closed_lost_risk / timeline_slip require a real
+    "version": "1.13.0",             # 1.13.0: every deal rule requires a buying relationship —
+                                    #   the extractor types each counterparty, so a sales lens
+                                    #   no longer narrates a fundraising outcome             # 1.12.0: closed_lost_risk / timeline_slip require a real
                                     #   inbound thread — `missing_ok` alone let them fire on
                                     #   people we have never corresponded with             # 1.11.0: push bands calibrated to the live score
                                     #   distribution — 70/85 sat above the max reachable score,
@@ -99,7 +101,10 @@ SALES_V1 = {
     "rules": [
         {"id": "stalled_deal", "level": "prescriptive", "scope": "deal",
          "when": [{"path": "deal.status", "op": "=", "value": "open"},
-                  {"fn": "days_since", "path": "deal.last_inbound", "op": ">=", "value": 7}],
+                  {"fn": "days_since", "path": "deal.last_inbound", "op": ">=", "value": 7},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "deal.last_inbound", "h": 3},
          "reason_code": "stalled_deal", "play": "follow_up", "cooldown_hours": 72,
          "linked_deal": True, "evidence_fields": ["deal.status", "deal.last_inbound"]},
@@ -113,7 +118,10 @@ SALES_V1 = {
         {"id": "objection_open", "level": "prescriptive", "scope": "person",
          "when": [{"has_obs": "objection"},
                   {"path": "thread.ball_in_court", "op": "=", "value": "us"},
-                  {"fn": "days_since", "path": "thread.last_inbound", "op": ">=", "value": 1}],
+                  {"fn": "days_since", "path": "thread.last_inbound", "op": ">=", "value": 1},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 2},
          "reason_code": "objection_open", "play": "handle_objection", "cooldown_hours": 48,
          "linked_deal": True, "evidence_fields": ["thread.ball_in_court", "thread.last_inbound"]},
@@ -122,7 +130,10 @@ SALES_V1 = {
         # deal while intent is hot. Opportunity, not a chore → different play than a follow-up.
         {"id": "buying_signal", "level": "prescriptive", "scope": "person",
          "when": [{"has_obs": "budget_approved"},
-                  {"path": "thread.ball_in_court", "op": "=", "value": "us"}],
+                  {"path": "thread.ball_in_court", "op": "=", "value": "us"},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 4},
          "reason_code": "buying_signal", "play": "advance_deal", "cooldown_hours": 72,
          "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
@@ -136,7 +147,10 @@ SALES_V1 = {
         # before anyone's gone formally silent. derived.engagement ≤ 0.5 = volume halved.
         {"id": "cooling_deal", "level": "predictive", "scope": "person",
          "when": [{"path": "derived.engagement", "op": "<=", "value": 0.5},
-                  {"neighbor_fact": "deal.status", "op": "=", "value": "open"}],
+                  {"neighbor_fact": "deal.status", "op": "=", "value": "open"},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 6},
          "reason_code": "cooling_deal", "play": "re_engage", "cooldown_hours": 96,
          "linked_deal": True, "evidence_fields": ["derived.engagement", "thread.last_inbound"]},
@@ -145,7 +159,10 @@ SALES_V1 = {
         # (the whole deal rides one contact). Coarse threading proxy via edge_count; tunable.
         {"id": "single_threaded_deal", "level": "predictive", "scope": "deal",
          "when": [{"path": "deal.status", "op": "=", "value": "open"},
-                  {"fn": "edge_count", "op": "<=", "value": 1}],
+                  {"fn": "edge_count", "op": "<=", "value": 1},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "deal.last_inbound", "h": 8},
          "reason_code": "single_threaded_deal", "play": "multi_thread", "cooldown_hours": 168,
          "linked_deal": True, "evidence_fields": ["deal.status"]},
@@ -154,7 +171,10 @@ SALES_V1 = {
         # while the deal is still open. The moment to differentiate, before it's a lost-reason.
         {"id": "competitor_in_live_deal", "level": "predictive", "scope": "deal",
          "when": [{"path": "deal.status", "op": "=", "value": "open"},
-                  {"neighbor_has_obs": "competitor"}],
+                  {"neighbor_has_obs": "competitor"},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "deal.last_inbound", "h": 5},
          "reason_code": "competitor_in_live_deal", "play": "defend_position", "cooldown_hours": 120,
          "linked_deal": True, "evidence_fields": ["deal.status"]},
@@ -164,7 +184,10 @@ SALES_V1 = {
         {"id": "going_dark_after_proposal", "level": "predictive", "scope": "person",
          "when": [{"has_obs": "pricing_discussed"},
                   {"path": "thread.ball_in_court", "op": "=", "value": "them"},
-                  {"fn": "days_since", "path": "thread.last_inbound", "op": ">=", "value": 4}],
+                  {"fn": "days_since", "path": "thread.last_inbound", "op": ">=", "value": 4},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 4},
          "reason_code": "going_dark_after_proposal", "play": "re_engage", "cooldown_hours": 96,
          "linked_deal": True, "evidence_fields": ["thread.ball_in_court", "thread.last_inbound"]},
@@ -173,7 +196,10 @@ SALES_V1 = {
         # is net-negative (more objections/competitor/pushback than positive intent). derived.sentiment.
         {"id": "deal_sentiment_negative", "level": "predictive", "scope": "person",
          "when": [{"path": "derived.sentiment", "op": "<=", "value": -0.34},
-                  {"neighbor_fact": "deal.status", "op": "=", "value": "open"}],
+                  {"neighbor_fact": "deal.status", "op": "=", "value": "open"},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 6},
          "reason_code": "deal_sentiment_negative", "play": "re_engage", "cooldown_hours": 120,
          "linked_deal": True, "evidence_fields": ["derived.sentiment"]},
@@ -186,7 +212,10 @@ SALES_V1 = {
         # respond specifically, before it becomes a lost-reason.
         {"id": "pricing_objection", "level": "prescriptive", "scope": "person",
          "when": [{"has_obs": "objection_price"},
-                  {"path": "thread.ball_in_court", "op": "=", "value": "us"}],
+                  {"path": "thread.ball_in_court", "op": "=", "value": "us"},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 2},
          "reason_code": "pricing_objection", "play": "handle_objection", "cooldown_hours": 48,
          "linked_deal": True, "evidence_fields": ["thread.ball_in_court", "thread.last_inbound"]},
@@ -195,7 +224,10 @@ SALES_V1 = {
         # it. Close the loop while intent is hot.
         {"id": "verbal_yes_not_closed", "level": "prescriptive", "scope": "person",
          "when": [{"has_obs": "verbal_yes"},
-                  {"path": "thread.ball_in_court", "op": "=", "value": "us"}],
+                  {"path": "thread.ball_in_court", "op": "=", "value": "us"},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 3},
          "reason_code": "verbal_yes_not_closed", "play": "advance_deal", "cooldown_hours": 72,
          "linked_deal": True, "evidence_fields": ["thread.ball_in_court", "thread.last_inbound"]},
@@ -204,7 +236,10 @@ SALES_V1 = {
         # in the pipeline: send it today.
         {"id": "contract_requested", "level": "prescriptive", "scope": "person",
          "when": [{"has_obs": "contract_requested"},
-                  {"path": "thread.ball_in_court", "op": "=", "value": "us"}],
+                  {"path": "thread.ball_in_court", "op": "=", "value": "us"},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 2},
          "reason_code": "contract_requested", "play": "advance_deal", "cooldown_hours": 48,
          "linked_deal": True, "evidence_fields": ["thread.ball_in_court", "thread.last_inbound"]},
@@ -213,7 +248,10 @@ SALES_V1 = {
         # review kills more deals than price. Keep it moving.
         {"id": "security_review_pending", "level": "prescriptive", "scope": "person",
          "when": [{"has_obs": "security_review_started"},
-                  {"fn": "days_since", "path": "thread.last_inbound", "op": ">=", "value": 3}],
+                  {"fn": "days_since", "path": "thread.last_inbound", "op": ">=", "value": 3},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 4},
          "reason_code": "security_review_pending", "play": "follow_up", "cooldown_hours": 96,
          "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
@@ -221,7 +259,10 @@ SALES_V1 = {
         # champion changed / left — the person driving the deal is moving on. Re-thread to another
         # stakeholder before the deal loses its internal sponsor.
         {"id": "champion_left", "level": "predictive", "scope": "person",
-         "when": [{"has_obs": "champion_change"}],
+         "when": [{"has_obs": "champion_change"},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 6},
          "reason_code": "champion_left", "play": "multi_thread", "cooldown_hours": 168,
          "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
@@ -229,7 +270,10 @@ SALES_V1 = {
         # budget freeze — spending is on hold. Don't push; nurture so we're first when it thaws.
         # Slow-burn (long half-life) + long cooldown — a heads-up, not a nag.
         {"id": "budget_freeze", "level": "predictive", "scope": "person",
-         "when": [{"has_obs": "budget_freeze"}],
+         "when": [{"has_obs": "budget_freeze"},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 12, "slow": True},
          "reason_code": "budget_freeze", "play": "re_engage", "cooldown_hours": 240,
          "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
@@ -238,7 +282,10 @@ SALES_V1 = {
         # with value + a considered concession path, not a reflex discount.
         {"id": "discount_pressure", "level": "prescriptive", "scope": "person",
          "when": [{"has_obs": "discount_pressure"},
-                  {"path": "thread.ball_in_court", "op": "=", "value": "us"}],
+                  {"path": "thread.ball_in_court", "op": "=", "value": "us"},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 3},
          "reason_code": "discount_pressure", "play": "handle_objection", "cooldown_hours": 72,
          "linked_deal": True, "evidence_fields": ["thread.ball_in_court", "thread.last_inbound"]},
@@ -247,7 +294,10 @@ SALES_V1 = {
         # cycle is where deals die slowly; check in and offer to unblock.
         {"id": "legal_in_review", "level": "prescriptive", "scope": "person",
          "when": [{"has_obs": "legal_review"},
-                  {"fn": "days_since", "path": "thread.last_inbound", "op": ">=", "value": 3}],
+                  {"fn": "days_since", "path": "thread.last_inbound", "op": ">=", "value": 3},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 5},
          "reason_code": "legal_in_review", "play": "follow_up", "cooldown_hours": 120,
          "linked_deal": True, "evidence_fields": ["thread.last_inbound"]},
@@ -263,7 +313,10 @@ SALES_V1 = {
                   # (hello@forumvc.com) got "Save the deal now" at critical band. This is also
                   # the rule's own urgency clock: without it the elapsed time is computed from
                   # nothing.
-                  {"present": "thread.last_inbound"},],
+                  {"present": "thread.last_inbound"},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 8, "slow": True},
          "reason_code": "timeline_slip", "play": "re_engage", "cooldown_hours": 168,
@@ -273,7 +326,10 @@ SALES_V1 = {
         # book it now.
         {"id": "demo_requested", "level": "prescriptive", "scope": "person",
          "when": [{"has_obs": "demo_requested"},
-                  {"path": "thread.ball_in_court", "op": "=", "value": "us"}],
+                  {"path": "thread.ball_in_court", "op": "=", "value": "us"},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 2},
          "reason_code": "demo_requested", "play": "advance_deal", "cooldown_hours": 48,
          "linked_deal": True, "evidence_fields": ["thread.ball_in_court", "thread.last_inbound"]},
@@ -283,7 +339,10 @@ SALES_V1 = {
         {"id": "proposal_no_response", "level": "prescriptive", "scope": "person",
          "when": [{"has_obs": "proposal_sent"},
                   {"path": "thread.ball_in_court", "op": "=", "value": "them"},
-                  {"fn": "days_since", "path": "thread.last_inbound", "op": ">=", "value": 4}],
+                  {"fn": "days_since", "path": "thread.last_inbound", "op": ">=", "value": 4},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 4},
          "reason_code": "proposal_no_response", "play": "re_engage", "cooldown_hours": 96,
          "linked_deal": True, "evidence_fields": ["thread.ball_in_court", "thread.last_inbound"]},
@@ -299,7 +358,10 @@ SALES_V1 = {
                   # (hello@forumvc.com) got "Save the deal now" at critical band. This is also
                   # the rule's own urgency clock: without it the elapsed time is computed from
                   # nothing.
-                  {"present": "thread.last_inbound"},],
+                  {"present": "thread.last_inbound"},
+                  {"path": "relationship.nature", "op": "IN",
+                   "value": ["customer", "prospect", "unknown"], "missing_ok": True}
+                 ],
          
          "urgency": {"type": "elapsed", "path": "thread.last_inbound", "h": 4},
          "reason_code": "closed_lost_risk", "play": "defend_position", "cooldown_hours": 120,
@@ -507,7 +569,10 @@ SALES_V1 = {
                    "thread.last_inbound", "thread.ball_in_court",
                    # derived continuous signals (engine-computed, not extracted) — declared so rules
                    # may cite them as evidence: momentum/engagement (trajectory) + sentiment (obs balance).
-                   "derived.momentum", "derived.engagement", "derived.sentiment"],
+                   "derived.momentum", "derived.engagement", "derived.sentiment",
+                   # The LENS — what the counterparty IS to us. Declared so a
+                   # rule may cite it and the schema check can see it.
+                   "relationship.nature", "relationship.direction"],
         "signal_vocab": ["stalled_deal", "objection_open",
                          "buying_signal", "cooling_deal", "single_threaded_deal",
                          "competitor_in_live_deal", "going_dark_after_proposal",

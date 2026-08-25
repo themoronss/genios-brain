@@ -27,6 +27,8 @@ class Extraction:
     # rule could only ask "did somebody write" and never "did the person who owes us an answer
     # write" — a connector, an introducer and the actual counterparty were the same thing.
     roles: list = field(default_factory=list)
+    #: WHAT KIND of relationship each party is in — the lens L3/L4 reason under.
+    relationships: list = field(default_factory=list)
     # Availability and time offers, split out of `commitments`. Nobody owes anything until a
     # time is agreed, and conflating the two minted commitment nodes with invented due dates
     # from sentences like "Can we do next week?".
@@ -90,6 +92,7 @@ def extract(llm: LLMClient, *, source: str, content: str,
         questions=_lst(p, "questions"),
         observations=_lst(p, "observations"),
         roles=_lst(p, "roles"),
+        relationships=_lst(p, "relationships"),
         scheduling_proposals=_lst(p, "scheduling_proposals"),
         input_tokens=res.input_tokens, output_tokens=res.output_tokens,
         ok=True, raw=res.raw)

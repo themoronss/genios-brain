@@ -175,3 +175,53 @@ def test_an_active_promoted_pack_carries_instructing_authority():
     # a compiled accepted package still authorises on its own
     assert _apply_abstention(
         signal, {"expertise": {"review_state": "accepted"}})["level"] == "prescriptive"
+
+
+# ── the lens: what a counterparty IS decides which expertise may speak ──────────
+def test_every_deal_rule_requires_a_buying_relationship():
+    """The engine held `company_type = "founder-only pre-seed VC"`, that fund's investment
+    decision timeline and its closure rate — and still told the founder to "Save the deal now",
+    because all of that sat in free-form fact names no rule could read. A pass from a fund is a
+    fundraising outcome; a sales rule has no business narrating it."""
+    from genios_engine.packs.sales_v1 import SALES_V1
+
+    for rule in SALES_V1["rules"]:
+        lens = [c for c in rule["when"] if c.get("path") == "relationship.nature"]
+        assert lens, f"{rule['id']} can fire on an investor"
+        assert set(lens[0]["value"]) == {"customer", "prospect", "unknown"}
+        # missing_ok: this narrows a KNOWN-WRONG lens; it does not require the lens to be known,
+        # or every untyped counterparty would silently drop out of the product.
+        assert lens[0]["missing_ok"] is True
+
+
+def test_the_relationship_vocabulary_is_closed():
+    """An open vocabulary lets the model invent a lens nothing downstream knows how to apply."""
+    from genios_engine.context.pipeline import (
+        _RELATIONSHIP_DIRECTIONS,
+        _RELATIONSHIP_NATURES,
+    )
+
+    assert "investor" in _RELATIONSHIP_NATURES
+    assert "unknown" in _RELATIONSHIP_NATURES, "admitting ignorance must be expressible"
+    assert _RELATIONSHIP_DIRECTIONS == {"they_evaluate_us", "we_evaluate_them", "peer"}
+
+
+def test_the_lens_is_typed_from_content_not_from_the_address():
+    """A domain list would work for one inbox and fail for the next tenant — the opposite of
+    what this layer is for."""
+    import inspect
+
+    from genios_engine.context.extract import prompt
+
+    src = inspect.getsource(prompt)
+    assert "never from the domain name" in src
+    assert "investor" in src and "they_evaluate_us" in src
+
+
+def test_a_new_extraction_shape_cannot_serve_a_cached_old_one():
+    """The cache key carries the prompt and schema version: a consumer that now looks for
+    `relationships` must not be handed a payload that never had them."""
+    from genios_engine.context.pipeline import EXTRACTION_SCHEMA_VERSION, PROMPT_VERSION
+
+    assert PROMPT_VERSION == "b3-4"
+    assert EXTRACTION_SCHEMA_VERSION == "3"

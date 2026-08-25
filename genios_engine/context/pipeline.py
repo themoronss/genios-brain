@@ -80,13 +80,13 @@ FACT_CONF_BY_RANK = {4: 1.00, 3: 0.90, 2: 0.85, 1: 0.40}
 # b3-2: enriched observations with the canonical SIGNAL KINDS vocab
 # b3-3: envelope (direction/from/to/we_are) + typed roles + scheduling_proposals split out of
 #       commitments + pack-supplied field and observation vocabulary
-PROMPT_VERSION = "b3-3"
+PROMPT_VERSION = "b3-4"
 
 #: Bumped whenever the SHAPE the pipeline reads out of an extraction changes, even if the prompt
 #: text does not. Both belong in the cache key: the cache stores a parsed result, so a reader
 #: that now looks for `roles` would otherwise be served a cached payload that never had them —
 #: silently, and for exactly the messages that already matter most.
-EXTRACTION_SCHEMA_VERSION = "2"
+EXTRACTION_SCHEMA_VERSION = "3"
 
 
 def _vocab_fingerprint(effective: dict | None) -> str:
@@ -255,6 +255,13 @@ _OBLIGATION = re.compile(
 
 #: The role vocabulary the extractor may assign. Closed on purpose — an open set would let the
 #: model invent a role no rule can ever match, which is the fact-field failure in a new costume.
+#: What the two sides ARE to each other. Closed on purpose: an open vocabulary would let the
+#: model invent a lens nothing downstream knows how to apply.
+_RELATIONSHIP_NATURES = frozenset({
+    "investor", "customer", "prospect", "vendor", "candidate", "partner", "community", "unknown"})
+#: Which way money and evaluation flow — what separates raising from selling.
+_RELATIONSHIP_DIRECTIONS = frozenset({"they_evaluate_us", "we_evaluate_them", "peer"})
+
 _COUNTERPARTY_ROLES = frozenset({
     "counterparty",   # the business subject: the person the loop is actually with
     "introducer",     # made the introduction; never the target of the resulting action
@@ -342,6 +349,7 @@ def _from_cache(d: dict) -> Extraction:
         # EXTRACTION_SCHEMA_VERSION so those rows are no longer reachable, but defaulting here
         # keeps a stale row readable instead of raising — a cache is not a place to fail.
         roles=d.get("roles", []),
+        relationships=d.get("relationships", []),
         scheduling_proposals=d.get("scheduling_proposals", []),
         ok=True)
 
@@ -350,7 +358,8 @@ def _to_cache(ex: Extraction) -> dict:
     return {"relevance": ex.relevance, "noise_type": ex.noise_type, "domains": ex.domains,
             "entity_mentions": ex.entity_mentions, "fact_candidates": ex.fact_candidates,
             "commitments": ex.commitments, "questions": ex.questions,
-            "roles": ex.roles, "scheduling_proposals": ex.scheduling_proposals,
+            "roles": ex.roles, "relationships": ex.relationships,
+            "scheduling_proposals": ex.scheduling_proposals,
             "observations": ex.observations}
 
 
@@ -847,6 +856,42 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 occurred_at=occurred_at, event_id=event_id,
                 evidence={"text": (r or {}).get("evidence_text")},
                 source=source, authority_rank=2)
+
+        # relationships → the LENS. `party.role` says who acted in this exchange; this says what
+        # the two sides ARE to each other, and it is the fact that decides which expertise may
+        # speak at all. Without it every counterparty is a potential deal: the engine extracted
+        # `company_type = "founder-only pre-seed VC"` for an investor, carried investment
+        # timelines and closure rates — and still told the founder to "Save the deal now",
+        # because no rule could read any of it. A pass from a fund is a fundraising outcome; a
+        # sales rule has no business narrating it.
+        #
+        # Typed from the message content, never from the address. A domain list would work for
+        # one inbox and fail for the next tenant, which is the opposite of what this layer is.
+        for rel in ex.relationships or ():
+            party = str((rel or {}).get("party") or "").strip()
+            nature = str((rel or {}).get("nature") or "").strip().lower()
+            if not party or nature not in _RELATIONSHIP_NATURES:
+                continue
+            rnode = name_to_node.get(_norm(party)) or (
+                _person(party) if "@" in party else None)
+            if not rnode:
+                continue
+            store.write_fact(
+                conn, org_id=org_id, subject_node_id=rnode,
+                field="relationship.nature", value=nature, value_type="enum",
+                confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
+                occurred_at=occurred_at, event_id=event_id,
+                evidence={"text": (rel or {}).get("evidence_text")},
+                source=source, authority_rank=2)
+            direction = str((rel or {}).get("direction") or "").strip().lower()
+            if direction in _RELATIONSHIP_DIRECTIONS:
+                store.write_fact(
+                    conn, org_id=org_id, subject_node_id=rnode,
+                    field="relationship.direction", value=direction, value_type="enum",
+                    confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
+                    occurred_at=occurred_at, event_id=event_id,
+                    evidence={"text": (rel or {}).get("evidence_text")},
+                    source=source, authority_rank=2)
 
         # commitments → FIRST-CLASS nodes. A commitment is the highest-value extracted
         # object in the system, and it used to be one colliding fact field on the person:

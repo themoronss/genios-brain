@@ -38,6 +38,17 @@ Return EXACTLY this shape:
        owner | approver | observer | machine>",
       "evidence_text": "exact substring, or \"envelope\" when read from the headers"}}
   ],
+  "relationships": [              // WHAT KIND of relationship this is — the lens every later
+                                  // layer needs. `roles` says who acted in THIS message;
+                                  // this says what the two sides are to each other. Judge from
+                                  // what the message is actually about, never from the domain
+                                  // name. Omit a party you cannot place from the text.
+    {{"party": "name or email",
+      "nature": "<one of: investor | customer | prospect | vendor | candidate | partner |
+       community | unknown>",
+      "direction": "<one of: they_evaluate_us | we_evaluate_them | peer>",
+      "evidence_text": "exact substring that shows what kind of relationship this is"}}
+  ],
   "fact_candidates": [
     {{"subject": "person or company name", "field": "<see FIELD NAMES below>",
       "value": "...", "evidence_text": "exact substring proving this fact"}}
@@ -81,6 +92,19 @@ what? If not, it is not a commitment.
   NO:  "Thursday 20 Aug, 11:15am"        -> scheduling_proposals (a time, not a promise)
 Never emit a commitment whose evidence_text ends in "?". `action` must be the normalised
 obligation ("share the updated deck"), never the raw sentence — the quote belongs in evidence_text.
+
+RELATIONSHIP NATURE — what the two sides ARE to each other. Judge it from what the message is
+actually ABOUT, never from the domain name: a list of known funds would work for one customer's
+inbox and fail for the next, and this layer exists to read each company's own world.
+- `investor` — they may put money INTO this company (a fund, an angel, an accelerator). A
+  rejection here is a fundraising outcome, never a lost sale.
+- `customer` — they already pay us. `prospect` — they might buy from us.
+- `vendor` — we pay them. `candidate` — they might join us.
+- `partner` — joint work, no money crossing directly. `community` — newsletters, events,
+  broadcasts with no two-way relationship.
+- `unknown` when the message genuinely does not say. Guessing is worse than admitting.
+The direction is the money/evaluation flow, and it is what stops a fundraising conversation
+from being read as a sales pipeline.
 
 DIRECTION — read it from the envelope, never guess it from tone.
 - On an OUTBOUND message the sender is US. Anything we offer, promise or send is OURS, and an

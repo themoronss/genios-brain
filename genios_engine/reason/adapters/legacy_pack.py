@@ -32,7 +32,7 @@ _REASONER_VERSION = "1.0.0"
 #:
 #: v2: + core.temporal and core.relationship (optional), + the explicit wait play, + real score
 #:     components, + the pack confidence floor, + authority decoupled from cooldown.
-_ADAPTER_SHAPE = "a3"  # a3: +core.alternative, +core.validation — the DAG changed, so the tag
+_ADAPTER_SHAPE = "a4"  # a4: validation reports, does not gate; wait play clears approval  # a3: +core.alternative, +core.validation — the DAG changed, so the tag
                        # must too, or the immutability guard correctly rejects the new bytes
                        # under a version it already has different bytes on file for.
 
@@ -260,6 +260,19 @@ def legacy_capability_manifest(*, rule: Rule, scoring: dict[str, Any],
         dependencies=("core.constraint", "core.priority", "core.confidence",
                      "core.temporal", "core.relationship"),
         failure_policy=FailurePolicy.OPTIONAL,
+        # safety_floor_bp = 0 — validation REPORTS here, it does not GATE.
+        #
+        # Its EvidenceSufficiencyPlugin counts a unit's claim as ungrounded when the unit cites
+        # no evidence id. That contract is real for the native capability this unit was written
+        # for; the legacy adapter's units do not implement it, so validation read every one of
+        # their claims as ungrounded, drove safe_bp under the default 4000 floor, and eliminated
+        # BOTH candidates on every run — 15 live signals became 0, silently, with the blocked
+        # decisions visible only in the suppression log.
+        #
+        # Measuring the ADAPTER's citation habits and calling the result an unsafe decision is
+        # the wrong claim. The metrics stay (they are how we will know when the legacy units do
+        # start citing); the authority to eliminate does not.
+        config={"safety_floor_bp": 0},
     )
     play = PlayDefinition(
         play_id=play_id,
