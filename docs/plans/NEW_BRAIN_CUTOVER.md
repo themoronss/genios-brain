@@ -82,7 +82,22 @@ not rediscover them:
    `dataclasses.replace` AFTER reasoning invalidates it — the snapshot must exist before
    `reason_native_capability` is called and be passed in as an argument.
 
-**The open one.** `ReasoningStore.persist_complete` (store.py:925) requires
+**8 — SOLVED.** Mint the config snapshot through `packs.snapshot.snapshot_id` over
+`{"pack_id": capability.domain, "version": ..., "capability_id": ...}`, write it to
+`config_snapshots` with `pack_id = capability.domain`, and pass the id into
+`reason_native_capability` BEFORE reasoning. With that, `persist_execution` succeeds — the audit
+bundle (run, results, candidates, checks, output) now commits, verified live: real `rrun_…` ids in
+`reasoning_runs` and `cand_…` rows in `reasoning_candidates`.
+
+**9 — THE OPEN ONE.** The signal insert now fails only on `signals_reasoning_candidate_fk`
+`(org_id, reasoning_run_id, reasoning_candidate_id)` → `reasoning_candidates`. Candidates ARE
+written, so the mismatch is which RUN they belong to: `persist_execution` is idempotent on
+`idempotency_key`, so a re-run returns an EARLIER bundle whose candidate ids differ from the
+decision now in hand. Either take the candidate id from the returned bundle rather than from
+`decision.selected_candidate_id`, or make the idempotency key vary with the decision content.
+Check `bundle["candidates"]` against `decision.selected_candidate_id` first — one print settles it.
+
+**Superseded.** `ReasoningStore.persist_complete` (store.py:925) requires
 `config.snapshot_id == recomputed_config_id` and `config_pack == capability_pack`. A hand-made
 `cfg_{version}` id cannot satisfy the first: the store recomputes the snapshot id from the
 `effective` config content. So the compiled lane needs a config snapshot built the way the store
