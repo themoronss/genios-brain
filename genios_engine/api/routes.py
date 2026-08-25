@@ -259,6 +259,29 @@ def _sync_connection(connection, mode: str, limit: int) -> None:
     _run_l2(connection.org_id)
 
 
+def _org_paused(org_id: str) -> bool:
+    """Is this tenant's 'stop everything' switch off?
+
+    `check_org_kill` enforces the same flag, but it is a FastAPI dependency — it only ever runs on
+    an inbound request. The scheduler sweep is a background thread that never passes through one,
+    so a paused org kept being swept: a wipe would delete every row and the next tick refilled the
+    graph from Gmail, which reads exactly like the delete silently failed. A switch labelled "stop
+    everything" has to stop the largest writer in the system too.
+
+    Fails OPEN like the request-path check: an infra hiccup must not silently halt ingestion.
+    """
+    if _graph is None:
+        return False
+    try:
+        from sqlalchemy import text
+        with _graph.engine.connect() as c:
+            row = c.execute(text("select enabled from feature_flags where key=:k"),
+                            {"k": f"kill_switch:{org_id}"}).first()
+        return row is not None and not bool(row.enabled)
+    except Exception:                                # noqa: BLE001 — never block ingestion on this
+        return False
+
+
 def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
     """Full auto-sync sweep across EVERY active connection (all orgs): L1 pull for all connections,
     THEN one L2/L3/L5 pass per org (not per-connection — an org with 3 sources shouldn't re-reason 3×).
@@ -269,7 +292,8 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
     limit = get_settings().sync_batch_limit if limit is None else limit
     conns = _connections.list_active()
     rc = make_relevance_classifier()
-    l1_ok = l1_err = 0
+    l1_ok = l1_err = l1_paused = 0
+    paused: dict[str, bool] = {}
     # Per-org budget decisions are made ONCE per sweep, not per connection: an org with gmail +
     # gcal + drive would otherwise pay for three checks to reach the same answer.
     over_budget: dict[str, bool] = {}
@@ -278,6 +302,11 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
         # This background sweep is the largest LLM spender in the system (the S2 gate runs on
         # every unknown sender) and it was the one path the daily cap did not gate — the breaker
         # guarded the onboarding sync only. A runaway here spends unattended, every tick.
+        if conn.org_id not in paused:
+            paused[conn.org_id] = _org_paused(conn.org_id)
+        if paused[conn.org_id]:
+            l1_paused += 1
+            continue
         if conn.org_id not in over_budget:
             over_budget[conn.org_id] = _llm_over_daily_cap(conn.org_id)
         if over_budget[conn.org_id]:
@@ -301,13 +330,15 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
             _run_ledger(org_id=conn.org_id, connection_id=conn.connection_id,
                         source=conn.source_type, mode=mode, error=str(e)[:500])
             _notify_sync_failure(org_id=conn.org_id, source=conn.source_type, error=str(e))
-    orgs = {c.org_id for c in conns}
+    orgs = {c.org_id for c in conns if not paused.get(c.org_id)}
     for org in orgs:                              # L2/L3/L5: once per org, after all its sources pulled
         _run_l2(org)
     _log.info("auto-sync sweep complete: %d/%d connection(s) pulled, %d skipped on budget, "
-              "%d org(s) reasoned", l1_ok, len(conns), l1_skipped, len(orgs))
+              "%d skipped as paused, %d org(s) reasoned",
+              l1_ok, len(conns), l1_skipped, l1_paused, len(orgs))
     return {"connections": len(conns), "l1_ok": l1_ok, "l1_err": l1_err,
-            "l1_skipped_over_budget": l1_skipped, "orgs": len(orgs)}
+            "l1_skipped_over_budget": l1_skipped, "l1_skipped_paused": l1_paused,
+            "orgs": len(orgs)}
 
 
 # Retained as a compatibility diagnostic only. Calibration authority is the durable

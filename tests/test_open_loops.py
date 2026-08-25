@@ -260,3 +260,23 @@ def test_the_env_override_still_wins():
 
     src = inspect.getsource(sync_runner)
     assert "GENIOS_L1_WORKERS" in src and "_default_workers()" in src
+
+
+# ── a paused org must stop the BACKGROUND writer, not just inbound requests ─────
+def test_sweep_skips_a_paused_org():
+    """The wipe kept 'failing': every deleted row came back within a minute. The delete was fine —
+    the scheduler sweep refilled the graph from Gmail because `check_org_kill` is a FastAPI
+    dependency and a background thread never passes through one. A tenant-level 'stop everything'
+    that leaves the largest writer running is not a stop."""
+    import inspect
+
+    from genios_engine.api import routes
+
+    src = inspect.getsource(routes.run_sync_sweep)
+    assert "_org_paused(conn.org_id)" in src, "sweep must consult the per-org kill switch"
+    assert "l1_paused += 1" in src and "continue" in src, "a paused org must be skipped, not synced"
+    assert "if not paused.get(c.org_id)" in src, "a paused org must not be reasoned either"
+
+    guard = inspect.getsource(routes._org_paused)
+    assert "kill_switch:" in guard
+    assert "return False" in guard.split("except")[-1], "must fail OPEN on infra error"
