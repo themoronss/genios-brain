@@ -65,6 +65,31 @@ The code was written and reverted while blocker #8 was still open; #8 is now fix
   `authority_pack_revision` must be > 0 when `authority_binding_version = 1`; naming a
   `reasoning_run_id` obliges a `config_snapshot_id`.
 
+### Where the live path stops today (walked end to end, 2026-08-25)
+
+Every schema obstacle below was hit in order and solved; they are listed so the next attempt does
+not rediscover them:
+
+1. one transaction for the whole loop → one bad row aborts 58 (`error: 58`) → per-situation txn;
+2. `pack_version` / `rule_version` are INTEGER, not the capability's hash;
+3. `authority_pack_revision` must be > 0 when `authority_binding_version = 1`;
+4. naming a `reasoning_run_id` obliges a `config_snapshot_id`
+   (`signals_linked_run_requires_config`);
+5. six FKs into the reasoning audit tables → call `audit.persist_execution` first, never
+   hand-make a run id;
+6. `config_snapshots` PK is `(org_id, snapshot_id)`, not `snapshot_id`;
+7. `request_id` is derived from request content, so a `config_snapshot_id` injected with
+   `dataclasses.replace` AFTER reasoning invalidates it — the snapshot must exist before
+   `reason_native_capability` is called and be passed in as an argument.
+
+**The open one.** `ReasoningStore.persist_complete` (store.py:925) requires
+`config.snapshot_id == recomputed_config_id` and `config_pack == capability_pack`. A hand-made
+`cfg_{version}` id cannot satisfy the first: the store recomputes the snapshot id from the
+`effective` config content. So the compiled lane needs a config snapshot built the way the store
+recomputes it — same canonical `effective` payload, same pack id as the capability's domain —
+rather than a synthetic row. Read `_recomputed_config_id` in store.py and mint the snapshot
+through the same function the legacy lane uses.
+
 Then: verify `signals.capability_id IS NOT NULL` is non-zero and cards render from it, and only
 then flip `GENIOS_USE_DOMAIN_COMPILER=true`.
 
