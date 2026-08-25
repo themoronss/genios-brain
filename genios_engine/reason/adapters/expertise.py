@@ -14,9 +14,11 @@ Knowledge-in, DAG-supplied. It never decides — it only shapes what Layer 4 wil
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 from typing import Any
 
 from genios_engine.contracts.domain_expertise import ExpertisePackage
+from genios_engine.platform.canonical import stable_id
 from genios_engine.contracts.reasoning import (
     CapabilityManifest,
     FailurePolicy,
@@ -277,8 +279,9 @@ def expertise_capability_manifest(
         "brain_snapshot_id": package.brain_snapshot_id,
     })
 
-    return CapabilityManifest(
+    manifest = CapabilityManifest(
         capability_id=f"expertise.{situation_type}",
+        # Provisional — replaced below once the manifest's own content can be hashed.
         version=f"exp.{knowledge_hash[:16]}",
         domain=domain,
         root_entity_type=str(root_entity_type or "entity"),
@@ -332,6 +335,18 @@ def expertise_capability_manifest(
             },
         },
     )
+
+    # Re-version on the MANIFEST's content, not only the knowledge's.
+    #
+    # `knowledge_hash` covers the compiled expertise, but the manifest built from it also varies
+    # with the situation: goal, root entity type, the plays that survived conversion, the gate and
+    # selection sets. Two situations therefore produced two different manifests under one version,
+    # and the audit store's immutability guard correctly refused the second — "immutable capability
+    # version mismatch". A version that does not move when the thing it names moves is not a
+    # version. Two hashes, not one: knowledge first so the lineage stays legible at a glance,
+    # manifest second so the identity is honest.
+    content = stable_id("capmanifest", manifest.to_semantic_dict()).split("_", 1)[-1]
+    return replace(manifest, version=f"exp.{knowledge_hash[:12]}.{content[:12]}")
 
 
 __all__ = ["expertise_capability_manifest", "ADAPTER_ID", "ADAPTER_VERSION"]
