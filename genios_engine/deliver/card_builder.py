@@ -359,8 +359,12 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time) ->
         "capability_key": signal.get("capability_id"),
         "capability_version": signal.get("capability_version"),
         # Unreviewed expertise must not instruct — the same state the abstention gate reads.
+        # The SIGNAL's own value first: it records the review state of the exact package that
+        # authored this decision, while `effective` describes the tenant's config as a whole. A
+        # legacy signal carries none and falls through to the config, exactly as before.
         "capability_review_state": str(
-            (effective.get("expertise") or {}).get("review_state") or "unreviewed"),
+            signal.get("capability_review_state")
+            or (effective.get("expertise") or {}).get("review_state") or "unreviewed"),
         # The DECISION's own values first; the pack template only fills a pre-0070 signal.
         # These came from ReasoningDecision at emit time — the pack fallback is a config author's
         # generic estimate, not this decision's judgment.

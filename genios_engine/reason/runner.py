@@ -666,15 +666,21 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         registry: PackRegistry | None = None, pack_id: str = DEFAULT_PACK_ID) -> dict:
     eval_time = eval_time or datetime.now(timezone.utc)
 
-    # Layer 3 Domain Expertise compiler — shadow pass (flag off by default). Decoupled from the
-    # node sweep below and from every return path: it compiles active L2 situations into
-    # ExpertisePackages to MEASURE route/coverage, persists nothing and changes no decision.
+    # Layer 3 Domain Expertise compiler — the CUTOVER pass (flag off by default). Decoupled from
+    # the node sweep below and from every return path: it compiles the active L2 situations into
+    # ExpertisePackages, reasons over them, and emits the decisions as signals the legacy lane
+    # cannot collide with (their rule ids are capability ids, not pack rule ids).
+    #
+    # `live=True`, deliberately. The flag used to run a measurement-only pass, so turning it on
+    # produced packages, decisions and no cards — the switch read as a cutover and behaved as a
+    # dry run. Measurement remains available to any caller as `shadow_compile(live=False)`, which
+    # is what the tests use; the ENV VAR is the cutover, because that is what flipping it means.
     if get_settings().use_domain_compiler:
         try:
             from genios_engine.reason.domain_shadow import shadow_compile
-            shadow_compile(store=store, org_id=org_id, eval_time=eval_time)
+            shadow_compile(store=store, org_id=org_id, eval_time=eval_time, live=True)
         except Exception:
-            logger.exception("domain-compiler shadow pass failed org=%s", org_id)
+            logger.exception("domain-compiler live pass failed org=%s", org_id)
 
     # L4 — resolve the tenant's effective config (rules + scoring + gate + budget + snapshot id).
     registry = registry or make_registry()

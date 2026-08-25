@@ -254,8 +254,15 @@ def _goal(package: ExpertisePackage, situation_type: str) -> Goal:
 
 def expertise_capability_manifest(
     package: ExpertisePackage, *, root_entity_type: str,
+    live_delivery_enabled: bool = False,
 ) -> CapabilityManifest:
-    """One ExpertisePackage -> one CapabilityManifest driving Layer 4's reasoning."""
+    """One ExpertisePackage -> one CapabilityManifest driving Layer 4's reasoning.
+
+    ``live_delivery_enabled`` defaults to False — the measurement pass must stay advisory. It is
+    True only on the cutover path, because the delivery authority predicate reads it directly
+    (``rcap.manifest->'live_delivery_enabled' = 'true'``): a signal whose capability snapshot says
+    False can never become a card, however complete the rest of its audit bundle is.
+    """
     situation_type = str(package.metadata.get("situation_type") or "situation")
     plays, play_receipt = _plays(package)
     domain_ids = package.metadata.get("domain_ids") or ()
@@ -291,7 +298,7 @@ def expertise_capability_manifest(
         required_fields=gate_fields,
         selection_fields=required_fields,
         policies=("read_only", "human_approval_required", "evidence_required"),
-        live_delivery_enabled=False,          # typed L3->L4 path stays advisory until cutover
+        live_delivery_enabled=live_delivery_enabled,   # advisory by default; True only on cutover
         do_nothing_consequence=(
             f"The {situation_type} situation is left unaddressed while its evidence compounds."
         ),

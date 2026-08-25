@@ -45,6 +45,12 @@ def _open_signals_without_cards(graph, org_id: str,
             "authority_cfg.effective as effective_config, "
             "authority_cfg.pack_id, s.authority_expires_at as decision_expires_at, "
             "s.reasoning_run_id, s.reasoning_candidate_id, s.reasoning_decision_hash, "
+            # WHICH BRAIN authored this. card_builder has always read `capability_id` for a card's
+            # capability_key (0074 added the columns), but this SELECT never carried them, so the
+            # read returned None and every card — compiled or legacy — looked identically like
+            # legacy output. Without these three the cutover cannot be measured from `cards` at
+            # all: NULL would mean "legacy" and "compiled" at the same time.
+            "s.capability_id, s.capability_version, s.capability_review_state, "
             # The DecisionObject's own content (0070). Reading it here is what retires the API
             # layer's reason_code if/elif chain as the source of a card's recommendation.
             "s.do_nothing_consequence, s.uncertainty, s.outcome_window_days as decision_window, "
