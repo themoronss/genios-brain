@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Callable
@@ -142,63 +142,97 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
     summary = SyncSummary()
     watermark = since
     page_cursor = cursor
-    for _page in range(max_pages):                    # drain up to max_pages (real API
-        batch = _fetch_page(connector, mode=mode, cursor=page_cursor, limit=limit, since=since,
-                            retries=fetch_retries, backoff=fetch_backoff, sleep=_sleep)
-        summary.next_cursor = batch.next_cursor
-        summary.scanned += len(batch.objects)
+    # PREFETCH the next page while this one is being captured.
+    #
+    # Measured against the live mailbox, one page costs ~16s of pure provider wait — the Composio
+    # list call alone is ~10.8s, the relevance gate ~4.5s, and the 12-way body fetch only ~1.1s —
+    # and the capture that follows it is another ~16s of DB work. Run back to back they add to the
+    # ~32s/round the ledger shows; overlapped they cost the larger of the two. Nothing about the
+    # ordering forces them to be serial: `next_cursor` is known the instant a page lands, so the
+    # following fetch can be in flight before we look at the current one.
+    #
+    # One worker, not a pool: pages must stay in order, and a second concurrent list call would
+    # only queue behind the provider anyway. Safe against the shared relevance cache — it is a
+    # plain dict keyed by source_object_id, and two pages never share an id.
+    prefetch: Future | None = None
+    pool = (ThreadPoolExecutor(max_workers=1, thread_name_prefix="l1-prefetch")
+            if max_pages > 1 else None)
+    try:
+        for _page in range(max_pages):                  # drain up to max_pages (real API
+            if prefetch is not None:
+                batch, prefetch = prefetch.result(), None
+            else:
+                batch = _fetch_page(connector, mode=mode, cursor=page_cursor, limit=limit, since=since,
+                                    retries=fetch_retries, backoff=fetch_backoff, sleep=_sleep)
+            # Kick the next page off BEFORE the expensive local work, not after it — that ordering is
+            # the whole optimisation. A page fetched and then discarded by an early break costs one
+            # wasted read; a page fetched serially costs every user 16s.
+            if (pool is not None and batch.next_cursor and batch.objects
+                    and _page + 1 < max_pages):
+                prefetch = pool.submit(
+                    _fetch_page, connector, mode=mode, cursor=batch.next_cursor, limit=limit,
+                    since=since, retries=fetch_retries, backoff=fetch_backoff, sleep=_sleep)
+            summary.next_cursor = batch.next_cursor
+            summary.scanned += len(batch.objects)
 
-        def _cap(raw: RawObject):
-            sk = sender_resolver(raw) if sender_resolver else False
-            res, err = _capture_bounded(raw, retries=2, org_id=org_id,
-                                        connection_id=connection_id, repo=repo,
-                                        sender_known=sk, relevance=relevance,
-                                        trace_repo=trace_repo, payload_store=payload_store,
-                                        prepared_store=prepared_store,
-                                        document_job_store=document_job_store,
-                                        mailbox_owner=mailbox_owner,
-                                        sync_mode=sync_mode)
-            return raw, res, err
+            def _cap(raw: RawObject):
+                sk = sender_resolver(raw) if sender_resolver else False
+                res, err = _capture_bounded(raw, retries=2, org_id=org_id,
+                                            connection_id=connection_id, repo=repo,
+                                            sender_known=sk, relevance=relevance,
+                                            trace_repo=trace_repo, payload_store=payload_store,
+                                            prepared_store=prepared_store,
+                                            document_job_store=document_job_store,
+                                            mailbox_owner=mailbox_owner,
+                                            sync_mode=sync_mode)
+                return raw, res, err
 
-        # BATCH the S2 relevance gate for the whole page in a few LLM calls (prime the classifier's
-        # cache) BEFORE per-event capture — turns ~25 gate calls/page into ~2. Best-effort: if the
-        # classifier doesn't support priming or a batch fails, capture just calls it per-email.
-        if batch.objects and relevance is not None and hasattr(relevance, "prime"):
-            try:
-                relevance.prime(batch.objects)
-            except Exception:      # noqa: BLE001 — never let batching break the sync
-                pass
+            # BATCH the S2 relevance gate for the whole page in a few LLM calls (prime the classifier's
+            # cache) BEFORE per-event capture — turns ~25 gate calls/page into ~2. Best-effort: if the
+            # classifier doesn't support priming or a batch fails, capture just calls it per-email.
+            if batch.objects and relevance is not None and hasattr(relevance, "prime"):
+                try:
+                    relevance.prime(batch.objects)
+                except Exception:      # noqa: BLE001 — never let batching break the sync
+                    pass
 
-        # capture the whole page CONCURRENTLY — DB round-trips overlap. Each email is independent,
-        # so this changes nothing about WHAT is captured, only how fast.
-        if batch.objects:
-            with ThreadPoolExecutor(max_workers=_CAPTURE_WORKERS) as ex:
-                captured = list(ex.map(_cap, batch.objects))
-        else:
-            captured = []
+            # capture the whole page CONCURRENTLY — DB round-trips overlap. Each email is independent,
+            # so this changes nothing about WHAT is captured, only how fast.
+            if batch.objects:
+                with ThreadPoolExecutor(max_workers=_CAPTURE_WORKERS) as ex:
+                    captured = list(ex.map(_cap, batch.objects))
+            else:
+                captured = []
 
-        for raw, res, err in captured:              # aggregate SINGLE-THREADED → no races on summary
-            if res is None:                          # poison → quarantine, batch continues
-                summary.quarantined += 1
-                if parked_store is not None:
-                    parked_store.add(ParkedEvent(
-                        event_id=f"{raw.source}:{raw.source_object_id}", org_id=org_id,
-                        source=raw.source, reason_code="poison_quarantine", stage="capture",
-                        trace=[{"error": type(err).__name__, "detail": str(err)[:200]}]))
-                continue
-            summary.results.append(res)
-            setattr(summary, res.outcome, getattr(summary, res.outcome) + 1)
-            if res.gated is not None:
-                summary.gated.append(res.gated)
-            if res.outcome == "parked" and parked_store is not None:
-                reason = res.trace.records[-1].reason_code if res.trace.records else "unknown"
-                parked_store.add(parked_from_trace(org_id, res.event.event_id,
-                                                   res.event.source, reason or "unknown", res.trace))
-            if watermark is None or raw.watermark_at > watermark:
-                watermark = raw.watermark_at
-        page_cursor = batch.next_cursor
-        if not page_cursor or not batch.objects:      # provider exhausted → stop
-            break
+            for raw, res, err in captured:              # aggregate SINGLE-THREADED → no races on summary
+                if res is None:                          # poison → quarantine, batch continues
+                    summary.quarantined += 1
+                    if parked_store is not None:
+                        parked_store.add(ParkedEvent(
+                            event_id=f"{raw.source}:{raw.source_object_id}", org_id=org_id,
+                            source=raw.source, reason_code="poison_quarantine", stage="capture",
+                            trace=[{"error": type(err).__name__, "detail": str(err)[:200]}]))
+                    continue
+                summary.results.append(res)
+                setattr(summary, res.outcome, getattr(summary, res.outcome) + 1)
+                if res.gated is not None:
+                    summary.gated.append(res.gated)
+                if res.outcome == "parked" and parked_store is not None:
+                    reason = res.trace.records[-1].reason_code if res.trace.records else "unknown"
+                    parked_store.add(parked_from_trace(org_id, res.event.event_id,
+                                                       res.event.source, reason or "unknown", res.trace))
+                if watermark is None or raw.watermark_at > watermark:
+                    watermark = raw.watermark_at
+            page_cursor = batch.next_cursor
+            if not page_cursor or not batch.objects:      # provider exhausted → stop
+                break
+    finally:
+        # A pending fetch after an early break is a read we no longer need; never let it hold the
+        # process open. shutdown(wait=False) so a hung provider call cannot outlive the sync.
+        if prefetch is not None:
+            prefetch.cancel()
+        if pool is not None:
+            pool.shutdown(wait=False)
 
     # recovery is a pure safety re-scan — never regress/advance the primary watermark
     if cursor_store is not None and mode != "recovery":
@@ -235,20 +269,35 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
 
 def backfill_drain(connector: SourceConnector, *, org_id: str, connection_id: str,
                    repo: SourceEventRepository, source: str, limit: int = 100,
-                   max_rounds: int = 500, **kw) -> SyncSummary:
+                   max_rounds: int = 500, pages_per_round: int = 8, **kw) -> SyncSummary:
     """Drain a source's FULL history: page in BACKFILL mode until the cursor is exhausted, so a large
     mailbox's older tail is never left behind. The incremental sync only pulls NEW mail (via the
     watermark), so on a huge first connect every page beyond `max_pages` was skipped PERMANENTLY —
     newest-first + an advancing watermark meant the older tail was never re-requested. Run this as a
     background task after connect; dedup makes overlap/restart safe. It passes cursor_store=None so it
     NEVER advances the incremental watermark — the two paths stay independent. `max_rounds` is a
-    runaway guard."""
+    runaway guard, counted in PAGES.
+
+    `pages_per_round` was effectively 1, which quietly disabled run_sync's page prefetch: with one
+    page per call there is never a next page to fetch ahead, so every round paid the provider's
+    ~16s serially and then captured for ~16s more. The live backfill showed exactly that — 35
+    rounds at a median 32.1s. Batching pages into the call that knows how to overlap them is what
+    makes the prefetch reach the path new tenants actually use; the outer loop still exists because
+    each round re-reads the cursor and re-checks the runaway guard."""
     total = SyncSummary()
     cursor: str | None = None
-    for _ in range(max_rounds):
+    # The guard counts PAGES, not loop iterations. A round used to BE one page, so the two were the
+    # same number and `max_rounds` could be read as either; batching pages into a round silently
+    # multiplied the ceiling by pages_per_round — a 500-page runaway budget became 4000. Spending
+    # the budget explicitly keeps the bound identical to what it has always been, whatever the
+    # batch size is tuned to next.
+    budget = max_rounds
+    while budget > 0:
+        take = min(pages_per_round, budget)
+        budget -= take
         summary = run_sync(connector, org_id=org_id, connection_id=connection_id, repo=repo,
                            mode="backfill", cursor=cursor, limit=limit, source=source,
-                           cursor_store=None, max_pages=1, **kw)
+                           cursor_store=None, max_pages=take, **kw)
         for f in ("scanned", "emitted", "dropped", "parked", "duplicate", "quarantined"):
             setattr(total, f, getattr(total, f) + getattr(summary, f))
         total.gated.extend(summary.gated)

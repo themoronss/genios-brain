@@ -91,7 +91,27 @@ def health_readiness(org_id: str = Depends(get_current_org)) -> dict:
     failed = [r for r in rows if r["status"] != "PASS"]
     return {"org_id": org_id, "ready": not failed,
             "passing": len(rows) - len(failed), "total": len(rows),
-            "receipts": rows}
+            "receipts": rows, "concurrency": _resolved_concurrency()}
+
+
+def _resolved_concurrency() -> dict:
+    """What the pipeline ACTUALLY resolved to in this process.
+
+    These numbers derive themselves from the pooler port, so the deployed value depends on an
+    environment variable no code path can see. Tuning them turned into an argument from throughput
+    arithmetic — "~14 events/min at a 5.2s LLM call implies about three workers, not eight" — which
+    is inference, not a reading, and inference is what has been wrong here repeatedly. A number
+    this load-bearing has to be observable from outside the process.
+
+    Behind the same tenant auth as the receipts: it describes deployment shape, not liveness.
+    """
+    from genios_engine.capture.acquire.sync_runner import _CAPTURE_WORKERS
+    from genios_engine.capture.connectors.composio import _FETCH_WORKERS
+    from genios_engine.context.runner import _BATCH, _MAX_WORKERS
+    url = (getattr(get_settings(), "database_url", "") or "")
+    return {"l1_capture_workers": _CAPTURE_WORKERS, "l1_fetch_workers": _FETCH_WORKERS,
+            "l2_workers": _MAX_WORKERS, "l2_batch": _BATCH,
+            "pooler": "transaction" if ":6543/" in url else "session"}
 
 
 @router.get("/config")

@@ -330,3 +330,36 @@ def test_seeing_a_card_and_acting_on_it_use_the_same_rule():
         src = inspect.getsource(fn)
         assert "sees_org_queue" in src, f"{fn.__name__} still uses the old scopes check"
         assert "ctx.scopes is None" not in src, f"{fn.__name__} has a stale scopes check"
+
+
+# ── L1 must overlap the provider wait with the capture that follows it ─────────
+def test_next_page_is_fetched_before_the_current_one_is_captured():
+    """Measured on the live mailbox: a page costs ~16s of provider wait (Composio list ~10.8s,
+    relevance gate ~4.5s, 12-way body fetch ~1.1s) and the capture after it another ~16s. Serially
+    those add — the backfill ledger showed 35 rounds at a median 32.1s. The next page's cursor is
+    known the moment a page lands, so the two can overlap."""
+    import inspect
+
+    from genios_engine.capture.acquire import sync_runner
+
+    src = inspect.getsource(sync_runner.run_sync)
+    submit = src.index("pool.submit(")
+    capture = src.index("ThreadPoolExecutor(max_workers=_CAPTURE_WORKERS)")
+    assert submit < capture, "the next page must be submitted BEFORE the capture, or nothing overlaps"
+    assert "prefetch.cancel()" in src and "pool.shutdown(wait=False)" in src
+
+
+def test_backfill_asks_for_enough_pages_to_overlap():
+    """A prefetch is dead code at one page per call: there is never a next page to fetch ahead.
+    backfill_drain passed max_pages=1, which is the path a new tenant's first sync takes."""
+    import inspect
+
+    from genios_engine.capture.acquire.sync_runner import backfill_drain
+
+    sig = inspect.signature(backfill_drain)
+    assert sig.parameters["pages_per_round"].default > 1
+    src = inspect.getsource(backfill_drain)
+    assert "take = min(pages_per_round, budget)" in src and "max_pages=take" in src, (
+        "pages must be batched into one run_sync call for the prefetch to have a next page")
+    assert "budget = max_rounds" in src, (
+        "the runaway guard must still count PAGES — batching must not multiply the ceiling")
