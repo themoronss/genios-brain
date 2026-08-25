@@ -290,12 +290,21 @@ def test_org_key_with_no_person_sees_the_org_queue():
     `assignee is null` fallback matched nothing because L5 routes every card to a seat."""
     from genios_engine.platform.auth import AuthCtx
 
-    org_key = AuthCtx(org_id="org_1", scopes=["cards.read"])
-    assert org_key.sees_org_queue, "a key with no person must read the org queue"
+    # Build the ctx EXACTLY as get_auth_ctx does, synthesised actor_id and all. The first attempt
+    # at this fix tested `actor_id is None`, which reads true on a hand-made AuthCtx and false on
+    # every real request — the API-key branch sets
+    # `actor_id = row.agent_id or f"api_key:{hashed[:12]}"`, so actor_id is never None there.
+    # It shipped, deployed, and changed nothing. Mirror the real construction or the test is theatre.
+    org_key = AuthCtx(org_id="org_1", agent_id=None, actor_id="api_key:a1b2c3d4e5f6",
+                      scopes=["cards.read"], source="api_key")
+    assert org_key.sees_org_queue, "a key bound to no agent must read the org queue"
 
-    assert AuthCtx(org_id="org_1").sees_org_queue, "owner session unchanged"
-    assert not AuthCtx(org_id="org_1", scopes=["cards.read"], actor_id="seat_a").sees_org_queue
-    assert not AuthCtx(org_id="org_1", scopes=["cards.read"], agent_id="agent_a").sees_org_queue
+    jwt = AuthCtx(org_id="org_1", actor_id="owner@example.com", scopes=None, source="jwt")
+    assert jwt.sees_org_queue, "owner session unchanged"
+
+    agent_key = AuthCtx(org_id="org_1", agent_id="agent_a", actor_id="agent_a",
+                        scopes=["cards.read"], source="api_key")
+    assert not agent_key.sees_org_queue, "an agent-bound key keeps its own lane"
 
 
 def test_queue_does_not_filter_by_a_person_when_there_is_no_person():

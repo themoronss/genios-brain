@@ -116,10 +116,15 @@ class AuthCtx:
         means nothing.
 
         A key carries the reach of whoever minted it, and only an owner can mint one. So an
-        identity-less key reads the org queue; a key bound to a seat or agent still sees only its
-        own lane.
+        identity-less key reads the org queue; a key bound to an AGENT still sees only its own lane.
+
+        Test ``agent_id``, never ``actor_id``: the API-key branch above synthesises
+        ``actor_id = row.agent_id or f"api_key:{hashed[:12]}"``, so actor_id is NEVER None on this
+        path and an ``actor_id is None`` check silently never fires. ``agent_id`` is the only field
+        that carries a real principal, because ``api_keys`` has no other identity column. A JWT
+        session needs no clause of its own — it always arrives with ``scopes is None``.
         """
-        return self.scopes is None or (self.actor_id is None and self.agent_id is None)
+        return self.scopes is None or (self.source == "api_key" and self.agent_id is None)
 
 
 def _engine():
