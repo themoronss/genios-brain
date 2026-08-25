@@ -255,6 +255,21 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
 
     for node_id in affected:                          # B9 rebuild affected read models
         build_entity_360(store, org_id=org_id, node_id=node_id)
+    # derived.* — engagement / sentiment / momentum. Written HERE, after extraction and before
+    # anything reasons, because they are counts over the observations this drain just committed.
+    # Every rule and capability that reads them was previously gated on a field no writer existed
+    # for, so the deep sales rules never fired and all 18 compiled capabilities returned
+    # INSUFFICIENT_CONTEXT. Never fatal: a derive failure costs one cycle of freshness, and the
+    # next drain recomputes from the same graph.
+    derived_rows = 0
+    if done or affected:
+        try:
+            from genios_engine.context.derived import compute as compute_derived
+            from genios_engine.context.derived import compute_deal_view
+            derived_rows = compute_derived(store, org_id) + compute_deal_view(store, org_id)
+        except Exception:      # noqa: BLE001 — derived view, recomputed next drain
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception("derived fact refresh failed for org=%s", org_id)
     # Attention refresh — L2 is the SOLE writer of context_attention. Full-org refresh
     # when anything changed (recency decays even for untouched nodes, and it is a few
     # bulk queries, not per-node round-trips).
@@ -297,4 +312,5 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         except Exception:      # noqa: BLE001 — billing must never break ingestion
             pass
     return {"processed": done, "outcomes": dict(out), "read_models_built": len(affected),
-            "attention_rows": attention_rows, "situation_rows": situation_rows}
+            "attention_rows": attention_rows, "situation_rows": situation_rows,
+            "derived_rows": derived_rows}

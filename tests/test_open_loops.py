@@ -363,3 +363,43 @@ def test_backfill_asks_for_enough_pages_to_overlap():
         "pages must be batched into one run_sync call for the prefetch to have a next page")
     assert "budget = max_rounds" in src, (
         "the runaway guard must still count PAGES — batching must not multiply the ceiling")
+
+
+# ── derived.* had no writer, so every rule gated on it was dead ────────────────
+def test_derived_fields_have_a_writer():
+    """`derived.engagement`, `derived.sentiment` and `derived.momentum` are read by the sales pack
+    (`derived.engagement <= 0.5`) and required by the compiled L3 capabilities, and the extraction
+    vocabulary excludes them on purpose — vocab.py: "computed by the reasoner, never extracted".
+    Nothing computed them. The deep sales rules never fired once and all 18 compiled capabilities
+    returned INSUFFICIENT_CONTEXT against a graph that already held everything else."""
+    import inspect
+
+    from genios_engine.context import derived, runner
+
+    src = inspect.getsource(derived.compute)
+    for field in ("derived.engagement", "derived.sentiment", "derived.momentum"):
+        assert field in src, f"{field} still has no writer"
+    assert "compute_derived(store, org_id)" in inspect.getsource(runner.process_pending), (
+        "L2 must derive after extraction — a writer nothing calls is the same as no writer")
+
+
+def test_engagement_is_relative_to_the_account_and_deal_value_is_never_invented():
+    """Engagement must be a ratio against this relationship's own history: "halved" has to mean
+    halved for THIS account whether it ran at forty emails a week or four. And a value nobody
+    stated must stay missing — a guessed deal size flows straight into prioritisation."""
+    import inspect
+
+    from genios_engine.context import derived
+
+    src = inspect.getsource(derived.compute)
+    assert "recent_rate / baseline_rate" in src, "engagement must be a ratio, not a raw count"
+    assert "1.0 if baseline_rate <= 0" in src, "a new contact must read neutral, not cold"
+    # Check the CODE, not the prose. The first version of this assertion matched the docstring
+    # sentence saying deal.value is never derived, and would have passed just as happily on a
+    # function that derived it while claiming otherwise.
+    body = inspect.getsource(derived.compute_deal_view)
+    body = body[body.index('"""', body.index('"""') + 3) + 3:]      # drop the docstring
+    written = {line.split('"')[1] for line in body.splitlines()
+               if '"deal.' in line and 'pairs.append' in line}
+    assert written == {"deal.last_inbound", "deal.status"}, (
+        f"compute_deal_view must write only rolled-up truth, writes {written}")
