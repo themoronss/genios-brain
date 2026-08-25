@@ -1,0 +1,62 @@
+identity:
+  id: sales.sit.live_account_relationship
+  name: Live Account Relationship
+  domain: sales
+  owner_capability: sales.post_sale_and_growth.customer_success
+  version: 1.0.0
+  status: draft
+
+description: >
+  An ongoing relationship with a company we are already talking to, read at the ACCOUNT level
+  rather than per person. This is the largest bucket L2 produces and, until this file existed,
+  the one nothing claimed: `relationship` was declared only by outbound-prospect, whose scope is
+  `person`, so twenty-five company-anchored situations on the design partner's org found no route
+  at all. They were not judged and rejected — they were never looked at, which is the failure this
+  situation exists to end.
+
+  It is deliberately NOT a deal. A relationship can be healthy, dormant or souring without any
+  opportunity attached, and forcing it through opportunity-shaped reasoning is what produces
+  "several open items blocking commitment" on a company that has no commitment in play.
+
+matches:
+  l2_situation_types:
+    - relationship
+  # ACCOUNT, not person. The anchor L2 hands the compiler for these is a company node; a
+  # person-scoped claim cannot match one however well its conditions read.
+  scope: account
+  when:
+    # No narrowing predicate on deal.* or ball_in_court. A relationship is worth reading precisely
+    # when nothing is formally open — that is when decay is cheapest to reverse and when every
+    # deal-shaped rule in the pack is silent.
+
+also_serves:
+  - sales.post_sale_and_growth.expansion
+  - sales.prospecting_and_outreach.account_research
+
+objects:
+  load:
+    - sales.obj.core.account
+    - sales.obj.core.company
+  optional:
+    - sales.obj.core.persona
+    - sales.obj.core.decision_maker
+  never_load:
+    # A relationship with no opportunity attached has no committee, budget or timeline to read.
+    # Each of these resolves happily to `unknown` and is then read downstream as "assessed and
+    # absent" rather than "never applicable" — a confident empty answer, which is worse than none.
+    - sales.obj.core.buying_committee
+    - sales.obj.core.budget
+    - sales.obj.core.timeline
+
+priority_bp: 5000
+typical_duration_days: 14
+
+signals_of_progress:
+  - positive_reply
+  - meeting_request
+  - introduction
+  - next_step_agreed
+
+signals_of_decay:
+  - timeline_slip
+  - negative_reply

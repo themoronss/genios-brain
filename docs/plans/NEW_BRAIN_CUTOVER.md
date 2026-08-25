@@ -192,3 +192,54 @@ traffic instead of being swapped blind.
   stated, and a wrong one flows straight into prioritisation.
 - L2 worker count: confirm from `/health/readiness` before changing it. Every previous estimate
   was inference, and inference has been wrong here repeatedly.
+
+---
+
+# Phase 2 — the corpus, not the code (surveyed 2026-08-25)
+
+The cutover works. What limits it now is authored content, and the survey is not what the
+capability count suggests:
+
+| Module | capabilities | Phase-1 stubs | situation files |
+|---|---|---|---|
+| Sales | 46 | **43** | 7 (only 1 account-scoped) |
+| Customer Support | 49 | 0 | 14 |
+| Admin | 57 | **0** | **0** |
+
+Two different problems wearing one label:
+
+- **Sales** — 43 of 46 capabilities carry identity, purpose and an object load-set and nothing
+  else ("Phase 1 stub — promote by adding outcomes, playbooks, heuristics, mental_models, kpis,
+  handoffs and situations"). The tenant is on the `sales` pack, so this is what the design partner
+  actually sees.
+- **Admin** — fully authored and completely unroutable: zero situation files, so no L2 output can
+  ever reach any of its 57 capabilities. Content without a route is invisible.
+- **Customer Support** — the only module with both halves.
+
+## Why 18 cards read identically
+
+`routes` is built per L2 `situation_type` from the situation files, and a route only forms through
+a capability that is not a stub. Sales has exactly one account-scoped situation
+(`inbound_fit_check` → `opportunity`), so every company-anchored situation compiles through one
+capability and produces one template with the domain name swapped.
+
+L2 emits seven types on the design partner's org: `relationship` (25), `opportunity` (18),
+`investor_relationship` (11), `account_admin` (2), `recruiting_company` (2),
+`partnerships_company` (1), `investor_company` (1). Six of the seven have no account-scoped route.
+
+## Work order, highest leverage first
+
+1. **Promote `sales.post_sale_and_growth.customer_success`** out of stub, then
+   `sales.sit.live_account_relationship` (already written, loads, waiting on its owner) starts
+   routing — 25 situations, the largest single bucket.
+2. **Author `investor_relationship`** — 11 situations. NOT a sales situation: an investor is not a
+   customer, which is why `relationship.nature` distinguishes them. It needs its own capability
+   whose failure mode is treating a fundraising conversation as a lost deal.
+3. **Give Admin its situation files** — 57 authored capabilities currently unreachable. Start with
+   `account_admin`.
+4. **Promote the remaining Sales stubs** in the order their situation types actually occur.
+
+## What is NOT the problem
+
+Code. Capture, context, reasoning, delivery and the audit chain are all live and verified against
+the real org. Nothing below this line needs an engineer; it needs authored expertise.
