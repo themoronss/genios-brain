@@ -229,9 +229,17 @@ L2 emits seven types on the design partner's org: `relationship` (25), `opportun
 
 ## Work order, highest leverage first
 
-1. **Promote `sales.post_sale_and_growth.customer_success`** out of stub, then
-   `sales.sit.live_account_relationship` (already written, loads, waiting on its owner) starts
-   routing — 25 situations, the largest single bucket.
+1. **`customer_success` — PROMOTED, route still not forming.** The capability now carries
+   outcomes, kpis, handoffs and applies_to, and its admission hash is re-stamped.
+   `sales.sit.live_account_relationship` is written, `status: stable`, admitted, and the catalog
+   LOADS it (7 situations, was 6). But `domain("sales").routes["relationship"]` still lists only
+   `sales.sit.outbound_prospect`, so compile is unchanged at 18/60.
+
+   **Open question, start here:** read the route builder in `packs/compiler/` and find what it
+   requires beyond a loaded situation and a non-stub owner. Candidates not yet checked — the
+   capability's own `objects` load-set must cover the situation's, `also_serves` targets must all
+   resolve, or the owner capability needs `situations:` declared explicitly. One read of the
+   builder settles it; do not guess.
 2. **Author `investor_relationship`** — 11 situations. NOT a sales situation: an investor is not a
    customer, which is why `relationship.nature` distinguishes them. It needs its own capability
    whose failure mode is treating a fundraising conversation as a lost deal.

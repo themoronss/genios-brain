@@ -4,7 +4,7 @@ identity:
   domain: sales
   owner_capability: sales.post_sale_and_growth.customer_success
   version: 1.0.0
-  status: draft
+  status: stable
 
 description: >
   An ongoing relationship with a company we are already talking to, read at the ACCOUNT level
@@ -60,3 +60,13 @@ signals_of_progress:
 signals_of_decay:
   - timeline_slip
   - negative_reply
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  review_status: approved
+  confidence: provisional
+  reviewed_at: '2026-08-25'
+admission:
+  accepted_content_hash: bd90d3f2929023d864b128f6c6a598321a6248f82a87d9c0861186e0468d7bf1
