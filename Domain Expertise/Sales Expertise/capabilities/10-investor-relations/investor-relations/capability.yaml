@@ -1,0 +1,137 @@
+identity:
+  id: sales.investor_relations.investor_relations
+  name: Investor Relations
+  domain: sales
+  subdomain: investor_relations
+  version: 1.0.0
+  status: stable
+  stub: false
+description: 'Reading and running the relationships with the people who might fund the company: funds,
+  accelerators, angels and the operators who introduce them. It sits in the Sales corpus and is written
+  against the sales reading of itself, because that reading is the default one and it is wrong in a
+  specific, expensive way.
+
+
+  Four things are structurally different from a purchase. The counterparty is not buying a product,
+  so there is nothing to demo and no value case to prove in the sales sense. There is no close date
+  we control — a fund invests when its own cycle, thesis and partnership say so. "No" is usually a "not
+  now" with a reopening condition attached, so a pass is a state to schedule against rather than an
+  outcome to record and forget. And the whole thing is a PARALLEL process with one shared clock: an
+  investor''s read of us is substantially a read of how the round is going, which means silence is not
+  neutral here the way it is in a deal — it is evidence.
+
+
+  The capability''s job is to keep every conversation''s real state and real next move visible, and
+  to keep the reversible ones from being written off.
+
+  '
+question: Where does each investor conversation actually stand, and what does silence cost us?
+outcomes:
+- Conversation state established above `unknown` for each investor — not started, warm intro in flight,
+  first meeting done, in diligence, passed, or dormant — from observed contact rather than from what
+  the founder remembers.
+- Ball-in-court named per investor, with the asymmetry stated. Investors do not chase. Where the ball
+  is ours and has been for a while, that is the finding, and it is nearly always the cheapest thing
+  on the list to fix.
+- 'A pass recorded WITH its reopening condition, or with an explicit statement that none was given.
+  "Passed" alone destroys the information: the next cohort, the next round, and the partner who liked
+  it are all still live and all become invisible.'
+- Accelerator and programme conversations kept apart from fund conversations. They run on cohort deadlines
+  that do not move, so the correct action is calendar-shaped, not persuasion-shaped.
+- The relationships worth keeping warm while NOT raising named as such. Most investor relationships
+  are dormant most of the time and that is their healthy state, not a lapse.
+- An explicit verdict per investor — advance, re-approach at a stated trigger, or let rest. "Keep warm"
+  is not a verdict; it is what gets written when nobody decided.
+failure_modes:
+- 'Reading the relationship as a deal. Everything that follows from that reading is wrong: a stalled-deal
+  frame on a fund that is simply between cycles, a "closed lost" on a pass that invited a re-application,
+  urgency applied to a party that has no reason to feel it.'
+- Treating a pass as terminal. Accelerators run cohorts on a schedule and explicitly re-admit; funds
+  pass on stage far more often than on company. Both are calendar problems being filed as verdicts.
+- Mistaking activity for progress. Investor conversations produce a great deal of pleasant correspondence,
+  and warmth is close to uncorrelated with intent. The measure is whether the process moved — a second
+  meeting, a partner added, a diligence request — not whether the last email was friendly.
+- Single-threading a fund. The associate who sourced you cannot fund you, and a relationship that never
+  reaches a partner converts at approximately nothing however well it reads.
+- Running the round in sequence. Talking to funds one at a time removes the only real source of momentum
+  and hands each of them an indefinite option, at the founder's expense.
+- Filing an introducer as an investor. A network operator, a scout and a fund each need a different
+  next move, and merging them produces advice that fits none of them.
+- Letting our own domain, portfolio-ops addresses and newsletter senders into the set. An investor relationship
+  inferred from a mailing list is a false positive that costs attention every time it is reviewed.
+kpis:
+- name: investor_state_coverage
+  unit: percent
+  direction: higher_is_better
+  description: 'Share of active investor relationships carrying a state newer than their last inbound.
+    The capability''s floor: a set of conversations nobody can state the position of is not being run,
+    whatever the founder''s confidence about it.'
+- name: ball_in_our_court_age
+  unit: days
+  direction: lower_is_better
+  description: Age of the oldest conversation waiting on us. The most actionable number here, because
+    the counterparty will not produce it — an investor who is waiting simply stops appearing, and the
+    relationship decays without ever announcing that it has.
+- name: reopening_conditions_captured
+  unit: percent
+  direction: higher_is_better
+  description: Share of passes recorded with the condition under which the investor invited a return.
+    Measures whether the reversible half of the set survives being written down.
+- name: partner_reach_rate
+  unit: percent
+  direction: higher_is_better
+  description: 'Share of live fund conversations that have reached someone with a cheque decision. The
+    qualification metric of this capability: everything above it is sourcing.'
+- name: dormant_revival_rate
+  unit: percent
+  direction: higher_is_better
+  description: Share of re-approaches at a stated trigger that produce a meeting. Calibrates whether
+    the reopening conditions being captured are real ones or politeness recorded as a plan.
+handoffs:
+  upstream:
+  - sales.prospecting_and_outreach.account_research
+  downstream:
+  - sales.prospecting_and_outreach.follow_up
+  parallel:
+  - sales.post_sale_and_growth.customer_success
+applies_to:
+  models:
+  - b2b
+  - b2b2c
+  - enterprise
+  - mid_market
+  - smb
+  - plg
+  - inside_sales
+  - channel
+  - partner
+  offerings:
+  - product
+  - service
+  - hybrid
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-25'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-25'
+  notes: 'Authored for the 11 `investor_relationship` situations the design partner''s org produces
+    — six funds, three accelerator programmes, an introduction network and the org''s own domain. Until
+    this existed those 11 failed at the resolver''s domain check, before any route was consulted: Layer
+    2 types them `fundraising`, and the corpus had no such domain.
+
+
+    It lives in the Sales corpus for an authority reason, not a taxonomic one — a compiled signal can
+    only carry authority in a pack lane the tenant holds. Every line above is written to refuse the
+    deal reading that placement invites.
+
+
+    Note what is NOT here: no thresholds, no scores, no rules. Those are Layer 4''s arithmetic and live
+    in the pack manifest. A number appearing in a capability file means the Layer 3/4 boundary has leaked.
+
+    '
+
+admission:
+  accepted_content_hash: c4b9191e3a2a2ba49da92b4ac0e4a77385d963e63cac9cb15b4681f5a92026ef

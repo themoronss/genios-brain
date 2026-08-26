@@ -28,6 +28,13 @@ from .models import RoutePlan
 #: written by humans and reads better as `customer_support`, while L2's id is a registry key.
 DOMAIN_ALIASES: dict[str, str] = {
     "support": "customer_support",
+    # Fundraising is authored inside the Sales corpus, in its own `investor_relations`
+    # subdomain. Not because an investor is a customer — the capability exists precisely to
+    # refuse that reading — but because a compiled signal can only carry authority in a pack
+    # lane the tenant actually holds (`_tenant_pack`: the config snapshot's `pack_id` must
+    # equal the capability's domain). Splitting fundraising into its own corpus domain would
+    # have produced a capability that compiles, reasons, and can never become a card.
+    "fundraising": "sales",
 }
 
 #: Layer 2 domain ids that are NOT a domain — they mean "no domain was identified".

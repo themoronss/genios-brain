@@ -140,11 +140,42 @@ map:
         - sales.obj.core.decision_maker
         - sales.obj.core.timeline
 
+  investor_relationship:
+    situations:
+      - sales.sit.live_investor_relationship
+    capabilities:
+      - sales.investor_relations.investor_relations
+      - sales.prospecting_and_outreach.account_research
+    objects:
+      load:
+        - sales.obj.core.account
+        - sales.obj.core.company
+        - sales.obj.investor_relations.investor_conversation
+      optional:
+        - sales.obj.core.competitor
+        - sales.obj.core.contact
+        - sales.obj.core.icp
+        - sales.obj.core.next_action
+        - sales.obj.core.pain_point
+        - sales.obj.core.risk
+      never_load:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_committee
+        - sales.obj.core.contract
+        - sales.obj.core.deal
+        - sales.obj.core.opportunity
+        - sales.obj.core.pricing
+        - sales.obj.core.proposal
+        - sales.obj.core.timeline
+
   relationship:
     situations:
+      - sales.sit.live_account_relationship
       - sales.sit.outbound_prospect
     capabilities:
       - sales.market_and_targeting.icp_definition
+      - sales.post_sale_and_growth.customer_success
+      - sales.post_sale_and_growth.expansion
       - sales.prospecting_and_outreach.account_research
       - sales.prospecting_and_outreach.follow_up
       - sales.prospecting_and_outreach.outreach
@@ -155,15 +186,19 @@ map:
         - sales.obj.core.icp
         - sales.obj.core.lead
         - sales.obj.core.next_action
+        - sales.obj.core.opportunity
         - sales.obj.core.persona
         - sales.obj.icp_definition.disqualifier
         - sales.obj.icp_definition.fit_analysis
       optional:
+        - sales.obj.core.business_need
         - sales.obj.core.champion
         - sales.obj.core.competitor
         - sales.obj.core.deal
         - sales.obj.core.decision_maker
         - sales.obj.core.pain_point
+        - sales.obj.core.risk
+        - sales.obj.core.stakeholder
       never_load:
         - sales.obj.core.budget
         - sales.obj.core.buying_committee
@@ -179,6 +214,7 @@ pending_l2_types: {}
 # Types this domain routes.
 routed_l2_types:
   - deal
+  - investor_relationship
   - opportunity
   - prospect_relationship
   - relationship
@@ -187,6 +223,7 @@ routed_l2_types:
 # that compiles to nothing, silently. Global, not this domain's fault.
 unrouted_l2_types:
   - account_admin
+  - investor_contact
 
 # Authored but unreachable — no situation routes into them.
 orphan_capabilities:
@@ -199,8 +236,6 @@ orphan_capabilities:
   - sales.market_and_targeting.tam_sam_som
   - sales.post_sale_and_growth.churn_prevention
   - sales.post_sale_and_growth.cross_sell
-  - sales.post_sale_and_growth.customer_success
-  - sales.post_sale_and_growth.expansion
   - sales.post_sale_and_growth.onboarding
   - sales.post_sale_and_growth.renewal
   - sales.post_sale_and_growth.upsell
@@ -220,19 +255,18 @@ orphan_capabilities:
   - sales.sales_management.sales_coaching
 
 # Authored but no capability's objects.yaml loads them.
-unreachable_objects:
-  - sales.obj.core.contact
+unreachable_objects: []
 
 stats:
-  l2_types_total: 7
-  l2_types_routed_here: 4
-  l2_types_unrouted_globally: 1
+  l2_types_total: 9
+  l2_types_routed_here: 5
+  l2_types_unrouted_globally: 2
   l2_types_pending: 0
-  situations: 6
-  capabilities: 46
-  capabilities_stub: 43
-  capabilities_complete: 3
-  capabilities_routed: 18
-  objects_total: 28
+  situations: 8
+  capabilities: 47
+  capabilities_stub: 0
+  capabilities_complete: 47
+  capabilities_routed: 21
+  objects_total: 29
   objects_core: 24
-  objects_scoped: 4
+  objects_scoped: 5

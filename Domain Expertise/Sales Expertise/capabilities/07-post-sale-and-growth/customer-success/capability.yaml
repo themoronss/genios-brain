@@ -14,7 +14,7 @@ question: Is the customer getting the outcome they bought?
 outcomes:
 - Relationship state established above `unknown` — active, dormant, or at risk — from observed
   contact rather than from the last CRM edit.
-- The current open loop named: what we owe them, or what we are waiting on, or neither.
+- 'The current open loop named: what we owe them, or what we are waiting on, or neither.'
 - Adoption of the thing they actually bought assessed, separately from how warm the last email felt.
   A friendly thread on an unused product is a churn signal, not a health signal.
 - 'An explicit verdict: nurture, intervene, or leave alone. `Stay in touch` is not an outcome — it
@@ -77,5 +77,6 @@ metadata:
 
     '
   reviewed_at: '2026-08-24'
+
 admission:
-  accepted_content_hash: 18b4669b5d95acde19b18dd81325302d5b0146a715c7b4772bba7703c461ca40
+  accepted_content_hash: 09411ca2834019a0982afca36f5d1d3b71be24acab75757a45074543f4748c14

@@ -1,0 +1,96 @@
+identity:
+  id: sales.pb.investor_relations.reopen_after_a_pass
+  name: Reopen after a pass
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.investor_relations.investor_relations
+  subdomain: investor_relations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'A pass from a fund or a programme is, most of the time, a dated decision rather than a
+    permanent one — passed on stage, on timing, on a metric we had not hit yet. This procedure converts
+    that pass into a scheduled re-approach with a stated trigger, which is the only form in which it
+    survives contact with a founder''s memory. The alternative is what happens by default: the relationship
+    is filed as lost and the invitation inside it is discarded.'
+when_to_use:
+  situations:
+  - sales.sit.live_investor_relationship
+  conditions:
+  - has_obs: closed_lost_mention
+  signals:
+  - A pass received or inferred whose reason class is stage, timing or traction.
+  - A relationship that went quiet after a warm start, where no explicit pass was ever sent and the
+    silence is functioning as one.
+  do_not_use_when:
+  - The pass was on thesis or on team — those do not reopen for this company, and re-approaching spends
+    the relationship as well as the time.
+  - No reason was given and none can be read. There is no trigger to schedule against, and an invented
+    one produces a re-approach with no delta to lead with.
+  - The same party has passed across more than one round. That is no longer a timing fact whatever the
+    stated reason.
+steps:
+- order: 1
+  actor: human
+  name: Classify the pass before answering it
+  description: 'Read the passing message for its reason class: stage, timing, traction, thesis, team,
+    or none given. Only the first three reopen. Thesis and team do not reopen for this company and pretending
+    otherwise costs the relationship as well as the time.'
+- order: 2
+  actor: human
+  name: Extract the reopening condition verbatim
+  description: Capture the exact words — "come back when you have a lead", "apply to the winter cohort",
+    "we look again above 50k MRR". Paraphrasing loses the threshold, and the threshold is the whole
+    asset. Where no condition was given, record that explicitly rather than inventing a plausible one.
+- order: 3
+  actor: human
+  name: Reply once, briefly, and take the no cleanly
+  description: Thank them, confirm the condition back in their own words, and ask nothing. Arguing with
+    a pass converts a warm future conversation into a closed one, and it is the single most common thing
+    founders do at this moment.
+- order: 4
+  actor: human
+  name: Schedule the re-approach against the trigger
+  description: A date where the condition is a date, a metric watch where it is a threshold. An unscheduled
+    intention to follow up later is indistinguishable from having dropped it.
+- order: 5
+  actor: human
+  name: Re-approach with the delta, not with a check-in
+  description: Open on what changed against their stated condition and nothing else. "You said come
+    back at a lead; we have one" is a new conversation. "Just checking in" is the same conversation
+    they already declined, and it teaches them to skim the next one.
+objects_used:
+- sales.obj.investor_relations.investor_conversation
+- sales.obj.core.company
+- sales.obj.core.next_action
+outcomes:
+- The pass carries a reason class, so the reversible half of the set is separable from the final half.
+- A reopening condition is recorded in the investor's own words, with a scheduled trigger against it.
+- The relationship survives the no — which is the asset, and the thing arguing destroys.
+failure_modes:
+- Re-approaching without the delta. It reopens nothing and spends the one credit the pass left behind.
+- Treating a thesis pass as reversible. It burns attention on the one class that genuinely does not
+  reopen.
+- Negotiating with the pass. The decision was usually made by people not on the thread, so there is
+  nobody on it to persuade.
+limits:
+- Says nothing about whether to raise at all, or from whom. It operates on a conversation that already
+  exists.
+- The reason class is often inferred rather than stated, and a polite pass deliberately obscures it.
+metrics:
+- name: reopen_conditions_captured
+  unit: percent
+  direction: higher_is_better
+  description: Share of passes carrying a recorded condition.
+- name: dormant_revival_rate
+  unit: percent
+  direction: higher_is_better
+  description: Share of triggered re-approaches producing a meeting.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-25'
+  review_status: approved
+  confidence: experimental

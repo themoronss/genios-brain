@@ -184,6 +184,7 @@ routed_l2_types:
 # that compiles to nothing, silently. Global, not this domain's fault.
 unrouted_l2_types:
   - account_admin
+  - investor_contact
 
 # Authored but unreachable — no situation routes into them.
 orphan_capabilities:
@@ -231,14 +232,14 @@ orphan_capabilities:
 unreachable_objects: []
 
 stats:
-  l2_types_total: 7
+  l2_types_total: 9
   l2_types_routed_here: 3
-  l2_types_unrouted_globally: 1
+  l2_types_unrouted_globally: 2
   l2_types_pending: 15
   situations: 14
   capabilities: 49
-  capabilities_stub: 40
-  capabilities_complete: 9
+  capabilities_stub: 0
+  capabilities_complete: 49
   capabilities_routed: 10
   objects_total: 12
   objects_core: 10

@@ -24,10 +24,10 @@ matches:
   # ACCOUNT, not person. The anchor L2 hands the compiler for these is a company node; a
   # person-scoped claim cannot match one however well its conditions read.
   scope: account
-  when:
-    # No narrowing predicate on deal.* or ball_in_court. A relationship is worth reading precisely
-    # when nothing is formally open — that is when decay is cheapest to reverse and when every
-    # deal-shaped rule in the pack is silent.
+  # No `when:` key at all — deliberately, and NOT an empty one. A relationship is worth reading
+  # precisely when nothing is formally open: that is when decay is cheapest to reverse and when
+  # every deal-shaped rule in the pack is silent. `when:` with nothing under it parses as null,
+  # which the schema rejects (it wants an array) — an absent narrowing has to be an absent key.
 
 also_serves:
   - sales.post_sale_and_growth.expansion
@@ -64,9 +64,11 @@ signals_of_decay:
 metadata:
   owner: Sales
   created_by: ai
+  last_updated: '2026-08-25'
   reviewed_by: harsh
   review_status: approved
   confidence: provisional
   reviewed_at: '2026-08-25'
+
 admission:
-  accepted_content_hash: bd90d3f2929023d864b128f6c6a598321a6248f82a87d9c0861186e0468d7bf1
+  accepted_content_hash: 6f250c1a1772257bf909643127329be2bb953ede5608769662d29f5b74828d9b

@@ -1,0 +1,25 @@
+# Load-set for sales.investor_relations.investor_relations — REFERENCES ONLY, never an inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+#
+# Deliberately narrow, and deliberately missing the objects a sales load-set would reach for.
+# deal, opportunity, budget, pricing, proposal and contract are all ABSENT and all resolvable —
+# which is the danger. Each would answer `unknown` rather than "not applicable here", and an
+# `unknown` reads downstream as assessed-and-absent. A confident empty answer about a buying
+# committee that never existed is worse than no answer, so they are refused at the load-set.
+
+capability: sales.investor_relations.investor_relations
+
+core:
+  required:
+    - sales.obj.core.company
+  optional:
+    - sales.obj.core.contact
+    - sales.obj.core.next_action
+    - sales.obj.core.risk
+
+scoped:
+  required:
+    - sales.obj.investor_relations.investor_conversation
+  optional: []

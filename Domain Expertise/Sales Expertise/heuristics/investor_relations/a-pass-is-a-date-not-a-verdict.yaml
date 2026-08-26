@@ -1,0 +1,63 @@
+identity:
+  id: sales.heu.investor_relations.a_pass_is_a_date_not_a_verdict
+  name: A pass is a date, not a verdict
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.investor_relations.investor_relations
+  subdomain: investor_relations
+  version: 1.0.0
+  status: draft
+  aliases:
+  - Not now is not no
+purpose:
+  statement: 'Separates the two things a pass can be, because the corpus''s own sales machinery cannot:
+    a closed-lost detector fires the same way on both, and the two demand opposite behaviour.'
+  answers:
+  - Is this relationship finished, or scheduled?
+  - Which passes are worth re-approaching, and when?
+heuristic:
+  statement: Most passes are decisions about timing, stage or a metric, and each of those carries an
+    implicit date on which it stops being true. Record the date, not the refusal. Only thesis and team
+    passes are verdicts.
+  why: 'A fund passing on stage is saying its cheque size does not fit today''s round, which changes
+    at the next round without anyone changing their mind. An accelerator passing on a cohort is running
+    a capacity constraint on a fixed calendar and frequently invites re-application outright. Both are
+    scheduling facts wearing the vocabulary of rejection, and the vocabulary is what gets recorded.
+    Thesis and team are different in kind: they are judgments about what the company IS, and no date
+    changes them.'
+  confidence_bp: 7000
+  applies_when: A pass has been received or inferred, and a reason class is stated or can be read from
+    it.
+  breaks_down_when: A pass with no reason given carries no date and must not be assigned one — inventing
+    a trigger produces a re-approach with nothing behind it, which is worse than none. Repeated passes
+    from the same party across rounds stop being about timing whatever the stated reason. And a warm
+    pass is sometimes simple politeness with no invitation inside it.
+  reads:
+  - sales.obj.investor_relations.investor_conversation
+objects_used:
+- sales.obj.investor_relations.investor_conversation
+- sales.obj.core.next_action
+outcomes:
+- Passes split into a reversible set carrying triggers and a final set that is genuinely closed.
+- Closed-lost language stops being applied to relationships that explicitly invited a return.
+failure_modes:
+- Reading every pass as reversible, which turns the set into an undifferentiated follow-up list and
+  trains the founder to ignore it.
+- Assigning a trigger where none was stated, producing a scheduled re-approach with no delta to lead
+  with.
+limits:
+- It classifies the pass; it does not predict the outcome of the re-approach. A correctly triggered
+  return can still be declined.
+metrics:
+- name: reopening_conditions_captured
+  unit: percent
+  direction: higher_is_better
+  description: Share of passes recorded with their reopening condition.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-25'
+  review_status: approved
+  confidence: experimental
