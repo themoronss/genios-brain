@@ -34,6 +34,12 @@ _GRAMMAR_WORDS = frozenset({
     "hi", "hey", "hello", "dear", "thanks", "thank", "regards", "best", "cheers", "sincerely",
     "warmly", "please", "sorry", "congrats", "congratulations", "welcome", "yes", "no", "ok",
     "okay", "sure", "great", "happy", "glad", "looking", "following", "just", "quick", "also",
+    # Ordinary nouns that open a sentence in this kind of copy. Each was a live rejection.
+    # Month and weekday NAMES are deliberately absent: a wrong month is exactly the invention
+    # this guard exists for, and blanket-exempting the calendar would let "March 22" through on
+    # evidence dated July. They are grounded in `_expand_dates` instead, from the fact date —
+    # which grounds the RIGHT day and still rejects the wrong one.
+    "decision", "context", "next", "status", "update", "note", "reason", "summary", "action",
     "and", "but", "so", "then", "if", "when", "while", "since", "as", "at", "on", "in", "for",
     "to", "of", "with", "from", "this", "that", "these", "those", "it", "we", "i", "you", "they",
     "he", "she", "our", "your", "their", "my", "his", "her", "there", "here", "what", "which",
@@ -111,7 +117,17 @@ def _proper_nouns(s: str) -> list[str]:
         core = re.sub(r"[^A-Za-z0-9]", "", re.split(r"[\u2019']", bare, maxsplit=1)[0])
         if len(core) < 2 or not core.isalpha():
             continue
-        if core.lower() in _GRAMMAR_WORDS:
+        low = core.lower()
+        if low in _GRAMMAR_WORDS:
+            continue
+        # A contraction that reached us ALREADY stripped. The apostrophe split above only helps
+        # while the apostrophe survives, and by the time copy gets here it often has not — the
+        # live cards rejected `Weve`, `Whats` and `Theyre` as invented companies, which is the
+        # apostrophe rule failing in the one case it exists for. Grade the base word: "Weve" is
+        # "we", which is grammar. `Wells` is not, because "well" is not a grammar word and the
+        # suffix test alone never decides.
+        if any(low.endswith(sfx) and low[: -len(sfx)] in _GRAMMAR_WORDS
+               for sfx in ("ve", "ll", "re", "s", "t", "d", "m")):
             continue
         if core[0].isupper():
             out.append(core)
@@ -130,6 +146,10 @@ def _expand_dates(s: str) -> list[str]:
             continue
         mon, abbr = dt.strftime("%B").lower(), dt.strftime("%b").lower()
         out += [mon, abbr, str(dt.day), str(dt.year), f"{mon} {dt.day}"]
+        # The WEEKDAY of a fact date is that date restated, not a new claim — "Friday" for
+        # 2026-07-24 is as faithful as "July 24". A live draft was discarded whole over exactly
+        # this word. Derived from the date, so a Friday that is really a Tuesday stays rejected.
+        out += [dt.strftime("%A").lower(), dt.strftime("%a").lower()]
     return out
 
 
