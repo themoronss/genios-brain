@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - admin.rule.inbox_and_correspondence.a_draft_may_not_commit_the_principal
 decision_frameworks:
   core: []
   scoped: []

@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - admin.rule.action_item_tracking.a_restated_action_is_the_same_action
 decision_frameworks:
   core: []
   scoped: []

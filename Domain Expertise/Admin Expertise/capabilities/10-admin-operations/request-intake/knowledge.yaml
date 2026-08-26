@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - admin.rule.request_intake.a_repeat_ask_is_a_defect_report
 decision_frameworks:
   core: []
   scoped: []

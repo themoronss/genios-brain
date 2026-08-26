@@ -6,10 +6,140 @@ identity:
   scope: capability
   owner_capability: admin.meeting_operations.action_item_tracking
   subdomain: meeting_operations
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: A meeting culture's worth is its action completion rate. Meetings that generate actions nobody
-    completes are expensive ways to feel productive — track the rate and the feeling becomes a fact.
+  statement: A meeting culture's worth is its action completion rate. Meetings that generate actions
+    nobody completes are expensive ways to feel productive — track the rate and the feeling becomes a
+    fact.
   answers:
   - How is meeting effectiveness actually measured?
+  - Which forum is producing decisions and which is producing minutes?
+  not:
+  - A claim that more actions are better. A forum generating many actions may be the worst one.
+  - A performance measure for the owners. It measures the forum, not the people it assigns to.
+
+heuristic:
+  statement: 'Judge a forum by the share of its actions that CLOSE, and judge an individual action by
+    how many consecutive sittings it has been carried. A forum with a high generation rate and a low
+    closure rate is not busy, it is converting discussion into a backlog — and the carried-item count
+    identifies which items are the backlog long before anyone would call them late.'
+  why: 'Actions are created under social pressure and completed under none. The room supplies the
+    accountability at the moment of assignment and nothing supplies it afterwards, which is why the
+    default trajectory of an action is quiet death rather than refusal. Carry count is the earliest
+    honest signal because it is visible before the date passes: an item on its third appearance is
+    already telling you something a due-date report will not say for another fortnight.'
+  confidence_bp: 7800
+  applies_when: 'A recurring forum exists whose actions are tracked in one register across sittings.
+    Requires continuity — the measure is meaningless on a register rebuilt each meeting.'
+  breaks_down_when: 'FORUMS THAT ARE NOT MEANT TO PRODUCE ACTIONS. Information-sharing, review and
+    governance forums exist to inform or to approve, and a low action count is correct. Applying the
+    rate here produces pressure to invent actions, which is a real and observed harm.
+
+    SMALL SAMPLES. A forum with a handful of actions in a period produces a completion rate that moves
+    wildly on single items. The number is only informative in aggregate.
+
+    WHERE ACTIONS ARE GAMED INTO EXISTENCE. Once the rate is reported, forums learn to log trivially
+    completable actions and to leave the hard work unlogged. The rate rises and the forum gets worse,
+    which is the standard fate of any metric that becomes a target.
+
+    BLOCKED ITEMS. An action waiting on an external party has not been neglected, and counting it
+    against the owner or the forum measures the wrong thing entirely — this is the distinction that
+    makes the rate fair or unfair.
+
+    ACTIONS SUPERSEDED BY EVENTS. An item overtaken by a decision elsewhere should be dropped, not
+    completed. Registers with no drop path record these as failures forever.'
+  reads:
+  - admin.obj.core.action_item
+  - admin.obj.core.meeting
+  - admin.obj.core.deadline
+  - meeting.status
+  - meeting.end_at
+  contradicts:
+  - admin.heu.follow_up_coordination.momentum_decays_in_days
+  pattern_ref:
+  - ai.past_its_date_and_still_open
+  - ai.action_against_a_meeting_that_happened
+  - ai.undated_minute_line
+  - mtg.its_actions_have_gone_past_their_dates
+
+when_to_use:
+  conditions:
+  - {exists: meeting.end_at}
+  - {path: meeting.status, op: "!=", value: cancelled}
+  signals:
+  - next_step_agreed
+  - followup_sent
+  do_not_use_when:
+  - The forum exists to inform or to approve rather than to assign; a low rate is correct there.
+  - The register is rebuilt each sitting, so carry count and ageing do not survive.
+  - The item is blocked on someone outside the forum's control.
+
+objects_used:
+- admin.obj.core.action_item
+- admin.obj.core.meeting
+- admin.obj.core.deadline
+- admin.obj.core.escalation
+
+outcomes:
+- Forums are compared on closure rather than on activity.
+- Chronic items are identified by carry count before their dates pass.
+
+failure_modes:
+- 'TURNED INTO A TARGET. Reported completion rates get optimised by logging easy actions; the metric
+  improves and the forum degrades.'
+- 'USED TO JUDGE OWNERS. The rate measures the forum''s ability to convert discussion into completed
+  work; attributing it to individuals produces defensive under-assignment.'
+- 'BLOCKED COUNTED AS NEGLECTED. Makes the number unfair, and unfair numbers stop being read.'
+
+limits:
+- Requires a continuous register; most organisations do not have one, which is why the number is
+  rarely available in practice.
+- Says nothing about whether the actions were worth doing.
+- Cannot distinguish an action completed from an action declared complete without evidence.
+
+variants:
+- applies_to: regulated
+  change: Closure requires recorded evidence and adoption at the next sitting; a self-declared close
+    does not count towards the rate.
+  why: The regime's question is whether it can be shown, not whether it was said.
+- applies_to: distributed
+  change: Carry count is measured in sittings, not weeks, because forums meet on different cadences
+    and elapsed time is not comparable across them.
+  why: Sittings are the unit of social accountability; weeks are not.
+- applies_to: startup_lean
+  change: Track carried items only; a completion rate over a handful of actions is noise.
+  why: The sample is too small for a ratio to say anything.
+
+metrics:
+- name: action_completion_rate
+  unit: percent
+  description: Share of actions closed by their date.
+  direction: higher_is_better
+- name: carried_item_share
+  unit: percent
+  description: Share of actions appearing at consecutive sittings. The early signal.
+  direction: lower_is_better
+
+references:
+- title: The Effective Executive
+  kind: book
+  author: Peter Drucker
+  note: On a decision not being a decision until someone owns its execution.
+- title: Goodhart's law
+  kind: research
+  note: Named here because this heuristic's own metric is a textbook candidate for it, which is why
+    the gaming regime is in breaks_down_when rather than in a footnote.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. Carry count is the addition: it is observable
+    earlier than a due date and it is the number that separates a forum with a backlog from a forum
+    with a bad week. The gaming regime is stated because this metric is unusually easy to satisfy
+    dishonestly.'

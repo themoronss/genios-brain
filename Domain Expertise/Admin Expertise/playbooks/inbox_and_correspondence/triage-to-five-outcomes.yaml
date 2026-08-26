@@ -6,24 +6,186 @@ identity:
   scope: capability
   owner_capability: admin.executive_support.inbox_and_correspondence
   subdomain: executive_support
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: Managed inbox flow sorts everything into act-now, delegate, draft-for-review, file, drop
-    — with drafted replies for the routine and a daily digest of what was handled — so the executive touches
-    only what genuinely needs them.
+  statement: 'Managed inbox flow sorts everything into act-now, delegate, draft-for-review, file, drop
+    — with drafted replies for the routine and a digest of what was handled — so the executive touches
+    only what genuinely needs them.'
+  answers:
+  - What happens to a message between arriving and being finished with?
+  - How does an assistant reduce the principal's inbox without hiding things from them?
+  not:
+  - A filing system. Folders are storage; these five are decisions.
+  - A rule for what deserves a reply. That judgement is upstream, in gatekeeping and intake.
+
+when_to_use:
+  situations:
+  - admin.sit.live_account_admin
+  conditions:
+  - {exists: thread.last_inbound}
+  signals:
+  - question
+  - meeting_request
+  - introduction
+  do_not_use_when:
+  - 'The principal has not agreed to delegated drafting. Triage without that mandate produces a
+    shadow inbox and two people answering the same thread differently.'
+  - 'The correspondence is legal, disciplinary or personal. These are not routed; they go straight to
+    the principal unread by anyone else, and a triage step here is a confidentiality incident.'
+  - 'There is no way to record what was handled. Triage without a digest is indistinguishable from
+    interception, and it fails the first time the principal is asked about a message they never saw.'
+
 steps:
 - order: 1
-  name: Sort on arrival by outcome, not by folder
-  description: The five outcomes are decisions; folders are storage. Every message leaves the inbox with
-    a decision attached.
-  actor: human
+  name: Cut the correspondence that is owed nothing
+  description: 'Automated notifications, bulk mail, receipts and courtesy closings look exactly like
+    unanswered inbound and are owed no reply. Making this cut FIRST is what makes the rest of the
+    list trustworthy; skipping it produces a queue whose size nobody believes.'
+  actor: system
+  objects_read:
+  - admin.obj.core.request
+  produces: The set of threads that carry a genuine obligation.
+  done_when: Every remaining thread has a human on the other end expecting something.
+
 - order: 2
-  name: Draft routine replies for one-tap approval
-  description: The executive edits or approves; they never start from blank on the routine 60%.
-  actor: human
+  name: Read direction before content
+  description: 'Whose move is it. A thread where they owe the answer is a wait, not work, and belongs
+    in a watch list rather than in the day''s queue. This is the step that stops a well-run inbox from
+    generating polite chases aimed at people already waiting on us.'
+  actor: system
+  objects_read:
+  - admin.obj.core.request
+  - admin.obj.core.commitment
+  produces: The owed set, separated from the waiting set.
+  done_when: Every carried thread has a direction or is explicitly marked unreadable.
+
 - order: 3
-  name: Digest what was handled
-  description: A daily five-line summary of handled-without-you builds the trust that makes delegation
-    stick.
+  name: Assign one of the five outcomes, on arrival
+  description: 'Act now, delegate, draft for review, file, drop. The outcomes are decisions and every
+    message leaves the inbox carrying one. DROP is the outcome that makes the other four work: without
+    a legitimate way to abandon correspondence, everything becomes file, and file becomes a second
+    inbox nobody reads.'
   actor: human
+  produces: One outcome per thread, recorded.
+  done_when: No thread is carried without an outcome attached.
+
+- order: 4
+  name: Draft the routine, and stop at the line where it commits them
+  description: 'Draft replies for the routine so the principal edits rather than starts. Stop short of
+    anything that creates an obligation in their name — a date, a price, an introduction, an
+    agreement. Those are theirs to make even when the wording is ours.'
+  actor: human
+  objects_read:
+  - admin.obj.core.commitment
+  - admin.obj.core.approval
+  produces: Drafted replies awaiting one-tap approval, with commitments flagged as such.
+  done_when: Every draft that would create an obligation is marked for explicit approval.
+  skip_when: The correspondent believes they are writing to the principal personally.
+
+- order: 5
+  name: Answer, do not acknowledge
+  description: 'A reply that promises a later answer converts one open thread into two obligations —
+    the reply owed and the promise made. Where the answer is genuinely pending, say when, and record
+    that date as a commitment rather than leaving it in prose.'
+  actor: human
+  objects_read:
+  - admin.obj.core.commitment
+  produces: Either a closed thread, or a dated promise entered in the register.
+  done_when: No holding reply exists without a corresponding tracked obligation.
+
+- order: 6
+  name: Digest what was handled without them
+  description: 'A short summary of what was answered, delegated and dropped. This is the step that
+    makes delegation survivable: the principal is never surprised by a message they did not see, and
+    a wrong call surfaces while it is still cheap to reverse.'
+  actor: human
+  produces: A periodic handled-without-you digest.
+  done_when: The principal can name what was dropped on their behalf.
+  typical_duration_days: 1
+
+objects_used:
+- admin.obj.core.request
+- admin.obj.core.commitment
+- admin.obj.core.approval
+- admin.obj.core.document
+- admin.obj.core.escalation
+
+outcomes:
+- The principal sees only correspondence requiring their authority, relationship or judgement.
+- Every other message has an outcome, including an explicit drop.
+- No obligation exists in the principal's name that they have not approved.
+
+failure_modes:
+- 'FIVE OUTCOMES BECOME TWO. Act-now and file absorb everything; delegate and drop are never used, and
+  the inbox is sorted rather than reduced.'
+- 'TRIAGE WITHOUT A DIGEST. Reads as interception the first time the principal is asked about a
+  message nobody told them about, and the mandate does not survive it.'
+- 'DRAFTING PAST THE COMMITMENT LINE. A drafted reply that agrees a date or an introduction is a
+  promise with the principal''s name on it, made by someone else.'
+- 'NOISE CUT LAST INSTEAD OF FIRST. Running triage over automated mail wastes the expensive judgement
+  steps on messages owed nothing, and inflates every count downstream.'
+- 'DROP USED AS A HIDING PLACE. Dropping is legitimate when it is recorded and visible; unrecorded, it
+  is the same as losing the message and is discovered at the worst possible moment.'
+
+limits:
+- Assumes a delegation mandate exists. Without it the playbook is a description of a shadow process.
+- Says nothing about how to write the reply, only about who writes it and how far they may go.
+- The noise cut depends on classification quality; a poor classifier makes step 1 the weakest link.
+
+variants:
+- applies_to: executive_office
+  change: Relationship threads bypass drafting entirely and go to the principal in original form.
+  why: The correspondent's expectation is a personal exchange, and discovering otherwise costs more
+    than the delay saved.
+- applies_to: shared_services
+  change: The five outcomes become queue states with owners rather than personal decisions, and the
+    digest is a service report rather than a note.
+  why: Nobody is anybody's assistant here; the accountability has to be structural.
+- applies_to: automated_first
+  change: Steps 1 to 3 are machine-executed and the human enters at drafting; the digest becomes the
+    primary control rather than a courtesy.
+  why: When classification is automatic, oversight has to move to where the judgement now happens.
+- applies_to: regulated
+  change: Drop is not available for correspondence inside a retention or supervision regime; the
+    equivalent outcome is file-with-reason.
+  why: The regime requires the record of the decision, not only the decision.
+
+metrics:
+- name: principal_touch_share
+  unit: percent
+  description: Share of inbound that reached the principal.
+  direction: target_band
+- name: acknowledgement_without_closure_rate
+  unit: percent
+  description: Share of replies that promised a later answer instead of giving one.
+  direction: lower_is_better
+- name: drop_recorded_share
+  unit: percent
+  description: Share of dropped correspondence with a recorded reason. Unrecorded drops are the
+    failure mode; this is where they become countable.
+  direction: higher_is_better
+
+references:
+- title: Getting Things Done
+  kind: book
+  author: David Allen
+  note: The two-minute rule and the insistence that every item leaves the inbox with a decision.
+- title: Never Check E-Mail In the Morning
+  kind: book
+  author: Julie Morgenstern
+  note: Batching and outcome-based sorting for a delegated inbox.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Two steps are new and both are load-bearing: cutting
+    owed-nothing correspondence FIRST (on the design partner''s org `email_noise:automated` is the
+    second-densest observation, so a triage that runs before this step spends its judgement on
+    robots), and reading direction before content, which is what keeps the drafted reply from being a
+    chase aimed at someone waiting on us.'

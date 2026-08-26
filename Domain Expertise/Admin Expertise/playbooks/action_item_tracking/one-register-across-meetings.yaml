@@ -6,21 +6,185 @@ identity:
   scope: capability
   owner_capability: admin.meeting_operations.action_item_tracking
   subdomain: meeting_operations
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: Action items from ALL meetings live in one tracked register — owner, source, due, status
-    — chased on a rhythm, because per-meeting action lists scattered across documents are write-only memory.
+  statement: 'Action items from ALL meetings live in one tracked register — owner, source, due, status
+    — worked on a rhythm, because per-meeting action lists scattered across documents are write-only
+    memory.'
+  answers:
+  - Where does an action live between the meeting and its completion?
+  - How do you see that one person is carrying work from four different forums?
+  not:
+  - A project plan. Actions are discrete obligations, not scheduled work with dependencies.
+  - A minute book. The register carries the obligation; the minute carries the record.
+
+when_to_use:
+  conditions:
+  - {exists: meeting.end_at}
+  signals:
+  - next_step_agreed
+  - followup_sent
+  do_not_use_when:
+  - 'The organisation already runs a tracker the owners genuinely use. A second register produces two
+    truths and the owners update the one their manager reads.'
+  - 'The forum is informational and assigns nothing. A register attached to it creates pressure to
+    invent actions so the register has content.'
+  - 'Nobody will work it between sittings. An unworked register turns "we lost it" into "we recorded
+    it and did nothing", which is a worse position at the next meeting, not a better one.'
+
 steps:
 - order: 1
-  name: Harvest into the register same-day
-  description: From minutes to the register within hours, deduplicated against existing threads.
+  name: Harvest into the ONE register, same day
+  description: 'From minutes into the register within hours, while the wording is still checkable
+    against the room''s memory. One register across every forum is the whole point — the fact that one
+    person is carrying work from four meetings is invisible in four lists and obvious in one.'
   actor: human
+  objects_read:
+  - admin.obj.core.meeting
+  - admin.obj.core.action_item
+  produces: New actions in the register, each carrying its source forum and sitting.
+  done_when: Every action from the sitting is in the register with its origin recorded.
+  typical_duration_days: 1
+
 - order: 2
-  name: Chase on cadence, before due
-  description: The register is worked weekly minimum; owners hear about items BEFORE they are late.
+  name: Deduplicate against what is already open
+  description: 'The same obligation restated at the next sitting is the SAME line, aged. Rewording is
+    how a register launders its own backlog: the old item ages out quietly, the new one starts fresh,
+    and the report shows progress that did not happen.'
   actor: human
+  produces: A register where one obligation has one line.
+  done_when: No open item duplicates another in substance.
+
 - order: 3
-  name: Open the next meeting with the register
-  description: Previous actions reviewed first — the two-minute ritual that makes commitments real.
+  name: Give it a person and a date, or mark what is missing
+  description: '"Ops to confirm" is unowned — a function survives in minutes because nobody objects to
+    it in the room. Where the owner was absent, the action is not owned until they have accepted it,
+    and the register should show it as assigned-not-accepted rather than as owned.'
   actor: human
+  objects_read:
+  - admin.obj.core.deadline
+  produces: Each line owned by a named person, dated, or explicitly flagged as neither.
+  done_when: No line names a function as owner without a flag saying so.
+
+- order: 4
+  name: Chase on the item's date, not the meeting's
+  description: 'Chasing everything the day before the next sitting gives every action the same window
+    regardless of its date, and short-dated items are already late the first time they are mentioned.
+    Owners hear about their items before they are late, on the item''s own clock.'
+  actor: human
+  produces: Reminders timed to each action rather than to the forum.
+  done_when: No item's first reminder arrives after its date.
+
+- order: 5
+  name: Separate blocked from neglected before reporting
+  description: 'The two look identical in a register and need opposite responses — one needs the
+    blocker cleared by someone else, the other needs the owner. Reporting a blocked item as neglected
+    in front of the forum is how a tracking function loses the room, and it is rarely recovered.'
+  actor: human
+  objects_read:
+  - admin.obj.core.escalation
+  produces: Open items split into blocked-with-a-named-blocker and genuinely outstanding.
+  done_when: Every overdue item carries a reason of one kind or the other.
+
+- order: 6
+  name: Open the next sitting with the register
+  description: 'Previous actions reviewed first, in carry-count order rather than in date order. The
+    two-minute ritual that makes assignment mean something, and the reason a room stops accepting
+    actions it does not intend to do.'
+  actor: human
+  produces: A reviewed register at the top of the agenda.
+  done_when: Every carried item was named aloud, with its carry count.
+
+- order: 7
+  name: Close with evidence, or drop with a reason
+  description: 'A tick is not a close. Record what changed. And give the register a drop path: items
+    overtaken by events should leave explicitly, because a forum that can never close anything
+    unfinished accumulates a permanent backlog it will eventually be judged on.'
+  actor: human
+  produces: Closed items carrying evidence; dropped items carrying a reason.
+  done_when: No item leaves the open set without either.
+
+objects_used:
+- admin.obj.core.action_item
+- admin.obj.core.meeting
+- admin.obj.core.deadline
+- admin.obj.core.commitment
+- admin.obj.core.escalation
+
+outcomes:
+- One register shows the true workload carried by any one person across forums.
+- Ageing survives across sittings, so chronic items are visible as chronic.
+- Items leave the register only by closure with evidence or by explicit drop.
+
+failure_modes:
+- 'ONE REGISTER PER MEETING, RENAMED. Keeps the same structure and loses the only benefit — the
+  cross-forum view of who is actually carrying what.'
+- 'DEDUPLICATION SKIPPED. The register launders its backlog through rewording and reports progress it
+  did not make.'
+- 'REVIEWED IN DATE ORDER. Puts the newest urgent items first and the chronic ones last, which is the
+  opposite of what the review is for.'
+- 'BLOCKED ITEMS REPORTED AS OVERDUE. Costs the tracking function its standing in the room, and the
+  register stops being read honestly afterwards.'
+- 'NO DROP PATH. Everything ever assigned stays open, the register grows without bound, and its size
+  becomes the thing people react to instead of its content.'
+
+limits:
+- Depends on minutes existing. Actions agreed verbally with no record never enter the register.
+- Cannot tell a genuine completion from a declared one without the evidence step, which is the step
+  most often skipped under time pressure.
+- Says nothing about whether the action was worth assigning.
+
+variants:
+- applies_to: regulated
+  change: Closure requires evidence and adoption at the next sitting; the register is itself a record
+    subject to retention.
+  why: The regime asks whether it can be shown, not whether it was said.
+- applies_to: distributed
+  change: The review in step 6 is written and asynchronous, and carry count carries the weight that
+    saying it aloud carries elsewhere.
+  why: The social accountability of the room does not survive time zones; the number has to.
+- applies_to: shared_services
+  change: The register is keyed on the requesting function as well as the owner, because owners rotate
+    and the obligation does not.
+  why: An action attached only to a departed individual becomes unclosable.
+- applies_to: automated_first
+  change: Harvest and deduplication are machine-assisted; step 5 remains human, because blocked versus
+    neglected is a judgement about people rather than about state.
+  why: Extraction can find the action and cannot tell why it has not moved.
+
+metrics:
+- name: action_completion_rate
+  unit: percent
+  description: Share of actions closed by their date.
+  direction: higher_is_better
+- name: carried_item_share
+  unit: percent
+  description: Share of items appearing at consecutive sittings.
+  direction: lower_is_better
+- name: closed_without_evidence_rate
+  unit: percent
+  description: Share of closures with nothing recorded about what changed.
+  direction: lower_is_better
+
+references:
+- title: Robert's Rules of Order
+  kind: standard
+  note: Matters arising and the adoption of minutes — the formal ancestor of the register review, and
+    the reason carry count is a meaningful unit at all.
+- title: Administrative practice — the single action register
+  kind: practitioner
+  note: Common in secretariats, rare elsewhere, and the cross-forum view is the reason it is worth the
+    overhead.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 2, 5 and 7 are new. Step 2 addresses the specific
+    way registers lie to themselves — rewording an item so the old line ages out — and step 5 is the
+    one that decides whether the forum keeps trusting the register at all.'

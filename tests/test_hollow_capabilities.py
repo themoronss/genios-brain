@@ -73,14 +73,22 @@ def test_hollow_is_reported_separately_from_admission():
     assert plan.hollow_capability_ids == ("a.b.c",)
 
 
-def test_the_admin_route_reports_its_placeholders_rather_than_hiding_them():
-    """All 57 Admin capabilities are hollow, including the three behind `account_admin`. That is
-    exactly why hollow is reported and not gated: refusing them would un-route the type entirely
-    and take live coverage backwards."""
+def test_the_admin_route_no_longer_compiles_through_placeholders():
+    """This test used to assert the OPPOSITE — that all three capabilities behind `account_admin`
+    were hollow — and it was true when written: refusing them would have un-routed the type
+    entirely, which is why hollow is reported and not gated.
+
+    They are now promoted, so the assertion is inverted rather than deleted. The reason for the
+    gate-free design still holds (see `test_hollow_is_reported_separately_from_admission`); what
+    has changed is that the live Admin route no longer needs the leniency."""
     admin = expert_catalog().domain("admin")
     behind = admin.routes["account_admin"]["capabilities"]
     assert behind, "account_admin routes to nothing"
-    assert all(_hollow(admin.capabilities[c]) for c in behind)
+    for capability_id in behind:
+        capability = admin.capabilities[capability_id]
+        assert not _hollow(capability), f"{capability_id} is a placeholder on a LIVE route"
+        for key in ("outcomes", "kpis", "handoffs", "failure_modes", "applies_to"):
+            assert capability.content.get(key), f"{capability_id} carries no {key}"
 
 
 # ── the corpus-wide count, so the queue cannot quietly grow ─────────────────────

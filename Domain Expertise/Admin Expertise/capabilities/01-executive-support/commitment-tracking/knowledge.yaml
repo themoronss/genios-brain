@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball
 decision_frameworks:
   core: []
   scoped: []

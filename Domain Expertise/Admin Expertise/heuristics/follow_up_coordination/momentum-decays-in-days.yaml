@@ -6,10 +6,146 @@ identity:
   scope: capability
   owner_capability: admin.meeting_operations.follow_up_coordination
   subdomain: meeting_operations
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
   statement: A decision not acted on within a week begins to feel optional; within a month, historical.
     Follow-up speed is not administrative nicety — it is what keeps decisions decided.
   answers:
   - How fast must follow-up move to hold a decision?
+  - When has a follow-up stopped being late and started being a new conversation?
+  not:
+  - A rule about how often to chase. Cadence is a different question with different inputs.
+  - A claim that every decision needs following up. Some are self-executing and need nothing.
+
+heuristic:
+  statement: 'Follow-up has two regimes with a boundary between them, and the boundary matters more
+    than the speed. Inside it, a late follow-up is still the same conversation and is worth sending as
+    a continuation. Past it, the recipient has re-planned around the silence, and sending the same
+    message as a continuation forces them to remember something they had already resolved to drop —
+    at which point the correct move is a fresh contact that never mentions the gap.'
+  why: 'A decision holds because the people affected believe it is still live, and that belief is
+    maintained by evidence rather than by memory. The first days after a meeting are when the recap is
+    read as confirmation; after that, silence is itself evidence, and it is read as the decision
+    having quietly lapsed. What decays is not enthusiasm — it is the shared assumption that the thing
+    is still happening, and once that has gone, an apology re-raises it while a fresh contact does not.'
+  confidence_bp: 7500
+  applies_when: 'A meeting or interaction has happened, something was left open, and the gap since is
+    measurable. `meeting.open_loop` marks the first; `meeting.end_at` against evaluation time gives
+    the second.'
+  breaks_down_when: 'SCHEDULED CADENCES. Where the parties meet on a standing rhythm, the next sitting
+    IS the follow-up and an interim chase is noise. The relevant clock is the interval between
+    sittings, not the days since the last one.
+
+    PROCESS COUNTERPARTIES. Grant committees, registrars, procurement desks and compliance functions
+    run on published cycles and do not lose momentum in the human sense. Their silence carries no
+    information about whether the matter is still live, so the decay model simply does not apply.
+
+    HIGH-FREQUENCY RELATIONSHIPS. Between parties in daily contact there is no decay window to speak
+    of; the follow-up rides on the next ordinary exchange and a separate one is redundant.
+
+    WHERE THE DELAY IS THE POINT. Deliberate cooling — after a disagreement, a rejection, or an
+    over-eager first approach — is a real tactic, and treating the resulting quiet as decay produces
+    exactly the message that reopens the wound.
+
+    ONE-SIDED PROPOSALS. A next step we proposed and they never acknowledged was never a decision.
+    Nothing is decaying, because nothing was decided; chasing it applies the model to a proposal.'
+  reads:
+  - admin.obj.core.meeting
+  - admin.obj.core.commitment
+  - meeting.open_loop
+  - meeting.end_at
+  - thread.last_inbound
+  contradicts:
+  - admin.heu.inbox_and_correspondence.response_speed_is_reputation
+  pattern_ref:
+  - mtg.held_and_nothing_sent
+  - mtg.circulated_but_nothing_left_the_room
+  - mtg.its_actions_have_gone_past_their_dates
+  - cmt.quiet_since_the_promise
+
+when_to_use:
+  situations:
+  - admin.sit.live_account_admin
+  conditions:
+  - {exists: meeting.end_at}
+  - {path: meeting.open_loop, op: "=", value: true}
+  signals:
+  - introduction
+  - next_step_agreed
+  - meeting_request
+  do_not_use_when:
+  - The parties meet on a standing cadence; the next sitting is the follow-up.
+  - The counterparty is a process rather than a person, and silence carries no signal.
+  - The next step was proposed by us and never acknowledged; it was never a decision.
+
+objects_used:
+- admin.obj.core.meeting
+- admin.obj.core.commitment
+- admin.obj.core.action_item
+
+outcomes:
+- Open loops are chased inside the window where a continuation still reads as one.
+- Past the window, contact is reopened as new rather than sent as an apology.
+
+failure_modes:
+- 'READ AS "FASTER IS ALWAYS BETTER". Produces a follow-up sent before the other side has had a chance
+  to act, which reads as distrust and is the one follow-up that damages the relationship.'
+- 'USED TO JUSTIFY GIVING UP. The decay model describes how to CONTACT after a gap, not permission to
+  stop. A relationship worth the meeting is worth a fresh approach.'
+- 'APPLIED TO EVERY SILENCE. Not all quiet is decay; some of it is a counterparty working. The
+  heuristic needs an open loop, not merely an absence of messages.'
+
+limits:
+- Says nothing about what the follow-up should contain, only about when and in what register.
+- Assumes the meeting is visible. Conversations with no calendar or mail trace never reach it.
+- The boundary between late and expired is a judgement the heuristic locates but does not measure;
+  quantifying it is Layer 4's job and belongs in the pack.
+
+variants:
+- applies_to: executive_office
+  change: The recap goes out under the principal's name the same day; delegated follow-up after the
+    window has passed is sent as the assistant reopening, not as the principal apologising.
+  why: An apology in the principal's voice is a costlier artefact than the follow-up it carries.
+- applies_to: distributed
+  change: The window is counted in working overlap rather than in elapsed days, because a two-day
+    silence across time zones may contain no shared working time at all.
+  why: Decay tracks opportunities to respond, not calendar days.
+- applies_to: regulated
+  change: Follow-up is governed by the notice period in the procedure, and the decay model is advisory
+    only.
+  why: A prescribed window outranks a behavioural one.
+
+metrics:
+- name: same_day_recap_rate
+  unit: percent
+  description: Share of interactions recapped before the two sides' versions could diverge.
+  direction: higher_is_better
+- name: expired_loop_share
+  unit: percent
+  description: Share of open loops past the point where a continuation is the right register.
+  direction: lower_is_better
+
+references:
+- title: Never Split the Difference
+  kind: book
+  author: Chris Voss
+  note: On agreement decaying without confirmed next steps — the negotiation framing of the same
+    observation.
+- title: Administrative practice — the same-day recap
+  kind: practitioner
+  note: Long-standing discipline; the contribution here is the late-versus-expired boundary, which
+    the practice handles by instinct and never states.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The late-versus-expired boundary is the whole
+    contribution: a generic "no reply, so follow up" rule produces exactly the apology-shaped message
+    that reopens something the recipient had closed, which is the shallow reading this file exists to
+    replace.'

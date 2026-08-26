@@ -106,41 +106,115 @@ closed:
 # ─────────────────────────────────────────────────────────────────────────────
 substrate:
 
-  # Typed fact paths declared by the shipped packs' schema.fields. Eleven. That is all.
+  # Typed fact paths the reasoner can read off a node.
+  #
+  # PROVENANCE, checked against the code rather than remembered (2026-08-26). Three producers,
+  # and the union of them is this list:
+  #   1. `context/extract/vocab.py::ENGINE_FIELDS` — what the engine requires of every tenant
+  #      regardless of pack, so a pack may add to it and may not remove it.
+  #   2. `packs/sales_v1.py` and `packs/general_v1.py` `schema.fields` — what each shipped pack
+  #      declares and its rules read.
+  #   3. Three fields the L2 pipeline writes directly and no pack declares — named below.
+  #
+  # This list used to hold twelve, which understated the substrate by eleven and forced honest
+  # patterns about meetings, correspondence direction and counterparty role to be marked
+  # `needs_signal` when they can in fact fire today. The check that matters is not "is it in a
+  # pack manifest" but "does anything WRITE it and can a predicate READ it": `reason/runner.py`
+  # `_load_context` selects every active fact on the node with no field filter, and
+  # `context/situation_bso.py` `build_context_slice` passes them through unfiltered, so any field
+  # Layer 2 writes is evaluable by the predicate grammar.
+  #
+  # What is deliberately NOT here: the L1 structured-connector fields (`deal.stage`,
+  # `deal.amount`, `meeting.title`, `meeting.location`, ... in `capture/structured/registry.py`).
+  # Those exist only for a tenant who has connected that source, so a pattern resting on one is
+  # true for some tenants and silently dead for the rest — which is what `needs_signal` is for.
   fact_paths:
+    # ── deal (sales_v1) ────────────────────────────────────────────────────────
     - deal.status
     - deal.last_inbound
-    - deal.value
+    - deal.value              # declared, and absent in practice — never derived, see below
+    # ── correspondence (ENGINE_FIELDS; both packs read them) ───────────────────
     - thread.last_inbound
+    - thread.last_outbound    # the other half of the pair; attention.py already reads it
     - thread.ball_in_court
+    # ── commitment (ENGINE_FIELDS + general_v1) ────────────────────────────────
     - commitment.due_at
     - commitment.action
+    - commitment.text         # pipeline.py writes it beside due_at; `action` is the reader's name
+    - commitment.status       # pipeline.py writes 'open' with due_at. Undeclared by any pack
+    # ── meeting (general_v1) ───────────────────────────────────────────────────
     - meeting.status
     - meeting.start_at
+    - meeting.end_at
+    - meeting.scheduled
+    - meeting.occurred
+    - meeting.attended
+    - meeting.external_counterparty
+    - meeting.open_loop       # meeting_lifecycle.py: it ended with something unresolved
+    # ── the lens: what the counterparty IS to us (sales_v1) ────────────────────
+    - relationship.nature
+    - relationship.direction
+    - party.role              # pipeline.py writes it; card_builder reads it. No pack declares it
+    - role                    # legacy flat names, still written and still read. Superseded by
+    - company                 #   party.role / the works_at edge, not yet removed
+    # ── engine-computed (never extracted; context/derived.py) ──────────────────
     - derived.momentum        # engine-computed trajectory
     - derived.engagement      # engine-computed two-way volume vs prior fortnight
     - derived.sentiment       # engine-computed observation balance
 
-  # Observation kinds Layer 2 emits today, union of both shipped packs.
+  # Observation kinds Layer 2 emits.
+  #
+  # GENERATED FROM `genios_engine/context/vocabulary.py::CANONICAL_OBS_KINDS`, which is the
+  # complete set the extractor is offered — `extract/vocab.py::observation_vocabulary` unions the
+  # tenant's rule-referenced kinds WITH the canonical set and never restricts to them, precisely
+  # so the kinds carrying the most intent keep being captured before a rule exists to read them.
+  #
+  # This list held eighteen of the thirty-four. The sixteen it omitted are not theoretical: on the
+  # design partner's org today `positive_reply` (57), `negative_reply` (8), `meeting_request`
+  # (128), `question` (65), `next_step_agreed` (17) and `objection_timing` (2) are all present in
+  # `graph_observations` — while every one of `budget_approved`, `budget_freeze`,
+  # `champion_change`, `contract_requested`, `discount_pressure`, `objection_price`,
+  # `legal_review` and `verbal_yes` on the old list has zero rows. The old list was a sales-deal
+  # ontology, and it made the honest expertise about correspondence, meetings and administrative
+  # obligation unauthorable — the very domains a non-sales tenant lives in.
   obs_kinds:
+    # positive (OBS_POSITIVE)
     - budget_approved
-    - budget_freeze
-    - champion_change
-    - closed_lost_mention
-    - competitor
+    - buying_intent
+    - champion_engaged
     - contract_requested
     - demo_requested
+    - next_step_agreed
+    - positive_reply
+    - pricing_discussed
+    - security_review_started
+    - stakeholder_added
+    - verbal_yes
+    # negative (OBS_NEGATIVE)
+    - budget_freeze
+    - champion_change
+    - churn_risk
+    - closed_lost_mention
+    - competitor
     - discount_pressure
+    - going_dark
+    - negative_reply
+    - objection
+    - objection_authority
+    - objection_integration
+    - objection_price
+    - objection_security
+    - objection_timing
+    - price_pushback
+    - stakeholder_left
+    - timeline_slip
+    # neutral (OBS_NEUTRAL) — no polarity, high intent
     - followup_sent
     - introduction
     - legal_review
-    - objection
-    - objection_price
-    - pricing_discussed
+    - meeting_request
     - proposal_sent
-    - security_review_started
-    - timeline_slip
-    - verbal_yes
+    - question
 
   # Learned per-entity baselines available to {baseline: ...} thresholds.
   baselines:

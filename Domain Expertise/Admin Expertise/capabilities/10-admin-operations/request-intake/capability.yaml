@@ -3,7 +3,7 @@ identity:
   name: Request Intake
   domain: admin
   subdomain: admin_operations
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'The front door of the administrative function: capturing requests from whatever channel
@@ -13,13 +13,107 @@ description: 'The front door of the administrative function: capturing requests 
 
   '
 question: What is being asked, by whom, how urgent is it, and who owns it now?
+
+outcomes:
+- 'Every request captured regardless of the channel it arrived on. The measure is not how good the
+  queue is; it is what share of the work reaches the queue at all, because everything asked in a
+  corridor is invisible to every metric downstream and is served ahead of everything that is not.'
+- 'An acknowledgement that states what was understood, not that a message was received. A receipt
+  confirms delivery; an acknowledgement that restates the ask is the cheapest possible correction of a
+  misunderstanding, and it is the last moment the correction is free.'
+- 'A priority set from consequence and deadline rather than from who asked. The whole point of a front
+  door is that it makes the ordering defensible — an intake that quietly re-sorts on seniority has the
+  costs of a queue and none of its benefits.'
+- 'A named owner from the moment of acceptance. A request in a shared queue with no owner is a request
+  every reader assumes belongs to someone else, and it ages while appearing to be in progress.'
+- 'A refusal or a redirect, given quickly. The negative outcome, and the one most intake processes
+  never produce: some requests are not this function''s work, and saying so on day one is worth more
+  to the requester than a polite acceptance that produces nothing for a fortnight.'
+- 'The repeat ask surfaced as a signal about the answer rather than as a second request. Someone
+  asking the same thing again usually means the first answer did not work, and re-serving it is
+  cheaper than fixing the reason — which is why it keeps happening.'
+
+failure_modes:
+- 'SERVING THE CHANNEL THAT IS EASIEST TO ANSWER. A verbal ask gets done because the person is
+  standing there; the queue waits. This is not laziness, it is the natural gradient, and an intake
+  process that does not actively resist it is decorative.'
+- 'ACKNOWLEDGING WITHOUT UNDERSTANDING. "Received, will look into it" satisfies the metric and defers
+  the only useful moment, which is when the requester can still cheaply correct what you heard.'
+- 'PRIORITISING BY REQUESTER SENIORITY. Defensible in the moment, corrosive over time — the patient
+  and the junior learn the queue is not for them, and they stop using it, which removes exactly the
+  requests the queue was measuring.'
+- 'CLASSIFYING TO THE OWNER RATHER THAN TO THE WORK. Routing by who usually does it entrenches
+  single-person dependencies and hides them from every capacity measure.'
+- 'NO REFUSAL PATH. When declining is not a legitimate outcome, out-of-scope requests are accepted and
+  quietly starved, which is the most expensive way to say no and the slowest.'
+- 'COUNTING REPEATS AS VOLUME. A rising request count is read as demand when it is often one broken
+  answer being asked about repeatedly. The two call for opposite responses — capacity, or a fix.'
+
+kpis:
+- name: off_queue_arrival_rate
+  unit: percent
+  description: Share of work that reached the function outside the intake channel. The number that
+    says whether the front door is a front door, and the one most intake reporting cannot see.
+  direction: lower_is_better
+- name: acknowledgement_restates_ask_rate
+  unit: percent
+  description: Share of acknowledgements that state what was understood rather than that something
+    arrived.
+  direction: higher_is_better
+- name: time_to_named_owner
+  unit: hours
+  description: Time from arrival to a named person owning it. Distinct from time to resolution and
+    far more predictive of it.
+  direction: lower_is_better
+- name: early_refusal_rate
+  unit: percent
+  description: Share of out-of-scope requests declined or redirected on arrival rather than after
+    ageing. A near-zero rate means the function has no refusal path.
+  direction: target_band
+- name: repeat_ask_share
+  unit: percent
+  description: Share of requests that repeat an earlier one from the same requester. High is a signal
+    about the answer, not about demand.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - admin.executive_support.inbox_and_correspondence
+  - admin.executive_support.gatekeeping
+  downstream:
+  - admin.admin_operations.service_level_management
+  - admin.executive_support.approval_coordination
+  - admin.executive_support.commitment_tracking
+  parallel:
+  - admin.admin_operations.sop_management
+  - admin.records_and_documentation.knowledge_base_maintenance
+
+applies_to:
+  models: [shared_services, in_house, outsourced, enterprise_admin, automated_first, distributed,
+           hybrid, multi_entity, regulated, startup_lean, executive_office]
+  offerings: [transactional, coordinative, assurance]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-26'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  notes: 'Promoted out of Phase-1 stub. `admin.obj.core.request` sits in the live situation''s optional
+    load-set and is required by `inbox_and_correspondence`, which IS on the live route — so this
+    capability is reached indirectly today and directly as soon as a request-shaped situation appears.
+
+    The request object already carries executable patterns for the states these outcomes turn on
+    (`req.no_acknowledgement_against_our_own_cadence`, `req.requester_is_chasing`,
+    `req.acknowledgement_probably_sent`), all of which read correspondence facts rather than a service
+    desk — which matters, because most tenants reaching this capability have no service desk at all.
+
+    No numbers: what counts as urgent, and how long acknowledgement may take, are Layer 4''s
+    arithmetic and belong in the pack.
+
+    '
+  reviewed_at: '2026-08-26'
+
 admission:
-  accepted_content_hash: b80b90dd5b0a6bd8a880c2f92f2fa289cb84ff7c6114ee3f48ab126b2bdcf358
+  accepted_content_hash: 5dec28bdcc1f276e38a9e7274f790bff9a74bdc2447211e738832007878b7b9d

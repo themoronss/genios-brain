@@ -1,0 +1,120 @@
+identity:
+  id: admin.rule.follow_up_coordination.an_introduction_is_not_discharged_by_sending
+  name: An introduction is not discharged by sending
+  kind: rule
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.follow_up_coordination
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'The obligation an introducer takes on ends when the two parties are talking, not when
+    their addresses share a thread. Marking it complete on send is the commonest false-complete in
+    administrative work, and it is why most introductions produce nothing.'
+  answers:
+  - When is an introduction actually finished?
+  - What is still owed after the introduction mail has gone out?
+  not:
+  - A judgement on whether the introduction should have been made.
+  - A rule about how many times to nudge. One is the shape; frequency is elsewhere.
+
+rule:
+  statement: 'An introduction MUST NOT be treated as discharged on the evidence of an outbound message
+    alone. It is discharged when both introduced parties have corresponded, or when it is explicitly
+    closed as unlanded. Until one of those, the obligation remains open and belongs to the introducer.'
+  spans:
+  - admin.obj.core.commitment
+  - admin.obj.core.meeting
+  when:
+  - {has_obs: introduction}
+  - {no_obs: positive_reply}
+  then: 'Keep the obligation open and offer a single one-sided nudge to whichever party has not
+    replied. Never re-introduce both parties, and never chase the side that already answered.'
+  severity: warning
+  why: 'Both parties are waiting for a signal that the other is interested, and neither wants to be
+    the eager one — so the default outcome of a well-made introduction is a polite mutual silence that
+    both sides read as the other''s disinterest. The introducer is the only party who can break that
+    symmetry, and it costs one message. Treated as complete on send, the introduction consumes the
+    introducer''s social capital and returns nothing, which is a worse outcome than not making it.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'A DOUBLE OPT-IN INTRODUCTION. Where both sides asked for the connection before it was made, the
+    symmetry problem does not exist and the introducer''s obligation genuinely ends on send. This is
+    the exception that should be most common and is the argument for making introductions this way.'
+  - 'THE CONVERSATION MOVED OFF THE THREAD. A call, a meeting or a direct exchange elsewhere discharges
+    it just as well as a reply. Absence of a reply in OUR thread is weak evidence, and the rule fires
+    on it — so a nudge sent here is sometimes redundant, and should be written to survive that.'
+  - 'ONE SIDE DECLINED. A refusal is a complete outcome. Nudging after a decline converts a clean no
+    into pressure, and it is the version of this rule''s failure that costs the most.'
+  - 'A CEREMONIAL OR COURTESY INTRODUCTION. Introductions made for visibility rather than for a
+    transaction — a new joiner announced to a counterparty, a handover of contact — carry no
+    expectation of a reply, and holding them open produces a permanent open loop nobody owes.'
+  - 'THE INTRODUCER WAS ASKED TO STEP BACK. An explicit "we will take it from here" ends the
+    obligation regardless of what the thread shows afterwards.'
+
+objects_used:
+- admin.obj.core.commitment
+- admin.obj.core.meeting
+- admin.obj.core.request
+
+outcomes:
+- Introductions carry a second act rather than dying politely.
+- The nudge goes to the silent side only, once.
+
+failure_modes:
+- 'BOTH SIDES NUDGED. Re-introducing people who have already met makes the introducer look absent from
+  their own thread and is more embarrassing than the silence.'
+- 'HELD OPEN FOREVER. Without an explicit unlanded close, every introduction ever made stays in the
+  live set and the whole follow-up queue loses meaning.'
+- 'FIRED ON COURTESY INTRODUCTIONS. Announcements are not connections; treating them alike produces
+  nudges nobody was waiting for.'
+
+limits:
+- '`introduction` marks that an introduction was mentioned, not that we made it. An introduction made
+  TO us fires the same observation, and the rule as written would have us nudge on someone else''s
+  behalf — the direction has to be read from the thread before acting.'
+- Reply evidence is limited to what is visible in correspondence; contact made by call or in person
+  is invisible and produces a false open loop.
+
+variants:
+- applies_to: startup_lean
+  change: The founder is usually both introducer and one of the parties; the rule reduces to
+    following up on their own thread, and the one-sided nudge collapses into an ordinary reply.
+  why: There is no third party whose obligation this is.
+- applies_to: executive_office
+  change: The nudge is sent by the assistant, not the principal — a principal chasing an introduction
+    they made spends more capital than the introduction was worth.
+  why: The follow-through is administrative; the introduction was relational.
+
+metrics:
+- name: introduction_second_contact_rate
+  unit: percent
+  description: Share of introductions with evidence of two-sided correspondence afterwards.
+  direction: higher_is_better
+- name: introduction_unlanded_close_rate
+  unit: percent
+  description: Share of introductions explicitly closed as unlanded rather than left open. The
+    counterweight to holding everything open forever.
+  direction: higher_is_better
+
+references:
+- title: Double opt-in introductions
+  kind: practitioner
+  note: The standard practice that removes the symmetry problem entirely, and the reason the first
+    exception exists.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new, and evaluable today: `introduction` (104 rows across 27 nodes) and
+    `positive_reply` (57 across 24) are both live on the design partner''s org, and `positive_reply`
+    only became authorable in this batch — it was missing from the corpus substrate list while Layer 2
+    had been emitting it all along. The direction caveat in `limits` is real and is stated rather than
+    engineered around, because the observation kind does not carry it.'

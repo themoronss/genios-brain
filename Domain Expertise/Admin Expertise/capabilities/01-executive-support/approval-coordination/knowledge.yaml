@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - admin.rule.approval_coordination.an_unowned_decision_is_not_a_slow_one
 decision_frameworks:
   core: []
   scoped: []

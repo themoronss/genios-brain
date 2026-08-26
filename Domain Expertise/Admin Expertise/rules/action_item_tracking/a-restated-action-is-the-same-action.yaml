@@ -1,0 +1,121 @@
+identity:
+  id: admin.rule.action_item_tracking.a_restated_action_is_the_same_action
+  name: A restated action is the same action
+  kind: rule
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.action_item_tracking
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'An obligation restated in different words at a later sitting is one action carried, not
+    two actions raised. Registers that treat the restatement as new launder their own backlog: the old
+    line ages out quietly and the report shows progress nobody made.'
+  answers:
+  - Is this a new action or the same one again?
+  - Why does the register look healthier than the forum feels?
+  not:
+  - A rule about how to word actions. It is about identity, not phrasing.
+  - A deduplication rule for genuinely similar but distinct obligations.
+
+rule:
+  statement: 'Where an action arising from a later meeting names the same obligation, owner and
+    counterparty as one already open, the register MUST carry the existing line forward with its
+    original creation date and its accumulated carry count. It MUST NOT open a new line and MUST NOT
+    close the old one as superseded.'
+  spans:
+  - admin.obj.core.action_item
+  - admin.obj.core.meeting
+  - admin.obj.core.commitment
+  when:
+  - {exists: commitment.action}
+  - {exists: meeting.end_at}
+  then: 'Match on obligation rather than on text, carry the original line and increment its carry
+    count. Where matching is uncertain, surface both and ask, rather than silently choosing either.'
+  severity: warning
+  why: 'Age is the most informative attribute an action has, and it is the one a restatement destroys.
+    An item on its fifth appearance and an item raised yesterday are the same row once the wording has
+    drifted, and every downstream judgement — which item is chronic, which owner is saturated, which
+    forum is accumulating a backlog — is computed from exactly the attribute that was reset. The
+    damage is silent and cumulative, which is why it needs a rule rather than a habit.'
+  enforced_by: L3_compile
+  exceptions:
+  - 'THE OBLIGATION GENUINELY CHANGED. A restatement that alters the scope, the deliverable or the
+    counterparty is a new action, and carrying the old date forward would overstate how long the NEW
+    thing has been outstanding. The test is whether completing the old line would now satisfy the
+    room; if it would not, it is new.'
+  - 'THE OWNER CHANGED. A reassigned action starts a fresh clock against the new owner while the
+    obligation''s own age is retained on the line. Judging a new owner on their predecessor''s carry
+    count is unfair and is quickly noticed.'
+  - 'RECURRING OBLIGATIONS. A standing action restated at each sitting by design — a monthly report, a
+    routine confirmation — is a recurrence, not a carry. Treating each as the same line produces an
+    item with an enormous and meaningless age.'
+  - 'A DELIBERATE RE-RAISE AFTER A DROP. Where an action was explicitly closed as dropped and the room
+    later decides to do it after all, that is a new decision with a new date, and inheriting the
+    original age would misrepresent a reversal as neglect.'
+  - 'MATCHING ON WEAK EVIDENCE. Two actions with similar wording, different counterparties and no
+    shared thread are probably distinct. Where the evidence supports either reading, the rule requires
+    asking rather than merging — a wrong merge is harder to detect afterwards than a duplicate.'
+
+objects_used:
+- admin.obj.core.action_item
+- admin.obj.core.meeting
+- admin.obj.core.commitment
+
+outcomes:
+- Carry count and creation date survive a rewording.
+- A backlog cannot be reset by restating its contents.
+
+failure_modes:
+- 'OVER-MERGING. Two genuinely distinct obligations with similar phrasing collapsed into one line, and
+  one of them silently stops being tracked. Harder to detect than the duplicate it prevented, which is
+  why the last exception requires asking.'
+- 'APPLIED TO RECURRENCES. A monthly obligation accumulating carry count forever, producing an alarm
+  about the healthiest item in the register.'
+
+limits:
+- Matching on obligation rather than on text is the hard part and is not solved here; the rule states
+  the requirement and the ambiguity, and leaves the matching to whatever evidence exists.
+- '`commitment.action` carries the extracted sentence, so text drift is precisely what the engine
+  sees. On the design partner''s org that field is present on 26 nodes — enough to match on, not
+  enough to be confident, which is why the severity is `warning` rather than `blocking`.'
+
+variants:
+- applies_to: regulated
+  change: A carried item retains its full history including every restatement, because how the
+    obligation was worded over time is itself part of the record.
+  why: The regime audits the trail, not only the outcome.
+- applies_to: automated_first
+  change: Matching is machine-proposed and human-confirmed; an unconfirmed merge is held rather than
+    applied.
+  why: A wrong merge is silent, and silence is the failure this rule exists to prevent.
+
+metrics:
+- name: register_reset_rate
+  unit: percent
+  description: Share of open items whose creation date moved without the obligation changing. Direct
+    evidence of the laundering this rule prevents.
+  direction: lower_is_better
+- name: false_merge_rate
+  unit: percent
+  description: Share of merges later reversed. The cost of over-applying the rule, made countable.
+  direction: lower_is_better
+
+references:
+- title: Robert's Rules of Order
+  kind: standard
+  note: Matters arising — the formal device that keeps a carried item identifiable across sittings.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. Severity is `warning` deliberately: the matching evidence available today
+    (`commitment.action` text, the meeting edge) supports a proposal and not a silent merge, and a
+    blocking rule on uncertain identity would create the over-merge failure it lists.'

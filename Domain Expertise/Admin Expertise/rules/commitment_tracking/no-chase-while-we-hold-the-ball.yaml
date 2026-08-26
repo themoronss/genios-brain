@@ -1,0 +1,123 @@
+# The Admin domain's first rule file. It exists because the condition cannot be seen from inside
+# either object it spans: `commitment` knows the promise is overdue, `escalation` knows a rung is
+# available, and NEITHER knows whose move is outstanding — that lives on the thread. A rule that can
+# see all three is the only place this can be stated once instead of twice, differently.
+
+identity:
+  id: admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball
+  name: No chase while we hold the ball
+  kind: rule
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.commitment_tracking
+  subdomain: executive_support
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'An overdue obligation is not automatically a chase. Where the outstanding move is OURS,
+    a reminder sent to the counterparty is at best noise and at worst an accusation, and it is the one
+    administrative act that damages a relationship rather than maintaining it.'
+  answers:
+  - May this overdue item be escalated or chased?
+  - Which overdue items are ours to deliver rather than theirs to answer?
+  not:
+  - A prioritisation rule. It gates one class of action; it does not order the rest.
+  - A judgement on whether the obligation matters. An overdue trivial promise is still ours.
+
+rule:
+  statement: 'An overdue commitment MUST NOT produce an outbound chase, reminder or escalation while
+    `thread.ball_in_court` reads `us`. The permitted moves are to discharge it, to renegotiate its
+    date, or to state the blocker — never to ask the other party for movement.'
+  spans:
+  - admin.obj.core.commitment
+  - admin.obj.core.escalation
+  when:
+  - {exists: commitment.due_at}
+  - {path: thread.ball_in_court, op: "=", value: us}
+  then: 'Suppress chase and escalation candidates for this obligation. Offer discharge, renegotiation
+    or blocker-statement instead, and say in the reason that the outstanding move is ours.'
+  severity: blocking
+  why: 'The counterparty''s reading of a reminder is set by whose turn it is, not by whose date passed.
+    Chased while they are waiting on us, the message says we have not read our own thread — and unlike
+    a late delivery, that is not recoverable by delivering. It is also the failure an urgency-sorted
+    register produces BY DEFAULT, which is why it needs a gate rather than a guideline.'
+  enforced_by: L4_constraint
+  exceptions:
+  # Where the rule above is legitimately wrong. Each is a real regime, not a hedge.
+  - 'THE OUTSTANDING MOVE IS A QUESTION WE ASKED. `thread.ball_in_court` follows the last message, so
+    a thread where our final message was itself a question reads as `us` while the substance is with
+    them. The distinguishing evidence is the message shape, not the flag: our last message asking for
+    something they have not supplied is a legitimate chase, and this is the exception that fires most
+    often on live data.'
+  - 'THE OBLIGATION IS THEIRS AND THE THREAD IS OURS. Direction is per-thread; the promise may live on
+    another. Where the commitment''s own owner edge points at the counterparty and only the
+    correspondence happens to sit with us, the rule does not apply — it was written against the case
+    where we owe the substance, not merely the next email.'
+  - 'A DEADLINE WITH A CONSEQUENCE ATTACHED. Where the date belongs to a third party — a filing
+    window, a programme cut-off, a signature needed before an event — notifying the counterparty that
+    a shared window is closing is not a chase, and withholding it to observe a courtesy rule costs
+    them the outcome.'
+  - 'THEY ASKED TO BE REMINDED. An explicit standing request to be nudged inverts the reading: the
+    reminder is the service, and its absence is the failure. Requires evidence of the request, not an
+    assumption of it.'
+  - 'THE THREAD STATE IS STALE. Where the correspondence has been quiet far past this relationship''s
+    own rhythm, `ball_in_court` describes a conversation that has stopped rather than a turn anybody
+    is taking. Re-opening is then a fresh contact rather than a chase, and it should be written as
+    one — not as a reminder about the original promise.'
+
+objects_used:
+- admin.obj.core.commitment
+- admin.obj.core.escalation
+- admin.obj.core.deadline
+
+outcomes:
+- No compiled candidate asks a counterparty for movement on something we owe them.
+- Overdue items where the move is ours arrive as delivery or renegotiation prompts.
+
+failure_modes:
+- 'READ AS "DO NOT ACT". The rule gates one class of action, not the item. An obligation suppressed
+  here and then dropped entirely is a worse outcome than the chase it prevented.'
+- 'APPLIED TO INTERNAL COLLEAGUES. Between colleagues the courtesy arithmetic is different and a
+  nudge is cheap; enforcing this on internal threads produces silence where a two-word ping would do.'
+
+limits:
+- Rests entirely on `thread.ball_in_court`, which follows the last message and cannot tell a question
+  from a delivery. The first exception exists for exactly that blind spot.
+- Says nothing about obligations with no thread at all, where direction has no evidence either way.
+
+variants:
+- applies_to: outsourced
+  change: A service provider may chase against its own service definition even holding the ball,
+    because the client's clock is contractual and silence is itself a breach.
+  why: The relationship is governed by a written standard rather than by courtesy.
+- applies_to: regulated
+  change: Statutory correspondence is exempt; a notice required by a regime is issued on its schedule
+    regardless of who owes what.
+  why: The regime is not a counterparty and does not read tone.
+
+metrics:
+- name: misdirected_chase_rate
+  unit: percent
+  description: Share of outbound chases sent while the ball was in our own court. The rule exists to
+    drive this to zero, and it is measurable from the thread state at send time.
+  direction: lower_is_better
+
+references:
+- title: Administrative correspondence practice — whose turn it is
+  kind: practitioner
+  note: The direction check is standard in well-run executive offices and is almost never encoded,
+    which is why urgency-sorted tooling reintroduces the error every time.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. `thread.ball_in_court` is present on 244 fact rows across 123 nodes of the
+    design partner''s org — it is the densest direction signal Layer 2 produces — so this rule is
+    evaluable on live data rather than aspirational. The first exception is the important one: the
+    flag follows the last message, and our own trailing question reads as `us`.'

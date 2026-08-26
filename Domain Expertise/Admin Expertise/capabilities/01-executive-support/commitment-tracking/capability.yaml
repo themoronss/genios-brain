@@ -3,7 +3,7 @@ identity:
   name: Commitment Tracking
   domain: admin
   subdomain: executive_support
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Holding the organisation to its own word. Every promise made in an email, a meeting or a
@@ -13,13 +13,119 @@ description: 'Holding the organisation to its own word. Every promise made in an
 
   '
 question: What did we promise, to whom, by when — and has it actually been delivered?
+
+# WHAT DONE LOOKS LIKE. Written for the case this capability is actually reached on: an obligation
+# to an outside organisation, read from the counterparty rather than from a queue. Feeds Layer 5's
+# success_events, so each of these has to be a state someone could observe, not an intention.
+outcomes:
+- 'A verdict per promise — kept, renegotiated, or abandoned — where ABANDONED is stated rather than
+  left as silence. A commitment that quietly stops being tracked is recorded as dropped, with a date,
+  because the alternative is a ledger that only ever grows and therefore is never read.'
+- 'Direction named before anything else: whether the outstanding obligation is ours or theirs. This is
+  the single fact the reader needs and the one an undated, unowned promise destroys. `party.role` and
+  the commitment''s own owner edge answer it; where they disagree, the disagreement is the finding.'
+- 'The undated promise surfaced AS undated. An obligation with no date is not a low-priority
+  obligation, it is the specific shape that goes missing, and naming the missing date is more useful
+  than inventing an urgency nobody agreed to.'
+- 'A renegotiation offered before the date rather than an apology after it. The output of tracking is
+  a move the principal can make while the promise is still theirs to redefine.'
+- 'Silence classified. An unanswered promise sits in one of two regimes — they owe us and have gone
+  quiet, or we owe them and have gone quiet — and these call for opposite next moves. A tracker that
+  reports "no reply" without saying whose reply is missing has done the arithmetic and skipped the
+  question.'
+- 'A closed loop removed from the live set. The negative outcome, and the one most often skipped: a
+  promise that was kept must leave the ledger, or the ledger''s size stops meaning anything and the
+  reader learns to ignore it.'
+
+# HOW THIS IS DONE BADLY BY SOMEONE WHO LOOKS COMPETENT. More useful than the outcomes, because it
+# is what an experienced administrator actually watches for.
+failure_modes:
+- 'CHASING BEFORE READING WHOSE TURN IT IS. The commonest and most expensive error: a reminder sent to
+  someone who is waiting on US reads as either incompetence or pressure, and it is the one message
+  that damages an administrative relationship rather than maintaining it.'
+- 'TREATING THE LEDGER AS THE DELIVERABLE. A complete, current, beautifully maintained register that
+  produces no move is a cost centre performing diligence. The register exists to generate one next
+  action per line; a line that can generate none should be closed rather than carried.'
+- 'READING ADMINISTRATIVE SILENCE AS DISINTEREST. Grant reviewers, programme committees, registrars
+  and finance departments go quiet as a matter of process, not sentiment. Escalating on quietness
+  alone converts a normal wait into a relationship event.'
+- 'ANCHORING ON THE PROMISE TEXT RATHER THAN THE PROMISE. Extraction records the sentence someone
+  typed; the obligation is what it meant. A ledger keyed on wording splits one promise into three
+  entries when it is restated, and each restatement then ages independently.'
+- 'DATING FROM THE SYSTEM RATHER THAN FROM THE AGREEMENT. A due date inferred from when a record was
+  created, rather than from what the parties said, produces an overdue flag nobody recognises — and
+  the first such flag teaches the reader to distrust every later one.'
+- 'ESCALATING A PROMISE THAT WAS NEVER ACCEPTED. A stated intention is not a commitment until the
+  other side relied on it. Tracking unilateral intentions as obligations inflates the ledger and
+  makes the genuinely accepted promises indistinguishable.'
+
+kpis:
+- name: promise_capture_completeness
+  unit: percent
+  description: Share of promises visible in correspondence that reached the ledger at all. The number
+    this capability lives or dies by — everything downstream is arithmetic over what was captured.
+  direction: higher_is_better
+- name: dated_obligation_share
+  unit: percent
+  description: Share of tracked obligations carrying a date either party stated. Low is not a tracking
+    failure; it is the finding, and it is what the next message should ask for.
+  direction: higher_is_better
+- name: renegotiated_before_due_rate
+  unit: percent
+  description: Share of slipped promises renegotiated before the date rather than after it. The one
+    metric that separates tracking from reporting.
+  direction: higher_is_better
+- name: silent_abandonment_rate
+  unit: percent
+  description: Share of obligations that left the ledger without a kept, renegotiated or explicitly
+    dropped verdict. Every one of these is a promise the counterparty may still be holding.
+  direction: lower_is_better
+- name: misdirected_chase_rate
+  unit: percent
+  description: Share of chases sent while the ball was in our own court. The damage metric — a low
+    capture rate costs opportunity, this costs standing.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - admin.executive_support.inbox_and_correspondence
+  - admin.meeting_operations.action_item_tracking
+  - admin.admin_operations.request_intake
+  downstream:
+  - admin.executive_support.approval_coordination
+  - admin.meeting_operations.follow_up_coordination
+  parallel:
+  - admin.executive_support.delegation_and_task_routing
+  - admin.contract_and_vendor.contract_administration
+
+applies_to:
+  models: [in_house, shared_services, outsourced, executive_office, startup_lean, distributed,
+           hybrid, multi_entity, regulated, enterprise_admin, automated_first]
+  offerings: [coordinative, assurance, transactional]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-26'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  notes: 'Promoted out of Phase-1 stub. This is the OWNER of `admin.sit.live_account_admin`, the only
+    Admin situation the design partner''s org reaches — both live `account_admin` situations compile
+    through it — and until now it carried a name, a description and a question.
+
+    Written against what Layer 2 actually holds for these situations rather than against a generic
+    promise register: `commitment.due_at` and `commitment.action` exist on the commitment node,
+    `commitment.status` is written beside them, `thread.ball_in_court` carries direction, and
+    `party.role` says what the counterparty is to us. Nothing here assumes a task system, a ticket or
+    an SLA, because an administrative obligation to an outside organisation has none of those.
+
+    No numbers, by contract: how overdue is overdue, and how hard to weight a slipped date, are Layer
+    4''s arithmetic and live in the pack manifest. A threshold appearing here means the Layer 3/4
+    boundary has leaked.
+
+    '
+  reviewed_at: '2026-08-26'
+
 admission:
-  accepted_content_hash: 2023b44165dd1d897425c2097759dc9c13b4370ca0bcc6cc59e24a9e36d0ff52
+  accepted_content_hash: b0a01760704612cdbbe56f8de41d3434aa451033c62255f9c1a4841dd636a406

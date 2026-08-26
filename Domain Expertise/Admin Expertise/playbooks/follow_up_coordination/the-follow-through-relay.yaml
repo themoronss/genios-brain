@@ -6,24 +6,195 @@ identity:
   scope: capability
   owner_capability: admin.meeting_operations.follow_up_coordination
   subdomain: meeting_operations
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
   statement: 'After decisions, someone owns the relay: informing the affected, connecting the assigned,
     confirming starts — because decisions do not implement themselves and the gap between decided and
     begun is where momentum dies.'
+  answers:
+  - Who carries a decision from the room to the people it affects?
+  - What has to happen between a meeting ending and work actually starting?
+  not:
+  - Project management. The relay ends when work has begun; tracking it to completion is elsewhere.
+  - Minute-taking. The record is an input to the relay, not the relay itself.
+
+when_to_use:
+  situations:
+  - admin.sit.live_account_admin
+  conditions:
+  - {exists: meeting.end_at}
+  signals:
+  - next_step_agreed
+  - introduction
+  - meeting_request
+  do_not_use_when:
+  - 'The meeting produced no decision and no obligation. Running the relay anyway generates messages
+    with nothing in them, and it teaches recipients that follow-up mail is safe to ignore.'
+  - 'A standing forum with its own minute-and-adopt cycle already carries the decisions. A parallel
+    relay creates a second record, and the two disagree within a month.'
+  - 'The decision is confidential to the room. Relaying it to the affected IS the leak, and the
+    sequencing question belongs to whoever owns the announcement.'
+
 steps:
 - order: 1
-  name: Notify the affected-but-absent within a day
-  description: People discover decisions about their work from the follow-up, not the grapevine.
+  name: Name what is owed, or record that nothing is
+  description: 'Separate what was DECIDED from what was discussed, and give each decision an owner and
+    a date. A meeting that ended owing nothing is a valid result and should be recorded as such — the
+    alternative is that every past meeting stays permanently open and the relay never runs dry.'
   actor: human
+  objects_read:
+  - admin.obj.core.meeting
+  - admin.obj.core.action_item
+  produces: A per-interaction debt list, possibly empty and explicitly so.
+  done_when: Every open item names one owner and one date, or is marked undated on purpose.
+  typical_duration_days: 1
+
 - order: 2
-  name: Confirm every action actually started
-  description: '48h check: does the owner have what they need? Blocked-at-start is the commonest silent
-    failure.'
+  name: Send the recap while both versions still agree
+  description: 'The recap''s value is not the record; it is the last cheap chance to correct a
+    misunderstanding. State the decisions, not the discussion, and invite correction explicitly —
+    silence against a stated decision is worth far more later than silence against a summary.'
   actor: human
+  objects_read:
+  - admin.obj.core.meeting
+  produces: A recap stating decisions, owners and dates, sent to everyone who was in the room.
+  done_when: The recap has gone out and any correction has been folded in.
+  typical_duration_days: 1
+
 - order: 3
-  name: Close the loop to the decider
-  description: '''All three actions moving; X blocked on budget'' — the summary that keeps decisions from
-    evaporating.'
+  name: Tell the affected-but-absent before the grapevine does
+  description: 'People learn about decisions concerning their own work from either the follow-up or
+    from someone else. Which one it is sets how they receive the decision itself, and it is decided
+    entirely by whether this step happened within a day.'
   actor: human
+  produces: Direct notice to each affected party not present.
+  done_when: No affected party has heard about it from a third source.
+  skip_when: The decision is confidential to the room, or the announcement is owned elsewhere.
+
+- order: 4
+  name: Close introductions on both sides
+  description: 'An introduction is discharged when the two parties are actually talking, not when the
+    addresses share a thread. Check for a reply from BOTH sides; where one has gone quiet, a single
+    short nudge to that side alone is the whole remaining obligation.'
+  actor: human
+  objects_read:
+  - admin.obj.core.commitment
+  produces: Either evidence of two-sided contact, or one nudge to the silent side.
+  done_when: Both parties have corresponded, or the introduction is explicitly closed as unlanded.
+  skip_when: Either party asked not to be connected.
+
+- order: 5
+  name: Confirm the work actually started
+  description: 'Blocked-at-start is the commonest silent failure: the owner accepted, then discovered
+    they were missing an input and said nothing. One check — do you have what you need — catches most
+    of it, and it is worth far more than a status request later.'
+  actor: human
+  objects_read:
+  - admin.obj.core.action_item
+  - admin.obj.core.escalation
+  produces: A started/blocked verdict per owned item.
+  done_when: Every item is either moving or has a named blocker with an owner.
+
+- order: 6
+  name: Choose the register before reopening a cold loop
+  description: 'Past the window where a continuation still reads as one, do not send the follow-up as
+    a follow-up. A fresh contact that does not mention the gap costs nothing; an apology forces the
+    recipient to re-open something they had already dropped, and it is the message most likely to be
+    ignored.'
+  actor: human
+  produces: Either a continuation or a fresh contact, chosen deliberately.
+  done_when: No message goes out apologising for a gap the recipient had stopped noticing.
+
+- order: 7
+  name: Report back to the decider, once
+  description: 'Three moving, one blocked on budget — the short summary that keeps decisions from
+    evaporating and gives the decider the one thing they cannot see: whether their decision is real.'
+  actor: human
+  produces: A single consolidated status back to whoever made the decision.
+  done_when: The decider knows which items moved and which did not.
+  optional: true
+
+objects_used:
+- admin.obj.core.meeting
+- admin.obj.core.action_item
+- admin.obj.core.commitment
+- admin.obj.core.request
+- admin.obj.core.escalation
+
+outcomes:
+- Every decision reaches the people it affects before it reaches them indirectly.
+- Introductions are closed on evidence of contact, not on evidence of sending.
+- Cold loops are reopened in the register that costs least.
+
+failure_modes:
+- 'THE RELAY BECOMES A NEWSLETTER. Recaps sent to everyone about everything, and the affected party
+  stops reading exactly the message that concerns them.'
+- 'RECAP AS TRANSCRIPT. Summarising the discussion instead of stating decisions produces a document
+  everyone agrees with and nobody acts on.'
+- 'INTRODUCTIONS MARKED DONE ON SEND. The most common false-complete in the whole capability, and the
+  reason most introductions produce nothing.'
+- 'CHASING A PROPOSAL AS THOUGH IT WERE A DECISION. A next step we suggested and they never
+  acknowledged is not owed; treating it as owed turns follow-up into pressure.'
+- 'RUNNING EVERY STEP ON EVERY MEETING. The relay is proportional to what was decided; a full relay on
+  a meeting that decided nothing is the fastest way to have it switched off.'
+
+limits:
+- Ends at work having begun; it does not track delivery.
+- Depends on the meeting being visible in calendar or correspondence.
+- Cannot distinguish a decision from a strongly-worded suggestion, which is where step 1 earns its
+  place and where it most often goes wrong.
+
+variants:
+- applies_to: executive_office
+  change: The recap goes under the principal's name; the chase and the start-check go under the
+    assistant's.
+  why: The record carries the principal's authority; the chasing should not spend it.
+- applies_to: distributed
+  change: The relay is written rather than spoken at every step, and the start-check is asynchronous.
+  why: A verbal relay in a distributed team reaches the people in one time zone and nobody else.
+- applies_to: shared_services
+  change: Steps 1 and 5 become queue transitions with owners rather than personal follow-ups.
+  why: Personal relays do not survive the person leaving, and in shared services they always do.
+- applies_to: regulated
+  change: The recap becomes a minute subject to adoption, and corrections are recorded rather than
+    folded in silently.
+  why: In a regime, how the record was amended is itself part of the record.
+
+metrics:
+- name: same_day_recap_rate
+  unit: percent
+  description: Share of interactions recapped within the day.
+  direction: higher_is_better
+- name: introduction_second_contact_rate
+  unit: percent
+  description: Share of introductions where both parties actually corresponded.
+  direction: higher_is_better
+- name: blocked_at_start_detection_rate
+  unit: percent
+  description: Share of blocked items found by the start-check rather than at the deadline.
+  direction: higher_is_better
+
+references:
+- title: The Effective Executive
+  kind: book
+  author: Peter Drucker
+  note: On decisions requiring an explicit conversion into action and an assigned owner before they
+    count as decisions at all.
+- title: Administrative practice — the post-meeting relay
+  kind: practitioner
+  note: The affected-but-absent step and the two-sided introduction close are the two most commonly
+    skipped, and are the two with the largest observable effect.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 4 and 6 are new. Step 4 exists because
+    `introduction` is among the densest observations Layer 2 emits on the design partner''s org and
+    almost none of those introductions have a recorded second contact; step 6 exists because a
+    follow-up sent past its window as a continuation is the specific message that costs standing.'

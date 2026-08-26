@@ -6,23 +6,188 @@ identity:
   scope: capability
   owner_capability: admin.executive_support.approval_coordination
   subdomain: executive_support
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: Pending approvals are batched, contextualised and chased as a daily rhythm — each with the
-    one-line what/why/amount/risk — because approval latency is invisible organisational drag that compounds
-    across every waiting team.
+  statement: 'Pending approvals are batched, contextualised and chased as a rhythm — each with the one
+    line of what, why, amount and risk — because approval latency is invisible organisational drag that
+    compounds across every waiting team.'
+  answers:
+  - How does an administrative function make an approval queue fast without weakening it?
+  - What does an approver need in order to decide in one pass rather than three?
+  not:
+  - A delegation-of-authority design. Who may approve what is decided upstream and this obeys it.
+  - A rule for what requires approval. This moves decisions; it does not decide which ones exist.
+
+when_to_use:
+  conditions:
+  - {exists: commitment.due_at}
+  signals:
+  - legal_review
+  - budget_approved
+  do_not_use_when:
+  - 'The decision is high-consequence and rare. Batching a decision that deserves a meeting into a
+    ten-item review session is how large mistakes get made quickly.'
+  - 'The delay IS the control — a cooling period on an irreversible action. Speeding it up removes
+    the mechanism rather than the drag.'
+  - 'Authority is genuinely unclear. Running the fast lane over an unresolved authority question
+    produces a fast decision from the wrong person, which is worse than the wait.'
+
 steps:
 - order: 1
-  name: Batch into one daily decision session
-  description: Ten approvals in ten focused minutes beat ten interruptions. The batch has a fixed slot.
+  name: Name the holder before anything else
+  description: 'Not "with legal" — a person. An approval whose holder cannot be named is unowned
+    rather than slow, and every subsequent step in this playbook is wasted on it. Where no holder can
+    be found, the item that goes forward is the question of who decides, not the decision.'
   actor: human
+  objects_read:
+  - admin.obj.core.approval
+  - admin.obj.core.approver
+  produces: A named holder per pending item, or an explicit unowned flag.
+  done_when: No pending item names a function instead of a person.
+
 - order: 2
-  name: Pre-digest each item to one line
-  description: What, cost, requester, risk-if-wrong. The executive decides; they should not have to research.
+  name: Sequence the disqualifying reviewer first
+  description: 'Whoever is most likely to say no goes first, even when they are the slowest and the
+    most senior. Cheap-approvers-first feels efficient and spends the entire queue before the veto is
+    exercised — the single most expensive ordering error in the capability.'
   actor: human
+  objects_read:
+  - admin.obj.core.policy
+  produces: An order in which the earliest step carries the highest rejection probability.
+  done_when: No approver with a veto sits behind an approver without one.
+
 - order: 3
-  name: Track aging, escalate the stuck
-  description: Anything pending >48h gets flagged with what it is blocking. Approval queues rot silently
-    otherwise.
+  name: Parallelise what does not depend
+  description: 'Serial chains exist mostly by habit. Two reviewers whose decisions do not depend on
+    each other should see it at the same time; the only genuine serial dependency is where one
+    approval changes what the next is approving.'
   actor: human
+  produces: A routing plan with the minimum number of serial hops.
+  done_when: Every serial step has a stated dependency.
+
+- order: 4
+  name: Pre-digest each item to a decision, not a document
+  description: 'What, cost, requester, risk if wrong, and the recommendation. The approver decides;
+    they should not have to research. An item that cannot be reduced to those five lines usually is
+    not ready for approval, and finding that out here is cheaper than finding it out mid-queue.'
+  actor: human
+  objects_read:
+  - admin.obj.core.document
+  produces: A one-line decision brief per item.
+  done_when: Every batched item states its recommendation and its downside.
+
+- order: 5
+  name: Batch into one scheduled session
+  description: 'Ten decisions in one focused block beat ten interruptions, and the block is a
+    commitment in the approver''s calendar rather than an aspiration. Batching also makes the
+    approver''s own rhythm legible, which is what the next step depends on.'
+  actor: human
+  produces: A recurring decision session with a fixed slot.
+  done_when: Approvals are being decided in the session rather than ad hoc.
+  typical_duration_days: 1
+
+- order: 6
+  name: Chase against the approver's own pace, and say what is blocked
+  description: 'Elapsed time means nothing on its own; an approver who batches weekly is not late on
+    day three. Chase when it is slow FOR THEM, and name what is waiting — an escalation that says
+    only "this is overdue" invites the question it should have answered.'
+  actor: human
+  objects_read:
+  - admin.obj.core.escalation
+  produces: Proportionate chases carrying a stated consequence.
+  done_when: No chase has gone out that does not say what it is blocking.
+  skip_when: The approver is absent with no delegate; that is a routing fix, not a chase.
+
+- order: 7
+  name: Return the answer to whoever is waiting
+  description: 'A granted approval nobody was told about is a decision that did not happen. Close the
+    loop to the requester, and record a clean no as a decision rather than letting it lapse into
+    silence — a process that never produces an explicit refusal is deferring rather than controlling.'
+  actor: human
+  produces: A communicated decision, including refusals.
+  done_when: Every decided item has reached the party who was waiting on it.
+
+objects_used:
+- admin.obj.core.approval
+- admin.obj.core.approver
+- admin.obj.core.policy
+- admin.obj.core.escalation
+- admin.obj.core.deadline
+- admin.obj.core.document
+
+outcomes:
+- Every pending decision has a named holder and a proportionate chase.
+- Rejections arrive early and explicitly rather than as an indefinite wait.
+- The approval path is fast enough that routing around it is not worth the effort.
+
+failure_modes:
+- 'BATCHING WITHOUT PRE-DIGESTING. Ten unprepared items in one session produces ten deferrals, and the
+  session becomes the new bottleneck.'
+- 'CHASING ON A UNIFORM CLOCK. Resented by the fast approvers, ignored by the slow ones, and it
+  degrades the signal until nobody reads the chases at all.'
+- 'FAST LANE APPLIED TO THE BIG DECISION. Speed on the one decision that warranted deliberation is
+  precisely the failure the exceptions exist to prevent.'
+- 'NAMING A FUNCTION AS THE HOLDER. Every downstream step silently degrades, and the item ages against
+  nobody in particular.'
+- 'REJECTIONS LEFT UNCOMMUNICATED. A no that is never sent is indistinguishable from a queue, and the
+  requester eventually acts without it.'
+
+limits:
+- Assumes the delegation of authority is known. Where it is not, step 1 is the whole playbook.
+- Cannot fix an approver who is absent; it can only route around them if a delegate exists.
+- Says nothing about approval quality — a fast rubber stamp scores well on every metric here.
+
+variants:
+- applies_to: regulated
+  change: Parallelisation is bounded by segregation-of-duties requirements, and the evidence of who
+    approved what is part of the output rather than a by-product.
+  why: In a regime the audit trail is the deliverable, not the decision alone.
+- applies_to: multi_entity
+  change: The holder is named per entity; an approver with authority in one entity routinely has none
+    in another, and the queue must not treat them as interchangeable.
+  why: Authority is entity-scoped and the org chart hides that.
+- applies_to: startup_lean
+  change: The batch is a standing slot with the founder, and step 2 collapses — there is one approver
+    and the ordering question does not arise.
+  why: The bottleneck is attention, not sequence.
+- applies_to: automated_first
+  change: Steps 1, 3 and 6 are system-executed; the human contribution is the decision brief in step 4,
+    which is the step automation is worst at.
+  why: Routing is mechanical; summarising a decision's downside is not.
+
+metrics:
+- name: named_holder_share
+  unit: percent
+  description: Share of pending approvals with a person, not a function, as holder.
+  direction: higher_is_better
+- name: approval_latency_vs_approver_norm
+  unit: ratio
+  description: Elapsed time against the approver's own usual turnaround.
+  direction: lower_is_better
+- name: decided_but_uncommunicated_rate
+  unit: percent
+  description: Share of decisions not returned to the waiting party.
+  direction: lower_is_better
+
+references:
+- title: Delegation of authority frameworks
+  kind: framework
+  note: Where the authority this playbook routes against is actually defined.
+- title: Administrative practice — the batched approval session
+  kind: practitioner
+  note: Common in well-run executive offices; the disqualifying-reviewer-first ordering is the part
+    most queues get wrong.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 1, 2, 3 and 7 are new. Step 2 is the one worth
+    arguing about: it deliberately makes the queue feel slower at the start in exchange for not
+    spending the whole chain before a veto is exercised, and it is the ordering a comfort-optimised
+    queue never chooses.'

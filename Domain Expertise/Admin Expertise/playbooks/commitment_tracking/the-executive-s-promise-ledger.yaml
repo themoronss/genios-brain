@@ -6,25 +6,186 @@ identity:
   scope: capability
   owner_capability: admin.executive_support.commitment_tracking
   subdomain: executive_support
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: Every commitment the executive makes — in meetings, mails, corridors — lands in one tracked
-    ledger with owner and due date, worked daily, because a leader's credibility compounds from kept small
-    promises and erodes from forgotten ones.
+  statement: 'Every commitment the executive makes — in meetings, mails, corridors — lands in one
+    tracked ledger with owner and due date, worked on a rhythm, because a leader''s credibility
+    compounds from kept small promises and erodes from forgotten ones.'
+  answers:
+  - Where does a promise live between being made and being kept?
+  - What is the smallest discipline that stops promises disappearing?
+  not:
+  - A task manager. Tasks are work the principal chose; promises are debts someone else is holding.
+  - A delegation system. Who does the work is decided elsewhere; the ledger only tracks who owes it.
+
+when_to_use:
+  situations:
+  - admin.sit.live_account_admin
+  conditions:
+  - {exists: commitment.due_at}
+  signals:
+  - followup_sent
+  - next_step_agreed
+  - meeting_request
+  do_not_use_when:
+  - 'The relationship carries a shared tracker both sides can see — a portal, a mutual action plan,
+    a ticket the counterparty can read. A private ledger beside a shared one produces two truths, and
+    the private one always loses the argument.'
+  - 'The promise is a standing operational routine rather than a discrete obligation. Recurring work
+    belongs in a schedule; entering each recurrence as a promise makes the ledger unreadable.'
+  - 'Nobody will work the ledger on a rhythm. An unworked register is worse than none: it converts
+    "we forgot" into "we knew and did nothing", which is the harder position to hold.'
+
 steps:
 - order: 1
-  name: Capture from every channel same-day
-  description: Meeting notes, sent mail, chat — swept daily for 'I will…'. The ledger is only as good
-    as its capture net.
+  name: Capture from every channel on the day
+  description: 'Meeting notes, sent mail, chat — swept for the shape "I will…", "we''ll get you…",
+    "let me come back on…". Capture the OBLIGATION, not the sentence: the same promise restated in a
+    later message is one line, not two, or the ledger ages the same debt three times.'
   actor: human
+  objects_read:
+  - admin.obj.core.commitment
+  - admin.obj.core.meeting
+  produces: One ledger line per obligation, carrying the recipient and the source it came from.
+  done_when: Every promise made in the period appears exactly once, and each names who is holding it.
+  typical_duration_days: 1
+
 - order: 2
-  name: Chase before due, renegotiate before breach
-  description: Nudge at 70% of the window. If it will slip, the executive says so BEFORE the date — that
-    sentence is reputation insurance.
+  name: Date it, or record that it has no date
+  description: 'An undated promise is not a low-priority promise; it is the shape that goes missing.
+    Where the parties named a date, take theirs. Where they did not, mark the line undated rather than
+    inventing one — an invented date produces an overdue flag the counterparty will not recognise,
+    and the first unrecognised flag teaches the reader to distrust the register.'
   actor: human
+  objects_read:
+  - admin.obj.core.deadline
+  produces: Each line either dated from the agreement, or explicitly flagged as undated.
+  done_when: No line carries a date that neither party stated.
+
 - order: 3
-  name: Review the ledger weekly with the executive
-  description: 'Five minutes: what is due, what slipped, what to drop honestly. Dropping explicitly beats
-    forgetting silently.'
+  name: Read whose turn it is before doing anything
+  description: 'The ledger''s first output is direction, not urgency. An obligation where the next
+    move is ours is worked; one where we are waiting is watched. Sending a chase while the ball is in
+    our own court is the single move that damages an administrative relationship rather than
+    maintaining it — and it is what an urgency-sorted register produces by default.'
   actor: human
+  objects_read:
+  - admin.obj.core.commitment
+  produces: The live set split into ours-to-move and theirs-to-move.
+  done_when: Every open line carries a direction, or is marked as unreadable on the evidence.
+
+- order: 4
+  name: Move ahead of the date, not after it
+  description: 'For lines that will slip and whose date the other side actually relied on, send the
+    renegotiation while the date is still ahead. One line, with a cause and a new date.'
+  actor: human
+  produces: A renegotiated date, or an explicit drop, recorded against the original line.
+  done_when: No line passes its date without either a discharge or an advance message.
+  skip_when: The date was internal and never communicated, or the obligation is blocked on them.
+
+- order: 5
+  name: Close the kept ones out loud
+  description: 'A discharged promise leaves the live set with a verdict — kept, renegotiated, or
+    dropped. The step everyone skips, and the reason registers rot: a ledger that only grows stops
+    being read, and an unread ledger is indistinguishable from no ledger at the moment it matters.'
+  actor: human
+  produces: A closed line with a verdict and a date, retained as history rather than deleted.
+  done_when: The live set contains only obligations that are genuinely still owed.
+
+- order: 6
+  name: Review the live set with the principal on a rhythm
+  description: 'Short, fixed, and about decisions rather than status: what is due, what slipped, what
+    to drop honestly. Dropping a promise explicitly is a decision the principal is entitled to make;
+    letting it lapse is one they are not.'
+  actor: human
+  produces: Decisions on the slipping lines, and an agreed drop list.
+  done_when: Every line older than the review either moved, closed, or was consciously carried.
+  typical_duration_days: 7
+
+objects_used:
+- admin.obj.core.commitment
+- admin.obj.core.deadline
+- admin.obj.core.action_item
+- admin.obj.core.escalation
+
+outcomes:
+- One live set of obligations with a direction and a verdict per line.
+- No promise leaves the register without someone deciding it left.
+
+failure_modes:
+- 'THE REGISTER BECOMES THE WORK. Perfect capture, perfect dating, no moves. Diligence performed
+  rather than obligations discharged, and it is expensive precisely because it looks like control.'
+- 'SORTED BY URGENCY, WORKED BY URGENCY. Urgency-first ordering hides direction, and direction is what
+  decides whether the next act is a chase or a delivery. It produces confident chases aimed at people
+  waiting on us.'
+- 'CAPTURING WORDING RATHER THAN OBLIGATION. One promise restated three times becomes three ageing
+  lines, and the counterparty is chased for a debt they discharged once.'
+- 'GROWING WITHOUT CLOSING. Every line ever opened still open. The count stops carrying information,
+  and the register''s size becomes the metric anyone optimises.'
+- 'ENTERING UNILATERAL INTENTIONS. A stated intention nobody relied on is not an obligation. Tracking
+  intentions inflates the register and makes the accepted promises indistinguishable inside it.'
+
+limits:
+- Assumes promises are visible in correspondence. Promises made verbally with no written trace never
+  reach the capture net, and the register cannot know what it never saw.
+- Says nothing about whether the promise was wise, only whether it is outstanding.
+- Does not scale to high-volume operational commitments; that is a queue with service levels, and a
+  per-promise ledger applied there produces noise that hides the exceptional item.
+
+variants:
+- applies_to: executive_office
+  change: The ledger separates promises made BY the principal from promises made TO them; the second
+    set is chased and the first is delivered, and mixing them is the commonest structural error.
+  why: The two sets have opposite failure modes — one damages our standing, the other costs us time.
+- applies_to: shared_services
+  change: The ledger is keyed on the requesting function rather than on the individual, because the
+    person who asked routinely leaves and the obligation does not.
+  why: A promise attached only to a departed requester becomes unclosable and sits forever.
+- applies_to: regulated
+  change: Statutory obligations do not enter this ledger; they belong to the obligation register,
+    which carries evidence requirements this one does not.
+  why: Conflating a statutory duty with a courtesy promise means the two get the same follow-up, and
+    the wrong one gets the attention.
+- applies_to: automated_first
+  change: Capture is machine-extracted and the human step becomes adjudication — confirming the
+    obligation, the direction, and whether the date was mutual.
+  why: Extraction is good at finding promise-shaped sentences and poor at knowing whether a date was
+    ever communicated, which is the one judgement the ledger turns on.
+
+metrics:
+- name: promise_capture_completeness
+  unit: percent
+  description: Share of promises visible in correspondence that reached the ledger.
+  direction: higher_is_better
+- name: open_line_age
+  unit: days
+  description: Age of the live set. Rising age with a stable count means closing has stopped.
+  direction: lower_is_better
+- name: silent_abandonment_rate
+  unit: percent
+  description: Share of lines that left the live set without a verdict.
+  direction: lower_is_better
+
+references:
+- title: Getting Things Done
+  kind: book
+  author: David Allen
+  note: The waiting-for list, and the argument for renegotiating rather than dropping agreements.
+- title: Executive assistant practice — the commitment register
+  kind: practitioner
+  note: Widely practised, rarely written down, and almost never with the direction step that makes it
+    safe to act on.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Step 3 — read direction before acting — is new and is the
+    step that makes the playbook safe on the live route: both `account_admin` situations on the design
+    partner''s org are obligations where the next move is ambiguous, and the urgency-first reading of
+    the same data produces a chase aimed at the wrong party.'

@@ -6,10 +6,145 @@ identity:
   scope: capability
   owner_capability: admin.executive_support.approval_coordination
   subdomain: executive_support
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: When the approval path is slow, people learn to avoid it — splitting purchases, acting first,
-    asking forgiveness. Approval speed is control's price; slowness buys shadow processes.
+  statement: When the approval path is slow, people learn to avoid it — splitting purchases, acting
+    first, asking forgiveness. Approval speed is control's price; slowness buys shadow processes.
   answers:
   - What does chronic approval delay actually produce?
+  - Why is approval latency a control problem rather than a service problem?
+  not:
+  - An argument for fewer controls. It argues that a slow control is a weaker control, not a safer one.
+  - A rule for setting thresholds. What needs approval at all is decided elsewhere.
+
+heuristic:
+  statement: 'Approval latency does not reduce risk, it relocates it. Past the point where waiting
+    costs more than the decision is worth, the population does not wait — it routes around, and the
+    spend that used to be visible and reviewable becomes invisible and unreviewed. A control with a
+    known workaround is producing an audit trail of the compliant minority and nothing else.'
+  why: 'Compliance is a cost-benefit judgement made by each requester, not a moral one. When the wait
+    is short, complying is cheaper than improvising; when it is long, improvising is cheaper, and
+    people are rational. The tell is not that spend rises — it is that spend rearranges into shapes
+    that fall below the threshold, which is why a control''s effectiveness is better read from the
+    distribution of what it sees than from its own approval rate.'
+  confidence_bp: 8200
+  applies_when: 'A recurring approval path exists with observable latency, and requesters have any
+    discretion about how to route their request.'
+  breaks_down_when: 'STATUTORY OR EXTERNALLY MANDATED APPROVALS. There is no workaround to learn — the
+    signature is legally required and the delay produces a wait, not a shadow process. Speeding these
+    up is still worth doing, but for cost reasons rather than control reasons.
+
+    HIGH-CONSEQUENCE, LOW-FREQUENCY DECISIONS. Where each decision is large, examined and rare, a slow
+    deliberate process is correct and a fast one is the failure. Nobody routes around board approval
+    for an acquisition; the population that would is not present.
+
+    WHERE THE DELAY IS THE CONTROL. A deliberate cooling period on irreversible actions — terminations,
+    large disposals, data deletion — is doing exactly what it was designed to do, and reading its
+    latency as drag removes the mechanism.
+
+    WHERE NO ALTERNATIVE PATH EXISTS. If the only way to buy anything is through the system, latency
+    produces delay and frustration but not shadow spend. This is rarer than it looks, because expense
+    reimbursement is almost always the alternative path and it is almost always overlooked.
+
+    A SINGLE SLOW APPROVER, NOT A SLOW PATH. One person''s backlog is a staffing or absence problem
+    and reads identically in the latency numbers. Treating it as a design fault produces a redesign
+    that does not fix it.'
+  reads:
+  - admin.obj.core.approval
+  - admin.obj.core.approver
+  - admin.obj.core.policy
+  - commitment.due_at
+  - thread.ball_in_court
+  contradicts:
+  - admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball
+  pattern_ref:
+  - apv.stuck_with_the_approver
+  - apv.nobody_owns_the_decision
+  - apv.chased_repeatedly_without_movement
+  - apr.silent_far_past_own_cadence
+
+when_to_use:
+  conditions:
+  - {exists: commitment.due_at}
+  - {path: thread.ball_in_court, op: "=", value: them}
+  signals:
+  - legal_review
+  - budget_approved
+  do_not_use_when:
+  - The approval is statutory; there is no route around it to learn.
+  - The delay is itself the control, as with a cooling period on an irreversible act.
+  - One approver is absent or overloaded; that is a staffing problem wearing a process costume.
+
+objects_used:
+- admin.obj.core.approval
+- admin.obj.core.approver
+- admin.obj.core.policy
+- admin.obj.core.escalation
+
+outcomes:
+- Approval latency is treated as a control metric rather than a service complaint.
+- A path with a known workaround is redesigned rather than re-communicated.
+
+failure_modes:
+- 'USED TO ARGUE FOR REMOVING APPROVALS. The heuristic argues for making them fast, not for making
+  them absent. Removing the control is the workaround, formalised.'
+- 'MEASURED ON APPROVED ITEMS ONLY. The evidence of a workaround is in what never arrived; a latency
+  report over the compliant population cannot see its own blind spot.'
+- 'APPLIED TO A ONE-OFF DELAY. A single slow decision is not a shadow process; the claim is about a
+  recurring path and a learned response.'
+
+limits:
+- Says nothing about which decisions should require approval in the first place.
+- The evidence it points at — spend clustering below thresholds, expense claims replacing purchase
+  orders — is not in the correspondence graph, so this is authored knowledge rather than something the
+  engine can currently detect.
+- Cannot separate an approver who is slow from a path that is long; both produce the same latency.
+
+variants:
+- applies_to: regulated
+  change: The workaround is not merely inefficient, it is a finding. Latency is tracked as a control
+    weakness with the same seriousness as a missing approval.
+  why: An auditor reads a routed-around control as an absent one.
+- applies_to: startup_lean
+  change: Most approvals are one person; the failure is not shadow spend but the founder becoming the
+    bottleneck for decisions they did not want.
+  why: With a single approver there is no path to route around, only a queue to wait in.
+- applies_to: shared_services
+  change: Latency is measured per requesting function, because one function's experience of the path
+    is what determines whether that function routes around it.
+  why: Averages across functions hide exactly the population that has already given up.
+
+metrics:
+- name: approval_latency_vs_approver_norm
+  unit: ratio
+  description: Elapsed time against this approver's usual turnaround.
+  direction: lower_is_better
+- name: below_threshold_clustering
+  unit: percent
+  description: Share of requests landing just under an approval threshold. The workaround made
+    visible, and the one measurement that tests this heuristic directly.
+  direction: lower_is_better
+
+references:
+- title: Delegation of authority frameworks
+  kind: framework
+  note: Standard DOA design, where thresholds and turnaround targets are set together — which is the
+    practice this heuristic explains the reason for.
+- title: Control effectiveness and circumvention
+  kind: practitioner
+  note: 'The audit reading: a control routed around is reported as ineffective, not as slow.'
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. `limits` states plainly that the strongest
+    evidence for this heuristic — spend clustering below thresholds — lives in a finance system and
+    not in the correspondence graph, so it is authored expertise that a reasoner cannot currently
+    confirm. Saying so is the point; the alternative is a pattern marked executable against data
+    nobody has.'

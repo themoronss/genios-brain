@@ -3,7 +3,7 @@ identity:
   name: Approval Coordination
   domain: admin
   subdomain: executive_support
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Moving a decision through the people who are allowed to make it. The work is routing against
@@ -13,13 +13,111 @@ description: 'Moving a decision through the people who are allowed to make it. T
 
   '
 question: Who must sign this, in what order, and where exactly is it stuck?
+
+outcomes:
+- 'A named holder for every pending decision. "With finance" is not a holder; a person is. An approval
+  whose holder cannot be named is not slow, it is unowned, and the two have completely different
+  remedies — one needs a nudge and the other needs a decision about who decides.'
+- 'PENDING and STUCK told apart. An approver inside their own normal rhythm is pending and needs
+  nothing; the same elapsed time from an approver who is usually immediate is stuck. The distinction
+  is what makes chasing proportionate, and treating all waiting alike is what makes approval chasing
+  universally resented.'
+- 'The reason for the stall, where it can be read. Missing information, missing authority and
+  unwillingness look identical from the queue and need opposite responses — supply, re-route, or
+  escalate. Guessing between them wastes the one chase the relationship affords.'
+- 'Serial steps that could be parallel, made parallel; and parallel steps that must be serial, kept
+  serial. The commonest structural waste is a queue where a late approver rejects on grounds the first
+  approver could have raised.'
+- 'A rejection surfaced early rather than politely deferred. The negative outcome: an approval that
+  will not be granted is worth more today than a maybe held for a fortnight, and an approval process
+  that never returns a clean no is not exercising the control it claims to.'
+- 'The decision closed out to whoever is waiting on it. An approval granted and not communicated is
+  the same as one not granted, and it is the failure mode with the longest tail.'
+
+failure_modes:
+- 'CHASING TIME RATHER THAN BEHAVIOUR. A universal ageing threshold chases an approver who batches
+  weekly on day three and misses one who normally answers within the hour. Elapsed time is only
+  meaningful against this approver''s own pace.'
+- 'ROUTING TO THE ORG CHART. Seniority is not authority. Sending a decision to the most senior person
+  available produces either a rubber stamp with no real review, or a delay while they find the person
+  who was actually delegated it.'
+- 'SEQUENCING BY CONVENIENCE. Cheap approvers first, expensive last, feels efficient and produces the
+  worst possible failure — the whole queue spent before the person most likely to object even sees it.
+  The disqualifying reviewer goes first.'
+- 'MISTAKING ABSENCE FOR REFUSAL. An approver on leave with no delegate produces exactly the pattern of
+  an approver ignoring you. Escalating over the head of someone who is simply away is expensive and
+  hard to undo.'
+- 'ESCALATING WITHOUT NAMING WHAT IS BLOCKED. An escalation that says "this is overdue" invites the
+  question "so what", and the answer should have been in the message. Escalation without a stated
+  consequence trains the next rung to deprioritise the next one.'
+- 'ACCEPTING A DECISION FROM SOMEONE WITHOUT THE AUTHORITY. Convenient at the time and worthless at
+  audit, and it usually surfaces long after the person who accepted it has moved on.'
+
+kpis:
+- name: named_holder_share
+  unit: percent
+  description: Share of pending approvals where a specific person, not a function, holds the decision.
+    The number every other approval metric depends on.
+  direction: higher_is_better
+- name: approval_latency_vs_approver_norm
+  unit: ratio
+  description: Elapsed time divided by this approver's own usual turnaround. The relative reading that
+    separates pending from stuck.
+  direction: lower_is_better
+- name: disqualifying_review_position
+  unit: ordinal
+  description: Where in the sequence the reviewer most likely to reject sits. Late means the queue is
+    ordered for comfort rather than for cost.
+  direction: lower_is_better
+- name: clean_rejection_rate
+  unit: percent
+  description: Share of decisions returning an explicit no rather than lapsing. A process with a near
+    zero rate is not approving carefully, it is deferring.
+  direction: target_band
+- name: decided_but_uncommunicated_rate
+  unit: percent
+  description: Share of granted approvals where the waiting party was not told.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - admin.executive_support.inbox_and_correspondence
+  - admin.admin_operations.request_intake
+  - admin.contract_and_vendor.procurement_administration
+  downstream:
+  - admin.executive_support.commitment_tracking
+  - admin.contract_and_vendor.purchase_order_management
+  - admin.finance_administration.payables_administration
+  parallel:
+  - admin.compliance_and_governance.policy_administration
+  - admin.executive_support.delegation_and_task_routing
+
+applies_to:
+  models: [in_house, shared_services, executive_office, enterprise_admin, regulated, multi_entity,
+           outsourced, distributed, hybrid, startup_lean, automated_first]
+  offerings: [assurance, coordinative, transactional]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-26'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  notes: 'Promoted out of Phase-1 stub. Not on the design partner''s live route today, but
+    `admin.obj.core.approval` is in `admin.sit.live_account_admin`''s optional load-set, so it is one
+    fact away from being reached — an administrative relationship that produces a signature request
+    routes straight through here.
+
+    The approval object already carries executable patterns for the states this capability turns on
+    (`apv.stuck_with_the_approver`, `apv.nobody_owns_the_decision`, `apv.chased_repeatedly_without_movement`,
+    `apr.silent_far_past_own_cadence`), which is why pending-versus-stuck is authored as an outcome
+    rather than as an aspiration.
+
+    No numbers: how long is stuck, and how to weight an ageing approval, are Layer 4''s arithmetic.
+
+    '
+  reviewed_at: '2026-08-26'
+
 admission:
-  accepted_content_hash: c7576682764ca3e31a18bc731adfce0f856e8368fdb632a253e19c97bf8d7d1f
+  accepted_content_hash: 569f09613aaa6c297dbf1413bc8264c5302b51c5f1a4d5f48714eb5399bead26

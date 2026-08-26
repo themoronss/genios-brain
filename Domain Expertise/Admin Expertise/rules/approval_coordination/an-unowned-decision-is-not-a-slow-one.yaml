@@ -1,0 +1,123 @@
+identity:
+  id: admin.rule.approval_coordination.an_unowned_decision_is_not_a_slow_one
+  name: An unowned decision is not a slow one
+  kind: rule
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.approval_coordination
+  subdomain: executive_support
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A pending approval with no named holder must not be chased as though it were late. It is
+    not waiting on anybody, and every reminder sent into it lands on a group where each recipient
+    reasonably assumes it belongs to someone else.'
+  answers:
+  - Is this approval slow, or is it unowned?
+  - What is the correct next act when nobody holds the decision?
+  not:
+  - A rule about who should hold it. It requires that someone does, not that a particular person does.
+  - A rule about escalation timing, which depends on the holder's own pace once one exists.
+
+rule:
+  statement: 'Where an approval is outstanding and no individual holder can be resolved, the system
+    MUST raise the ownership question rather than a chase. The item that goes forward is "who decides
+    this", addressed to whoever can answer it — never a reminder addressed to the decision itself.'
+  spans:
+  - admin.obj.core.approval
+  - admin.obj.core.approver
+  - admin.obj.core.escalation
+  when:
+  - {exists: commitment.due_at}
+  - {absent: party.role}
+  then: 'Emit an ownership-resolution prompt naming the decision and the parties who could hold it,
+    and suppress reminder and escalation candidates until a holder exists.'
+  severity: blocking
+  why: 'Diffusion of responsibility is not a metaphor here: a reminder addressed to a function is
+    read by several people, each of whom correctly infers that a message sent to everyone was not sent
+    to them. The queue then ages while producing chase activity, which is the worst combination —
+    the appearance of pursuit with none of its effect, and a record that will later be read as
+    evidence that the requester was told and did nothing. Naming a holder is also cheap, which is why
+    the rule blocks rather than warns.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'A GENUINE DUTY ROTA. Where a function operates a published rota or a shared queue with an owner
+    of the day, the function IS a holder and reminding it is correct. The distinguishing evidence is
+    whether anyone can say who holds it today — a rota can, a mailbox cannot.'
+  - 'THE FIRST CONTACT. Before anything has been sent, addressing a request to a function is the
+    normal way to find the holder. The rule bites on the SECOND message, not the first, and applying
+    it to initial routing would prevent the very step that resolves ownership.'
+  - 'AN EXTERNAL COUNTERPARTY WHOSE INTERNAL STRUCTURE IS NOT OURS TO KNOW. We cannot name a holder
+    inside another organisation and should not pretend to; the correct act is to ask them who owns it,
+    which is an ownership prompt addressed outward and satisfies the rule''s intent.'
+  - 'A DEADLINE WITH AN EXTERNAL CONSEQUENCE ARRIVING FIRST. Where a filing or contractual date will
+    pass before ownership can be resolved, both go out together — the ownership question and the
+    warning — because the consequence does not wait for the governance to be tidy.'
+  - 'THE HOLDER IS KNOWN OFF-SYSTEM. Absence of `party.role` is absence of evidence, not evidence of
+    absence. Where a human knows who holds it, recording that is the fix; the rule should not be read
+    as a claim that the decision is genuinely unowned in the world.'
+
+objects_used:
+- admin.obj.core.approval
+- admin.obj.core.approver
+- admin.obj.core.escalation
+- admin.obj.core.policy
+
+outcomes:
+- Unowned decisions surface as ownership questions rather than ageing quietly.
+- No reminder is addressed to a function where no individual holds the item.
+
+failure_modes:
+- 'READ AS A REASON TO WAIT. The rule replaces one act with another; it does not license inaction on
+  the decision.'
+- 'FIRING ON FIRST CONTACT. Blocking the initial routing message prevents the step that discovers the
+  holder, which inverts the rule''s purpose.'
+- 'TREATING EVERY SHARED MAILBOX AS UNOWNED. A staffed queue with a rota is a holder; conflating the
+  two produces ownership prompts to functions that already answered.'
+
+limits:
+- Rests on `party.role`, which says what a party is to us and is absent for most counterparties. The
+  final exception exists because that absence is frequently an evidence gap rather than a real one.
+- Cannot see ownership recorded in a system outside the graph — a workflow tool, a DOA matrix.
+
+variants:
+- applies_to: shared_services
+  change: The rota is the holder and the rule is satisfied by the queue's own ownership record.
+  why: Structural ownership is the whole design of the model.
+- applies_to: regulated
+  change: An unowned approval is a control finding in its own right and is recorded as one, not merely
+    resolved.
+  why: The regime cares that the authority was defined, not only that a decision eventually appeared.
+
+metrics:
+- name: named_holder_share
+  unit: percent
+  description: Share of pending approvals with an individual holder.
+  direction: higher_is_better
+- name: chase_into_the_void_rate
+  unit: percent
+  description: Share of reminders sent on items with no resolvable holder. What this rule drives to
+    zero.
+  direction: lower_is_better
+
+references:
+- title: Delegation of authority frameworks
+  kind: framework
+  note: Where holders are supposed to be defined, and whose absence this rule detects downstream.
+- title: Diffusion of responsibility
+  kind: research
+  note: The mechanism behind why a message to everyone is acted on by nobody.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. The `when` block uses `party.role`, which is the densest fact Layer 2
+    writes about counterparties (705 rows across 124 nodes on the design partner''s org) and which was
+    absent from the corpus substrate list until this batch — the rule was unauthorable before, and
+    that absence is exactly what made "who holds this" unaskable in the corpus.'
