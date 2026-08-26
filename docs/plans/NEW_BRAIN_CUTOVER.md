@@ -195,59 +195,116 @@ traffic instead of being swapped blind.
 
 ---
 
-# Phase 2 — the corpus, not the code (surveyed 2026-08-25)
+# Phase 2 — the corpus, not the code
 
-The cutover works. What limits it now is authored content, and the survey is not what the
-capability count suggests:
+> Surveyed 2026-08-25. Worked in three batches on 2026-08-26 — commits `9ddeeed`, `087d4e6`,
+> and the one carrying this edit. Every number below was measured against
+> `org_e97e86f858ad48b2bbf64b8a`, not against tests.
 
-| Module | capabilities | Phase-1 stubs | situation files |
-|---|---|---|---|
-| Sales | 46 | **43** | 7 (only 1 account-scoped) |
-| Customer Support | 49 | 0 | 14 |
-| Admin | 57 | **0** | **0** |
+## Where Phase 2 stands
 
-Two different problems wearing one label:
+| Measure | Before (2026-08-25) | Now |
+|---|---|---|
+| Situations routing | 52 / 60 | **55 / 60** |
+| Compiled / decided | 52 / 52 | **55 / 55** |
+| `no_route` | 6 | **3** |
+| `required_missing` | 2 | 2 (unchanged) |
+| Compiled cards rendering `raw_slot` | 11 of 18 | **the four causes are fixed; see below** |
+| Live routes compiling through a placeholder capability | 3 of 4 types | **0 of 3 sales types** |
+| Tests | 1640 | **1675** |
 
-- **Sales** — 43 of 46 capabilities carry identity, purpose and an object load-set and nothing
-  else ("Phase 1 stub — promote by adding outcomes, playbooks, heuristics, mental_models, kpis,
-  handoffs and situations"). The tenant is on the `sales` pack, so this is what the design partner
-  actually sees.
-- **Admin** — fully authored and completely unroutable: zero situation files, so no L2 output can
-  ever reach any of its 57 capabilities. Content without a route is invisible.
-- **Customer Support** — the only module with both halves.
+## Batch 1 — the compiled brain now writes its own cards (`9ddeeed`)
 
-## Why 18 cards read identically
+Eleven of eighteen compiled cards rendered `raw_slot`, and ten shipped the literal word "open" as
+their situation line. Four independent causes:
 
-`routes` is built per L2 `situation_type` from the situation files, and a route only forms through
-a capability that is not a stub. Sales has exactly one account-scoped situation
-(`inbound_fit_check` → `opportunity`), so every company-anchored situation compiles through one
-capability and produces one template with the domain name swapped.
+1. **No template.** `card_builder` reads `effective["templates"][reason_code]` from the TENANT
+   PACK; a compiled signal's reason_code is its situation type, which no pack authors. Empty
+   render_hint meant no guidance in the prompt (all eighteen cards read alike); empty fallback
+   meant a rejected line shipped the default `{stage}` slot. Fixed by authoring the copy in the
+   corpus: situation files carry a `render:` block that travels situation → RoutePlan →
+   ExpertisePackage → CapabilityManifest → `rcap.manifest` → the delivery SELECT. The wording is
+   pinned to the capability version that produced it.
+2. **Sentinel slots were handed to the model as facts.** `compute_slots` fills an absent fact with
+   a placeholder so the deterministic template stays grammatical; the prompt presented all of them
+   as "Key slots" and the model wrote down what it was told. On live facts the model's slot set
+   drops from seven values to two, both real.
+3. **V-01 threw away a good sentence.** Ten of eighteen situations came back 142–158 characters
+   against a 140 cap. An over-cap line now drops whole trailing SENTENCES while any complete
+   leading sentence fits; Law 3 holds (nothing cut mid-word).
+4. **V-02 rejected contractions as invented companies.** "We've" → "Weve" → not in any dictionary
+   → invented entity. Eight of eleven artifact rejections were this.
 
-L2 emits seven types on the design partner's org: `relationship` (25), `opportunity` (18),
-`investor_relationship` (11), `account_admin` (2), `recruiting_company` (2),
-`partnerships_company` (1), `investor_company` (1). Six of the seven have no account-scoped route.
+## Batch 2 — three of the six `no_route` were a vocabulary gap (`087d4e6`)
 
-## Work order, highest leverage first
+- **`investor_company` (1)** — `investor` is the model's word for the registered `fundraising`
+  domain; they never met, so the type fell to the generic `<domain>_<anchor>`.
+  `domain_spec._ALIASES` canonicalises at `resolve_domain`, and `refresh_situations` re-derived the
+  org's 83 situations. Routes and delivers.
+- **`recruiting_company` on `thegenios.com` (1)** — `is_platform_sender` kept the product's own
+  address out of the person graph but `_works_at` still minted the company node, so the product's
+  own website was a counterparty inside a customer's graph. Fixed for everything created from here;
+  the one existing correlation row is stale data, left rather than deleted from a live org unasked.
+- **`account_admin` (2)** — Admin had 57 authored capabilities and zero situation files, so the
+  domain was content with no door. `admin.sit.live_account_admin` authored on `commitment_tracking`.
+- **`recruiting_company` + `partnerships_company` on `boardy.ai` (2)** — NOT authored, deliberately.
+  boardy.ai is an introduction bot the pipeline already classifies as non-anchoring infrastructure,
+  and no Recruiting or Partnerships expertise exists in any corpus. Authoring a domain to serve an
+  introduction bot would be authoring a corpus for noise.
 
-1. **`customer_success` — PROMOTED, route still not forming.** The capability now carries
-   outcomes, kpis, handoffs and applies_to, and its admission hash is re-stamped.
-   `sales.sit.live_account_relationship` is written, `status: stable`, admitted, and the catalog
-   LOADS it (7 situations, was 6). But `domain("sales").routes["relationship"]` still lists only
-   `sales.sit.outbound_prospect`, so compile is unchanged at 18/60.
+## Batch 3 — the stubs that were actually on a live route
 
-   **Open question, start here:** read the route builder in `packs/compiler/` and find what it
-   requires beyond a loaded situation and a non-stub owner. Candidates not yet checked — the
-   capability's own `objects` load-set must cover the situation's, `also_serves` targets must all
-   resolve, or the owner capability needs `situations:` declared explicitly. One read of the
-   builder settles it; do not guess.
-2. **Author `investor_relationship`** — 11 situations. NOT a sales situation: an investor is not a
-   customer, which is why `relationship.nature` distinguishes them. It needs its own capability
-   whose failure mode is treating a fundraising conversation as a lost deal.
-3. **Give Admin its situation files** — 57 authored capabilities currently unreachable. Start with
-   `account_admin`.
-4. **Promote the remaining Sales stubs** in the order their situation types actually occur.
+`identity.stub` had already been flipped to `false` across the corpus, so `index.py` reported
+"0 stub" while 136 capabilities carried a name, a sentence, a question and nothing else — every one
+of them `status: stable`, `review_status: approved` and hash-pinned. **The admission ceremony asks
+whether a named human approved these exact bytes and never asked whether there were any bytes worth
+approving.**
 
-## What is NOT the problem
+Promoted the three that were on a live route: `account_research` (reached by all 55 routed
+situations, serving all three sales types), `lead_generation` (18), `expansion` (23). Every sales
+situation type on the live org now compiles entirely through capabilities that carry real
+expertise — measured, not assumed:
 
-Code. Capture, context, reasoning, delivery and the audit chain are all live and verified against
-the real org. Nothing below this line needs an engineer; it needs authored expertise.
+| type | capabilities | hollow |
+|---|---|---|
+| `opportunity` | 4 | 0 (was 2) |
+| `relationship` | 3 | 0 (was 2) |
+| `investor_relationship` | 2 | 0 (was 1) |
+| `account_admin` | 3 | 3 — the whole Admin domain is unpromoted |
+
+Hollowness is now **reported and not gated**, in two places: `_tools/admit.py --check` prints a
+per-domain promotion queue, and the compiler records `hollow_capability_ids` on the package. It is
+deliberately kept OUT of `admission_gaps`, because that list drives `review_state`, which decides
+whether a card may instruct — folding a content observation into it would make "thin" silently mean
+"unauthorised". Gating it today would un-route `account_admin` entirely and take coverage backwards.
+
+## What is left, and the honest blockers
+
+1. **`account_admin` routes but CANNOT DELIVER.** `ReasoningStore.persist_complete` refuses a write
+   unless `config_pack == capability_pack`. The capability's domain is `admin`; the only pack
+   modules that exist are `sales_v1` and `general_v1`, and the tenant holds sales@1.13.0 +
+   general@1.4.0. A live compile counts these under `no_tenant_pack` and emits nothing. **The same
+   is true of all 49 Customer Support capabilities.** This is the largest structural gap left: the
+   corpus can author a domain the tenant has no lane for, and nothing in the authoring path says so.
+   The honest unblock is an `admin` pack module plus a tenant promotion.
+2. **136 hollow capabilities** — 57 admin, 40 customer_support, 39 sales. Only the sales ones can
+   reach a user today. Promote in the order their situation types actually occur.
+3. **`required_missing` (2)** — two `relationship` situations want
+   `customer_support.obj.core.{customer_account,named_contact,support_plan}`, which are referenced
+   and not authored. A Customer Support object gap reached through a sales route.
+4. **`recruiting_company` / `partnerships_company` (3)** — see Batch 2; not a corpus gap.
+5. **`review_state` is still `draft` on every live package**, so every compiled card is an
+   `observation`. That is the abstention gate behaving correctly. It flips only when
+   `require_admission=True` compiles find no admission gaps at all.
+6. **`CardStore.claim_build` refuses a claim when ANY card row exists for the signal**, including an
+   expired one — so the pipeline's "an expired card reopens the door for a rebuild" comment is not
+   true in practice. Pre-existing, unfixed.
+7. **`deal.value`** is absent and deliberately never derived.
+8. **L2 worker count**: confirm from `/health/readiness` before changing it.
+
+## How to re-measure
+
+```
+PYTHONPATH=. .venv/bin/python scripts/corpus_route_probe.py          # per-type route coverage
+PYTHONPATH=. .venv/bin/python "Domain Expertise/_tools/admit.py" --check   # admission + hollow queue
+```

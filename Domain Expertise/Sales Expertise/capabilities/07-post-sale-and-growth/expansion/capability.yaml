@@ -11,17 +11,66 @@ description: 'Growing existing accounts through new teams, use cases or geograph
 
   '
 question: Where else in this account is there unserved need?
+outcomes:
+- 'A named unserved need inside an account we already have, evidenced by something someone said —
+  not a product we would like them to buy next.'
+- 'The new buying centre identified as its own buying centre. Expansion into a different team is a
+  fresh discovery with a different budget holder and a different problem; running it as a renewal
+  conversation is why most expansion attempts stall on people who were never asked.'
+- 'A judgment on whether the existing relationship is healthy enough to carry the ask. Expanding into
+  an account whose original business case is unmet converts one unhappy team into two.'
+- 'An explicit verdict: pursue now, wait for a named event, or leave alone. `Keep warm` is what gets
+  written when nobody decided.'
+failure_modes:
+- 'EXPANSION AS A SUBSTITUTE FOR NEW BUSINESS. An account gets asked repeatedly because it answers,
+  not because it needs anything. The tell is expansion attempts clustering on the friendliest
+  contacts rather than on the largest gaps.'
+- 'READING WARMTH AS DEMAND. A responsive thread is evidence about the relationship, not about
+  unserved need — the same confusion `customer_success` exists to keep out of health scoring.'
+- 'REUSING THE ORIGINAL CHAMPION FOR A DIFFERENT TEAM. Their authority does not travel, and asking
+  them to carry it spends the one relationship that was working.'
+kpis:
+- name: expansion_from_stated_need
+  unit: percent
+  description: Share of expansion attempts citing something the customer actually said. The
+    difference between expansion and a product pitch to an existing logo.
+- name: new_buying_centre_rate
+  unit: percent
+  description: Share of expansions reaching a budget holder who was not party to the original deal.
+- name: expansion_attempt_health_precondition
+  unit: percent
+  description: Share of attempts made on accounts with a current, non-at-risk relationship verdict.
+- name: repeat_ask_concentration
+  unit: percent
+  description: Share of attempts aimed at the same contacts. Rising means the capability is
+    following responsiveness rather than need.
+handoffs:
+  upstream:
+  - sales.post_sale_and_growth.customer_success
+  - sales.post_sale_and_growth.onboarding
+  downstream:
+  - sales.post_sale_and_growth.upsell
+  - sales.post_sale_and_growth.cross_sell
+  - sales.discovery_and_solution.discovery
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-26'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached by all twenty-three `relationship` situations on the design partner''s org, alongside
+    `customer_success`, which was promoted first and carried the route alone.
+
+    Note what is NOT here: no thresholds, no scores, no rules. Those are Layer 4''s arithmetic and
+    live in the pack manifest. A number appearing in a capability file means the Layer 3/4 boundary
+    has leaked.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-26'
+
 admission:
-  accepted_content_hash: f3db9ca8e19458f7f9c2568956420e88ce328c8f1d2fc909e9af22f5058ef032
+  accepted_content_hash: d712cdf0ea8729ee76eefc4629b65a5a833b61be17d4095b5f991a4bbd597e44

@@ -60,6 +60,11 @@ class RoutePlan:
     #: downstream (deliver's abstention gate reads the package review_state).
     admitted: bool = True
     admission_gaps: tuple[str, ...] = ()
+    #: Routed capabilities that are admitted and say nothing — no outcomes, kpis, handoffs or
+    #: failure modes, only a name, a sentence and a question. Separate from `admission_gaps`
+    #: because thinness is not an authority failure: this must be countable without deciding
+    #: whether the package may instruct.
+    hollow_capability_ids: tuple[str, ...] = ()
     #: The authored card copy for this route — `artifact_kind`, `render_hint` and the
     #: deterministic `fallback` — lifted from the winning situation file.
     #:

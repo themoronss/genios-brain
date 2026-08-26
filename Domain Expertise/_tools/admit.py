@@ -47,6 +47,29 @@ def expected(content: dict) -> str:
     return semantic_hash({k: v for k, v in content.items() if k != "admission"})
 
 
+#: Everything a capability file carries that is EXPERTISE rather than a label. A file with none of
+#: these has a name, a sentence and a question — which is a placeholder, not knowledge.
+_LABEL_KEYS = frozenset({"identity", "description", "question", "metadata", "admission"})
+
+
+def hollow(content: dict) -> bool:
+    """True when this document is admitted, hash-pinned, and says nothing.
+
+    The ceremony asks three questions — is it stable, did a named human approve it, do the bytes
+    still match — and never asked whether there was anything to approve. So 42 of the 47 Sales
+    capabilities, all 57 Admin capabilities and 40 of 49 Customer Support capabilities are
+    `status: stable`, `review_status: approved` and carry a stamped hash over a file whose own
+    notes say "Phase 1 stub — identity, purpose and object load-set only". Three of them are
+    reached by every routed situation on the design partner's org.
+
+    Reported, deliberately NOT gated. Refusing them today would un-route `account_admin` entirely
+    (all three Admin capabilities behind it are hollow) and take live coverage backwards. A count
+    that shows up on every run is what makes the promotion queue visible; a gate that breaks
+    routing is what makes it get switched off.
+    """
+    return not (set(content) - _LABEL_KEYS)
+
+
 def gate(content: dict) -> str | None:
     """None = the reviewer has done their part. Else why this document may not be stamped."""
     identity = content.get("identity") or {}
@@ -93,6 +116,7 @@ def main() -> int:
         targets = sorted(docs)          # --check over everything
 
     stamped = drifted = blocked = ok = 0
+    hollow_ids: list[str] = []
     for identifier in targets:
         source = docs.get(identifier)
         if source is None:
@@ -102,6 +126,8 @@ def main() -> int:
         want = expected(source.content)
         have = str((source.content.get("admission") or {}).get("accepted_content_hash") or "")
         reason = gate(source.content)
+        if reason is None and hollow(source.content):
+            hollow_ids.append(identifier)
 
         if reason is not None:
             # --all means "everything the reviewer approved", so an unapproved document is
@@ -122,7 +148,18 @@ def main() -> int:
         print(f"  STAMPED  {identifier} -> {want}")
         stamped += 1
 
-    print(f"\n{ok} already admitted, {stamped} stamped, {drifted} drifted, {blocked} blocked")
+    print(f"\n{ok} already admitted, {stamped} stamped, {drifted} drifted, {blocked} blocked, "
+          f"{len(hollow_ids)} HOLLOW")
+    if hollow_ids:
+        print("\nHOLLOW — admitted, hash-pinned, and carrying no expertise beyond a name, a\n"
+              "sentence and a question. Each one routes and contributes nothing to the answer.\n"
+              "Not blocked: refusing them today would un-route whole situation types (every\n"
+              "Admin capability is here). This is the promotion queue.")
+        by_domain: dict[str, list[str]] = {}
+        for identifier in hollow_ids:
+            by_domain.setdefault(str(identifier).split(".")[0], []).append(identifier)
+        for domain, ids in sorted(by_domain.items()):
+            print(f"  {domain:<18} {len(ids):>3}")
     return 1 if (drifted or blocked) else 0
 
 

@@ -88,6 +88,10 @@ class ExpertiseBuilder:
             # here and everything built from it stays non-prescriptive at the card layer.
             "review_state": "accepted" if plan.admitted else "draft",
             "admission_gaps": plan.admission_gaps,
+            # How much of this answer came from placeholders. Deliberately NOT folded into
+            # `review_state`: a thin capability is a content gap, an unadmitted one is an
+            # authority gap, and one number cannot mean both.
+            "hollow_capability_ids": plan.hollow_capability_ids,
             "excluded_runtime_entry_ids": runtime.excluded_entry_ids,
             "shadowed_runtime_entry_ids": runtime.shadowed_entry_ids,
             "runtime_conflict_resolutions": runtime.conflict_resolutions,

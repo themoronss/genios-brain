@@ -12,17 +12,66 @@ description: 'Producing a repeatable flow of accounts and contacts that match th
 
   '
 question: Where does a steady supply of in-profile leads come from?
+outcomes:
+- 'A judgment on where this specific account came from and whether that source has produced anything
+  before. Source is the only lead attribute available before any conversation, and it is the one
+  most consistently discarded.'
+- 'In-profile and out-of-profile separated BEFORE qualification spends capacity on either. Volume
+  without fit is the most expensive activity in sales precisely because it consumes the scarce
+  resource rather than an abundant one.'
+- 'Inbound distinguished from outbound-derived interest, because they decay at different speeds and
+  a single queue treats them identically.'
+- 'An explicit verdict on whether to pursue, park or discard — never a lead that stays in the list
+  because nobody decided about it.'
+failure_modes:
+- 'COUNTING LEADS AS AN OUTCOME. A lead is an input. A capability measured on how many it produced
+  will produce more of exactly the ones that should not have been created.'
+- 'TREATING AN INTRODUCTION BROKER AS A LEAD. An introduction bot or a networking service appears in
+  every conversation it brokers and is a party to none of them; filed as a lead it generates one
+  account per introduction and pollutes every downstream count.'
+- 'FIT ASSUMED FROM THE SOURCE. That a lead arrived through a good channel is evidence about the
+  channel, not about the account.'
+kpis:
+- name: in_profile_share
+  unit: percent
+  description: Share of generated leads that survive a fit check. The channel-quality measure, and
+    the only one that predicts qualification cost.
+- name: source_attribution_coverage
+  unit: percent
+  description: Share of leads whose origin is recorded rather than inferred later.
+- name: lead_to_qualified_conversion
+  unit: percent
+  description: Read per source, never in aggregate — an average across channels describes none of them.
+- name: undecided_lead_age
+  unit: days
+  description: How long a lead sits with no pursue/park/discard verdict. Rising means the capability
+    is producing and not deciding.
+handoffs:
+  upstream:
+  - sales.market_and_targeting.icp_definition
+  - sales.market_and_targeting.tam_sam_som
+  downstream:
+  - sales.prospecting_and_outreach.account_research
+  - sales.qualification.lead_qualification
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-26'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached by all eighteen `opportunity` situations on the design partner''s org, where it was one
+    of four routed capabilities and one of the two that said nothing.
+
+    Note what is NOT here: no thresholds, no scores, no rules. Those are Layer 4''s arithmetic and
+    live in the pack manifest. A number appearing in a capability file means the Layer 3/4 boundary
+    has leaked.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-26'
+
 admission:
-  accepted_content_hash: ca3ec55c664dd6cba98ba2ce8f9e7b1837b429564832d3961db16a4c22772b5f
+  accepted_content_hash: 340ed6af85887da15580f083903595e72bb0cd3a96e929bee340633527f4538b

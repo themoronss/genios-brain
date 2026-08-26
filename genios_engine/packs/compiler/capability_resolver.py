@@ -83,6 +83,29 @@ def _load_set(manifest: dict) -> tuple[set[str], set[str]]:
 
 
 
+#: Keys a capability file carries that are a LABEL rather than expertise. A file with nothing
+#: outside this set has a name, a sentence and a question.
+_LABEL_KEYS = frozenset({"identity", "description", "question", "metadata", "admission"})
+
+
+def _hollow(capability) -> bool:
+    """Admitted, hash-pinned, and saying nothing.
+
+    The ceremony asks whether a named human approved these exact bytes. It never asked whether
+    there were any bytes worth approving, so 136 of the corpus's capabilities are `stable`,
+    `approved` and hash-pinned over a file whose own notes read "Phase 1 stub — identity, purpose
+    and object load-set only". Three of them were reached by every routed situation on the design
+    partner's org, which is a large part of why eighteen compiled cards read alike.
+
+    RECORDED, NOT SKIPPED. A hollow capability still routes: refusing it today would un-route
+    `account_admin` entirely — all three Admin capabilities behind it are hollow — and take live
+    coverage backwards. It lands in `admission_gaps`, which flows to the package's
+    `review_state`/`admission_gaps` metadata, so a compile can be asked "how much of this answer
+    came from placeholders?" and give a number instead of a shrug.
+    """
+    return not (set(capability.content) - _LABEL_KEYS)
+
+
 def _admission_reason(capability) -> str | None:
     """None = admitted. Else the named reason this capability may not carry authority."""
     content = capability.content
@@ -144,6 +167,7 @@ class CapabilityResolver:
         skipped_capabilities: set[str] = set()
         skipped_reasons: dict[str, str] = {}
         admission_gaps: list[str] = []
+        hollow_capabilities: set[str] = set()
         render: dict | None = None
         render_situation_id: str | None = None
         render_rank: tuple[int, str] | None = None
@@ -217,6 +241,13 @@ class CapabilityResolver:
                 #   admission.accepted_content_hash == the catalog's computed content hash
                 # The hash pin is the difference between accepting a FILE and accepting its
                 # CONTENT — an edit after review silently un-accepts, which is the point.
+                if _hollow(capability):
+                    # Its OWN field, deliberately not `admission_gaps`. That list drives
+                    # `plan.admitted`, which drives the package's `review_state`, which decides
+                    # whether a card may instruct — folding a content observation into it would
+                    # silently make "thin" mean "unauthorised" and prevent any package containing
+                    # a single placeholder from EVER being accepted. Two different questions.
+                    hollow_capabilities.add(capability_id)
                 verdict_reason = _admission_reason(capability)
                 if verdict_reason is not None:
                     admission_gaps.append(f"{capability_id}:{verdict_reason}")
@@ -287,6 +318,7 @@ class CapabilityResolver:
             skipped_capability_ids=tuple(sorted(skipped_capabilities)),
             admitted=not admission_gaps,
             admission_gaps=tuple(sorted(admission_gaps)),
+            hollow_capability_ids=tuple(sorted(hollow_capabilities)),
             render=render,
             render_situation_id=render_situation_id,
         )

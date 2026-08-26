@@ -11,17 +11,72 @@ description: 'Assembling the firmographic, technographic and situational picture
 
   '
 question: What do we need to know before we contact this account?
+outcomes:
+- 'A verdict on what is actually KNOWN about this account, separated from what is assumed. The
+  distinction is the whole capability: an account nobody has researched and an account researched
+  and found unremarkable produce identical empty records, and the two call for opposite next moves.'
+- 'The trigger, if there is one, named with its source — a raise, a hire, a launch, a stated
+  problem. A trigger is what makes a first message about them rather than about us.'
+- 'What the counterparty has said about themselves, in their own words, preferred over anything
+  inferred. On a live thread this is the cheapest and most reliable research available and is
+  routinely skipped in favour of firmographics nobody can verify.'
+- 'The gaps stated as gaps. Industry, size and geography are absent for most accounts reaching this
+  capability, and the honest output names them as unknown rather than resolving them to a default
+  that reads downstream as an assessment.'
+- 'A stop verdict when the account is already understood well enough to act. Research that continues
+  past the point of decision is the most common way this capability destroys value.'
+failure_modes:
+- 'ASSERTING FROM ABSENCE. Fifteen of the design partner''s eighteen company nodes hold zero facts,
+  and every field this capability could report resolves to `unknown`. Reporting those as findings
+  produces a confident, empty dossier — worse than none, because the seller stops looking.'
+- 'RESEARCHING INSTEAD OF ASKING. Once a conversation is live, the counterparty is a better source
+  than any database, and a question they can answer in one line costs less than an hour of search.'
+- 'A DOSSIER NOBODY USES. Output that does not change the next message is cost with no return. The
+  test is whether one sentence of the outreach would differ.'
+kpis:
+- name: known_versus_assumed_ratio
+  unit: percent
+  description: Share of reported attributes traceable to a source, rather than inferred or defaulted.
+    The number this capability lives or dies by.
+- name: trigger_hit_rate
+  unit: percent
+  description: Share of researched accounts where a real, dated trigger was found. Near zero means
+    the sources available cannot support the claim this capability makes.
+- name: research_to_first_message_lead_time
+  unit: hours
+  description: Time from research starting to outreach going out. Research that outlives the trigger
+    it found has produced nothing.
+- name: unused_research_rate
+  unit: percent
+  description: Share of researched accounts contacted with a message that cites none of it.
+handoffs:
+  upstream:
+  - sales.market_and_targeting.icp_definition
+  - sales.prospecting_and_outreach.lead_generation
+  downstream:
+  - sales.prospecting_and_outreach.outreach
+  - sales.qualification.lead_qualification
+  - sales.post_sale_and_growth.customer_success
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-26'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Every one of the fifty-five routed situations on the design partner''s org compiles through
+    this capability — it serves `opportunity`, `relationship` and `investor_relationship` alike — and
+    until now it carried a name, a description and nothing else.
+
+    Note what is NOT here: no thresholds, no scores, no rules. Those are Layer 4''s arithmetic and
+    live in the pack manifest. A number appearing in a capability file means the Layer 3/4 boundary
+    has leaked.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-26'
+
 admission:
-  accepted_content_hash: e7ea812d768aca2abbbadcc4158780e661465560439caa6b6560051b8da09418
+  accepted_content_hash: 9142d6904138f04c3a4769052f056827653dea31bedf9bb2c41d23a0af55b0c4
