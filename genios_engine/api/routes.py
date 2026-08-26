@@ -2206,7 +2206,8 @@ _ASK_SIGNALS = frozenset({"question", "meeting_request", "proposal_sent", "demo_
                           "contract_requested", "objection", "next_step_agreed"})
 
 
-def _actionability(reason_code: str | None, obs_kinds: set, fact_fields: set) -> dict:
+def _actionability(reason_code: str | None, obs_kinds: set, fact_fields: set,
+                   *, capability_id: str | None = None) -> dict:
     """Update 1 — the universal zero-clarity gate. A card may carry a confident action imperative
     ('reply now', 'deliver the commitment') ONLY when the decisive context for its type is grounded.
     When the action-critical fact is missing, fail closed: switch to a context-recovery outcome so
@@ -2217,7 +2218,8 @@ def _actionability(reason_code: str | None, obs_kinds: set, fact_fields: set) ->
     sales-critical signals (closed_lost_risk, objection_open, demo_requested, timeline_slip)
     entirely ungated and gave every future rule the same free pass by default.
     """
-    return _decisive.evaluate(reason_code, obs_kinds, fact_fields)
+    return _decisive.evaluate(reason_code, obs_kinds, fact_fields,
+                              capability_id=capability_id)
 
 
 # Per-ask-signal step text — the concrete next move the recommendation should propose.
@@ -2524,7 +2526,8 @@ def _card_intelligence(org_id: str, card: dict) -> tuple[dict, dict, dict]:
     if _is_connector(canonical_key, obs_counts):
         actionability = _connector_gate(canonical_key)
     else:
-        actionability = _actionability(reason_code, obs_kinds, gate_facts)
+        actionability = _actionability(reason_code, obs_kinds, gate_facts,
+                                       capability_id=card.get("capability_key"))
     decision = _decision_projection(reason_code, card, dec_facts, obs_kinds, actionability,
                                     situation)
     context = {"profile": profile, "signals": signals, "interactions": interactions,

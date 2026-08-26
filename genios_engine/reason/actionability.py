@@ -88,15 +88,19 @@ UNDECLARED = Decisive(
 #: hash matched a named reviewer's approval, and its candidate survived the constraint checks. A
 #: second gate keyed on a name no pack was ever going to contain is not fail-closed — it is a
 #: default that cannot be satisfied, which is a different thing.
-_COMPILED_LANE_PREFIX = "expertise."
+def evaluate(reason_code: str | None, obs_kinds: set, fact_fields: set,
+             *, capability_id: str | None = None) -> dict:
+    """`actionable` only when the decisive context for this reason code is grounded.
 
-
-def evaluate(reason_code: str | None, obs_kinds: set, fact_fields: set) -> dict:
-    """`actionable` only when the decisive context for this reason code is grounded."""
-    code = reason_code or ""
-    if code.startswith(_COMPILED_LANE_PREFIX):
+    `capability_id`, not a reason-code prefix. The first attempt at this keyed on codes starting
+    "expertise." and never fired once: the compiled lane emits its reason code as the capability's
+    LAST SEGMENT so it lives inside the tenant's pack — `relationship`, `opportunity`,
+    `investor_relationship`. Guessing the shape of an identifier instead of reading the field that
+    carries it is how a fix ships, passes, and changes nothing.
+    """
+    if capability_id:
         return {"state": "actionable"}
-    req = REQUIREMENTS.get(code)
+    req = REQUIREMENTS.get(reason_code or "")
     if req is None:
         req = UNDECLARED
     elif req.satisfied(obs_kinds, fact_fields):
