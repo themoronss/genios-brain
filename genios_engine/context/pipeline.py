@@ -495,7 +495,17 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             # A company reached through one of OUR OWN seats is us, not a counterparty.
             # Without this, every outbound email anchors on our own domain and the whole
             # org collapses into one situation containing everything.
-            if (_norm_email(email) or "") in internal_set:
+            #
+            # And a company reached through the PLATFORM's own address is nobody's counterparty
+            # either. `is_platform_sender` already keeps `invite@thegenios.com` out of the person
+            # graph — but only the PERSON was protected. `_works_at` still minted a `thegenios.com`
+            # company node and left it eligible to anchor, so the product's own domain became a
+            # situation inside the customer's graph: the design partner carries a
+            # `recruiting_company` situation on `thegenios.com`, which is a card advising a founder
+            # about his relationship with his own vendor's website. Two different questions —
+            # "is this the customer?" (internal_set) and "is this us, the product?"
+            # (is_platform_sender) — and the answer to either one means this is not a counterparty.
+            if (_norm_email(email) or "") in internal_set or is_platform_sender(email):
                 internal_nodes.add(company)
             if store.write_edge(conn, org_id=org_id, edge_type="works_at",
                                 from_node_id=person_node, to_node_id=company, confidence=0.9,

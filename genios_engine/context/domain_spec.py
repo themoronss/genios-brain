@@ -91,11 +91,38 @@ def extend(domain: str, **changes) -> DomainSpec:
     return register(replace(spec_for(domain), **changes))
 
 
+#: Two names for one domain. The LEFT side is a word a producer actually emits; the right is the
+#: registered spec it denotes.
+#:
+#: `investor` is the model's own word — `_RELATIONSHIP_NATURES` in the L2 pipeline offers it, and
+#: the model reasonably answers with it when a message is about a fund. The registry calls the
+#: same domain `fundraising`. Nothing was wrong with either name; what was wrong is that they did
+#: not meet. An unregistered domain gets the generic spec, which types a company-anchored
+#: situation `<domain>_<anchor>` — so one of the design partner's situations was `investor_company`
+#: rather than `investor_relationship`, and the authored investor-relations route could not see
+#: it. Not a mislabel and not a gap: two vocabularies for one thing, which is exactly what an
+#: alias is for. (Layer 3 has the mirror of this table in `capability_resolver.DOMAIN_ALIASES`,
+#: mapping a corpus folder name to an L2 domain id.)
+#:
+#: An alias is deliberately NOT the same as `register()`ing the name: the canonical name is what
+#: gets stored, so the correlation key, the situation type and the L3 domain hint all agree, and
+#: a diff in `spec_version()` records the day they started agreeing.
+_ALIASES: dict[str, str] = {
+    "investor": "fundraising",
+}
+
+
+def canonical_domain(domain: str | None) -> str:
+    """The registered name for a domain someone referred to by another of its names."""
+    name = (domain or "").strip().lower() or "general"
+    return _ALIASES.get(name, name)
+
+
 def spec_for(domain: str | None) -> DomainSpec:
     """The spec for a domain. NEVER raises and never returns None — an unknown domain is
     an ordinary case, and making callers handle a missing spec would push domain
     awareness back into every call site."""
-    name = (domain or "").strip().lower() or "general"
+    name = canonical_domain(domain)
     return _SPECS.get(name) or generic_spec(name)
 
 
@@ -116,8 +143,13 @@ def spec_version() -> str:
     from dataclasses import asdict
 
     from genios_engine.platform.canonical import stable_id
-    return stable_id("dspec", {name: asdict(spec)
-                               for name, spec in sorted(_SPECS.items())})
+    return stable_id("dspec", {"specs": {name: asdict(spec)
+                                        for name, spec in sorted(_SPECS.items())},
+                               # An alias decides which spec a domain resolves to, so it changes
+                               # the derived `situation_type` exactly as a spec edit does. Leaving
+                               # it out of the hash would make a re-typing unattributable — the
+                               # one thing this stamp exists to prevent.
+                               "aliases": dict(sorted(_ALIASES.items()))})
 
 
 def registered_domains() -> tuple[str, ...]:

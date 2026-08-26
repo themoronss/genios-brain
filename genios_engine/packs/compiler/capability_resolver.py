@@ -35,6 +35,14 @@ DOMAIN_ALIASES: dict[str, str] = {
     # equal the capability's domain). Splitting fundraising into its own corpus domain would
     # have produced a capability that compiles, reasons, and can never become a card.
     "fundraising": "sales",
+    # `investor` is the SAME domain under the model's own word for it — `_RELATIONSHIP_NATURES`
+    # in the L2 pipeline offers `investor`, the registry calls it `fundraising`, and the two never
+    # met. `context.domain_spec._ALIASES` now canonicalises the name where a hint becomes THE
+    # domain, so nothing new is stored as `investor`; this entry exists because situations already
+    # stored under the old name are real and re-typing history silently would be worse than
+    # reading it. Deliberately duplicated rather than imported: L2 and L3 share no module today,
+    # and one import to save one line of data is not worth the edge.
+    "investor": "sales",
 }
 
 #: Layer 2 domain ids that are NOT a domain — they mean "no domain was identified".

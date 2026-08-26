@@ -57,6 +57,8 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import text
 
+from genios_engine.context.domain_spec import canonical_domain
+
 from genios_engine.platform.canonical import stable_id
 
 # How long a weak (entity+domain) correlation stays open to new evidence. A conversation
@@ -150,7 +152,10 @@ def resolve_domain(domain_hints: list | None) -> str:
     if not ranked:
         return DEFAULT_DOMAIN
     ranked.sort()
-    return ranked[0][2]
+    # CANONICALISE HERE, at the one point where a hint becomes THE domain. This value is the
+    # correlation key, the stored `context_situations.domain` and the hint Layer 3 resolves a
+    # corpus folder from, so an alias applied anywhere later would leave those three disagreeing.
+    return canonical_domain(ranked[0][2])
 
 
 #: Roles that make a party INFRASTRUCTURE for a conversation rather than a party to it.

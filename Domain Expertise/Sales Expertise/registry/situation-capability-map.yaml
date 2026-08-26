@@ -222,7 +222,6 @@ routed_l2_types:
 # Layer 2 emits these and NO situation in ANY domain binds them. Each is a signal
 # that compiles to nothing, silently. Global, not this domain's fault.
 unrouted_l2_types:
-  - account_admin
   - investor_contact
 
 # Authored but unreachable — no situation routes into them.
@@ -260,7 +259,7 @@ unreachable_objects: []
 stats:
   l2_types_total: 9
   l2_types_routed_here: 5
-  l2_types_unrouted_globally: 2
+  l2_types_unrouted_globally: 1
   l2_types_pending: 0
   situations: 8
   capabilities: 47
