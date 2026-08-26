@@ -264,7 +264,13 @@ def _fit(text: str, cap: int) -> str | None:
     if len(text) <= cap:
         return text
     kept = ""
-    for sentence in re.findall(r"[^.!?]+[.!?]+|\S[^.!?]*$", text):
+    # A dot inside a hostname or an address is not a sentence boundary. Splitting naively cut
+    # "antler.co passed on Residency" down to "antler." and
+    # "deepthi.chandrashekhar@nsrcel.iimb.ac.in replied" to "deepthi. chandrashekhar@nsrcel. iimb.
+    # ac." — headlines that name a company nobody can find. A boundary needs whitespace after the
+    # stop, which is what separates "…ac.in replied" from "…replied. Next".
+    for sentence in re.findall(
+            r"(?:[^.!?]|[.!?](?!\s|$))+(?:[.!?]+(?=\s|$))?", text):
         # Normalise as we join: a sentence carries its leading space and `kept` already ends in
         # one, so the naive concatenation measures a double space and rejects a run that fits.
         candidate = re.sub(r"\s+", " ", kept + sentence).strip()
