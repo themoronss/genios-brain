@@ -168,8 +168,16 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
                          if c.get("candidate_id") == candidate_id), None)
     if selected_row is None:
         return "nothing_to_emit"
-    review_state = str((package.review_state if hasattr(package, "review_state")
-                        else (package.to_semantic_dict() or {}).get("review_state")) or "draft")
+    # review_state lives in the package's METADATA, not at its top level and not in the semantic
+    # dict. Both lookups above returned None on every real package, so the `or "draft"` fallback
+    # fired every time — and `draft` is what makes a card an observation instead of an
+    # instruction. Fifty-three cards told the design partner "Context incomplete — open the
+    # source and review it before acting" while the packages behind them were all `accepted`
+    # with zero admission gaps. The authority was earned and then thrown away by a lookup that
+    # could not find it; a default that silently downgrades has to read the real field first.
+    metadata = package.metadata if isinstance(getattr(package, "metadata", None), dict) else \
+        dict(getattr(package, "metadata", {}) or {})
+    review_state = str(metadata.get("review_state") or "draft")
     # The legacy lane will not re-publish a rule/node inside its cooldown window; without the same
     # discipline the sweep would expire and rebuild every compiled card on every run — a queue that
     # reshuffles under the user each sweep, and an LLM render paid for each time. The compiled
