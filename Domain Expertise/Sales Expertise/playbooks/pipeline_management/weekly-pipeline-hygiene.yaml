@@ -6,24 +6,189 @@ identity:
   scope: capability
   owner_capability: sales.revenue_operations.pipeline_management
   subdomain: revenue_operations
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: A pipeline is a shared factual record, not a motivational artifact. The weekly pass moves
-    every deal to its true stage, dates every next step, and removes the corpses — because every fiction
-    in the pipeline becomes a fiction in the forecast.
+  statement: 'A pipeline is a shared factual record, not a motivational artefact. The regular pass
+    moves every deal to its true stage, dates every next step, and removes the corpses — because every
+    fiction in the pipeline becomes a fiction in the forecast.'
+  answers:
+  - What does a pipeline pass actually consist of?
+  - How is a dead deal distinguished from a quiet one?
+  not:
+  - A forecast. This produces the record the forecast is computed from.
+  - A deal review. Whether a live deal is winnable is a different inspection with different questions.
+
+when_to_use:
+  situations:
+  - sales.sit.out_of_profile_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - proposal_sent
+  - closed_lost_mention
+  do_not_use_when:
+  - 'The pipeline is too small for the arithmetic to mean anything — one or two deals dominate the
+    ratio and the pass produces ceremony rather than information.'
+  - 'Closing a deal lost is treated as a performance event. Hygiene under those conditions produces
+    hidden pipeline, which is worse than dirty pipeline because it is invisible.'
+  - 'Activity is not being captured. Without buyer-activity evidence the pass degenerates into asking
+    sellers to assert liveness, which is the thing it exists to replace.'
+
 steps:
 - order: 1
-  name: Stage by evidence, not optimism
-  description: A deal is in 'proposal' when a proposal was SENT, not intended. Stage definitions are behavioural
-    and non-negotiable, or stages mean nothing.
+  name: Stage by evidence, not by intention
+  description: 'A deal is at proposal when a proposal was SENT — `proposal_sent` is an observation the
+    record carries — not when one is being written. Stage definitions are behavioural and
+    non-negotiable, or every conversion rate downstream is a fiction that compounds quarterly.'
   actor: human
+  objects_read:
+  - sales.obj.core.deal
+  - sales.obj.core.proposal
+  produces: A stage per deal traceable to something that happened.
+  done_when: No stage rests on an intention.
+
 - order: 2
-  name: Every open deal carries a dated next step
-  description: No next step = not a deal, it is a memory. Date in the past = this week's first follow-up.
-  actor: human
+  name: Separate buyer activity from seller activity
+  description: 'Follow-ups sent into silence keep a dead deal looking fresh. The liveness question is
+    what the BUYER last did — `deal.last_inbound`, an inbound reply, a meeting they attended — and it
+    is the qualifier that makes every later number honest.'
+  actor: system
+  objects_read:
+  - sales.obj.core.deal
+  produces: A buyer-activity recency per deal, distinct from last-touched.
+  done_when: Liveness is computed from inbound evidence only.
+
 - order: 3
-  name: Kill zombies monthly, kindly
-  description: No buyer activity in 30-45 days → closed-lost with a reason and a revisit date. A fat pipeline
-    of dead deals hides the real coverage problem it exists to reveal.
+  name: Every open deal carries a dated next step
+  description: 'No next step means it is not a deal, it is a memory. A date already in the past is
+    this week''s first piece of work rather than a data-quality complaint.'
   actor: human
+  objects_read:
+  - sales.obj.core.next_action
+  produces: A dated, owned next step on every open deal.
+  done_when: No open deal has an empty or undated next step.
+
+- order: 4
+  name: Age each deal against its own stage's normal
+  description: 'A uniform ageing threshold flags the naturally slow stages constantly and misses the
+    genuinely stalled fast ones. The comparison that carries information is time-in-stage against that
+    stage''s own median.'
+  actor: system
+  objects_read:
+  - sales.obj.core.timeline
+  produces: A relative ageing flag per deal.
+  done_when: Ageing alerts are proportionate enough to be read.
+
+- order: 5
+  name: Close the corpses, with a reason and a return date
+  description: 'A deal with no buyer activity across a meaningful window is closed lost with a recorded
+    cause and a revisit date. Both halves matter: without the cause the loss teaches nothing, and
+    without the date the pipeline is discarded rather than deferred.'
+  actor: human
+  objects_read:
+  - sales.obj.core.deal
+  - sales.obj.core.risk
+  produces: Closed-lost records carrying cause and revisit date.
+  done_when: The open set contains only deals with evidence of life.
+
+- order: 6
+  name: Count only after cleaning
+  description: 'Coverage computed over a contaminated set is not a weaker measure, it is a misleading
+    one, and it misleads in the reassuring direction. Report the cleaned number and the gap between it
+    and the raw one — the gap is the more useful of the two.'
+  actor: system
+  produces: A coverage figure over live deals, plus the contaminated share.
+  done_when: No coverage number is published without its hygiene qualifier.
+
+- order: 7
+  name: End with decisions, not with updated fields
+  description: 'A pass that changes no decision is a tax on the seller, and the data degrades faster
+    afterwards than it did before. Each pass should produce a short list of deals to work, deals to
+    close, and a named gap to build against.'
+  actor: human
+  produces: Decisions, not a tidier record.
+  done_when: The pass output is a list of actions with owners.
+  typical_duration_days: 7
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.opportunity
+- sales.obj.core.next_action
+- sales.obj.core.timeline
+- sales.obj.core.proposal
+- sales.obj.core.risk
+- sales.obj.core.icp
+
+outcomes:
+- The open pipeline contains only deals with evidence of life.
+- Coverage is reported with its contaminated share alongside it.
+- Losses carry a cause and a revisit date.
+
+failure_modes:
+- 'THE PASS BECOMES ADMINISTRATION. Fields updated, nothing decided, and the sellers learn it is for
+  management rather than for them.'
+- 'STAGE MOVED BY ARGUMENT. Sellers negotiate stage rather than evidencing it, and every conversion
+  rate becomes uninterpretable.'
+- 'CLOSING WITHOUT A REASON. The only thing a loss produces is the reason it happened; discarding it
+  makes the loss pure cost.'
+- 'PUNISHING THE CLOSE. Produces hidden pipeline. The single most damaging way to run this playbook.'
+- 'CLEANING ONCE. Contamination regrows continuously; a one-off purge treats a flow as a stock.'
+
+limits:
+- Says nothing about deal quality; a clean pipeline of badly qualified deals passes every step here.
+- Depends on activity capture, so quiet channels read as death on a partially-connected tenant.
+- Cannot set the coverage target it insists be computed honestly.
+
+variants:
+- applies_to: enterprise
+  change: Liveness reads from process milestones — security review, legal, procurement — rather than
+    from message recency, and the zombie window is much longer.
+  why: Long cycles contain long legitimate silences.
+- applies_to: smb
+  change: Short window, frequent pass, and step 5 runs on nearly every cycle.
+  why: Silence carries more information per week in a short cycle.
+- applies_to: channel
+  change: Buyer activity means the END customer's activity, not the partner's. A partner reporting
+    progress is seller activity wearing a different badge.
+  why: The partner is not the buyer, and conflating them is how channel pipeline inflates.
+- applies_to: inside_sales
+  change: Steps 2, 4 and 6 are automated; steps 5 and 7 stay human.
+  why: The mechanical steps do not survive the volume, and the judgement ones must not be automated.
+
+metrics:
+- name: dated_next_step_share
+  unit: percent
+  description: Share of open deals with a dated next step.
+  direction: higher_is_better
+- name: contaminated_pipeline_share
+  unit: percent
+  description: Share of open pipeline with no recent buyer activity.
+  direction: lower_is_better
+- name: closed_lost_with_reason_share
+  unit: percent
+  description: Share of losses carrying a recorded cause.
+  direction: higher_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: The qualification counterpart — this playbook asks whether a deal is alive, MEDDICC asks
+    whether it was ever real, and a pipeline needs both.
+- title: Practitioner pipeline hygiene
+  kind: practitioner
+  note: Behavioural stage definitions are the single highest-leverage convention in revenue
+    operations and the one most frequently negotiated away.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 2, 4, 6 and 7 are new, and the day-count thresholds
+    in the original step 3 were removed — a window in Layer 3 is a boundary leak, and the substantive
+    instruction survives without it. Step 2 is the one that carries the weight: seller activity
+    keeping a dead deal fresh is why raw coverage is reassuring exactly when it is least reliable.'

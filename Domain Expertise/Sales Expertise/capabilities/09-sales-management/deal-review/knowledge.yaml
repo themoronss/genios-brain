@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.deal_review.a_gate_is_evidenced_or_it_is_asserted
 decision_frameworks:
   core: []
   scoped: []

@@ -1,0 +1,124 @@
+# Sales had exactly one rule file before this one. The condition below is why rules/ exists: the
+# `next_action` object knows a follow-up is due, the `lead` object knows how engaged the person is,
+# and neither can see whose move is outstanding — that lives on the thread.
+
+identity:
+  id: sales.rule.follow_up.no_follow_up_while_they_wait_on_us
+  name: No follow-up while they wait on us
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.follow_up
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'An unanswered thread is not automatically a follow-up. Where the outstanding move is
+    ours, the correct act is to answer; a nudge sent in that state tells the counterparty we have not
+    read our own thread, and unlike a slow reply it is not recoverable by replying.'
+  answers:
+  - May this quiet thread receive a follow-up?
+  - Which quiet threads are ours to answer rather than theirs to reply to?
+  not:
+  - A cadence rule. It gates one class of message; when to send the permitted ones is decided elsewhere.
+  - A quality judgement on the follow-up's content.
+
+rule:
+  statement: 'A follow-up, nudge or check-in MUST NOT be emitted for a thread where
+    `thread.ball_in_court` reads `us`. The permitted candidates are to answer the outstanding ask, to
+    state when it will be answered, or to close it.'
+  spans:
+  - sales.obj.core.next_action
+  - sales.obj.core.lead
+  when:
+  - {exists: thread.last_inbound}
+  - {path: thread.ball_in_court, op: "=", value: us}
+  then: 'Suppress follow-up candidates and offer answer, date-the-answer or close instead, naming in
+    the reason that the outstanding move is ours.'
+  severity: blocking
+  why: 'This is the specific defect the shallow reading of follow-up produces. "No reply for N days"
+    is true of both directions of silence and is the easiest thing to compute, so an unguarded
+    follow-up capability sends its most confident messages into exactly the threads where we are the
+    ones who owe something. The cost is asymmetric: a late answer is forgiven, and a nudge asking for
+    movement on something we owe is remembered, because it is evidence about attention rather than
+    about speed.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'OUR LAST MESSAGE WAS ITSELF THE ASK. `thread.ball_in_court` follows the last message, so a thread
+    whose final message was our question reads as `us` while the substance sits with them. This is the
+    exception that fires most often, and the distinguishing evidence is the shape of our last message,
+    not the flag.'
+  - 'A SCHEDULED RETURN THAT WE PROMISED. Where we said we would come back at a stated time, arriving
+    then is delivery of a commitment, not a follow-up, even though it looks identical from the thread
+    state.'
+  - 'A DIFFERENT LOOP ON THE SAME THREAD. Threads carry several conversations. Owing them an answer on
+    one subject does not make a genuine follow-up on an unrelated one inappropriate — though sending
+    both in one message is almost always better than sending two.'
+  - 'A MULTI-THREADED ACCOUNT. Direction is per-thread and per-person. Owing an answer to one
+    contact does not gate contact with another, and reading it as an account-level block would freeze
+    an entire relationship on one unanswered message.'
+  - 'THE STATE IS STALE. Where the thread has been quiet far past this relationship''s own cadence,
+    the flag describes a conversation that stopped rather than a turn anyone is taking. Re-opening is
+    a fresh contact and should be written as one, not as a nudge about the original subject.'
+
+objects_used:
+- sales.obj.core.next_action
+- sales.obj.core.lead
+- sales.obj.core.champion
+
+outcomes:
+- No follow-up is sent into a thread that is waiting on our answer.
+- Threads we owe surface as answer prompts rather than as nudges.
+
+failure_modes:
+- 'READ AS "DO NOTHING". The rule redirects the act, it does not suppress the item; a thread gated
+  here and then dropped is a worse outcome than the nudge it prevented.'
+- 'APPLIED AT ACCOUNT LEVEL. Freezes contact with an entire organisation because one contact is owed
+  a reply. The fourth exception exists for this and is easy to get wrong.'
+
+limits:
+- Rests entirely on `thread.ball_in_court`, which follows the last message and cannot tell a question
+  from a delivery. The first exception is that blind spot, stated rather than engineered around.
+- Says nothing about threads with no correspondence at all, where direction has no evidence.
+
+variants:
+- applies_to: inside_sales
+  change: Enforce mechanically in the sequencer; at volume the direction check will not be made by
+    hand and the sequence's default is to send.
+  why: The failure is systemic, so the guard has to be.
+- applies_to: enterprise
+  change: Evaluate per contact within the account, and surface the owed answer to the seller
+    alongside the permitted contact with someone else.
+  why: A committee has several live threads and blocking all of them on one is the wrong trade.
+
+metrics:
+- name: misdirected_follow_up_rate
+  unit: percent
+  description: Share of follow-ups sent while the ball was in our own court. What this rule drives to
+    zero, and it is measurable from thread state at send time.
+  direction: lower_is_better
+- name: owed_answer_latency
+  unit: hours
+  description: Time to answer on threads the rule redirected. If the rule suppresses without the
+    answer arriving faster, it has only hidden the problem.
+  direction: lower_is_better
+
+references:
+- title: Practitioner correspondence discipline
+  kind: practitioner
+  note: Reading direction before acting is standard in well-run desks and is almost never encoded,
+    which is why every cadence tool reintroduces the error.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new, and directly relevant to live traffic: `sales.sit.inbound_lead` matches on
+    `thread.ball_in_court = us` and lists this capability under `also_serves`, so the situation that
+    reaches follow-up is by construction one where we owe the reply. Without this rule the compiled
+    advice for that situation would be a nudge.'

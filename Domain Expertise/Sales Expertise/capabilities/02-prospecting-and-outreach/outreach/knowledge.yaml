@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.outreach.a_sequence_stops_when_it_becomes_a_conversation
 decision_frameworks:
   core: []
   scoped: []

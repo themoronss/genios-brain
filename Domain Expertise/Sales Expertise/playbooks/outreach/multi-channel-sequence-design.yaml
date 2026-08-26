@@ -6,25 +6,198 @@ identity:
   scope: capability
   owner_capability: sales.prospecting_and_outreach.outreach
   subdomain: prospecting_and_outreach
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: A sequence is one conversation across channels, not three parallel campaigns. Email, LinkedIn
-    and phone each carry the SAME thread — each touch aware of the last, each channel doing what it is
-    best at.
+  statement: 'A sequence is one conversation across channels, not three parallel campaigns. Email,
+    LinkedIn and phone each carry the SAME thread — each touch aware of the last, each channel doing
+    what it is best at.'
+  answers:
+  - How should touches be distributed across channels?
+  - What makes a sequence read as one person rather than as three systems?
+  not:
+  - Channel mechanics. How to write the email or open the call belongs to the channel capabilities.
+  - A targeting method. Who to contact is decided upstream and this playbook cannot rescue a bad list.
+
+when_to_use:
+  situations:
+  - sales.sit.outbound_prospect
+  conditions:
+  - {path: thread.ball_in_court, op: "=", value: them}
+  - {fn: edge_count, op: "<=", value: 1}
+  signals:
+  - followup_sent
+  do_not_use_when:
+  - 'The counterparty already corresponds with the organisation. A sequence run over an existing
+    relationship is the most visible way to demonstrate that nobody looked.'
+  - 'A reply, an introduction or a meeting request has arrived. The relationship has changed shape and
+    the sequence must stop, not continue underneath the conversation.'
+  - 'The list has not been researched. Multi-channel contact multiplies the damage of a bad list
+    rather than compensating for it.'
+
 steps:
 - order: 1
-  name: Lead with the channel they live in
-  description: 'Developers: not the phone. Founders: email and warm intros. Field roles: the phone works.
-    The persona picks the channel; the seller''s comfort does not.'
-  actor: human
+  name: Check the counterparty is actually cold
+  description: 'Existing correspondence, a prior introduction, a colleague already in conversation —
+    any of these means this is not outreach. The situation that reaches this playbook narrows on
+    `edge_count <= 1` for exactly this reason, and the check should be repeated at send time because
+    the graph moves between compile and send.'
+  actor: system
+  objects_read:
+  - sales.obj.core.lead
+  produces: A cold/not-cold verdict, with the evidence that decided it.
+  done_when: No person with live correspondence is in the sequence.
+
 - order: 2
-  name: Space touches by days, escalate value not volume
-  description: Six to eight touches over three weeks, each ADDING something new. Repeating the same ask
-    louder is how domains get blocked and names get remembered badly.
+  name: Lead with the channel they live in
+  description: 'Engineers are not on the phone. Founders read email and answer warm introductions.
+    Field roles answer calls. The persona picks the channel; the seller''s comfort does not, and the
+    seller''s comfort is what usually picks it.'
   actor: human
+  objects_read:
+  - sales.obj.core.persona
+  produces: A channel order derived from the persona rather than from the sender.
+  done_when: The first touch is in the channel the persona actually uses.
+
 - order: 3
-  name: End with the breakup, then recycle on a date
-  description: The sequence has a stated end. Silence at the end parks the account with a return date
-    — sequences that never end become background radiation.
+  name: Space touches by days, escalate value not volume
+  description: 'Each touch ADDS something — a different argument, a different entry point, a different
+    proof. Repeating the same ask more loudly is how domains get blocked and names get remembered
+    badly, and it is what a sequence does by default when nobody supplies new material.'
   actor: human
+  objects_read:
+  - sales.obj.core.pain_point
+  - sales.obj.core.competitor
+  produces: A sequence whose steps differ in substance.
+  done_when: No two consecutive steps make the same argument.
+
+- order: 4
+  name: Keep one thread across channels
+  description: 'A LinkedIn message that does not know the email was sent produces two strangers with
+    the same name. Each touch references the last, whichever channel it was in — this is what makes
+    the sequence read as a person.'
+  actor: human
+  produces: Cross-channel continuity in the copy itself.
+  done_when: Every touch after the first refers to the one before it.
+
+- order: 5
+  name: Contact the account in sequence, not in parallel
+  description: 'Approaching four people at one company inside a week reads as a mail merge, because
+    they compare notes faster than the sequence advances. Where several contacts are genuinely needed,
+    space them and vary the entry point.'
+  actor: human
+  objects_read:
+  - sales.obj.core.buying_committee
+  produces: An account-level contact plan, not just a person-level one.
+  done_when: No account has simultaneous first touches to multiple people.
+
+- order: 6
+  name: Stop the moment it becomes a conversation
+  description: 'A reply, an introduction, a meeting request — each ends outreach and starts something
+    else. Sequence overrun is almost always mechanical: the reply landed somewhere the tool cannot
+    see. The check has to be against the correspondence record, not against the tool''s own state.'
+  actor: system
+  objects_read:
+  - sales.obj.core.next_action
+  produces: A sequence halted on evidence of a live conversation.
+  done_when: No sequence step is sent after an inbound message on the thread.
+
+- order: 7
+  name: End with the breakup, then recycle on a date
+  description: 'The sequence has a stated end. Silence at the end parks the account with a return date;
+    sequences that never end become background radiation, and the pipeline they produce is people who
+    replied to make it stop.'
+  actor: human
+  objects_read:
+  - sales.obj.core.timeline
+  produces: A closed sequence with a recorded stop and a return date.
+  done_when: No person is in an active sequence with no terminal step.
+
+objects_used:
+- sales.obj.core.lead
+- sales.obj.core.persona
+- sales.obj.core.icp
+- sales.obj.core.pain_point
+- sales.obj.core.next_action
+- sales.obj.core.buying_committee
+- sales.obj.core.competitor
+- sales.obj.core.timeline
+
+outcomes:
+- One conversation across channels rather than three campaigns.
+- No sequence runs over a live conversation or over an existing relationship.
+- Every sequence terminates explicitly.
+
+failure_modes:
+- 'CHANNELS RUN INDEPENDENTLY. Three tools, three states, and the buyer receives three uncoordinated
+  approaches from one company inside a fortnight.'
+- 'MORE TOUCHES AS THE ANSWER TO A FALLING REPLY RATE. The spiral is well documented: volume rises,
+  reply rate falls, volume rises further, and the domain reputation pays for it.'
+- 'SEQUENCE OVERRUN AFTER A REPLY. Mechanical, common, and the most damaging single failure in the
+  capability.'
+- 'PARALLEL ACCOUNT CONTACT MISTAKEN FOR COVERAGE. Reads as automation to the only people whose
+  opinion matters.'
+- 'NO TERMINAL STEP. The sequence becomes a subscription, and the recipients who reply are selected
+  for irritation rather than for interest.'
+
+limits:
+- Cannot compensate for a poorly targeted list; it multiplies whatever the list already is.
+- Says nothing about message content beyond requiring that it vary.
+- The overrun check depends on the correspondence record being complete; replies that arrive out of
+  band are invisible to it, which is the residual risk in step 6.
+
+variants:
+- applies_to: enterprise
+  change: Sequence the account deliberately — a considered order of contacts over weeks, with each
+    approach informed by what the previous one learned.
+  why: In a committee the second approach is stronger for knowing what the first was told.
+- applies_to: smb
+  change: Fewer touches, shorter window, and the phone earlier — the buyer is the operator and the
+    decision does not need a committee.
+  why: Long sequences to a single decision-maker exhaust patience before they exhaust arguments.
+- applies_to: inside_sales
+  change: Steps 1, 5 and 6 must be enforced by the tooling; at volume they will not be done by hand.
+  why: These three are the ones whose failure is invisible to the sender and obvious to the recipient.
+- applies_to: partner
+  change: The sequence targets the partner's commercial interest, and account-simultaneity rules apply
+    across the partner's customers rather than across contacts.
+  why: Approaching a partner's customers in parallel is a channel-conflict problem, not a style one.
+
+metrics:
+- name: reply_rate_per_contacted_person
+  unit: percent
+  description: Replies over people contacted, never over messages sent.
+  direction: higher_is_better
+- name: live_thread_overrun_rate
+  unit: percent
+  description: Share of sequences that continued after an inbound reply.
+  direction: lower_is_better
+- name: account_simultaneity
+  unit: count
+  description: People contacted at one account inside one window.
+  direction: lower_is_better
+
+references:
+- title: Predictable Revenue
+  kind: book
+  author: Aaron Ross
+  note: The origin of sequenced outbound as a discipline, and of the volume metrics this playbook
+    deliberately argues against.
+- title: The Challenger Sale
+  kind: methodology
+  author: Dixon and Adamson
+  note: Value escalation across touches rather than repetition — step 3.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 1, 4, 5 and 6 are new. Step 1 mirrors the
+    `edge_count <= 1` predicate on the situation that reaches this playbook and repeats it at send
+    time, because the graph changes between compile and send; step 6 is the one that prevents the
+    single most damaging failure, and it deliberately checks the correspondence record rather than the
+    sequencing tool''s own state.'

@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.pipeline_management.seller_activity_is_not_evidence_of_life
 decision_frameworks:
   core: []
   scoped: []

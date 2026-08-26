@@ -3,7 +3,7 @@ identity:
   name: Deal Review
   domain: sales
   subdomain: sales_management
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Structured inspection of a live deal against evidence: is the approver verified, is the
@@ -11,17 +11,103 @@ description: 'Structured inspection of a live deal against evidence: is the appr
 
   '
 question: Is this deal what the rep believes it is?
+
+outcomes:
+- 'A separation between what is EVIDENCED and what is believed. Most of the value of a review is
+  producing that line explicitly, because a deal narrative is internally consistent whether or not any
+  of it is true, and consistency is what a listener mistakes for evidence.'
+- 'Buyer actions named, seller actions discounted. "What did THEY do since we last spoke" is the
+  question the review exists to ask; seller motion without buyer motion is a one-sided courtship
+  whatever the stage says.'
+- 'The gates identified and their state read from the record — is there a verified approver, a real
+  budget, a date the buyer owns. `contract_requested`, `legal_review`, `security_review_started` and
+  `budget_approved` are observations the record can be asked for rather than opinions the seller can
+  be asked for.'
+- 'A single deal-advancing action with an owner and a date. A review producing no action is status
+  theatre with a calendar slot, and it is the most common form the ceremony takes.'
+- 'A disqualification when the evidence supports one. The negative outcome, and the reason reviews
+  exist at all: a review that has never killed a deal is not inspecting, and its absence of refusals
+  is evidence about the review rather than about the pipeline.'
+- 'The confident narrative given MORE scrutiny than the uncertain one, deliberately, because the
+  natural direction of attention is the opposite.'
+
+failure_modes:
+- 'REVIEWING THE NARRATION. A polished story correlates with a polished seller, not with a healthy
+  deal, and a review that rewards fluency selects for it.'
+- 'THE REVIEWER ARRIVING UNPREPARED. If the record is narrated rather than read, the only information
+  in the room is the seller''s account of it, and the review has no independent input at all.'
+- 'ASKING WHAT IS NEXT INSTEAD OF WHAT HAPPENED. Forward-looking questions are answerable with
+  intention; the useful questions are backward-looking, because only the past has evidence.'
+- 'CONFUSING ACTIVITY WITH PROGRESS. A deal with many meetings and no gate cleared is a deal that has
+  been talked about, and high activity makes it feel healthier than a quieter deal that cleared two.'
+- 'INSPECTION EXPERIENCED AS INTERROGATION. A review that punishes bad news gets optimistic reporting
+  from then on, and the pipeline degrades in exactly the way the review was meant to prevent.'
+- 'REVIEWING EVERY DEAL EQUALLY. Uniform scrutiny spends the scarcest resource in sales management
+  evenly over deals that need it and deals that do not.'
+
+kpis:
+- name: evidenced_gate_share
+  unit: percent
+  description: Share of a deal's gates supported by something in the record rather than by the
+    seller's account. The core measure of what a review produces.
+  direction: higher_is_better
+- name: buyer_action_recency
+  unit: days
+  description: Days since the buyer last did something. The number that most often contradicts the
+    narrative, and the one it is hardest to argue with.
+  direction: lower_is_better
+- name: review_to_action_rate
+  unit: percent
+  description: Share of reviewed deals leaving with one owned, dated action.
+  direction: higher_is_better
+- name: post_review_disqualification_rate
+  unit: percent
+  description: Share of reviews ending in a downgrade or a close. Near zero means the review is not
+    inspecting anything.
+  direction: target_band
+- name: forecast_deviation_after_review
+  unit: percent
+  description: How far reviewed deals landed from where the review placed them. The only honest test
+    of whether the review is any good.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.revenue_operations.pipeline_management
+  - sales.qualification.buying_committee_analysis
+  downstream:
+  - sales.revenue_operations.forecasting
+  - sales.sales_management.sales_coaching
+  parallel:
+  - sales.revenue_operations.revenue_intelligence
+  - sales.sales_management.performance_management
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-26'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached through `sales.sit.out_of_profile_deal` and
+    `sales.sit.enterprise_deal` (`also_serves` on both), the first of which binds to `opportunity` —
+    live on the design partner''s org with 18 situations.
+
+    The gates in the outcomes are written against observation kinds that exist rather than against a
+    methodology checklist: `contract_requested`, `legal_review`, `security_review_started`,
+    `budget_approved`, `proposal_sent`. Their absence on the live org is itself the point — a review
+    asking for evidence gets "none recorded", which is a true and useful answer, where a review asking
+    the seller gets a confident one.
+
+    No numbers: what share of gates is enough, and how many days of buyer silence matters, are Layer
+    4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-26'
+
 admission:
-  accepted_content_hash: fb9972ba6bbb7456096310af7373bde1eec4057d2f0507cb7919cb7185773b4d
+  accepted_content_hash: 23e551feeab2db30282d77accf28aa2dc2b267834c88412f50d12a0a458eae25

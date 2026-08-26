@@ -6,10 +6,144 @@ identity:
   scope: capability
   owner_capability: sales.revenue_operations.pipeline_management
   subdomain: revenue_operations
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: 3x coverage of quota means nothing if a third of it is zombies. Hygiene comes before arithmetic
-    — clean first, then count, or the comfort of the ratio is the most expensive comfort in sales.
+  statement: Coverage of quota means nothing if a third of it is zombies. Hygiene comes before
+    arithmetic — clean first, then count, or the comfort of the ratio is the most expensive comfort in
+    sales.
   answers:
-  - Is a 3x pipeline actually enough?
+  - Is this pipeline actually enough?
+  - Why does a healthy coverage ratio precede a missed quarter so reliably?
+  not:
+  - A coverage target. What ratio is enough is a Layer 4 question and varies by motion.
+  - A qualification standard. This is about whether deals are alive, not whether they were ever good.
+
+heuristic:
+  statement: 'Compute coverage only over deals with recent BUYER activity, and treat the difference
+    between that number and the raw one as the finding. The gap is the honest measure of how much of
+    the pipeline is memory — and it is more informative than either number alone, because a shrinking
+    gap is a function getting healthier and a widening one is a function that has started to carry
+    its losses instead of taking them.'
+  why: 'Deals do not leave a pipeline by themselves. Every incentive on the seller is to keep an
+    unresolved deal open — closing it lost is a visible admission, carrying it is invisible — so the
+    contaminated fraction rises monotonically until someone forces a clean, and it rises fastest in
+    exactly the quarters that are going badly. The coverage ratio therefore looks most reassuring at
+    the moment it is least reliable, which is why the arithmetic must come second.'
+  confidence_bp: 8700
+  applies_when: 'A pipeline exists with per-deal activity dates. `deal.status` and `deal.last_inbound`
+    are the minimum; `derived.momentum` and `derived.engagement` sharpen the liveness read
+    considerably where they are populated.'
+  breaks_down_when: 'LONG-CYCLE PROCUREMENT. Public-sector and regulated purchases go genuinely quiet
+    for long periods without dying, and buyer-activity recency reads them as corpses. The liveness
+    evidence there is the process calendar, not the correspondence.
+
+    ACCOUNTS WHERE ACTIVITY MOVED CHANNELS. A deal progressing entirely in a portal, a shared
+    workspace or in person shows no inbound at all. Absence of captured activity is not absence of
+    activity, and this is the commonest false positive on a partially-connected tenant.
+
+    EARLY-STAGE PIPELINE. A deal created this week has no activity history and is not a zombie. The
+    heuristic needs an age floor or it flags the newest and healthiest part of the pipeline.
+
+    WHEN THE CLEAN IS USED AS A PERFORMANCE EVENT. If closing a deal lost is punished, hygiene
+    produces hidden pipeline instead of a clean one — sellers keep the deal out of the system rather
+    than in it, which is strictly worse because it is now invisible to everybody.
+
+    A PIPELINE THAT IS TOO SMALL TO CLEAN. Below a certain size the coverage ratio is dominated by one
+    or two deals and no amount of hygiene makes it informative; the honest answer is that the number
+    is not a measure yet.'
+  reads:
+  - sales.obj.core.deal
+  - sales.obj.core.opportunity
+  - deal.status
+  - deal.last_inbound
+  - derived.momentum
+  contradicts:
+  - sales.heu.revenue_intelligence.latency_is_the_earliest_honest_signal
+  pattern_ref:
+  - dl.momentum_collapse_after_proposal
+
+when_to_use:
+  situations:
+  - sales.sit.out_of_profile_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {exists: deal.last_inbound}
+  signals:
+  - proposal_sent
+  - closed_lost_mention
+  do_not_use_when:
+  - The motion is long-cycle procurement where silence is procedural.
+  - Buyer activity happens off the captured channels.
+  - The deal is too new to have an activity history.
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.opportunity
+- sales.obj.core.icp
+- sales.obj.core.timeline
+
+outcomes:
+- Coverage is reported over live deals, with the contaminated fraction named separately.
+- The gap between raw and cleaned coverage is tracked as its own signal.
+
+failure_modes:
+- 'CLEANING ONCE. The contaminated fraction regrows continuously; a one-off purge produces a clean
+  number and a false sense that the problem was structural rather than continuous.'
+- 'HYGIENE WITHOUT A DECISION. Updating fields changes nothing and teaches sellers the exercise is
+  administrative, after which the data degrades faster than before.'
+- 'SELLER ACTIVITY COUNTED AS LIFE. Follow-ups sent into silence keep a zombie looking fresh, which is
+  precisely the failure the buyer-activity qualifier exists to prevent.'
+
+limits:
+- Says nothing about whether the live deals are good ones; a clean pipeline of poorly qualified deals
+  passes this test completely.
+- Depends on activity capture, so on a partially-connected tenant it will read quiet channels as death.
+- Cannot set the coverage target it argues should be computed honestly.
+
+variants:
+- applies_to: enterprise
+  change: Liveness is read from the buyer's process milestones — security review started, legal
+    engaged, procurement opened — rather than from message recency.
+  why: Long cycles have long legitimate silences, and the process leaves better evidence than the inbox.
+- applies_to: smb
+  change: The window is short and the clean is frequent; an SMB deal quiet for a few weeks is usually
+    over.
+  why: Cycle length sets how much information silence carries.
+- applies_to: inside_sales
+  change: Automate the flag and keep the close decision human, because an automatic close is exactly
+    what teaches sellers to keep deals out of the system.
+  why: The behavioural failure is worse than the data one.
+
+metrics:
+- name: coverage_after_hygiene
+  unit: ratio
+  description: Coverage over deals with recent buyer activity.
+  direction: target_band
+- name: contaminated_pipeline_share
+  unit: percent
+  description: Share of open pipeline with no recent buyer activity. The gap this heuristic is about.
+  direction: lower_is_better
+
+references:
+- title: Pipeline coverage practice
+  kind: practitioner
+  note: Coverage multiples are quoted everywhere and almost never qualified by liveness, which is what
+    makes them comfortable and unreliable at the same time.
+- title: MEDDICC
+  kind: methodology
+  note: Qualification rigour is the complementary control — this heuristic asks whether a deal is
+    alive, MEDDICC asks whether it was ever real.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The original stated a specific multiple; that
+    number has been removed because a threshold in Layer 3 is a boundary leak, and the substantive
+    claim — clean before counting — survives without it. The fourth breakdown regime is the important
+    one: hygiene that is punished produces hidden pipeline, which is worse than dirty pipeline.'

@@ -15,7 +15,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.follow_up.no_follow_up_while_they_wait_on_us
 decision_frameworks:
   core: []
   scoped: []

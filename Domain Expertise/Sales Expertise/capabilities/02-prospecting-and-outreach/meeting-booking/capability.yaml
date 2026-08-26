@@ -3,25 +3,108 @@ identity:
   name: Meeting Booking
   domain: sales
   subdomain: prospecting_and_outreach
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
+  parent_capability: sales.prospecting_and_outreach.outreach
 description: 'Turning a positive reply into a held meeting. The gap between agreed and attended is where
   most inbound intent is lost, and it is almost entirely a scheduling-friction problem.
 
   '
 question: How do we convert interest into a scheduled conversation?
+
+outcomes:
+- 'The scheduling thread answered the same day it lands on us. This is the highest-value latency in the
+  whole pipeline: the buyer''s interest is at its peak the moment they express it, and every exchange
+  after that is decay the seller controls.'
+- 'Direction read on the scheduling thread specifically. Proposing times hands the ball to them;
+  their counter-proposal hands it back to us. `thread.ball_in_court` says which, and the answer changes
+  whether the correct act is to wait or to reply immediately.'
+- 'A meeting with a stated purpose, so it survives calendar triage. "Intro call" is what a buyer
+  cancels on a busy morning; a line naming what will be decided is what they keep.'
+- 'A held meeting, not an accepted invite. Acceptance and attendance are different events, and a
+  capability measured on the first optimises the wrong one — `meeting.status` and `meeting.attended`
+  are separate facts for this reason.'
+- 'One graceful rebound after a no-show, then a return to follow-up. The negative outcome: a
+  second unattended slot is information, and continuing to offer times past it converts a scheduling
+  problem into a standing one.'
+- 'No slot offered that the seller cannot honour. A proposed time withdrawn is worse than a slower
+  first reply, because it spends the credibility the fast reply just earned.'
+
+failure_modes:
+- 'SENDING A BOOKING LINK AS THE WHOLE REPLY. It transfers the work to the interested party at the
+  moment they were willing to do the least, and it reads as a status claim rather than as a courtesy.'
+- 'SLOW PING-PONG. Scheduling threads die of latency far more often than of refusal, and each
+  round-trip costs a fraction of the yeses. The seller controls their half entirely.'
+- 'PROPOSING TIMES IN THE SELLER''S TIMEZONE. A small error that forces the buyer to do arithmetic and
+  signals whose convenience the meeting is arranged around.'
+- 'TREATING THE ACCEPTED INVITE AS THE OUTCOME. Booked-meeting metrics are gameable by scheduling
+  meetings nobody attends, and the gaming is usually unconscious.'
+- 'NO AGENDA LINE. The meeting is then the first thing cut when the buyer''s week goes wrong, because
+  it is the only entry on their calendar whose value is unstated.'
+- 'CHASING A NO-SHOW AS THOUGH IT WERE A SCHEDULING ERROR. One rebound is courtesy; two is a seller
+  who has not registered that circumstances changed.'
+
+kpis:
+- name: reply_to_scheduling_thread_latency
+  unit: hours
+  description: Time to answer once the scheduling ball is ours. The one latency in the pipeline that
+    is entirely within the seller's control.
+  direction: lower_is_better
+- name: agreed_to_held_rate
+  unit: percent
+  description: Share of agreed meetings actually attended. The honest conversion, and the one a
+    booked-meetings target cannot game.
+  direction: higher_is_better
+- name: scheduling_round_trips
+  unit: count
+  description: Messages exchanged between agreement and a confirmed slot. Each one costs conversions.
+  direction: lower_is_better
+- name: agenda_line_share
+  unit: percent
+  description: Share of invitations stating what will be decided.
+  direction: higher_is_better
+- name: no_show_rebound_rate
+  unit: percent
+  description: Share of no-shows that rebooked on a single graceful offer.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.prospecting_and_outreach.outreach
+  - sales.prospecting_and_outreach.follow_up
+  downstream:
+  - sales.discovery_and_solution.discovery
+  - sales.qualification.lead_qualification
+  parallel:
+  - sales.prospecting_and_outreach.cold_email
+  - sales.prospecting_and_outreach.linkedin_outreach
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-26'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached through `sales.sit.inbound_lead` (`also_serves`),
+    which binds to `opportunity` and `prospect_relationship` and matches on `thread.ball_in_court =
+    us` — the exact state this capability is about, because a scheduling thread waiting on us is the
+    single most time-sensitive item a seller holds.
+
+    Authored against facts that exist: `thread.ball_in_court`, `thread.last_inbound`,
+    `thread.last_outbound`, `meeting.start_at` (198 rows), `meeting.status` (129), `meeting.scheduled`
+    (46) and `meeting.attended`. The agreed-versus-held distinction in the outcomes is only writable
+    because `meeting.attended` is a separate declared fact rather than an inference from status.
+
+    No numbers: how fast is same-day, and how many round-trips is too many, are Layer 4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-26'
+
 admission:
-  accepted_content_hash: e49e399f9a3fdabff989882a2a80b3f4035e8e7014c2a2a490cff19e2905d2dd
+  accepted_content_hash: 46fda310b535001e4e9433a926c8226c9f0eed45b1b7b56e184aa30b88b902ba

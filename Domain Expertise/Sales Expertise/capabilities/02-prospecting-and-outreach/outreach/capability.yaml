@@ -3,25 +3,115 @@ identity:
   name: Outreach
   domain: sales
   subdomain: prospecting_and_outreach
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
-description: 'The parent capability for first contact across every channel. Owns sequencing, message relevance
-  and stop rules; the channel capabilities below own the mechanics specific to each medium.
+description: 'The parent capability for first contact across every channel. Owns sequencing, message
+  relevance and stop rules; the channel capabilities below own the mechanics specific to each medium.
 
   '
 question: How do we earn a first conversation with someone who did not ask for one?
+
+outcomes:
+- 'A first message whose first line could not have been sent to anyone else. Relevance is not
+  personalisation — a correct job title and a company name are personalisation and are worth nothing;
+  relevance is a reason this message arrives now, for them.'
+- 'A stated reason for the timing. Every unsolicited message implicitly answers "why now", and one
+  that cannot is answered by the reader with "no reason", which is the same as "no".'
+- 'A sequence whose steps differ in substance, not in wording. Repeated contact with the same argument
+  tests nothing and teaches the recipient that the sender has one thing to say.'
+- 'A stop rule that fires. The negative outcome: outreach with no terminal step is not a sequence, it
+  is a subscription the recipient did not choose, and the pipeline it produces is contaminated by
+  people who replied to make it end.'
+- 'Contact that stops the moment the relationship changes shape. An inbound reply, an introduction, a
+  meeting request — each of these ends outreach and starts something else, and continuing to run the
+  sequence over the top of it is the most visible way to show the recipient they are in a machine.'
+- 'A record of what was tried, so that a later attempt is a genuinely fresh contact rather than the
+  next touch of a sequence the buyer already stopped reading.'
+
+failure_modes:
+- 'PERSONALISATION MISTAKEN FOR RELEVANCE. Merge fields and a compliment about a funding round produce
+  a message that is obviously templated at exactly the moment it is trying not to be.'
+- 'THE SEQUENCE VISIBLE FROM THE OUTSIDE. Buyers do not experience stages; they experience one person
+  being relevant or annoying. Any step whose only justification is that the sequence has a slot for it
+  is a step that damages the sender.'
+- 'CONTACTING EVERYONE AT AN ACCOUNT SIMULTANEOUSLY. It looks like coverage and reads as a mail merge,
+  and the people involved compare notes faster than the sequence advances.'
+- 'RUNNING OVER A LIVE CONVERSATION. The sequence continues after a reply because the reply landed
+  outside the tool. The single most damaging failure in the capability, and almost always mechanical
+  rather than intentional.'
+- 'VOLUME AS THE OPERATING METRIC. Reply rate falls, volume rises to compensate, reply rate falls
+  further. The spiral is well documented and is invisible from inside a dashboard that reports meetings
+  booked in absolute terms.'
+- 'RE-ENTERING A COLD PROSPECT AT TOUCH FIVE. A returning attempt that inherits the previous
+  sequence''s position asks the buyer to resume a conversation they never joined.'
+
+kpis:
+- name: reply_rate_per_contacted_person
+  unit: percent
+  description: Replies over people contacted, not over messages sent. Counting per message rewards
+    exactly the behaviour that destroys the channel.
+  direction: higher_is_better
+- name: positive_reply_share
+  unit: percent
+  description: Share of replies that are not refusals. Total reply rate rises with provocation; this
+    one does not.
+  direction: higher_is_better
+- name: sequence_step_variance
+  unit: percent
+  description: Share of sequence steps carrying a genuinely different argument from the previous one.
+  direction: higher_is_better
+- name: live_thread_overrun_rate
+  unit: percent
+  description: Share of sequences that continued after the recipient replied. Should be zero, and the
+    cases where it is not are mechanical.
+  direction: lower_is_better
+- name: account_simultaneity
+  unit: count
+  description: People contacted at one account inside one window. High values are how a coordinated
+    approach reads as a mail merge.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.prospecting_and_outreach.lead_generation
+  - sales.prospecting_and_outreach.account_research
+  - sales.market_and_targeting.icp_definition
+  downstream:
+  - sales.prospecting_and_outreach.follow_up
+  - sales.prospecting_and_outreach.meeting_booking
+  - sales.qualification.lead_qualification
+  parallel:
+  - sales.prospecting_and_outreach.cold_email
+  - sales.prospecting_and_outreach.linkedin_outreach
+  - sales.prospecting_and_outreach.cold_calling
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-26'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. It OWNS `sales.sit.outbound_prospect`, which binds to
+    `relationship` — a live type with 23 situations on the design partner''s org — and matches on
+    `thread.ball_in_court = them` with `edge_count <= 1`. So this capability is two facts from
+    delivering, and the situation it owns is the one that decides whether a quiet, thinly-connected
+    counterparty is a prospect at all.
+
+    The `edge_count <= 1` predicate is worth naming: it is what keeps this situation off well-connected
+    counterparties, and it is the reason outreach does not fire on people the organisation already has
+    a relationship with. The outcomes are written to respect that — the last two are about NOT running
+    a sequence over something that has become a conversation.
+
+    No numbers: how many touches, over what window, and where the stop sits are Layer 4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-26'
+
 admission:
-  accepted_content_hash: 8edc88a84c31be820ed914ff2c62603d4d5df9a5bddf9e0b2de8e05a8b8e39e7
+  accepted_content_hash: 0ff1a8e51db9f532b09c3eb942ba01dc54a25fc4a7ba9d15234f1a6b72cc63d8

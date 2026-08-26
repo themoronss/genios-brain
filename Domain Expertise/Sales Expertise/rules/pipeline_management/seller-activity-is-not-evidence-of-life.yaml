@@ -1,0 +1,119 @@
+identity:
+  id: sales.rule.pipeline_management.seller_activity_is_not_evidence_of_life
+  name: Seller activity is not evidence of life
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.pipeline_management
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A deal is alive because the buyer did something, not because the seller did. Follow-ups
+    sent into silence refresh every timestamp a pipeline watches, which is how a dead deal stays
+    indistinguishable from a live one indefinitely.'
+  answers:
+  - Is this deal alive?
+  - Which timestamp may be used to answer that?
+  not:
+  - A qualification rule. It asks whether the deal is still moving, not whether it was ever good.
+  - A rule about how often to contact.
+
+rule:
+  statement: 'Deal liveness MUST be derived from buyer-side evidence — `deal.last_inbound`,
+    `thread.last_inbound`, a positive reply, an attended meeting, or a buying observation. Seller-side
+    activity (`thread.last_outbound`, `followup_sent`) MUST NOT be used to establish that a deal is
+    active, in coverage arithmetic or in ageing.'
+  spans:
+  - sales.obj.core.deal
+  - sales.obj.core.next_action
+  when:
+  - {path: deal.status, op: "=", value: open}
+  - {absent: deal.last_inbound}
+  then: 'Treat the deal as unevidenced for liveness and exclude it from cleaned coverage. Surface it
+    for a close-or-evidence decision rather than ageing it silently.'
+  severity: warning
+  why: 'Every incentive in the system points the other way. A seller who follows up has done their
+    job, the record shows recent activity, and no field distinguishes "recently worked" from
+    "recently answered" — so the contaminated share of a pipeline rises monotonically and rises
+    fastest in bad quarters, which is precisely when the reassuring number does most damage. The two
+    facts already exist separately (`thread.last_inbound` on 127 nodes,
+    `thread.last_outbound` on 118 on the design partner''s org); this rule exists to stop them being
+    collapsed into a single last-touched.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'ACTIVITY MOVED OFF THE CAPTURED CHANNELS. A deal progressing in a portal, a shared workspace or
+    in person produces no inbound at all. Absence of captured buyer activity is not evidence of
+    death, and on a partially-connected tenant this is the commonest reason the rule is wrong.'
+  - 'LONG-CYCLE PROCUREMENT. Public-sector and regulated purchases go quiet for long, procedurally
+    normal periods. Liveness there is the process calendar — a scheduled review, a submitted
+    response — not the correspondence record.'
+  - 'THE DEAL IS TOO NEW. A deal created recently has no buyer-activity history and is not
+    unevidenced in the sense this rule means; applying it there flags the healthiest part of the
+    pipeline.'
+  - 'A THIRD PARTY IS THE ACTIVE ONE. In channel and partner motions the end customer''s activity is
+    the evidence, and it frequently reaches us through the partner rather than directly. Requiring
+    direct inbound would mark every healthy channel deal dead.'
+  - 'AN ATTENDED MEETING WITH NO MESSAGE. `meeting.attended` is buyer evidence even when no
+    correspondence followed, and a rule reading only inbound mail would miss it — which matters
+    because the highest-intent buyers often talk instead of writing.'
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.next_action
+- sales.obj.core.opportunity
+- sales.obj.core.buying_signal
+
+outcomes:
+- Coverage and ageing are computed from buyer-side evidence only.
+- Deals with no buyer evidence surface as a decision rather than ageing quietly.
+
+failure_modes:
+- 'ABSENCE READ AS DEATH. On a tenant whose channels are partly connected this flags healthy deals;
+  the first exception is the reason the severity is a warning rather than blocking.'
+- 'APPLIED AS AN AUTOMATIC CLOSE. Automating the close is exactly what teaches sellers to keep deals
+  out of the system, and hidden pipeline is worse than dirty pipeline.'
+- 'USED TO JUDGE SELLERS. The rule is about which timestamp is meaningful, not about effort.'
+
+limits:
+- Rests on activity being captured; it cannot distinguish an uncaptured channel from a silent buyer,
+  which is the whole content of the first exception.
+- Says nothing about how much silence is too much — that window is Layer 4's.
+
+variants:
+- applies_to: enterprise
+  change: Process milestones count as buyer evidence alongside correspondence.
+  why: The buyer's activity in a long cycle is procedural and leaves better evidence than mail.
+- applies_to: channel
+  change: End-customer activity relayed by the partner counts, and partner activity alone does not.
+  why: The partner is a route to the buyer, not the buyer.
+
+metrics:
+- name: contaminated_pipeline_share
+  unit: percent
+  description: Share of open pipeline with no buyer-side evidence.
+  direction: lower_is_better
+- name: liveness_false_positive_rate
+  unit: percent
+  description: Share of deals flagged unevidenced that turned out to be progressing off-channel. The
+    cost of this rule, made countable.
+  direction: lower_is_better
+
+references:
+- title: Practitioner pipeline hygiene
+  kind: practitioner
+  note: The buyer-activity qualifier is the difference between a coverage ratio that predicts and one
+    that reassures.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. Only authorable because `thread.last_outbound` entered the corpus
+    substrate in this session — the inbound/outbound distinction is the entire content of the rule,
+    and with only `thread.last_inbound` declared there was no way to say what must NOT be used.'

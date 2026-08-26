@@ -6,11 +6,145 @@ identity:
   scope: capability
   owner_capability: sales.sales_management.deal_review
   subdomain: sales_management
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: Polished deal narratives correlate with polished sellers, not with deal health — the confident
-    story is where the review must push hardest on evidence. The stumbling story about a real buyer is
-    often the healthier deal.
+  statement: Polished deal narratives correlate with polished sellers, not with deal health — the
+    confident story is where the review must push hardest on evidence. The stumbling story about a
+    real buyer is often the healthier deal.
   answers:
   - Which deals deserve the hardest review questions?
+  not:
+  - A claim that confident sellers are wrong. It is a claim about where scrutiny is scarce.
+  - A coaching method. It allocates attention; it does not develop the seller.
+
+heuristic:
+  statement: 'Allocate review scrutiny inversely to narrative fluency, and make the allocation
+    explicit so it is not read as suspicion of the individual. The deal that answers every question
+    smoothly has told you about the seller''s preparation; the deal whose owner is uncertain in
+    specific places has told you where the real gaps are, which is more information.'
+  why: 'A narrative is generated from the seller''s model of the deal, so it is internally consistent
+    whether or not the model is right — and consistency is the property a listener mistakes for
+    evidence. Scrutiny then flows to the deals that FEEL uncertain, which are disproportionately the
+    ones being described accurately, while the fluent account passes unexamined. The correction is not
+    scepticism about people; it is recognising that fluency and accuracy are independent, and that the
+    review''s scarce resource is attention rather than doubt.'
+  confidence_bp: 7000
+  applies_when: 'A deal is being inspected and the reviewer has independent access to the record. The
+    heuristic is close to useless without that — with the narrative as the only input, there is no way
+    to push on evidence.'
+  breaks_down_when: 'THE SELLER IS GENUINELY EXPERIENCED ON THIS ACCOUNT. A veteran describing an
+    account they have run for years is fluent because they know it. Applying inverse scrutiny
+    mechanically here spends the review on the best-understood deal in the room.
+
+    THE UNCERTAINTY IS ABOUT THE SELLER, NOT THE DEAL. A new seller is uncertain about everything, and
+    reading their hesitancy as a signal about the deal manufactures risk where there is only
+    inexperience.
+
+    THE RECORD IS THIN FOR STRUCTURAL REASONS. Where activity is off-channel or the tenant''s capture
+    is partial, "push on evidence" produces an absence the reviewer then misreads as a gap in the
+    deal.
+
+    WHERE IT BECOMES A CULTURE OF SUSPICION. Applied as a stance rather than as an allocation rule,
+    it teaches sellers that confidence is punished — after which everyone hedges, the signal
+    disappears entirely, and the review has destroyed its own input.
+
+    SMALL, SIMPLE DEALS. A short-cycle transaction has few gates and little to be wrong about; the
+    scrutiny has nowhere useful to go.'
+  reads:
+  - sales.obj.core.deal
+  - sales.obj.core.decision_maker
+  - sales.obj.core.budget
+  - deal.last_inbound
+  - derived.momentum
+  contradicts:
+  - sales.heu.revenue_intelligence.latency_is_the_earliest_honest_signal
+  pattern_ref:
+  - dl.verbal_yes_without_paper
+  - dl.momentum_collapse_after_proposal
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  - sales.sit.out_of_profile_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - proposal_sent
+  - verbal_yes
+  do_not_use_when:
+  - The reviewer has no independent access to the record; there is nothing to push against.
+  - The uncertainty is the seller's inexperience rather than the deal's condition.
+  - The deal is short-cycle and simple enough that there is little to be wrong about.
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.decision_maker
+- sales.obj.core.budget
+- sales.obj.core.champion
+- sales.obj.core.risk
+- sales.obj.core.buying_committee
+
+outcomes:
+- Review attention is allocated where it is most likely to change a conclusion.
+- Fluency is not accepted as evidence.
+
+failure_modes:
+- 'BECOMES A STANCE RATHER THAN AN ALLOCATION. Universal scepticism destroys the honesty the review
+  depends on, and it does so permanently.'
+- 'APPLIED TO PEOPLE INSTEAD OF NARRATIVES. The claim is about a property of stories, not about which
+  sellers are trustworthy.'
+- 'PUSHING ON EVIDENCE THAT COULD NOT EXIST. Demanding record support in a motion whose activity is
+  off-channel produces a false gap and teaches the seller the review is not grounded.'
+
+limits:
+- Says nothing about what evidence to demand — the gates come from the methodology, not from here.
+- Depends on the reviewer having read the record, which is the step most often skipped.
+- Cannot distinguish fluency from expertise, which is the first breakdown regime and the hardest.
+
+variants:
+- applies_to: enterprise
+  change: Push hardest on the committee — who else is engaged, and what did the economic buyer
+    personally do. A single-threaded fluent narrative is the highest-risk shape there is.
+  why: In a committee, the story is usually the champion's story repeated.
+- applies_to: smb
+  change: Reduce to one question — what did the buyer do — because there are few gates and the
+    narrative has little room to diverge.
+  why: Scrutiny has nowhere to go in a simple deal.
+- applies_to: inside_sales
+  change: 'Apply at the aggregate: which sellers'' forecasts deviate most, rather than which deals
+    sound best. At volume the pattern is more reliable than any single narrative.'
+  why: Individual review is not affordable per deal.
+
+metrics:
+- name: forecast_deviation_after_review
+  unit: percent
+  description: How far reviewed deals landed from where the review placed them. The honest test of
+    whether the scrutiny was allocated well.
+  direction: lower_is_better
+- name: evidenced_gate_share
+  unit: percent
+  description: Share of gates supported by the record rather than by the account.
+  direction: higher_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: Supplies the gates this heuristic decides how hard to push on — metrics, economic buyer,
+    decision criteria, decision process, paper process, identified pain, champion, competition.
+- title: Overconfidence and fluency effects
+  kind: research
+  note: The finding that fluency raises perceived accuracy independently of actual accuracy, which is
+    the mechanism this heuristic corrects for.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The fourth breakdown regime is the one to watch:
+    this heuristic is unusually easy to adopt as a personality rather than as a rule, and in that form
+    it destroys the honest reporting the whole review depends on.'

@@ -6,8 +6,8 @@ identity:
   scope: capability
   owner_capability: sales.prospecting_and_outreach.follow_up
   subdomain: prospecting_and_outreach
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
   statement: A prospect who went quiet mostly did not reject you — they deprioritised you. The correct
     read is 'not now' rather than 'no', so the correct move is a scheduled return with new context, not
@@ -15,3 +15,136 @@ purpose:
   answers:
   - Should a quiet thread be chased this week or parked with a date?
   - Does silence after a good call mean the deal is dead?
+  not:
+  - A licence to follow up indefinitely. Repeated silence eventually IS an answer about value.
+  - A rule for what to send. It sets the read and the timing, not the content.
+
+heuristic:
+  statement: 'Treat a first and second silence as a statement about the buyer''s current priorities and
+    return with new context on a date; treat repeated silence across genuinely different messages as a
+    statement about fit, and stop. The signal that separates them is not elapsed time — it is whether
+    the silences survived a change in what was offered.'
+  why: 'Buyers rarely spend a message to decline something that costs them nothing to ignore, so
+    "no" and "not this quarter" arrive through the same channel: an empty inbox. What distinguishes
+    them is response to variation. A prospect with a real but dormant problem reacts when the context
+    changes — a new trigger, a peer''s result, a different entry point — while one for whom the
+    problem does not exist reacts to none of them. Sending the same message repeatedly cannot make
+    that distinction, which is why cadence alone never learns anything.'
+  confidence_bp: 7500
+  applies_when: 'A thread exists, the outstanding move is theirs, and the gap has passed this
+    correspondent''s own reply cadence. All three are readable — `thread.ball_in_court`,
+    `thread.last_inbound` / `thread.last_outbound`, and the `reply_cadence` baseline.'
+  breaks_down_when: 'AFTER AN EXPLICIT DECLINE. A stated no is not silence and does not deserve the
+    generous reading. Continuing to return converts a clean refusal into a block.
+
+    AFTER A LOST DEAL WITH A NAMED CAUSE. `closed_lost_mention` is present on the live org; where the
+    reason was stated, the return is a re-entry on new grounds and not a follow-up on the old thread.
+
+    WHEN OUR LAST MESSAGE ASKED FOR SOMETHING EXPENSIVE. A silence following a request for a large
+    commitment — a security review, an executive introduction, a paid pilot — usually IS about value,
+    because the buyer weighed something concrete and did not act.
+
+    HIGH-VOLUME TRANSACTIONAL SALES. Where the cycle is days and the deal is small, the buyer
+    genuinely does decide quickly, and reading every silence as a deprioritisation inflates the
+    pipeline with prospects who have decided.
+
+    WHEN THE SILENCE IS ORGANISATIONAL. A champion who has left, a company in a freeze or a reorg
+    produces a silence that is about neither timing nor value and does not respond to context at all;
+    `champion_change` and `budget_freeze` say so where they are present, and their absence is not
+    evidence of their absence.'
+  reads:
+  - sales.obj.core.next_action
+  - sales.obj.core.lead
+  - thread.ball_in_court
+  - thread.last_inbound
+  - derived.engagement
+  contradicts:
+  - sales.heu.follow_up.the_thread_you_answered_is_not_the_loop_you_closed
+  pattern_ref:
+  - dl.momentum_collapse_after_proposal
+  - dl.verbal_yes_without_paper
+
+when_to_use:
+  situations:
+  - sales.sit.outbound_prospect
+  - sales.sit.inbound_lead
+  conditions:
+  - {path: thread.ball_in_court, op: "=", value: them}
+  - {exists: thread.last_inbound}
+  signals:
+  - followup_sent
+  - question
+  do_not_use_when:
+  - They declined explicitly, or the deal was closed lost with a stated reason.
+  - Our last message asked for a large commitment; that silence is usually about value.
+  - The silence is organisational — a departed champion, a freeze — and no context will move it.
+
+objects_used:
+- sales.obj.core.next_action
+- sales.obj.core.lead
+- sales.obj.core.timeline
+
+outcomes:
+- Quiet threads are parked with a date and a reason to return, rather than chased weekly.
+- Repeated silence across genuinely different messages produces a stop rather than a fifth touch.
+
+failure_modes:
+- 'USED TO JUSTIFY AN INDEFINITE SEQUENCE. The heuristic requires the CONTEXT to change between
+  returns; without that it becomes a licence for the same message on a timer.'
+- 'APPLIED TO A DECLINE. The generous reading of a stated no is not optimism, it is not listening.'
+- 'CONFUSED WITH PATIENCE. Parking a thread with a date is an action; parking it without one is
+  forgetting it and calling it strategy.'
+
+limits:
+- Says nothing about what new context to bring, which is where most of the difficulty actually is.
+- Cannot see an organisational cause unless it happened to be mentioned in correspondence.
+- Rests on a learned cadence, so on a first-contact thread it has no baseline and no opinion.
+
+variants:
+- applies_to: enterprise
+  change: The dormancy window is longer and the return should be tied to the buyer's planning cycle
+    rather than to elapsed weeks.
+  why: Priorities in a large organisation move on budget calendars, not on seller cadence.
+- applies_to: smb
+  change: Compress the window sharply; an SMB buyer who has not replied within a short multiple of
+    their own cadence has usually moved on, and the return costs more attention than it earns.
+  why: Shorter cycles mean silence carries more information per unit time.
+- applies_to: inside_sales
+  change: Enforce the stop mechanically — the sequence needs a terminal step, because the volume makes
+    per-thread judgement impossible and the default without one is infinite touches.
+  why: At volume, the failure mode is systemic rather than individual.
+
+metrics:
+- name: reply_rate_by_touch_number
+  unit: percent
+  description: Reply rate at each successive touch; the curve is where the honest stop sits.
+  direction: higher_is_better
+- name: revival_rate_after_park
+  unit: percent
+  description: Share of parked threads that replied on a later, context-changed return. The direct
+    test of this heuristic, and the number that says whether parking beats stopping.
+  direction: higher_is_better
+
+references:
+- title: The Challenger Sale
+  kind: methodology
+  author: Dixon and Adamson
+  note: The insistence that a seller's return be worth the buyer's attention on its own terms, which
+    is what "new context" means here.
+- title: Practitioner cadence data
+  kind: practitioner
+  note: Reply-rate-by-touch curves are segment-specific and are the only honest source for where the
+    stop point sits; this file deliberately states no number.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page; the original statement is kept verbatim because
+    it is correct. The addition is the discriminator — silence surviving a CHANGE in context is the
+    signal, not silence surviving time — which is what makes the heuristic falsifiable rather than a
+    reason to keep sending.'

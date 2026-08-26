@@ -1,0 +1,118 @@
+identity:
+  id: sales.rule.meeting_booking.a_meeting_is_not_booked_until_it_is_held
+  name: A meeting is not booked until it is held
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.meeting_booking
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'An accepted invitation and an attended meeting are different events. Treating the first
+    as the outcome produces a pipeline of scheduled conversations that never happened, and the error
+    is invisible from inside any metric built on invitations.'
+  answers:
+  - Has this meeting actually happened?
+  - When may a deal be advanced on the strength of a meeting?
+  not:
+  - A no-show remedy. It defines the state; what to do about it is in the playbook.
+  - A rule about meeting quality.
+
+rule:
+  statement: 'A deal, lead or relationship MUST NOT be advanced on the strength of a scheduled meeting
+    alone. Advancement requires evidence the meeting occurred — `meeting.status` reaching a completed
+    state, or `meeting.attended` — and a scheduled-but-unheld meeting whose start time has passed is
+    treated as an open loop rather than as progress.'
+  spans:
+  - sales.obj.core.next_action
+  - sales.obj.core.deal
+  when:
+  - {exists: meeting.start_at}
+  - {absent: meeting.attended}
+  then: 'Hold the stage, and surface the meeting as an unresolved item once its start time has passed.
+    Do not count it towards progress or coverage.'
+  severity: warning
+  why: 'Scheduling is the easiest thing in the pipeline to produce and the easiest to mistake for
+    progress, so any system that rewards it gets more of it — including meetings arranged with people
+    who will not attend, which cost the seller''s hour and the buyer''s goodwill. The distinction is
+    also the cheapest early warning available: a buyer who accepts and does not attend has told you
+    something clearer than anything they said in the thread, and a pipeline that cannot see the
+    difference has thrown that signal away.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'ATTENDANCE IS NOT CAPTURED FOR THIS TENANT. `meeting.attended` is present on a single node of the
+    design partner''s org — for most tenants it is absent entirely, and absence must not be read as a
+    no-show. Where the fact is not being written at all, the rule has no evidence and should abstain
+    rather than hold every stage.'
+  - 'THE MEETING MOVED. A rescheduled meeting is not an unheld one. Where a later `meeting.start_at`
+    exists for the same counterparty, the earlier record is superseded rather than failed.'
+  - 'THE CONVERSATION HAPPENED ELSEWHERE. Buyers routinely resolve a scheduled call in a thread, a
+    corridor, or a shorter ad-hoc conversation. Evidence of the substance having occurred discharges
+    the meeting even though the calendar entry never completed.'
+  - 'A MEETING WHERE OUR ATTENDANCE IS THE QUESTION. Where the seller cancelled, the buyer''s
+    behaviour carries no signal at all, and reading it as a no-show inverts the meaning of the event.'
+  - 'STANDING SERIES. A recurring internal or account meeting produces many entries, and holding
+    progress on any single unattended instance would freeze a healthy relationship on a missed weekly
+    call.'
+
+objects_used:
+- sales.obj.core.next_action
+- sales.obj.core.deal
+- sales.obj.core.timeline
+
+outcomes:
+- Progress is recorded on meetings held, not on invitations accepted.
+- A passed-but-unheld meeting surfaces as an open loop rather than disappearing.
+
+failure_modes:
+- 'ABSENCE READ AS A NO-SHOW. The most likely misfire, because `meeting.attended` is rarely written.
+  The first exception exists for it and the rule is a warning rather than blocking for the same reason.'
+- 'APPLIED TO RECURRING SERIES. Generates a stream of unheld-meeting flags about a healthy cadence.'
+- 'USED TO PUNISH THE SELLER. The signal is about the buyer''s intent; treating it as an activity
+  failure produces sellers who stop recording meetings honestly.'
+
+limits:
+- Depends on calendar capture. Where no connector writes `meeting.*`, none of this is evaluable and
+  the rule correctly says nothing.
+- Cannot see a conversation that replaced the meeting unless it was correspondence.
+
+variants:
+- applies_to: enterprise
+  change: A partially-attended meeting — the champion present, the economic buyer absent — is neither
+    held nor missed, and should be recorded as held with the gap named.
+  why: In a committee, who attended is more informative than whether anyone did.
+- applies_to: inside_sales
+  change: Held-rate is monitored per seller as a data-quality measure rather than per deal, because at
+    volume the individual deal signal is weaker than the pattern.
+  why: The aggregate is where an unattended-meeting habit becomes visible.
+
+metrics:
+- name: agreed_to_held_rate
+  unit: percent
+  description: Share of agreed meetings attended.
+  direction: higher_is_better
+- name: passed_unheld_open_loops
+  unit: count
+  description: Meetings whose start time passed with no evidence of occurrence. What the rule surfaces.
+  direction: lower_is_better
+
+references:
+- title: Practitioner pipeline hygiene
+  kind: practitioner
+  note: Booked-meeting targets are among the most commonly gamed sales metrics, and almost always
+    unconsciously — which is why this is a system rule rather than a coaching point.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new, and deliberately a warning rather than blocking. `meeting.start_at` is
+    dense on the design partner''s org (198 rows / 98 nodes) but `meeting.attended` appears once —
+    so a blocking version would hold nearly every stage on missing evidence. The first exception
+    states that regime explicitly rather than letting the rule misfire quietly.'

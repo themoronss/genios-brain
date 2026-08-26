@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.revenue_intelligence.a_signal_without_a_baseline_is_a_threshold
 decision_frameworks:
   core: []
   scoped: []

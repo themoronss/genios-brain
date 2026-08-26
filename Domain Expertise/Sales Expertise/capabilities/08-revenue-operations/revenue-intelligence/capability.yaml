@@ -3,7 +3,7 @@ identity:
   name: Revenue Intelligence
   domain: sales
   subdomain: revenue_operations
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Deriving patterns from activity, conversation and outcome data across the whole pipeline
@@ -11,17 +11,108 @@ description: 'Deriving patterns from activity, conversation and outcome data acr
 
   '
 question: What is the data telling us that nobody has noticed?
+
+outcomes:
+- 'Leading indicators separated from lagging ones, and only the leading ones acted on. Stage regression
+  and closed-lost are lagging: by the time they move, the decision has been made. Reply latency
+  stretching, meeting cadence thinning, thread count collapsing and stakeholder breadth narrowing all
+  move first, and all are computable from correspondence alone.'
+- 'A signal expressed against the relationship''s own baseline rather than as an absolute. Latency
+  doubling means something; three days means nothing without knowing what three days is for this
+  counterparty. `reply_cadence` is the only learned baseline the engine has, and this capability is
+  its main consumer.'
+- 'A named divergence between the record and the narrative, stated as a question rather than as an
+  accusation. "Confident, and no buyer contact in some weeks — what am I missing?" is a factual
+  question; the same observation delivered as doubt gets a defensive answer and no information.'
+- 'The false-positive rate of each signal, tracked. A signal nobody trusts is worse than no signal,
+  and trust is destroyed by unreviewed alerts far faster than it is built by correct ones.'
+- 'Outcomes fed back against what the signals said and when. The negative outcome, and the only thing
+  that turns this into intelligence rather than dashboards: the gap between when a signal fired and
+  when anyone acted is the process improvement, and it is invisible unless it is measured.'
+- 'Silence about the deals where nothing is happening. A cross-deal view whose output is proportional
+  to the number of deals is a report; one whose output is proportional to the number of anomalies is
+  intelligence.'
+
+failure_modes:
+- 'ABSOLUTE THRESHOLDS ON RELATIVE PHENOMENA. A fixed latency threshold flags the fast correspondents
+  and misses the slow ones going quiet, which is the exact inversion of what is wanted.'
+- 'ALERTS WITHOUT AN OWNER. A signal that fires into a dashboard nobody owns is not a signal, and its
+  main effect is to make the next real one less credible.'
+- 'CONFUSING CORRELATION WITH A CAUSE THE SELLER CAN ACT ON. "Deals with more stakeholders close more
+  often" is true and produces the instruction "add stakeholders", which produces cc lists.'
+- 'MEASURING SELLER ACTIVITY BECAUSE IT IS THE EASIEST DATA. Activity metrics are abundant, precise
+  and nearly uninformative about outcomes; their abundance is why they dominate.'
+- 'NEVER CHECKING THE SIGNAL AGAINST THE OUTCOME. Without the feedback loop this capability produces
+  plausible patterns indefinitely and never learns which of them were true.'
+- 'REPORTING ON EVERYTHING. Coverage of every deal buries the two that mattered, and the reader
+  eventually reads none of it.'
+
+kpis:
+- name: signal_lead_time
+  unit: days
+  description: Days between a signal firing and the lagging indicator it predicted. The whole value of
+    the capability, expressed as one number.
+  direction: higher_is_better
+- name: signal_precision
+  unit: percent
+  description: Share of fired signals that preceded the outcome they claim to predict. The number that
+    decides whether anyone reads the next alert.
+  direction: higher_is_better
+- name: signal_to_action_lag
+  unit: days
+  description: Days between a signal firing and anyone acting on it. Usually the largest and least
+    examined term in the whole chain.
+  direction: lower_is_better
+- name: alert_volume_per_reviewer
+  unit: count
+  description: Signals raised per person expected to act on them. Above a threshold this number
+    predicts that none of them are read.
+  direction: lower_is_better
+- name: baseline_coverage
+  unit: percent
+  description: Share of active counterparties with a learned reply cadence. Without it, every latency
+    signal falls back to an absolute threshold.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.revenue_operations.pipeline_management
+  - sales.revenue_operations.sales_operations
+  downstream:
+  - sales.sales_management.deal_review
+  - sales.revenue_operations.forecasting
+  - sales.post_sale_and_growth.churn_prevention
+  parallel:
+  - sales.revenue_operations.sales_analytics
+  - sales.sales_management.sales_coaching
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-26'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached through `sales.sit.field_evidence_on_the_market`
+    (`also_serves`), which binds to `deal` and `opportunity` — the latter live on the design partner''s
+    org with 18 situations.
+
+    This capability is unusual in that its inputs are the strongest in the corpus:
+    `thread.last_inbound` (127 rows), `thread.last_outbound` (118), `derived.momentum`,
+    `derived.engagement` and `derived.sentiment` (74 each), plus the `reply_cadence` baseline. The
+    outcomes are written against those rather than against a conversation-intelligence product,
+    because latency, cadence and breadth are computable from correspondence and call transcripts are
+    not available.
+
+    No numbers: what multiple of baseline constitutes a signal, and how many alerts is too many, are
+    Layer 4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-26'
+
 admission:
-  accepted_content_hash: ae88c8a6b2a3a65fbd83d69792050cf1d8d26f99f0ad57804bc2bdf41ba605ca
+  accepted_content_hash: ee034b1bb0a1ea7407ff85b814cc04bea81ad9b8ecb6312bdcac4c3d2146e198

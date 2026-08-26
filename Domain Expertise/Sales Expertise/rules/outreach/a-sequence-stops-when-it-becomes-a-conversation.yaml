@@ -1,0 +1,118 @@
+identity:
+  id: sales.rule.outreach.a_sequence_stops_when_it_becomes_a_conversation
+  name: A sequence stops when it becomes a conversation
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.outreach
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'Outreach is what happens before a relationship exists. The moment the counterparty
+    replies, is introduced, or asks for a meeting, the relationship exists — and any further
+    sequence step is a machine talking over a person.'
+  answers:
+  - When must an outbound sequence stop?
+  - Which counterparties are not outreach targets at all?
+  not:
+  - A rule about cadence within a sequence.
+  - A judgement about whether the reply was positive. Any reply ends outreach; what follows is a
+    different capability's problem.
+
+rule:
+  statement: 'An outbound sequence step MUST NOT be emitted for a counterparty who has replied, been
+    introduced, requested a meeting, or already corresponds with the organisation. Evidence of any of
+    these ends the sequence and hands the thread to follow-up, meeting booking or qualification.'
+  spans:
+  - sales.obj.core.lead
+  - sales.obj.core.next_action
+  when:
+  - {exists: thread.last_inbound}
+  then: 'Terminate the sequence and route the thread to the capability that owns a live conversation.
+    Record the stop, so a later attempt is a fresh contact rather than the next touch.'
+  severity: blocking
+  why: 'The failure this prevents is mechanical rather than intentional — the reply arrives somewhere
+    the sequencing tool cannot see, so the tool''s own state says "no response" and the next step
+    fires on schedule. To the recipient it is unambiguous evidence that nobody is reading, and it
+    destroys in one message what the previous four were trying to build. The check therefore has to be
+    made against the correspondence record, which is the only place the whole relationship is visible.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'AN AUTOMATED REPLY. Out-of-office and bounce notifications are inbound messages and are not
+    conversations. The `email_noise:automated` classification is what separates them, and treating
+    every inbound as a reply would stop a sequence on the strength of an autoresponder.'
+  - 'A REPLY FROM A DIFFERENT PERSON AT THE SAME ACCOUNT. A colleague answering does not end the
+    approach to the original contact — though it usually changes it, and continuing unchanged is the
+    version of this exception that goes wrong.'
+  - 'AN EXPLICIT REQUEST TO CONTINUE LATER. "Come back to me next quarter" ends the sequence and
+    creates a dated return; the return is not a sequence step and is not gated by this rule.'
+  - 'A DELIVERY-CONFIRMATION OR LOGISTICS MESSAGE. Sending a calendar invite or a promised document
+    after a reply is not a sequence step and must not be suppressed by a rule aimed at persuasion.'
+  - 'A REPLY THAT PRE-DATES THE SEQUENCE ENTIRELY. Old correspondence means the counterparty was never
+    a cold prospect, so the correct action is not to stop the sequence but to conclude it should never
+    have started and to record why.'
+
+objects_used:
+- sales.obj.core.lead
+- sales.obj.core.next_action
+- sales.obj.core.persona
+
+outcomes:
+- No sequence step is sent over a live conversation.
+- Counterparties with existing correspondence never enter outreach.
+
+failure_modes:
+- 'STOPPED BY AN AUTORESPONDER. Ends sequences that had not been read, and the first exception exists
+  precisely for this.'
+- 'READ AS AN ACCOUNT-LEVEL STOP. One reply freezing the approach to every contact at a company
+  removes the coverage the sequence was built for.'
+- 'STOP RECORDED AS A COMPLETION. If the halt is logged as a finished sequence, a later attempt
+  resumes at the next touch and asks the buyer to continue something they never joined.'
+
+limits:
+- '`thread.last_inbound` marks that an inbound message exists, not that it was a human reply — the
+  automated-reply exception cannot be resolved from that fact alone and needs the noise
+  classification, which lives in observations rather than in the fact.'
+- Cannot see replies that arrived out of band, in another channel or to another colleague.
+
+variants:
+- applies_to: inside_sales
+  change: Enforce in the sequencer itself and reconcile against the mail record on a schedule; the
+    manual version does not survive the volume.
+  why: This failure is invisible to the sender and obvious to the recipient.
+- applies_to: enterprise
+  change: Evaluate per contact, and surface the reply to whoever is approaching the other contacts so
+    the next approach is informed rather than merely permitted.
+  why: A committee reply is information about the account, not only about the person.
+
+metrics:
+- name: live_thread_overrun_rate
+  unit: percent
+  description: Share of sequences that sent a step after an inbound message. What this rule drives to
+    zero.
+  direction: lower_is_better
+- name: cold_entry_error_rate
+  unit: percent
+  description: Share of sequence entries for counterparties who already corresponded.
+  direction: lower_is_better
+
+references:
+- title: Practitioner outbound operations
+  kind: practitioner
+  note: Sequence overrun after reply is the most commonly reported outbound defect and is almost
+    always a state-synchronisation problem rather than a judgement one.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. `thread.last_inbound` is present on 127 fact rows across 74 nodes of the
+    design partner''s org, so the gate is evaluable today; the automated-reply exception is not
+    resolvable from that fact and is stated in `limits` rather than assumed — `email_noise:automated`
+    is the second-densest observation on that org, which is how large the gap would be.'

@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.meeting_booking.a_meeting_is_not_booked_until_it_is_held
 decision_frameworks:
   core: []
   scoped: []

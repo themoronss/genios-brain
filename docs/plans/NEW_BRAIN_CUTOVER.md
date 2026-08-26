@@ -197,8 +197,8 @@ traffic instead of being swapped blind.
 
 # Phase 2 — the corpus, not the code
 
-> Surveyed 2026-08-25. Worked in four batches on 2026-08-26 — commits `9ddeeed`, `087d4e6`,
-> `3dc7f61`, and the one carrying this edit. Every number below was measured against
+> Surveyed 2026-08-25. Worked in five batches on 2026-08-26 — commits `9ddeeed`, `087d4e6`,
+> `3dc7f61`, `049ee6b`, and the one carrying this edit. Every number below was measured against
 > `org_e97e86f858ad48b2bbf64b8a`, not against tests.
 
 ## Where Phase 2 stands
@@ -211,8 +211,8 @@ traffic instead of being swapped blind.
 | `required_missing` | 2 | 2 (unchanged — see item 3 below) |
 | Compiled cards rendering `raw_slot` | 11 of 18 | **the four causes are fixed; see below** |
 | Live routes compiling through a placeholder capability | 3 of 4 types | **0 of 4** — Admin closed in batch 4 |
-| Hollow capabilities | 136 | **130** (admin 51, customer_support 40, sales 39) |
-| Corpus validation errors | 566 | **542** |
+| Hollow capabilities | 136 | **124** (admin 51, customer_support 40, sales 33) |
+| Corpus validation errors | 566 | **514** |
 | Tests | 1640 | **1678** |
 
 ## Batch 4 — the substrate was understated, and the live Admin route is no longer hollow
@@ -281,6 +281,50 @@ then hits `no_tenant_pack` — obstacle 1 under "What is left" below. So `script
 recorded here as a **baseline for the next batch**, not as a before/after: 13 "says it has nothing to
 say", 24 "template copy, not authored", 9 "abstains instead of advising", and clean on the other four
 defect classes.
+
+## Batch 5 — the six sales capabilities one predicate from live traffic
+
+Selected from `registry/situation-capability-map.yaml` rather than by judgement. Every live type's
+route set was read, the capabilities in it were checked against the hollow list, and these six are
+the intersection — each already named by a situation bound to `opportunity` or `relationship`, and
+separated from delivering only by a predicate that did not match:
+
+| capability | reached through | held back by |
+|---|---|---|
+| `follow_up` | `inbound_lead` + `outbound_prospect` (3 route sets — the most exposed capability in the corpus) | `ball_in_court` value |
+| `outreach` | owns `outbound_prospect`, bound to live `relationship` | `ball_in_court = them` and `edge_count <= 1` |
+| `meeting_booking` | `inbound_lead` `also_serves` | `ball_in_court = us` |
+| `pipeline_management` | `out_of_profile_deal` `also_serves` | `deal.status = open` on a company anchor |
+| `deal_review` | `out_of_profile_deal` + `enterprise_deal` | same |
+| `revenue_intelligence` | `field_evidence_on_the_market` | same |
+
+Same shape as batch 4 — capability outcomes with the negative one, failure modes as how a
+competent-seeming person does it badly, KPIs, handoffs; heuristics promoted to full artifacts with
+`breaks_down_when`; playbooks to steps with `produces` / `done_when` / `skip_when`. Sales had ONE
+rule file before this; six more were authored, each with `rule.exceptions`:
+
+| rule | gate | the failure it prevents |
+|---|---|---|
+| `no_follow_up_while_they_wait_on_us` | L4_constraint, blocking | the shallow "no reply → follow up" reading, aimed at threads we owe |
+| `a_sequence_stops_when_it_becomes_a_conversation` | L4_constraint, blocking | sequence overrun after a reply |
+| `a_meeting_is_not_booked_until_it_is_held` | L4_constraint, warning | accepted invitations counted as progress |
+| `seller_activity_is_not_evidence_of_life` | L4_constraint, warning | follow-ups keeping a dead deal fresh |
+| `a_gate_is_evidenced_or_it_is_asserted` | L4_constraint, warning | a confident account read as a verified one |
+| `a_signal_without_a_baseline_is_a_threshold` | L4_constraint, blocking | a latency signal silently falling back to a constant |
+
+Three of these are only authorable because of the batch-4 substrate correction:
+`seller_activity_is_not_evidence_of_life` needs `thread.last_outbound` (the whole content of the rule
+is what must NOT be used), and both the follow-up and repeat-ask rules read `question` /
+`positive_reply`.
+
+Thresholds were REMOVED where the original sketches carried them — a coverage multiple, a zombie
+window in days, a latency in days. A number in a Layer 3 file is a boundary leak, and in each case
+the substantive claim survived without it.
+
+**Measured, not asserted:** routing 56/61 (unchanged, and expected — these six sit behind predicates
+that do not currently match, so this batch closes CONTENT, not coverage), `card_audit` byte-identical
+to the batch-4 baseline (63 cards; 13 / 24 / 9; four classes clean — no new defect), 1678 tests green,
+corpus errors 542 → 514, hollow 130 → 124.
 
 ## Batch 1 — the compiled brain now writes its own cards (`9ddeeed`)
 
@@ -356,12 +400,13 @@ whether a card may instruct — folding a content observation into it would make
    is true of all 49 Customer Support capabilities.** This is the largest structural gap left: the
    corpus can author a domain the tenant has no lane for, and nothing in the authoring path says so.
    The honest unblock is an `admin` pack module plus a tenant promotion.
-2. **130 hollow capabilities** — 51 admin, 40 customer_support, 39 sales (was 136 before batch 4).
+2. **124 hollow capabilities** — 51 admin, 40 customer_support, 33 sales (was 136 before batch 4).
    Only the sales ones can reach a user today. Promote in the order their situation types actually
-   occur. Nothing hollow now sits on a live route in ANY domain, so from here the queue is worked by
-   proximity — the next batches are the sales capabilities one fact away from the live types
-   (`follow_up`, `outreach`, `objection_handling`, `closing`, `relationship_management`,
-   `churn_prevention`), then the Customer Support core that `required_missing` depends on.
+   occur. Nothing hollow now sits on a live route in ANY domain, and after batch 5 nothing hollow
+   sits in a live type's ROUTE SET either. From here the queue is worked outwards: the remaining
+   `deal`-lane sales capabilities (`pricing`, `champion_identification`, `stakeholder_mapping`,
+   `decision_maker_identification`, `legal_review`, `procurement`), then the three unauthored
+   Customer Support core objects that `required_missing` depends on, then the rest by subdomain.
 3. **`required_missing` (2)** — two `relationship` situations want
    `customer_support.obj.core.{customer_account,named_contact,support_plan}`, which are referenced
    and not authored. A Customer Support object gap reached through a sales route.

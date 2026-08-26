@@ -6,11 +6,143 @@ identity:
   scope: capability
   owner_capability: sales.prospecting_and_outreach.meeting_booking
   subdomain: prospecting_and_outreach
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
   statement: When you propose times, the ball is theirs; when they propose, it is yours — and it must
     be answered same-day. Scheduling threads die of slow ping-pong more than of refusal, and speed here
     is read as a sample of what working with you is like.
   answers:
   - Whose move is this scheduling thread on, and how fast should it be answered?
+  not:
+  - A rule about how many slots to offer. That is in the playbook.
+  - A general claim that fast replies win. It is specific to the interval between agreement and invite.
+
+heuristic:
+  statement: 'On a scheduling thread, latency is not a courtesy variable — it is the conversion
+    variable. Answer within the buyer''s working day when the ball is ours, and where a counter-proposal
+    is impossible to accept, reply with the impossibility immediately rather than waiting until a
+    better alternative is available.'
+  why: 'Intent is at its maximum in the moment it is expressed and decays with every exchange, because
+    each round-trip gives the buyer another opportunity to reconsider and another day for their week
+    to change. The seller controls exactly half of those round-trips, and it is the half that is free.
+    The second-order effect matters more: a buyer with no other evidence about the seller treats the
+    scheduling exchange as a work sample, and a two-day gap over a calendar slot is read as a forecast
+    of what every later interaction will cost them.'
+  confidence_bp: 8800
+  applies_when: 'A meeting has been agreed in principle and the slot is not yet fixed. Direction is
+    readable from `thread.ball_in_court`; the gap from `thread.last_inbound` against evaluation time.'
+  breaks_down_when: 'THE SLOT DEPENDS ON SOMEONE ELSE. Where a colleague or an executive must attend, a
+    fast reply that cannot be honoured is worse than a slower one — the correct fast act is to
+    acknowledge with a stated time by which slots will follow, which preserves the speed signal
+    without spending credibility.
+
+    A DELIBERATE SCARCITY POSITION. Where the seller is genuinely in demand and the buyer is being
+    qualified rather than pursued, instant availability undercuts the position. This is real and is
+    also the most commonly self-serving exception a seller invokes.
+
+    ACROSS DISTANT TIME ZONES. "Same day" measured in the seller''s calendar can mean the buyer sees
+    the reply two mornings later. The unit is the buyer''s working day.
+
+    LARGE FORMAL BUYERS. Procurement-led organisations schedule through a process, and speed on the
+    seller''s side neither accelerates it nor is read as a signal.
+
+    WHEN THE MEETING SHOULD NOT HAPPEN YET. Booking fast is only correct if the meeting is the right
+    next step; a fast slot for an unqualified conversation converts a scheduling win into a wasted
+    hour on both sides.'
+  reads:
+  - sales.obj.core.next_action
+  - sales.obj.core.decision_maker
+  - thread.ball_in_court
+  - thread.last_inbound
+  - meeting.start_at
+  contradicts:
+  - sales.heu.follow_up.silence_is_an_answer_about_timing__not_value
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.inbound_lead
+  conditions:
+  - {path: thread.ball_in_court, op: "=", value: us}
+  - {exists: thread.last_inbound}
+  signals:
+  - meeting_request
+  - positive_reply
+  do_not_use_when:
+  - The slot depends on a third party; acknowledge fast instead of proposing fast.
+  - The buyer schedules through a formal process where seller speed changes nothing.
+  - The meeting is not yet the right next step.
+
+objects_used:
+- sales.obj.core.next_action
+- sales.obj.core.decision_maker
+- sales.obj.core.lead
+- sales.obj.core.timeline
+
+outcomes:
+- The scheduling ball never sits with the seller overnight in the buyer's working day.
+- An impossible counter-proposal is answered immediately with the constraint, not with silence.
+
+failure_modes:
+- 'SPEED WITHOUT A HONOURABLE SLOT. Proposing times that are then withdrawn spends more credibility
+  than the fast reply earned.'
+- 'MEASURED IN THE SELLER''S DAY. Produces a reply that is same-day locally and two mornings late for
+  the buyer.'
+- 'GENERALISED TO ALL THREADS. Applied outside scheduling it becomes an argument for answering
+  everything instantly, which is a different and worse claim.'
+
+limits:
+- Says nothing about whether the meeting should happen, only about how fast to arrange it.
+- Assumes the seller's availability is genuinely knowable at reply time, which for a multi-attendee
+  meeting it is not.
+- Cannot distinguish an agreed meeting from a polite expression of future interest, which is where
+  the fast reply sometimes arrives before there is anything to schedule.
+
+variants:
+- applies_to: enterprise
+  change: The fast act is usually an acknowledgement plus a named time for slots, because the attendee
+    list is rarely within one person's control.
+  why: Speed has to be spent on the part the seller actually controls.
+- applies_to: smb
+  change: Propose and confirm in a single exchange wherever possible; the buyer is the decision-maker
+    and a second round-trip is pure loss.
+  why: There is no committee to coordinate.
+- applies_to: inside_sales
+  change: Treat the scheduling queue as a service level rather than as individual judgement, because
+    at volume the slow replies concentrate in the hours nobody owns.
+  why: The failure is a coverage gap, not a discipline gap.
+
+metrics:
+- name: reply_to_scheduling_thread_latency
+  unit: hours
+  description: Time to answer once the scheduling ball is ours, measured in the buyer's working day.
+  direction: lower_is_better
+- name: scheduling_round_trips
+  unit: count
+  description: Messages between agreement and a fixed slot.
+  direction: lower_is_better
+
+references:
+- title: Lead response time research
+  kind: research
+  note: The well-replicated finding that contact-attempt latency dominates conversion in inbound
+    response; this heuristic applies the same logic to the interval after agreement.
+- title: Practitioner scheduling discipline
+  kind: practitioner
+  note: The work-sample reading — that the buyer treats the scheduling exchange as evidence about
+    working with you — is folk knowledge among experienced sellers and is the stronger of the two
+    arguments.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The first breakdown regime is the one that
+    matters in practice: a multi-attendee meeting makes fast proposal impossible, and the heuristic
+    would otherwise push a seller into offering slots they cannot hold — which costs more than the
+    delay it avoided.'

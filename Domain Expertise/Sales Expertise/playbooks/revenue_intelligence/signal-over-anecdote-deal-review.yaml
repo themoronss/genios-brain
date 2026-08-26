@@ -1,30 +1,194 @@
 identity:
   id: sales.pb.revenue_intelligence.signal_over_anecdote_deal_review
-  name: Signal-over-anecdote deal review
+  name: Signal over anecdote
   kind: playbook
   domain: sales
   scope: capability
   owner_capability: sales.revenue_operations.revenue_intelligence
   subdomain: revenue_operations
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: Deal risk is read from recorded behaviour — response latency stretching, meetings pushed,
-    champion gone quiet, single-threading — not from the owner's narrative. The record outvotes the story,
-    kindly and every time.
+  statement: 'Deal risk is read from recorded behaviour — response latency stretching, meetings
+    pushed, champion gone quiet, single-threading — not from the owner''s narrative. The record
+    outvotes the story, kindly and every time.'
+  answers:
+  - Which measurable behaviours predict a deal cooling?
+  - How is a divergence between record and narrative raised without making it personal?
+  not:
+  - A deal review. This supplies the evidence a review interrogates.
+  - A scoring model. It names the signals; how to weight them is Layer 4's arithmetic.
+
+when_to_use:
+  situations:
+  - sales.sit.field_evidence_on_the_market
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {exists: thread.last_inbound}
+  signals:
+  - timeline_slip
+  - negative_reply
+  - going_dark
+  do_not_use_when:
+  - 'There is no correspondence history to establish rhythms. Every signal here is a deviation from a
+    baseline, and without one they degrade into absolute thresholds.'
+  - 'The relationship runs off the captured channels. The signals will fire on a healthy deal and the
+    first false alarm costs more credibility than several correct ones earn.'
+  - 'Nobody owns the alerts. Signals with no owner make the next real one less believable, which is a
+    net negative.'
+
 steps:
 - order: 1
-  name: Watch the four leading signals
-  description: Reply latency trend, meeting cadence, thread count, stakeholder breadth. Each measurable
-    from the communication record; each degrades before the story does.
-  actor: human
+  name: Establish the baseline before reading any signal
+  description: 'Every signal below is a deviation. A counterparty''s own reply rhythm, meeting cadence
+    and thread breadth are the reference; without them the same rules become absolute thresholds that
+    flag the fast correspondents and miss the slow ones going quiet.'
+  actor: system
+  objects_read:
+  - sales.obj.core.deal
+  produces: Per-relationship baselines, and a list of relationships too new to have one.
+  done_when: Every monitored deal either has a baseline or is explicitly excluded.
+
 - order: 2
-  name: Challenge divergence with data, not doubt
-  description: '''Confident, but no buyer touch in 19 days — what am I missing?'' The number makes the
-    conversation factual instead of personal.'
-  actor: human
+  name: Watch the four leading indicators
+  description: 'Reply latency trend, meeting cadence, thread count and stakeholder breadth. Each is
+    computable from the communication record, each degrades before the story does, and each is
+    independent enough that two moving together is worth more than one moving far.'
+  actor: system
+  objects_read:
+  - sales.obj.core.buying_signal
+  - sales.obj.core.buying_committee
+  produces: A per-deal signal set expressed relative to baseline.
+  done_when: Signals are ratios, not raw values.
+
 - order: 3
-  name: Feed outcomes back to the signals
-  description: Post-mortem lost deals against what the signals said and when. The gap between signal and
-    action is the process improvement.
+  name: Rule out the boring explanations first
+  description: 'Holidays, a whole-market slowdown, a channel move, a handoff to procurement. Each
+    produces the signal pattern without the meaning — and the handoff case is the expensive one,
+    because a deal advancing into legal looks exactly like a deal going cold. Simultaneity across
+    unrelated deals is the tell for the seasonal cases.'
+  actor: system
+  produces: Signals with the mundane causes excluded or flagged.
+  done_when: No alert is raised that a calendar or a handoff explains.
+
+- order: 4
+  name: Raise divergence as a question, with the number in it
+  description: '"Confident, and no buyer contact in some weeks — what am I missing?" The number makes
+    the conversation factual instead of personal, and the question form leaves the seller somewhere to
+    stand. The same observation delivered as doubt gets a defensive answer and no information.'
   actor: human
+  produces: A factual question naming the divergence.
+  done_when: The seller can answer with information rather than with reassurance.
+
+- order: 5
+  name: Give every signal an owner and a decision
+  description: 'A signal firing into a dashboard nobody owns is not a signal. Each one resolves to
+    act, watch or dismiss — and dismissal is a legitimate outcome that must be recorded, because it is
+    what the precision measurement in the next step is computed from.'
+  actor: human
+  objects_read:
+  - sales.obj.core.next_action
+  produces: A resolution per signal.
+  done_when: No signal is older than the review cycle without a decision.
+
+- order: 6
+  name: Feed outcomes back against what the signals said and when
+  description: 'Post-mortem lost deals against the signals: did they fire, when, and did anyone act.
+    The gap between firing and acting is usually the largest term in the chain and the least examined,
+    and it is the process improvement rather than a modelling one.'
+  actor: human
+  objects_read:
+  - sales.obj.core.risk
+  produces: Per-signal precision and lead time, plus the signal-to-action lag.
+  done_when: Each signal's precision is known rather than assumed.
+  typical_duration_days: 30
+
+- order: 7
+  name: Retire the signals that do not earn their alerts
+  description: 'A signal with poor precision is worse than no signal, because it spends the credibility
+    the good ones need. Retiring one is a success of the feedback loop, not an admission that the
+    exercise failed.'
+  actor: human
+  produces: A reduced, higher-precision signal set.
+  done_when: Alert volume per reviewer is low enough that every alert is read.
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.buying_signal
+- sales.obj.core.buying_committee
+- sales.obj.core.opportunity
+- sales.obj.core.risk
+- sales.obj.core.next_action
+
+outcomes:
+- Cooling is detected from behaviour, ahead of any stage change.
+- Every signal has an owner, a decision and a measured precision.
+- The signal set shrinks over time rather than growing.
+
+failure_modes:
+- 'SIGNALS WITHOUT BASELINES. The default implementation, and it inverts which deals get flagged.'
+- 'ALERTS WITHOUT OWNERS. Volume rises, attention falls, and the next genuine alert is ignored.'
+- 'DIVERGENCE RAISED AS DOUBT. Produces defensiveness and ends the flow of information the whole
+  capability depends on.'
+- 'NO FEEDBACK LOOP. Plausible patterns accumulate indefinitely and none of them are ever tested.'
+- 'THE SIGNAL SET ONLY GROWS. Every new idea becomes an alert, nothing is retired, and the reviewer
+  stops reading.'
+
+limits:
+- Says nothing about why attention moved, which is what decides the response.
+- Blind to conversations outside the captured channels — the dominant false-positive source.
+- Cannot separate a deal advancing into a slow function from one cooling, without the handoff being
+  visible in the record; step 3 names this and cannot fully solve it.
+
+variants:
+- applies_to: enterprise
+  change: Signals are computed per stakeholder as well as per deal; a champion staying warm while the
+    economic buyer cools is the specific pattern worth alerting on.
+  why: The aggregate hides the relationship that actually decides.
+- applies_to: smb
+  change: Reduce to raw silence and meetings pushed; there is not enough history for the other two to
+    mean anything.
+  why: Baselines need exchanges that a short cycle never produces.
+- applies_to: inside_sales
+  change: Fully automate steps 1 to 3 and keep step 5 human, with alerts routed to a named queue
+    rather than to individuals.
+  why: At volume, ownership has to be structural or it does not exist.
+- applies_to: channel
+  change: Track partner and end-customer signals separately and alert on the customer's.
+  why: A responsive partner masks a silent customer completely.
+
+metrics:
+- name: signal_precision
+  unit: percent
+  description: Share of signals that preceded the outcome they predict.
+  direction: higher_is_better
+- name: signal_to_action_lag
+  unit: days
+  description: Days from firing to someone acting.
+  direction: lower_is_better
+- name: alert_volume_per_reviewer
+  unit: count
+  description: Signals raised per person expected to act on them.
+  direction: lower_is_better
+
+references:
+- title: Conversation and engagement analytics practice
+  kind: practitioner
+  note: The four leading indicators are standard; the baseline requirement and the retirement step
+    are what separate a signal set that is read from one that is not.
+- title: Base rate neglect
+  kind: research
+  note: Why a signal with modest precision applied to a large pipeline produces mostly false alarms,
+    which is the argument underneath steps 6 and 7.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 1, 3, 5 and 7 are new. Step 3 exists because the
+    handoff case — a deal moving into procurement or legal — produces the cooling pattern while the
+    deal advances, and acting on it sends a rescue message to a buyer who is buying.'

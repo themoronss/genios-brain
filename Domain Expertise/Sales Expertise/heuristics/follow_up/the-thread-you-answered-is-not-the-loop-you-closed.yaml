@@ -6,10 +6,134 @@ identity:
   scope: capability
   owner_capability: sales.prospecting_and_outreach.follow_up
   subdomain: prospecting_and_outreach
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: 'Replying to one of a prospect''s three questions closes one loop, not the person. Follow-up
-    discipline is per-request: every distinct ask they made either has an answer, an owner, or a date.'
+  statement: Replying to one of a prospect's three questions closes one loop, not the person. Follow-up
+    discipline is per-request; every distinct ask they made either has an answer, an owner, or a date.
   answers:
   - What exactly is still open with this person?
+  not:
+  - A rule about reply speed. This is about completeness, and the two trade against each other.
+  - A record-keeping practice. The unit is the counterparty's expectation, not our filing.
+
+heuristic:
+  statement: 'Track open loops at the level of the ASK, not the thread. A thread shows as answered the
+    moment any reply is sent, so a message that addresses one of several questions marks the whole
+    conversation closed in every system that watches threads — while the counterparty is still waiting
+    on the two that mattered most to them, and reads the partial answer as a decision to ignore them.'
+  why: 'Thread state is a property of the mailbox and ask state is a property of the relationship, and
+    only the second predicts what the other side thinks of us. The asymmetry is what makes this
+    expensive: the unanswered questions are disproportionately the hard ones — price, a reference, a
+    commitment on timing — because the easy ones are what a hurried reply reaches for first. So the
+    systematic effect of thread-level tracking is that the most consequential asks are the ones that
+    silently go unanswered.'
+  confidence_bp: 8000
+  applies_when: 'An inbound message contained more than one distinct request. `question` observations
+    mark that asks were made; the count and their individual state are not carried, which is stated in
+    limits rather than assumed away.'
+  breaks_down_when: 'RHETORICAL AND COURTESY QUESTIONS. "Hope you are well?" and "does that make
+    sense?" are not asks. Tracking them produces a permanently open loop nobody is waiting on, and it
+    trains the reader to ignore the list.
+
+    A DELIBERATE PARTIAL ANSWER. Answering one question and explicitly saying when the others will
+    follow is complete follow-up, not partial — the loop moved from unanswered to dated, which is the
+    outcome the heuristic asks for.
+
+    QUESTIONS OVERTAKEN BY A LATER MESSAGE. Buyers routinely ask something and then answer it
+    themselves, or make it irrelevant by moving on. A loop tracked past that point produces a follow-up
+    about a question the buyer no longer remembers asking.
+
+    HIGH-VOLUME TRANSACTIONAL THREADS. Where messages are short and asks are single, per-ask tracking
+    is overhead with no corresponding benefit.
+
+    WHEN THE ANSWER IS DELIBERATELY WITHHELD. Some asks — a discount, a reference before qualification,
+    a roadmap commitment — are not answered on purpose. That is a negotiating position, and recording
+    it as an unclosed loop mistakes strategy for neglect.'
+  reads:
+  - sales.obj.core.next_action
+  - sales.obj.core.champion
+  - thread.ball_in_court
+  - thread.last_inbound
+  contradicts:
+  - sales.heu.follow_up.silence_is_an_answer_about_timing__not_value
+  pattern_ref:
+  - req.requester_is_chasing
+
+when_to_use:
+  situations:
+  - sales.sit.inbound_lead
+  conditions:
+  - {has_obs: question}
+  - {path: thread.ball_in_court, op: "=", value: us}
+  signals:
+  - question
+  - negative_reply
+  do_not_use_when:
+  - The questions were rhetorical or courtesy phrasing.
+  - A partial answer was given with a stated date for the rest; the loop is dated, not open.
+  - The ask is being withheld deliberately as a negotiating position.
+
+objects_used:
+- sales.obj.core.next_action
+- sales.obj.core.champion
+- sales.obj.core.objection
+
+outcomes:
+- Every distinct ask carries an answer, an owner or a date.
+- A thread is never marked closed on the strength of any reply having been sent.
+
+failure_modes:
+- 'TRACKING EVERY SENTENCE ENDING IN A QUESTION MARK. Produces a list of rhetorical loops and the
+  discipline is abandoned within a fortnight.'
+- 'USED AS A COMPLETENESS TEST FOR A SINGLE MESSAGE. Answering all three questions in one reply is not
+  required; answering, owning or dating each of them is.'
+- 'APPLIED WITHOUT DIRECTION. An open ask on a thread where the ball is genuinely theirs is not our
+  loop to close.'
+
+limits:
+- '`question` records that an ask occurred, not how many or which remain open. On the design partner''s
+  org it appears 65 times across 25 nodes with no per-ask structure, so the count this heuristic wants
+  is not currently derivable and the pattern that would operationalise it does not exist.'
+- Cannot distinguish a hard ask from a soft one, which is exactly the distinction that makes the
+  unanswered ones expensive.
+
+variants:
+- applies_to: enterprise
+  change: Asks arrive from several people in the buying committee and must be tracked per person;
+    answering the champion does not answer the security reviewer.
+  why: A committee's loops are not fungible, and the unanswered one usually holds the gate.
+- applies_to: inside_sales
+  change: Reduce to a single rule — never send a reply that leaves an unanswered question without a
+    date — because per-ask tracking does not survive the volume.
+  why: The discipline has to fit inside one message at this cadence.
+
+metrics:
+- name: unanswered_ask_share
+  unit: percent
+  description: Share of distinct asks with no answer, owner or date.
+  direction: lower_is_better
+- name: partial_reply_rate
+  unit: percent
+  description: Share of replies that addressed some but not all open asks without dating the rest.
+  direction: lower_is_better
+
+references:
+- title: SPIN Selling
+  kind: methodology
+  author: Neil Rackham
+  note: On the buyer's questions being the highest-value data in the exchange, which is the reason
+    leaving one unanswered costs more than the reply time it saved.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. `limits` states plainly that the per-ask count
+    this heuristic depends on is NOT derivable today — `question` marks that an ask happened and
+    nothing more — so this is authored expertise ahead of the signal, recorded honestly rather than
+    dressed as an executable pattern.'
