@@ -123,12 +123,12 @@ class CardStore:
                 "business_subject, relationship_role, unresolved_item, why_now, "
                 "capability_key, capability_version, capability_review_state, "
                 "outcome_window_days, success_signal, do_nothing_consequence, "
-                "confidence_vector, "
+                "confidence_vector, surfaces, "
                 "state, expires_at) values (:id,:sig,:o,:asg,:dom,:lvl,:band,:head,:sit,:score,"
                 "cast(:sb as jsonb),cast(:act as jsonb),cast(:why as jsonb),:tags,"
                 "cast(:art as jsonb),:rm,:cs,:tv,:rjc,:rjd,:abst,"
                 ":bsub,:brole,:bitem,:bwhy,:ckey,:cver,:crev,:owin,:osig,:odnc,"
-                "cast(:cvec as jsonb),'queued',:exp) "
+                "cast(:cvec as jsonb),:surf,'queued',:exp) "
                 "on conflict (signal_id) do nothing returning card_id"),
                 {"id": card_id, "sig": card["signal_id"], "o": card["org_id"],
                  "asg": card["assignee"], "dom": card["domain"], "lvl": card["level"],
@@ -151,6 +151,9 @@ class CardStore:
                  "osig": card.get("success_signal"),
                  "odnc": card.get("do_nothing_consequence"),
                  "cvec": json.dumps(card.get("confidence_vector") or {}, default=str),
+                 # Default to all four when the builder did not decide, so a caller that predates
+                 # surface-awareness keeps today's behaviour instead of silently vanishing.
+                 "surf": card.get("surfaces") or ["app", "agent", "ask", "api"],
                  # why this card declines to instruct, or NULL when it does
                  "abst": card.get("abstained_because"),
                  "exp": card["expires_at"]}).first()
@@ -300,7 +303,11 @@ class CardStore:
              " as score, k.state, k.render_mode, k.created_at, k.expires_at "
              "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
              + AUTHORITATIVE_SIGNAL_JOINS +
+             # The APP surface, not every card the org holds. A rejected deal past its deadline
+             # still answers "what happened with Antler?" — it just does not belong in a queue
+             # whose only honest measure is whether the reader acts on every line.
              " where k.org_id=:o and k.state = any(:states) and s.status='open' "
+             "and 'app' = any(k.surfaces) "
              "and k.expires_at > :authority_time and " + AUTHORITATIVE_SIGNAL_PREDICATE)
         params = {"o": org_id, "states": list(states),
                   "authority_time": datetime.now(timezone.utc)}

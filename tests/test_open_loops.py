@@ -403,3 +403,38 @@ def test_engagement_is_relative_to_the_account_and_deal_value_is_never_invented(
                if '"deal.' in line and 'pairs.append' in line}
     assert written == {"deal.last_inbound", "deal.status"}, (
         f"compute_deal_view must write only rolled-up truth, writes {written}")
+
+
+# ── one intelligence, four surfaces ────────────────────────────────────────────
+def test_a_settled_deal_leaves_the_app_queue_but_stays_answerable():
+    """antler.co, rejected 6 Aug, deadline 14 Aug passed, momentum zero — shown inside "62 OPEN
+    LOOPS" in an app whose job is to say what needs you now. The same text is the complete answer
+    to "what happened with Antler?", so the card is not wrong; serving one row to four different
+    questions is."""
+    from genios_engine.deliver.card_builder import _surfaces
+
+    settled = {"deal.status": {"value": "rejected"}, "derived.momentum": {"value": 0}}
+    assert _surfaces(settled, {}, [{"action": "run_play"}]) == ["ask", "api"]
+
+    # Either condition alone is not enough: a live deal at zero momentum is exactly what the app
+    # exists to surface, and a won deal still moving is an expansion conversation.
+    live = {"deal.status": {"value": "open"}, "derived.momentum": {"value": 0}}
+    assert "app" in _surfaces(live, {}, [{"action": "reply"}])
+
+
+def test_agent_surface_needs_something_to_execute():
+    """An agent can only act on a play it was handed. A card whose actions are human judgement
+    calls has nothing to delegate, whatever else is true of it."""
+    from genios_engine.deliver.card_builder import _surfaces
+
+    facts = {"deal.status": {"value": "open"}}
+    assert "agent" in _surfaces(facts, {}, [{"action": "run_play"}])
+    assert "agent" not in _surfaces(facts, {}, [{"action": "reply"}])
+
+
+def test_the_app_queue_filters_on_the_surface():
+    import inspect
+
+    from genios_engine.deliver.store import CardStore
+
+    assert "'app' = any(k.surfaces)" in inspect.getsource(CardStore.queue)

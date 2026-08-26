@@ -222,6 +222,48 @@ def _real_sources(store, org_id: str, node_id: str) -> set[str]:
     return {r.source for r in rows if r.source}
 
 
+#: Situations whose own status says the work is finished. Not a guess about relevance — the value
+#: is written by the extractor from what the counterparty actually said.
+_SETTLED_STATUSES = frozenset({"rejected", "lost", "won", "closed", "churned", "declined"})
+
+
+def _surfaces(facts: dict, signal: dict, actions: list) -> list[str]:
+    """Which surfaces this card is valid on.
+
+    Four surfaces ask four different questions and were being served one answer. The app asks
+    "what should I do right now"; the agent asks "what should I execute"; Ask and the API ask
+    "tell me what you know". A rejected deal with zero momentum past its deadline answers the last
+    two perfectly and the first two not at all — and it was appearing in the app's open-loop count,
+    where the only honest measure is whether a person acts on every card he reads.
+
+    So `ask` and `api` are unconditional: withholding a closed deal from someone who asked about it
+    is that surface's failure mode. `app` and `agent` are earned. A card that reaches neither is
+    not discarded — it is history, and history has two surfaces of its own.
+    """
+    surfaces = ["ask", "api"]
+    def _val(field):
+        v = facts.get(field)
+        return v.get("value") if isinstance(v, dict) and "value" in v else v
+
+    settled = str(_val("deal.status") or "").lower() in _SETTLED_STATUSES
+    try:
+        momentum = float(_val("derived.momentum") or 0)
+    except (TypeError, ValueError):
+        momentum = 0.0
+    # Settled AND going nowhere. Either alone is not enough: a won deal still moving is an
+    # expansion conversation, and a live deal at zero momentum is exactly what the app exists to
+    # surface.
+    if settled and momentum <= 0:
+        return surfaces
+    if actions:
+        surfaces.insert(0, "app")
+        # An agent can only act on a play it was handed. `run_play` is that handover; a card whose
+        # only actions are human judgement calls has nothing to delegate.
+        if any(str(a.get("action") or "") == "run_play" for a in actions if isinstance(a, dict)):
+            surfaces.insert(1, "agent")
+    return surfaces
+
+
 def _plain_value(value):
     """Unwrap the canonical tag wrappers before a value is shown to a person.
 
@@ -318,7 +360,7 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time) ->
     template = (dict(capability_render) if isinstance(capability_render, dict)
                 and capability_render else
                 (effective.get("templates", {}) or {}).get(reason_code, {}))
-    play_id = (effective.get("plays", {}).get(signal.get("play") or "", {}) and signal.get("play"))
+    _play_id = (effective.get("plays", {}).get(signal.get("play") or "", {}) and signal.get("play"))
 
     actions = [
         {"type": "run_play", "play_id": signal.get("play"),
@@ -407,6 +449,7 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time) ->
         # call for different user actions and a single number cannot tell them apart.
         "confidence_vector": {k: score_inputs.get(k) for k in ("C", "U", "I", "R")},
         "actions": actions, "why": _why(signal.get("evidence"), facts),
+        "surfaces": _surfaces(facts, signal, actions),
         "context_tags": _context_tags(node_type, attrs, facts, sources),
         "config_snapshot_id": signal.get("config_snapshot_id"),
         "template_version": (effective.get("templates", {}) or {}).get("_version"),
