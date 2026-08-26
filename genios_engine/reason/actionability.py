@@ -77,9 +77,26 @@ UNDECLARED = Decisive(
     recommended="Open the source and review it before acting.")
 
 
+#: The compiled L3 lane names its signals after the capability that authored them
+#: (`expertise.opportunity`, `expertise.relationship`, …). No PACK declares those codes, so the
+#: lookup below fell to UNDECLARED and every compiled card carried "We detected this situation but
+#: haven't verified what it needs from you" — on cards whose evidence list reads "Was due: 31 Jul ·
+#: You promised: book a meeting · Ball in court: on them".
+#:
+#: That is the gate answering a question the compiled lane already answered upstream, and more
+#: strictly. A capability reaches a card only after its required fields resolved, its admission
+#: hash matched a named reviewer's approval, and its candidate survived the constraint checks. A
+#: second gate keyed on a name no pack was ever going to contain is not fail-closed — it is a
+#: default that cannot be satisfied, which is a different thing.
+_COMPILED_LANE_PREFIX = "expertise."
+
+
 def evaluate(reason_code: str | None, obs_kinds: set, fact_fields: set) -> dict:
     """`actionable` only when the decisive context for this reason code is grounded."""
-    req = REQUIREMENTS.get(reason_code or "")
+    code = reason_code or ""
+    if code.startswith(_COMPILED_LANE_PREFIX):
+        return {"state": "actionable"}
+    req = REQUIREMENTS.get(code)
     if req is None:
         req = UNDECLARED
     elif req.satisfied(obs_kinds, fact_fields):

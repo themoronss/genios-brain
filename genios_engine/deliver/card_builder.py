@@ -222,6 +222,21 @@ def _real_sources(store, org_id: str, node_id: str) -> set[str]:
     return {r.source for r in rows if r.source}
 
 
+def _plain_value(value):
+    """Unwrap the canonical tag wrappers before a value is shown to a person.
+
+    `canonicalize` encodes a Decimal as `{"$decimal": "0"}` so a hash is stable across float
+    repr — correct for hashing, and a card rendered it verbatim: the live app showed
+    "momentum: [object Object]" and "engagement: [object Object]" where a number belonged. The
+    wrapper is a serialisation detail of the audit layer and has no business crossing into copy.
+    """
+    if isinstance(value, dict) and len(value) == 1:
+        for tag in ("$decimal", "$datetime", "$date", "$uuid"):
+            if tag in value:
+                return value[tag]
+    return value
+
+
 def _why(evidence: list, _facts: dict) -> list[dict]:
     """Project only evidence that the immutable reasoning context actually bound.
 
@@ -236,7 +251,7 @@ def _why(evidence: list, _facts: dict) -> list[dict]:
         if not isinstance(e, dict):
             continue
         field = e.get("field", "")
-        out.append({"field": field, "value": e.get("value"),
+        out.append({"field": field, "value": _plain_value(e.get("value")),
                     "source": _SOURCE.get(field.split(".")[0], "graph")})
     return out
 
