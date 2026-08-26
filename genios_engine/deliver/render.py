@@ -34,7 +34,17 @@ _GRAMMAR_WORDS = frozenset({
     "hi", "hey", "hello", "dear", "thanks", "thank", "regards", "best", "cheers", "sincerely",
     "warmly", "please", "sorry", "congrats", "congratulations", "welcome", "yes", "no", "ok",
     "okay", "sure", "great", "happy", "glad", "looking", "following", "just", "quick", "also",
-    # Ordinary nouns that open a sentence in this kind of copy. Each was a live rejection.
+    # Ordinary words that open a sentence in this kind of copy. Every one below was a real
+    # rejection on a live card, not a guess. Position cannot replace this list: the tests hold
+    # "Initech's team replied" and "Three items are open" — both sentence-initial, both correctly
+    # judged — against "Decision needed on scope", which must not be. Only the WORD separates
+    # them, so the list is the mechanism and each entry has to be earned by an observed failure.
+    "cannot", "unable", "entity", "relationship", "worth", "deadline", "agenda", "new",
+    "open", "closed", "active", "pending", "waiting", "still", "both", "each", "every",
+    "after", "before", "during", "until", "unless", "once", "here", "there", "their",
+    "meeting", "call", "email", "reply", "response", "message", "thread", "draft", "deck",
+    "budget", "price", "pricing", "proposal", "contract", "invoice", "renewal", "demo",
+    "confirm", "share", "schedule", "propose", "suggest", "offer", "ask", "check", "review",
     # Month and weekday NAMES are deliberately absent: a wrong month is exactly the invention
     # this guard exists for, and blanket-exempting the calendar would let "March 22" through on
     # evidence dated July. They are grounded in `_expand_dates` instead, from the fact date —
