@@ -53,6 +53,40 @@ _CLOCK = {
 }
 
 
+#: slot -> the value that means "we could not compute this".
+#:
+#: A sentinel is legitimate in the DETERMINISTIC fallback template, where it keeps a sentence
+#: grammatical, and illegitimate in the LLM prompt, where it is read as a fact and written into
+#: the copy as one. The compiled lane made that visible at scale: with no authored template the
+#: prompt's "Key slots" line was five sentinels, and all eighteen live cards came back reading
+#: "several open items blocking commitment ... in open stage for several days ... No value set"
+#: about accounts with no deal in play. The model was not hallucinating — it was told those were
+#: the facts.
+#:
+#: A grounded value that happens to EQUAL its sentinel (a deal genuinely in stage "open") is
+#: treated as ungrounded here. That costs one content-free word in the prompt and is the only
+#: reading available: `compute_slots` returns a string, not a provenance.
+SENTINELS: dict[str, str] = {
+    "entity": "this account",
+    "days": "several",
+    "stage": "open",
+    "money": "no value set",
+    "action": "the commitment",
+    "who": "them",
+    "concerns": "several open items",
+}
+
+
+def is_grounded(name: str, value) -> bool:
+    """False when this slot holds its own "we do not know" sentinel."""
+    return SENTINELS.get(name) != value
+
+
+def grounded_slots(slots: dict) -> dict:
+    """Only the slots that came from a fact — what the model is allowed to be told."""
+    return {k: v for k, v in slots.items() if is_grounded(k, v)}
+
+
 def compute_slots(reason_code: str, node_name: str, facts: dict, eval_time: datetime,
                   clock_path: str | None = None) -> dict:
     """Named slots for template interpolation + the invention whitelist.
@@ -66,11 +100,13 @@ def compute_slots(reason_code: str, node_name: str, facts: dict, eval_time: date
     money = _money(_fval(facts, "deal.value"))
     action = _fval(facts, "commitment.action")
     return {
-        "entity": node_name or "this account",
-        "days": days if days is not None else "several",
-        "stage": stage or "open",
-        "money": money or "no value set",
-        "action": action or "the commitment",
-        "who": node_name or "them",
-        "concerns": "several open items",     # composite override in card_builder; default is safe
+        "entity": node_name or SENTINELS["entity"],
+        "days": days if days is not None else SENTINELS["days"],
+        "stage": stage or SENTINELS["stage"],
+        "money": money or SENTINELS["money"],
+        "action": action or SENTINELS["action"],
+        "who": node_name or SENTINELS["who"],
+        # composite override in card_builder; the default is a sentinel, so it reaches the
+        # fallback template and never the prompt.
+        "concerns": SENTINELS["concerns"],
     }

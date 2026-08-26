@@ -309,6 +309,11 @@ def expertise_capability_manifest(
             # play" is a readable state instead of a successful-looking silence.
             "play_receipt": play_receipt,
             "situation_type": situation_type,
+            # The situation's own card copy. Delivery reads it off `rcap.manifest` — the same
+            # audited snapshot the authority predicate already joins — so a card's wording is
+            # pinned to the capability version that produced it and cannot drift underneath it.
+            "render": package.metadata.get("render"),
+            "render_situation_id": package.metadata.get("render_situation_id"),
             "expertise_id": package.id,
             "brain_snapshot_id": package.brain_snapshot_id,
             "object_coverage_bp": package.metadata.get("object_coverage_bp"),

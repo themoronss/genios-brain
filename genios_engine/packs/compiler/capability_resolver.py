@@ -48,6 +48,21 @@ DOMAIN_ALIASES: dict[str, str] = {
 UNCLASSIFIED_DOMAINS: frozenset[str] = frozenset({"general", "unknown", ""})
 
 
+def _plain(value):
+    """Deep copy an authored fragment into ordinary dicts/lists.
+
+    Catalog documents are frozen (`freeze_mapping`), so a nested block lifted straight off one
+    arrives as a `mappingproxy`. The canonical encoder happens to accept that today; the plan is
+    a value object crossing into two more layers and a JSONB column, and it should not depend on
+    that.
+    """
+    if isinstance(value, Mapping):
+        return {str(k): _plain(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_plain(v) for v in value]
+    return value
+
+
 def _load_set(manifest: dict) -> tuple[set[str], set[str]]:
     required: set[str] = set()
     optional: set[str] = set()
@@ -121,6 +136,9 @@ class CapabilityResolver:
         skipped_capabilities: set[str] = set()
         skipped_reasons: dict[str, str] = {}
         admission_gaps: list[str] = []
+        render: dict | None = None
+        render_situation_id: str | None = None
+        render_rank: tuple[int, str] | None = None
         saw_index_route = False
 
         for domain_id in domain_ids:
@@ -150,6 +168,23 @@ class CapabilityResolver:
             local_capabilities: set[str] = set()
             for situation_id in selected_here:
                 authored = domain.situations[situation_id].content
+                # THE CARD COPY IS PART OF THE EXPERTISE, so it is collected here with the rest
+                # of what the situation declares. Without it the delivery layer looked the copy
+                # up in the TENANT PACK by reason_code — and a compiled signal's reason_code is
+                # its situation type, which no pack authors. Every compiled card therefore
+                # rendered against an empty template: no guidance in the prompt, and a fallback
+                # of "{entity}" / "{stage}" that shipped the literal word "open" as a situation
+                # line on ten of the design partner's eighteen live cards.
+                render_block = authored.get("render")
+                if isinstance(render_block, Mapping) and render_block:
+                    # A type can match several situations. Rank by the priority the AUTHOR
+                    # declared, not by iteration or alphabetical accident, and break ties on id
+                    # so the choice is reproducible byte-for-byte across compiles.
+                    rank = (-int((authored.get("priority_bp") or 0)), situation_id)
+                    if render_rank is None or rank < render_rank:
+                        render_rank = rank
+                        render = _plain(render_block)
+                        render_situation_id = situation_id
                 owner = (authored.get("identity") or {}).get("owner_capability")
                 serving = ([owner] if owner else []) + list(authored.get("also_serves") or ())
                 local_capabilities.update(value for value in serving if value)
@@ -244,6 +279,8 @@ class CapabilityResolver:
             skipped_capability_ids=tuple(sorted(skipped_capabilities)),
             admitted=not admission_gaps,
             admission_gaps=tuple(sorted(admission_gaps)),
+            render=render,
+            render_situation_id=render_situation_id,
         )
 
 

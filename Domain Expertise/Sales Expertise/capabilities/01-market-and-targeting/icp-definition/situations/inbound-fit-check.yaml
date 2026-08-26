@@ -70,6 +70,28 @@ signals_of_decay:
   - objection_price
   - closed_lost_mention
 
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    This card answers ONE question: is this account one we should want, before anyone spends a
+    discovery call on it. Say nothing about deal stage, budget, timeline, close date or "open
+    items" — none of those exist at a fit check, and asserting them is precisely the misread
+    this situation exists to prevent.
+
+    Headline: the account and the fit judgment, in the reader's terms — what about this account
+    matches or contradicts who we sell to. If the evidence does not support a fit read, name
+    what is missing instead. Never a status line, never a generic phrase.
+
+    Situation: the one or two specifics from what they actually wrote that decide fit — what
+    they do, what they asked for, who they are. Evidence, not process vocabulary.
+
+    Artifact: a short reply that moves the fit question forward — ask the single thing that
+    would settle it, or engage directly when fit is already clear. Never a generic follow-up.
+  fallback:
+    headline: "{entity} — fit not assessed"
+    situation: >-
+      Interest arrived from {entity} and nobody has judged yet whether it fits who we sell to.
+
 metadata:
   owner: Sales
   created_by: ai

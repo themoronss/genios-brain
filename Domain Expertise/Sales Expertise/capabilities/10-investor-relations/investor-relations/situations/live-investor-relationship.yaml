@@ -68,6 +68,28 @@ signals_of_decay:
   - negative_reply
   - timeline_slip
 
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    A conversation with a party that might FUND us. Not a customer, not a deal. There is no
+    value to prove, no budget of ours to approve and no close date we control — never write
+    about pricing, contracts, buying committees or a deal stage, and never render a pass as a
+    loss. A pass is a date: it usually carries a condition and an implicit "come back when".
+
+    Headline: where this stands with the fund and what it turns on — the condition they named,
+    the round context, the next real moment. Name the fund.
+
+    Situation: what they actually said, in their terms. The condition, the timing, the person
+    who said it. A "no" that named a milestone is a different fact from silence, and the two
+    must never read alike.
+
+    Artifact: a reply that respects who is chasing whom. Investors do not chase — give them a
+    reason to re-engage (a concrete update against the condition they named), never a nudge.
+  fallback:
+    headline: "{entity} — investor conversation open"
+    situation: >-
+      An open fundraising conversation with {entity} with no agreed next step on the record.
+
 metadata:
   owner: Sales
   created_by: ai
@@ -78,4 +100,4 @@ metadata:
   reviewed_at: '2026-08-25'
 
 admission:
-  accepted_content_hash: de9c787381eb2f09f6c3075b4646ff2471db4e04d4fe71d24b4c20455a390074
+  accepted_content_hash: 39afb3ff7306529331d0579cfeaf59dfc084cdbfe3d24086719d8a8973b91429

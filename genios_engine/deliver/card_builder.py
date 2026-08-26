@@ -289,7 +289,20 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time) ->
             slots["concerns"] = concerns
             facts = {**facts, "deal.concerns": {"value": concerns, "confidence": 1.0,
                                                 "authority_rank": 3}}
-    template = (effective.get("templates", {}) or {}).get(reason_code, {})
+    # THE COMPILED BRAIN'S OWN COPY FIRST. `effective["templates"]` is the TENANT PACK's, keyed
+    # by the pack's own reason codes; a compiled signal's reason_code is its situation type
+    # (`opportunity`, `relationship`, `investor_relationship`) and no pack authors those. The
+    # lookup therefore returned `{}` for every compiled card — an empty render_hint, so the
+    # prompt carried no guidance and eighteen cards came back reading alike, and an empty
+    # fallback, so a rejected line shipped as the default `{stage}` slot: the word "open".
+    #
+    # A legacy signal carries no `capability_render` and falls through to the pack exactly as
+    # before. Neither lane can take the other's copy: the compiled block travels on the audited
+    # capability snapshot, the pack block on the tenant's effective config.
+    capability_render = signal.get("capability_render")
+    template = (dict(capability_render) if isinstance(capability_render, dict)
+                and capability_render else
+                (effective.get("templates", {}) or {}).get(reason_code, {}))
     play_id = (effective.get("plays", {}).get(signal.get("play") or "", {}) and signal.get("play"))
 
     actions = [

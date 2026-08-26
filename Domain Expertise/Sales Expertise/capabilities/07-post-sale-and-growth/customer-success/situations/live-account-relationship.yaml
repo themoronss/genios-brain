@@ -61,6 +61,27 @@ signals_of_decay:
   - timeline_slip
   - negative_reply
 
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    A live relationship with no deal attached. There is no pipeline, no commitment and no close
+    date here, so never write "open items blocking commitment", a stage, or anything implying a
+    purchase is in motion — that sentence on a company with nothing in play is the exact failure
+    this situation was written to end.
+
+    Headline: where the relationship actually stands and what it needs — warming, dormant,
+    souring, or an opening worth taking. Name the account.
+
+    Situation: the last real exchange and what it revealed. What they said, what changed, what
+    is unresolved between the two sides — not elapsed time on its own.
+
+    Artifact: a reply that continues the relationship on its own terms — respond to what they
+    last raised, or offer something specific and useful. Never a check-in for its own sake.
+  fallback:
+    headline: "{entity} — relationship open, nothing moving"
+    situation: >-
+      An active relationship with {entity} with nothing currently in play and no agreed next step.
+
 metadata:
   owner: Sales
   created_by: ai
@@ -71,4 +92,4 @@ metadata:
   reviewed_at: '2026-08-25'
 
 admission:
-  accepted_content_hash: 6f250c1a1772257bf909643127329be2bb953ede5608769662d29f5b74828d9b
+  accepted_content_hash: 0303bfcf12daf1e4c526d0af22762730487702d2900488c16ebc1e813852caf9

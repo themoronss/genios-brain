@@ -205,6 +205,45 @@
         "type": "string"
       }
     },
+    "render": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "How a card built from this situation must READ. Optional, and absent means the delivery layer falls back to the tenant pack's own template.\n\nIt lives here rather than in the pack because a compiled signal's reason_code is its situation TYPE, and no pack authors those keys \u2014 so the pack lookup returned an empty template for every compiled card: no guidance in the renderer's prompt, and a fallback that shipped the bare `{stage}` slot (the literal word \"open\") as the situation line. The copy is also expertise in its own right: what a reader must be told about this situation is the same kind of judgment as which objects to load, it is reviewed with the rest of the file, and it is hashed into the capability version so rewording cannot silently change what an already-audited card claimed.\n\nThe `fallback` strings are DETERMINISTIC \u2014 no model runs \u2014 and may name only slots the renderer computes: entity, who, days, stage, money, action, concerns. Any clause holding a slot the system could not compute is dropped before the line renders, so write each clause so the sentence survives without it.",
+      "required": [
+        "render_hint",
+        "fallback"
+      ],
+      "properties": {
+        "artifact_kind": {
+          "type": "string",
+          "description": "What the attached artifact IS \u2014 draft_reply, draft_intro, brief. Also names the card's action button. Defaults to a generic draft when absent."
+        },
+        "render_hint": {
+          "type": "string",
+          "minLength": 40,
+          "description": "The instruction handed to the copy renderer: what the headline, the situation line and the artifact must each say for THIS situation. This is the field that stops every card in a situation type reading alike, so it has to name the specific judgment the reader needs, not restate the situation's description."
+        },
+        "fallback": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "headline",
+            "situation"
+          ],
+          "description": "The deterministic copy used when no model is available or the render is rejected. It must be honest on its own: it ships to a real user.",
+          "properties": {
+            "headline": {
+              "type": "string",
+              "minLength": 3
+            },
+            "situation": {
+              "type": "string",
+              "minLength": 3
+            }
+          }
+        }
+      }
+    },
     "metadata": {
       "type": "object",
       "additionalProperties": false,

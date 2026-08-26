@@ -100,6 +100,12 @@ class ExpertiseBuilder:
             "context_slice_hash": context.semantic_hash if context is not None else None,
             "context_graph_version": context.graph_version if context is not None else None,
             "context_selector_version": context.selector_version if context is not None else None,
+            # The authored card copy, and which situation it came from. Carried on the package so
+            # it is hashed into the manifest with the rest of the knowledge: rewording a headline
+            # mints a new capability version rather than silently changing what an already-audited
+            # card claimed.
+            "render": plan.render,
+            "render_situation_id": plan.render_situation_id,
         }
         body = {
             "org_id": situation.org_id,

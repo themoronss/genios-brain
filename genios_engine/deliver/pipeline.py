@@ -51,6 +51,14 @@ def _open_signals_without_cards(graph, org_id: str,
             # legacy output. Without these three the cutover cannot be measured from `cards` at
             # all: NULL would mean "legacy" and "compiled" at the same time.
             "s.capability_id, s.capability_version, s.capability_review_state, "
+            # The compiled brain's OWN card copy, off the audited capability snapshot `rcap`
+            # (already joined for the authority predicate). card_builder used to look a template
+            # up in the tenant pack by reason_code, and a compiled signal's reason_code is its
+            # situation type — which no pack authors. So every compiled card rendered against an
+            # empty template: no guidance reached the prompt, and the fallback shipped the bare
+            # `{stage}` slot, the literal word "open", as the situation line on ten of the design
+            # partner's eighteen live cards.
+            "rcap.manifest->'metadata'->'render' as capability_render, "
             # The DecisionObject's own content (0070). Reading it here is what retires the API
             # layer's reason_code if/elif chain as the source of a card's recommendation.
             "s.do_nothing_consequence, s.uncertainty, s.outcome_window_days as decision_window, "
@@ -74,12 +82,12 @@ def _open_signals_without_cards(graph, org_id: str,
     out = []
     for r in rows:
         d = dict(r)
-        for jf in ("score_inputs", "evidence", "composite_members"):
+        for jf in ("score_inputs", "evidence", "composite_members", "capability_render"):
             if isinstance(d.get(jf), str):
                 try:
                     d[jf] = json.loads(d[jf])
                 except (ValueError, TypeError):
-                    d[jf] = {} if jf == "score_inputs" else []
+                    d[jf] = {} if jf in ("score_inputs", "capability_render") else []
         out.append(d)
     return out
 
