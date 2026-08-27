@@ -1,0 +1,128 @@
+identity:
+  id: sales.rule.need_analysis.a_mapping_with_no_gap_is_a_pitch
+  name: A mapping with no gap is a pitch
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.need_analysis
+  subdomain: discovery_and_solution
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'An analysis in which every stated need has a capability against it has not been
+    performed. Real products have edges, and a mapping that shows none is describing our marketing
+    rather than their situation.'
+  answers:
+  - Is this need analysis credible?
+  - What has to be present before a mapping is used downstream?
+  not:
+  - A requirement to invent weaknesses. The gap has to be real.
+  - A disqualification rule. A gap is normal; its absence is what is suspicious.
+
+rule:
+  statement: 'A need analysis MUST record at least one need that is unsolved or partly solved, or an
+    explicit statement that the buyer named no need outside our scope. A mapping with universal
+    coverage and no such statement MUST be marked unvalidated and MUST NOT be used as the basis for a
+    proposal.'
+  spans:
+  - sales.obj.core.business_need
+  - sales.obj.core.pain_point
+  - sales.obj.core.proposal
+  when:
+  - {exists: thread.last_inbound}
+  - {no_obs: objection}
+  then: 'Require the gap statement before the mapping is treated as complete, and surface reviewing
+    the buyer''s unranked or unaddressed needs as the next action.'
+  severity: warning
+  why: 'Universal coverage is the signature of a mapping built backwards from the product rather than
+    forwards from the buyer. It is also the most persuasive artefact a seller can produce internally,
+    which is why it survives review — everyone reading it wants it to be true — and it is dismantled
+    by the first evaluator who tests it, at the stage where being wrong is most expensive. The gap
+    also has a second function: naming one early is the cheapest credibility available, because it is
+    the only evidence a buyer has that our other claims were assessed rather than asserted.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'A NARROW, WELL-BOUNDED PURCHASE. Where the buyer stated one need and we solve it, universal
+    coverage is simply true, and the honest record is that no out-of-scope need was raised — which is
+    the statement the rule asks for rather than an invented weakness.'
+  - 'A TENDER ANSWERED AGAINST PUBLISHED REQUIREMENTS. Compliance is scored line by line and the
+    appropriate place for a gap is the response itself, not a parallel analysis.'
+  - 'A RENEWAL OR EXPANSION IN A KNOWN SCOPE. The edges are already established by a year of use, and
+    re-deriving them is duplication.'
+  - 'A GAP THAT IS CLOSING ON A COMMITTED ROADMAP DATE. It should be recorded as a gap with a date
+    rather than as coverage — the distinction matters because a buyer told it is solved and finding
+    it is not has learned something about us rather than about the product.'
+  - 'AN ANALYSIS DONE BEFORE THE FULL NEED SET EXISTS. Early in discovery there may genuinely be only
+    one need on record, and requiring a gap against an incomplete list produces a fabricated one.'
+
+objects_used:
+- sales.obj.core.business_need
+- sales.obj.core.pain_point
+- sales.obj.core.proposal
+- sales.obj.core.competitor
+
+outcomes:
+- Every mapping either names a gap or states that none was raised.
+- Proposals rest on an analysis that has edges.
+
+failure_modes:
+- 'GAPS INVENTED TO SATISFY THE RULE. A trivial weakness recorded to pass a check is worse than no
+  check — it teaches the reader that the gap field is decorative.'
+- 'THE GAP RECORDED AND NOT SAID. Writing it down and not telling the buyer captures the audit benefit
+  and none of the credibility benefit, which was the larger one.'
+- 'APPLIED TOO EARLY. Against a single-need list it manufactures a gap, which is the third failure
+  this rule was trying to prevent, arriving through the front door.'
+
+limits:
+- 'The mapping is not in the record; the `no_obs` condition on `objection` is a weak proxy for
+  nothing having been pushed back on, and on the design partner''s org `objection` has 4 rows across
+  the whole graph. This prompts a review and verifies nothing.'
+- Cannot distinguish a real gap from a token one, which is the whole quality question.
+
+variants:
+- applies_to: enterprise
+  change: Require the gap position per function; a gap that is trivial for the sponsor may be
+    disqualifying for security, and one statement cannot carry both.
+  why: The evaluator who finds it is not the person who agreed the mapping.
+- applies_to: smb
+  change: One sentence is enough, and the first exception is common — a narrow purchase honestly
+    covered.
+  why: Small scope, few needs, real coverage.
+- applies_to: service
+  change: The gap is usually capacity, timeline or seniority of the people available rather than
+    capability, and it should be stated in those terms.
+  why: In effort-based work the constraint is who does it and when.
+
+metrics:
+- name: named_gap_rate
+  unit: percent
+  description: Share of analyses naming a real gap or explicitly stating none was raised.
+  direction: higher_is_better
+- name: late_gap_discovery_rate
+  unit: percent
+  description: Share of deals where a gap surfaced after the proposal. What this rule exists to move.
+  direction: lower_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: Decision criteria and competition — a mapping with no edges cannot support a differentiation
+    argument, because everything matches.
+- title: Practitioner solution-consulting review
+  kind: practitioner
+  note: Universal-coverage matrices are a recognised warning sign in solution reviews precisely
+    because they are built backwards from the product.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. Warning rather than blocking because the mapping is not in the record at
+    all and the condition is a weak proxy — but the rule is worth having because universal coverage is
+    the most internally persuasive artefact a seller produces, and the one an evaluator dismantles
+    latest and most expensively.'

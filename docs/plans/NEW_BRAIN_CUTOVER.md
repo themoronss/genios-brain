@@ -211,8 +211,8 @@ traffic instead of being swapped blind.
 | `required_missing` | 2 | 2 (unchanged — see item 3 below) |
 | Compiled cards rendering `raw_slot` | 11 of 18 | **the four causes are fixed; see below** |
 | Live routes compiling through a placeholder capability | 3 of 4 types | **0 of 4** — Admin closed in batch 4 |
-| Hollow capabilities | 136 | **107** (admin 51, customer_support 40, sales 16) |
-| Corpus validation errors | 566 | **446** |
+| Hollow capabilities | 136 | **105** (admin 51, customer_support 40, sales 14) |
+| Corpus validation errors | 566 | **438** |
 | Tests | 1640 | **1678** |
 
 ## Batch 4 — the substrate was understated, and the live Admin route is no longer hollow
@@ -517,6 +517,32 @@ real, and late.
 **Measured:** routing 56/61 unchanged, `card_audit` identical to the batch-4 baseline, 1678 tests
 green, corpus errors 454 → 446, hollow 109 → 107.
 
+## Batch 10 — the head of the discovery chain
+
+`discovery` and `need_analysis`. Two, not four, for the same reason batch 8 was three: the
+alternative was starting `value_proposition` and pushing it half-written.
+
+These two are the head of a chain — value proposition and demo both consume what they produce, and
+each fails in a characteristic way when fed a thin discovery. That is why they were taken first.
+
+**The substrate position here is the weakest in the whole corpus, and both files say so.** Discovery
+happens in CONVERSATION and the record holds no call transcripts. Talk ratio, the playback, the
+consequence question, the needs mapping — none of it is observable. `meeting.start_at` / `.end_at` /
+`.attended` say a discovery meeting occurred and nothing about whether discovery happened inside it.
+Both rules are therefore warnings on weak proxies, stated as such rather than dressed up.
+
+`a_mapping_with_no_gap_is_a_pitch` is the one worth reading. Universal coverage — every stated need
+with a capability against it — is the most internally persuasive artefact a seller produces, which is
+exactly why it survives review: everyone reading it wants it to be true. It is dismantled by the
+first evaluator who tests it, at the stage where being wrong costs most.
+
+Two thresholds removed on promotion: the specific talk-ratio figure (recast as a SCREEN rather than a
+score, which also protects it from the metric-as-target failure) and the T-120 window in batch 8's
+renewal playbook.
+
+**Measured:** routing 56/61 unchanged, `card_audit` identical to the batch-4 baseline, 1678 tests
+green, corpus errors 446 → 438, hollow 107 → 105.
+
 ## What is left, and the honest blockers
 
 1. **`account_admin` routes but CANNOT DELIVER.** `ReasoningStore.persist_complete` refuses a write
@@ -526,7 +552,7 @@ green, corpus errors 454 → 446, hollow 109 → 107.
    is true of all 49 Customer Support capabilities.** This is the largest structural gap left: the
    corpus can author a domain the tenant has no lane for, and nothing in the authoring path says so.
    The honest unblock is an `admin` pack module plus a tenant promotion.
-2. **107 hollow capabilities** — 51 admin, 40 customer_support, 16 sales (was 136 before batch 4).
+2. **105 hollow capabilities** — 51 admin, 40 customer_support, 14 sales (was 136 before batch 4).
    Only the sales ones can reach a user today. Promote in the order their situation types actually
    occur. **Corrected:** batch 5 was reported as leaving nothing hollow in a live type's route set —
    `pricing` was still there, reached through `field_evidence_on_the_market` under `opportunity`. It
@@ -540,9 +566,9 @@ green, corpus errors 454 → 446, hollow 109 → 107.
       `support_plan`. This is the ONLY remaining corpus-fixable routing gain: it closes
       `required_missing=2` and takes the live org from 56/61 to 58/61. It is also a much larger unit
       of work than a capability batch — these are 23-section objects at the `requester.yaml` standard.
-   c. **The remaining 16 sales capabilities** — revenue_operations (5), discovery_and_solution (4),
-      prospecting channels (3), sales_management (3), tam_sam_som (1). Two subdomains are now
-      complete: post_sale_and_growth (7 of 7) and qualification (5 of 5).
+   c. **The remaining 14 sales capabilities** — revenue_operations (5), prospecting channels (3),
+      sales_management (3), discovery_and_solution (2 left: value_proposition, demo), tam_sam_som (1).
+      Two subdomains complete: post_sale_and_growth (7 of 7) and qualification (5 of 5).
    d. Admin (51) and Customer Support (40) last, because neither can deliver on this tenant until an
       `admin` pack module exists.
 3. **`required_missing` (2)** — two `relationship` situations want

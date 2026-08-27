@@ -6,30 +6,193 @@ identity:
   scope: capability
   owner_capability: sales.discovery_and_solution.discovery
   subdomain: discovery_and_solution
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: Discovery exists to understand the problem in the buyer's numbers and words — not to queue
-    up pitch openings. A discovery call the buyer experienced as being understood outsells a call they
-    experienced as being processed.
+  statement: 'Discovery exists to understand the problem in the buyer''s numbers and words — not to
+    queue up pitch openings. A discovery call the buyer experienced as being understood outsells one
+    they experienced as being processed.'
+  answers:
+  - What does a discovery conversation actually consist of?
+  - How is a discovery kept from becoming a qualification interview?
+  not:
+  - Qualification. Whether they can buy is a different question asked at a different time.
+  - A demo. Showing anything before the problem is agreed is prescribing before diagnosing.
+
+when_to_use:
+  situations:
+  - sales.sit.inbound_lead
+  conditions:
+  - {exists: meeting.start_at}
+  signals:
+  - meeting_request
+  - question
+  do_not_use_when:
+  - 'The buyer has explicitly asked to see the product first. Insisting on discovery against a stated
+    preference is a process being imposed, and it reads as one.'
+  - 'It is a renewal or expansion where the problem is already understood; re-running discovery treats
+    an informed customer as a stranger.'
+  - 'There is no time for it. A five-minute discovery is not a short discovery, it is a qualification
+    call, and it should be named honestly rather than run badly.'
+
 steps:
 - order: 1
   name: Open the problem, shut the pitch
-  description: 'First half: their current state, what breaks, what it costs, what they tried. The product
-    stays holstered — every early pitch line converts an informant into an audience.'
+  description: 'The first half is their current state — what breaks, what it costs, what they have
+    already tried. Nothing about us. Asking about budget or authority before the problem is understood
+    teaches the buyer this conversation is about our process, and they answer briefly from then on.'
   actor: human
+  objects_read:
+  - sales.obj.core.business_need
+  - sales.obj.core.pain_point
+  produces: The buyer's situation, in their words.
+  done_when: No product content was introduced before the problem was described.
+
 - order: 2
-  name: Quantify with their numbers
-  description: '''How often? Who fixes it? What does that cost a quarter?'' A problem without their numbers
-    cannot be prioritised by them or defended by you later.'
+  name: Ask what they have already tried
+  description: 'The attempts are the most informative part of the conversation and are almost never
+    asked for. They reveal what the buyer believes the problem is, who else has been involved, what
+    was already funded and what failed — and a solution that resembles a previous failure is a
+    solution the organisation will not approve.'
   actor: human
+  objects_read:
+  - sales.obj.core.competitor
+  produces: The history of attempts and their outcomes.
+  done_when: We know what has been tried and why it did not hold.
+
 - order: 3
-  name: Play it back and get the correction
-  description: Summarise the problem in their words; let them fix your summary. The corrected summary
-    is the deal's foundation document.
+  name: Quantify with their numbers
+  description: '"How often? Who fixes it? What does that cost a quarter?" A problem without their
+    figures cannot be prioritised against everything else on their list, and an industry benchmark is
+    our number wearing their problem — finance discounts it instantly because they can tell.'
   actor: human
+  produces: A cost of today, supplied by the buyer.
+  done_when: The number came from them.
+
 - order: 4
-  name: Agree what happens if this is solved — and if it is not
-  description: The consequence question separates a project from a preference, and its answer writes the
-    business case.
+  name: Play it back and get the correction
+  description: 'Summarise the problem in their words and let them fix it. The corrected version is the
+    real statement, and the correction is worth more than anything we produced — a buyer who fixes our
+    summary has just shown us where our model was wrong, at no cost.'
   actor: human
+  produces: A problem statement the buyer has amended and agreed.
+  done_when: The buyer changed something, or explicitly confirmed nothing needed changing.
+
+- order: 5
+  name: Ask what happens if it is not solved
+  description: 'The consequence question separates a project from a preference, and its answer decides
+    whether this is bought this year or admired this year. It is uncomfortable to ask, which is why it
+    is skipped, and skipping it is what produces a strong discovery followed by a deal that never
+    becomes urgent.'
+  actor: human
+  objects_read:
+  - sales.obj.core.timeline
+  produces: The stated cost of inaction, and any date attached to it.
+  done_when: The consequence has been named by the buyer.
+
+- order: 6
+  name: Say so when we do not solve it
+  description: 'A discovery that never ends a deal is qualification theatre. The problems we do not
+    address are the ones that consume the most time and close least, and naming the gap early costs
+    one conversation and buys back a quarter.'
+  actor: human
+  produces: A disqualification where the fit is not there.
+  done_when: No known non-fit is being carried forward.
+
+- order: 7
+  name: Re-run it as the committee widens
+  description: 'The problem changes as new people join. A discovery from week one describes a
+    situation that has moved, and the seat added in week six usually has a different problem — which
+    is the one that will be raised at the review we are not in.'
+  actor: human
+  objects_read:
+  - sales.obj.core.buying_committee
+  produces: A refreshed problem statement per significant new stakeholder.
+  done_when: The current committee's problem is the one on record.
+  optional: true
+
+objects_used:
+- sales.obj.core.business_need
+- sales.obj.core.pain_point
+- sales.obj.core.competitor
+- sales.obj.core.timeline
+- sales.obj.core.buying_committee
+- sales.obj.core.persona
+
+outcomes:
+- The problem exists in the buyer's words, with their numbers and a stated consequence.
+- The playback has been corrected by the buyer.
+- Non-fits are named rather than carried.
+
+failure_modes:
+- 'QUALIFICATION FIRST. Teaches the buyer the conversation is about us, and the honest answers stop.'
+- 'PITCH-SHAPED QUESTIONS. Recognised within two, after which the answers are managed rather than
+  candid.'
+- 'OUR VOCABULARY IMPOSED. Feels like clarity, destroys the sentence they would have repeated
+  internally.'
+- 'NO CONSEQUENCE QUESTION. Produces a well-understood problem nobody is urgent about.'
+- 'NEVER DISQUALIFYING. The deals that survive a discovery which cannot say no are the ones that cost
+  most and close least.'
+
+limits:
+- Nothing here is observable in the record — there are no call transcripts, so the engine can see that
+  a discovery meeting happened and nothing about what occurred inside it.
+- Assumes access to someone who knows the operational detail; a discovery with the wrong person
+  produces confident answers about a problem they do not own.
+- Says nothing about how to ask well, which is the skill this playbook only structures.
+
+variants:
+- applies_to: enterprise
+  change: Step 7 stops being optional — the problem genuinely differs per function, and the version
+    that matters is the one held by the seat that can object.
+  why: A committee holds several problems and only some of them are ours.
+- applies_to: smb
+  change: Compress to steps 1, 3 and 5; the operator knows the numbers and the consequence
+    immediately.
+  why: One person holds the problem, the cost and the decision.
+- applies_to: inside_sales
+  change: Steps 3 and 5 only, and written where possible; the cycle does not support the rest.
+  why: The two steps that carry the most information per minute.
+- applies_to: service
+  change: Step 2 carries unusual weight — previous failed engagements shape what can be proposed far
+    more than in a product sale.
+  why: The buyer is comparing us to consultants who did not deliver.
+
+metrics:
+- name: buyer_talk_ratio
+  unit: percent
+  description: Share of the conversation spoken by the buyer.
+  direction: higher_is_better
+- name: quantified_problem_share
+  unit: percent
+  description: Share of discoveries with a buyer-supplied cost figure.
+  direction: higher_is_better
+- name: consequence_question_rate
+  unit: percent
+  description: Share where the cost of inaction was asked.
+  direction: higher_is_better
+
+references:
+- title: SPIN Selling
+  kind: methodology
+  author: Neil Rackham
+  note: Situation, problem, implication and need-payoff — steps 1, 3 and 5 are that sequence, and the
+    implication question is the one the research found separates successful calls.
+- title: The Challenger Sale
+  kind: methodology
+  author: Dixon and Adamson
+  note: On the buyer's existing beliefs about their problem being the thing to engage with rather than
+    to route around.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a four-step sketch. Steps 2, 6 and 7 are new. Step 2 is the addition worth
+    keeping — what has already been tried is the most informative answer in a discovery and is almost
+    never asked for, and a solution resembling a previous failure will not be approved regardless of
+    its merits.'

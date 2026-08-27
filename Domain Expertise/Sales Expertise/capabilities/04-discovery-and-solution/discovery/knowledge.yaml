@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.discovery.the_problem_statement_is_the_buyers
 decision_frameworks:
   core: []
   scoped: []

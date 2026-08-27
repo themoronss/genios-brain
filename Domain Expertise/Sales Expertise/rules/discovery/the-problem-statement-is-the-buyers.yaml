@@ -1,0 +1,127 @@
+identity:
+  id: sales.rule.discovery.the_problem_statement_is_the_buyers
+  name: The problem statement is the buyer's
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.discovery
+  subdomain: discovery_and_solution
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A problem statement we authored is one the buyer will not repeat. Everything downstream
+    — the value case, the demo, the proposal — is built on that sentence, and if it is ours then all
+    of it is addressed to a problem nobody inside their organisation has actually described.'
+  answers:
+  - Whose words is this deal's problem statement in?
+  - What has to exist before a solution is proposed?
+  not:
+  - A rule about how to run discovery.
+  - A requirement that the buyer write anything. Correcting our summary is authorship enough.
+
+rule:
+  statement: 'A deal MUST carry a problem statement attributable to the buyer — their words, their
+    figures — before a demo, value case or proposal is recommended. A statement recorded only in our
+    category vocabulary, or with no cost supplied by them, is marked unvalidated and the recommended
+    action is the playback rather than the next stage.'
+  spans:
+  - sales.obj.core.business_need
+  - sales.obj.core.pain_point
+  - sales.obj.core.proposal
+  when:
+  - {exists: meeting.end_at}
+  - {absent: commitment.action}
+  then: 'Recommend the playback-and-correction step, and hold demo and proposal candidates until a
+    buyer-attributable statement exists.'
+  severity: warning
+  why: 'The sentence is the deal''s load-bearing artefact and it travels without us. It is what the
+    champion repeats to the economic buyer, what appears in the internal business case, and what the
+    sceptic reads in the proposal — and in every one of those moments we are absent. A statement in
+    our vocabulary does not survive that journey: the champion translates it, the translation loses
+    the specifics, and the version that reaches the decision is a generic category description that
+    any competitor also matches.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'THE BUYER USES OUR VOCABULARY THEMSELVES. In established categories buyers often describe their
+    problem in the market''s language because that is genuinely how they think about it, and
+    insisting on a translation manufactures a distinction they do not hold.'
+  - 'A TECHNICAL EVALUATION AGAINST PUBLISHED CRITERIA. Where the buyer has issued requirements, those
+    ARE their problem statement in their words, and re-deriving one is duplication.'
+  - 'A RENEWAL OR EXPANSION. The problem was established at the original purchase and re-authoring it
+    treats a known customer as a stranger.'
+  - 'AN EARLY EXPLORATORY CONVERSATION. Before there is a deal there is nothing to gate, and applying
+    this to a first call makes discovery adversarial at the moment it most needs to be easy.'
+  - 'A BUYER WHO WILL NOT QUANTIFY. Some genuinely do not have the numbers, and the honest record is a
+    qualitative statement in their words marked as unquantified — which is weaker evidence and is not
+    the same thing as our sentence.'
+
+objects_used:
+- sales.obj.core.business_need
+- sales.obj.core.pain_point
+- sales.obj.core.proposal
+- sales.obj.core.champion
+
+outcomes:
+- Every deal carries a problem statement the buyer would recognise as theirs.
+- Demo and proposal are built on a statement that survives being repeated internally.
+
+failure_modes:
+- 'SATISFIED BY A QUOTE. A sentence lifted from a call and pasted into a field is not a statement the
+  buyer agreed described their problem; the playback and its correction are what makes it theirs.'
+- 'APPLIED TO A FIRST CALL. Makes exploratory conversation adversarial exactly when it should be easy.'
+- 'THE UNQUANTIFIED CASE TREATED AS COMPLIANT. Qualitative in their words is better than ours and is
+  still weaker evidence, and recording the two identically loses that.'
+
+limits:
+- The record cannot hold or check a problem statement — `commitment.action` is being used as a proxy
+  for "something specific was agreed after the meeting", which is weak and says nothing about whose
+  words were used. This rule is a sequencing prompt, not a verification.
+- No call transcripts exist, so whether a playback happened is entirely invisible.
+
+variants:
+- applies_to: enterprise
+  change: Require a statement per function that will be asked to approve; the security reviewer's
+    problem is not the sponsor's and only one of them is on record.
+  why: The proposal is read by several people with different problems.
+- applies_to: smb
+  change: One statement, one owner, and the operator's own words are usually available immediately.
+  why: No translation layer.
+- applies_to: channel
+  change: The statement belongs to the end customer and reaches us through the partner; a
+    partner-authored statement should be recorded as second-hand.
+  why: The partner translates, and translation is exactly what this rule guards against.
+
+metrics:
+- name: buyer_attributable_statement_rate
+  unit: percent
+  description: Share of deals whose problem statement is in the buyer's words with their figures.
+  direction: higher_is_better
+- name: playback_correction_rate
+  unit: percent
+  description: Share where the buyer amended our summary. Zero suggests no playback was offered.
+  direction: higher_is_better
+
+references:
+- title: SPIN Selling
+  kind: methodology
+  author: Neil Rackham
+  note: The buyer articulating the need in their own terms is the transition the research identifies
+    as decisive, and it cannot be performed on their behalf.
+- title: The Challenger Customer
+  kind: book
+  author: Adamson, Dixon, Spenner and Toman
+  note: On the internal circulation of the case, which is where a vendor-worded problem statement
+    quietly becomes a generic one.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. Warning rather than blocking, and `limits` says why plainly — the record
+    holds no problem statement and no transcripts, so this fires on a weak proxy and can prompt the
+    playback without ever verifying it happened.'

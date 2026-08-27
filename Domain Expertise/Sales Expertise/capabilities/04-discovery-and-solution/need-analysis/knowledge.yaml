@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.need_analysis.a_mapping_with_no_gap_is_a_pitch
 decision_frameworks:
   core: []
   scoped: []
