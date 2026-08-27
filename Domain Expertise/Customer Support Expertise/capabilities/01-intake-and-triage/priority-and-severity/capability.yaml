@@ -77,3 +77,6 @@ metadata:
 
     triage_reversal_rate is a target band because zero means triage is transcribing the
     reporter's own assessment, which is the failure this capability exists to prevent.
+
+admission:
+  accepted_content_hash: 2b363cfdf325b1d87542319a193368d1e2c18282779c2b389ec7ada1c00867df

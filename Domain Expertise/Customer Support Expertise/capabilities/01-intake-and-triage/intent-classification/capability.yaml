@@ -77,3 +77,6 @@ metadata:
     here: zero reclassification means nobody checks, zero unknowns means labels are being
     forced, and a dropdown override rate of zero would mean customers classify themselves
     accurately, which they do not.
+
+admission:
+  accepted_content_hash: 482294ca399146bb78b0da7b9496e43984ec515308e941e93f7a2d71348e2343

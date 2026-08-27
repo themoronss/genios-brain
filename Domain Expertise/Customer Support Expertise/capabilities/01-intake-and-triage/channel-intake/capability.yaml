@@ -77,3 +77,6 @@ metadata:
     consequential issues arrive as a sentence to an account manager, and a capability that only
     models the channels it can see will report clean intake while the important things bypass
     it.
+
+admission:
+  accepted_content_hash: 81c202840d5588d6a0d6d1b50532186de82934aeebe90681f74438a96244c4fe

@@ -75,3 +75,6 @@ metadata:
     merge_rate is a target band in both directions: too low and duplicates are being worked
     repeatedly, too high and separate conversations are being collapsed because a lower ticket
     count looks better.
+
+admission:
+  accepted_content_hash: 8b0a00ae58121cff0c73ee7dec53b6bc37f6b84c88d1aefedfd4ae70044d8569

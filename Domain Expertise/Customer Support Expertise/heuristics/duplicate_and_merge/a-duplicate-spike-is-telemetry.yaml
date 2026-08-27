@@ -44,7 +44,9 @@ variants:
   change: Strongest and fastest — volume makes the spike obvious within minutes.
   why: The sample size arrives immediately.
 - applies_to: enterprise_support
-  change: Weak as a spike and strong as a pattern: three enterprise accounts reporting the same thing in a week is the equivalent signal.
+  change: >
+    Weak as a spike and strong as a pattern: three enterprise accounts reporting the same thing in
+    a week is the equivalent signal.
   why: Low volume, high correlation.
 references:
 - title: Incident detection from support signals

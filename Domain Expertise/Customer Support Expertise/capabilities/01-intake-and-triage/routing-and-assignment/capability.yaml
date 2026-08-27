@@ -76,3 +76,6 @@ metadata:
     unowned_duration deliberately includes the period a ticket sits with another team. That is
     the gap engineering_handoff also names: the ticket is with engineering and the customer
     relationship is with nobody.
+
+admission:
+  accepted_content_hash: 4751ad65b0a860e9693505934f367c089229178934bf0bc697775fc3d14d3b36
