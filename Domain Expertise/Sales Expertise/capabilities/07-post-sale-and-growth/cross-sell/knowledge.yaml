@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.cross_sell.a_second_product_needs_its_own_committee
 decision_frameworks:
   core: []
   scoped: []

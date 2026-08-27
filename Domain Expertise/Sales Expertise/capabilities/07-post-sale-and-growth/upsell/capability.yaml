@@ -3,25 +3,115 @@ identity:
   name: Upsell
   domain: sales
   subdomain: post_sale_and_growth
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
+  parent_capability: sales.post_sale_and_growth.expansion
 description: 'Increasing volume or tier within the existing product. Usage-led and largely mechanical,
   which is exactly why it is routinely left unworked.
 
   '
 question: Should they be on more of what they already have?
+
+outcomes:
+- 'The moment of a FELT limit identified and acted on while it is still felt. Seats full, a volume cap
+  reached, a premium feature attempted — the constraint has to have been experienced, because selling
+  the removal of a limit nobody has bumped into is selling insurance against a risk they have not had.'
+- 'The offer framed as removing a block rather than as an upgrade. "Your team hit this twice last
+  month, here is what removing it costs" meets a problem they already have; the same offer framed as
+  a better tier meets a decision they were not making.'
+- 'The increment priced, not the staircase. Showing the step from today, in their billing rhythm, is
+  a small decision; re-anchoring on the full new tier price restarts a commercial conversation that
+  was already settled a year ago.'
+- 'Upsell run as a standing motion rather than as an event. It is mechanical, which is precisely why
+  nobody owns it — the work is unglamorous and the revenue is real, and those two facts together are
+  why it stays unworked in most organisations.'
+- 'A refusal to upsell an account that is not getting value from what it already has. The negative
+  outcome: more of an underused product accelerates the churn it looks like growth, and it is the one
+  upsell that reliably damages the renewal.'
+- 'Separation from cross-sell. More of the same product is a different motion with a different buyer
+  and a much shorter path; treating the two as one produces a cross-sell run with an upsell''s
+  lightness.'
+
+failure_modes:
+- 'SELLING AN UNFELT LIMIT. Produces polite deferral, and it teaches the customer that our contact is
+  commercial rather than useful.'
+- 'CALLING IT AN UPGRADE. Frames it as a decision about tiers rather than about a problem they have,
+  and tier decisions get deferred to a review nobody schedules.'
+- 'RE-ANCHORING ON THE FULL PRICE. Turns a small increment into a fresh commercial negotiation, and
+  frequently reopens terms that were settled.'
+- 'UPSELLING A DISENGAGED ACCOUNT. Growth on paper, churn accelerated, and the renewal conversation
+  arrives with an unusable balance of evidence.'
+- 'LEFT UNOWNED BECAUSE IT IS MECHANICAL. The work is boring and the revenue is real; nobody is
+  measured on it and it simply does not happen.'
+- 'TRIGGERED LATE. The limit was felt six weeks ago, a workaround exists, and the pain that would have
+  justified the conversation has been engineered away by the customer.'
+
+kpis:
+- name: limit_event_to_offer_days
+  unit: days
+  description: Days between the customer hitting a constraint and the conversation happening. The
+    whole capability lives in this interval, and a workaround gets built inside it.
+  direction: lower_is_better
+- name: felt_limit_share
+  unit: percent
+  description: Share of upsell conversations triggered by an experienced constraint rather than by a
+    calendar or a quota gap.
+  direction: higher_is_better
+- name: upsell_attach_rate
+  unit: percent
+  description: Share of eligible accounts that expanded within the term.
+  direction: higher_is_better
+- name: upsell_on_low_engagement_rate
+  unit: percent
+  description: Share of upsells sold into accounts with falling engagement. Growth that accelerates
+    churn, made visible.
+  direction: lower_is_better
+- name: post_upsell_retention
+  unit: percent
+  description: Retention of upsold accounts against the base. Below the base means the motion is
+    selling into the wrong accounts.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.post_sale_and_growth.customer_success
+  - sales.post_sale_and_growth.onboarding
+  downstream:
+  - sales.post_sale_and_growth.renewal
+  - sales.proposal_and_commercials.pricing
+  parallel:
+  - sales.post_sale_and_growth.cross_sell
+  - sales.post_sale_and_growth.expansion
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Sits under `expansion`, which IS on the live route set
+    (`sales.sit.live_account_relationship`, 23 situations on the design partner''s org), so this is
+    one parent-capability hop from live traffic.
+
+    The honest constraint is stark and worth stating plainly: this capability is entirely usage-led
+    and there is NO usage telemetry in the record. Limit events, seat counts and volume caps are
+    exactly what the engine cannot see. Everything here is therefore authored for a tenant with
+    product instrumentation, and on a correspondence-only tenant the only available trigger is the
+    customer mentioning the constraint themselves — which is a real signal and a late one.
+
+    The fifth outcome is the one that matters most and is the least commercial: upselling a
+    disengaged account is growth that accelerates churn, and `derived.engagement` CAN see that.
+
+    No numbers: what usage level implies a conversation is Layer 4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: 53971527f0819954f9a47e3d0d8a49db1973adc343cdb4669204be03104aa718
+  accepted_content_hash: 1792cd264ae87fcc2268c7cf51ee3135d920108b179b8d3a652cf527ac61c1c3

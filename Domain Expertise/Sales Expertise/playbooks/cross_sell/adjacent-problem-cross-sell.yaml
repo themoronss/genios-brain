@@ -1,29 +1,197 @@
 identity:
   id: sales.pb.cross_sell.adjacent_problem_cross_sell
-  name: Adjacent-problem cross-sell
+  name: The adjacent-problem cross-sell
   kind: playbook
   domain: sales
   scope: capability
   owner_capability: sales.post_sale_and_growth.cross_sell
   subdomain: post_sale_and_growth
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
   statement: 'Cross-sell rides the workflow: the second product is offered where the first product''s
-    users visibly hit the adjacent problem. The bridge is the observed workflow gap, never the catalogue.'
+    users visibly hit the adjacent problem. The bridge is the observed workflow gap, never the
+    catalogue.'
+  answers:
+  - How is a second product introduced into an existing account?
+  - What makes a cross-sell shorter than a new sale, and what does not?
+  not:
+  - Upsell. More of the same product is a different and much shorter motion.
+  - A portfolio strategy. Which products should pair is decided elsewhere.
+
+when_to_use:
+  situations:
+  - sales.sit.live_account_relationship
+  conditions:
+  - {path: derived.engagement, op: ">=", value: 1}
+  - {fn: edge_count, op: ">", value: 1}
+  signals:
+  - introduction
+  - next_step_agreed
+  do_not_use_when:
+  - 'The first product is in trouble. The credibility this playbook borrows is not there, and the
+    correct work is fixing the first relationship.'
+  - 'There is no observed workflow gap. Without one the bridge is the catalogue, and the customer
+    hears a vendor rather than a colleague.'
+  - 'The pressure to run it comes from a number rather than from the account. Fit is weakest exactly
+    when quota pressure is highest, and the cost lands on the core renewal.'
+
 steps:
 - order: 1
-  name: Spot the adjacent pain in their usage
-  description: Where does their process leave your product for a spreadsheet or a rival tool? That seam
-    is the cross-sell's natural home.
-  actor: human
+  name: Check the first relationship is healthy
+  description: 'Cross-sell borrows the first product''s credibility. If that account is disengaged or
+    unhappy there is nothing to borrow, and the attempt reads as a company selling rather than
+    listening — at exactly the moment they were deciding whether we listen.'
+  actor: system
+  objects_read:
+  - sales.obj.core.account
+  produces: A health verdict on the existing relationship.
+  done_when: No struggling account is in the cross-sell motion.
+
 - order: 2
-  name: Pilot small inside the existing trust
-  description: A scoped pilot with the existing champion beats a new sales cycle. Let product two earn
-    its own proof the way product one did.
+  name: Spot the adjacent pain in their actual workflow
+  description: 'Where does their process leave our product for a spreadsheet or a rival tool? That gap
+    is the bridge and it is the only reason the customer will recognise. A catalogue-derived pitch —
+    you have A, so you might want B — is a vendor''s logic and is heard as one.'
   actor: human
+  objects_read:
+  - sales.obj.core.pain_point
+  - sales.obj.core.business_need
+  produces: A named workflow gap the customer experiences.
+  done_when: The reason for the second product is theirs, not ours.
+
 - order: 3
-  name: Keep separate value ledgers
-  description: Product two gets its own outcome definition and its own numbers — blended value stories
-    make BOTH renewals harder to defend.
+  name: Map the new committee from zero
+  description: 'The people who bought the first product frequently have no authority over the second.
+    Assuming continuity is the standard error and it surfaces late — the champion agrees warmly and
+    then discovers they have no standing in the other function.'
   actor: human
+  objects_read:
+  - sales.obj.core.buying_committee
+  - sales.obj.core.decision_maker
+  produces: A committee map for the second product.
+  done_when: The second product's buyers are identified rather than assumed.
+
+- order: 4
+  name: Ask the champion for a route, not for advocacy
+  description: 'A champion in one function has no credibility in another, and asking them to carry the
+    second product spends their standing on our behalf and returns nothing. Ask them who owns the
+    adjacent problem — that is a favour they can do at no cost.'
+  actor: human
+  objects_read:
+  - sales.obj.core.champion
+  produces: An introduction into the right function.
+  done_when: The champion was asked for a door rather than for a case.
+
+- order: 5
+  name: Pilot small inside the existing trust
+  description: 'A scoped pilot with a clean exit beats a new sales cycle, and it bounds the downside
+    that makes cross-sell risky in the first place. Let the product make the case where the
+    relationship has already earned the trial.'
+  actor: human
+  produces: A bounded trial with a stated success criterion and an exit.
+  done_when: The second product is being evaluated rather than argued for.
+
+- order: 6
+  name: Keep separate value ledgers
+  description: 'Product two gets its own outcome definition and its own numbers. Blended value hides
+    which product is earning its place, and at renewal it produces one figure nobody can defend line
+    by line — so the weaker product contaminates the stronger.'
+  actor: system
+  objects_read:
+  - sales.obj.core.account
+  produces: Per-product value records.
+  done_when: Each product's contribution can be stated separately.
+
+- order: 7
+  name: Withdraw where the fit is not there
+  description: 'A failed second product spends the first one''s credibility and weakens a renewal that
+    was not at risk. Stopping early is cheap; the customer''s conclusion after a poor fit is about our
+    recommendations rather than about the product, and it applies to everything we sell them.'
+  actor: human
+  objects_read:
+  - sales.obj.core.risk
+  produces: An explicit withdrawal where fit is weak.
+  done_when: No poor-fit cross-sell was pushed to a decision.
+
+objects_used:
+- sales.obj.core.opportunity
+- sales.obj.core.account
+- sales.obj.core.champion
+- sales.obj.core.buying_committee
+- sales.obj.core.decision_maker
+- sales.obj.core.pain_point
+- sales.obj.core.business_need
+- sales.obj.core.risk
+
+outcomes:
+- The second product is introduced through an observed gap, into a mapped committee.
+- The champion supplies a route rather than carrying a case.
+- Poor fits are withdrawn before they cost the core renewal.
+
+failure_modes:
+- 'RUN AS AN EXTENSION. Qualification skipped because the logo is familiar; the deal stalls and the
+  standing is spent anyway.'
+- 'SOLD FROM THE CATALOGUE. Vendor logic, heard as vendor logic.'
+- 'THE SAME COMMITTEE ASSUMED. Surfaces late and wastes the champion in the process.'
+- 'THE CHAMPION ASKED TO ADVOCATE. Spends their credibility in a function where they have none.'
+- 'BLENDED LEDGERS. One number at renewal, indefensible line by line, and the weak product drags the
+  strong one.'
+
+limits:
+- The workflow gap in step 2 cannot be seen in the record — there is no product usage data — so it is
+  human observation, and it is the step the whole playbook depends on.
+- '`edge_count` shows the relationship has reached more than one person and cannot show whether it has
+  reached the right FUNCTION for the second product.'
+- Says nothing about which products are genuinely adjacent.
+
+variants:
+- applies_to: enterprise
+  change: Steps 3 and 4 are the majority of the work, and the second committee frequently has no
+    overlap with the first at all.
+  why: Functions buy separately, and one relationship does not travel.
+- applies_to: smb
+  change: One buyer, so steps 3 and 4 collapse — but step 7 matters most, because there are no
+    compartments and a poor fit contaminates everything.
+  why: Total trust transfer in both directions.
+- applies_to: channel
+  change: The partner decides whether to carry the second product at all, and their credibility is
+    what is being risked.
+  why: We are spending someone else's relationship capital.
+
+metrics:
+- name: workflow_bridge_share
+  unit: percent
+  description: Share of attempts grounded in an observed gap rather than the catalogue.
+  direction: higher_is_better
+- name: new_committee_mapped_rate
+  unit: percent
+  description: Share where the second product's buyers were mapped rather than assumed.
+  direction: higher_is_better
+- name: core_renewal_after_failed_cross_sell
+  unit: percent
+  description: First-product renewal after an unsuccessful cross-sell.
+  direction: higher_is_better
+
+references:
+- title: The Challenger Customer
+  kind: book
+  author: Adamson, Dixon, Spenner and Toman
+  note: On the second product requiring its own consensus rather than inheriting the first's.
+- title: Practitioner expansion operations
+  kind: practitioner
+  note: Workflow-adjacent cross-sell converts far better than portfolio-adjacent, and the difference
+    is whether the customer already experiences the gap.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch, and it completes the post-sale-and-growth subdomain.
+    Steps 1, 3, 4 and 7 are new. Step 4 is the one worth arguing about: the instinct is to ask the
+    champion to advocate, and the correct ask is a route — advocacy in a function where they have no
+    standing spends their credibility and returns nothing.'

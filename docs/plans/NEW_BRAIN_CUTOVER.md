@@ -211,8 +211,8 @@ traffic instead of being swapped blind.
 | `required_missing` | 2 | 2 (unchanged — see item 3 below) |
 | Compiled cards rendering `raw_slot` | 11 of 18 | **the four causes are fixed; see below** |
 | Live routes compiling through a placeholder capability | 3 of 4 types | **0 of 4** — Admin closed in batch 4 |
-| Hollow capabilities | 136 | **109** (admin 51, customer_support 40, sales 18) |
-| Corpus validation errors | 566 | **454** |
+| Hollow capabilities | 136 | **107** (admin 51, customer_support 40, sales 16) |
+| Corpus validation errors | 566 | **446** |
 | Tests | 1640 | **1678** |
 
 ## Batch 4 — the substrate was understated, and the live Admin route is no longer hollow
@@ -489,6 +489,34 @@ insist a human establishes it.
 **Measured:** routing 56/61 unchanged, `card_audit` identical to the batch-4 baseline, 1678 tests
 green, corpus errors 466 → 454, hollow 112 → 109.
 
+## Batch 9 — post-sale-and-growth closed
+
+`upsell` and `cross_sell`, which completes the subdomain — all seven post-sale capabilities now carry
+real expertise, the first subdomain in the corpus to be finished.
+
+The two rules here are both about the DOWNSIDE of expansion, which is the half every attach-rate
+target is blind to:
+
+* `do_not_grow_a_shrinking_account` — blocking, and unusually for recent batches it rests on a signal
+  that genuinely exists (`derived.engagement`, 74 nodes live). Selling more into a declining account
+  books as expansion this quarter and resolves as a larger churn a year later, and the two events are
+  far enough apart that nobody connects them — measured, as they are, by different people.
+* `a_second_product_needs_its_own_committee` — a cross-sell inherits the relationship and not the
+  authority. The failure is double: the deal stalls at an approval nobody mapped, and the champion
+  asked to carry it discovers in public that they have no standing there.
+
+One authored line was deliberately REMOVED rather than promoted. The original upsell heuristic said
+"wait for the bump, or manufacture the experience" — engineering a consequential limit to create
+urgency is not a timing tactic, it is a harm, and it is now a named breakdown regime forbidding it.
+
+**Honest constraint, stated in both files:** upsell is entirely usage-led and there is no usage
+telemetry in the record. Limit events, seat counts and volume caps are exactly what the engine cannot
+see, so on a correspondence-only tenant the only trigger is the customer mentioning the constraint —
+real, and late.
+
+**Measured:** routing 56/61 unchanged, `card_audit` identical to the batch-4 baseline, 1678 tests
+green, corpus errors 454 → 446, hollow 109 → 107.
+
 ## What is left, and the honest blockers
 
 1. **`account_admin` routes but CANNOT DELIVER.** `ReasoningStore.persist_complete` refuses a write
@@ -498,7 +526,7 @@ green, corpus errors 466 → 454, hollow 112 → 109.
    is true of all 49 Customer Support capabilities.** This is the largest structural gap left: the
    corpus can author a domain the tenant has no lane for, and nothing in the authoring path says so.
    The honest unblock is an `admin` pack module plus a tenant promotion.
-2. **109 hollow capabilities** — 51 admin, 40 customer_support, 18 sales (was 136 before batch 4).
+2. **107 hollow capabilities** — 51 admin, 40 customer_support, 16 sales (was 136 before batch 4).
    Only the sales ones can reach a user today. Promote in the order their situation types actually
    occur. **Corrected:** batch 5 was reported as leaving nothing hollow in a live type's route set —
    `pricing` was still there, reached through `field_evidence_on_the_market` under `opportunity`. It
@@ -512,9 +540,9 @@ green, corpus errors 466 → 454, hollow 112 → 109.
       `support_plan`. This is the ONLY remaining corpus-fixable routing gain: it closes
       `required_missing=2` and takes the live org from 56/61 to 58/61. It is also a much larger unit
       of work than a capability batch — these are 23-section objects at the `requester.yaml` standard.
-   c. **The remaining 18 sales capabilities** — discovery_and_solution (4), post_sale_and_growth (2
-      left: upsell, cross_sell), revenue_operations (5), sales_management (3), prospecting channels
-      (3), tam_sam_som (1).
+   c. **The remaining 16 sales capabilities** — revenue_operations (5), discovery_and_solution (4),
+      prospecting channels (3), sales_management (3), tam_sam_som (1). Two subdomains are now
+      complete: post_sale_and_growth (7 of 7) and qualification (5 of 5).
    d. Admin (51) and Customer Support (40) last, because neither can deliver on this tenant until an
       `admin` pack module exists.
 3. **`required_missing` (2)** — two `relationship` situations want

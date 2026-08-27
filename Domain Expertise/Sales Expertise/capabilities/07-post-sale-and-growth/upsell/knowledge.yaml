@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.upsell.do_not_grow_a_shrinking_account
 decision_frameworks:
   core: []
   scoped: []

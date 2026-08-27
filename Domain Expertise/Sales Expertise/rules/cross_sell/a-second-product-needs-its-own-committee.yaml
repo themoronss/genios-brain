@@ -1,0 +1,129 @@
+identity:
+  id: sales.rule.cross_sell.a_second_product_needs_its_own_committee
+  name: A second product needs its own committee
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.cross_sell
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A cross-sell inherits the relationship and not the authority. The people who bought the
+    first product frequently cannot approve the second, and the assumption that they can is what turns
+    a warm start into a stalled deal that also costs the champion.'
+  answers:
+  - May this cross-sell proceed on the existing relationship?
+  - What has to be established before the second product is pitched?
+  not:
+  - A rule about product fit, which is the heuristic's territory.
+  - A requirement to start from nothing. The relationship is a real asset; the authority is not.
+
+rule:
+  statement: 'A cross-sell opportunity MUST NOT be qualified on the first product''s buying committee.
+    The second product requires its own economic buyer and its own user function identified before a
+    proposal, and where the relationship has not reached that function the recommended action is an
+    introduction rather than an offer.'
+  spans:
+  - sales.obj.core.opportunity
+  - sales.obj.core.buying_committee
+  - sales.obj.core.champion
+  when:
+  - {path: derived.engagement, op: ">=", value: 1}
+  - {fn: edge_count, op: "<=", value: 2}
+  then: 'Recommend obtaining a route into the owning function through the existing champion, and
+    withhold proposal-shaped candidates until the second committee exists.'
+  severity: warning
+  why: 'The warm start is real and it applies to exactly one thing — the introduction. Everything
+    downstream of that is a new sale into a function that has never met us, with its own budget cycle,
+    its own incumbent tools and its own reasons to be sceptical. Assuming otherwise fails twice: the
+    deal stalls at an approval nobody mapped, and the champion who was asked to carry it discovers in
+    public that they have no standing there, which costs us the asset that made the cross-sell
+    possible in the first place.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'THE SAME FUNCTION GENUINELY BUYS BOTH. Where the second product serves the same team with the
+    same budget, the committee is the same and re-mapping is ceremony. This is common in modular
+    product lines and is the exception that keeps the rule from being a tax.'
+  - 'A CENTRAL PROCUREMENT OR PLATFORM DECISION. Some organisations buy at the platform level, so the
+    approving body is the same regardless of which function will use it.'
+  - 'A PILOT WITH NO COMMERCIAL COMMITMENT. A scoped free trial needs no economic buyer, and requiring
+    one before a pilot removes the cheapest available way to establish fit.'
+  - 'THE CUSTOMER INITIATED IT. When they ask for the second product they have already navigated their
+    own authority, and requiring us to re-derive it is slower and slightly insulting.'
+  - 'A SMALL, SINGLE-BUYER ACCOUNT. Where one person holds the whole relationship there is no second
+    committee to find, and the rule collapses to the fit question.'
+
+objects_used:
+- sales.obj.core.opportunity
+- sales.obj.core.buying_committee
+- sales.obj.core.champion
+- sales.obj.core.decision_maker
+- sales.obj.core.account
+
+outcomes:
+- The second product's authority is established before it is proposed.
+- The champion is asked for a route rather than for advocacy they cannot give.
+
+failure_modes:
+- 'READ AS RESTARTING FROM ZERO. The relationship genuinely shortens the introduction; only the
+  authority has to be rebuilt, and treating the whole thing as a cold sale wastes the asset.'
+- 'THE SAME-FUNCTION EXCEPTION ASSUMED. It is common and it is also convenient; the test is whether
+  the same budget pays, not whether the same person is friendly.'
+- 'THE CHAMPION USED AS THE MAP. They describe the committee as they experience it, which for a
+  function they do not work in is not at all.'
+
+limits:
+- '`edge_count` counts connected people, not functions, so it can suggest a narrow relationship and
+  cannot confirm which function has been reached — `party.role` helps and is absent for many
+  counterparties.'
+- The record cannot tell which product a contact relates to at all, so the two committees are
+  indistinguishable in the graph and this rule is a prompt rather than a check.
+
+variants:
+- applies_to: enterprise
+  change: Expect no overlap at all between the two committees, and treat any overlap as the exception
+    rather than the expectation.
+  why: Functions buy separately and budgets do not travel.
+- applies_to: smb
+  change: The fifth exception is the normal case; the rule rarely applies.
+  why: One person, one budget.
+- applies_to: channel
+  change: The partner holds both relationships and decides whether to carry the second product at all;
+    the committee that matters first is theirs.
+  why: There is a gate before the customer's gate.
+
+metrics:
+- name: new_committee_mapped_rate
+  unit: percent
+  description: Share of cross-sells where the second committee was mapped before a proposal.
+  direction: higher_is_better
+- name: cross_sell_stall_at_approval_rate
+  unit: percent
+  description: Share of cross-sells that stalled at an approval nobody had mapped. The failure this
+    rule exists to remove.
+  direction: lower_is_better
+
+references:
+- title: The Challenger Customer
+  kind: book
+  author: Adamson, Dixon, Spenner and Toman
+  note: On consensus being function-specific, and on advocacy failing to transfer across an
+    organisation's internal boundaries.
+- title: MEDDICC
+  kind: methodology
+  note: Economic buyer, re-established per purchase rather than inherited per account.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new, and it completes the rule coverage for post-sale-and-growth. Warning
+    rather than blocking because the record cannot tell which product a contact belongs to — the two
+    committees are indistinguishable in the graph, so this prompts the question and cannot verify the
+    answer.'
