@@ -3,25 +3,100 @@ identity:
   name: Quota Planning
   domain: sales
   subdomain: revenue_operations
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
-description: 'Setting targets from capacity, territory potential and historical conversion. A quota nobody
-  has ever hit is not a target, it is an attrition schedule.
+description: 'Setting targets from capacity, territory potential and historical conversion. A quota
+  nobody has ever hit is not a target, it is an attrition schedule.
 
   '
 question: What should each seller be expected to deliver?
+
+outcomes:
+- 'A bottom-up number built before the top-down one is applied. Territory potential multiplied by
+  historical conversion and by capacity — that figure is the only defensible one, and it has to exist
+  before the company target arrives or it will simply be back-solved from it.'
+- 'The gap between bottom-up and top-down named as a strategy, in the open. If the company number
+  exceeds what the territories support, the difference is a new segment, a price change, more heads
+  or a stretch — and saying which is the difference between a plan and a wish.'
+- 'Attainability designed on purpose. A quota most of the team cannot reach stops functioning as a
+  target and starts functioning as a filter, and the people it filters out first are frequently the
+  ones with the least tolerance for an unwinnable game rather than the least ability.'
+- 'Ramp treated as a separate calculation. A new seller carrying a full-tenure number is being
+  measured against a pipeline they had no time to build, and the miss is arithmetic rather than
+  performance.'
+- 'A stated refusal to accept an unsupportable number. The negative outcome: a planning function that
+  never pushes back has not planned, it has distributed — and the failure is discovered a year later
+  as attrition rather than as a planning error.'
+
+failure_modes:
+- 'TOP-DOWN DIVIDED BY HEADCOUNT. Fast, defensible-looking, and it allocates the same number to
+  territories with completely different potential.'
+- 'BOTTOM-UP BUILT AFTER THE TARGET IS KNOWN. It is then back-solved to match, and the exercise
+  produces a justification rather than a plan.'
+- 'ATTAINMENT DESIGNED BY ACCIDENT. Nobody decides what share of the team should hit; the distribution
+  is whatever falls out, and it is discovered after a year of behaviour has adapted to it.'
+- 'RAMP IGNORED. New sellers miss arithmetically, leave, and are replaced by new sellers who miss
+  arithmetically.'
+- 'MISSES DIAGNOSED AS PERFORMANCE WHEN EVERYONE MISSED. Burns trust, changes nothing, and the same
+  plan fails again the following year.'
+
+kpis:
+- name: attainment_distribution
+  unit: percent
+  description: Share of the team reaching target. The number that says whether this is a target or a
+    filter, and it should be a design choice rather than an outcome.
+  direction: target_band
+- name: bottom_up_to_top_down_gap
+  unit: percent
+  description: Difference between what territories support and what the company requires. Naming it is
+    the whole point; a gap of zero usually means one number was derived from the other.
+  direction: lower_is_better
+- name: ramp_adjusted_attainment
+  unit: percent
+  description: Attainment excluding sellers still ramping. Mixing them makes both numbers meaningless.
+  direction: higher_is_better
+- name: quota_driven_attrition
+  unit: percent
+  description: Departures from territories with structurally unreachable numbers. The cost of the
+    failure mode, measured where it actually lands.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.revenue_operations.territory_planning
+  - sales.revenue_operations.forecasting
+  downstream:
+  - sales.sales_management.performance_management
+  - sales.revenue_operations.sales_operations
+  parallel:
+  - sales.revenue_operations.sales_analytics
+  - sales.market_and_targeting.tam_sam_som
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. This capability is planning rather than execution, so it has
+    no live route and no situation could sensibly trigger it — it is consumed by a human at a planning
+    moment, and the corpus holds it so that a compiled answer about targets is grounded rather than
+    invented.
+
+    The specific attainment band in the original playbook sketch was removed on promotion. What share
+    of a team should hit is a genuine design decision that varies by motion, and a number in a Layer 3
+    file would freeze one organisation''s answer for every tenant.
+
+    No numbers: attainment targets, ramp periods and conversion assumptions are Layer 4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: 34e90a7a2160b50462ce8b08360c6208903747f0391f9717619db71c7c8fa314
+  accepted_content_hash: 6f5db54dee24fe9d3f8641bdafb552e749ec320bb35a60ddf2055b86c87699b1

@@ -3,7 +3,7 @@ identity:
   name: Territory Planning
   domain: sales
   subdomain: revenue_operations
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Dividing the market across the team by potential rather than by convenience. A territory
@@ -11,17 +11,96 @@ description: 'Dividing the market across the team by potential rather than by co
 
   '
 question: Who owns which accounts, and is the split fair and covered?
+
+outcomes:
+- 'Accounts scored before any line is drawn. Fit, intent and size per account, so a territory''s value
+  is the sum of its scores rather than the count of its logos — geography and alphabet are convenient
+  and they correlate with nothing.'
+- 'Territories bounded by what a seller can actually work. Coverage means worked, not assigned; an
+  account in a territory beyond capacity is warehoused, and it produces exactly the outcome of an
+  account nobody owns while appearing on a map as covered.'
+- 'Balance measured on potential, not on account count. Two territories with the same number of
+  accounts and different potential are two different jobs paid the same way, and the sellers work out
+  which is which within a quarter.'
+- 'Rebalancing on a calendar with stated criteria. Ad-hoc redistribution in response to complaints
+  rewards the loudest and teaches everyone that the map is negotiable.'
+- 'Transition rules for in-flight deals, written before they are needed. Moving an account mid-cycle
+  without them creates a dispute at the worst moment, between two people who both behaved reasonably.'
+- 'An honest statement of what cannot be covered. The negative outcome: a map that shows full
+  coverage of a market the team cannot work is a comfortable fiction, and the accounts it silently
+  abandons are invisible precisely because they were assigned.'
+
+failure_modes:
+- 'DRAWN BY GEOGRAPHY OR ALPHABET. Convenient, explicable, and uncorrelated with potential — which
+  means the resulting territories differ in value by multiples nobody intended.'
+- 'ACCRETED FROM HISTORY. Territories inherited and grandfathered, each adjustment locally reasonable,
+  the cumulative result indefensible and nobody responsible for it.'
+- 'COVERAGE COUNTED AS ASSIGNMENT. The map shows every account owned; the reality is that a third of
+  them have never been contacted, and both statements are true at once.'
+- 'BALANCED ON COUNT. Equal logos, unequal value, and the sellers who drew the weaker territories work
+  it out long before the plan does.'
+- 'REBALANCED ON COMPLAINT. Rewards volume of protest, and it converts the map from a plan into a
+  negotiation that never closes.'
+- 'NO TRANSITION RULES. An account moves mid-deal and two sellers who each behaved correctly end up in
+  a dispute nobody designed.'
+
+kpis:
+- name: worked_account_share
+  unit: percent
+  description: Share of assigned accounts actually contacted in the period. The difference between
+    coverage and assignment, and the number that exposes warehousing.
+  direction: higher_is_better
+- name: territory_potential_variance
+  unit: percent
+  description: Spread of scored potential across territories. High variance means unequal jobs paid
+    equally.
+  direction: lower_is_better
+- name: capacity_ratio
+  unit: ratio
+  description: Assigned accounts against what a seller can work well. Above one is warehousing,
+    whatever the map says.
+  direction: target_band
+- name: mid_cycle_transfer_disputes
+  unit: count
+  description: Ownership disputes on in-flight deals. Each one indicates a missing transition rule
+    rather than a difficult person.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.market_and_targeting.icp_definition
+  - sales.market_and_targeting.tam_sam_som
+  downstream:
+  - sales.revenue_operations.quota_planning
+  - sales.prospecting_and_outreach.lead_generation
+  parallel:
+  - sales.revenue_operations.sales_operations
+  - sales.sales_management.performance_management
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. A planning capability with no live route — no situation
+    triggers it — and it is authored so that a compiled answer about coverage is grounded rather than
+    invented.
+
+    One thing here IS observable and worth naming: `worked_account_share`. The graph holds
+    correspondence per account, so the gap between accounts assigned and accounts actually contacted
+    is derivable wherever assignment data exists. That is the single most useful number in the
+    capability and it is the one most territory reviews do not produce.
+
+    No numbers: capacity per seller and acceptable variance are Layer 4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: 584a33cc37217bcba4feaa062dc2cb89583c051936440c550ecf6e571e6c5728
+  accepted_content_hash: 19c22944d90c85e694133613fd0654c3f8aa5226aa8e0b9f7ef7e26af5eeec64

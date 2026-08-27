@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.forecasting.a_category_is_an_evidence_claim
 decision_frameworks:
   core: []
   scoped: []

@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.territory_planning.assigned_is_not_covered
 decision_frameworks:
   core: []
   scoped: []

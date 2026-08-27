@@ -3,7 +3,7 @@ identity:
   name: Forecasting
   domain: sales
   subdomain: revenue_operations
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Producing a defensible revenue prediction from deal-level evidence. A forecast is a claim
@@ -11,17 +11,87 @@ description: 'Producing a defensible revenue prediction from deal-level evidence
 
   '
 question: What will actually close, and how confident should we be?
+
+outcomes:
+- 'Categories defined behaviourally, so two people place the same deal identically. Commit means paper
+  is moving and the buyer named the date; anything resting on a seller''s confidence belongs lower,
+  whatever they feel about it.'
+- 'The DELTAS interrogated rather than the levels. What moved this week and why is where the learning
+  is; a forecast review that walks the same list at the same numbers is a status meeting with a
+  spreadsheet.'
+- 'Slips counted, not forgiven. A deal slipping its second quarter is telling us the buyer urgency is
+  too weak to sign — the pattern is the signal and it is available long before the outcome.'
+- 'Per-seller bias tracked over time. Systematic over- or under-calling is correctable and is worth
+  more than any single quarter''s accuracy, because it applies to every future forecast that person
+  gives.'
+- 'Deals excluded on evidence, including ones everybody expects to close. The negative outcome: a
+  forecast that never removes a popular deal is not a forecast, it is a summary of hope with a
+  confidence interval attached.'
+
+failure_modes:
+- 'CATEGORIES DEFINED BY FEELING. Commit means confident, which means different things to different
+  people, and the roll-up then aggregates incomparable claims.'
+- 'REVIEWING LEVELS, NOT MOVEMENT. The same deals discussed at the same numbers weekly. Nothing is
+  learned because the question was never what changed.'
+- 'SLIPS FORGIVEN INDIVIDUALLY. Each one has a reason; the second slip is the information, and
+  treating each in isolation guarantees it is never seen.'
+- 'ACCURACY MEASURED ONLY IN AGGREGATE. Two sellers cancelling each other out looks accurate and is
+  two uncorrected biases.'
+- 'THE FORECAST AS A COMMITMENT DEVICE. When the number is a promise rather than a prediction, it
+  stops being evidence-based and starts being negotiated, and everyone downstream inherits the
+  negotiation.'
+
+kpis:
+- name: forecast_accuracy
+  unit: percent
+  description: Predicted against actual, per period. The headline, and the least diagnostic of these.
+  direction: higher_is_better
+- name: per_seller_bias
+  unit: percent
+  description: Systematic over- or under-call per person. Correctable, and invisible in the aggregate.
+  direction: lower_is_better
+- name: commit_slip_rate
+  unit: percent
+  description: Share of commit-category deals that missed their own date.
+  direction: lower_is_better
+- name: second_slip_downgrade_rate
+  unit: percent
+  description: Share of twice-slipped deals actually downgraded. The discipline this capability turns
+    on, made countable.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.revenue_operations.pipeline_management
+  - sales.sales_management.deal_review
+  downstream:
+  - sales.revenue_operations.quota_planning
+  - sales.sales_management.performance_management
+  parallel:
+  - sales.revenue_operations.revenue_intelligence
+  - sales.revenue_operations.sales_analytics
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Bounded by the same gap as the rest of revenue_operations:
+    `deal.value` is present on one node of the design partner''s org and is never derived, so a
+    weighted-value forecast is not computable there at all. What IS available is `deal.status`,
+    `deal.last_inbound`, `timeline_slip` (26 rows) and the commitment dates — which is why the
+    outcomes are written around slip patterns and category discipline rather than around a number.
+
+    No numbers: category thresholds and confidence bands are Layer 4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: 3381ed68e713d4744153ef9e1927f77672c39af167a5154451a0e50144913cd2
+  accepted_content_hash: d262c41fcae116b24026b908135b8967bdf64d913dfc811a29d07cda09c25e3e

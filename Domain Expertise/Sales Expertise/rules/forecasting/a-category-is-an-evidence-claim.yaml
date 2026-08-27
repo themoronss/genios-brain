@@ -1,0 +1,81 @@
+identity:
+  id: sales.rule.forecasting.a_category_is_an_evidence_claim
+  name: A category is an evidence claim
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.forecasting
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A forecast category asserts that specific evidence exists. Where it instead records how
+    a seller feels, the roll-up adds together claims that do not mean the same thing, and no amount of
+    arithmetic downstream recovers the comparability.'
+  answers:
+  - May this deal be placed in commit?
+  - What has to be true for a category, as opposed to believed?
+  not:
+  - A definition of the categories, which each organisation sets.
+  - A rule about the forecast total.
+
+rule:
+  statement: 'A deal MUST NOT be placed in the highest forecast category without a buyer-stated close
+    date and evidence that the closing process has begun. A deal that has slipped a buyer-stated date
+    more than once MUST be downgraded, and a downgrade reversed without new evidence MUST be recorded
+    as an override.'
+  spans:
+  - sales.obj.core.deal
+  - sales.obj.core.timeline
+  - sales.obj.core.contract
+  when:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: timeline_slip}
+  then: 'Require the evidence test for the top category, and downgrade on a repeated slip unless the
+    paper advanced in the same period.'
+  severity: warning
+  why: 'Categories are the only shared language a revenue organisation has for uncertainty, and their
+    value is entirely in being comparable across people. A category that encodes confidence is
+    comparable to nothing — one seller''s commit is another''s best case — so the roll-up produces a
+    number with a precision it has not earned, and the error is discovered only at the end of the
+    period when nothing can be done.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'A SLIP THAT CAME WITH PROGRESS. Where paper advanced in the same period — legal engaged, a
+    signatory named, security started — the date moved for scheduling reasons and the deal is
+    healthier than before, not weaker.'
+  - 'AN EXTERNAL EVENT ACROSS THE ACCOUNT. A reorganisation or a freeze slips everything at once, and
+    the pattern describes the organisation rather than the purchase.'
+  - 'A FIXED-GATE PROCUREMENT CALENDAR. Public-sector and committee-driven buying misses dates as a
+    matter of course, and the misses carry no urgency information.'
+  - 'A DATE THAT WAS NEVER THE BUYER''S. A seller-assumed date has not slipped; it was never a date,
+    and counting its movement measures our optimism. The correct action is to obtain a real one.'
+  - 'AN EXPLICIT, RECORDED OVERRIDE. A leader may hold a deal in commit against the evidence, and that
+    is a legitimate judgement — provided it is recorded as an override rather than as a category, so
+    the accuracy measurement can still see what happened.'
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.timeline
+- sales.obj.core.contract
+- sales.obj.core.decision_maker
+
+limits:
+- '`timeline_slip` marks that a date moved and not how many times; the repeat count has to come from
+  date history, which the observation does not carry.'
+- Cannot see whether a date was buyer-stated or seller-assumed — the fourth exception is therefore
+  common and undetectable, which is why this is a warning.
+- Says nothing about the categories an organisation should use.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. The last exception is deliberate — a leadership override is legitimate and
+    the damage comes from disguising it as a category, because the accuracy measurement then attributes
+    the miss to the evidence test rather than to the decision that bypassed it.'

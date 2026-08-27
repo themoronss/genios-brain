@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.quota_planning.the_bottom_up_number_exists_first
 decision_frameworks:
   core: []
   scoped: []

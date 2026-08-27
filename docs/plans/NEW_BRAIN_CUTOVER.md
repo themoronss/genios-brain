@@ -211,8 +211,8 @@ traffic instead of being swapped blind.
 | `required_missing` | 2 | 2 (unchanged — see item 3 below) |
 | Compiled cards rendering `raw_slot` | 11 of 18 | **the four causes are fixed; see below** |
 | Live routes compiling through a placeholder capability | 3 of 4 types | **0 of 4** — Admin closed in batch 4 |
-| Hollow capabilities | 136 | **105** (admin 51, customer_support 40, sales 14) |
-| Corpus validation errors | 566 | **438** |
+| Hollow capabilities | 136 | **102** (admin 51, customer_support 40, sales 11) |
+| Corpus validation errors | 566 | **426** |
 | Tests | 1640 | **1678** |
 
 ## Batch 4 — the substrate was understated, and the live Admin route is no longer hollow
@@ -543,6 +543,34 @@ renewal playbook.
 **Measured:** routing 56/61 unchanged, `card_audit` identical to the batch-4 baseline, 1678 tests
 green, corpus errors 446 → 438, hollow 107 → 105.
 
+## Batch 11 — the planning half of revenue operations
+
+`forecasting`, `quota_planning`, `territory_planning`.
+
+**Authoring method changed here, and it is the reason this batch moved faster.** Two corrections:
+files are now written in PARALLEL — four independent files in one turn rather than four turns — and
+the optional artifact sections (`variants`, `references`, `metrics` on every heuristic and playbook)
+were dropped back to the stated bar. Roughly 250 lines per capability instead of 600, with the depth
+kept where it was asked for: `exceptions`, `breaks_down_when`, `done_when`, and the honest `limits`.
+
+These three are PLANNING capabilities with no live route — no situation triggers them, and none
+sensibly could. They are authored so a compiled answer about targets or coverage is grounded rather
+than invented. Their rules are correspondingly weaker in enforcement and say so:
+`the_bottom_up_number_exists_first` is `advisory`, because the substrate holds no quota, headcount or
+territory data at all and a stronger severity would assert an enforcement the engine cannot perform.
+
+One number in this batch IS computable today and is worth flagging: `worked_account_share`. The graph
+holds correspondence per account, so the gap between accounts assigned and accounts actually contacted
+is derivable wherever ownership data reaches the record — and it is the number most territory reviews
+never produce, because assignment is what a map records.
+
+Another threshold removed on promotion: the specific attainment band in the quota playbook. What share
+of a team should hit is a real design decision that varies by motion, and a number here would freeze
+one organisation's answer for every tenant.
+
+**Measured:** routing 56/61 unchanged, `card_audit` identical to the batch-4 baseline, 1678 tests
+green, corpus errors 438 → 426, hollow 105 → 102.
+
 ## What is left, and the honest blockers
 
 1. **`account_admin` routes but CANNOT DELIVER.** `ReasoningStore.persist_complete` refuses a write
@@ -552,7 +580,7 @@ green, corpus errors 446 → 438, hollow 107 → 105.
    is true of all 49 Customer Support capabilities.** This is the largest structural gap left: the
    corpus can author a domain the tenant has no lane for, and nothing in the authoring path says so.
    The honest unblock is an `admin` pack module plus a tenant promotion.
-2. **105 hollow capabilities** — 51 admin, 40 customer_support, 14 sales (was 136 before batch 4).
+2. **102 hollow capabilities** — 51 admin, 40 customer_support, 11 sales (was 136 before batch 4).
    Only the sales ones can reach a user today. Promote in the order their situation types actually
    occur. **Corrected:** batch 5 was reported as leaving nothing hollow in a live type's route set —
    `pricing` was still there, reached through `field_evidence_on_the_market` under `opportunity`. It
@@ -566,8 +594,9 @@ green, corpus errors 446 → 438, hollow 107 → 105.
       `support_plan`. This is the ONLY remaining corpus-fixable routing gain: it closes
       `required_missing=2` and takes the live org from 56/61 to 58/61. It is also a much larger unit
       of work than a capability batch — these are 23-section objects at the `requester.yaml` standard.
-   c. **The remaining 14 sales capabilities** — revenue_operations (5), prospecting channels (3),
-      sales_management (3), discovery_and_solution (2 left: value_proposition, demo), tam_sam_som (1).
+   c. **The remaining 11 sales capabilities** — prospecting channels (3: cold_calling, cold_email,
+      linkedin_outreach), sales_management (3), revenue_operations (2 left: sales_analytics,
+      sales_operations), discovery_and_solution (2 left: value_proposition, demo), tam_sam_som (1).
       Two subdomains complete: post_sale_and_growth (7 of 7) and qualification (5 of 5).
    d. Admin (51) and Customer Support (40) last, because neither can deliver on this tenant until an
       `admin` pack module exists.

@@ -1,0 +1,80 @@
+identity:
+  id: sales.rule.territory_planning.assigned_is_not_covered
+  name: Assigned is not covered
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.territory_planning
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'Coverage reported from an assignment table is a statement about a spreadsheet. The
+    accounts that matter are the ones nobody has contacted, and they are the hardest to see precisely
+    because somebody owns them.'
+  answers:
+  - Is this market actually covered?
+  - What may be counted as coverage?
+  not:
+  - A rule about territory size.
+  - A rule about how often an account should be contacted.
+
+rule:
+  statement: 'Coverage MUST be computed from evidence of contact, not from assignment. An assigned
+    account with no outbound activity in the period MUST be reported as unworked rather than as
+    covered, and a coverage figure published without its unworked count MUST be labelled as an
+    assignment figure.'
+  spans:
+  - sales.obj.core.account
+  - sales.obj.core.icp
+  - sales.obj.core.lead
+  when:
+  - {absent: thread.last_outbound}
+  - {absent: thread.last_inbound}
+  then: 'Count the account as unworked, and require the unworked share to travel with any coverage
+    number derived from the territory.'
+  severity: warning
+  why: 'The two figures diverge in one direction only. Assigning is free and working costs time, so
+    the gap widens continuously and silently, and the map keeps reporting full coverage because
+    assignment is the thing it records. The ownership then does active harm rather than neutral harm:
+    an unassigned account is a visible gap someone eventually closes, whereas an owned and unworked
+    one is invisible AND protected, because no colleague will approach an account that belongs to
+    somebody else.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'A DELIBERATE MULTI-YEAR HOLD. Strategic accounts worked over years are not measured by quarterly
+    contact, and reporting them as unworked misdescribes a decision as a failure.'
+  - 'COVERAGE THROUGH ANOTHER MOTION. Where marketing, a partner or a self-serve channel reaches the
+    account, seller contact is the wrong measure and its absence carries no information.'
+  - 'A SEASONAL BUYING WINDOW. An account contacted once, inside its window, is correctly covered and
+    looks unworked for the rest of the year.'
+  - 'CONTACT THAT HAPPENED OFF-CHANNEL. A call, an event conversation or a portal exchange leaves no
+    correspondence trace; absence of a record is not absence of contact, and on a partially-connected
+    tenant this is the commonest reason the rule is wrong.'
+  - 'A NEWLY DRAWN TERRITORY. In its first period nothing has been worked yet, and the measure
+    describes a start rather than neglect.'
+
+objects_used:
+- sales.obj.core.account
+- sales.obj.core.icp
+- sales.obj.core.lead
+
+limits:
+- Assignment is not in the corpus substrate. The rule can identify accounts with no correspondence and
+  cannot know who was supposed to work them, so it produces the unworked set and leaves the coverage
+  arithmetic to whoever holds the ownership data.
+- Cannot distinguish never-contacted from contacted-off-channel, which is the fourth exception and the
+  main source of false positives.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. Half of this rule is genuinely computable today — the graph holds
+    correspondence per account, so the unworked set is derivable — and half is not, because ownership
+    never reaches the record. `limits` splits the two rather than implying the whole thing runs.'

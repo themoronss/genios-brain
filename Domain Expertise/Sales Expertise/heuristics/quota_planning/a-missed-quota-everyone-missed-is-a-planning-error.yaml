@@ -1,15 +1,88 @@
 identity:
   id: sales.heu.quota_planning.a_missed_quota_everyone_missed_is_a_planning_error
-  name: A missed quota everyone missed is a planning error
+  name: A quota everyone missed is a planning error
   kind: heuristic
   domain: sales
   scope: capability
   owner_capability: sales.revenue_operations.quota_planning
   subdomain: revenue_operations
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
   statement: When most of the team misses, the plan was wrong, not the people. Diagnose planning before
     performance — the reverse order burns trust and the same plan fails again next year.
   answers:
-  - Whose failure is a broadly missed quota?
+  - What does a widespread miss actually indicate?
+  - In what order should a shortfall be diagnosed?
+  not:
+  - A claim that individual performance never matters. It sets the order of investigation.
+
+heuristic:
+  statement: 'Read the DISTRIBUTION of attainment before reading any individual''s number. Widespread
+    misses point at the plan — the target, the territories, the price, the market — and scattered
+    misses point at people. The distribution is available immediately and costs nothing to look at,
+    and it is almost never the first thing examined.'
+  why: 'Individual performance varies, and variation produces a spread. When nearly everyone lands on
+    the same side of a line, the line is the thing they have in common — the plan — rather than
+    anything about them. Diagnosing people first is not only wrong, it is expensive in a specific way:
+    it tells a team that a structural error is their fault, which costs the trust needed to fix it and
+    guarantees the identical plan is accepted quietly next year.'
+  confidence_bp: 8600
+  applies_when: 'A period has closed and attainment is known across a team large enough for a
+    distribution to be meaningful.'
+  breaks_down_when: 'A SMALL TEAM. With a handful of sellers, two departures or one bad hire produce a
+    distribution indistinguishable from a planning error, and the statistics do not exist.
+
+    A GENUINE MARKET SHOCK. Everyone missing because the market moved is neither a planning error nor
+    a performance one, and treating it as either produces a fix aimed at the wrong thing.
+
+    A DELIBERATE STRETCH. Where leadership set an ambitious number knowingly and said so, widespread
+    misses are the designed outcome, and re-diagnosing them as a planning failure ignores a decision
+    that was made in the open.
+
+    THE FIRST PERIOD AFTER A MAJOR CHANGE. New territories, new pricing or a new segment produce one
+    period of noise, and the plan cannot be judged from it.
+
+    WHEN IT BECOMES A SHIELD. Used to explain away every miss, it removes accountability entirely —
+    which is the mirror of the failure it corrects and is equally damaging.'
+  reads:
+  - sales.obj.core.account
+  - sales.obj.core.deal
+  contradicts:
+  - sales.heu.performance_management.trailing_metrics_manage_history
+  pattern_ref: []
+
+when_to_use:
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - closed_lost_mention
+  do_not_use_when:
+  - The team is too small for a distribution to mean anything.
+  - The market moved; the cause is neither plan nor people.
+  - The number was a declared stretch and everyone knew it.
+
+objects_used:
+- sales.obj.core.account
+- sales.obj.core.deal
+- sales.obj.core.icp
+
+limits:
+- Nothing in the corpus substrate carries attainment, quota or headcount — this is entirely a
+  human planning analysis, and it is authored here so a compiled answer about a shortfall does not
+  reach for a performance explanation by default.
+- Says nothing about what the corrected plan should be.
+- Cannot separate a planning error from a market shift, which the second breakdown regime names and
+  does not solve.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The last breakdown regime is the necessary
+    counterweight — this heuristic is unusually comfortable to invoke, and used on every miss it
+    removes accountability as thoroughly as the failure it was written to correct.'

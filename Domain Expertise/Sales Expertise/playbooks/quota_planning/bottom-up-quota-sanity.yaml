@@ -6,25 +6,113 @@ identity:
   scope: capability
   owner_capability: sales.revenue_operations.quota_planning
   subdomain: revenue_operations
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: 'A quota is credible when the arithmetic under it is: territory potential × expected win
-    rate × capacity, reconciled against the top-down number in the open. Quotas asserted without arithmetic
-    get gamed instead of chased.'
+  statement: 'A quota is credible when the arithmetic under it is: territory potential multiplied by
+    expected win rate and by capacity, reconciled against the top-down number in the open. Quotas
+    asserted without that arithmetic are distributed, not planned.'
+  answers:
+  - How is a defensible quota built?
+  - What happens when the company number exceeds what the territories support?
+  not:
+  - Territory design, which happens first and which this consumes.
+  - Compensation design. What the quota is worth is a separate question.
+
+when_to_use:
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - closed_lost_mention
+  do_not_use_when:
+  - 'The top-down number has already been communicated to the team. The bottom-up build will be
+    back-solved to match it, and the exercise produces a justification instead of a plan.'
+  - 'Territories have not been drawn. Potential cannot be summed over a boundary that does not exist.'
+  - 'There is no conversion history. The multiplier would be invented, and an invented multiplier is
+    what makes a bottom-up number look rigorous while being arbitrary.'
+
 steps:
 - order: 1
-  name: Build the bottom-up number first
-  description: 'Per territory: realistic pipeline × historical conversion. This number exists BEFORE anyone
-    sees the board target.'
+  name: Build the bottom-up number first, and in writing
+  description: 'Per territory: realistic pipeline potential multiplied by historical conversion. This
+    number exists before the top-down target arrives, or it will be derived from it — and a bottom-up
+    figure that happens to equal the company target was not built, it was back-solved.'
   actor: human
+  objects_read:
+  - sales.obj.core.account
+  - sales.obj.core.icp
+  produces: A territory-level capacity figure, dated and recorded.
+  done_when: The number exists before the target is known.
+
 - order: 2
-  name: Reconcile gaps explicitly
-  description: Top-down exceeds bottom-up → the gap is a named strategy (new segment, new motion, headcount)
-    — not a silent stretch spread across reps.
+  name: Apply capacity honestly
+  description: 'A seller can work a finite number of real opportunities well. Potential beyond that is
+    not capacity, it is a list — and a quota built on it is a quota built on accounts nobody will
+    reach.'
   actor: human
+  produces: Potential bounded by what the team can actually work.
+  done_when: No territory's number assumes coverage the headcount cannot deliver.
+
 - order: 3
-  name: Set attainability on purpose
-  description: Design for most-reps-can-hit (60-70% attainment). Quotas most of the team misses stop functioning
-    as targets and start functioning as attrition.
+  name: Reconcile the gap explicitly
+  description: 'Where top-down exceeds bottom-up, the difference is a named strategy — a new segment,
+    a price change, additional heads, or an accepted stretch. An unnamed gap is a wish distributed as
+    a target, and every level below inherits it without knowing what it was.'
   actor: human
+  produces: The gap, and the named thing that is supposed to close it.
+  done_when: No unexplained difference remains between the two numbers.
+
+- order: 4
+  name: Set attainability on purpose
+  description: 'Decide what share of the team should reach the number, and design for it. A quota most
+    of the team cannot hit stops working as a target and starts working as a filter — and it filters
+    for tolerance of an unwinnable game rather than for ability.'
+  actor: human
+  produces: A stated attainment intent.
+  done_when: The expected distribution was chosen rather than discovered.
+
+- order: 5
+  name: Calculate ramp separately
+  description: 'A new seller carrying a full-tenure number is being measured against a pipeline they
+    had no time to build. The miss is arithmetic, and treating it as performance produces attrition
+    that replaces one arithmetically-missing seller with another.'
+  actor: human
+  objects_read:
+  - sales.obj.core.timeline
+  produces: Ramped targets for sellers within their first period.
+  done_when: No ramping seller is measured on a full-tenure number.
+
+- order: 6
+  name: Refuse a number the arithmetic cannot support
+  description: 'A planning function that never pushes back has distributed rather than planned. The
+    refusal is uncomfortable and it is the entire value of the exercise — the alternative surfaces a
+    year later as attrition, which is a slower and much more expensive way to learn the same thing.'
+  actor: human
+  produces: A stated position where the number is unsupportable.
+  done_when: The arithmetic was presented, including when it was overruled.
+
+objects_used:
+- sales.obj.core.account
+- sales.obj.core.deal
+- sales.obj.core.icp
+- sales.obj.core.timeline
+
+limits:
+- Nothing in the corpus substrate carries quota, attainment, headcount or territory data — this is a
+  human planning exercise and the corpus holds it so the reasoning is available, not so the engine can
+  perform it.
+- Depends on conversion history; a new motion has none, and the multiplier is then a judgement stated
+  as arithmetic.
+- Says nothing about compensation design, which shapes behaviour at least as much as the quota does.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. The specific attainment band in the original step 3 was
+    removed — what share of a team should hit is a real design decision that varies by motion, and a
+    number here would freeze one organisation''s answer for every tenant. Steps 2, 5 and 6 are new.'

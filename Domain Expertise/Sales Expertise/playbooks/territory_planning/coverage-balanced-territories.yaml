@@ -6,25 +6,125 @@ identity:
   scope: capability
   owner_capability: sales.revenue_operations.territory_planning
   subdomain: revenue_operations
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: Territories are drawn from account potential and capacity arithmetic, reviewed on evidence
-    yearly — not accreted from history and grandfathering. Balanced territories are a fairness instrument
-    AND a coverage instrument at once.
+  statement: 'Territories are drawn from account potential and capacity arithmetic, reviewed on
+    evidence yearly — not accreted from history and grandfathering. Balanced territories are a
+    fairness mechanism and a coverage one at the same time.'
+  answers:
+  - How is a territory map built and maintained?
+  - What makes two territories comparable?
+  not:
+  - Quota setting, which consumes this and comes after.
+  - Account scoring methodology, which the ICP work supplies.
+
+when_to_use:
+  conditions:
+  - {absent: thread.last_outbound}
+  signals:
+  - followup_sent
+  do_not_use_when:
+  - 'The team is small enough that everyone works everything. A map adds boundaries where none are
+    needed and creates disputes that did not exist.'
+  - 'The ICP has not been defined. Scoring accounts against an undefined profile produces numbers with
+    no meaning and a map that looks rigorous.'
+  - 'A major change is mid-flight — a merger, a new segment launch. Draw after it settles rather than
+    twice.'
+
 steps:
 - order: 1
-  name: Score accounts before drawing lines
-  description: Fit + intent + size per account. Territory value is the sum of its scores, not its count
-    of logos.
+  name: Score accounts before drawing any line
+  description: 'Fit, intent and size per account. A territory''s value is then the sum of its scores
+    rather than the count of its logos — geography and alphabet are convenient, explicable, and
+    uncorrelated with potential, which is how territories end up differing in value by multiples
+    nobody intended.'
   actor: human
+  objects_read:
+  - sales.obj.core.account
+  - sales.obj.core.icp
+  produces: A scored account list, before any boundary exists.
+  done_when: Every account carries a score derived from the ICP.
+
 - order: 2
   name: Balance to capacity honestly
-  description: A rep covers N real opportunities well. Territories beyond capacity are inventory nobody
-    works; below it, quota nobody can hit.
+  description: 'A seller works a finite number of real opportunities well. Assigning beyond that
+    warehouses the remainder — and warehousing is worse than leaving them unassigned, because an owned
+    account is invisible as a gap and nobody else will approach it.'
   actor: human
+  produces: Territories bounded by workable capacity rather than by ambition.
+  done_when: No territory holds more than its owner can work.
+
 - order: 3
-  name: Rebalance on the calendar, not on complaints
-  description: Annual, criteria-driven, with transition rules for in-flight deals. Ad-hoc redraws teach
-    everyone to lobby instead of sell.
+  name: Balance on potential, not on count
+  description: 'Two territories with the same number of accounts and different potential are two
+    different jobs paid the same way. The sellers work out which is which within a quarter, and from
+    then on the map is a fairness problem as well as a coverage one.'
   actor: human
+  produces: Comparable territories by scored value.
+  done_when: Potential variance across territories is within a stated tolerance.
+
+- order: 4
+  name: Write the transition rules before they are needed
+  description: 'What happens to an in-flight deal when an account moves — who is credited, who
+    finishes it, what the buyer is told. Written in advance this is administration; written during a
+    transfer it is a dispute between two people who both behaved reasonably.'
+  actor: human
+  objects_read:
+  - sales.obj.core.deal
+  produces: Stated rules for mid-cycle ownership changes.
+  done_when: No transfer requires an ad-hoc decision.
+
+- order: 5
+  name: Measure worked, not assigned
+  description: 'Coverage means contacted. The gap between accounts assigned and accounts actually
+    worked is the single most useful number in the exercise and the one most territory reviews never
+    produce — because assignment is what the map records.'
+  actor: system
+  produces: A worked-account share per territory.
+  done_when: Warehoused accounts are visible as a number.
+
+- order: 6
+  name: Rebalance on the calendar, not on complaints
+  description: 'Annual, criteria-driven, with the transition rules applied. Ad-hoc redistribution in
+    response to protest rewards volume of complaint and teaches everyone that the map is negotiable —
+    after which it is renegotiated continuously.'
+  actor: human
+  produces: A scheduled review with stated criteria.
+  done_when: Changes happen on the cycle rather than on request.
+
+- order: 7
+  name: State what will not be covered
+  description: 'Where capacity genuinely falls short of the market, say which accounts are outside the
+    plan. A map showing full coverage of a market the team cannot work is a comfortable fiction, and
+    the accounts it abandons are invisible precisely because they were assigned.'
+  actor: human
+  produces: An explicit uncovered set.
+  done_when: The plan distinguishes what is covered from what is merely allocated.
+
+objects_used:
+- sales.obj.core.account
+- sales.obj.core.icp
+- sales.obj.core.deal
+- sales.obj.core.lead
+
+limits:
+- Ownership and assignment are not in the corpus substrate; the worked half of step 5 is derivable
+  from correspondence and the assigned half is not, so the number becomes available only where a
+  tenant's ownership data reaches the record.
+- Says nothing about compensation, which determines whether a balanced map is experienced as fair.
+- Account scoring quality is inherited from the ICP work; a weak profile produces a precise and
+  meaningless map.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 4, 5 and 7 are new. Step 5 is the one with real
+    substrate behind it — the graph holds correspondence per account, so warehousing is measurable
+    wherever assignment data exists, and it is the number that turns this from a fairness exercise
+    into a coverage one.'
