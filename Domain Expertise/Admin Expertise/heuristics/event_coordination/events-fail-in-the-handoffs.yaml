@@ -13,3 +13,54 @@ purpose:
     extension cords is where events wobble. The run-sheet's real product is explicit handoffs.
   answers:
   - Where do organised events still go wrong?
+
+heuristic:
+  statement: >
+    The AV was fine and the catering was fine — the gap where each assumed the other had the
+    extension cords is where events wobble. A run sheet's real product is explicit handoffs.
+  why: >
+    Each supplier and each internal owner optimises their own scope and does it competently. Nobody
+    owns the boundary, because a boundary is not a workstream and does not appear on anybody's
+    checklist. So failures cluster at transitions — setup to rehearsal, rehearsal to doors, session
+    to break — and they are invisible in planning precisely because every individual area is
+    covered. The run sheet works not by listing what happens but by forcing a name against each
+    moment when responsibility moves.
+  confidence_bp: 8000
+  applies_when: Any event with more than one supplier or more than one internal owner.
+  breaks_down_when: >
+    One person is doing everything. With no handoffs there is nothing to make explicit, and the
+    ceremony of naming yourself against each transition adds nothing — the failure mode there is
+    capacity, not coordination. It also breaks down where the handoff list becomes the plan:
+    over-specifying transitions produces a document nobody can follow in real time, and on the day
+    people revert to asking each other, which is what the sheet was replacing.
+  reads: [admin.obj.core.meeting, admin.obj.core.vendor, admin.obj.core.action_item]
+  contradicts: [admin.heu.meeting_scheduling.reschedules_cost_more_than_they_show]
+limits:
+- 'It concerns coordination failures, not capacity or quality ones.'
+- 'It cannot help where the handoff crosses to a party who has not seen the run sheet.'
+failure_modes:
+- 'Handoffs listed and not staffed, which documents the gap without closing it.'
+- 'Over-specification, producing a sheet too detailed to use under time pressure.'
+variants:
+- applies_to: outsourced
+  change: Strongest. The agency owns its transitions and the ones into your organisation belong to nobody by default.
+  why: The boundary is contractual and therefore invisible to both sides' internal planning.
+- applies_to: enterprise_admin
+  change: More owners means more transitions, and the count grows faster than the number of workstreams.
+  why: Handoffs scale combinatorially and areas scale linearly.
+references:
+- title: Event run-sheet practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the practical ceiling: over-specifying transitions produces a
+    sheet nobody can follow on the day, and people revert to asking each other — which is
+    exactly what the run sheet existed to replace.

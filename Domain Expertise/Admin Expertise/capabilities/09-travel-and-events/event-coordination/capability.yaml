@@ -3,7 +3,7 @@ identity:
   name: Event Coordination
   domain: admin
   subdomain: travel_and_events
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Running internal and external events end to end: venue, suppliers, budget, invitations and
@@ -12,13 +12,64 @@ description: 'Running internal and external events end to end: venue, suppliers,
 
   '
 question: Is this event going to run, and what happens if a supplier fails?
+
+outcomes:
+- 'One run sheet built backwards from the event date, with a timeline, owners and vendors on the same page. Events are projects with immovable deadlines and no rescheduling option.'
+- 'Handoffs made explicit, because that is where events actually fail — the AV was fine, the catering was fine, and nobody owned the extension cords.'
+- 'Contingency named per supplier for the ones that cannot be recovered on the day.'
+- 'Attendance managed as a number that changes, since catering, seating and materials are all priced against a figure that moves until the last week.'
+- 'The negative outcome: an element CUT while there is still time to cut it. Every event has a moment where scope must reduce, and events that miss it fail publicly.'
+failure_modes:
+- 'MULTIPLE PLANS. Two spreadsheets and a thread is the normal state and it is where the gaps live.'
+- 'OWNERS BY WORKSTREAM, NOT BY MOMENT. Everybody owns their area and the transitions between areas belong to nobody.'
+- 'NO SUPPLIER CONTINGENCY, so a single failure on the day has no answer and the answer must be invented in front of an audience.'
+- 'PLANNING TO THE INVITED NUMBER rather than to the expected one, which over-caters and under-seats simultaneously.'
+- 'DEFERRING THE CUT. Scope reduction is available cheaply for weeks and then not at all.'
+kpis:
+- name: run_sheet_singularity
+  unit: percent
+  description: Events run from one document rather than several.
+  direction: higher_is_better
+- name: unowned_handoff_count
+  unit: count
+  description: Transitions in the run sheet with no named owner. Where events actually wobble.
+  direction: lower_is_better
+- name: supplier_failure_recovery_rate
+  unit: percent
+  description: Supplier failures with a pre-named fallback that was used.
+  direction: higher_is_better
+- name: budget_variance_at_reconciliation
+  unit: percent
+  description: Final cost against plan. Events reconcile late and badly, and the variance is where the learning is.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.meeting_operations.meeting_scheduling, admin.contract_and_vendor.procurement_administration,
+             admin.finance_administration.budget_tracking]
+  downstream: [admin.travel_and_events.travel_expense_administration, admin.contract_and_vendor.vendor_performance_management]
+  parallel: [admin.facilities_and_assets.workplace_management, admin.travel_and_events.itinerary_management]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, executive_office, hybrid, outsourced]
+  offerings: [coordinative]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    unowned_handoff_count is the KPI the whole capability turns on, and it is not one any event
+    checklist carries. Events are staffed by competent people who each own an area well; the
+    failures live in the transitions between areas, which nobody owns because ownership is
+    assigned by workstream.
+
+    The negative outcome — cutting scope while cutting is still cheap — is the decision every
+    event has and most defer. It is available for weeks and then it is not, and events that miss
+    the window fail in front of an audience.
+
 admission:
-  accepted_content_hash: de4edb98f6b75eb4f34f7b9eebe3b7189dc370ca98968cc5194503eca636b3c8
+  accepted_content_hash: 287d17ed049b8dce81273e084cf33b5117da368b0b29ad661cdf8c8c432dfd34

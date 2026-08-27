@@ -12,16 +12,77 @@ purpose:
   statement: Every trip has one living itinerary — flights, stays, meetings, transfers, contacts — updated
     as things change and synced to the traveller's calendar, because a trip run from six confirmation
     emails is a trip run on luck.
+
+when_to_use:
+  conditions: [{exists: meeting.start_at}]
+  do_not_use_when:
+  - A single-leg day trip with one meeting. An itinerary there is a calendar entry with extra steps.
 steps:
 - order: 1
-  name: Consolidate at booking time
-  description: Everything into one document/app view as it is booked, not the night before.
+  name: Build one sheet, and make it the only one
+  description: >
+    Flights, stays, meetings, transfers, contacts. Six confirmations across four apps is raw
+    material, and the traveller assembles it at the worst moment.
   actor: human
+  objects_read: [admin.obj.core.meeting]
+  produces: A single itinerary.
+  done_when: The traveller needs nothing else to know what is next.
 - order: 2
-  name: Push changes in real time
-  description: Delays and gate changes reach the traveller with the ADJUSTED plan, not just the alert.
+  name: Use real transfer times
+  description: >
+    Not map estimates. Forty minutes at 08:00 in a city the planner has never visited is a guess
+    with a decimal point on it.
   actor: human
+  done_when: Transfers reflect the actual journey, at that hour.
 - order: 3
-  name: Include the failure numbers
-  description: Airline, hotel, local contact, home contact — the itinerary is also the contingency card.
+  name: Resolve time zones once, here
+  description: >
+    Every zone conversion left to the traveller is arithmetic performed at a gate, and it is the
+    error that produces a missed flight.
+  actor: system
+  done_when: All times are local and labelled.
+- order: 4
+  name: Name the fallback on the legs that cascade
+  description: >
+    Two or three legs carry the day. A delay there propagates through everything after it, and the
+    alternative has to be known before it is needed.
   actor: human
+  done_when: Critical legs have a stated plan B.
+- order: 5
+  name: Keep it current, not the bookings
+  description: >
+    Changing the booking and not the itinerary is how a traveller arrives at the previous hotel
+    with a confirmation in their hand.
+  actor: agent
+  done_when: The itinerary is the thing that gets updated.
+objects_used: [admin.obj.core.meeting, admin.obj.core.deadline, admin.obj.core.request]
+limits:
+- 'It cannot make an over-dense day work. Sequencing exposes the problem; fixing it is a calendar decision.'
+- 'Real transfer times require local knowledge that a central function often does not have.'
+failure_modes:
+- 'Step 5 inverted — the booking is the source of truth and the itinerary decays, which is worse than not having one.'
+- 'Step 4 skipped because naming failure feels pessimistic, which is exactly the day it was written for.'
+variants:
+- applies_to: executive_office
+  change: Step 1 is a printed or offline copy as well, because connectivity is the first thing to fail.
+  why: A cloud itinerary is unavailable precisely when the plan breaks.
+- applies_to: distributed
+  change: Step 3 dominates — multi-zone trips with participants in a third zone produce the most errors.
+  why: The arithmetic has more than two terms.
+references:
+- title: Executive travel support practice
+  kind: practitioner
+  note: Single-source itineraries are consistently the intervention travellers report as most valuable.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is the one that inverts silently: the booking becomes the source of truth, the
+    itinerary decays, and the traveller trusts a document that is now wrong — which is worse
+    than never having produced one.

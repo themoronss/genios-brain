@@ -11,18 +11,84 @@ identity:
 purpose:
   statement: Events run on a single run-sheet — timeline, owners, vendors, contingencies — built backwards
     from the event date, because events are projects with immovable deadlines and no reschedule option.
+
+when_to_use:
+  conditions: [{exists: meeting.start_at}]
+  do_not_use_when:
+  - It is a meeting rather than an event. Run-sheet machinery on a twelve-person session is ceremony that consumes the preparation the session actually needed.
 steps:
 - order: 1
-  name: Build the backward timeline
-  description: 'From event day to today: bookings, materials, confirmations — each with an owner and date.'
+  name: Build backwards from the date
+  description: >
+    The date does not move, so every lead time is a constraint rather than a preference. Planning
+    forwards produces a plan that runs out of time at the end.
   actor: human
+  objects_read: [admin.obj.core.deadline]
+  produces: A dated run sheet.
+  done_when: Every item has a by-when derived from the event date.
 - order: 2
-  name: Confirm vendors twice
-  description: At booking and at T-minus-week. The unconfirmed caterer is a rite of passage nobody needs
-    twice.
+  name: Keep one run sheet
+  description: >
+    Two spreadsheets and a thread is the normal state, and the gaps between them are where the
+    failures are.
   actor: human
+  done_when: There is one document everybody is working from.
 - order: 3
-  name: Run the day from the sheet
-  description: One coordinator, one run-sheet, everyone else executing their lines. Improvisation is for
-    the unplanned parts only.
+  name: Name the handoffs, not just the workstreams
+  description: >
+    The AV was fine and the catering was fine, and the gap where each assumed the other had the
+    extension cords is where events wobble. Handoffs need owners more than areas do.
   actor: human
+  done_when: Every transition has a name against it.
+- order: 4
+  name: Name a fallback for the suppliers who cannot be recovered
+  description: >
+    Some failures are absorbable on the day and some are not. The second group needs an answer
+    before it is needed, because inventing one happens in front of the audience.
+  actor: human
+  objects_read: [admin.obj.core.vendor]
+  done_when: Critical suppliers have a plan B.
+- order: 5
+  name: Plan to expected attendance, and re-plan as it moves
+  description: >
+    Invited is not attending. Planning to the invitation over-caters and under-seats at the same
+    time, which is the classic pair.
+  actor: human
+  done_when: Numbers are tracked and the plan follows them.
+- order: 6
+  name: Cut scope while cutting is still cheap
+  description: >
+    Every event has a moment where something has to go. It is available for weeks and then it is
+    not, and missing it is what turns a compromise into a visible failure.
+  actor: human
+  done_when: The cut decision was made deliberately or explicitly not needed.
+objects_used: [admin.obj.core.meeting, admin.obj.core.vendor, admin.obj.core.budget_line, admin.obj.core.deadline, admin.obj.core.action_item]
+limits:
+- 'It coordinates delivery; it does not decide whether the event is worth running.'
+- 'Step 4 depends on alternatives existing, which for venues and specialist suppliers is often false close to the date.'
+failure_modes:
+- 'Step 3 recorded as an area list, which reads as complete coverage and leaves every transition unowned.'
+- 'Step 6 deferred as optimism, so the cut is made on the day by circumstance.'
+variants:
+- applies_to: outsourced
+  change: Step 3 is the client''s job even when everything else is the agency''s, because the handoffs cross the organisational boundary.
+  why: An agency owns its own transitions and not the ones into your building.
+- applies_to: startup_lean
+  change: Steps 1, 3 and 6. The run sheet is a page and the failure is always a handoff.
+  why: Few people, many hats, and every transition is between two roles held by the same person until it is not.
+references:
+- title: Event run-sheet practice
+  kind: practitioner
+  note: Where handoffs are treated as first-class line items rather than as implied by adjacency.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 3 is the product of the run sheet, not the timeline. Areas are owned well by default;
+    transitions between areas are owned by nobody unless somebody writes a name against them.

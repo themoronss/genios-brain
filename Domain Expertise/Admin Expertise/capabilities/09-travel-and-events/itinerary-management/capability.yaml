@@ -3,7 +3,7 @@ identity:
   name: Itinerary Management
   domain: admin
   subdomain: travel_and_events
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Turning bookings into a workable day: transfer times, time zones, meeting sequencing, contingency
@@ -12,13 +12,63 @@ description: 'Turning bookings into a workable day: transfer times, time zones, 
 
   '
 question: Does the schedule on the ground actually hold together?
+
+outcomes:
+- 'One living itinerary the traveller actually reads, rather than six confirmations across four apps. The single sheet is the product.'
+- 'Transfer times that survive contact with the ground — real journey times, not map estimates, with the arrival buffer the airport actually needs.'
+- 'Time zones resolved once, in the itinerary, so the traveller is never doing arithmetic at a gate.'
+- 'Contingency named for the two or three legs where failure cascades, since an itinerary is a plan under adversarial conditions.'
+- 'The negative outcome: a meeting MOVED or dropped because the sequence does not hold. Discovering that on paper costs an email; discovering it in a taxi costs the meeting.'
+failure_modes:
+- 'FORWARDING CONFIRMATIONS AND CALLING IT AN ITINERARY. Six emails is not a plan; it is the raw material for one.'
+- 'BOOKING TIMES FROM MAPS. A forty-minute transfer at 08:00 in a city the planner has never been to is a guess with a decimal point.'
+- 'NO SLACK ANYWHERE, so the first delay propagates through every remaining commitment.'
+- 'UPDATING THE BOOKINGS AND NOT THE ITINERARY, which is how the traveller ends up at the old hotel.'
+- 'OPTIMISING DENSITY. A day with six meetings and no gaps is a schedule that fails at the second one.'
+kpis:
+- name: single_source_rate
+  unit: percent
+  description: Trips where the traveller used one itinerary rather than assembling from confirmations.
+  direction: higher_is_better
+- name: sequence_break_incidents
+  unit: count
+  description: Times the plan failed on the ground — a missed transfer, an impossible connection.
+  direction: lower_is_better
+- name: itinerary_currency
+  unit: percent
+  description: Changes reflected in the itinerary rather than only in the booking.
+  direction: higher_is_better
+- name: contingency_named_share
+  unit: percent
+  description: Critical legs with a stated fallback.
+  direction: higher_is_better
+handoffs:
+  upstream: [admin.travel_and_events.travel_booking, admin.travel_and_events.visa_and_documentation,
+             admin.executive_support.calendar_management]
+  downstream: [admin.travel_and_events.travel_expense_administration, admin.executive_support.briefing_and_preparation]
+  parallel: [admin.meeting_operations.meeting_scheduling, admin.executive_support.gatekeeping]
+applies_to:
+  models: [executive_office, in_house, shared_services, enterprise_admin, multi_entity, hybrid, distributed]
+  offerings: [coordinative]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    meeting.start_at and meeting.end_at have real writers, so a sequencing check — does the plan
+    hold on the ground — is closer to executable than most of this domain. What is missing is
+    location and transfer time, which is the fact the whole capability turns on.
+
+    The description's framing is the right one: an itinerary is a plan under adversarial
+    conditions. Everything here is written for the version of the day where the first thing goes
+    wrong, because the version where nothing does needs no itinerary at all.
+
 admission:
-  accepted_content_hash: 7a278f16bd66254b3ea5007e08bf7ece73740db93b39954194bc8ef6efe45b61
+  accepted_content_hash: 6377bd6cc5ab9473a6953099059618c74e39641d084edb8dadf64cf777d2b496

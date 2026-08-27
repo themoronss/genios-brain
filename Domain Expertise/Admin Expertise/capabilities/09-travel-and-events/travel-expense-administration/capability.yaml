@@ -3,7 +3,7 @@ identity:
   name: Travel Expense Administration
   domain: admin
   subdomain: travel_and_events
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Closing the financial loop on travel: advances, corporate card reconciliation, per diems,
@@ -12,13 +12,63 @@ description: 'Closing the financial loop on travel: advances, corporate card rec
 
   '
 question: Has this trip been reconciled, evidenced and claimed within the window?
+
+outcomes:
+- 'Each trip closed as a UNIT within days of return — advances reconciled, receipts matched, claim filed. Trip expenses left open become month-end mysteries with fading memories attached.'
+- 'Advances reconciled against actual spend rather than carried, because an unreconciled advance drifts toward a write-off and an awkward conversation.'
+- 'Foreign currency handled once, at a stated rate, rather than argued about per line.'
+- 'Corporate card transactions matched to the trip, since card spend without a trip context is a list of merchants.'
+- 'The negative outcome: a claim CLOSED SHORT — the traveller told which items are not claimable and why — rather than left open pending a receipt that will never arrive.'
+failure_modes:
+- 'CLOSING EXPENSES AT MONTH END RATHER THAN AT RETURN. Memory decays within a week and the receipts decay with it.'
+- 'ADVANCES ISSUED AND NOT TRACKED, which converts a cash-flow convenience into a debt nobody names.'
+- 'PER-LINE CURRENCY ARGUMENTS, which cost more in administrative time than the variance being disputed.'
+- 'CARD RECONCILIATION SEPARATED FROM THE CLAIM, so the same trip is processed twice through different lenses.'
+- 'LEAVING A CLAIM OPEN FOR ONE MISSING RECEIPT, which is how a trip stays on the books for a quarter.'
+kpis:
+- name: closure_within_window
+  unit: percent
+  description: Trips reconciled within the stated days-after-return window. The variable everything else follows.
+  direction: higher_is_better
+- name: outstanding_advance_age
+  unit: days
+  description: Oldest unreconciled advance. Advances age into write-offs.
+  direction: lower_is_better
+- name: open_trip_count
+  unit: count
+  direction: lower_is_better
+  description: Trips still unresolved past the window.
+- name: unsupported_item_share
+  unit: percent
+  description: Claimed items with no evidence. A target band — zero implies nobody ever loses a receipt, which is false.
+  direction: target_band
+handoffs:
+  upstream: [admin.travel_and_events.travel_booking, admin.travel_and_events.itinerary_management,
+             admin.finance_administration.expense_management]
+  downstream: [admin.finance_administration.reimbursement_processing, admin.finance_administration.budget_tracking]
+  parallel: [admin.finance_administration.payables_administration, admin.compliance_and_governance.audit_support]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, executive_office, hybrid, distributed, outsourced]
+  offerings: [transactional]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    The trip-as-unit framing is the capability. Travel spend processed as individual expense
+    lines loses the context that makes it reconcilable, which is why unreconciled travel is the
+    most common source of month-end noise in the whole finance area.
+
+    unsupported_item_share is a target band rather than a minimum because zero implies nobody
+    ever loses a receipt, which is false — and a policy that behaves as though it were true
+    produces claimants who stop claiming rather than claimants who keep better records.
+
 admission:
-  accepted_content_hash: a1fe9ce71f58a39a469d329c6f720b8fb78f12e8d78cd0a731415d171b57fabc
+  accepted_content_hash: da45b24b34e3a156a93ff4619cca9f4db6ee25b1b3b0f5be992ac0b227eced33
