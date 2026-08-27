@@ -3,7 +3,7 @@ identity:
   name: Receivables Follow-up
   domain: admin
   subdomain: finance_administration
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Chasing money owed to the organisation with a documented, escalating and unembarrassed sequence.
@@ -12,13 +12,64 @@ description: 'Chasing money owed to the organisation with a documented, escalati
 
   '
 question: Who owes us, how overdue are they, and what has been said about it?
+
+outcomes:
+- 'An escalating cadence that runs whether or not anyone feels like running it: a reminder before due, follow-ups after, a human call at ageing thresholds.'
+- 'A record of what was promised and when, because that is what turns a polite reminder into a position.'
+- 'Chasing that is systematic rather than personal, so the relationship carries none of it. Unasked-for money arrives last.'
+- 'Disputes separated from delays early. A customer withholding over a disputed line is not a slow payer and chasing them as one loses both the money and the relationship.'
+- 'The negative outcome: an account STOPPED, escalated or written off deliberately. Endless polite chasing of an unwilling payer is a decision made by not deciding.'
+failure_modes:
+- 'UNDER-CHASING TO PROTECT THE RELATIONSHIP. It is the founder''s instinct and it is backwards — professional systematic follow-up is respected, and cash gaps close companies.'
+- 'CHASING WITHOUT A RECORD, so each conversation restarts and the customer''s previous promise is unquotable.'
+- 'THE SAME MESSAGE THREE TIMES. Escalation means the content and the sender change, not the frequency.'
+- 'TREATING A DISPUTE AS LATENESS, which insults a customer with a legitimate objection and delays the fix.'
+- 'ESCALATING TO A HUMAN CALL TOO LATE, when the balance is large enough that the conversation is now adversarial.'
+kpis:
+- name: days_sales_outstanding
+  unit: days
+  direction: lower_is_better
+  description: The outcome measure. Everything else here is a mechanism for moving it.
+- name: cadence_adherence
+  unit: percent
+  description: Scheduled chases actually sent. The step where discomfort shows up as a gap.
+  direction: higher_is_better
+- name: promise_kept_rate
+  unit: percent
+  description: Customer payment promises honoured. The number that tells you whether chasing is working or being absorbed.
+  direction: higher_is_better
+- name: dispute_identification_lag
+  unit: days
+  description: Time from invoice to a dispute being recognised as one rather than chased as lateness.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.contract_and_vendor.contract_administration, admin.finance_administration.invoice_processing]
+  downstream: [admin.finance_administration.budget_tracking, admin.compliance_and_governance.audit_support]
+  parallel: [admin.finance_administration.payables_administration, admin.admin_operations.service_level_management]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, startup_lean, hybrid, outsourced]
+  offerings: [transactional, coordinative]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    This is the one Admin capability whose substrate is close to real. thread.last_inbound,
+    thread.last_outbound, thread.ball_in_court and commitment.due_at are exactly the facts a
+    collections sequence runs on — what was promised, by whom, and whose move it is now. A
+    correspondence-only tenant can genuinely see a customer who promised payment on a date that
+    has passed.
+
+    The reason it is not routed is the situation layer, not the substrate: nothing types a
+    receivables conversation, so the capability has no door. That is a smaller gap than most of
+    this domain has.
+
 admission:
-  accepted_content_hash: f6a524f88c1ad57fb42557d69d0caac24f1ea8cb369fe8b069cfb1eaa808ba75
+  accepted_content_hash: d17baaa41f9dfa2bb22a1c5332573db8db8fe98d8b3a66c3a8e650257c508c1d

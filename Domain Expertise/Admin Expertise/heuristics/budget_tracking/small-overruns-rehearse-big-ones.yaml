@@ -13,3 +13,54 @@ purpose:
     are cheap; skipping them prices the 40% surprise.
   answers:
   - Why chase small budget variances?
+
+heuristic:
+  statement: >
+    Tolerated minor variances teach the organisation that budgets are decorative. The five per cent
+    conversations are cheap; skipping them prices the forty per cent surprise.
+  why: >
+    A budget's force is entirely social — nothing physically prevents an overspend, so what stops it
+    is the expectation of being asked. Every unremarked variance lowers that expectation slightly,
+    and the lowering is uniform across everyone watching, not just the line that overran. So the
+    cost of ignoring a small variance is not the amount; it is the marginal reduction in the
+    likelihood that the next, larger one gets flagged early enough to act on.
+  confidence_bp: 7500
+  applies_when: Recurring budget lines with an owner and a monthly cycle.
+  breaks_down_when: >
+    The variance is noise rather than signal — timing differences, an invoice landing a week either
+    side of a period end, a genuinely lumpy line. Querying those trains owners that the process does
+    not understand their line, and they stop engaging with the questions that mattered. It also
+    breaks down where the budget was wrong: repeatedly asking about a variance caused by an
+    unrealistic allocation is asking the owner to explain somebody else's error, and the honest move
+    is to fix the number rather than to keep raising it.
+  reads: [admin.obj.core.budget_line]
+  contradicts: [admin.heu.procurement_administration.friction_begets_shadow_procurement]
+limits:
+- 'It concerns the conversation, not the correction. Many small variances should be explained and then accepted.'
+- 'It assumes the budget was set competently, which is outside this capability.'
+failure_modes:
+- 'Applied to timing differences, which is how a variance process loses the owners'' attention permanently.'
+- 'Used to justify querying every line, which converts a signal into administrative noise.'
+variants:
+- applies_to: startup_lean
+  change: Weaker on small lines and stronger on the aggregate — runway is the only variance that matters and it is the sum of all of them.
+  why: Individual lines are small; the total is the company's remaining life.
+- applies_to: enterprise_admin
+  change: Strongest, because the social expectation is the only control across thousands of lines.
+  why: Nobody can inspect them all; the belief that they might be is what works.
+references:
+- title: Commitment accounting practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the one that erodes these processes: repeatedly querying a
+    variance caused by an unrealistic allocation asks the owner to explain somebody else's
+    error, and the honest move is to fix the number rather than keep raising it.

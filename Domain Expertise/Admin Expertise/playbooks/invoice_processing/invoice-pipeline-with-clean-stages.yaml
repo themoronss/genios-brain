@@ -12,18 +12,77 @@ purpose:
   statement: Inbound invoices flow capture → validation → approval → scheduled payment, each stage owned
     and aged — because invoices lost in inboxes become late fees, damaged vendor relations and month-end
     mysteries.
+
+when_to_use:
+  do_not_use_when:
+  - The payment is not invoice-driven — payroll, tax, intercompany. Those have their own controls and forcing them through this pipeline produces exceptions with no meaning.
 steps:
 - order: 1
-  name: Capture into one queue on arrival
-  description: Whatever the door — email, portal, paper — the invoice enters the pipeline same-day with
-    its metadata.
-  actor: human
+  name: Capture into a stage, not an inbox
+  description: >
+    Every invoice gets a state and an age from the moment it arrives. Invoices lost in inboxes
+    become late fees and month-end mysteries, and nobody can say when they arrived.
+  actor: system
+  objects_read: [admin.obj.core.invoice]
+  done_when: The invoice is countable and ageing.
 - order: 2
-  name: Validate before approval
-  description: Vendor known? PO matched? Duplicate check? Validation failures return to sender now, not
-    at payment time.
-  actor: human
+  name: Check for a duplicate on number and amount
+  description: >
+    Resends, forwards and portal-plus-email doubles are normal traffic. The check is cheap and earns
+    its keep monthly.
+  actor: system
+  done_when: A duplicate is flagged before it reaches approval.
 - order: 3
-  name: Approve by threshold, pay on schedule
-  description: Approvals route by amount; payments batch on terms. Ad-hoc payments are error surface.
+  name: Match, then code, then route
+  description: >
+    In that order. Coding an unmatched invoice produces a budget position built on something that
+    may be returned.
+  actor: system
+  objects_read: [admin.obj.core.budget_line]
+  done_when: Matched invoices are coded and only exceptions need a person.
+- order: 4
+  name: Route unusual invoices to whoever knows, not to whoever the threshold names
+  description: >
+    Amount-based routing sends a strange invoice to an approver with no view on it, who approves it
+    because it is within their limit.
   actor: human
+  objects_read: [admin.obj.core.approver]
+  done_when: The approver could actually tell whether it is right.
+- order: 5
+  name: Return errors to the supplier
+  description: >
+    Fixing their invoice internally is invisible work that recurs forever, because they never learn
+    it was wrong.
+  actor: human
+  done_when: The supplier was told what to correct.
+objects_used: [admin.obj.core.invoice, admin.obj.core.vendor, admin.obj.core.budget_line, admin.obj.core.approval, admin.obj.core.approver]
+limits:
+- 'Matching depends on a PO and a receipt existing. Without them every invoice is an exception and the pipeline is manual by construction.'
+- 'It validates the invoice, not the purchase. A correctly matched invoice for something nobody should have bought passes cleanly.'
+failure_modes:
+- 'Step 5 skipped because returning feels confrontational, which converts a supplier''s error into our permanent process.'
+- 'Exception queue ageing unwatched, which produces pay-to-clear behaviour at month end.'
+variants:
+- applies_to: automated_first
+  change: Steps 1 to 3 automate well; step 4 is where automation quietly fails, because unusualness is not a field.
+  why: Threshold routing is easy to encode and is the wrong rule.
+- applies_to: startup_lean
+  change: Steps 1, 2 and 5. Matching requires POs that do not exist yet.
+  why: Duplicates and lost invoices are the real exposure at this size.
+references:
+- title: Accounts payable process design
+  kind: practitioner
+  note: Where touchless rate and exception ageing are treated as a pair rather than as separate metrics.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 4 is the one automation gets wrong. Unusualness is not a field, so amount-based routing
+    is what gets encoded, and it sends the strange invoice to somebody with no view on it who
+    approves it because it is within their limit.

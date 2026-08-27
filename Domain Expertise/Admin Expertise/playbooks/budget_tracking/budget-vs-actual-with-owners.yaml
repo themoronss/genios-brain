@@ -11,17 +11,75 @@ identity:
 purpose:
   statement: Spend tracks against budget monthly, by owner, variances explained in one line — because
     a budget without tracking is a wish, and variance found at quarter-end is history rather than steering.
+
+when_to_use:
+  do_not_use_when:
+  - There is no owner for the line. Tracking a budget nobody owns produces a report and no decision.
 steps:
 - order: 1
-  name: Assign every line an owner
-  description: Ownerless budget lines drift unexamined. The owner explains the variance, both directions.
-  actor: human
+  name: Show committed, not just spent
+  description: >
+    Open orders and signed commitments against the line. Actuals-only reporting is how a healthy
+    line is overspent by people making individually sensible decisions.
+  actor: system
+  objects_read: [admin.obj.core.budget_line]
+  done_when: The remaining figure is net of commitments.
 - order: 2
-  name: Review monthly at the variance level
-  description: On-track lines take seconds; attention goes to the drifts and their one-line whys.
+  name: Give each line one owner who sees it
+  description: >
+    A variance report circulated to everyone is owned by nobody. The owner should not have to ask
+    for their own position.
   actor: human
+  done_when: Each line has a name and that person has access.
 - order: 3
-  name: Reforecast when reality diverges
-  description: A budget known to be wrong that nobody updates trains everyone to ignore it. Reforecast
-    honestly and keep the original for learning.
+  name: Explain variance in one line, in-period
+  description: >
+    Monthly, by the owner, in a sentence that says why rather than restating the number. Quarter-end
+    explanations are history.
   actor: human
+  done_when: Material variances carry a cause, not a magnitude.
+- order: 4
+  name: Revise the forecast when reality moves
+  description: >
+    A forecast unchanged since the start of the year is an aspiration with a date. Revision is the
+    output of tracking, not an admission.
+  actor: human
+  done_when: The forecast reflects what is now known.
+- order: 5
+  name: Never rebaseline to remove variance
+  description: >
+    Moving the budget to match the spend produces a clean report and destroys the only instrument
+    that would have caught the next one.
+  actor: human
+  done_when: Any baseline change is a decision with a reason, not a reconciliation.
+objects_used: [admin.obj.core.budget_line, admin.obj.core.invoice, admin.obj.core.approval, admin.obj.core.vendor]
+limits:
+- 'Step 1 requires commitments to be recorded somewhere, which is purchase_order_management''s job. Without it this degrades to actuals reporting.'
+- 'It reports; it does not authorise. Stopping spend is a decision this capability informs.'
+failure_modes:
+- 'Step 3 satisfied with commentary that restates the variance, which is the most common line written in finance.'
+- 'Step 5 breached quietly at half-year, which is when the pressure to produce a clean report peaks.'
+variants:
+- applies_to: startup_lean
+  change: Steps 1 and 4 only, on a handful of lines. Formal variance commentary at this size is ceremony.
+  why: The runway question is the budget question, and it moves monthly.
+- applies_to: multi_entity
+  change: Consolidation hides line-level overspend behind group headroom; step 2 must be per entity.
+  why: Money is fungible in a report and not in a legal entity.
+references:
+- title: Commitment accounting practice
+  kind: practitioner
+  note: Where committed-not-yet-invoiced is treated as the operative balance rather than a memorandum.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1 is the difference between a budget instrument and a spending report, and step 5 is
+    what keeps it honest — rebaselining at half-year produces a clean report and removes the
+    only signal that would have caught the next overspend.

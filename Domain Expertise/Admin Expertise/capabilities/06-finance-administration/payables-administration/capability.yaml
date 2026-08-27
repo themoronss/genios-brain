@@ -3,7 +3,7 @@ identity:
   name: Payables Administration
   domain: admin
   subdomain: finance_administration
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Managing the payables cycle: ageing, payment scheduling, run preparation, bank detail verification
@@ -12,13 +12,63 @@ description: 'Managing the payables cycle: ageing, payment scheduling, run prepa
 
   '
 question: What is due, to whom, when — and is the payment run correct before it goes?
+
+outcomes:
+- 'Payments made ON terms — not early by accident, not late by neglect. Payables timing is working-capital management performed daily by somebody who may not know that is what they are doing.'
+- 'Bank detail changes verified out of band, without exception. This is the single highest-risk moment in the whole administrative function.'
+- 'The run reviewed before it goes: totals, new payees, unusual amounts. After it goes, recovery depends on the receiving bank.'
+- 'Early-payment discounts taken deliberately where the arithmetic supports it, rather than never or by default.'
+- 'The negative outcome: a payment HELD because something did not reconcile. A payables function that has never held a run is processing, not administering.'
+failure_modes:
+- 'PAYING EARLY BECAUSE THE INVOICE ARRIVED. It costs working capital for nothing and it is the commonest silent leak.'
+- 'ACTING ON A BANK CHANGE THAT ARRIVED BY EMAIL. Everything about it will look right; that is the design.'
+- 'NO PRE-RUN REVIEW. New payees and outlier amounts are visible for one moment and unrecoverable afterwards.'
+- 'AGEING TRACKED WITHOUT A CASH VIEW, so payments are scheduled against a balance that has other claims on it.'
+- 'REMITTANCE NOT SENT, which generates supplier chasing on money already paid and consumes more time than sending it would.'
+kpis:
+- name: on_terms_payment_rate
+  unit: percent
+  description: Paid within the agreed window rather than early or late. Both ends are failures.
+  direction: higher_is_better
+- name: out_of_band_verified_changes
+  unit: percent
+  description: Bank detail changes confirmed through an independently obtained channel. Must be 100.
+  direction: higher_is_better
+- name: pre_run_review_rate
+  unit: percent
+  direction: higher_is_better
+  description: Runs reviewed before release.
+- name: discount_captured_share
+  unit: percent
+  description: Available early-payment discounts taken where the arithmetic favoured it.
+  direction: target_band
+handoffs:
+  upstream: [admin.finance_administration.invoice_processing, admin.contract_and_vendor.vendor_onboarding]
+  downstream: [admin.finance_administration.budget_tracking, admin.compliance_and_governance.audit_support]
+  parallel: [admin.finance_administration.receivables_follow_up, admin.contract_and_vendor.vendor_performance_management]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, outsourced, hybrid]
+  offerings: [transactional]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    The description names the thing correctly: the single highest-risk moment in the
+    administrative function is a changed bank detail arriving by email.
+    out_of_band_verified_changes is therefore the only KPI in this corpus whose target is stated
+    as 100 rather than as a direction, because it is binary per event and one miss is the whole
+    loss.
+
+    on_terms_payment_rate counts both directions as failures, which is unusual. Early payment is
+    a silent working-capital leak that no accounts payable dashboard shows as a problem.
+
 admission:
-  accepted_content_hash: d98044d0ed2159085cfcbfc0729d110a41ea5d57991408593fe8cbee1f62632a
+  accepted_content_hash: f173e92987c8ef49a1387a821e25113b7980e437f9f6839258ca346c6bfebf0f

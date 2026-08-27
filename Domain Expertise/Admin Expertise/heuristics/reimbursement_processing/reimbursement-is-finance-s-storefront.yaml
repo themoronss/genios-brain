@@ -13,3 +13,53 @@ purpose:
     process buys goodwill for every future finance ask — expense policies, budget discipline, audit requests.
   answers:
   - Why does reimbursement UX matter beyond itself?
+
+heuristic:
+  statement: >
+    Most employees judge the entire finance function by their reimbursement experience. A smooth one
+    buys goodwill for every future finance ask — expense policy, budget discipline, audit requests.
+  why: >
+    Reimbursement is the only finance process most people participate in personally, with their own
+    money, on a cycle they can feel. Everything else finance does — budgets, controls, close — is
+    abstract to them. So the single concrete experience becomes the evidence for the general
+    judgement, and it is applied to every subsequent interaction: a team that was paid back in three
+    days accepts a receipt policy, and a team that waited a month litigates it.
+  confidence_bp: 8000
+  applies_when: Any organisation where employees front costs and claim them back.
+  breaks_down_when: >
+    Corporate cards or direct billing remove the personal exposure, and reimbursement stops being the
+    representative experience — the judgement then attaches to whichever process people do touch,
+    often expense coding or approval delays. It also breaks down at senior levels, where the amounts
+    are immaterial and the experience carries no signal, which is dangerous because those are the
+    people deciding whether the process is worth investment.
+  reads: [admin.obj.core.expense, admin.obj.core.employee_record]
+  contradicts: [admin.heu.expense_management.slow_reimbursement_is_a_loan_from_staff]
+limits:
+- 'It argues for investment in a small process on reputational grounds, which loses to any argument framed on transaction cost.'
+- 'The goodwill is real and unmeasurable, so it cannot be defended with a number.'
+failure_modes:
+- 'Used to justify approving claims that should be refused, which trades a control for a feeling.'
+- 'Assessed by the seniors who feel it least, which is how the process stays under-invested.'
+variants:
+- applies_to: startup_lean
+  change: Strongest. Finance is one person and the reimbursement experience is the whole relationship.
+  why: There is no other finance interaction to form a view from.
+- applies_to: enterprise_admin
+  change: The judgement transfers to shared services generally rather than to finance, which diffuses it and makes it harder to act on.
+  why: Employees attribute to the function they can name.
+references:
+- title: Employee service design
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the structural reason this stays under-invested: the people who
+    decide whether to fund the process are the ones for whom the amounts are immaterial and the
+    experience carries no signal at all.

@@ -12,17 +12,76 @@ purpose:
   statement: Expense policy is enforced by an easy compliant path — clear limits, in-flow receipt capture,
     fast reimbursement — because expense abuse is rare while expense friction is universal, and the system
     should be built for the honest majority.
+
+when_to_use:
+  do_not_use_when:
+  - The spend belongs on a purchase order. Routing procurement through expenses defeats every control on the other side.
 steps:
 - order: 1
-  name: Publish limits people can remember
-  description: Meal caps, travel classes, approval routes — a page, not a policy novel.
+  name: Write limits as numbers, not as judgement
+  description: >
+    "Reasonable" is not a limit. Every claimant resolves it differently and defensibly, and the
+    resulting arguments are the friction the policy was meant to remove.
   actor: human
+  objects_read: [admin.obj.core.policy]
+  done_when: A claimant can determine the answer without asking.
 - order: 2
-  name: Capture receipts at spend time
-  description: Photo-in-app at the moment beats the month-end envelope archaeology.
-  actor: human
+  name: Capture the receipt at the moment of spend
+  description: >
+    Month-end reconstruction is the least accurate and most resented part of the process, and it is
+    where the missing-receipt exceptions come from.
+  actor: system
+  done_when: Evidence is attached before the trip or the week ends.
 - order: 3
-  name: Reimburse fast, audit by sample
-  description: Quick repayment builds compliance goodwill; risk-based sampling catches the outliers without
-    taxing everyone.
+  name: Code at submission, with a short list
+  description: >
+    A long code list produces guesses that finance corrects silently. A short list with plain names
+    produces correct coding and a claimant who learns.
   actor: human
+  objects_read: [admin.obj.core.budget_line]
+  done_when: The claimant chose the code and it was right.
+- order: 4
+  name: Refuse with the reason and the policy line
+  description: >
+    A bare rejection guarantees the same claim next month. The explanation is the only part that
+    changes behaviour.
+  actor: human
+  done_when: The claimant knows what would have been claimable.
+- order: 5
+  name: Pay fast, and treat speed as part of the control
+  description: >
+    Slow repayment is what makes people stop submitting and start avoiding the process entirely,
+    which moves spend somewhere nobody sees.
+  actor: agent
+  done_when: Payment happened inside the published window.
+objects_used: [admin.obj.core.expense, admin.obj.core.policy, admin.obj.core.budget_line, admin.obj.core.approval]
+limits:
+- 'It administers the policy; it cannot make an unreasonable policy workable.'
+- 'Step 2 needs tooling at the point of spend. Without it the reconstruction problem is structural.'
+failure_modes:
+- 'Step 4 skipped under volume, which converts every refusal into a grievance and repeats the claim.'
+- 'Step 1 written to cover every case, producing a policy too long to consult — which is the same ambiguity by another route.'
+variants:
+- applies_to: distributed
+  change: Step 1 needs per-currency and per-country limits, or the policy is unusable for most of the company.
+  why: A single number is a local number and reads as a head-office default.
+- applies_to: startup_lean
+  change: Steps 1 and 5 only. One page of limits and fast payment outperforms any system.
+  why: The failure at this size is delay and ambiguity, not leakage.
+references:
+- title: Expense policy design practice
+  kind: practitioner
+  note: Where build-for-the-honest-majority is stated as a design rule rather than a concession.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 sits in an expense playbook rather than in reimbursement on purpose: repayment speed
+    is part of the control, because slow repayment is what pushes spend out of the process and
+    into channels with no policy at all.

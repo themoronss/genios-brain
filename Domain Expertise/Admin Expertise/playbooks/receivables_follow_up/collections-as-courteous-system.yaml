@@ -12,18 +12,84 @@ purpose:
   statement: Receivables are chased on an escalating cadence — reminder before due, follow-ups after,
     human call at aging thresholds — polite, consistent, unembarrassed, because unasked-for money arrives
     last.
+
+when_to_use:
+  conditions: [{fn: days_since, path: commitment.due_at, op: ">", value: 0}]
+  signals: [next_step_agreed, negative_reply]
+  do_not_use_when:
+  - There is an open dispute on the invoice. Chasing a disputed line as lateness insults a customer with a legitimate objection and delays the resolution that would release the payment.
 steps:
 - order: 1
-  name: Remind before due date
-  description: A friendly upcoming-invoice note catches the lost and the forgetful — most lateness is
-    disorganisation, not refusal.
-  actor: human
+  name: Remind before it is due
+  description: >
+    The cheapest intervention in collections and the one most often skipped because it feels
+    presumptuous. It converts a forgotten invoice into a paid one at no relational cost.
+  actor: agent
+  objects_read: [admin.obj.core.invoice]
+  done_when: A pre-due reminder went out.
 - order: 2
-  name: Escalate on a stated ladder
-  description: Day 3 note, day 14 firmer, day 30 call, then terms review. The ladder removes both awkwardness
-    and inconsistency.
+  name: Escalate content and sender, not frequency
+  description: >
+    The same message three times teaches the recipient to ignore the channel. A different person
+    asking a more specific question is what changes the outcome.
   actor: human
+  done_when: Each step differs from the last in substance.
 - order: 3
-  name: Read aging weekly by customer
-  description: Slow-shifting payers get terms conversations early. Aging drift is churn's financial twin.
+  name: Record every promise with its date
+  description: >
+    A promise nobody wrote down cannot be quoted back, and quoting it back is what turns a reminder
+    into a position.
+  actor: agent
+  objects_read: [admin.obj.core.commitment]
+  done_when: Promised dates exist and are checked when they pass.
+- order: 4
+  name: Separate disputes from delays immediately
+  description: >
+    A customer withholding over a disputed line is not a slow payer. Recognising it early routes it
+    to the person who can fix it instead of to the person who chases.
   actor: human
+  done_when: The reason for non-payment is known rather than assumed.
+- order: 5
+  name: Call a human at the ageing threshold
+  description: >
+    Before the balance is large enough that the conversation is adversarial. A call at thirty days
+    is administrative; the same call at ninety is a negotiation.
+  actor: human
+  done_when: A person spoke to a person while it was still routine.
+- order: 6
+  name: Decide, rather than chase forever
+  description: >
+    Stop supply, escalate commercially, or write off. Endless polite chasing of an unwilling payer
+    is a decision made by not making one.
+  actor: human
+  done_when: An account past the threshold has a stated disposition.
+objects_used: [admin.obj.core.invoice, admin.obj.core.commitment, admin.obj.core.escalation, admin.obj.core.contract, admin.obj.core.deadline]
+limits:
+- 'It collects; it does not fix the reason for non-payment, which is often a dispute, a missing PO or a wrong address.'
+- 'Step 6 needs commercial authority this capability does not hold.'
+failure_modes:
+- 'Step 1 skipped as presumptuous, which removes the cheapest win in the whole sequence.'
+- 'Step 5 deferred repeatedly, so the first human conversation happens when the balance is adversarial.'
+variants:
+- applies_to: startup_lean
+  change: The founder is the sender at every step, which is exactly why the sequence must be systematic — it removes the personal awkwardness that causes the gap.
+  why: There is nobody to hand step 5 to.
+- applies_to: enterprise_admin
+  change: Steps 2 and 5 route through a named collections owner, and step 4's dispute path must reach the account team same-day.
+  why: At scale disputes stall behind the chase queue.
+references:
+- title: Credit control practice
+  kind: practitioner
+  note: Pre-due reminders and early human contact are the two interventions with the largest measured effect on DSO.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Steps 1 and 5 are the two with the largest effect and the two most often skipped, both for
+    the same reason — they feel presumptuous early, which is precisely when they are cheap.
