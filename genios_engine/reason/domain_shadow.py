@@ -269,7 +269,7 @@ def _persist_live(*, store: GraphStore, reasoning_store: ReasoningStore, org_id:
 
 
 def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None = None,
-                   limit: int = 200, live: bool = False) -> dict:
+                   limit: int = 200, live: bool = False, registry=None) -> dict:
     """Compile every active L2 situation into an ExpertisePackage; return route/coverage tallies.
 
     ``live=False`` (the default, and every existing caller) is unchanged: nothing is persisted and
@@ -302,7 +302,12 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     graph_version = _graph_version(store, org_id)
     adj, _node_types, obs_idx, fact_idx = _neighbor_index(store, org_id)
     counts: Counter = Counter()
-    registry = make_registry() if live else None
+    # `registry` is injectable for the same reason `run()` takes one: `make_registry()` resolves
+    # its URL from global settings, so a caller holding a DIFFERENT store (a test on a scratch
+    # Postgres, a one-off script against another tenant's database) would silently resolve the
+    # tenant pack from the WRONG database and count every capability as `no_tenant_pack` — the
+    # exact symptom this pass exists to remove, arriving from the harness instead of the code.
+    registry = (registry or make_registry()) if live else None
     reasoning_store = ReasoningStore(engine=store.engine) if live else None
     packs: dict[str, dict | None] = {}      # capability domain -> the tenant's active pack lane
 

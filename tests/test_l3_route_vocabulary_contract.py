@@ -55,7 +55,13 @@ def test_producible_vocabulary_is_small_and_closed():
     assert types == {
         "deal", "opportunity", "prospect_relationship",
         "support_case", "support_contact",
-        "account_admin",
+        # `admin_contact` joined `account_admin`: only the company anchor was described, so a
+        # person-anchored admin situation fell to `type_for`'s generic `<domain>_<anchor>` default
+        # and became `admin_person` — a value this set never contained, that no situation file
+        # claims, and that therefore routed nothing. Growing this set is exactly the event the
+        # test exists to force someone to look at; it is checked against the corpus by
+        # `test_every_producible_type_someone_authored_for` below.
+        "account_admin", "admin_contact",
         "investor_relationship", "investor_contact",     # fundraising (L2-05)
         "relationship",
     }, "the L2 situation vocabulary changed — re-check every corpus route against it"

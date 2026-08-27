@@ -240,6 +240,11 @@ substrate:
     - support_case              # support, anchored on a company
     - support_contact           # support, anchored on a person
     - account_admin             # admin, anchored on a company
+    - admin_contact             # admin, anchored on a person. Added with the `domain_spec` entry
+                                #   that produces it: only `company` was described, so a
+                                #   person-anchored admin situation fell to the generic
+                                #   `<domain>_<anchor>` default (`admin_person`) and no situation
+                                #   file could claim it.
     - investor_relationship     # fundraising, anchored on a company
     - investor_contact          # fundraising, anchored on a person
     - relationship              # general, anchored on a company or a person

@@ -94,14 +94,27 @@ def test_admin_now_routes_account_admin():
     assert "admin.executive_support.commitment_tracking" in (route.get("capabilities") or ())
 
 
-def test_the_admin_situation_states_that_it_cannot_deliver_yet():
-    """It routes and it cannot become a card: `persist_complete` refuses the write unless
-    `config_pack == capability_pack`, and no `admin` pack module exists. A situation that says so
-    is honest; one that stays silent looks like coverage."""
+def test_the_admin_situation_can_now_deliver_and_says_which_lane_carries_it():
+    """It used to route and be unable to become a card: `persist_complete` refuses the write
+    unless `config_pack == capability_pack`, and no `admin` pack module existed. `admin_v1` is
+    that lane. The note is kept — and inverted — rather than deleted, because the NEXT author
+    needs to know a domain without a pack is silently skipped, not rejected."""
+    from genios_engine.packs.wiring import DEFAULT_PACKS
     from genios_engine.reason.domain_shadow import expert_catalog
     sit = expert_catalog().domain("admin").situations["admin.sit.live_account_admin"]
     notes = ((sit.content.get("metadata") or {}).get("notes") or "").lower()
-    assert "cannot yet deliver" in notes and "config_pack" in notes
+    assert "no_tenant_pack" in notes and "config_pack" in notes
+    assert "cannot yet deliver" not in notes
+    assert dict(DEFAULT_PACKS).get("admin"), "the lane the note now claims does not exist"
+
+
+def test_admin_describes_its_person_anchor_too():
+    """Only `company` was described, so a person-anchored admin situation fell to `type_for`'s
+    generic `<domain>_<anchor>` default and became `admin_person` — a name no situation file
+    claims and the registry cannot resolve. Same fault as `general_deal`; the design partner
+    carries one of these."""
+    assert situation_type("person", "admin") == "admin_contact"
+    assert situation_type("company", "admin") == "account_admin"
 
 
 def test_a_capability_domain_the_tenant_has_no_pack_for_is_counted_not_guessed():

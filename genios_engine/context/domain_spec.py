@@ -194,9 +194,25 @@ register(DomainSpec(
 register(DomainSpec(
     domain="admin",
     display_name="Admin & Finance",
-    situation_types={"company": "account_admin"},
+    # `person` maps to `admin_contact`, and it did not before.
+    #
+    # Only `company` was described, so a person-anchored admin situation fell through to
+    # `type_for`'s `<domain>_<anchor>` default and became `admin_person` — a name no situation
+    # file claims, that `_schema/vocabulary.yaml` does not list, and that the registry therefore
+    # cannot resolve. It is the same fault the `general_deal` fix closed: the generic fallback is
+    # for domains NOBODY has described, and describing a domain half way leaves half its
+    # situations in a lane with no door. The design partner carries one of these today.
+    #
+    # `admin_contact`, not `admin_person`, deliberately: it is the same word the two other
+    # person-anchored lanes already use (`support_contact`, `investor_contact`), and consistency
+    # in this name is not cosmetic — it is what a corpus author reads to know the lane exists.
+    situation_types={"company": "account_admin", "person": "admin_contact"},
     expected_fields={
         "account_admin": {"subscription.current_period_end": "renewal date"},
+        # An administrative counterparty is read through what we owe them and whose turn it is,
+        # not through a pipeline stage. Both fields have real writers.
+        "admin_contact": {"thread.ball_in_court": "whose turn it is",
+                          "commitment.due_at": "what we owe them, and when"},
     }))
 
 register(DomainSpec(

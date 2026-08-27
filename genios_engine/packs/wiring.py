@@ -6,21 +6,29 @@ from sqlalchemy import text
 
 from genios_engine.platform.config import get_settings
 
+from .admin_v1 import ADMIN_V1
 from .general_v1 import GENERAL_V1
 from .registry import PackRegistry
 from .sales_v1 import SALES_V1
+from .support_v1 import SUPPORT_V1
 
 # D0 wiring — one place that knows which packs exist and which is the tenant default. The
 # runner asks here for a registry; it never imports a domain pack directly. Adding a pack =
 # import it + register it here (and let an admin apply_to_tenant). Zero engine change.
 
-BUILTIN_PACKS = [SALES_V1, GENERAL_V1]
+BUILTIN_PACKS = [SALES_V1, GENERAL_V1, ADMIN_V1, SUPPORT_V1]
 DEFAULT_PACK_ID = "sales"
 DEFAULT_PACK_VERSION = SALES_V1["version"]
 
-# every org gets both applied automatically (if absent) — sales (deal-linked signals) + general
-# (relationship hygiene, any contact). See ensure_defaults below.
-DEFAULT_PACKS = [(SALES_V1["id"], SALES_V1["version"]), (GENERAL_V1["id"], GENERAL_V1["version"])]
+# Every org gets all four applied automatically (if absent). Two of them carry legacy RULES —
+# sales (deal-linked signals) and general (relationship hygiene, any contact). The other two carry
+# none by design: `admin` and `customer_support` exist so the COMPILED Layer 3 brain has a lane
+# with authority in those domains. Without a tenant pack whose `pack_id` equals the capability's
+# `domain`, `persist_complete` refuses the write and every Admin/Support capability dies at
+# `domain_shadow.py` under `no_tenant_pack` — which is what had been happening to all 106 of them.
+# See admin_v1.py's docstring for why they hold no rules.
+DEFAULT_PACKS = [(SALES_V1["id"], SALES_V1["version"]), (GENERAL_V1["id"], GENERAL_V1["version"]),
+                 (ADMIN_V1["id"], ADMIN_V1["version"]), (SUPPORT_V1["id"], SUPPORT_V1["version"])]
 
 
 @lru_cache(maxsize=4)

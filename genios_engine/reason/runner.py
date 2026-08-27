@@ -666,22 +666,6 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         registry: PackRegistry | None = None, pack_id: str = DEFAULT_PACK_ID) -> dict:
     eval_time = eval_time or datetime.now(timezone.utc)
 
-    # Layer 3 Domain Expertise compiler — the CUTOVER pass (flag off by default). Decoupled from
-    # the node sweep below and from every return path: it compiles the active L2 situations into
-    # ExpertisePackages, reasons over them, and emits the decisions as signals the legacy lane
-    # cannot collide with (their rule ids are capability ids, not pack rule ids).
-    #
-    # `live=True`, deliberately. The flag used to run a measurement-only pass, so turning it on
-    # produced packages, decisions and no cards — the switch read as a cutover and behaved as a
-    # dry run. Measurement remains available to any caller as `shadow_compile(live=False)`, which
-    # is what the tests use; the ENV VAR is the cutover, because that is what flipping it means.
-    if get_settings().use_domain_compiler:
-        try:
-            from genios_engine.reason.domain_shadow import shadow_compile
-            shadow_compile(store=store, org_id=org_id, eval_time=eval_time, live=True)
-        except Exception:
-            logger.exception("domain-compiler live pass failed org=%s", org_id)
-
     # L4 — resolve the tenant's effective config (rules + scoring + gate + budget + snapshot id).
     registry = registry or make_registry()
     ensure_default(registry, org_id)                       # design-partner default: sales.v1
@@ -705,6 +689,24 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         capability for capability in BUILTIN_CAPABILITIES
         if capability.domain == effective["pack_id"]
     )
+
+    # A pack with no rules and no native capability has nothing to evaluate PER NODE, so the whole
+    # sweep below — the graph read, the P90 overlay, the baseline rebuild, the neighbour index and
+    # one pass over every node in the org — would run to produce an empty Counter.
+    #
+    # This is not hypothetical tidiness. `admin` and `customer_support` are rule-free by design
+    # (their lane is the compiled Layer 3 brain, see packs/admin_v1.py), and `run_all` calls this
+    # function once per tenant pack. Without this return, adding those two packs would have
+    # doubled the cost of every reasoning sweep on every org to compute nothing twice — on top of
+    # the L3 reasoning cost the perf work is already trying to bring down.
+    #
+    # Scoped deliberately to "nothing to evaluate", not to "no rules": a pack that HAD rules and
+    # lost them still owns open signals that the sweep resolves, and it will have native
+    # capabilities or rules to carry it there.
+    if not effective["rules"] and not native_capabilities:
+        return {"nodes": 0, "outcomes": {}, "eval_time": eval_time.isoformat(),
+                "pack": {"pack_id": effective["pack_id"], "version": effective["version"],
+                         "snapshot_id": snapshot_id}}
 
     scoring_cfg = effective["scoring"]
     # Capture BEFORE the first graph-derived runtime overlay. Previously the capture happened
@@ -1349,6 +1351,30 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
     eval_time = eval_time or datetime.now(timezone.utc)
     registry = registry or make_registry()
     ensure_defaults(registry, org_id)
+
+    # Layer 3 Domain Expertise compiler — the CUTOVER pass (flag off by default). It compiles the
+    # active L2 situations into ExpertisePackages, reasons over them, and emits the decisions as
+    # signals the legacy lane cannot collide with (their rule ids are capability ids, not pack
+    # rule ids).
+    #
+    # ONCE PER SWEEP, not once per pack. This used to sit at the top of `run()`, which is called
+    # once for every pack the tenant holds — so the whole corpus compiled, reasoned and emitted
+    # twice on every sweep, and would compile FOUR times now that `admin` and `customer_support`
+    # are default packs. The compile is org-scoped and pack-agnostic (it resolves its own pack per
+    # capability domain inside `shadow_compile`), so repeating it per pack bought nothing and paid
+    # the full L4 cost each time. Every production caller enters through `run_all`.
+    #
+    # `live=True`, deliberately. The flag used to run a measurement-only pass, so turning it on
+    # produced packages, decisions and no cards — the switch read as a cutover and behaved as a
+    # dry run. Measurement remains available to any caller as `shadow_compile(live=False)`, which
+    # is what the tests use; the ENV VAR is the cutover, because that is what flipping it means.
+    if get_settings().use_domain_compiler:
+        try:
+            from genios_engine.reason.domain_shadow import shadow_compile
+            shadow_compile(store=store, org_id=org_id, eval_time=eval_time, live=True)
+        except Exception:
+            logger.exception("domain-compiler live pass failed org=%s", org_id)
+
     with store.engine.connect() as c:
         pack_ids = [r[0] for r in c.execute(text(
             "select pack_id from tenant_packs where org_id=:o "

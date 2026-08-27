@@ -105,19 +105,24 @@ metadata:
   confidence: experimental
   reviewed_at: '2026-08-26'
   notes: >
-    ROUTES BUT CANNOT YET DELIVER, and the reason is structural rather than authored. A compiled
-    decision is persisted under the tenant's effective config for the capability's own domain, and
-    `ReasoningStore.persist_complete` refuses the write unless `config_pack == capability_pack`
-    (`ConfigSnapshotMismatch`). This capability's domain is `admin`; the only pack modules that
-    exist are `sales_v1` and `general_v1`, and the design partner holds sales@1.13.0 and
-    general@1.4.0. So `shadow_compile(live=True)` counts these situations under `no_tenant_pack`
-    and emits no signal — deliberately, and counted rather than guessed.
+    DELIVERS. It did not, until `genios_engine/packs/admin_v1.py` shipped, and the reason it did
+    not is worth keeping: a compiled decision is persisted under the tenant's effective config for
+    the capability's OWN domain, and `ReasoningStore.persist_complete` refuses the write unless
+    `config_pack == capability_pack` (`ConfigSnapshotMismatch`). This capability's domain is
+    `admin`; the only pack modules that existed were `sales_v1` and `general_v1`. So every Admin
+    situation was compiled, reasoned over, and then counted under `no_tenant_pack` and thrown
+    away — 57 authored capabilities that were never judged, only skipped.
 
-    The same is true of all 49 Customer Support capabilities, which is the larger finding: the
-    corpus can author a domain the tenant has no lane for, and nothing in the authoring path says
-    so. Authoring this inside the Sales corpus the way `investor_relations` was would make it
-    deliverable and would be a lie — fundraising is a motion the same seller runs, and
-    administering a counterparty account is not. The honest unblock is an `admin` pack.
+    The `admin` pack carries no legacy rules and is not meant to. It exists so this lane has
+    authority; the reasoning is the corpus. Authoring this inside the Sales corpus the way
+    `investor_relations` was would have made it deliverable and would have been a lie —
+    fundraising is a motion the same seller runs, and administering a counterparty account is not.
+
+    Still true and still a Layer 2 gap: every genuinely administrative TRIGGER — an approval past
+    its threshold, a filing due, an invoice that does not match its PO — rests on facts nothing
+    writes. See `_schema/vocabulary.yaml::planned_substrate`. This situation reads an
+    administrative relationship through correspondence, commitments and meetings, which is real
+    and is a fraction of the domain.
 
 admission:
-  accepted_content_hash: 57a2bc5f0195956470a98e7890654b427d7244a61f0d7cf28384dd4a52287667
+  accepted_content_hash: 5adf465e558058460d9208f7029be1a532ff923e0da74a8fb65962ca7825cfd1
