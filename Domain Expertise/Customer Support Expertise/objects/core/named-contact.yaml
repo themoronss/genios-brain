@@ -1,0 +1,1302 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# NAMED CONTACT — a person who holds a standing ROLE in the account relationship.
+#
+# WHY IT EXISTS SEPARATELY FROM REQUESTER. `requester` is whoever wrote in THIS time. A named
+# contact is whoever the relationship is actually built on, and the two are routinely different
+# people: the engineer who files every ticket is rarely the person who signs the renewal, and the
+# person who signs the renewal has usually never filed one. Modelling only the requester means the
+# support system knows everyone who complains and nobody who decides.
+#
+# THE THESIS, in three lines:
+#   1. AUTHORITY AND ACTIVITY ARE UNCORRELATED, and the naive system assumes they are the same.
+#      The most active contact is usually the least able to approve anything, and treating volume
+#      as importance is how an escalation gets routed to somebody who cannot act on it.
+#   2. THE SILENT CONTACT IS INFORMATION. Someone copied on every thread who has never written is
+#      reading, and their silence is a different fact from an active contact's silence. When they
+#      finally write, that is a state change and not a ticket.
+#   3. A CONTACT LEAVING INVALIDATES HISTORY. Preferences, tolerances, the unwritten agreement
+#      about what counts as urgent — all of it was held by a person and none of it was inherited
+#      by the account. Handled here as an explicit invalidation rather than a note.
+#
+# WHAT IT CAN SEE TODAY. Twelve inference patterns: FIVE executable, seven needs_signal. The
+# executable half rests on `party.role`, `thread.ball_in_court`, correspondence timing and the
+# observation stream — all of which Layer 2 genuinely writes. The needs_signal half is everything
+# a CRM contact record or a helpdesk would carry: seniority, ticket authorship counts, CSAT
+# attribution, org chart. On a correspondence-only tenant this object reads a relationship
+# honestly and cannot read a hierarchy.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.obj.core.named_contact
+  name: Named Contact
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.support_management.account_relationship_management
+  subdomain: support_management
+  version: 1.0.0
+  status: stable
+  aliases:
+    - account contact
+    - primary contact
+    - technical contact
+    - escalation contact
+    - stakeholder
+
+purpose:
+  statement: >
+    A specific person at a customer organisation who holds a standing role in the relationship —
+    the technical owner, the economic buyer, the administrative contact, the person we escalate to.
+    Durable rather than per-ticket: the named contact persists across every conversation, carries
+    the account's institutional memory of us, and is the route through which almost every fact
+    about the account arrives.
+  discriminator: >
+    A requester is whoever wrote in this time; a named contact is who the relationship runs
+    through. The same human is frequently both and frequently neither — an end user files a ticket
+    without being a contact, and an economic buyer is a contact who may never file one.
+  answers:
+    - Who at this organisation can actually authorise or unblock this?
+    - Is the person in this thread the person who matters, or a proxy for them?
+    - Who must be told about this even though they have not asked?
+    - Has the person who holds this relationship changed, and what does that invalidate?
+    - Is this person's silence normal for them?
+  not:
+    - The individual on a specific ticket — that is customer_support.obj.core.requester.
+    - The organisation — that is customer_support.obj.core.customer_account.
+    - Who owns an escalation on OUR side — that is customer_support.obj.core.escalation_owner.
+    - A sales buying-committee member. The purchase already happened; this is who lives with it.
+
+attributes:
+  - name: identity_block
+    purpose: Which person this is, established before anything is claimed about their standing.
+    type: composite
+    contains: [display_name, primary_email, account_ref, alternate_addresses]
+
+  - name: display_name
+    purpose: >
+      The name they use for themselves. Appears in every customer-facing sentence, so an inferred
+      name from an email local-part is a visible error rather than a data-quality one.
+    type: value
+    data_type: string
+    required: true
+
+  - name: primary_email
+    purpose: The address the relationship actually runs through, which is not always the first one seen.
+    type: value
+    data_type: string
+    required: true
+
+  - name: account_ref
+    purpose: >
+      The organisation this contact belongs to. Sometimes absent and legitimately so — a contractor
+      or a partner's engineer belongs to a different payer than the one they are working for.
+    type: reference
+    ref: customer_support.obj.core.customer_account
+
+  - name: alternate_addresses
+    purpose: >
+      Other addresses the same person uses. Merging them is what stops one human appearing as three
+      quiet contacts instead of one active one, which inverts every concentration measurement.
+    type: value
+    data_type: list
+
+  - name: role_block
+    purpose: What this person can do, as distinct from what they do.
+    type: composite
+    contains: [contact_role, authority_level, is_escalation_contact, is_economic_buyer,
+               technical_depth]
+
+  - name: contact_role
+    purpose: >
+      The function they hold in the relationship. Roles are not exclusive — in a small customer one
+      person is all of them, and pretending otherwise produces four phantom contacts.
+    type: value
+    data_type: enum
+    allowed_values: [technical_owner, economic_buyer, administrative, escalation, end_user,
+                     partner_engineer, unknown]
+    default: unknown
+    source_paths: [party.role, role]
+
+  - name: authority_level
+    purpose: >
+      What they can decide without asking. The load-bearing distinction is between someone who can
+      approve and someone who can only advocate; both sound identical in an email.
+    type: value
+    data_type: enum
+    allowed_values: [decides, approves_within_limit, recommends, informs, none, unknown]
+    default: unknown
+
+  - name: is_escalation_contact
+    purpose: >
+      Whether this is the agreed route when the normal path fails. Agreed in advance, in calm
+      conditions — an escalation contact discovered during an incident is not an escalation
+      contact, it is whoever answered.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: is_economic_buyer
+    purpose: >
+      Whether they hold the budget for the relationship. The single most under-modelled fact in
+      support: this person's opinion decides the renewal and they are usually invisible to the
+      queue.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: technical_depth
+    purpose: >
+      How much they can diagnose themselves. It changes the correct answer more than seniority does
+      — the same reply is respectful to one contact and patronising to another.
+    type: value
+    data_type: enum
+    allowed_values: [expert, competent, guided, non_technical, unknown]
+    default: unknown
+
+  - name: engagement_block
+    purpose: How this person actually behaves with us, and whether that has changed.
+    type: composite
+    contains: [last_inbound_at, last_outbound_at, ball_in_court, reply_cadence,
+               inbound_share, is_silent_observer]
+
+  - name: last_inbound_at
+    purpose: When this person last wrote to us.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+
+  - name: last_outbound_at
+    purpose: >
+      When we last wrote to them. Held separately because "they have gone quiet" is only a fact
+      about them when we did not go quiet first.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_outbound]
+
+  - name: ball_in_court
+    purpose: >
+      Whose move it is with this person specifically. Per-contact rather than per-account: an
+      account can be waiting on us through one contact while another is waiting on them.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+
+  - name: reply_cadence
+    purpose: >
+      How fast this person normally answers. A learned per-person baseline, because the same
+      three-day gap is instant from one contact and alarming from another.
+    type: derived
+    derived_from: [last_inbound_at, last_outbound_at]
+
+  - name: inbound_share
+    purpose: >
+      What proportion of the account's inbound comes from this person. High share is what makes an
+      account single-threaded, and it is invisible from any one thread.
+    type: derived
+    derived_from: [last_inbound_at]
+    unit: basis_points
+
+  - name: is_silent_observer
+    purpose: >
+      Copied on threads and never writes. Usually a manager reading, and their first message is a
+      state change rather than a request — which is why it needs to be knowable that they were
+      there all along.
+    type: derived
+    data_type: boolean
+    derived_from: [last_inbound_at, inbound_share]
+
+  - name: history_block
+    purpose: What this person carries that the account does not.
+    type: composite
+    contains: [tenure_with_us, open_commitments, sentiment_trend, has_been_let_down,
+               departed, replaced_by]
+
+  - name: tenure_with_us
+    purpose: >
+      How long we have been dealing with this person. Long tenure buys patience and raises the cost
+      of losing them; a contact who has watched us fix things before reads a delay differently.
+    type: derived
+    derived_from: [last_inbound_at]
+    unit: days
+
+  - name: open_commitments
+    purpose: >
+      What we have promised THIS person. Promises are remembered by the individual who received
+      them, whatever the account record says.
+    type: reference
+    ref: customer_support.obj.core.commitment
+
+  - name: sentiment_trend
+    purpose: >
+      Their tone over time, relative to their own norm. A blunt contact who becomes polite and
+      formal is often the strongest negative signal in the file, and every absolute tone measure
+      reads it as an improvement.
+    type: derived
+    derived_from: [derived.sentiment]
+    source_paths: [derived.sentiment]
+
+  - name: has_been_let_down
+    purpose: >
+      Whether a commitment to this person has previously passed its date. It sets the credibility
+      we are operating with and it is personal, not organisational.
+    type: derived
+    data_type: boolean
+    derived_from: [open_commitments]
+
+  - name: departed
+    purpose: >
+      Whether they have left the account or the organisation. It invalidates everything they told
+      us and is the most common silent cause of an account relationship decaying.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: replaced_by
+    purpose: >
+      Who took the relationship over. Recording the successor is the difference between a handover
+      and a gap, and the gap is where accounts are lost without anyone deciding to lose them.
+    type: reference
+    ref: customer_support.obj.core.named_contact
+
+states:
+  initial: unverified
+  terminal: [departed, superseded]
+  values:
+    - name: unverified
+      description: Seen in correspondence; role and standing not established.
+      implies: >
+        May be quoted, may not be relied on. Every authority claim about an unverified contact is
+        an inference from an email signature.
+    - name: active
+      description: Corresponding with us within their own normal cadence.
+      entered_when:
+        - {exists: thread.last_inbound}
+      implies: Their behavioural baseline is meaningful and deviations from it are readable.
+    - name: quiet
+      description: No contact from them for materially longer than their own cadence.
+      entered_when:
+        - {fn: days_since, path: thread.last_inbound, op: ">=",
+           value: {baseline: reply_cadence, mult: 2.5, floor: 14}}
+      implies: >
+        Ambiguous by construction — reassignment, leave, or disengagement. Not a signal on its own
+        and frequently reported as one.
+    - name: strained
+      description: Negative tone, an escalation, or a promise to them that was missed.
+      entered_when:
+        - {has_obs: negative_reply}
+      implies: Our credibility with this individual is now the constraint, not our correctness.
+    - name: departed
+      description: No longer at the account.
+      implies: >
+        Everything they asserted about internal politics, priorities and tolerances is unverified
+        from this moment. The account did not inherit it.
+    - name: superseded
+      description: Still present, but the relationship has moved to someone else.
+      implies: >
+        Continuing to route through them is how a message reaches somebody who is no longer
+        responsible and no longer reads it.
+  transitions:
+    - from: unverified
+      to: active
+      trigger: role established from correspondence, signature or an explicit statement
+      reversible: true
+    - from: active
+      to: quiet
+      when:
+        - {fn: days_since, path: thread.last_inbound, op: ">=",
+           value: {baseline: reply_cadence, mult: 2.5, floor: 14}}
+      trigger: silence beyond their own cadence
+      reversible: true
+    - from: active
+      to: strained
+      when:
+        - {has_obs: negative_reply}
+      trigger: complaint, escalation, or a missed commitment to them
+      reversible: true
+    - from: quiet
+      to: departed
+      trigger: a bounce, an out-of-office naming a successor, or someone new writing on their behalf
+      reversible: false
+    - from: active
+      to: superseded
+      trigger: an explicit handover
+      reversible: true
+    - from: strained
+      to: active
+      trigger: a kept commitment after the strain
+      reversible: true
+
+relationships:
+  - target: customer_support.obj.core.customer_account
+    type: member_of
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 9000
+    confidence_bp: 8000
+    evidence: [email, crm]
+    priority: 1
+    description: >
+      The account this person represents. `zero_or_one` rather than `one`: a contractor or a
+      partner's engineer legitimately belongs to a different organisation than the one they are
+      acting for, and forcing the edge is how those get filed against the wrong payer.
+
+  - target: customer_support.obj.core.requester
+    type: references
+    direction: bidirectional
+    cardinality: zero_or_many
+    weight_bp: 7500
+    confidence_bp: 7000
+    evidence: [email]
+    priority: 2
+    description: >
+      The same human appearing as the author of specific tickets. The edge exists precisely because
+      the two are NOT the same object: collapsing them loses every contact who never files and
+      every requester who holds no standing.
+
+  - target: customer_support.obj.core.commitment
+    type: owns
+    direction: inbound
+    cardinality: zero_or_many
+    weight_bp: 8000
+    confidence_bp: 8000
+    evidence: [email, meeting_transcript]
+    priority: 3
+    description: >
+      Promises made TO this person. Inbound because they are the beneficiary, not the author, and
+      the direction matters — a promise remembered by the recipient is the one that gets quoted
+      back.
+
+  - target: customer_support.obj.core.escalation
+    type: escalates_to
+    direction: inbound
+    cardinality: zero_or_many
+    weight_bp: 7000
+    confidence_bp: 6000
+    conditions:
+      - {path: party.role, op: "=", value: escalation}
+    evidence: [email, crm, manual_entry]
+    priority: 4
+    description: >
+      Conditional on the role, deliberately. An escalation contact is an agreement made in advance;
+      inferring one from whoever answered during an incident produces a route that fails next time.
+
+  - target: customer_support.obj.core.named_contact
+    type: supersedes
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 6500
+    confidence_bp: 5000
+    evidence: [email]
+    priority: 5
+    description: >
+      The predecessor this contact replaced. Self-referential because a handover is a fact about
+      two people, and without the edge a departure looks like a new contact appearing from nowhere.
+
+  - target: customer_support.obj.core.customer_sentiment
+    type: measures
+    direction: inbound
+    cardinality: zero_or_many
+    weight_bp: 6000
+    confidence_bp: 5500
+    evidence: [email, derived]
+    priority: 6
+    description: >
+      Sentiment attaches to a person before it attaches to an account. Aggregating first loses the
+      disagreement between a happy user and an unhappy buyer, which is the whole signal.
+
+  - target: customer_support.obj.core.ticket
+    type: assigned_to
+    direction: inbound
+    cardinality: zero_or_many
+    weight_bp: 5000
+    confidence_bp: 7000
+    evidence: [email, crm]
+    priority: 7
+    description: Tickets this person raised or is named on. Numerous, individually low weight.
+
+  - target: customer_support.obj.core.churn_risk
+    type: influences
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 7000
+    confidence_bp: 5000
+    conditions:
+      - {path: party.role, op: "IN", value: [economic_buyer, technical_owner]}
+    evidence: [email, derived]
+    priority: 8
+    description: >
+      Only some contacts move churn risk. An unhappy end user is a service problem; an unhappy
+      economic buyer is a renewal problem, and weighting them equally is how health scores go green
+      in the month an account decides to leave.
+
+inference_patterns:
+  deterministic:
+    - id: contact.role_is_stated_by_layer_two
+      statement: >
+        Layer 2 has read what this person is to us from the correspondence itself. It is the only
+        role signal available without a CRM and it is materially better than guessing from a job
+        title in a signature.
+      status: executable
+      when:
+        - {exists: party.role}
+      yields:
+        confidence_bp: 7000
+        attribute: contact_role
+      evidence_fields: [party.role, role]
+      false_positive: >
+        A person acting temporarily outside their role — an engineer chasing an invoice while the
+        finance contact is away reads as administrative for exactly one thread.
+
+    - id: contact.we_owe_this_person
+      statement: >
+        The ball is with us on this person's thread. Personal rather than organisational: the
+        account can be up to date while this individual has been waiting a week.
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: us}
+        - {exists: thread.last_inbound}
+      yields:
+        confidence_bp: 8500
+        attribute: ball_in_court
+        value: us
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        Their last message was an acknowledgement. The ball sits nominally with us and nothing is
+        owed.
+
+    - id: contact.quiet_beyond_their_own_cadence
+      statement: >
+        This person has not written for materially longer than they normally would. Measured
+        against their own baseline, because a fortnightly correspondent and a same-day one are not
+        equally quiet at five days.
+      status: executable
+      when:
+        - {fn: days_since, path: thread.last_inbound, op: ">=",
+           value: {baseline: reply_cadence, mult: 2.5, floor: 14}}
+        - {path: thread.ball_in_court, op: "!=", value: us}
+      yields:
+        confidence_bp: 6500
+        attribute: reply_cadence
+      evidence_fields: [thread.last_inbound, thread.ball_in_court]
+      false_positive: >
+        Leave, parental leave or a secondment. Common enough that this pattern should never on its
+        own justify contacting anyone else at the account.
+      note: >
+        The `ball_in_court != us` clause is not decoration. Without it the pattern fires on every
+        person we owe an answer to and reports our own backlog as their disengagement.
+
+    - id: contact.we_have_let_this_person_down_before
+      statement: >
+        A commitment made to this individual passed its date. Our credibility with them is
+        diminished independently of anything the account record says.
+      status: executable
+      when:
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+        - {exists: commitment.action}
+      yields:
+        confidence_bp: 7000
+        attribute: has_been_let_down
+        value: true
+      evidence_fields: [commitment.due_at, commitment.action]
+      false_positive: >
+        Delivered and never recorded as delivered — the most common data-quality failure in this
+        whole domain, which is why this yields 7000 rather than 9000.
+
+    - id: contact.was_introduced_to_us
+      statement: >
+        This person arrived through an introduction rather than by filing something. That makes
+        them a relationship contact from the first message, and the introducer is part of the
+        context.
+      status: executable
+      when:
+        - {has_obs: introduction}
+      yields:
+        confidence_bp: 6000
+        attribute: contact_role
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        An automated "you have been added to this ticket" notification, which reads as an
+        introduction and establishes nothing.
+
+    - id: contact.holds_the_budget
+      statement: This person controls the spend on the relationship, so their view decides the renewal.
+      status: needs_signal
+      requires_signals:
+        - {kind: fact_path, name: account.arr, owner_layer: L2}
+        - {kind: obs_kind, name: budget_approved, owner_layer: L2,
+           note: "Declared in CANONICAL_OBS_KINDS and emitted zero times on the live org. Until an
+                  approval sentence is recognised, economic authority is unobservable."}
+      yields:
+        confidence_bp: 7500
+        attribute: is_economic_buyer
+        value: true
+      false_positive: >
+        A procurement administrator who signs and does not decide. They hold the pen and not the
+        opinion, and the difference matters at renewal.
+
+    - id: contact.is_the_agreed_escalation_route
+      statement: An escalation path agreed in advance, in writing, in calm conditions.
+      status: needs_signal
+      requires_signals:
+        - {kind: obs_kind, name: escalation_requested, owner_layer: L2}
+        - {kind: fact_path, name: entitlement.plan, owner_layer: L2}
+      yields:
+        confidence_bp: 8000
+        attribute: is_escalation_contact
+        value: true
+      false_positive: >
+        Whoever happened to reply during the last incident, promoted to escalation contact by
+        accident. It works once and fails when it is actually needed.
+
+    - id: contact.has_departed
+      statement: A bounce, an auto-reply naming a successor, or a colleague answering on their behalf.
+      status: needs_signal
+      requires_signals:
+        - {kind: obs_kind, name: champion_change, owner_layer: L2}
+        - {kind: obs_kind, name: stakeholder_left, owner_layer: L2}
+      yields:
+        confidence_bp: 8000
+        attribute: departed
+        value: true
+        corroborates: [contact.quiet_beyond_their_own_cadence]
+      false_positive: >
+        Extended leave with cover. Marking someone departed and re-introducing ourselves to their
+        replacement is a visible, slightly insulting error.
+
+  heuristic:
+    - id: contact.authority_is_not_volume
+      statement: >
+        The most active correspondent on an account is usually NOT the most senior. Ranking contacts
+        by message count and escalating to the top of that list reaches somebody who cannot act.
+      status: executable
+      when:
+        - {exists: party.role}
+        - {path: party.role, op: "!=", value: economic_buyer}
+      yields:
+        confidence_bp: 5500
+        attribute: authority_level
+      evidence_fields: [party.role]
+      false_positive: >
+        Small customers, where the founder does file every ticket and volume and authority genuinely
+        coincide.
+      note: >
+        Authored as a pattern rather than a comment because the mistake is systematic. Every
+        contact-ranking feature ever built sorts by activity, and it is wrong in exactly the
+        accounts where escalation matters.
+
+    - id: contact.the_silent_observer_just_spoke
+      statement: >
+        Someone copied on threads for a long time has written for the first time. That is a state
+        change in the relationship, not a new request, and it usually means the person reading has
+        decided reading is no longer enough.
+      status: executable
+      when:
+        - {exists: thread.last_inbound}
+        - {has_obs: question}
+        - {no_obs: followup_sent}
+      yields:
+        confidence_bp: 5000
+        attribute: is_silent_observer
+        value: true
+      evidence_fields: [thread.last_inbound]
+      false_positive: >
+        A genuinely new person added to the thread, who is not an observer at all. Distinguishing
+        them needs the copy history, which is why the confidence is low.
+      note: >
+        Deliberately low-confidence and still worth carrying: the cost of missing it is a manager's
+        first message handled as a routine ticket.
+
+    - id: contact.politeness_replaced_warmth
+      statement: >
+        A previously informal contact who has become formal and correct. It is one of the strongest
+        negative signals available and every absolute tone measure records it as an improvement.
+      status: executable
+      when:
+        - {no_obs: positive_reply}
+        - {fn: days_since, path: thread.last_inbound, op: "<=", value: 30}
+      yields:
+        confidence_bp: 4500
+        attribute: sentiment_trend
+      evidence_fields: [derived.sentiment, thread.last_inbound]
+      false_positive: >
+        A thread that has more readers on it. People write formally when they know it will be
+        forwarded, which is not the same as disengagement.
+      note: >
+        The confidence is low because the substrate cannot see register, only polarity. Recorded
+        anyway so that the ask — a formality delta rather than a sentiment score — is legible in
+        `backlog.py`.
+
+    - id: contact.technical_depth_from_how_they_write
+      statement: >
+        A contact who supplies logs, versions and reproduction steps unprompted is an expert, and
+        answering them with first-line troubleshooting is insulting rather than helpful.
+      status: needs_signal
+      requires_signals:
+        - {kind: obs_kind, name: reproduction_confirmed, owner_layer: L2}
+        - {kind: fact_path, name: ticket.channel, owner_layer: L2}
+      yields:
+        confidence_bp: 6000
+        attribute: technical_depth
+        value: expert
+      false_positive: >
+        A well-written ticket copied from an internal template by someone who cannot interpret any
+        of it.
+
+    - id: contact.is_a_proxy_for_someone_else
+      statement: >
+        The person writing is relaying for someone who is actually blocked. The answer needs to be
+        forwardable, and every diagnostic question costs a full round trip through a third party.
+      status: needs_signal
+      requires_signals:
+        - {kind: obs_kind, name: reproduction_failed, owner_layer: L2}
+        - {kind: derived, name: derived.contact_frequency, owner_layer: L2}
+      yields:
+        confidence_bp: 5500
+        attribute: contact_role
+      false_positive: >
+        A manager who genuinely owns the issue and is describing it second-hand because they were
+        told about it in a meeting.
+
+    - id: contact.tenure_buys_patience
+      statement: >
+        A long-tenured contact who has watched us fix things before reads a delay differently from
+        a new one. The same wait costs less credibility with them, and the same failure costs more.
+      status: needs_signal
+      requires_signals:
+        - {kind: baseline, name: contact_rate_per_account, owner_layer: L2}
+        - {kind: fact_path, name: ticket.created_at, owner_layer: L2}
+      yields:
+        confidence_bp: 5000
+        attribute: tenure_with_us
+      false_positive: >
+        Tenure with a product is not tenure with us — someone who inherited the account last month
+        may have used the product for years and have no history of our service at all.
+
+inputs:
+  - source: email
+    signal: correspondence authored by or addressed to this person
+    path: thread.last_inbound
+    fills: [last_inbound_at, ball_in_court, reply_cadence, inbound_share]
+    reliability_bp: 8500
+  - source: email
+    signal: the counterparty role Layer 2 reads from the exchange
+    path: party.role
+    fills: [contact_role]
+    reliability_bp: 7000
+    description: >
+      The only role signal available without a CRM. It reads what the person is DOING in this
+      relationship, which is closer to what support needs than a job title would be.
+  - source: derived
+    signal: engine-computed tone balance over this person's messages
+    path: derived.sentiment
+    fills: [sentiment_trend]
+    reliability_bp: 6500
+  - source: crm
+    signal: contact record
+    fills: [contact_role, authority_level, is_escalation_contact, is_economic_buyer]
+    reliability_bp: 6000
+    description: >
+      Structurally rich and routinely stale. A CRM contact record survives the person leaving by
+      months, which is the specific staleness that matters most here.
+  - source: meeting_transcript
+    signal: who spoke, who deferred to whom
+    fills: [authority_level, technical_depth]
+    reliability_bp: 8000
+    description: >
+      The best available authority signal. Deference in a live conversation is very hard to fake
+      and impossible to read from email.
+  - source: manual_entry
+    signal: account team annotation
+    fills: [is_escalation_contact, is_economic_buyer, replaced_by]
+    reliability_bp: 7000
+
+outputs:
+  - name: who_to_address
+    type: ref
+    description: >
+      The right recipient for this specific message, which is not always the person who wrote. The
+      output that keeps an escalation from landing on someone with no authority to act.
+    derived_from: [contact_role, authority_level, is_escalation_contact]
+    consumed_by: [L5.communication_planning, "L5.2.channel_planner"]
+  - name: register_and_depth
+    type: enum
+    description: How technical and how formal the reply should be for this person.
+    derived_from: [technical_depth, sentiment_trend]
+    consumed_by: ["L5.2.channel_planner", L5.communication_planning]
+  - name: personal_credibility
+    type: score
+    description: >
+      How much benefit of the doubt we currently hold with this individual, after any missed
+      commitments to them.
+    derived_from: [has_been_let_down, open_commitments, tenure_with_us]
+    consumed_by: [L4.decision_maker, L5.execution_planning]
+  - name: relationship_continuity_risk
+    type: score
+    description: Exposure to this person leaving, given their share of the relationship.
+    derived_from: [inbound_share, departed, replaced_by, contact_role]
+    consumed_by: [L4.reasoning_unit, L6.learning_unit]
+  - name: silence_reading_for_person
+    type: enum
+    description: >
+      Whether this person's quiet is owed, waiting, normal for them, or a departure. Four readings
+      that a single elapsed-days number collapses into one.
+    derived_from: [ball_in_court, last_inbound_at, reply_cadence, departed]
+    consumed_by: [L4.decision_maker, L5.communication_planning]
+
+preconditions:
+  - id: contact.person_resolves_to_one_human
+    statement: >
+      Alternate addresses must be merged before any per-person measurement. One human split across
+      three addresses appears as three quiet contacts and inverts every concentration figure.
+    requires: [primary_email, alternate_addresses]
+    if_unmet: degrade
+
+  - id: contact.not_one_of_us
+    statement: >
+      The person must be external. Our own staff appear in every thread and treating a colleague as
+      a customer contact produces advice about chasing ourselves.
+    requires: [account_ref]
+    if_unmet: block
+
+  - id: contact.baseline_before_deviation
+    statement: >
+      No claim that this person has gone quiet without their own cadence baseline. A global
+      threshold flags every fortnightly correspondent and misses every daily one.
+    requires: [reply_cadence]
+    if_unmet: degrade
+
+  - id: contact.authority_asserted_only_with_evidence
+    statement: >
+      Authority may be recorded as unknown. It may not be inferred from message volume, seniority
+      in a signature, or the fact that they replied fastest.
+    requires: [authority_level]
+    if_unmet: degrade
+
+constraints:
+  - id: contact.never_route_around_without_cause
+    statement: >
+      Do not contact someone else at the account over this person's head unless the agreed
+      escalation path says so or they have departed.
+    hard: true
+    why: >
+      Going over a contact's head is remembered for years and is the fastest way to lose the person
+      who was advocating for us internally. The service problem gets fixed and the relationship does
+      not recover.
+
+  - id: contact.departure_invalidates_assertions
+    statement: >
+      When a contact departs, everything they asserted about internal priorities, politics and
+      tolerances is marked unverified rather than retained.
+    hard: true
+    why: >
+      Those facts were true of a person's judgement, not of an organisation. Carrying them forward
+      is how a support team confidently applies a departed manager's preferences to their successor.
+
+  - id: contact.personal_sentiment_is_not_account_sentiment
+    statement: One person's tone may never be reported as the account's without saying whose it is.
+    hard: false
+    why: >
+      A single furious end user and a single furious economic buyer produce the same account-level
+      number and mean entirely different things.
+
+  - id: contact.no_authority_claim_from_a_signature
+    statement: A job title in an email signature is not evidence of decision authority.
+    hard: true
+    why: >
+      Titles are inconsistent across organisations and inflate by convention. Routing an approval
+      request on a signature is how it sits unanswered for a fortnight.
+
+business_rules:
+  - id: contact.reply_to_the_person_who_asked
+    statement: >
+      The reply goes to the person who wrote, even when someone more senior is on the thread.
+      Answering past them is a visible slight and costs the advocate we already had.
+    when:
+      - {path: thread.ball_in_court, op: "=", value: us}
+    then: Address the author; copy the others.
+    severity: warning
+    why: The person who asked is accountable internally for getting an answer. Bypassing them removes their standing.
+
+  - id: contact.escalation_uses_the_agreed_route
+    statement: Escalate through the recorded escalation contact, not through whoever answered last.
+    when:
+      - {path: party.role, op: "=", value: escalation}
+    then: Route to the recorded escalation contact.
+    severity: blocking
+    why: >
+      An escalation route improvised during an incident works once. The next incident finds the same
+      person on leave and nobody knows who else to try.
+
+  - id: contact.a_departure_is_an_account_event
+    statement: A departed primary contact raises an account-level action even with no open ticket.
+    then: Raise a relationship action on the account, not a ticket.
+    severity: advisory
+    why: >
+      This is the most common silent cause of an account decaying: nothing breaks, nobody complains,
+      and the relationship simply stops having a route in.
+
+  - id: contact.silence_is_not_read_while_we_owe_them
+    statement: >
+      While ball_in_court is us, this person's silence may not be reported as disengagement under
+      any elapsed threshold.
+    when:
+      - {path: thread.ball_in_court, op: "=", value: us}
+    then: Suppress every quiet or gone-dark reading for this contact.
+    severity: blocking
+    why: Otherwise the system reports our own backlog as the customer's withdrawal.
+
+decision_factors:
+  - name: authority_to_act
+    weight_bp: 2500
+    direction: increases
+    description: >
+      Whether this person can actually unblock the thing. The largest weight because getting it
+      wrong does not degrade the answer, it sends it to somebody who cannot use it.
+    reads: [authority_level, is_economic_buyer, is_escalation_contact]
+  - name: personal_credibility_state
+    weight_bp: 2000
+    direction: increases
+    description: What we have already cost this individual in broken promises.
+    reads: [has_been_let_down, open_commitments]
+  - name: relationship_weight
+    weight_bp: 2000
+    direction: increases
+    description: How much of the account runs through this one person.
+    reads: [inbound_share, contact_role, tenure_with_us]
+  - name: who_owes_whom
+    weight_bp: 1500
+    direction: context
+    description: >
+      Context rather than increases: it does not raise importance, it decides which action is
+      permissible at all.
+    reads: [ball_in_court, last_inbound_at, last_outbound_at]
+  - name: technical_register
+    weight_bp: 1000
+    direction: context
+    description: Shapes how the answer is written, never whether it is given.
+    reads: [technical_depth]
+  - name: continuity_exposure
+    weight_bp: 1000
+    direction: increases
+    description: What breaks if this person leaves tomorrow.
+    reads: [departed, replaced_by, inbound_share]
+
+evidence:
+  - source: meeting_transcript
+    strength_bp: 8500
+    independent_of: [email, crm]
+    decays: true
+    description: >
+      The strongest authority evidence there is. Who defers to whom in a live conversation is very
+      hard to stage and cannot be read from written correspondence at all.
+  - source: email
+    strength_bp: 8000
+    independent_of: [crm, meeting_transcript]
+    decays: true
+    description: >
+      Authoritative about behaviour — cadence, tone, whose turn it is — and weak about authority,
+      which people routinely overstate in writing.
+  - source: crm
+    strength_bp: 6000
+    independent_of: [email]
+    decays: true
+    description: >
+      Rich and stale. A contact record outlives the person's employment by months, which is exactly
+      the failure this object's `departed` attribute exists to catch.
+  - source: derived
+    strength_bp: 6000
+    independent_of: [crm, meeting_transcript]
+    decays: true
+    description: >
+      Engine-computed from correspondence, therefore NOT independent of email. It may corroborate a
+      CRM reading and never a second email one.
+  - source: manual_entry
+    strength_bp: 7000
+    independent_of: [email, crm]
+    decays: true
+    description: >
+      An account manager naming the buyer is usually right and usually undated. Strong when fresh
+      and silently wrong a year later.
+  - source: document
+    strength_bp: 7500
+    independent_of: [email, derived]
+    decays: true
+    description: >
+      A signed order form or support agreement naming the escalation contact. Authoritative for the
+      role and silent about whether that person is still there.
+
+metrics:
+  - name: contact_role_coverage
+    unit: basis_points
+    description: Share of active contacts whose role is established rather than unknown.
+    direction: higher_is_better
+    owner_layer: L3
+    calibrates: [contact.role_is_stated_by_layer_two]
+  - name: escalation_route_hit_rate
+    unit: basis_points
+    description: Share of escalations that reached someone able to act, first time.
+    direction: higher_is_better
+    owner_layer: L5
+    calibrates: [contact.authority_is_not_volume, contact.is_the_agreed_escalation_route]
+  - name: departure_detection_lag
+    unit: days
+    description: Time between a contact leaving and us knowing.
+    direction: lower_is_better
+    owner_layer: L2
+    calibrates: [contact.has_departed]
+  - name: personal_promise_kept_rate
+    unit: basis_points
+    description: Commitments made to this individual, delivered by their date.
+    direction: higher_is_better
+    owner_layer: L2
+    calibrates: [contact.we_have_let_this_person_down_before]
+  - name: single_threaded_account_share
+    unit: basis_points
+    description: Share of accounts where one contact carries most of the inbound.
+    direction: lower_is_better
+    owner_layer: L6
+
+events:
+  - id: contact.departed
+    name: Contact departed
+    severity: critical
+    payload: [display_name, account_ref, replaced_by]
+    invalidates: [authority_level, technical_depth, sentiment_trend, is_economic_buyer]
+    description: >
+      Invalidates far more than it announces. Everything this person told us about their
+      organisation was their judgement, and the account did not inherit it.
+  - id: contact.first_message_from_an_observer
+    name: A silent observer wrote for the first time
+    severity: notable
+    emitted_when:
+      - {has_obs: question}
+    payload: [display_name, account_ref]
+    description: >
+      A relationship state change dressed as a routine question, and it is routinely handled as the
+      latter.
+  - id: contact.commitment_to_them_breached
+    name: A promise to this person passed its date
+    severity: critical
+    emitted_when:
+      - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+    payload: [display_name, open_commitments]
+    invalidates: [sentiment_trend]
+    description: Personal credibility, not account credibility. They are the one who remembers.
+  - id: contact.went_quiet_beyond_cadence
+    name: Quiet beyond their own cadence
+    severity: info
+    emitted_when:
+      - {fn: days_since, path: thread.last_inbound, op: ">=",
+         value: {baseline: reply_cadence, mult: 2.5, floor: 14}}
+    payload: [display_name, last_inbound_at]
+    description: >
+      `info` on purpose. It is ambiguous — leave, reassignment or disengagement — and raising it
+      louder teaches people to ignore it.
+  - id: contact.handover_recorded
+    name: Relationship handed to a successor
+    severity: notable
+    payload: [display_name, replaced_by]
+    invalidates: [inbound_share]
+
+actions:
+  - id: contact.confirm_role_directly
+    name: Ask who owns what
+    actor: human
+    effect: Replaces an inferred role with a stated one, which is the cheapest accuracy gain available here.
+    cost: low
+    reversible: true
+    description: >
+      Almost never done because it feels like admitting ignorance. It is one sentence and it
+      resolves the field this whole object is weakest on.
+  - id: contact.establish_a_second_contact
+    name: Establish a second named contact
+    actor: human
+    effect: Removes the single point of failure in the relationship.
+    cost: moderate
+    reversible: true
+  - id: contact.acknowledge_personally
+    name: Acknowledge to this person by name
+    actor: human
+    preconditions:
+      - {path: thread.ball_in_court, op: "=", value: us}
+    effect: Restores the credibility a missed date cost, before the substance is available.
+    cost: trivial
+    reversible: false
+  - id: contact.route_to_escalation_contact
+    name: Use the agreed escalation route
+    actor: human
+    preconditions:
+      - {path: party.role, op: "=", value: escalation}
+    effect: Reaches someone with authority without going over the working contact's head.
+    cost: low
+    reversible: false
+  - id: contact.re_establish_after_departure
+    name: Re-establish the relationship with a successor
+    actor: human
+    preconditions:
+      - {no_obs: followup_sent}
+    effect: Turns a gap into a handover before the account notices it was a gap.
+    cost: moderate
+    reversible: true
+
+dependencies:
+  - target: customer_support.obj.core.customer_account
+    kind: requires
+    strength: hard
+    description: A contact with no organisation cannot be entitled, escalated or renewed.
+  - target: customer_support.obj.core.requester
+    kind: enriches
+    strength: soft
+    description: >
+      Enriches rather than requires, in both directions: a requester who is also a named contact
+      should be answered differently, and a contact who never files is invisible to the requester
+      object entirely.
+  - target: customer_support.obj.core.commitment
+    kind: enriches
+    strength: soft
+  - target: customer_support.obj.core.escalation
+    kind: enriches
+    strength: soft
+  - target: customer_support.obj.core.churn_risk
+    kind: enriches
+    strength: soft
+  - target: customer_support.obj.core.customer_sentiment
+    kind: derived_from
+    strength: soft
+  - target: customer_support.obj.core.incident
+    kind: invalidated_by
+    strength: soft
+    description: >
+      During an incident, tone and cadence are about the incident. Every behavioural read of a
+      person is unreliable until it clears.
+
+exceptions:
+  - id: contact.in_a_small_customer_everyone_is_everyone
+    statement: >
+      Below roughly a dozen people, one person genuinely is the technical owner, the buyer and the
+      escalation contact. Splitting them into four roles creates three phantom contacts and makes
+      the account look better-covered than it is.
+    overrides: [contact.authority_is_not_volume, contact.the_relationship_is_one_person_deep]
+    why: >
+      Role separation is a property of organisational size, not of good practice. Applying an
+      enterprise contact model to a five-person customer produces a map of people who do not exist.
+    frequency: common
+
+  - id: contact.the_quiet_buyer_is_the_normal_case
+    statement: >
+      An economic buyer who never writes is not disengaged — that is what buying a product is
+      supposed to feel like. Their silence must never be scored the way a technical owner's is.
+    overrides: [contact.quiet_beyond_their_own_cadence]
+    why: >
+      Applying an activity-based health measure to a buyer marks every well-served account as at
+      risk through its most important person.
+    frequency: common
+
+  - id: contact.route_around_when_the_contact_is_the_blocker
+    statement: >
+      When the working contact is themselves the obstruction — sitting on an answer their own
+      organisation is waiting for — going around them can be correct. It is a relationship cost
+      taken deliberately, with the account owner's agreement, never by a system.
+    overrides: [contact.never_route_around_without_cause, contact.reply_to_the_person_who_asked]
+    why: >
+      The rule exists because routing around is usually wrong. Making it absolute means a customer
+      stays blocked indefinitely because one person stopped replying.
+    frequency: rare
+
+  - id: contact.a_partners_engineer_is_not_the_customers_contact
+    statement: >
+      An MSP or reseller engineer holds a standing role and belongs to a different organisation.
+      Filing them under the end customer misattributes both entitlement and sentiment.
+    overrides: [contact.not_one_of_us, contact.person_resolves_to_one_human]
+    why: >
+      Their account membership is genuinely elsewhere. `account_ref` is `zero_or_one` precisely so
+      this case does not have to be forced into a wrong edge.
+    frequency: occasional
+
+  - id: contact.formality_is_not_always_distance
+    statement: >
+      A contact who becomes formal may simply have more readers on the thread. Register tracks
+      audience as much as it tracks feeling.
+    overrides: [contact.politeness_replaced_warmth]
+    why: >
+      Reading every formal message as a cooling relationship generates concern about customers who
+      have merely started copying their manager, which is often a sign of importance rather than
+      distance.
+    frequency: common
+
+  - id: contact.the_departed_contacts_assertions_may_still_be_true
+    statement: >
+      Marking assertions unverified is not marking them false. A departed contact's account of
+      their own organisation is usually still accurate and should be re-confirmed rather than
+      discarded.
+    overrides: [contact.departure_invalidates_assertions]
+    why: >
+      Discarding it wholesale throws away the only institutional memory we have, and the successor
+      is the worst-placed person to reconstruct it.
+    frequency: common
+
+best_practices:
+  - id: contact.ask_who_owns_what
+    statement: Ask directly who owns what, early, in writing.
+    why: >
+      Role is the field this object is weakest on and the cheapest to fix. One sentence in an
+      onboarding thread outperforms every inference in this file.
+    applies_when: First weeks of a relationship, and after any handover.
+
+  - id: contact.name_a_successor_before_you_need_one
+    statement: Record a second contact while the first is still present and cooperative.
+    why: >
+      After a departure, the person best placed to name their successor has already gone. The cost
+      of asking early is one line; the cost of asking late is a cold re-introduction.
+    applies_when: Any account whose inbound is concentrated on one person.
+
+  - id: contact.answer_the_author_copy_the_audience
+    statement: Reply to whoever asked; keep the seniors copied.
+    why: >
+      It preserves the working contact's internal standing, which is the thing that makes them
+      useful to us, while giving the audience the visibility they joined for.
+    applies_when: Any thread with more than one recipient on the customer side.
+
+  - id: contact.keep_promises_per_person_not_per_ticket
+    statement: Track what was promised to each individual, not only what was promised on each ticket.
+    why: >
+      Customers remember by person. "You told me last month" is a personal ledger, and a
+      ticket-scoped record cannot answer it.
+    applies_when: Any commitment with a date.
+
+  - id: contact.write_for_their_depth
+    statement: Match the technical register to the person, not to the severity.
+    why: >
+      An expert given first-line steps reads it as not being listened to; a non-technical contact
+      given a stack trace reads it as being dismissed. Both are the same failure to notice who is
+      reading.
+    applies_when: Every outbound message.
+
+anti_patterns:
+  - id: contact.rank_by_message_count
+    statement: Treating the most active correspondent as the most important contact.
+    why_it_happens: >
+      Activity is the only contact signal a support system holds without a CRM, and it correlates
+      with importance often enough to look right.
+    cost: >
+      Escalations land on people with no authority, and the economic buyer — who decides the
+      renewal — never appears in any ranking at all.
+    instead: Carry role and authority separately from activity, and leave them unknown when they are.
+    detectable_by: [contact.authority_is_not_volume, contact.holds_the_budget]
+
+  - id: contact.merge_requester_into_contact
+    statement: Collapsing "the person on this ticket" and "the person the relationship runs through".
+    why_it_happens: >
+      They are the same human most of the time, and one object is simpler than two.
+    cost: >
+      Every contact who never files disappears, and every one-off requester is promoted to a
+      standing role. The account map ends up listing the people who complain and none of the people
+      who decide.
+    instead: Two objects with an explicit edge between them, which is why that edge is weighted 7500.
+
+  - id: contact.title_as_authority
+    statement: Inferring decision rights from a job title in an email signature.
+    why_it_happens: It is right there, it looks structured, and it is right often enough.
+    cost: >
+      Approval requests routed to a Director who needs their own VP's sign-off, sitting unanswered
+      while both sides assume the other is moving.
+    instead: Leave authority unknown until someone states it or defers to someone in a meeting.
+    detectable_by: [contact.authority_is_not_volume]
+
+  - id: contact.chase_the_person_you_owe
+    statement: Nudging a contact for a reply while the ball is with us.
+    why_it_happens: >
+      Elapsed-time instruments are direction-blind, and "follow up after N days" is the default rule
+      in every outreach tool.
+    cost: The most damaging single message in support. It proves we neither answered nor noticed.
+    instead: Gate every nudge on ball_in_court.
+    detectable_by: [contact.we_owe_this_person]
+
+  - id: contact.re_introduce_to_someone_who_never_left
+    statement: Marking a contact departed on the strength of silence and writing to their colleague.
+    why_it_happens: Silence and departure look identical, and departure is the more actionable reading.
+    cost: >
+      A slightly insulting email to someone on parental leave, and a colleague who now knows we lost
+      track of who they work with.
+    instead: Require a bounce, an auto-reply, or a person writing on their behalf before setting departed.
+    detectable_by: [contact.has_departed]
+
+examples:
+  - label: Platform engineer who files every ticket, cannot approve spend
+    kind: typical
+    note: >
+      The most common named contact and the one most often mistaken for the decision maker because
+      they are the only one visible.
+  - label: VP Engineering copied on every thread for four months, never written
+    kind: typical
+    note: >
+      A silent observer. Their first message is a state change; handling it as a routine question is
+      the standard error.
+  - label: Finance contact who appears once a year at renewal
+    kind: edge
+    note: >
+      Quiet by design. Every activity-based health measure marks them disengaged, which is exactly
+      backwards for the person who signs.
+  - label: Engineer at an MSP raising tickets for three different end customers
+    kind: misclassification
+    note: >
+      Filed under whichever end customer is in the subject line. They are a contact of the PARTNER,
+      and `account_ref` is zero_or_one so this need not be forced.
+  - label: Contact who went from "hey, quick one" to "Dear Support Team, please find attached"
+    kind: counterexample
+    note: >
+      Reads as an improvement on every polarity measure and is usually the opposite — unless they
+      simply added their manager to the thread. Both readings are live; see the exception.
+  - label: Founder of a six-person customer who is buyer, admin and technical owner
+    kind: edge
+    note: >
+      Role separation is a function of organisational size. Splitting them here invents three
+      contacts and makes the account look covered.
+
+references:
+  - title: MEDDICC — Economic Buyer and Champion
+    kind: methodology
+    note: >
+      Where the authority-versus-advocacy distinction is stated most precisely. It is a sales
+      framework and the distinction survives the handover to support unchanged, which is why it is
+      cited here rather than reinvented.
+  - title: The Challenger Customer
+    kind: book
+    author: Adamson, Dixon, Spenner, Toman
+    note: >
+      Source of the mobiliser-versus-talker separation, which is this object's
+      `contact.authority_is_not_volume` in a different vocabulary.
+  - title: ITIL 4 — Relationship Management practice
+    kind: framework
+    note: Named contacts as a service-management construct rather than a CRM one.
+  - title: customer_support.obj.core.requester
+    kind: internal
+    artifact_ref: customer_support.obj.core.requester
+    note: The per-ticket twin. The discriminator between the two is the most important line in both files.
+  - title: customer_support.obj.core.customer_account
+    kind: internal
+    artifact_ref: customer_support.obj.core.customer_account
+    note: The organisation these people belong to; `contact_concentration` there is computed from `inbound_share` here.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    All twenty-three sections present. Twelve inference patterns: FIVE executable, seven
+    needs_signal. What is executable comes from `party.role`, `thread.ball_in_court`,
+    correspondence timing, commitment dates and the observation stream — all genuinely written by
+    Layer 2. What needs a signal is every hierarchy fact: seniority, budget authority, an agreed
+    escalation route, ticket authorship counts.
+
+    Authored because four capabilities required it and it did not exist, which aborted routes
+    rather than degrading them.
+
+    The two lines most likely to be wrong elsewhere and right here are
+    `contact.authority_is_not_volume` and `contact.the_quiet_buyer_is_the_normal_case`. Every
+    contact-ranking feature ever shipped sorts by activity, and doing so both misroutes escalations
+    and marks the healthiest accounts at risk through their most important person.

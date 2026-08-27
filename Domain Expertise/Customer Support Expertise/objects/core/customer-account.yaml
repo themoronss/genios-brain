@@ -1,0 +1,1416 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CUSTOMER ACCOUNT — the organisation on the other side of the contract.
+#
+# WHY IT EXISTS. Sixteen capabilities reference it and none could load it, so four of the design
+# partner's live situations aborted with `required_missing` and routed NOTHING — not even the
+# capabilities that did not need it. A missing required object does not degrade a route, it kills
+# it, which is why this file's absence cost more than its content.
+#
+# THE THESIS, in three lines:
+#   1. The account is the unit of ENTITLEMENT, RENEWAL and BLAST RADIUS. The ticket is the unit of
+#      work. Every expensive support mistake comes from reasoning about the second while the
+#      decision belonged to the first — a P3 from the account renewing in three weeks outranks a
+#      P1 from the one that churned last month, and neither ticket says so.
+#   2. Support load tracks CHANGE, not size. A large steady account is quiet; a small account
+#      mid-migration is not. Staffing to headcount and being surprised by volume is the standard
+#      version of this error.
+#   3. An account that stops contacting is AMBIGUOUS. It means "we are fine" or "we have given
+#      up", the two need opposite actions, and nothing in a ticket queue distinguishes them.
+#      Modelled here as a first-class ambiguity rather than resolved by optimism.
+#
+# WHAT THIS OBJECT CAN AND CANNOT SEE TODAY. Fourteen inference patterns: FOUR executable, TEN
+# needs_signal. That ratio is the honest one and it is worth reading rather than averaging away.
+# Everything executable is derived from CORRESPONDENCE — who writes, how often, whose turn it is,
+# what was promised. Everything that needs a signal is the part a connected helpdesk or billing
+# system would supply: ARR, plan, renewal date, ticket volume, entitlement state. On a
+# correspondence-only tenant this object is a real read of an account relationship and a
+# fraction of an account record. Saying so here is the point of `status`.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.obj.core.customer_account
+  name: Customer Account
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.support_management.account_relationship_management
+  subdomain: support_management
+  version: 1.0.0
+  status: stable
+  aliases:
+    - account
+    - customer
+    - organisation
+    - tenant
+    - client
+
+purpose:
+  statement: >
+    The contracting organisation a support conversation belongs to: who they are, what they are
+    entitled to, how much of our capacity they consume, and what is at stake if the relationship
+    fails. It is the aggregate every per-ticket decision is secretly being made about — priority,
+    escalation, effort, tone and who to route to all change with the account and change with
+    nothing on the ticket itself.
+  discriminator: >
+    The account is who PAYS and who CHURNS; the requester is who is BLOCKED. A named contact at a
+    reselling partner can raise a ticket against an account they do not belong to, and the
+    entitlement, the renewal risk and the escalation path all follow the account, not the person
+    holding the keyboard.
+  answers:
+    - Is this organisation entitled to the response we are about to promise?
+    - How much does this ticket matter beyond the person who raised it?
+    - Is this account's contact pattern normal for THIS account, or has it changed?
+    - Who else at this organisation should be in this conversation, and who must not be?
+    - Is silence from this account good news or the last thing we will hear from them?
+  not:
+    - The individual who wrote in — that is customer_support.obj.core.requester.
+    - The commercial terms themselves — that is customer_support.obj.core.support_plan.
+    - The likelihood of losing them — that is customer_support.obj.core.churn_risk, which reads
+      this object rather than replacing it.
+    - A sales pipeline record. Nothing here is being sold; the purchase already happened.
+
+attributes:
+  - name: identity_block
+    purpose: Everything that establishes WHICH organisation this is, before anything is claimed about it.
+    type: composite
+    contains: [account_name, primary_domains, parent_account, account_region, account_segment]
+
+  - name: account_name
+    purpose: >
+      The organisation's own name for itself, which is frequently not the name on the contract and
+      almost never the email domain. Used in every customer-facing sentence, so getting it wrong
+      is visible to the customer.
+    type: value
+    data_type: string
+    required: true
+    source_paths: [company]
+
+  - name: primary_domains
+    purpose: >
+      The email domains that resolve to this account. A list, not a value: acquisitions, regional
+      entities and contractor addresses all belong to one payer, and treating each domain as its
+      own account is the most common way an account record fragments.
+    type: value
+    data_type: list
+    constraints: >
+      Never includes a free-mail domain. A gmail address belonging to a customer's employee
+      identifies a person, never an organisation, and admitting one here merges every unrelated
+      personal-address customer into a single phantom account.
+
+  - name: parent_account
+    purpose: >
+      The owning entity when this account is a subsidiary, region or business unit. Entitlement and
+      escalation may follow the parent while ownership and sentiment stay local, and conflating the
+      two spends a parent's contractual response budget on a subsidiary that never bought it.
+    type: reference
+    ref: customer_support.obj.core.customer_account
+
+  - name: account_region
+    purpose: >
+      Where the account's working day is. It decides which coverage window applies and whether a
+      four-hour target lands overnight, which changes the correct promise rather than the effort.
+    type: value
+    data_type: string
+
+  - name: account_segment
+    purpose: >
+      The service posture the organisation buys into — self-serve, mid-market, enterprise,
+      strategic. Not a size band: it names the expectations the relationship was sold with, and
+      those survive a headcount change.
+    type: value
+    data_type: enum
+    allowed_values: [self_serve, mid_market, enterprise, strategic, partner, internal]
+
+  - name: commercial_block
+    purpose: What is at stake and when it is next decided.
+    type: composite
+    contains: [annual_value, renewal_at, contract_state, support_plan_ref]
+
+  - name: annual_value
+    purpose: >
+      Recurring contract value. Present for prioritisation and for nothing else — it is an input to
+      how much CAPACITY an account justifies, never to how POLITELY it is treated, and the
+      distinction is one customers can feel.
+    type: value
+    data_type: money
+    sensitivity: confidential
+
+  - name: renewal_at
+    purpose: >
+      The next date the relationship can end. It is the single most decision-changing fact about a
+      support ticket and it appears nowhere on the ticket: the same complaint is routine six months
+      out and a retention event three weeks out.
+    type: value
+    data_type: timestamp
+
+  - name: contract_state
+    purpose: >
+      Whether the commercial relationship is live, lapsed, in notice or pre-signature. A lapsed
+      account still writes in, and answering as though nothing changed is how unbilled work becomes
+      an expectation.
+    type: value
+    data_type: enum
+    allowed_values: [active, in_notice, lapsed, trial, pre_contract, churned]
+    default: active
+
+  - name: support_plan_ref
+    purpose: The entitlement this account bought, which bounds every promise made to it.
+    type: reference
+    ref: customer_support.obj.core.support_plan
+
+  - name: relationship_block
+    purpose: Who we actually talk to, and how that has been changing.
+    type: composite
+    contains: [named_contacts, contact_concentration, primary_contact_changed_recently,
+               relationship_nature, relationship_direction]
+
+  - name: named_contacts
+    purpose: >
+      The people at this organisation with a standing role in the relationship. Distinct from
+      "everyone who has ever emailed us", which is a mailing list and not a map.
+    type: reference
+    ref: customer_support.obj.core.named_contact
+
+  - name: contact_concentration
+    purpose: >
+      What share of this account's inbound comes from one person. High concentration is a risk
+      wearing the costume of a healthy relationship: the account looks engaged, and it is one
+      resignation away from having nobody who knows how to reach us.
+    type: derived
+    derived_from: [named_contacts]
+    unit: basis_points
+
+  - name: primary_contact_changed_recently
+    purpose: >
+      Whether the person we mostly hear from has changed. It invalidates history — preferences,
+      tolerances and unwritten agreements were held by a person, not by the account — and it is a
+      leading indicator of both churn and a step change in ticket volume.
+    type: derived
+    data_type: boolean
+    derived_from: [named_contacts]
+
+  - name: relationship_nature
+    purpose: >
+      What this organisation is to us, from Layer 2's own reading of the correspondence. It is the
+      one guard against treating an investor, a partner or a job applicant as a customer account,
+      which is the failure mode of every domain-agnostic entity graph.
+    type: value
+    data_type: enum
+    allowed_values: [customer, prospect, partner, vendor, investor, unknown]
+    source_paths: [relationship.nature]
+
+  - name: relationship_direction
+    purpose: >
+      Whether we are buying from them or they from us. A vendor who also buys is both, and reading
+      an inbound support request from a vendor account as a customer case inverts the entire
+      service posture.
+    type: value
+    data_type: string
+    source_paths: [relationship.direction]
+
+  - name: load_block
+    purpose: What this account costs us, and whether that is changing.
+    type: composite
+    contains: [open_ticket_count, contact_rate, contact_rate_baseline, escalation_history,
+               last_inbound_at, last_outbound_at, ball_in_court]
+
+  - name: open_ticket_count
+    purpose: >
+      How many of this account's issues are live at once. The number matters less than its shape:
+      six unrelated tickets is a busy account, six tickets on one product area is an unaddressed
+      root cause being reported repeatedly.
+    type: value
+    data_type: integer
+
+  - name: contact_rate
+    purpose: >
+      Inbound volume per unit time from this account, in whatever form it arrives. Deliberately
+      channel-agnostic: a customer who stops filing tickets and starts messaging the account team
+      has not become quieter.
+    type: derived
+    derived_from: [last_inbound_at]
+
+  - name: contact_rate_baseline
+    purpose: >
+      What normal looks like FOR THIS ACCOUNT. A cross-account average is worse than useless here —
+      a technical customer who files eight well-written tickets a month is healthy, and eight from
+      an account that has never filed one is an incident.
+    type: derived
+    derived_from: [contact_rate]
+
+  - name: escalation_history
+    purpose: >
+      How often this account has needed escalating, and whether it worked. An account that
+      escalates routinely has been taught that escalation is the way to get service, which is a
+      process failure recorded on the account rather than a trait of the customer.
+    type: reference
+    ref: customer_support.obj.core.escalation
+
+  - name: last_inbound_at
+    purpose: When this account last reached out. Half of the only silence measurement available.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+
+  - name: last_outbound_at
+    purpose: >
+      When we last said anything to them. The other half, and the half that turns silence from a
+      customer property into a joint one — an account is not quiet if we stopped writing.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_outbound]
+
+  - name: ball_in_court
+    purpose: >
+      Whose move it is. The single most load-bearing fact in this object, because it separates the
+      two readings of silence that no other field can: waiting on us is a service failure, waiting
+      on them is a normal pause.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody]
+    source_paths: [thread.ball_in_court]
+
+  - name: health_block
+    purpose: The read, as opposed to the record.
+    type: composite
+    contains: [sentiment_trend, engagement_trend, churn_risk_ref, health_confidence]
+
+  - name: sentiment_trend
+    purpose: >
+      The direction of the account's tone across recent exchanges, not its level. A consistently
+      blunt customer is not unhappy; a previously warm one who has gone terse is.
+    type: derived
+    derived_from: [derived.sentiment]
+    source_paths: [derived.sentiment]
+
+  - name: engagement_trend
+    purpose: >
+      Two-way volume against this account's own recent past. It is the measurement that makes
+      silence readable at all, and it is engine-computed rather than extracted, so it cannot be
+      talked up by a well-written email.
+    type: derived
+    derived_from: [derived.engagement, derived.momentum]
+    source_paths: [derived.engagement, derived.momentum]
+
+  - name: churn_risk_ref
+    purpose: The assessed likelihood of losing them, owned elsewhere and read here.
+    type: reference
+    ref: customer_support.obj.core.churn_risk
+
+  - name: health_confidence
+    purpose: >
+      How much of this account's picture is actually evidenced. An account we hold three emails
+      about can be described but not assessed, and a confident assessment over three emails is the
+      specific error this attribute exists to prevent.
+    type: derived
+    derived_from: [contact_rate, named_contacts, sentiment_trend]
+    unit: basis_points
+
+states:
+  initial: prospective
+  terminal: [churned, dormant]
+  values:
+    - name: prospective
+      description: Contracting, trialling or pre-signature. Support is being given ahead of entitlement.
+      implies: >
+        Generosity here is a sales investment, not a service level. Recording it as normal service
+        sets an expectation the signed plan will not honour.
+    - name: onboarding
+      description: Signed and not yet in steady state.
+      implies: >
+        Ticket volume is expected to be high and is not a health signal. The health signal in
+        onboarding is whether the questions are getting more advanced.
+    - name: steady
+      description: In contract and behaving like itself.
+      entered_when:
+        - {path: relationship.nature, op: "=", value: customer}
+      implies: Baselines are meaningful; deviation from them is worth reading.
+    - name: strained
+      description: In contract, with escalation, negative tone or a broken promise on record.
+      entered_when:
+        - {has_obs: negative_reply}
+      implies: >
+        Every subsequent interaction is being read by the customer as evidence for a decision they
+        have already started making.
+    - name: at_risk
+      description: Renewal in reach and the relationship materially degraded.
+      implies: Support decisions are now retention decisions and should be made by someone who knows that.
+    - name: dormant
+      description: In contract and not talking to us.
+      implies: >
+        The most misread state in support. It is either a self-sufficient customer or a departed
+        one, and the queue cannot tell the difference — nor can this object without usage data.
+    - name: churned
+      description: The contract has ended.
+      implies: >
+        Inbound still arrives and answering it is a commercial decision, not a service one.
+  transitions:
+    - from: prospective
+      to: onboarding
+      trigger: contract signed
+      reversible: false
+    - from: onboarding
+      to: steady
+      trigger: contact rate settles toward a stable baseline
+      reversible: true
+    - from: steady
+      to: strained
+      when:
+        - {has_obs: negative_reply}
+      trigger: escalation, sustained negative tone, or a missed commitment
+      reversible: true
+    - from: strained
+      to: at_risk
+      trigger: renewal approaches with the strain unresolved
+      reversible: true
+    - from: steady
+      to: dormant
+      when:
+        - {path: thread.ball_in_court, op: "=", value: nobody}
+      trigger: no contact for materially longer than this account's own baseline
+      reversible: true
+    - from: at_risk
+      to: churned
+      trigger: notice served or renewal declined
+      reversible: false
+    - from: dormant
+      to: steady
+      trigger: they write in again
+      reversible: true
+
+relationships:
+  - target: customer_support.obj.core.named_contact
+    type: owns
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 9000
+    confidence_bp: 8000
+    evidence: [email, crm, manual_entry]
+    priority: 1
+    description: >
+      The people who constitute the relationship. Weighted highest because an account with no
+      named contact is an entry in a billing system, not a relationship — every other edge here is
+      reached through a person.
+
+  - target: customer_support.obj.core.support_plan
+    type: belongs_to
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 8500
+    confidence_bp: 7000
+    evidence: [contract, crm]
+    priority: 2
+    description: >
+      The entitlement that bounds every promise made to this account. Without it a target is an
+      aspiration, and an aspiration stated to a customer becomes a commitment.
+
+  - target: customer_support.obj.core.ticket
+    type: owns
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 7000
+    confidence_bp: 9000
+    evidence: [email, crm]
+    priority: 3
+    description: The work. High confidence, lower weight — tickets are numerous and individually cheap.
+
+  - target: customer_support.obj.core.entitlement
+    type: gates
+    direction: inbound
+    cardinality: zero_or_one
+    weight_bp: 7500
+    confidence_bp: 6500
+    evidence: [contract, crm]
+    priority: 4
+    description: >
+      Entitlement gates the account rather than the ticket. A per-ticket entitlement check that
+      does not resolve the account first will happily verify a subsidiary against a parent's plan.
+
+  - target: customer_support.obj.core.churn_risk
+    type: influences
+    direction: bidirectional
+    cardinality: zero_or_one
+    weight_bp: 8000
+    confidence_bp: 5500
+    evidence: [derived, email]
+    priority: 5
+    description: >
+      Bidirectional deliberately. Account state feeds the risk assessment, and a raised risk
+      changes how every subsequent account interaction should be handled.
+
+  - target: customer_support.obj.core.escalation
+    type: escalates_to
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 6000
+    confidence_bp: 7500
+    evidence: [email, crm]
+    priority: 6
+    description: Where this account's unresolved work goes, and how often it has had to go there.
+
+  - target: customer_support.obj.core.customer_sentiment
+    type: measures
+    direction: inbound
+    cardinality: zero_or_many
+    weight_bp: 5500
+    confidence_bp: 5000
+    evidence: [email, derived]
+    priority: 7
+    description: >
+      Account-level sentiment is the aggregate of its people's, and it is not their mean — one
+      furious economic buyer outweighs four content end users.
+
+  - target: customer_support.obj.core.commitment
+    type: owns
+    direction: outbound
+    cardinality: zero_or_many
+    weight_bp: 7000
+    confidence_bp: 8000
+    evidence: [email, meeting_transcript]
+    priority: 8
+    description: >
+      What we have promised this organisation. Promises accrue to the account and survive the
+      person who made them, which is exactly why they get lost when that person moves on.
+
+  - target: customer_support.obj.core.incident
+    type: caused_by
+    direction: inbound
+    cardinality: zero_or_many
+    weight_bp: 5000
+    confidence_bp: 6000
+    conditions:
+      - {has_obs: negative_reply}
+    evidence: [email, crm]
+    priority: 9
+    description: >
+      Accounts affected by an incident, held here so blast radius is an account list rather than a
+      ticket count. The two differ whenever one account files ten tickets about one outage.
+
+  - target: customer_support.obj.core.customer_account
+    type: belongs_to
+    direction: outbound
+    cardinality: zero_or_one
+    weight_bp: 6500
+    confidence_bp: 6000
+    evidence: [contract, crm]
+    priority: 10
+    description: >
+      The parent, when this account is a subsidiary or region. A self-referential edge because
+      corporate structure is recursive and flattening it loses exactly the case that matters.
+
+inference_patterns:
+  deterministic:
+    - id: account.is_a_customer_not_a_counterparty
+      statement: >
+        Layer 2's own relationship reading says this organisation is a customer, so a support lens
+        is the correct lens for it.
+      status: executable
+      when:
+        - {path: relationship.nature, op: "=", value: customer}
+      yields:
+        confidence_bp: 8500
+        attribute: relationship_nature
+        value: customer
+      evidence_fields: [relationship.nature]
+      false_positive: >
+        A vendor who also buys from us, and a partner who resells. Both read as customers on the
+        inbound half of the correspondence and neither is entitled to the same service.
+      note: >
+        This is the guard that keeps an investor thread out of the support queue. It fires on the
+        company node's own fact, so it is unaffected by which individual happened to write.
+
+    - id: account.we_owe_them_a_reply
+      statement: >
+        The account is waiting on us. This is the only reading of silence that is unambiguously a
+        service failure rather than a customer state.
+      status: executable
+      when:
+        - {path: relationship.nature, op: "=", value: customer}
+        - {path: thread.ball_in_court, op: "=", value: us}
+      yields:
+        confidence_bp: 9000
+        attribute: ball_in_court
+        value: us
+        corroborates: [account.silence_is_ours_not_theirs]
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        A thread whose last inbound was an acknowledgement — "thanks, that's sorted" leaves the
+        ball nominally with us and nothing is owed.
+
+    - id: account.silence_is_ours_not_theirs
+      statement: >
+        The account has been waiting on us for materially longer than its own reply cadence. The
+        elapsed time is measured against THIS account's baseline, not a global target, because a
+        weekly-cadence account and a same-day one are not equally overdue at 48 hours.
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: us}
+        - {fn: days_since, path: thread.last_inbound, op: ">=",
+           value: {baseline: reply_cadence, mult: 2.0, floor: 2}}
+      yields:
+        confidence_bp: 8000
+        attribute: engagement_trend
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        An agreed pause. "Come back to me after the quarter" makes a two-week gap correct, and the
+        substrate cannot see the agreement — only the gap.
+      note: >
+        The reason this exists as its own pattern rather than a threshold on the one above: it is
+        the pattern a card should be built from, and the one above is the pattern a card should be
+        SUPPRESSED by when it is false.
+
+    - id: account.the_relationship_is_one_person_deep
+      statement: >
+        We reach this organisation through a single individual. The account looks engaged and is
+        one departure away from having no route in at all.
+      status: needs_signal
+      requires_signals:
+        - {kind: derived, name: derived.contact_frequency, owner_layer: L2,
+           note: "Per-person inbound share within an account. The graph holds the people and the
+                  messages; nothing aggregates one against the other."}
+      yields:
+        confidence_bp: 7000
+        attribute: contact_concentration
+      false_positive: >
+        A deliberately single-threaded relationship. Some accounts appoint one contact by policy,
+        and there the concentration is a governance choice rather than a fragility.
+
+    - id: account.entitlement_has_lapsed
+      statement: The contract has ended and inbound is still arriving.
+      status: needs_signal
+      requires_signals:
+        - {kind: fact_path, name: entitlement.expires_at, owner_layer: L2}
+        - {kind: fact_path, name: account.renewal_at, owner_layer: L2}
+      yields:
+        confidence_bp: 9000
+        attribute: contract_state
+        value: lapsed
+      false_positive: >
+        An account mid-renewal whose paperwork lags the intent. Treating that as lapsed insults a
+        customer who has already decided to stay.
+
+    - id: account.renewal_is_within_reach
+      statement: >
+        The renewal date is close enough that support quality is now being weighed as evidence.
+        Nothing on the ticket says this and it changes the correct answer more than severity does.
+      status: needs_signal
+      requires_signals:
+        - {kind: fact_path, name: account.renewal_at, owner_layer: L2,
+           note: "Available from any billing or CRM connector; absent on a correspondence-only
+                  tenant, where a renewal is mentioned in prose at most."}
+      yields:
+        confidence_bp: 8500
+        attribute: renewal_at
+      false_positive: >
+        Multi-year contracts with auto-renewal and no decision point. The date exists and nobody
+        is deciding anything.
+
+    - id: account.load_is_concentrated_on_one_product_area
+      statement: >
+        Several open tickets share a product area. That is one unaddressed cause being reported
+        repeatedly, not a busy account, and it wants a different response.
+      status: needs_signal
+      requires_signals:
+        - {kind: fact_path, name: ticket.queue, owner_layer: L2}
+        - {kind: fact_path, name: ticket.status, owner_layer: L2}
+      yields:
+        confidence_bp: 7500
+        attribute: open_ticket_count
+      false_positive: >
+        A large account with genuinely independent teams using the same area for unrelated reasons.
+
+  heuristic:
+    - id: account.tone_has_turned_for_this_account
+      statement: >
+        Sentiment is trending down against this account's own history. The absolute level is not
+        the signal — some customers are blunt by culture and always have been.
+      status: executable
+      when:
+        - {path: relationship.nature, op: "=", value: customer}
+        - {has_obs: negative_reply}
+      yields:
+        confidence_bp: 6000
+        attribute: sentiment_trend
+      evidence_fields: [derived.sentiment]
+      false_positive: >
+        One frustrated message inside an otherwise healthy relationship, usually about something
+        that is not our fault. A single negative reply is an event; a trend is a state.
+      note: >
+        `derived.sentiment` is engine-computed from the observation balance, so it cannot be
+        talked up by a politely worded complaint — which is the failure mode of model-scored tone.
+
+    - id: account.quiet_after_a_broken_promise
+      statement: >
+        We committed to something, the date passed, and the account has not written since. This is
+        the shape of a customer who has stopped expecting an answer, and it reads identically to a
+        satisfied customer in every queue metric.
+      status: executable
+      when:
+        - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+        - {path: thread.ball_in_court, op: "=", value: us}
+      yields:
+        confidence_bp: 6500
+        attribute: engagement_trend
+        corroborates: [account.silence_is_ours_not_theirs]
+      evidence_fields: [commitment.due_at, commitment.action, thread.ball_in_court]
+      false_positive: >
+        The commitment was delivered and nobody recorded it. Common, and the reason this yields a
+        moderate confidence rather than a high one.
+
+    - id: account.the_person_we_knew_has_gone
+      statement: >
+        Inbound now comes from someone new while the previous primary contact has stopped
+        appearing. Everything the old contact told us about internal politics, tolerances and
+        priorities is now unverified.
+      status: needs_signal
+      requires_signals:
+        - {kind: obs_kind, name: champion_change, owner_layer: L2,
+           note: "Declared in CANONICAL_OBS_KINDS and emitted zero times on the live org. Until
+                  the extractor recognises a handover sentence, this cannot fire."}
+      yields:
+        confidence_bp: 7000
+        attribute: primary_contact_changed_recently
+        value: true
+      false_positive: >
+        Holiday cover. A colleague answering for two weeks is not a handover, and treating it as
+        one produces a re-introduction email to somebody who never left.
+
+    - id: account.dormant_but_healthy
+      statement: >
+        Long silence with no open loop on either side, no negative tone and no broken promise. The
+        most likely reading is a self-sufficient customer, and the correct action is usually
+        nothing.
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: nobody}
+        - {fn: days_since, path: thread.last_inbound, op: ">=",
+           value: {baseline: reply_cadence, mult: 3.0, floor: 21}}
+        - {no_obs: negative_reply}
+      yields:
+        confidence_bp: 5500
+        attribute: engagement_trend
+      evidence_fields: [thread.ball_in_court, thread.last_inbound]
+      false_positive: >
+        A customer who has quietly migrated to a competitor and has no reason to tell us until
+        renewal. This is the single most expensive false positive in the file, which is why the
+        confidence is deliberately modest and why `usage` is the signal that would settle it.
+      note: >
+        Authored as a POSITIVE pattern on purpose. Without it, every silence resolves to concern
+        and the system generates a check-in for every content customer — the fastest way to make
+        an account team ignore it.
+
+    - id: account.escalation_has_become_the_channel
+      statement: >
+        This account escalates routinely and gets results when it does. We have taught them that
+        the normal path does not work.
+      status: needs_signal
+      requires_signals:
+        - {kind: obs_kind, name: escalation_requested, owner_layer: L2}
+        - {kind: derived, name: derived.escalation_pressure, owner_layer: L2}
+      yields:
+        confidence_bp: 6500
+        attribute: escalation_history
+      false_positive: >
+        An account genuinely suffering repeated severe issues, where escalating each time is
+        correct behaviour and the fault is entirely ours.
+
+    - id: account.volume_spike_is_change_not_growth
+      statement: >
+        A sharp rise in contact rate against this account's own baseline, concentrated in time.
+        Something changed on their side — a migration, a new team, a version upgrade — and the
+        cause is usually knowable by asking.
+      status: needs_signal
+      requires_signals:
+        - {kind: baseline, name: contact_rate_per_account, owner_layer: L2}
+        - {kind: fact_path, name: ticket.created_at, owner_layer: L2}
+      yields:
+        confidence_bp: 6000
+        attribute: contact_rate
+      false_positive: >
+        An incident on our side. Identical shape, opposite owner, and reading it as customer change
+        sends an account manager to ask why they are so busy during our own outage.
+
+    - id: account.the_buyer_and_the_users_disagree
+      statement: >
+        End users are content and the economic buyer is not, or the reverse. An account mean hides
+        this completely and it is the disagreement that predicts the renewal.
+      status: needs_signal
+      requires_signals:
+        - {kind: fact_path, name: csat.score, owner_layer: L2}
+        - {kind: obs_kind, name: cancellation_threat, owner_layer: L2}
+      yields:
+        confidence_bp: 6500
+        attribute: sentiment_trend
+      false_positive: >
+        Small sample. Two survey responses from a hundred-seat account is noise wearing a number.
+
+inputs:
+  - source: email
+    signal: correspondence with any address on the account's domains
+    path: thread.last_inbound
+    fills: [last_inbound_at, ball_in_court, contact_rate]
+    reliability_bp: 8500
+    description: >
+      The spine of this object on a correspondence-only tenant. High reliability for WHAT was said
+      and moderate for who it commits, because an individual's email does not always bind the
+      organisation.
+  - source: email
+    signal: whose turn it is, as extracted per thread
+    path: thread.ball_in_court
+    fills: [ball_in_court]
+    reliability_bp: 7500
+  - source: derived
+    signal: engine-computed trajectory over the account's neighbourhood
+    path: derived.engagement
+    fills: [engagement_trend, sentiment_trend]
+    reliability_bp: 7000
+    description: >
+      Computed rather than extracted, so it is immune to persuasive prose. Its weakness is the
+      opposite one: it needs enough history to mean anything.
+  - source: crm
+    signal: account record
+    fills: [annual_value, renewal_at, contract_state, account_segment, parent_account]
+    reliability_bp: 6000
+    description: >
+      Higher structural reliability and lower freshness than email. CRM account fields are
+      routinely months stale, and a stale renewal date is worse than none because it is trusted.
+  - source: contract
+    signal: signed agreement
+    fills: [support_plan_ref, contract_state, renewal_at]
+    reliability_bp: 9500
+    description: The only authoritative source for entitlement. Slow to change and correct when it does.
+  - source: manual_entry
+    signal: account team's own annotation
+    fills: [account_segment, named_contacts, parent_account]
+    reliability_bp: 6500
+
+outputs:
+  - name: account_stake
+    type: score
+    description: >
+      How much this ticket matters beyond its reporter, combining value, renewal proximity and
+      relationship state. The number every priority decision needs and no ticket carries.
+    derived_from: [annual_value, renewal_at, churn_risk_ref, account_segment]
+    consumed_by: [L4.reasoning_unit, L4.decision_maker, L5.execution_planning]
+  - name: entitlement_ceiling
+    type: constraint
+    description: The strongest promise that may be made to this account without exceeding what it bought.
+    derived_from: [support_plan_ref, contract_state]
+    consumed_by: [L4.decision_maker, "L5.2.channel_planner"]
+  - name: relationship_fragility
+    type: score
+    description: How exposed the relationship is to losing one person.
+    derived_from: [contact_concentration, named_contacts, primary_contact_changed_recently]
+    consumed_by: [L4.reasoning_unit, L6.learning_unit]
+  - name: silence_reading
+    type: enum
+    description: >
+      Which of the two readings of quiet applies — owed, waiting, or genuinely settled. The output
+      that stops a check-in being sent to every content customer.
+    derived_from: [ball_in_court, last_inbound_at, last_outbound_at, engagement_trend]
+    consumed_by: [L4.decision_maker, L5.communication_planning]
+  - name: account_confidence
+    type: score
+    description: How much of this account is evidenced rather than assumed.
+    derived_from: [health_confidence]
+    consumed_by: [L4.decision_maker, L6.learning_unit]
+
+preconditions:
+  - id: account.identity_resolves
+    statement: >
+      The organisation must be identified before anything is asserted about it. An account
+      assembled from an unresolved domain is a confident statement about a company that may not
+      exist.
+    requires: [account_name, primary_domains]
+    if_unmet: block
+
+  - id: account.is_actually_a_customer
+    statement: >
+      The counterparty must read as a customer or partner. A support lens applied to an investor,
+      a vendor or a job applicant produces advice that is wrong in a way the recipient can see.
+    requires: [relationship_nature]
+    when:
+      - {path: relationship.nature, op: "IN", value: [customer, partner, unknown]}
+    if_unmet: block
+
+  - id: account.entitlement_known_before_promising
+    statement: >
+      Entitlement must be resolved before any response target is stated to the customer. Without
+      it, a target is a guess, and a guess said out loud is a commitment.
+    requires: [support_plan_ref]
+    if_unmet: degrade
+
+  - id: account.baseline_exists_before_deviation_is_claimed
+    statement: >
+      No claim that behaviour has CHANGED without a baseline for this account. Cross-account
+      averages do not substitute — they make every technical customer look like an incident.
+    requires: [contact_rate_baseline]
+    if_unmet: degrade
+
+constraints:
+  - id: account.value_never_changes_tone
+    statement: >
+      Commercial value may change priority and capacity. It may never change politeness, honesty,
+      or what the customer is told about cause and timeline.
+    hard: true
+    why: >
+      Differential service is a purchased entitlement and is defensible. Differential candour is
+      not, and customers compare notes.
+
+  - id: account.subsidiary_does_not_spend_the_parent_entitlement
+    statement: >
+      A subsidiary's request may not consume the parent's contractual entitlement unless the
+      agreement explicitly covers affiliates.
+    hard: true
+    why: >
+      It is the parent's purchased capacity. Spending it silently is a contractual breach that
+      surfaces at renewal, in the worst possible conversation.
+
+  - id: account.lapsed_accounts_get_an_answer_about_status_not_service
+    statement: >
+      A churned or lapsed account may be told where it stands. It may not be given continued
+      unbilled service as though nothing changed.
+    when:
+      - {path: relationship.nature, op: "!=", value: customer}
+    hard: false
+    why: >
+      Continuing quietly is kind once and an expectation twice. The honest version is a sentence
+      about status, which most customers accept without complaint.
+
+  - id: account.no_confident_health_without_evidence
+    statement: >
+      An account with too little history may be described but not assessed. Absence of evidence is
+      reported as absence, never as a mid-range score.
+    hard: true
+    why: >
+      A confident 50 and an honest unknown lead to different decisions, and only one of them can
+      be corrected later.
+
+business_rules:
+  - id: account.ball_in_court_beats_elapsed_time
+    statement: >
+      When the ball is on us, elapsed time is a service breach; when it is on them, the same
+      elapsed time is a normal pause. Never report the duration without the owner.
+    when:
+      - {path: thread.ball_in_court, op: "=", value: us}
+    then: Treat the gap as ours and suppress any "they have gone quiet" reading.
+    severity: blocking
+    why: >
+      Reversing these two produces the single most damaging card support can send — a nudge to a
+      customer who is waiting on an answer we owe them.
+
+  - id: account.renewal_proximity_raises_the_floor
+    statement: >
+      Inside the renewal window, no request from this account is routine, whatever its severity.
+    when:
+      - {exists: relationship.nature}
+    then: Raise the account stake and require a human read before anything is de-prioritised.
+    severity: advisory
+    why: >
+      Severity measures the technical impact. Renewal proximity measures what the answer costs,
+      and the second is what the business is actually deciding.
+
+  - id: account.strain_survives_resolution
+    statement: >
+      Closing the ticket does not clear the account state. A strained account stays strained until
+      something positive happens after the resolution.
+    then: Keep the strained reading until a subsequent positive exchange is on record.
+    severity: warning
+    why: >
+      Resetting on close is how a health score reads green through the month an account decides to
+      leave. The customer's ledger is longer than the queue's.
+
+  - id: account.a_free_mail_domain_never_identifies_an_organisation
+    statement: A personal-mail domain may identify a person and may never be added to primary_domains.
+    then: Attach the contact to the account by another route, or leave the account unresolved.
+    severity: blocking
+    why: >
+      One admitted free-mail domain merges every unrelated personal-address customer into a single
+      phantom account, and every aggregate computed afterwards is wrong without looking wrong.
+
+decision_factors:
+  - name: entitlement_and_contract_state
+    weight_bp: 2500
+    direction: context
+    description: >
+      What was actually bought. Context rather than increases/decreases because it BOUNDS the
+      answer instead of pushing it — a low entitlement is not a reason to care less, it is a
+      reason to promise less.
+    reads: [support_plan_ref, contract_state]
+  - name: renewal_proximity
+    weight_bp: 2000
+    direction: increases
+    description: The most decision-changing fact that never appears on a ticket.
+    reads: [renewal_at]
+  - name: relationship_state
+    weight_bp: 2000
+    direction: increases
+    description: Strain compounds. The second disappointment costs more than the first.
+    reads: [sentiment_trend, engagement_trend, churn_risk_ref]
+  - name: who_owes_whom
+    weight_bp: 1500
+    direction: increases
+    description: >
+      Weighted heavily for its size because it is the one factor that can invert the correct
+      action rather than merely re-rank it.
+    reads: [ball_in_court, last_inbound_at, last_outbound_at]
+  - name: commercial_value
+    weight_bp: 1000
+    direction: increases
+    description: >
+      Deliberately the smallest weight of the five. It justifies capacity, not candour, and
+      weighting it higher is how a support organisation becomes one customers describe to each
+      other.
+    reads: [annual_value, account_segment]
+  - name: evidence_sufficiency
+    weight_bp: 1000
+    direction: context
+    description: How much of the above is known rather than assumed.
+    reads: [health_confidence]
+
+evidence:
+  - source: contract
+    strength_bp: 9500
+    independent_of: [email, derived, crm]
+    decays: false
+    description: >
+      Authoritative for entitlement and for nothing else. It says what was agreed, never what is
+      happening.
+  - source: email
+    strength_bp: 8000
+    independent_of: [crm, contract]
+    decays: true
+    description: >
+      What is actually happening, in the customer's own words. Decays quickly: a two-month-old
+      thread describes an account that may no longer exist in that state.
+  - source: crm
+    strength_bp: 6000
+    independent_of: [email]
+    decays: true
+    description: >
+      Structurally reliable, routinely stale. A CRM renewal date nobody has touched since the
+      last renewal is trusted precisely because it looks like a fact.
+  - source: derived
+    strength_bp: 6500
+    independent_of: [crm, contract]
+    decays: true
+    description: >
+      Engine-computed trend. NOT independent of email — it is a function of it — so it may
+      corroborate a CRM or contract reading and must never be counted as a second witness to an
+      email one.
+  - source: meeting_transcript
+    strength_bp: 8500
+    independent_of: [crm]
+    decays: true
+    description: >
+      Where the unwritten version of the relationship is said out loud, usually by the person who
+      would never put it in an email.
+  - source: manual_entry
+    strength_bp: 5500
+    independent_of: [email, crm]
+    decays: true
+    description: An informed human's read. Strong when fresh, undated and unattributed too often.
+
+metrics:
+  - name: account_resolution_rate
+    unit: basis_points
+    description: Share of this account's requests closed without escalation or reopen.
+    direction: higher_is_better
+    owner_layer: L2
+    calibrates: [account.escalation_has_become_the_channel]
+  - name: silence_misread_rate
+    unit: basis_points
+    description: >
+      How often a dormant reading was wrong in hindsight. The feedback loop for the one pattern in
+      this file whose false positive is expensive.
+    direction: lower_is_better
+    owner_layer: L6
+    calibrates: [account.dormant_but_healthy]
+  - name: contact_concentration_bp
+    unit: basis_points
+    description: Share of inbound from the single most active contact.
+    direction: lower_is_better
+    owner_layer: L2
+    calibrates: [account.the_relationship_is_one_person_deep]
+  - name: promise_kept_rate
+    unit: basis_points
+    description: Commitments to this account delivered by their stated date.
+    direction: higher_is_better
+    owner_layer: L2
+    calibrates: [account.quiet_after_a_broken_promise]
+  - name: account_health_confidence
+    unit: basis_points
+    description: Share of the health picture backed by evidence rather than default.
+    direction: higher_is_better
+    owner_layer: L3
+
+events:
+  - id: account.renewal_window_opened
+    name: Renewal window opened
+    severity: notable
+    payload: [account_name, renewal_at, churn_risk_ref]
+    description: Every open item on this account is now retention-relevant.
+    invalidates: [account_segment]
+  - id: account.primary_contact_changed
+    name: Primary contact changed
+    severity: notable
+    payload: [account_name, named_contacts]
+    invalidates: [contact_concentration, sentiment_trend, health_confidence]
+    description: >
+      Invalidates more than it announces. Preferences, tolerances and unwritten agreements were
+      held by a person; the account did not inherit them.
+  - id: account.contract_lapsed
+    name: Contract lapsed
+    severity: critical
+    payload: [account_name, contract_state]
+    invalidates: [support_plan_ref]
+    description: Entitlement stops being a fact and becomes a question.
+  - id: account.went_quiet_owing_nothing
+    name: Went quiet with no open loop
+    severity: info
+    emitted_when:
+      - {path: thread.ball_in_court, op: "=", value: nobody}
+    payload: [account_name, last_inbound_at]
+    description: >
+      Deliberately `info`. It is the ambiguous state, and raising it louder is how a support team
+      learns to ignore the channel.
+  - id: account.commitment_breached
+    name: Commitment to this account passed its date
+    severity: critical
+    emitted_when:
+      - {fn: days_since, path: commitment.due_at, op: ">", value: 0}
+    payload: [account_name]
+    invalidates: [sentiment_trend]
+    description: >
+      Critical because it is the one failure the customer definitely noticed. Invalidates the
+      sentiment read: whatever the tone was before, it is now measured from a different baseline.
+
+actions:
+  - id: account.confirm_entitlement
+    name: Confirm what this account is entitled to
+    actor: system
+    effect: Resolves the support plan so a promise can be bounded rather than guessed.
+    cost: trivial
+    reversible: true
+  - id: account.acknowledge_and_own
+    name: Acknowledge and take the loop back
+    actor: human
+    preconditions:
+      - {path: thread.ball_in_court, op: "=", value: us}
+    effect: Converts an unexplained silence into a stated position, which is what the customer wants first.
+    cost: low
+    reversible: false
+  - id: account.map_a_second_contact
+    name: Establish a second named contact
+    actor: human
+    effect: Removes the single point of failure in the relationship.
+    cost: moderate
+    reversible: true
+  - id: account.raise_to_account_owner
+    name: Bring the account owner into the thread
+    actor: human
+    preconditions:
+      - {has_obs: negative_reply}
+    effect: Puts the commercial relationship in the room before a support problem becomes a renewal one.
+    cost: moderate
+    reversible: false
+  - id: account.leave_it_alone
+    name: Take no action
+    actor: human
+    preconditions:
+      - {path: thread.ball_in_court, op: "=", value: nobody}
+      - {no_obs: negative_reply}
+    effect: Preserves a working relationship by not manufacturing a conversation.
+    cost: trivial
+    reversible: true
+    description: >
+      A first-class action, not the absence of one. Most quiet accounts are fine, and a system that
+      cannot recommend silence will recommend a check-in for every one of them.
+
+dependencies:
+  - target: customer_support.obj.core.named_contact
+    kind: requires
+    strength: hard
+    description: An account with no people is a billing row. Every readable signal here arrives through a person.
+  - target: customer_support.obj.core.support_plan
+    kind: requires
+    strength: soft
+    description: >
+      Soft, deliberately. Without it the account is still readable; it simply cannot bound a
+      promise, which degrades rather than blocks.
+  - target: customer_support.obj.core.ticket
+    kind: enriches
+    strength: soft
+  - target: customer_support.obj.core.churn_risk
+    kind: enriches
+    strength: soft
+  - target: customer_support.obj.core.entitlement
+    kind: requires
+    strength: soft
+  - target: customer_support.obj.core.escalation
+    kind: enriches
+    strength: soft
+  - target: customer_support.obj.core.incident
+    kind: invalidated_by
+    strength: soft
+    description: >
+      A live incident invalidates the account's behavioural read. Volume, tone and contact rate all
+      spike for a reason that has nothing to do with the account.
+
+exceptions:
+  - id: account.value_does_not_apply_during_an_incident
+    statement: >
+      During a major incident, account value stops ordering the queue. Communication goes out by
+      blast radius and by who is most exposed, not by who pays most.
+    overrides: [account.renewal_proximity_raises_the_floor, commercial_value]
+    when:
+      - {neighbor_has_obs: negative_reply}
+    why: >
+      Serving the largest account first during an outage means the other ninety learn about it from
+      a status page they had to find. The reputational cost lands on every renewal, not one.
+    frequency: occasional
+
+  - id: account.a_lapsed_account_still_gets_a_safety_answer
+    statement: >
+      Entitlement does not gate a safety-, security- or data-loss-relevant answer. A lapsed
+      customer with an exposed credential is told, immediately, regardless of contract state.
+    overrides: [account.lapsed_accounts_get_an_answer_about_status_not_service,
+                account.entitlement_known_before_promising]
+    why: >
+      The alternative is withholding information about harm to somebody's business over an unpaid
+      invoice. There is no version of that which survives being described out loud.
+    frequency: rare
+
+  - id: account.silence_from_a_self_serve_account_means_nothing
+    statement: >
+      For a self-serve or low-touch account, quiet is the designed state, not a signal. Reading it
+      as disengagement generates outreach to customers who bought the absence of outreach.
+    overrides: [account.dormant_but_healthy, account.silence_is_ours_not_theirs]
+    why: >
+      The baseline for a self-serve account is zero contact. Every deviation-from-baseline
+      instrument in this file divides by something that is already zero.
+    frequency: common
+
+  - id: account.the_angriest_account_is_often_the_most_committed
+    statement: >
+      Sustained, detailed complaint from a long-tenured account is usually investment, not exit.
+      The customer leaving quietly is the dangerous one; the customer writing three paragraphs
+      about your API still intends to use it.
+    overrides: [account.tone_has_turned_for_this_account]
+    when:
+      - {has_obs: negative_reply}
+    why: >
+      Effort is the tell. Nobody writes a careful bug report about a product they have decided to
+      replace, and treating detailed criticism as churn risk trains a team to fear its best users.
+    frequency: common
+
+  - id: account.a_brand_new_account_has_no_baseline_and_that_is_fine
+    statement: >
+      In the first weeks, high contact rate and confused questions are onboarding, not distress.
+      Every deviation instrument here should be suspended rather than run against a baseline of one.
+    overrides: [account.volume_spike_is_change_not_growth, account.baseline_exists_before_deviation_is_claimed]
+    why: >
+      A baseline built from an onboarding period is permanently wrong in the other direction: the
+      account looks like it went quiet the moment it became competent.
+    frequency: common
+
+  - id: account.subsidiary_autonomy_cuts_both_ways
+    statement: >
+      A subsidiary may be commercially separate and operationally identical. Escalating to the
+      parent's executive over a subsidiary's ticket can be exactly the wrong move — sometimes the
+      relationship being protected is the local one.
+    overrides: [account.subsidiary_does_not_spend_the_parent_entitlement]
+    why: >
+      Corporate structure describes who pays, not who trusts whom. Going over a local contact's
+      head to their group office costs a relationship that took years to build.
+    frequency: occasional
+
+  - id: account.a_partner_account_is_not_the_end_customer
+    statement: >
+      When a reseller or MSP raises a ticket, the account is the partner and the affected party is
+      somebody we have no contract with. Both readings are needed and only one is entitled.
+    overrides: [account.is_actually_a_customer]
+    why: >
+      Answering the partner as though they are the end customer produces advice that cannot be
+      acted on, and answering the end customer directly breaches the partner agreement.
+    frequency: occasional
+
+best_practices:
+  - id: account.resolve_the_account_before_reading_the_ticket
+    statement: Establish which account this is, and its state, before forming a view on the request.
+    why: >
+      Priority, tone, entitlement and escalation path are all account properties. Reading the
+      ticket first anchors on severity, which is the least decision-relevant of the five.
+    applies_when: Every inbound.
+    evidence: The standard failure is a correctly triaged P3 from an account in its notice period.
+
+  - id: account.baseline_per_account_never_across_them
+    statement: Compare an account to its own history, never to the cohort.
+    why: >
+      Contact rate varies by more than an order of magnitude between healthy accounts. A
+      cross-account threshold flags the technical customers and misses the quiet ones.
+    applies_when: Any claim that behaviour has changed.
+
+  - id: account.state_the_position_before_you_have_the_answer
+    statement: >
+      When the ball is on us and there is no answer yet, send the position rather than waiting for
+      the resolution.
+    why: >
+      Customers tolerate delay far better than they tolerate silence, and the account-level cost of
+      silence compounds while the cost of a holding update is one sentence.
+    applies_when: ball_in_court is us and the resolution is not imminent.
+
+  - id: account.record_the_promise_on_the_account
+    statement: Commitments belong to the organisation, not to the thread or the agent who made them.
+    why: >
+      A promise recorded on a thread dies when the thread does, and the customer's memory of it does
+      not. Every "you said you would" starts here.
+    applies_when: Any commitment with a date.
+
+  - id: account.write_down_which_reading_of_silence_you_chose
+    statement: >
+      When an account goes quiet, record whether it was read as owed, waiting or settled — and on
+      what basis.
+    why: >
+      It is the only way the misread rate can ever be measured, and it is the pattern in this file
+      most likely to be wrong.
+    applies_when: Any dormant or long-gap account.
+
+anti_patterns:
+  - id: account.health_score_as_a_single_number
+    statement: Collapsing account health into one score and driving decisions from it.
+    why_it_happens: >
+      It makes accounts sortable, and sortable is what a review meeting wants. Every dashboard in
+      the category ships one.
+    cost: >
+      The number averages away the disagreement that predicts churn — content users and an unhappy
+      buyer produce a comfortable middle score, which is the exact profile of an account about to
+      leave.
+    instead: >
+      Carry the components separately and let the disagreement between them be the signal.
+    detectable_by: [account.the_buyer_and_the_users_disagree]
+
+  - id: account.quiet_means_happy
+    statement: Treating an account that has stopped contacting as a satisfied one.
+    why_it_happens: >
+      Every queue metric improves when an account goes quiet, and the absence of complaints reads
+      as the presence of satisfaction.
+    cost: The churn arrives with no warning and the post-mortem finds the last ticket was six months old.
+    instead: >
+      Resolve the ambiguity with something outside the queue — usage, the account team, or one
+      honest question — and record which reading was chosen.
+    detectable_by: [account.dormant_but_healthy, account.silence_is_ours_not_theirs]
+
+  - id: account.chasing_a_customer_we_owe
+    statement: Sending a check-in or nudge to an account that is waiting on an answer from us.
+    why_it_happens: >
+      The gap-since-last-contact instrument fires identically in both directions, and "reach out
+      when it has been a while" is the rule most outreach tooling ships with.
+    cost: >
+      The single most damaging message support can send. It tells the customer that not only did we
+      not answer, we did not notice we had not.
+    instead: Gate every outreach on ball_in_court and answer first.
+    detectable_by: [account.we_owe_them_a_reply]
+
+  - id: account.entitlement_checked_against_the_wrong_entity
+    statement: Verifying a subsidiary's request against the parent's plan because the domain matched.
+    why_it_happens: >
+      Domain-based account resolution is cheap, usually right, and silently wrong for exactly the
+      corporate structures where entitlement matters most.
+    cost: A parent's purchased capacity spent on an affiliate, discovered at renewal.
+    instead: Resolve the contracting entity, then check entitlement against it.
+    detectable_by: [account.entitlement_has_lapsed]
+
+  - id: account.big_account_gets_the_truth_last
+    statement: Softening or delaying bad news for the largest accounts.
+    why_it_happens: >
+      The stakes feel higher, so the instinct is to wait until there is something better to say.
+    cost: >
+      They find out anyway, later, and now the problem is trust rather than the outage. Large
+      customers compare notes and this is what they compare.
+    instead: Tell the largest accounts first and most precisely. Value buys speed, not comfort.
+
+examples:
+  - label: Mid-market SaaS account, steady, weekly cadence, two named contacts
+    kind: typical
+    note: >
+      The baseline case. Everything in this file is calibrated against an account like this and
+      most of its instruments are only meaningful here.
+  - label: Account silent for six weeks, no open loop, no negative tone, renewal in five months
+    kind: typical
+    note: >
+      Correctly read as dormant-but-healthy. Correct action is none. A system that cannot produce
+      "none" here will produce a check-in, and the account team will stop reading its cards.
+  - label: Account silent for six weeks after we missed a promised fix date
+    kind: edge
+    note: >
+      Identical silence, opposite meaning. `commitment.due_at` in the past with the ball on us is
+      what separates them, and it is the whole reason the commitment edge is weighted at 7000.
+  - label: A reseller raises a P1 on behalf of an end customer we have no contract with
+    kind: misclassification
+    note: >
+      Classically filed against the end customer's name, which resolves to no account, no
+      entitlement and no owner. The account is the PARTNER; the end customer is context.
+  - label: Personal-address contact from a customer's employee during a migration
+    kind: misclassification
+    note: >
+      The free-mail domain must not join primary_domains. Doing so once merges every unrelated
+      personal-address customer into one phantom account, and every aggregate afterwards is quietly
+      wrong.
+  - label: Long-tenured account filing detailed, irritated bug reports weekly
+    kind: counterexample
+    note: >
+      Reads as strained on tone and is usually the opposite. Effort is investment. See
+      `account.the_angriest_account_is_often_the_most_committed`.
+
+references:
+  - title: ITIL 4 — Service Relationship Management
+    kind: framework
+    note: >
+      The source of the account-as-relationship framing rather than account-as-record. Its weakness
+      here is that it assumes a service catalogue most SaaS support organisations do not maintain.
+  - title: The Effortless Experience
+    kind: book
+    author: Dixon, Toman, DeLisi
+    note: >
+      The evidence that effort predicts loyalty better than satisfaction does. It is why this object
+      weights repeated contact and escalation history above CSAT.
+  - title: Customer Success — How Innovative Companies Are Reducing Churn
+    kind: book
+    author: Mehta, Steinman, Murphy
+    note: >
+      Source of the health-score practice this file's anti-patterns argue against. Included because
+      a reviewer should read the case for the thing being rejected.
+  - title: Gainsight and Zendesk account-health field models
+    kind: practitioner
+    note: >
+      The de facto industry schema. Their common flaw is exactly the single-number collapse recorded
+      in the anti-patterns.
+  - title: customer_support.obj.core.requester
+    kind: internal
+    artifact_ref: customer_support.obj.core.requester
+    note: The person-level twin. Read both; the discriminator between them is the most reused line in this domain.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    All twenty-three sections present. Fourteen inference patterns: FOUR executable, ten
+    needs_signal — and the ratio is the honest finding rather than a shortfall to be improved by
+    relabelling. What is executable comes from correspondence: whose turn it is, how long it has
+    been against this account's own cadence, whether a promise passed its date, whether the tone
+    turned. What needs a signal is every fact a helpdesk or billing system would carry — ARR,
+    renewal date, plan, ticket volume, CSAT, entitlement expiry.
+
+    Authored because sixteen capabilities referenced it and it did not exist, which made four of
+    the design partner's live situations abort with `required_missing` and route nothing at all —
+    including the capabilities that never needed it. A missing required object kills a route rather
+    than degrading it.
+
+    The section to read first is `exceptions`. `account.silence_from_a_self_serve_account_means_nothing`
+    and `account.the_angriest_account_is_often_the_most_committed` are the two that most often
+    make the rest of this file wrong, and neither is in any vendor's account-health model.
