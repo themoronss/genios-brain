@@ -12,16 +12,75 @@ purpose:
   statement: Leave runs on self-service requests, rule-based balances, calendar visibility and clean payroll
     handoff — because leave disputes are almost always record disputes, and morale leaks where balances
     are mysterious.
+
+when_to_use:
+  do_not_use_when:
+  - The absence is a medical or disciplinary matter with its own process. Routing it through leave administration loses the handling it requires.
 steps:
 - order: 1
-  name: Automate balance arithmetic
-  description: Accruals, carry-overs, caps — computed by rule, visible to the employee always.
-  actor: human
+  name: Derive balances from rules, and show them
+  description: >
+    A balance the employee cannot see is a balance they will dispute. Visibility removes most leave
+    disagreements before they are raised.
+  actor: system
+  objects_read: [admin.obj.core.employee_record]
+  done_when: The person can check their own entitlement without asking.
 - order: 2
-  name: Approve against team calendar visibility
-  description: The approver sees overlaps at request time — coverage clashes caught before, not during.
+  name: Record the statutory category, not just the absence
+  description: >
+    Sickness, parental and bereavement carry different legal treatment. Collapsing them into leave
+    produces the wrong answer at the moment it matters.
   actor: human
+  done_when: Each absence carries its legal category.
 - order: 3
-  name: Feed payroll from the same record
-  description: Unpaid leave and encashments flow from the leave system, not a month-end spreadsheet reconciliation.
+  name: Show coverage with the approval
+  description: >
+    Each approval is individually reasonable. Seen together they are how a team discovers in August
+    that nobody is in.
+  actor: system
+  done_when: The approver saw who else is off.
+- order: 4
+  name: Hand off to payroll before the cut-off
+  description: >
+    Most absence categories affect pay, and the cut-off is the one administrative deadline with no
+    tolerance at all.
+  actor: agent
+  objects_read: [admin.obj.core.deadline]
+  done_when: Absence data is in the pay run without re-keying.
+- order: 5
+  name: Watch the non-takers
+  description: >
+    A growing accrual on one person is a liability and a fatigue signal, and they will not raise it
+    themselves because not taking leave is how they are being useful.
   actor: human
+  done_when: Chronic non-takers have been spoken to.
+objects_used: [admin.obj.core.employee_record, admin.obj.core.policy, admin.obj.core.deadline, admin.obj.core.approval]
+limits:
+- 'Statutory treatment varies by jurisdiction, so step 2 is only as correct as the local rules configured behind it.'
+- 'Step 3 needs a team view that most leave tools provide and most approvers do not open.'
+failure_modes:
+- 'Step 2 simplified to make the tooling easier, which is invisible until an employment matter examines it.'
+- 'Step 5 skipped because the non-taker is delivering, which is the point at which it stops being an administrative issue.'
+variants:
+- applies_to: multi_entity
+  change: Steps 1 and 2 are per jurisdiction and cannot be harmonised without being wrong somewhere.
+  why: Entitlement and category are statutory, not policy.
+- applies_to: distributed
+  change: Step 3 must account for public holidays that differ by location, which is where coverage gaps actually appear.
+  why: A fully staffed team on paper can be empty in one region.
+references:
+- title: Statutory leave administration
+  kind: standard
+  note: Where category-specific treatment is a legal requirement rather than a reporting nicety.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1 removes most of the disputes this capability otherwise generates, and step 5 is the
+    one nobody schedules because the person it concerns is the one causing no problems.

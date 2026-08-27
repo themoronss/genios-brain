@@ -3,7 +3,7 @@ identity:
   name: Access & Identity Administration
   domain: admin
   subdomain: people_administration
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Granting, reviewing and revoking access across systems and physical space: joiner provisioning,
@@ -12,13 +12,62 @@ description: 'Granting, reviewing and revoking access across systems and physica
 
   '
 question: Who has access to what, why, and should they still?
+
+outcomes:
+- 'Access granted from a role template rather than by copying somebody. Copying a colleague inherits their accumulated exceptions along with their job.'
+- 'Access changed when the ROLE changes, not only when someone joins or leaves. The mover is the case every provisioning process handles worst.'
+- 'Periodic recertification that actually removes things. A review producing no revocations reviewed nothing.'
+- 'Leaver revocation same-day and complete, including the systems nobody remembers because they were provisioned informally.'
+- 'The negative outcome: access REFUSED or time-boxed. A function that only ever grants is a provisioning desk.'
+failure_modes:
+- 'PROVISIONING BY COPYING A COLLEAGUE. Fast, obvious, and it propagates every exception that colleague accumulated over four years.'
+- 'HANDLING JOINERS AND LEAVERS AND IGNORING MOVERS. The long-tenured employee''s permission set is the union of every role they have held.'
+- 'RECERTIFICATION AS ATTESTATION. A manager confirming their team list has not reviewed access; they have confirmed headcount.'
+- 'REVOKING THE OBVIOUS SYSTEMS ONLY, leaving the SaaS tools somebody expensed and the shared account nobody owns.'
+- 'TEMPORARY GRANTS WITH NO EXPIRY, which is how every emergency becomes permanent.'
+kpis:
+- name: role_template_coverage
+  unit: percent
+  description: Grants made from a template rather than by copy or by request text.
+  direction: higher_is_better
+- name: mover_reprovision_rate
+  unit: percent
+  description: Role changes that removed old access as well as adding new. The gap nobody measures.
+  direction: higher_is_better
+- name: leaver_revocation_lag
+  unit: hours
+  direction: lower_is_better
+  description: Departure to last access removed.
+- name: recertification_removal_rate
+  unit: percent
+  description: A target band. Zero removals means the review is an attestation.
+  direction: target_band
+handoffs:
+  upstream: [admin.people_administration.onboarding_administration, admin.people_administration.employee_records_administration]
+  downstream: [admin.people_administration.offboarding_administration, admin.compliance_and_governance.audit_support,
+               admin.compliance_and_governance.data_protection_administration]
+  parallel: [admin.facilities_and_assets.asset_issuance_and_recovery, admin.contract_and_vendor.vendor_onboarding]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, distributed, outsourced]
+  offerings: [assurance, transactional]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. access.granted_at, .last_used_at,
+    .reviewed_at and access_orphaned / access_review_due are all planned_substrate with no
+    writer.
+
+    mover_reprovision_rate is the KPI that names the real gap. Every access process handles
+    joiners and leavers, because both have a forcing event; the mover has none, so a long-
+    tenured employee's permission set becomes the union of every role they have ever held —
+    which is the thing an auditor finds and nobody was measuring.
+
 admission:
-  accepted_content_hash: 17725af923138fbc6c28791d141044ece9280ed94d9c28dac4c9a8420b2818f2
+  accepted_content_hash: df71b1f2065d9faf2bc8cf1a55b63e0b84380dd78d48710a88616b04d96271b2

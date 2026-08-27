@@ -12,19 +12,84 @@ purpose:
   statement: A new joiner's accounts, equipment, access and paperwork are ready BEFORE day one, from a
     standing checklist per role — because the first day's competence signal sets the employment relationship's
     tone.
+
+when_to_use:
+  do_not_use_when:
+  - The engagement is a short contractor booking with no systems access. Full onboarding machinery there delays the work and provisions nothing that gets used.
 steps:
 - order: 1
-  name: Trigger the checklist at offer acceptance
-  description: Equipment ordered, accounts queued, docs prepared — the runway starts weeks out, not Monday
-    morning.
+  name: Work backwards from the start date
+  description: >
+    Every item has a lead time — hardware, background checks, account provisioning — and most are
+    longer than anyone assumes. Starting the checklist on the start date guarantees a bad first week.
   actor: human
+  objects_read: [admin.obj.core.deadline, admin.obj.core.employee_record]
+  done_when: Each item has an order-by date.
 - order: 2
-  name: Provision access by role template
-  description: Each role has a standard access set — no ad-hoc guessing, no over-provisioning that security
-    later unwinds.
+  name: Use the checklist for THIS role
+  description: >
+    One universal list under-provisions the specialist and over-provisions everyone else, and the
+    over-provisioning becomes the accumulated access somebody audits later.
   actor: human
+  done_when: The list reflects what this person will actually do.
 - order: 3
-  name: Confirm readiness the Friday before
-  description: 'A pre-flight check: laptop, logins, workspace, buddy. Day-one scrambles are always a skipped
-    Friday check.'
+  name: Complete the legally required evidence before the start
+  description: >
+    Right to work and a signed contract. Chased in week two, the person is already working and
+    declining to proceed is no longer an option anyone will take.
   actor: human
+  done_when: The evidence is held, not promised.
+- order: 4
+  name: Configure, do not just deliver
+  description: >
+    A laptop in a box on day one is a day lost. Equipment counts as ready when it is logged into.
+  actor: system
+  objects_read: [admin.obj.core.asset]
+  done_when: The joiner can work on it without help.
+- order: 5
+  name: Tell somebody they are coming
+  description: >
+    The logistics can be perfect and the day still lands badly if no named person is expecting them.
+    It is the cheapest item on the list and the one with no owner.
+  actor: human
+  done_when: A named person knows and has time blocked.
+- order: 6
+  name: Capture policy acknowledgement at induction
+  description: >
+    Attention is highest and the population is defined. Chasing acknowledgements at audit is the
+    alternative, and it produces clicks rather than comprehension.
+  actor: agent
+  done_when: Mandatory acknowledgements are recorded against this version.
+objects_used: [admin.obj.core.employee_record, admin.obj.core.asset, admin.obj.core.access_right, admin.obj.core.policy, admin.obj.core.deadline]
+limits:
+- 'It cannot compress a background check or a hardware lead time; it can only stop them being discovered late.'
+- 'Step 5 depends on a manager, who is outside this function and usually busy for the same reason they hired.'
+failure_modes:
+- 'Step 3 deferred because the person is keen to start, which converts a legal precondition into an administrative chase.'
+- 'Step 4 treated as delivered when shipped, which is the commonest cause of an unproductive first day.'
+variants:
+- applies_to: distributed
+  change: Steps 1 and 4 lengthen substantially — shipping, customs, and no colleague to hand a spare cable to.
+  why: Everything physical acquires a lead time and a failure mode.
+- applies_to: regulated
+  change: Step 3 gains screening that gates the start date rather than accompanying it.
+  why: The precondition is external and non-waivable.
+- applies_to: startup_lean
+  change: Steps 3, 4 and 5. The checklist is short and the failure is always the same three items.
+  why: There is no volume to justify the machinery and no slack to absorb the miss.
+references:
+- title: Onboarding as employer branding
+  kind: practitioner
+  note: First-day experience is measured to correlate with early attrition more strongly than most retention interventions.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is the cheapest item on the list and the only one with no natural owner, which is why
+    the logistics can be flawless and the day still land badly.

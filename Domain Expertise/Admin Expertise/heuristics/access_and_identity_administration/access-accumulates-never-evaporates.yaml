@@ -13,3 +13,54 @@ purpose:
     converges on everyone-can-touch-everything, one convenience grant at a time.
   answers:
   - Why is periodic access review non-optional?
+
+heuristic:
+  statement: >
+    Nobody requests access removal — there is no incentive to. Without scheduled review every
+    organisation converges on everyone-can-touch-everything, one convenience grant at a time.
+  why: >
+    Access requests are made by people who need something and approved by people who want to unblock
+    them. Removal has no equivalent: the person holding it has no reason to give it up, their
+    manager gains nothing by taking it, and the security benefit is diffuse and unattributable. So
+    the process is structurally one-directional, and the drift is not a failure of discipline but the
+    predictable output of an incentive asymmetry. Only a calendar, owned by somebody whose job it is,
+    supplies the missing direction.
+  confidence_bp: 8500
+  applies_when: Any environment where access is granted per request and roles change over time.
+  breaks_down_when: >
+    Access is genuinely ephemeral by construction — short-lived credentials, just-in-time elevation,
+    session-scoped grants. There, accumulation cannot happen and a review calendar audits an empty
+    set. It also breaks down where removal is destructive rather than protective: revoking access a
+    person quietly relies on for a task nobody documented breaks the task, and the review discovers
+    this by breaking it, which is how recertification acquires a reputation that gets it cancelled.
+  reads: [admin.obj.core.access_right, admin.obj.core.employee_record]
+  contradicts: [admin.heu.onboarding_administration.day_one_is_remembered_forever]
+limits:
+- 'It explains the drift; it does not size the risk. Most accumulated access is harmless and some is not, and this cannot tell them apart.'
+- 'It assumes access is visible. Shadow SaaS is outside every review this heuristic argues for.'
+failure_modes:
+- 'Reviews scheduled without an owner, which produces a recurring calendar entry and no removals.'
+- 'Mass revocation to demonstrate the review worked, which breaks undocumented work and discredits the practice.'
+variants:
+- applies_to: enterprise_admin
+  change: Strongest, because tenure is long and role changes are frequent — the union is large and nobody can see it.
+  why: Accumulation is a function of time and mobility, both of which scale.
+- applies_to: startup_lean
+  change: Weak while everyone does everything, and it arrives suddenly with the first specialised hire.
+  why: There are no roles to accumulate across yet.
+references:
+- title: Identity and access management practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is how recertification gets cancelled: revoking access somebody
+    quietly relied on for undocumented work breaks the work, and the review is blamed rather
+    than the documentation gap it exposed.
