@@ -6,11 +6,85 @@ identity:
   scope: capability
   owner_capability: sales.prospecting_and_outreach.cold_calling
   subdomain: prospecting_and_outreach
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: Cold calling earns its cost where the list is short and the value per account is high — named-account
-    motions, senior buyers, timing-critical events. Spraying calls at a long tail is the most expensive
-    way to be ignored.
+  statement: Cold calling earns its cost where the list is short and the value per account is high —
+    named-account motions, senior buyers, timing-critical events. Spraying calls at a long list is the
+    most expensive way to produce a low reply rate.
   answers:
-  - When does calling beat emailing for a first touch?
+  - When is the phone the right channel?
+  not:
+  - A claim that cold calling does not work. It works where its economics do.
+
+heuristic:
+  statement: 'Choose the phone for what it uniquely does — a real-time exchange with someone who would
+    never have replied in writing — and not as a way to reach more people. Its advantage is depth per
+    contact and its cost scales linearly with attempts, so the channel is correct exactly where the
+    list is short enough that depth matters more than reach.'
+  why: 'Email and social scale at almost no marginal cost and calls do not, so the two channels have
+    opposite economics and the same tooling has made that easy to forget. A dialler makes volume
+    calling feel like the same activity as volume emailing; it is not, because each call spends a
+    person''s minutes and each unwanted one spends a stranger''s. That asymmetry is why the channel
+    rewards short lists and punishes long ones far more sharply than any written channel does.'
+  confidence_bp: 8000
+  applies_when: 'An outbound motion where a named-account list exists and the value per account
+    justifies individual attention.'
+  breaks_down_when: 'INBOUND OR TRIGGERED RESPONSE. Calling someone who just asked to be contacted is
+    not cold calling and the speed of the call is worth far more than the list length.
+
+    BUYER TYPES WHO DO NOT ANSWER. Engineers, most technical buyers and increasingly anyone under a
+    certain tenure will not take an unknown number. Persisting is a channel error dressed as
+    persistence.
+
+    HIGHLY REGULATED CONTACT REGIMES. Some jurisdictions and sectors restrict unsolicited calls
+    outright, and the question is legal rather than commercial.
+
+    A DENSE EXISTING RELATIONSHIP. Calling a known contact is not this capability at all, and applying
+    cold-call discipline to it is odd for both parties.
+
+    WHEN VOLUME IS THE MANAGEMENT METRIC. If calls made is the number being managed, this heuristic
+    will lose to it every time — and the channel will be measured to death regardless of what it is
+    capable of.'
+  reads:
+  - sales.obj.core.lead
+  - sales.obj.core.persona
+  - sales.obj.core.icp
+  contradicts:
+  - sales.heu.cold_email.reply_rate_beats_open_rate__always
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.outbound_prospect
+  conditions:
+  - {fn: edge_count, op: "<=", value: 1}
+  signals:
+  - followup_sent
+  do_not_use_when:
+  - The buyer type demonstrably does not answer unknown numbers.
+  - The contact regime restricts unsolicited calls.
+  - Calls made is the metric being managed; the channel cannot be run well under it.
+
+objects_used:
+- sales.obj.core.lead
+- sales.obj.core.persona
+- sales.obj.core.icp
+
+limits:
+- Calls leave no trace in a correspondence graph, so nothing about this channel is observable in the
+  record — volume, outcomes and refusal reasons are all human-logged or absent.
+- Says nothing about what to say once the call connects.
+- Cannot judge list quality, which is what actually determines whether the economics work.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The economic argument is the addition — calls
+    cost linearly and written channels do not, and modern tooling makes the two feel like the same
+    activity, which is precisely how the channel gets used at a volume its economics cannot support.'

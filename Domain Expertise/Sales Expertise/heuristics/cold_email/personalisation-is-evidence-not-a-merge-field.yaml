@@ -6,11 +6,84 @@ identity:
   scope: capability
   owner_capability: sales.prospecting_and_outreach.cold_email
   subdomain: prospecting_and_outreach
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: A first name and company name in a template is not personalisation — it is mail merge. The
-    bar is one sentence that could not exist without research on this specific person, because that sentence
-    is what buys the second sentence a reading.
+  statement: A first name and company name in a template is not personalisation — it is mail merge.
+    The bar is one sentence that could not exist without research on this specific person.
   answers:
-  - Is this email personalised enough to send?
+  - What counts as personalisation?
+  not:
+  - A demand for lengthy research. One sentence is the bar, not one hour.
+
+heuristic:
+  statement: 'Test every opening against a single question: could this sentence appear in a message to
+    anyone else on the list? If it could, it is not personalisation regardless of how many variables
+    it contains — and the recipient applies exactly this test, in about a second, from experience.'
+  why: 'Recipients receive several templated messages a day and have become extremely good at the
+    classification. The merge field is not merely ineffective, it is actively negative: it signals
+    that effort was available and was spent on volume rather than on them, which is a worse signal
+    than a plainly generic message that makes no claim to know them. The cost is therefore paid at
+    exactly the moment the sender believes they are earning credit.'
+  confidence_bp: 8700
+  applies_when: 'Any first written approach to someone who has not asked to be contacted.'
+  breaks_down_when: 'A GENUINELY UNIFORM SEGMENT. Where every account shares one specific and recent
+    situation — a regulatory deadline, an ecosystem change — the same sentence is true of all of them
+    and is still evidence rather than merge.
+
+    HIGH-VOLUME LOW-VALUE MOTIONS. Where the economics cannot support per-person research, the honest
+    answer is a plainly generic message that does not pretend, rather than a merge field that does.
+
+    RESEARCH THAT IS PUBLIC AND OBVIOUS. A funding round every competitor also mentioned is
+    technically specific and practically a merge field, because the recipient has had ten messages
+    about it.
+
+    WHEN IT DELAYS THE SEND PAST THE TRIGGER. Research has a shelf life; a perfect line about an event
+    that is now three weeks old is worse than a quick one sent while it mattered.
+
+    A WARM OR REFERRED APPROACH. The referral is the relevance, and additional personalisation reads
+    as trying too hard on top of something that already worked.'
+  reads:
+  - sales.obj.core.lead
+  - sales.obj.core.persona
+  - sales.obj.core.icp
+  contradicts:
+  - sales.heu.linkedin_outreach.warm_channel__same_discipline
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.outbound_prospect
+  conditions:
+  - {fn: edge_count, op: "<=", value: 1}
+  - {absent: thread.last_inbound}
+  signals:
+  - followup_sent
+  do_not_use_when:
+  - The segment genuinely shares one specific recent situation.
+  - The economics cannot support research; send something honestly generic instead.
+  - The approach is referred, in which case the referral is the relevance.
+
+objects_used:
+- sales.obj.core.lead
+- sales.obj.core.persona
+- sales.obj.core.icp
+
+limits:
+- The message body is not in the record, so the engine cannot assess personalisation — it can see that
+  outbound happened and whether a reply came, which is the outcome rather than the cause.
+- Says nothing about where to find the research.
+- Cannot distinguish specific-and-obvious from specific-and-useful, which is the third breakdown
+  regime and the most common self-deception.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The addition is that a merge field is NEGATIVE
+    rather than neutral — it signals effort was available and spent elsewhere, which is worse than an
+    honestly generic message, and the sender believes the opposite at the moment they send it.'

@@ -14,7 +14,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.cold_email.replies_are_counted_per_person
 decision_frameworks:
   core: []
   scoped: []

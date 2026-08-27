@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.linkedin_outreach.a_mutual_connection_is_asked_not_cited
 decision_frameworks:
   core: []
   scoped: []

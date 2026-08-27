@@ -211,8 +211,8 @@ traffic instead of being swapped blind.
 | `required_missing` | 2 | 2 (unchanged — see item 3 below) |
 | Compiled cards rendering `raw_slot` | 11 of 18 | **the four causes are fixed; see below** |
 | Live routes compiling through a placeholder capability | 3 of 4 types | **0 of 4** — Admin closed in batch 4 |
-| Hollow capabilities | 136 | **102** (admin 51, customer_support 40, sales 11) |
-| Corpus validation errors | 566 | **426** |
+| Hollow capabilities | 136 | **99** (admin 51, customer_support 40, sales 8) |
+| Corpus validation errors | 566 | **412** |
 | Tests | 1640 | **1678** |
 
 ## Batch 4 — the substrate was understated, and the live Admin route is no longer hollow
@@ -571,6 +571,36 @@ one organisation's answer for every tenant.
 **Measured:** routing 56/61 unchanged, `card_audit` identical to the batch-4 baseline, 1678 tests
 green, corpus errors 438 → 426, hollow 105 → 102.
 
+## Batch 12 — the three outbound channels; prospecting_and_outreach closed
+
+`cold_calling`, `cold_email`, `linkedin_outreach`. Eight of eight in the subdomain — the third
+complete subdomain in the corpus, and the one containing the capability nearest to live traffic
+(`follow_up`, in three route sets).
+
+The three channels have genuinely different economics and the corpus now says so rather than treating
+them as one technique with three surfaces. Calls cost linearly and written channels do not, which is
+why the same tooling makes volume calling feel like volume emailing and why the channel gets used at a
+volume its economics cannot support. LinkedIn's informality acts on the SENDER and not on the reader,
+so the discipline drops on one side of the exchange only.
+
+**One rule here is fully evaluable on live data**, which is rare in this corpus:
+`replies_are_counted_per_person`. `thread.last_outbound` (118 rows) and `thread.last_inbound` (127)
+are both dense on the design partner's org, and `email_noise:automated` — the second most common
+observation there — is exactly what separates a real reply from an autoresponder. The argument is
+about the denominator: measured per MESSAGE, a more intrusive programme reports a better number,
+because extra touches add sends that will not be replied to and also carry the replies earned by
+earlier ones.
+
+The other two rules are `advisory` and say why — calls and social platforms leave no trace in a
+correspondence graph at all.
+
+Two heuristic ids had to be restored on promotion (`reply_rate_beats_open_rate__always`,
+`warm_channel__same_discipline`): the originals carry a double underscore where the title had a
+comma, and rewriting them broke the knowledge-manifest references. Caught by `validate.py`.
+
+**Measured:** routing 56/61 unchanged, `card_audit` identical to the batch-4 baseline, 1678 tests
+green, corpus errors 426 → 412, hollow 102 → 99.
+
 ## What is left, and the honest blockers
 
 1. **`account_admin` routes but CANNOT DELIVER.** `ReasoningStore.persist_complete` refuses a write
@@ -580,7 +610,7 @@ green, corpus errors 438 → 426, hollow 105 → 102.
    is true of all 49 Customer Support capabilities.** This is the largest structural gap left: the
    corpus can author a domain the tenant has no lane for, and nothing in the authoring path says so.
    The honest unblock is an `admin` pack module plus a tenant promotion.
-2. **102 hollow capabilities** — 51 admin, 40 customer_support, 11 sales (was 136 before batch 4).
+2. **99 hollow capabilities** — 51 admin, 40 customer_support, 8 sales (was 136 before batch 4).
    Only the sales ones can reach a user today. Promote in the order their situation types actually
    occur. **Corrected:** batch 5 was reported as leaving nothing hollow in a live type's route set —
    `pricing` was still there, reached through `field_evidence_on_the_market` under `opportunity`. It
@@ -594,10 +624,11 @@ green, corpus errors 438 → 426, hollow 105 → 102.
       `support_plan`. This is the ONLY remaining corpus-fixable routing gain: it closes
       `required_missing=2` and takes the live org from 56/61 to 58/61. It is also a much larger unit
       of work than a capability batch — these are 23-section objects at the `requester.yaml` standard.
-   c. **The remaining 11 sales capabilities** — prospecting channels (3: cold_calling, cold_email,
-      linkedin_outreach), sales_management (3), revenue_operations (2 left: sales_analytics,
-      sales_operations), discovery_and_solution (2 left: value_proposition, demo), tam_sam_som (1).
-      Two subdomains complete: post_sale_and_growth (7 of 7) and qualification (5 of 5).
+   c. **The remaining 8 sales capabilities** — sales_management (3: performance_management,
+      relationship_management, sales_coaching), revenue_operations (2: sales_analytics,
+      sales_operations), discovery_and_solution (2: value_proposition, demo), tam_sam_som (1).
+      THREE subdomains now complete: prospecting_and_outreach (8 of 8), post_sale_and_growth (7 of 7)
+      and qualification (5 of 5).
    d. Admin (51) and Customer Support (40) last, because neither can deliver on this tenant until an
       `admin` pack module exists.
 3. **`required_missing` (2)** — two `relationship` situations want

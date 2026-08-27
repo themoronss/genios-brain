@@ -3,25 +3,103 @@ identity:
   name: Cold Calling
   domain: sales
   subdomain: prospecting_and_outreach
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
-description: 'A channel inside outreach. Distinct expertise: opening lines, permission, objection deflection
-  in the first fifteen seconds, and call-time targeting.
+  parent_capability: sales.prospecting_and_outreach.outreach
+description: 'A channel inside outreach. Distinct expertise: opening lines, permission, objection
+  deflection in the first fifteen seconds, and call-time targeting.
 
   '
 question: How do we open and hold a conversation with someone who did not expect the call?
+
+outcomes:
+- 'Permission asked for and granted before anything is pitched. Naming the call as a cold call and
+  asking for a short window is a pattern break that earns more time than any disguise does, and it
+  costs one sentence.'
+- 'A reason for the call that is about them, delivered inside the window that was granted. The
+  thirty seconds is a contract; running past it forfeits the goodwill the honesty bought.'
+- 'The channel used where it earns its cost — short lists, high value per account, senior buyers,
+  timing-critical events. Spraying calls across a long list is the version of this channel that
+  damages the brand faster than it builds pipeline.'
+- 'A refusal taken gracefully and recorded verbatim. A no with a reason is research; three of them
+  saying the same thing is a targeting correction, and this is the cheapest market feedback any
+  channel produces.'
+- 'Call time targeted from evidence rather than from habit. When a specific buyer type is reachable
+  is knowable and is usually assumed.'
+- 'A decision not to call a segment at all. The negative outcome: some buyer types genuinely do not
+  answer phones, and continuing to call them converts a channel decision into a morale problem.'
+
+failure_modes:
+- 'DISGUISING THE CALL. Pretending to be returning a call or dropping a mutual name that does not
+  hold is detected quickly, and it costs the conversation and the reputation together.'
+- 'RUNNING PAST THE PERMISSION GRANTED. Thirty seconds asked for and two minutes taken teaches the
+  buyer that our word is approximate, which is a poor first data point.'
+- 'PITCHING FEATURES IN THE OPENING. The opening buys attention for a problem statement, not for a
+  product description, and the two are distinguishable in one sentence.'
+- 'CALLING A LONG LIST. The channel''s economics only work on short, high-value lists; at volume it
+  is the most expensive way to produce a low reply rate.'
+- 'NOT LOGGING THE REFUSALS. The reasons are the most valuable output of a bad call, and they are
+  discarded by default because a no feels like nothing happened.'
+- 'ARGUING WITH THE NO. It converts a neutral refusal into a memorable one, and phone refusals are
+  remembered far longer than email ones.'
+
+kpis:
+- name: permission_grant_rate
+  unit: percent
+  description: Share of answered calls where the buyer agreed to hear the reason. The one metric that
+    isolates the opening from everything after it.
+  direction: higher_is_better
+- name: conversation_rate
+  unit: percent
+  description: Answered calls that became a genuine exchange rather than a refusal. Distinct from
+    connect rate, which measures the dialler.
+  direction: higher_is_better
+- name: refusal_reason_capture_rate
+  unit: percent
+  description: Share of refusals logged with what was actually said.
+  direction: higher_is_better
+- name: calls_per_meeting
+  unit: count
+  description: Effort per meeting booked. The number that decides whether this channel is earning its
+    cost against the alternatives.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.prospecting_and_outreach.outreach
+  - sales.prospecting_and_outreach.account_research
+  downstream:
+  - sales.prospecting_and_outreach.meeting_booking
+  - sales.prospecting_and_outreach.follow_up
+  parallel:
+  - sales.prospecting_and_outreach.cold_email
+  - sales.prospecting_and_outreach.linkedin_outreach
+
+applies_to:
+  models: [b2b, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. A channel under `outreach`, which owns
+    `sales.sit.outbound_prospect` — bound to the live `relationship` type.
+
+    Nothing in this capability is observable in the record. Calls leave no trace in a
+    correspondence graph, so permission rates, refusal reasons and call outcomes are all human-logged
+    or absent. It is authored so that a compiled answer about outbound channels does not silently
+    assume email is the only one.
+
+    No numbers: how long the opening window should be, and what call volume is viable, are Layer 4''s
+    arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: ba898536287868956bb3926da7f64e83c083c41011b9bd8be6d5461e9d4d134b
+  accepted_content_hash: 1f016396bbad3a04c6e7f246c37d91cbc4034bd32401ffdfcfc675f8f443875d

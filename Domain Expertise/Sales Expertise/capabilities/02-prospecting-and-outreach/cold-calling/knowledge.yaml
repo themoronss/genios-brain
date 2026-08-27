@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.cold_calling.permission_granted_is_a_time_limit
 decision_frameworks:
   core: []
   scoped: []

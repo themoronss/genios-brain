@@ -1,30 +1,116 @@
 identity:
   id: sales.pb.linkedin_outreach.comment_first_linkedin_approach
-  name: Comment-first LinkedIn approach
+  name: The comment-first approach
   kind: playbook
   domain: sales
   scope: capability
   owner_capability: sales.prospecting_and_outreach.linkedin_outreach
   subdomain: prospecting_and_outreach
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: 'A connection request from a stranger is judged in two seconds on one question: do I recognise
-    this person? Being usefully visible in their comments for two weeks before the request turns a cold
-    ask into a warm-ish one at near-zero cost.'
+  statement: 'A connection request from a stranger is judged in two seconds on one question: do I
+    recognise this person? Being usefully visible in their world beforehand changes the answer, and
+    nothing in the request itself can.'
+  answers:
+  - How is a connection request made likely to be accepted?
+  - What is the message thread actually for?
+  not:
+  - A content strategy. This is about being visible to specific people, not to an audience.
+  - Automation guidance. Nothing here scales without risking the account.
+
+when_to_use:
+  situations:
+  - sales.sit.outbound_prospect
+  conditions:
+  - {fn: edge_count, op: "<=", value: 1}
+  signals:
+  - introduction
+  do_not_use_when:
+  - 'The buyer is not active on the platform. Visibility cannot be built in a space they do not
+    inhabit, and the pre-work is then pure cost.'
+  - 'A warm introduction is available. Use it — an introduction outperforms weeks of visibility and
+    spends less.'
+  - 'The approach needs to happen this week. The pre-work takes time and compressing it produces the
+    cold request it was meant to replace.'
+
 steps:
 - order: 1
-  name: Engage their content with substance
-  description: Two or three comments that add a fact or a sharp question — over days, not in one hour,
-    which reads as targeting.
+  name: Look for the warm path first
+  description: 'A mutual connection willing to introduce is worth more than any amount of visibility.
+    Ask them for the introduction rather than name-dropping them — name-dropping spends their
+    credibility without their knowledge and is discovered the moment the recipient checks.'
   actor: human
+  objects_read:
+  - sales.obj.core.lead
+  produces: Either a requested introduction, or a confirmed absence of a warm path.
+  done_when: The warm route was checked before the cold one was taken.
+  skip_when: No mutual connection exists.
+
 - order: 2
-  name: Send the request with a reason, not a pitch
-  description: One line naming why THEM — never a paragraph, never a link. The pitch in a connection request
-    converts acceptance into archive.
+  name: Engage their content with substance
+  description: 'Two or three comments that add a fact or a sharp question, over days rather than in an
+    afternoon. Empty agreement is worse than silence — it establishes recognition of a person who says
+    nothing, which is a worse starting position than being unknown.'
   actor: human
+  produces: Recognition, built from contributions worth reading.
+  done_when: The comments would stand on their own without the request that follows.
+
 - order: 3
-  name: Move real conversations off-platform
-  description: The DM's job is to earn the email or the call. Long selling in a DM thread buries the deal
-    in a channel built for scrolling.
+  name: Send the request with a reason, not a pitch
+  description: 'One line naming why them. Never a paragraph, never a link. The request is asking for
+    permission to be visible in their network, and a pitch attached to it is asking for something else
+    entirely while pretending otherwise.'
   actor: human
+  produces: A short, specific request.
+  done_when: The request contains no offer.
+
+- order: 4
+  name: Hold the same bar as email
+  description: 'The platform is informal and the recipient''s judgement is not. Any message we would
+    not send by email should not be sent here — the casualness acts on the sender, which is why the
+    discipline drops on one side of the exchange only.'
+  actor: human
+  produces: Messages that would survive being read in any other medium.
+  done_when: No message relies on the platform's tone to be acceptable.
+
+- order: 5
+  name: Move real conversations off-platform
+  description: 'The thread''s job is to earn the email or the call. Long selling in a message window is
+    a channel doing work it is bad at, and it also keeps the conversation somewhere neither party
+    controls.'
+  actor: human
+  produces: A conversation continued in email or on a call.
+  done_when: No live conversation is still being conducted in message threads.
+
+- order: 6
+  name: Respect the platform's limits as a strategy constraint
+  description: 'Automating past them risks the account the entire channel depends on, and that loss is
+    permanent in a way an email domain problem usually is not. The limits are a reason the channel
+    suits short lists — which is the same conclusion the economics reach independently.'
+  actor: human
+  produces: An approach volume the platform tolerates.
+  done_when: The channel is being run manually at a sustainable rate.
+
+objects_used:
+- sales.obj.core.lead
+- sales.obj.core.persona
+- sales.obj.core.icp
+
+limits:
+- No social-platform connector exists, so none of this is observable in the record.
+- The pre-work takes days, which makes the channel unsuitable for anything time-critical.
+- Says nothing about what content to comment on, which is where the substance actually comes from.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 1, 4 and 6 are new. Step 1 is placed first
+    deliberately — the original went straight to visibility-building, and a warm introduction
+    outperforms weeks of it while costing less, so checking for one has to precede the pre-work rather
+    than follow it.'

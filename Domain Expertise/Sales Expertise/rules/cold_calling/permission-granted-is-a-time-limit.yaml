@@ -1,0 +1,72 @@
+identity:
+  id: sales.rule.cold_calling.permission_granted_is_a_time_limit
+  name: Permission granted is a time limit
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.cold_calling
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A window the buyer granted is a commitment we made in the first ten seconds of knowing
+    them. Overrunning it is the earliest possible demonstration that our stated terms are
+    approximate.'
+  answers:
+  - What does asking for thirty seconds oblige us to?
+  not:
+  - A rule about call length once a conversation is genuinely under way.
+
+rule:
+  statement: 'Where a cold call opens by asking for a stated window, the pitch MUST end inside it
+    unless the buyer extends it themselves. The call MUST also end on a refusal without a rebuttal
+    attempt, and the refusal reason MUST be recorded as given.'
+  spans:
+  - sales.obj.core.lead
+  - sales.obj.core.icp
+  when:
+  - {fn: edge_count, op: "<=", value: 1}
+  then: 'Treat the granted window as binding and the refusal as terminal; capture the reason rather
+    than answering it.'
+  severity: advisory
+  why: 'The opening trade is honesty for attention, and it only works because it is honest. An
+    overrun collects the attention and withdraws the honesty in the same call — which is worse than
+    never having asked, because the buyer now has direct evidence about how we treat stated terms.
+    The refusal half matters for a different reason: a phone no is remembered in a way an ignored
+    email is not, so arguing with it costs a future opportunity that silence would have preserved.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'THE BUYER EXTENDS IT. "Go on" is permission renewed, and continuing is what they asked for.'
+  - 'A QUESTION FROM THEM. Answering what they asked is not an overrun even if it crosses the window;
+    the clock was on our pitch, not on their curiosity.'
+  - 'A REFUSAL THAT IS ACTUALLY A DEFERRAL. "Not now, call me after the quarter" is an instruction
+    rather than a no, and treating it as terminal discards an invitation.'
+  - 'A FACTUAL CORRECTION. Where the refusal rests on a mistaken belief about what we do, one sentence
+    of correction is not a rebuttal — though a second sentence is.'
+  - 'AN INBOUND OR TRIGGERED CALL. There was no permission trade, so the window does not exist and
+    this rule has nothing to govern.'
+
+objects_used:
+- sales.obj.core.lead
+- sales.obj.core.icp
+- sales.obj.core.persona
+
+limits:
+- Entirely unobservable in the record. Calls leave no correspondence trace, so this rule cannot be
+  evaluated by the engine at all and is `advisory` for that reason — it exists so that a compiled
+  answer about calling states the obligation rather than assuming it.
+- Cannot distinguish a refusal from a deferral, which is the third exception and the most consequential
+  misreading in the capability.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new and `advisory`, because nothing about a phone call reaches the record. It
+    is recorded because the permission trade is the whole basis of the opener, and an overrun does not
+    merely waste time — it supplies direct evidence that our stated terms are negotiable.'

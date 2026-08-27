@@ -6,11 +6,81 @@ identity:
   scope: capability
   owner_capability: sales.prospecting_and_outreach.linkedin_outreach
   subdomain: prospecting_and_outreach
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: 'LinkedIn feels social, which tempts sloppy asks that email discipline would have caught.
-    The medium changes the greeting, not the bar: one-reader personalisation, phone-sized ask, follow-up
-    rules — all still apply.'
+  statement: LinkedIn feels social, which tempts sloppy asks that email discipline would have caught.
+    The medium changes the greeting, not the bar.
   answers:
-  - Does outreach discipline relax on social channels?
+  - Does a social platform justify a lower standard of approach?
+  not:
+  - An argument for formality. The tone should change; the standard should not.
+
+heuristic:
+  statement: 'Apply the written-outreach bar unchanged — one-reader relevance, a phone-sized ask, a
+    reason this arrives now — and let only the register move. The platform''s informality is a
+    property of the medium and not of the recipient''s judgement, and the two are easy to confuse
+    because everything around the message looks casual.'
+  why: 'Context shapes the sender far more than the reader. A message composed in a social feed
+    inherits the feed''s standards on the way out and is read in exactly the same evaluative frame the
+    recipient uses everywhere else — so the discipline drops on one side of the exchange only. That
+    asymmetry is why the same person who would never send a bare pitch by email will send one here and
+    not notice.'
+  confidence_bp: 8400
+  applies_when: 'Any outbound approach on a social platform to someone who has not asked to be
+    contacted.'
+  breaks_down_when: 'AN EXISTING RELATIONSHIP. Between people who already know each other the platform
+    is genuinely social, and applying outbound discipline to a colleague is stilted.
+
+    A GENUINE CONTENT INTERACTION. Replying substantively to something they published is participation
+    rather than outreach, and the bar there is whether the reply is worth reading.
+
+    RECRUITING AND COMMUNITY CONTEXTS. Different norms apply and the platform is the accepted venue,
+    so the outbound frame misdescribes what is happening.
+
+    WHEN IT PRODUCES EMAIL-LENGTH MESSAGES. The register genuinely is shorter here; importing email
+    structure wholesale produces a message that is correct and unread.
+
+    A WARM INTRODUCTION ALREADY MADE. Once someone has introduced us the approach is not cold, and
+    treating it with cold-outreach caution wastes the introduction.'
+  reads:
+  - sales.obj.core.lead
+  - sales.obj.core.persona
+  contradicts:
+  - sales.heu.cold_email.personalisation_is_evidence__not_a_merge_field
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.outbound_prospect
+  conditions:
+  - {fn: edge_count, op: "<=", value: 1}
+  signals:
+  - introduction
+  do_not_use_when:
+  - The relationship already exists; the platform is genuinely social there.
+  - It is a substantive reply to something they published.
+  - An introduction has already been made; the approach is not cold.
+
+objects_used:
+- sales.obj.core.lead
+- sales.obj.core.persona
+- sales.obj.core.icp
+
+limits:
+- No social-platform connector exists, so nothing about this channel reaches the record — approaches,
+  acceptances and threads are all invisible.
+- Says nothing about what to write, only about the standard it must meet.
+- Cannot see whether a warm path exists, which is the channel's main advantage.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The mechanism is the addition — the informality
+    acts on the SENDER and not on the reader, so the discipline drops on one side of the exchange
+    only, which is why the same person sends a message here they would never send by email.'
