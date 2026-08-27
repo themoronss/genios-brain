@@ -13,3 +13,54 @@ purpose:
     a future negotiation point; every clean one is credibility banked.
   answers:
   - Who is the board record actually for?
+
+heuristic:
+  statement: >
+    Governance is retrospective evidence. Fundraises, disputes and exits all read the board record
+    backwards — every sloppy minute is a future negotiation point, every clean one is credibility banked.
+  why: >
+    Nobody examines a board record while things are going well. It is read under adversarial
+    conditions, by a lawyer or an acquirer, looking for the gap: the decision with no resolution, the
+    conflict declared but unmanaged, the meeting whose quorum cannot be reconstructed. Because the
+    reading is always later and always hostile, the value of care is invisible at the moment it is
+    exercised, which is exactly why it gets skipped.
+  confidence_bp: 8500
+  applies_when: Any constituted body whose decisions bind the organisation.
+  breaks_down_when: >
+    The care becomes a substitute for the decision. Boards that minute impeccably and decide
+    nothing have optimised the artefact over the function, and the record then documents that
+    faithfully. It also breaks down where over-recording creates the exposure: a minute capturing
+    every argument gives a future opponent the strongest version of the case against you, which is
+    why what to omit is a governance judgement rather than a completeness one.
+  reads: [admin.obj.core.meeting, admin.obj.core.approval, admin.obj.core.document]
+  contradicts: [admin.heu.minutes_and_documentation.unminuted_decisions_dissolve]
+limits:
+- 'It argues for a defensible record, not a complete one. Those diverge, and the divergence is the skill.'
+- 'It says nothing about decision quality, which the record cannot improve.'
+failure_modes:
+- 'Used to justify minuting everything, which hands a future opponent the material.'
+- 'Cited after the fact to rewrite a record, which converts a weakness into misconduct.'
+variants:
+- applies_to: regulated
+  change: The reader may be a regulator with statutory powers rather than a counterparty, and the standard rises accordingly.
+  why: The consequence of a gap moves from a negotiation point to a finding.
+- applies_to: startup_lean
+  change: The reading happens at the next funding round, which is close enough to be predictable and far enough to be ignored.
+  why: The deferral is short and the temptation to defer is high.
+references:
+- title: Companies Act secretarial practice
+  kind: standard
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the one that separates a secretary from a scribe: a minute that
+    captures every argument gives a future opponent the strongest version of the case against
+    you. What to omit is a governance judgement, and unminuted-decisions-dissolve pulls the
+    other way on exactly that.

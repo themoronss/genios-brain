@@ -14,3 +14,54 @@ purpose:
     the disease.
   answers:
   - What makes audits painful?
+
+heuristic:
+  statement: >
+    A brutal audit is rarely about the auditor. It is deferred filing, unreconciled registers and
+    tribal knowledge presenting their invoice at once — the audit is the symptom, the records were
+    the disease.
+  why: >
+    Auditors ask a small, predictable set of questions and the answers either exist or must be
+    reconstructed. Reconstruction is expensive, error-prone and, crucially, visible: it produces
+    inconsistencies that invite deeper testing, which produces more requests. So audit pain is
+    close to a direct measure of accumulated records debt, and the organisation experiences it as an
+    external event rather than as a bill it wrote itself.
+  confidence_bp: 8000
+  applies_when: A routine audit against controls the organisation already claims to operate.
+  breaks_down_when: >
+    The audit has a different purpose than assurance — a for-cause investigation, a new regulator
+    establishing scope, an acquirer probing rather than verifying. There the difficulty is
+    deliberate and reads identically, and treating it as records debt sends a team to reorganise
+    filing while the actual question goes unanswered. It also breaks down where the control genuinely
+    was not operating: perfect records of an absent control produce a short audit and a real finding.
+  reads: [admin.obj.core.document, admin.obj.core.compliance_obligation]
+  contradicts: [admin.heu.retention_and_archival.everything_kept_is_discoverable]
+limits:
+- 'It diagnoses, it does not remediate. Knowing the pain was self-inflicted does not produce the evidence.'
+- 'It applies to routine assurance. Any audit with an adversarial purpose fails the assumption.'
+failure_modes:
+- 'Used to blame the records team for a finding about a control they do not own.'
+- 'Cited to justify keeping everything, which is the other heuristic''s exact objection.'
+variants:
+- applies_to: regulated
+  change: Strongest — the question set is published in advance, so unpreparedness is a choice.
+  why: There is no surprise to absorb.
+- applies_to: outsourced
+  change: The debt may be the vendor''s and the pain is ours, which the heuristic does not distinguish.
+  why: Evidence lives across an organisational boundary and arrives on their cadence.
+references:
+- title: ISA 500 — audit evidence
+  kind: standard
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    contradicts everything-kept-is-discoverable directly: this heuristic pushes toward more
+    evidence retained, that one toward less. Both are right within their record class, and an
+    organisation that applies either globally gets the other one's failure.

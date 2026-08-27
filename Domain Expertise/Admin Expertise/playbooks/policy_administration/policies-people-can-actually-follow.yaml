@@ -12,16 +12,81 @@ purpose:
   statement: Policy administration keeps the policy set small, current, findable and acknowledged — every
     policy owned, reviewed on schedule, written for readers — because unfollowable policy volume produces
     performative compliance and real ignorance.
+
+when_to_use:
+  do_not_use_when:
+  - The guidance is procedural rather than binding. That is an SOP, and dressing one as policy adds an acknowledgement burden for nothing.
 steps:
 - order: 1
-  name: Keep the set minimal and owned
-  description: Every policy has an owner and a reason to exist. Orphan policies get adopted or retired.
+  name: Ask whether an existing policy already covers it
+  description: >
+    The default response to an incident is a new policy. Amending one that exists keeps the set
+    readable and puts the change where people already look.
   actor: human
+  objects_read: [admin.obj.core.policy]
+  done_when: A new document is justified rather than assumed.
 - order: 2
-  name: Version and acknowledge on change
-  description: Material changes get re-acknowledged by affected staff — the log is the enforcement evidence.
+  name: Write for the operator, then have it reviewed
+  description: >
+    In that order. A document drafted for defensibility and then simplified never quite is; one
+    drafted for the reader and then hardened usually survives both.
   actor: human
+  done_when: Someone in the affected population can state what it requires of them.
 - order: 3
-  name: Write for the reader under pressure
-  description: Short, concrete, example-led. A policy nobody can apply at 5pm Friday is decoration.
+  name: Name an owner and a review date at publication
+  description: >
+    Both, at the same moment. An owner without a date reviews when reminded; a date without an owner
+    passes.
   actor: human
+  objects_read: [admin.obj.core.deadline]
+  done_when: Both exist on the policy record.
+- order: 4
+  name: Capture acknowledgement from the affected population, not everyone
+  description: >
+    Universal acknowledgement dilutes the signal and irritates people the policy does not touch.
+  actor: agent
+  done_when: The population is defined and its acknowledgement recorded against this version.
+- order: 5
+  name: Review against the law, not against the text
+  description: >
+    Policies drift out of alignment without changing a word. Re-reading the document tells you
+    nothing about whether it still matches what it was written to satisfy.
+  actor: human
+  done_when: The review names what it checked the policy against.
+- order: 6
+  name: Retire and merge on the same cycle
+  description: >
+    The compliance-maximising move is often deletion. A review that can only conclude "still valid"
+    is not a review.
+  actor: human
+  done_when: Retirement was considered and decided either way.
+objects_used: [admin.obj.core.policy, admin.obj.core.document, admin.obj.core.deadline, admin.obj.core.compliance_obligation]
+limits:
+- 'It administers policy; it does not decide what the organisation''s position should be.'
+- 'Step 4 needs a population definition, which most policy tooling replaces with "all staff".'
+failure_modes:
+- 'Step 1 skipped under incident pressure, which is precisely when the set grows fastest and reads worst.'
+- 'Step 6 treated as optional, so the set only ever grows and step 2 becomes impossible.'
+variants:
+- applies_to: regulated
+  change: Steps 3 to 5 are evidenced and the review cadence is externally set; step 6 is constrained by what must exist.
+  why: Some policies are required to exist regardless of whether anyone reads them.
+- applies_to: startup_lean
+  change: Five policies, well known, beats twenty filed. Steps 1 and 6 do almost all the work.
+  why: The realistic alternative is not a better policy set but an ignored one.
+references:
+- title: ISO 9001 — control of documented information
+  kind: standard
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1 and step 6 are the two that keep a policy set usable and both are counter-
+    instinctive: after an incident the pressure is to add, and at review the safe answer is to
+    keep.

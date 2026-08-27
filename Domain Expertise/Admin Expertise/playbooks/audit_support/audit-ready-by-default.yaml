@@ -12,17 +12,76 @@ purpose:
   statement: Audit support is a standing evidence discipline — organised records, reconciled registers,
     a known request-response routine — so an audit is retrieval, not archaeology, and the team's month
     is not consumed by reconstruction.
+
+when_to_use:
+  do_not_use_when:
+  - There is no control to evidence. Assembling evidence for a process nobody committed to is documentation, not audit support.
 steps:
 - order: 1
-  name: Maintain the evidence map
-  description: 'For each auditable area: where its records live, who owns them. The map is half the audit.'
-  actor: human
+  name: Keep the trail between cycles
+  description: >
+    Evidence held is evidence; evidence reconstructed is an argument. The whole capability is
+    decided in the eleven months nobody is asking.
+  actor: agent
+  objects_read: [admin.obj.core.document, admin.obj.core.approval]
+  done_when: The control's operation leaves a durable artefact as a by-product.
 - order: 2
-  name: Run one point of contact
-  description: All auditor requests through one coordinator — logged, tracked, consistent. Scattered responses
-    create contradictions.
+  name: Map each request to a control and a population
+  description: >
+    Before producing anything. Without a stated population, the sample cannot be defended and the
+    auditor's definition becomes ours by default.
   actor: human
+  produces: A request-to-evidence map.
+  done_when: Every request names what it is testing and over what set.
 - order: 3
-  name: Close findings like commitments
-  description: Each finding gets owner, date, verification. Repeat findings are the true audit failure.
+  name: Draw the sample from the population, not from what is to hand
+  description: >
+    A convenience sample answers a different question confidently, and it is the failure that
+    survives right up until it does not.
   actor: human
+  done_when: The selection method is stated and reproducible.
+- order: 4
+  name: Name your own gaps first
+  description: >
+    A self-reported gap with a remediation date costs a fraction of a found one, and it changes the
+    auditor's prior about everything else they look at.
+  actor: human
+  done_when: Known unevidenced controls are disclosed before testing.
+- order: 5
+  name: Track findings to remediated, not to responded
+  description: >
+    A management response is a sentence. The next cycle asks what happened, and a repeat finding is
+    a different category of problem.
+  actor: human
+  objects_read: [admin.obj.core.action_item]
+  done_when: Each finding has an owner, a date and a closing artefact.
+objects_used: [admin.obj.core.document, admin.obj.core.approval, admin.obj.core.compliance_obligation, admin.obj.core.action_item, admin.obj.core.policy]
+limits:
+- 'Step 1 is a design property of the controls themselves. Audit support cannot retrofit a trail onto a process that leaves none.'
+- 'It does not make a failing control pass. Evidence of a control operating badly is still evidence.'
+failure_modes:
+- 'Step 4 avoided because disclosure feels like weakness, which is exactly backwards with an experienced auditor.'
+- 'Step 1 deferred until an audit is announced, which converts the capability into the scramble it exists to prevent.'
+variants:
+- applies_to: regulated
+  change: Step 2 is prescribed and step 5 has external deadlines; discretion sits almost entirely in step 1.
+  why: The request set is defined for you, so preparation is the only lever.
+- applies_to: startup_lean
+  change: Steps 1 and 4 only. Sampling ceremony is meaningless below a certain population.
+  why: With twenty transactions the population is the sample.
+references:
+- title: ISA 500 — audit evidence
+  kind: standard
+  note: Where sufficiency and appropriateness are separated, which is the distinction step 3 turns on.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1 is the capability and the other four are the visible part. A team that only runs
+    steps 2 to 5 will pass audits and carry the record debt that makes each one worse.

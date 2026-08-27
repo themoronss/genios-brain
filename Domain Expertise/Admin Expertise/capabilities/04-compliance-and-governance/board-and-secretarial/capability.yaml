@@ -3,7 +3,7 @@ identity:
   name: Board & Secretarial
   domain: admin
   subdomain: compliance_and_governance
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Company secretarial administration: board and committee calendars, notices, packs, quorum,
@@ -13,13 +13,64 @@ description: 'Company secretarial administration: board and committee calendars,
 
   '
 question: Is the governance record complete, and were the decisions properly taken?
+
+outcomes:
+- 'A record a third party can read a year later and see that the decision was validly made by the people entitled to make it. That, not attendance, is the test.'
+- 'Notice, quorum and packs handled to the constitution rather than to habit. Habit is what fails when a decision is challenged.'
+- 'Resolutions written as resolutions — a decision, its terms, and who carried it — separable from the discussion around them.'
+- 'Registers kept current between meetings. A register updated at year end is a reconstruction with a date on it.'
+- 'The negative outcome: a decision recorded as INVALID or deferred because quorum, notice or a conflict made it so. A secretariat that has never done this is not exercising the function.'
+failure_modes:
+- 'MINUTING THE CONVERSATION. Governance is read backwards from the record; narrative buries the decision the reader came for.'
+- 'TREATING NOTICE AND QUORUM AS FORMALITIES. They are the two grounds on which a decision is most easily unwound, and both are cheap to get right in advance.'
+- 'PACKS CIRCULATED THE NIGHT BEFORE. A board that has not read cannot decide; it can only ratify.'
+- 'CONFLICTS NOTED AND NOT MANAGED. Declaring an interest is half; recording that the member withdrew is the half a reader checks.'
+- 'REGISTERS UPDATED AT AUDIT. Every one of those entries is dated by the update, not the event.'
+kpis:
+- name: pack_lead_time
+  unit: days
+  description: How long before the meeting the pack went out.
+  direction: higher_is_better
+- name: minute_circulation_lag
+  unit: days
+  direction: lower_is_better
+  description: Meeting to draft minute. Accuracy and correctability both decay with it.
+- name: register_currency_lag
+  unit: days
+  description: Event to register entry. The number that separates a maintained register from a reconstructed one.
+  direction: lower_is_better
+- name: procedurally_challenged_decisions
+  unit: count
+  description: Decisions later questioned on notice, quorum or conflict grounds.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.meeting_operations.agenda_preparation, admin.compliance_and_governance.policy_administration]
+  downstream: [admin.meeting_operations.minutes_and_documentation, admin.compliance_and_governance.statutory_filing,
+               admin.records_and_documentation.retention_and_archival]
+  parallel: [admin.compliance_and_governance.audit_support, admin.executive_support.approval_coordination]
+applies_to:
+  models: [enterprise_admin, multi_entity, regulated, in_house, shared_services, executive_office]
+  offerings: [assurance]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    The meeting half has real substrate — meeting.start_at, meeting.occurred, meeting.attended
+    and meeting.external_counterparty all have writers, which is enough to know a board meeting
+    happened and who was there. The governance half has none: notice, quorum, resolutions and
+    registers are documents.
+
+    The outcome most likely to be dropped is the negative one. A secretariat that has never
+    recorded a decision as invalid on quorum or notice grounds is not exercising the function —
+    it is minuting.
+
 admission:
-  accepted_content_hash: 2fcb002007f90b6e8afc84d0e6d554ce794e872fe3805ac95cbb9efb77ef0478
+  accepted_content_hash: 6b261a63d58db1cc8020eff6326d57ffd3874769e610bc43231ff588a52a361d

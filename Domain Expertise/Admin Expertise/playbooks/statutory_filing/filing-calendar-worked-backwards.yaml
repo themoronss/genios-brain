@@ -12,17 +12,79 @@ purpose:
   statement: Every statutory deadline lives on one calendar with preparation lead-times worked backwards
     — data needed, preparer, reviewer, buffer — because statutory deadlines do not negotiate and last-minute
     filings are error factories.
+
+when_to_use:
+  do_not_use_when:
+  - The deadline is internal. Internal dates negotiate and this playbook's whole shape assumes one that does not.
 steps:
 - order: 1
-  name: Maintain the master obligation calendar
-  description: Every filing, every jurisdiction, every frequency — with the NEXT date always visible.
+  name: Work backwards from the statutory date
+  description: >
+    Filing date, then review, then preparation, then data-needed. Each interval is a real duration
+    and the earliest is the one that actually gets managed.
   actor: human
+  objects_read: [admin.obj.core.deadline, admin.obj.core.compliance_obligation]
+  produces: A dated chain per filing.
+  done_when: The data-needed date exists and is on somebody's calendar.
 - order: 2
-  name: Back-schedule preparation with buffer
-  description: Data-gathering starts at T-minus-enough; review completes days before, not hours.
+  name: Name a preparer and a separate reviewer
+  description: >
+    Same-person prepare-and-file is where arithmetic errors survive, and they survive into
+    correspondence that outlasts the filing by months.
   actor: human
+  done_when: Two names exist, and the reviewer is not the preparer.
 - order: 3
-  name: File, confirm, archive the proof
-  description: Submission receipts filed with the return. 'We filed' without the acknowledgment is a claim,
-    not a record.
+  name: Collect the inputs on the data-needed date
+  description: >
+    Late filings are almost never late submissions. They are late inputs, and the input owner
+    usually has no idea a statutory date depends on them.
   actor: human
+  done_when: Inputs are complete or the shortfall is escalated with the deadline attached.
+- order: 4
+  name: Decide about an extension early or not at all
+  description: >
+    Where the regime permits one, seeking it in advance is a decision. Discovering the need on the
+    deadline is a late filing with paperwork.
+  actor: human
+  done_when: Extension was considered while it was still available.
+- order: 5
+  name: Confirm acceptance, not submission
+  description: >
+    A rejected filing is an unfiled filing, and the rejection notice is easy to miss because it
+    arrives after everyone stopped watching.
+  actor: agent
+  done_when: An acceptance artefact is on file.
+objects_used: [admin.obj.core.compliance_obligation, admin.obj.core.deadline, admin.obj.core.document, admin.obj.core.approval]
+limits:
+- 'It manages the calendar, not the correctness of what is filed. A punctual wrong return is still wrong.'
+- 'Step 3 depends on people outside this function who have no visibility of the deadline they are feeding.'
+failure_modes:
+- 'Step 1 collapsed to a single reminder, which is the default in every calendar tool and the reason preparation is always last-minute.'
+- 'Step 5 skipped because the submission screen said success, which is a different claim from acceptance.'
+variants:
+- applies_to: multi_entity
+  change: Steps 1 and 5 are per registrant and the intervals differ. A merged calendar hides the entity whose deadline moved.
+  why: Obligations attach to the registrant, not the group.
+- applies_to: outsourced
+  change: Step 2's reviewer must be ours even when the preparer is theirs, and step 5 is where the boundary usually fails.
+  why: Acceptance notifications go to the filer, not the accountable party.
+- applies_to: startup_lean
+  change: Steps 1 and 3 only, on a very short list. The failure at this size is not knowing an obligation exists.
+  why: The register is the gap, not the process.
+references:
+- title: Statutory filing calendars and penalty regimes
+  kind: practitioner
+  note: Automatic penalties are what make this the one administrative deadline class with no tolerance for a manual reminder.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1 is the whole playbook and step 3 is where it is tested. Every calendar tool defaults
+    to a single reminder on the deadline, which leaves the data-needed date — the only one that
+    can still be rescued — unmanaged.

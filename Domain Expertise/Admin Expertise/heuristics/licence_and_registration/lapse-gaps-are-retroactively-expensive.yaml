@@ -14,3 +14,53 @@ purpose:
     they are catastrophic.
   answers:
   - Why track expirables centrally?
+
+heuristic:
+  statement: >
+    Lapse gaps are retroactively expensive. A licence gap discovered later — by an auditor, an
+    insurer, a diligence lawyer — can void coverage and taint every contract signed during the period.
+  why: >
+    Operating without a permission is usually invisible while it lasts: nothing breaks, no customer
+    notices, revenue continues. The cost materialises when a third party reconstructs the period and
+    asks what authority the activity was conducted under. Because the damage is assessed backwards
+    over a window rather than at a moment, a short gap can carry a long tail — every contract,
+    every claim, every representation made inside it.
+  confidence_bp: 8000
+  applies_when: Any regulated activity where a permission is a precondition rather than a formality.
+  breaks_down_when: >
+    The regime has a formal grace or continuation provision — many renewals allow operation while an
+    application is pending, and treating that as a gap produces an unnecessary shutdown and a
+    self-report of a breach that did not occur. It also breaks down where the permission was never
+    required: registers accumulate certificates for activities the organisation stopped doing, and
+    panicking over their expiry spends real effort on nothing.
+  reads: [admin.obj.core.compliance_obligation, admin.obj.core.contract]
+  contradicts: [admin.heu.procurement_administration.friction_begets_shadow_procurement]
+limits:
+- 'It is about permissions that gate an activity, not about certifications that market one.'
+- 'It says nothing about likelihood of discovery, which is what actually determines whether a gap is ever priced.'
+failure_modes:
+- 'Cited to justify halting operations during a pending renewal that the regime explicitly permits.'
+- 'Applied to lapsed certificates for activities long discontinued.'
+variants:
+- applies_to: regulated
+  change: Strongest, and the discovery mechanism is a supervisor rather than a counterparty.
+  why: Someone is looking as a matter of routine.
+- applies_to: multi_entity
+  change: The gap can exist in one jurisdiction while the group is fully permitted, and group-level registers hide exactly that.
+  why: Permissions are territorial and registers are usually organisational.
+references:
+- title: Licence conditions and continuing obligations
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is worth reading before acting on this: many regimes permit
+    operation while a renewal is pending, and a team that treats that as a gap self-reports a
+    breach that did not happen.
