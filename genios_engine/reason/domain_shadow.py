@@ -429,6 +429,22 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 counts["error"] += 1
                 logger.exception("domain-compiler shadow: situation %s failed",
                                  row["situation_id"])
+            finally:
+                # ONE connection serves the whole loop, and SQLAlchemy opens an implicit
+                # transaction on it at first use. A statement that raises leaves that transaction
+                # invalid, and every later statement on the same connection then fails with
+                # PendingRollbackError — so a single bad situation silently takes every situation
+                # after it. Measured on the design partner's org: one persist_error was followed by
+                # five cascade failures, and `compiled` came back 50 against the measurement pass's
+                # 56. The six missing situations were not unroutable; they were never attempted.
+                #
+                # This is the same failure the per-situation transaction fixed for WRITES
+                # (obstacle 1 in NEW_BRAIN_CUTOVER), reappearing on the READ connection, where the
+                # comment above asserts "READS only" and reads alone are enough to poison it.
+                #
+                # rollback() on a healthy connection is a no-op, so this is unconditional rather
+                # than guarded on a flag we would have to keep correct.
+                conn.rollback()
 
     result = dict(counts)
     logger.info("domain-compiler %s org=%s %s", "LIVE" if live else "shadow", org_id, result)

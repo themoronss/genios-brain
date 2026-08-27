@@ -32,6 +32,21 @@ matches:
 also_serves:
   - sales.post_sale_and_growth.expansion
   - sales.prospecting_and_outreach.account_research
+  # Added 2026-08-27. A measured gap rather than a judgement call: 47 Sales capabilities were
+  # authored and only 15 sat in any live type's route set, because eight situation files name
+  # every capability the corpus can reach and most were simply never named. Six of the unnamed
+  # ones are ABOUT precisely this situation — a live account relationship — and were unreachable
+  # for want of a binding, not for want of content.
+  #
+  # Each earns its place on its own question, and each is honest in its own file about what it
+  # cannot see: churn prevention reads `derived.engagement` (dense on live data), renewal reads
+  # `commitment.due_at`, and the growth pair state plainly that no usage telemetry exists.
+  - sales.post_sale_and_growth.churn_prevention
+  - sales.post_sale_and_growth.renewal
+  - sales.post_sale_and_growth.onboarding
+  - sales.post_sale_and_growth.upsell
+  - sales.post_sale_and_growth.cross_sell
+  - sales.sales_management.relationship_management
 
 objects:
   load:
@@ -92,4 +107,4 @@ metadata:
   reviewed_at: '2026-08-25'
 
 admission:
-  accepted_content_hash: 0303bfcf12daf1e4c526d0af22762730487702d2900488c16ebc1e813852caf9
+  accepted_content_hash: 421ca4cd320d0e140eca2fd0a15a6c17c793037c4d30a7fd32a8b4c2b4e8251d

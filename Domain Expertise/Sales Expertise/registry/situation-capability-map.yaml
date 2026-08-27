@@ -174,20 +174,29 @@ map:
       - sales.sit.outbound_prospect
     capabilities:
       - sales.market_and_targeting.icp_definition
+      - sales.post_sale_and_growth.churn_prevention
+      - sales.post_sale_and_growth.cross_sell
       - sales.post_sale_and_growth.customer_success
       - sales.post_sale_and_growth.expansion
+      - sales.post_sale_and_growth.onboarding
+      - sales.post_sale_and_growth.renewal
+      - sales.post_sale_and_growth.upsell
       - sales.prospecting_and_outreach.account_research
       - sales.prospecting_and_outreach.follow_up
       - sales.prospecting_and_outreach.outreach
+      - sales.sales_management.relationship_management
     objects:
       load:
         - sales.obj.core.account
         - sales.obj.core.company
+        - sales.obj.core.contract
         - sales.obj.core.icp
         - sales.obj.core.lead
         - sales.obj.core.next_action
         - sales.obj.core.opportunity
         - sales.obj.core.persona
+        - sales.obj.core.risk
+        - sales.obj.core.stakeholder
         - sales.obj.icp_definition.disqualifier
         - sales.obj.icp_definition.fit_analysis
       optional:
@@ -197,8 +206,7 @@ map:
         - sales.obj.core.deal
         - sales.obj.core.decision_maker
         - sales.obj.core.pain_point
-        - sales.obj.core.risk
-        - sales.obj.core.stakeholder
+        - sales.obj.core.pricing
       never_load:
         - sales.obj.core.budget
         - sales.obj.core.buying_committee
@@ -233,11 +241,6 @@ orphan_capabilities:
   - sales.discovery_and_solution.need_analysis
   - sales.discovery_and_solution.value_proposition
   - sales.market_and_targeting.tam_sam_som
-  - sales.post_sale_and_growth.churn_prevention
-  - sales.post_sale_and_growth.cross_sell
-  - sales.post_sale_and_growth.onboarding
-  - sales.post_sale_and_growth.renewal
-  - sales.post_sale_and_growth.upsell
   - sales.proposal_and_commercials.negotiation
   - sales.proposal_and_commercials.objection_handling
   - sales.proposal_and_commercials.proposal_creation
@@ -250,7 +253,6 @@ orphan_capabilities:
   - sales.revenue_operations.sales_operations
   - sales.revenue_operations.territory_planning
   - sales.sales_management.performance_management
-  - sales.sales_management.relationship_management
   - sales.sales_management.sales_coaching
 
 # Authored but no capability's objects.yaml loads them.
@@ -265,7 +267,7 @@ stats:
   capabilities: 47
   capabilities_stub: 0
   capabilities_complete: 47
-  capabilities_routed: 21
+  capabilities_routed: 27
   objects_total: 29
   objects_core: 24
   objects_scoped: 5
