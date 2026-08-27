@@ -11,19 +11,81 @@ identity:
 purpose:
   statement: Every channel — email, chat, phone, social — lands in ONE queue with the channel recorded,
     so priority is decided by content and customer, never by which door happened to be loudest.
+
+when_to_use:
+  do_not_use_when:
+  - A major incident is running. Then intake is a broadcast problem with its own handling, and per-contact triage floods the queue with the same event.
 steps:
 - order: 1
-  name: Normalise every inbound into one record shape
-  description: 'Whatever the door, the ticket carries the same fields: who, what, entitlement, severity-candidate.
-    Channel is a tag, not a queue.'
-  actor: human
+  name: Land everything in one queue, recording the door
+  description: >
+    Channel is a fact about the customer's preference and nothing about impact. Recorded, it is
+    useful; used as priority, it teaches customers to shout through the loudest door.
+  actor: system
+  objects_read: [customer_support.obj.core.ticket]
+  done_when: Every contact is in the common queue with its channel noted.
 - order: 2
-  name: Acknowledge on the channel they used
-  description: The auto-ack goes back where they wrote, with a reference id and an honest first-response
-    expectation.
+  name: Capture the verbal forward
+  description: >
+    The account manager who was told over lunch is carrying the highest-signal, least-recorded
+    issue in the organisation.
   actor: human
+  objects_read: [customer_support.obj.core.named_contact]
+  done_when: Conversationally-reported issues exist as work.
 - order: 3
-  name: Route by content, not arrival order
-  description: A P1 by email outranks a P4 by phone. The queue is sorted by the triage verdict, never
-    by recency alone.
+  name: Resolve who and which account before anything else
+  description: >
+    Entitlement, history and priority all key on the account. An unattributed ticket is triaged on
+    its words alone.
+  actor: system
+  objects_read: [customer_support.obj.core.customer_account, customer_support.obj.core.requester]
+  done_when: Reporter and account are resolved, or the gap is explicit.
+- order: 4
+  name: Split multiple problems
+  description: >
+    One ticket carrying three issues gets closed when the easiest is solved, and the other two
+    return as new tickets with no history.
   actor: human
+  done_when: Each distinct problem has its own unit of work.
+- order: 5
+  name: Answer once on an unsupported channel, then redirect
+  description: >
+    Helping once is right. Helping repeatedly establishes a door with no staffing, no measurement
+    and no entitlement behind it.
+  actor: human
+  done_when: The customer was helped and told where to go next time.
+objects_used: [customer_support.obj.core.ticket, customer_support.obj.core.requester, customer_support.obj.core.customer_account,
+               customer_support.obj.core.named_contact, customer_support.obj.core.intent]
+limits:
+- 'Step 2 depends on people outside support choosing to pass things on, which is a relationship rather than a process.'
+- 'It captures and normalises; what the request means is intent_classification''s problem.'
+failure_modes:
+- 'Step 1 implemented as a shared inbox with channel-specific handling behind it, which is one queue in name.'
+- 'Step 5 skipped because refusing feels unhelpful, which is how a private Slack channel becomes a support tier.'
+variants:
+- applies_to: community_support
+  change: The queue is public and step 4 matters more — a thread with three problems gets three partial answers from three people.
+  why: Multiple responders make the split impossible after the fact.
+- applies_to: enterprise_support
+  change: Step 2 is the dominant intake path and needs a named route, because the TAM hears things before the queue does.
+  why: The relationship carries more traffic than the tooling.
+- applies_to: plg_self_serve
+  change: Steps 1 and 3 automate; step 2 barely exists because there is no account team.
+  why: There is nobody having lunch with the customer.
+references:
+- title: Omnichannel support practice
+  kind: practitioner
+  note: Where single-queue-many-doors is treated as the design that keeps priority honest.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is the one that shapes the next two years. Helping once on an unsupported channel is
+    correct; doing it repeatedly creates a door with no staffing, no measurement and no
+    entitlement, and it cannot be closed afterwards.

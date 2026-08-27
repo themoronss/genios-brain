@@ -13,3 +13,52 @@ purpose:
     arriving by customer. The merge queue is the earliest incident detector many teams have.
   answers:
   - What does a sudden duplicate cluster mean?
+
+heuristic:
+  statement: >
+    Five identical tickets in an hour are not five annoyances — they are an outage announcement
+    arriving by customer. The merge queue is the earliest incident detector many teams have.
+  why: >
+    Monitoring watches the things somebody thought to instrument. Customers experience everything,
+    including the failure modes nobody predicted, and when a fault is broad enough they report it
+    simultaneously. That simultaneity is a signal with almost no false-positive rate — unrelated
+    customers do not coincidentally report the same symptom in the same hour — and it arrives before
+    any alert for exactly the class of failure that has no alert.
+  confidence_bp: 8000
+  applies_when: A cluster of similar reports arriving in a compressed window from unrelated accounts.
+  breaks_down_when: >
+    The cluster has a shared external cause — a newsletter, a release note, a status page update
+    that prompted everybody to check the same thing at once. The correlation is real and the fault
+    is not. It also breaks down at low volume: two similar tickets in a day is a coincidence in most
+    queues, and treating it as a spike produces incident declarations that erode the response.
+  reads: [customer_support.obj.core.ticket, customer_support.obj.core.incident, customer_support.obj.core.issue]
+  contradicts: [customer_support.heu.intent_classification.the_customer_s_words_beat_the_form_s_dropdown]
+limits:
+- 'It detects breadth, not severity. A widely-noticed cosmetic fault produces the same shape.'
+- 'It needs enough baseline volume for a spike to be distinguishable, which small queues do not have.'
+failure_modes:
+- 'Declaring an incident from a communications-driven cluster.'
+- 'Watching the merge count as a productivity metric, which is the reading that hides the signal.'
+variants:
+- applies_to: b2c
+  change: Strongest and fastest — volume makes the spike obvious within minutes.
+  why: The sample size arrives immediately.
+- applies_to: enterprise_support
+  change: Weak as a spike and strong as a pattern: three enterprise accounts reporting the same thing in a week is the equivalent signal.
+  why: Low volume, high correlation.
+references:
+- title: Incident detection from support signals
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the one that produces false incidents: a newsletter or a status-
+    page update prompts everybody to check the same thing at once, and the correlation is real
+    while the fault is not.

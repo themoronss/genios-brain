@@ -13,3 +13,53 @@ purpose:
     field is a guess made in a hurry. Classify from what they wrote, not what they clicked.
   answers:
   - Which signal decides a ticket's real intent?
+
+heuristic:
+  statement: >
+    Customers mislabel their own tickets constantly. The body text is the truth; the category field
+    is a guess made in a hurry to get past the form.
+  why: >
+    The customer is classifying against a taxonomy built for our internal routing, using terms that
+    mean something specific to us and something looser to them, at the moment when their goal is to
+    finish the form and get help. They are not being careless — they are answering a question that
+    was written for somebody else. The body, by contrast, is where they put the effort, because it
+    is where they are trying to be understood.
+  confidence_bp: 8500
+  applies_when: Any intake form offering a customer-selected category.
+  breaks_down_when: >
+    The categories are the customer's own vocabulary rather than ours — a product-area selector in a
+    tool they use daily, where the terms are the ones on their screen. There the dropdown is often
+    more reliable than the prose, because the prose describes symptoms and the selector names the
+    feature. It also breaks down where the body is one line: "it's broken" carries less than any
+    category choice, and the dropdown is the only signal present.
+  reads: [customer_support.obj.core.ticket, customer_support.obj.core.intent]
+  contradicts: [customer_support.heu.channel_intake.the_loud_channel_is_not_the_urgent_one]
+limits:
+- 'It concerns the category field specifically, not other structured intake — version numbers and environment selectors are usually accurate.'
+- 'It says the body is more reliable, not that it is sufficient.'
+failure_modes:
+- 'Used to discard all structured intake, including the fields customers do answer well.'
+- 'Applied where the body is empty, leaving nothing to classify from.'
+variants:
+- applies_to: embedded_in_product
+  change: Context is captured automatically and outranks both the body and the dropdown.
+  why: The system knows what they were doing.
+- applies_to: b2c
+  change: Strongest — high volume, short bodies, and a taxonomy written entirely for internal routing.
+  why: The form is optimised for the queue and filled in by somebody who wants it to end.
+references:
+- title: Support taxonomy design
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is real and specific: where the categories are the customer's own
+    vocabulary — a product-area selector naming what is on their screen — the dropdown beats the
+    prose, because the prose describes symptoms and the selector names the feature.

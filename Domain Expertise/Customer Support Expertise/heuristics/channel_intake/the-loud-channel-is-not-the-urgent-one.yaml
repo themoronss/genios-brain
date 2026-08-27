@@ -13,3 +13,53 @@ purpose:
     medium. Triage that privileges interruptive channels trains customers to escalate theatrically.
   answers:
   - Should a phone ticket outrank an email ticket by default?
+
+heuristic:
+  statement: >
+    Phone and social feel urgent because they interrupt. Severity lives in the impact, not in the
+    medium — and triage that privileges interruptive channels trains customers to escalate their
+    channel instead of describing their problem.
+  why: >
+    An interruption creates urgency in the person receiving it, and that feeling is indistinguishable
+    from the urgency of the underlying issue. So a support function triaging by felt pressure
+    systematically serves the loudest channel first, and customers learn the rule within about two
+    interactions. The result is a queue ordered by channel choice, in which the polite customer with
+    the production outage waits behind a chat about a password.
+  confidence_bp: 8500
+  applies_when: Any multi-channel intake where priority is set by a human under load.
+  breaks_down_when: >
+    The channel genuinely carries information about severity. A customer who calls after emailing
+    twice has escalated deliberately and the channel change is the signal — and some organisations
+    reserve a phone line for genuine outages, where the medium is a contractual severity marker
+    rather than a preference. Reading those as noise discards real evidence.
+  reads: [customer_support.obj.core.ticket, customer_support.obj.core.customer_account]
+  contradicts: [customer_support.heu.priority_and_severity.tone_is_not_severity]
+limits:
+- 'It concerns the channel, not the customer. Some accounts genuinely warrant faster handling and that is entitlement, not medium.'
+- 'It cannot be measured without a channel field, which most reporting has and few triage reviews use.'
+failure_modes:
+- 'Applied so strictly that a deliberate escalation by channel change is ignored.'
+- 'Used to justify slow phone handling, where the customer is waiting live and the cost of delay is real.'
+variants:
+- applies_to: b2c
+  change: Social is public, which is a business risk that legitimately affects priority without being severity.
+  why: The channel changes the exposure even when it does not change the impact.
+- applies_to: enterprise_support
+  change: A phone call from a named contact is often the contractual escalation path and should be read as one.
+  why: The medium was agreed in advance for exactly that purpose.
+references:
+- title: Omnichannel support practice
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The breakdown case is what keeps this from being a rule: a customer who calls after emailing
+    twice has escalated deliberately, and some organisations sell a phone line as a severity
+    marker. Reading those as noise discards the evidence the channel was carrying.

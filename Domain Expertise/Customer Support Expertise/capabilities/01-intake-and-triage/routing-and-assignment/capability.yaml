@@ -3,7 +3,7 @@ identity:
   name: Routing & Assignment
   domain: customer_support
   subdomain: intake_and_triage
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Choosing the queue and then choosing the human, which are two decisions with different failure
@@ -17,23 +17,62 @@ description: 'Choosing the queue and then choosing the human, which are two deci
 
   '
 question: Which queue can finish this, and which person should hold it?
+
+outcomes:
+- 'Two decisions made separately: which queue can finish this, and which person should hold it. They have different failure modes and are usually run as one.'
+- 'Assignment by skill first and load second, never round-robin — a fast wrong assignment costs two handoffs and the customer watches both.'
+- 'Ownership that persists. A ticket changing hands three times has told the customer nobody owns them.'
+- 'A queue with no obvious owner recognised as a taxonomy gap rather than pushed to whoever is least busy.'
+- 'The negative outcome: a ticket HELD unassigned with a stated reason, rather than parked with somebody who cannot progress it.'
+failure_modes:
+- 'ROUND-ROBIN. It is fair to agents and indifferent to customers, and it optimises the one thing that does not matter.'
+- 'ROUTING FAST TO CLEAR THE QUEUE, which produces the handoffs that satisfaction actually tracks.'
+- 'ASSIGNING BY AVAILABILITY, so the person with capacity is the person without the context.'
+- 'QUEUE ROUTING BY KEYWORD, which fails on exactly the tickets whose wording is unusual — the ones that most need a human decision.'
+- 'NO OWNER DURING ESCALATION, where the ticket is with engineering and the customer relationship is with nobody.'
+kpis:
+- name: reassignment_count
+  unit: count
+  description: Handoffs per ticket. The number satisfaction tracks and queues do not report.
+  direction: lower_is_better
+- name: first_assignment_resolution_share
+  unit: percent
+  description: Tickets resolved by whoever first received them.
+  direction: higher_is_better
+- name: skill_match_rate
+  unit: percent
+  description: Assignments to somebody with the relevant capability rather than the relevant availability.
+  direction: higher_is_better
+- name: unowned_duration
+  unit: hours
+  description: Time a ticket spends with no named holder, including while it sits with another team.
+  direction: lower_is_better
+handoffs:
+  upstream: [customer_support.intake_and_triage.priority_and_severity, customer_support.intake_and_triage.intent_classification]
+  downstream: [customer_support.diagnosis_and_resolution.diagnostics, customer_support.escalation_and_incident.engineering_handoff]
+  parallel: [customer_support.support_operations.workload_balancing, customer_support.entitlement_and_sla.coverage_and_on_call]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, swarming_support,
+           follow_the_sun, named_tam, outsourced_bpo, ai_first_support, field_service]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Stub — identity, purpose and load-set only. Promote by separating the two decisions explicitly
-    through every section: queue-level playbooks and heuristics, then person-level ones, and failure_modes
-    for each. The highest-value content is the continuity-versus-capacity trade and the rules for when
-    round-robin should be suspended (named accounts, active escalations, reopened tickets, anything an
-    agent has already apologised for). KPIs must include unowned-queue ageing alongside per-agent load,
-    because a perfectly balanced roster sitting next to an ageing catch-all queue reads as healthy. Handoffs:
-    upstream from ticket_triage, parallel with queue_management and workload_balancing, downstream into
-    diagnostics and escalation_management.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. ticket.queue and ticket.assignee are
+    planned_substrate with no writer.
 
-    '
-  reviewed_at: '2026-08-24'
-admission:
-  accepted_content_hash: 2ec8fe83eee8708fe26ed26336b2688e9b15f2c062ae59f340f8a8fe7b7f2ac6
+    reassignment_count is the KPI that matters and it is almost never reported, because queue
+    systems measure time-in-queue and not hands-touched. Satisfaction tracks handoffs more
+    closely than it tracks duration, which means the reported number and the experienced one
+    diverge exactly where the customer is most annoyed.
+
+    unowned_duration deliberately includes the period a ticket sits with another team. That is
+    the gap engineering_handoff also names: the ticket is with engineering and the customer
+    relationship is with nobody.

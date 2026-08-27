@@ -11,18 +11,77 @@ identity:
 purpose:
   statement: Intent classification earns its keep only if the label changes what happens next — the route,
     the priority, the macro. Labels nobody branches on are taxonomy hobbyism.
+
+when_to_use:
+  signals: [question]
+  do_not_use_when:
+  - The taxonomy has no branches behind it. Classifying into labels nobody acts on is work with no output, and fixing the taxonomy comes first.
 steps:
 - order: 1
-  name: Keep the intent set small and actionable
-  description: A dozen intents that each map to a different route beat eighty that map to nothing.
-  actor: human
+  name: Read the body, not the dropdown
+  description: >
+    The category field is the part of the form the customer spent least time on. The body text is
+    what they actually wanted to say.
+  actor: system
+  objects_read: [customer_support.obj.core.ticket, customer_support.obj.core.intent]
+  done_when: The label derives from what was written.
 - order: 2
-  name: Let low confidence stay unlabelled
-  description: A wrong route costs more than a short manual triage. Below the confidence bar, the ticket
-    goes to a human sorter, honestly.
+  name: Find the outcome they would accept
+  description: >
+    Not the action they asked for. "How do I export this" frequently means "I have a board meeting
+    at four", and the export may not be the answer.
   actor: human
+  done_when: The acceptable outcome is stated, even if it differs from the request.
 - order: 3
-  name: Audit misroutes weekly
-  description: Every re-route is a labelled training example. The intent set that never changes is the
-    one nobody is checking.
+  name: Check the label changes something
+  description: >
+    If the route, the priority and the macro would be identical without it, the label is
+    maintenance cost with no return.
   actor: human
+  done_when: Each label maps to a branch.
+- order: 4
+  name: Say unknown rather than force a fit
+  description: >
+    Nearest-category assignment routes confidently to the wrong place, which costs more than an
+    honest unknown routed to a person.
+  actor: human
+  done_when: Ambiguous cases are labelled ambiguous.
+- order: 5
+  name: Resist taxonomy growth
+  description: >
+    Every added label reduces the accuracy of the others, because the boundaries become finer than
+    the evidence available at intake.
+  actor: human
+  done_when: New labels replaced old ones rather than joining them.
+objects_used: [customer_support.obj.core.ticket, customer_support.obj.core.intent, customer_support.obj.core.requester,
+               customer_support.obj.core.product_area]
+limits:
+- 'Step 2 needs context the ticket often does not carry, so it is frequently a question rather than an inference.'
+- 'It classifies; whether the classification is acted on correctly belongs to routing.'
+failure_modes:
+- 'Step 3 skipped, so the taxonomy grows and the accuracy of every label falls together.'
+- 'Step 1 automated against the dropdown as a training label, which teaches a model to reproduce the customer''s guess.'
+variants:
+- applies_to: ai_first_support
+  change: Step 4 becomes the most important step — a model that cannot say unknown will classify everything, confidently.
+  why: Forced classification is the default behaviour of a classifier.
+- applies_to: plg_self_serve
+  change: Step 1 is the whole capability; there is no human to correct the dropdown later.
+  why: Nobody reads it before it routes.
+references:
+- title: Support taxonomy design
+  kind: practitioner
+  note: Where a label's value is defined by the branch it drives rather than by its descriptive accuracy.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1's automation failure is worth flagging: training a classifier on the customer-
+    selected category teaches it to reproduce the guess the customer made in a hurry, which is
+    the thing this playbook exists to override.
