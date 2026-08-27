@@ -6,11 +6,85 @@ identity:
   scope: capability
   owner_capability: sales.discovery_and_solution.value_proposition
   subdomain: discovery_and_solution
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: Founders think in runway and growth, CFOs in payback months, ops leaders in hours and errors.
-    The same true value lands or dies by choosing the audience's native unit — translate the equation
-    per stakeholder.
+  statement: Founders think in runway and growth, CFOs in payback months, ops leaders in hours and
+    errors. The same true value lands or dies by choosing the audience's native unit.
   answers:
-  - How should the same ROI be presented to different stakeholders?
+  - In what terms should value be expressed?
+  not:
+  - A claim that value changes by audience. The value is one thing; the unit is not.
+
+heuristic:
+  statement: 'Translate the value into the unit the audience is personally measured on, and do the
+    translation ourselves. The arithmetic is identical either way — what changes is whether the
+    listener has to perform a conversion before they can judge it, and under time pressure an
+    unconverted number is treated as not applicable rather than as unclear.'
+  why: 'People assess a claim against the measure they are held to, because that is the measure they
+    have intuitions about. A figure in a foreign unit is not merely harder — it is unanchored, so
+    there is nothing to compare it with and no way to tell whether it is large. Asking the buyer to
+    convert also transfers work at the exact moment we are trying to demonstrate that we understand
+    their situation, which undercuts the claim while making it.'
+  confidence_bp: 8500
+  applies_when: 'A value case being presented to a specific person whose measures are knowable.'
+  breaks_down_when: 'A MIXED AUDIENCE. Several people measured on different things, where choosing one
+    unit excludes the rest — the resolution is one primary unit with the others available, not an
+    average nobody uses.
+
+    A BUYER WHO HAS STATED THEIR OWN FRAME. If they have said what they are optimising for, use it
+    exactly rather than inferring a role-typical unit, which is frequently wrong for the individual.
+
+    EARLY EXPLORATION. Before the problem is quantified there is nothing to translate, and a precise
+    figure in any unit is a guess dressed up.
+
+    WHEN THE TRANSLATION IS A STRETCH. Converting a real operational gain into a revenue number
+    through several assumptions produces a bigger figure and a weaker case, because each assumption is
+    a place to disagree.
+
+    A TECHNICAL EVALUATOR. Some audiences are assessing capability rather than value, and a commercial
+    translation reads as an evasion of the question they asked.'
+  reads:
+  - sales.obj.core.business_need
+  - sales.obj.core.persona
+  - sales.obj.core.decision_maker
+  contradicts:
+  - sales.heu.proposal_creation.sent_proposals_are_read_aloud_without_you
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - proposal_sent
+  - budget_approved
+  do_not_use_when:
+  - The buyer has already stated their own frame; use theirs rather than a role-typical guess.
+  - The problem is not yet quantified, so there is nothing to translate.
+  - The audience is technical and assessing capability rather than value.
+
+objects_used:
+- sales.obj.core.business_need
+- sales.obj.core.persona
+- sales.obj.core.decision_maker
+- sales.obj.core.pain_point
+
+limits:
+- The value case lives in conversation and documents, neither of which is in the record.
+- '`party.role` says what a counterparty is to us and not what they are measured on, so the unit has
+  to be established by asking.'
+- Says nothing about whether the value is real, only about how it is expressed.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The addition is that an unconverted number is
+    UNANCHORED rather than merely unclear — there is nothing to compare it against, so under time
+    pressure it is read as not applicable, which is worse than being read as wrong.'

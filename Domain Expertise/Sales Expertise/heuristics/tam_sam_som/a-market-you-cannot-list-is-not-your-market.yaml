@@ -6,10 +6,80 @@ identity:
   scope: capability
   owner_capability: sales.market_and_targeting.tam_sam_som
   subdomain: market_and_targeting
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: The test of a target market is whether its members can be enumerated. 'Mid-market B2B companies'
-    is a phrase; four hundred nameable accounts with the pain and the budget is a market.
+  statement: The test of a target market is whether its members can be enumerated. 'Mid-market B2B
+    companies' is a phrase; four hundred nameable accounts with the pain and the budget is a market.
   answers:
-  - Is this segment real enough to build pipeline against?
+  - Is this a market or a description?
+  not:
+  - A claim that large markets are not real. It is about whether ours is addressable.
+
+heuristic:
+  statement: 'Require the list before accepting the size. Enumeration is not a formality — it is the
+    only test that distinguishes a market we can work from a category we belong to, and it fails
+    loudly and early, which is exactly what a sizing exercise is for.'
+  why: 'A descriptive market cannot be handed to anybody. Territory planning needs accounts to divide,
+    prospecting needs names to contact and quota planning needs potential to sum, so a number with no
+    list underneath it stops at the slide it was made for. The enumeration also tends to reveal the
+    real problem — the segment is smaller than assumed, or the qualifying criteria exclude most of it
+    — and it reveals it in an afternoon rather than in a year of coverage.'
+  confidence_bp: 8700
+  applies_when: 'Any market sizing intended to drive targeting, territory or quota decisions.'
+  breaks_down_when: 'GENUINELY LONG-TAIL MOTIONS. Self-serve and volume businesses have real markets
+    with millions of members that nobody enumerates, and demanding a list there is a category error —
+    the sizing is statistical rather than nominal.
+
+    A NEW CATEGORY. Where the buyers do not yet identify as a segment, the list cannot be built from
+    existing signals and the sizing is necessarily an argument rather than a count.
+
+    EARLY EXPLORATION. Before the ICP is settled the list would enumerate the wrong criteria, and a
+    precise count of the wrong thing is worse than an estimate.
+
+    CONSUMER OR VERY SMALL BUSINESS MARKETS. Individually nameable and practically not, so the test
+    passes in principle and adds nothing.
+
+    WHEN IT PRODUCES FALSE PRECISION. A list built from a purchasable database is enumerable and may
+    be no more accurate than the estimate it replaced; being countable is not the same as being right.'
+  reads:
+  - sales.obj.core.icp
+  - sales.obj.core.account
+  contradicts:
+  - sales.heu.territory_planning.unworked_accounts_are_nobodys_win
+  pattern_ref: []
+
+when_to_use:
+  conditions:
+  - {absent: thread.last_outbound}
+  signals:
+  - followup_sent
+  do_not_use_when:
+  - The motion is long-tail or self-serve, where sizing is statistical rather than nominal.
+  - The category is new and buyers do not yet identify as a segment.
+  - The ICP is not settled, so the list would enumerate the wrong criteria.
+
+objects_used:
+- sales.obj.core.icp
+- sales.obj.core.account
+- sales.obj.core.lead
+
+limits:
+- The enumeration test is checkable in principle against `graph_nodes` for a tenant whose graph covers
+  their market, and not otherwise — most tenants' graphs contain their correspondence rather than
+  their market.
+- Says nothing about whether the enumerated accounts will buy.
+- Cannot distinguish a genuinely enumerable market from a purchased list that merely looks like one.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The addition is what the enumeration is FOR —
+    every downstream consumer needs accounts rather than a number, so a market with no list stops at
+    the slide it was made for, and the attempt to build one usually surfaces the real problem in an
+    afternoon.'

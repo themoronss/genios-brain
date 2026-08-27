@@ -3,25 +3,101 @@ identity:
   name: Value Proposition
   domain: sales
   subdomain: discovery_and_solution
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
-description: 'Articulating value against the buyer''s own metrics, with the status quo as the real competitor.
-  Most deals are lost to inaction, not to a rival.
+description: 'Articulating value against the buyer''s own metrics, with the status quo as the real
+  competitor. Most deals are lost to inaction, not to a rival.
 
   '
 question: Why is this worth more than doing nothing?
+
+outcomes:
+- 'The status quo named as the competitor it is. Most losses are to inaction, and a value case built
+  only against rival products has never argued with the option the buyer will actually take.'
+- 'Value expressed in the audience''s native unit. Founders think in runway and growth, finance in
+  payback months, operations in hours and errors — the same true value lands or dies on that
+  translation, and translating is our job rather than theirs.'
+- 'Every number taken from their discovery, not from a benchmark. An industry figure is our number
+  wearing their problem, and finance discounts it immediately because the provenance is obvious.'
+- 'The delta stated conservatively and said to be conservative. A modest claim survives a finance
+  review; an aggressive one invites a challenge that consumes the meeting and leaves nothing
+  established.'
+- 'A single-line equation someone can repeat. Costs roughly this today, conservative impact this,
+  investment this — a sentence that travels intact through a room we are not in.'
+- 'An admission that the case is weak where it is. The negative outcome: some accounts genuinely
+  cannot justify the spend, and discovering that with them is faster and cheaper than discovering it
+  through a slow no.'
+
+failure_modes:
+- 'ARGUING AGAINST COMPETITORS ONLY. The buyer''s realistic alternative is usually to do nothing, and
+  a case that never addresses it loses to the option it ignored.'
+- 'OUR UNIT OF ACCOUNT. Value stated in the metrics we optimise rather than the ones they are measured
+  on, which requires the buyer to do the translation and most will not.'
+- 'BENCHMARK NUMBERS. Recognisable as vendor arithmetic and discounted on sight, and they also
+  discredit the numbers beside them that did come from the buyer.'
+- 'BEST-CASE CLAIMS. Invite a challenge on the assumptions, and the meeting is then about our
+  credibility rather than about their problem.'
+- 'A CASE TOO COMPLEX TO REPEAT. If the champion cannot restate it in one sentence, it does not
+  survive being carried into a room we are not in — which is the only room it needs to work in.'
+- 'A VALUE CASE WITH NO COST OF INACTION. Establishes that the product is good and not that anything
+  needs to happen this year.'
+
+kpis:
+- name: buyer_sourced_number_share
+  unit: percent
+  description: Share of figures in the case supplied by the buyer rather than by us.
+  direction: higher_is_better
+- name: native_unit_match_rate
+  unit: percent
+  description: Share of cases expressed in the audience's own measure.
+  direction: higher_is_better
+- name: repeatable_equation_rate
+  unit: percent
+  description: Share of value cases the champion can restate in one sentence.
+  direction: higher_is_better
+- name: loss_to_inaction_share
+  unit: percent
+  description: Share of losses to no-decision rather than to a competitor. The number this capability
+    exists to move, and the one most win-loss analysis under-reports.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.discovery_and_solution.discovery
+  - sales.discovery_and_solution.need_analysis
+  downstream:
+  - sales.proposal_and_commercials.proposal_creation
+  - sales.proposal_and_commercials.pricing
+  - sales.discovery_and_solution.demo
+  parallel:
+  - sales.proposal_and_commercials.objection_handling
+  - sales.qualification.decision_maker_identification
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Downstream of discovery and need analysis, and it inherits
+    their substrate problem entirely — the numbers this capability depends on are stated in
+    conversation and the record holds no transcripts.
+
+    The status-quo framing in the first outcome is the load-bearing claim and it is the one most value
+    frameworks skip: they compare against alternatives that were considered, and the alternative that
+    wins most often was never considered at all because it required no decision.
+
+    No numbers: what payback is acceptable, and how conservative is conservative, are Layer 4''s
+    arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: fe46bd104087e5a768a111fcfe2e9d89742f0a31b63442165706cc897f8154f9
+  accepted_content_hash: 10716f7d737b41bbce9429cbe0a71d33e8d1fcc0f28e95a82c842accb9f05f7d

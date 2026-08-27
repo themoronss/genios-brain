@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.sales_analytics.slice_before_concluding
 decision_frameworks:
   core: []
   scoped: []

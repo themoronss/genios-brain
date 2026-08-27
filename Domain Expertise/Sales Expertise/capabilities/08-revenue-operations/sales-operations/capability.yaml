@@ -3,25 +3,101 @@ identity:
   name: Sales Operations
   domain: sales
   subdomain: revenue_operations
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
-description: 'Process, tooling, data hygiene, compensation mechanics and enablement infrastructure. Invisible
-  when it works and the sole explanation for the quarter when it does not.
+description: 'Process, tooling, data hygiene, compensation mechanics and enablement infrastructure.
+  Invisible when it works and the sole explanation for the quarter when it does not.
 
   '
 question: Does the machinery of selling work?
+
+outcomes:
+- 'Every mandated field, stage and report able to name the decision it feeds. No answer means theatre,
+  and theatre in a sales process is paid for in selling hours by people who had no say in it.'
+- 'Selling hours bought back and counted. The function''s output is time returned to the people who
+  sell, and it is measurable — a periodic honest log of where the week goes surprises everyone,
+  including the people keeping it.'
+- 'Deletion attempted before automation. Half the reported ritual serves nobody; automating a broken
+  ritual makes it permanent and cheap, which is the worst combination available.'
+- 'Data hygiene treated as a consequence of process design rather than as a discipline problem. Fields
+  nobody reads are filled in badly because filling them in badly is rational, and no amount of
+  reminding changes that.'
+- 'Compensation mechanics understood as behaviour design. The plan is the strongest instruction the
+  organisation issues, and it overrides every stated priority that contradicts it.'
+- 'A stated refusal to add a requirement. The negative outcome: an operations function that only ever
+  adds is accumulating tax, and each addition is individually defensible while the total is not.'
+
+failure_modes:
+- 'PROCESS ADDED, NEVER REMOVED. Each requirement locally justified, the cumulative burden nobody''s
+  responsibility, and the sellers absorb all of it.'
+- 'AUTOMATING THE RITUAL. It survives forever afterwards, cheaply, and its cost disappears from view
+  precisely because it no longer takes anyone visible effort.'
+- 'HYGIENE MANAGED BY REMINDING. Fields nobody reads get filled in badly for good reasons; reminders
+  address the symptom and the cause is that the field feeds nothing.'
+- 'TOOLING CHOSEN BEFORE THE PROCESS IS UNDERSTOOD. It then encodes the current mess and makes it
+  expensive to change.'
+- 'COMP PLANS TREATED AS FINANCE MECHANICS. They are the loudest behavioural instruction in the
+  organisation, and a plan contradicting the stated strategy wins.'
+- 'MEASURING THE FUNCTION BY ITS OUTPUT VOLUME. Reports produced and processes shipped, rather than
+  hours returned and decisions improved.'
+
+kpis:
+- name: selling_time_share
+  unit: percent
+  description: Share of a seller's week spent in front of buyers. The function's actual output, and
+    the only measure that captures both what it added and what it removed.
+  direction: higher_is_better
+- name: mandated_field_justification_rate
+  unit: percent
+  description: Share of required fields that can name a decision they feed.
+  direction: higher_is_better
+- name: deletions_per_period
+  unit: count
+  description: Requirements removed. A function that only adds is accumulating tax, and this is the
+    counterweight.
+  direction: higher_is_better
+- name: process_change_adoption
+  unit: percent
+  description: Share of shipped changes still in use after a period. Low adoption is a design verdict,
+    not a compliance problem.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.revenue_operations.sales_analytics
+  - sales.sales_management.performance_management
+  downstream:
+  - sales.revenue_operations.pipeline_management
+  - sales.revenue_operations.forecasting
+  parallel:
+  - sales.revenue_operations.territory_planning
+  - sales.revenue_operations.quota_planning
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. An infrastructure capability with no live route — nothing
+    triggers it — authored so a compiled answer about process or hygiene reasons from something rather
+    than from instinct.
+
+    Worth stating because it explains a defect this whole corpus is downstream of: data hygiene is a
+    PROCESS DESIGN outcome, not a discipline outcome. A field nobody reads is filled in badly because
+    doing so is rational, which is why every quality problem the engine encounters in a tenant''s CRM
+    has a cause that lives here rather than in the sellers.
+
+    No numbers: acceptable selling-time shares and process budgets are Layer 4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: 59be187907636c3d42ff10ce19f3ecf33af7cf793e32dc70d28dda7d98f81778
+  accepted_content_hash: b3980b34a3f4d785a1fa0dcf560dc32c54b3b8cd1c5a6f16e8504cc0f1411403

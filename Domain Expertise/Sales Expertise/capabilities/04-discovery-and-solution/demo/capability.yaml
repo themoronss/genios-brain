@@ -3,25 +3,100 @@ identity:
   name: Demo
   domain: sales
   subdomain: discovery_and_solution
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
-description: 'A demonstration built from discovery, not from a script. The failure mode is feature tour:
-  showing everything, proving nothing, and leaving the buyer to do the mapping we were paid to do.
+description: 'A demonstration built from discovery, not from a script. The failure mode is feature
+  tour: showing everything, proving nothing, and leaving the buyer to do the mapping we were paid to
+  do.
 
   '
 question: How do we show the solution against their specific problem?
+
+outcomes:
+- 'A script that is their problem list, in their words, agreed at the start. Opening by naming what
+  will be shown and asking whether that is right turns the demo into a contract — and it surfaces a
+  missing problem while there is still time to include it.'
+- 'The single most valuable moment for THIS buyer shown early. Setup and configuration before the
+  payoff spends the attention on the least interesting part, and the buyer decides during it.'
+- 'Every segment landed on their metric. After each problem is answered, name what it was worth in
+  their terms — otherwise the mapping from feature to value is left to them, and it is the work we
+  were there to do.'
+- 'Less shown, not more. Every feature beyond their needs adds surface for confusion and price
+  anxiety rather than desire; the demo that closes is remembered as doing exactly what they needed.'
+- 'A next step named and scheduled before the call ends. A demo ending in "we will be in touch" has
+  leaked, and the interest it built is at its peak in that moment and never higher afterwards.'
+- 'A refusal to demo before discovery. The negative outcome: a demonstration with no problem list is
+  a feature tour by construction, and running it anyway trains the buyer to evaluate us on breadth.'
+
+failure_modes:
+- 'THE FEATURE TOUR. Everything shown, nothing proved, and the buyer left to work out which parts were
+  for them — which is the analysis they were relying on us to have done.'
+- 'SETUP BEFORE PAYOFF. The most valuable moment arrives after attention has gone, and the buyer has
+  already formed a view during the configuration screens.'
+- 'SHOWING BREADTH TO IMPRESS. Extra capability reads as complexity and as cost, and it invites price
+  anxiety rather than desire.'
+- 'NO METRIC AFTER EACH SEGMENT. The buyer sees a feature working and does not connect it to the hours
+  or the money, because nobody made the connection out loud.'
+- 'DEMO BEFORE DISCOVERY. There is no problem list, so the only available structure is the product
+  menu, and the evaluation becomes a comparison of feature counts.'
+- 'ENDING WITHOUT A NEXT STEP. Interest peaks at the end of a good demo and decays from there; leaving
+  the moment unused is the most common way a good demonstration produces nothing.'
+
+kpis:
+- name: problems_agreed_upfront_rate
+  unit: percent
+  description: Share of demos opening with an agreed problem list rather than a product agenda.
+  direction: higher_is_better
+- name: time_to_first_payoff
+  unit: minutes
+  description: Minutes before the single most valuable moment for this buyer. The attention budget is
+    spent early whether or not anything is proved in it.
+  direction: lower_is_better
+- name: features_shown_beyond_need
+  unit: count
+  description: Capabilities demonstrated that no stated problem required.
+  direction: lower_is_better
+- name: next_step_scheduled_rate
+  unit: percent
+  description: Share of demos ending with a dated next step.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.discovery_and_solution.discovery
+  - sales.discovery_and_solution.need_analysis
+  downstream:
+  - sales.proposal_and_commercials.proposal_creation
+  - sales.proposal_and_commercials.objection_handling
+  parallel:
+  - sales.discovery_and_solution.value_proposition
+  - sales.qualification.buying_committee_analysis
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub, and it completes the discovery_and_solution subdomain.
+
+    Everything here happens inside a meeting the record cannot see. `meeting.start_at`, `.end_at` and
+    `demo_requested` (9 rows on the design partner''s org) show that a demonstration was requested and
+    that a meeting happened; nothing shows what was demonstrated or in what order. The last outcome is
+    the exception — a scheduled next step leaves a calendar trace, so the one thing the engine can
+    observe about a demo is whether it produced a follow-on meeting.
+
+    No numbers: how long before the payoff, and how many features is too many, are Layer 4''s
+    arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: 4c3a54d3477d00316f7aeb5f6c9d9957608c15f5fe848d809f5f371ca4bb458d
+  accepted_content_hash: 8e84c3f4b3561f874dc8bd4708d4cf2b95db8338300567b1013333ad0e32d438

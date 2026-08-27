@@ -1,34 +1,120 @@
 identity:
   id: sales.pb.demo.discovery_anchored_demo
-  name: Discovery-anchored demo
+  name: The discovery-anchored demo
   kind: playbook
   domain: sales
   scope: capability
   owner_capability: sales.discovery_and_solution.demo
   subdomain: discovery_and_solution
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: A demo is proof, not a tour. Its script is the three problems discovery surfaced, in the
-    buyer's own words, each answered on-screen in minutes — and everything else in the product left unshown.
+  statement: 'A demo is proof, not a tour. Its script is the problems discovery surfaced, in the
+    buyer''s own words, each answered on screen — and everything else stays closed.'
+  answers:
+  - What is a demo's structure?
+  - What happens at the end of one?
+  not:
+  - Product training, which is comprehensive by design.
+  - Discovery. If it has not happened, this playbook cannot run.
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {has_obs: demo_requested}
+  signals:
+  - demo_requested
+  - meeting_request
+  do_not_use_when:
+  - 'Discovery has not happened. Without a problem list the only available structure is the product
+    menu, and the evaluation becomes a comparison of feature counts.'
+  - 'The buyer is evaluating breadth deliberately — a consolidation or standardisation decision — where
+    showing the range is answering their question.'
+  - 'A scored technical evaluation governs, where coverage must be demonstrated against a rubric.'
+
 steps:
 - order: 1
   name: Open with their problems, as a contract
-  description: '''You told us X, Y, Z — today we show exactly how each is handled. Fair?'' The demo now
-    has a definition of done.'
+  description: '"You told us X, Y and Z — today we show exactly how each is handled. Is that right?"
+    It turns the demo into an agreement about what will be proved, and it surfaces a missing problem
+    while there is still time to include it.'
   actor: human
+  objects_read:
+  - sales.obj.core.pain_point
+  - sales.obj.core.business_need
+  produces: An agreed agenda in the buyer's own words.
+  done_when: The buyer confirmed or corrected the list before anything was shown.
+
 - order: 2
-  name: Show the aha inside ten minutes
-  description: The single most valuable moment for THIS buyer goes early, not after setup screens. Attention
-    is highest at the start; spend it on the peak.
+  name: Show the payoff inside the first minutes
+  description: 'The single most valuable moment for THIS buyer goes early — not after setup, not after
+    configuration. The attention budget is spent at the start whether or not anything is proved in it,
+    and the buyer forms a view during whatever occupies it.'
   actor: human
+  produces: The strongest moment delivered while attention is highest.
+  done_when: Nothing procedural preceded the first proof.
+
 - order: 3
-  name: Land each segment with their metric
-  description: 'After each problem-solution: ''that is the 6 hours back''. Then a check — ''does this
-    handle it as you imagined?'' Objections surfaced live are objections you can answer.'
+  name: Land each segment on their metric
+  description: 'After each problem is answered, say what it was worth in their terms — that is the six
+    hours back. Then check: does that address it? Without the naming, the mapping from feature to
+    value is left to the buyer, and it is the work we were there to do.'
   actor: human
+  produces: A stated value per segment, confirmed.
+  done_when: No segment ended without its metric and a check.
+
 - order: 4
-  name: Close with the next step scheduled
-  description: A demo that ends with 'we'll be in touch' leaked. The next step is named and calendared
-    before the call ends.
+  name: Keep everything else closed
+  description: 'Capability beyond the agreed list adds scope, complexity and an expectation of price.
+    Mention it in a sentence if it matters; do not demonstrate it, because breadth shown is breadth
+    assumed to be paid for.'
   actor: human
+  produces: A demo bounded by the agreed problem list.
+  done_when: Nothing was demonstrated that no stated problem required.
+
+- order: 5
+  name: Name what we do not do
+  description: 'If a stated problem is one we do not solve, say so during the demo rather than letting
+    it be discovered afterwards. It costs one sentence and buys the credibility that everything else
+    shown depends on.'
+  actor: human
+  produces: An explicit gap, stated by us first.
+  done_when: No known gap was left for the buyer to find.
+
+- order: 6
+  name: Close with the next step scheduled
+  description: 'A demo ending in "we will be in touch" has leaked. Interest peaks at the end of a good
+    demonstration and decays from there, so the next step is named and put in a calendar before the
+    call ends.'
+  actor: human
+  objects_read:
+  - sales.obj.core.next_action
+  produces: A dated next step, agreed in the room.
+  done_when: The follow-on is scheduled rather than promised.
+
+objects_used:
+- sales.obj.core.pain_point
+- sales.obj.core.business_need
+- sales.obj.core.next_action
+- sales.obj.core.pricing
+
+limits:
+- What happened inside the demonstration is invisible to the record; `demo_requested` and the meeting
+  facts show that one was asked for and that a meeting occurred.
+- Step 6 is the exception — a scheduled follow-on leaves a calendar trace, which is the one
+  observable outcome of a demo.
+- Says nothing about how to demonstrate well, only about what to demonstrate and in what order.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a four-step sketch, and it completes the discovery_and_solution subdomain.
+    Steps 4 and 5 are new. Step 5 is the one that is hardest to do and cheapest to skip — naming a gap
+    during the demo costs a sentence, and letting it be discovered afterwards costs the credibility of
+    everything that was shown before it.'

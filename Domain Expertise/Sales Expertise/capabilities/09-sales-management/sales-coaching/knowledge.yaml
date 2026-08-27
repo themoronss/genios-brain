@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.sales_coaching.one_focus_at_a_time
 decision_frameworks:
   core: []
   scoped: []

@@ -1,30 +1,117 @@
 identity:
   id: sales.pb.sales_operations.friction_audit
-  name: Friction audit
+  name: The friction audit
   kind: playbook
   domain: sales
   scope: capability
   owner_capability: sales.revenue_operations.sales_operations
   subdomain: revenue_operations
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: Sales ops exists to buy back selling hours. The quarterly audit asks reps where the hours
-    actually go — CRM ritual, approval chains, doc assembly — and deletes, automates or delegates the
-    top time-thieves.
+  statement: 'Sales ops exists to buy back selling hours. The periodic audit asks sellers where the
+    hours actually go — CRM ritual, approval chains, document assembly — and deletes, automates or
+    delegates what it finds, in that order.'
+  answers:
+  - Where does the selling week actually go?
+  - In what order should friction be removed?
+  not:
+  - Tooling selection, which comes after the process is understood.
+  - Enablement content, which is a different kind of support.
+
+when_to_use:
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - followup_sent
+  do_not_use_when:
+  - 'Nothing can be removed. An audit that produces findings and no authority to act on them costs
+    sellers a week and returns a document.'
+  - 'The team is too new to have a settled routine; the log would describe onboarding.'
+  - 'A major system change is mid-flight. Audit after it settles rather than measuring a transition.'
+
 steps:
 - order: 1
-  name: Measure where the week goes
-  description: A one-week honest log per rep, quarterly. The result always surprises; the surprise is
-    the roadmap.
+  name: Measure where the week goes, honestly
+  description: 'A short, honest log per seller, periodically. The result always surprises — including
+    the people keeping it — because the cost of ritual is paid in fragments nobody adds up.'
   actor: human
+  produces: An evidenced breakdown of the selling week.
+  done_when: The picture came from a log rather than from opinion.
+
 - order: 2
-  name: Delete before automating
-  description: Half the reported ritual serves nobody — fields no one reads, reports no one opens. Deletion
-    is free automation.
+  name: Ask what decision each item feeds
+  description: 'Per mandated field, stage and report: which decision, made by whom. No answer is the
+    finding. The person who added it never paid its cost, which is why nobody has asked before.'
   actor: human
+  objects_read:
+  - sales.obj.core.deal
+  produces: A justification or a gap, per requirement.
+  done_when: Every mandated item has an answer or is on the deletion list.
+
 - order: 3
-  name: Automate what survives deletion
-  description: What remains and repeats gets tooling. Automating a broken ritual just makes the waste
-    faster.
+  name: Delete before automating
+  description: 'Half the reported ritual serves nobody — fields no one reads, reports no one opens.
+    Automating a broken ritual makes it permanent and cheap, which is the worst combination: the cost
+    vanishes from view while the process survives forever.'
   actor: human
+  produces: A list of removed requirements.
+  done_when: Deletion was attempted on every candidate before automation was considered.
+
+- order: 4
+  name: Automate what survives deletion
+  description: 'What remains and repeats gets tooling. This is the correct order and it is almost
+    always reversed, because automation is a project and deletion is an argument.'
+  actor: human
+  produces: Automation applied only to justified, repeating work.
+  done_when: Nothing was automated that could have been removed.
+
+- order: 5
+  name: Fix hygiene by design, not by reminding
+  description: 'A field nobody reads is filled in badly because doing so is rational. Reminders treat
+    the symptom; removing the field or connecting it to a decision treats the cause, and only one of
+    them survives the next quarter.'
+  actor: human
+  produces: Data quality addressed at its source.
+  done_when: No quality problem is being managed by reminder alone.
+
+- order: 6
+  name: Read the comp plan as an instruction
+  description: 'The plan is the loudest behavioural instruction the organisation issues, and it
+    overrides every stated priority that contradicts it. A process asking for behaviour the plan
+    penalises will lose, every time, and no amount of enablement changes that.'
+  actor: human
+  produces: Process and compensation checked against each other.
+  done_when: No mandated behaviour contradicts what the plan pays for.
+
+- order: 7
+  name: Report hours returned, not projects shipped
+  description: 'The function''s output is selling time. Reports produced and processes shipped measure
+    activity — which is the same error this subdomain warns about everywhere else, applied to itself.'
+  actor: system
+  produces: A selling-time measure across periods.
+  done_when: The function is measured on what it gave back.
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.next_action
+- sales.obj.core.timeline
+
+limits:
+- Nothing here reaches the corpus substrate — process, tooling and time allocation are outside the
+  record entirely.
+- The log in step 1 is self-reported and therefore approximate; its value is the surprise rather than
+  the precision.
+- Says nothing about which tools to choose once automation is justified.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 2, 5, 6 and 7 are new. Step 6 is the one most
+    operations functions never run — the compensation plan is a behavioural instruction that silently
+    overrides process, and a process contradicting it loses without anyone noticing which one won.'

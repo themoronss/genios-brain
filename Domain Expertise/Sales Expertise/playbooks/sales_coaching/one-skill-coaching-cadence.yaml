@@ -1,30 +1,116 @@
 identity:
   id: sales.pb.sales_coaching.one_skill_coaching_cadence
-  name: One-skill coaching cadence
+  name: The one-skill coaching cadence
   kind: playbook
   domain: sales
   scope: capability
   owner_capability: sales.sales_management.sales_coaching
   subdomain: sales_management
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: 'Coaching changes behaviour when it is specific, evidenced and singular: one skill per rep
-    per month, drawn from real calls and threads, practised deliberately — not a monthly critique buffet
-    nobody digests.'
+  statement: 'Coaching changes behaviour when it is specific, evidenced and singular: one skill per
+    person per period, drawn from real calls and threads, practised deliberately — not a monthly
+    review of results.'
+  answers:
+  - What does a coaching cycle actually consist of?
+  - How many things should someone be working on?
+  not:
+  - Performance management, which selects who needs the conversation.
+  - Onboarding curriculum, which is sequential rather than diagnostic.
+
+when_to_use:
+  conditions:
+  - {exists: thread.last_outbound}
+  signals:
+  - question
+  - objection
+  do_not_use_when:
+  - 'No record of real interactions exists. Without observable behaviour the session becomes a results
+    conversation regardless of intent.'
+  - 'The problem is fit, territory or plan. Coaching it delays a decision and exhausts the person
+    while the delay runs.'
+  - 'The seller is new enough that everything is a gap; a curriculum is the right instrument.'
+
 steps:
 - order: 1
   name: Diagnose from the record
-  description: Review 2-3 real calls or threads for the pattern that costs the most. The evidence is the
-    diagnosis; opinion is a hypothesis.
+  description: 'Review two or three real calls or threads for the pattern that costs the most. A
+    dashboard produces an adjective; actual interactions produce a repeated, nameable thing that
+    happens in a moment and could happen differently.'
   actor: human
+  objects_read:
+  - sales.obj.core.deal
+  - sales.obj.core.objection
+  produces: One named behavioural pattern, with the examples it came from.
+  done_when: The pattern can be pointed at in a specific interaction.
+
 - order: 2
-  name: Agree ONE focus and its rep
-  description: '''This month: isolating objections before answering.'' Practised in role-play, then live,
-    with the rep knowing exactly what is being watched.'
+  name: Check it is a skill before coaching it
+  description: 'Role fit, an unworkable territory or a broken compensation plan all present as skill
+    gaps and none of them respond to coaching. Naming that costs one honest conversation and saves
+    months of the wrong one.'
   actor: human
+  produces: A coachable-or-not verdict.
+  done_when: No non-coachable problem is entering a coaching cycle.
+
 - order: 3
-  name: Close the loop with before/after evidence
-  description: 'Next month, same lens on new calls: did the pattern move? Coaching without the second
-    measurement is commentary.'
+  name: Agree ONE focus
+  description: 'One skill for the period — isolating objections before answering, for example.
+    A list of five is a performance review wearing a coaching label, and the seller reasonably
+    prioritises none of it.'
   actor: human
+  produces: A single agreed focus, in the seller's words.
+  done_when: Exactly one behaviour is being worked on.
+
+- order: 4
+  name: Show the alternative, do not only name the gap
+  description: 'Naming a behaviour without being able to demonstrate the better version is a criticism
+    rather than a lesson. If the manager cannot show it, the focus is wrong or the coach is.'
+  actor: human
+  produces: A demonstrated alternative the seller has seen.
+  done_when: The seller knows what the better version sounds like.
+
+- order: 5
+  name: Practise between sessions
+  description: 'Rehearsal is where behaviour actually changes and it is the step that gets dropped,
+    because it is uncomfortable for both people. A skill discussed once and never practised does not
+    transfer.'
+  actor: human
+  produces: Deliberate practice, scheduled.
+  done_when: The focus was rehearsed rather than only agreed.
+
+- order: 6
+  name: Close the loop with before-and-after evidence
+  description: 'Next period, the same lens on new interactions: did the pattern move? Coaching without
+    that loop is advice — nobody can tell whether it worked, so the same pattern gets renamed and
+    re-coached indefinitely.'
+  actor: human
+  produces: A movement verdict on the coached pattern.
+  done_when: The previous focus was measured before a new one was chosen.
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.objection
+- sales.obj.core.next_action
+- sales.obj.core.business_need
+
+limits:
+- Calls are not in the record; correspondence is. Half the reviewable behaviour is available and the
+  half where most selling skill lives is not.
+- Says nothing about how to teach a specific skill.
+- Depends on the manager being able to demonstrate the alternative, which step 4 tests and does not
+  supply.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch, and it completes the sales_management subdomain. Steps 2
+    and 4 are new. Step 2 is the one that prevents the most waste — fit, territory and plan problems
+    all present as skill gaps, and coaching them delays a decision that belongs to someone else while
+    exhausting the person waiting for it.'

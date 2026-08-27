@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.value_proposition.the_status_quo_is_the_competitor
 decision_frameworks:
   core: []
   scoped: []

@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.relationship_management.a_departing_champion_is_followed_not_deleted
 decision_frameworks:
   core: []
   scoped: []

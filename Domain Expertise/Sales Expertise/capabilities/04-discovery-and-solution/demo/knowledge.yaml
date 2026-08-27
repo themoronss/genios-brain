@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.demo.no_demo_without_a_problem_list
 decision_frameworks:
   core: []
   scoped: []

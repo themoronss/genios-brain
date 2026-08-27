@@ -211,8 +211,8 @@ traffic instead of being swapped blind.
 | `required_missing` | 2 | 2 (unchanged — see item 3 below) |
 | Compiled cards rendering `raw_slot` | 11 of 18 | **the four causes are fixed; see below** |
 | Live routes compiling through a placeholder capability | 3 of 4 types | **0 of 4** — Admin closed in batch 4 |
-| Hollow capabilities | 136 | **99** (admin 51, customer_support 40, sales 8) |
-| Corpus validation errors | 566 | **412** |
+| Hollow capabilities | 136 | **91** (admin 51, customer_support 40, **sales 0 — COMPLETE**) |
+| Corpus validation errors | 566 | **380** |
 | Tests | 1640 | **1678** |
 
 ## Batch 4 — the substrate was understated, and the live Admin route is no longer hollow
@@ -601,6 +601,38 @@ comma, and rewriting them broke the knowledge-manifest references. Caught by `va
 **Measured:** routing 56/61 unchanged, `card_audit` identical to the batch-4 baseline, 1678 tests
 green, corpus errors 426 → 412, hollow 102 → 99.
 
+## Batch 13 — Sales is complete
+
+`sales_analytics`, `sales_operations`, `relationship_management`, `performance_management`,
+`sales_coaching`, `value_proposition`, `demo`, `tam_sam_som` — plus the three outbound channels in the
+same session. **All 47 Sales capabilities across all 10 subdomains now carry real expertise.** Zero
+hollow.
+
+The last stretch also fixed the authoring method that had been the real bottleneck: files written in
+PARALLEL rather than one per turn, and the optional artifact sections trimmed back to the stated bar.
+The final eight capabilities took roughly as long as two had earlier.
+
+Several of these are PLANNING and MANAGEMENT capabilities with no live route, and their rules are
+`advisory` for a stated reason — quota, attainment, headcount, territory, coaching sessions and market
+size are simply not in the substrate. Recording them at advisory is more honest than asserting an
+enforcement the engine cannot perform, and it means a compiled answer about a shortfall or a market
+reasons from something rather than reaching for the generic response.
+
+Two substrate observations worth carrying forward, both uncomfortable and both recorded in `limits`:
+
+* For `performance_management` and `sales_analytics`, the engine can compute the metric each
+  capability argues AGAINST (correspondence-derived activity) and not the one it argues FOR (outcomes,
+  stage conversion). The corpus is structurally on the wrong side of its own advice there.
+* For `cold_email`, the reverse — reply rate per person is fully computable and open rate is not, so
+  the engine is structurally on the right side.
+
+Three id mismatches were caught by `validate.py` during promotion, not by me: the originals carry a
+double underscore where a title had a comma, and rewriting them silently broke the knowledge-manifest
+references.
+
+**Measured:** routing 56/61 unchanged, `card_audit` identical to the batch-4 baseline, 1678 tests
+green, corpus errors 412 → 380, hollow 99 → 91.
+
 ## What is left, and the honest blockers
 
 1. **`account_admin` routes but CANNOT DELIVER.** `ReasoningStore.persist_complete` refuses a write
@@ -610,7 +642,9 @@ green, corpus errors 426 → 412, hollow 102 → 99.
    is true of all 49 Customer Support capabilities.** This is the largest structural gap left: the
    corpus can author a domain the tenant has no lane for, and nothing in the authoring path says so.
    The honest unblock is an `admin` pack module plus a tenant promotion.
-2. **99 hollow capabilities** — 51 admin, 40 customer_support, 8 sales (was 136 before batch 4).
+2. **91 hollow capabilities** — 51 admin, 40 customer_support, **0 sales**. The Sales corpus is
+   COMPLETE: all 47 capabilities across all 10 subdomains carry real expertise, and it is the only
+   domain a tenant can deliver through today.
    Only the sales ones can reach a user today. Promote in the order their situation types actually
    occur. **Corrected:** batch 5 was reported as leaving nothing hollow in a live type's route set —
    `pricing` was still there, reached through `field_evidence_on_the_market` under `opportunity`. It
@@ -624,11 +658,7 @@ green, corpus errors 426 → 412, hollow 102 → 99.
       `support_plan`. This is the ONLY remaining corpus-fixable routing gain: it closes
       `required_missing=2` and takes the live org from 56/61 to 58/61. It is also a much larger unit
       of work than a capability batch — these are 23-section objects at the `requester.yaml` standard.
-   c. **The remaining 8 sales capabilities** — sales_management (3: performance_management,
-      relationship_management, sales_coaching), revenue_operations (2: sales_analytics,
-      sales_operations), discovery_and_solution (2: value_proposition, demo), tam_sam_som (1).
-      THREE subdomains now complete: prospecting_and_outreach (8 of 8), post_sale_and_growth (7 of 7)
-      and qualification (5 of 5).
+   c. ~~The remaining sales capabilities~~ — DONE. Sales is 47 of 47.
    d. Admin (51) and Customer Support (40) last, because neither can deliver on this tenant until an
       `admin` pack module exists.
 3. **`required_missing` (2)** — two `relationship` situations want

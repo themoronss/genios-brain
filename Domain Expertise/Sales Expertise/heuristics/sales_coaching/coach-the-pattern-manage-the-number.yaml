@@ -6,10 +6,85 @@ identity:
   scope: capability
   owner_capability: sales.sales_management.sales_coaching
   subdomain: sales_management
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
   statement: Numbers say WHO needs help; only the recorded behaviour says WHAT to change. Coaching from
     dashboards alone produces pep talks; coaching from calls produces skill.
   answers:
-  - What separates coaching from performance management?
+  - What should a coaching conversation be built from?
+  not:
+  - A claim that numbers are irrelevant to coaching. They select the person, not the subject.
+
+heuristic:
+  statement: 'Use the number to choose who and the record to choose what, and never let the first
+    supply the second. A result contains no behaviour, so a conversation built from it can only
+    describe the result more emphatically — which the seller experiences as being told something they
+    already knew, in a tone that implies they did not.'
+  why: 'Behaviour change requires a specific action to change, and a number is an aggregate over
+    hundreds of them. The manager, lacking a specific one, reaches for encouragement or for a
+    generality, both of which are unactionable — and the seller correctly concludes the conversation
+    was about accountability rather than about improvement. Two or three real interactions supply what
+    the aggregate cannot: a repeated, nameable thing that happens in a moment and could happen
+    differently.'
+  confidence_bp: 8600
+  applies_when: 'A coaching relationship where some record of actual interactions is available.'
+  breaks_down_when: 'NO RECORD EXISTS. Where calls are not recorded and correspondence is thin, there
+    is no behaviour to observe and the honest alternatives are joining a live call or accepting that
+    coaching will be weaker.
+
+    THE PROBLEM IS NOT A SKILL. Role fit, territory, plan or motivation dressed as a skill gap. Coaching
+    them delays a decision someone else has to make and exhausts the person while it is delayed.
+
+    A VERY NEW SELLER. Everything is a gap, so selecting from observed behaviour returns the entire
+    list; the correct instrument early is a curriculum rather than a diagnosis.
+
+    WHEN OBSERVATION BECOMES SURVEILLANCE. Reviewing recorded interactions is coaching when it is
+    focused and infrequent and something else entirely when it is continuous, and the difference is
+    obvious to the person being reviewed.
+
+    A PATTERN THE MANAGER CANNOT DEMONSTRATE. Naming a behaviour without being able to show the
+    alternative produces a criticism rather than a lesson.'
+  reads:
+  - sales.obj.core.deal
+  - thread.last_outbound
+  - thread.last_inbound
+  contradicts:
+  - sales.heu.performance_management.trailing_metrics_manage_history
+  pattern_ref: []
+
+when_to_use:
+  conditions:
+  - {exists: thread.last_outbound}
+  signals:
+  - question
+  - objection
+  - negative_reply
+  do_not_use_when:
+  - No record of real interactions exists to observe.
+  - The problem is role fit, territory or plan rather than skill.
+  - The seller is new enough that a curriculum beats a diagnosis.
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.objection
+- sales.obj.core.next_action
+
+limits:
+- Threads are in the record and calls are not, so half the reviewable behaviour is available and the
+  half where most selling skill lives — live conversation — is outside it entirely.
+- Says nothing about how to teach the behaviour once it is named.
+- Cannot tell a coachable skill gap from a fit problem, which is the second breakdown regime and the
+  most consequential misclassification in the capability.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The mechanism is the addition — a manager
+    without a specific behaviour reaches for encouragement, which the seller reads as accountability
+    dressed as help, and that reading is correct.'

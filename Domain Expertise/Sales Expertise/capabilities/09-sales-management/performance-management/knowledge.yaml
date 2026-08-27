@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.performance_management.the_number_says_who_not_why
 decision_frameworks:
   core: []
   scoped: []

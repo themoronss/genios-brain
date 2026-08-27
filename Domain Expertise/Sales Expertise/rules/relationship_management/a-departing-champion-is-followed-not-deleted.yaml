@@ -1,0 +1,76 @@
+identity:
+  id: sales.rule.relationship_management.a_departing_champion_is_followed_not_deleted
+  name: A departing champion is followed, not deleted
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.sales_management.relationship_management
+  subdomain: sales_management
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A champion who leaves is not a lost contact, they are a warm relationship that has moved
+    to a new address. The record files people against companies, so the default behaviour deletes the
+    single most valuable opening the organisation has.'
+  answers:
+  - What happens when a champion leaves an account?
+  not:
+  - A rule about the account they left, which is churn prevention's problem.
+
+rule:
+  statement: 'A champion or executive sponsor leaving an account MUST generate a follow action rather
+    than a contact removal. The relationship record MUST persist against the PERSON, and their
+    departure MUST also raise the account-side risk separately — the two are different events and both
+    are real.'
+  spans:
+  - sales.obj.core.champion
+  - sales.obj.core.stakeholder
+  - sales.obj.core.account
+  when:
+  - {has_obs: champion_change}
+  then: 'Raise two items — follow the person to their new organisation, and assess the account they
+    left — rather than closing the contact.'
+  severity: warning
+  why: 'The asymmetry is stark and almost always missed. Losing a champion at an account is a risk
+    everyone recognises; gaining a warm advocate at a NEW company is an opportunity nobody is looking
+    for, and it arrives in the same event. Systems that key relationships to accounts cannot represent
+    the second at all, so the departure produces a risk flag and a deletion — and the strongest
+    opening available anywhere, someone who already knows the product works, is discarded as
+    administrative tidying.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'A DEPARTURE ON BAD TERMS WITH US. Where the relationship ended poorly, following is not a warm
+    opening and pursuing it compounds the original problem.'
+  - 'A MOVE OUTSIDE ANY PLAUSIBLE MARKET. A champion who leaves for an unrelated industry or stops
+    working is not a commercial opportunity, though they may remain a personal contact.'
+  - 'A CONTRACTUAL OR CONFIDENTIALITY CONSTRAINT. Some engagements limit contact with individuals
+    after they leave a client, and the constraint governs.'
+  - 'THE PERSON ASKED NOT TO BE FOLLOWED. Rare and decisive.'
+  - 'A DEPARTURE WE ONLY INFER. `champion_change` can fire on a role change, a reorganisation or a
+    handover rather than an exit, and following someone who has not left reads as not paying
+    attention — the event needs confirming before it is acted on.'
+
+objects_used:
+- sales.obj.core.champion
+- sales.obj.core.stakeholder
+- sales.obj.core.account
+- sales.obj.core.risk
+
+limits:
+- '`champion_change` has zero rows on the design partner''s org, so this rule has no live trigger
+  there — departures currently surface as a new name replying, which nothing classifies as an event.'
+- The observation does not distinguish a departure from a role change, which is the fifth exception.
+- Cannot find where the person went; that is a human step.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. The point is the asymmetry — the same event is a recognised risk at one
+    account and an unrecognised opportunity at another, and account-keyed records can only represent
+    the first, which is why the second is discarded by default.'

@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.tam_sam_som.size_the_obtainable_number_first
 decision_frameworks:
   core: []
   scoped: []

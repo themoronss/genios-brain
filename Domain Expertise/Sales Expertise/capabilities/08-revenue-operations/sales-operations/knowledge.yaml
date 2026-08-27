@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.sales_operations.delete_before_automating
 decision_frameworks:
   core: []
   scoped: []

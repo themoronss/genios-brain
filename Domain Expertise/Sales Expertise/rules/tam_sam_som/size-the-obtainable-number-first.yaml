@@ -1,0 +1,73 @@
+identity:
+  id: sales.rule.tam_sam_som.size_the_obtainable_number_first
+  name: Size the obtainable number first
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.tam_sam_som
+  subdomain: market_and_targeting
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'The total market is the largest of the three figures and the least actionable, and it is
+    the one that gets presented. Producing it first anchors everyone on a number that no plan can be
+    built from, and the obtainable figure then arrives as a disappointment rather than as the answer.'
+  answers:
+  - In what order should the three market figures be produced?
+  not:
+  - A rule about what the numbers should be.
+
+rule:
+  statement: 'A market sizing MUST produce the obtainable figure first and present it as the headline,
+    with the serviceable and total figures as context. Each figure MUST carry the assumptions it rests
+    on; a size published without them is recorded as unreviewable.'
+  spans:
+  - sales.obj.core.icp
+  - sales.obj.core.account
+  - sales.obj.core.pricing
+  when:
+  - {absent: thread.last_outbound}
+  then: 'Require the obtainable figure and its assumptions before the larger numbers are used, and
+    treat an unsourced size as unreviewable.'
+  severity: advisory
+  why: 'Order sets the anchor, and the anchor sets what every later number is judged against. Produce
+    the total first and the obtainable figure is experienced as a shortfall against it, which invites
+    pressure to widen the definition rather than to check it — so the sequence quietly changes the
+    conclusion. The obtainable number is also the only one anything downstream can consume: territory
+    planning divides accounts, quota planning sums potential, and neither can use a category size.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'AN INVESTOR OR STRATEGY AUDIENCE ASKING FOR THE CATEGORY. The total is a legitimate answer to a
+    question about the opportunity''s ceiling, provided the obtainable figure is also given.'
+  - 'A LONG-TAIL MOTION. Where the market is statistical rather than nominal, an obtainable count is
+    not the natural first figure and the sizing is a different exercise.'
+  - 'A NEW CATEGORY. The obtainable number depends on buyers identifying as a segment, which they do
+    not yet, so the sizing is an argument and the ordering is less meaningful.'
+  - 'A REFRESH OF AN EXISTING SIZING. Where the obtainable figure already exists and is being updated,
+    re-deriving the sequence is duplication.'
+  - 'A REGULATORY OR FUNDING SUBMISSION WITH A PRESCRIBED FORMAT. The format governs the order.'
+
+objects_used:
+- sales.obj.core.icp
+- sales.obj.core.account
+- sales.obj.core.pricing
+
+limits:
+- Market sizing is entirely outside the corpus substrate, so this rule cannot be evaluated by the
+  engine — advisory, and recorded so a compiled answer about market size states the ordering rather
+  than reaching for the largest figure.
+- Cannot check whether stated assumptions are reasonable, only whether they were stated.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new, and it is the last rule in the Sales corpus. The anchoring argument is the
+    point — producing the total first makes the obtainable figure feel like a shortfall, which invites
+    pressure to widen the definition rather than to check it, so the sequence changes the conclusion
+    without anyone deciding to.'

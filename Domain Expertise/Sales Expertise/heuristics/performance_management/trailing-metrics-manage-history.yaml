@@ -6,10 +6,83 @@ identity:
   scope: capability
   owner_capability: sales.sales_management.performance_management
   subdomain: sales_management
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: By the time revenue misses, the causes are eight weeks old. A management rhythm built on
+  statement: By the time revenue misses, the causes are weeks old. A management rhythm built on
     trailing numbers is a post-mortem rhythm — accountability without the possibility of rescue.
   answers:
-  - Why do revenue-only reviews fail as management?
+  - Which numbers should a management cadence run on?
+  not:
+  - A claim that outcomes do not matter. They are the objective and they are a poor control surface.
+
+heuristic:
+  statement: 'Run the management rhythm on inputs and the review rhythm on outcomes, and keep the two
+    apart. An outcome number arrives after every decision that produced it has been taken, so it can
+    allocate accountability and it cannot change anything — which is a reasonable thing to do quarterly
+    and a waste of a weekly meeting.'
+  why: 'The lag is structural rather than a reporting problem. Revenue in a period was determined by
+    pipeline created weeks or months earlier, so a manager watching revenue is watching a decision
+    window that has already closed. Inputs sit inside the window — pipeline created, buyer meetings
+    held, conversion at the current stage — which means they are the only numbers where a conversation
+    this week can still change the outcome.'
+  confidence_bp: 8400
+  applies_when: 'A recurring management cadence with any choice about which numbers it runs on.'
+  breaks_down_when: 'A VERY SHORT CYCLE. Where deals close in days, outcome data arrives fast enough to
+    be a control surface, and the distinction largely dissolves.
+
+    INPUTS THAT ARE GAMEABLE. Activity metrics can be inflated at will, so an input-driven rhythm
+    invites exactly that. The inputs have to be ones a buyer participates in — meetings held,
+    conversion — rather than ones a seller can generate alone.
+
+    A NEW MOTION WITH NO CORRELATION HISTORY. Which inputs predict outcomes here is unknown, so an
+    input scorecard is a guess presented with a straight face.
+
+    QUARTERLY OR ANNUAL ACCOUNTABILITY CONVERSATIONS. Outcomes are exactly right there; the heuristic
+    is about the weekly rhythm, not about whether results ever get discussed.
+
+    WHEN INPUTS BECOME THE OBJECTIVE. A team managed only on inputs optimises inputs, and the link to
+    outcomes decays quietly until someone checks the correlation and finds it gone.'
+  reads:
+  - sales.obj.core.deal
+  - derived.momentum
+  - thread.last_outbound
+  contradicts:
+  - sales.heu.sales_analytics.activity_metrics_measure_effort__funnel_metrics_measure_trut
+  pattern_ref: []
+
+when_to_use:
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - proposal_sent
+  - meeting_request
+  do_not_use_when:
+  - The cycle is short enough that outcomes arrive inside the decision window.
+  - The available inputs are seller-generated and gameable.
+  - The conversation is a periodic accountability review, where outcomes are correct.
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.opportunity
+
+limits:
+- Attainment and revenue are not in the corpus substrate at all, and correspondence-derived activity
+  is — so the engine can see the gameable inputs and neither the outcomes nor the buyer-participating
+  inputs this heuristic actually recommends.
+- Says nothing about which inputs predict outcomes for a given funnel; that is history-specific.
+- Cannot distinguish a seller-generated input from a buyer-participating one without knowing what the
+  metric counts.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The second breakdown regime is the necessary
+    qualifier and it connects to the sales_analytics heuristic that contradicts this one — inputs are
+    only a safe control surface when a buyer participates in them, because a seller-only input is a
+    number the team can move without anything changing.'

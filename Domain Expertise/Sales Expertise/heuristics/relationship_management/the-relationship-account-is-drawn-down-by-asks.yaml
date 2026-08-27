@@ -6,10 +6,89 @@ identity:
   scope: capability
   owner_capability: sales.sales_management.relationship_management
   subdomain: sales_management
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: Every ask spends balance; every give deposits. Accounts contacted only at renewal and upsell
-    time run permanently overdrawn — and overdrawn relationships answer RFPs instead of taking calls.
+  statement: Every ask spends balance; every give deposits. Accounts contacted only at renewal and
+    upsell time run permanently overdrawn — and overdrawn relationships answer tenders instead of
+    taking calls.
   answers:
-  - Why did the key account go to RFP without a heads-up?
+  - Why does a relationship contacted only when we need something stop working?
+  not:
+  - A transactional model of friendship. It is a way of noticing an imbalance, not of scoring people.
+
+heuristic:
+  statement: 'Track the give-to-ask balance per relationship and read it before making a request. The
+    balance is not a metaphor — the recipient keeps it, approximately and unconsciously, and their
+    willingness to take the next call is a function of it rather than of how good the request is.'
+  why: 'Reciprocity is the strongest cheap force available in a commercial relationship, and its
+    accounting is asymmetric in a way that catches people out. Asks are salient to us and forgettable
+    to them; gives are the reverse. So our sense of the balance is systematically wrong in the
+    flattering direction — we remember what we gave and they remember what we asked — and the first
+    reliable signal of an overdrawn account is that a request that would once have been easy is
+    suddenly routed through a process.'
+  confidence_bp: 8100
+  applies_when: 'An ongoing relationship with no live transaction, where contact is discretionary on
+    both sides.'
+  breaks_down_when: 'A GENUINELY TRANSACTIONAL RELATIONSHIP. Some counterparties want a vendor, not a
+    relationship, and value-touches from them read as overhead. Respecting that is the correct
+    response.
+
+    A LIVE DEAL. During an active transaction the exchange is the relationship and applying a
+    deposit-withdrawal frame to it is artificial.
+
+    GIVES NOBODY VALUED. A newsletter, a generic insight, a check-in — these feel like deposits to the
+    sender and register as nothing, or as noise, which makes the internal accounting worse rather than
+    better.
+
+    A STRUCTURAL POWER IMBALANCE. Where one side is far more dependent, reciprocity does not operate
+    symmetrically and gives may not accrue at all.
+
+    WHEN IT PRODUCES CALCULATED GENEROSITY. A give offered visibly in order to enable an ask is
+    recognised, and it withdraws more than it deposits.'
+  reads:
+  - sales.obj.core.stakeholder
+  - sales.obj.core.champion
+  - thread.last_inbound
+  - thread.last_outbound
+  contradicts:
+  - sales.heu.follow_up.silence_is_an_answer_about_timing__not_value
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.live_account_relationship
+  conditions:
+  - {exists: thread.last_outbound}
+  signals:
+  - introduction
+  - positive_reply
+  do_not_use_when:
+  - The counterparty wants a vendor rather than a relationship.
+  - A deal is live; the transaction is the relationship for now.
+  - The available gives are generic and register as noise.
+
+objects_used:
+- sales.obj.core.stakeholder
+- sales.obj.core.champion
+- sales.obj.core.account
+
+limits:
+- The record holds message direction and timing but not message INTENT, so it can show cadence and
+  cannot tell a give from an ask — which is the entire quantity this heuristic is about.
+- Says nothing about what constitutes a valuable give for a particular person.
+- Cannot see relationship activity that happens in person, which for senior relationships is most of
+  it.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The asymmetry is the addition — asks are salient
+    to us and forgettable to them, gives the reverse — which is why our sense of the balance is
+    systematically flattering and why the first real signal is a once-easy request suddenly needing a
+    process.'
