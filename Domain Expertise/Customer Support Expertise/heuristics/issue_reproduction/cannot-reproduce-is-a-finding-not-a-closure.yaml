@@ -13,3 +13,54 @@ purpose:
     without bracketing the difference just schedules the ticket''s reopening.'
   answers:
   - Is a failed reproduction grounds to close?
+
+heuristic:
+  statement: >
+    "Works for me" means the difference between environments IS the bug's habitat. Closing as
+    no-reproduce without bracketing that difference just schedules the ticket's reopening.
+  why: >
+    A fault that occurs for the customer and not for us is not an absence of a fault; it is a fault
+    with a precondition we have not identified. The reproduction attempt has therefore succeeded at
+    something — it has established that the cause lives in the delta between two environments, which
+    is a much smaller search space than the one we started with. Discarding that finding and closing
+    the ticket throws away the only progress made and returns the customer to the beginning, angrier.
+  confidence_bp: 8500
+  applies_when: A credible report that does not reproduce in a controlled environment.
+  breaks_down_when: >
+    The report is not credible. A misremembered sequence, a different product, a user error already
+    corrected — those genuinely have no fault behind them, and treating every no-repro as a hidden
+    defect consumes engineering attention on nothing. It also breaks down where the delta is
+    unbounded: a customer environment nobody can inspect, with no logs and no access, leaves nothing
+    to bracket and the honest answer is that we cannot proceed without something they must supply.
+  reads: [customer_support.obj.core.issue, customer_support.obj.core.ticket, customer_support.obj.core.customer_account]
+  contradicts: [customer_support.heu.verification_and_closure.fast_closure_is_a_vanity_metric]
+limits:
+- 'It argues against a specific closure, not for indefinite investigation. Bracketing has a stopping point.'
+- 'It assumes the report describes a real observation, which is the judgement it rests on.'
+failure_modes:
+- 'Every no-repro escalated, which spends engineering attention on user error and devalues genuine escalations.'
+- 'Bracketing performed and never written down, so the next agent starts from zero.'
+variants:
+- applies_to: enterprise_support
+  change: Strongest. Environments are unique, non-reproducible faults are normal, and the delta is where nearly all real defects live.
+  why: There is no standard environment to compare against.
+- applies_to: b2c
+  change: Weaker — with volume, a fault affecting real users usually reproduces somewhere, and a single no-repro is more often user error.
+  why: The sample size does the bracketing for you.
+references:
+- title: Minimal reproducible example practice
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the honest stopping point: where the customer environment
+    cannot be inspected and no logs are available, there is nothing to bracket, and saying we
+    cannot proceed without something they supply is more useful than an open ticket that never
+    moves.

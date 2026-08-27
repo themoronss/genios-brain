@@ -13,3 +13,55 @@ purpose:
     trust reopens — a queue with fast closes and high reopens is hiding its real backlog inside its history.
   answers:
   - Which closure metric deserves trust?
+
+heuristic:
+  statement: >
+    Time-to-close can be gamed by closing early and often; reopen rate cannot. When the two
+    conflict, trust the reopens — a queue with fast closes and high reopens is hiding its real
+    performance from itself.
+  why: >
+    Closure is an action the organisation controls entirely, so any metric built on it can be
+    improved by changing behaviour rather than outcomes. Reopening is an action the customer
+    controls, which makes it the only closure-related signal that cannot be produced internally.
+    The two therefore fail in opposite directions under pressure: a team pushed on close time gets
+    faster and worse simultaneously, and only the reopen number moves in the direction that reveals
+    it.
+  confidence_bp: 8500
+  applies_when: Any queue where closure speed is measured or targeted.
+  breaks_down_when: >
+    Reopening is hard. Where the customer must file a new ticket, the reopen rate is artificially
+    low and the metric it was supposed to check is now equally gamed — the failures simply appear as
+    new reports. It also breaks down where reopens are legitimate and frequent by nature: a
+    long-running defect that recurs across releases produces reopens that say nothing about closure
+    quality.
+  reads: [customer_support.obj.core.ticket, customer_support.obj.core.resolution]
+  contradicts: [customer_support.heu.resolution_delivery.fixed_in_prod_is_not_resolved_for_the_customer]
+limits:
+- 'It compares two metrics; it does not say what good looks like on either.'
+- 'Reopen rate lags by days or weeks, which makes it a poor operational signal and a good review one.'
+failure_modes:
+- 'Cited while reopen friction is high, which makes the check as gameable as the thing it checks.'
+- 'Used to argue against closure targets entirely, which produces a queue that never closes anything.'
+variants:
+- applies_to: outsourced_bpo
+  change: Strongest. Close-time targets are usually contractual and reopen rate is usually not, which is exactly the incentive this heuristic warns about.
+  why: The measured thing is the paid thing.
+- applies_to: b2c
+  change: Weaker, because low-engagement customers neither confirm nor reopen; the signal is thin in both directions.
+  why: Silence dominates the population.
+references:
+- title: Ticket closure practice
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is what makes this heuristic self-undermining if not checked: where
+    reopening is hard, reopen rate is artificially low and the check is as gameable as the
+    metric it exists to police.

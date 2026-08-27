@@ -12,18 +12,76 @@ purpose:
   statement: 'A reproduction is the issue captured in the fewest steps that still fail. The minimal repro
     is the handoff currency: engineering trusts it, fixes verify against it, and closure is testable because
     of it.'
+
+when_to_use:
+  do_not_use_when:
+  - The fault is a known defect with an existing ticket. Reproducing a known bug to confirm it exists spends the customer's patience on something already established.
 steps:
 - order: 1
-  name: Script the exact path
-  description: Numbered steps from clean state to failure, with data values. 'Sometimes it breaks' is
-    a symptom report, not a repro.
+  name: Reproduce it at all, in a controlled environment
+  description: >
+    Somebody has to be able to make it happen deliberately. Until then every downstream claim is
+    about a report rather than about a fault.
   actor: human
+  objects_read: [customer_support.obj.core.issue, customer_support.obj.core.ticket]
+  done_when: The fault occurs on demand somewhere we control.
 - order: 2
-  name: Shrink until every step is load-bearing
-  description: Remove steps until removal makes it pass. What remains is the cause's outline.
+  name: Reduce it to the fewest failing steps
+  description: >
+    The minimal repro is the handoff currency. A reproduction carrying the customer's whole setup
+    hands engineering a reduction exercise before they can start.
   actor: human
+  done_when: Removing any remaining step makes it pass.
 - order: 3
-  name: Record environment as part of the repro
-  description: Version, browser, tenant config — a repro that omits its environment reproduces arguments
-    instead of bugs.
+  name: Write it so a stranger can follow it
+  description: >
+    The reader is somebody with no context, possibly in another team, possibly next month. Steps
+    that assume the author's setup fail silently.
   actor: human
+  done_when: Somebody uninvolved reproduced it from the text.
+- order: 4
+  name: When it will not reproduce, bracket the difference
+  description: >
+    Works for me means the difference between environments is the bug's habitat. Version,
+    configuration, data, region, timing — narrowing that is the finding.
+  actor: human
+  done_when: The environment delta is named, even if the fault is not.
+- order: 5
+  name: Never close on no-repro alone
+  description: >
+    It is the commonest way a real defect leaves the queue, and it returns with the customer's
+    patience already spent.
+  actor: human
+  done_when: The ticket stays open with a stated next step, or the customer agreed to close it.
+objects_used: [customer_support.obj.core.issue, customer_support.obj.core.ticket, customer_support.obj.core.product_area,
+               customer_support.obj.core.customer_account, customer_support.obj.core.bug_report]
+limits:
+- 'Some faults are genuinely environmental and will never reproduce internally; step 4 is the whole capability for those.'
+- 'Reduction takes time that a queue under load does not have, which is why step 2 is the step that gets skipped.'
+failure_modes:
+- 'Step 2 skipped, so the handoff is technically complete and practically unusable.'
+- 'Step 5 breached under backlog pressure, which converts a diagnostic outcome into a disposal.'
+variants:
+- applies_to: enterprise_support
+  change: Step 4 dominates — the customer's environment is unique and often the only place the fault exists.
+  why: Reproduction internally may be impossible by construction.
+- applies_to: b2c
+  change: Step 1 is usually easy and step 2 is where the value is, because volume makes the reduction reusable across many reports.
+  why: One good repro serves hundreds of tickets.
+references:
+- title: Minimal reproducible example practice
+  kind: practitioner
+  note: Where reduction, not reproduction, is identified as the step that makes a report actionable.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 2 is the step under load-pressure and it is the one that determines whether the handoff
+    is usable. Reproducing with the customer's full setup is technically complete and hands
+    engineering the reduction exercise as their first task.

@@ -13,3 +13,54 @@ purpose:
     product behaviour that upgrades then break — the tracking is what keeps 'temporary' true.
   answers:
   - What happens to workarounds nobody tracks?
+
+heuristic:
+  statement: >
+    Nothing outlives a temporary fix that works well enough. Untracked workarounds become
+    undocumented product behaviour, and the upgrade that breaks them arrives with nobody connecting
+    the two.
+  why: >
+    A workaround removes the pain, and pain is what funds the fix. Once the customer is comfortable
+    and the ticket is quiet, the defect competes for engineering attention against problems that are
+    still hurting somebody — and it loses, correctly, every quarter. Meanwhile the workaround
+    accretes: other customers adopt it, documentation references it, and eventually a release
+    changes the behaviour it depended on and produces an incident whose cause is three years old.
+  confidence_bp: 8500
+  applies_when: Any workaround that resolves the customer's immediate problem effectively.
+  breaks_down_when: >
+    The workaround is genuinely better than the fix would be. Sometimes the alternative path is
+    simpler, and the honest outcome is to make it the supported way and close the defect — treating
+    that as fossilisation forces engineering work nobody needed. It also breaks down where the
+    product is being retired: a workaround on a sunsetting system is the correct permanent answer,
+    and tracking it as debt spends attention on a life that will not be used.
+  reads: [customer_support.obj.core.workaround, customer_support.obj.core.bug_report, customer_support.obj.core.issue]
+  contradicts: [customer_support.heu.verification_and_closure.fast_closure_is_a_vanity_metric]
+limits:
+- 'It argues for tracking, not against workarounds. The relief is real and withholding it helps nobody.'
+- 'The fossilisation is only visible if somebody records the workaround at issue time, which is the step it depends on.'
+failure_modes:
+- 'Used to withhold relief until a proper fix exists, which is the opposite failure and costs the customer directly.'
+- 'Tracked and never reviewed, which is the same outcome with an audit trail.'
+variants:
+- applies_to: enterprise_support
+  change: Strongest. Workarounds become embedded in the customer's own runbooks and outlive everyone involved on both sides.
+  why: The customer institutionalises it faster than we track it.
+- applies_to: embedded_in_product
+  change: Workarounds frequently become configuration values that persist across releases invisibly.
+  why: A setting is not a workaround in anybody's record.
+references:
+- title: Known error and workaround practice
+  kind: framework
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is worth acting on rather than resisting: sometimes the workaround
+    is simply better, and the honest outcome is to make it supported and close the defect rather
+    than fund a fix nobody needed.

@@ -12,19 +12,78 @@ purpose:
   statement: A workaround buys time — it is a loan, not a fix. Every issued workaround carries the real
     fix's ticket, a review date, and honest labelling, so relief today does not silently become the permanent
     state.
+
+when_to_use:
+  do_not_use_when:
+  - The fault is silent data corruption or a security exposure. Masking those is harm, not relief, and the correct answer is to stop the activity.
 steps:
 - order: 1
-  name: Label it a workaround, in those words
-  description: Customers plan around what they think is permanent. Honesty about temporariness is what
-    earns patience for the fix.
+  name: Unblock them today
+  description: >
+    A workaround is a real resolution for the person who could not work. Withholding it while a
+    proper fix is built is optimising for tidiness.
   actor: human
+  objects_read: [customer_support.obj.core.issue, customer_support.obj.core.ticket]
+  done_when: The customer can proceed.
 - order: 2
-  name: Link and track the underlying fix
-  description: The workaround's ticket references the root-cause work. When the fix ships, every workaround
-    holder gets told.
+  name: Say it is temporary, and why
+  description: >
+    Presented as a fix it ends the conversation and removes the pressure that would have produced
+    the real one.
   actor: human
+  done_when: The customer knows this is a bridge.
 - order: 3
-  name: Review standing workarounds monthly
-  description: A workaround past its review date is a decision nobody made — either promote the fix or
-    re-justify the wait.
+  name: Attach the real fix's ticket and a review date
+  description: >
+    A workaround without a linked defect is a debt with no creditor, and nothing outlives a
+    temporary measure that works well enough.
+  actor: agent
+  objects_read: [customer_support.obj.core.bug_report, customer_support.obj.core.workaround]
+  done_when: The link and the date both exist.
+- order: 4
+  name: Record who is relying on it
+  description: >
+    When the real fix ships, the people using the alternative are the ones who must be told — and
+    they are also the ones a release can break.
+  actor: agent
+  objects_read: [customer_support.obj.core.customer_account]
+  done_when: The reliance list exists.
+- order: 5
+  name: Keep the defect ticket open
+  description: >
+    Closing on the workaround is the mechanism by which the underlying fault leaves the queue and
+    is never fixed.
   actor: human
+  done_when: The defect remains tracked independently of the relief.
+objects_used: [customer_support.obj.core.workaround, customer_support.obj.core.issue, customer_support.obj.core.bug_report,
+               customer_support.obj.core.customer_account, customer_support.obj.core.ticket]
+limits:
+- 'It manages the debt; it cannot make engineering prioritise the fix, which is where most workarounds actually fossilise.'
+- 'Step 4 depends on knowing who applied it, which is often nobody''s record when the workaround spreads by word of mouth.'
+failure_modes:
+- 'Step 5 breached because the customer is happy and the queue is long, which is the most reasonable-seeming way a defect disappears.'
+- 'Step 2 softened to avoid alarming the customer, which produces exactly the belief this capability exists to prevent.'
+variants:
+- applies_to: enterprise_support
+  change: Step 4 is essential — workarounds spread through the customer's own teams and the reliance list grows without us.
+  why: The customer distributes it internally and we lose track of who is on it.
+- applies_to: embedded_in_product
+  change: Workarounds often become configuration, and step 3's review date is the only thing preventing permanent divergence.
+  why: A setting persists silently across releases.
+references:
+- title: Known error and workaround practice
+  kind: framework
+  note: ITIL's known-error record is the formal version of step 3, and its purpose is exactly to stop the workaround becoming the answer.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is where this fails in practice. The customer is unblocked and satisfied, the queue
+    is long, and closing the ticket is the reasonable-seeming action that removes the defect
+    from existence.

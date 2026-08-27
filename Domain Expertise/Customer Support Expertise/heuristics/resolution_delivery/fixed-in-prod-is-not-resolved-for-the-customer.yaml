@@ -13,3 +13,54 @@ purpose:
     The gap between deploy and told is where ''you fixed it and never said'' resentment grows.'
   answers:
   - When does a fixed bug count as a resolved ticket?
+
+heuristic:
+  statement: >
+    Resolution is a customer-side event: they know, they can proceed, and they said so. The gap
+    between deploy and told is where "you fixed it and never said" resentment grows.
+  why: >
+    Engineering's definition of done is a state of the system; the customer's is a state of their
+    work. Between those two there is a window in which the problem is solved and the person who
+    reported it is still blocked — still working around it, still explaining to their own
+    colleagues that it is broken. That window costs nothing to close and it is nobody's job, which
+    is why it stays open: the ticket shows resolved, the deploy shows shipped, and the only person
+    experiencing the gap has no visibility into either.
+  confidence_bp: 8500
+  applies_when: Any fix that reaches production before it reaches the customer.
+  breaks_down_when: >
+    The customer has explicitly asked not to be told until it is verified — common with technical
+    contacts who have been burned by premature resolution notices and would rather hear once,
+    certainly. Announcing early there is noise that costs credibility. It also breaks down where
+    the deploy is staged: telling a customer it is fixed when their region receives it next week is
+    a worse failure than saying nothing, because it converts a wait into a broken promise.
+  reads: [customer_support.obj.core.ticket, customer_support.obj.core.resolution, customer_support.obj.core.customer_account]
+  contradicts: [customer_support.heu.verification_and_closure.fast_closure_is_a_vanity_metric]
+limits:
+- 'It concerns the telling, not the fix. A promptly announced wrong fix is worse than a delayed right one.'
+- 'The lag is unmeasured in most organisations because it spans the engineering and support boundary.'
+failure_modes:
+- 'Automated on ticket state change, which produces a notification the customer does not read as an answer.'
+- 'Announced before the change reaches their environment.'
+variants:
+- applies_to: enterprise_support
+  change: The gap is widest here, because releases are staged and the account has multiple people waiting.
+  why: More distance between deploy and the person affected.
+- applies_to: b2c
+  change: Often solved by in-product signalling rather than by a message, and the lag is genuinely near zero.
+  why: The product is the channel.
+references:
+- title: Resolution communication practice
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is a real trap in staged rollouts: telling a customer it is fixed
+    when their region gets it next week converts a wait into a broken promise, which is worse
+    than the silence this heuristic argues against.
