@@ -13,3 +13,53 @@ purpose:
     amendment, the recorded warning. An incomplete file argues for the other side by default.
   answers:
   - What decides employment disputes?
+
+heuristic:
+  statement: >
+    Employment disagreements are decided on documentation — the contract version, the signed
+    amendment, the recorded warning. An incomplete file argues for the other side by default.
+  why: >
+    In a dispute both parties present a version of events and the tribunal weighs what can be
+    evidenced. The employer is the party expected to hold records, so an absence is read against
+    them rather than as neutral: a warning nobody documented did not happen, and a variation nobody
+    signed was never agreed. This asymmetry means the file is not merely useful — its gaps actively
+    make the employer's case, in the opposite direction.
+  confidence_bp: 8500
+  applies_when: Any employment matter that could be examined externally.
+  breaks_down_when: >
+    The documentation is bad rather than absent. A file full of vague, undated or retrospectively
+    written notes is worse than a thin one, because it invites the finding that records were created
+    for the occasion — and that colours everything else in the file. It also breaks down where
+    documenting damages the relationship it was protecting: papering every minor conversation
+    produces an employee who behaves defensively and a manager who stops giving feedback informally.
+  reads: [admin.obj.core.employee_record, admin.obj.core.document]
+  contradicts: [admin.heu.retention_and_archival.everything_kept_is_discoverable]
+limits:
+- 'It concerns evidencing decisions, not making good ones. A well-documented unfair decision is well-documented.'
+- 'It says nothing about which records to keep, which retention owns and pulls the other way.'
+failure_modes:
+- 'Retrospective note-writing before a hearing, which is detectable and worse than the gap.'
+- 'Documenting everything, which produces a file that is both a liability under retention rules and a relationship cost.'
+variants:
+- applies_to: regulated
+  change: Some records are mandatory and their absence is a finding independent of any dispute.
+  why: The obligation exists before the disagreement does.
+- applies_to: startup_lean
+  change: Strongest in effect and weakest in practice — no HR function, informal agreements, and the first dispute is the first test of the file.
+  why: Everything was agreed in conversation and none of it was written down.
+references:
+- title: Employment records and evidential standards
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the one that costs cases: a file of vague, undated or
+    retrospectively written notes invites the finding that records were made for the occasion,
+    which colours everything else in it. Thin beats fabricated.

@@ -3,7 +3,7 @@ identity:
   name: Offboarding Administration
   domain: admin
   subdomain: people_administration
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Closing an employment cleanly: access revocation, asset recovery, final pay and entitlements,
@@ -13,13 +13,65 @@ description: 'Closing an employment cleanly: access revocation, asset recovery, 
 
   '
 question: Has everything this person held been recovered, revoked, reassigned or handed over?
+
+outcomes:
+- 'A same-day sweep from a checklist: access revoked, assets recovered, work handed over, payroll and records closed. Offboarding has the widest blast radius of any administrative process.'
+- 'Handover of what the person OWNED, not just what they were working on — the vendor relationship, the shared account, the thing only they knew how to run.'
+- 'Final pay and entitlements settled correctly, because this is the last financial interaction and the one that gets discussed.'
+- 'Records closed and retained per rule rather than deleted, since employment obligations outlive employment.'
+- 'The negative outcome, and the one that makes this protective rather than punitive: a documented, complete exit that clears the leaver of suspicion as much as it protects the company.'
+failure_modes:
+- 'REVOKING THE OBVIOUS AND MISSING THE REST. The identity provider is easy; the SaaS tool they expensed and the shared credential nobody owns are where the lingering access lives.'
+- 'ASSET RECOVERY LEFT TO GOODWILL, which works most of the time and produces an awkward chase in the cases where it does not.'
+- 'HANDOVER OF TASKS BUT NOT OF OWNERSHIP, so a vendor relationship or a running process quietly has nobody.'
+- 'STAGGERED OFFBOARDING, where each step happens eventually and the window between them is the exposure.'
+- 'TREATING RIGOUR AS DISTRUST. Sloppy offboarding manufactures ambiguity that hurts the leaver too, and a clean one protects them.'
+kpis:
+- name: same_day_revocation_rate
+  unit: percent
+  description: Departures with all access removed on the day.
+  direction: higher_is_better
+- name: residual_access_found_later
+  unit: count
+  description: Live accounts discovered after the fact. The measure of the systems the checklist does not know about.
+  direction: lower_is_better
+- name: asset_recovery_rate
+  unit: percent
+  direction: higher_is_better
+  description: Issued items returned or written off deliberately.
+- name: orphaned_ownership_count
+  unit: count
+  description: Vendor relationships, processes and accounts left with nobody after a departure.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.people_administration.employee_records_administration, admin.people_administration.access_and_identity_administration]
+  downstream: [admin.facilities_and_assets.asset_issuance_and_recovery, admin.people_administration.payroll_input_administration,
+               admin.records_and_documentation.retention_and_archival]
+  parallel: [admin.executive_support.delegation_and_task_routing, admin.contract_and_vendor.vendor_performance_management]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, distributed, outsourced, startup_lean]
+  offerings: [assurance, transactional]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    The widest blast radius in the Admin domain, and the KPI set is built around the part
+    checklists miss. residual_access_found_later measures the systems the checklist does not
+    know about, and orphaned_ownership_count measures what was owned rather than what was being
+    worked on — the vendor relationship, the running process, the shared account that now has
+    nobody.
+
+    The negative outcome is framed as protective on purpose. Rigour here clears the leaver as
+    much as it covers the company, and a function that presents it as distrust loses the
+    cooperation that makes it work.
+
 admission:
-  accepted_content_hash: 5f6340bf13584c2cfab8a21f26a9de58861d3fdbf33532ca0e20f3d26da04534
+  accepted_content_hash: f9b1e436516a90a802eec35dad3a090752a7c903727e7397690e5af208f0af03

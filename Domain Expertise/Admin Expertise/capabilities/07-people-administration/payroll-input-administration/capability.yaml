@@ -3,7 +3,7 @@ identity:
   name: Payroll Input Administration
   domain: admin
   subdomain: people_administration
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Assembling the monthly payroll input: starters, leavers, contractual changes, overtime,
@@ -12,13 +12,64 @@ description: 'Assembling the monthly payroll input: starters, leavers, contractu
 
   '
 question: Is everything that changes this month's pay captured before the cut-off?
+
+outcomes:
+- 'Every input collected against a published cut-off and LOCKED before processing. Payroll is the one administrative deadline with no tolerance whatsoever.'
+- 'Starters, leavers and contractual changes captured from their source process rather than remembered, because the person who knows is rarely the person filing.'
+- 'Variable elements — overtime, absence, expense items — reconciled before the lock rather than corrected after payment.'
+- 'A verification pass against last cycle: who is new, who has gone, whose pay moved and why. Most payroll errors are visible as a difference.'
+- 'The negative outcome: an input REJECTED after the cut-off and deferred to next cycle, with the person told. Slipping it in quietly is how a locked run becomes an unlocked one.'
+failure_modes:
+- 'CHASING INPUTS RATHER THAN RECEIVING THEM. If payroll has to ask each month, the month it forgets to ask is the month somebody is not paid.'
+- 'ACCEPTING LATE CHANGES, which is kind once and destroys the cut-off permanently.'
+- 'NO DIFFERENCE CHECK, so an error that would have been obvious against last month goes out as a number.'
+- 'RE-KEYING FROM EMAILS, which is where payroll data acquires its errors and where they are least traceable.'
+- 'TREATING A SMALL ERROR AS SMALL. It is the one number every employee checks, and the trust cost is unrelated to the amount.'
+kpis:
+- name: input_completeness_at_cutoff
+  unit: percent
+  description: Inputs received by the deadline rather than chased after it.
+  direction: higher_is_better
+- name: post_lock_change_count
+  unit: count
+  description: Changes accepted after the lock. Each one weakens the cut-off for every future cycle.
+  direction: lower_is_better
+- name: payroll_error_rate
+  unit: percent
+  description: Payslips with any error, regardless of amount. Severity is not the right lens here.
+  direction: lower_is_better
+- name: difference_check_coverage
+  unit: percent
+  description: Cycles where a variance-against-last-month pass was run before release.
+  direction: higher_is_better
+handoffs:
+  upstream: [admin.people_administration.onboarding_administration, admin.people_administration.offboarding_administration,
+             admin.people_administration.attendance_and_leave, admin.finance_administration.reimbursement_processing]
+  downstream: [admin.compliance_and_governance.statutory_filing, admin.finance_administration.budget_tracking]
+  parallel: [admin.people_administration.employee_records_administration, admin.finance_administration.payables_administration]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, outsourced, hybrid, startup_lean]
+  offerings: [transactional, assurance]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    payroll_error_rate counts any error regardless of amount, and that is the deliberate choice.
+    Severity is the wrong lens for a number every employee personally verifies — the trust cost
+    of a small mistake is unrelated to its size, which is the whole point of the heuristic
+    beside it.
+
+    post_lock_change_count is the leading indicator. Accepting a late change is kind once and
+    permanently weakens the cut-off, and the cut-off is the only thing standing between this
+    capability and a monthly emergency.
+
 admission:
-  accepted_content_hash: 484efcab61070cb1184d215323c7de5b6f24787bd9efb82c32b933300ae447cc
+  accepted_content_hash: 65ea7c45ed070587d97263155c29103dd03170efa67dc732feec15c24ba29f37

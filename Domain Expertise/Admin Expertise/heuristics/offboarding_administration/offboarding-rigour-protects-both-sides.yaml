@@ -13,3 +13,55 @@ purpose:
     suspicion and the company from exposure. Sloppy offboarding manufactures ambiguity nobody wants.
   answers:
   - Who benefits from checklist offboarding?
+
+heuristic:
+  statement: >
+    Clean exits — documented returns, final settlements, timely revocations — protect the leaver
+    from suspicion as much as they protect the company from exposure. Sloppy offboarding manufactures
+    ambiguity nobody wants.
+  why: >
+    Ambiguity after a departure is always resolved against the person who left, because they are not
+    there to explain. An unreturned laptop nobody recorded as written off, an account still live six
+    months later, a settlement nobody confirmed — each becomes a question with no available answer,
+    and the questions arrive during audits and incidents when the leaver has no standing. Rigour
+    therefore serves them, which is also why framing it as distrust destroys the cooperation that
+    makes it work.
+  confidence_bp: 7500
+  applies_when: Any departure, including amicable ones — especially amicable ones.
+  breaks_down_when: >
+    The rigour is applied selectively. A sweep run thoroughly for a contested exit and casually for a
+    friendly one converts the process itself into a signal about how the departure was regarded,
+    which is visible to everyone remaining and is a worse message than either treatment alone. It
+    also breaks down where speed is mistaken for rigour: same-day revocation performed without
+    handover leaves the organisation unable to run something and the leaver blamed for it.
+  reads: [admin.obj.core.employee_record, admin.obj.core.asset, admin.obj.core.access_right]
+  contradicts: [admin.heu.onboarding_administration.day_one_is_remembered_forever]
+limits:
+- 'It argues for consistency and documentation, not for suspicion or for speed alone.'
+- 'It cannot recover what was never recorded as issued.'
+failure_modes:
+- 'Applied harder to contested exits, which makes the process a verdict.'
+- 'Revocation without handover, which is rigour that produces an outage.'
+variants:
+- applies_to: startup_lean
+  change: Strongest in effect and least practised — everyone leaves on good terms and nothing is documented, so the first difficult exit has no precedent to follow.
+  why: The process is invented under pressure, for the case it is least suited to.
+- applies_to: enterprise_admin
+  change: Consistency is achievable and is the whole value; the risk is a checklist that covers directories and not the informal estate.
+  why: Scale buys uniformity and hides the exceptions.
+references:
+- title: Joiner-mover-leaver practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the one that matters culturally: running the sweep thoroughly
+    for a contested exit and casually for a friendly one turns the process into a verdict, and
+    everyone remaining reads it.

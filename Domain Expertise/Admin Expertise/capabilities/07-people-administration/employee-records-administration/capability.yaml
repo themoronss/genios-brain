@@ -3,7 +3,7 @@ identity:
   name: Employee Records Administration
   domain: admin
   subdomain: people_administration
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Maintaining the employee file across its life: contracts and variations, personal data changes,
@@ -12,13 +12,64 @@ description: 'Maintaining the employee file across its life: contracts and varia
 
   '
 question: Is this person's record complete, current and lawfully held?
+
+outcomes:
+- 'One complete record per person — contract, variations, statutory evidence, role changes — current within days of any change, because employment disagreements are decided on documentation.'
+- 'The signed version of every variation held. A verbally agreed change that was never papered is the employer arguing against its own record.'
+- 'Access restricted to who needs it, since an employee file is the most sensitive personal data most organisations hold about anyone.'
+- 'Retention applied per category, because a disciplinary record and a contract have different lawful lives.'
+- 'The negative outcome: a record identified as INCOMPLETE and closed, rather than assumed complete because nobody has needed it.'
+failure_modes:
+- 'UPDATING AT REVIEW TIME, so the record describes the person as they were and the change nobody papered is the one in dispute.'
+- 'THE FILE SPREAD ACROSS SYSTEMS, so completeness is unknowable and each system believes it is the record.'
+- 'BROAD ACCESS FOR CONVENIENCE, which is the highest-sensitivity data in the building shared for the lowest-value reason.'
+- 'ONE RETENTION PERIOD FOR THE WHOLE FILE, which either destroys a contract too early or keeps a disciplinary note far past its lawful life.'
+- 'ASSUMING COMPLETE BECAUSE UNTESTED. The gap is discovered by the dispute, which is the one moment it cannot be repaired.'
+kpis:
+- name: record_completeness
+  unit: percent
+  description: Files with contract, current variations and statutory evidence present.
+  direction: higher_is_better
+- name: change_to_record_lag
+  unit: days
+  description: Role or terms change to papered and filed. The window in which memory diverges.
+  direction: lower_is_better
+- name: access_breadth
+  unit: count
+  description: People able to read a given employee file. Lower is the whole point.
+  direction: lower_is_better
+- name: category_retention_coverage
+  unit: percent
+  description: Record classes with their own retention rule rather than a file-level one.
+  direction: higher_is_better
+handoffs:
+  upstream: [admin.people_administration.onboarding_administration, admin.compliance_and_governance.policy_administration]
+  downstream: [admin.people_administration.payroll_input_administration, admin.people_administration.offboarding_administration,
+               admin.records_and_documentation.retention_and_archival]
+  parallel: [admin.compliance_and_governance.data_protection_administration, admin.people_administration.access_and_identity_administration]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, distributed, outsourced]
+  offerings: [assurance]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    The framing that matters is in the description: employment records are legal evidence stored
+    administratively. Every failure mode here follows from treating them as an HR filing task —
+    access granted for convenience, retention applied at file level, updates batched to review
+    cycles.
+
+    The negative outcome is the one that requires deliberate effort: identifying a record as
+    incomplete before anybody needs it. Completeness is otherwise assumed until the dispute,
+    which is the single moment it cannot be repaired.
+
 admission:
-  accepted_content_hash: 691ed224649e89971723be8c60dacf2c50c461676689beed96d25a431d63e709
+  accepted_content_hash: ad56afa88248c8bb8900ed3228b71b8054d4ddc975a2a0974e5ab02c2ddbcce4
