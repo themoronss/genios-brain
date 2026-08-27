@@ -13,3 +13,54 @@ purpose:
     default spending back into actual decisions.
   answers:
   - What do missed notice windows cost?
+
+heuristic:
+  statement: >
+    An un-diarised auto-renewal is a purchase nobody re-approved. The notice-window alert is what
+    converts default spending back into an actual decision.
+  why: >
+    Auto-renewal moves the burden of action from continuing to stopping, and organisations are far
+    better at inaction than at action. The spend therefore persists not because anyone judged it
+    worthwhile but because the window in which stopping was possible passed unnoticed — and each
+    year the renewal looks more established, which makes the eventual review harder rather than
+    easier. The alert is cheap and it is the only intervention that restores the decision.
+  confidence_bp: 8500
+  applies_when: Any agreement with automatic renewal and a notice period.
+  breaks_down_when: >
+    The service is genuinely load-bearing and the review is theatre — re-approving the payroll
+    platform every year consumes real attention to reach a foregone conclusion, and the alert
+    becomes noise that trains people to dismiss the whole class. It also breaks down where the
+    notice window is long enough that the decision must be made before the year's usage is known:
+    a ninety-day notice on an annual contract asks you to judge in month nine, and treating a
+    provisional answer as a decision is worse than the default.
+  reads: [admin.obj.core.contract, admin.obj.core.deadline, admin.obj.core.budget_line]
+  contradicts: [admin.heu.procurement_administration.friction_begets_shadow_procurement]
+limits:
+- 'It restores the decision; it does not make it. A surfaced renewal still needs somebody with authority to judge it.'
+- 'It assumes the notice period is known, which requires the extraction this heuristic''s capability performs.'
+failure_modes:
+- 'Alerting on everything, which makes the class dismissable and loses the renewals that mattered.'
+- 'Cited to cancel a service whose cost was reviewed and accepted, on the grounds that it renewed automatically.'
+variants:
+- applies_to: enterprise_admin
+  change: The alert must reach a budget owner, not the administrator, or it produces a notification with no authority behind it.
+  why: The decision is commercial and the alert is administrative.
+- applies_to: startup_lean
+  change: Strongest form — accumulated auto-renewals are a meaningful share of a small cost base and nobody is reviewing spend line by line.
+  why: The absolute amounts are small and the aggregate is not.
+references:
+- title: Contract lifecycle management practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the one that kills these alert systems: re-approving the payroll
+    platform annually is theatre, and a few of those train everyone to dismiss the whole class
+    including the renewal that mattered.

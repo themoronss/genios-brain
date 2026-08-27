@@ -13,3 +13,55 @@ purpose:
     bank details. The out-of-band verification habit is the whole defence.
   answers:
   - Where does vendor payment fraud actually enter?
+
+heuristic:
+  statement: >
+    Vendor payment fraud rarely hacks anything. It arrives as a familiar supplier announcing new
+    bank details, and out-of-band verification is the entire defence.
+  why: >
+    The attack does not need access to any system. It needs an email that looks like one you already
+    trust, sent at a moment when a payment is plausible, asking for a change that is administratively
+    routine. Every instinct available to the person receiving it — the sender looks right, the
+    invoice matches, the tone is normal — is the exact surface the attack was built against.
+    Verification through a channel the attacker did not supply is the only check that does not run
+    on those instincts, which is why it is the only one that works.
+  confidence_bp: 9000
+  applies_when: Any change to payment destination, for any supplier, at any value.
+  breaks_down_when: >
+    The out-of-band channel is itself sourced from the compromised material — a phone number taken
+    from the invoice, or from a website the email linked to. That is the common failure and it feels
+    identical to doing it properly. It also degrades where the supplier's own account is
+    compromised: verification then reaches a genuine employee who confirms a change they were also
+    deceived into making, which is why a second signal — an unexplained change of bank, a new
+    jurisdiction — still matters.
+  reads: [admin.obj.core.vendor, admin.obj.core.invoice]
+  contradicts: [admin.heu.procurement_administration.friction_begets_shadow_procurement]
+limits:
+- 'It is one control against one attack. It says nothing about vendor quality, solvency or performance.'
+- 'It does not survive an urgency exception, which is the only way it fails in practice.'
+failure_modes:
+- 'Verifying using contact details from the same email, which is the attack completing successfully through the control.'
+- 'Waived for a trusted long-standing supplier, which is the profile the impersonation selects for.'
+variants:
+- applies_to: enterprise_admin
+  change: The control must survive delegation to a shared service centre, where the operator has no relationship to sense wrongness from.
+  why: Familiarity is doing more work than anyone admits at smaller scale.
+- applies_to: startup_lean
+  change: The highest-yield control available, and the one most likely to be skipped because everybody knows the supplier.
+  why: Knowing the supplier is precisely what the attack impersonates.
+references:
+- title: Accounts payable fraud controls
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the one that matters: a phone number taken from the invoice is
+    not out of band, and doing it that way feels identical to doing it properly. The channel has
+    to be sourced from material the attacker did not control.

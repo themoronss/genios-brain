@@ -13,3 +13,55 @@ purpose:
     the real procurement system — invisible, unnegotiated, unvetted. Speed IS compliance strategy.
   answers:
   - Why do controlled orgs still leak uncontrolled spend?
+
+heuristic:
+  statement: >
+    When the compliant path takes three weeks, corporate cards and personal reimbursements become
+    the real procurement system — invisible, unnegotiated, unvetted. Speed is a compliance strategy.
+  why: >
+    People do not choose between complying and not complying; they choose between getting the work
+    done and not. If the sanctioned route is slower than the deadline they are under, they will find
+    another one, and the alternative route has no vendor vetting, no negotiated terms, no data
+    processing agreement and no visibility. The control that was added to reduce risk therefore
+    increases it, and the increase is invisible precisely because it happens outside the system that
+    would have measured it.
+  confidence_bp: 8500
+  applies_when: Routine, low-value purchases where the requester has a deadline and an alternative channel.
+  breaks_down_when: >
+    The spend class genuinely warrants the friction — anything touching personal data, security,
+    regulated activity or a material commitment. There, a slow path is the control working, and
+    invoking this heuristic to speed it up removes the review that justified the process. It also
+    breaks down where no alternative channel exists: in an organisation with real spend controls on
+    cards and expenses, slowness produces delay and complaint rather than shadow procurement, which
+    is a cost but not this cost.
+  reads: [admin.obj.core.request, admin.obj.core.expense, admin.obj.core.vendor]
+  contradicts: [admin.heu.contract_administration.auto_renewals_are_decisions_by_default]
+limits:
+- 'It argues for proportionality, not for removing controls. The fast lane still has approval, it is just fast.'
+- 'It cannot be measured directly — off-process spend is by definition the spend the system did not see.'
+failure_modes:
+- 'Used to justify lowering controls on the spend classes that most need them.'
+- 'Read as a criticism of procurement rather than of threshold design, which is where the fix actually is.'
+variants:
+- applies_to: startup_lean
+  change: Strongest. Everyone has a card, nobody has time, and the shadow system is the default rather than the exception.
+  why: There is no enforcement capacity, only design.
+- applies_to: regulated
+  change: Weaker on the low-value end and unchanged above it — the fast lane's ceiling is lower but the argument for having one is identical.
+  why: Proportionality is still permitted below the regulated threshold.
+references:
+- title: Procurement threshold and delegation practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    contradicts auto-renewals-are-decisions-by-default: that heuristic adds a review to spend
+    that was flowing, this one warns that added review pushes spend out of view. Both are right,
+    and the resolution is that reviews belong where the amount justifies them.

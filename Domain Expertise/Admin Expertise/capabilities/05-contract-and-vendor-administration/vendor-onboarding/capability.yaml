@@ -3,7 +3,7 @@ identity:
   name: Vendor Onboarding
   domain: admin
   subdomain: contract_and_vendor
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Taking a chosen supplier from selection to operational: due diligence, security and data-
@@ -13,13 +13,65 @@ description: 'Taking a chosen supplier from selection to operational: due dilige
 
   '
 question: Is this supplier cleared, contracted and set up to be paid?
+
+outcomes:
+- 'A proportionate gauntlet: legitimacy always, security posture where relevant, terms before work starts, payment details verified out-of-band without exception.'
+- 'Bank details confirmed by a channel the requester did not choose. Vendor payment fraud does not hack systems; it impersonates a known supplier announcing new details.'
+- 'The vendor record created once, so the same supplier does not exist three times with three payment destinations.'
+- 'Risk assessed against what the vendor will actually touch — data, systems, premises — rather than against contract value.'
+- 'The negative outcome: a vendor REJECTED, or accepted with conditions. Onboarding that has never declined anyone is a data-entry step.'
+failure_modes:
+- 'VERIFYING BANK DETAILS BY REPLYING TO THE EMAIL THAT SUPPLIED THEM. It is the single most exploited weakness in accounts payable and it feels like diligence.'
+- 'RISK-RATING BY SPEND. A cheap vendor with production data access outranks an expensive one supplying furniture.'
+- 'RUNNING THE FULL GAUNTLET ON EVERYONE, which delays legitimate work and pushes urgent purchases outside the process entirely.'
+- 'ONBOARDING AFTER THE WORK STARTED, so the checks are retrospective and refusal is no longer available.'
+- 'DUPLICATE VENDOR RECORDS, which defeats every downstream control that keys on the supplier.'
+kpis:
+- name: out_of_band_verification_rate
+  unit: percent
+  description: Payment details confirmed through an independently obtained channel. The fraud control, and it is binary per vendor.
+  direction: higher_is_better
+- name: onboarding_before_work_rate
+  unit: percent
+  direction: higher_is_better
+  description: Vendors onboarded before engagement rather than after.
+- name: duplicate_vendor_rate
+  unit: percent
+  description: Suppliers existing more than once in the master record.
+  direction: lower_is_better
+- name: gauntlet_cycle_time
+  unit: days
+  description: A target band. Too slow and urgent work routes around it, which is the state that produces unvetted vendors.
+  direction: target_band
+handoffs:
+  upstream: [admin.contract_and_vendor.procurement_administration, admin.admin_operations.request_intake]
+  downstream: [admin.contract_and_vendor.contract_administration, admin.finance_administration.payables_administration,
+               admin.contract_and_vendor.vendor_performance_management]
+  parallel: [admin.compliance_and_governance.data_protection_administration, admin.people_administration.access_and_identity_administration]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, outsourced]
+  offerings: [assurance, transactional]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    The one control here that is binary rather than graduated is out-of-band verification of
+    payment details, and it is the reason the KPI is expressed as a rate rather than a maturity
+    level. Vendor payment fraud is overwhelmingly an impersonation of a known supplier
+    announcing new bank details, and replying to the email that supplied them feels exactly like
+    diligence.
+
+    Risk is rated against access rather than spend, deliberately. A cheap vendor with production
+    data access outranks an expensive one supplying furniture, and every value-banded vendor
+    risk model gets that backwards.
+
 admission:
-  accepted_content_hash: 69bc6ad55da7906019054cd94c7068d374d67d2b7dce7ed3f0ba1a203ca9ccc0
+  accepted_content_hash: e55a07a29db62ab924a20381725da4faaf76df6adb06041d1287ac391c9385f9

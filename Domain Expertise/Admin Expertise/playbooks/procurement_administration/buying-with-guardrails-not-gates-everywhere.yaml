@@ -12,18 +12,75 @@ purpose:
   statement: Procurement admin gives routine purchases a fast compliant path — thresholds, preferred vendors,
     simple approvals — saving the heavy process for heavy spend, because over-gated small purchases breed
     shadow buying.
+
+when_to_use:
+  do_not_use_when:
+  - The spend is below the threshold at which the process costs more than it protects. Applying it anyway is how shadow procurement starts.
 steps:
 - order: 1
-  name: Publish thresholds and their paths
-  description: 'Under X: manager click. X to Y: budget-owner. Above Y: full process. Known lanes keep
-    traffic on the road.'
-  actor: human
+  name: Route by value into a path that fits it
+  description: >
+    Routine spend needs a fast lane with preferred vendors and a simple approval. Heavy process is
+    reserved for heavy spend, because speed IS the compliance strategy.
+  actor: system
+  objects_read: [admin.obj.core.request, admin.obj.core.budget_line]
+  done_when: The purchase is on a path proportionate to its size.
 - order: 2
-  name: Prefer the pre-vetted list
-  description: Buying from onboarded vendors skips re-diligence. The list is the fast lane's pavement.
+  name: Check the authority, not the seniority
+  description: >
+    Approval thresholds should track who can actually commit the organisation. A round number
+    inherited from a template sends a modest purchase to somebody with no view on it.
   actor: human
+  objects_read: [admin.obj.core.approver]
+  done_when: The approver holds the authority for this amount.
 - order: 3
-  name: Reconcile purchases to approvals monthly
-  description: Spend without approval trail surfaces monthly, small — while it is a coaching note, not
-    an investigation.
+  name: Compete where competition changes the answer
+  description: >
+    Three quotes are worth the fortnight above a level and are ritual below it. Two courtesy quotes
+    around a chosen vendor satisfies the control and informs nothing.
   actor: human
+  done_when: Competition was applied deliberately or waived with a reason.
+- order: 4
+  name: Ask about conflicts at requisition
+  description: >
+    Disclosure is cheap at the start and expensive at audit, where it also looks like concealment.
+  actor: human
+  done_when: The question was asked and the answer recorded.
+- order: 5
+  name: Refuse or re-scope before commitment
+  description: >
+    After a verbal agreement, refusing is an argument about trust rather than a control decision.
+    The window is short and it is the whole point of the function.
+  actor: human
+  done_when: The decision was made while it was still reversible.
+objects_used: [admin.obj.core.request, admin.obj.core.approval, admin.obj.core.approver, admin.obj.core.budget_line, admin.obj.core.vendor]
+limits:
+- 'It controls the process, not the judgement. A correctly approved bad purchase is correctly approved.'
+- 'Step 1 needs a threshold structure somebody owns and revisits, which is the part that silently ages.'
+failure_modes:
+- 'Step 3 performed as ritual, which is worse than skipping it: it consumes the time and produces a documented non-comparison.'
+- 'Step 1 collapsed to one path because it is simpler to administer, which is exactly the friction that creates shadow spend.'
+variants:
+- applies_to: regulated
+  change: Steps 3 and 4 are evidenced and may be externally specified; the fast lane still exists but its ceiling is lower.
+  why: The control set is defined for you and proportionality is the only remaining lever.
+- applies_to: startup_lean
+  change: Steps 2 and 5 only. Competition and formal conflict declaration cost more than they return at this size.
+  why: One person holds the authority and knows the vendors; the real risk is uncommitted spend, not favouritism.
+references:
+- title: Procurement threshold and delegation practice
+  kind: practitioner
+  note: Where proportionality is treated as a control design principle rather than a concession.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 defines the window this capability lives in. After a verbal agreement the control
+    decision has become a trust argument, which is why post_commitment_approval_share is the
+    metric that shows the function failing while every other number looks healthy.

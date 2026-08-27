@@ -13,3 +13,55 @@ purpose:
     incident log is what converts sympathy into leverage.
   answers:
   - Why do bad vendors keep getting renewed?
+
+heuristic:
+  statement: >
+    Vendor failures that live only in team grumbles get forgiven by contract-time amnesia. The
+    incident log is what converts sympathy into leverage.
+  why: >
+    Frustration is vivid and perishable. Three months after a bad month nobody can say how many
+    incidents there were, how long each took, or what it cost — only that it was annoying, which a
+    vendor answers with an apology and a promise. A dated log converts the same experience into a
+    position: this many failures, this much delay, against these terms. Nothing about the underlying
+    facts changed; what changed is whether they can be asserted, and assertion is the whole of
+    commercial leverage.
+  confidence_bp: 8000
+  applies_when: Any supplier relationship with a renewal or a service commitment worth enforcing.
+  breaks_down_when: >
+    The log becomes the relationship. A supplier who experiences every interaction as evidence
+    gathering stops volunteering problems, and the failures you learn about drop to the ones large
+    enough to be undeniable — which is the opposite of what the log was for. It also breaks down
+    where switching is genuinely impossible: a meticulous record against a monopoly supplier
+    documents tolerance and can make the eventual conversation worse, because it proves how much was
+    absorbed without objection.
+  reads: [admin.obj.core.vendor, admin.obj.core.escalation, admin.obj.core.contract]
+  contradicts: [admin.heu.renewal_management.vendors_price_your_inertia]
+limits:
+- 'It creates the position; it does not decide whether to use it.'
+- 'Logged incidents must map to agreed terms, or the record is a list of disappointments.'
+failure_modes:
+- 'Logging without ever raising, which is the state most vendor logs are in and it produces nothing.'
+- 'Applied to a supplier there is no alternative to, where the record documents what was tolerated.'
+variants:
+- applies_to: outsourced
+  change: Strongest. Where delivery is entirely theirs, the log is the only version of events that survives staff turnover on both sides.
+  why: Institutional memory of the relationship lives in the record or nowhere.
+- applies_to: startup_lean
+  change: A short log of the three things that actually hurt beats a system nobody maintains.
+  why: The failure at this size is having no record at all, not having a shallow one.
+references:
+- title: Vendor management scorecards
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the one that catches good teams: a supplier who experiences
+    every interaction as evidence gathering stops volunteering problems, and you are left
+    learning only about the failures too large to hide.

@@ -3,7 +3,7 @@ identity:
   name: Vendor Performance Management
   domain: admin
   subdomain: contract_and_vendor
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Holding suppliers to the agreement after the excitement of signing: service levels, delivery
@@ -12,13 +12,63 @@ description: 'Holding suppliers to the agreement after the excitement of signing
 
   '
 question: Is this supplier delivering what the contract says, and what do we do when they are not?
+
+outcomes:
+- 'An incident log kept as things happen, because a performance conversation without a record is a complaint and gets answered as one.'
+- 'Scorecards reviewed WITH the vendor, not about them. A score they first see at renewal is a negotiating tactic, and they will treat it as one.'
+- 'Measures taken from the agreement rather than invented. A scorecard measuring things nobody agreed to is unenforceable and reads as moving the goalposts.'
+- 'The escalation route agreed while the relationship is healthy, because discovering it during a failure means using whoever answers.'
+- 'The negative outcome: a supplier formally put on notice, exited, or the service reduced. A performance function that has never done that is a survey.'
+failure_modes:
+- 'GRUMBLES INSTEAD OF RECORDS. Team frustration is real and unusable — contract-time amnesia forgives everything that was never written down.'
+- 'SCORING WHAT IS EASY TO COUNT. Ticket volume and response time crowd out the failures that actually hurt, which are usually qualitative and rare.'
+- 'REVIEWS THAT NEVER CHANGE ANYTHING. A cadence with no consequence teaches the vendor exactly what the review is worth.'
+- 'ESCALATING TO THE ACCOUNT MANAGER FOREVER. They are paid to absorb it; the route has to reach somebody whose numbers the problem affects.'
+- 'MEASURING VENDORS WE CANNOT LEAVE, and treating the resulting scorecard as leverage when it is a record of tolerance.'
+kpis:
+- name: incident_capture_rate
+  unit: percent
+  description: Vendor failures reaching the log rather than staying in conversation. The input to everything else.
+  direction: higher_is_better
+- name: review_cadence_adherence
+  unit: percent
+  direction: higher_is_better
+  description: Scheduled vendor reviews actually held.
+- name: issues_closed_by_vendor
+  unit: percent
+  description: Logged issues the supplier resolved. The measure of whether the process has consequence.
+  direction: higher_is_better
+- name: scorecard_to_renewal_linkage
+  unit: percent
+  description: Renewals where the performance record demonstrably informed the decision. Otherwise this is documentation.
+  direction: higher_is_better
+handoffs:
+  upstream: [admin.contract_and_vendor.contract_administration, admin.contract_and_vendor.vendor_onboarding]
+  downstream: [admin.contract_and_vendor.renewal_management, admin.admin_operations.service_level_management]
+  parallel: [admin.contract_and_vendor.purchase_order_management, admin.admin_operations.process_improvement]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, outsourced, hybrid]
+  offerings: [assurance, coordinative]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    The administrative contribution here is evidence, which is the Admin domain's own stated
+    property — in a governed context, work performed correctly and undocumented did not happen.
+    A vendor performance function produces records so that a commercial conversation can rest on
+    something.
+
+    scorecard_to_renewal_linkage is the KPI that decides whether this capability is real. A
+    performance record that never reaches a renewal decision is documentation, and the vendor
+    learns that faster than we do.
+
 admission:
-  accepted_content_hash: 76f7bccc0d8cdc63295fbb5692968af59f1a2a71df65599b9d36207f0cac168f
+  accepted_content_hash: 14ce9f9fc28312d74a262b47cded6abcfb79046f623a99e1bee1b336207743ac
