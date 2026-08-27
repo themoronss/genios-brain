@@ -1,16 +1,94 @@
 identity:
   id: customer_support.heu.account_relationship_management.support_sees_churn_first
-  name: Support sees churn first
+  name: Support sees churn first, and says it last
   kind: heuristic
   domain: customer_support
   scope: capability
   owner_capability: customer_support.support_management.account_relationship_management
   subdomain: support_management
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: Sponsor changes, frustration patterns, competitor mentions — all surface in tickets months
-    before renewal. Support's account notes are the CS team's earliest warning system, if anyone writes
-    them.
+  statement: >
+    The earliest evidence that an account is leaving arrives in support, months before it reaches a
+    renewal forecast — and it almost never gets passed on, because each individual signal looks like
+    an ordinary ticket.
   answers:
-  - Which team usually holds the earliest churn signal?
+  - Why do churn post-mortems keep finding warnings nobody escalated?
+  - What does support know that the account team does not?
+
+heuristic:
+  statement: >
+    A customer who stops complaining has usually stopped caring. Support's leading indicator is not
+    an angry account, it is a previously active one going quiet.
+  why: >
+    Complaint requires belief that complaining will work. When a customer decides to leave, the effort
+    stops before the contract does — they route around the product, stop reporting defects, and use
+    what still works. Every support metric improves at exactly that moment, which is why the signal is
+    invisible to the queue and visible only to someone comparing an account to its own past.
+  confidence_bp: 7000
+  applies_when: An account with an established contact history materially reduces its inbound, with no open loop on our side.
+  breaks_down_when: >
+    The quiet is ours. An account we owe an answer to has stopped writing because it is waiting, and
+    reading that as disengagement inverts the finding and produces outreach instead of a reply. It also
+    breaks down for accounts whose usage is genuinely seasonal, and for accounts that have simply
+    become competent — the whole point of a well-adopted product is that support contact falls, and a
+    heuristic that reads success as risk will cry wolf on the healthiest accounts you have.
+  reads:
+  - customer_support.obj.core.customer_account
+  - customer_support.obj.core.churn_risk
+  - customer_support.obj.core.named_contact
+  - engagement_trend
+  contradicts:
+  - customer_support.heu.diagnostics.what_changed_is_the_first_question
+  pattern_ref:
+  - account.dormant_but_healthy
+  - account.silence_is_ours_not_theirs
+  - contact.the_quiet_buyer_is_the_normal_case
+
+limits:
+- >
+  It is a prompt to look, never a verdict. Distinguishing satisfied quiet from departed quiet needs
+  something outside the queue — usage, the account team, or one honest question.
+- It does not apply to contacts, only to accounts. A quiet economic buyer is the normal case and reading this onto them marks every healthy account at risk.
+
+failure_modes:
+- >
+  Escalated as a certainty. "This account is churning" from support, based on silence alone, damages
+  credibility with the account team the first time it is wrong — and it will be wrong often.
+- >
+  Applied to a low-touch account. Quiet is the designed state there, and the deviation instrument
+  divides by a baseline of zero.
+
+variants:
+- applies_to: named_tam
+  change: The signal arrives earlier and is easier to resolve, because there is a person who can simply ask.
+  why: A named relationship converts the ambiguity into a question rather than an inference.
+- applies_to: b2b2c_reseller_support
+  change: Largely unavailable. The end customer's disengagement is invisible behind the partner.
+  why: We do not correspond with the party who is leaving.
+
+references:
+- title: Customer Success — How Innovative Companies Reduce Churn
+  kind: book
+  author: Mehta, Steinman, Murphy
+  note: The standard account-health framing, whose weakness this heuristic names — it reads reduced contact as improved health.
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+  note: >
+    Its effort findings explain the mechanism: a customer who has decided to leave stops spending
+    effort on us first.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Confidence held at 7000 deliberately. The mechanism is real and the false-positive rate against a
+    well-adopted product is high enough that a higher number would license exactly the over-escalation
+    named in the failure modes.

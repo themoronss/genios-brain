@@ -1,16 +1,82 @@
 identity:
   id: customer_support.heu.proactive_status_updates.anxiety_scales_with_silence_squared
-  name: Anxiety scales with silence squared
+  name: Anxiety scales with silence, not with severity
   kind: heuristic
   domain: customer_support
   scope: capability
   owner_capability: customer_support.customer_communication.proactive_status_updates
   subdomain: customer_communication
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: The second missed update does not double the anxiety of the first — it multiplies it, and
-    CC lists start growing. The escalation you receive at hour six was usually purchasable for one update
-    at hour two.
+  statement: >
+    How worried a customer becomes is governed by how long they have heard nothing, not by how bad
+    the problem is. A severe issue with hourly updates is calmer than a minor one with three days of
+    nothing.
   answers:
-  - Why did a manageable issue become an executive escalation?
+  - Why does a small unanswered ticket generate a bigger escalation than a large well-communicated one?
+  - What is actually being managed by a status update?
+
+heuristic:
+  statement: >
+    In the absence of information the customer supplies their own, and their version is reliably
+    worse than ours — forgotten, deprioritised, handed to somebody junior.
+  why: >
+    Uncertainty is the uncomfortable state, not bad news. A customer told a fix is two weeks away can
+    plan around it; a customer told nothing cannot plan at all, and the only action available to them
+    is to escalate. This is why escalation volume tracks communication gaps far more closely than it
+    tracks severity, and why the cheapest intervention in support is a message containing no progress.
+  confidence_bp: 8500
+  applies_when: A case is open, the ball is on us, and the customer is exposed to the outcome.
+  breaks_down_when: >
+    The updates carry nothing new. Repetition is silence with extra steps and the customer decodes it
+    within two messages. It also breaks down for a customer who has explicitly asked not to be
+    updated until there is an answer — a real preference, more common among expert contacts, and
+    overriding it reads as noise rather than as care.
+  reads:
+  - customer_support.obj.core.customer_sentiment
+  - customer_support.obj.core.escalation
+  - last_outbound_at
+  contradicts:
+  - customer_support.heu.breach_prevention.breaches_cluster_so_prevention_compounds
+  pattern_ref:
+  - account.silence_is_ours_not_theirs
+  - contact.we_owe_this_person
+
+limits:
+- It concerns silence FROM US. A quiet customer is a different question entirely and reading this heuristic onto them inverts it.
+- It gives no guidance on interval length, which is an impact judgement rather than a communication one.
+
+failure_modes:
+- Used to justify volume. More updates is not the conclusion; more DATED updates with content is.
+- Applied to every open case equally, which is how a support team floods its own outbound and the important updates stop being distinguishable.
+
+variants:
+- applies_to: enterprise_support
+  change: The effect compounds through the customer's own internal reporting — our silence becomes their contact's credibility problem.
+  why: They are being asked for a status they cannot give.
+- applies_to: field_service
+  change: Strongest form. A customer waiting for someone to physically arrive has no other information source at all.
+  why: There is no portal, no queue position, nothing to check.
+
+references:
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+  note: Its channel-switching and repeat-contact findings are what silence produces measurably.
+- title: ITIL 4 — Incident communication
+  kind: framework
+  note: The practice of committing to an update interval independent of progress.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The named breakdown is the important half. Every support team that internalises this heuristic
+    without it produces a cadence of empty updates, which is a measurable improvement on the
+    communication metric and a degradation of the thing it was measuring.

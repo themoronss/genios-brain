@@ -3,7 +3,7 @@ identity:
   name: Entitlement Verification
   domain: customer_support
   subdomain: entitlement_and_sla
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Establishing what this customer is actually owed before anyone promises anything: which
@@ -17,24 +17,115 @@ description: 'Establishing what this customer is actually owed before anyone pro
 
   '
 question: What is this customer actually owed right now, and does the system still believe it?
+
+# WHAT DONE LOOKS LIKE. Each of these is a state someone could observe, because Layer 5 reads
+# them as success events. "The customer felt looked after" is not one of them.
+outcomes:
+- 'A stated entitlement, or a stated absence of one. "We do not have your agreement on file" is a
+  complete answer and a defaulted tier is not — a default is a fabricated contract, and the customer
+  will quote it back to us correctly.'
+- 'A response target expressed as a MOMENT, not a duration. "Four hours" against a business-hours
+  plan at 17:45 on a Friday means Monday morning, and both sides read the same sentence and expect
+  different days. The arithmetic happens before the promise or it happens during the complaint.'
+- 'The gap between the signed agreement and the ticketing system''s configuration, named when it
+  exists. That gap is normally discovered by an angry customer rather than by an audit, and it is
+  almost always in the customer''s favour in the contract and against them in the tool.'
+- 'A downward verification delivered EARLY. Telling someone they are not entitled to what they are
+  asking is cheap on first contact and ruinous once work has started; the whole skill is doing it in
+  the first exchange without making them feel caught out.'
+- 'The negative outcome, stated as such: a request identified as outside coverage AND a decision
+  recorded about whether to serve it anyway. Silently serving it is not generosity, it is an
+  unrecorded amendment to the agreement that the next agent inherits.'
+- 'Entitlement re-checked when it could have changed — renewal, plan change, a named contact leaving
+  — rather than cached from whenever the account was first opened.'
+
+# HOW SOMEONE COMPETENT GETS THIS WRONG. More diagnostic than the outcomes.
+failure_modes:
+- 'ASSUMING RATHER THAN CHECKING, because the answer is usually Standard and usually right. It is
+  wrong specifically on large custom agreements that kept a standard tier label for billing — the
+  accounts where being wrong costs most.'
+- 'READING THE TIER NAME INSTEAD OF THE TERMS. "Premium" is a display label over a bundle, and
+  custom contracts keep the label while changing the clauses being relied on.'
+- 'QUOTING THE DURATION FROM THE CONTRACT VERBATIM. The contract states durations because that is
+  how terms are written; the customer needs a deadline. Passing the duration through unconverted
+  is the single most common cause of a breach that surprises everybody.'
+- 'ENFORCING ENTITLEMENT AGAINST A CUSTOMER MID-RENEWAL. The record says expired, the process says
+  check, and the customer experiences a refusal during the renewal they are completing. It is the
+  most avoidable churn event in support and it is caused by an administrative lag.'
+- 'TREATING THE CEILING AS A FLOOR. The plan bounds what may be PROMISED; it never bounds what may
+  be DONE. Withholding a two-minute answer to protect a tier boundary saves nothing measurable and
+  is recounted at renewal.'
+- 'VERIFYING AGAINST THE WRONG ENTITY. Domain-matching resolves a subsidiary to its parent, which
+  spends purchased capacity nobody bought — invisible until the renewal conversation.'
+
+kpis:
+- name: entitlement_resolved_before_first_promise
+  unit: percent
+  description: Share of cases where the plan was established before any target was stated. The number
+    this capability exists to move; everything downstream is arithmetic over it.
+  direction: higher_is_better
+- name: defaulted_tier_rate
+  unit: percent
+  description: Share of cases served against an assumed plan rather than a recorded one. Counts the
+    fabricated contracts, which is what a default actually is.
+  direction: lower_is_better
+- name: deadline_stated_as_moment_rate
+  unit: percent
+  description: Share of commitments expressed as a date and time rather than a duration.
+  direction: higher_is_better
+- name: late_downward_verification_rate
+  unit: percent
+  description: Share of not-entitled findings delivered after work began. The damage metric — early
+    costs a sentence, late costs the relationship.
+  direction: lower_is_better
+- name: grace_period_refusals
+  unit: count
+  description: Times entitlement was raised against a customer whose renewal was in progress. Should
+    be zero, and is not, because the record and the reality disagree by exactly the renewal lag.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - customer_support.intake_and_triage.channel_intake
+  - customer_support.intake_and_triage.routing_and_assignment
+  - customer_support.support_management.account_relationship_management
+  downstream:
+  - customer_support.entitlement_and_sla.sla_management
+  - customer_support.customer_communication.expectation_setting
+  - customer_support.entitlement_and_sla.breach_prevention
+  parallel:
+  - customer_support.intake_and_triage.priority_and_severity
+  - customer_support.entitlement_and_sla.coverage_and_on_call
+
+applies_to:
+  models: [b2b, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support,
+           named_tam, premium_paid_support, outsourced_bpo, follow_the_sun, b2b2c_reseller_support]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, decision_frameworks,
-    kpis and handoffs, following ../sla-management/capability.yaml, and by authoring situations/entitlement-expired.yaml
-    (customer_support.sit.entitlement_expired), which this capability owns and which binds to the pending
-    L2 types entitlement_expired and entitlement_mismatch.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Reachable from the design partner's live relationship and
+    support_contact situations, and until now it carried a name, a description and a question.
 
-    The expertise to capture on promotion, in order of value: the silent-expiry problem; the contract-versus-configuration
-    drift that makes the ticketing system an unreliable witness; grandfathering and goodwill as deliberate,
-    recorded exceptions rather than agent discretion; and the fact that a downgrade discovered mid-ticket
-    is a commercial conversation wearing a support ticket''s clothes.
+    Written against what Layer 2 actually holds, which is almost nothing this capability wants:
+    entitlement.plan, entitlement.expires_at, entitlement.coverage_hours and
+    sla.target_first_response_at are all in _schema/vocabulary.yaml planned_substrate with no
+    writer. That is why customer_support.obj.core.support_plan has only two executable inference
+    patterns out of ten, and why its most valuable output on this tenant is
+    entitlement_confidence reporting LOW. The capability is written for the connected case and
+    is honest about the correspondence-only one: with no billing connector, its correct answer
+    is usually 'we do not have your agreement on file'.
 
-    '
-  reviewed_at: '2026-08-24'
+    No numbers, by contract. How close is close to a deadline, and how far a target may be
+    exceeded before it counts as an exception, are Layer 4 arithmetic and live in the pack
+    manifest.
+
 admission:
-  accepted_content_hash: c3e4eda0d92a8b352b2bc367969790636c3f0a414eed26e358e6846b31d1c8e0
+  accepted_content_hash: 8155ad5060092566a68ef9a972f8cd9db374fe92933bceadd99f85b43a712311

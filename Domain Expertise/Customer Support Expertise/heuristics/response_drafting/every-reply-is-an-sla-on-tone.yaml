@@ -1,15 +1,90 @@
 identity:
   id: customer_support.heu.response_drafting.every_reply_is_an_sla_on_tone
-  name: Every reply is an SLA on tone
+  name: Every reply sets the tone for the next one
   kind: heuristic
   domain: customer_support
   scope: capability
   owner_capability: customer_support.customer_communication.response_drafting
   subdomain: customer_communication
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: Customers screenshot support replies. Write each one as if it will be read aloud in the buyer's
-    renewal meeting — because occasionally it is.
+  statement: >
+    The register of a reply is not decoration on the content — it is a commitment about how the rest
+    of the case will be conducted, and the customer reads it as one. A hurried message on a serious
+    issue is answered in kind, and the thread never recovers its temperature.
   answers:
-  - What standard should a routine reply meet?
+  - Why does a technically correct reply sometimes escalate a case?
+  - What is the cost of a fast reply written under load?
+
+heuristic:
+  statement: >
+    The customer matches the register you set. Write briskly about something they consider serious
+    and every subsequent message arrives shorter, colder and copied to someone more senior.
+  why: >
+    A reply carries two messages: the answer, and an implicit estimate of how much the problem
+    matters. When those disagree, the customer corrects the estimate — and the only tools available
+    to them are escalating, adding recipients, and writing more formally. What reads internally as
+    efficiency reads externally as a judgement about their problem's importance.
+  confidence_bp: 7000
+  applies_when: The customer has signalled that they consider the issue serious, by urgency, by detail, or by who they copied.
+  breaks_down_when: >
+    The customer is an expert who prefers terse. A senior engineer wants the answer and nothing else,
+    and warmth added for its own sake reads as padding and as a delay — the same behaviour that
+    de-escalates a frustrated non-technical contact irritates them. It also breaks down in high-volume
+    consumer support, where brevity is the expected register and matching it is correct.
+  reads:
+  - customer_support.obj.core.requester
+  - customer_support.obj.core.customer_sentiment
+  - technical_depth
+  contradicts:
+  - customer_support.heu.expectation_setting.silence_is_the_promise_breaker
+  pattern_ref:
+  - contact.politeness_replaced_warmth
+  - account.tone_has_turned_for_this_account
+
+limits:
+- >
+  It is about register, not about length. A long reply can be dismissive and a short one careful; the
+  variable is whether the message acknowledges the weight the customer assigned.
+- It cannot be measured on the current substrate. derived.sentiment carries polarity, not formality, and those are different things.
+
+failure_modes:
+- >
+  Read as an instruction to add warmth everywhere. Applied to an expert contact it produces padding,
+  which they experience as a slower answer.
+- >
+  Used to justify slow replies. The heuristic is about the register of the message, not its timing,
+  and the two are routinely traded against each other when they need not be.
+
+variants:
+- applies_to: b2c
+  change: Largely inverted. Brevity is the expected register and elaborate warmth reads as scripted.
+  why: The relationship is transactional and the customer knows it.
+- applies_to: named_tam
+  change: Strongest form. The register is a continuing relationship rather than a single message, so one brisk reply is read against a long history.
+  why: There is a baseline to deviate from.
+
+references:
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+  note: >
+    Its "advocacy language" finding — that how an agent frames a message changes outcomes
+    independently of content — is the closest empirical support for this.
+- title: customer_support.obj.core.requester
+  kind: internal
+  note: technical_depth and its false positives are the fields this heuristic depends on and the reason its confidence is 7000 rather than higher.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Confidence deliberately lower than the other heuristics in this capability set. The effect is
+    real and the reader-dependence is large enough that the breakdown case is common rather than
+    rare, which is exactly what a 7000 is supposed to communicate.

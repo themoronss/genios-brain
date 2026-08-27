@@ -7,23 +7,137 @@ identity:
   owner_capability: customer_support.support_management.account_relationship_management
   subdomain: support_management
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: For named accounts, support maintains its own relationship rhythm — a known contact map,
-    a health note after every major interaction, proactive outreach after rough patches — because renewal
-    conversations inherit whatever support left in the room.
+  statement: >
+    Review the support relationship with a named account on a rhythm, between tickets, and produce
+    either a specific action or an explicit "nothing needed". The unit of work is the relationship, so
+    the review has to happen on the weeks when no ticket is open — which are the weeks it is most
+    often skipped and most often needed.
+  answers:
+  - Where does this relationship stand when nothing is open?
+  - Is this account's quiet a result or a warning?
+
+when_to_use:
+  conditions:
+  - {path: relationship.nature, op: "IN", value: [customer, partner]}
+  signals:
+  - positive_reply
+  - negative_reply
+  do_not_use_when:
+  - The account is self-serve or low-touch. Quiet is the designed state there and every deviation
+    instrument divides by a baseline that is already zero.
+  - An incident is running. Volume, tone and cadence are all about the incident and no behavioural read is reliable.
+
 steps:
 - order: 1
-  name: Keep the contact map current from tickets
-  description: Every new name on a thread joins the account map with role. Support often meets the org
-    chart before sales does.
-  actor: human
+  name: Read whose turn it is before reading anything else
+  description: >
+    An account waiting on our answer is a service failure; an account waiting on nothing is a state.
+    Getting these backwards produces a check-in to a customer we owe, which proves we neither replied
+    nor noticed.
+  actor: system
+  objects_read: [customer_support.obj.core.customer_account]
+  produces: A direction.
+  done_when: ball_in_court is resolved for the account's live threads.
 - order: 2
-  name: Log a one-line health note per major interaction
-  description: 'After escalations and incidents: how did this leave them? The renewal team reads these.'
-  actor: human
+  name: Compare the account to itself, never to the cohort
+  description: >
+    Contact rate varies by more than an order of magnitude between healthy accounts. A cross-account
+    threshold flags the technical customers and misses the quiet ones.
+  actor: system
+  objects_read: [customer_support.obj.core.customer_account]
+  produces: A deviation from this account's own baseline.
+  done_when: The comparison is against its own history, or the absence of a baseline is stated.
 - order: 3
-  name: Reach out after the storm
-  description: 'A week after a bad incident: ''checking everything held up'' — unprompted. This is where
-    damaged accounts decide you care.'
+  name: Check the map, not just the volume
+  description: >
+    Who is writing, whether that has changed, and whether anyone new has appeared. A new named contact
+    nobody has met is how a relationship decays with nothing visibly breaking.
   actor: human
+  objects_read: [customer_support.obj.core.named_contact]
+  produces: A current contact map.
+  done_when: Every active correspondent is either known or flagged as new.
+- order: 4
+  name: Look across tickets for the pattern no ticket contains
+  description: >
+    The same product area three times, the same question from three people. Individually each was
+    handled; together they are a finding.
+  actor: human
+  objects_read: [customer_support.obj.core.ticket, customer_support.obj.core.product_area]
+  produces: A cross-ticket observation, or none.
+  done_when: The recent set has been read as a set.
+- order: 5
+  name: Close the escalations socially
+  description: >
+    A resolved escalation that was never repaired with the person who raised it leaves the
+    relationship worse than before it was fixed, and the ticket says closed.
+  actor: human
+  objects_read: [customer_support.obj.core.escalation]
+  done_when: Each recent escalation has a relationship-level close or an explicit decision not to.
+- order: 6
+  name: Conclude, including "nothing"
+  description: >
+    Most quiet accounts are fine. A motion that cannot produce "no action" will produce a check-in for
+    every one of them, and the account team will stop reading its output within a month.
+  actor: human
+  produces: One conclusion per account.
+  done_when: A stated outcome exists, and "no action needed" counts.
+
+objects_used:
+- customer_support.obj.core.customer_account
+- customer_support.obj.core.named_contact
+- customer_support.obj.core.churn_risk
+- customer_support.obj.core.escalation
+- customer_support.obj.core.ticket
+- customer_support.obj.core.customer_sentiment
+
+limits:
+- >
+  Steps 2 and 4 need per-account baselines and ticket aggregation. The baseline exists
+  (reply_cadence); the ticket aggregation does not, so step 4 is a human read on this tenant.
+- >
+  It cannot distinguish a self-sufficient quiet account from a departed one without usage data. That
+  ambiguity is modelled explicitly in customer_account rather than resolved by optimism.
+
+failure_modes:
+- >
+  Run as a cadence of outreach rather than a cadence of review. The review is internal; contact is one
+  possible outcome of it and usually not the right one.
+- >
+  Duplicating the account team without telling them. Two uncoordinated relationship conversations with
+  the same customer are noticed immediately.
+
+variants:
+- applies_to: named_tam
+  change: Steps 3 to 5 are continuous rather than periodic, and step 6 becomes a shared view with the account team.
+  why: A named relationship already has the forum this playbook otherwise has to manufacture.
+- applies_to: enterprise_support
+  change: Step 5 hardens — enterprise escalations have an internal audience, and the social close has to reach it.
+  why: The people who need repairing are often not the people on the ticket.
+- applies_to: plg_self_serve
+  change: Does not apply. See do_not_use_when.
+  why: There is no relationship to review, by design and by the customer's choice.
+
+references:
+- title: Customer Success — How Innovative Companies Reduce Churn
+  kind: book
+  author: Mehta, Steinman, Murphy
+  note: >
+    The source of the account-review cadence. Its health-score practice is the part this playbook
+    deliberately does not adopt — see customer_account's anti-patterns for why.
+- title: customer_support.obj.core.customer_account
+  kind: internal
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1 before step 2 is the ordering that matters. Reading deviation before direction is what
+    produces the single most damaging output of this capability — a warm check-in sent to an account
+    that has been waiting nine days for an answer we owe them.

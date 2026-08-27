@@ -1,15 +1,86 @@
 identity:
   id: customer_support.heu.expectation_setting.silence_is_the_promise_breaker
-  name: Silence is the promise-breaker
+  name: Silence is the promise breaker
   kind: heuristic
   domain: customer_support
   scope: capability
   owner_capability: customer_support.customer_communication.expectation_setting
   subdomain: customer_communication
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: Customers forgive slow fixes far more readily than unexplained silence. The absence of an
-    update IS an update — it says 'you are forgotten' — and it is the cheapest thing support can prevent.
+  statement: >
+    A missed date that was communicated in advance is a delay. The same date missed in silence is a
+    broken promise. The difference is one message, and it decides which of the two the customer
+    experienced.
   answers:
-  - 'What damages trust faster: slowness or silence?'
+  - Why does telling a customer bad news early cost less than telling them nothing?
+  - What actually breaks a commitment — the slip, or the silence around it?
+
+heuristic:
+  statement: >
+    Customers do not measure whether the date was met. They measure whether they had to find out on
+    their own.
+  why: >
+    A slipped date is a fact about the world; being left to discover it is a fact about us. The first
+    is attributed to circumstance, the second to indifference, and only the second generalises to
+    every future promise. This is why a two-week delay with three honest updates ends in a working
+    relationship and a four-day delay with no contact ends in an escalation.
+  confidence_bp: 8500
+  applies_when: A dated commitment exists and its date is at risk or has passed.
+  breaks_down_when: >
+    The updates carry nothing. Three identical "still working on it" messages are silence with extra
+    steps, and after the second the customer correctly concludes the cadence is theatre. It also
+    breaks down where the delay is trivial relative to the customer's own timeline — telling someone
+    an answer will be Thursday rather than Wednesday, when they do not need it until the following
+    month, spends attention on nothing.
+  reads:
+  - customer_support.obj.core.commitment
+  - customer_support.obj.core.customer_sentiment
+  - ball_in_court
+  contradicts:
+  - customer_support.heu.response_drafting.every_reply_is_an_sla_on_tone
+  pattern_ref:
+  - account.quiet_after_a_broken_promise
+  - contact.we_owe_this_person
+
+limits:
+- >
+  It is about promises WE made. A customer waiting on a third party is a different situation with a
+  different owner, and applying this heuristic there manufactures updates about somebody else's work.
+- It says nothing about the size of the slip, which is deliberate — the size is rarely what the reaction is about.
+
+failure_modes:
+- >
+  Taken as licence to send an update instead of doing the work. A perfectly maintained cadence on a
+  case where nothing is happening is a well-documented failure, and the customer eventually says so.
+- >
+  Applied only after the date passes. The whole value is in the message sent BEFORE, when the promise
+  is still ours to redefine.
+
+variants:
+- applies_to: enterprise_support
+  change: Stronger. The contact has repeated our date internally, so our silence becomes their credibility problem.
+  why: The promise was forwarded before it was broken.
+- applies_to: ai_first_support
+  change: An automated pre-slip notice is better than nothing and materially worse than a human one, because the customer can tell.
+  why: The message's content is the evidence that a person is holding it; automation removes exactly that.
+
+references:
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+  note: Effort, not outcome, drives disloyalty — and discovering a slip yourself is pure added effort.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    `contradicts` names the tone heuristic because under time pressure they pull apart: this one
+    says send something now, that one says a hurried reply carries its own cost. Both are true and a
+    practitioner trades them off per case.

@@ -7,23 +7,125 @@ identity:
   owner_capability: customer_support.customer_communication.proactive_status_updates
   subdomain: customer_communication
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: Updates go out on the promised cadence even when nothing changed — 'still working, here is
-    where we are' — because the cadence is the product. Progress-triggered updates fall silent exactly
-    when anxiety peaks.
+  statement: >
+    Send the update when the cadence says so, not when there is something good to report. Updating on
+    progress means the customer hears from us exactly when things are going well and never when they
+    are not, which is the pattern that teaches them to escalate.
+  answers:
+  - When is the next update due, and what goes in it if nothing has moved?
+  - How do I stop a no-news update from being noise?
+
+when_to_use:
+  conditions:
+  - {path: thread.ball_in_court, op: "=", value: us}
+  - {exists: thread.last_outbound}
+  signals:
+  - question
+  - next_step_agreed
+  do_not_use_when:
+  - The ball is genuinely with the customer and they know it. An update whose content is that we are
+    still waiting for them is a chase wearing a costume.
+  - The case is closed. Cadence that continues past resolution trains the customer to ignore it.
+
 steps:
 - order: 1
-  name: Set cadence by severity
-  description: P1 hourly, P2 daily, P3 on change. Stated to the customer, honoured like an SLA.
+  name: Date the next update as you send this one
+  description: >
+    An update that ends without saying when the following one arrives restarts the customer's
+    uncertainty the moment they finish reading it. The next date is part of the message, not an
+    internal reminder.
   actor: human
+  produces: A promised next-update moment.
+  done_when: The sent message names a date.
 - order: 2
-  name: Make no-news updates substantive
-  description: What we ruled out, what we try next. 'No update' updates erode; 'here is the path' updates
-    reassure.
+  name: Set the interval from their exposure, not from ticket age
+  description: >
+    A production outage is not a weekly-update situation because the case is old. Exposure decides
+    frequency; age decides nothing.
   actor: human
+  objects_read: [customer_support.obj.core.customer_account, customer_support.obj.core.ticket]
+  produces: An interval.
+  done_when: The interval is justified by impact rather than by convention.
 - order: 3
-  name: Close the loop with a final summary
-  description: 'When resolved: what happened, what changed, what we are doing so it does not recur. The
-    last update is the one they remember.'
+  name: Write the no-news update as though it were news
+  description: >
+    What was tried, what it ruled out, what happens next. "Still investigating" three times proves
+    nothing changed AND that nobody thought about how to say so, after which the cadence carries no
+    information and skipping it costs nothing.
   actor: human
+  produces: An update with content.
+  done_when: The message contains something the previous one did not.
+- order: 4
+  name: Send it to whoever is carrying the anxiety
+  description: >
+    During an escalation the person who needs the rhythm is often the manager who has gone quiet, not
+    the engineer still replying. The requester is the default and not always the audience.
+  actor: human
+  objects_read: [customer_support.obj.core.named_contact]
+  produces: A correctly addressed update.
+  done_when: The recipient list reflects who is exposed, not just who wrote.
+- order: 5
+  name: Hold the rhythm on the bad days
+  description: >
+    Those are the only days it proves anything. Attention decays with ticket age and customer anxiety
+    does the opposite, so the updates that matter most are the ones nobody feels like sending.
+  actor: human
+  done_when: No promised update was skipped.
+- order: 6
+  name: Stop deliberately, and say so
+  description: >
+    Updates that trail off leave the customer unsure whether the case ended or was abandoned. The
+    closing message is one sentence and it is the one most often omitted.
+  actor: human
+  produces: A stated end of cadence.
+  done_when: The customer has been told this was the last update and why.
+
+objects_used:
+- customer_support.obj.core.commitment
+- customer_support.obj.core.customer_account
+- customer_support.obj.core.named_contact
+- customer_support.obj.core.ticket
+- customer_support.obj.core.customer_sentiment
+
+limits:
+- >
+  It assumes somebody is doing the work. A perfect cadence over a stalled case is a well-documented
+  failure and this playbook cannot detect it — only the resolution metrics can.
+- Step 2 needs an impact read the substrate does not carry; on a correspondence-only tenant it is a human judgement.
+
+failure_modes:
+- Cadence held with empty content until the customer stops reading. Step 3 exists to prevent exactly this and is the step most often skipped under load.
+- Updating the ticket rather than the person. A status change in a portal nobody watches is a record that we would have told them if they had looked.
+
+variants:
+- applies_to: enterprise_support
+  change: Steps 1 and 4 harden — the update is written to be forwarded and the distribution is agreed in advance.
+  why: Enterprise updates are consumed by people who never wrote to us.
+- applies_to: b2c
+  change: Cadence becomes automated status, and step 3 is satisfied by a genuinely changing status rather than by prose.
+  why: Volume makes per-case authorship impossible; the honesty requirement survives, the format does not.
+- applies_to: proactive_support
+  change: The playbook runs before a case exists, on a detected condition rather than a promise.
+  why: The same discipline applied to something the customer has not noticed yet.
+
+references:
+- title: ITIL 4 — Incident Management, communication practice
+  kind: framework
+  note: Where update cadence is a committed interval rather than a function of progress.
+- title: customer_support.obj.core.commitment
+  kind: internal
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Steps 3 and 5 are the two that fail in practice, and they fail in opposite directions — one
+    produces noise, the other produces silence. A team doing only one of them well is doing this
+    capability badly in a way its own metrics will report as success.

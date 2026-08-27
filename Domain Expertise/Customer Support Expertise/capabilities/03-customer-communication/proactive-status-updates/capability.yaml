@@ -3,7 +3,7 @@ identity:
   name: Proactive Status Updates
   domain: customer_support
   subdomain: customer_communication
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Speaking before being asked, on a rhythm the customer was told to expect. An update carrying
@@ -15,22 +15,108 @@ description: 'Speaking before being asked, on a rhythm the customer was told to 
   '
 question: When did we last tell this customer where they stand, and when did we say we would tell them
   again?
+
+outcomes:
+- 'The next update DATED at the moment the last one is sent. An update that ends without saying when
+  the following one arrives restarts the customer''s uncertainty the moment they finish reading it.'
+- 'The cadence held on the days there is nothing good to say. Those are the only days it proves
+  anything — an update sent when progress exists is a report; one sent when it does not is the
+  demonstration that somebody is still holding the thing.'
+- 'The customer''s own explanation for the silence pre-empted. Left alone they will invent one, and
+  their version is reliably worse than ours: forgotten, deprioritised, given to somebody junior.'
+- 'A no-progress update that is still worth reading — what was tried, what it ruled out, what
+  happens next. "Still investigating" three times is worse than nothing because it proves nothing
+  changed AND that nobody thought about how to say so.'
+- 'The negative outcome, and the one most often skipped: cadence STOPPED deliberately when the case
+  is genuinely closed, with a sentence saying so. Updates that trail off leave the customer unsure
+  whether it ended or was abandoned.'
+- 'Update frequency matched to the customer''s exposure rather than to our comfort — an outage
+  affecting their production is not a weekly-update situation because the ticket is old.'
+
+failure_modes:
+- 'UPDATING ON PROGRESS RATHER THAN ON THE CLOCK. It feels honest — why write when there is nothing
+  to report — and it means the customer hears from us exactly when things are going well and never
+  when they are not.'
+- 'SENDING CONTENT-FREE UPDATES ON SCHEDULE. The opposite failure and equally corrosive: three
+  identical "still working on it" messages teach the customer that our updates carry no information,
+  after which the cadence is noise and skipping it costs nothing.'
+- 'PROMISING A CADENCE AND HOLDING IT ONLY WHILE THE TICKET IS INTERESTING. Attention decays with
+  ticket age and customer anxiety does the opposite. The updates that matter most are the ones
+  nobody feels like sending.'
+- 'UPDATING THE TICKET INSTEAD OF THE PERSON. A status change in a portal the customer does not
+  watch is not an update; it is a record that we would have told them if they had been looking.'
+- 'SENDING THE UPDATE TO THE REQUESTER WHEN THE ANXIETY IS ELSEWHERE. During an escalation the
+  person who needs the rhythm is often the manager who has gone quiet, not the engineer still
+  replying.'
+- 'LETTING THE UPDATE REPLACE THE WORK. A perfectly maintained cadence on a ticket where nothing is
+  happening is a well-documented failure, and eventually the customer says so.'
+
+kpis:
+- name: cadence_adherence_rate
+  unit: percent
+  description: Share of promised updates sent by their promised time. The capability's whole
+    proposition — it is a promise about communication and it is measured like one.
+  direction: higher_is_better
+- name: next_update_dated_rate
+  unit: percent
+  description: Share of updates that name when the following one arrives.
+  direction: higher_is_better
+- name: customer_chase_rate
+  unit: percent
+  description: Share of open cases where the customer asked for a status before we gave one. The
+    truest failure signal here — every chase is an update we owed and did not send.
+  direction: lower_is_better
+- name: informative_update_share
+  unit: percent
+  description: Share of updates carrying something the previous one did not. Guards against the
+    opposite failure, where cadence is met with noise.
+  direction: higher_is_better
+- name: silent_close_rate
+  unit: percent
+  description: Share of cases whose updates simply stopped, with no closing message.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - customer_support.entitlement_and_sla.commitment_tracking
+  - customer_support.customer_communication.expectation_setting
+  - customer_support.escalation_and_incident.incident_management
+  downstream:
+  - customer_support.customer_communication.response_drafting
+  - customer_support.diagnosis_and_resolution.verification_and_closure
+  - customer_support.support_management.account_relationship_management
+  parallel:
+  - customer_support.customer_communication.de_escalation
+  - customer_support.escalation_and_incident.major_incident_communication
+
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support,
+           swarming_support, named_tam, follow_the_sun, premium_paid_support, proactive_support,
+           outsourced_bpo, field_service, b2b2c_reseller_support]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, decision_frameworks,
-    kpis and handoffs, following the shape of capabilities/03-customer-communication/de-escalation/capability.yaml.
-    Capture first: the rule that cadence is agreed rather than assumed, the practice of writing updates
-    the requester can forward to their own stakeholders unedited, and the failure mode where a team pauses
-    updates during an incident precisely when demand for them peaks. Also author the support-call-no-recap
-    situation here — it binds to the real Layer 2 type meeting_no_followup and routes today, which makes
-    it the natural first executable surface for this capability.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Reachable from the live relationship and support_contact
+    routes.
 
-    '
-  reviewed_at: '2026-08-24'
+    Unusually well served by the existing substrate. thread.last_outbound says when we last
+    spoke, thread.last_inbound says when they did, thread.ball_in_court says whose move it is,
+    and commitment.due_at carries a promised update date. Those four answer this capability's
+    own question — when did we last tell this customer where they stand, and when did we say we
+    would tell them again — without a single planned-substrate field.
+
+    The KPI set carries a deliberate opposing pair: cadence_adherence_rate and
+    informative_update_share. Optimising either alone produces a recognisable failure — silence
+    on the bad days, or three identical 'still working on it' messages — and the capability is
+    only being done well when both hold.
+
 admission:
-  accepted_content_hash: 4b14be6543dda3318d29eae52e387c285828abc8c42388fa31b59dd2d8e027ba
+  accepted_content_hash: 3b4ba59f4ef02fb27d296bd0713280e0230d86df8394e027a808fe9a0e0054af

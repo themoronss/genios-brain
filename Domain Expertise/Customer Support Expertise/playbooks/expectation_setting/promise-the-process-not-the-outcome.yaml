@@ -7,22 +7,117 @@ identity:
   owner_capability: customer_support.customer_communication.expectation_setting
   subdomain: customer_communication
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: 'When the outcome is uncertain, promise the checkpoints: what we are doing, when you will
-    next hear from us — and then hit those. Kept small promises buy patience that big vague ones burn.'
+  statement: >
+    Commit to what we control — when we will look, when we will report, what we will have decided by
+    when — rather than to a resolution date that depends on a diagnosis nobody has finished. A
+    process promise is keepable on the worst day; an outcome promise is a bet with the customer's
+    planning built on top of it.
+  answers:
+  - What can I honestly commit to before the cause is known?
+  - How do I end an uncomfortable exchange without buying it with optimism?
+
+when_to_use:
+  conditions:
+  - {path: thread.ball_in_court, op: "=", value: us}
+  signals:
+  - question
+  - meeting_request
+  do_not_use_when:
+  - The answer is already known. A process promise where an outcome is available reads as evasion,
+    and the customer can tell.
+  - The customer needs a decision rather than a date — "can I rely on this for Monday's launch"
+    wants yes or no, and a cadence promise in its place is the wrong answer politely delivered.
+
 steps:
 - order: 1
-  name: Give a next-update time, always
-  description: '''Update by 4pm tomorrow even if unresolved'' converts silent waiting into scheduled waiting.'
+  name: Separate what we control from what we are guessing
+  description: >
+    Time to look, time to report and time to decide are ours. Time to fix belongs to a cause nobody
+    has found yet. Almost every over-promise in support is the second dressed as the first.
   actor: human
+  produces: A list of commitable moments.
+  done_when: Each candidate promise is classed as controlled or speculative.
 - order: 2
-  name: Never promise a date engineering has not given
-  description: A support-invented ETA is a future apology. 'I will have a date for you by X' is honest
-    and keepable.
-  actor: human
+  name: Check the queue, not the entitlement document
+  description: >
+    The target is a contractual ceiling; the estimate is what will actually happen this week. A queue
+    three days behind that keeps promising four hours is reading the first as the second.
+  actor: system
+  objects_read: [customer_support.obj.core.support_plan, customer_support.obj.core.backlog]
+  produces: A realistic window.
+  done_when: The promise is bounded by observed behaviour, or the absence of that evidence is stated.
 - order: 3
-  name: Reset expectations the moment they slip
-  description: A proactive 'this is taking longer, next update Friday' costs a sentence; a missed promise
-    costs the relationship's benefit of the doubt.
+  name: Promise slightly less than you believe
+  description: >
+    An under-promise that lands early costs nothing and buys credibility. An over-promise turns a
+    solvable ticket into a broken one and hands the next agent a trust problem on top of the fault.
   actor: human
+  produces: A stated commitment.
+  done_when: The promise is one the worst plausible version of the week still meets.
+- order: 4
+  name: Say what happens if it slips
+  description: >
+    A promise with no stated fallback is half a promise, and the missing half is the one that gets
+    tested. "If I do not have it by Thursday I will tell you Thursday morning and give you a new
+    date" is the whole clause.
+  actor: human
+  produces: A fallback.
+  done_when: The customer knows what they will hear, and when, if the date moves.
+- order: 5
+  name: Record it where the next person will see it
+  description: >
+    The customer remembers the promise exactly; a colleague picking up the case has no idea it was
+    made. That contradiction is what turns a delay into a complaint.
+  actor: agent
+  objects_read: [customer_support.obj.core.commitment]
+  produces: A tracked commitment.
+  done_when: The promise exists outside the sent message.
+
+objects_used:
+- customer_support.obj.core.commitment
+- customer_support.obj.core.support_plan
+- customer_support.obj.core.ticket
+- customer_support.obj.core.requester
+
+limits:
+- >
+  Step 2 needs queue telemetry — backlog age, first-response baselines — which has no writer on a
+  correspondence-only tenant. There the honest promise is narrower, not more confident.
+- >
+  It does not help with a customer who needs a commitment we genuinely cannot make. That is a
+  commercial escalation, not a wording problem.
+
+failure_modes:
+- >
+  Process promises used to avoid ever committing to an outcome. Endless "I will update you" with no
+  convergence is its own failure and customers name it quickly.
+- Step 4 dropped because the promise felt safe. The fallback matters most precisely on the promises that felt safe.
+
+variants:
+- applies_to: enterprise_support
+  change: Step 4 is written for forwarding, because it will be pasted into somebody's internal status update.
+  why: The fallback clause is the part that survives the forward.
+- applies_to: b2c
+  change: Steps compress into one sentence; step 5 becomes automatic or does not happen.
+  why: Volume makes ceremony impossible, and an unrecorded promise at scale is a guaranteed contradiction.
+
+references:
+- title: ITIL 4 — Service Level Management
+  kind: framework
+  note: Its SLA/SLO separation is the formal version of step 2's contractual-ceiling-versus-estimate distinction.
+- title: customer_support.obj.core.commitment
+  kind: internal
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1 is the whole playbook. Everything after it is bookkeeping on a distinction most agents
+    never make explicitly, which is why the over-promise feels like good service at the time.

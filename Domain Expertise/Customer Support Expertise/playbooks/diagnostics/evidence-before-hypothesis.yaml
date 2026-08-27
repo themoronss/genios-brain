@@ -7,23 +7,128 @@ identity:
   owner_capability: customer_support.diagnosis_and_resolution.diagnostics
   subdomain: diagnosis_and_resolution
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: Diagnosis starts by collecting what is cheap and factual — logs, versions, timestamps, exact
-    steps — before anyone theorises, because a hypothesis formed early bends every later fact toward itself.
+  statement: >
+    Decide what to gather before forming a theory, and gather it in one pass. Evidence collected
+    after a hypothesis exists is collected to confirm it, and the confirming evidence is always
+    available — which is how a case closes on the wrong cause and reopens a fortnight later.
+  answers:
+  - What do we need to see, and can we get it ourselves?
+  - What expires if we wait until tomorrow to ask?
+
+when_to_use:
+  signals:
+  - question
+  - negative_reply
+  do_not_use_when:
+  - The cause is already known and reproducible. Ceremony on a known fault wastes the customer's time.
+  - A major incident is running. Incident diagnosis is a different motion with a different owner.
+
 steps:
 - order: 1
-  name: Collect the minimum evidence set first
-  description: Environment, version, exact error, when it started, what changed. One structured ask, not
-    five rounds of one-question emails.
+  name: Ask what changed
+  description: >
+    Systems that worked and stopped almost always had something change, and the customer usually
+    knows what it was. Not asking is the single largest unforced error in support diagnosis.
   actor: human
+  produces: A change window, or an explicit "nothing".
+  done_when: The question has been asked, whatever the answer.
 - order: 2
-  name: Reproduce or bracket
-  description: 'Can we see it ourselves? If not, bracket: works here / fails there — the boundary is the
-    diagnosis half-done.'
+  name: List the evidence before theorising
+  description: >
+    Write the list while you still have no theory. Once a hypothesis exists the list quietly becomes
+    the subset that would confirm it.
   actor: human
+  produces: An evidence list.
+  done_when: The list exists and no cause has been named yet.
 - order: 3
-  name: State the hypothesis and its test
-  description: '''We believe X; if true, Y will show it.'' A hypothesis without a test is a guess with
-    confidence.'
+  name: Take everything you can from your own side first
+  description: >
+    Version, plan, configuration, recent errors, their own account data. Asking a customer for what
+    is in our telemetry is the cheapest avoidable insult in support and the fastest way to convince a
+    technical customer that nobody is looking.
+  actor: system
+  objects_read: [customer_support.obj.core.customer_account, customer_support.obj.core.ticket]
+  produces: Self-served evidence.
+  done_when: The remaining list contains only things we genuinely cannot obtain.
+- order: 4
+  name: Order the ask by what expires
+  description: >
+    The log everyone wants is the one that rotated away yesterday. Requesting volatile evidence first
+    costs nothing and is almost never done.
   actor: human
+  produces: An ordered request.
+  done_when: Anything time-limited is at the top.
+- order: 5
+  name: Ask once, and say why
+  description: >
+    One message, every item, with a sentence on what each is for. A customer asked three times for
+    the same class of thing stops believing anyone is reading their replies.
+  actor: human
+  produces: A single evidence request.
+  done_when: The request is complete enough that a second one would be a new question, not a continuation.
+- order: 6
+  name: State what the evidence supports, including nothing
+  description: >
+    "This does not tell us enough, here is what would" is a finding. Presenting an inconclusive
+    result as progress is how a case runs for a fortnight on no information.
+  actor: human
+  produces: A verdict and a list of ruled-out hypotheses.
+  done_when: What was eliminated is recorded, so the next person does not repeat it.
+
+objects_used:
+- customer_support.obj.core.ticket
+- customer_support.obj.core.issue
+- customer_support.obj.core.requester
+- customer_support.obj.core.customer_account
+- customer_support.obj.core.product_area
+
+limits:
+- >
+  Steps 3 and 4 assume telemetry and retention windows we can see. Without them the playbook degrades
+  to steps 1, 2, 5 and 6 — still the majority of its value, because the round-trip discipline is
+  where the cost actually is.
+- It does not cover reproduction, which is its own capability and a different kind of work.
+
+failure_modes:
+- >
+  Step 2 performed after a theory has quietly formed. Nobody notices they have done this, which is
+  why the step is written as "before" rather than as "carefully".
+- >
+  The single request made so long that the customer answers half of it. The ask is one message, not
+  an audit; step 5's "say why" is what keeps it answerable.
+
+variants:
+- applies_to: enterprise_support
+  change: Step 3 expands considerably — enterprise tenants usually have telemetry we can read, and asking anyway is noticed.
+  why: The self-serve share is the difference between competent and irritating at this tier.
+- applies_to: b2c
+  change: Steps 2 to 5 collapse into a structured intake form, and step 1 becomes a required field.
+  why: Volume makes per-case evidence design impossible; the change question survives because it is the highest-yield one.
+- applies_to: embedded_in_product
+  change: Most of step 3 happens automatically at ticket creation, which moves the failure mode from asking too much to not reading what was attached.
+  why: The evidence arrives unrequested and is routinely ignored.
+
+references:
+- title: Debugging — The Nine Indispensable Rules
+  kind: book
+  author: David J. Agans
+  note: >
+    "Quit thinking and look" and "what did you change" are rules 3 and 6 there. This playbook is
+    those two rules with a customer's patience treated as the scarce resource.
+- title: customer_support.obj.core.issue
+  kind: internal
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Steps 1 and 4 are the two highest-yield and lowest-cost actions in support diagnosis, and both are
+    routinely skipped — the first because it feels like a formality, the second because nobody thinks
+    about retention windows until the log is gone.

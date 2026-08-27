@@ -7,22 +7,129 @@ identity:
   owner_capability: customer_support.customer_communication.response_drafting
   subdomain: customer_communication
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: The reply's first sentence answers or advances the customer's actual question; context, empathy
-    and caveats follow. Burying the answer under preamble reads as evasion even when the answer is good.
+  statement: >
+    Put the substance in the first sentence and cut everything the customer cannot act on. Most weak
+    support replies fail by including the internal reasoning, the hedges and an answer to a question
+    nobody asked, so the one sentence that mattered arrives fourth and is read last.
+  answers:
+  - What is the shortest message that leaves this customer able to act?
+  - What belongs in a reply and what belongs in the internal note?
+
+when_to_use:
+  conditions:
+  - {path: thread.ball_in_court, op: "=", value: us}
+  signals:
+  - question
+  - next_step_agreed
+  do_not_use_when:
+  - The reply is an apology for a serious failure. Leading with the answer there reads as brisk; that
+    is de_escalation's sequence, not this one.
+
 steps:
 - order: 1
-  name: Open with the answer or the honest state
-  description: '''Yes, refunded today'' or ''We can see the bug; fix expected Thursday.'' The first line
-    is the whole email for a skimming reader.'
+  name: Work out what they were actually asking
+  description: >
+    "How do I export this?" frequently means "I have a board meeting at four". Answering the literal
+    question is technically correct and leaves the person exactly as blocked.
   actor: human
+  objects_read: [customer_support.obj.core.requester, customer_support.obj.core.intent]
+  produces: The real question.
+  done_when: The underlying need is named, or the reply asks for it directly.
 - order: 2
-  name: Match effort to stakes
-  description: A password reset needs two lines; a data-loss scare needs a paragraph of care. One-size
-    templates read as indifference at both ends.
+  name: Write the answer as the first sentence
+  description: >
+    Not the greeting, not the recap, not the caveat. If the answer is that we do not know yet, that
+    is the first sentence.
   actor: human
+  produces: A lead line carrying the substance.
+  done_when: The first sentence would still be useful if the customer read nothing else.
 - order: 3
-  name: End with exactly one next step
-  description: Whose move, what, when. Replies that end nowhere generate their own follow-up tickets.
+  name: Name what happens next and who owns it
+  description: >
+    A reply missing the owner is where a case goes quiet, because both sides believe the other is
+    moving. Three things belong in every draft: what is true, what happens next, who owns it.
   actor: human
+  produces: A stated next step with an owner.
+  done_when: A reader could say whose move it is without inferring.
+- order: 4
+  name: Delete the investigation
+  description: >
+    A paragraph on what we ruled out reads as thoroughness internally and as evasion externally,
+    because none of it is the answer. It belongs in the internal note where the next agent needs it.
+  actor: human
+  produces: A shorter draft.
+  done_when: Nothing remains that only makes sense to us.
+- order: 5
+  name: Match the register to the reader
+  description: >
+    An expert given first-line steps reads it as not being listened to; a non-technical contact given
+    a stack trace reads it as being dismissed. Both are the same failure to notice who is reading.
+  actor: human
+  objects_read: [customer_support.obj.core.requester, customer_support.obj.core.named_contact]
+  done_when: The technical level matches the reader rather than the severity.
+- order: 6
+  name: Read it as the customer
+  description: >
+    One pass asking only: could I act on this without writing back? Every clarifying question we
+    provoke is a round trip we chose to spend.
+  actor: human
+  done_when: No sentence in the draft would prompt "what do you mean".
+
+objects_used:
+- customer_support.obj.core.requester
+- customer_support.obj.core.named_contact
+- customer_support.obj.core.ticket
+- customer_support.obj.core.intent
+- customer_support.obj.core.knowledge_article
+
+limits:
+- >
+  It is a drafting discipline, not a decision. If the answer itself is wrong, an excellently
+  structured reply delivers it faster.
+- >
+  Its main metric — clarification round trips — needs per-thread message counts that nothing
+  currently aggregates, so on this tenant the playbook is enforced by render copy rather than measured.
+
+failure_modes:
+- >
+  Brevity pursued past clarity. A curt one-liner and a wall of text fail the same reader; the craft
+  is subtractive, not minimal.
+- >
+  Step 1 skipped because the literal question was easy. It is the step that decides whether the reply
+  is useful at all, and it is the one time pressure removes first.
+
+variants:
+- applies_to: enterprise_support
+  change: Step 3 hardens — the reply will be forwarded, so the owner and the next date must survive being pasted with no context.
+  why: Half the readers of an enterprise reply never wrote to us.
+- applies_to: ai_first_support
+  change: Steps 2 to 4 are exactly what a generated draft does badly; the human pass is step 1 and step 5.
+  why: Generated replies are structurally competent and routinely answer the literal question.
+- applies_to: community_support
+  change: The audience is future readers as much as the asker, so step 4's deletions move into a linked article rather than being discarded.
+  why: The investigation has value where the thread is a permanent artefact.
+
+references:
+- title: The Pyramid Principle
+  kind: methodology
+  author: Barbara Minto
+  note: Answer-first structure, from consulting rather than support. Step 2 is Minto applied to a two-paragraph message.
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+  note: The round-trip as the unit of customer effort, which is what step 6 minimises.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Steps 1 and 6 bracket the playbook and are the two that survive automation. Everything between
+    them is structure a generator already does competently, which is precisely why generated support
+    replies read well and answer the wrong question.

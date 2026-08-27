@@ -7,10 +7,92 @@ identity:
   owner_capability: customer_support.entitlement_and_sla.entitlement_verification
   subdomain: entitlement_and_sla
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: Consistently giving P1 treatment to P3 contracts teaches the customer their real tier is
-    fiction — and makes the eventual enforcement feel like a downgrade. Kindness beyond contract should
-    be explicit and occasional, not ambient.
+  statement: >
+    Consistently beating the plan is good service and a slow amendment to the agreement, because the
+    customer calibrates on what happens rather than on what was signed. The generosity is not the
+    problem; doing it without recording it is, because the person who eventually serves the actual
+    contract is the one who takes the complaint.
   answers:
-  - What is the cost of quietly exceeding entitlement?
+  - Why does reverting to the agreed target feel to the customer like a downgrade?
+  - When is exceeding the plan safe, and what makes it safe?
+
+heuristic:
+  statement: >
+    What a customer has been receiving for six months IS their entitlement, in every sense that
+    governs the next conversation. Expectation is set by experience, not by signature.
+  why: >
+    Nobody reads their support agreement twice. They read the last four interactions. A team that
+    answers a Standard-tier customer in twenty minutes for two quarters has taught them that twenty
+    minutes is the service, and the first four-hour response is experienced as something being taken
+    away — which is a harder conversation than never having given it, and it lands on whoever
+    happens to be on shift.
+  confidence_bp: 8000
+  applies_when: >
+    A pattern of over-delivery exists across enough interactions to be a pattern rather than a good
+    week, and it has not been recorded anywhere the customer or the next agent can see.
+  breaks_down_when: >
+    The over-delivery was visibly exceptional and named as such at the time — a launch, an incident,
+    an onboarding period — in which case the customer's own model already treats it as temporary and
+    reversion costs nothing. It also breaks down for a customer whose usage genuinely grew: they are
+    not experiencing a downgrade, they have outgrown their plan, and the correct move is commercial
+    rather than an apology.
+  reads:
+  - customer_support.obj.core.support_plan
+  - customer_support.obj.core.customer_account
+  - exceeds_stated_expectation
+  contradicts:
+  - customer_support.pb.entitlement_verification.verify_before_the_meter_starts
+  pattern_ref:
+  - plan.we_have_been_over_delivering_quietly
+  - plan.expectation_exceeds_entitlement
+
+limits:
+- >
+  It is not an argument for serving strictly to the contract. Withholding cheap help to protect a
+  tier boundary costs more than it saves every time; the heuristic argues for RECORDING generosity,
+  not for rationing it.
+- >
+  It cannot be measured on a correspondence-only tenant. Detecting it needs a first-response
+  baseline and a stated target, and neither has a writer today.
+
+failure_modes:
+- >
+  Read as a mandate to normalise service downward. The characteristic misuse: a manager cites it to
+  justify slowing responses to the agreed target, which is the change the customer experiences as a
+  degradation and this heuristic exists to warn about, not to license.
+- >
+  Used to refuse an individual request. It describes a pattern over months and says nothing about
+  the case in front of you.
+
+variants:
+- applies_to: named_tam
+  change: >
+    The effect is stronger and the remedy is easier — the TAM can name the exception out loud in a
+    review, which is exactly the recording the heuristic asks for.
+  why: A named relationship has a forum for saying "this was a favour"; a ticket queue does not.
+- applies_to: plg_self_serve
+  change: Largely inapplicable. Self-serve expectations are set by published documentation rather than by interaction history.
+  why: There is no relationship to calibrate on.
+
+references:
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+  note: >
+    Its central finding — that customers punish added effort far more than they reward delight —
+    is the mechanism here: the removal of an unearned convenience registers as added effort.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    `contradicts` names its own capability's playbook deliberately. The playbook says verify and
+    bound the promise; this says the bound may already have moved. That tension is real in the
+    profession and hiding it would make the brain read more confident than a practitioner would be.
