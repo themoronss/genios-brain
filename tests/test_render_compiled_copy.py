@@ -228,3 +228,60 @@ def test_the_authored_copy_travels_from_the_situation_to_the_manifest():
                      render_situation_id="sales.sit.x")
     assert plan.render["artifact_kind"] == "draft_reply"
     assert plan.render_situation_id == "sales.sit.x"
+
+
+# ── 6 · a headline is clause-joined, not sentence-joined ───────────────────────
+#
+# Both cases below are from the design partner's live queue on 2026-08-27. Six of twenty-four
+# newly built cards were rejected at 61 or 62 characters against a 60 cap and replaced by
+# template copy, because `_fit` only knows how to drop a trailing SENTENCE and a headline has
+# none — one clause-joined fragment, `re.findall` returns it whole, nothing fits, None.
+def test_an_over_cap_headline_drops_its_trailing_clause_instead_of_falling_back():
+    from genios_engine.deliver.render import _fit_clauses
+
+    head = "bharatkesuperfounders.com — rejected from the cohort — status still open"
+    kept = _fit_clauses(head, HEADLINE_CAP)
+    assert kept == "bharatkesuperfounders.com — rejected from the cohort"
+    assert len(kept) <= HEADLINE_CAP
+    assert not kept.endswith("—")          # no dangling join where a clause was removed
+
+
+def test_a_fallback_headline_is_never_cut_mid_word():
+    """`{entity} — relationship open, nothing moving` with a fifty-character address shipped as
+    `invoice+statements+acct_1ika5ja3kz32dpo1@stripe.com — relati` — a hard slice at the cap."""
+    from genios_engine.deliver.render import _trim_to_word
+
+    long_address = "invoice+statements+acct_1ika5ja3kz32dpo1@stripe.com"
+    out = render_copy(reason_code="relationship",
+                      template={"fallback": {
+                          "headline": "{entity} — relationship open, nothing moving",
+                          "situation": "An active relationship with {entity}."}},
+                      facts={}, slots={"entity": long_address}, llm=None)
+    assert len(out["headline"]) <= HEADLINE_CAP
+    assert not out["headline"].endswith("relati")
+    # The address itself has no space to break on, so slicing it is the only option left — but
+    # that is the ONLY case where a mid-token cut is allowed.
+    assert _trim_to_word("x" * 80, HEADLINE_CAP) == "x" * HEADLINE_CAP
+
+
+def test_the_copys_own_vocabulary_is_not_read_as_an_invented_company():
+    """`The`, `Positive`, `Multiple`, `Fit` and `Presentation` each cost a live card on
+    2026-08-27: the guard read a sentence-opening ordinary word as a name nobody mentioned."""
+    for word in ("The", "Positive", "Multiple", "Fit", "Presentation", "A", "An"):
+        ok, why = invention_ok(f"{word} thread is open with Acme.", "acme", set())
+        assert ok, f"{word} was rejected as an invented name ({why})"
+    # And the guard still does its job: a company nobody mentioned is still caught.
+    ok, why = invention_ok("Initech will vouch for us.", "acme", set())
+    assert not ok and why == "name:Initech"
+
+
+def test_a_hyphenated_word_is_judged_by_its_parts_not_as_one_mashed_token():
+    """`AI-guided` was stripped to `AIguided` — a token in no language and therefore in no
+    corpus — so the guard called it an invented company and threw the card away. Same failure the
+    apostrophe rule already documents, wearing a different punctuation mark."""
+    from genios_engine.deliver.render import _proper_nouns
+
+    assert _proper_nouns("An AI-guided review with Acme.") == ["AI", "Acme"]
+    assert invention_ok("An AI-guided review.", "we sent an ai note", set()) == (True, None)
+    # Splitting on the hyphen must not blunt the guard: a name in either half is still caught.
+    assert invention_ok("Follow-up with Initech.", "acme", set()) == (False, "name:Initech")

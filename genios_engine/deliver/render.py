@@ -77,6 +77,17 @@ _GRAMMAR_WORDS = frozenset({
     "before", "after", "during", "once", "until", "unless", "however", "meanwhile", "otherwise",
     "given", "based", "regarding", "attached", "per", "via", "both", "either", "neither", "each",
     "every", "any", "all", "some", "most", "more", "less", "last", "next", "final",
+    # Earned on 2026-08-27, each from a card that fell back to template copy on this word alone.
+    # `the` is the striking one: the commonest word in English was not here, so any model
+    # sentence opening "The proposal…" was read as an invented company. Articles are a closed
+    # class and cannot be a name on their own, so all three go in together rather than waiting
+    # for `a` and `an` to each cost their own card.
+    "the", "a", "an",
+    # The copy's OWN vocabulary, which the model naturally echoes back: it is told about
+    # sentiment and engagement, then rejected for saying "Positive signals" or "Multiple threads
+    # are open". A word the system itself put in the prompt cannot be evidence of invention.
+    "positive", "negative", "neutral", "mixed", "multiple", "single", "fit", "unfit",
+    "presentation", "signals", "engagement", "momentum", "sentiment", "contact",
     # NOT exempt, deliberately, and for the reason stated above the calendar note: a number word
     # is a factual claim ("Three open items" when there are two), and exempting the spelled form
     # while `_digit_runs` still checks "3" would make the guard depend on how the model chose to
@@ -116,7 +127,14 @@ def _proper_nouns(s: str) -> list[str]:
     is capitalised is entity-shaped, which is exactly what the guard is for.
     """
     out: list[str] = []
-    for w in s.split():
+    # A HYPHEN IS A WORD BOUNDARY, not a character to delete. The strip below removes every
+    # non-alphanumeric, which turned "AI-guided" into "AIguided" — a token in no language and
+    # therefore in no corpus, so the guard read it as an invented company and threw the card
+    # away. Exactly the failure the apostrophe rule below already documents, wearing a different
+    # punctuation mark. Judging the parts separately is what makes the question answerable:
+    # "guided" is lowercase and never reaches the check, and "AI" is judged against the corpus
+    # on its own, which is the right question about it.
+    for w in re.split(r"[\s‐-―/]+|(?<=[A-Za-z0-9])-(?=[A-Za-z0-9])", s):
         # THE APOSTROPHE IS PART OF THE WORD. Stripping every non-alphanumeric turned "We've"
         # into "Weve", "What's" into "Whats" and "They're" into "Theyre" — capitalised tokens
         # in no dictionary, so the guard read each as an invented company and threw the draft
@@ -239,15 +257,64 @@ def _interpolate(tpl: str, slots: dict) -> str:
 
 def _fallback(template: dict, slots: dict) -> dict:
     fb = template.get("fallback", {})
-    head = _interpolate(fb.get("headline", "{entity}"), slots)[:HEADLINE_CAP]
-    sit = _interpolate(fb.get("situation", "{stage}"), slots)[:SITUATION_CAP]
+    head = _trim_to_word(_interpolate(fb.get("headline", "{entity}"), slots), HEADLINE_CAP)
+    sit = _trim_to_word(_interpolate(fb.get("situation", "{stage}"), slots), SITUATION_CAP)
     # Cutting every unsubstantiated clause can empty the line. A card still has to name its
     # subject, so the entity carries it alone rather than the card shipping blank.
-    head = head or str(slots.get("entity") or "")[:HEADLINE_CAP]
+    head = head or _trim_to_word(str(slots.get("entity") or ""), HEADLINE_CAP)
     return {"headline": head, "situation": sit,
             "artifact": {"kind": template.get("artifact_kind", "draft"),
                          "body": "", "mode": "raw_slot"},
             "render_mode": "raw_slot", "reject_code": None}
+
+
+#: Clause separators a headline is actually built from. These are the joins the authored
+#: fallbacks use ("{entity} — relationship open, nothing moving") and the ones the model copies.
+_CLAUSE_SPLIT = re.compile(r"\s+[—–·|]\s+|(?<=[a-z0-9]):\s+|,\s+(?=[a-z])")
+
+
+def _fit_clauses(text: str, cap: int) -> str | None:
+    """The longest leading run of complete CLAUSES that fits, or None if not even the first does.
+
+    The sentence rule below cannot help a headline, because a headline is one clause-joined
+    fragment with no terminal punctuation: `re.findall` returns it whole, the whole thing is over
+    cap, and `_fit` returns None. Six of the design partner's twenty-four newest cards were
+    rejected at 61 or 62 characters against a 60 cap and shipped the template's `{entity} —
+    relationship open, nothing moving` instead — which for a contact whose address is fifty
+    characters long then hard-sliced to `invoice+statements+acct_1ika5ja3kz32dpo1@stripe.com —
+    relati`. A specific grounded line was replaced by a generic one cut mid-word.
+
+    Dropping a trailing clause is the same move `_interpolate` makes when it cannot substantiate
+    one, and the same move the sentence rule makes one level up. Nothing is cut mid-word and no
+    ellipsis is added; what remains is whole.
+    """
+    parts = [p for p in _CLAUSE_SPLIT.split(text) if p and p.strip()]
+    if len(parts) < 2:
+        return None                 # nothing to drop — the sentence rule is the only hope left
+    kept = parts[0].strip()
+    if len(kept) > cap:
+        return None
+    for part in parts[1:]:
+        candidate = f"{kept} — {part.strip()}"
+        if len(candidate) > cap:
+            break
+        kept = candidate
+    return kept or None
+
+
+def _trim_to_word(text: str, cap: int) -> str:
+    """Cap a line at a WORD boundary. A hard slice is what put
+    `invoice+statements+acct_…@stripe.com — relati` in front of a founder."""
+    if len(text) <= cap:
+        return text
+    cut = text[:cap]
+    space = cut.rfind(" ")
+    if space <= 0:
+        # A single token longer than the cap has no boundary to fall back to; slicing it is the
+        # only option left, and it is still better than shipping nothing. `rfind` returns -1
+        # here, and `cut[:-1]` would silently drop a character off every such line.
+        return cut
+    return (cut[:space].rstrip(" —–·|,:") or cut).strip()
 
 
 def _fit(text: str, cap: int) -> str | None:
@@ -263,6 +330,9 @@ def _fit(text: str, cap: int) -> str | None:
     """
     if len(text) <= cap:
         return text
+    clause = _fit_clauses(text, cap)
+    if clause is not None:
+        return clause
     kept = ""
     # A dot inside a hostname or an address is not a sentence boundary. Splitting naively cut
     # "antler.co passed on Residency" down to "antler." and
