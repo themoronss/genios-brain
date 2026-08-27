@@ -1,30 +1,199 @@
 identity:
   id: sales.pb.onboarding.time_to_first_value_sprint
-  name: Time-to-first-value sprint
+  name: The time-to-first-value sprint
   kind: playbook
   domain: sales
   scope: capability
   owner_capability: sales.post_sale_and_growth.onboarding
   subdomain: post_sale_and_growth
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: 'The clock that matters after signature is days-to-first-value: the moment the customer sees
-    the outcome they bought. Everything in onboarding is sequenced to shorten that clock, because renewal
-    odds are set in the first thirty days.'
+  statement: 'The clock that matters after signature is days-to-first-value: the moment the customer
+    sees the outcome they bought. Everything in onboarding is sequenced to shorten that clock.'
+  answers:
+  - What is onboarding actually optimising for?
+  - How is a configuration checklist kept from becoming the objective?
+  not:
+  - An implementation methodology. It is the sequencing principle, not the technical work.
+  - Customer success. That begins once first value has been reached.
+
+when_to_use:
+  situations:
+  - sales.sit.live_account_relationship
+  conditions:
+  - {exists: thread.last_outbound}
+  signals:
+  - next_step_agreed
+  - meeting_request
+  do_not_use_when:
+  - 'The product is self-serve and first value arrives without assistance. A sprint imposed on it adds
+    ceremony to something already working.'
+  - 'The customer bought ahead of a planned start. Running the sprint against our calendar rather than
+    theirs wastes the one period of peak motivation.'
+  - 'Nothing in the sale defined what success looks like. Step 1 is then the whole playbook, and
+    running the rest without it sequences toward an outcome nobody has named.'
+
 steps:
 - order: 1
-  name: Define first-value with the customer at kickoff
-  description: 'One sentence: ''you will know this worked when X''. Taken from the sales-cycle promise
-    — onboarding inherits the deal''s why, not a generic checklist.'
+  name: Carry the sale's promises into delivery, in writing
+  description: 'A date, an integration, a named contact, a review cadence — these frequently live in
+    email rather than in the contract, and the delivery team inherits both while seeing only one.
+    The handover is the moment to write down what was promised as well as what was signed.'
   actor: human
+  objects_read:
+  - sales.obj.core.contract
+  - sales.obj.core.account
+  produces: A handover carrying contractual and non-contractual commitments alike.
+  done_when: Delivery knows what was promised, not only what was agreed.
+
 - order: 2
-  name: Sequence ruthlessly toward that X
-  description: Everything needed for first-value goes first; everything else waits. Config completeness
-    is not the goal; the customer's visible win is.
+  name: Define first value WITH the customer at kickoff
+  description: 'One sentence — "you will know this worked when X" — taken from the problem statement
+    in the sale and stated by them. A definition we author is one they will not recognise when it
+    arrives, so the moment passes without convincing the person it needed to convince.'
   actor: human
+  objects_read:
+  - sales.obj.core.business_need
+  - sales.obj.core.pain_point
+  produces: An observable success criterion in the customer's words.
+  done_when: The customer has stated the criterion rather than accepted ours.
+
 - order: 3
-  name: Mark the moment and tell the sponsor
-  description: 'When X happens, say so to the person who signed: ''the outcome you bought is live''. This
-    message is renewal insurance bought at week three.'
+  name: Sequence ruthlessly toward that one outcome
+  description: 'Everything needed for first value goes first; everything else waits. Configuration
+    completeness is the standard substitute for value, and it feels like progress because it is
+    progress — on our list rather than on theirs.'
   actor: human
+  produces: A plan ordered by contribution to the criterion.
+  done_when: No task precedes first value unless first value requires it.
+
+- order: 4
+  name: Chase the first silence immediately
+  description: 'A gap in the first weeks is not busyness. Motivation peaks right after purchase, so a
+    quiet customer is blocked on something — access, effort, an internal objection that surfaced after
+    signature — and none of those will be volunteered. Ask what is in the way rather than sending a
+    reminder.'
+  actor: human
+  objects_read:
+  - sales.obj.core.risk
+  produces: The obstacle named, while it is still cheap to remove.
+  done_when: No first-period silence went unasked about.
+
+- order: 5
+  name: Mark the moment and tell the sponsor
+  description: 'When X happens, say so to the person who signed: the outcome you bought is live. It is
+    the one report that converts a purchase into a defensible decision inside their organisation, and
+    it is almost never sent — the delivery team knows it happened and the sponsor does not.'
+  actor: human
+  objects_read:
+  - sales.obj.core.champion
+  - sales.obj.core.decision_maker
+  produces: A first-value notification to the buyer.
+  done_when: The person who spent the money has been told it worked.
+
+- order: 6
+  name: Open the value ledger with that entry
+  description: 'First value is the first line of the record the renewal will be built on. Logged now
+    with its date, it is evidence; reconstructed in eleven months, it is advocacy — and the customer
+    was there for the difference.'
+  actor: system
+  objects_read:
+  - sales.obj.core.account
+  produces: A dated first entry in the account's value record.
+  done_when: The renewal motion has something to start from.
+
+- order: 7
+  name: Say when first value has not been reached
+  description: 'A stalled onboarding is a renewal already in trouble. Naming it while there is a year
+    to recover is worth far more than a green status reflecting task completion, and it is the report
+    nobody volunteers because it reads as a delivery failure.'
+  actor: human
+  produces: An explicit not-yet-reached verdict with a reason.
+  done_when: No onboarding is closed as complete without the criterion having occurred.
+
+objects_used:
+- sales.obj.core.account
+- sales.obj.core.contract
+- sales.obj.core.business_need
+- sales.obj.core.pain_point
+- sales.obj.core.champion
+- sales.obj.core.decision_maker
+- sales.obj.core.risk
+- sales.obj.core.next_action
+
+outcomes:
+- First value is customer-defined, sequenced for, and reported when it arrives.
+- Early silence is investigated rather than attributed.
+- The value ledger the renewal needs starts on day one.
+
+failure_modes:
+- 'CONFIGURATION AS THE MEASURE. Every box ticked, no outcome, and the status is green because the
+  checklist was the objective.'
+- 'FIRST VALUE DEFINED BY US. Arrives unrecognised by the only person whose recognition mattered.'
+- 'PROMISES LOST AT HANDOVER. Delivery meets an expectation it has no record of, in front of the
+  customer.'
+- 'SILENCE ATTRIBUTED TO BUSYNESS. The cheapest churn signal available, ignored at the point it is
+  most recoverable.'
+- 'THE SPONSOR NEVER TOLD. Their internal case decays for want of one message, and it is the case that
+  defends the renewal.'
+
+limits:
+- Days-to-first-value cannot be computed from the record — there is no usage or outcome telemetry —
+  so the central clock is a discipline rather than a metric the engine can produce.
+- Step 4 depends on correspondence being the customer's channel; a customer active in the product and
+  quiet in email reads as stalled.
+- Says nothing about the implementation work itself.
+
+variants:
+- applies_to: enterprise
+  change: There are several first values, one per function, and the sponsor's is the one that has to be
+    reported. Sequencing toward all of them at once is how enterprise onboarding reaches none of them.
+  why: A committee bought different outcomes and only one of them defends the spend.
+- applies_to: smb
+  change: Compress to steps 2, 4 and 5; the buyer is the user and first value should be days away.
+  why: No handover and no committee.
+- applies_to: channel
+  change: The partner runs onboarding, so steps 1 and 6 are what we own — the promises handed over and
+    the record kept.
+  why: We cannot sequence work we are not doing, and we can supply what it needs.
+- applies_to: service
+  change: First value is usually a deliverable rather than a state, and step 2 should name the
+    artefact and its recipient.
+  why: An outcome is harder to observe in effort-based work, so the criterion has to be concrete.
+
+metrics:
+- name: days_to_first_value
+  unit: days
+  description: Signature to the customer-defined outcome occurring.
+  direction: lower_is_better
+- name: onboarding_engagement_gap
+  unit: days
+  description: Longest silence in the first period.
+  direction: lower_is_better
+- name: sponsor_value_notification_rate
+  unit: percent
+  description: Share of first-value moments reported to the person who signed.
+  direction: higher_is_better
+
+references:
+- title: Time to first value
+  kind: practitioner
+  note: The strongest available predictor of first-year retention, and the reason onboarding is a
+    revenue capability rather than a support one.
+- title: Practitioner customer-success operations
+  kind: practitioner
+  note: Customer-authored success criteria outperform vendor-defined ones, because recognition by the
+    buyer is the event that matters rather than completion by the vendor.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 1, 4, 6 and 7 are new. Step 1 closes the loop with
+    batch 7''s `a_trade_must_be_deliverable` — the commitments made to win are the ones that fail
+    here, and they fail because the person who made them is not the person who has to honour them.'

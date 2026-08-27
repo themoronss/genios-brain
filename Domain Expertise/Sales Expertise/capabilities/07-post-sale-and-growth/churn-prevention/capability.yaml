@@ -3,25 +3,112 @@ identity:
   name: Churn Prevention
   domain: sales
   subdomain: post_sale_and_growth
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
-description: 'Detecting and reversing decay before the renewal conversation starts. By the time an account
-  says it is leaving, the decision is usually months old.
+description: 'Detecting and reversing decay before the renewal conversation starts. By the time an
+  account says it is leaving, the decision is usually months old.
 
   '
 question: Which accounts are leaving, and is there still time to act?
+
+outcomes:
+- 'Decay detected from behaviour rather than from statements. `derived.engagement`, `derived.momentum`
+  and `derived.sentiment` are computed for every relationship and move before anyone writes anything
+  down — which matters because by the time an account says it is leaving, the internal decision is
+  weeks old and has already been socialised.'
+- 'The DRIVER named before any save is offered. Value gap, sponsor loss, budget cut and product gap
+  look identical from the outside and need completely different responses; a discount answers only
+  the third and is the reflex response to all four.'
+- 'Sponsor change treated as a first-class risk event rather than as an administrative update. The
+  person who bought is the person who defends the spend, and their replacement inherited a cost with
+  none of the conviction that created it.'
+- 'A save attempt timed to the leading signal rather than to the cancellation. The window that
+  matters opens at the usage cliff and the unanswered review, and it has usually closed by the time
+  a cancellation email exists.'
+- 'A graceful loss when the account is genuinely going. The negative outcome: an easy exit with data
+  returned and no argument keeps a door open that a fought exit closes permanently — and a
+  meaningful share of returning customers come back through exactly that door.'
+- 'A distinction between an account that is leaving and one that is merely quiet. Silence has many
+  causes and treating all of it as churn risk produces a save motion nobody believes.'
+
+failure_modes:
+- 'WAITING FOR THE SIGNAL THE ACCOUNT SENDS. A stated intention to leave is the last event in the
+  sequence, not the first, and a process triggered by it is a process that acts after the decision.'
+- 'DISCOUNTING AS THE UNIVERSAL SAVE. It answers a budget driver and nothing else, and offered against
+  a value gap it confirms the customer''s suspicion that the price was never justified.'
+- 'HEALTH SCORES NOBODY ACTS ON. A number that aggregates several signals into one figure is easy to
+  produce and hard to act on, because the action depends on which component moved.'
+- 'MISSING THE SPONSOR CHANGE. It is the single most predictive event available and it arrives as an
+  out-of-office or a new name on a thread rather than as an alert.'
+- 'SAVE ATTEMPTS THAT ARGUE. A customer who has decided experiences persuasion as not being listened
+  to, and it converts a recoverable relationship into a closed one.'
+- 'TREATING QUIET AS CHURN. Most quiet accounts are not leaving, and a save motion aimed at them wastes
+  the credibility needed for the ones that are.'
+
+kpis:
+- name: leading_signal_lead_time
+  unit: days
+  description: Days between the first behavioural signal and the account stating an intention to
+    leave. The whole value of the capability, and it is zero when the process is triggered by the
+    statement.
+  direction: higher_is_better
+- name: driver_identified_rate
+  unit: percent
+  description: Share of at-risk accounts where the actual driver was named before a save was offered.
+  direction: higher_is_better
+- name: save_rate_by_driver
+  unit: percent
+  description: Save rate split by cause. A single blended number hides that discounts save budget
+    cases and nothing else.
+  direction: higher_is_better
+- name: sponsor_change_detection_rate
+  unit: percent
+  description: Share of sponsor departures noticed before the renewal conversation.
+  direction: higher_is_better
+- name: graceful_exit_return_rate
+  unit: percent
+  description: Share of departed accounts that later returned. The measure of whether losses are being
+    lost well, and it is invisible to any churn metric.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.post_sale_and_growth.customer_success
+  - sales.revenue_operations.revenue_intelligence
+  downstream:
+  - sales.post_sale_and_growth.renewal
+  - sales.post_sale_and_growth.onboarding
+  parallel:
+  - sales.sales_management.relationship_management
+  - sales.post_sale_and_growth.expansion
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Not in a live route set today — `sales.sit.live_account_relationship`
+    serves `customer_success`, `expansion` and `account_research` — but it is the capability nearest to
+    the design partner''s largest live population, the 23 `relationship` situations.
+
+    Its substrate position is unusually good and worth stating: `derived.engagement`,
+    `derived.momentum` and `derived.sentiment` are computed for 74 nodes on that org and are exactly
+    the behavioural decay signals the first outcome asks for. What is absent is the vocabulary that
+    would name the event — `churn_risk`, `champion_change` and `stakeholder_left` all have zero rows —
+    so decay is currently observable and its CAUSE is not, which is precisely why the outcomes insist
+    the driver be established by a human conversation rather than inferred.
+
+    No numbers: what engagement drop constitutes risk is Layer 4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: ad435555f566d095aabfdf6d7c788c0840d904e1b75af42eccf7511fc426fc61
+  accepted_content_hash: 5facf7109f0de100e6f359d13df10b9bcef1271a9e5a81d4cfc7707c39b90c30

@@ -1,0 +1,125 @@
+identity:
+  id: sales.rule.onboarding.first_value_is_the_customers_sentence
+  name: First value is the customer's sentence
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.onboarding
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'An onboarding cannot be complete against a criterion the customer never stated. Where we
+    author the definition of success, we also author the moment of reaching it — and the person whose
+    recognition the whole exercise exists to earn was not consulted about either.'
+  answers:
+  - May this onboarding be recorded as complete?
+  - Whose definition of success counts?
+  not:
+  - A rule about how long onboarding should take.
+  - An implementation standard.
+
+rule:
+  statement: 'An onboarding MUST carry a success criterion attributable to the customer, and MUST NOT
+    be recorded as complete on the basis of internal task completion alone. Where no
+    customer-authored criterion exists, the onboarding is recorded as complete-unverified and the
+    account is flagged for the renewal motion.'
+  spans:
+  - sales.obj.core.account
+  - sales.obj.core.business_need
+  - sales.obj.core.contract
+  when:
+  - {exists: thread.last_outbound}
+  - {absent: commitment.action}
+  then: 'Require the success criterion to be recorded before completion is accepted, and surface
+    defining it with the customer as the next action.'
+  severity: warning
+  why: 'Task completion and value are measured by different parties and only one of them renews.
+    Everything inside the delivering organisation pushes towards the internal measure: it is
+    countable, it is on time, and it is under our control — whereas the customer''s outcome is none of
+    those. So the default state of any onboarding process is that it closes accounts as successful
+    while the buyer is still waiting, and nobody notices until the renewal, when the sponsor cannot
+    articulate what they got and does not defend the spend.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'A SELF-SERVE PRODUCT WITH NO ASSISTED ONBOARDING. There is no kickoff at which to author a
+    criterion, and requiring one manufactures a conversation the customer did not want.'
+  - 'A CRITERION IMPLICIT IN A CONTRACTUAL DELIVERABLE. Where the agreement specifies what will be
+    delivered and accepted, the acceptance IS the customer''s criterion and restating it separately is
+    duplication.'
+  - 'A RENEWAL OR EXPANSION ONTO AN ALREADY-ONBOARDED ACCOUNT. The value definition exists from the
+    original engagement and re-authoring it treats a continuing relationship as new.'
+  - 'A CUSTOMER WHO DECLINES TO DEFINE ONE. Some will not engage with the question, and the honest
+    record is that the criterion is ours and unverified — which is exactly what the flag says. The
+    rule requires the attempt, not the customer''s cooperation.'
+  - 'AN ONBOARDING THAT IS PURELY TECHNICAL MIGRATION. Where the outcome is that an existing thing
+    keeps working, first value is continuity and the criterion is that nothing broke — a real
+    criterion, and one that reads as absent to a rule looking for a new outcome.'
+
+objects_used:
+- sales.obj.core.account
+- sales.obj.core.business_need
+- sales.obj.core.contract
+- sales.obj.core.champion
+
+outcomes:
+- Onboarding completion rests on a criterion the customer authored.
+- Accounts closed without one are visible to the renewal motion rather than assumed healthy.
+
+failure_modes:
+- 'A CRITERION WRITTEN BY US AND SHOWN TO THEM. Acceptance of our sentence is not authorship of
+  theirs, and the difference shows up at the moment it arrives unrecognised.'
+- 'THE FLAG TREATED AS A DELIVERY FAILURE. It is a record of what is known, not a judgement of the
+  team, and treating it punitively guarantees the field is filled in falsely.'
+- 'APPLIED TO A MIGRATION. Continuity is a real criterion and reads as absent to a rule expecting a
+  new outcome; the fifth exception exists for it.'
+
+limits:
+- The record holds no success criterion field; `commitment.action` is being used as a proxy for
+  "something specific was agreed", which is weak — it is present on 26 nodes of the design partner''s
+  org and says nothing about whose sentence it was.
+- No usage or outcome telemetry exists, so whether first value actually occurred cannot be verified
+  by the engine at all.
+
+variants:
+- applies_to: enterprise
+  change: Require a criterion per function and name which one belongs to the sponsor, because that is
+    the one that will defend the spend.
+  why: A committee bought several outcomes and only one of them is load-bearing at renewal.
+- applies_to: smb
+  change: One sentence, captured at kickoff, and the rule is satisfied.
+  why: One buyer, one outcome.
+- applies_to: channel
+  change: The criterion is authored by the end customer and held by the partner; ours is second-hand
+    and should be recorded as such.
+  why: We are not in the kickoff.
+
+metrics:
+- name: first_value_defined_with_customer_rate
+  unit: percent
+  description: Share of onboardings with a customer-authored criterion.
+  direction: higher_is_better
+- name: complete_unverified_share
+  unit: percent
+  description: Share closed without one. The population this rule hands to the renewal motion instead
+    of losing.
+  direction: lower_is_better
+
+references:
+- title: Time to first value
+  kind: practitioner
+  note: Customer-recognised value rather than vendor-completed configuration is what predicts
+    retention, which is the entire basis for whose sentence counts.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. Warning rather than blocking because the proxy is weak and stated as such
+    — there is no success-criterion field in the record, and blocking on `commitment.action` would gate
+    completion on evidence that does not mean what the rule needs it to mean.'

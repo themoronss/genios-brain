@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.renewal.a_renewal_date_is_an_obligation_not_a_reminder
 decision_frameworks:
   core: []
   scoped: []

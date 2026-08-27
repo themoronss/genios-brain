@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.churn_prevention.diagnose_before_offering
 decision_frameworks:
   core: []
   scoped: []

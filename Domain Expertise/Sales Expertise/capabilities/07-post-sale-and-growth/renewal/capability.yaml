@@ -3,25 +3,111 @@ identity:
   name: Renewal
   domain: sales
   subdomain: post_sale_and_growth
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
-description: 'Securing continuation ahead of the contract end date. A renewal decided in the last month
-  is decided by procurement; one worked from mid-term is decided by realised value.
+description: 'Securing continuation ahead of the contract end date. A renewal decided in the last
+  month is decided by procurement; one worked from mid-term is decided by realised value.
 
   '
 question: Will they sign again, and on what terms?
+
+outcomes:
+- 'A value ledger kept as the year happens rather than assembled at the end. Value reconstructed in
+  the final month is a seller''s account of a year the customer remembers differently; value logged
+  as it occurred is a record they were part of building.'
+- 'The conversation opened before budget season rather than inside it. Opening early finds the
+  sponsor change and the budget pressure while both are still addressable; opening late finds them
+  as reasons.'
+- 'Renewal treated as re-earned regardless of the auto-renew clause. A clause collects a signature
+  and not a commitment, and accounts that renew by default and disengage churn violently at the
+  first budget review — usually with no warning, because the mechanism suppressed the conversation
+  that would have produced one.'
+- 'The renewal owner identified as a person who may not be the original buyer. Sponsors move, and the
+  renewal is frequently decided by someone who inherited the spend without the conviction.'
+- 'Terms discussed on the value ledger, in that order — year in numbers, next year''s plan, then the
+  commercial. A price increase presented before evidence of value is a price increase; presented
+  after, it is a proposal.'
+- 'A decision not to pursue a renewal. The negative outcome: some accounts are unprofitable, badly
+  fitted or damaging as references, and declining to renew them is a legitimate commercial act that
+  almost no renewal process is able to produce.'
+
+failure_modes:
+- 'THE NINETY-DAY RESCUE. A motion that begins when the date approaches is a rescue running against a
+  decision that has already been forming, and it arrives with no evidence because none was collected.'
+- 'AUTO-RENEW AS A STRATEGY. It converts a relationship into a subscription nobody examines, and the
+  eventual examination happens without us in the room.'
+- 'VALUE RECONSTRUCTED AT THE END. Assembled from memory and CRM notes, it reads as a case being made
+  rather than as a record, and the customer can tell the difference immediately.'
+- 'ASSUMING THE SPONSOR IS THE SAME PERSON. The single most common renewal surprise, and it is
+  visible months earlier as a change in who replies.'
+- 'PRICE BEFORE EVIDENCE. Uplift presented first makes the whole conversation about the increase, and
+  the value discussion that would have justified it never happens.'
+- 'RENEWING EVERYTHING. A process with no capacity to decline keeps accounts that cost more than they
+  return, and the cost is invisible because renewal is counted as a win.'
+
+kpis:
+- name: renewal_motion_start_lead_time
+  unit: days
+  description: Days before contract end that the renewal conversation opened. The number that
+    separates administration from rescue.
+  direction: higher_is_better
+- name: value_ledger_currency
+  unit: days
+  description: Age of the most recent logged outcome at the point the renewal opens. A ledger written
+    in the last week is not a ledger.
+  direction: lower_is_better
+- name: sponsor_continuity_rate
+  unit: percent
+  description: Share of renewals where the original sponsor is still in place. Falling is not a
+    failure; not knowing is.
+  direction: target_band
+- name: uplift_achieved_rate
+  unit: percent
+  description: Share of renewals closing at or above the intended price.
+  direction: higher_is_better
+- name: declined_renewal_rate
+  unit: percent
+  description: Share of renewals the seller chose not to pursue. Zero means the process cannot say no.
+  direction: target_band
+
+handoffs:
+  upstream:
+  - sales.post_sale_and_growth.customer_success
+  - sales.post_sale_and_growth.churn_prevention
+  - sales.closing.contract_management
+  downstream:
+  - sales.post_sale_and_growth.expansion
+  - sales.proposal_and_commercials.negotiation
+  parallel:
+  - sales.post_sale_and_growth.upsell
+  - sales.sales_management.relationship_management
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Adjacent to the design partner''s largest live population — the
+    23 `relationship` situations — without being in that route set today.
+
+    The substrate fit is specific and worth naming: a renewal motion is driven by DATES, and
+    `commitment.due_at`, `meeting.start_at` and `contract` obligations are exactly that shape. The
+    batch-7 rule `an_obligation_leaves_the_document` exists precisely so that the renewal date is
+    outside the contract file where a motion can be built on it. What is missing is any usage or
+    outcome telemetry — the value ledger is authored discipline, not something the engine can
+    assemble.
+
+    No numbers: how far ahead to open, and what uplift to seek, are Layer 4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: 16917fc3d5cac2fc0db8b90cb2c5dcfe0f4fa54d5e6005fccedc480bed4cbe01
+  accepted_content_hash: 31fbac0e636550065791ffdc643cc04c5a677d4f8fbc17c42b89f674df0aff83

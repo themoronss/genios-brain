@@ -6,11 +6,142 @@ identity:
   scope: capability
   owner_capability: sales.post_sale_and_growth.renewal
   subdomain: post_sale_and_growth
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
   statement: An auto-renew clause collects signatures, not commitment — accounts that renew by default
-    and disengage churn violently at the first budget review. Treat every renewal as re-earned, clause
-    or no clause.
+    and disengage churn violently at the first budget review. Treat every renewal as re-earned,
+    clause or no clause.
   answers:
-  - Does an auto-renewal clause make renewal safe?
+  - Does an auto-renew clause mean the renewal is handled?
+  not:
+  - An argument against auto-renew clauses. They are useful; they are not a motion.
+  - A claim that every account needs an annual sales cycle.
+
+heuristic:
+  statement: 'Read an auto-renewal as deferred risk rather than as secured revenue. The clause removes
+    the annual moment at which the customer would have had to justify the spend — which is convenient
+    for as long as nothing prompts them to, and catastrophic the first time something does, because
+    the justification has then never been made and nobody on their side can make it.'
+  why: 'A renewal conversation is not overhead, it is the mechanism by which the value case gets
+    rebuilt and re-socialised inside the customer each year. Suppress it and the case decays quietly:
+    the original sponsor moves, the outcome becomes assumed background, and the spend appears in a
+    cost review as a line nobody can explain. At that point the decision is made in a meeting we are
+    not in, by people with no evidence, and the clause that protected the revenue for three years
+    loses it in one afternoon.'
+  confidence_bp: 8000
+  applies_when: 'A contract with automatic renewal, particularly where engagement has been low and the
+    original sponsor may have moved.'
+  breaks_down_when: 'GENUINELY COMMODITY OR INFRASTRUCTURAL PURCHASES. Some spend is deliberately
+    invisible and the customer does not want an annual conversation about it; manufacturing one
+    invites a review nobody was going to run.
+
+    HIGH-VOLUME, LOW-VALUE SUBSCRIPTIONS. The cost of an annual motion exceeds the revenue at risk,
+    and the honest answer is to accept the churn rate rather than to staff against it.
+
+    WHERE THE RELATIONSHIP IS ALREADY DENSE. An account in constant contact with several people has
+    its value case rebuilt continuously; a formal renewal ritual on top of that is ceremony.
+
+    A MULTI-YEAR TERM WITH A MID-TERM REVIEW ALREADY BUILT IN. The mechanism exists, just not
+    annually, and applying the heuristic to the calendar rather than to the review misreads it.
+
+    WHEN IT BECOMES AN EXCUSE TO REOPEN COMMERCIALS. Re-earning the renewal is about the value case,
+    not about renegotiating a working contract — and a customer who experiences the annual
+    conversation as an annual price rise will start avoiding it.'
+  reads:
+  - sales.obj.core.contract
+  - sales.obj.core.timeline
+  - sales.obj.core.account
+  - derived.engagement
+  contradicts:
+  - sales.heu.churn_prevention.the_save_window_opens_before_the_cancel_email
+  pattern_ref:
+  - dl.date_passed_undischarged
+
+when_to_use:
+  situations:
+  - sales.sit.live_account_relationship
+  conditions:
+  - {exists: commitment.due_at}
+  - {path: derived.engagement, op: "<", value: 1}
+  signals:
+  - champion_change
+  - going_dark
+  do_not_use_when:
+  - The purchase is infrastructural and the customer does not want an annual conversation about it.
+  - The revenue at risk is smaller than the cost of the motion.
+  - The relationship is already dense enough that the value case is rebuilt continuously.
+
+objects_used:
+- sales.obj.core.contract
+- sales.obj.core.timeline
+- sales.obj.core.account
+- sales.obj.core.champion
+
+outcomes:
+- Auto-renewing accounts receive a value conversation rather than a silent invoice.
+- Low-engagement auto-renewals are treated as risk rather than as revenue.
+
+failure_modes:
+- 'AN ANNUAL RITUAL WITH NO CONTENT. A conversation held to satisfy the heuristic, with no ledger
+  behind it, is worse than silence — it draws attention to a spend and supplies no justification.'
+- 'USED TO REOPEN PRICING EVERY YEAR. Teaches the customer that the annual conversation is an annual
+  increase, and they will route around it.'
+- 'APPLIED UNIFORMLY BY REVENUE SIZE. The relevant variable is engagement and sponsor continuity, not
+  contract value; a large well-engaged account needs it less than a small silent one.'
+
+limits:
+- Says nothing about what the annual conversation should contain — that is the value ledger, which
+  the engine cannot assemble.
+- '`champion_change` has zero rows on the design partner''s org, so the sponsor-departure half of the
+  risk is currently invisible and `derived.engagement` is the only available proxy.'
+- Cannot see contract terms at all; whether a renewal is automatic is not in the record unless it was
+  extracted as an obligation.
+
+variants:
+- applies_to: enterprise
+  change: The annual conversation is with the budget holder, who is frequently not the day-to-day
+    sponsor and may never have met us.
+  why: The cost review happens at their level, and that is where the case has to exist.
+- applies_to: smb
+  change: A light touch — a short outcome summary before the renewal date — is proportionate; a full
+    motion is not.
+  why: The economics do not support more, and the buyer is already the user.
+- applies_to: channel
+  change: The partner holds the renewal relationship, so the value case has to be built for THEM to
+    carry, not delivered by us.
+  why: We are not in the conversation where it is decided.
+
+metrics:
+- name: auto_renew_engagement_gap
+  unit: percent
+  description: Engagement of auto-renewing accounts against actively-renewed ones. The quantity this
+    heuristic claims is a hidden liability.
+  direction: higher_is_better
+- name: post_auto_renew_churn_rate
+  unit: percent
+  description: Share of auto-renewed accounts that churn at the following review. The delayed cost,
+    measured where it lands.
+  direction: lower_is_better
+
+references:
+- title: Practitioner customer-success operations
+  kind: practitioner
+  note: Silent auto-renewals show materially higher churn at the first genuine budget review, which
+    is the empirical case for treating the clause as deferred risk.
+- title: MEDDICC
+  kind: methodology
+  note: The champion dimension applied post-sale — a spend with no internal advocate has no defence
+    when it is eventually examined.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The mechanism is the addition: the clause does
+    not merely fail to secure commitment, it suppresses the annual event that would have REBUILT the
+    internal case — so the case decays invisibly and is absent at the one moment it is needed.'

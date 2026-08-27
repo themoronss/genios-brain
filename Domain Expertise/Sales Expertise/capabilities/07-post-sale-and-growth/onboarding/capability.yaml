@@ -3,26 +3,114 @@ identity:
   name: Onboarding
   domain: sales
   subdomain: post_sale_and_growth
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
-description: 'The handover from sale to delivery and the path to first realised value. Time to first value
-  is the strongest predictor of first-year retention, which makes onboarding a revenue capability rather
-  than a support one.
+description: 'The handover from sale to delivery and the path to first realised value. Time to first
+  value is the strongest predictor of first-year retention, which makes onboarding a revenue
+  capability rather than a support one.
 
   '
 question: How does the customer get to first value, and how fast?
+
+outcomes:
+- 'First value defined in one sentence WITH the customer, not for them. "You will know this worked
+  when X" — taken from the sales-cycle problem statement so the thing being delivered is the thing
+  that was bought, and stated precisely enough that its arrival is observable rather than felt.'
+- 'Everything sequenced toward that one outcome, and everything else deferred. Configuration
+  completeness is the standard substitute for value and it feels like progress to the delivering
+  team, because it is progress on their list rather than on the customer''s.'
+- 'The commitments made during the sale carried into delivery. A date, an integration, a named
+  contact — these frequently live in email rather than in the contract, and the delivery team
+  inherits both and can only see one of them.'
+- 'Onboarding silence treated as a signal, not as the customer being busy. A gap in the first weeks
+  predicts churn better than any later health measure, because a customer who has just paid and is
+  not engaging is stalling on something unstated.'
+- 'The moment of first value marked and told to the person who signed. It is the one report that
+  converts a purchase into a defensible decision inside their organisation, and it is almost never
+  sent — the delivery team knows it happened and the sponsor does not.'
+- 'A stated failure to reach first value. The negative outcome: an onboarding that stalls is a
+  renewal already in trouble, and naming it while there is a year to recover is worth more than a
+  green status that reflects task completion.'
+
+failure_modes:
+- 'CONFIGURATION MISTAKEN FOR VALUE. Every box ticked, nothing achieved, and the status is green
+  because the checklist was the measure.'
+- 'FIRST VALUE DEFINED BY US. A definition the customer did not author is a definition they will not
+  recognise when it arrives, so the moment passes without being noticed by the person it needed to
+  convince.'
+- 'THE SALE''S PROMISES LOST AT HANDOVER. Delivery meets an expectation it has no record of, in front
+  of the customer, and the failure looks like incompetence rather than a handover gap.'
+- 'SILENCE READ AS THE CUSTOMER BEING BUSY. In the first weeks it is almost never that, and it is the
+  cheapest churn signal available at the point when it is most recoverable.'
+- 'ONBOARDING DECLARED COMPLETE ON OUR CRITERIA. The customer is not onboarded when our tasks are
+  done; they are onboarded when the outcome they bought is happening.'
+- 'THE SPONSOR NEVER TOLD. The person who spent the money hears nothing between signature and
+  renewal, and their internal case decays for want of a single message.'
+
+kpis:
+- name: days_to_first_value
+  unit: days
+  description: Signature to the customer-defined outcome occurring. The strongest available predictor
+    of first-year retention, and the clock everything else is sequenced against.
+  direction: lower_is_better
+- name: first_value_defined_with_customer_rate
+  unit: percent
+  description: Share of onboardings whose success criterion was authored by the customer.
+  direction: higher_is_better
+- name: onboarding_engagement_gap
+  unit: days
+  description: Longest silence in the first period. The earliest and cheapest churn signal there is.
+  direction: lower_is_better
+- name: sale_commitment_handover_rate
+  unit: percent
+  description: Share of promises made during the sale that reached delivery in writing.
+  direction: higher_is_better
+- name: sponsor_value_notification_rate
+  unit: percent
+  description: Share of first-value moments reported to the person who signed.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.closing.contract_management
+  - sales.closing.closing
+  downstream:
+  - sales.post_sale_and_growth.customer_success
+  - sales.post_sale_and_growth.renewal
+  - sales.post_sale_and_growth.expansion
+  parallel:
+  - sales.post_sale_and_growth.churn_prevention
+  - sales.sales_management.relationship_management
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Adjacent to the live `relationship` population without being
+    in its route set.
+
+    The fourth outcome is the one with real substrate behind it: onboarding silence is measurable
+    from `thread.last_inbound`, `thread.last_outbound` and `derived.engagement`, all of which are
+    dense on the design partner''s org, and it does not require any product telemetry. Days to first
+    value does — there is no usage data in the record — so the central KPI is authored discipline that
+    the engine cannot currently compute, and that is stated rather than implied.
+
+    The third outcome connects to batch 7''s `a_trade_must_be_deliverable`: commitments made to win
+    are the ones that fail here, and they fail because the person who made them is not the person who
+    has to honour them.
+
+    No numbers: what counts as fast, and how long a silence is too long, are Layer 4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: f87c54496da2ba442869a69ee92667b8d7cc295bf5c9d38c27b0e675e460e494
+  accepted_content_hash: 6258f360221533aba5d0d4cd67be4a61648324bc970169bb48197ef4e28561a8

@@ -211,8 +211,8 @@ traffic instead of being swapped blind.
 | `required_missing` | 2 | 2 (unchanged — see item 3 below) |
 | Compiled cards rendering `raw_slot` | 11 of 18 | **the four causes are fixed; see below** |
 | Live routes compiling through a placeholder capability | 3 of 4 types | **0 of 4** — Admin closed in batch 4 |
-| Hollow capabilities | 136 | **112** (admin 51, customer_support 40, sales 21) |
-| Corpus validation errors | 566 | **466** |
+| Hollow capabilities | 136 | **109** (admin 51, customer_support 40, sales 18) |
+| Corpus validation errors | 566 | **454** |
 | Tests | 1640 | **1678** |
 
 ## Batch 4 — the substrate was understated, and the live Admin route is no longer hollow
@@ -460,6 +460,35 @@ reason worth keeping: its outputs are dated obligations, which is exactly the sh
 identical to the batch-4 baseline (63 cards; 13 / 24 / 9; four classes clean), 1678 tests green,
 corpus errors 490 → 466, hollow 118 → 112.
 
+## Batch 8 — the retention trio
+
+A SHORT batch, deliberately: `churn_prevention`, `renewal`, `onboarding`. Three rather than six,
+because the alternative was starting a fourth and pushing it half-written — and a half-authored
+capability that carries an admission stamp is worse than a hollow one, since it looks finished.
+
+These three are one lifecycle and were authored together for that reason: onboarding defines the
+value criterion, the renewal is built on the ledger that starts with it, and churn prevention is what
+happens when the first two did not run. The rules chain the same way —
+`first_value_is_the_customers_sentence` produces the criterion,
+`a_renewal_date_is_an_obligation_not_a_reminder` pairs with batch 7's
+`an_obligation_leaves_the_document` to insist there are TWO dates (the notice window closes first and
+silently), and `diagnose_before_offering` blocks the reflex discount.
+
+`diagnose_before_offering` is blocking on a weak proxy, deliberately. The damage it prevents is not a
+failed save — it is the permanent loss of the chance to learn the real cause, because once an offer
+is on the table the customer discusses the offer and the value gap or sponsor problem that actually
+drove the decision is never mentioned.
+
+**Substrate position is better here than in the closing subdomain**, and it is the reason this trio
+was chosen over the discovery cluster: `derived.engagement` / `.momentum` / `.sentiment` are computed
+for 74 nodes on the live org and ARE the behavioural decay signals churn prevention needs. What is
+missing is the vocabulary to name the cause — `churn_risk`, `champion_change` and `stakeholder_left`
+all have zero rows — so decay is observable and its driver is not, which is exactly why the outcomes
+insist a human establishes it.
+
+**Measured:** routing 56/61 unchanged, `card_audit` identical to the batch-4 baseline, 1678 tests
+green, corpus errors 466 → 454, hollow 112 → 109.
+
 ## What is left, and the honest blockers
 
 1. **`account_admin` routes but CANNOT DELIVER.** `ReasoningStore.persist_complete` refuses a write
@@ -469,7 +498,7 @@ corpus errors 490 → 466, hollow 118 → 112.
    is true of all 49 Customer Support capabilities.** This is the largest structural gap left: the
    corpus can author a domain the tenant has no lane for, and nothing in the authoring path says so.
    The honest unblock is an `admin` pack module plus a tenant promotion.
-2. **112 hollow capabilities** — 51 admin, 40 customer_support, 21 sales (was 136 before batch 4).
+2. **109 hollow capabilities** — 51 admin, 40 customer_support, 18 sales (was 136 before batch 4).
    Only the sales ones can reach a user today. Promote in the order their situation types actually
    occur. **Corrected:** batch 5 was reported as leaving nothing hollow in a live type's route set —
    `pricing` was still there, reached through `field_evidence_on_the_market` under `opportunity`. It
@@ -483,8 +512,9 @@ corpus errors 490 → 466, hollow 118 → 112.
       `support_plan`. This is the ONLY remaining corpus-fixable routing gain: it closes
       `required_missing=2` and takes the live org from 56/61 to 58/61. It is also a much larger unit
       of work than a capability batch — these are 23-section objects at the `requester.yaml` standard.
-   c. **The remaining 21 sales capabilities** — discovery_and_solution (4), post_sale_and_growth (5),
-      revenue_operations (5), sales_management (3), prospecting channels (3), tam_sam_som (1).
+   c. **The remaining 18 sales capabilities** — discovery_and_solution (4), post_sale_and_growth (2
+      left: upsell, cross_sell), revenue_operations (5), sales_management (3), prospecting channels
+      (3), tam_sam_som (1).
    d. Admin (51) and Customer Support (40) last, because neither can deliver on this tenant until an
       `admin` pack module exists.
 3. **`required_missing` (2)** — two `relationship` situations want

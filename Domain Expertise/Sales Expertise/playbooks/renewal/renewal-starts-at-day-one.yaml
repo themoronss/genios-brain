@@ -1,30 +1,195 @@
 identity:
   id: sales.pb.renewal.renewal_starts_at_day_one
-  name: Renewal starts at day one
+  name: The renewal starts at day one
   kind: playbook
   domain: sales
   scope: capability
   owner_capability: sales.post_sale_and_growth.renewal
   subdomain: post_sale_and_growth
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: A renewal motion that begins ninety days out is a rescue; one that begins at onboarding is
-    administration. The year's cadence of value-marking exists so the renewal conversation is a summary,
-    not an argument.
+  statement: 'A renewal motion that begins ninety days out is a rescue; one that begins at onboarding
+    is administration. The year''s cadence of value-marking exists so the renewal conversation is a
+    summary rather than an argument.'
+  answers:
+  - When does a renewal actually begin?
+  - What makes a renewal conversation easy rather than adversarial?
+  not:
+  - A save play. That is what happens when this was not done.
+  - A pricing method. The uplift is decided elsewhere; this is what earns the right to propose it.
+
+when_to_use:
+  situations:
+  - sales.sit.live_account_relationship
+  conditions:
+  - {exists: commitment.due_at}
+  signals:
+  - next_step_agreed
+  - positive_reply
+  do_not_use_when:
+  - 'The revenue at risk is smaller than the cost of the motion. Accepting a churn rate is a
+    legitimate commercial choice and staffing against it is not always the right one.'
+  - 'The purchase is deliberately infrastructural and the customer does not want an annual review of
+    it. Manufacturing one invites the examination this playbook exists to survive.'
+  - 'The account should not be renewed. That decision is made here and the rest of the playbook does
+    not apply to it.'
+
 steps:
 - order: 1
-  name: Keep a value ledger all year
-  description: Every win, metric, and solved problem logged as it happens. Reconstructed value at renewal
-    time is estimated value, and estimates get negotiated.
-  actor: human
+  name: Extract the renewal and notice dates on day one
+  description: 'The dates come out of the contract at signature and become tracked obligations. A
+    renewal date that lives only inside the executed document is a date discovered by a calendar
+    rather than by anyone, and it is discovered late.'
+  actor: system
+  objects_read:
+  - sales.obj.core.contract
+  - sales.obj.core.timeline
+  produces: Dated renewal and notice obligations, outside the document.
+  done_when: The renewal has a date in a system that produces reminders.
+
 - order: 2
-  name: Open the renewal conversation at T-120
-  description: Before budget season, not inside it. Early opening finds sponsor changes and budget pressure
-    while there is still time to work them.
+  name: Keep a value ledger all year
+  description: 'Every win, metric and solved problem logged as it happens. Value reconstructed in the
+    final month reads as a case being made; value logged as it occurred reads as a record — and the
+    customer can tell the difference in one sentence, because they were there for the second one.'
   actor: human
+  objects_read:
+  - sales.obj.core.account
+  produces: A running record of realised outcomes with dates.
+  done_when: The ledger's most recent entry is never months old on an active account.
+
 - order: 3
-  name: Present the ledger, then the ask
-  description: Year in numbers → next year's plan → renewal terms, in that order. A price increase rides
-    on a value story or it does not ride at all.
+  name: Re-check who the sponsor is, twice a year
+  description: 'Sponsors move, and the renewal is frequently decided by someone who inherited the
+    spend without the conviction. The change is visible months earlier as a different name replying,
+    and it is the single most common renewal surprise.'
   actor: human
+  objects_read:
+  - sales.obj.core.champion
+  - sales.obj.core.stakeholder
+  produces: A current named sponsor, or a flagged change.
+  done_when: The renewal owner is known to be the person we think it is.
+
+- order: 4
+  name: Open the conversation before budget season, not inside it
+  description: 'Early opening finds the sponsor change and the budget pressure while both can still be
+    addressed. Opening inside the cycle finds them as reasons, delivered by someone who has already
+    had the conversation without us.'
+  actor: human
+  produces: A renewal conversation started ahead of the customer's planning.
+  done_when: The motion opened before the customer's budget process, not during it.
+
+- order: 5
+  name: Present the ledger, then the plan, then the ask
+  description: 'Year in numbers, next year''s plan, renewal terms — in that order. A price increase
+    presented before evidence of value is a price increase; presented after, it is a proposal, and the
+    order costs nothing to get right.'
+  actor: human
+  objects_read:
+  - sales.obj.core.pricing
+  produces: A renewal conversation grounded in evidence before commercials.
+  done_when: No commercial term was discussed before the value record.
+
+- order: 6
+  name: Treat auto-renew accounts as if there were no clause
+  description: 'The clause collects a signature and suppresses the conversation that rebuilds the
+    internal case. Accounts that renew silently and disengage churn at the first genuine budget
+    review, with no warning, because the justification was never made and nobody on their side can
+    make it.'
+  actor: human
+  produces: A value conversation on accounts that did not require one.
+  done_when: No low-engagement auto-renewal passed without contact.
+  skip_when: The purchase is infrastructural and a review would be unwelcome.
+
+- order: 7
+  name: Decide whether to renew it
+  description: 'Some accounts cost more than they return, damage references or were never a fit. A
+    process with no capacity to decline keeps all of them, and the cost stays invisible because every
+    renewal counts as a win.'
+  actor: human
+  objects_read:
+  - sales.obj.core.risk
+  produces: An explicit pursue-or-decline decision.
+  done_when: Renewal is a decision rather than a default in both directions.
+
+objects_used:
+- sales.obj.core.contract
+- sales.obj.core.timeline
+- sales.obj.core.account
+- sales.obj.core.champion
+- sales.obj.core.stakeholder
+- sales.obj.core.pricing
+- sales.obj.core.risk
+
+outcomes:
+- The renewal date is a tracked obligation from signature day.
+- The value case exists as a record rather than as an argument.
+- The sponsor is current, and the decision to renew is deliberate on both sides.
+
+failure_modes:
+- 'THE NINETY-DAY RESCUE. Runs against a decision that has already been forming, with no evidence
+  because none was collected.'
+- 'A LEDGER WRITTEN IN THE LAST WEEK. Reads as advocacy, and the customer was present for the year it
+  claims to describe.'
+- 'THE SPONSOR ASSUMED. The most common surprise and the most visible in advance.'
+- 'PRICE BEFORE EVIDENCE. Makes the whole conversation about the increase.'
+- 'NO CAPACITY TO DECLINE. Unprofitable accounts renew forever and the cost never appears anywhere.'
+
+limits:
+- The value ledger cannot be assembled by the engine; there is no usage or outcome telemetry in the
+  record and this is authored discipline.
+- '`champion_change` has zero rows on the design partner''s org, so step 3 has no signal and depends
+  on someone noticing a different name.'
+- Says nothing about what the renewal price should be.
+
+variants:
+- applies_to: enterprise
+  change: Step 4 opens with the budget holder as well as the sponsor, and the ledger has to survive
+    being read by someone who has never met us.
+  why: The cost review happens above the relationship.
+- applies_to: smb
+  change: Steps 1, 2 and 5 only, and the ledger is three lines.
+  why: The economics do not support more, and the buyer already sees the outcome daily.
+- applies_to: channel
+  change: The ledger is built for the PARTNER to present; we are not in the renewal conversation.
+  why: Our evidence has to travel through someone else to be used at all.
+- applies_to: regulated
+  change: Notice windows are contractual and unforgiving; step 1 stops being administrative and
+    becomes the whole risk.
+  why: A missed notice period commits both sides regardless of intent.
+
+metrics:
+- name: renewal_motion_start_lead_time
+  unit: days
+  description: Days before contract end that the motion opened.
+  direction: higher_is_better
+- name: value_ledger_currency
+  unit: days
+  description: Age of the most recent logged outcome when the renewal opens.
+  direction: lower_is_better
+- name: uplift_achieved_rate
+  unit: percent
+  description: Share of renewals closing at or above the intended price.
+  direction: higher_is_better
+
+references:
+- title: Practitioner customer-success operations
+  kind: practitioner
+  note: Renewal outcomes correlate far more strongly with engagement across the term than with
+    anything done in the final quarter, which is the whole argument for the ledger.
+- title: MEDDICC
+  kind: methodology
+  note: Metrics and champion, applied post-sale — the value record and the person who will carry it.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch, and the original T-120 figure was removed — a window in a
+    Layer 3 file is a boundary leak, and "before budget season rather than inside it" is the
+    instruction that survives without it. Steps 1, 3, 6 and 7 are new.'

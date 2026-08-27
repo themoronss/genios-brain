@@ -1,30 +1,195 @@
 identity:
   id: sales.pb.churn_prevention.save_play_with_dignity
-  name: Save-play with dignity
+  name: The save play, with dignity
   kind: playbook
   domain: sales
   scope: capability
   owner_capability: sales.post_sale_and_growth.churn_prevention
   subdomain: post_sale_and_growth
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: When churn risk is live, speed and honesty outperform discounts. Diagnose the real driver
-    — value, sponsor, budget, or product — because each has a different save, and a discount only saves
-    exactly one of them.
+  statement: 'When churn risk is live, speed and honesty outperform discounts. Diagnose the real
+    driver — value, sponsor, budget or product — because each has a different save, and a discount
+    only saves one of them.'
+  answers:
+  - What actually happens when an account is at risk?
+  - Why does the standard save attempt fail?
+  not:
+  - A detection method. This starts once risk is known.
+  - A renewal motion. A save is what happens when the renewal motion was too late.
+
+when_to_use:
+  situations:
+  - sales.sit.live_account_relationship
+  conditions:
+  - {path: derived.engagement, op: "<", value: 1}
+  signals:
+  - going_dark
+  - negative_reply
+  - champion_change
+  do_not_use_when:
+  - 'The dip is seasonal or project-shaped. A save motion aimed at a normal cycle is wasted and reads
+    as not understanding how the customer works.'
+  - 'The account is in its first months. Early quiet is usually ramp, and there is no baseline to
+    judge it against.'
+  - 'Nothing can actually be offered. Running the play with no authority to change anything produces
+    a conversation that raises expectations and then confirms the customer''s decision.'
+
 steps:
 - order: 1
-  name: Diagnose before offering anything
-  description: '''Help me understand what changed'' — listen. Value-gap, sponsor-loss, budget-cut and
-    product-gap each have different plays; guessing wrong burns the one save conversation.'
+  name: Move at the signal, not at the statement
+  description: 'Engagement falling, a sponsor moving, a review unanswered — these are the window. Once
+    a cancellation has been stated it has been discussed internally and defended to somebody, and
+    reversing it now asks several people to be publicly wrong.'
   actor: human
+  objects_read:
+  - sales.obj.core.account
+  - sales.obj.core.risk
+  produces: Contact made while the decision is still reversible.
+  done_when: The conversation happened before an intention was stated.
+
 - order: 2
-  name: Bring the right save to the right driver
-  description: Value-gap → re-onboarding sprint. Sponsor-loss → re-sell the new person from zero. Budget
-    → smaller scope, not smaller price. Product-gap → roadmap honesty and a bridge.
+  name: Diagnose before offering anything
+  description: '"Help me understand what changed" — and then listen. Value gap, sponsor loss, budget
+    cut and product gap look identical from outside and need opposite responses. Offering before
+    diagnosing is how a discount gets attached to a problem that was never about money.'
   actor: human
+  produces: A named driver.
+  done_when: The seller can state which of the four this is, from what the customer said.
+
 - order: 3
-  name: If it is lost, lose it well
-  description: A graceful exit with easy data export and a genuine thank-you keeps the door open. Churned
-    customers return and refer — exit friction forecloses both.
+  name: Bring the right save to the right driver
+  description: 'Value gap needs a re-onboarding sprint and a fresh first-value definition. Sponsor
+    loss needs the new person sold from zero, because they inherited a cost with none of the
+    conviction. Budget cut needs a commercial structure, not a plea. Product gap needs honesty about
+    the roadmap, including when the answer is that it will not be built.'
   actor: human
+  objects_read:
+  - sales.obj.core.champion
+  - sales.obj.core.contract
+  produces: A response matched to the cause.
+  done_when: The offer addresses the driver rather than the symptom.
+
+- order: 4
+  name: Re-sell a new sponsor from zero
+  description: 'The commonest driver and the one most often mishandled. A replacement sponsor did not
+    buy this, has no stake in its success, and inherited a line of spend with an unclear rationale.
+    Treating them as continuity rather than as a new sale is what turns a sponsor change into a churn.'
+  actor: human
+  objects_read:
+  - sales.obj.core.stakeholder
+  produces: A new sponsor with their own reason to keep it.
+  done_when: The new person can state the value in their own words.
+  skip_when: The original sponsor is still in place.
+
+- order: 5
+  name: Do not argue
+  description: 'A customer who has decided experiences persuasion as not being heard, and it converts
+    a recoverable relationship into a closed one. Ask what would have to be true, and accept the
+    answer when it is that nothing would.'
+  actor: human
+  produces: A save attempt the customer experiences as listening.
+  done_when: No attempt was made to talk them out of a stated position.
+
+- order: 6
+  name: If it is lost, lose it well
+  description: 'A graceful exit — data returned without friction, no retention obstacle course, a
+    genuine thank-you — keeps a door open that a fought exit closes permanently. A meaningful share of
+    returning customers come back through exactly that door, and none come back through the other one.'
+  actor: human
+  produces: A clean exit and an open door.
+  done_when: The customer left without having to fight to do it.
+
+- order: 7
+  name: Record the driver, not the outcome
+  description: '"Churned" tells the organisation nothing. The driver, recorded consistently, is the
+    only input that improves anything — and it is the field that is filled in last and worst.'
+  actor: system
+  objects_read:
+  - sales.obj.core.risk
+  produces: A recorded cause per loss and per save.
+  done_when: Losses are analysable by driver rather than by count.
+
+objects_used:
+- sales.obj.core.account
+- sales.obj.core.risk
+- sales.obj.core.champion
+- sales.obj.core.stakeholder
+- sales.obj.core.contract
+- sales.obj.core.pricing
+
+outcomes:
+- Saves are attempted at the signal and matched to the driver.
+- Sponsor changes are handled as new sales rather than as continuity.
+- Losses are clean, and their causes are recorded.
+
+failure_modes:
+- 'DISCOUNT FIRST. Answers a budget driver and confirms every other one.'
+- 'DIAGNOSING WHILE OFFERING. The offer contaminates the answer; the customer will discuss what was
+  put in front of them rather than what is actually wrong.'
+- 'THE NEW SPONSOR ASSUMED TO BE THE OLD ONE. The single most common way a manageable change becomes
+  a loss.'
+- 'ARGUING WITH A DECISION. Closes the door that a graceful exit would have left open.'
+- 'RECORDING THE OUTCOME AND NOT THE CAUSE. Guarantees the organisation learns nothing from a loss it
+  has already paid for.'
+
+limits:
+- Cannot see the driver from the record; step 2 is a human conversation and there is no signal that
+  substitutes for it.
+- '`champion_change` and `stakeholder_left` have zero rows on the design partner''s org, so step 4''s
+  trigger — the event that most often causes this — is not currently detectable.'
+- Says nothing about accounts that were never a good fit, where the save is the wrong objective.
+
+variants:
+- applies_to: enterprise
+  change: Steps 3 and 4 dominate; the driver is usually sponsor change or a consolidation decision
+    taken above the relationship.
+  why: Large accounts rarely leave on product dissatisfaction alone.
+- applies_to: smb
+  change: Compress to steps 2, 5 and 6, and move fast — the window is weeks and the decision-maker is
+    the user.
+  why: No committee, no internal socialisation, much shorter window.
+- applies_to: channel
+  change: The save is run with and through the partner, whose own relationship is also at risk and
+    whose incentives may not match ours.
+  why: Two relationships are ending, and only one of them is visible to us.
+
+metrics:
+- name: driver_identified_rate
+  unit: percent
+  description: Share of at-risk accounts with a named driver before an offer.
+  direction: higher_is_better
+- name: save_rate_by_driver
+  unit: percent
+  description: Save rate split by cause.
+  direction: higher_is_better
+- name: graceful_exit_return_rate
+  unit: percent
+  description: Share of departed accounts that later returned.
+  direction: higher_is_better
+
+references:
+- title: Practitioner customer-success operations
+  kind: practitioner
+  note: Driver-segmented save rates differ enormously, which is the empirical case against a single
+    save motion — and discounting is the one that appears to work because budget cases are the ones
+    that get recorded.
+- title: Never Split the Difference
+  kind: book
+  author: Chris Voss
+  note: On listening rather than persuading when the counterparty has taken a position — the argument
+    behind step 5.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 1, 4 and 7 are new. Step 4 was pulled out of the
+    original step 2 deliberately — sponsor loss is both the most common driver and the one most often
+    mishandled, because the replacement is treated as continuity when they are in fact a new buyer who
+    inherited a cost.'

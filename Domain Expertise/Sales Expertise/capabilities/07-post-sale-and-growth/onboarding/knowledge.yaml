@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.onboarding.first_value_is_the_customers_sentence
 decision_frameworks:
   core: []
   scoped: []
