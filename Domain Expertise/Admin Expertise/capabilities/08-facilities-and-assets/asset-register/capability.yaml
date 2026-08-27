@@ -3,7 +3,7 @@ identity:
   name: Asset Register
   domain: admin
   subdomain: facilities_and_assets
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Maintaining an accurate register of physical and digital assets with custody, location,
@@ -12,13 +12,64 @@ description: 'Maintaining an accurate register of physical and digital assets wi
 
   '
 question: What do we own, where is it, and who is holding it?
+
+outcomes:
+- 'Assets entering the register at PURCHASE, with tag, custodian, location and value. Entered later they are entered from memory.'
+- 'Reconciliation against physical reality on a schedule, because a register that is not reconciled is a list — and a list is what organisations discover they had during an insurance claim.'
+- 'Lifecycle state tracked, so an asset that is in repair, in storage or awaiting disposal is not indistinguishable from one in use.'
+- 'Digital assets in the same register as physical ones. Licences and domains are owned, valuable and universally missing from asset lists.'
+- 'The negative outcome: an asset RETIRED and removed. A register that only grows overstates what exists, and overstatement is discovered at the worst possible moment.'
+failure_modes:
+- 'REGISTERING AT AUDIT, which produces a document that agrees with itself and with nothing else.'
+- 'NO RECONCILIATION, so the register and reality diverge continuously and nobody knows by how much.'
+- 'CUSTODY RECORDED ONCE, which is accurate on the day of issue and increasingly fictional afterwards.'
+- 'PHYSICAL ONLY. Domains, licences and cloud resources are assets that expire, and their absence from the register is why they expire unnoticed.'
+- 'TREATING THE REGISTER AS A FINANCE ARTEFACT, so it is accurate about value and useless about location.'
+kpis:
+- name: register_at_purchase_rate
+  unit: percent
+  description: Assets entered when acquired rather than reconstructed later.
+  direction: higher_is_better
+- name: reconciliation_variance
+  unit: percent
+  description: Items whose register entry disagreed with physical reality at the last count.
+  direction: lower_is_better
+- name: custody_currency
+  unit: percent
+  direction: higher_is_better
+  description: Entries whose custodian is current.
+- name: digital_asset_coverage
+  unit: percent
+  description: Domains, licences and subscriptions present in the register. Usually near zero.
+  direction: higher_is_better
+handoffs:
+  upstream: [admin.contract_and_vendor.purchase_order_management, admin.facilities_and_assets.asset_issuance_and_recovery]
+  downstream: [admin.finance_administration.budget_tracking, admin.compliance_and_governance.audit_support,
+               admin.facilities_and_assets.maintenance_coordination]
+  parallel: [admin.contract_and_vendor.renewal_management, admin.people_administration.access_and_identity_administration]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, distributed, outsourced]
+  offerings: [assurance, transactional]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    digital_asset_coverage is included because it is almost always near zero and it is where the
+    expensive surprises live. Domains, certificates and licences are owned, valuable and expire,
+    and they are absent from every asset register that was designed around physical equipment —
+    which is why they expire unnoticed rather than being renewed.
+
+    The distinction from asset_issuance_and_recovery is custody versus inventory: that
+    capability tracks who holds a thing, this one tracks what exists. An organisation can have
+    perfect custody records and no idea what it owns.
+
 admission:
-  accepted_content_hash: ab259f68315355de169111fd04f8706ee67da4af4eff317e6de81b00277adf82
+  accepted_content_hash: bc8ce7542d8025f46e3cf5b5a746e123acf62863bc503202317f1d0e7be29de1

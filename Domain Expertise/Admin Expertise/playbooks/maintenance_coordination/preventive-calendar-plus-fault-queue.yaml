@@ -11,17 +11,77 @@ identity:
 purpose:
   statement: Maintenance runs two lanes — scheduled preventive work from a calendar, and a fault queue
     with triage — because equipment maintained on failure costs multiples of equipment maintained on schedule.
+
+when_to_use:
+  do_not_use_when:
+  - The fault is a safety hazard. That leaves this queue immediately and goes to health and safety, which has authority this capability does not.
 steps:
 - order: 1
-  name: Calendar the preventive work
-  description: Servicing intervals per asset class, booked ahead. The AC serviced in February does not
-    fail in June.
+  name: Keep two lanes and protect the calendar one
+  description: >
+    A broken thing is always more urgent than a working one, so a merged queue empties the
+    preventive lane silently and the consequence arrives as a failure rate months later.
   actor: human
+  objects_read: [admin.obj.core.asset]
+  done_when: Scheduled work has protected capacity.
 - order: 2
-  name: Triage faults by impact
-  description: Blocking-work faults jump the queue; cosmetic ones batch. One intake, honest priorities.
+  name: Lift statutory inspections out of the backlog
+  description: >
+    They are obligations with penalties, not maintenance tasks. Left in the queue they compete with
+    discretionary work and lose.
   actor: human
+  objects_read: [admin.obj.core.compliance_obligation, admin.obj.core.deadline]
+  done_when: Statutory dates sit on their own calendar.
 - order: 3
-  name: Log work against the asset
-  description: Every repair on the asset's history — the record that reveals the lemon worth replacing.
+  name: Triage the fault queue on consequence
+  description: >
+    Not on arrival order and not on who complained loudest. The failure that stops work outranks
+    the one that is annoying.
   actor: human
+  done_when: Open faults have a priority somebody could defend.
+- order: 4
+  name: Manage contractor access as access
+  description: >
+    A maintenance visit puts an unescorted stranger in the building. It is an access event and a
+    safety one, and it is usually neither recorded nor escorted.
+  actor: human
+  objects_read: [admin.obj.core.access_right, admin.obj.core.vendor]
+  done_when: Who was on site and when is answerable.
+- order: 5
+  name: Age the backlog and report the trend
+  description: >
+    A count is reported and ignored. An ageing profile shows the debt accumulating, which is the
+    only form in which deferred maintenance is visible before the failure.
+  actor: system
+  done_when: The backlog has a median age and a direction.
+objects_used: [admin.obj.core.asset, admin.obj.core.vendor, admin.obj.core.compliance_obligation, admin.obj.core.deadline, admin.obj.core.access_right]
+limits:
+- 'It coordinates work; it does not decide whether an asset should be repaired or replaced.'
+- 'Step 1 depends on budget and capacity being protected upstream, which is where preventive work is actually cut.'
+failure_modes:
+- 'Step 1 conceded during a busy period, which is how a preventive programme ends — not by decision but by a series of reasonable deferrals.'
+- 'Step 5 reported as a count, which is the number that looks fine while the age doubles.'
+variants:
+- applies_to: outsourced
+  change: Steps 3 and 5 are the client's instrument for holding the contract; the provider owns the work and not the priority.
+  why: Triage is a business judgement and cannot be delegated with the labour.
+- applies_to: distributed
+  change: Largely reduces to equipment maintenance and statutory obligations at the registered office.
+  why: There is no shared estate to maintain.
+references:
+- title: Planned preventive maintenance practice
+  kind: practitioner
+  note: Where the two-lane separation is treated as structural rather than as a scheduling preference.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1 is conceded gradually rather than decided. A preventive programme ends through a
+    series of individually reasonable deferrals during busy periods, and nobody ever chooses to
+    stop it.

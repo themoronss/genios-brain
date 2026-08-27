@@ -3,7 +3,7 @@ identity:
   name: Maintenance Coordination
   domain: admin
   subdomain: facilities_and_assets
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Coordinating planned and reactive maintenance with internal teams and contractors: schedules,
@@ -12,13 +12,62 @@ description: 'Coordinating planned and reactive maintenance with internal teams 
 
   '
 question: Is this being maintained on schedule, and is the reactive queue under control?
+
+outcomes:
+- 'Two lanes run separately: a preventive calendar and a triaged fault queue. Merging them means the reactive work always wins and the preventive work never happens.'
+- 'Statutory inspections treated as non-negotiable dates rather than as maintenance tasks, because they are obligations with penalties attached.'
+- 'Contractor access managed — who is on site, when, escorted or not — since a maintenance visit is an access event.'
+- 'A backlog with an age and a trend, because deferred maintenance is a debt and the only question is when it is repaid.'
+- 'The negative outcome: equipment TAKEN OUT OF SERVICE rather than run to failure. Choosing the downtime is far cheaper than receiving it.'
+failure_modes:
+- 'ONE QUEUE FOR BOTH LANES. Urgent faults are always more urgent than scheduled servicing, so the calendar quietly empties.'
+- 'DEFERRING SERVICING TO SAVE BUDGET, which books a future failure at emergency rates with collateral damage attached.'
+- 'STATUTORY INSPECTIONS IN THE MAINTENANCE BACKLOG, where they compete with discretionary work and lose.'
+- 'CONTRACTORS ON SITE WITH NOBODY TRACKING IT, which is an access and a safety exposure at once.'
+- 'A BACKLOG COUNTED AND NOT AGED. Twenty open items is meaningless; twenty items averaging nine months is a decision nobody made.'
+kpis:
+- name: preventive_completion_rate
+  unit: percent
+  description: Scheduled work done in its window. The lane that loses when the queues merge.
+  direction: higher_is_better
+- name: reactive_share
+  unit: percent
+  description: Maintenance effort spent on failures rather than on schedule. Rising is the debt being repaid.
+  direction: lower_is_better
+- name: backlog_age
+  unit: days
+  description: Median age of the open fault queue. The count says nothing; the age says everything.
+  direction: lower_is_better
+- name: statutory_inspection_adherence
+  unit: percent
+  direction: higher_is_better
+  description: Required inspections completed by their date.
+handoffs:
+  upstream: [admin.facilities_and_assets.asset_register, admin.facilities_and_assets.workplace_management]
+  downstream: [admin.facilities_and_assets.health_and_safety_administration, admin.finance_administration.budget_tracking]
+  parallel: [admin.contract_and_vendor.vendor_performance_management, admin.admin_operations.business_continuity_administration]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, outsourced]
+  offerings: [coordinative, assurance]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    The two-lane structure is the capability. A single queue guarantees that reactive work
+    displaces preventive work, because a broken thing is always more urgent than a working one —
+    and the preventive lane emptying is invisible until the failure rate rises months later.
+
+    backlog_age rather than backlog count, because the count is the number everybody reports and
+    it carries no information. Twenty open items is meaningless; twenty items averaging nine
+    months is a decision nobody made and nobody wrote down.
+
 admission:
-  accepted_content_hash: 609346b78afd30d41975c8077ff3d4cc6335b3dc96739ff82e6e6148e9600cc4
+  accepted_content_hash: b75cb3a41e0079f25909881ed7f3977939e78f4b3aecbbb9a2b90425b18294a4

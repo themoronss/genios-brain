@@ -12,16 +12,76 @@ purpose:
   statement: The workplace runs on service rhythms — supplies stocked by par levels, spaces bookable,
     issues reported and closed visibly — because environment friction taxes everyone's day in unmeasured
     minutes.
+
+when_to_use:
+  do_not_use_when:
+  - The issue is a safety hazard or a building fault under a lease. Both leave this queue immediately for someone with the authority to act on them.
 steps:
 - order: 1
-  name: Stock by par level, not by complaint
-  description: Consumables refill at thresholds. The coffee running out is a process failure, not a surprise.
-  actor: human
+  name: Set par levels and reorder against them
+  description: >
+    Reordering when somebody notices guarantees running out, and the person who notices is the
+    person who needed it.
+  actor: system
+  done_when: Reorder happens before the shelf is empty.
 - order: 2
-  name: Make space booking self-service and honest
-  description: Rooms and desks bookable with no-show release. Ghost bookings are the commonest space complaint.
+  name: Make bookings hold
+  description: >
+    A reservation people plan around and then lose is worse than having no system, because it moved
+    the cost from planning to the moment of the meeting.
   actor: human
+  objects_read: [admin.obj.core.meeting]
+  done_when: Booked spaces are available when claimed.
 - order: 3
-  name: Close reported issues with feedback
-  description: '''Fixed, thanks for flagging'' — visible closure keeps the reporting habit alive.'
+  name: Make reporting trivial and closure visible
+  description: >
+    People report when it is easy and keep reporting when they hear back. Silent closure reduces
+    the reporting population to the persistent few.
+  actor: system
+  objects_read: [admin.obj.core.request]
+  done_when: The reporter knows what happened.
+- order: 4
+  name: Fix the recurring one properly
+  description: >
+    The same fault reported three times is a different problem from three faults, and the ticket
+    queue treats them identically.
   actor: human
+  done_when: Repeat reports are recognised as repeats.
+- order: 5
+  name: Look at what people use, not at what is visible
+  description: >
+    The reception area is easy to maintain and rarely used. The thing forty people touch daily is
+    where the friction actually accumulates.
+  actor: human
+  done_when: Attention follows usage rather than visibility.
+objects_used: [admin.obj.core.request, admin.obj.core.asset, admin.obj.core.meeting, admin.obj.core.vendor]
+limits:
+- 'It runs the environment; it does not decide the estate strategy or the lease.'
+- 'Step 5 needs usage data most workplaces do not collect, so it is usually a judgement.'
+failure_modes:
+- 'Step 3 half-implemented — easy reporting with silent closure — which produces a spike in reports and then a collapse.'
+- 'Step 4 invisible because the ticket system has no notion of recurrence.'
+variants:
+- applies_to: distributed
+  change: Most of this disappears and what remains is equipment and stipends; the failure mode moves to onboarding logistics.
+  why: There is no shared environment to manage.
+- applies_to: enterprise_admin
+  change: Step 5 becomes measurable and step 2 becomes a real system with enforcement.
+  why: Scale makes both the data and the abuse visible.
+references:
+- title: Workplace services practice
+  kind: practitioner
+  note: Where visible closure is treated as the variable that sustains reporting rates.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 3 fails most often when it is half-implemented: easy reporting with silent closure
+    produces a spike in reports followed by a collapse, and the collapse is misread as the
+    problems having been solved.

@@ -13,3 +13,53 @@ purpose:
     the company. Framing it as mutual protection is also what makes compliance friction-free.
   answers:
   - Why do signed issue records help employees?
+
+heuristic:
+  statement: >
+    The issue record protects the employee — "I returned it, here is the acknowledgement" — as much
+    as it protects the company. Framing it as mutual is also what makes compliance frictionless.
+  why: >
+    Without a record, a dispute about a returned item is one person's memory against another's, and
+    the employee loses by default because the company holds the ledger. The signature is therefore
+    the only artefact that lets them prove they did the right thing, and saying so converts the
+    request from an accusation into a service. That framing is not a communications nicety — it is
+    what determines whether people sign willingly, which determines whether the control exists.
+  confidence_bp: 8000
+  applies_when: Any issued item of material value, at issue and at return.
+  breaks_down_when: >
+    The process is one-directional. If the company records issue and not return, the artefact
+    protects only one party and employees correctly perceive the framing as false — which poisons
+    compliance for every other administrative process too. It also breaks down for low-value
+    consumables, where the ceremony costs more than the item and its main effect is to teach people
+    that the signature means nothing.
+  reads: [admin.obj.core.asset, admin.obj.core.employee_record]
+  contradicts: [admin.heu.offboarding_administration.offboarding_rigour_protects_both_sides]
+limits:
+- 'It concerns the framing and the record, not recovery itself, which needs an owner and a date.'
+- 'The mutual claim is only true if returns are recorded as carefully as issues.'
+failure_modes:
+- 'Return signatures omitted, which makes the mutual framing untrue and visibly so.'
+- 'Applied to consumables, which devalues the signature everywhere it matters.'
+variants:
+- applies_to: outsourced
+  change: The record is contractual rather than relational, and the mutual framing carries less weight because the relationship is shorter.
+  why: Protection matters to both parties and goodwill is not the mechanism.
+- applies_to: startup_lean
+  change: Strongest, because there is no HR function to arbitrate a dispute and the record is the only referee.
+  why: Everything else is memory.
+references:
+- title: Asset custody practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case makes the heuristic self-checking: if the company records issue and
+    not return, the mutual framing is false and employees can see it, which damages compliance
+    with every other administrative process too.
