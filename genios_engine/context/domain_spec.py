@@ -224,7 +224,19 @@ register(DomainSpec(
 register(DomainSpec(
     domain="general",
     display_name="General",
-    situation_types={"company": "relationship", "person": "relationship"},
+    # `deal` maps to `deal`, not to `general_deal`.
+    #
+    # `general` does not mean "a domain called general". It means no hint fired — which on real
+    # correspondence is most of it: 23 of one tenant's 30 deal-anchored correlations. A deal node
+    # exists only because `deal.*` facts were extracted from the message, so the anchor is a deal
+    # whether or not the word "pipeline" appeared in the text. Falling through to `type_for`'s
+    # `<domain>_<anchor>` default named it `general_deal`, which no situation file claims and the
+    # registry cannot resolve — the entire deal lane unroutable on any tenant whose mail happens
+    # not to trip a keyword.
+    #
+    # Company and person stay `relationship` deliberately. Those readings genuinely differ by
+    # domain — an unclassified account is not an opportunity — but a deal is a deal.
+    situation_types={"company": "relationship", "person": "relationship", "deal": "deal"},
     expected_fields={
         # A relationship is NOT context-complete because we know who sent the last email.
         #

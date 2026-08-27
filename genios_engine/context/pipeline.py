@@ -5,6 +5,8 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
+from sqlalchemy import text
+
 # Load-bearing at RUNTIME only (the ask/reply branches) — exactly how their absence shipped:
 # module imported cleanly, suite green, and the first real extraction with an ask observation
 # would have raised NameError and zeroed the whole L2 processing phase.
@@ -379,6 +381,42 @@ def _resolve_subject(name, name_to_node: dict, fallback: str | None) -> str | No
     return fallback
 
 
+#: Words that mean a deal is FINISHED, and which way it went. Everything else is live.
+#:
+#: `deal.status` is declared as an extraction field and its VALUES were never constrained
+#: anywhere — not in the prompt, not in the pack schema, not in the corpus vocabulary. So the
+#: model wrote whatever the message said. One live tenant holds `lost`, `rejected` and `engaged`
+#: and not one `open`, while `sales_v1.py` gates six rules on `deal.status = open` and three
+#: Sales situations gate on the same literal. Every one of them is dead, in both the pack lane
+#: and the compiled lane, for a reason that appears in no error and no count: the rule is
+#: correct, the fact is present, and the two never meet.
+#:
+#: Normalising at the WRITE, not in the prompt, is deliberate. The prompt is hashed into the
+#: extraction cache key, so constraining it there re-runs the model over a tenant's whole history
+#: at real cost to fix a mapping that is deterministic. And a controlled value is what every
+#: reader already assumes it is reading.
+_DEAL_TERMINAL = {
+    "lost": "lost", "closed lost": "lost", "closed_lost": "lost", "closed-lost": "lost",
+    "rejected": "lost", "declined": "lost", "passed": "lost", "no": "lost",
+    "dead": "lost", "cancelled": "lost", "canceled": "lost", "churned": "lost",
+    "won": "won", "closed won": "won", "closed_won": "won", "closed-won": "won",
+    "signed": "won", "closed": "won",
+}
+
+
+def _normalise_deal_status(value):
+    """Free-text deal status → the controlled value every reader assumes: open | won | lost.
+
+    Returns a (status, raw) pair. The model's own word is never discarded — it is the stage, and
+    "negotiation" or "final review" is more informative than "open" once something is reading
+    for it. Only the STATUS is collapsed, because that is the one every rule compares against.
+    """
+    raw = str(value or "").strip()
+    if not raw:
+        return None, None
+    return _DEAL_TERMINAL.get(raw.lower(), "open"), raw
+
+
 def process_event(*, org_id: str, event_id: str, source: str, content: str,
                   sender_email: str | None, occurred_at: datetime | None,
                   llm: LLMClient, store: GraphStore, is_inbound: bool = False,
@@ -482,6 +520,8 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 internal_nodes.add(node)
             return node
 
+        employer: dict[str, str] = {}
+
         def _works_at(email: str, person_node: str) -> None:
             """person → works_at → company(domain). Groups everyone at 3one4/kurral/… together."""
             nonlocal edge_n
@@ -492,6 +532,8 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 conn, org_id=org_id, node_type="company", canonical_key=dom,
                 display_name=dom, event_id=event_id)
             touched[company] = "company"
+            employer[person_node] = company     # read by _deal_for, so a deal lands on the
+            #                                     subject's OWN account and not an arbitrary one
             # A company reached through one of OUR OWN seats is us, not a counterparty.
             # Without this, every outbound email anchors on our own domain and the whole
             # org collapses into one situation containing everything.
@@ -707,14 +749,96 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # not about a document.
         content_subject = canon_node or sender_node
         fact_n = 0
+
+        # DEAL NODES. `deal.*` facts used to land on whichever person happened to be the subject,
+        # because this loop writes every extracted fact to its subject and nothing minted a deal.
+        # The cost was invisible and total: `correlation.ANCHOR_PRIORITY` puts "deal" FIRST, above
+        # company and person, and `domain_spec` types a deal-anchored sales situation as `deal` —
+        # so the whole chain from correlation through situation typing to the corpus was built and
+        # waiting on a node that was never created. Measured on the design partner's org: 45
+        # `deal.status` rows across 38 nodes, zero deal nodes, zero `deal` situations, and roughly
+        # twenty authored capabilities (closing, negotiation, pricing, discovery, demo, forecasting,
+        # the qualification cluster) unreachable for want of this.
+        #
+        # Keyed on the COMPANY, not the person: a deal is an account-level thing and the same
+        # opportunity reaches us through several contacts. Keying it per person would mint one deal
+        # per correspondent and split one negotiation into five situations.
+        deal_nodes: dict[str, str] = {}
+
+        def _deal_for(subject_node: str) -> str | None:
+            """The deal node for whichever account this subject belongs to, minted on first need."""
+            nonlocal edge_n
+            if touched.get(subject_node) == "company":
+                company = subject_node
+            else:
+                # The subject's OWN employer first. Falling straight to "any company in the
+                # event" would put a deal on whichever counterparty happened to be cc'd, and on
+                # an introduction thread naming three firms that is a coin toss recorded as fact.
+                company = employer.get(subject_node)
+            if company is None or company in internal_nodes:
+                external = sorted(c for c, t in touched.items()
+                                  if t == "company" and c not in internal_nodes)
+                company = external[0] if len(external) == 1 else None
+            if not company or company in internal_nodes:
+                return None            # our own domain is not a counterparty, so it has no deal
+            node = deal_nodes.get(company)
+            if node is None:
+                # Named after the account, because the card says this out loud and
+                # "deal:node_abc123" in front of a founder is worse than no card.
+                row = conn.execute(text(
+                    "select display_name from graph_nodes where org_id=:o and node_id=:n"),
+                    {"o": org_id, "n": company}).first()
+                label = (row[0] if row and row[0] else company)
+                node = store.find_or_create_node(
+                    conn, org_id=org_id, node_type="deal", canonical_key="deal:" + company,
+                    display_name=f"{label} — deal"[:80], event_id=event_id)
+                touched[node] = "deal"
+                deal_nodes[company] = node
+            # BOTH edges are load-bearing, and the person one especially so. `_neighborhood` is
+            # ONE hop and verb-agnostic, and a company node holds almost no facts of its own —
+            # everything a deal capability asks for (`thread.ball_in_court`, `commitment.due_at`,
+            # `derived.engagement`) sits on the PEOPLE. With only `company owns deal` the contacts
+            # are two hops away, so a deal-anchored situation would read an empty neighbourhood
+            # and come back INSUFFICIENT_CONTEXT — the exact failure the company anchor already
+            # had to be rescued from.
+            for frm, to, verb in ((company, node, "owns"), (node, subject_node, "involves")):
+                if frm != to and store.write_edge(
+                        conn, org_id=org_id, edge_type=verb, from_node_id=frm, to_node_id=to,
+                        confidence=0.9, occurred_at=occurred_at, event_id=event_id,
+                        evidence={"derived": "deal from deal.* facts"}, source=source,
+                        authority_rank=2):
+                    edge_n += 1
+            return node
+
         for f in facts:
             subj = _resolve_subject(f.get("subject"), name_to_node, content_subject)
             if subj is None:
                 continue
+            field = str(f.get("field") or "note")
+            value = f.get("value")
+            # A `deal.*` fact belongs to the deal, not to whoever happened to mention it.
+            if field.startswith("deal."):
+                subj = _deal_for(subj) or subj
             # ungrounded (paraphrased) fact → kept, but scored down instead of dropped.
             fact_rel = ex.relevance if f.get("_grounded", True) else ex.relevance * _GROUNDING_PENALTY
+            if field == "deal.status":
+                status, raw = _normalise_deal_status(value)
+                if status is None:
+                    continue
+                value = status
+                # The model's own word survives as the STAGE. "negotiation" and "final review"
+                # are what a reader actually wants back; collapsing them into "open" and
+                # throwing the original away would trade one dead field for a duller one.
+                if raw.lower() != status and store.write_fact(
+                        conn, org_id=org_id, subject_node_id=subj, field="deal.stage",
+                        value=raw, value_type="string",
+                        confidence=FACT_CONF_BY_RANK[claim_rank], relevance=fact_rel,
+                        occurred_at=occurred_at, event_id=event_id,
+                        evidence=_claim_evidence(f, internal_kind), source=source,
+                        authority_rank=claim_rank):
+                    fact_n += 1
             wrote = store.write_fact(conn, org_id=org_id, subject_node_id=subj,
-                                     field=str(f.get("field") or "note"), value=f.get("value"),
+                                     field=field, value=value,
                                      value_type="string",
                                      confidence=FACT_CONF_BY_RANK[claim_rank],
                                      relevance=fact_rel,

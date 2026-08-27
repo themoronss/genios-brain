@@ -57,7 +57,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import text
 
-from genios_engine.context.domain_spec import canonical_domain
+from genios_engine.context.domain_spec import canonical_domain, spec_for
 
 from genios_engine.platform.canonical import stable_id
 
@@ -393,6 +393,50 @@ def lift_people_to_their_companies(conn, *, org_id: str,
     return lifted
 
 
+def lift_companies_to_their_deals(conn, *, org_id: str, domain: str,
+                                  node_types: dict[str, str]) -> dict[str, str]:
+    """Add each account's deal to the anchor pool. The direct analogue of the lift above.
+
+    Correspondence about an account with a live deal is correspondence about the DEAL, and
+    `ANCHOR_PRIORITY` already says so by ranking deal above company. But only the one event that
+    happened to create the deal node touches it, so without this every OTHER message in the same
+    conversation anchors on the company and the deal situation is a group of one.
+
+    Worse, `plan_correlation` is thread-first by design — a reply carries the conversation's
+    identity. So a thread that anchored on the company before the deal existed keeps pulling new
+    events back to the company anchor no matter how many are re-correlated, and the deal lane
+    stays empty for a reason that never appears in any count. Lifting removes the ordering
+    problem entirely: whichever message arrives first, the account's deal is in the pool.
+
+    SCOPED TO DOMAINS THAT HAVE A DEAL, and that guard is the whole difference between a fix and
+    a regression. A `deal.status` fact is extracted from investor and recruiting mail too, so on
+    a real founder's inbox most accounts acquire a deal node. Lifting unconditionally would take
+    every `investor_relationship` situation — the ones the investor-relations capability is built
+    on — and retype them `fundraising_deal`, which no capability claims. One empty lane traded for
+    another. `domain_spec` already states, per domain, whether a deal is a thing there; asking it
+    keeps that judgement in the one place that owns it.
+
+    Read-only and never creates: if the account has no deal, the company stays the anchor.
+    """
+    if "deal" not in spec_for(domain).situation_types:
+        return node_types
+    companies = [nid for nid, ntype in node_types.items() if ntype == "company"]
+    if not companies:
+        return node_types
+    rows = conn.execute(text(
+        "select e.to_node_id from graph_edges e "
+        "join graph_nodes d on d.org_id = e.org_id and d.node_id = e.to_node_id "
+        "  and d.node_type = 'deal' and d.valid_to is null "
+        "where e.org_id = :o and e.edge_type = 'owns' and e.valid_to is null "
+        "  and e.from_node_id = any(:ids)"), {"o": org_id, "ids": companies}).fetchall()
+    if not rows:
+        return node_types
+    lifted = dict(node_types)
+    for row in rows:
+        lifted[row.to_node_id] = "deal"
+    return lifted
+
+
 def _lift_roles(conn, *, org_id: str, node_roles: dict[str, str]) -> dict[str, str]:
     """Carry each person's role onto the company they work at.
 
@@ -430,8 +474,14 @@ def correlate_event(conn, *, org_id: str, event_id: str, occurred_at: datetime |
     plan = plan_correlation(
         thread_correlation_ids=thread_correlations(
             conn, org_id=org_id, thread_id=thread_id, exclude_event_id=event_id),
-        node_types=lift_people_to_their_companies(conn, org_id=org_id,
-                                                  node_types=node_types),
+        # People → their company → that account's deal. Order matters: a person is lifted to the
+        # company first, so a message naming only a contact still reaches the deal. The domain is
+        # resolved here as well as inside `plan_correlation`; `resolve_domain` is pure and cheap,
+        # and threading it out would put a second source of truth next to the first.
+        node_types=lift_companies_to_their_deals(
+            conn, org_id=org_id, domain=resolve_domain(domain_hints),
+            node_types=lift_people_to_their_companies(conn, org_id=org_id,
+                                                      node_types=node_types)),
         # A person's role carries to the company they were lifted to: an introduction bot's
         # company is the introduction service, and it must not anchor either.
         node_roles=_lift_roles(conn, org_id=org_id, node_roles=node_roles or {}),

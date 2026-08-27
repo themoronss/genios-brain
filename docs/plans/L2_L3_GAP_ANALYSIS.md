@@ -8,6 +8,58 @@ because Layer 2 does not create the node type their situations anchor on.
 
 This is a Layer 2 gap, not a corpus gap, and no amount of further authoring closes it.
 
+---
+
+# UPDATE 2026-08-27 — L2-1 fixed, and it was four faults in a row, not one
+
+The deal node was the first of four, each of which alone was enough to keep the lane empty. All
+four are fixed, each proven on a throwaway Postgres first and then on the live org, with the graph
+backed up to `*_bak_20260827_deal` tables before anything was written.
+
+| # | Fault | Where | Fix |
+|---|---|---|---|
+| 1 | No `deal` node was ever created, so `deal.*` facts landed on whichever person was the subject | `context/pipeline.py` | mint the deal on the account, move the facts to it, edge it to the company and the contact |
+| 2 | History already had the facts, on the wrong nodes, with no way to get them onto a deal | `context/backfill.py` | `backfill_deal_nodes` — resolves the account by `works_at` OR email domain, and skips our own domains so `thegenios.com — deal` cannot happen |
+| 3 | Correlation is thread-first, so a thread that anchored on the company before the deal existed pulled every later message back — releasing the affected events did nothing | `context/backfill.py`, `context/correlation.py` | `lift_companies_to_their_deals` (the direct analogue of the existing person→company lift, scoped to domains whose spec HAS a deal) plus a `rebuild` re-derivation |
+| 4 | `deal.status` values were never constrained anywhere, so the model wrote `lost` / `rejected` / `engaged` while six `sales_v1` rules and three Sales situations all gate on the literal `open` | `context/pipeline.py` | normalise at the write to `open` \| `won` \| `lost`, keeping the model's own word as `deal.stage` |
+
+Plus one in `domain_spec.py`: `general` had no `deal` entry, so an unhinted deal typed as
+`general_deal` — a name no situation claims and the registry cannot resolve. `general` means *no
+hint fired*, not *a domain called general*, and a deal node exists only because `deal.*` facts were
+extracted. It now maps `deal → deal`.
+
+## Measured on the live org, before → after
+
+| | before | after |
+|---|---|---|
+| `deal` nodes | 0 | 33 |
+| `deal.*` facts on a deal node | 0 of 83 | 57 (26 orphaned — personal-domain contacts with no account, correctly left) |
+| `deal.status = open` | **0** | 7 (34 `lost`) |
+| **`deal` situations** | **0** | **20** |
+| `investor_relationship` situations | 13 | 9 — deliberately NOT eaten by the deal lift |
+| events correlated | 162 of 354 | 287 of 354 |
+
+Two things worth stating plainly rather than burying:
+
+* **Most of this org's "deals" are investor rejections.** 34 of 41 `deal.status` facts normalise to
+  `lost`, because the extractor reads a VC pass as a lost deal. The plumbing is now correct; the
+  data on THIS inbox is thin, and a real sales inbox is what will exercise it.
+* **The `general` domain dominates.** Most correspondence trips no keyword, which is why the
+  `domain_spec` entry above mattered more than any corpus edit. Domain hint quality is the next
+  real constraint on routing, not authoring.
+
+## Tests
+
+A new real-Postgres suite, `tests/test_deal_node_from_correspondence.py` (9 tests), covers minting,
+fact placement, both edges, situation typing, idempotence, the backfill, the thread-first
+limitation the `rebuild` flag exists for, and the domain scoping of the lift. It caught two defects
+the hermetic suite could not see: a missing `nonlocal edge_n`, and a bare string written into a
+`jsonb` column. Also fixed `tests/test_segments.py`, which seeded `node_id='p1'` — six modules used
+that literal and `graph_nodes`'s primary key is `(node_id, version)` with no org in it, so on a
+shared test database the second module to run silently seeded nothing.
+
+---
+
 # What was measured
 
 | | |
