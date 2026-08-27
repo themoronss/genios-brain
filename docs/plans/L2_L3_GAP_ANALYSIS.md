@@ -52,6 +52,23 @@ correspondence-only tenant — `closing`, `negotiation`, `pricing`, `proposal_cr
 `deal_review`, `pipeline_management`, `revenue_intelligence`, the whole qualification cluster,
 `discovery`, `need_analysis`, `value_proposition`, `demo`.
 
+**Everything downstream of the node is ALREADY BUILT and waiting.** This was checked link by link:
+
+| Link | State |
+|---|---|
+| `correlation.py:91` `ANCHOR_PRIORITY` | `("deal", ...)` — **`deal` is FIRST**, above company and person |
+| `situations.py:382` | `situation_type(corr.anchor_type, corr.domain)` |
+| `domain_spec.py:174` | `situation_types={"deal": "deal", ...}` |
+| Corpus | 4 situations bound to the `deal` type |
+| Corpus | ~20 capabilities behind those situations |
+
+The correlation layer already prioritises a deal above every other anchor. The situation typer already
+maps it. The corpus already binds it. **The only missing link in the entire chain is that
+`pipeline.py` never creates the node.**
+
+That makes this a single-point fix rather than a subsystem change, which is worth knowing before
+anyone plans it as a large piece of work.
+
 **The fix has a working precedent in the same file.** `pipeline.py:930` already mints a `commitment`
 node when it finds a dated promise:
 
@@ -127,7 +144,14 @@ Admin 51, Customer Support 40. Sales is 0. Blocked behind L3-1 regardless.
 # Recommended order
 
 1. **L2-1 — mint the deal node.** Largest return by a wide margin: ~20 already-authored capabilities
-   become reachable, no new corpus. Working precedent in the same file.
+   become reachable, no new corpus. Everything downstream is already built — correlation, situation
+   typing, domain spec and corpus all handle `deal` today and are waiting on a node that is never
+   created. Working precedent for creating it is in the same file (`pipeline.py:930`).
+
+   Concretely, three edits: (a) mint a `deal` node when `deal.*` facts are extracted, keyed on the
+   account; (b) route `deal.*` facts to it in the generic fact loop at `pipeline.py:710` instead of
+   letting them land on the person; (c) edge it to the company and the person so the neighbourhood
+   reaches it. Then re-run the sync and the `deal` situations appear on their own.
 2. **L2-2 — diagnose the missing observation kinds.** Determines whether the closing and churn rules
    can ever fire, and it is a diagnosis before it is a fix.
 3. **L3-1 — `admin_v1` pack.** Unblocks 51 Admin capabilities, 3 of which are on a live route today.
