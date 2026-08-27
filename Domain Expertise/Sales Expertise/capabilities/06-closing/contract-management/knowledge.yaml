@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.contract_management.an_obligation_leaves_the_document
 decision_frameworks:
   core: []
   scoped: []

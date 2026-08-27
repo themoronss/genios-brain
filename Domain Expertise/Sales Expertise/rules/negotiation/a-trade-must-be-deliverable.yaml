@@ -1,0 +1,133 @@
+identity:
+  id: sales.rule.negotiation.a_trade_must_be_deliverable
+  name: A trade must be deliverable
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.negotiation
+  subdomain: proposal_and_commercials
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A concession the organisation cannot honour is not a concession, it is a future failure
+    with a signature on it. The negotiation books it as a win and the delivery team discovers it as a
+    loss, by which time the person who agreed it has moved on.'
+  answers:
+  - May this term be offered?
+  - Who has to have seen a commitment before it is made?
+  not:
+  - A rule about commercial value. What a trade is worth is priced elsewhere.
+  - A requirement to consult on every term. It applies to operational commitments.
+
+rule:
+  statement: 'A negotiated commitment that binds delivery — a scope inclusion, a start or go-live
+    date, a support level, a custom integration, a migration — MUST NOT be offered without
+    confirmation from whoever will perform it. A commitment made without it MUST be recorded as
+    unconfirmed and surfaced before signature rather than after.'
+  spans:
+  - sales.obj.core.contract
+  - sales.obj.core.proposal
+  - sales.obj.core.timeline
+  when:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: proposal_sent}
+  - {exists: commitment.due_at}
+  then: 'Require delivery confirmation on any operational commitment before it is recommended, and
+    flag existing unconfirmed commitments as a pre-signature item.'
+  severity: blocking
+  why: 'The incentives are misaligned across time and across people, which is what makes this
+    structural rather than a matter of care. The commitment is made by someone measured on closing,
+    under time pressure, at the moment the deal is nearly done; it is honoured by someone else,
+    measured on delivery, months later. Nothing in that sequence produces a check, and the failure is
+    discovered at the point of maximum cost — after the customer has been told, when the only
+    remaining options are to disappoint them or to absorb the difference.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'A STANDARD OFFERING. Anything inside the normal scope needs no per-deal confirmation — the whole
+    point of a defined offering is that it is pre-confirmed, and requiring a check on it would make
+    the rule ceremonial and therefore ignored.'
+  - 'A PRE-AGREED FLEXIBILITY BAND. Where delivery has stated in advance what may be committed without
+    asking — a range of start dates, a set of standard integrations — a commitment inside it is
+    already confirmed.'
+  - 'AN EXPLICITLY CONDITIONAL OFFER. "Subject to confirmation by our implementation team" is a
+    legitimate commercial move and satisfies the rule, provided the condition is real and the
+    confirmation is actually sought rather than assumed.'
+  - 'A COMMITMENT THE BUYER PROPOSED AND WE HAVE NOT ACCEPTED. Discussing a date is not committing to
+    it, and a rule that fires on every mention of a timeline in a negotiation would be noise.'
+  - 'A DELIVERY FUNCTION THAT CANNOT RESPOND IN TIME. Real, and the correct resolution is the
+    conditional offer rather than an unconfirmed one — the exception exists to name the pressure, not
+    to license the failure.'
+
+objects_used:
+- sales.obj.core.contract
+- sales.obj.core.proposal
+- sales.obj.core.timeline
+- sales.obj.core.risk
+
+outcomes:
+- Operational commitments are seen by whoever will perform them, before they are made.
+- Unconfirmed commitments surface before signature rather than in implementation.
+
+failure_modes:
+- 'APPLIED TO STANDARD SCOPE. Makes the rule ceremonial, and a ceremonial gate is routed around within
+  a month — taking the non-ceremonial part with it.'
+- 'SATISFIED BY A NOTIFICATION. Telling delivery is not asking them; the rule requires a response,
+  and a rule satisfied by a sent message has changed nothing.'
+- 'THE CONDITIONAL OFFER USED AS A HABIT. Every term made conditional transfers the seller''s job to
+  the customer, who now has to chase confirmations we could have obtained.'
+
+limits:
+- The record cannot tell an operational commitment from a commercial one — `commitment.due_at` and
+  `commitment.action` mark that a dated promise exists and not what kind. The rule can prompt on the
+  presence of commitments near a proposal and cannot classify them.
+- Says nothing about what delivery should agree to, only that they should have seen it.
+
+variants:
+- applies_to: enterprise
+  change: Require a named individual in delivery, not a function, and record their confirmation
+    against the specific commitment.
+  why: A function-level assurance is nobody's, and this is precisely where the handover fails.
+- applies_to: smb
+  change: Frequently the same person sells and delivers, and the rule collapses to a self-check —
+    which is weaker, and worth stating as such rather than treating as satisfied.
+  why: The temporal misalignment remains even when the people are the same.
+- applies_to: channel
+  change: The partner may be the delivery party, so their confirmation is the one required — and they
+    have their own incentive to agree first and resolve later.
+  why: The rule follows whoever performs, not whoever signs.
+
+metrics:
+- name: unconfirmed_commitment_rate
+  unit: percent
+  description: Share of signed deals carrying an operational commitment delivery had not confirmed.
+  direction: lower_is_better
+- name: post_signature_scope_escalation_rate
+  unit: percent
+  description: Share of new accounts raising a scope or date dispute in their first period. The cost
+    this rule prevents, measured where it actually lands.
+  direction: lower_is_better
+
+references:
+- title: Getting to Yes
+  kind: book
+  author: Fisher and Ury
+  note: On the difference between an agreement and a workable agreement, which is the distinction this
+    rule enforces at the operational level.
+- title: Practitioner sales-to-delivery handover
+  kind: practitioner
+  note: Scope and date commitments made without delivery input are the most commonly cited cause of
+    first-period customer dissatisfaction, and they are almost never made in bad faith.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new and blocking, despite the record being unable to classify the commitment
+    type — because the failure is structural rather than careless, and it is paid by someone who had
+    no part in causing it. `limits` states the classification gap plainly rather than implying the
+    rule is more precise than it is.'

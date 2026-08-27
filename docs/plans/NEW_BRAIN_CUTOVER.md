@@ -197,8 +197,8 @@ traffic instead of being swapped blind.
 
 # Phase 2 — the corpus, not the code
 
-> Surveyed 2026-08-25. Worked in six batches — `9ddeeed`, `087d4e6`, `3dc7f61`, `049ee6b`,
-> `1d42e8a` on 2026-08-26, and the one carrying this edit on 2026-08-27. Every number below was measured against
+> Surveyed 2026-08-25. Worked in seven batches — `9ddeeed`, `087d4e6`, `3dc7f61`, `049ee6b`,
+> `1d42e8a` on 2026-08-26; `07a0c3c` and the one carrying this edit on 2026-08-27. Every number below was measured against
 > `org_e97e86f858ad48b2bbf64b8a`, not against tests.
 
 ## Where Phase 2 stands
@@ -211,8 +211,8 @@ traffic instead of being swapped blind.
 | `required_missing` | 2 | 2 (unchanged — see item 3 below) |
 | Compiled cards rendering `raw_slot` | 11 of 18 | **the four causes are fixed; see below** |
 | Live routes compiling through a placeholder capability | 3 of 4 types | **0 of 4** — Admin closed in batch 4 |
-| Hollow capabilities | 136 | **118** (admin 51, customer_support 40, sales 27) |
-| Corpus validation errors | 566 | **490** |
+| Hollow capabilities | 136 | **112** (admin 51, customer_support 40, sales 21) |
+| Corpus validation errors | 566 | **466** |
 | Tests | 1640 | **1678** |
 
 ## Batch 4 — the substrate was understated, and the live Admin route is no longer hollow
@@ -427,6 +427,39 @@ a `description:` continuation must be indented past its key. All 1300+ corpus fi
 **Measured:** routing 56/61 (unchanged, and expected — `deal` does not occur on this org), `card_audit`
 byte-identical to the batch-4 baseline, 1678 tests green, corpus errors 514 → 490, hollow 124 → 118.
 
+## Batch 7 — the closing and commercials cluster
+
+Six capabilities: `closing`, `procurement`, `contract_management`, `negotiation`,
+`objection_handling`, `proposal_creation`. With these the `deal` route set carries no hollow
+capability at all, which was the remaining structural gap in the sales corpus.
+
+Six more rules with `rule.exceptions`. Two are blocking on a proxy condition, deliberately, and both
+say why in their own `limits`:
+
+* `urgency_must_belong_to_the_buyer` — because seller-side urgency is one of the few failures in this
+  corpus that is worse than inaction: the buyer learns that waiting improves the price, and that
+  belief outlives the deal. Its second metric needs no message analysis at all — extreme period-end
+  close concentration is the signature of this failure at organisation scale.
+* `an_obligation_leaves_the_document` — because the failure is silent, symmetrical (a missed notice
+  window costs both sides) and the day of signature is the only moment when someone has just read the
+  document and extraction is nearly free.
+
+`a_trade_must_be_deliverable` is the one worth reading: the incentives are misaligned across time AND
+across people — the commitment is made by someone measured on closing, under pressure, and honoured
+by someone else measured on delivery, months later. Nothing in that sequence produces a check.
+
+**What this batch cannot do today.** The live org carries zero `deal` situations, and
+`verbal_yes`, `contract_requested`, `legal_review`, `discount_pressure` and `objection_price` all
+have zero observation rows. `objection` has 4 and `proposal_sent` has 9 — the only two live markers
+in the whole cluster. Every capability states this in its own `metadata.notes` and every rule in its
+`limits`. `contract_management` is called out as the best structural fit in the subdomain for a
+reason worth keeping: its outputs are dated obligations, which is exactly the shape
+`commitment.due_at` / `.action` / `.status` already hold.
+
+**Measured:** routing 56/61 unchanged (expected — `deal` does not occur on this org), `card_audit`
+identical to the batch-4 baseline (63 cards; 13 / 24 / 9; four classes clean), 1678 tests green,
+corpus errors 490 → 466, hollow 118 → 112.
+
 ## What is left, and the honest blockers
 
 1. **`account_admin` routes but CANNOT DELIVER.** `ReasoningStore.persist_complete` refuses a write
@@ -436,7 +469,7 @@ byte-identical to the batch-4 baseline, 1678 tests green, corpus errors 514 → 
    is true of all 49 Customer Support capabilities.** This is the largest structural gap left: the
    corpus can author a domain the tenant has no lane for, and nothing in the authoring path says so.
    The honest unblock is an `admin` pack module plus a tenant promotion.
-2. **118 hollow capabilities** — 51 admin, 40 customer_support, 27 sales (was 136 before batch 4).
+2. **112 hollow capabilities** — 51 admin, 40 customer_support, 21 sales (was 136 before batch 4).
    Only the sales ones can reach a user today. Promote in the order their situation types actually
    occur. **Corrected:** batch 5 was reported as leaving nothing hollow in a live type's route set —
    `pricing` was still there, reached through `field_evidence_on_the_market` under `opportunity`. It
@@ -444,14 +477,16 @@ byte-identical to the batch-4 baseline, 1678 tests green, corpus errors 514 → 
    `opportunity`, `relationship` and `investor_relationship` alike.
 
    From here the queue is worked outwards, in this order:
-   a. **`procurement` and `buying_committee_analysis`'s siblings** — the last two `deal`-lane hollows
-      (`procurement`, plus `closing`, `contract_management`, `negotiation`, `objection_handling`,
-      `proposal_creation` in the adjacent subdomains).
+   a. ~~The closing and commercials cluster~~ — done in batch 7. The whole `deal` route set is now
+      free of hollow capabilities.
    b. **The three unauthored Customer Support core objects** — `customer_account`, `named_contact`,
       `support_plan`. This is the ONLY remaining corpus-fixable routing gain: it closes
-      `required_missing=2` and takes the live org from 56/61 to 58/61.
-   c. The rest by subdomain, sales before admin and customer_support, since sales is the only lane
-      the tenant can deliver through.
+      `required_missing=2` and takes the live org from 56/61 to 58/61. It is also a much larger unit
+      of work than a capability batch — these are 23-section objects at the `requester.yaml` standard.
+   c. **The remaining 21 sales capabilities** — discovery_and_solution (4), post_sale_and_growth (5),
+      revenue_operations (5), sales_management (3), prospecting channels (3), tam_sam_som (1).
+   d. Admin (51) and Customer Support (40) last, because neither can deliver on this tenant until an
+      `admin` pack module exists.
 3. **`required_missing` (2)** — two `relationship` situations want
    `customer_support.obj.core.{customer_account,named_contact,support_plan}`, which are referenced
    and not authored. A Customer Support object gap reached through a sales route.

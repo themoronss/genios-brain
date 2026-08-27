@@ -1,0 +1,135 @@
+identity:
+  id: sales.rule.closing.urgency_must_belong_to_the_buyer
+  name: Urgency must belong to the buyer
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.closing
+  subdomain: closing
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'Urgency a buyer can trace to our calendar is not urgency, it is information — that a
+    discount is available to anyone willing to wait. It simultaneously delays the deal and reduces
+    its value, and it is produced by the act of trying to accelerate.'
+  answers:
+  - May this deal be pushed, and on whose authority?
+  - What kind of urgency actually moves a late-stage deal?
+  not:
+  - A prohibition on asking for the close. Asking is not pressure.
+  - A rule about discounting, which is priced elsewhere.
+
+rule:
+  statement: 'A closing recommendation MUST rest on a date the BUYER owns — a compelling event, a
+    contractual expiry, a launch, a budget window they named. A recommendation whose only stated
+    reason for urgency is our own period end MUST NOT be surfaced, and where no buyer-owned date
+    exists, the recommended action is to find one rather than to apply pressure.'
+  spans:
+  - sales.obj.core.deal
+  - sales.obj.core.timeline
+  - sales.obj.core.next_action
+  when:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: proposal_sent}
+  - {absent: commitment.due_at}
+  then: 'Recommend establishing a buyer-owned date as the next action. Suppress urgency framing in the
+    generated copy, and mark the deal as having no buyer-owned event.'
+  severity: blocking
+  why: 'This is the rare failure that is worse than doing nothing, and its cost is invisible at the
+    moment it is paid. A buyer who detects seller-side urgency updates two beliefs at once — that
+    waiting improves the price, and that our interest is in our calendar rather than in their outcome
+    — and both survive the deal. It is also systematically produced by well-intentioned pressure at
+    period end, which is exactly when the largest number of deals are being worked and the least
+    judgement is available.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'A GENUINE, DISCLOSED COMMERCIAL DEADLINE. A price change or a promotion with a real expiry that
+    applies to everyone is a fact about the offer, not manufactured urgency — provided it is true and
+    is honoured. A deadline that slips once teaches the buyer that none of them are real.'
+  - 'A DELIVERY OR CAPACITY CONSTRAINT. Implementation slots, onboarding capacity or a
+    resource-limited start window are our constraints and are legitimately ours to state, because they
+    change what the buyer receives rather than what they pay.'
+  - 'THE BUYER ASKED FOR A DEADLINE. Some buyers request an external forcing date to drive their own
+    internal process, and supplying one is a service rather than a tactic.'
+  - 'A CONTRACTUAL EXPIRY THAT IS ACTUALLY THEIRS. An incumbent renewal date or a notice period is a
+    buyer-owned date even though we are the party pointing at it, and treating it as seller urgency
+    withholds the most useful fact in the deal.'
+  - 'INTERNAL FORECASTING LANGUAGE. Our period end is a legitimate consideration in how a deal is
+    forecast and prioritised internally; the rule governs what reaches the BUYER, not what the
+    organisation may think about its own quarter.'
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.timeline
+- sales.obj.core.next_action
+- sales.obj.core.business_need
+
+outcomes:
+- Generated closing advice never cites our own period end to the buyer.
+- Deals with no buyer-owned date surface that gap as the work.
+
+failure_modes:
+- 'READ AS "DO NOT CLOSE". The rule redirects the reason, not the act; asking cleanly for the business
+  is unaffected.'
+- 'SATISFIED BY A DATE THE SELLER SUGGESTED. A date the buyer agreed to under prompting is ours
+  wearing their name, and it produces the same slip with more paperwork.'
+- 'THE DEADLINE EXCEPTION ABUSED. A promotional expiry that is extended once has taught the buyer that
+  every future deadline is negotiable, which costs more than the deal it saved.'
+
+limits:
+- '`commitment.due_at` is the closest available proxy for a buyer-owned date and is not specific to a
+  compelling event — a promised document with a date satisfies the absence test — so this is a prompt
+  rather than a precise gate.'
+- Cannot distinguish a genuine buyer event from one the seller talked them into naming.
+- '`verbal_yes` has zero rows on the design partner''s org, so the stage this rule most wants to fire
+  in is not detectable there; `proposal_sent` is the nearest marker.'
+
+variants:
+- applies_to: enterprise
+  change: The buyer-owned date is normally a board meeting, budget expiry or programme milestone; ask
+    for the artefact that carries it rather than for the date itself.
+  why: A date with a document behind it survives an internal challenge; a stated one often does not.
+- applies_to: smb
+  change: The compelling event is frequently operational — a hire, a launch, a renewal — and is
+    discoverable in one question.
+  why: The buyer is the operator and the pain is immediate.
+- applies_to: inside_sales
+  change: Enforce in the generated copy rather than by coaching; at volume, period-end language
+    reappears in exactly the week the rule matters most.
+  why: The failure is systemic and seasonal.
+
+metrics:
+- name: buyer_owned_event_share
+  unit: percent
+  description: Share of late-stage deals with a buyer-owned date. What this rule exists to raise.
+  direction: higher_is_better
+- name: period_end_close_concentration
+  unit: percent
+  description: Share of closes landing in the final days of our period. Extreme concentration is the
+    signature of seller-driven urgency, visible without reading a single message.
+  direction: lower_is_better
+
+references:
+- title: The Challenger Sale
+  kind: methodology
+  author: Dixon and Adamson
+  note: Constructive tension sourced from the buyer's own situation rather than from the seller's
+    calendar.
+- title: MEDDICC
+  kind: methodology
+  note: The compelling-event dimension, which exists precisely because deals without one slip
+    indefinitely regardless of enthusiasm.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new and blocking despite the proxy condition, because the failure it prevents
+    is one of the few in this corpus that is worse than inaction — the buyer learns that waiting pays,
+    and that belief outlives the deal. The second metric is deliberately one that needs no message
+    analysis: extreme period-end concentration is the signature of this failure at organisation scale.'

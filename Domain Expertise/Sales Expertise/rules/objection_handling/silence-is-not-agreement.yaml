@@ -1,0 +1,128 @@
+identity:
+  id: sales.rule.objection_handling.silence_is_not_agreement
+  name: Silence is not agreement
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.objection_handling
+  subdomain: proposal_and_commercials
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'An objection nobody confirmed as settled is still open, and a participant who said
+    nothing has not agreed. Both are recorded as consent by default, and both resurface at the point
+    where the deal has least room to absorb them.'
+  answers:
+  - May this objection be treated as resolved?
+  - May a silent participant be counted as supportive?
+  not:
+  - A rule about how to answer an objection.
+  - A claim that quiet people disagree. It is a claim that we do not know.
+
+rule:
+  statement: 'A raised objection MUST NOT be recorded as resolved without explicit confirmation from
+    the party who raised it, and a meeting participant''s silence MUST NOT be recorded as support.
+    Both default to unresolved and unknown respectively, and both must be visible in any readiness or
+    coverage summary derived from them.'
+  spans:
+  - sales.obj.core.objection
+  - sales.obj.core.stakeholder
+  - sales.obj.core.deal
+  when:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: objection}
+  - {no_obs: positive_reply}
+  then: 'Hold the objection open, and surface the confirmation question as the next action rather than
+    reporting the concern as addressed.'
+  severity: warning
+  why: 'Both defaults fail in the same direction and for the same reason: the absence of a further
+    complaint is easier to observe than the presence of agreement, so a record that does not
+    distinguish them fills with silent consent. In a group setting the effect is stronger, because
+    saying nothing is the socially standard way of deferring disagreement to a private conversation
+    the vendor will not be in — which means the quietest room produces the most confident notes and
+    the least reliable ones.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'AN OBJECTION OVERTAKEN BY EVENTS. Where the concern was about a capability we have since shipped,
+    or a term since changed, the objection is resolved by the change rather than by a conversation.
+    Recording what resolved it is still required.'
+  - 'A BUYER WHO EXPLICITLY DECLINES TO RE-DISCUSS. "We are past that" is confirmation, even though it
+    is not agreement with our answer, and treating it as unresolved is not listening.'
+  - 'A PARTICIPANT WITH NO ROLE IN THE DECISION. Silence from someone attending for information
+    carries no meaning either way, and recording them as unknown inflates the risk count with people
+    whose view does not matter.'
+  - 'CULTURES WHERE PUBLIC DISAGREEMENT IS NOT DONE. In some contexts nobody objects in a group at any
+    time, so the rule''s signal is uniformly absent and the correct instrument is a private
+    conversation rather than a flag on every attendee.'
+  - 'A WRITTEN ASYNCHRONOUS PROCESS. Where review happens by document comment rather than in meetings,
+    absence of a comment on a section genuinely is the process''s form of assent — provided the
+    process says so.'
+
+objects_used:
+- sales.obj.core.objection
+- sales.obj.core.stakeholder
+- sales.obj.core.deal
+- sales.obj.core.buying_committee
+
+outcomes:
+- Objections leave the open set only on confirmation.
+- Silent participants are recorded as unknown rather than as supportive.
+
+failure_modes:
+- 'EVERY ATTENDEE FLAGGED UNKNOWN. Inflates the risk count with people who had no role, and the flag
+  stops being read. The third exception exists for this.'
+- 'CONFIRMATION SOUGHT MECHANICALLY. "Does that settle it?" after every sentence is a technique the
+  buyer will recognise; the rule wants one confirmation per concern, not per exchange.'
+- 'THE RULE SATISFIED BY THE SELLER''S OWN NOTE. A seller recording "confirmed" is not the party whose
+  confirmation was required.'
+
+limits:
+- '`positive_reply` is a poor proxy for confirmation of a SPECIFIC objection — it marks that a
+  positive response occurred somewhere on the thread, not that the concern was settled. This rule can
+  therefore prompt and cannot verify, which is why it is a warning.'
+- Attendance and silence are not in the record at all; the meeting-participant half of the rule is
+  human discipline with no signal behind it.
+
+variants:
+- applies_to: enterprise
+  change: Apply the silence half only to seats on the committee map, not to every attendee.
+  why: A large meeting has many people present and few whose view decides anything.
+- applies_to: smb
+  change: The objection half applies and the silence half rarely does; there is usually one person and
+    no group dynamic to defer into.
+  why: No committee, no deferred disagreement.
+- applies_to: channel
+  change: Confirmation relayed by a partner is weaker evidence than direct confirmation, and should be
+    recorded as partner-asserted rather than as confirmed.
+  why: The intermediary has an incentive to report progress.
+
+metrics:
+- name: confirmed_closure_rate
+  unit: percent
+  description: Share of objections explicitly confirmed by the party who raised them.
+  direction: higher_is_better
+- name: objection_recurrence_rate
+  unit: percent
+  description: Share that reappeared after being marked resolved. The cost of the default this rule
+    removes.
+  direction: lower_is_better
+
+references:
+- title: Practitioner deal-review observation
+  kind: practitioner
+  note: Objections recorded as resolved and later recurring are among the most common findings in
+    loss reviews, and almost always trace to an unconfirmed close rather than to a wrong answer.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. `limits` is the honest part: `positive_reply` marks a positive response
+    somewhere on the thread and not confirmation of a specific concern, and meeting silence is not in
+    the record at all — so half of this rule is a prompt and half is a discipline the engine cannot
+    see.'

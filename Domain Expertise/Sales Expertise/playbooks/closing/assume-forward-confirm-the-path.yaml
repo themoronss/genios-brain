@@ -6,25 +6,189 @@ identity:
   scope: capability
   owner_capability: sales.closing.closing
   subdomain: closing
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: Closing is not a moment of pressure; it is the natural end of a well-run process. From proposal
-    onward, speak in 'when' terms, and replace 'the ask' with a sequence of small confirmations that make
-    signing the default.
+  statement: 'Closing is not a moment of pressure; it is the natural end of a well-run process. From
+    proposal onward, speak in when-terms, and replace the ask with a sequence of small confirmed
+    steps.'
+  answers:
+  - How is a deal closed without applying pressure?
+  - What replaces the closing moment in a well-run process?
+  not:
+  - A rescue for an unqualified deal. Nothing here supplies a missing approver or budget.
+  - Contract or procurement mechanics, which have their own capabilities.
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: proposal_sent}
+  signals:
+  - verbal_yes
+  - next_step_agreed
+  do_not_use_when:
+  - 'Qualification is incomplete. Closing technique on a deal with no verified approver produces the
+    appearance of urgency and no movement, because willingness was never the obstacle.'
+  - 'The buyer''s decision calendar is fixed and known. The sequence is then a plan to it, not a
+    compression of it.'
+  - 'The relationship is under strain from a prior escalation; assume-forward language reads as
+    presumption at exactly the wrong moment.'
+
 steps:
 - order: 1
   name: Trial-close early and often
-  description: '''If the pilot shows X, what happens next on your side?'' Objections surface while they
-    are cheap; silence here is a warning worth having early.'
+  description: '"If the pilot shows X, what happens next on your side?" Objections surface while they
+    are cheap, and the answer maps the buyer''s real process better than any direct question about it.
+    The cost is a question they were going to have to answer anyway.'
   actor: human
+  objects_read:
+  - sales.obj.core.deal
+  produces: Early visibility of the buyer's remaining internal steps.
+  done_when: The buyer has described what happens after a yes, in their own terms.
+
 - order: 2
-  name: Use their compelling event, not your quarter
-  description: Urgency borrowed from the buyer's own dated need moves deals; urgency from a seller's month-end
-    discount devalues the product and trains delay.
+  name: Build the sequence with them, not for them
+  description: 'List the remaining steps, each with an owner and a date, and get the buyer to agree
+    them. A plan they never confirmed is our wish list; the value is entirely in their commitment,
+    which is also what makes their internal delays visible before they become our slipped date.'
   actor: human
+  objects_read:
+  - sales.obj.core.next_action
+  - sales.obj.core.timeline
+  produces: A mutual plan the buyer has explicitly agreed.
+  done_when: Every remaining step has a named owner on the buyer's side.
+
 - order: 3
-  name: Ask cleanly, then stop
-  description: '''Anything preventing us from starting on the 1st?'' — then silence. The gap after a clean
-    close question is where the truth arrives; filling it costs the answer.'
+  name: Use their compelling event, not our quarter
+  description: 'Urgency borrowed from the buyer''s own dated need moves deals. Urgency from our period
+    end tells them a discount is coming if they wait, which is simultaneously a delay and a discount,
+    caused by asking.'
   actor: human
+  objects_read:
+  - sales.obj.core.business_need
+  produces: A date the buyer owns and cares about.
+  done_when: No urgency in the conversation traces to our calendar.
+
+- order: 4
+  name: Work the one blocker, named
+  description: 'Late-stage deals are blocked by one thing at a time. "Any update?" asks the buyer to
+    do our diagnosis; naming the step we believe is outstanding and asking whether that is right gets
+    a correction or a confirmation, and both are useful.'
+  actor: human
+  objects_read:
+  - sales.obj.core.risk
+  produces: A single named obstacle with an owner.
+  done_when: The deal's status is a specific step rather than a stage name.
+
+- order: 5
+  name: Ask cleanly, then stop
+  description: '"Anything preventing us from starting on the first?" — then silence. The gap after a
+    clean close is where the buyer decides; filling it with reassurance answers an objection they had
+    not raised and reopens what was closing.'
+  actor: human
+  produces: A clear answer, including a clear no.
+  done_when: The question was asked once and not qualified afterwards.
+
+- order: 6
+  name: Convert the verbal yes to paper the same day
+  description: 'Agreement in principle is the start of the most fragile window in the deal, not the
+    end of the process. Every day between yes and document is exposure to a reorganisation, a freeze
+    or a competitor — none of which are about us.'
+  actor: human
+  objects_read:
+  - sales.obj.core.contract
+  produces: Paper out on the day of agreement.
+  done_when: No verbal agreement is more than a day old without a document against it.
+
+- order: 7
+  name: Say it is a rescue when it is
+  description: 'Where qualification was not done, this playbook cannot supply it. Recording that the
+    deal needs re-qualification rather than closing is more useful than a technique, and it is the
+    output a review can act on.'
+  actor: human
+  produces: An explicit rescue verdict where applicable.
+  done_when: No unqualified deal is being worked as a closing deal.
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.decision_maker
+- sales.obj.core.contract
+- sales.obj.core.next_action
+- sales.obj.core.timeline
+- sales.obj.core.business_need
+- sales.obj.core.risk
+
+outcomes:
+- The remaining sequence is dated, owned and buyer-agreed.
+- Urgency comes from the buyer's calendar rather than ours.
+- Verbal agreement converts to paper the same day.
+
+failure_modes:
+- 'PRESSURE INSTEAD OF PROCESS. Applied to an unqualified deal it produces motion without movement.'
+- 'OUR QUARTER IN THE CONVERSATION. Reads as a discount forthcoming, and delays the deal it was meant
+  to pull in.'
+- 'TALKING AFTER THE ASK. Reopens the decision the silence was closing.'
+- 'A MUTUAL PLAN NOBODY AGREED. A wish list with dates, which then fails to reveal the buyer''s
+  delays because they never owned any of the steps.'
+- 'CELEBRATING THE VERBAL YES. Forecast and attention both move at the moment the deal becomes most
+  fragile.'
+
+limits:
+- Cannot supply qualification; step 7 exists to say so rather than to fix it.
+- Assumes the buyer will describe their process, which some will not.
+- The verbal-agreement moment is not currently detectable in the record — `verbal_yes` has no rows on
+  the design partner's org — so step 6 is a human discipline with no prompt behind it.
+
+variants:
+- applies_to: enterprise
+  change: Step 2 is the whole playbook — a mutual action plan with named owners across functions —
+    and steps 5 and 6 are comparatively minor.
+  why: The remaining work is coordination, not persuasion.
+- applies_to: smb
+  change: Steps 5 and 6 collapse into one conversation; the paper should be ready before the call.
+  why: There is no queue and no committee, so all the latency is ours.
+- applies_to: inside_sales
+  change: Standardise steps 5 and 6 and drop the rest; a mutual plan is overhead at this cycle length.
+  why: The deal closes inside the window a plan would take to agree.
+- applies_to: regulated
+  change: Step 3's compelling event is usually a statutory or funding date; plan to it rather than
+    trying to create urgency around it.
+  why: The date exists already and is not ours to move.
+
+metrics:
+- name: verbal_to_signature_days
+  unit: days
+  description: Agreement to execution.
+  direction: lower_is_better
+- name: mutual_plan_agreement_rate
+  unit: percent
+  description: Share of late-stage deals with a buyer-agreed sequence.
+  direction: higher_is_better
+- name: named_blocker_share
+  unit: percent
+  description: Share of late-stage deals whose obstacle is a named step with an owner.
+  direction: higher_is_better
+
+references:
+- title: The Challenger Sale
+  kind: methodology
+  author: Dixon and Adamson
+  note: On constructive tension and on closing as the consequence of the conversation rather than an
+    event appended to it.
+- title: MEDDICC
+  kind: methodology
+  note: Decision process and paper process — the two dimensions steps 2 and 6 operationalise.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 2, 4, 6 and 7 are new. Step 2 is the substantive
+    addition — the original had no mutual plan at all, and without one the buyer''s internal delays
+    are invisible until they have already become our slipped date.'

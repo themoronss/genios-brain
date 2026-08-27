@@ -3,25 +3,113 @@ identity:
   name: Contract Management
   domain: sales
   subdomain: closing
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
-description: 'Terms, renewal dates, obligations and the commitments made to win. A contract''s non-standard
-  clauses are a liability that outlives the rep who agreed them.
+description: "Terms, renewal dates, obligations and the commitments made to win. A contract's
+  non-standard clauses are a liability that outlives the rep who agreed them.
 
-  '
+  "
 question: What did we actually agree, and what does it commit us to?
+
+outcomes:
+- 'Every non-standard clause recorded as an obligation with an owner, not buried in an executed
+  document nobody reopens. A deviation agreed to win a deal becomes somebody else''s constraint, and
+  the only moment it is cheap to write down is the moment it is agreed.'
+- 'Renewal and notice dates extracted and dated the day the contract executes. An auto-renewal or a
+  notice window discovered late is a decision that was made by a calendar rather than by anyone, and
+  it is the commonest way a contract surprises its own owner.'
+- 'Paper out the same day as agreement. The window between verbal yes and signature is where deals
+  die of events unrelated to their merit, and the only lever the seller fully controls is how quickly
+  a document exists.'
+- 'The common redlines pre-answered. Liability caps, data terms, notice periods and payment schedules
+  are the same ten items in most negotiations, and knowing our fallback before they arrive turns a
+  week of internal consultation into a same-day response.'
+- 'A location, not a status. "With legal" describes a queue; "with a named person, expected on a
+  date" is something a seller can act on, and asking for it is the difference between chasing and
+  knowing.'
+- 'An explicit record of what was conceded and why. The negative outcome: terms accepted to save time
+  are rediscovered at renewal by someone who would not have chosen them and cannot tell whether they
+  were a mistake or a trade.'
+
+failure_modes:
+- 'THE VERBAL YES CELEBRATED. Forecast and attention both move at the moment the deal becomes most
+  fragile, and the paper follows days later because nobody felt urgency about a deal already counted.'
+- 'NON-STANDARD TERMS UNRECORDED. They exist only in the executed document, which nobody reads again
+  until the obligation is breached or the renewal arrives.'
+- 'REDLINES ANSWERED FROM SCRATCH EACH TIME. The same ten items, re-consulted internally on every
+  deal, at a week each.'
+- 'RENEWAL DATES LEFT IN THE DOCUMENT. An auto-renewal that passes unnoticed is a commercial decision
+  taken by inattention, and it is equally damaging in both directions.'
+- 'TRACKING THE STAGE INSTEAD OF THE PERSON. A contract is always with somebody; a status that does
+  not name them cannot be chased and will not move on its own.'
+- 'CONCESSIONS MADE AND NOT EXPLAINED. The next negotiation starts from a position nobody chose, and
+  the person defending it does not know why it exists.'
+
+kpis:
+- name: verbal_to_paper_hours
+  unit: hours
+  description: Time from agreement in principle to a document being sent. The seller-controlled half
+    of the most fragile window in the deal.
+  direction: lower_is_better
+- name: non_standard_clause_capture_rate
+  unit: percent
+  description: Share of deviations recorded as tracked obligations rather than left in the document.
+  direction: higher_is_better
+- name: renewal_date_capture_rate
+  unit: percent
+  description: Share of executed contracts with renewal and notice dates extracted on execution day.
+  direction: higher_is_better
+- name: named_holder_share
+  unit: percent
+  description: Share of in-flight contracts whose current holder is a person with an expected date.
+  direction: higher_is_better
+- name: redline_first_pass_resolution
+  unit: percent
+  description: Share of redlines answered from a pre-agreed fallback rather than by internal
+    consultation.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.closing.closing
+  - sales.closing.legal_review
+  - sales.proposal_and_commercials.negotiation
+  downstream:
+  - sales.post_sale_and_growth.onboarding
+  - sales.post_sale_and_growth.renewal
+  - sales.post_sale_and_growth.customer_success
+  parallel:
+  - sales.closing.procurement
+  - sales.revenue_operations.sales_operations
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached through `sales.sit.enterprise_deal` (`also_serves`),
+    bound to the `deal` type.
+
+    This capability has the best structural fit with the substrate of anything in the closing
+    subdomain, and it is worth naming why: its central outputs are DATED OBLIGATIONS — a renewal
+    date, a notice window, a non-standard clause somebody owns — and `commitment.due_at`,
+    `commitment.action` and `commitment.status` are exactly that shape. The observations it would
+    like (`contract_requested`, `legal_review`) have zero rows on the design partner''s org, so it
+    cannot currently be triggered there, but what it produces is representable in a way that most of
+    this subdomain''s output is not.
+
+    No numbers: notice periods, liability positions and renewal windows are contractual facts and
+    Layer 4 thresholds, not Layer 3 content.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: 2f336efbb7daeb36888dbe4050940dae38fe2a866dba6cb58fb311292c77a8ff
+  accepted_content_hash: 5953e4ed78eb447f580a3832d01e3224a41d7f848cf3cedf22a43141e6d30086

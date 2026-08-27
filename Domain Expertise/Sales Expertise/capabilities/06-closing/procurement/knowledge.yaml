@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.procurement.independent_steps_run_in_parallel
 decision_frameworks:
   core: []
   scoped: []

@@ -3,26 +3,112 @@ identity:
   name: Procurement
   domain: sales
   subdomain: closing
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
-description: 'Working a formal purchasing function: vendor onboarding, security review, competitive requirements
-  and payment terms. Procurement is measured on savings, which makes it structurally adversarial no matter
-  how good the relationship is.
+description: 'Working a formal purchasing function: vendor onboarding, security review, competitive
+  requirements and payment terms. Procurement is measured on savings, which makes it structurally
+  adversarial no matter how good the relationship with the business is.
 
   '
 question: What does their purchasing process require, and how long does it take?
+
+outcomes:
+- 'The checklist obtained before it is needed. Vendor forms, security questionnaires, insurance
+  certificates, tax documents and payment terms are all knowable at proposal time and are routinely
+  discovered in the final fortnight — every item known early is a week not lost.'
+- 'A duration, not a status. "In procurement" describes a queue; what the deal needs is the number of
+  steps remaining and the working days each normally takes, which procurement will usually state if
+  asked directly.'
+- 'Steps run in parallel wherever they do not depend on each other. Security review during legal,
+  vendor setup during signature — serial execution of independent steps is the single largest source
+  of avoidable delay in this stage, and it is almost always the default.'
+- 'Completeness and speed offered instead of value. Procurement is measured on cost and process
+  adherence; the product''s merits are not their concern and pitching to them wastes the one thing
+  they do reward, which is a vendor who never makes them chase a document.'
+- 'The last-squeeze demand recognised as a ritual rather than a crisis. A late token reduction is
+  usually a process requirement — someone must be able to report a negotiation happened — and meeting
+  it with real margin is paying cash for a formality.'
+- 'A recorded verdict that we cannot meet a requirement. The negative outcome: some procurement
+  conditions — a liability position, an insurance level, a data-residency term — are genuinely
+  outside what we will accept, and discovering that early is worth more than discovering it after
+  three weeks of process.'
+
+failure_modes:
+- 'PITCHING VALUE TO PROCUREMENT. They are not paid to care, and it reads as not understanding their
+  role — which is the one impression that makes an already adversarial function less cooperative.'
+- 'DISCOVERING THE REQUIREMENTS LATE. Every item is knowable at proposal time. The fortnight lost to
+  an insurance certificate nobody asked for is entirely self-inflicted.'
+- 'TREATING THE PROCESS AS A NEGOTIATION. Most of procurement is not negotiable and is not personal;
+  arguing with the form wastes the goodwill needed for the one term that is.'
+- 'RUNNING STEPS SERIALLY BECAUSE NOBODY ASKED. The default sequence is whatever order the requests
+  arrived in, which is rarely the fastest and never checked.'
+- 'CONCEDING REAL MARGIN TO THE LAST SQUEEZE. The demand arrives at the moment the seller most wants
+  to be finished, which is precisely why it arrives then.'
+- 'LETTING THE BUSINESS SPONSOR DISAPPEAR. Procurement has no deadline of its own; the sponsor does,
+  and a sponsor who has stopped watching is how a decided deal spends a quarter in a queue.'
+
+kpis:
+- name: requirement_discovery_lead_time
+  unit: days
+  description: Days between agreement in principle and the full purchasing checklist being known.
+    Late discovery is the dominant cause of slippage in this stage.
+  direction: lower_is_better
+- name: parallel_step_share
+  unit: percent
+  description: Share of independent procurement steps run concurrently rather than in sequence.
+  direction: higher_is_better
+- name: document_turnaround_time
+  unit: hours
+  description: Time to return a requested document. The only currency procurement actually rewards.
+  direction: lower_is_better
+- name: procurement_cycle_days
+  unit: days
+  description: Entry to purchase order. The number the whole capability exists to compress.
+  direction: lower_is_better
+- name: last_squeeze_concession_depth
+  unit: percent
+  description: Reduction conceded to the closing demand. Should be small and clearly labelled, or the
+    ritual becomes an expectation.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.closing.closing
+  - sales.proposal_and_commercials.negotiation
+  downstream:
+  - sales.closing.contract_management
+  - sales.post_sale_and_growth.onboarding
+  parallel:
+  - sales.closing.legal_review
+  - sales.qualification.buying_committee_analysis
+
+applies_to:
+  models: [b2b, enterprise, mid_market, b2b2c, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached through `sales.sit.enterprise_deal` (`also_serves`),
+    bound to the `deal` type.
+
+    Live evidence is thin and stated rather than assumed: `contract_requested`, `discount_pressure`
+    and `legal_review` all have zero observation rows on the design partner''s org, and
+    `security_review_started` has one. What IS available is `commitment.due_at` and `commitment.action`
+    for the individual document promises this stage generates, which is why the outcomes are written
+    around obtaining and returning a checklist — a commitment-shaped activity the record can hold —
+    rather than around detecting a procurement stage that Layer 2 cannot currently see.
+
+    No numbers: how long a procurement cycle should take, and how small a closing concession may be,
+    are Layer 4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: 96600bbc64cabfbad605413602a11b094d22e5b3e0e08c624bb39fd03cf4f343
+  accepted_content_hash: c2b5ffd922e2570f2917f2b1c54b15605cfe5b8fa6832e32f5c230592397c246

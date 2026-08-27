@@ -6,11 +6,146 @@ identity:
   scope: capability
   owner_capability: sales.proposal_and_commercials.negotiation
   subdomain: proposal_and_commercials
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
   statement: A late procurement discount demand is a ritual, not a deal crisis. It means the decision
     is made — nobody negotiates price on a product they rejected. Hold, trade small, do not reopen the
     whole commercial.
   answers:
-  - Is the last-minute procurement squeeze a threat to the deal?
+  - What does a last-minute discount demand actually mean?
+  - How large a response does it deserve?
+  not:
+  - A claim that procurement never walks. Occasionally the demand is real and the budget is fixed.
+  - Advice to refuse. Refusing a ritual outright can also cost the deal, for reasons of face.
+
+heuristic:
+  statement: 'Read the timing rather than the size of the ask. A discount demand arriving after the
+    commercial decision, from a function that was not part of it, is usually a requirement to
+    demonstrate that a negotiation occurred — so the response that fits is a small, clearly-labelled,
+    reciprocated concession, and the response that does not is reopening the commercial.'
+  why: 'Purchasing functions are measured on savings achieved, which means someone has to be able to
+    report a number. That reporting requirement is satisfied by almost any concession; it is not
+    satisfied by an explanation of why the price is fair. Reopening the whole commercial in response
+    converts a ceremony into a genuine renegotiation, and does so at the worst possible moment —
+    after the seller has spent months and is least able to walk, which the buyer''s side knows as well
+    as we do.'
+  confidence_bp: 7700
+  applies_when: 'A purchasing function raises a price demand after the business has decided, and the
+    demand arrives late in an otherwise settled process.'
+  breaks_down_when: 'THE BUDGET IS GENUINELY FIXED. Sometimes the number is not a ritual and the money
+    does not exist. The tell is usually that the demand arrives with a specific figure and a stated
+    source rather than as an open request for a better price.
+
+    PROCUREMENT WAS PART OF THE DECISION. Where purchasing selected the vendor — commodity categories,
+    public sector — the demand is a real negotiating position from a real decision-maker, and treating
+    it as ceremony is how a deal is lost to the party who chose us.
+
+    A COMPETITIVE PROCESS STILL RUNNING. If another vendor is live, the late demand may be a genuine
+    comparison rather than a formality, and holding firm on the assumption of ritual is a bet placed
+    without checking whether it is still a race.
+
+    THE DEMAND IS NOT ABOUT PRICE. Late asks for liability changes, data terms or payment schedules
+    are frequently substantive requirements from risk or finance wearing a procurement badge, and
+    trading a small discount against them answers a question nobody asked.
+
+    A PATTERN OF ESCALATING ASKS. If each concession produces another demand, the ritual reading was
+    wrong; this is a negotiation and it is being conducted by someone with more patience than us.'
+  reads:
+  - sales.obj.core.pricing
+  - sales.obj.core.contract
+  - sales.obj.core.budget
+  - sales.obj.core.competitor
+  contradicts:
+  - sales.heu.pricing.discounting_is_a_signal__not_a_lever
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: discount_pressure}
+  signals:
+  - discount_pressure
+  - contract_requested
+  - objection_price
+  do_not_use_when:
+  - Procurement selected the vendor; the demand is a real position from a real decider.
+  - A competing vendor is still live and the comparison may be genuine.
+  - The concession produced another demand — that is a negotiation, not a ceremony.
+
+objects_used:
+- sales.obj.core.pricing
+- sales.obj.core.contract
+- sales.obj.core.budget
+- sales.obj.core.competitor
+
+outcomes:
+- A late demand is met with a small, labelled, reciprocated concession.
+- The commercial is not reopened in response to a formality.
+
+failure_modes:
+- 'USED TO REFUSE OUTRIGHT. A ritual that receives nothing leaves someone unable to report anything,
+  and face matters more here than the money does.'
+- 'ASSUMED ON EVERY LATE ASK. The second and third breakdown regimes are both cases where the demand
+  is real, and both are expensive to misread.'
+- 'THE CONCESSION UNLABELLED. A small reduction given without naming it as the closing concession
+  invites a second one, because nothing signalled that it was the last.'
+
+limits:
+- Cannot distinguish ritual from real position without knowing procurement's role in the decision,
+  which the record does not hold.
+- '`discount_pressure` and `objection_price` both have zero rows on the design partner''s org, so this
+  heuristic has no live trigger there at all.'
+- Says nothing about the size of the appropriate concession, which is Layer 4's arithmetic.
+
+variants:
+- applies_to: enterprise
+  change: Expect it, plan the closing concession in advance, and hold it back specifically for this
+    moment rather than spending it earlier.
+  why: A concession reserved for the ritual satisfies it at no incremental cost.
+- applies_to: regulated
+  change: Public-sector purchasing frequently cannot negotiate at all outside a published process;
+    the demand, where it exists, is procedural in a different and stricter sense.
+  why: The counterparty has no discretion to exercise.
+- applies_to: smb
+  change: Rarely applies; there is no purchasing function to perform the ritual.
+  why: The buyer and the negotiator are the same person, and their ask is real.
+- applies_to: channel
+  change: The squeeze may come from the partner protecting their margin rather than from the end
+    customer, and conceding to it does not improve the customer's price at all.
+  why: Two commercial relationships, and the concession lands in only one of them.
+
+metrics:
+- name: last_squeeze_concession_depth
+  unit: percent
+  description: Reduction conceded to the closing demand.
+  direction: lower_is_better
+- name: post_concession_further_ask_rate
+  unit: percent
+  description: Share of closing concessions followed by another demand. The direct test of whether the
+    ritual reading was right.
+  direction: lower_is_better
+
+references:
+- title: Never Split the Difference
+  kind: book
+  author: Chris Voss
+  note: On late-stage asks, deadline pressure and the asymmetry of who is most invested at the end.
+- title: Practitioner procurement operations
+  kind: practitioner
+  note: Savings-achieved reporting is a standard purchasing scorecard line, which is the mechanism
+    that generates the ritual.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The fourth breakdown regime is the one most
+    often missed: a late ask about liability or payment terms is a substantive requirement wearing a
+    procurement badge, and answering it with a small discount responds to a question nobody asked.'

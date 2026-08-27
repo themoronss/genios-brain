@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.proposal_creation.scope_must_be_specific_enough_to_refuse
 decision_frameworks:
   core: []
   scoped: []

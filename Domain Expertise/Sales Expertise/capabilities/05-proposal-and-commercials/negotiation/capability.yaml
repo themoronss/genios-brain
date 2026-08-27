@@ -3,25 +3,115 @@ identity:
   name: Negotiation
   domain: sales
   subdomain: proposal_and_commercials
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
-description: 'Trading across the whole set of terms rather than conceding on price alone. Every unreciprocated
-  discount trains the buyer for the renewal, which is a cost that lands after the quarter closes.
+description: 'Trading across the whole set of terms rather than conceding on price alone. Every
+  unreciprocated discount trains the buyer for the renewal, which is a cost that lands after the
+  quarter closes.
 
   '
 question: On what terms will both sides say yes?
+
+outcomes:
+- 'The buyer''s full list obtained before anything is answered. Solving items one at a time lets the
+  list regrow — each concession is banked and the next ask arrives — so the single most valuable
+  question in the capability is what else needs to work, asked before the first trade.'
+- 'Floors decided cold, before the conversation. A limit invented under pressure is not a limit, and
+  the person deciding it is the least able at that moment to weigh what it costs.'
+- 'Movement across the whole set of terms rather than on price alone. Term length, payment schedule,
+  scope, start date, reference rights and support level are all currency, and a negotiation conducted
+  only in price has thrown away every instrument except the most expensive one.'
+- 'Every give attached to a get, stated as an exchange. It preserves the price''s credibility, teaches
+  that value flows both ways, and is the only mechanism that stops the renewal starting from this
+  deal''s floor.'
+- 'A live walk-away. The negative outcome, and the one that makes the rest work: a deal that cannot be
+  left cannot be negotiated, and an organisation whose floor has never held does not have one — it
+  has an opening position that every buyer eventually discovers.'
+- 'The late procurement squeeze recognised and priced as a ritual. It arrives at the moment the seller
+  most wants to be finished, which is precisely why it arrives then.'
+
+failure_modes:
+- 'NEGOTIATING IN PRICE ONLY. The most expensive currency is used first because it is the easiest to
+  quantify, and every other lever is left unspent.'
+- 'ANSWERING ASKS IN ARRIVAL ORDER. The list regrows, each concession is pocketed, and the seller
+  experiences a buyer who keeps asking rather than their own failure to bound the set.'
+- 'FLOORS SET DURING THE CALL. Decided by the person under the most pressure at the moment they have
+  the least perspective, and they move again next time for the same reason.'
+- 'CONCEDING TO END THE DISCOMFORT. The commonest real cause of a bad trade, and it is invisible in
+  any post-hoc rationalisation of it.'
+- 'TREATING THE LATE SQUEEZE AS A CRISIS. Reopening the whole commercial in response to a ritual
+  demand converts a formality into a genuine renegotiation, on worse terms.'
+- 'WINNING ON TERMS THE DELIVERY TEAM CANNOT MEET. A negotiated scope or date that fails in
+  implementation is a loss booked as a win, discovered by somebody else.'
+
+kpis:
+- name: full_list_obtained_rate
+  unit: percent
+  description: Share of negotiations where the buyer's complete set of asks was obtained before the
+    first concession.
+  direction: higher_is_better
+- name: non_price_trade_share
+  unit: percent
+  description: Share of concessions settled with a non-price lever. Low means the cheapest instruments
+    were never used.
+  direction: higher_is_better
+- name: reciprocation_rate
+  unit: percent
+  description: Share of gives carrying a named get.
+  direction: higher_is_better
+- name: floor_breach_rate
+  unit: percent
+  description: Share of deals closed below the pre-agreed floor. Anything above zero means the floor
+    is advisory.
+  direction: lower_is_better
+- name: renewal_uplift_after_discount
+  unit: percent
+  description: Price movement at renewal for accounts that were discounted at first purchase. The cost
+    this capability's failures actually produce, and it lands a year late.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.proposal_and_commercials.proposal_creation
+  - sales.proposal_and_commercials.pricing
+  downstream:
+  - sales.closing.closing
+  - sales.closing.contract_management
+  - sales.closing.legal_review
+  parallel:
+  - sales.closing.procurement
+  - sales.proposal_and_commercials.objection_handling
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached through `sales.sit.enterprise_deal` (`also_serves`),
+    bound to the `deal` type.
+
+    Live evidence is effectively absent and that bounds what this can do: `discount_pressure` and
+    `objection_price` have zero rows on the design partner''s org and `pricing_discussed` has one, so
+    nothing here has a trigger there. `deal.value` is present on a single node and is never derived,
+    which is why none of the outcomes rest on knowing deal size — a negotiation capability written
+    around a value the engine cannot see would be unusable for most tenants rather than merely
+    untriggered.
+
+    The last KPI is deliberately a lagging one. The real cost of an unreciprocated discount lands at
+    renewal, long after the quarter it saved, and a capability measured only on close rate cannot see
+    the harm it does.
+
+    No numbers: floors, bands and approval thresholds are Layer 4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: 429566ba5c4f8e1d5122c8265634c0d86d7d6a3fe8f956d5f3a7094fa6a6cc6e
+  accepted_content_hash: 52693528a5900e61603fdddb7dd87ab0bfd46efb04d35f610061becc9c726a71

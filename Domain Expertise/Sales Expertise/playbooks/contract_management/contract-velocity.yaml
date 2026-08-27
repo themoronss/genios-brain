@@ -6,25 +6,186 @@ identity:
   scope: capability
   owner_capability: sales.closing.contract_management
   subdomain: closing
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: The contract phase is where won deals go to stall. The countermeasures are preparation (clean
-    template, pre-answered common redlines) and cadence — the seller drives the paper daily, because nobody
-    on the buyer's side owns 'fast'.
+  statement: 'The contract phase is where won deals go to stall. The countermeasures are preparation —
+    a clean template and pre-answered common redlines — and cadence, with the seller driving rather
+    than waiting.'
+  answers:
+  - How is the gap between agreement and signature made short?
+  - What has to exist before a contract is ever needed?
+  not:
+  - Legal review, which is the counterparty's process and has its own capability.
+  - Negotiation. The terms arrive here already agreed.
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: proposal_sent}
+  signals:
+  - verbal_yes
+  - contract_requested
+  do_not_use_when:
+  - 'The buyer mandates their own paper. The velocity levers are then almost entirely theirs, and
+    driving cadence against their process reads as pressure.'
+  - 'Signature is already scheduled with a named signatory. There is a date; the work is to keep it,
+    not to accelerate it.'
+  - 'Terms are still being negotiated. Sending paper into an unsettled commercial produces a document
+    that is read as an opening position.'
+
 steps:
 - order: 1
-  name: Send paper the same day as verbal yes
-  description: Every day between yes and document is decay. Template ready, terms pre-filled, sent within
-    hours.
+  name: Have the template and the fallbacks ready before any deal needs them
+  description: 'A clean current template, and a decided position on the usual ten redlines — liability
+    caps, data terms, notice periods, payment schedules. This is organisational preparation, not deal
+    work, and it is what turns a week of internal consultation into a same-day answer.'
   actor: human
+  objects_read:
+  - sales.obj.core.contract
+  produces: A maintained template and a fallback position per common clause.
+  done_when: No common redline requires an internal consultation to answer.
+
 - order: 2
-  name: Pre-concede the standard redlines
-  description: Liability caps, data terms, notice periods — know your fallback on the usual ten before
-    they are raised, so each redline costs an email, not a week.
+  name: Send paper the same day as the verbal yes
+  description: 'Every day between agreement and document is exposure to events that have nothing to do
+    with the deal. This is the half of the window the seller fully controls, and it is routinely the
+    larger half.'
   actor: human
+  produces: A document out within the day.
+  done_when: No verbal agreement is more than a day old without paper against it.
+
 - order: 3
-  name: Track WHERE it sits, daily
-  description: '''With legal'' is not a status; ''with Priya, expected Thursday'' is. The named owner
-    and date make the follow-up a courtesy instead of a chase.'
+  name: Answer redlines from the fallback list, in one pass
+  description: 'Most redlines have a pre-decided answer. Returning them together, same day, buys the
+    goodwill that the one genuine disagreement will need — and avoids the clause-by-clause exchange
+    where the weeks actually go.'
   actor: human
+  objects_read:
+  - sales.obj.core.risk
+  produces: A single consolidated response.
+  done_when: No item is being negotiated in its own separate thread.
+
+- order: 4
+  name: Track WHERE it sits, not what stage it is in
+  description: '"With legal" is not a status; "with a named person, expected Thursday" is. A contract
+    is always with somebody, and a status that does not name them cannot be chased and will not move
+    on its own.'
+  actor: human
+  objects_read:
+  - sales.obj.core.timeline
+  produces: A named current holder and an expected date.
+  done_when: The seller can say who has it and when it is due back.
+
+- order: 5
+  name: Extract the dates on the day it executes
+  description: 'Renewal date, notice window, price-review date, any milestone we committed to — pulled
+    out and dated the day the contract is signed. A notice period discovered late is a commercial
+    decision taken by a calendar rather than by anyone.'
+  actor: system
+  objects_read:
+  - sales.obj.core.contract
+  - sales.obj.core.timeline
+  produces: Dated obligations extracted from the executed document.
+  done_when: No obligation exists only inside the contract file.
+
+- order: 6
+  name: Record every non-standard clause as an owned obligation
+  description: 'A deviation agreed to win a deal becomes someone else''s constraint. The only moment
+    it is cheap to write down is the moment it is agreed, and the person who will have to honour it is
+    never in that conversation.'
+  actor: human
+  objects_read:
+  - sales.obj.core.account
+  produces: Each deviation recorded with an owner and a reason.
+  done_when: Non-standard terms are visible outside the executed document.
+
+- order: 7
+  name: Hand over what was promised, not just what was signed
+  description: 'The commitments made to win — a date, an integration, a named contact, a review
+    cadence — frequently sit in email rather than in the contract. Delivery inherits both and can only
+    see one of them.'
+  actor: human
+  produces: A handover carrying contractual and non-contractual commitments alike.
+  done_when: The delivery team knows what was promised as well as what was agreed.
+
+objects_used:
+- sales.obj.core.contract
+- sales.obj.core.account
+- sales.obj.core.risk
+- sales.obj.core.timeline
+- sales.obj.core.deal
+
+outcomes:
+- Paper exists within a day of agreement and redlines are answered in one pass.
+- Every in-flight contract has a named holder and an expected date.
+- Dates and deviations leave the document and become tracked obligations.
+
+failure_modes:
+- 'PREPARATION TREATED AS DEAL WORK. The template and fallbacks get built during the first deal that
+  needs them, at the worst possible moment.'
+- 'THE VERBAL YES CELEBRATED. Attention moves away exactly when exposure peaks.'
+- 'STAGE TRACKED INSTEAD OF PERSON. Produces a queue nobody can chase.'
+- 'DATES LEFT IN THE DOCUMENT. Auto-renewals and notice windows pass unnoticed in both directions.'
+- 'PROMISES OUTSIDE THE CONTRACT NEVER HANDED OVER. Delivery meets an expectation it has no record of,
+  in front of the customer.'
+
+limits:
+- Cannot compress the buyer's own legal queue; steps 2 to 4 act on our half of the window.
+- Assumes we have a template to use, which is not true where the buyer mandates their paper.
+- '`verbal_yes` and `contract_requested` have zero rows on the design partner''s org, so none of this
+  is currently triggerable there — though what it produces, dated obligations, is representable.'
+
+variants:
+- applies_to: enterprise
+  change: Steps 1 and 4 carry the value; the buyer's queue is long and the only levers are being
+    complete on first submission and knowing exactly who holds it.
+  why: Rework and anonymity are what extend a long queue further.
+- applies_to: smb
+  change: Steps 2 and 5; there is rarely a negotiation and the risk is an unnoticed renewal.
+  why: Short cycle, standard terms, long-lived contract.
+- applies_to: regulated
+  change: Step 6 becomes mandatory and formal — deviations from standard terms are a control matter as
+    well as a commercial one.
+  why: The regime asks what was agreed and on whose authority.
+- applies_to: channel
+  change: Two contracts, ours with the partner and theirs with the customer; the commitments we made
+    must survive translation into the second.
+  why: An obligation that does not appear in the downstream paper is still ours in practice.
+
+metrics:
+- name: verbal_to_paper_hours
+  unit: hours
+  description: Agreement to document sent.
+  direction: lower_is_better
+- name: renewal_date_capture_rate
+  unit: percent
+  description: Share of executed contracts with dates extracted on execution day.
+  direction: higher_is_better
+- name: non_standard_clause_capture_rate
+  unit: percent
+  description: Share of deviations recorded as tracked obligations.
+  direction: higher_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: Paper process as a sequence with a duration and a holder rather than an opaque stage.
+- title: Practitioner contracting operations
+  kind: practitioner
+  note: Pre-agreed fallback positions on the common clauses are the single largest controllable
+    reduction in contract cycle time, and they are organisational preparation rather than deal work.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 1, 5, 6 and 7 are new. Steps 5 to 7 are the half
+    the original was missing entirely — it covered getting to signature and said nothing about what
+    the signature obliges us to, which is the part that outlives everyone involved in the deal.'

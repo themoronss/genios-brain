@@ -1,30 +1,184 @@
 identity:
   id: sales.pb.procurement.procurement_as_process_to_run
-  name: Procurement as process to run
+  name: Procurement as a process to run
   kind: playbook
   domain: sales
   scope: capability
   owner_capability: sales.closing.procurement
   subdomain: closing
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: Procurement is a checklist with its own SLA, not a person to persuade. Ask for the checklist
-    early — vendor form, security questionnaire, insurance, payment terms — and run it in parallel with
-    the sale instead of discovering it after the yes.
+  statement: 'Procurement is a checklist with its own service level, not a person to persuade. Ask for
+    the checklist early — vendor form, security questionnaire, insurance, payment terms — and return
+    every item faster than they expect.'
+  answers:
+  - How is a formal purchasing process moved through quickly?
+  - What should be prepared before procurement is ever contacted?
+  not:
+  - Negotiation. Commercial terms are traded elsewhere; this runs the process around them.
+  - Legal review, which has its own capability and its own counterparty.
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - security_review_started
+  - contract_requested
+  do_not_use_when:
+  - 'Procurement is the DECIDER rather than the processor. Running a compliance play against the
+    person choosing the vendor means never making the case to them.'
+  - 'The buyer has no purchasing function. There is no checklist and no queue.'
+  - 'Requirements are growing as they are satisfied. That is a decision made elsewhere being executed
+    through the process, and the useful move is to find out where it was made.'
+
 steps:
 - order: 1
   name: Get the requirements at proposal time
-  description: '''If we go ahead, what does onboarding a vendor involve?'' Every item known early is a
-    week not lost later.'
+  description: '"If we go ahead, what does onboarding a vendor involve?" Asked while the business is
+    enthusiastic, this costs one question and returns the full list. Every item known early is a week
+    not lost later, and the answer also reveals how formal this buyer actually is.'
   actor: human
+  objects_read:
+  - sales.obj.core.contract
+  - sales.obj.core.timeline
+  produces: The complete purchasing checklist, before it is needed.
+  done_when: No requirement can be discovered after this point that was knowable now.
+
 - order: 2
-  name: Pre-package the standard answers
-  description: Security doc, insurance certs, references, W-9/GST — one folder, ready. Same-day answers
-    halve the calendar.
+  name: Ask for the duration, not the status
+  description: '"In procurement" is a queue, not information. How many steps remain and how many
+    working days each normally takes is a question purchasing will usually answer directly, and it
+    converts an open-ended wait into a plan with a date.'
   actor: human
+  produces: A step count and an expected duration.
+  done_when: The remaining process has a stated length rather than a stage name.
+
 - order: 3
-  name: Run it parallel, never serial
-  description: Security review during legal, vendor setup during signature. Serial procurement is how
-    a Q3 deal becomes a Q4 deal.
+  name: Pre-package the standard answers
+  description: 'Security documentation, insurance certificates, references, tax registration — one
+    folder, current, ready before the request arrives. Same-day answers are the only currency
+    procurement actually rewards, and preparation is what makes them possible.'
   actor: human
+  produces: A maintained pack covering the common requirements.
+  done_when: No standard request requires assembling anything from scratch.
+
+- order: 4
+  name: Submit complete the first time
+  description: 'A returned form restarts the queue. Rework, not review, is where the weeks go — so
+    the acceptance rate on first submission predicts cycle time better than turnaround speed does.'
+  actor: human
+  produces: Submissions accepted without rework.
+  done_when: Nothing has been returned for incompleteness.
+
+- order: 5
+  name: Run it parallel, never serial
+  description: 'Security review during legal, vendor setup during signature. The default sequence is
+    whatever order the requests arrived in, which is rarely the fastest and is almost never checked —
+    asking which steps are independent is usually enough to reorder them.'
+  actor: human
+  produces: A parallelised plan with dependencies stated.
+  done_when: Every serial step has a reason for being serial.
+
+- order: 6
+  name: Identify the unmeetable requirements immediately
+  description: 'Some conditions — a liability position, an insurance level, a data-residency term —
+    are outside what we will accept. Finding that in week one is worth more than finding it after
+    three weeks of diligent process, and it lets the sponsor decide whether to seek an exception.'
+  actor: human
+  objects_read:
+  - sales.obj.core.risk
+  produces: An early list of conditions we cannot meet.
+  done_when: No deal has spent weeks in process on a requirement that was always going to fail.
+
+- order: 7
+  name: Keep the sponsor's date visible
+  description: 'Procurement has no deadline of its own; the business sponsor does. A sponsor who has
+    stopped watching is how a decided deal spends a quarter in a queue, and the reminder that helps is
+    a specific step and its expected date rather than a general request for help.'
+  actor: human
+  objects_read:
+  - sales.obj.core.buying_committee
+  produces: A sponsor who knows where the deal sits and when it is due out.
+  done_when: The business owner can name the current step.
+
+objects_used:
+- sales.obj.core.contract
+- sales.obj.core.buying_committee
+- sales.obj.core.pricing
+- sales.obj.core.timeline
+- sales.obj.core.risk
+
+outcomes:
+- The checklist is known before it is requested and returned faster than expected.
+- Independent steps run concurrently.
+- Unmeetable requirements surface in week one.
+
+failure_modes:
+- 'PITCHING VALUE. Spent on a function not measured by it, and read as not understanding their role.'
+- 'REQUIREMENTS DISCOVERED LATE. Entirely self-inflicted and the dominant cause of slippage here.'
+- 'SERIAL BY DEFAULT. Nobody chose the order; it is simply the order the requests arrived in.'
+- 'PERFECT COMPLIANCE, ABSENT SPONSOR. Fast responses into a queue nobody is timing.'
+- 'WORKING THROUGH AN UNMEETABLE CONDITION IN ORDER. Three weeks spent reaching a no that was
+  available on day one.'
+
+limits:
+- Cannot compress a queue whose length is set by the buyer's own staffing.
+- Says nothing about the commercial terms procurement will demand; that is negotiation.
+- The stage is not currently detectable from the record on the design partner's org —
+  `contract_requested` has no rows and `security_review_started` has one — so this playbook runs on
+  human recognition rather than on a trigger.
+
+variants:
+- applies_to: enterprise
+  change: Expect a vendor portal with its own queue and a supplier-onboarding team distinct from the
+    buyer; step 4 carries most of the cycle-time gain.
+  why: Rework in a portal restarts a queue measured in weeks.
+- applies_to: regulated
+  change: Step 6 moves to the front — statutory requirements cannot be waived and the counterparty
+    cannot negotiate them.
+  why: An early no is the only good outcome available if a condition is genuinely unmeetable.
+- applies_to: smb
+  change: Do not run; there is no purchasing function.
+  why: The buyer and the process are the same person.
+- applies_to: channel
+  change: The partner usually owns the procurement relationship and is being measured on their own
+    responsiveness; supply them the pack rather than submitting it ourselves.
+  why: Our documents reach the customer through them.
+
+metrics:
+- name: requirement_discovery_lead_time
+  unit: days
+  description: Days to the full checklist being known.
+  direction: lower_is_better
+- name: first_submission_acceptance_rate
+  unit: percent
+  description: Share of submissions accepted without rework.
+  direction: higher_is_better
+- name: procurement_cycle_days
+  unit: days
+  description: Entry to purchase order.
+  direction: lower_is_better
+
+references:
+- title: Practitioner procurement operations
+  kind: practitioner
+  note: Vendor-onboarding rework is consistently the largest controllable component of purchasing
+    cycle time, which is why step 4 outranks step 3 in effect.
+- title: MEDDICC
+  kind: methodology
+  note: Paper process as a knowable sequence with a duration rather than an opaque stage.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 2, 4, 6 and 7 are new. Step 4 is the one that
+    changes outcomes most and is least intuitive — sellers optimise for responding fast, and a fast
+    incomplete submission restarts a queue that a slower complete one would have cleared.'

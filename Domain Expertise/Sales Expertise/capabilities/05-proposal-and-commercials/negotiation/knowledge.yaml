@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.negotiation.a_trade_must_be_deliverable
 decision_frameworks:
   core: []
   scoped: []

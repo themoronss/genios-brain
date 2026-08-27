@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.closing.urgency_must_belong_to_the_buyer
 decision_frameworks:
   core: []
   scoped: []

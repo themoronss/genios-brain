@@ -6,25 +6,192 @@ identity:
   scope: capability
   owner_capability: sales.proposal_and_commercials.objection_handling
   subdomain: proposal_and_commercials
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: An objection answered before it is understood multiplies. First acknowledge, then isolate
-    — 'if we solve this, is anything else in the way?' — then answer the real, whole list with evidence
-    rather than argument.
+  statement: 'An objection answered before it is understood multiplies. First acknowledge, then
+    isolate — if we solve this, is anything else in the way — then answer the real, whole set.'
+  answers:
+  - In what order should an objection be handled?
+  - Why does answering a concern well often produce another one?
+  not:
+  - A library of responses. What to say depends on the concern; this is the sequence around it.
+  - Negotiation. Trading terms comes after the concern is understood.
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: objection}
+  signals:
+  - objection
+  - objection_timing
+  - negative_reply
+  do_not_use_when:
+  - 'The objection is correct and unanswerable. Running the sequence produces a well-handled delay to
+    an honest no, and spends the relationship doing it.'
+  - 'The concern is a procurement form-filling requirement. There is nothing to isolate; there is a
+    box to complete.'
+  - 'The objection came from someone with no stake in the outcome; the sequence treats positioning as
+    evaluation.'
+
 steps:
 - order: 1
   name: Acknowledge without conceding
-  description: '''Fair question'' buys thinking time and keeps the buyer talking. Defensiveness converts
-    a question into a position.'
+  description: '"Fair question" buys thinking time and keeps the buyer talking. Defensiveness converts
+    a question into a position — the buyer starts defending a concern they only half-held, and it
+    becomes real in the act of being challenged.'
   actor: human
+  objects_read:
+  - sales.obj.core.objection
+  produces: A buyer still explaining rather than defending.
+  done_when: The response contained no rebuttal.
+
 - order: 2
-  name: Isolate the full set
-  description: The stated objection is often the comfortable one. 'Apart from X, what else?' surfaces
-    the real blocker while it is still cheap to address.
+  name: Understand it before valuing it
+  description: 'Ask what sits behind the concern. "Too expensive" carries at least four meanings — no
+    budget, no urgency, no confidence in the outcome, a cheaper alternative — and only one of them is
+    answered by a number. The question that separates them costs one sentence.'
   actor: human
+  objects_read:
+  - sales.obj.core.competitor
+  - sales.obj.core.budget
+  produces: The concern behind the phrasing.
+  done_when: The seller can state what the objection is actually about.
+
 - order: 3
-  name: Answer with evidence, confirm closure
-  description: 'A customer story or a number beats adjectives. Then: ''does that settle X?'' — an objection
-    not closed returns at signature time with friends.'
+  name: Isolate the full set
+  description: 'The stated objection is often the comfortable one. "Apart from X, what else?" surfaces
+    the real list, and it is the step that stops the multiplication — answering one at a time is
+    experienced by the seller as a buyer moving the goalposts and is actually their own sequencing.'
   actor: human
+  produces: The complete list of concerns, before any is answered.
+  done_when: The buyer has confirmed nothing else is outstanding.
+
+- order: 4
+  name: Answer with evidence, not with adjectives
+  description: 'A named customer, a number, a behaviour they can verify. Assertions of quality answer a
+    doubt about quality with more of the thing being doubted, and the buyer discounts them exactly as
+    they would discount any interested party''s self-assessment.'
+  actor: human
+  objects_read:
+  - sales.obj.core.risk
+  produces: Responses grounded in something checkable.
+  done_when: No material objection was answered by assertion alone.
+
+- order: 5
+  name: Confirm closure explicitly
+  description: '"Does that settle X?" An objection nobody confirmed as settled is still open — dead in
+    our notes and live in their mind — and it reappears at the moment the deal has least room to
+    absorb it.'
+  actor: human
+  produces: A stated confirmation, or a still-open item.
+  done_when: Every raised concern has a yes or an explicit remaining gap.
+
+- order: 6
+  name: Check the silent people in the room
+  description: 'In a group, saying nothing is the standard way disagreement is deferred to a private
+    conversation we will not be in. Asking the quiet participant directly is uncomfortable and is
+    usually the highest-value question available.'
+  actor: human
+  objects_read:
+  - sales.obj.core.stakeholder
+  produces: Objections from people who were not going to volunteer them.
+  done_when: Nobody present was assumed to agree because they were silent.
+  optional: true
+
+- order: 7
+  name: Say when the objection is right
+  description: 'Some concerns are correct and unanswerable — a missing capability, a regulatory
+    position, a price genuinely above the budget. Naming that ends the deal honestly rather than
+    extending it with technique, and it is the outcome that makes the other six credible.'
+  actor: human
+  produces: An honest stop where one is warranted.
+  done_when: No unanswerable objection is being worked as a handleable one.
+
+objects_used:
+- sales.obj.core.objection
+- sales.obj.core.competitor
+- sales.obj.core.pricing
+- sales.obj.core.risk
+- sales.obj.core.stakeholder
+- sales.obj.core.budget
+
+outcomes:
+- The full set of concerns is known before any is answered.
+- Responses are evidence-based and confirmed closed.
+- Correct objections end deals rather than extending them.
+
+failure_modes:
+- 'ANSWERING FIRST. Each surface objection resolved reveals the next, and the seller experiences their
+  own sequencing as the buyer moving the goalposts.'
+- 'DEFENSIVENESS IN STEP 1. Hardens a half-held concern into a position.'
+- 'ADJECTIVES IN STEP 4. Answers a doubt with more of the thing being doubted.'
+- 'CLOSURE NEVER CONFIRMED. Live in the buyer''s mind, closed in our notes, and it returns at the
+  worst possible moment.'
+- 'SILENCE READ AS AGREEMENT. Especially in a group, where it is the standard way disagreement is
+  deferred.'
+
+limits:
+- Says nothing about what evidence will actually satisfy a given concern.
+- The isolation question can feel like a technique if used mechanically, and buyers who have
+  encountered it recognise it.
+- '`objection` marks that a concern occurred and carries no type, so the four meanings of "too
+  expensive" cannot be distinguished from the record — step 2 is human work with no signal behind it.'
+
+variants:
+- applies_to: enterprise
+  change: Run the isolation question per seat rather than per conversation; the security reviewer's
+    full set and the sponsor's are different lists.
+  why: Objections are not fungible across a committee.
+- applies_to: smb
+  change: Compress to steps 1, 3 and 5; there is one person and the whole set is available in one
+    conversation.
+  why: No committee, no deferred disagreement.
+- applies_to: inside_sales
+  change: Steps 3 and 5 only; there is not time for the rest and those two carry most of the effect.
+  why: Cycle length bounds the sequence.
+- applies_to: channel
+  change: Objections arrive filtered through the partner, so step 3 has to be asked of the partner
+    about the customer, which is a weaker instrument and should be treated as one.
+  why: The intermediary softens what reaches us.
+
+metrics:
+- name: full_set_surfaced_rate
+  unit: percent
+  description: Share of conversations where the full set was asked for before answering.
+  direction: higher_is_better
+- name: objection_recurrence_rate
+  unit: percent
+  description: Share of objections that reappeared after being answered.
+  direction: lower_is_better
+- name: confirmed_closure_rate
+  unit: percent
+  description: Share explicitly confirmed as settled.
+  direction: higher_is_better
+
+references:
+- title: SPIN Selling
+  kind: methodology
+  author: Neil Rackham
+  note: On objection prevention through prior questioning, and on the cost of answering before
+    understanding.
+- title: Never Split the Difference
+  kind: book
+  author: Chris Voss
+  note: Acknowledgement and labelling as the means of keeping a counterparty explaining rather than
+    defending — the mechanism behind step 1.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 2, 6 and 7 are new. Step 2 is the substantive one —
+    the original went straight from acknowledgement to isolation, and without understanding what the
+    objection is ABOUT the isolation question surfaces a list of surfaces rather than a list of
+    concerns.'
