@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.champion_identification.advocacy_is_claimed_until_it_opens_a_door
 decision_frameworks:
   core: []
   scoped: []

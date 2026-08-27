@@ -6,25 +6,183 @@ identity:
   scope: capability
   owner_capability: sales.qualification.decision_maker_identification
   subdomain: qualification
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: The economic buyer is whoever can say yes when everyone else says no, and no when everyone
-    else says yes. Deals discover this person in week one or in the final week — and the final-week discovery
-    usually restarts the sale from zero.
+  statement: 'The economic buyer is whoever can say yes when everyone else says no, and no when
+    everyone else says yes. Deals discover this person in the first week or in the final one, and the
+    final-week discovery is usually a slipped close date.'
+  answers:
+  - How is the approver found without asking who decides?
+  - How is a meeting with them earned rather than requested?
+  not:
+  - Committee mapping, which enumerates seats rather than locating authority.
+  - A closing method. This finds the person; closing is what happens once they are in the room.
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - budget_approved
+  - proposal_sent
+  do_not_use_when:
+  - 'The buyer is founder-led or owner-managed. Authority is obvious and the indirection is a
+    formality that reads oddly.'
+  - 'The organisation has just reorganised. The precedent this playbook reads describes a structure
+    that no longer exists, and confidently naming last year''s signer forecloses the question.'
+  - 'The purchase is genuinely the first of its kind, so there is no comparable act to ask about.'
+
 steps:
 - order: 1
   name: Ask the process question, not the org-chart question
-  description: '''Walk me through how the last tool this size got bought'' reveals the real signer; ''who
-    decides'' invites the flattering answer.'
+  description: '"Walk me through how the last tool this size got bought" surfaces the real signer as a
+    by-product of a story people are happy to tell. "Who decides" asks the listener to rank
+    themselves — socially awkward, and answered optimistically in good faith.'
   actor: human
+  objects_read:
+  - sales.obj.core.decision_maker
+  produces: A named precedent and the person who approved it.
+  done_when: A past comparable purchase and its approver have been described.
+
 - order: 2
-  name: Verify with the money test
-  description: The economic buyer can reallocate budget, not just spend an allocated line. If approval
-    must go 'up' from your contact, you have not met the buyer yet.
+  name: Follow the story one step past the signature
+  description: 'In procurement-led organisations the signer signs everything and decides nothing. Ask
+    who persuaded them; the same story answers it, and the two people are the ones the deal actually
+    needs.'
   actor: human
+  produces: The signer and the persuader, recorded separately.
+  done_when: It is known whether those are the same person.
+
 - order: 3
-  name: Earn the meeting through your champion, with a reason
-  description: The buyer takes meetings that de-risk their quarter. Frame the ask as the thing THEY care
-    about — outcome and risk — never as a demo.
+  name: Verify with the money test
+  description: 'The economic buyer can REALLOCATE budget, not merely spend an allocated line. If
+    approval has to go up from them for a number of this size, they are a recommender — a valuable one,
+    and not the person who can say yes.'
   actor: human
+  objects_read:
+  - sales.obj.core.budget
+  produces: A reallocate-or-recommend verdict.
+  done_when: The distinction has been tested rather than assumed.
+
+- order: 4
+  name: Separate the yes from the no
+  description: 'One person usually holds approval and several hold a veto. Record them apart — the
+    veto holders are where deals die, and a single decision-maker field cannot express the difference.'
+  actor: human
+  objects_read:
+  - sales.obj.core.buying_committee
+  produces: An approver, and a list of veto holders.
+  done_when: Veto holders are enumerated separately from the approver.
+
+- order: 5
+  name: Earn the meeting through the champion, with their reason
+  description: 'The approver takes meetings that de-risk their quarter. Frame the ask around the
+    outcome THEY own, and route it through the champion — going around them occasionally works and
+    reliably costs the champion, who is needed after the meeting as well as before it.'
+  actor: human
+  objects_read:
+  - sales.obj.core.champion
+  produces: A meeting request framed in the approver's terms, carried by the champion.
+  done_when: The approach was made without bypassing the champion.
+  skip_when: The champion has already been tested and cannot open this door.
+
+- order: 6
+  name: Record unknown when it is unknown
+  description: 'Most deals reach proposal with an assumed approver. Writing down that authority is
+    unverified is what allows a review to ask the only question that matters, and it costs nothing
+    except the comfort of the summary.'
+  actor: human
+  produces: An explicit unverified-authority flag where applicable.
+  done_when: No proposal is sent describing an assumed approver as a known one.
+
+- order: 7
+  name: Re-verify when the organisation moves
+  description: 'Approval authority is a property of the organisation at a moment. Reorganisations,
+    budget cycles and headcount changes all reset it, and large purchases stall in exactly those
+    windows.'
+  actor: human
+  produces: A re-checked approver at each stage gate.
+  done_when: Authority verified in a previous quarter is not carried into this one unchecked.
+
+objects_used:
+- sales.obj.core.decision_maker
+- sales.obj.core.buying_committee
+- sales.obj.core.budget
+- sales.obj.core.champion
+- sales.obj.core.stakeholder
+- sales.obj.core.timeline
+
+outcomes:
+- The approver is evidenced from a past act, early.
+- Signer, persuader and veto holders are recorded as distinct people.
+- Unverified authority is visible rather than assumed.
+
+failure_modes:
+- 'ASKING WHO DECIDES. Invites an optimistic and sincerely-held answer, which no amount of rapport
+  corrects.'
+- 'STOPPING AT THE SIGNATURE. Finds the formality and misses the decision.'
+- 'THE MONEY TEST SKIPPED. The recommender is mistaken for the approver, and the difference surfaces
+  when the number exceeds their line.'
+- 'BYPASSING THE CHAMPION. Occasionally succeeds and reliably costs the relationship that is needed
+  afterwards.'
+- 'ASSUMED AUTHORITY RECORDED AS KNOWN. Every downstream consumer inherits it and none of them can
+  tell.'
+
+limits:
+- Nothing in the record establishes authority; steps 1 to 4 are human discovery work with no signal
+  behind them, and `budget_approved` has zero rows on the design partner's org.
+- Needs a precedent, which the newest buyers do not have.
+- Says nothing about what to do when the approver refuses to meet anyone.
+
+variants:
+- applies_to: enterprise
+  change: Expect three distinct people — signer, budget holder, decider — and treat the deal as
+    unqualified on authority until all three are named.
+  why: Collapsing them produces a proposal sent to someone who cannot act on it.
+- applies_to: mid_market
+  change: Steps 1 and 3 usually resolve it in one conversation; steps 2 and 4 are often unnecessary.
+  why: Fewer layers between the budget and the decision.
+- applies_to: smb
+  change: Ask directly and skip the indirection entirely.
+  why: There is nobody for authority to be obscured from.
+- applies_to: channel
+  change: Run the whole playbook twice — once for the partner, once for the end customer — because the
+    partner's approval structure is invisible from the customer's thread.
+  why: Either side can stall a deal the other has approved.
+
+metrics:
+- name: evidenced_authority_share
+  unit: percent
+  description: Share of deals with authority established by a past act.
+  direction: higher_is_better
+- name: economic_buyer_contact_rate
+  unit: percent
+  description: Share of deals where the approver has been in a live conversation.
+  direction: higher_is_better
+- name: unverified_approver_share
+  unit: percent
+  description: Share of proposals sent with an assumed approver.
+  direction: lower_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: Economic buyer and decision process — the two dimensions this playbook operationalises.
+- title: The Challenger Customer
+  kind: book
+  author: Adamson, Dixon, Spenner and Toman
+  note: On distributed authority and on the signer rarely being the persuaded party.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 2, 4, 6 and 7 are new. Step 2 is the substantive
+    one: the original stopped at the signer, and in a procurement-led organisation that is precisely
+    the person who decides nothing.'

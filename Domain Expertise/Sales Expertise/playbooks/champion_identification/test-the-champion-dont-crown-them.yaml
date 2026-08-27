@@ -1,30 +1,195 @@
 identity:
   id: sales.pb.champion_identification.test_the_champion__dont_crown_them
-  name: Test the champion, don't crown them
+  name: Test the champion, do not crown them
   kind: playbook
   domain: sales
   scope: capability
   owner_capability: sales.qualification.champion_identification
   subdomain: qualification
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: A champion is not the friendliest contact — it is the person who sells when you are not in
-    the room, with personal stake in the outcome and real standing. Champions are verified by what they
-    DO between meetings, never by warmth in them.
+  statement: 'A champion is not the friendliest contact — it is the person who sells when you are not
+    in the room, with personal stake in the outcome and real standing. Champions are verified by what
+    they DO between meetings.'
+  answers:
+  - How is a champion verified rather than assumed?
+  - What does a champion test actually consist of?
+  not:
+  - A recruitment method. This tests whoever is already engaged.
+  - Stakeholder mapping, which asks who exists rather than who advocates.
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {exists: thread.last_inbound}
+  signals:
+  - introduction
+  - next_step_agreed
+  do_not_use_when:
+  - 'The contact can approve the purchase themselves. Asking them to advocate internally is asking
+    them to convince themselves.'
+  - 'The relationship is too new for a small internal ask to be a reasonable request. A test from a
+    stranger is a demand, and it produces a false negative on a genuine future champion.'
+  - 'It is a renewal where the internal case has already been made and won.'
+
 steps:
 - order: 1
   name: Give a small internal task
-  description: Ask them to forward a one-pager to the economic buyer, or book the security review. A champion
-    does it within days; a fan apologises next call.
+  description: 'Ask them to forward a one-page summary to the economic buyer, or to book the security
+    review. Small enough that a willing person can do it in a day, and public enough that doing it
+    puts their name on us. A champion does it; a coach explains why it is difficult.'
   actor: human
+  objects_read:
+  - sales.obj.core.champion
+  produces: A completed action, or a reasoned decline, within days.
+  done_when: The ask has been made and the answer observed.
+  typical_duration_days: 7
+
 - order: 2
-  name: Check standing, kindly
-  description: Do colleagues seek their view? Have they shipped internal changes before? A junior enthusiast
-    can be a scout, not a champion — treat accordingly.
+  name: Size the ask so a refusal means something
+  description: 'A large, urgent or politically awkward request is a demand rather than a test, and a
+    real champion who refuses it gets misfiled. The ask must be one a supportive person could
+    reasonably do this week — otherwise the experiment measures the ask rather than the person.'
   actor: human
+  produces: A calibrated request.
+  done_when: A refusal would be informative rather than expected.
+
 - order: 3
-  name: Confirm the personal win
-  description: Champions carry risk for a reason — a metric they own, a promotion path, a pain they personally
-    feel. If you cannot name their win, you have a contact, not a champion.
+  name: Read a reasoned refusal as judgement, not absence
+  description: 'A champion who declines because the timing is internally wrong is demonstrating
+    exactly the awareness we need from them. Ask what would make it possible; the answer separates
+    judgement from reluctance more reliably than the refusal itself does.'
   actor: human
+  produces: A distinction between a well-judged no and an unwilling one.
+  done_when: The reason behind a decline has been asked for.
+
+- order: 4
+  name: Check standing, kindly
+  description: 'Do colleagues seek their view? Have they carried an internal change before? A junior
+    enthusiast is a scout — genuinely useful, and not someone whose advocacy moves an approver. This
+    is asked around them rather than of them.'
+  actor: human
+  objects_read:
+  - sales.obj.core.stakeholder
+  - sales.obj.core.buying_committee
+  produces: An assessment of internal weight, separate from willingness.
+  done_when: Enthusiasm and standing have been assessed as two different things.
+
+- order: 5
+  name: Confirm the personal win
+  description: 'Champions carry risk for a reason — a metric they own, a promotion path, a problem
+    they personally feel. If we cannot state their reason in one sentence, we have assumed the
+    advocacy rather than understood it, and an assumed motive disappears the moment their priorities
+    move.'
+  actor: human
+  objects_read:
+  - sales.obj.core.pain_point
+  produces: A stated reason this person is helping us.
+  done_when: The champion's own win can be named without guessing.
+
+- order: 6
+  name: Convert advocacy into access
+  description: 'Advocacy that never produces a meeting with a seat we had not reached has converted
+    nothing. The champion''s value is measured in doors opened, and asking for one is both the use and
+    the confirmation.'
+  actor: human
+  objects_read:
+  - sales.obj.core.decision_maker
+  produces: A meeting with a previously unreached seat.
+  done_when: The champion has widened the relationship rather than only warmed it.
+
+- order: 7
+  name: Find the second one, or record the single-thread risk
+  description: 'One advocate is a single point of failure with a career of its own. Either build a
+    second relationship of substance or record explicitly that the deal rests on one person — because
+    a champion leaving is currently invisible in the record, and an unrecorded dependency is
+    discovered at the worst moment.'
+  actor: human
+  objects_read:
+  - sales.obj.core.risk
+  produces: A second thread, or a recorded single-champion risk.
+  done_when: The dependency is either reduced or written down.
+
+objects_used:
+- sales.obj.core.champion
+- sales.obj.core.stakeholder
+- sales.obj.core.decision_maker
+- sales.obj.core.buying_committee
+- sales.obj.core.pain_point
+- sales.obj.core.risk
+
+outcomes:
+- Champions are confirmed by completed actions and by access produced.
+- Coaches are kept and used as coaches rather than promoted by hope.
+- Single-advocate dependency is either reduced or recorded.
+
+failure_modes:
+- 'CROWNING THE RESPONSIVE. Availability measured, influence assumed.'
+- 'AN ASK TOO LARGE TO REFUSE INNOCENTLY. The test then measures the request rather than the person.'
+- 'STANDING NEVER CHECKED. Produces an enthusiastic advocate whose support carries no weight where it
+  is needed.'
+- 'THE PERSONAL WIN ASSUMED. An assumed motive vanishes the moment the champion''s priorities move,
+  and nobody notices because nobody knew what it was.'
+- 'ONE CHAMPION TREATED AS COVERAGE. The commonest structural risk in enterprise deals, and the one
+  most invisible in the record.'
+
+limits:
+- Cannot assess standing from the record; steps 4 and 5 are human work with no signal behind them.
+- '`champion_change` has no rows on the design partner''s org, so a champion leaving or moving does
+  not expire the classification automatically — which is exactly why step 7 exists.'
+- Says nothing about how to create a champion where none exists.
+
+variants:
+- applies_to: enterprise
+  change: A champion per major seat; run the test independently in each function.
+  why: Advocacy does not cross functional boundaries in a large organisation.
+- applies_to: mid_market
+  change: One tested champion with real standing is usually enough; steps 4 and 6 carry the value.
+  why: Shorter internal distance, fewer seats.
+- applies_to: channel
+  change: The champion is a partner rep and the personal win is commercial — margin, registration, a
+    quota. Test with a co-selling ask rather than an internal forward.
+  why: Their risk and their reward are both commercial rather than political.
+- applies_to: smb
+  change: Do not run. The contact is usually the buyer, and the test is a category error.
+  why: There is nobody to advocate to.
+
+metrics:
+- name: champion_action_rate
+  unit: percent
+  description: Share of small internal asks completed.
+  direction: higher_is_better
+- name: access_conversion_rate
+  unit: percent
+  description: Share of champions producing access to an unreached seat.
+  direction: higher_is_better
+- name: single_champion_share
+  unit: percent
+  description: Share of live deals resting on one advocate.
+  direction: lower_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: Champion as a tested rather than nominated role.
+- title: The Challenger Customer
+  kind: book
+  author: Adamson, Dixon, Spenner and Toman
+  note: Mobilisers versus talkers, and the finding that the most agreeable contact is frequently the
+    least able to drive internal consensus.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 2, 3, 6 and 7 are new. Steps 2 and 3 exist to stop
+    the test misfiring on real champions — an oversized ask or a well-judged refusal both produce a
+    false negative — and step 7 exists because `champion_change` is unobservable, so the dependency
+    has to be written down rather than waited for.'

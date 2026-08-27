@@ -6,25 +6,179 @@ identity:
   scope: capability
   owner_capability: sales.qualification.buying_committee_analysis
   subdomain: qualification
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: Deals above trivial size are decided by a committee the seller mostly never meets. The work
-    is naming every seat — economic buyer, users, technical gate, procurement, the skeptic — and knowing
-    which are filled, which are hostile, and which are empty.
+  statement: 'Deals above trivial size are decided by a committee the seller mostly never meets. The
+    work is naming every seat — economic buyer, users, technical gate, procurement, the skeptic — and
+    knowing which are covered.'
+  answers:
+  - Who has to agree, and how many of them have we actually reached?
+  - How is a committee map built without waiting for people to appear?
+  not:
+  - Stakeholder mapping. That is broader and includes influencers with no vote; this is the seats.
+  - Champion work. Who advocates for us is a different question with different evidence.
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - security_review_started
+  - legal_review
+  - proposal_sent
+  do_not_use_when:
+  - 'The purchase genuinely has one decision-maker. Building a committee map creates stakeholders,
+    and contacting them introduces the review that did not exist.'
+  - 'The buyer publishes its evaluation structure. Read it; do not infer it.'
+  - 'It is a renewal inside a healthy account where the seats already agreed once.'
+
 steps:
 - order: 1
-  name: List the seats the deal size implies
-  description: 'A ₹25k/mo SaaS buy at a startup: founder + one user. An enterprise rollout: six-plus seats.
-    Let deal size and company size set the expected roster, then find the people.'
+  name: List the seats the decision implies, before listing people
+  description: 'Start from the shape of the purchase — who pays, who uses, who must technically
+    approve, who processes the paper, who reviews risk — and only then attach names. Starting from
+    names produces a map of the people who happened to reply, which is the failure the whole playbook
+    exists to prevent.'
   actor: human
+  objects_read:
+  - sales.obj.core.buying_committee
+  produces: A seat list derived from the decision, with names where known and gaps where not.
+  done_when: Every seat exists on the list whether or not a person is attached to it.
+
 - order: 2
-  name: 'Mark each seat: ally, neutral, hostile, unknown'
-  description: Unknown is the dangerous state — an unmapped skeptic surfaces at the worst moment. Every
-    'unknown' is a discovery task with an owner.
+  name: Mark each seat ally, neutral, hostile or unknown
+  description: 'Unknown is the dangerous state and the one that dissolves fastest into an optimistic
+    summary. Every unknown is a discovery task with an owner, not a shrug.'
   actor: human
+  objects_read:
+  - sales.obj.core.stakeholder
+  produces: A position per seat, with unknown counted separately from neutral.
+  done_when: No seat is recorded as neutral because nobody has asked.
+
 - order: 3
-  name: Test access, not assurances
-  description: '''Everyone is on board'' from one contact is a claim. A meeting where the other seats
-    show up is evidence. Ask for the meeting.'
+  name: Name the skeptic
+  description: 'If nobody on the map is one, the map is incomplete rather than the deal safe. Security,
+    finance, an incumbent owner, a peer with a competing initiative — someone''s job is to find the
+    reason not to, and they have no incentive to meet a vendor before the decision reaches them.'
   actor: human
+  objects_read:
+  - sales.obj.core.risk
+  produces: A named skeptic seat, or a recorded statement that the buyer has none and why.
+  done_when: The skeptic question has been answered rather than skipped.
+
+- order: 4
+  name: Count coverage as seats, not as contacts
+  description: 'Five people in one function is one seat with redundancy. Coverage is seats engaged
+    over seats required, and the distinction is what stops a wide-looking account from being
+    single-threaded in substance.'
+  actor: system
+  produces: A seat-coverage figure distinct from a contact count.
+  done_when: Coverage is computed over the seat list, not over the address book.
+
+- order: 5
+  name: Test access, do not accept assurance
+  description: '"Everyone is on board", relayed by one contact, is a claim about a committee we have
+    not met. A meeting where the other seats appear is evidence. Asking for that meeting is also the
+    cheapest test of the champion — a real one arranges it, a coach explains why it is difficult.'
+  actor: human
+  objects_read:
+  - sales.obj.core.champion
+  produces: Either multi-seat contact, or a clear signal about the champion's actual standing.
+  done_when: At least one seat beyond the primary contact has appeared in a live conversation.
+
+- order: 6
+  name: Re-verify at every stage gate
+  description: 'Committees reorganise, people are promoted and replaced mid-cycle. A map drawn at
+    qualification is archaeology by the proposal, and the seats most likely to have changed are the
+    ones we never met.'
+  actor: human
+  produces: A map re-checked before proposal, negotiation and signature.
+  done_when: No stage gate is passed on a map older than the previous one.
+
+- order: 7
+  name: Record when the committee is unmappable
+  description: 'Some buyers will not expose their process. Saying so, as a risk, is more useful than a
+    confident diagram assembled from one person''s account — and it is the input a deal review needs
+    in order to ask a different question.'
+  actor: human
+  produces: An explicit unmappable verdict where that is the truth.
+  done_when: No map is presented as complete when it was inferred from a single source.
+
+objects_used:
+- sales.obj.core.buying_committee
+- sales.obj.core.stakeholder
+- sales.obj.core.decision_maker
+- sales.obj.core.champion
+- sales.obj.core.risk
+
+outcomes:
+- Seats are enumerated from the decision, not from the inbox.
+- Unknown positions are visible and owned rather than assumed neutral.
+- Coverage is a seat ratio, and access has been tested at least once.
+
+failure_modes:
+- 'THE MAP IS THE THREAD. Assembled from people who replied, then trusted as the committee.'
+- 'THE CHAMPION''S MAP ACCEPTED AS THE MAP. Reliably omits their rivals and their seniors.'
+- 'UNKNOWN RECORDED AS NEUTRAL. The single most consequential rounding error in the capability.'
+- 'CONTACTS COUNTED AS COVERAGE. Breadth on the dashboard, one seat in reality.'
+- 'MAPPED ONCE. Every later stage is then run against a picture that has quietly expired.'
+
+limits:
+- Cannot detect an unmapped seat from the record — an unmapped person generates no correspondence, so
+  the gap is invisible by construction and step 1 is a human act.
+- Says nothing about how to reach a seat once named; that is the champion's route.
+- Assumes the decision has a discoverable shape, which some buyers deliberately obscure.
+
+variants:
+- applies_to: enterprise
+  change: Expect several skeptic seats and map them separately — security, legal, procurement,
+    build-versus-buy — because each is cleared by different evidence.
+  why: One "skeptic" entry hides four different objections.
+- applies_to: mid_market
+  change: Usually three or four seats with finance as the skeptic; steps 3 and 5 carry most of the value.
+  why: The structure is simpler and the single review seat holds the risk.
+- applies_to: smb
+  change: Do not run. There is no committee, and building one is an active harm.
+  why: A manufactured stakeholder becomes a real reviewer.
+- applies_to: channel
+  change: Map the partner's internal seats as well as the customer's; the deal has two committees and
+    the partner's is invisible from the customer's thread.
+  why: The route to the buyer has its own approvals.
+
+metrics:
+- name: seat_coverage
+  unit: percent
+  description: Seats engaged over seats required.
+  direction: higher_is_better
+- name: unknown_seat_share
+  unit: percent
+  description: Share of seats whose position is unknown.
+  direction: lower_is_better
+- name: multi_seat_meeting_rate
+  unit: percent
+  description: Share of deals with a live conversation beyond the primary contact.
+  direction: higher_is_better
+
+references:
+- title: The Challenger Customer
+  kind: book
+  author: Adamson, Dixon, Spenner and Toman
+  note: Consensus formation inside the buying group, and why supplier-side mapping under-counts.
+- title: MEDDICC
+  kind: methodology
+  note: Decision process and economic buyer — the seats this playbook enumerates.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. The original step 1 carried a worked example with a
+    specific monthly price; removed — a number in a Layer 3 file is a boundary leak, and "let the
+    decision shape imply the seats" is the instruction that survives. Steps 4, 6 and 7 are new; step 5
+    now doubles as the cheapest available test of the champion.'

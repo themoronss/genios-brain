@@ -3,26 +3,111 @@ identity:
   name: Stakeholder Mapping
   domain: sales
   subdomain: qualification
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
-description: 'Building the map of everyone touching the decision and their individual stake. Broader than
-  committee analysis: it includes influencers with no vote whose objection still routes through someone
-  who has one.
+description: 'Building the map of everyone touching the decision and their individual stake. Broader
+  than committee analysis: it includes influencers with no vote whose objection still routes through
+  someone who has one.
 
   '
 question: Who is involved, what do they each want, and who can stop this?
+
+outcomes:
+- 'A map that includes people with no vote. The influencer whose opinion the signer trusts is not on
+  the committee and frequently decides it, and a map restricted to formal seats is a map of the
+  process rather than of the decision.'
+- 'Influence lines, not only boxes. Who does the approver actually listen to is a different question
+  from who reports to whom, and it is the one that predicts where an objection will land.'
+- 'Each person''s own stake named. People act on what the decision does to their work, their budget
+  and their standing — not on what it does for the company — and a stakeholder whose stake we cannot
+  state is one whose behaviour we cannot anticipate.'
+- 'Single-threading made visible early, while adding a second thread is a warm introduction rather
+  than a cold rescue. `edge_count` on the relationship is the closest available measure, and it is
+  cheap to read continuously.'
+- 'The map maintained on every meaningful contact rather than redrawn at stage gates. A new name on a
+  thread costs seconds to add and is invisible a month later — this is the cheap habit that decides
+  whether the map is current or archaeological.'
+- 'People who have LEFT the map removed and the gap surfaced. The negative outcome: a departed
+  contact who stays on the map inflates coverage and hides the very single-threading the map exists
+  to expose.'
+
+failure_modes:
+- 'DRAWN ONCE AT QUALIFICATION. Archaeology by the proposal stage — people join, leave, are promoted
+  and change sides mid-cycle, and none of that reaches a map nobody touches.'
+- 'AN ORG CHART WITH LOGOS. Reporting lines are public and mostly irrelevant; influence is private and
+  decisive, and the map that records the first feels rigorous while predicting nothing.'
+- 'ROLES WITHOUT STAKES. "VP Engineering — technical evaluator" is a label. What they personally gain
+  or lose is the part that predicts their behaviour, and it is the part almost never written down.'
+- 'EVERY NEW NAME ADDED AS A STAKEHOLDER. A map that grows with the cc list stops distinguishing
+  between people who matter and people who were copied.'
+- 'MISTAKING BREADTH FOR COVERAGE. Many contacts in one function reads as multi-threaded on every
+  dashboard and is a single point of failure in reality.'
+- 'KEEPING DEPARTED PEOPLE ON THE MAP. Coverage stays flattering, the thread that actually carried
+  the relationship is gone, and the deal is single-threaded without anyone noticing.'
+
+kpis:
+- name: map_freshness
+  unit: days
+  description: Days since the map last changed on a deal that is still moving. A static map on an
+    active deal is the failure state, and it is measurable without judging the map's content.
+  direction: lower_is_better
+- name: named_stake_share
+  unit: percent
+  description: Share of mapped people whose personal stake is stated rather than inferred from role.
+  direction: higher_is_better
+- name: single_threaded_deal_share
+  unit: percent
+  description: Share of live deals with substantive contact through one person only.
+  direction: lower_is_better
+- name: influence_line_coverage
+  unit: percent
+  description: Share of mapped decision-relevant people for whom we know who they listen to.
+  direction: higher_is_better
+- name: stale_contact_share
+  unit: percent
+  description: Share of mapped people with no activity in a meaningful window. The map's own decay,
+    made countable.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.prospecting_and_outreach.account_research
+  - sales.discovery_and_solution.discovery
+  downstream:
+  - sales.qualification.buying_committee_analysis
+  - sales.qualification.champion_identification
+  - sales.qualification.decision_maker_identification
+  parallel:
+  - sales.sales_management.relationship_management
+  - sales.post_sale_and_growth.customer_success
+
+applies_to:
+  models: [b2b, enterprise, mid_market, b2b2c, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached through `sales.sit.enterprise_deal` (`also_serves`),
+    bound to the `deal` type.
+
+    This is the one qualification capability with a genuinely usable live signal. `edge_count` is
+    computed for every situation and is exactly the single-threading measure the fourth outcome asks
+    for; `party.role` (705 rows / 124 nodes on the design partner''s org) says what each counterparty
+    is to us; `thread.last_inbound` per person gives staleness. What is NOT available is
+    `stakeholder_added` or `stakeholder_left` — zero rows — so the map''s DECAY is observable through
+    silence while its movement is not, which is why the outcomes lean on freshness rather than on
+    change events.
+
+    No numbers: what counts as single-threaded, and how stale is stale, are Layer 4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: fed60dc354ed2084540959c2a6976df37b369e4afec147fb3cdbc2a29849c902
+  accepted_content_hash: 39d3c1cb739d2bec146a531f076f66ef424e1ed6fec8f87f1a4854a4752857eb

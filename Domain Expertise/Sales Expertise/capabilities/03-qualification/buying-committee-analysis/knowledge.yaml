@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.buying_committee_analysis.an_unknown_seat_is_not_a_neutral_one
 decision_frameworks:
   core: []
   scoped: []

@@ -1,0 +1,124 @@
+identity:
+  id: sales.rule.buying_committee_analysis.an_unknown_seat_is_not_a_neutral_one
+  name: An unknown seat is not a neutral one
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.buying_committee_analysis
+  subdomain: qualification
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A seat nobody has spoken to has no recorded position, and the only honest value for it
+    is unknown. Rolling unknown into neutral converts an unmeasured risk into a measured absence of
+    risk, which is the arithmetic behind most late-stage surprises.'
+  answers:
+  - How should an unengaged seat be counted?
+  - May this committee be described as mapped?
+  not:
+  - A rule about contacting the seat. It governs how the gap is recorded, not how it is closed.
+  - A coverage threshold, which is Layer 4's.
+
+rule:
+  statement: 'A committee seat with no engagement evidence MUST be recorded as unknown, never as
+    neutral, and MUST be excluded from coverage numerators. A committee containing unknown seats MUST
+    NOT be described as mapped in any roll-up, and the count of unknowns must travel with the
+    coverage figure wherever it is reported.'
+  spans:
+  - sales.obj.core.buying_committee
+  - sales.obj.core.stakeholder
+  - sales.obj.core.decision_maker
+  when:
+  - {path: deal.status, op: "=", value: open}
+  - {fn: edge_count, op: "<=", value: 2}
+  then: 'Report coverage with its unknown count attached, mark the committee unmapped, and raise the
+    unknown seats as discovery tasks with owners rather than as a status observation.'
+  severity: warning
+  why: 'The two states differ in what they license. Neutral says a position was assessed and found
+    unaligned either way; unknown says nobody looked. Every downstream consumer — coverage, risk,
+    forecast category, the deal review — treats them identically once they are merged, so the merge
+    does not lose precision, it inverts the meaning: a deal with four unassessed seats reports as a
+    deal with no opposition. The direction of the error is what makes it dangerous, because it always
+    resolves in the reassuring direction and it resolves late.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'A SEAT WITH A PUBLISHED POSITION. Where the buyer states its standard — a security questionnaire
+    already passed, a procurement policy that pre-approves this category — the seat has a position we
+    did not obtain by meeting anyone, and recording it as unknown understates what is known.'
+  - 'A CEREMONIAL SEAT. Some approvals are rubber stamps by design and their holder genuinely has no
+    view; treating them as unknown inflates the risk count and trains people to ignore it. Requires
+    evidence of the pattern, not an assumption of it.'
+  - 'A SEAT VOUCHED FOR BY A TESTED CHAMPION. A champion who has already demonstrated standing by
+    arranging access to other seats is a weaker source than direct contact and a much stronger one
+    than nothing. Record it as champion-asserted — a third state — rather than collapsing it into
+    either of the two.'
+  - 'AN EXPANSION INSIDE AN ACCOUNT WHOSE COMMITTEE ALREADY BOUGHT. The seats agreed once and their
+    position is evidenced by the existing contract, unless something has changed in the interval.'
+  - 'A SEAT WE HAVE DELIBERATELY CHOSEN NOT TO APPROACH. Routing around the champion''s process is
+    sometimes the wrong trade, and an unknown accepted on purpose is a decision rather than a gap —
+    provided it is recorded as one.'
+
+objects_used:
+- sales.obj.core.buying_committee
+- sales.obj.core.stakeholder
+- sales.obj.core.decision_maker
+- sales.obj.core.champion
+- sales.obj.core.risk
+
+outcomes:
+- Coverage figures always travel with their unknown count.
+- No committee is reported as mapped while seats are unassessed.
+
+failure_modes:
+- 'UNKNOWNS COUNTED AS RISKS AND THEN IGNORED. A long list nobody works is the same as a merged one,
+  with extra reporting.'
+- 'APPLIED TO A SINGLE-DECISION-MAKER PURCHASE. Manufactures seats, and then manufactures risk about
+  them.'
+- 'CHAMPION-ASSERTED COLLAPSED INTO KNOWN. The third exception exists precisely to prevent that; a
+  champion''s account of a seat is evidence about the champion as much as about the seat.'
+
+limits:
+- '`edge_count` is a proxy for breadth, not a seat count — it says how many people are connected, not
+  how many seats exist. The rule can therefore flag a probably-narrow deal and cannot verify a seat
+  list, which remains a human artefact.'
+- '`stakeholder_added` and `stakeholder_left` have no rows on the design partner''s org, so committee
+  movement is currently unobservable even where the initial map is good.'
+
+variants:
+- applies_to: enterprise
+  change: Unknown seats are tracked per function, because an unknown in security and an unknown in
+    procurement are cleared by entirely different work.
+  why: Aggregating them hides which discovery task actually matters.
+- applies_to: smb
+  change: Do not apply. There is no committee and the rule produces phantom risk.
+  why: The failure mode is inventing stakeholders.
+
+metrics:
+- name: unknown_seat_share
+  unit: percent
+  description: Share of identified seats with no assessed position.
+  direction: lower_is_better
+- name: unknown_to_assessed_conversion
+  unit: percent
+  description: Share of unknowns that became assessed before the proposal. Whether the flag produced
+    work or only reporting.
+  direction: higher_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: Decision process and champion dimensions, where seat positions are supposed to be recorded and
+    where the neutral/unknown distinction is conventionally lost.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. Severity is `warning` because the `when` clause can only use `edge_count`
+    as a proxy for narrowness — the seat list itself is a human artefact the engine cannot verify, and
+    a blocking rule resting on a proxy would gate on the wrong evidence.'

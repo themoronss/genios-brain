@@ -3,25 +3,111 @@ identity:
   name: Champion Identification
   domain: sales
   subdomain: qualification
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
-description: 'Separating a real advocate from a friendly contact. The test is internal risk taken on our
-  behalf, not warmth — and advocacy without access to the approver converts nothing.
+description: 'Separating a real advocate from a friendly contact. The test is internal risk taken on
+  our behalf, not warmth — and advocacy without access to the approver converts nothing.
 
   '
 question: Who inside the account will spend their own credibility on us?
+
+outcomes:
+- 'A verdict based on what the contact DID, not on how they sounded. A champion is verified by an
+  action taken between meetings — a forward to their own executive, a review booked, a colleague
+  introduced — and every one of those leaves a trace in correspondence, which is what makes the
+  verdict checkable rather than felt.'
+- 'The coach and the champion told apart and both kept. A coach supplies information and is genuinely
+  valuable; misfiling one as a champion is the single most common cause of the sure-thing deal that
+  never signs, because the seller stops looking for the person who can actually move it.'
+- 'Standing assessed separately from enthusiasm. A junior advocate with no internal weight is a scout,
+  and treating their eagerness as coverage produces a deal that is well-liked and unapproved.'
+- 'The champion''s own win named. Advocates carry internal risk for a reason — a metric they own, a
+  promotion path, a problem they personally feel — and a champion whose reason we cannot state is one
+  we have assumed.'
+- 'A small internal ask made early, so the answer arrives while it is still cheap. The test costs one
+  request and the alternative is discovering the truth at the point where the deal needed them most.'
+- 'An explicit finding that there is no champion. The negative outcome: single-threaded deals with a
+  friendly contact and no advocate are common, and naming that is worth more than promoting the
+  friendliest person into a role they never accepted.'
+
+failure_modes:
+- 'CROWNING THE MOST RESPONSIVE CONTACT. Responsiveness measures availability, not influence, and the
+  most available person in an organisation is frequently the least busy one.'
+- 'MISTAKING WARMTH FOR ADVOCACY. Pleasant conversations produce a strong feeling about the
+  relationship and no evidence about what happens when we are not in the room.'
+- 'ACCEPTING RELAYED ASSURANCE AS ACCESS. "I have spoken to the exec and they are supportive" is a
+  claim about a conversation nobody else witnessed; the request that tests it is a meeting.'
+- 'TESTING TOO LATE. The internal ask is made when the deal needs the champion — at which point a
+  negative answer is a crisis rather than information.'
+- 'BURNING THE CHAMPION WITH THE TEST. An ask that is large, urgent or politically awkward is not a
+  test, it is a demand, and a real champion who refuses it is misread as a coach.'
+- 'ASSUMING ONE CHAMPION IS ENOUGH. A single advocate is a single point of failure with a career of
+  its own; champions leave, get promoted, and change priorities mid-cycle.'
+
+kpis:
+- name: champion_action_rate
+  unit: percent
+  description: Share of small internal asks the contact actually completed. The behavioural definition
+    of the whole capability, expressed as one number.
+  direction: higher_is_better
+- name: access_conversion_rate
+  unit: percent
+  description: Share of champions who produced a meeting with a seat we had not reached. Advocacy
+    without access converts nothing, and this is where the distinction becomes measurable.
+  direction: higher_is_better
+- name: named_personal_win_share
+  unit: percent
+  description: Share of identified champions whose own reason for helping we can state.
+  direction: higher_is_better
+- name: champion_test_lead_time
+  unit: days
+  description: Time from first identifying a likely champion to the first internal ask. Long lead
+    times mean the answer arrives when it is a crisis rather than information.
+  direction: lower_is_better
+- name: single_champion_share
+  unit: percent
+  description: Share of live deals resting on exactly one advocate.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.qualification.stakeholder_mapping
+  - sales.discovery_and_solution.discovery
+  downstream:
+  - sales.qualification.decision_maker_identification
+  - sales.qualification.buying_committee_analysis
+  - sales.closing.closing
+  parallel:
+  - sales.sales_management.relationship_management
+  - sales.post_sale_and_growth.customer_success
+
+applies_to:
+  models: [b2b, enterprise, mid_market, b2b2c, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached through `sales.sit.enterprise_deal` (`also_serves`),
+    bound to the `deal` type.
+
+    What makes this capability unusually authorable is that its evidence is behavioural and
+    correspondence-shaped: a forward, an introduction, a booked review all appear in the thread.
+    `introduction` is among the densest observations Layer 2 emits (104 rows / 27 nodes on the design
+    partner''s org), and `edge_count` shows whether advocacy actually widened the relationship. What
+    is NOT available is `champion_change` — zero rows — so a champion leaving is currently invisible,
+    which is why the outcomes include the single-advocate risk explicitly rather than relying on a
+    signal to raise it.
+
+    No numbers: how many completed asks constitute a champion is Layer 4''s arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: d6f3f569c3213ddf1c4df1bb6fba8c1a3e933feca98feb1f219a8b8486ea1458
+  accepted_content_hash: f1a4f8000565cb8a6c01caf2a2f46870c1f374675b510be6c9ec8473a1062fa6

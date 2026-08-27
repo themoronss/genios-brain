@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.pricing.a_concession_requires_a_counterpart
 decision_frameworks:
   core: []
   scoped: []

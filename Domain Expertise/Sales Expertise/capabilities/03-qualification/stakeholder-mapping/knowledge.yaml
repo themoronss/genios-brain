@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.stakeholder_mapping.breadth_is_counted_in_seats_not_in_people
 decision_frameworks:
   core: []
   scoped: []

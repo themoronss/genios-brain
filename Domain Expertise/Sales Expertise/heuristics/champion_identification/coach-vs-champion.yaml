@@ -1,16 +1,147 @@
 identity:
   id: sales.heu.champion_identification.coach_vs_champion
-  name: Coach vs champion
+  name: Coach versus champion
   kind: heuristic
   domain: sales
   scope: capability
   owner_capability: sales.qualification.champion_identification
   subdomain: qualification
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
   statement: A coach tells you things; a champion does things. Both are valuable, only one moves deals.
     Classifying a talkative coach as a champion is the most common cause of the 'sure-thing' deal that
     never signs.
   answers:
-  - Is this person a coach or a champion?
+  - Is this person a champion or a coach?
+  - What evidence distinguishes them?
+  not:
+  - A ranking of people. A good coach is often more useful than a weak champion.
+  - A rule about how to recruit a champion. It classifies; recruiting is the playbook.
+
+heuristic:
+  statement: 'Classify on ACTION TAKEN AT PERSONAL RISK, not on information given. Information costs
+    the giver nothing and is therefore available from anyone who likes you; internal advocacy spends
+    their standing, so it is only offered by someone with a reason of their own. The test is always
+    the same shape — ask for something small that requires them to put their name on it — and the
+    answer arrives in days rather than in impressions.'
+  why: 'The two roles feel identical in a meeting and diverge completely the moment we leave the room,
+    which is precisely where the deal is decided. A coach can describe the committee, warn about the
+    incumbent and explain the budget cycle, all of which is genuinely valuable and none of which
+    changes anyone''s mind. The classification matters because it determines what the seller does
+    next: with a champion the work is to arm them, and with a coach the work is to find the person who
+    will carry it — and a misclassification stops that search precisely when there is still time.'
+  confidence_bp: 8500
+  applies_when: 'A multi-person purchase where at least one contact is engaged and helpful, and where
+    someone other than that contact must approve.'
+  breaks_down_when: 'THE CONTACT IS THE DECISION-MAKER. Where they can simply buy, championing is
+    irrelevant; asking them to advocate internally is asking them to convince themselves.
+
+    EARLY, BEFORE ANY ASK IS APPROPRIATE. A test in the first conversation is a demand from a
+    stranger. The heuristic needs enough relationship that a small internal ask is a reasonable thing
+    to request, and applying it earlier produces a false negative on a genuine future champion.
+
+    CULTURES AND ROLES WHERE INTERNAL ADVOCACY IS COSTLY BY DEFAULT. In some organisations nobody
+    forwards a vendor document to an executive, however convinced they are. The absence of the action
+    then says something about the environment rather than about the person, and the correct test is a
+    different action of comparable risk.
+
+    A REFUSAL WITH A GOOD REASON. A champion who declines a specific ask because the timing is wrong
+    internally is demonstrating judgement, not absence of advocacy — and reading it as disqualifying
+    is how a real champion gets written off.
+
+    RENEWALS AND EXPANSIONS. The internal case is already made and the advocacy has already happened;
+    demanding a fresh demonstration treats an established relationship as an unproven one.'
+  reads:
+  - sales.obj.core.champion
+  - sales.obj.core.stakeholder
+  - sales.obj.core.decision_maker
+  contradicts:
+  - sales.heu.buying_committee_analysis.the_unseen_skeptic_kills_late
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {exists: thread.last_inbound}
+  signals:
+  - introduction
+  - next_step_agreed
+  - positive_reply
+  do_not_use_when:
+  - The contact can approve the purchase themselves.
+  - The relationship is too new for a small internal ask to be reasonable.
+  - It is a renewal where the internal case was already made and won.
+
+objects_used:
+- sales.obj.core.champion
+- sales.obj.core.stakeholder
+- sales.obj.core.decision_maker
+- sales.obj.core.buying_committee
+
+outcomes:
+- Contacts are classified on completed actions rather than on stated support.
+- A coach is kept and used as a coach rather than promoted by hope.
+
+failure_modes:
+- 'THE TEST IS TOO BIG. A large or politically awkward ask is a demand, and a real champion who
+  refuses it gets misfiled as a coach.'
+- 'CLASSIFIED ONCE. People move between the two roles as their own incentives change; a champion who
+  has been promoted may have become a coach in the new seat.'
+- 'USED TO DISMISS A COACH. The coach is often the best source of information in the account, and
+  demoting them in the seller''s attention costs exactly that.'
+
+limits:
+- Says nothing about whether the champion has enough standing to matter, which is a separate and
+  equally decisive question.
+- Requires a testable ask to exist; in some motions there is nothing small to request.
+- '`champion_change` has zero rows on the design partner''s org, so a champion leaving or changing
+  role is not observable and the classification cannot currently expire on its own.'
+
+variants:
+- applies_to: enterprise
+  change: Expect to need a champion per major seat rather than one for the deal; a champion in
+    security cannot advocate inside finance.
+  why: Advocacy does not transfer across functions in a large organisation.
+- applies_to: mid_market
+  change: One champion with genuine standing is usually sufficient, and the standing question matters
+    more than the count.
+  why: Fewer seats, shorter internal distance.
+- applies_to: channel
+  change: The champion sits inside the partner, and their personal win is commercial — deal
+    registration, margin, a quota they own — rather than operational.
+  why: The partner rep advocates for their own economics, which is a stronger and more legible motive.
+
+metrics:
+- name: champion_action_rate
+  unit: percent
+  description: Share of small internal asks completed.
+  direction: higher_is_better
+- name: access_conversion_rate
+  unit: percent
+  description: Share of champions who produced access to an unreached seat.
+  direction: higher_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: The champion dimension, and its insistence that a champion is tested rather than nominated.
+- title: The Challenger Customer
+  kind: book
+  author: Adamson, Dixon, Spenner and Toman
+  note: The mobiliser research — that the people who drive internal consensus are often not the
+    friendliest contacts, and are sometimes the most sceptical ones.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The fourth breakdown regime is the one that
+    protects real champions: a well-judged refusal of a specific ask is evidence of internal awareness,
+    and reading every refusal as disqualifying discards exactly the people with the best judgement.'

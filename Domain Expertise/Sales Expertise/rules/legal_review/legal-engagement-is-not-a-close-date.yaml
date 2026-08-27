@@ -1,0 +1,125 @@
+identity:
+  id: sales.rule.legal_review.legal_engagement_is_not_a_close_date
+  name: Legal engagement is not a close date
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.legal_review
+  subdomain: closing
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'Redlines arriving means the decision was made. It says nothing about when signature
+    lands, because the remaining time belongs to a queue nobody in the deal controls — and a forecast
+    built on the first fact and presented as the second is how a committed quarter slips in its final
+    week.'
+  answers:
+  - May this deal be committed because legal is engaged?
+  - What does legal engagement actually license?
+  not:
+  - A claim that legal engagement is weak evidence. It is strong evidence of the decision.
+  - A rule about how to run the review.
+
+rule:
+  statement: 'Legal engagement MUST NOT by itself move a deal into a committed forecast category or
+    set a close date. It may raise confidence that the deal will close; the DATE requires separate
+    evidence — a buyer-owned signature date, a scheduled execution step, or a stated paper process
+    with a known duration.'
+  spans:
+  - sales.obj.core.contract
+  - sales.obj.core.deal
+  - sales.obj.core.timeline
+  when:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: legal_review}
+  - {absent: commitment.due_at}
+  then: 'Raise confidence in the outcome and hold the date. Recommend obtaining a buyer-owned date
+    rather than inferring one from the stage.'
+  severity: warning
+  why: 'The two questions have different owners. Whether the deal closes was decided by the business,
+    and legal engagement is downstream evidence of that decision. When it closes is set by a review
+    queue with its own backlog, holidays, and competing matters — none of which the buyer''s sponsor
+    controls and none of which correlate with their enthusiasm. Conflating them is unusually
+    expensive because it happens at the end: the deal is in a committed category, the quarter is
+    planned around it, and the slip is discovered with no time to replace it.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'A BUYER-OWNED DATE EXISTS. Where the buyer has stated a date they are working to — a board
+    meeting, a budget expiry, a go-live — that date is theirs and the rule has nothing to add. This is
+    the exception the rule is trying to produce, not one it grudgingly allows.'
+  - 'A PUBLISHED TURNAROUND. Some buyers state their legal service level. Where they do, the duration
+    is known and a date derived from it is evidence rather than inference.'
+  - 'A FINAL-STAGE REVIEW WITH THE SIGNATURE SCHEDULED. Where execution is already booked and legal is
+    completing the last pass, the sequencing is known and the objection does not apply.'
+  - 'STANDARD TERMS WITH NO NEGOTIATION EXPECTED. A click-through or standard-paper motion has no
+    queue to be caught in, and treating it as an open-ended review overstates the risk.'
+  - 'A RENEWAL ON UNCHANGED PAPER. There is no review of substance and the date is administrative.'
+
+objects_used:
+- sales.obj.core.contract
+- sales.obj.core.deal
+- sales.obj.core.timeline
+- sales.obj.core.decision_maker
+
+outcomes:
+- Confidence and date are moved by different evidence.
+- Deals in legal carry a buyer-owned date or an explicit note that they do not.
+
+failure_modes:
+- 'READ AS PESSIMISM ABOUT THE DEAL. The rule holds the date and explicitly raises confidence in the
+  outcome; presenting it as doubt makes sellers argue with it rather than get the date.'
+- 'SATISFIED BY A SELLER-SET DATE. A date the seller chose is the inference this rule exists to
+  prevent, wearing a field.'
+- 'APPLIED TO A STANDARD-TERMS MOTION. Adds a forecasting caveat to a deal with no review queue.'
+
+limits:
+- '`legal_review` has zero rows on the design partner''s org, so this rule cannot currently fire
+  there; it is authored for tenants whose correspondence reaches contract stage.'
+- '`commitment.due_at` is the closest available representation of a buyer-owned date and is not
+  specific to signature — a promised document with a date would satisfy the absence test, which makes
+  this a prompt rather than a precise gate.'
+
+variants:
+- applies_to: enterprise
+  change: Require a named signatory and a scheduled execution step, not merely a stated date — a date
+    without a booked signature is an intention.
+  why: Long approval chains absorb stated dates routinely.
+- applies_to: regulated
+  change: Statutory or committee review calendars set the date; read the calendar rather than asking
+    for a commitment.
+  why: The counterparty cannot promise a date the regime controls.
+- applies_to: smb
+  change: Rarely applies; there is usually no legal review and no queue.
+  why: Standard terms, single signer.
+
+metrics:
+- name: buyer_owned_date_share
+  unit: percent
+  description: Share of deals in legal review carrying a date the buyer stated. What this rule exists
+    to increase.
+  direction: higher_is_better
+- name: committed_slip_rate_from_legal
+  unit: percent
+  description: Share of committed deals that slipped while in legal review. The failure this prevents,
+    measured after the fact.
+  direction: lower_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: The paper-process dimension — knowing the duration and the steps, not only that a review is
+    happening.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new, and it deliberately pairs with the heuristic in the same capability rather
+    than contradicting it: the heuristic says redlines are good news about the OUTCOME, this rule says
+    they are no news about the DATE. Both are needed, because the heuristic alone reliably produces an
+    optimistic close date.'

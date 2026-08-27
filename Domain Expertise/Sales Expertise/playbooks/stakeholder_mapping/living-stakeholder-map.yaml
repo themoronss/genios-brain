@@ -6,25 +6,185 @@ identity:
   scope: capability
   owner_capability: sales.qualification.stakeholder_mapping
   subdomain: qualification
-  version: 1.0.0
-  status: draft
+  version: 1.1.0
+  status: stable
 purpose:
-  statement: A stakeholder map drawn once at qualification is archaeology by the proposal stage. People
-    join, leave, get promoted and change sides mid-deal; the map is maintained on every meaningful contact
-    or it silently becomes fiction.
+  statement: 'A stakeholder map drawn once at qualification is archaeology by the proposal stage.
+    People join, leave, get promoted and change sides mid-deal; the map is maintained on every
+    meaningful contact or it is decoration.'
+  answers:
+  - How is a stakeholder map kept current rather than accurate once?
+  - What is recorded about each person beyond their role?
+  not:
+  - Committee analysis, which enumerates the seats that must agree.
+  - A contact database. The map records stakes and influence, not addresses.
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - introduction
+  - meeting_request
+  do_not_use_when:
+  - 'The buyer is a single person. There is no map, and building one manufactures stakeholders.'
+  - 'Nobody will maintain it. A map updated once is worse than none, because it is trusted at the
+    stage gate where it is most out of date.'
+  - 'The cycle is short enough that the map cannot decay before the deal resolves.'
+
 steps:
 - order: 1
   name: Update on every multi-person interaction
-  description: New name on a thread, new voice in a call — thirty seconds to add them with role and read.
-    The cheap habit that prevents the expensive surprise.
+  description: 'A new name on a thread, a new voice in a call — thirty seconds to add them with role
+    and read. This is the cheap habit the whole playbook depends on; every other step degrades
+    gracefully and this one does not.'
   actor: human
+  objects_read:
+  - sales.obj.core.stakeholder
+  produces: A map that changes as the account does.
+  done_when: No new participant has appeared without being recorded.
+
 - order: 2
-  name: Track influence lines, not just boxes
-  description: Who does the signer actually listen to? The advisor with no title on the org chart often
-    outweighs a VP on it.
+  name: Record each person's own stake, not their role
+  description: '"VP Engineering — technical evaluator" is a label. What they personally gain or lose —
+    a metric they own, a team they protect, a project this displaces — is what predicts their
+    behaviour, and it is the part almost never written down.'
   actor: human
+  objects_read:
+  - sales.obj.core.persona
+  - sales.obj.core.pain_point
+  produces: A stated personal stake per decision-relevant person.
+  done_when: Every mapped person has a stake or is explicitly marked unknown.
+
 - order: 3
-  name: Re-verify before every stage gate
-  description: 'Before proposal, before negotiation, before signature: is everyone on this map still in-seat
-    and still on-side? Departures found here cost a call; found later they cost the deal.'
+  name: Track influence lines, not just boxes
+  description: 'Who does the signer actually listen to? The advisor with no title on the org chart
+    frequently outweighs a VP on it. Reporting lines are public and mostly irrelevant; influence is
+    private and decisive.'
   actor: human
+  objects_read:
+  - sales.obj.core.decision_maker
+  produces: Influence relationships alongside the formal ones.
+  done_when: For each decision-relevant person it is known who they defer to.
+
+- order: 4
+  name: Distinguish participants from stakeholders
+  description: 'A map that grows with the cc list stops distinguishing people who matter from people
+    who were copied. Someone becomes a stakeholder when they can affect the decision, not when they
+    appear in a thread.'
+  actor: human
+  produces: A bounded map rather than a contact list.
+  done_when: Every entry can be justified by an effect they could have on the outcome.
+
+- order: 5
+  name: Read breadth continuously, not at stage gates
+  description: 'Single-threading is cheap to see and cheap to fix while the relationship is healthy.
+    Discovering it at a gate means discovering it at the moment the warm introduction is no longer
+    available, and the remedy has become a cold approach into a quiet account.'
+  actor: system
+  objects_read:
+  - sales.obj.core.champion
+  produces: A live breadth reading per deal.
+  done_when: Single-threading raises a prompt before the next stage rather than at it.
+
+- order: 6
+  name: Remove people who have gone
+  description: 'A departed contact left on the map inflates coverage and hides the single-threading it
+    exists to expose. Departures are not observable in the record today — they present as silence —
+    so this is a human check with a real cost if skipped.'
+  actor: human
+  produces: A map without ghosts, and a re-read of breadth after each removal.
+  done_when: No mapped person has been silent past the point where absence is the best explanation.
+
+- order: 7
+  name: Re-verify before every stage gate
+  description: 'Before proposal, before negotiation, before signature — is everyone on this map still
+    in seat and still on side? The seats most likely to have changed are the ones we never met, which
+    are also the ones the map is least likely to have updated.'
+  actor: human
+  produces: A map re-checked at each transition.
+  done_when: No gate is passed against a map that predates the previous one.
+
+objects_used:
+- sales.obj.core.stakeholder
+- sales.obj.core.buying_committee
+- sales.obj.core.champion
+- sales.obj.core.decision_maker
+- sales.obj.core.persona
+- sales.obj.core.pain_point
+- sales.obj.core.risk
+
+outcomes:
+- The map changes as the account changes rather than at review time.
+- Each person carries a stake and an influence line, not only a role.
+- Breadth is read continuously and departures are removed.
+
+failure_modes:
+- 'MAINTAINED AT STAGE GATES ONLY. Guarantees the map is most out of date exactly when it is most
+  trusted.'
+- 'AN ORG CHART WITH LOGOS. Feels rigorous, predicts nothing, and takes as long to build as the real
+  thing.'
+- 'GROWS WITH THE CC LIST. The map stops distinguishing between influence and presence.'
+- 'GHOSTS LEFT ON THE MAP. Coverage stays flattering while the deal has quietly become
+  single-threaded.'
+- 'BREADTH READ AS A COUNT OF PEOPLE. Five contacts in one team satisfies the metric and none of the
+  purpose.'
+
+limits:
+- '`stakeholder_added` and `stakeholder_left` have no rows on the design partner''s org, so joins and
+  departures are invisible; step 6 is human work and cannot currently be prompted.'
+- '`edge_count` counts connected people rather than seats, so step 5 can be satisfied cosmetically.'
+- Says nothing about how to build a relationship with a newly identified person.
+
+variants:
+- applies_to: enterprise
+  change: Maintain the map per function and require breadth across functions; two contacts in one team
+    count as one thread.
+  why: A reorganisation moves a whole team, so intra-team breadth is correlated risk.
+- applies_to: mid_market
+  change: Steps 1, 2 and 5 carry nearly all the value; influence lines are usually short enough to be
+    obvious.
+  why: Fewer layers between the stake and the decision.
+- applies_to: smb
+  change: Do not run.
+  why: There is one person, and mapping invents the rest.
+- applies_to: channel
+  change: Maintain two maps — the partner's and the end customer's — and read breadth on both.
+  why: A deal wide at the partner and narrow at the customer is a narrow deal.
+
+metrics:
+- name: map_freshness
+  unit: days
+  description: Days since the map last changed on an active deal.
+  direction: lower_is_better
+- name: named_stake_share
+  unit: percent
+  description: Share of mapped people with a stated personal stake.
+  direction: higher_is_better
+- name: single_threaded_deal_share
+  unit: percent
+  description: Share of live deals running through one person.
+  direction: lower_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: Champion, economic buyer and decision process — the roles this map holds and keeps current.
+- title: The Challenger Customer
+  kind: book
+  author: Adamson, Dixon, Spenner and Toman
+  note: On influence inside buying groups running along lines the org chart does not show.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 2, 4, 5 and 6 are new. Step 6 is the one that
+    surprised on review: a departed contact left on the map is not a tidiness problem, it inflates
+    coverage and conceals the single-threading the map exists to expose — and with `stakeholder_left`
+    at zero rows there is no signal that will do it for us.'

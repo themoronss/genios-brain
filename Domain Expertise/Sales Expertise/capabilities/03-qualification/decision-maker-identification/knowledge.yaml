@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.decision_maker_identification.a_proposal_needs_a_named_approver
 decision_frameworks:
   core: []
   scoped: []

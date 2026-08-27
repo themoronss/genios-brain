@@ -3,26 +3,116 @@ identity:
   name: Legal Review
   domain: sales
   subdomain: closing
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
-description: 'Navigating contract review, redlines and the buyer''s legal function. Legal is a veto seat:
-  it can stop the deal and cannot start it, and it appears on the critical path far later than anyone
-  plans for.
+description: 'Navigating contract review, redlines and the buyer''s legal function. Legal is a veto
+  seat: it can stop the deal and cannot start it, and it appears on the critical path far later than
+  anyone plans for.
 
   '
 question: What in the paper stands between agreement and signature?
+
+outcomes:
+- 'Redlines read as evidence the deal is real. Legal does not review contracts for products the
+  business rejected, so the arrival of redlines means the decision has been made and what remains is
+  the price of risk. `legal_review` is the observation that marks it, and treating it as a threat
+  inverts the most reliable positive signal in the closing stage.'
+- 'Redlines triaged in one pass rather than negotiated in order. Accept, fallback, escalate — most
+  fall in the first pile, and accepting them the same day buys the goodwill that the two genuine
+  disagreements will need.'
+- 'The real disagreements packaged and taken together. Clause-by-clause exchange is where weeks
+  disappear; the few substantive items resolved in one conversation between people with authority is
+  the whole difference in cycle time.'
+- 'The business sponsor kept watching the clock. Legal optimises for risk and is correct to; only the
+  business owns the date, and a sponsor who does not know the signature is slipping cannot apply the
+  pressure that is theirs to apply.'
+- 'The gate identified before it is reached. Legal appears on the critical path later than anyone
+  plans for, and asking early what the paper process requires converts a surprise into a scheduled
+  step.'
+- 'A recorded decision to accept a term rather than argue it. The negative outcome: some redlines are
+  worth conceding immediately even when they are unwelcome, and an organisation that fights every
+  clause pays in cycle time for positions nobody will ever invoke.'
+
+failure_modes:
+- 'TREATING REDLINES AS COMBAT. The buyer''s counsel is doing their job — bounding risk — and a seller
+  who responds adversarially converts a procedural step into a relationship problem with the one
+  function that can stop the deal.'
+- 'CLAUSE PING-PONG. Twenty rounds of document exchange, each addressing one item, each taking days.
+  It feels like progress and is the single largest source of avoidable delay at this stage.'
+- 'ESCALATING EVERY DISAGREEMENT. If everything is a principle, nothing is, and the buyer''s counsel
+  learns that the seller''s position carries no information.'
+- 'LETTING LEGAL OWN THE DATE. Legal has no incentive to hurry and no visibility of the commercial
+  consequence. Left unwatched, the deal moves at the speed of a queue nobody is measuring.'
+- 'DISCOVERING THE PAPER PROCESS AT THE END. A buyer with mandatory security addenda, insurance
+  requirements or a standard-terms policy has a process that could have been asked about in week one
+  and is instead discovered in the final fortnight.'
+- 'CONCEDING ON A TERM THAT MATTERS TO AVOID DELAY. The mirror failure of fighting everything, and it
+  is discovered at renewal or at the first incident rather than now.'
+
+kpis:
+- name: redline_cycle_time
+  unit: days
+  description: Days from first redline to executed contract. The capability's central number, and the
+    one clause ping-pong destroys.
+  direction: lower_is_better
+- name: same_day_acceptance_share
+  unit: percent
+  description: Share of redlines accepted without negotiation on the first pass. High is usually good
+    — it is what buys credibility on the items that matter.
+  direction: higher_is_better
+- name: escalated_clause_count
+  unit: count
+  description: Items taken as genuine disagreements. A high count means the triage did not happen.
+  direction: lower_is_better
+- name: exchange_rounds
+  unit: count
+  description: Document round-trips before execution. The direct measure of ping-pong.
+  direction: lower_is_better
+- name: paper_process_lead_time
+  unit: days
+  description: Days between agreement in principle and the buyer's paper requirements being known.
+    Late discovery here is the commonest cause of a slipped signature.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.closing.closing
+  - sales.proposal_and_commercials.negotiation
+  downstream:
+  - sales.closing.contract_management
+  - sales.closing.procurement
+  - sales.post_sale_and_growth.onboarding
+  parallel:
+  - sales.qualification.buying_committee_analysis
+  - sales.sales_management.deal_review
+
+applies_to:
+  models: [b2b, enterprise, mid_market, b2b2c, channel, partner]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Sales
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes, playbooks,
-    heuristics, mental_models, kpis, handoffs and situations, following capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached through `sales.sit.enterprise_deal` (`also_serves`),
+    bound to the `deal` type.
+
+    Worth stating because it changes what the first outcome can currently do: `legal_review` and
+    `contract_requested` both have ZERO rows on the design partner''s org — the two observations that
+    would let the engine recognise this stage at all. The `objects/core/document.yaml` object already
+    carries an executable pattern for the related state (`doc.in_legal_review_is_not_approved`), so
+    the reasoning is in place and the trigger is not. This capability is therefore authored for
+    tenants whose correspondence reaches contract stage, and on the current org it will not fire.
+
+    No numbers: how many exchange rounds is too many, and how long a review may take, are Layer 4''s
+    arithmetic.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+
 admission:
-  accepted_content_hash: 0e4f1f409211a20b34dfa7d7e56d6aad0cc8f9ebcbed2d4bf22abfdbe8f321e1
+  accepted_content_hash: a8b71b8a1b21cbad1a500da0eeadf32eedb1d8c11c0ebdace39df1b69172a645

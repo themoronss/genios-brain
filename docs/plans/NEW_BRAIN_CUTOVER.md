@@ -197,8 +197,8 @@ traffic instead of being swapped blind.
 
 # Phase 2 — the corpus, not the code
 
-> Surveyed 2026-08-25. Worked in five batches on 2026-08-26 — commits `9ddeeed`, `087d4e6`,
-> `3dc7f61`, `049ee6b`, and the one carrying this edit. Every number below was measured against
+> Surveyed 2026-08-25. Worked in six batches — `9ddeeed`, `087d4e6`, `3dc7f61`, `049ee6b`,
+> `1d42e8a` on 2026-08-26, and the one carrying this edit on 2026-08-27. Every number below was measured against
 > `org_e97e86f858ad48b2bbf64b8a`, not against tests.
 
 ## Where Phase 2 stands
@@ -211,8 +211,8 @@ traffic instead of being swapped blind.
 | `required_missing` | 2 | 2 (unchanged — see item 3 below) |
 | Compiled cards rendering `raw_slot` | 11 of 18 | **the four causes are fixed; see below** |
 | Live routes compiling through a placeholder capability | 3 of 4 types | **0 of 4** — Admin closed in batch 4 |
-| Hollow capabilities | 136 | **124** (admin 51, customer_support 40, sales 33) |
-| Corpus validation errors | 566 | **514** |
+| Hollow capabilities | 136 | **118** (admin 51, customer_support 40, sales 27) |
+| Corpus validation errors | 566 | **490** |
 | Tests | 1640 | **1678** |
 
 ## Batch 4 — the substrate was understated, and the live Admin route is no longer hollow
@@ -391,6 +391,42 @@ deliberately kept OUT of `admission_gaps`, because that list drives `review_stat
 whether a card may instruct — folding a content observation into it would make "thin" silently mean
 "unauthorised". Gating it today would un-route `account_admin` entirely and take coverage backwards.
 
+## Batch 6 — the qualification cluster, and a correction
+
+`pricing` was still hollow inside a live type's route set when batch 5 reported otherwise. Re-checked
+against the registry rather than from memory: it is reached through `field_evidence_on_the_market`,
+which binds to `deal` AND `opportunity`, and `opportunity` is live with 18 situations. Closed here,
+and the same query now returns an empty hollow set for all three live types.
+
+Six capabilities: `pricing`, then the qualification cluster (`buying_committee_analysis` — which owns
+`sales.sit.enterprise_deal` — `champion_identification`, `decision_maker_identification`,
+`stakeholder_mapping`) and `legal_review`.
+
+Six more rules with `rule.exceptions`. The pattern worth noting is that three of them exist to stop a
+sibling heuristic from being over-applied — `advocacy_is_claimed_until_it_opens_a_door` bounds the
+coach/champion test, `breadth_is_counted_in_seats_not_in_people` bounds the single-threading
+heuristic, and `legal_engagement_is_not_a_close_date` bounds "redlines mean the deal is real", which
+on its own reliably produces an optimistic close date.
+
+`breadth_is_counted_in_seats_not_in_people` is only writable because `party.role` entered the
+substrate in batch 4 — without it, "group the contacts by function before counting them" cannot be
+expressed and breadth can only ever be a headcount.
+
+**Honesty about what this batch can do today.** These are `deal`-lane capabilities and the live org
+carries ZERO `deal` situations — every situation there is company- or person-anchored. The
+observations they read (`budget_approved`, `contract_requested`, `legal_review`, `objection_price`,
+`discount_pressure`, `champion_change`, `stakeholder_left`) all have zero rows. Each capability says
+so in its own `metadata.notes` and each rule says so in its `limits`, rather than being written as
+though the signals existed. Two rules were deliberately set to `warning` instead of `blocking` for
+exactly this reason.
+
+**A corpus-wide YAML check was added to the routine.** Two authoring hazards bit repeatedly and are
+now checked by parsing every file: a plain scalar cannot start with a backtick (YAML reserves it), and
+a `description:` continuation must be indented past its key. All 1300+ corpus files now parse.
+
+**Measured:** routing 56/61 (unchanged, and expected — `deal` does not occur on this org), `card_audit`
+byte-identical to the batch-4 baseline, 1678 tests green, corpus errors 514 → 490, hollow 124 → 118.
+
 ## What is left, and the honest blockers
 
 1. **`account_admin` routes but CANNOT DELIVER.** `ReasoningStore.persist_complete` refuses a write
@@ -400,13 +436,22 @@ whether a card may instruct — folding a content observation into it would make
    is true of all 49 Customer Support capabilities.** This is the largest structural gap left: the
    corpus can author a domain the tenant has no lane for, and nothing in the authoring path says so.
    The honest unblock is an `admin` pack module plus a tenant promotion.
-2. **124 hollow capabilities** — 51 admin, 40 customer_support, 33 sales (was 136 before batch 4).
+2. **118 hollow capabilities** — 51 admin, 40 customer_support, 27 sales (was 136 before batch 4).
    Only the sales ones can reach a user today. Promote in the order their situation types actually
-   occur. Nothing hollow now sits on a live route in ANY domain, and after batch 5 nothing hollow
-   sits in a live type's ROUTE SET either. From here the queue is worked outwards: the remaining
-   `deal`-lane sales capabilities (`pricing`, `champion_identification`, `stakeholder_mapping`,
-   `decision_maker_identification`, `legal_review`, `procurement`), then the three unauthored
-   Customer Support core objects that `required_missing` depends on, then the rest by subdomain.
+   occur. **Corrected:** batch 5 was reported as leaving nothing hollow in a live type's route set —
+   `pricing` was still there, reached through `field_evidence_on_the_market` under `opportunity`. It
+   was closed in batch 6, and re-measuring from the registry now returns an empty hollow set for
+   `opportunity`, `relationship` and `investor_relationship` alike.
+
+   From here the queue is worked outwards, in this order:
+   a. **`procurement` and `buying_committee_analysis`'s siblings** — the last two `deal`-lane hollows
+      (`procurement`, plus `closing`, `contract_management`, `negotiation`, `objection_handling`,
+      `proposal_creation` in the adjacent subdomains).
+   b. **The three unauthored Customer Support core objects** — `customer_account`, `named_contact`,
+      `support_plan`. This is the ONLY remaining corpus-fixable routing gain: it closes
+      `required_missing=2` and takes the live org from 56/61 to 58/61.
+   c. The rest by subdomain, sales before admin and customer_support, since sales is the only lane
+      the tenant can deliver through.
 3. **`required_missing` (2)** — two `relationship` situations want
    `customer_support.obj.core.{customer_account,named_contact,support_plan}`, which are referenced
    and not authored. A Customer Support object gap reached through a sales route.

@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - sales.rule.legal_review.legal_engagement_is_not_a_close_date
 decision_frameworks:
   core: []
   scoped: []
