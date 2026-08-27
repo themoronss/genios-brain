@@ -13,3 +13,54 @@ purpose:
     how competence stops being hostage to attendance.
   answers:
   - What are SOPs actually protecting against?
+
+heuristic:
+  statement: >
+    The test of an administrative function is whether it survives its people being on leave. SOPs
+    are how competence stops being hostage to attendance.
+  why: >
+    Administrative competence accumulates as tacit knowledge in individuals — the order things must
+    be done in, the person to call, the field that must be set before the other one. None of it is
+    visible while the person is present, and all of it is missing the week they are not. Writing it
+    down is not bureaucracy; it is the only mechanism that converts a personal capability into an
+    organisational one, and the conversion is invisible until it is tested by absence.
+  confidence_bp: 8000
+  applies_when: Any recurring process where a single person's knowledge is the dependency.
+  breaks_down_when: >
+    The process changes faster than the document can. In a genuinely fluid area an SOP is stale on
+    arrival, and following it produces the previous process confidently — which is worse than asking
+    somebody. It also breaks down when SOPs are written to demonstrate rigour rather than to be
+    used: a library produced for an audit reads differently from one produced for a colleague, and
+    the difference is detectable in a paragraph.
+  reads: [admin.obj.core.sop, admin.obj.core.employee_record]
+  contradicts: [admin.heu.process_improvement.workarounds_mark_the_real_process_map]
+limits:
+- 'It argues for documenting the load-bearing processes, not all of them. Universal coverage is what makes a library unmaintainable.'
+- 'It says nothing about whether the documented process is the right one.'
+failure_modes:
+- 'Written for an auditor, which produces documents nobody uses and a false sense of coverage.'
+- 'Applied to fluid processes, where the document confidently describes last month.'
+variants:
+- applies_to: startup_lean
+  change: Strongest and least practised. Every process is one person deep and the first holiday is the test.
+  why: There is no redundancy anywhere and nobody has noticed yet.
+- applies_to: outsourced
+  change: The SOP is the transition artefact; competence transfers with the document or it does not transfer.
+  why: There is no shadowing period long enough to move tacit knowledge.
+references:
+- title: Standard operating procedure practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    contradicts workarounds-mark-the-real-process-map because they disagree about which process
+    to write down: this one documents the official process for resilience, that one says the
+    workaround is the true process and the official one already failed. Writing the wrong one
+    produces a resilient description of something nobody does.

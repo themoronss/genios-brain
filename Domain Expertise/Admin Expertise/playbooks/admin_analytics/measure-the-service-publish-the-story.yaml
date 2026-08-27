@@ -12,16 +12,75 @@ purpose:
   statement: Admin analytics tracks the function as a service — volumes, SLA hits, cost per request class,
     friction themes — one honest page monthly, because an unmeasured support function is invisible until
     it is blamed.
+
+when_to_use:
+  do_not_use_when:
+  - The function is too small for the numbers to mean anything. Below a certain volume the measurement costs more than the insight and invites over-reading noise.
 steps:
 - order: 1
-  name: Instrument the intake queue
-  description: Volume, class mix, resolution times — the queue is the dataset; keep it clean.
+  name: Classify before counting
+  description: >
+    Volume across a mixed catalogue is a number that grows with headcount and says nothing. Classes
+    are what make a count interpretable.
   actor: human
+  objects_read: [admin.obj.core.request]
+  done_when: Requests fall into classes with different work.
 - order: 2
-  name: Report the one page
-  description: Served, hit-rate, top frictions, one improvement shipped. Readable in two minutes, monthly.
-  actor: human
+  name: Measure cycle time as a distribution
+  description: >
+    An average hides the class that takes three weeks, and that class is the one generating
+    escalations.
+  actor: system
+  done_when: Reporting shows the tail.
 - order: 3
-  name: Use it for capacity conversations
-  description: Growth in request volume is the staffing case, in numbers, before burnout makes it in resignations.
+  name: Count rework separately
+  description: >
+    A request handled twice is a different problem from two requests, and merging them makes a
+    broken function look busy.
+  actor: system
+  done_when: Rework is visible as its own number.
+- order: 4
+  name: Find the repeated question
+  description: >
+    The same request arriving weekly is a self-service page that does not exist. This is the
+    capability's actual purpose and it is not an efficiency measure.
   actor: human
+  done_when: Repeat classes are identified and handed to knowledge or process.
+- order: 5
+  name: Narrate one page, monthly
+  description: >
+    Admin done well disappears. A dashboard nobody opens is a cost with no output, and the
+    narration is what makes the function visible at budget time.
+  actor: human
+  done_when: A page exists, is short, and somebody read it.
+objects_used: [admin.obj.core.request, admin.obj.core.sop, admin.obj.core.budget_line, admin.obj.core.escalation]
+limits:
+- 'It measures the function; it cannot measure the value of work that prevented something from happening.'
+- 'Cost per class requires effort data most administrative functions do not capture.'
+failure_modes:
+- 'Step 5 produced as a dashboard rather than a narrative, which is read by nobody and cited by nobody.'
+- 'Measurement used to argue for headcount, which is legitimate and destroys the credibility of the numbers if it is the only use.'
+variants:
+- applies_to: outsourced
+  change: The numbers become contractual and step 3 is where disputes concentrate.
+  why: Rework is billable to somebody and both sides have a view.
+- applies_to: startup_lean
+  change: Step 4 only, informally. The repeated question is worth finding at any size; the rest is not.
+  why: Volume is too low for distributions to mean anything.
+references:
+- title: Service function measurement practice
+  kind: practitioner
+  note: Where repeat-contact analysis is treated as the highest-value output of operational reporting.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is the step that makes the other four matter. A dashboard is a cost with no output; a
+    narrated page is the function's existence proof at budget time, and admin is the function
+    that most needs one because doing it well makes it invisible.

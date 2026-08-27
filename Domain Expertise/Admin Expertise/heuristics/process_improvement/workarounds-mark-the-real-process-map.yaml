@@ -13,3 +13,53 @@ purpose:
     is the most honest process-improvement backlog available.
   answers:
   - Where should process improvement look first?
+
+heuristic:
+  statement: >
+    Wherever staff built a workaround, the official process failed them. The workaround inventory is
+    the most honest process-improvement backlog available.
+  why: >
+    A workaround costs the person who built it real effort, and nobody spends that effort on a
+    process that works. So each one is a precise, self-funded, unsolicited defect report — more
+    reliable than a survey, because it was made by action rather than by opinion, and more specific,
+    because it identifies exactly which step was unusable. It is also invisible by construction: the
+    people using it have solved their problem and have no reason to raise it.
+  confidence_bp: 8500
+  applies_when: Any established administrative process with regular users.
+  breaks_down_when: >
+    The workaround exists to evade a control that is working. Somebody routing spend through
+    expenses to avoid procurement has built a workaround and the official process did not fail —
+    it functioned. Treating that as a defect report and smoothing the path removes the control.
+    It also breaks down where the workaround is habit: a practice carried from a previous employer
+    or a previous system, which describes history rather than the current process.
+  reads: [admin.obj.core.request, admin.obj.core.sop, admin.obj.core.approval]
+  contradicts: [admin.heu.sop_management.sops_are_resilience_not_bureaucracy]
+limits:
+- 'It identifies where the process failed, not what the fix is. The workaround is evidence, not a design.'
+- 'Workarounds are hidden by definition, so the inventory is always incomplete and biased toward the visible.'
+failure_modes:
+- 'Used to legitimise control evasion, which is the one case where the official process was right.'
+- 'Collected and then punished, which drives the remaining workarounds further underground.'
+variants:
+- applies_to: regulated
+  change: A workaround around a control is a finding, and this heuristic must be applied only to the non-control steps.
+  why: The distinction between friction and control is externally defined.
+- applies_to: distributed
+  change: Workarounds are less visible because nobody watches anyone work, so they must be asked for rather than observed.
+  why: The usual discovery mechanism is seeing somebody do something odd at their desk.
+references:
+- title: Continuous improvement practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the important one: somebody routing spend through expenses to
+    avoid procurement has built a workaround, and the official process did not fail — it worked.
+    Smoothing that path removes the control.

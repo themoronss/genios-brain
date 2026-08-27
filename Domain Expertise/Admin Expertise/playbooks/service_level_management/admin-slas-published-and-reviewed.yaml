@@ -11,18 +11,82 @@ identity:
 purpose:
   statement: Admin services carry published response and completion targets by request type, tracked and
     reviewed — because 'as soon as possible' is a promise nobody can keep and everybody resents.
+
+when_to_use:
+  do_not_use_when:
+  - The work is genuinely bespoke and unbounded. Publishing a target for something whose scope is unknown produces a breach and a broken promise on the first instance.
 steps:
 - order: 1
-  name: Set targets per request class
-  description: Same-day for access, 3 days for letters, week for procurements — realistic and stated.
+  name: Classify requests before setting any target
+  description: >
+    One target across a mixed catalogue is wrong for most of it. The classes are what make a target
+    meaningful.
   actor: human
+  objects_read: [admin.obj.core.request]
+  done_when: Requests fall into classes with materially different work.
 - order: 2
-  name: Track against them honestly
-  description: 'Hit rates by class, visible. Missed classes get root-caused: volume, staffing, or wrong
-    target.'
+  name: Set targets from measured capability, not aspiration
+  description: >
+    An aspirational target converts the SLA into a monthly apology and teaches requesters to
+    discount every future commitment.
   actor: human
+  done_when: The target is one the queue currently meets most of the time.
 - order: 3
-  name: Renegotiate targets openly
-  description: If a target is chronically missed, fix capacity or change the promise publicly — silent
-    misses corrode the whole system's credibility.
+  name: Measure from the requester's submission
+  description: >
+    Starting the clock at triage is compliant and disappoints everybody, because their experience
+    began when they asked.
+  actor: system
+  done_when: The clock starts at the inbound.
+- order: 4
+  name: Publish, and say what happens on a breach
+  description: >
+    A target with no stated failure behaviour is a promise with no remedy. Saying what we do when
+    we miss is most of what makes it credible.
   actor: human
+  done_when: Requesters know the target and the escalation.
+- order: 5
+  name: Report the tail, not the mean
+  description: >
+    The ninety-fifth percentile is what people experience and talk about. The mean is what makes a
+    report look fine.
+  actor: system
+  done_when: Reporting shows the distribution.
+- order: 6
+  name: Review targets against capability on a cycle
+  description: >
+    Volumes and staffing move. A published catalogue describing last year's function is a set of
+    promises nobody agreed to keep.
+  actor: human
+  done_when: Targets have been re-derived from current performance.
+objects_used: [admin.obj.core.request, admin.obj.core.escalation, admin.obj.core.deadline, admin.obj.core.policy]
+limits:
+- 'It sets and measures commitments; it does not create the capacity to meet them.'
+- 'Step 3 requires intake tooling that timestamps the request, which informal channels do not.'
+failure_modes:
+- 'Step 2 inverted under pressure to look ambitious, which is how an SLA becomes a liability.'
+- 'Step 5 skipped because the mean is comfortable, which hides exactly the cases that generate escalations.'
+variants:
+- applies_to: outsourced
+  change: The targets become contractual and step 6 becomes a negotiation rather than an adjustment.
+  why: Changing a target you have signed is a commercial act.
+- applies_to: startup_lean
+  change: Steps 1 and 4 only, informally. Two classes and a stated expectation removes most chasing.
+  why: The value is the certainty, not the measurement.
+references:
+- title: ITIL 4 — Service Level Management
+  kind: framework
+  note: Where measuring from the customer's request rather than from internal triage is explicit.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 2 is the one that fails under pressure to look ambitious. An aspirational target
+    converts the SLA into a monthly apology and trains requesters to discount every future
+    commitment the function makes.

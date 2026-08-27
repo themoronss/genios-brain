@@ -13,3 +13,53 @@ purpose:
     for free. Treat every minor disruption as a live drill and harvest its lessons.
   answers:
   - When does continuity planning get tested?
+
+heuristic:
+  statement: >
+    Before the disaster, small disruptions — an outage, a storm week, a key person unavailable —
+    audit your continuity for free. Treat every minor disruption as a live drill and harvest it.
+  why: >
+    A planned exercise is expensive, scheduled, and everybody knows it is a test, which is exactly
+    the conditions under which a plan performs best and tells you least. A real minor disruption is
+    unannounced, happens under normal staffing, and reveals what people actually do — which is
+    usually not what the plan says. It costs nothing because it was going to happen anyway, and the
+    only expense is somebody writing down what did not work while it is still fresh.
+  confidence_bp: 8000
+  applies_when: Any unplanned disruption, however small, that touched a documented process.
+  breaks_down_when: >
+    The disruption is being actively managed and the harvesting interferes. Asking people to
+    document lessons during the event competes with resolving it, and the notes are worse than the
+    ones taken the next day. It also breaks down where the small disruption is not representative:
+    a two-hour outage tests notification and tests nothing about a week-long one, and concluding the
+    plan works from it produces exactly the false confidence a drill is supposed to remove.
+  reads: [admin.obj.core.sop, admin.obj.core.escalation, admin.obj.core.action_item]
+  contradicts: [admin.heu.health_and_safety_administration.near_misses_are_the_cheapest_teachers]
+limits:
+- 'Small disruptions test small failure modes. They cannot substitute for testing the scenarios that would actually threaten the organisation.'
+- 'The harvest depends on somebody owning it, and during a disruption nobody is assigned to learning.'
+failure_modes:
+- 'Harvesting during the event, which competes with resolving it.'
+- 'Generalising from a short disruption to a long one, which produces confidence the test did not earn.'
+variants:
+- applies_to: distributed
+  change: Connectivity and tooling outages are frequent and test exactly the dependencies that matter.
+  why: The failure modes and the rehearsals are the same events.
+- applies_to: regulated
+  change: Formal exercises are mandated and this becomes a supplement rather than a substitute.
+  why: The regulator wants a scheduled test regardless of how much free evidence exists.
+references:
+- title: Business continuity practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the one that produces false confidence: a two-hour outage tests
+    notification and nothing about a week-long failure, and concluding the plan works from it is
+    exactly the belief a drill exists to remove.

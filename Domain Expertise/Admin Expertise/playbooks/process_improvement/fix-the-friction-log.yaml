@@ -12,19 +12,76 @@ purpose:
   statement: Admin processes improve from a running friction log — every recurring annoyance, wait and
     workaround recorded — with the top item fixed each month, because continuous improvement is a habit
     with a backlog, not an initiative with a slide deck.
+
+when_to_use:
+  do_not_use_when:
+  - The process is about to be replaced. Improving something scheduled for removal spends effort on a life that will not be used.
 steps:
 - order: 1
-  name: Log frictions as they occur
-  description: The double-entry, the wait-on-approval, the manual copy — thirty seconds each into the
-    log.
+  name: Keep a running friction log
+  description: >
+    Every recurring annoyance, wait and workaround. Without an input queue, improvement targets
+    whatever was mentioned most recently or most loudly.
   actor: human
+  objects_read: [admin.obj.core.request]
+  produces: A standing backlog.
+  done_when: Friction is being recorded as it is experienced.
 - order: 2
-  name: Pick monthly by pain × frequency
-  description: One improvement, properly done, per cycle. The log's ranking beats anyone's memory of what
-    hurts.
+  name: Read the workarounds first
+  description: >
+    Wherever somebody built one, the official process failed them and they told you by acting
+    rather than by complaining. It is the most honest backlog available.
   actor: human
+  done_when: Known workarounds are in the log as defects.
 - order: 3
-  name: Measure the before and after
-  description: Time or errors, before vs after. Improvements without measures become opinions in the next
-    debate.
+  name: Ask whether the step can go before asking how to speed it up
+  description: >
+    Optimising a step that should not exist is the commonest form of improvement theatre, and
+    automating it makes it permanent.
   actor: human
+  done_when: Removal was considered first.
+- order: 4
+  name: Find the approvals that never reject
+  description: >
+    A gate with a hundred per cent approval rate is latency with a control''s name on it, and it is
+    defended by the fact that nothing has gone wrong.
+  actor: system
+  objects_read: [admin.obj.core.approval]
+  done_when: Approval rates per gate are known.
+- order: 5
+  name: Ship one fix a month
+  description: >
+    One delivered change beats a prioritised list of twenty, and it is what keeps the friction log
+    receiving input.
+  actor: human
+  done_when: Something changed and the reporter saw it.
+objects_used: [admin.obj.core.request, admin.obj.core.approval, admin.obj.core.sop, admin.obj.core.action_item]
+limits:
+- 'It improves what exists. Whether the process should exist at all is a design question above this capability.'
+- 'Step 4 needs approval outcomes to be recorded, which most approval flows do not retain.'
+failure_modes:
+- 'Step 5 replaced by a roadmap, after which the log stops receiving input because nothing visibly happens.'
+- 'Step 3 skipped because acceleration is easier to justify than deletion, which requires arguing the step was never needed.'
+variants:
+- applies_to: automated_first
+  change: Step 3 becomes critical — automation is the fastest way to make an unnecessary step permanent and invisible.
+  why: A codified step is harder to question than a manual one.
+- applies_to: shared_services
+  change: Step 1 must collect from requesters, not only from the team, or the log describes internal irritation rather than customer friction.
+  why: The people experiencing the process are outside the function.
+references:
+- title: Continuous improvement practice
+  kind: practitioner
+  note: Removal before acceleration is the ordering that distinguishes improvement from optimisation.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is what keeps step 1 alive. A friction log whose items are prioritised and never
+    shipped stops receiving input within two months, because reporting visibly achieves nothing.

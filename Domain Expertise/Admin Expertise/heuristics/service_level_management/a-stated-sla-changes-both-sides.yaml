@@ -13,3 +13,54 @@ purpose:
     not urgency. The SLA's biggest product is the silence of people who know when to expect.
   answers:
   - What do published admin SLAs change?
+
+heuristic:
+  statement: >
+    Publishing targets disciplines the provider AND calms the requester. Most chasing is
+    uncertainty rather than urgency, so the SLA's largest product is the silence of people who now
+    know when to expect an answer.
+  why: >
+    A person who does not know when something will happen has exactly one available action, which is
+    to ask. They are not applying pressure; they are resolving uncertainty, and they will do it
+    repeatedly because each answer expires. Publishing a target replaces the asking with waiting,
+    which costs them nothing and removes a large volume of inbound that the function was reading as
+    impatience. The delivery discipline is the visible half; the reduction in noise is the larger one.
+  confidence_bp: 8000
+  applies_when: A request-based service where the requester cannot otherwise see progress.
+  breaks_down_when: >
+    The target is routinely missed. A published commitment that fails converts uncertainty into
+    grievance, which is a worse state than not knowing — the requester now has evidence rather than
+    a question. It also breaks down where visible progress is available instead: a status the
+    requester can see removes the uncertainty without committing to a date, and is stronger than an
+    SLA for work whose duration genuinely varies.
+  reads: [admin.obj.core.request, admin.obj.core.escalation]
+  contradicts: [admin.heu.gatekeeping.the_gatekeeper_is_the_brand_s_first_draft]
+limits:
+- 'It concerns certainty, not speed. A long target honestly kept outperforms a short one missed.'
+- 'The chasing reduction only materialises if the target is believed, which takes a few cycles of meeting it.'
+failure_modes:
+- 'Publishing before the function can meet the number, which spends the credibility the mechanism depends on.'
+- 'Treated as a delivery commitment only, so nobody notices the inbound-volume effect that justified it.'
+variants:
+- applies_to: enterprise_admin
+  change: Strongest, because the requester has no relationship with the provider and no other way to judge progress.
+  why: Anonymity removes every informal channel for reassurance.
+- applies_to: startup_lean
+  change: An informal stated expectation does most of the work, and a formal catalogue is overhead.
+  why: People can ask in person, so the uncertainty is cheap to resolve.
+references:
+- title: ITIL 4 — Service Level Management
+  kind: framework
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the one worth knowing before publishing anything: visible
+    progress removes the uncertainty without committing to a date, and for work whose duration
+    genuinely varies it is a stronger instrument than an SLA.

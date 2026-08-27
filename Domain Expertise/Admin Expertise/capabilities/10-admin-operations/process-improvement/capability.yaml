@@ -3,7 +3,7 @@ identity:
   name: Process Improvement
   domain: admin
   subdomain: admin_operations
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Taking measured administrative work and making it smaller: eliminating steps, removing approvals
@@ -12,13 +12,63 @@ description: 'Taking measured administrative work and making it smaller: elimina
 
   '
 question: Which administrative step can be removed, automated or pushed to self-service?
+
+outcomes:
+- 'A running friction log — every recurring annoyance, wait and workaround recorded — because continuous improvement without an input queue is an intention.'
+- 'The top item fixed each month. One shipped fix beats a prioritised list of twenty.'
+- 'Approvals that never reject identified and removed. An approval with a hundred per cent approval rate is a delay wearing a control''s clothing.'
+- 'Transcription between systems automated, since re-keying is the highest-volume, lowest-value administrative work and it is where the errors are.'
+- 'The negative outcome: a step DELETED rather than made faster. Optimising a step that should not exist is the most common form of improvement theatre.'
+failure_modes:
+- 'IMPROVING WITHOUT AN INPUT QUEUE, which means improving whatever was mentioned most recently or most loudly.'
+- 'MAKING A STEP FASTER INSTEAD OF REMOVING IT. Automating an unnecessary approval institutionalises it.'
+- 'MEASURING ACTIVITY RATHER THAN REMOVAL. Number of improvements is a metric that rises as the process gets more complicated.'
+- 'IGNORING WORKAROUNDS. Wherever staff built one, the official process failed them, and it is the most honest backlog available.'
+- 'BIG-BANG REDESIGN, which consumes a quarter and delivers a process nobody was consulted about.'
+kpis:
+- name: friction_log_inflow
+  unit: count
+  description: Items recorded per period. A target band — zero inflow means nobody believes reporting achieves anything.
+  direction: target_band
+- name: items_shipped
+  unit: count
+  direction: higher_is_better
+  description: Fixes actually delivered, not identified.
+- name: steps_removed
+  unit: count
+  description: Steps deleted rather than accelerated. The measure that distinguishes improvement from theatre.
+  direction: higher_is_better
+- name: never_rejecting_approvals
+  unit: count
+  description: Approval gates with no rejections in the period. Each one is a delay with no control behind it.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.admin_operations.admin_analytics, admin.admin_operations.request_intake]
+  downstream: [admin.admin_operations.sop_management, admin.admin_operations.service_level_management]
+  parallel: [admin.contract_and_vendor.procurement_administration, admin.executive_support.approval_coordination]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, hybrid, outsourced, automated_first, startup_lean]
+  offerings: [coordinative, transactional]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    steps_removed is the KPI that separates this from improvement theatre. Making a step faster
+    is measurable and satisfying; deleting it is neither, and the second is almost always the
+    larger win. never_rejecting_approvals is its sharpest instance — a gate with a hundred per
+    cent approval rate is pure latency with a control's name on it.
+
+    friction_log_inflow is a target band with a floor rather than a maximum, for the same reason
+    near-miss reporting is: zero inflow does not mean a smooth process, it means nobody believes
+    reporting achieves anything.
+
 admission:
-  accepted_content_hash: 1bfcf8bc4db3aa8be3263f57989f9ada7243c1b2e64b965ba8bb97876b292068
+  accepted_content_hash: 744d1176a7a25638d4e3fe2b8b5e0484e493b6c64f47f7423c84f998ea22c5aa

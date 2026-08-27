@@ -3,7 +3,7 @@ identity:
   name: Business Continuity Administration
   domain: admin
   subdomain: admin_operations
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'The administrative side of continuity: documenting critical processes and their dependencies,
@@ -12,13 +12,63 @@ description: 'The administrative side of continuity: documenting critical proces
 
   '
 question: If this stopped working tomorrow, is there a documented, tested way to keep going?
+
+outcomes:
+- 'Critical processes documented with their DEPENDENCIES, because the thing that stops you is usually two steps away from the thing that failed.'
+- 'A contact tree that is current and reachable without the systems that may be down.'
+- 'Alternate arrangements that have been tried at least once, since a plan nobody has walked is a document rather than a capability.'
+- 'A lightweight annual walkthrough, because the plan you have never tested is the plan you do not have.'
+- 'The negative outcome: a documented process identified as HAVING NO alternative, stated plainly rather than filled with an aspiration.'
+failure_modes:
+- 'PLANNING FOR DISASTERS AND NOT FOR TUESDAYS. The disruptions that actually happen are an outage, a storm week, a key person unavailable — and those are also free rehearsals nobody harvests.'
+- 'A PLAN STORED IN THE SYSTEM IT PROTECTS AGAINST, which is discovered at exactly the wrong moment.'
+- 'CONTACT TREES THAT AGE. People leave, numbers change, and the tree is only tested when it is needed.'
+- 'ALTERNATIVES ASSERTED, NOT TRIED. "We would use the other supplier" is a sentence, not an arrangement.'
+- 'DEPENDENCIES ONE LEVEL DEEP, so the plan covers the system and not the thing the system needs.'
+kpis:
+- name: critical_process_coverage
+  unit: percent
+  description: Processes whose failure would stop the organisation, with a documented recovery.
+  direction: higher_is_better
+- name: plan_currency
+  unit: days
+  description: Age of the contact tree and dependency map. Both decay continuously and silently.
+  direction: lower_is_better
+- name: walkthrough_recency
+  unit: days
+  direction: lower_is_better
+  description: Time since the plan was actually exercised.
+- name: disruption_lessons_captured
+  unit: percent
+  description: Real minor disruptions that produced a plan update. The free audits, harvested or wasted.
+  direction: higher_is_better
+handoffs:
+  upstream: [admin.admin_operations.sop_management, admin.facilities_and_assets.maintenance_coordination]
+  downstream: [admin.compliance_and_governance.audit_support, admin.facilities_and_assets.health_and_safety_administration]
+  parallel: [admin.records_and_documentation.retention_and_archival, admin.contract_and_vendor.vendor_performance_management]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, distributed]
+  offerings: [assurance]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    disruption_lessons_captured is the KPI that makes this capability affordable. Full
+    continuity exercises are expensive and rare; minor disruptions are frequent and free, and
+    every one of them audits the plan at no cost. An organisation that harvests them tests
+    continuously and an organisation that does not tests annually at best.
+
+    The negative outcome — recording that a process has NO alternative — is the one continuity
+    plans systematically avoid, because a plan with gaps reads as incomplete. A plan with an
+    aspiration where an arrangement should be is worse: it fails at the moment it is relied on.
+
 admission:
-  accepted_content_hash: eb7d9cedf50b5262230d407828d14a98786f0117d5d7707852c6d49b0ec23046
+  accepted_content_hash: bf01498fb19d57a80b5ad98f9c0041a268a9ab7067adafc4a9d9853615396e15
