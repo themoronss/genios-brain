@@ -13,3 +13,55 @@ purpose:
     paranoid-early document work on every international trip.
   answers:
   - Why front-load visa work?
+
+heuristic:
+  statement: >
+    Most trip problems degrade gracefully — a document problem cancels. The asymmetry justifies
+    paranoid-early document work on every international trip.
+  why: >
+    A delayed flight shortens a meeting, a lost bag is an inconvenience, a cancelled hotel is a
+    different hotel. Each has a recovery. A missing visa or an invalid passport has none: the
+    traveller does not board, and no amount of money or effort at that moment changes it. Because
+    the loss distribution is binary rather than continuous, the correct preparation is not
+    proportional to the probability — it is proportional to the fact that the downside has no
+    partial outcome.
+  confidence_bp: 8500
+  applies_when: Any international travel with a documentation requirement.
+  breaks_down_when: >
+    The destination genuinely has no requirement for this passport — common within visa-free
+    arrangements — where the paranoia produces cost and delay for nothing and, worse, trains
+    travellers to treat the process as theatre, which is what happens when they next go somewhere
+    that does require it. It also breaks down for the traveller who manages their own documents
+    competently and is being asked to prove it repeatedly, where the check becomes friction rather
+    than protection.
+  reads: [admin.obj.core.employee_record, admin.obj.core.deadline]
+  contradicts: [admin.heu.travel_booking.traveller_fatigue_is_a_cost_line]
+limits:
+- 'It argues for lead time, not for expense. Early is free; expedited is not, and this heuristic exists to avoid needing expedited.'
+- 'It cannot compress a consulate.'
+failure_modes:
+- 'Applied uniformly to visa-free destinations, which produces process fatigue that lands on the trip that mattered.'
+- 'Used to justify expensive expediting rather than earlier starting, which is treating the symptom.'
+variants:
+- applies_to: distributed
+  change: Stronger — a global team means many nationalities and no single answer for the same trip.
+  why: The per-traveller requirement is the norm rather than the exception.
+- applies_to: startup_lean
+  change: The founder books their own travel late and this is the failure that catches them.
+  why: Nobody is watching the lead time and the trip is always urgent.
+references:
+- title: Business travel documentation practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case matters because it is how the discipline erodes: applying full
+    paranoia to visa-free destinations trains travellers to treat the whole process as theatre,
+    and that habit arrives with them on the trip that did require it.

@@ -3,7 +3,7 @@ identity:
   name: Visa & Documentation
   domain: admin
   subdomain: travel_and_events
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Managing the documentation that makes travel lawful: passports and validity windows, visas,
@@ -12,13 +12,62 @@ description: 'Managing the documentation that makes travel lawful: passports and
 
   '
 question: Is this person legally able to enter and work there on these dates?
+
+outcomes:
+- 'Document work started the moment travel becomes PROBABLE, not when it is booked. These are the one part of a trip with a lead time nobody controls.'
+- 'Passport validity checked against the destination rule, not against the expiry date. Six months remaining is a requirement in many places and a surprise at check-in.'
+- 'Requirements researched per nationality, since the same trip has different answers for different passports on the same team.'
+- 'Buffer built in, because an application that comes back requiring one more document has consumed the buffer that did not exist.'
+- 'The negative outcome: a trip CANCELLED or a traveller substituted, early, because the documentation will not arrive. Deciding it in week one costs a booking fee; deciding it at the airport costs the meeting.'
+failure_modes:
+- 'STARTING WHEN THE FLIGHT IS BOOKED. Booking is fast and documents are slow, and the order in which they are done is the whole risk.'
+- 'CHECKING EXPIRY RATHER THAN VALIDITY WINDOW. A passport valid on the travel date can still be refused.'
+- 'ONE ANSWER FOR THE WHOLE TRAVELLING GROUP, which is wrong for whichever member holds a different passport.'
+- 'NO BUFFER, so a single request for further information turns an approved application into a missed trip.'
+- 'TREATING A DOCUMENT RISK LIKE ANY OTHER TRIP RISK. Most trip problems degrade — a delayed flight is a shorter meeting. A document problem cancels.'
+kpis:
+- name: lead_time_from_probable
+  unit: days
+  description: From the trip becoming likely to the application being submitted. The only controllable variable.
+  direction: higher_is_better
+- name: validity_window_check_rate
+  unit: percent
+  description: Trips where destination-specific validity rules were checked, not just expiry.
+  direction: higher_is_better
+- name: document_caused_cancellations
+  unit: count
+  description: Trips lost to paperwork. The outcome this exists to prevent.
+  direction: lower_is_better
+- name: buffer_consumed_share
+  unit: percent
+  description: Applications that used their contingency. A rising share means the buffer is really the plan.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.travel_and_events.travel_booking, admin.executive_support.calendar_management]
+  downstream: [admin.travel_and_events.itinerary_management, admin.travel_and_events.travel_expense_administration]
+  parallel: [admin.people_administration.employee_records_administration, admin.compliance_and_governance.licence_and_registration]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, executive_office, hybrid, distributed]
+  offerings: [coordinative, assurance]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    The asymmetry stated in the heuristic is what shapes every outcome here: most trip problems
+    degrade gracefully and a document problem cancels. That justifies work that looks paranoid —
+    starting before the trip is confirmed, buffering an application that historically takes two
+    weeks — because the expected cost is dominated by a binary tail rather than by the mean.
+
+    lead_time_from_probable rather than from booked, because booking is fast and documents are
+    slow, and the order those two are done in is the entire risk.
+
 admission:
-  accepted_content_hash: 91e688fd1eb633eed99a68f82c1a67e5c50aad94252af138af75e9fc5701f88e
+  accepted_content_hash: 07ee0c20909e5b9cdb0a38c6d657ab49df5df1d6fb87f524eb634db109d2fbbd

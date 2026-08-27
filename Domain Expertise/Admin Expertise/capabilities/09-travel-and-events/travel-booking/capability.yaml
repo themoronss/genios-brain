@@ -3,7 +3,7 @@ identity:
   name: Travel Booking
   domain: admin
   subdomain: travel_and_events
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Arranging travel against policy and budget: approval before commitment, fare and class rules,
@@ -12,13 +12,63 @@ description: 'Arranging travel against policy and budget: approval before commit
 
   '
 question: Is this trip approved, within policy, and booked at a sensible cost?
+
+outcomes:
+- 'Approval before commitment, because a booked trip is a spent trip and the approval afterwards is a formality.'
+- 'Lead time treated as the primary cost lever. It dominates the economics far more than any policy clause about fare class.'
+- 'Refundable fares chosen where the trip is genuinely uncertain, priced as an option rather than as an indulgence.'
+- 'Routings judged on the traveller arriving able to work, not on the ticket price alone. The trip exists for the meeting.'
+- 'The negative outcome: a trip REPLACED by a call, or a traveller reduced from three to one. The cheapest trip is the one not taken.'
+failure_modes:
+- 'OPTIMISING THE TICKET AND IGNORING THE TRIP. A saving that exhausts the traveller before the meeting spent more than it saved.'
+- 'BOOKING LATE AND BLAMING POLICY. The fare difference is almost entirely lead time, and lead time is a planning decision.'
+- 'BANNING REFUNDABLE FARES. On a genuinely uncertain trip the change fee exceeds the premium, and the ban is a false economy applied uniformly.'
+- 'APPROVAL AFTER BOOKING, which makes the control a record.'
+- 'MEASURING COST PER TRIP RATHER THAN COST PER OUTCOME, which makes the unnecessary cheap trip look better than the necessary expensive one.'
+kpis:
+- name: advance_booking_days
+  unit: days
+  description: Lead time at booking. The variable that actually determines cost.
+  direction: higher_is_better
+- name: pre_commitment_approval_rate
+  unit: percent
+  direction: higher_is_better
+  description: Trips approved before they were booked.
+- name: policy_exception_rate
+  unit: percent
+  description: A target band. Zero means the policy is either perfect or nobody is asking.
+  direction: target_band
+- name: red_eye_or_same_day_arrival_share
+  unit: percent
+  description: Trips where the traveller arrives with no recovery before the meeting. The fatigue cost, made visible.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.executive_support.calendar_management, admin.executive_support.approval_coordination]
+  downstream: [admin.travel_and_events.visa_and_documentation, admin.travel_and_events.itinerary_management,
+               admin.travel_and_events.travel_expense_administration]
+  parallel: [admin.finance_administration.budget_tracking, admin.contract_and_vendor.procurement_administration]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, executive_office, hybrid, distributed, outsourced]
+  offerings: [transactional, coordinative]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    advance_booking_days is the KPI that matters and it is almost never the one a travel policy
+    measures. Fare differences are dominated by lead time, so a policy tightening class rules
+    while trips are booked four days out is optimising the small term.
+
+    red_eye_or_same_day_arrival_share makes the fatigue cost visible, which is the only way it
+    enters a cost conversation at all — otherwise the saving is measurable and the cost is not,
+    and the measurable side wins by default.
+
 admission:
-  accepted_content_hash: 08f122a792b2ed94a5c2f84e6e16fbd061ab332fc097210cf3ccc1485f052f30
+  accepted_content_hash: 1558c452f5fc6b9740edd6d8375ad98b81abccd9202e637520f8114a4a77507c
