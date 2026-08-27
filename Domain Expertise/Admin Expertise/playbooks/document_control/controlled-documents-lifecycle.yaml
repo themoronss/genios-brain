@@ -12,19 +12,81 @@ purpose:
   statement: 'Documents that bind — policies, contracts, SOPs — get controlled handling: owner, review
     date, distribution list, change log — because a binding document nobody owns drifts from reality and
     then binds you to the drift.'
+
+when_to_use:
+  signals: [followup_sent, next_step_agreed]
+  do_not_use_when:
+  - The document does not bind anyone. Control applied to working notes is ceremony, and ceremony is
+    what makes people stop using the repository.
 steps:
 - order: 1
-  name: Register what counts as controlled
-  description: The binding set is enumerated. Everything on it has an owner and a review date; everything
-    off it is ordinary.
+  name: Decide whether it binds
+  description: >
+    Policies, contracts, SOPs and anything a third party could rely on. Everything else is a file.
+    Applying control to both is how the controlled set stops being distinguishable.
   actor: human
+  produces: A control decision.
+  done_when: The document is inside or outside the controlled set, deliberately.
 - order: 2
-  name: Change through the owner, logged
-  description: Edits to controlled docs go through the owner with a what-changed line. Silent edits to
-    policies are how disputes start.
+  name: Give it one location and one owner
+  description: >
+    Ownership is what makes every later step enforceable. An owner-less document has a review date
+    nobody is responsible for missing.
   actor: human
+  objects_read: [admin.obj.core.document]
+  produces: A canonical location and a named owner.
+  done_when: Both exist and the owner knows.
 - order: 3
-  name: Review on schedule, retire honestly
-  description: 'At review: still true? Update or retire. A stale controlled document is worse than none
-    — it carries false authority.'
+  name: Stamp state and classification on the document itself
+  description: >
+    Held in a separate system, the state is invisible at the moment of use. A draft that reads like
+    a policy will be followed like one.
   actor: human
+  done_when: Someone holding only the file can tell what it is.
+- order: 4
+  name: Set a review date and put it on somebody's calendar
+  description: >
+    A document's bindingness decays as reality moves. The review date is the renewal fee on its
+    right to be obeyed, and an unworked date proves the control is not operating.
+  actor: agent
+  objects_read: [admin.obj.core.deadline]
+  done_when: The date exists and has an owner attached.
+- order: 5
+  name: Withdraw rather than delete
+  description: >
+    A deleted document leaves every downloaded copy authoritative. A withdrawn one leaves a marker
+    where people look.
+  actor: human
+  done_when: The superseded version is marked in place.
+objects_used: [admin.obj.core.document, admin.obj.core.policy, admin.obj.core.contract, admin.obj.core.deadline]
+limits:
+- 'Steps 3 to 5 assume a repository people actually use. Where the working copy lives in email,
+  this playbook controls the library and not the document.'
+- 'It cannot detect the copies problem, which is the failure that actually costs money.'
+failure_modes:
+- 'Step 1 skipped, so everything enters the controlled set and the review backlog makes the whole scheme unworkable.'
+- 'Step 5 done as a deletion because it is tidier, which is the single most common cause of a superseded version being acted on.'
+variants:
+- applies_to: regulated
+  change: Step 3 and step 5 become evidential, and withdrawal must be logged rather than merely visible.
+  why: An auditor asks which version was in force on a date, not which is current.
+- applies_to: startup_lean
+  change: Steps 1, 2 and 5 only. Classification and formal state are overhead at this size.
+  why: The binding set is small enough to hold in one head; the copies problem is not.
+references:
+- title: ISO 9001 — control of documented information
+  kind: standard
+  note: The origin of owner/state/review as the minimum control set, and of withdrawal-not-deletion.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Steps 1 and 5 are the ones that fail. The first because control feels safer applied broadly,
+    the second because deletion is tidier than withdrawal and leaves every downloaded copy
+    authoritative.

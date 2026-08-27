@@ -3,7 +3,7 @@ identity:
   name: Retention & Archival
   domain: admin
   subdomain: records_and_documentation
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Applying the retention schedule: what is kept, for how long, where it goes when it leaves
@@ -13,13 +13,63 @@ description: 'Applying the retention schedule: what is kept, for how long, where
 
   '
 question: How long must we keep this, and when are we obliged to destroy it?
+
+outcomes:
+- 'A retention period per record CLASS, derived from law and business need, not per document by judgement.'
+- 'Expiry that triggers a review and then a destruction — never an automatic delete, and never an indefinite hold by default.'
+- 'Destruction logged. Defensible disposal is the log, not the deletion; without it we cannot prove we were entitled to no longer have it.'
+- 'Legal holds that suspend the schedule and are RELEASED when the matter closes. An unreleased hold quietly converts to keep-forever.'
+- 'The negative outcome, and the one that makes this a capability rather than a storage policy: data DESTROYED on time because we were obliged to, not merely permitted to.'
+failure_modes:
+- 'KEEP EVERYTHING FOREVER. It feels safe and it is a liability strategy — everything retained stays subpoenaable, breachable and searchable.'
+- 'DELETING AT WHIM TO SAVE SPACE. The opposite failure with the same root: no schedule, so both decisions are improvised.'
+- 'RETENTION SET BY THE LONGEST APPLICABLE RULE ACROSS ALL CLASSES. One seven-year obligation drags the entire estate to seven years, including personal data we were allowed to hold for months.'
+- 'HOLDS APPLIED AND NEVER RELEASED, so the exception becomes the schedule.'
+- 'DESTROYING WITHOUT A LOG, which is indistinguishable from losing it.'
+kpis:
+- name: classified_record_share
+  unit: percent
+  description: Records under a stated retention class.
+  direction: higher_is_better
+- name: overdue_destruction_volume
+  unit: count
+  description: Records past their destruction date still held. The privacy-side exposure.
+  direction: lower_is_better
+- name: premature_destruction_incidents
+  unit: count
+  description: Records destroyed that were still required. The opposite exposure, and the one that ends careers.
+  direction: lower_is_better
+- name: unreleased_hold_age
+  unit: days
+  description: Oldest legal hold with no live matter behind it.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.records_and_documentation.document_control, admin.compliance_and_governance.data_protection_administration]
+  downstream: [admin.compliance_and_governance.audit_support, admin.records_and_documentation.filing_and_retrieval]
+  parallel: [admin.compliance_and_governance.policy_administration, admin.admin_operations.business_continuity_administration]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, outsourced]
+  offerings: [assurance]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    No substrate: document.retention_until and retention_review_due are both in
+    planned_substrate with no writer, and record classification does not exist in the graph at
+    all.
+
+    The capability is unusual in having two failure modes with OPPOSITE consequences —
+    discarding what a regulator will ask for, and holding personal data past the point we were
+    permitted to. Almost every retention practice optimises one and calls it caution. Both KPIs
+    are therefore present and neither can be improved by improving the other.
+
 admission:
-  accepted_content_hash: 694711334e53034e7e48c4ca15b66385b39883b3c3062097b4d6179101f109f3
+  accepted_content_hash: bd97dac06768a8819fc1f6b7ac7c4297f3d9614a8470592ad641bde11274cef2

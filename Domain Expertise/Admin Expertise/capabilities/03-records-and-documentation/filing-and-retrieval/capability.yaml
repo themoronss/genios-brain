@@ -3,7 +3,7 @@ identity:
   name: Filing & Retrieval
   domain: admin
   subdomain: records_and_documentation
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Designing and maintaining the structure that makes retrieval independent of the person who
@@ -12,13 +12,61 @@ description: 'Designing and maintaining the structure that makes retrieval indep
 
   '
 question: Can the right person find this in minutes, without asking anyone?
+
+outcomes:
+- 'A convention published and applied AT CREATION. Filing schemes imposed afterwards never catch up, and the documents that escape are the ones already being used.'
+- 'Retrieval by someone who did not file it, without asking anyone. That is the only test; a scheme its author can navigate has failed.'
+- 'Both paths kept alive — search for what you can name, structure for what you forgot exists.'
+- 'Names that carry the discriminating facts: counterparty, date, kind. A name that requires opening the file to understand is a filename, not an index.'
+- 'The negative outcome: a folder or convention RETIRED because nobody used it. Dead structure is what makes a taxonomy unnavigable.'
+failure_modes:
+- 'DESIGNING FOR THE FILER. The person filing knows the context; the person retrieving is somebody else, later, under time pressure, and they are the customer.'
+- 'DEEP HIERARCHIES. Every extra level is a guess the retriever has to get right, and the failure is silent — they conclude it does not exist.'
+- 'TRUSTING SEARCH TO REPLACE STRUCTURE. Search finds what you can name. The contract you do not remember signing is only findable by walking the vendor folder.'
+- 'A CONVENTION WITH NO ENFORCEMENT POINT. Rules applied by goodwill decay to the median, and the median is a date-stamped download name.'
+- 'REORGANISING PERIODICALLY. Each reorganisation invalidates everyone else''s memory of where things are, and the cost is paid by every person who had learned it.'
+kpis:
+- name: retrieval_success_without_asking
+  unit: percent
+  description: Share of retrievals completed by a non-filer with no human help. The only measure that matters.
+  direction: higher_is_better
+- name: convention_adherence_at_creation
+  unit: percent
+  description: Share of new documents named to convention when created rather than corrected later.
+  direction: higher_is_better
+- name: median_retrieval_time
+  unit: minutes
+  direction: lower_is_better
+  description: Time from question to authoritative document.
+- name: orphan_share
+  unit: percent
+  description: Documents outside any convention. The backlog that makes search a necessity rather than a convenience.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.records_and_documentation.document_control, admin.meeting_operations.minutes_and_documentation]
+  downstream: [admin.records_and_documentation.retention_and_archival, admin.compliance_and_governance.audit_support]
+  parallel: [admin.records_and_documentation.knowledge_base_maintenance, admin.records_and_documentation.version_control]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, distributed, startup_lean, outsourced]
+  offerings: [coordinative, assurance]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    No substrate at all — filing is a property of a repository and the graph holds
+    correspondence. Nothing writes document.classification or a location. This is authored for a
+    human reader and for Layer 5 rendering.
+
+    Everything here is written from the retriever's side rather than the filer's, because that
+    inversion is the whole capability and it is the one thing every folder taxonomy gets wrong.
+
 admission:
-  accepted_content_hash: 6db64e4961f2f0bdfcf72c87230726dc81f37de1e13f138a1c92b4487d2740aa
+  accepted_content_hash: 7b9b514bc787473c4b1aa07f3dbcf986f777750c614ebe1f6ab995ed301572f6

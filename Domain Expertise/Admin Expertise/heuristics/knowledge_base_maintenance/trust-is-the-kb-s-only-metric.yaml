@@ -14,3 +14,54 @@ purpose:
     every other page's usage.
   answers:
   - What actually kills internal knowledge bases?
+
+heuristic:
+  statement: >
+    Trust is the only knowledge-base metric. Two bad experiences and people stop consulting it and
+    start interrupting colleagues — which is the failure the base existed to prevent.
+  why: >
+    A knowledge base is consulted on a prior. Every accurate page raises that prior slightly; every
+    stale page burns it disproportionately, because being wrong costs the reader the time they spent
+    plus the time to recover from acting on it. The asymmetry means accuracy is not one property
+    among several — it is the property that decides whether any of the others are ever experienced.
+    Which is why every page's accuracy defends every other page's usage.
+  confidence_bp: 8500
+  applies_when: Any internal reference people are expected to consult before asking a human.
+  breaks_down_when: >
+    The base is used as an archive rather than an answer source — a record of what was decided, read
+    by someone who already knows it may be historical. There, staleness is content rather than
+    defect. It also breaks down for fast-moving material where readers already expect drift and
+    verify anyway; a deployment runbook in an org that ships daily is read sceptically by default,
+    and enforcing freshness there costs more than the scepticism.
+  reads: [admin.obj.core.document, admin.obj.core.sop]
+  contradicts: [admin.heu.filing_and_retrieval.search_does_not_replace_structure]
+limits:
+- 'It is about accuracy, not coverage. A trusted base that answers little is trusted and useless.'
+- 'Trust cannot be measured directly; failed searches and interruption volume are the proxies, and neither is instrumented today.'
+failure_modes:
+- 'Used to justify freezing the base — fewer pages, all correct, none useful.'
+- 'Applied to archive material, where staleness is the point.'
+variants:
+- applies_to: startup_lean
+  change: Strongest form. One wrong page in a ten-page base destroys the base.
+  why: There is no volume of correct pages to absorb the damage.
+- applies_to: enterprise_admin
+  change: Trust is per-section rather than global — people learn which corners are maintained.
+  why: At scale readers develop a local prior, which limits the blast radius and hides the problem.
+references:
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    contradicts the search-versus-structure heuristic because they disagree about pruning: that
+    one wants the forgotten thing still findable, this one wants the stale thing gone. Archive
+    and answer-source are different estates and should not share a policy.
