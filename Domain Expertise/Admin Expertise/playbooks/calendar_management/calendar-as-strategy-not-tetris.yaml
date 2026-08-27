@@ -7,24 +7,114 @@ identity:
   owner_capability: admin.executive_support.calendar_management
   subdomain: executive_support
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: The calendar is managed against the executive's stated priorities — protected deep-work blocks,
-    meeting-worthiness screening, recovery buffers — because a calendar that accepts everything optimises
-    for other people's agendas.
+  statement: >
+    Allocate the week against stated priorities before requests arrive, then screen each request
+    against worthiness. A calendar that accepts everything optimises for other people's agendas, and
+    it does so invisibly because every individual acceptance was reasonable.
+  answers:
+  - What must be on the calendar before anyone asks for time?
+  - Which of this week's requests should not become meetings?
+
+when_to_use:
+  conditions:
+  - {exists: meeting.start_at}
+  do_not_use_when:
+  - The week is already committed and the question is triage rather than allocation. That is a
+    collision problem, not a budgeting one.
+
 steps:
 - order: 1
-  name: Block the priorities first
-  description: Deep work, key relationships, thinking time — scheduled before requests arrive, defended
-    like meetings with the CEO.
+  name: Block the priorities before the requests arrive
+  description: >
+    Deep work, key relationships, thinking time — scheduled first and defended like meetings with the
+    board. Whoever books first owns the week, so this step is the entire mechanism.
   actor: human
+  produces: A defended baseline week.
+  done_when: Priority blocks exist before the diary is opened to requests.
 - order: 2
-  name: Screen every request against worthiness
-  description: Does it need THEM, live, this week? Decline-with-alternative (a delegate, a doc, an async
-    answer) serves better than default-accept.
+  name: Screen every request on three separable questions
+  description: >
+    Does it need them, live, this week. A no to any one has a cheaper answer — a delegate, a
+    document, or a later slot — and the three are routinely collapsed into a single yes.
   actor: human
+  objects_read: [admin.obj.core.meeting, admin.obj.core.request]
+  produces: An accept, a substitute, or a decline with an alternative.
+  done_when: Each request has an answer that is not simply "yes, when".
 - order: 3
   name: Buffer transitions and overruns
-  description: Back-to-back is a plan for being late and depleted. Ten-minute buffers are the difference
-    between a schedule and a stampede.
+  description: >
+    Back to back is a plan for being late to everything after the first overrun. Ten minutes between
+    meetings is the difference between a schedule and a stampede, and it is the first thing sacrificed.
   actor: human
+  done_when: No meeting starts at the moment another ends.
+- order: 4
+  name: Schedule the preparation with the meeting
+  description: >
+    If the pre-read is due the night before and there is no time the night before, the meeting was
+    booked rather than arranged. Preparation is part of the meeting's cost and belongs in its budget.
+  actor: human
+  done_when: Significant meetings have prep time on the calendar, not assumed around it.
+- order: 5
+  name: Resolve collisions on consequence, and record why
+  description: >
+    Urgency is asserted by the requester; consequence is assessed by us. Resolving on seniority or
+    volume is fast and hands the diary to whoever is most insistent.
+  actor: human
+  produces: A resolved collision with a reason.
+  done_when: The losing party has an alternative and the reasoning exists somewhere.
+- order: 6
+  name: Question the recurring set on a rhythm
+  description: >
+    Recurring meetings are the largest consumer of executive time and the least reviewed. Most
+    calendars carry at least one nobody would create today.
+  actor: human
+  produces: A list of recurring meetings to end or shorten.
+  done_when: Every recurring series has been justified within the review period.
+
+objects_used:
+- admin.obj.core.meeting
+- admin.obj.core.request
+- admin.obj.core.commitment
+- admin.obj.core.action_item
+
+limits:
+- >
+  Step 1 needs the principal's stated priorities, which no connector carries. Without them this
+  degrades into a booking queue with buffers, which is better than nothing and is not this playbook.
+- It optimises one person's week. Steps 3 and 5 have costs that land on other people's calendars and this playbook cannot see them.
+
+failure_modes:
+- Step 1 skipped because the week already looks full. That is precisely the week it was written for.
+- Step 3 treated as a nicety and cut under pressure, which converts one overrun into a late afternoon.
+
+variants:
+- applies_to: startup_lean
+  change: Step 6 dominates and step 1 is thinner — a founder's priorities move weekly, so blocking too far ahead is fiction.
+  why: Priority stability is what step 1 assumes and early-stage companies do not have it.
+- applies_to: enterprise_admin
+  change: Step 5 becomes a negotiation with other assistants rather than a decision.
+  why: At this scale every collision is between two defended calendars.
+- applies_to: distributed
+  change: Step 3 must account for time zones — a buffer that exists locally may not exist for a participant joining at the end of their day.
+  why: Transitions are per-person and the calendar shows only one of them.
+
+references:
+- title: Deep Work
+  kind: book
+  author: Cal Newport
+  note: The argument that unprotected time is allocated by request order rather than by importance, which is step 1's justification.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Steps 1 and 6 are the only two that change the shape of a week. Steps 2 to 5 improve a week whose
+    shape was already decided, which is why a calendar function that starts at step 2 feels busy and
+    changes nothing.

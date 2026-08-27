@@ -1,29 +1,125 @@
 identity:
   id: admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting
-  name: One-page brief before every external meeting
+  name: One page, the evening before
   kind: playbook
   domain: admin
   scope: capability
   owner_capability: admin.executive_support.briefing_and_preparation
   subdomain: executive_support
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: 'No external meeting without a one-pager: who, context, our goal, their likely goal, open
-    threads, one suggested ask — delivered the evening before, because a briefed executive extracts double
-    the value from the same hour.'
+  statement: >
+    Put one page in front of the principal the evening before every external meeting: who, context,
+    our goal, their likely goal, open threads both ways, one suggested ask. A briefed executive
+    extracts roughly double the value from the same hour, and the page has to arrive early enough to
+    be thought about.
+  answers:
+  - What does the principal need to know before this room?
+  - What would embarrass us if it were not known?
+
+when_to_use:
+  conditions:
+  - {path: meeting.external_counterparty, op: "=", value: true}
+  - {exists: meeting.start_at}
+  do_not_use_when:
+  - The meeting is internal and routine. A brief there is ceremony, and ceremony is what makes people stop reading briefs.
+  - There is no time to act on it. A brief delivered ten minutes before is a record, not preparation.
+
 steps:
 - order: 1
-  name: Compile from the record, not from memory
-  description: Last correspondence, open commitments, recent news about them. The brief's power is its
-    receipts.
-  actor: human
+  name: Establish who is actually in the room
+  description: >
+    Names, roles, and which of them we have dealt with before. The most common gap in an executive's
+    preparation is not strategy, it is not knowing that one attendee was on the difficult call in
+    March.
+  actor: agent
+  objects_read: [admin.obj.core.meeting, admin.obj.core.vendor]
+  produces: An attendee list with history.
+  done_when: Every external attendee is either known or flagged as new.
 - order: 2
-  name: State our objective in one line
-  description: What should be true after this meeting that is not true now? No objective, no meeting —
-    flag those too.
-  actor: human
+  name: Retrieve what was last said, and by whom
+  description: >
+    The single most retrievable and most often missing fact. Getting it wrong in the room is expensive
+    out of all proportion to the cost of checking.
+  actor: agent
+  objects_read: [admin.obj.core.commitment, admin.obj.core.request]
+  produces: The last exchange.
+  done_when: The most recent substantive contact is on the page.
 - order: 3
-  name: Deliver the evening prior
-  description: Morning-of briefs get skimmed in elevators. Evening delivery buys the sleep-on-it advantage.
+  name: List open threads in BOTH directions
+  description: >
+    What we owe them and what they owe us. An unmet commitment discovered by the counterparty in the
+    meeting costs more than the commitment was worth.
+  actor: agent
+  objects_read: [admin.obj.core.commitment, admin.obj.core.deadline]
+  produces: Two lists.
+  done_when: Obligations on both sides are stated, including the uncomfortable ones.
+- order: 4
+  name: State their likely goal, not only ours
+  description: >
+    A brief covering only our position prepares the half we were already going to be good at.
   actor: human
+  done_when: The counterparty's probable objective is written down as a claim someone could disagree with.
+- order: 5
+  name: Name the one thing that would embarrass us
+  description: >
+    Every good brief has this line and most templates have no field for it. It is usually the unpaid
+    invoice, the missed date, or the thing we said we would send.
+  actor: human
+  done_when: The line exists, or its absence was a decision rather than an oversight.
+- order: 6
+  name: Cut it to one page and send it the evening before
+  description: >
+    The constraint is what makes the format work. A four-page brief is not read, so its accurate
+    contents are functionally absent.
+  actor: human
+  produces: A one-page brief, delivered.
+  done_when: It is in the principal's hands with a night in between.
+
+objects_used:
+- admin.obj.core.meeting
+- admin.obj.core.commitment
+- admin.obj.core.request
+- admin.obj.core.deadline
+- admin.obj.core.contract
+
+limits:
+- >
+  Steps 1 to 3 depend on correspondence history being retrievable per counterparty. Where the
+  relationship lives in somebody's personal inbox or on a call, the brief is only as good as what was
+  written down.
+- It prepares the principal, not the meeting. A briefed executive in an unprepared room gets a well-informed version of a meeting that should not have happened.
+
+failure_modes:
+- The brief restates the agenda, which is already in the invite. It is the most common failure and adds a page of nothing.
+- Step 5 omitted to keep the tone positive, which removes exactly the item the counterparty will raise.
+
+variants:
+- applies_to: regulated
+  change: Step 3 gains statutory obligations and step 5 becomes mandatory rather than advisory.
+  why: In a governed context an undisclosed obligation is a finding, not an embarrassment.
+- applies_to: startup_lean
+  change: Collapses to steps 2, 3 and 5 in a short message. The format goes; the three facts do not.
+  why: Below a certain size the ceremony costs more than it returns and the content still matters.
+- applies_to: executive_office
+  change: Step 1 expands considerably — attendee history across an institution is the whole value.
+  why: The principal meets many people once and the record is the only continuity.
+
+references:
+- title: admin.obj.core.commitment
+  kind: internal
+  note: Steps 3 and 5 both read it; an obligation with no date is the specific shape that goes missing.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Steps 5 and 6 are the two that get dropped, and they are the two that make the difference between
+    a brief and a document. The first because it is uncomfortable, the second because more
+    information always feels safer than less.

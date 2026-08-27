@@ -3,7 +3,7 @@ identity:
   name: Delegation & Task Routing
   domain: admin
   subdomain: executive_support
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Turning an inbound ask into an owned piece of work: identifying the right owner by capacity
@@ -12,13 +12,101 @@ description: 'Turning an inbound ask into an owned piece of work: identifying th
 
   '
 question: Who should actually be doing this, and do they know they own it?
+
+outcomes:
+- 'A named owner and a due date on everything that leaves the desk. "Someone should" is where tasks
+  go to die, and it is the default state of anything routed without a name attached.'
+- 'Enough context transferred that the owner does not re-discover it. A handover that forces the new
+  owner to read the whole thread has moved the work and none of the cost.'
+- 'Owner chosen by capacity AND authority, not by convenience. The person who will say yes is rarely
+  the person who can finish it, and routing by availability is how work lands with people who cannot
+  complete it.'
+- 'A check-back cadence set by stakes at the moment of handover. Set later it is a chase; set at the
+  start it is part of the arrangement and nobody reads it as distrust.'
+- 'The handover recorded so accountability survives the reassignment. An undocumented delegation
+  reverts to the delegator the moment anything goes wrong.'
+- 'The negative outcome: work identified as un-delegable and kept. Some things genuinely require the
+  principal, and a routing discipline that cannot say so pushes them out and gets them back later,
+  worse.'
+
+failure_modes:
+- 'DELEGATING THE TASK AND KEEPING THE ACCOUNTABILITY. It looks like delegation and functions as a
+  reminder service — and the owner can tell, which is what makes them stop owning it.'
+- 'ROUTING BY WHO IS AVAILABLE. Availability correlates with having less to do, which correlates with
+  not being the right person, which is why this feels efficient and is not.'
+- 'TRANSFERRING WITHOUT AUTHORITY. Giving someone a task and not the ability to decide anything about
+  it produces a check-in loop that costs more than doing it would have.'
+- 'AUDITING EVERY STEP. Delegating and then supervising each move is not delegation; the owner
+  correctly concludes they are executing rather than owning, and stops thinking.'
+- 'NEVER CHECKING AT ALL. The opposite failure, equally common in the other kind of manager, and it
+  is discovered on the due date when there is no time left to correct anything.'
+- 'ROUTING THE SYMPTOM. Handing on the request as received, without establishing what is actually
+  being asked, transfers the ambiguity along with the work.'
+
+kpis:
+- name: named_owner_rate
+  unit: percent
+  description: Share of routed items with a specific person attached rather than a team.
+  direction: higher_is_better
+- name: context_sufficiency
+  unit: percent
+  description: Share of handovers where the owner did not have to come back for the background.
+  direction: higher_is_better
+- name: on_time_completion_after_delegation
+  unit: percent
+  description: Share completed by the agreed date. The outcome measure, and the one that exposes
+    routing-by-availability.
+  direction: higher_is_better
+- name: boomerang_rate
+  unit: percent
+  description: Share of delegated work that returned to the principal unfinished. The single most
+    diagnostic number here.
+  direction: lower_is_better
+- name: check_back_set_at_handover_rate
+  unit: percent
+  description: Share where the follow-up cadence was agreed at the start rather than imposed later.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - admin.executive_support.gatekeeping
+  - admin.executive_support.inbox_and_correspondence
+  - admin.admin_operations.request_intake
+  downstream:
+  - admin.executive_support.commitment_tracking
+  - admin.meeting_operations.action_item_tracking
+  - admin.meeting_operations.follow_up_coordination
+  parallel:
+  - admin.executive_support.approval_coordination
+  - admin.admin_operations.service_level_management
+
+applies_to:
+  models: [executive_office, in_house, shared_services, startup_lean, distributed, hybrid,
+           enterprise_admin, multi_entity, outsourced]
+  offerings: [coordinative, transactional]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route today, and the closest of this batch to
+    being reachable: it sits directly downstream of inbox_and_correspondence and gatekeeping,
+    both of which the live admin situations already serve.
+
+    Partially executable. commitment.due_at and commitment.action carry the date and the
+    promise, and the commitment node's owner edge carries the actor — which is the fact that
+    distinguishes work we routed from work we kept. What is missing is capacity:
+    derived.approval_latency, request.state and employee records all sit in planned_substrate,
+    so 'route by capacity and authority' is authored as a discipline rather than as a
+    computation.
+
+    boomerang_rate is the KPI to read first. It is the one number that exposes routing-by-
+    availability, which is the failure that feels most efficient at the moment it is committed.
+
 admission:
-  accepted_content_hash: eb5229fc9294ad2e16072cf05adf929d995a60f023681d623bbd64c25a3e3567
+  accepted_content_hash: 5e78b831abb418dd659314cc2287f5bb45c5c11fc1fcbdb76cb4be6a18e6c36d

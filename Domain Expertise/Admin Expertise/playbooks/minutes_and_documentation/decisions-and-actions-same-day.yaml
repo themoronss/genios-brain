@@ -1,29 +1,121 @@
 identity:
   id: admin.pb.minutes_and_documentation.decisions_and_actions_same_day
-  name: Decisions and actions, same-day
+  name: Decisions and actions, same day
   kind: playbook
   domain: admin
   scope: capability
   owner_capability: admin.meeting_operations.minutes_and_documentation
   subdomain: meeting_operations
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: Minutes capture three things — decisions made, actions with owners and dates, open questions
-    — circulated same-day while memory agrees, because minutes that arrive Friday document a meeting nobody
-    quite remembers the same way.
+  statement: >
+    Capture three things — decisions made, actions with owners and dates, open questions — and
+    circulate the same day while memory still agrees. Minutes that arrive on Friday document a meeting
+    nobody quite remembers, and corrections at that distance become negotiations.
+  answers:
+  - What was decided, by whom, and where is that written down?
+  - What is the minimum record that survives the people who were there?
+
+when_to_use:
+  conditions:
+  - {path: meeting.occurred, op: "=", value: true}
+  do_not_use_when:
+  - The meeting was purely social or exploratory with nothing agreed. A minute recording that nothing
+    was decided is useful; a full minute of a conversation is not.
+
 steps:
 - order: 1
-  name: Record decisions verbatim as agreed
-  description: The exact wording, confirmed in the room. Ambiguity here becomes next month's 'that is
-    not what we decided'.
+  name: Separate decisions from discussion
+  description: >
+    A minute that narrates the conversation buries the three sentences that are the actual record, and
+    a reader who was not there cannot find them.
   actor: human
+  produces: A decisions section.
+  done_when: Each decision stands alone and is locatable without reading the prose.
 - order: 2
-  name: List actions as owner-verb-date
-  description: '''Priya ships draft by Thu'' — nothing about actions is prose.'
+  name: Write actions with a named owner and a date
+  description: >
+    "The team will look into it" is the most common line in bad minutes and commits nobody. An action
+    inside a paragraph is a sentence; an action in a list with an owner is a commitment.
   actor: human
+  objects_read: [admin.obj.core.action_item, admin.obj.core.commitment]
+  produces: An extractable action list.
+  done_when: Every action has a person and a date, or is recorded as unowned on purpose.
 - order: 3
-  name: Send same-day to attendees plus affected absentees
-  description: The document is the meeting for everyone not in it. Same-day is what makes corrections
-    cheap.
+  name: Record dissent where it mattered
+  description: >
+    In a governed context the fact that somebody objected is part of the decision. A
+    consensus-shaped minute misrepresents what happened and removes the thing a future reader most
+    needs.
   actor: human
+  done_when: Material disagreement is on the record, or its absence is true.
+- order: 4
+  name: Record what was NOT decided
+  description: >
+    Meetings routinely end with everyone believing something was agreed. Writing down that it was not
+    is what stops it being assumed for a month, and it is the item that takes nerve.
+  actor: human
+  produces: An open-questions section.
+  done_when: Anything left open is named as open.
+- order: 5
+  name: Circulate the same day
+  description: >
+    Every day of delay reduces both accuracy and the chance of correction. After a week the minute
+    becomes the version of record by default rather than by agreement.
+  actor: human
+  done_when: It went out on the day.
+- order: 6
+  name: File it where a stranger can find it
+  description: >
+    An accurate minute nobody can locate is indistinguishable from no minute — most of the value lost
+    after all of the work.
+  actor: agent
+  objects_read: [admin.obj.core.document]
+  done_when: Someone who was not there could find it without asking.
+
+objects_used:
+- admin.obj.core.meeting
+- admin.obj.core.action_item
+- admin.obj.core.commitment
+- admin.obj.core.document
+- admin.obj.core.approval
+
+limits:
+- >
+  The minute is a document and documents are not captured by the substrate. What Layer 2 can see is
+  the trigger — meeting.occurred and meeting.open_loop — not the record.
+- It does not make the decision better. A well-minuted bad decision is a durable bad decision.
+
+failure_modes:
+- Transcription instead of minuting. Length is inversely related to usefulness and it is the failure that looks most like diligence.
+- Step 4 skipped because it is uncomfortable, which is precisely when it is worth most.
+
+variants:
+- applies_to: regulated
+  change: Steps 3, 4 and 6 become mandatory and evidential, and the minute is the artefact an auditor reads.
+  why: Work performed correctly and undocumented did not happen.
+- applies_to: startup_lean
+  change: Collapses to steps 1, 2 and 5 in a message. The format goes; the decisions-and-actions split does not.
+  why: The split is the value; the ceremony is not.
+- applies_to: distributed
+  change: Step 5 hardens — attendees in other time zones have only the minute, so a late one leaves them a day behind.
+  why: The minute is the meeting for anyone who could not attend.
+
+references:
+- title: admin.obj.core.action_item
+  kind: internal
+  note: Step 2 produces exactly this object; an action without an owner cannot become one.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Steps 4 and 5 are the two that separate a minute from a transcript. The first requires nerve and
+    the second requires doing it before the day ends, and both are dropped for the same reason —
+    they are uncomfortable at exactly the moment they are cheap.

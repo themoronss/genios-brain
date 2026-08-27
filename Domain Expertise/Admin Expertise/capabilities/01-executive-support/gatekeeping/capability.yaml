@@ -3,7 +3,7 @@ identity:
   name: Gatekeeping
   domain: admin
   subdomain: executive_support
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Deciding what reaches a scarce person and what is answered, redirected, deferred or declined
@@ -13,13 +13,107 @@ description: 'Deciding what reaches a scarce person and what is answered, redire
 
   '
 question: Does this deserve the principal's attention, or someone else's?
+
+outcomes:
+- 'A stated disposition for every inbound: answered, redirected, deferred, or declined. "Left in the
+  inbox" is not one of them, and it is where most of the volume actually goes.'
+- 'Every decline offered an alternative path. A gate that only blocks breeds workarounds — people
+  route around it through a board member, a personal number, or the principal''s spouse — and the
+  workaround is permanent once discovered.'
+- 'The criteria written down and known to the principal. A gatekeeper filtering on private judgement
+  cannot be corrected, and the first serious miss makes the whole arrangement untenable.'
+- 'The invisible failure surfaced deliberately: a periodic look at what was filtered OUT. Letting
+  noise through is obvious within a day; filtering out the message that mattered is discovered weeks
+  later by somebody else, and only a deliberate review finds it.'
+- 'Redirection that actually lands. Handing a request to a colleague without transferring the context
+  is a decline with extra steps, and the sender experiences it as being passed around.'
+- 'The negative outcome, and the one that justifies the role: a genuinely urgent thing let through
+  fast, against the criteria, because the criteria were wrong for this case.'
+
+failure_modes:
+- 'OPTIMISING THE VISIBLE DIRECTION ONLY. False positives are measured because the principal complains;
+  false negatives are silent, and a gatekeeper judged only on the first becomes progressively more
+  restrictive until the second is the real cost.'
+- 'FILTERING ON SENDER SENIORITY. It is the easiest available proxy and it is wrong in the two cases
+  that matter — a junior person reporting something serious, and a senior person asking for a
+  courtesy.'
+- 'DECLINING WITHOUT A ROUTE. "He is not available" ends the exchange and starts the workaround. The
+  cost is not the rejected request; it is the permanent alternative channel it creates.'
+- 'BECOMING THE BOTTLENECK BEING PROTECTED AGAINST. A gate that holds everything for a daily review
+  adds a day to every request, including the ones it would have passed.'
+- 'CONFUSING THE PRINCIPAL''S PREFERENCE WITH THE ORGANISATION''S INTEREST. Some things the principal
+  does not want to see are things they need to see, and an assistant who only filters toward comfort
+  is doing half the job.'
+- 'FORGETTING THAT THE GATE IS THE FIRST IMPRESSION. For most people the assistant IS the principal''s
+  personality at first contact; the register of a refusal is attributed upward.'
+
+kpis:
+- name: disposition_rate
+  unit: percent
+  description: Share of inbound with a stated disposition rather than an implicit one. The base
+    measure — most gatekeeping failures are things nobody decided about.
+  direction: higher_is_better
+- name: decline_with_alternative_rate
+  unit: percent
+  description: Share of refusals that offered another path. The single number that predicts whether
+    the gate will be routed around.
+  direction: higher_is_better
+- name: false_negative_discovery_lag
+  unit: days
+  description: Time between filtering something out and discovering it mattered. Measures the
+    invisible direction, which nothing else does.
+  direction: lower_is_better
+- name: escalation_bypass_rate
+  unit: percent
+  description: Share of requests that reached the principal through an unofficial route. Rising
+    values mean the gate has stopped being credible, whatever its other numbers say.
+  direction: lower_is_better
+- name: median_hold_time
+  unit: hours
+  description: How long an inbound waits for a disposition. A target band — instant is
+    indiscriminate, a day makes the gate the bottleneck.
+  direction: target_band
+
+handoffs:
+  upstream:
+  - admin.executive_support.inbox_and_correspondence
+  - admin.admin_operations.request_intake
+  downstream:
+  - admin.executive_support.delegation_and_task_routing
+  - admin.executive_support.calendar_management
+  - admin.executive_support.briefing_and_preparation
+  parallel:
+  - admin.executive_support.approval_coordination
+  - admin.meeting_operations.meeting_scheduling
+
+applies_to:
+  models: [executive_office, in_house, shared_services, startup_lean, distributed, hybrid,
+           enterprise_admin, multi_entity]
+  offerings: [coordinative, transactional]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route today — the design partner's org carries
+    one account_admin and one admin_contact situation, and both are served by
+    commitment_tracking, inbox_and_correspondence and follow_up_coordination. This is authoring
+    debt paid down in advance of the routes, and saying so is more useful than implying
+    otherwise.
+
+    The capability is written around an asymmetry the substrate cannot see at all: gatekeeping
+    fails in two directions and only one of them is observable. A message let through wrongly is
+    visible within a day; a message filtered out wrongly is discovered weeks later by somebody
+    else. Every KPI here except false_negative_discovery_lag measures the visible direction,
+    which is exactly why that one exists.
+
+    No numbers, by contract. What counts as a reasonable hold time, and how aggressive the
+    filter should be, are Layer 4 arithmetic and tenant configuration.
+
 admission:
-  accepted_content_hash: e5af29c989d4b68c2e3ac0b7bf3f015614c628590d1a0470c147506281b5bb3f
+  accepted_content_hash: 29a31f7b01a012a3842be60430a85a0897ffe83132628c6c6c18087386ea980f

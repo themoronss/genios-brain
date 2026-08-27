@@ -7,23 +7,112 @@ identity:
   owner_capability: admin.executive_support.gatekeeping
   subdomain: executive_support
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: Access to the executive is filtered by stated criteria — decision-needed, relationship-critical,
-    time-sensitive — with every 'no' offered an alternative path, because a gate that only blocks breeds
-    resentment while a gate that redirects builds respect.
+  statement: >
+    Filter access to a scarce person against criteria the principal has agreed and the requester can
+    understand, and give every refusal somewhere else to go. A gate that only blocks breeds
+    workarounds, and a workaround is permanent once it has been discovered.
+  answers:
+  - Does this deserve the principal's attention, or somebody else's?
+  - What do I say to the people it does not?
+  not:
+  - Deciding who owns the work afterwards — that is delegation_and_task_routing.
+
+when_to_use:
+  conditions:
+  - {path: thread.ball_in_court, op: "=", value: us}
+  signals:
+  - question
+  - meeting_request
+  - introduction
+  do_not_use_when:
+  - The sender is a counterparty to a live obligation with a date. Filtering an obligation is how a
+    deadline becomes a lapse, and the obligation lane has its own owner.
+  - The request is from someone the principal has personally asked to hear from directly.
+
 steps:
 - order: 1
-  name: Publish the access logic to insiders
-  description: 'What gets time: decisions only they can make, key externals, emergencies. Known criteria
-    stop the lobbying meta-game.'
+  name: Test against the three stated criteria
+  description: >
+    Decision needed, relationship-critical, or time-sensitive. Anything failing all three has a
+    cheaper route, and anything passing one is worth a sentence of the principal's attention.
   actor: human
+  produces: A disposition.
+  done_when: The request is classed as answer, redirect, defer or decline.
 - order: 2
-  name: Redirect, never just refuse
-  description: '''Not them, but X owns this and can decide'' — the requester leaves served, not blocked.'
+  name: Answer what you can answer
+  description: >
+    A large share of inbound is a question the assistant already knows the answer to. Passing it
+    upward is not neutrality, it is spending the scarce resource the gate exists to protect.
   actor: human
+  done_when: Anything answerable has been answered.
 - order: 3
-  name: Keep an exceptions log
-  description: Who got through outside criteria and why — reviewed monthly. The gate's drift is measured
-    in its exceptions.
+  name: Give every no an alternative
+  description: >
+    A named person, a document, a later date, or a different forum. "He is not available" ends the
+    exchange and starts the workaround; the alternative is what keeps the gate credible.
   actor: human
+  produces: A route.
+  done_when: No refusal was sent without somewhere else to go.
+- order: 4
+  name: Match the register to the principal, not to the queue
+  description: >
+    For most people the assistant IS the principal's personality at first contact. Warm and firm
+    reflects upward; cold and obstructive does too, and neither is attributed to the assistant.
+  actor: human
+  done_when: The message would not embarrass the principal if forwarded to them.
+- order: 5
+  name: Review what was filtered out
+  description: >
+    On a rhythm, look at the declines. Letting noise through is visible within a day; filtering out
+    the thing that mattered is discovered weeks later by somebody else, and only a deliberate review
+    finds it.
+  actor: human
+  produces: A list of possible misses.
+  done_when: The filtered set has been read, not just the passed set.
+
+objects_used:
+- admin.obj.core.request
+- admin.obj.core.escalation
+- admin.obj.core.commitment
+- admin.obj.core.approval
+
+limits:
+- >
+  It assumes criteria the principal has actually agreed. A gatekeeper filtering on private judgement
+  cannot be corrected, and the first serious miss makes the arrangement untenable.
+- Step 5 needs a record of declines. Most gatekeeping is done in an inbox and leaves none.
+
+failure_modes:
+- Steps 1 to 4 run and step 5 never does, which optimises the visible direction until the invisible one is the whole cost.
+- Step 3 satisfied with a formula. "Please email marketing@" is not an alternative; a named person is.
+
+variants:
+- applies_to: startup_lean
+  change: Criteria are thinner and step 2 does most of the work, because the assistant knows nearly everything the principal does.
+  why: Small organisations have less to filter and more to answer.
+- applies_to: regulated
+  change: Step 1 gains a fourth criterion — statutory or contractual obligation — which outranks the other three.
+  why: An obligation with an external deadline is not subject to a preference filter.
+- applies_to: enterprise_admin
+  change: Step 5 becomes a shared review with the principal rather than a private one.
+  why: At scale the false-negative rate is a governance question, not an assistant's judgement.
+
+references:
+- title: ITIL 4 — Service Request Management
+  kind: framework
+  note: The disposition set here is the request-management triage applied to a person rather than a queue.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is the one that will be dropped and the reason the playbook exists. Everything before it
+    improves a metric somebody is watching; step 5 is the only part that measures the failure nobody
+    sees.

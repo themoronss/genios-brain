@@ -7,9 +7,70 @@ identity:
   owner_capability: admin.meeting_operations.minutes_and_documentation
   subdomain: meeting_operations
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: A decision that lives only in memory gets re-litigated within weeks by whoever liked it least.
-    The minute is the decision's existence proof — meetings without minutes decide nothing durably.
+  statement: >
+    A decision that lives only in memory gets re-litigated within weeks by whoever liked it least. The
+    minute is the decision's existence proof, and meetings without minutes decide nothing durably.
   answers:
   - Why do the same decisions keep coming back?
+  - What is a minute actually for?
+
+heuristic:
+  statement: >
+    An undocumented decision has an expiry date, and it is roughly the interval until the next meeting
+    of the same people.
+  why: >
+    Memory of a decision is not uniform across the room. Everyone remembers a version shaded toward
+    what they wanted, and the person who lost remembers the strongest caveat that was voiced. With no
+    written record the reconstruction is a negotiation between those versions, and the outcome is
+    decided by who is most insistent rather than by what was agreed. Writing it down does not make
+    people honest; it removes the ambiguity that makes re-litigation costless.
+  confidence_bp: 8500
+  applies_when: A decision with more than one interested party, especially one where somebody disagreed.
+  breaks_down_when: >
+    The decision was genuinely provisional and everyone knew it. Minuting an exploratory conclusion as
+    settled freezes a position nobody intended to hold, and the next meeting is spent unpicking a
+    record rather than a decision — which is worse than having no record. It also breaks down where
+    the minute is written by an interested party: a record shaded toward the author's position is not
+    an existence proof, it is a claim, and it will be contested harder than memory would have been.
+  reads:
+  - admin.obj.core.document
+  - admin.obj.core.approval
+  - admin.obj.core.action_item
+  contradicts:
+  - admin.heu.delegation_and_task_routing.delegation_is_trust_plus_verification
+
+limits:
+- It argues for a record, not for a long one. A transcript is not a stronger existence proof than three sentences.
+- It cannot help where the decision itself was unclear. A minute of an ambiguous conclusion records the ambiguity faithfully.
+
+failure_modes:
+- Used to minute everything, which produces a volume of record nobody reads and inside which real decisions are unfindable.
+- Applied by an interested author, which converts the record from evidence into a position.
+
+variants:
+- applies_to: regulated
+  change: Not a heuristic but a requirement, and the existence proof is the point rather than a side effect.
+  why: An undocumented decision is a finding.
+- applies_to: startup_lean
+  change: Weaker per decision and stronger over time — few people, high recall, and no institutional memory at all when they leave.
+  why: The failure arrives on departure rather than in the next meeting.
+
+references:
+- title: admin.obj.core.approval
+  kind: internal
+  note: The object that carries a recorded decision and its approver, which is what makes an existence proof more than a note.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the one practitioners hit. A minute written by whoever won the
+    argument is contested harder than no minute would have been, which is why authorship is a
+    governance question rather than an administrative convenience.

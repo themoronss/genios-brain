@@ -7,9 +7,71 @@ identity:
   owner_capability: admin.executive_support.delegation_and_task_routing
   subdomain: executive_support
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: Delegating and then auditing every step is not delegation; delegating and never checking
-    is not management. The check-back cadence — set by stakes — is where the balance lives.
+  statement: >
+    Delegating and then auditing every step is not delegation; delegating and never checking is not
+    management. The check-back cadence, set by stakes and agreed at handover, is where the balance
+    actually lives.
   answers:
-  - How much follow-up does delegation need?
+  - How much follow-up is the right amount?
+  - Why does the same check-in read as support in one case and surveillance in another?
+
+heuristic:
+  statement: >
+    A check-back agreed at handover is part of the arrangement. The identical check-back invented
+    later is a chase — same words, opposite meaning.
+  why: >
+    What makes follow-up feel like distrust is not its frequency but its unexpectedness. An owner who
+    agreed to a Thursday check reads Thursday as the plan working; an owner who is asked on Thursday
+    having agreed nothing reads it as being watched, and correctly infers that the delegator was
+    never comfortable. This is why the cadence must be set in the same conversation as the task, and
+    why "I'll leave it with you" is the phrase that guarantees an awkward follow-up.
+  confidence_bp: 8000
+  applies_when: Work has been transferred to a named owner with a date.
+  breaks_down_when: >
+    The stakes change after handover. A task that becomes critical justifies a check nobody agreed to,
+    and pretending otherwise to preserve the arrangement is how a delegator finds out too late. It
+    also breaks down with a new or unproven owner, where a denser cadence is appropriate and should
+    be named as such at handover rather than smuggled in — "we will talk more often at first, because
+    it is new" costs nothing to say and prevents the inference.
+  reads:
+  - admin.obj.core.commitment
+  - admin.obj.core.action_item
+  - admin.obj.core.approver
+  contradicts:
+  - admin.heu.commitment_tracking.a_promise_without_a_date_is_a_wish
+
+limits:
+- It concerns the cadence, not the choice of owner. A perfectly cadenced delegation to the wrong person still fails.
+- It cannot be measured today. Nothing records whether a check-back was agreed or imposed.
+
+failure_modes:
+- Used to justify a fixed check-back interval for everything, which is a policy rather than a judgement and gets both ends wrong.
+- Read as permission to stop checking once trust is established, which is how a long-running task goes quiet for a quarter.
+
+variants:
+- applies_to: outsourced
+  change: The cadence becomes contractual and the trust component largely disappears, which is honest rather than cynical.
+  why: Across an organisational boundary the relationship cannot carry the verification.
+- applies_to: distributed
+  change: Denser cadence at the same stakes, because ambient awareness of progress does not exist.
+  why: Co-located delegators verify continuously without noticing they are doing it.
+
+references:
+- title: admin.obj.core.action_item
+  kind: internal
+  note: The object that carries the cadence this heuristic is about.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the practical one. A denser cadence for a new owner is correct and
+    is routinely applied without being named, which produces exactly the surveillance reading the
+    heuristic exists to prevent.

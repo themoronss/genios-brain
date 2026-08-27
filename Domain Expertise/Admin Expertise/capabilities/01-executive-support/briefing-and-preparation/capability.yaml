@@ -3,7 +3,7 @@ identity:
   name: Briefing & Preparation
   domain: admin
   subdomain: executive_support
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Assembling the minimum sufficient context before a meeting, a call or a decision: who is
@@ -12,13 +12,99 @@ description: 'Assembling the minimum sufficient context before a meeting, a call
 
   '
 question: Will the principal walk into this knowing what they need to know?
+
+outcomes:
+- 'A one-page brief in the principal''s hands the evening before, not the morning of. The value of a
+  brief is the thinking it prompts overnight, and a brief delivered ten minutes before is a document
+  being read aloud in the reader''s head during the introductions.'
+- 'The counterparty''s likely goal stated, not just ours. A brief that covers only our position
+  prepares half a conversation and the half we were already going to be good at.'
+- 'What was last said to these people, and by whom. It is the single most common thing an executive
+  is missing and the easiest to retrieve, and getting it wrong in the room is expensive out of all
+  proportion to the effort of checking.'
+- 'Open threads on BOTH sides — what we owe them, what they owe us. An unmet commitment discovered by
+  the counterparty in the meeting costs more than the commitment was worth.'
+- 'The one thing that would embarrass us if it were not known, named explicitly. Every good brief has
+  this line and most templates have no field for it.'
+- 'The negative outcome: a brief that concludes the meeting needs rescheduling or does not need the
+  principal at all. Preparation that can never reach that conclusion is not preparation.'
+
+failure_modes:
+- 'RESTATING THE AGENDA. The most common failure by a distance. The agenda is already in the invite;
+  a brief that repeats it has added a page and no information.'
+- 'LENGTH AS DILIGENCE. A four-page brief is not read, so its accurate contents are functionally
+  absent. The constraint is what makes the format work.'
+- 'PREPARING THE PRINCIPAL AND NOT THE MEETING. A briefed executive walking into an unprepared room
+  gets a well-informed version of a meeting that should not have happened.'
+- 'LEAVING OUT THE UNCOMFORTABLE ITEM. The unpaid invoice, the missed date, the thing we said we
+  would do — omitted to keep the brief positive, and it is exactly what the counterparty will raise.'
+- 'DELIVERING IT TOO LATE TO CHANGE ANYTHING. A brief that arrives after the principal''s last
+  opportunity to prepare is a record, not a brief.'
+- 'SOURCING FROM THE CRM ONLY. The most useful line is usually in a thread nobody logged, and a brief
+  assembled from structured fields alone reads as though nobody looked.'
+
+kpis:
+- name: brief_delivered_before_the_evening
+  unit: percent
+  description: Share of external meetings briefed with enough lead time to act on it.
+  direction: higher_is_better
+- name: brief_coverage_of_external_meetings
+  unit: percent
+  description: Share of external meetings briefed at all.
+  direction: higher_is_better
+- name: surprise_rate_in_meeting
+  unit: percent
+  description: Share of meetings where something material was raised that the brief should have
+    carried. The outcome measure, and the only one that judges content rather than process.
+  direction: lower_is_better
+- name: brief_length
+  unit: pages
+  description: A target band. The one-page constraint is not aesthetic — beyond it the brief stops
+    being read and its accuracy becomes irrelevant.
+  direction: target_band
+- name: open_thread_capture_rate
+  unit: percent
+  description: Share of briefs naming outstanding obligations in both directions.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - admin.executive_support.calendar_management
+  - admin.meeting_operations.meeting_scheduling
+  - admin.executive_support.inbox_and_correspondence
+  downstream:
+  - admin.meeting_operations.agenda_preparation
+  - admin.meeting_operations.minutes_and_documentation
+  parallel:
+  - admin.executive_support.commitment_tracking
+  - admin.executive_support.gatekeeping
+
+applies_to:
+  models: [executive_office, in_house, shared_services, startup_lean, distributed, hybrid,
+           enterprise_admin, multi_entity]
+  offerings: [coordinative]
+
 metadata:
   owner: Admin
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route today.
+
+    The substrate supports the two hardest inputs and not the format. What was last said to
+    these people, and what is outstanding on both sides, come from thread.last_inbound,
+    thread.last_outbound, thread.ball_in_court and commitment.due_at — all real. What is missing
+    is the meeting's attendee list resolved to people we know, which
+    meeting.external_counterparty gestures at and does not deliver.
+
+    The outcome most likely to be dropped is the last one: a brief that concludes the meeting
+    should be rescheduled or does not need the principal. Preparation that can only ever produce
+    a document is a formatting exercise, and this is the one Admin capability where the negative
+    outcome is cheap to produce and almost never produced.
+
 admission:
-  accepted_content_hash: cde1ada5f99c77df20b386e0a73896435caea0d8899fe2267770dfbebc36d6af
+  accepted_content_hash: 0d24958c430548a77d34b6651fbe07469348d05068f6a9918392419f9727ac8e

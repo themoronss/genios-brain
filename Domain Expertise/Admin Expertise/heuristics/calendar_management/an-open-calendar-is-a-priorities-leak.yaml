@@ -7,9 +7,69 @@ identity:
   owner_capability: admin.executive_support.calendar_management
   subdomain: executive_support
   version: 1.0.0
-  status: draft
+  status: stable
 purpose:
-  statement: Whoever books first owns the week. Unprotected time gets allocated by request order, not
-    importance — the calendar's default answer must be the executive's priorities, not first-come-first-served.
+  statement: >
+    Whoever books first owns the week. Unprotected time is allocated by request order rather than by
+    importance, so the calendar's default answer has to already be the principal's priorities.
   answers:
-  - What does a fully-bookable calendar optimise for?
+  - What does a fully bookable calendar actually optimise for?
+  - Why does a busy week so often contain none of the important work?
+
+heuristic:
+  statement: >
+    A calendar with no defaults does not have no priorities. It has other people's.
+  why: >
+    Requests arrive continuously and priorities are set periodically, so in any open system the
+    continuous process wins. Nothing about this is a failure of discipline — each individual
+    acceptance is reasonable, the requester is usually right that the meeting is useful, and the
+    aggregate is still a week allocated by whoever was quickest. The only intervention that works is
+    changing what the empty slot means before anybody asks for it.
+  confidence_bp: 8500
+  applies_when: The principal's time is genuinely scarce and requests exceed capacity.
+  breaks_down_when: >
+    The principal's job IS availability. A founder in a customer-discovery phase, an executive during
+    a crisis, a new leader in their first month — for all of them an open calendar is the correct
+    configuration and protecting it optimises the wrong thing. It also breaks down when the blocks
+    are fiction: protected time that is routinely surrendered teaches everyone that the block is
+    decorative, which is worse than never having declared it.
+  reads:
+  - admin.obj.core.meeting
+  - admin.obj.core.request
+  contradicts:
+  - admin.heu.gatekeeping.the_gatekeeper_is_the_brand_s_first_draft
+
+limits:
+- It says nothing about which priorities. Blocking time for the wrong work is a well-defended waste.
+- It concerns allocation, not conduct. A perfectly allocated week can still be spent badly inside each block.
+
+failure_modes:
+- Blocks declared and not defended, which trains requesters to ignore them and costs credibility that took months to build.
+- Applied to a role whose value is responsiveness, where it produces an unreachable executive and a queue of resentment.
+
+variants:
+- applies_to: startup_lean
+  change: Largely inverted for the first year. Availability is the product of the founder's job at that stage.
+  why: Discovery and sales both require being interruptible.
+- applies_to: regulated
+  change: Certain blocks are statutory rather than preferential — board, audit, filing windows — and outrank everything including the principal.
+  why: External deadlines are not subject to a priorities argument.
+
+references:
+- title: Deep Work
+  kind: book
+  author: Cal Newport
+  note: The clearest statement of the underlying asymmetry between continuous requests and periodic priority-setting.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case matters more than the first. Undefended protected time is the common
+    failure and it is worse than an open calendar, because it costs the credibility that would have
+    made the next attempt work.
