@@ -1179,22 +1179,26 @@ inference_patterns:
   - id: ticket.repeat_contact_from_the_same_account
     statement: This account has contacted us repeatedly in a short window — the aggregate is the signal,
       not any one ticket.
-    status: needs_signal
+    status: executable
+    when:
+    - path: derived.contact_frequency
+      op: '>'
+      value: {baseline: contact_rate_per_account, mult: 2, floor: 1}
     yields:
       confidence_bp: 7500
       attribute: null
-    requires_signals:
-    - kind: derived
-      name: derived.contact_frequency
-      owner_layer: L2
-      note: Repeat contact is where support stops being reactive. Three tickets from one account in a
-        week is a different object from three unrelated tickets, and today the queue cannot see the difference
-        — each one is read as a fresh surprise by a different agent.
-    - kind: baseline
-      name: contact_rate_per_account
-      owner_layer: L2
-      note: Needed to make 'repeatedly' relative. A hundred-seat account opening four tickets a week is
-        normal; a two-seat account doing the same is a churn signal.
+    evidence_fields: [derived.contact_frequency]
+    false_positive: >
+      Onboarding, migration and incident weeks. A newly implemented account contacting five times
+      in a week is the product working as sold, and an open major incident concentrates a
+      fortnight of contact into two days for a reason everyone already knows.
+    note: >
+      The mirror of `cs.churn.contact_rate_below_this_accounts_own_norm`, and it takes the
+      opposite floor for the opposite reason. Firing UPWARD, a floor is protective rather than
+      harmful: `_resolve_value` computes max(floor, mult · baseline), so `floor: 1` stops an
+      account whose norm is one contact a month from being called a repeat contacter the first
+      week it writes twice. Doubling a real norm is the signal; doubling near-zero is arithmetic.
+      Both inputs are written per company by `reason/baselines.py`.
   - id: ticket.priority_should_outrank_severity_here
     statement: A low-severity ticket on an account near renewal should be worked before a high-severity
       one on a trial.

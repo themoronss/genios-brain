@@ -171,6 +171,10 @@ substrate:
     - derived.momentum        # engine-computed trajectory
     - derived.engagement      # engine-computed two-way volume vs prior fortnight
     - derived.sentiment       # engine-computed observation balance
+    # Account level, not person level: reason/baselines.py rolls each company's people up through
+    # the works_at edge and writes contacts/week over the recent window. Paired with the
+    # contact_rate_per_account baseline below — a rate is not evidence without its own norm.
+    - derived.contact_frequency
 
   # Observation kinds Layer 2 emits.
   #
@@ -229,6 +233,7 @@ substrate:
   # Learned per-entity baselines available to {baseline: ...} thresholds.
   baselines:
     - reply_cadence
+    - contact_rate_per_account   # per-company contacts/week over the 56d window (reason/baselines.py)
 
   # Layer 2 situation types a situation file may bind to via `matches.l2_situation_types`.
   # Union of both packs' schema.signal_vocab. A situation naming a type outside this list
@@ -443,7 +448,6 @@ planned_substrate:
     - incident.severity
     - incident.status
     - incident.started_at
-    - derived.contact_frequency
     - derived.escalation_pressure
     - derived.backlog_age
 
@@ -492,7 +496,6 @@ planned_substrate:
   baselines:
     - first_response_time
     - resolution_time
-    - contact_rate_per_account
     - ticket_volume
     # ── Added by Admin ──
     - approval_turnaround

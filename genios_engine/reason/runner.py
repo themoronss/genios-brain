@@ -297,7 +297,9 @@ def _bulk_load_metrics(store, org_id) -> dict:
         v = float(r.value)
         if metric == "reply_cadence":
             baselines["reply_cadence"] = v
-        elif metric in ("momentum", "engagement"):
+        elif metric == "contact_rate_per_account":
+            baselines["contact_rate_per_account"] = v
+        elif metric in ("momentum", "engagement", "contact_frequency"):
             derived[f"derived.{metric}"] = {"value": v, "confidence": 0.85,
                                             "authority_rank": 2, "occurred_at": None, "src_count": 1}
     return out

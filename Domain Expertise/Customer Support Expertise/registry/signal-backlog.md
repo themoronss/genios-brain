@@ -12,142 +12,208 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 
 ## Where the brain stands
 
-- **93** patterns executable against the pipeline today
-- **112** patterns blocked, waiting on **119** distinct signals
-- **15** situation binding(s) waiting on an L2 type no pack emits
-- Substrate today: **12** fact paths · **18** observation kinds · **1** baselines
+- **117** patterns executable against the pipeline today
+- **142** patterns blocked, waiting on **142** distinct signals
+- **16** situation binding(s) waiting on an L2 type no pack emits
+- Substrate today: **34** fact paths · **34** observation kinds · **2** baselines
 
 ## The backlog
 
 | # | Signal | Kind | Owner | Unblocks | Top conf | Objects |
 |---|---|---|---|---|---|---|
-| 1 | `csat.score` | fact_path | L1 | 8 | 9000 | Churn Risk, Commitment, Customer Sentiment, Macro, SLA Target, Ticket |
-| 2 | `derived.contact_frequency` | derived | L2 | 8 | 9000 | Churn Risk, Customer Sentiment, Entitlement, Escalation, Knowledge Article, Requester, Ticket |
-| 3 | `incident_declared` | obs_kind | L2 | 7 | 10000 | Churn Risk, Escalation, Incident, Postmortem |
-| 4 | `incident.started_at` | fact_path | L1 | 6 | 9500 | Customer Sentiment, Incident, Postmortem |
-| 5 | `cancellation_threat` | obs_kind | L2 | 6 | 9200 | Churn Risk, Commitment, Customer Sentiment, Escalation, Macro, Ticket |
-| 6 | `account.renewal_at` | fact_path | L1 | 6 | 9000 | Churn Risk, Customer Sentiment, Entitlement, Escalation, Ticket |
-| 7 | `angry_language` | obs_kind | L2 | 6 | 8200 | Commitment, Customer Sentiment, Escalation, Incident, Postmortem, Ticket |
-| 8 | `incident.status` | fact_path | L1 | 5 | 10000 | Churn Risk, Customer Sentiment, Incident, Postmortem |
-| 9 | `sla.clock_state` | fact_path | L1 | 5 | 10000 | Churn Risk, Commitment, Escalation, SLA Target, Ticket |
-| 10 | `sla.target_resolution_at` | fact_path | L1 | 5 | 10000 | Churn Risk, Commitment, SLA Target, Ticket |
-| 11 | `entitlement.plan` | fact_path | L1 | 5 | 9500 | Entitlement, Postmortem, Requester, Ticket |
-| 12 | `escalation_requested` | obs_kind | L2 | 5 | 9500 | Churn Risk, Escalation, Knowledge Article, Macro, Requester |
-| 13 | `contact_rate_per_account` | baseline | L2 | 5 | 9000 | Churn Risk, Escalation, Knowledge Article, Requester, Ticket |
-| 14 | `entitlement.expires_at` | fact_path | L1 | 4 | 10000 | Entitlement, Postmortem, Ticket |
-| 15 | `sla.target_first_response_at` | fact_path | L1 | 4 | 10000 | Customer Sentiment, SLA Target, Ticket |
-| 16 | `sla_breach` | obs_kind | L2 | 4 | 10000 | Churn Risk, Customer Sentiment, Escalation, SLA Target |
-| 17 | `ticket.status` | fact_path | L1 | 4 | 10000 | Churn Risk, Commitment, Ticket |
-| 18 | `macro_applied` | obs_kind | L2 | 4 | 9800 | Macro |
-| 19 | `ticket.created_at` | fact_path | L1 | 4 | 9700 | Incident, Postmortem, Ticket |
-| 20 | `incident.severity` | fact_path | L1 | 4 | 9500 | Churn Risk, Incident, Postmortem |
-| 21 | `ticket.reopen_count` | fact_path | L1 | 4 | 9500 | Customer Sentiment, Escalation, Macro, Ticket |
-| 22 | `ticket_reopened` | obs_kind | L2 | 4 | 9500 | Churn Risk, Knowledge Article, Macro, Ticket |
-| 23 | `derived.escalation_pressure` | derived | L2 | 4 | 9200 | Commitment, Incident, Postmortem, Ticket |
-| 24 | `self_service_attempted` | obs_kind | L2 | 4 | 9200 | Incident, Knowledge Article, Requester |
-| 25 | `csat_submitted` | obs_kind | L2 | 4 | 9000 | Churn Risk, Customer Sentiment, Macro, Ticket |
-| 26 | `self_service_abandoned` | obs_kind | L2 | 4 | 8800 | Customer Sentiment, Incident, Knowledge Article, Requester |
-| 27 | `incident_resolved` | obs_kind | L2 | 3 | 10000 | Incident, Postmortem |
-| 28 | `entitlement.coverage_hours` | fact_path | L1 | 3 | 9500 | Entitlement, SLA Target |
-| 29 | `entitlement_checked` | obs_kind | L2 | 3 | 9500 | Entitlement, Requester |
-| 30 | `ticket_created` | obs_kind | L2 | 3 | 9200 | Incident, Knowledge Article |
-| 31 | `agent_reassigned` | obs_kind | L2 | 3 | 8800 | Escalation, Requester |
-| 32 | `ces_submitted` | obs_kind | L2 | 3 | 7800 | Churn Risk, Customer Sentiment, Requester |
-| 33 | `knowledge_article_linked` | obs_kind | L2 | 3 | 7500 | Knowledge Article, Macro |
-| 34 | `account.arr` | fact_path | L1 | 3 | 7000 | Entitlement, Escalation, Ticket |
-| 35 | `first_response_time` | baseline | L2 | 3 | 7000 | Incident, Postmortem, SLA Target |
-| 36 | `commitment.state` | fact_path | L1 | 2 | 10000 | Commitment |
-| 37 | `escalation_accepted` | obs_kind | L2 | 2 | 10000 | Escalation |
-| 38 | `ticket.assignee` | fact_path | L1 | 2 | 10000 | Escalation, Ticket |
-| 39 | `ticket.first_response_at` | fact_path | L1 | 2 | 9800 | SLA Target, Ticket |
-| 40 | `commitment.owner` | fact_path | L1 | 2 | 9200 | Commitment |
-| 41 | `commitment.recipient` | fact_path | L1 | 2 | 9200 | Commitment |
-| 42 | `product.released_at` | fact_path | L1 | 2 | 9000 | Knowledge Article, Macro |
-| 43 | `product.surface_version` | fact_path | L1 | 2 | 9000 | Knowledge Article, Macro |
-| 44 | `ticket.channel` | fact_path | L1 | 2 | 9000 | Entitlement, Requester |
-| 45 | `bug_fixed` | obs_kind | L2 | 2 | 8600 | Macro, Postmortem |
-| 46 | `ticket.queue` | fact_path | L1 | 2 | 8600 | Incident, Macro |
-| 47 | `account.health_score` | fact_path | L1 | 2 | 8500 | Churn Risk, Customer Sentiment |
-| 48 | `bug_filed` | obs_kind | L2 | 2 | 8500 | Postmortem, Ticket |
-| 49 | `derived.backlog_age` | derived | L2 | 2 | 8500 | Incident, SLA Target |
-| 50 | `reproduction_confirmed` | obs_kind | L2 | 2 | 8500 | Escalation, Requester |
-| 51 | `ticket_volume` | baseline | L2 | 2 | 8500 | Incident, Macro |
-| 52 | `macro.body_text` | fact_path | L1 | 2 | 8000 | Macro |
-| 53 | `resolution_time` | baseline | L2 | 2 | 7000 | Churn Risk |
-| 54 | `bug_awaiting_engineering` | l2_situation_type | L2 | 1 | 10000 | [situation] Bug Awaiting Engineering |
-| 55 | `csat_detractor` | l2_situation_type | L2 | 1 | 10000 | [situation] CSAT Detractor |
-| 56 | `entitlement_expired` | l2_situation_type | L2 | 1 | 10000 | [situation] Entitlement Expired |
-| 57 | `entitlement_mismatch` | l2_situation_type | L2 | 1 | 10000 | [situation] Entitlement Expired |
-| 58 | `escalation_requested` | l2_situation_type | L2 | 1 | 10000 | [situation] Escalation Requested |
-| 59 | `first_response_overdue` | l2_situation_type | L2 | 1 | 10000 | [situation] SLA Breach Imminent |
-| 60 | `incident_unresolved` | l2_situation_type | L2 | 1 | 10000 | [situation] Major Incident Declared |
-| 61 | `knowledge_gap` | l2_situation_type | L2 | 1 | 10000 | [situation] Repeat Contact |
-| 62 | `major_incident_declared` | l2_situation_type | L2 | 1 | 10000 | [situation] Major Incident Declared |
-| 63 | `queue_overloaded` | l2_situation_type | L2 | 1 | 10000 | [situation] Queue Overloaded |
-| 64 | `repeat_contact` | l2_situation_type | L2 | 1 | 10000 | [situation] Repeat Contact |
-| 65 | `sla_breach_imminent` | l2_situation_type | L2 | 1 | 10000 | [situation] SLA Breach Imminent |
-| 66 | `ticket_aging` | l2_situation_type | L2 | 1 | 10000 | [situation] Queue Overloaded |
-| 67 | `ticket_reopened` | l2_situation_type | L2 | 1 | 10000 | [situation] Ticket Reopened |
-| 68 | `workaround_only` | l2_situation_type | L2 | 1 | 10000 | [situation] Bug Awaiting Engineering |
-| 69 | `first_response_sent` | obs_kind | L2 | 1 | 9800 | SLA Target |
-| 70 | `macro.edit_distance_at_send` | fact_path | L1 | 1 | 9800 | Macro |
-| 71 | `macro.macro_ref` | fact_path | L1 | 1 | 9800 | Macro |
-| 72 | `entitlement.clock_basis` | fact_path | L1 | 1 | 9500 | Entitlement |
-| 73 | `incident.detected_at` | fact_path | L1 | 1 | 9500 | Postmortem |
-| 74 | `knowledge.owner_id` | fact_path | L1 | 1 | 9500 | Knowledge Article |
-| 75 | `leaver_confirmed` | obs_kind | L2 | 1 | 9500 | Knowledge Article |
-| 76 | `callback_promised` | obs_kind | L2 | 1 | 9200 | Commitment |
-| 77 | `knowledge.viewed_at` | fact_path | L1 | 1 | 9200 | Knowledge Article |
-| 78 | `root_cause_identified` | obs_kind | L2 | 1 | 9200 | Postmortem |
-| 79 | `accessibility_need_stated` | obs_kind | L2 | 1 | 9000 | Requester |
-| 80 | `account.contact_role` | fact_path | L1 | 1 | 9000 | Requester |
-| 81 | `conversation.from_address` | fact_path | L1 | 1 | 9000 | Requester |
-| 82 | `derived.affected_account_count` | derived | L2 | 1 | 9000 | Incident |
-| 83 | `entitlement_expired` | obs_kind | L2 | 1 | 9000 | Entitlement |
-| 84 | `ticket.resolved_at` | fact_path | L1 | 1 | 9000 | SLA Target |
-| 85 | `derived.sentiment_by_author` | derived | L2 | 1 | 8800 | Customer Sentiment |
-| 86 | `entitlement.entitled_severity_levels` | fact_path | L1 | 1 | 8800 | Entitlement |
-| 87 | `rca_requested` | obs_kind | L2 | 1 | 8800 | Postmortem |
-| 88 | `search.query_text` | fact_path | L1 | 1 | 8800 | Knowledge Article |
-| 89 | `search.result_count` | fact_path | L1 | 1 | 8800 | Knowledge Article |
-| 90 | `ticket.severity` | fact_path | L1 | 1 | 8800 | Entitlement |
-| 91 | `commitment_renegotiated` | obs_kind | L2 | 1 | 8500 | Commitment |
-| 92 | `derived.sentiment_prior` | derived | L2 | 1 | 8500 | Customer Sentiment |
-| 93 | `derived.sentiment_trend` | derived | L2 | 1 | 8500 | Customer Sentiment |
-| 94 | `diagnostic_artifact_attached` | obs_kind | L2 | 1 | 8500 | Requester |
-| 95 | `entitlement.seat_count` | fact_path | L1 | 1 | 8500 | Entitlement |
-| 96 | `entitlement.seats_in_use` | fact_path | L1 | 1 | 8500 | Entitlement |
-| 97 | `handoff_to_engineering` | obs_kind | L2 | 1 | 8500 | Postmortem |
-| 98 | `macro.use_count_30d` | fact_path | L1 | 1 | 8500 | Macro |
-| 99 | `product.active_usage_trend` | fact_path | L1 | 1 | 8500 | Churn Risk |
-| 100 | `workaround_provided` | obs_kind | L2 | 1 | 8500 | Ticket |
-| 101 | `blame_attribution` | obs_kind | L2 | 1 | 8000 | Postmortem |
-| 102 | `conversation.language` | fact_path | L1 | 1 | 8000 | Requester |
-| 103 | `derived.macro_similarity` | derived | L2 | 1 | 8000 | Macro |
-| 104 | `derived.requester_active_hours` | derived | L2 | 1 | 8000 | Requester |
-| 105 | `entitlement.coverage_timezone` | fact_path | L1 | 1 | 8000 | Entitlement |
-| 106 | `customer_tone_baseline` | baseline | L2 | 1 | 7800 | Customer Sentiment |
-| 107 | `derived.backlog_age` | fact_path | L2 | 1 | 7500 | Postmortem |
-| 108 | `entitlement.named_contacts` | fact_path | L1 | 1 | 7500 | Entitlement |
-| 109 | `knowledge.body_text` | fact_path | L1 | 1 | 7200 | Macro |
-| 110 | `commitment_delivery_rate` | baseline | L2 | 1 | 7000 | Commitment |
-| 111 | `derived.escalation_pressure` | fact_path | L2 | 1 | 7000 | Requester |
-| 112 | `entitlement_verification_interval` | baseline | L2 | 1 | 7000 | Entitlement |
-| 113 | `sla_clock_paused` | obs_kind | L2 | 1 | 7000 | SLA Target |
-| 114 | `article_link_rate` | baseline | L2 | 1 | 6800 | Knowledge Article |
-| 115 | `contract.auto_renew` | fact_path | L1 | 1 | 6800 | Churn Risk |
-| 116 | `contract.end_at` | fact_path | L1 | 1 | 6800 | Churn Risk |
-| 117 | `contract.notice_period_days` | fact_path | L1 | 1 | 6800 | Churn Risk |
-| 118 | `knowledge.view_count_30d` | fact_path | L1 | 1 | 3500 | Knowledge Article |
-| 119 | `knowledge_feedback_submitted` | obs_kind | L2 | 1 | 3500 | Knowledge Article |
+| 1 | `entitlement.plan` | fact_path | L1/L2 | 9 | 9500 | Entitlement, Named Contact, Postmortem, Requester, Support Plan, Ticket |
+| 2 | `account.renewal_at` | fact_path | L1/L2 | 9 | 9000 | Churn Risk, Customer Account, Customer Sentiment, Entitlement, Escalation, Support Plan, Ticket |
+| 3 | `csat.score` | fact_path | L1/L2 | 9 | 9000 | Churn Risk, Commitment, Customer Account, Customer Sentiment, Macro, SLA Target, Ticket |
+| 4 | `derived.contact_frequency` | derived | L2 | 9 | 9000 | Churn Risk, Customer Account, Customer Sentiment, Entitlement, Escalation, Knowledge Article, Named Contact, Requester, Support Plan |
+| 5 | `entitlement.expires_at` | fact_path | L1/L2 | 7 | 10000 | Customer Account, Entitlement, Postmortem, Support Plan, Ticket |
+| 6 | `incident_declared` | obs_kind | L2 | 7 | 10000 | Churn Risk, Escalation, Incident, Postmortem |
+| 7 | `escalation_requested` | obs_kind | L2 | 7 | 9500 | Churn Risk, Customer Account, Escalation, Knowledge Article, Macro, Named Contact, Requester |
+| 8 | `cancellation_threat` | obs_kind | L2 | 7 | 9200 | Churn Risk, Commitment, Customer Account, Customer Sentiment, Escalation, Macro, Ticket |
+| 9 | `sla.target_first_response_at` | fact_path | L1/L2 | 6 | 10000 | Customer Sentiment, SLA Target, Support Plan, Ticket |
+| 10 | `ticket.created_at` | fact_path | L1/L2 | 6 | 9700 | Customer Account, Incident, Named Contact, Postmortem, Ticket |
+| 11 | `incident.started_at` | fact_path | L1 | 6 | 9500 | Customer Sentiment, Incident, Postmortem |
+| 12 | `angry_language` | obs_kind | L2 | 6 | 8200 | Commitment, Customer Sentiment, Escalation, Incident, Postmortem, Ticket |
+| 13 | `incident.status` | fact_path | L1 | 5 | 10000 | Churn Risk, Customer Sentiment, Incident, Postmortem |
+| 14 | `sla.clock_state` | fact_path | L1 | 5 | 10000 | Churn Risk, Commitment, Escalation, SLA Target, Ticket |
+| 15 | `sla.target_resolution_at` | fact_path | L1 | 5 | 10000 | Churn Risk, Commitment, SLA Target, Ticket |
+| 16 | `ticket.status` | fact_path | L1/L2 | 5 | 10000 | Churn Risk, Commitment, Customer Account, Ticket |
+| 17 | `derived.escalation_pressure` | derived | L2 | 5 | 9200 | Commitment, Customer Account, Incident, Postmortem, Ticket |
+| 18 | `contact_rate_per_account` | baseline | L2 | 5 | 9000 | Customer Account, Escalation, Knowledge Article, Named Contact, Requester |
+| 19 | `sla_breach` | obs_kind | L2 | 4 | 10000 | Churn Risk, Customer Sentiment, Escalation, SLA Target |
+| 20 | `macro_applied` | obs_kind | L2 | 4 | 9800 | Macro |
+| 21 | `entitlement.coverage_hours` | fact_path | L1/L2 | 4 | 9500 | Entitlement, SLA Target, Support Plan |
+| 22 | `incident.severity` | fact_path | L1 | 4 | 9500 | Churn Risk, Incident, Postmortem |
+| 23 | `ticket.reopen_count` | fact_path | L1 | 4 | 9500 | Customer Sentiment, Escalation, Macro, Ticket |
+| 24 | `ticket_reopened` | obs_kind | L2 | 4 | 9500 | Churn Risk, Knowledge Article, Macro, Ticket |
+| 25 | `self_service_attempted` | obs_kind | L2 | 4 | 9200 | Incident, Knowledge Article, Requester |
+| 26 | `csat_submitted` | obs_kind | L2 | 4 | 9000 | Churn Risk, Customer Sentiment, Macro, Ticket |
+| 27 | `ticket.channel` | fact_path | L1/L2 | 4 | 9000 | Entitlement, Named Contact, Requester, Support Plan |
+| 28 | `self_service_abandoned` | obs_kind | L2 | 4 | 8800 | Customer Sentiment, Incident, Knowledge Article, Requester |
+| 29 | `account.arr` | fact_path | L1/L2 | 4 | 7500 | Entitlement, Escalation, Named Contact, Ticket |
+| 30 | `first_response_time` | baseline | L2 | 4 | 7000 | Incident, Postmortem, SLA Target, Support Plan |
+| 31 | `incident_resolved` | obs_kind | L2 | 3 | 10000 | Incident, Postmortem |
+| 32 | `entitlement_checked` | obs_kind | L2 | 3 | 9500 | Entitlement, Requester |
+| 33 | `ticket_created` | obs_kind | L2 | 3 | 9200 | Incident, Knowledge Article |
+| 34 | `agent_reassigned` | obs_kind | L2 | 3 | 8800 | Escalation, Requester |
+| 35 | `ticket.queue` | fact_path | L1/L2 | 3 | 8600 | Customer Account, Incident, Macro |
+| 36 | `reproduction_confirmed` | obs_kind | L2 | 3 | 8500 | Escalation, Named Contact, Requester |
+| 37 | `ces_submitted` | obs_kind | L2 | 3 | 7800 | Churn Risk, Customer Sentiment, Requester |
+| 38 | `knowledge_article_linked` | obs_kind | L2 | 3 | 7500 | Knowledge Article, Macro |
+| 39 | `csat.responded_at` | fact_path | L1 | 3 | 0 | Satisfaction Score |
+| 40 | `commitment.state` | fact_path | L1 | 2 | 10000 | Commitment |
+| 41 | `escalation_accepted` | obs_kind | L2 | 2 | 10000 | Escalation |
+| 42 | `ticket.assignee` | fact_path | L1 | 2 | 10000 | Escalation, Ticket |
+| 43 | `ticket.first_response_at` | fact_path | L1 | 2 | 9800 | SLA Target, Ticket |
+| 44 | `commitment.owner` | fact_path | L1 | 2 | 9200 | Commitment |
+| 45 | `commitment.recipient` | fact_path | L1 | 2 | 9200 | Commitment |
+| 46 | `product.released_at` | fact_path | L1 | 2 | 9000 | Knowledge Article, Macro |
+| 47 | `product.surface_version` | fact_path | L1 | 2 | 9000 | Knowledge Article, Macro |
+| 48 | `ticket.severity` | fact_path | L1/L2 | 2 | 8800 | Entitlement, Support Plan |
+| 49 | `bug_fixed` | obs_kind | L2 | 2 | 8600 | Macro, Postmortem |
+| 50 | `account.health_score` | fact_path | L1 | 2 | 8500 | Churn Risk, Customer Sentiment |
+| 51 | `bug_filed` | obs_kind | L2 | 2 | 8500 | Postmortem, Ticket |
+| 52 | `derived.backlog_age` | derived | L2 | 2 | 8500 | Incident, SLA Target |
+| 53 | `ticket_volume` | baseline | L2 | 2 | 8500 | Incident, Macro |
+| 54 | `champion_change` | obs_kind | L2 | 2 | 8000 | Customer Account, Named Contact |
+| 55 | `macro.body_text` | fact_path | L1 | 2 | 8000 | Macro |
+| 56 | `resolution_time` | baseline | L2 | 2 | 7000 | Churn Risk |
+| 57 | `csat.value` | fact_path | L1 | 2 | 0 | Satisfaction Score |
+| 58 | `issue.ref` | fact_path | L2 | 2 | 0 | Issue |
+| 59 | `bug_awaiting_engineering` | l2_situation_type | L2 | 1 | 10000 | [situation] Bug Awaiting Engineering |
+| 60 | `csat_detractor` | l2_situation_type | L2 | 1 | 10000 | [situation] CSAT Detractor |
+| 61 | `entitlement_expired` | l2_situation_type | L2 | 1 | 10000 | [situation] Entitlement Expired |
+| 62 | `entitlement_mismatch` | l2_situation_type | L2 | 1 | 10000 | [situation] Entitlement Expired |
+| 63 | `escalation_requested` | l2_situation_type | L2 | 1 | 10000 | [situation] Escalation Requested |
+| 64 | `first_response_overdue` | l2_situation_type | L2 | 1 | 10000 | [situation] SLA Breach Imminent |
+| 65 | `incident_unresolved` | l2_situation_type | L2 | 1 | 10000 | [situation] Major Incident Declared |
+| 66 | `issue_under_diagnosis` | l2_situation_type | L1 | 1 | 10000 | [situation] Issue Under Diagnosis |
+| 67 | `knowledge_gap` | l2_situation_type | L2 | 1 | 10000 | [situation] Repeat Contact |
+| 68 | `major_incident_declared` | l2_situation_type | L2 | 1 | 10000 | [situation] Major Incident Declared |
+| 69 | `queue_overloaded` | l2_situation_type | L2 | 1 | 10000 | [situation] Queue Overloaded |
+| 70 | `repeat_contact` | l2_situation_type | L2 | 1 | 10000 | [situation] Repeat Contact |
+| 71 | `sla_breach_imminent` | l2_situation_type | L2 | 1 | 10000 | [situation] SLA Breach Imminent |
+| 72 | `ticket_aging` | l2_situation_type | L2 | 1 | 10000 | [situation] Queue Overloaded |
+| 73 | `ticket_reopened` | l2_situation_type | L2 | 1 | 10000 | [situation] Ticket Reopened |
+| 74 | `workaround_only` | l2_situation_type | L2 | 1 | 10000 | [situation] Bug Awaiting Engineering |
+| 75 | `first_response_sent` | obs_kind | L2 | 1 | 9800 | SLA Target |
+| 76 | `macro.edit_distance_at_send` | fact_path | L1 | 1 | 9800 | Macro |
+| 77 | `macro.macro_ref` | fact_path | L1 | 1 | 9800 | Macro |
+| 78 | `entitlement.clock_basis` | fact_path | L1 | 1 | 9500 | Entitlement |
+| 79 | `incident.detected_at` | fact_path | L1 | 1 | 9500 | Postmortem |
+| 80 | `knowledge.owner_id` | fact_path | L1 | 1 | 9500 | Knowledge Article |
+| 81 | `leaver_confirmed` | obs_kind | L2 | 1 | 9500 | Knowledge Article |
+| 82 | `callback_promised` | obs_kind | L2 | 1 | 9200 | Commitment |
+| 83 | `knowledge.viewed_at` | fact_path | L1 | 1 | 9200 | Knowledge Article |
+| 84 | `root_cause_identified` | obs_kind | L2 | 1 | 9200 | Postmortem |
+| 85 | `accessibility_need_stated` | obs_kind | L2 | 1 | 9000 | Requester |
+| 86 | `account.contact_role` | fact_path | L1 | 1 | 9000 | Requester |
+| 87 | `conversation.from_address` | fact_path | L1 | 1 | 9000 | Requester |
+| 88 | `derived.affected_account_count` | derived | L2 | 1 | 9000 | Incident |
+| 89 | `entitlement_expired` | obs_kind | L2 | 1 | 9000 | Entitlement |
+| 90 | `ticket.resolved_at` | fact_path | L1 | 1 | 9000 | SLA Target |
+| 91 | `derived.sentiment_by_author` | derived | L2 | 1 | 8800 | Customer Sentiment |
+| 92 | `entitlement.entitled_severity_levels` | fact_path | L1 | 1 | 8800 | Entitlement |
+| 93 | `rca_requested` | obs_kind | L2 | 1 | 8800 | Postmortem |
+| 94 | `search.query_text` | fact_path | L1 | 1 | 8800 | Knowledge Article |
+| 95 | `search.result_count` | fact_path | L1 | 1 | 8800 | Knowledge Article |
+| 96 | `commitment_renegotiated` | obs_kind | L2 | 1 | 8500 | Commitment |
+| 97 | `derived.sentiment_prior` | derived | L2 | 1 | 8500 | Customer Sentiment |
+| 98 | `derived.sentiment_trend` | derived | L2 | 1 | 8500 | Customer Sentiment |
+| 99 | `diagnostic_artifact_attached` | obs_kind | L2 | 1 | 8500 | Requester |
+| 100 | `entitlement.seat_count` | fact_path | L1 | 1 | 8500 | Entitlement |
+| 101 | `entitlement.seats_in_use` | fact_path | L1 | 1 | 8500 | Entitlement |
+| 102 | `handoff_to_engineering` | obs_kind | L2 | 1 | 8500 | Postmortem |
+| 103 | `macro.use_count_30d` | fact_path | L1 | 1 | 8500 | Macro |
+| 104 | `product.active_usage_trend` | fact_path | L1 | 1 | 8500 | Churn Risk |
+| 105 | `workaround_provided` | obs_kind | L2 | 1 | 8500 | Ticket |
+| 106 | `blame_attribution` | obs_kind | L2 | 1 | 8000 | Postmortem |
+| 107 | `conversation.language` | fact_path | L1 | 1 | 8000 | Requester |
+| 108 | `derived.macro_similarity` | derived | L2 | 1 | 8000 | Macro |
+| 109 | `derived.requester_active_hours` | derived | L2 | 1 | 8000 | Requester |
+| 110 | `entitlement.coverage_timezone` | fact_path | L1 | 1 | 8000 | Entitlement |
+| 111 | `stakeholder_left` | obs_kind | L2 | 1 | 8000 | Named Contact |
+| 112 | `customer_tone_baseline` | baseline | L2 | 1 | 7800 | Customer Sentiment |
+| 113 | `budget_approved` | obs_kind | L2 | 1 | 7500 | Named Contact |
+| 114 | `contract_requested` | obs_kind | L2 | 1 | 7500 | Support Plan |
+| 115 | `derived.backlog_age` | fact_path | L2 | 1 | 7500 | Postmortem |
+| 116 | `entitlement.named_contacts` | fact_path | L1 | 1 | 7500 | Entitlement |
+| 117 | `knowledge.body_text` | fact_path | L1 | 1 | 7200 | Macro |
+| 118 | `commitment_delivery_rate` | baseline | L2 | 1 | 7000 | Commitment |
+| 119 | `derived.escalation_pressure` | fact_path | L2 | 1 | 7000 | Requester |
+| 120 | `entitlement_verification_interval` | baseline | L2 | 1 | 7000 | Entitlement |
+| 121 | `sla_clock_paused` | obs_kind | L2 | 1 | 7000 | SLA Target |
+| 122 | `article_link_rate` | baseline | L2 | 1 | 6800 | Knowledge Article |
+| 123 | `contract.auto_renew` | fact_path | L1 | 1 | 6800 | Churn Risk |
+| 124 | `contract.end_at` | fact_path | L1 | 1 | 6800 | Churn Risk |
+| 125 | `contract.notice_period_days` | fact_path | L1 | 1 | 6800 | Churn Risk |
+| 126 | `ticket.priority` | fact_path | L2 | 1 | 6000 | Support Plan |
+| 127 | `reproduction_failed` | obs_kind | L2 | 1 | 5500 | Named Contact |
+| 128 | `knowledge.view_count_30d` | fact_path | L1 | 1 | 3500 | Knowledge Article |
+| 129 | `knowledge_feedback_submitted` | obs_kind | L2 | 1 | 3500 | Knowledge Article |
+| 130 | `conversation.answered_count` | fact_path | L2 | 1 | 0 | Conversation |
+| 131 | `conversation.channel` | fact_path | L1 | 1 | 0 | Conversation |
+| 132 | `conversation.external_ref` | fact_path | L1 | 1 | 0 | Conversation |
+| 133 | `conversation.participants` | fact_path | L1 | 1 | 0 | Conversation |
+| 134 | `conversation.request_count` | fact_path | L2 | 1 | 0 | Conversation |
+| 135 | `csat.asked_at` | fact_path | L1 | 1 | 0 | Satisfaction Score |
+| 136 | `csat.instrument` | fact_path | L1 | 1 | 0 | Satisfaction Score |
+| 137 | `csat.scale` | fact_path | L1 | 1 | 0 | Satisfaction Score |
+| 138 | `issue.affected_accounts` | fact_path | L1 | 1 | 0 | Issue |
+| 139 | `issue.reproduction_state` | fact_path | L1 | 1 | 0 | Issue |
+| 140 | `issue.reproduction_steps` | fact_path | L1 | 1 | 0 | Issue |
+| 141 | `issue.resolution_kind` | fact_path | L1 | 1 | 0 | Issue |
+| 142 | `ticket.issue_ref` | fact_path | L1 | 1 | 0 | Issue |
 
 ## Why each one matters
+
+### `entitlement.plan` · fact_path
+
+- blocks **Entitlement** / `ent.channel_used_outside_entitlement` (would yield 8500 bp)
+- blocks **Entitlement** / `ent.plan_of_record` (would yield 9500 bp)
+- blocks **Named Contact** / `contact.is_the_agreed_escalation_route` (would yield 8000 bp)
+- blocks **Postmortem** / `postmortem.customer_rca_owed_and_late` (would yield 8800 bp)
+- blocks **Requester** / `req.named_contact_on_the_plan` (would yield 9500 bp)
+- blocks **Support Plan** / `plan.channel_is_outside_the_agreement` (would yield 7000 bp)
+- blocks **Support Plan** / `plan.the_named_caller_limit_is_being_exceeded` (would yield 6500 bp)
+- blocks **Support Plan** / `plan.tier_is_stated` (would yield 8500 bp)
+- blocks **Ticket** / `ticket.priority_should_outrank_severity_here` (would yield 7000 bp)
+- Entitlement: Not 10000 even from a system of record, for the reason in false_positive. Absent this, `plan` is populated by agent assertion, which means the tier is whatever the last person to look believed.
+
+- Entitlement: The channel list hangs off the plan. Without the tier there is nothing to compare the arriving channel against.
+
+- Requester: Plans live in billing systems and CRMs that L1 already connects to; nothing projects the covered-contact list into a typed fact. Without it the system cannot distinguish an uncovered person at a covered company, which is the most common entitlement argument there is.
+
+- Support Plan: In planned_substrate with no writer. A billing or helpdesk connector supplies it; correspondence mentions a plan name at most, in prose, unreliably.
+- Postmortem: Written RCAs are an entitlement line item at enterprise tiers with a stated turnaround, usually five business days. It is the only deadline attached to this object that anyone outside the company can enforce, which is exactly why it wins by default and drags the internal document into the customer document's shape — the failure this object's fourth claim is about.
+
+
+### `account.renewal_at` · fact_path
+
+- blocks **Churn Risk** / `cs.churn.unresolved_escalation_inside_the_renewal_window` (would yield 9000 bp)
+- blocks **Churn Risk** / `cs.churn.usage_fell_before_the_contact_did` (would yield 8500 bp)
+- blocks **Customer Account** / `account.entitlement_has_lapsed` (would yield 9000 bp)
+- blocks **Customer Account** / `account.renewal_is_within_reach` (would yield 8500 bp)
+- blocks **Customer Sentiment** / `cs.sent.calm_and_leaving` (would yield 7500 bp)
+- blocks **Entitlement** / `ent.expiry_lands_inside_open_work` (would yield 8000 bp)
+- blocks **Escalation** / `esc.high_value_account_is_waiting` (would yield 6000 bp)
+- blocks **Support Plan** / `plan.entitlement_has_expired` (would yield 9000 bp)
+- blocks **Ticket** / `ticket.priority_should_outrank_severity_here` (would yield 7000 bp)
+- Churn Risk: The single most valuable missing field for this object. Without it there is no renewal window, so the highest-signal combination available anywhere in support cannot be expressed at all, and every read this object produces is a direction with no date attached.
+
+- Customer Account: Available from any billing or CRM connector; absent on a correspondence-only tenant, where a renewal is mentioned in prose at most.
+- Customer Sentiment: The context that turns a benign quiet into an emergency. `dangerous_calm` above is stuck at 6000 precisely because it cannot see this: the same collapsed engagement is a shrug eleven months before renewal and a five-alarm fire six weeks before it. One date changes the whole read.
+
+- Entitlement: Needed to tell a lapse from a renewal in progress. The two demand opposite handling — one stops the promise, the other extends the grace — and without renewal_at they are the same date.
+
+- Escalation: Proximity to renewal compresses the window far more than revenue size does. A modest account six weeks from renewal deserves an earlier escalation than a large one eleven months out, and any implementation that reads only ARR will get that backwards.
+- Ticket: The severity/priority inversion is the most valuable judgement in triage and it is entirely unavailable to the engine today: nothing commercial about the account is visible on a support node.
 
 ### `csat.score` · fact_path
 
 - blocks **Churn Risk** / `cs.churn.detractor_after_a_hard_resolution` (would yield 6500 bp)
 - blocks **Churn Risk** / `cs.churn.effort_high_while_satisfaction_looks_fine` (would yield 7000 bp)
 - blocks **Commitment** / `commitment.met_every_clock_and_still_broke_our_word` (would yield 8000 bp)
+- blocks **Customer Account** / `account.the_buyer_and_the_users_disagree` (would yield 6500 bp)
 - blocks **Customer Sentiment** / `cs.sent.effort_grievance_from_ces` (would yield 7800 bp)
 - blocks **Customer Sentiment** / `cs.sent.survey_answer_corroborates_the_read` (would yield 7000 bp)
 - blocks **Macro** / `macro.detractor_after_a_canned_reply` (would yield 6500 bp)
@@ -163,17 +229,17 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 
 ### `derived.contact_frequency` · derived
 
-- blocks **Churn Risk** / `cs.churn.contact_rate_below_this_accounts_own_norm` (would yield 8000 bp)
 - blocks **Churn Risk** / `cs.churn.the_same_unresolved_thing_asked_again` (would yield 7800 bp)
+- blocks **Customer Account** / `account.the_relationship_is_one_person_deep` (would yield 7000 bp)
 - blocks **Customer Sentiment** / `cs.sent.reopened_or_repeat_contact` (would yield 8200 bp)
 - blocks **Entitlement** / `ent.serving_beyond_what_was_bought` (would yield 6500 bp)
 - blocks **Escalation** / `esc.the_diagnosis_restarted` (would yield 7500 bp)
 - blocks **Knowledge Article** / `ka.repeat_contact_after_self_service` (would yield 7000 bp)
+- blocks **Named Contact** / `contact.is_a_proxy_for_someone_else` (would yield 5500 bp)
 - blocks **Requester** / `req.repeat_contact_inside_a_week` (would yield 9000 bp)
-- blocks **Ticket** / `ticket.repeat_contact_from_the_same_account` (would yield 7500 bp)
-- Churn Risk: The account-level counterpart to derived.engagement. Every executable going-quiet pattern in this file reads a THREAD and infers an ACCOUNT, which is the central approximation this object is currently making and the one most likely to mislead: an account can be silent on one thread and busy on four others.
-
+- blocks **Support Plan** / `plan.the_named_caller_limit_is_being_exceeded` (would yield 6500 bp)
 - Churn Risk: Needed to distinguish three contacts about one thing from three unrelated contacts. Today each is read as a fresh surprise by a different agent, which is also how it feels to the customer.
+- Customer Account: Per-person inbound share within an account. The graph holds the people and the messages; nothing aggregates one against the other.
 - Customer Sentiment: Needed to catch repeat contact that arrives as new tickets rather than reopens, which is what most customers actually do and what happens by default whenever they use a different channel. Reopen counts alone under-report repeat contact badly.
 
 - Entitlement: Support effort is entirely invisible today — the substrate can see a thread going quiet but not an account consuming four times its tier. Over-service is therefore undetectable until renewal, which is the latest and most expensive moment to find it.
@@ -182,7 +248,21 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - Knowledge Article: Already planned. Needs to be sliced by intent, not just by account — an account contacting more overall is not the same as an account contacting again about the SAME thing.
 - Requester: The highest-value missing signal on this object. Three individually reasonable tickets from one person in a week is a content gap, a product defect or a failed first resolution, and it is invisible to every capability that reads one ticket at a time. Everything the executable graph-degree heuristic below approximates, this would state.
 
-- Ticket: Repeat contact is where support stops being reactive. Three tickets from one account in a week is a different object from three unrelated tickets, and today the queue cannot see the difference — each one is read as a fresh surprise by a different agent.
+
+### `entitlement.expires_at` · fact_path
+
+- blocks **Customer Account** / `account.entitlement_has_lapsed` (would yield 9000 bp)
+- blocks **Entitlement** / `ent.expired_by_date_of_record` (would yield 10000 bp)
+- blocks **Entitlement** / `ent.expiry_lands_inside_open_work` (would yield 8000 bp)
+- blocks **Postmortem** / `postmortem.customer_rca_owed_and_late` (would yield 8800 bp)
+- blocks **Support Plan** / `plan.entitlement_has_expired` (would yield 9000 bp)
+- blocks **Support Plan** / `plan.is_in_grace` (would yield 7500 bp)
+- blocks **Ticket** / `ticket.entitlement_lapsed_at_intake` (would yield 9700 bp)
+- Entitlement: The highest-value missing signal in this entire domain. Without it, expiry is invisible: no state changes, no event fires, and the agent keeps reading a cached `premium` for months. Every over-service incident this object is meant to prevent starts here. It is a date on a contract already in a billing system — the ask is projection, not extraction.
+
+- Entitlement: The genuinely nasty case, and the one nobody plans for: work committed in term, delivered out of term. Whether the original entitlement still governs is a real contractual question, and today it surfaces as an argument rather than as a flag.
+
+- Ticket: Checked, never assumed — and today not checkable at all. An expired-entitlement ticket gets worked anyway because refusing it in the moment feels worse than absorbing the cost, so the cost lands in a margin nobody attributes to support.
 
 ### `incident_declared` · obs_kind
 
@@ -204,6 +284,70 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - Postmortem: The gap between declaration and the first broadcast is support's half of the incident and the half most often absent from the review, because engineering owns the document and the comms failure belongs to whoever was answering tickets at 3am. Customers forgive the fault; they narrate the silence.
 
 
+### `escalation_requested` · obs_kind
+
+- blocks **Churn Risk** / `cs.churn.unresolved_escalation_inside_the_renewal_window` (would yield 9000 bp)
+- blocks **Customer Account** / `account.escalation_has_become_the_channel` (would yield 6500 bp)
+- blocks **Escalation** / `esc.customer_asked_for_a_manager` (would yield 9500 bp)
+- blocks **Knowledge Article** / `ka.read_then_escalated` (would yield 7500 bp)
+- blocks **Macro** / `macro.preceded_an_escalation` (would yield 7000 bp)
+- blocks **Named Contact** / `contact.is_the_agreed_escalation_route` (would yield 8000 bp)
+- blocks **Requester** / `req.escalation_prone_from_history` (would yield 7000 bp)
+- Churn Risk: Support has no escalation signal of any kind. Anger is inferable from language; a transfer of ownership with a reason is not, and the two are routinely confused precisely because only one of them is currently visible.
+
+- Escalation: The single highest-value missing signal for this object and probably for the domain. The phrasing is stereotyped across every language and channel support runs on — 'can I speak to', 'who is your manager', 'escalate this' — so extraction is unusually tractable. Not 10000 even when it lands: customers say it rhetorically and withdraw it in the next message.
+- Knowledge Article: Planned. Needed with a path back to what the customer was shown before they asked for a manager.
+- Requester: There is no escalation signal of any kind in the substrate, so escalation history — one of the most predictive facts about a requester — is entirely unobservable today.
+
+- Macro: Needed with a path back to what the customer was actually shown before they asked for someone else. Escalations are recorded with a reason field that never contains the reply that caused them.
+
+### `cancellation_threat` · obs_kind
+
+- blocks **Churn Risk** / `cs.churn.explicit_cancellation_language` (would yield 9200 bp)
+- blocks **Commitment** / `commitment.broken_promise_became_a_cancellation_conversation` (would yield 8200 bp)
+- blocks **Customer Account** / `account.the_buyer_and_the_users_disagree` (would yield 6500 bp)
+- blocks **Customer Sentiment** / `cs.sent.explicit_cancellation_language` (would yield 9200 bp)
+- blocks **Escalation** / `esc.the_customer_threatened_to_leave` (would yield 8000 bp)
+- blocks **Macro** / `macro.preceded_an_escalation` (would yield 7000 bp)
+- blocks **Ticket** / `ticket.escalation_pressure_building` (would yield 8000 bp)
+- Churn Risk: Stated in plain language in threads the pipeline already ingests, and absent from the extractor whitelist. It is the moment support stops being a cost-centre question and becomes a revenue one.
+
+- Commitment: Stated in plain language in threads we already ingest, and extracted by nothing. It is the moment a broken callback stops being a support cost and becomes a revenue one, and it is the single observation most likely to change what an organisation does about promise tracking.
+
+- Customer Sentiment: The clearest sentiment statement a customer ever makes and the pipeline cannot see it. Note this is not the same as churn: most cancellation threats are bids for attention rather than decisions, which is why 9200 and not 10000 — treating it as evidence about intent is how support teams get held to ransom by the customers least likely to leave.
+
+- Escalation: closed_lost_mention exists in the substrate today and is the near neighbour, but it is scoped to a deal and means the opposite thing — a prospect declining to buy, not a customer leaving. Binding this to it would produce an escalation brain that fires on lost deals, which is precisely the false-coverage failure the domain header warns about.
+- Ticket: The single highest-value missing observation for this domain. It is the moment support stops being a cost centre question and becomes a revenue one, it is stated in plain language in the thread, and the extractor whitelist does not include it.
+- Macro: The louder version of the same event. A macro that reliably precedes cancellation language has found the exact sentence at which a customer decides we are not worth talking to, and that is the single most valuable thing this object could ever tell anyone.
+
+
+### `sla.target_first_response_at` · fact_path
+
+- blocks **Customer Sentiment** / `cs.sent.first_response_clock_breached` (would yield 8000 bp)
+- blocks **SLA Target** / `sla.breach_imminent_against_the_real_target` (would yield 8500 bp)
+- blocks **SLA Target** / `sla.target_timestamp_from_the_ticketing_system` (would yield 10000 bp)
+- blocks **Support Plan** / `plan.target_needs_the_calendar_applied` (would yield 9000 bp)
+- blocks **Support Plan** / `plan.we_have_been_over_delivering_quietly` (would yield 6000 bp)
+- blocks **Ticket** / `ticket.first_response_overdue` (would yield 9800 bp)
+- Customer Sentiment: The machine-readable form of "nobody has told me anything yet". It is the cleanest possible uncertainty-attribution signal because it is a fact about us with a timestamp, and it needs no language model at all.
+
+- SLA Target: The actual deadline. Every executable pattern above is a proxy for this one field, and each proxy is weaker in a different direction — this is the highest-value single ask this object generates.
+
+### `ticket.created_at` · fact_path
+
+- blocks **Customer Account** / `account.volume_spike_is_change_not_growth` (would yield 6000 bp)
+- blocks **Incident** / `incident.blast_radius_from_distinct_affected_accounts` (would yield 9000 bp)
+- blocks **Named Contact** / `contact.tenure_buys_patience` (would yield 5000 bp)
+- blocks **Postmortem** / `postmortem.detection_gap_is_the_headline` (would yield 9500 bp)
+- blocks **Postmortem** / `postmortem.timeline_is_recollection` (would yield 7000 bp)
+- blocks **Ticket** / `ticket.entitlement_lapsed_at_intake` (would yield 9700 bp)
+- Incident: Needed to bound the count to a window. Without it the count accumulates forever and every long-lived issue eventually looks like an incident.
+
+- Postmortem: The cheapest available proxy for started_at and often the most accurate one — the first ticket usually predates the first alert. This is the argument for support owning the detection timeline rather than merely attending the meeting.
+
+- Postmortem: Ticket arrival times are artefacts and they are free. A timeline anchored on them is checkable by anyone; one anchored on "I think it was around nine" is a set of plausible durations that will be quoted as fact in a board pack within a month.
+
+
 ### `incident.started_at` · fact_path
 
 - blocks **Customer Sentiment** / `cs.sent.incident_window_suppresses_the_read` (would yield 8800 bp)
@@ -220,42 +364,6 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 
 - Postmortem: The highest-value missing signal for this object by a wide margin, and it is not close. Detection lag is the cheapest gap in an incident to close — usually a threshold on a metric that already exists — and it is the only one with no owner, no budget line and no slide, because the fix belongs to engineering and the gap belongs to nobody. Without started_at, every duration on this object is measured from when we noticed, which silently deletes the finding from the document that exists to produce it.
 
-
-### `cancellation_threat` · obs_kind
-
-- blocks **Churn Risk** / `cs.churn.explicit_cancellation_language` (would yield 9200 bp)
-- blocks **Commitment** / `commitment.broken_promise_became_a_cancellation_conversation` (would yield 8200 bp)
-- blocks **Customer Sentiment** / `cs.sent.explicit_cancellation_language` (would yield 9200 bp)
-- blocks **Escalation** / `esc.the_customer_threatened_to_leave` (would yield 8000 bp)
-- blocks **Macro** / `macro.preceded_an_escalation` (would yield 7000 bp)
-- blocks **Ticket** / `ticket.escalation_pressure_building` (would yield 8000 bp)
-- Churn Risk: Stated in plain language in threads the pipeline already ingests, and absent from the extractor whitelist. It is the moment support stops being a cost-centre question and becomes a revenue one.
-
-- Commitment: Stated in plain language in threads we already ingest, and extracted by nothing. It is the moment a broken callback stops being a support cost and becomes a revenue one, and it is the single observation most likely to change what an organisation does about promise tracking.
-
-- Customer Sentiment: The clearest sentiment statement a customer ever makes and the pipeline cannot see it. Note this is not the same as churn: most cancellation threats are bids for attention rather than decisions, which is why 9200 and not 10000 — treating it as evidence about intent is how support teams get held to ransom by the customers least likely to leave.
-
-- Escalation: closed_lost_mention exists in the substrate today and is the near neighbour, but it is scoped to a deal and means the opposite thing — a prospect declining to buy, not a customer leaving. Binding this to it would produce an escalation brain that fires on lost deals, which is precisely the false-coverage failure the domain header warns about.
-- Ticket: The single highest-value missing observation for this domain. It is the moment support stops being a cost centre question and becomes a revenue one, it is stated in plain language in the thread, and the extractor whitelist does not include it.
-- Macro: The louder version of the same event. A macro that reliably precedes cancellation language has found the exact sentence at which a customer decides we are not worth talking to, and that is the single most valuable thing this object could ever tell anyone.
-
-
-### `account.renewal_at` · fact_path
-
-- blocks **Churn Risk** / `cs.churn.unresolved_escalation_inside_the_renewal_window` (would yield 9000 bp)
-- blocks **Churn Risk** / `cs.churn.usage_fell_before_the_contact_did` (would yield 8500 bp)
-- blocks **Customer Sentiment** / `cs.sent.calm_and_leaving` (would yield 7500 bp)
-- blocks **Entitlement** / `ent.expiry_lands_inside_open_work` (would yield 8000 bp)
-- blocks **Escalation** / `esc.high_value_account_is_waiting` (would yield 6000 bp)
-- blocks **Ticket** / `ticket.priority_should_outrank_severity_here` (would yield 7000 bp)
-- Churn Risk: The single most valuable missing field for this object. Without it there is no renewal window, so the highest-signal combination available anywhere in support cannot be expressed at all, and every read this object produces is a direction with no date attached.
-
-- Customer Sentiment: The context that turns a benign quiet into an emergency. `dangerous_calm` above is stuck at 6000 precisely because it cannot see this: the same collapsed engagement is a shrug eleven months before renewal and a five-alarm fire six weeks before it. One date changes the whole read.
-
-- Entitlement: Needed to tell a lapse from a renewal in progress. The two demand opposite handling — one stops the promise, the other extends the grace — and without renewal_at they are the same date.
-
-- Escalation: Proximity to renewal compresses the window far more than revenue size does. A modest account six weeks from renewal deserves an earlier escalation than a large one eleven months out, and any implementation that reads only ARR will get that backwards.
-- Ticket: The severity/priority inversion is the most valuable judgement in triage and it is entirely unavailable to the engine today: nothing commercial about the account is visible on a support node.
 
 ### `angry_language` · obs_kind
 
@@ -308,73 +416,42 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - blocks **Ticket** / `ticket.clock_breached` (would yield 10000 bp)
 - SLA Target: Separate from first response and must stay separate. A pack that projects one 'sla_due' field has already made the error this object is built to prevent.
 
-### `entitlement.plan` · fact_path
+### `ticket.status` · fact_path
 
-- blocks **Entitlement** / `ent.channel_used_outside_entitlement` (would yield 8500 bp)
-- blocks **Entitlement** / `ent.plan_of_record` (would yield 9500 bp)
-- blocks **Postmortem** / `postmortem.customer_rca_owed_and_late` (would yield 8800 bp)
-- blocks **Requester** / `req.named_contact_on_the_plan` (would yield 9500 bp)
-- blocks **Ticket** / `ticket.priority_should_outrank_severity_here` (would yield 7000 bp)
-- Entitlement: Not 10000 even from a system of record, for the reason in false_positive. Absent this, `plan` is populated by agent assertion, which means the tier is whatever the last person to look believed.
-
-- Entitlement: The channel list hangs off the plan. Without the tier there is nothing to compare the arriving channel against.
-
-- Requester: Plans live in billing systems and CRMs that L1 already connects to; nothing projects the covered-contact list into a typed fact. Without it the system cannot distinguish an uncovered person at a covered company, which is the most common entitlement argument there is.
-
-- Postmortem: Written RCAs are an entitlement line item at enterprise tiers with a stated turnaround, usually five business days. It is the only deadline attached to this object that anyone outside the company can enforce, which is exactly why it wins by default and drags the internal document into the customer document's shape — the failure this object's fourth claim is about.
-
-
-### `escalation_requested` · obs_kind
-
+- blocks **Churn Risk** / `cs.churn.the_same_unresolved_thing_asked_again` (would yield 7800 bp)
 - blocks **Churn Risk** / `cs.churn.unresolved_escalation_inside_the_renewal_window` (would yield 9000 bp)
-- blocks **Escalation** / `esc.customer_asked_for_a_manager` (would yield 9500 bp)
-- blocks **Knowledge Article** / `ka.read_then_escalated` (would yield 7500 bp)
-- blocks **Macro** / `macro.preceded_an_escalation` (would yield 7000 bp)
-- blocks **Requester** / `req.escalation_prone_from_history` (would yield 7000 bp)
-- Churn Risk: Support has no escalation signal of any kind. Anger is inferable from language; a transfer of ownership with a reason is not, and the two are routinely confused precisely because only one of them is currently visible.
+- blocks **Commitment** / `commitment.declared_state_from_the_system_of_record` (would yield 10000 bp)
+- blocks **Customer Account** / `account.load_is_concentrated_on_one_product_area` (would yield 7500 bp)
+- blocks **Ticket** / `ticket.status_declared_by_the_system_of_record` (would yield 10000 bp)
+- Churn Risk: Needed to establish that the escalation is UNRESOLVED. A closed escalation inside the renewal window is a story about a system that worked and carries the opposite sign.
+- Churn Risk: The "unresolved" half. Repetition about a thing we fixed is a different and much weaker signal.
+- Commitment: A commitment on a ticket that closed is a different object from one on a ticket still open, and today the two are indistinguishable — so a promise attached to work that finished keeps generating overdue alerts.
 
-- Escalation: The single highest-value missing signal for this object and probably for the domain. The phrasing is stereotyped across every language and channel support runs on — 'can I speak to', 'who is your manager', 'escalate this' — so extraction is unusually tractable. Not 10000 even when it lands: customers say it rhetorically and withdraw it in the next message.
-- Knowledge Article: Planned. Needed with a path back to what the customer was shown before they asked for a manager.
-- Requester: There is no escalation signal of any kind in the substrate, so escalation history — one of the most predictive facts about a requester — is entirely unobservable today.
+- Ticket: The single most embarrassing gap in this domain. The declared state of THE central object is not projected into a typed fact, so a support brain has to infer from email what the ticketing system already knows for certain. Everything else in this backlog is worth less than this one line.
 
-- Macro: Needed with a path back to what the customer was actually shown before they asked for someone else. Escalations are recorded with a reason field that never contains the reply that caused them.
+### `derived.escalation_pressure` · derived
+
+- blocks **Commitment** / `commitment.broken_promise_became_a_cancellation_conversation` (would yield 8200 bp)
+- blocks **Customer Account** / `account.escalation_has_become_the_channel` (would yield 6500 bp)
+- blocks **Incident** / `incident.synchronised_angry_language` (would yield 6500 bp)
+- blocks **Postmortem** / `postmortem.this_has_been_written_before` (would yield 9200 bp)
+- blocks **Ticket** / `ticket.escalation_pressure_building` (would yield 8000 bp)
+- Incident: Must be readable across accounts, not per-ticket. Per-ticket anger says nothing; the same anger appearing in unrelated accounts within an hour says one thing broke.
+
+- Ticket: A single angry message is not pressure. Accumulation over a thread is, and only L2 can accumulate it.
+- Postmortem: Second and third occurrences generate materially different customer behaviour from first ones, and the accumulation is the part only L2 can compute.
 
 ### `contact_rate_per_account` · baseline
 
-- blocks **Churn Risk** / `cs.churn.contact_rate_below_this_accounts_own_norm` (would yield 8000 bp)
+- blocks **Customer Account** / `account.volume_spike_is_change_not_growth` (would yield 6000 bp)
 - blocks **Escalation** / `esc.repeat_contact_on_the_same_problem` (would yield 7200 bp)
 - blocks **Knowledge Article** / `ka.repeat_contact_after_self_service` (would yield 7000 bp)
+- blocks **Named Contact** / `contact.tenure_buys_patience` (would yield 5000 bp)
 - blocks **Requester** / `req.repeat_contact_inside_a_week` (would yield 9000 bp)
-- blocks **Ticket** / `ticket.repeat_contact_from_the_same_account` (would yield 7500 bp)
-- Churn Risk: Absence needs a baseline or it is not evidence. A hundred-seat account opening four tickets a week is normal; a two-seat account doing the same is a churn signal, and a heavy integrator that drops from nine contacts a month to one has said more than any survey ever will.
-
 - Escalation: Three contacts in a week is normal for a heavy integrator and alarming for a quiet one. Without the per-account baseline this fires on the customers who use the product most, which is the exact inverse of the intent.
 - Knowledge Article: Needed so 'shortly after' means something relative to how often this account contacts us anyway. Absolute windows mis-fire badly on high-touch enterprise accounts.
 - Requester: Needed to make frequency readable — a power user's fourth contact is noise, a quiet customer's second is a signal, and an absolute threshold cannot tell them apart.
 
-- Ticket: Needed to make 'repeatedly' relative. A hundred-seat account opening four tickets a week is normal; a two-seat account doing the same is a churn signal.
-
-### `entitlement.expires_at` · fact_path
-
-- blocks **Entitlement** / `ent.expired_by_date_of_record` (would yield 10000 bp)
-- blocks **Entitlement** / `ent.expiry_lands_inside_open_work` (would yield 8000 bp)
-- blocks **Postmortem** / `postmortem.customer_rca_owed_and_late` (would yield 8800 bp)
-- blocks **Ticket** / `ticket.entitlement_lapsed_at_intake` (would yield 9700 bp)
-- Entitlement: The highest-value missing signal in this entire domain. Without it, expiry is invisible: no state changes, no event fires, and the agent keeps reading a cached `premium` for months. Every over-service incident this object is meant to prevent starts here. It is a date on a contract already in a billing system — the ask is projection, not extraction.
-
-- Entitlement: The genuinely nasty case, and the one nobody plans for: work committed in term, delivered out of term. Whether the original entitlement still governs is a real contractual question, and today it surfaces as an argument rather than as a flag.
-
-- Ticket: Checked, never assumed — and today not checkable at all. An expired-entitlement ticket gets worked anyway because refusing it in the moment feels worse than absorbing the cost, so the cost lands in a margin nobody attributes to support.
-
-### `sla.target_first_response_at` · fact_path
-
-- blocks **Customer Sentiment** / `cs.sent.first_response_clock_breached` (would yield 8000 bp)
-- blocks **SLA Target** / `sla.breach_imminent_against_the_real_target` (would yield 8500 bp)
-- blocks **SLA Target** / `sla.target_timestamp_from_the_ticketing_system` (would yield 10000 bp)
-- blocks **Ticket** / `ticket.first_response_overdue` (would yield 9800 bp)
-- Customer Sentiment: The machine-readable form of "nobody has told me anything yet". It is the cleanest possible uncertainty-attribution signal because it is a fact about us with a timestamp, and it needs no language model at all.
-
-- SLA Target: The actual deadline. Every executable pattern above is a proxy for this one field, and each proxy is weaker in a different direction — this is the highest-value single ask this object generates.
 
 ### `sla_breach` · obs_kind
 
@@ -388,18 +465,6 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 
 - SLA Target: Cheap for L2 to emit and immediately useful. Pair it with sla_clock_paused, or a breach arrives with no explanation of which minutes counted, which is a notification rather than a finding.
 
-### `ticket.status` · fact_path
-
-- blocks **Churn Risk** / `cs.churn.the_same_unresolved_thing_asked_again` (would yield 7800 bp)
-- blocks **Churn Risk** / `cs.churn.unresolved_escalation_inside_the_renewal_window` (would yield 9000 bp)
-- blocks **Commitment** / `commitment.declared_state_from_the_system_of_record` (would yield 10000 bp)
-- blocks **Ticket** / `ticket.status_declared_by_the_system_of_record` (would yield 10000 bp)
-- Churn Risk: Needed to establish that the escalation is UNRESOLVED. A closed escalation inside the renewal window is a story about a system that worked and carries the opposite sign.
-- Churn Risk: The "unresolved" half. Repetition about a thing we fixed is a different and much weaker signal.
-- Commitment: A commitment on a ticket that closed is a different object from one on a ticket still open, and today the two are indistinguishable — so a promise attached to work that finished keeps generating overdue alerts.
-
-- Ticket: The single most embarrassing gap in this domain. The declared state of THE central object is not projected into a typed fact, so a support brain has to infer from email what the ticketing system already knows for certain. Everything else in this backlog is worth less than this one line.
-
 ### `macro_applied` · obs_kind
 
 - blocks **Macro** / `macro.detractor_after_a_canned_reply` (would yield 6500 bp)
@@ -409,18 +474,17 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - Macro: The foundational miss for this object. Every helpdesk records which macro an agent inserted; none of it reaches Layer 2, so a support brain cannot tell a written reply from a pasted one. Without this observation every other pattern here is inferring from thread shape what the tool knows for certain.
 
 
-### `ticket.created_at` · fact_path
+### `entitlement.coverage_hours` · fact_path
 
-- blocks **Incident** / `incident.blast_radius_from_distinct_affected_accounts` (would yield 9000 bp)
-- blocks **Postmortem** / `postmortem.detection_gap_is_the_headline` (would yield 9500 bp)
-- blocks **Postmortem** / `postmortem.timeline_is_recollection` (would yield 7000 bp)
-- blocks **Ticket** / `ticket.entitlement_lapsed_at_intake` (would yield 9700 bp)
-- Incident: Needed to bound the count to a window. Without it the count accumulates forever and every long-lived issue eventually looks like an incident.
+- blocks **Entitlement** / `ent.commitment_lands_outside_coverage` (would yield 8000 bp)
+- blocks **Entitlement** / `ent.coverage_of_record` (would yield 9500 bp)
+- blocks **SLA Target** / `sla.the_clock_was_never_survivable` (would yield 8000 bp)
+- blocks **Support Plan** / `plan.target_needs_the_calendar_applied` (would yield 9000 bp)
+- Entitlement: Without it, coverage is inferred from the plan tier, and tier-to-coverage mapping is exactly what custom agreements break. The failure is silent and one-directional: nobody complains about being covered too widely.
 
-- Postmortem: The cheapest available proxy for started_at and often the most accurate one — the first ticket usually predates the first alert. This is the argument for support owning the detection timeline rather than merely attending the meeting.
+- Entitlement: commitment.due_at is already live, which makes this the cheapest high-value pattern in the file: one missing field away from executable. It catches the Friday-evening callback promised to a business-hours account — a breach created at the moment of promising, hours before anyone could notice it.
 
-- Postmortem: Ticket arrival times are artefacts and they are free. A timeline anchored on them is checkable by anyone; one anchored on "I think it was around nine" is a set of plausible durations that will be quoted as fact in a board pack within a month.
-
+- SLA Target: Turns a breach postmortem into a coverage decision. These breaches are not agent failures and treating them as such is how coaching time gets spent on a rota problem — the fix is a shift pattern or a renegotiated clock, and neither is visible from the ticket.
 
 ### `incident.severity` · fact_path
 
@@ -455,17 +519,6 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - Macro: The quality signal a customer has to spend effort to send, which is what makes it harder to game than any survey. Joined to a macro, it is the closest thing available to proof that a canned answer did not hold.
 
 
-### `derived.escalation_pressure` · derived
-
-- blocks **Commitment** / `commitment.broken_promise_became_a_cancellation_conversation` (would yield 8200 bp)
-- blocks **Incident** / `incident.synchronised_angry_language` (would yield 6500 bp)
-- blocks **Postmortem** / `postmortem.this_has_been_written_before` (would yield 9200 bp)
-- blocks **Ticket** / `ticket.escalation_pressure_building` (would yield 8000 bp)
-- Incident: Must be readable across accounts, not per-ticket. Per-ticket anger says nothing; the same anger appearing in unrelated accounts within an hour says one thing broke.
-
-- Ticket: A single angry message is not pressure. Accumulation over a thread is, and only L2 can accumulate it.
-- Postmortem: Second and third occurrences generate materially different customer behaviour from first ones, and the accumulation is the part only L2 can compute.
-
 ### `self_service_attempted` · obs_kind
 
 - blocks **Incident** / `incident.self_service_spike_precedes_the_queue` (would yield 6000 bp)
@@ -486,6 +539,17 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 
 - Macro: Needed with the send so the score can be attributed to the reply that produced it rather than to the ticket in general.
 
+### `ticket.channel` · fact_path
+
+- blocks **Entitlement** / `ent.channel_used_outside_entitlement` (would yield 8500 bp)
+- blocks **Named Contact** / `contact.technical_depth_from_how_they_write` (would yield 6000 bp)
+- blocks **Requester** / `req.shared_mailbox_is_not_a_person` (would yield 9000 bp)
+- blocks **Support Plan** / `plan.channel_is_outside_the_agreement` (would yield 7000 bp)
+- Entitlement: Everything the pipeline sees is email-shaped, so the channel dimension of entitlement is entirely unmodelled. Channel breach is the most common entitlement breach precisely because it is never a decision — the agent replies on whatever arrived.
+
+- Requester: Corroborating and independent of the address: portal submissions under a service account and forwarded helpdesk tickets are both shared-identity patterns that the address alone can miss.
+
+
 ### `self_service_abandoned` · obs_kind
 
 - blocks **Customer Sentiment** / `cs.sent.calm_and_leaving` (would yield 7500 bp)
@@ -500,6 +564,24 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - Requester: The stronger half: where they gave up names the content gap precisely, which is what content_gap_analysis needs and cannot get from the ticket text. It is also the signal that stops abandonment being counted as a deflection success.
 
 
+### `account.arr` · fact_path
+
+- blocks **Entitlement** / `ent.serving_beyond_what_was_bought` (would yield 6500 bp)
+- blocks **Escalation** / `esc.high_value_account_is_waiting` (would yield 6000 bp)
+- blocks **Named Contact** / `contact.holds_the_budget` (would yield 7500 bp)
+- blocks **Ticket** / `ticket.priority_should_outrank_severity_here` (would yield 7000 bp)
+- Entitlement: The denominator. Without it there is no cost-to-serve, and "this account is expensive" stays an anecdote a support manager cannot escalate.
+
+
+### `first_response_time` · baseline
+
+- blocks **Incident** / `incident.first_response_time_collapses_against_baseline` (would yield 5500 bp)
+- blocks **Postmortem** / `postmortem.timeline_is_recollection` (would yield 7000 bp)
+- blocks **SLA Target** / `sla.systematic_pause_gaming` (would yield 7000 bp)
+- blocks **Support Plan** / `plan.we_have_been_over_delivering_quietly` (would yield 6000 bp)
+- SLA Target: The peer comparison. Absolute pause counts are meaningless — some queues genuinely need more information from customers. Only the deviation carries a signal, and only at team level; run this per-agent and you will build a metric that teaches people to stop asking necessary questions.
+- Postmortem: Needed to tell an abnormal response window during the incident from a normal one, which is what turns a raw timestamp into a comms finding.
+
 ### `incident_resolved` · obs_kind
 
 - blocks **Incident** / `incident.resolved_on_the_record` (would yield 9800 bp)
@@ -508,17 +590,6 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - Incident: Ends the incident clock and nothing else. Covered tickets stay open, the issue stays open, and a system that conflates the three will close forty tickets on customers who were never told anything.
 
 - Postmortem: A postmortem written while impact is live competes with the response for the same five people. Knowing the incident is closed is the precondition for the whole object.
-
-### `entitlement.coverage_hours` · fact_path
-
-- blocks **Entitlement** / `ent.commitment_lands_outside_coverage` (would yield 8000 bp)
-- blocks **Entitlement** / `ent.coverage_of_record` (would yield 9500 bp)
-- blocks **SLA Target** / `sla.the_clock_was_never_survivable` (would yield 8000 bp)
-- Entitlement: Without it, coverage is inferred from the plan tier, and tier-to-coverage mapping is exactly what custom agreements break. The failure is silent and one-directional: nobody complains about being covered too widely.
-
-- Entitlement: commitment.due_at is already live, which makes this the cheapest high-value pattern in the file: one missing field away from executable. It catches the Friday-evening callback promised to a business-hours account — a breach created at the moment of promising, hours before anyone could notice it.
-
-- SLA Target: Turns a breach postmortem into a coverage decision. These breaches are not agent failures and treating them as such is how coaching time gets spent on a rota problem — the fix is a shift pattern or a renegotiated clock, and neither is visible from the ticket.
 
 ### `entitlement_checked` · obs_kind
 
@@ -550,6 +621,25 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - Requester: The observable proxy, and the one that does not require asking. Every reassignment restarts the customer's explanation from zero, and the count of them is the cheapest effort signal in support.
 
 
+### `ticket.queue` · fact_path
+
+- blocks **Customer Account** / `account.load_is_concentrated_on_one_product_area` (would yield 7500 bp)
+- blocks **Incident** / `incident.same_area_across_unrelated_accounts` (would yield 8600 bp)
+- blocks **Macro** / `macro.carrying_an_outsized_share_of_a_queue` (would yield 8500 bp)
+- Incident: Queue is the nearest thing the planned schema has to a product area, and it is a poor substitute — queues are drawn around teams and shifts, not around faults. A real ticket.product_area is what this pattern wants.
+
+- Macro: The denominator has to be a queue, not the whole org. A macro at four percent of all replies and forty percent of the billing queue is a billing product finding, and the org-wide number hides it completely.
+
+
+### `reproduction_confirmed` · obs_kind
+
+- blocks **Escalation** / `esc.the_diagnosis_restarted` (would yield 7500 bp)
+- blocks **Named Contact** / `contact.technical_depth_from_how_they_write` (would yield 6000 bp)
+- blocks **Requester** / `req.fluency_from_what_they_attach` (would yield 8500 bp)
+- Escalation: A second reproduction request after a reassignment is the machine-visible fingerprint of context that did not travel — the characteristic failure of this object, and currently invisible.
+- Requester: Corroborating and independent: someone who can reproduce on demand has proved diagnostic_capability, which is access. The artifact proves fluency, which is knowledge. Together they also settle the proxy false positive above, because a relayer cannot reproduce on request.
+
+
 ### `ces_submitted` · obs_kind
 
 - blocks **Churn Risk** / `cs.churn.effort_high_while_satisfaction_looks_fine` (would yield 7000 bp)
@@ -568,21 +658,11 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - Knowledge Article: Already planned. The link event is the observable; the absence of it, on an intent this article covers, is the signal.
 - Macro: Establishes that the two are meant to be the same answer. Without it, divergence cannot be distinguished from two macros that were never related.
 
-### `account.arr` · fact_path
+### `csat.responded_at` · fact_path
 
-- blocks **Entitlement** / `ent.serving_beyond_what_was_bought` (would yield 6500 bp)
-- blocks **Escalation** / `esc.high_value_account_is_waiting` (would yield 6000 bp)
-- blocks **Ticket** / `ticket.priority_should_outrank_severity_here` (would yield 7000 bp)
-- Entitlement: The denominator. Without it there is no cost-to-serve, and "this account is expensive" stays an anecdote a support manager cannot escalate.
-
-
-### `first_response_time` · baseline
-
-- blocks **Incident** / `incident.first_response_time_collapses_against_baseline` (would yield 5500 bp)
-- blocks **Postmortem** / `postmortem.timeline_is_recollection` (would yield 7000 bp)
-- blocks **SLA Target** / `sla.systematic_pause_gaming` (would yield 7000 bp)
-- SLA Target: The peer comparison. Absolute pause counts are meaningless — some queues genuinely need more information from customers. Only the deviation carries a signal, and only at team level; run this per-agent and you will build a metric that teaches people to stop asking necessary questions.
-- Postmortem: Needed to tell an abnormal response window during the incident from a normal one, which is what turns a raw timestamp into a comms finding.
+- blocks **Satisfaction Score** / `satisfaction.customer_rated_us` (would yield 0 bp)
+- blocks **Satisfaction Score** / `satisfaction.response_rate_is_falling` (would yield 0 bp)
+- blocks **Satisfaction Score** / `satisfaction.this_account_is_trending_down` (would yield 0 bp)
 
 ### `commitment.state` · fact_path
 
@@ -642,13 +722,11 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - Knowledge Article: So verified_against_version has a referent. A verification date with nothing to compare against is a date, not a verification.
 - Macro: So verified_against_version has something to compare against.
 
-### `ticket.channel` · fact_path
+### `ticket.severity` · fact_path
 
-- blocks **Entitlement** / `ent.channel_used_outside_entitlement` (would yield 8500 bp)
-- blocks **Requester** / `req.shared_mailbox_is_not_a_person` (would yield 9000 bp)
-- Entitlement: Everything the pipeline sees is email-shaped, so the channel dimension of entitlement is entirely unmodelled. Channel breach is the most common entitlement breach precisely because it is never a decision — the agent replies on whatever arrived.
-
-- Requester: Corroborating and independent of the address: portal submissions under a service account and forwarded helpdesk tickets are both shared-identity patterns that the address alone can miss.
+- blocks **Entitlement** / `ent.severity_outside_entitled_levels` (would yield 8800 bp)
+- blocks **Support Plan** / `plan.severity_definitions_are_being_stretched` (would yield 6000 bp)
+- Entitlement: Blast radius as declared on the ticket, on the SEV1–SEV4 convention. Needed to make the severity dispute an entitlement conversation, which is where it belongs and where it is far less heated — the argument is then with the contract rather than with the agent.
 
 
 ### `bug_fixed` · obs_kind
@@ -658,15 +736,6 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - Macro: The sharper half. A release is circumstantial; a FIX to the specific issue a workaround macro documents makes that macro wrong immediately and with certainty. That edge already exists in the model and nothing walks it.
 
 - Postmortem: Also the suppression signal for postmortem.action_overdue_with_no_outbound — with it, a completed action stops looking like an abandoned one.
-
-### `ticket.queue` · fact_path
-
-- blocks **Incident** / `incident.same_area_across_unrelated_accounts` (would yield 8600 bp)
-- blocks **Macro** / `macro.carrying_an_outsized_share_of_a_queue` (would yield 8500 bp)
-- Incident: Queue is the nearest thing the planned schema has to a product area, and it is a poor substitute — queues are drawn around teams and shifts, not around faults. A real ticket.product_area is what this pattern wants.
-
-- Macro: The denominator has to be a queue, not the whole org. A macro at four percent of all replies and forty percent of the billing queue is a billing product finding, and the org-wide number hides it completely.
-
 
 ### `account.health_score` · fact_path
 
@@ -691,14 +760,6 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 
 - SLA Target: The second half is what makes this actionable rather than merely alarming. Time-remaining alone tells you a breach is coming; time-remaining against queue depth tells you whether anyone can still stop it, which is the only version worth waking someone for.
 
-### `reproduction_confirmed` · obs_kind
-
-- blocks **Escalation** / `esc.the_diagnosis_restarted` (would yield 7500 bp)
-- blocks **Requester** / `req.fluency_from_what_they_attach` (would yield 8500 bp)
-- Escalation: A second reproduction request after a reassignment is the machine-visible fingerprint of context that did not travel — the characteristic failure of this object, and currently invisible.
-- Requester: Corroborating and independent: someone who can reproduce on demand has proved diagnostic_capability, which is access. The artifact proves fluency, which is knowledge. Together they also settle the proxy false positive above, because a relayer cannot reproduce on request.
-
-
 ### `ticket_volume` · baseline
 
 - blocks **Incident** / `incident.ticket_creation_burst_above_baseline` (would yield 8000 bp)
@@ -707,6 +768,12 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 
 - Macro: So "substantial" is relative to the queue's own size and season. A fixed threshold fires constantly on small queues and never on large ones, which is the opposite of useful.
 
+
+### `champion_change` · obs_kind
+
+- blocks **Customer Account** / `account.the_person_we_knew_has_gone` (would yield 7000 bp)
+- blocks **Named Contact** / `contact.has_departed` (would yield 8000 bp)
+- Customer Account: Declared in CANONICAL_OBS_KINDS and emitted zero times on the live org. Until the extractor recognises a handover sentence, this cannot fire.
 
 ### `macro.body_text` · fact_path
 
@@ -720,6 +787,16 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - blocks **Churn Risk** / `cs.churn.effort_high_while_satisfaction_looks_fine` (would yield 7000 bp)
 - Churn Risk: Lets effort be reconstructed from ticket history — touches, reassignments, reopens, elapsed wall clock — on the accounts that never answer a survey, which are disproportionately the strategic ones.
 - Churn Risk: The "hard" half. A detractor score on a fast resolution is about the answer; a detractor score on a resolution that took four times this account's norm is about us.
+
+### `csat.value` · fact_path
+
+- blocks **Satisfaction Score** / `satisfaction.customer_rated_us` (would yield 0 bp)
+- blocks **Satisfaction Score** / `satisfaction.this_account_is_trending_down` (would yield 0 bp)
+
+### `issue.ref` · fact_path
+
+- blocks **Issue** / `issue.affects_many_accounts` (would yield 0 bp)
+- blocks **Issue** / `issue.same_problem_as_an_existing_one` (would yield 0 bp)
 
 ### `bug_awaiting_engineering` · l2_situation_type
 
@@ -772,6 +849,16 @@ WHY BINDING TO unanswered_email WOULD BE WRONG, specifically. It fires on any un
 - Major Incident Declared: Must mean: a declared incident is still open, with elapsed time since declaration and since the last customer-facing update carried separately. The second clock is the one that matters here and the one no incident tool tracks — an incident can be under control technically and completely silent externally, and the silence is what generates the escalations. What would emit it: Layer 2 over incident.status and incident.started_at, ticking against the update cadence promised at declaration rather than against any SLA. Why commitment_overdue is not good enough: it is the right shape and the wrong grain. An incident with forty affected accounts and a promised half-hourly update produces forty overdue commitments, forty nudges to whichever agents own those threads, and forty separately-worded updates — which is the exact failure this situation exists to prevent, now automated. It also fires only where a promise was explicitly recorded, so the accounts nobody thought to promise anything to generate nothing at all, and those are the ones that find out from a competitor's status page.
 
 - Major Incident Declared: closest type emitted today is `commitment_overdue` — close enough to be tempting, not close enough to be true
+
+### `issue_under_diagnosis` · l2_situation_type
+
+- blocks **[situation] Issue Under Diagnosis** / `customer_support.sit.issue_under_diagnosis` (would yield 10000 bp)
+- Issue Under Diagnosis: WHAT THE TYPE MUST MEAN. A defect with identity across the tickets that report it, carrying reproduction state (reproduced, not reproduced, intermittent), current resolution (none, workaround, fix) and verification state. Identity across tickets is the hard requirement: without it `root_cause_analysis` sees one report at a time, which is the one view from which a root cause is invisible.
+WHAT WOULD EMIT IT. `issue.id`, `issue.reproduction_state`, `issue.resolution_kind` and `issue.verified_at`, plus a ticket-to-issue link. No writer exists. Clustering distinct reports onto one issue is a Layer 2 identity problem of the same shape as person merge and should be specified as one, not left to a per-ticket classifier.
+WHAT GOES WRONG TODAY. Nothing fires for root_cause_analysis, issue_reproduction, workaround_management, resolution_delivery or verification_and_closure.
+WHY BINDING TO support_case WOULD BE WRONG, specifically. (1) `support_case` is anchored on a company; an issue spans companies, so the binding would produce one root-cause analysis per customer of the same defect — the exact fragmentation the issue object exists to remove. (2) No reproduction state, so `issue_reproduction` would advise on reproducing something with no record of whether it reproduces. (3) No verification, so `verification_and_closure` would treat a last reply as confirmation, and a customer going quiet is not a customer confirming a fix. (4) Compound: closure inferred from silence reports defects as resolved that are still live, which is the failure this subdomain is built to prevent.
+
+- Issue Under Diagnosis: closest type emitted today is `support_case` — close enough to be tempting, not close enough to be true
 
 ### `knowledge_gap` · l2_situation_type
 
@@ -951,12 +1038,6 @@ WHY BINDING TO unanswered_email WOULD BE WRONG, specifically — and this is the
 - blocks **Knowledge Article** / `ka.searched_for_and_not_found` (would yield 8800 bp)
 - Knowledge Article: Zero-result is the trivially instrumentable case. The harder and more valuable one is a non-zero result the customer scrolled past.
 
-### `ticket.severity` · fact_path
-
-- blocks **Entitlement** / `ent.severity_outside_entitled_levels` (would yield 8800 bp)
-- Entitlement: Blast radius as declared on the ticket, on the SEV1–SEV4 convention. Needed to make the severity dispute an entitlement conversation, which is where it belongs and where it is far less heated — the argument is then with the contract rather than with the agent.
-
-
 ### `commitment_renegotiated` · obs_kind
 
 - blocks **Commitment** / `commitment.renegotiated_before_the_due_time` (would yield 8500 bp)
@@ -1043,11 +1124,24 @@ WHY BINDING TO unanswered_email WOULD BE WRONG, specifically — and this is the
 - Entitlement: Invented. Without the customer's timezone the comparison runs in ours, which produces exactly the first-response breaches nobody can explain afterwards, and produces them confidently.
 
 
+### `stakeholder_left` · obs_kind
+
+- blocks **Named Contact** / `contact.has_departed` (would yield 8000 bp)
+
 ### `customer_tone_baseline` · baseline
 
 - blocks **Customer Sentiment** / `cs.sent.hostile_language_first_occurrence` (would yield 7800 bp)
 - Customer Sentiment: Per-person normal tone. Without it the abrasive customer is flagged hostile every week until the team stops reading the field, which is the failure mode that kills sentiment features. Note the inversion this baseline also unlocks: an abrasive customer who suddenly becomes polite is the most alarming reading in this object, and no absolute scale can express it.
 
+
+### `budget_approved` · obs_kind
+
+- blocks **Named Contact** / `contact.holds_the_budget` (would yield 7500 bp)
+- Named Contact: Declared in CANONICAL_OBS_KINDS and emitted zero times on the live org. Until an approval sentence is recognised, economic authority is unobservable.
+
+### `contract_requested` · obs_kind
+
+- blocks **Support Plan** / `plan.is_in_grace` (would yield 7500 bp)
 
 ### `derived.backlog_age` · fact_path
 
@@ -1107,6 +1201,14 @@ WHY BINDING TO unanswered_email WOULD BE WRONG, specifically — and this is the
 - blocks **Churn Risk** / `cs.churn.locked_in_and_the_risk_is_next_year` (would yield 6800 bp)
 - Churn Risk: The notice period, not the end date, is what makes a risk urgent. An account with eighteen months left and a ninety-day notice window has a decision point in fifteen months, not eighteen.
 
+### `ticket.priority` · fact_path
+
+- blocks **Support Plan** / `plan.severity_definitions_are_being_stretched` (would yield 6000 bp)
+
+### `reproduction_failed` · obs_kind
+
+- blocks **Named Contact** / `contact.is_a_proxy_for_someone_else` (would yield 5500 bp)
+
 ### `knowledge.view_count_30d` · fact_path
 
 - blocks **Knowledge Article** / `ka.traffic_without_feedback` (would yield 3500 bp)
@@ -1115,3 +1217,56 @@ WHY BINDING TO unanswered_email WOULD BE WRONG, specifically — and this is the
 
 - blocks **Knowledge Article** / `ka.traffic_without_feedback` (would yield 3500 bp)
 - Knowledge Article: Any feedback event at all — thumbs, comment, correction. The absence of the event is what carries the meaning here, so it must be emitted reliably or not at all.
+
+### `conversation.answered_count` · fact_path
+
+- blocks **Conversation** / `conversation.second_request_was_dropped` (would yield 0 bp)
+
+### `conversation.channel` · fact_path
+
+- blocks **Conversation** / `conversation.spans_channels` (would yield 0 bp)
+
+### `conversation.external_ref` · fact_path
+
+- blocks **Conversation** / `conversation.spans_channels` (would yield 0 bp)
+
+### `conversation.participants` · fact_path
+
+- blocks **Conversation** / `conversation.someone_new_is_on_it` (would yield 0 bp)
+
+### `conversation.request_count` · fact_path
+
+- blocks **Conversation** / `conversation.second_request_was_dropped` (would yield 0 bp)
+
+### `csat.asked_at` · fact_path
+
+- blocks **Satisfaction Score** / `satisfaction.response_rate_is_falling` (would yield 0 bp)
+
+### `csat.instrument` · fact_path
+
+- blocks **Satisfaction Score** / `satisfaction.customer_rated_us` (would yield 0 bp)
+
+### `csat.scale` · fact_path
+
+- blocks **Satisfaction Score** / `satisfaction.customer_rated_us` (would yield 0 bp)
+
+### `issue.affected_accounts` · fact_path
+
+- blocks **Issue** / `issue.affects_many_accounts` (would yield 0 bp)
+
+### `issue.reproduction_state` · fact_path
+
+- blocks **Issue** / `issue.reproduces` (would yield 0 bp)
+
+### `issue.reproduction_steps` · fact_path
+
+- blocks **Issue** / `issue.reproduces` (would yield 0 bp)
+
+### `issue.resolution_kind` · fact_path
+
+- blocks **Issue** / `issue.is_only_worked_around` (would yield 0 bp)
+
+### `ticket.issue_ref` · fact_path
+
+- blocks **Issue** / `issue.same_problem_as_an_existing_one` (would yield 0 bp)
+
