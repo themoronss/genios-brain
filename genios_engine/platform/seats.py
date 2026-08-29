@@ -73,6 +73,14 @@ def ensure_pull_surface(conn, org_id: str) -> bool:
     ladder — so a row asserting it is a statement of fact, not a setting. Chat channels stay
     opt-in and credentialed as before.
 
+    It is emphatically NOT a transport, and this row alone does not make the org deliverable.
+    `get_channel('in_app')` is None — there is nothing to send, because the card is already on
+    the surface the row names. `outbox.deliverable_channels` therefore intersects `org_channels`
+    with the channels that have an adapter, and an org holding only this row is counted as
+    `no_deliverable_channel` by the sweep rather than being queued a message that the drain
+    would kill on sight. Making that row a transport is what produced production's entire
+    delivery history: 3 rows, all `failed_terminal`.
+
     Returns True when a row was created.
     """
     from genios_engine.deliver.routing import PULL_SURFACE

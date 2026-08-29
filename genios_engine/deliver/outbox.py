@@ -64,6 +64,28 @@ from genios_engine.reason.authority import (
 BACKOFF_MINUTES: tuple[int, ...] = (5, 30, 120, 720)
 NOTIFY_BANDS = ("high", "critical")
 
+#: The row could not travel because this org has NOWHERE to send it — no adapter for the channel,
+#: or no active `org_channels`/`agent_registry` row backing it. Deliberately its own status, and
+#: deliberately NOT terminal.
+#:
+#: It used to be `failed_terminal` with `attempts=1`, and that single choice is what poisoned the
+#: card permanently: both the enqueue dedupe (`not exists … ob.channel=:ch`) and the unique index
+#: `delivery_outbox_once` ignore status, so once a row existed for (org, card, channel) no later
+#: enqueue could ever produce another one. Registering a channel afterwards rescued nothing —
+#: production's entire delivery history is 3 such rows, and all 3 stay dead for cards that are
+#: otherwise still live.
+#:
+#: `failed_terminal` was also just wrong as a description. Nothing was attempted and nothing
+#: failed: there was no transport to fail. A failure is a fact about the message; this is a fact
+#: about the tenant's configuration, and it stops being true the moment they configure one —
+#: which is exactly why `revive_undeliverable` can un-park it without guessing.
+UNDELIVERABLE = "undeliverable"
+
+#: The exact `last_error` the drain wrote before `UNDELIVERABLE` existed. Kept verbatim as the
+#: healing key: it was only ever written by the no-transport branch, so matching on it repairs
+#: rows burned by the old code without touching a row that genuinely failed in transport.
+NO_TRANSPORT_ERROR = "channel unregistered or inactive"
+
 _log = get_logger("genios.deliver.outbox")
 
 
@@ -143,8 +165,155 @@ def _current_digest_payload(engine, org_id: str, evaluation_time: datetime) -> d
         build_summary(store, org_id, "one_minute", eval_time=evaluation_time))
 
 
+# ── channel resolution ────────────────────────────────────────────────────────────
+def deliverable_channels(conn, org_id: str) -> list[str]:
+    """The channels this org can ACTUALLY be pushed on, right now.
+
+    Two conditions, and every historical delivery failure in this database is one of them
+    being assumed rather than checked:
+
+      1. the tenant registered it (`org_channels`, active), and
+      2. we have a transport for it (`channels/base.get_channel` returns an adapter).
+
+    Both halves are load-bearing. Measured on production 2026-08-29: `delivery_outbox` held 3
+    rows across its entire history, all `channel='slack'`, all `failed_terminal`, all
+    `last_error='channel unregistered or inactive'`, attempts=1 — killed on first look because
+    the enqueue paths named 'slack' as a Python default while `org_channels` contained exactly
+    two rows, both `in_app`, and never a slack row in either org. Checking condition 1 alone
+    would not have helped: `get_channel('in_app')` is None, so an in_app row fails the drain's
+    adapter check identically. `in_app` is the PULL surface (`routing.PULL_SURFACE`) — the card
+    is already sitting on it, there is nothing to send, and enqueueing one manufactures a
+    `failed_terminal` row per card and reports it as delivery work.
+
+    Agent transports are excluded on top of both, and that exclusion is not a detail:
+    `routing.AGENT_TRANSPORTS` ('agent_push', 'api') carry MACHINE deliveries, which are
+    enqueued by `enqueue_agent_push` with an `agent_id` recipient and resolved by the drain
+    against `agent_registry`, not `org_channels`. Routing law 1 says a human delivery may never
+    ride an agent transport, and the mechanical consequence here is precise: handing 'agent_push'
+    to `enqueue_pending` would write a card row whose recipient is a SEAT, the drain would look
+    that seat up in `agent_registry`, find nothing, and write `failed_terminal` — the identical
+    defect this function exists to remove, just reached by a different road.
+
+    Empty list = this tenant has no push channel. That is a REAL, reportable condition and the
+    caller must name it, not queue a message to a channel that does not exist.
+    """
+    from genios_engine.deliver.routing import AGENT_TRANSPORTS
+    from genios_engine.deliver.units import _implemented_channels
+
+    registered = [r[0] for r in conn.execute(text(
+        "select channel from org_channels where org_id=:o and active order by channel"),
+        {"o": org_id})]
+    deliverable = _implemented_channels() - AGENT_TRANSPORTS
+    return [ch for ch in registered if ch in deliverable]
+
+
+def connected_executors(conn, org_id: str) -> list[str]:
+    """The agent executors this org can hand work to right now — the OTHER push lane.
+
+    Resolved from `agent_registry`, never from `org_channels`, because an executor is not a
+    surface a tenant configures for themselves: it is a machine that registered a webhook and a
+    scope. That separation is routing law 1 and law 2 in table form — a human delivery may never
+    ride an agent transport, and an agent may ride only one — and it is why
+    `deliverable_channels` subtracts `AGENT_TRANSPORTS` instead of ever returning 'agent_push'.
+
+    The predicate matches `push.py::_active_agent_webhooks` deliberately, clause for clause:
+
+      * `status='active'`   — 0017 added the column `not null default 'active'`, so it is set on
+                              every row including the ones 0002 created.
+      * `signals.read`      — the payload the drain builds for an agent row is the /v1/signals
+                              projection (`push._card_projection`), so pushing it to an agent
+                              without that grant would hand a machine, unasked, exactly the data
+                              its scope says it may not poll. The enqueue used to skip this check
+                              while the poll endpoint enforced it, which made the push path the
+                              looser of the two on the same bytes.
+      * `webhook_url <> ''` — `channels/agent.py` returns False on an empty url, so an agent
+                              registered without one would burn all four retry slots and land in
+                              `failed_terminal` for a message that never had anywhere to go.
+                              `is not null` alone let the empty string through.
+    """
+    return [r[0] for r in conn.execute(text(
+        "select agent_id from agent_registry "
+        "where org_id=:o and coalesce(status,'active')='active' "
+        "and 'signals.read'=any(coalesce(allowed_actions, array[]::text[])) "
+        "and webhook_url is not null and webhook_url <> '' "
+        "order by agent_id"), {"o": org_id})]
+
+
+def revive_undeliverable(conn, org_id: str, channel: str, *,
+                         now: datetime | None = None) -> int:
+    """Re-open every row this org parked only because it had nowhere to send it. Returns the count.
+
+    This is the answer to "a card must become deliverable the moment a channel exists". The
+    alternative designs were considered and rejected:
+
+      * *A status-aware dedupe* would let a SECOND row be inserted for the same (org, card,
+        channel) — except `delivery_outbox_once` is a unique index that does not read status, so
+        the insert would simply be swallowed by `on conflict do nothing` and nothing would
+        change. Making the index status-aware instead would mean one card could accumulate a row
+        per failed attempt-generation, and the audit trail stops being "one row per logical
+        delivery" — the property `delivery_id` and the whole L7 fact feed depend on.
+      * *Re-enqueueing from scratch* throws away the row's history: when it was first decided,
+        what its authority stamps were, what it was deferred for. The delivery is the same
+        delivery; only the world around it changed.
+
+    So the row is REVIVED in place. It keeps its identity, its authority stamps and its audit
+    trail, and it re-enters the queue with a clean ladder because none of its slots were ever
+    spent on a real attempt.
+
+    Two shapes are healed. `UNDELIVERABLE` is what the drain writes now. The `failed_terminal`
+    clause repairs rows burned by the code this replaces — that exact `last_error` string was
+    written by one branch and one branch only, so it cannot match a row that failed in transport.
+
+    Reviving a stale card is SAFE, and that is not an accident of ordering: the drain re-proves
+    graph/pack/card authority immediately before every send, so a revived row whose card has since
+    expired or been revoked is `cancelled` on its way out rather than delivered. Waking an old
+    message and letting the authority check kill it is strictly better than leaving it dead,
+    because the second option cannot tell "we chose not to send" from "we lost it".
+    """
+    moment = now or datetime.now(timezone.utc)
+    return conn.execute(text(
+        "update delivery_outbox set status='queued', next_attempt_at=:now, attempts=0, "
+        "last_error=null "
+        "where org_id=:o and channel=:ch "
+        "and (status=:parked or (status='failed_terminal' and last_error=:legacy))"),
+        {"o": org_id, "ch": channel, "now": moment,
+         "parked": UNDELIVERABLE, "legacy": NO_TRANSPORT_ERROR}).rowcount
+
+
+def card_backlog_counts(conn, org_id: str, now: datetime) -> tuple[int, int]:
+    """(band_starved, unrouted) for this org's live cards — diagnostics, not delivery.
+
+    Extracted from `enqueue_pending` so the sweep can report them for an org with NO channel
+    too. Previously they were only ever computed as a side effect of enqueueing, so the one
+    tenant whose delivery is completely unconfigured — the tenant these numbers are actually
+    about — produced neither. They are also per-ORG, not per-channel: computing them inside a
+    per-channel loop would multiply the same backlog by the number of channels.
+    """
+    starved = conn.execute(text(
+        "select count(*) from cards k "
+        "where k.org_id=:o and k.state in ('queued','surfaced') and k.expires_at>:now "
+        "and k.urgency_band not in ('high','critical')"),
+        {"o": org_id, "now": now}).scalar() or 0
+    unrouted = conn.execute(text(
+        "select count(*) from cards k "
+        "where k.org_id=:o and k.state in ('queued','surfaced') and k.expires_at>:now "
+        "and k.assignee is null"),
+        {"o": org_id, "now": now}).scalar() or 0
+    return int(starved), int(unrouted)
+
+
 # ── enqueue ───────────────────────────────────────────────────────────────────────
-def enqueue_pending(engine, org_id: str, channel: str = "slack",
+#
+# `channel` is REQUIRED on every enqueue path below, and deliberately has no default.
+#
+# It used to default to the string "slack" in all three (here, `enqueue_digest`, and
+# `executive_bridge.enqueue_executive_messages`), and `run_distribution` called all three
+# without ever passing one. So every proactive message this product has ever produced was
+# addressed to a channel chosen by a Python default rather than by the tenant — and the drain
+# terminated each on sight. A default is the wrong shape for this argument: there is no channel
+# that is right when the caller has not looked, so the type system should make not-looking
+# impossible. Callers resolve it with `deliverable_channels` first.
+def enqueue_pending(engine, org_id: str, channel: str,
                     base_url: str = "") -> dict:
     """Queue un-notified HIGH/CRITICAL cards for this org's channel. Idempotent: the
     unique index makes a re-run a no-op. Payload is built from card columns that
@@ -160,6 +329,16 @@ def enqueue_pending(engine, org_id: str, channel: str = "slack",
     indistinguishable from "there was nothing to send". A tenant where no card has ever cleared
     the push band is a broken scoring pipeline, not a quiet week, and the two have to be
     tellable apart from the sweep's own output."""
+    from genios_engine.deliver.routing import AGENT_TRANSPORTS
+    if channel in AGENT_TRANSPORTS:
+        # Routing law 1, as an executable statement at the write boundary rather than a sentence
+        # in routing.py's docstring. Every row this function writes carries a SEAT as recipient;
+        # the drain resolves an agent-class row's config from `agent_registry` by recipient, so a
+        # seat id would find no agent and the row would die as `failed_terminal`. Raising here
+        # names the mistake at the caller instead of leaving a dead row to explain it later.
+        raise ValueError(
+            f"{channel!r} is an agent transport; a human card delivery may never ride one "
+            "(routing law 1) — agent deliveries go through enqueue_agent_push")
     queued = 0
     now = datetime.now(timezone.utc)
     channel_class = channel_class_for(channel).value
@@ -215,19 +394,10 @@ def enqueue_pending(engine, org_id: str, channel: str = "slack",
         # formula never executes, so `I` is 5000 on every card and nothing reaches 70), but a
         # layer that silently discards its entire input is how an upstream defect stays invisible
         # for months — every L6 metric had an empty denominator and read as "no problem".
-        starved = c.execute(text(
-            "select count(*) from cards k "
-            "where k.org_id=:o and k.state in ('queued','surfaced') and k.expires_at>:now "
-            "and k.urgency_band not in ('high','critical')"),
-            {"o": org_id, "now": now}).scalar() or 0
         # A card with no assignee has no authorized recipient, so audience and visibility rules
         # cannot even be evaluated for it. Counted rather than absorbed.
-        unrouted = c.execute(text(
-            "select count(*) from cards k "
-            "where k.org_id=:o and k.state in ('queued','surfaced') and k.expires_at>:now "
-            "and k.assignee is null"),
-            {"o": org_id, "now": now}).scalar() or 0
-    return {"queued": queued, "band_starved": int(starved), "unrouted": int(unrouted)}
+        starved, unrouted = card_backlog_counts(c, org_id, now)
+    return {"queued": queued, "band_starved": starved, "unrouted": unrouted}
 
 
 def enqueue_agent_push(engine, org_id: str, card_id: str) -> int:
@@ -273,13 +443,23 @@ def enqueue_agent_push(engine, org_id: str, card_id: str) -> int:
     return queued
 
 
-def enqueue_digest(engine, org_id: str, channel: str = "slack",
+def enqueue_digest(engine, org_id: str, channel: str,
                    eval_time: datetime | None = None) -> int:
     """Claim one daily digest slot.
 
     The row is only a delivery intent.  Its authority-sensitive content is regenerated from the
     current executive projection in ``drain`` so a queued digest can never send yesterday's
     revoked recommendation after a graph/config/pack change.
+
+    ``channel`` is required (see the block comment above ``enqueue_pending``). The existence
+    check below reads ``org_channels`` for this exact channel, so the old "slack" default made
+    this function's FIRST statement return 0 for every org on every tick: production's
+    ``last_digest_date`` is NULL for both orgs across all of history and no ``digest:`` row has
+    ever been written. The digest never failed — it never ran.
+
+    ``last_digest_date`` lives on the ``org_channels`` ROW, so the once-per-day marker is
+    per-(org, channel) and a tenant with two push channels gets one digest on each rather than
+    the second silently suppressing the first.
     """
     now = eval_time or datetime.now(timezone.utc)
     today = now.date()
@@ -325,7 +505,11 @@ def drain(engine, *, eval_time: datetime | None = None, limit: int = 50) -> dict
     write a card_events audit row for real cards."""
     now = eval_time or datetime.now(timezone.utc)
     out = {"delivered": 0, "retried": 0, "terminal": 0, "cancelled": 0,
-           "deferred": 0, "suppressed": 0}
+           # `parked` is what used to be counted as `terminal`. A row with nowhere to go was
+           # never an attempt and never a failure, and calling it one burned the card forever
+           # (see UNDELIVERABLE). It is reported separately so "3 terminal failures" stops
+           # meaning "3 tenants never registered a channel".
+           "deferred": 0, "suppressed": 0, "parked": 0}
 
     with engine.begin() as c:
         due = c.execute(text(
@@ -391,8 +575,22 @@ def _drain_claimed(engine, claimed: list[dict], gate: PgDeliveryContext, now: da
             cfg = configs.get((r["org_id"], r["channel"]))
         ch = get_channel(r["channel"])
         if ch is None or cfg is None:
-            _finish(engine, r, now, ok=False, detail="channel unregistered or inactive",
-                    terminal=True, out=out)
+            # PARKED, not failed. Nothing was attempted, so nothing failed — there was no
+            # transport to fail on. `_finish(terminal=True)` here is what wrote production's
+            # entire delivery history (3 rows, all `failed_terminal`, all attempts=1, all
+            # `last_error='channel unregistered or inactive'`) and, because both the enqueue
+            # dedupe and `delivery_outbox_once` ignore status, permanently burned those cards:
+            # registering a channel afterwards could never produce a second row for them.
+            #
+            # The two ways to get here are both facts about CONFIGURATION, and both stop being
+            # true the moment the tenant fixes them, which is exactly why the row must stay
+            # revivable: `ch is None` = we ship no adapter for this channel (our gap),
+            # `cfg is None` = the backing `org_channels`/`agent_registry` row was deactivated or
+            # removed between enqueue and drain (theirs).
+            _park(engine, r, now,
+                  detail=("no adapter for this channel" if ch is None
+                          else NO_TRANSPORT_ERROR),
+                  out=out)
             continue
 
         # ── Layer 5.2 admission ──────────────────────────────────────────────────────
@@ -671,17 +869,35 @@ def shadow_resolve_v2(engine, org_id: str, *, now: datetime) -> dict:
 
 
 # ── the sweep entrypoint ──────────────────────────────────────────────────────────
-def run_distribution(engine, *, base_url: str = "",
+def run_distribution(engine, *, base_url: str | None = None,
                      eval_time: datetime | None = None) -> dict:
-    """One distribution pass: for every org with an active channel, enqueue new
-    high/critical cards + the daily digest, then drain everything due. Called from the
-    maintenance sweep; per-org failures isolate."""
+    """One distribution pass: for every org, resolve the channels it can actually be reached
+    on, enqueue new high/critical cards + the daily digest + Layer 5's reminders onto each,
+    then drain everything due. Called from the maintenance sweep; per-org failures isolate.
+
+    ``base_url`` defaults to the configured dashboard URL rather than to ``""``. The only
+    production caller (``api/routes.py``) never passed one, and ``channels/slack.py`` drops the
+    "Open the card →" link when it is empty — so every message this sweep has ever built had no
+    way back into the product (measured: all 3 production payloads, 238/260/248 bytes, headline
+    and situation only, no link). An unset setting still yields no link, because inventing a
+    hostname would be worse than omitting the line.
+    """
     now = eval_time or datetime.now(timezone.utc)
+    if base_url is None:
+        from genios_engine.platform.config import get_settings
+        base_url = get_settings().dashboard_url
     totals = {"orgs": 0, "queued": 0, "digests": 0, "reminders": 0, "linked": 0,
               # Named conditions, not silence. `band_starved` on every org means the scoring
               # pipeline is broken upstream; `unrouted` means cards exist with nobody to send
               # them to. Both previously presented as a clean zero.
               "band_starved": 0, "unrouted": 0, "org_failures": 0,
+              # Orgs with reasoning worth delivering and NO channel to deliver it on. This is
+              # the live tenant's actual state and it used to be invisible: the sweep queued to
+              # a hardcoded 'slack', the drain wrote `failed_terminal`, and the pass reported
+              # `queued: 1` — delivery work that had already failed before anyone read the
+              # number. Counting it here is what makes "nobody registered a channel" a fact the
+              # operator can see instead of three dead rows nobody looks at.
+              "no_deliverable_channel": 0,
               # The v2 control plane's shadow resolution: how the unwired path WOULD have routed
               # the same cards this tick. The measurement a cutover decision needs.
               "v2_shadow_resolved": 0, "v2_shadow_unroutable": 0}
@@ -700,16 +916,38 @@ def run_distribution(engine, *, base_url: str = "",
     for org in orgs:
         totals["orgs"] += 1
         try:
-            pending = enqueue_pending(engine, org, base_url=base_url)
-            totals["queued"] += pending["queued"]
-            totals["band_starved"] += pending["band_starved"]
-            totals["unrouted"] += pending["unrouted"]
-            totals["digests"] += enqueue_digest(engine, org, eval_time=now)
-            # Layer 5 decided somebody needed nudging and wrote it down; this is where it
-            # actually leaves the building. Linking runs first so a reminder can name the card
-            # it belongs to.
+            # Backlog diagnostics are per-ORG and hold whether or not anything can be sent, so
+            # they are computed once and OUTSIDE the channel loop. An org with no channel still
+            # reports them — it is the org whose numbers matter most.
+            with engine.connect() as c:
+                channels = deliverable_channels(c, org)
+                starved, unrouted = card_backlog_counts(c, org, now)
+            totals["band_starved"] += starved
+            totals["unrouted"] += unrouted
+
+            # Linking is bookkeeping on our own rows, not a send, so it runs regardless of
+            # whether there is anywhere to send — and it runs BEFORE the reminder enqueue so a
+            # reminder can name the card it belongs to.
             totals["linked"] += link_commitment_cards(engine, org)
-            totals["reminders"] += enqueue_executive_messages(engine, org, base_url=base_url)
+
+            if not channels:
+                # Fail loudly, write nothing. Queueing here is not "trying" — the drain has
+                # already decided the outcome, so a row would be a failure we manufactured and
+                # then reported as work. The tenant has to register a channel
+                # (PUT /api/org/{org}/channels/slack); until then this is the honest state.
+                totals["no_deliverable_channel"] += 1
+                _log.warning(
+                    "org=%s has no deliverable channel — nothing proactive can be sent. "
+                    "%d card(s) below the push band, %d unrouted. Register one with "
+                    "PUT /api/org/%s/channels/slack.", org, starved, unrouted, org)
+            for channel in channels:
+                pending = enqueue_pending(engine, org, channel, base_url=base_url)
+                totals["queued"] += pending["queued"]
+                totals["digests"] += enqueue_digest(engine, org, channel, eval_time=now)
+                # Layer 5 decided somebody needed nudging and wrote it down; this is where it
+                # actually leaves the building.
+                totals["reminders"] += enqueue_executive_messages(
+                    engine, org, channel, base_url=base_url)
             shadow = shadow_resolve_v2(engine, org, now=now)
             totals["v2_shadow_resolved"] += shadow["resolved"]
             totals["v2_shadow_unroutable"] += sum(shadow["unroutable"].values())

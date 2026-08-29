@@ -127,13 +127,29 @@ def _detail(value: Any) -> dict:
     return {}
 
 
-def enqueue_executive_messages(engine, org_id: str, channel: str = "slack",
+def enqueue_executive_messages(engine, org_id: str, channel: str,
                                limit: int = 100, base_url: str = "") -> int:
     """Queue every un-sent reminder Layer 5 has decided on, for orgs on this channel.
 
     Filtered to commitments Layer 5 actually routed to this channel and marked as interrupting.
     A commitment planned for the digest is deliberately *not* pushed here — respecting that
     choice is the whole reason Layer 5 was given the channel decision in the first place.
+
+    ``channel`` is required and has no default. It used to default to "slack" while the only
+    caller (``outbox.run_distribution``) passed nothing, so this function asked for commitments
+    routed to a channel no tenant had ever registered. The caller now resolves it from
+    ``org_channels`` (``outbox.deliverable_channels``) before calling.
+
+    ``x.channel_id=:ch`` is KEPT, deliberately. It looks like the same hardcoding defect, but it
+    is the opposite: it compares Layer 5's own recorded channel decision against the transport
+    we are about to use, which is exactly the "Layer 5's channel choice is obeyed" guarantee in
+    this module's docstring. Dropping it — as a reading of the production data suggests, since
+    all 178 live executions carry ``channel_id='in_app'`` — would push commitments that Layer 5
+    explicitly routed to the pull surface or the digest. The reason those rows say 'in_app' is
+    that ``communication.plan_communication`` branch 6 (`no_channel_registered`) is the only
+    branch reachable when the org has no chat channel; once one is registered, Layer 5 plans
+    'slack' by itself and this predicate matches. The fix for those rows is registration, not a
+    looser join here.
     """
     queued = 0
     with engine.begin() as conn:

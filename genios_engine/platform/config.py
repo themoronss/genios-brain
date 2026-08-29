@@ -68,6 +68,13 @@ class Settings(BaseSettings):
     ops_alert_webhook: str = ""
     composio_webhook_secret: str = ""            # HMAC-SHA256 secret for inbound Composio webhooks
     cors_origins: str = "*"                       # comma-separated dashboard origins ('*' = dev)
+    # Public base URL of the client dashboard, e.g. https://brain.thegenios.com. Used ONLY to
+    # build the "Open the card →" deep link on outbound proactive messages. Empty = no link,
+    # which is why every message the distribution sweep has ever built had none: the sweep's
+    # `base_url` defaulted to "" and its one caller never passed anything, so `channels/slack.py`
+    # dropped the link line on all three production payloads. Kept empty by default because a
+    # guessed hostname produces a broken link, which is worse than no link.
+    dashboard_url: str = ""
 
     # LLM (L2 extraction) — Anthropic. The single combined relevance+extraction call.
     anthropic_api_key: str = ""
