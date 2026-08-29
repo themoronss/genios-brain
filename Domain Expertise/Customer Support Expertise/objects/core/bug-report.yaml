@@ -1,0 +1,351 @@
+identity:
+  id: customer_support.obj.core.bug_report
+  name: Bug Report
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.escalation_and_incident.engineering_handoff
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: stable
+  aliases:
+  - defect write-up
+  - engineering ticket
+  - jira issue
+  - filed bug
+purpose:
+  statement: 'The write-up support handed to engineering, and the state of what happened to it. It is
+    the ARTEFACT OF THE HANDOFF — who filed it, against what, when, and what engineering has said
+    since — held apart from the defect itself and from the customer waiting on it.
+
+    '
+  discriminator: 'An issue is what is broken. A bug report is the document that crossed the boundary
+    into another team''s system, and it has its own state machine, its own owner and its own silence.
+    Conflating them loses the only question this domain actually cares about: a bug can be moving
+    briskly through an engineering board while the customer has heard nothing for five weeks.
+
+    '
+  answers:
+  - Was this actually filed, or does everyone just believe it was?
+  - Where is it now, in the other team's terms?
+  - Who on the support side still owns telling the customer?
+  - How long since the customer heard anything — which is not how long since the bug moved?
+attributes:
+- name: bug_ref
+  purpose: 'The identifier in the engineering system. Without it the handoff is a claim: nobody can
+    check the state, and "it is with engineering" becomes unfalsifiable.
+
+    '
+  type: value
+  data_type: string
+  required: true
+- name: filed_at
+  purpose: When it crossed the boundary. The start of the interval this object measures.
+  type: value
+  data_type: timestamp
+  required: false
+- name: filed_by
+  purpose: Who on the support side wrote it up, and therefore who can answer questions about what the
+    customer actually said.
+  type: reference
+  ref: customer_support.obj.core.support_agent
+  data_type: ref
+  required: false
+- name: engineering_state
+  purpose: 'Where it is in the other team''s process, in the other team''s words. Deliberately opaque
+    to this domain — support must report it, never interpret it.
+
+    '
+  type: value
+  data_type: string
+  required: false
+- name: support_owner
+  purpose: 'Who still owns the RELATIONSHIP while engineering owns the work. The defining failure of
+    the handoff is a filed bug on behalf of a customer nobody owns.
+
+    '
+  type: reference
+  ref: customer_support.obj.core.support_agent
+  data_type: ref
+  required: false
+- name: customer_last_told_at
+  purpose: 'When the waiting customer last heard anything. The second clock, and the one this domain
+    cares about — it moves independently of engineering_state and is the one that loses accounts.
+
+    '
+  type: value
+  data_type: timestamp
+  required: false
+- name: fix_expected_at
+  purpose: 'A date engineering has committed to, where one exists. Held as THEIR commitment, never
+    repeated to a customer as ours.
+
+    '
+  type: value
+  data_type: timestamp
+  required: false
+states:
+  initial: drafted
+  values:
+  - name: drafted
+    description: Support has written it up and it has not crossed the boundary.
+    implies: 'The most common invisible state. Everyone believes it was filed, no reference exists,
+      and the customer is waiting on a document nobody sent.
+
+      '
+  - name: filed
+    description: It exists in the engineering system with a reference.
+  - name: accepted
+    description: Engineering has acknowledged it as theirs.
+  - name: fixed
+    description: Engineering says it is fixed.
+    implies: 'NOT the terminal state for support. Nobody has told the customer yet, and this object
+      exists precisely because that step is the one that gets skipped.
+
+      '
+  - name: told
+    description: The waiting customer has been told the outcome.
+  - name: rejected
+    description: Engineering will not act on it, which is an answer the customer is owed just as
+      much as a fix.
+  terminal:
+  - told
+  - rejected
+relationships:
+- target: customer_support.obj.core.issue
+  type: documents
+  direction: outbound
+  cardinality: one
+  weight_bp: 9500
+  confidence_bp: 7000
+  evidence:
+  - ticket
+  - manual_entry
+  priority: 1
+  description: The defect it describes. Exactly one — two reports of one fault are a duplicate
+    problem, not two issues, and only issue identity can tell them apart.
+- target: customer_support.obj.core.ticket
+  type: attaches_to
+  direction: inbound
+  cardinality: many
+  weight_bp: 8500
+  confidence_bp: 6000
+  evidence:
+  - ticket
+  priority: 2
+  description: The customer-facing tickets blocked on it. The membership is who has to be told when
+    the outcome arrives, and it is the step most often skipped.
+- target: customer_support.obj.core.commitment
+  type: produces
+  direction: outbound
+  cardinality: zero_or_many
+  weight_bp: 7500
+  confidence_bp: 6500
+  evidence:
+  - email
+  priority: 3
+  description: 'The promise to make contact during the wait. The object that keeps the ticket alive,
+    because the ticket has no next action an agent can take and therefore stops appearing in anyone''s
+    day.
+
+    '
+- target: customer_support.obj.core.workaround
+  type: attaches_to
+  direction: outbound
+  cardinality: zero_or_one
+  weight_bp: 6500
+  confidence_bp: 5000
+  evidence:
+  - email
+  priority: 4
+  description: 'The measure keeping the customer running while this waits. Its existence makes the
+    wait more dangerous, not less: the ticket is marked resolved on the strength of it and the clock
+    stops.
+
+    '
+inference_patterns:
+  deterministic:
+  - id: bug_report.it_was_actually_filed
+    statement: A reference exists in the engineering system, so the handoff is checkable rather than
+      believed.
+    status: needs_signal
+    note: 'There is no engineering connector on this tenant. A bug reference cannot be read out of
+      correspondence without inventing one, and an invented reference is worse than none — it makes
+      an unfalsifiable claim checkable-looking.
+
+      '
+    requires_signals:
+    - kind: obs_kind
+      name: bug_filed
+      owner_layer: L1
+    - kind: fact_path
+      name: bug.ref
+      owner_layer: L1
+    yields:
+      confidence_bp: 0
+      attribute: bug_ref
+  - id: bug_report.engineering_has_moved_it
+    statement: The state in the other team's system has changed.
+    status: needs_signal
+    note: 'Owned entirely by a system nothing here reads. Inferring movement from an internal
+      colleague''s tone in a mail thread would produce a state claim engineering never made.
+
+      '
+    requires_signals:
+    - kind: fact_path
+      name: bug.engineering_state
+      owner_layer: L1
+    yields:
+      confidence_bp: 0
+      attribute: engineering_state
+  - id: bug_report.the_customer_has_heard_nothing
+    statement: 'The second clock — time since the waiting customer last heard anything — has run past
+      what this relationship tolerates. The finding this whole object is for.
+
+      '
+    status: needs_signal
+    note: 'The elapsed half is computable from correspondence today; the ANCHOR is not. Without a
+      filed bug there is nothing to say the customer is waiting on engineering rather than on us, and
+      a silence attributed to the wrong party produces the opposite advice. `commitment_overdue` is
+      the nearest live signal and it fires only where somebody promised a date, which is the
+      well-managed minority.
+
+      '
+    requires_signals:
+    - kind: obs_kind
+      name: handoff_to_engineering
+      owner_layer: L1
+    - kind: fact_path
+      name: bug.customer_last_told_at
+      owner_layer: L2
+    yields:
+      confidence_bp: 0
+      attribute: customer_last_told_at
+  - id: bug_report.nobody_on_our_side_owns_it
+    statement: 'The bug is filed and no support-side owner is attached, so no human is responsible
+      for the relationship during the wait.
+
+      '
+    status: needs_signal
+    note: 'Requires an assignee. `org_seats` is empty on this tenant and no helpdesk supplies one, so
+      ownership cannot be asserted or denied — and asserting "nobody owns this" when the substrate
+      simply cannot see owners is a false accusation about a real person.
+
+      '
+    requires_signals:
+    - kind: fact_path
+      name: ticket.assignee
+      owner_layer: L1
+    yields:
+      confidence_bp: 0
+      attribute: support_owner
+evidence:
+- source: ticket
+  strength_bp: 9500
+  independent_of:
+  - email
+  - crm
+  - derived
+  decays: false
+  description: 'The engineering system is authoritative for every attribute except
+    customer_last_told_at. No connector exists, which is why every pattern above is needs_signal.
+
+    '
+- source: email
+  strength_bp: 4000
+  independent_of:
+  - crm
+  - derived
+  decays: true
+  description: 'What was said to the customer, and when — genuinely useful for the second clock and
+    worthless for the first. A colleague writing "raised with the team" is not a filing event.
+
+    '
+- source: derived
+  strength_bp: 3000
+  independent_of:
+  - crm
+  decays: true
+  description: Elapsed intervals over correspondence. Honest about duration, silent about which team
+    the wait belongs to.
+constraints:
+- id: bug_report.never_treat_a_mention_as
+  statement: Never treat a mention of engineering as a filing event. "Raised with the team" is a
+    sentence, not a reference.
+  hard: true
+- id: bug_report.never_repeat_an_engineering_date
+  statement: Never repeat an engineering date to a customer as a commitment. It is their estimate and
+    it becomes our promise the moment it is quoted.
+  hard: true
+- id: bug_report.never_close_on_the_fix
+  statement: Never treat "fixed" as terminal. The customer has not been told, and telling them is the
+    step this object exists to force.
+  hard: true
+- id: bug_report.never_infer_the_engineering_state
+  statement: Never infer engineering state from support correspondence. Support reports that state;
+    it does not hold it.
+  hard: true
+exceptions:
+- id: bug_report.engineering_rejects_it
+  statement: Engineering rejects the report.
+  why: 'A rejection is an OUTCOME and the customer is owed it as much as a fix. Treating rejection as
+    a dead end is how a customer waits forever on a decision that was made in a week.
+
+    '
+- id: bug_report.the_customer_stops_asking
+  statement: The customer stops asking.
+  why: 'Almost never satisfaction. They have concluded nothing will happen, which is the state this
+    object exists to prevent and cannot detect.
+
+    '
+- id: bug_report.the_fix_ships_in_a_release
+  statement: The fix ships in a release nobody links back to the report.
+  why: 'Common, and the reason bug_ref is required rather than optional: without it the release note
+    and the waiting customer are never joined and the goodwill is never collected.
+
+    '
+anti_patterns:
+- id: bug_report.measuring_the_engineering_clock
+  statement: Measuring the engineering clock and reporting it as the customer's wait
+  cost: 'The two move independently. A briskly-moving bug and a five-week silence coexist happily,
+    and only one of them costs an account.
+
+    '
+- id: bug_report.filing_without_a_support_owner
+  statement: Filing without a support owner
+  cost: 'The relationship has no keeper. Every update depends on somebody remembering, and nobody is
+    accountable when they do not.
+
+    '
+- id: bug_report.sending_no_update_because_there_is
+  statement: Sending no update because there is no news
+  cost: '"Nothing has changed" is a complete and adequate update and is the one an agent will not
+    send unprompted, because it feels like admitting there is nothing to say. The silence, not the
+    defect, is what the customer remembers.
+
+    '
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: '2026-08-29'
+  review_status: unreviewed
+  confidence: experimental
+  notes: 'Authored to close a required-object failure.
+    `customer_support.sit.bug_awaiting_engineering` routes `workaround_only` live and loads this
+    object; it existed only as a planned_object, so the object resolver raised
+    RequiredKnowledgeMissing and the route produced nothing.
+
+    EVERY PATTERN HERE IS needs_signal AND YIELDS 0, and that is the true state rather than a
+    skeleton. This tenant has no engineering system and no helpdesk: there is no bug reference, no
+    engineering state and no assignee anywhere in the substrate. An object that inferred them from
+    correspondence would let the compile assert a defect was filed, and its state known, on the
+    strength of a colleague writing "raised with the team" — which is exactly the unfalsifiable claim
+    the engineering-handoff capability is about. What this object contributes today is its
+    DISCRIMINATORS: the two clocks held apart, "fixed" refused as terminal, and rejection treated as
+    an outcome the customer is owed.
+
+    The gap it names is the same one `customer_support.sit.bug_awaiting_engineering` still waits on
+    in matches.pending_l2_situation_types, so the object and the situation point at one Layer 1
+    build rather than two.
+
+    '

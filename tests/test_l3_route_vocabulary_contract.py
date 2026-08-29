@@ -77,6 +77,43 @@ def test_producible_vocabulary_is_small_and_closed():
         # A domain opts in by declaring `"tenant": "<domain>_period_review"` in `domain_spec`; the
         # set below therefore grows by one per opting-in domain and is still closed.
         "pipeline_period_review", "admin_period_review", "support_period_review",
+        # The seven CORRESPONDENCE readings, minted by `context/support_situations.py`. A third
+        # shape again: the period types name a window and the rest name a subject, while these
+        # name an APPROXIMATION — a service-desk reading of a mailbox on a tenant that has no
+        # helpdesk, no ticket table, no queue, no assignee and no SLA clock.
+        #
+        # That is why they are listed with their anchors rather than as seven more strings. Each
+        # declares its OWN anchor node type, because `type_for` maps one anchor to one type and
+        # two readings sharing an anchor could not both be named — and the constraint matched
+        # what the corpus already wanted: per-item aging "needs the item to be a first-class
+        # subject", and a content gap "belongs to an INTENT" rather than to whoever reported it.
+        #
+        # If this set grows again, the thing to check is not the count. It is that every new type
+        # caps its `coverage` and names what it cannot see in `missing` on every row — because
+        # the failure these seven were built against is a card labelled "SLA Breach Imminent" on
+        # an org with no SLAs, which is worse than a gap since it reports coverage that does not
+        # exist.
+        "first_response_overdue",    # anchored on the thread a request arrived in
+        "ticket_aging",              # anchored on one unmet ask (`backlog_item`)
+        "escalation_requested",      # anchored on the raise (`escalation`)
+        "repeat_contact",            # anchored on one person and one topic (`contact_intent`)
+        "knowledge_gap",             # anchored on the topic itself (`topic`)
+        "queue_overloaded",          # anchored on one connected mailbox (`mailbox`)
+        "workaround_only",           # anchored on the workaround a customer lives on
+        # The RECORDS reading, minted by `context/document_register.py` on a `document` node.
+        # A fourth shape: not a subject, not a window, not a service-desk approximation, but a
+        # CONTROL GAP on one file — and the distinction is the whole design. It opens a situation
+        # only where an owner is unverified, two copies are live, a governance artefact has gone a
+        # year without an edit, or nobody is attached to it at all. One per file would be a Drive
+        # listing wearing a situation's clothes, which the situation file rules out in five words:
+        # "the headline is the gap, not the document."
+        #
+        # The same test applies as to the seven above, and it applies harder here because records
+        # is the domain where claimed-and-absent coverage is what somebody relies on in an audit:
+        # two of the four failures this type exists to catch — missing approval and past its
+        # retention date — cannot be read from a file store at all, so they stay in `missing` on
+        # every row and are never inferred from a modification history.
+        "document_under_control",    # admin, anchored on one file (`document`)
     }, "the L2 situation vocabulary changed — re-check every corpus route against it"
 
 

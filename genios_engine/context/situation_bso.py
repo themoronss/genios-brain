@@ -23,6 +23,7 @@ from typing import Any
 
 from sqlalchemy import text
 
+from genios_engine.context.situations import SCORE_MAX
 from genios_engine.contracts.domain_expertise import (
     BusinessSituationObject,
     SituationContextSlice,
@@ -39,12 +40,23 @@ DEFAULT_IMPORTANCE_BP = 5000
 
 
 def _bp(percent: Any) -> int:
-    """L2 confidence/coverage are int 0-100; the contracts want 0-10000 basis points."""
+    """L2 confidence/coverage are int 0..SCORE_MAX percent; the contracts want basis points.
+
+    The clamp is a floor/ceiling on a legal percent, NOT a scale converter. Feed it a number
+    already in basis points and it saturates silently: 2500 (a knowledge_gap coverage honestly
+    capped at a quarter) and 3000 (escalation) both came out of here as 10000 — the same value a
+    fully-covered recorded situation produces — which is exactly the "reports coverage it does not
+    have" failure the caps exist to prevent, and it left
+    `expertise_builder`'s `min(situation.confidence_bp, expert.coverage_bp)` with nothing to cap.
+    `situations.SCORE_MAX` now names the storage unit so a writer cannot pick the other one by
+    accident, and `tests/test_situation_bso.py` pins that an inferred situation can never reach a
+    recorded one's coverage across this seam.
+    """
     try:
         value = int(percent or 0) * 100
     except (TypeError, ValueError):
         value = 0
-    return max(0, min(10000, value))
+    return max(0, min(SCORE_MAX * 100, value))
 
 
 def _iso(value: Any) -> str | None:

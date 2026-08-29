@@ -31,56 +31,100 @@ description: >
   ticket-per-contact model prevents.
 
 matches:
-  l2_situation_types: []
+  # ROUTED SINCE 2026-08-29. BOTH types on this file now mint, from one mechanism in
+  # `context/support_situations.py`: a closed deterministic lexicon names the TOPIC of every
+  # inbound message, and the two readings are the same evidence grouped two ways —
+  # `repeat_contact` per person-and-topic, `knowledge_gap` per topic across everybody.
+  #
+  # `knowledge_gap` gets its own `topic` anchor node, which REMOVES the limitation this file
+  # records below rather than inheriting it: the finding finally has its own subject instead of
+  # being filed against the customer who reported it. `repeat_contact` keeps the person anchor,
+  # because the repetition is what is observable there.
+  #
+  # THE ANSWERED GATE IS THE SITUATION, and it is enforced: every contact in a repeat group
+  # except the newest must show `thread.ball_in_court = them`, so a group whose earlier contact
+  # was never answered is left to unanswered mail, which is what it is. `knowledge_gap`
+  # additionally requires three distinct askers at two distinct accounts, because one chatty
+  # account is a repeat contact and not a content gap.
+  #
+  # WHAT IS LOST, declared on every row's `missing` rather than papered over.
+  # (1) The corpus's real discriminator — was an article surfaced and rejected, or was nothing
+  #     surfaced at all — is NOT recovered and must not be faked. It needs help-centre search
+  #     telemetry nobody has connected. `knowledge.answer_reuse_bp` is a SURROGATE measuring how
+  #     much OUR OWN replies repeat themselves: high means a settled answer exists and should be
+  #     published, low means none exists yet. That is a related question, not the same one, and
+  #     `knowledge.published_answer_seen` is deliberately never written so the difference stays
+  #     visible. Commissioning a duplicate article is the specific harm named below.
+  # (2) Intent is INFERRED from the customer's own wording, not handed over by a requester's
+  #     taxonomy. The failure is asymmetric and in the safe direction: a phrasing the lexicon does
+  #     not recognise splits the group and the situation quietly does NOT fire. So the ordinal is
+  #     a floor, never an exact count, and `inputs` says so rather than presenting "3rd contact"
+  #     as a fact.
+  # (3) Email only. A customer who called and then wrote reads as a first contact, and nothing
+  #     here can detect that an arrival is missing.
+  # (4) Deflection has no denominator — every contact counted arrived by mail by definition — so
+  #     no deflection rate can be reported at all.
+  # (5) THE LOAD-SET IS STILL SHORT. `content_gap` and `intent` are in `objects.load` below and
+  #     exist only as planned_objects, and `ObjectResolver` raises RequiredKnowledgeMissing on a
+  #     missing REQUIRED object — so BOTH types above route, resolve, and then compile to nothing;
+  #     `domain_shadow` counts them under `required_missing`. Measured 2026-08-29 against the real
+  #     catalog. Recorded here rather than left to be discovered, because `validate.py` tolerates
+  #     a planned reference by design and reports no error for a live route that cannot produce a
+  #     single package.
+  l2_situation_types:
+    - repeat_contact
+    - knowledge_gap
 
-  pending_l2_situation_types:
-    - type: repeat_contact
-      owner_layer: L2
-      nearest_today: unanswered_email
-      note: >
-        Must mean: the same requester, or the same account, contacting again about the same
-        INTENT within a window — counted by intent and not by ticket, because "how do I export
-        this" and "where is the download button" are one gap in two phrasings, and counting
-        tickets splits the evidence exactly where it needs to be joined. It must survive the
-        earlier tickets being closed, merged or handled by a different agent, and it must carry
-        the ordinal (second, third, fifth) because the shape of the curve is the finding: a
-        second contact is noise, a fifth is a defect in the help centre with a customer attached
-        to it.
-        What would emit it: Layer 2 clustering ticket_created observations by requester and
-        intent over derived.contact_frequency, with Layer 1 supplying the intent classification.
-        The contact_rate_per_account baseline in planned_substrate is what makes the window
-        adaptive rather than arbitrary — a weekly contact is normal for some accounts and alarming
-        for others.
-        Why unanswered_email is not good enough: repeat contact is its exact opposite. Every one
-        of these contacts was answered — that is the whole point, that is what makes it
-        interesting, and it is why this situation is invisible on every dashboard a support team
-        already owns. Binding to unanswered_email would let the situation fire only in the single
-        case it does not describe. What goes wrong today is not that the customer is ignored; it
-        is that the second arrival is processed as a first arrival by someone who has never seen
-        the first, and the fact that made it worth reading is discarded at intake.
-    - type: knowledge_gap
-      owner_layer: L2
-      nearest_today: unanswered_email
-      note: >
-        Must mean: a question the help centre does not answer, or answers somewhere nobody finds.
-        Those are the same volume and opposite fixes — write the article versus fix the
-        findability — and a type that cannot distinguish them will be used to commission
-        duplicates, which then compete with the original in search and make findability worse.
-        So the type must carry the discriminator: was an article surfaced and rejected, or was
-        nothing surfaced at all. Its subject is an intent, not a ticket. A gap that exists only
-        as a property of a ticket dies when the ticket closes, and that death is the reason
-        content gap analysis is currently a person reading exports rather than anything the
-        engine does.
-        What would emit it: zero-result and abandoned help-centre searches (self_service_attempted
-        and self_service_abandoned in planned_substrate), knowledge_article_linked observations
-        where the customer had already opened that article, and Layer 2 aggregation of
-        deflection_failed across an intent.
-        Why the nearest is not good enough: there is no near miss available, and that is the
-        honest answer rather than an evasion. Every type the pipeline emits is customer-shaped —
-        a thread, a person, a deal — and this one is content-shaped. Naming any of them as the
-        binding would file the finding against a ticket, which is precisely the category error
-        that makes it disappear. unanswered_email is recorded here as the compromise someone
-        would reach for, not as an approximation worth making.
+  # ── THE CENSUS ENTRIES THESE TYPES USED TO HAVE, kept rather than deleted ──────────────────
+  #
+  # Both were `pending_l2_situation_types` until 2026-08-29. Neither can stay one — the schema and
+  # `validate.py` both make naming an EMITTED type there an error, because as written it would
+  # route nothing — but deleting them would erase the only record of what the approximation cannot
+  # say. Each original ask is kept, clause by clause, marked against what was actually built.
+  #
+  # repeat_contact
+  #   Must mean: the same requester, or the same account, contacting again about the same INTENT
+  #   within a window — counted by intent and not by ticket.
+  #     BUILT. The anchor is one person and one topic, and the group is keyed on the topic a
+  #     closed lexicon named, never on a thread or a ticket.
+  #   It must survive the earlier tickets being closed, merged or handled by a different agent.
+  #     BUILT by construction — there are no tickets to close, and the reading is over the
+  #     correspondence itself.
+  #   It must carry the ordinal, because the shape of the curve is the finding.
+  #     PARTLY BUILT. `repeat.ordinal` is written and is a FLOOR, not a count: a phrasing the
+  #     lexicon does not recognise silently leaves a contact out of its own group.
+  #   What would emit it: Layer 2 clustering ticket_created observations by requester and intent
+  #   over derived.contact_frequency, with Layer 1 supplying the intent classification, and the
+  #   contact_rate_per_account baseline making the window adaptive.
+  #     PARTLY BUILT, and by a different instrument. There is no `ticket_created` obs kind and no
+  #     Layer 1 intent classifier; a deterministic lexicon over masked text stands in for both.
+  #     THE ADAPTIVE WINDOW IS BUILT — `account_rate` derives it from the account's own contact
+  #     rhythm, clamped to 14..90 days — but `contact_rate_per_account` as a learned BASELINE is
+  #     NOT: the rate is recomputed per sweep and nothing stores it.
+  #   Why unanswered_email is not good enough: every one of these contacts was answered.
+  #     STILL TRUE and now ENFORCED: every contact in a group except the newest must show
+  #     `thread.ball_in_court = them`, so an unanswered pile is left to unanswered mail.
+  #
+  # knowledge_gap
+  #   Must mean: a question the help centre does not answer, or answers somewhere nobody finds —
+  #   and the type must carry the discriminator between them.
+  #     NOT BUILT, and this is the one that matters. The discriminator needs help-centre search
+  #     telemetry that nobody has connected. `knowledge.answer_reuse_bp` measures how much OUR OWN
+  #     replies repeat themselves, which is a related question and not this one, and
+  #     `knowledge.published_answer_seen` is deliberately never written so the substitution stays
+  #     visible. Until it is built, commissioning a duplicate article remains possible.
+  #   Its subject is an intent, not a ticket. A gap that exists only as a property of a ticket
+  #   dies when the ticket closes.
+  #     BUILT. `knowledge_gap` mints its own `topic` anchor, so the finding has a subject of its
+  #     own instead of being filed against whichever customer reported it.
+  #   What would emit it: zero-result and abandoned help-centre searches, knowledge_article_linked
+  #   observations, and Layer 2 aggregation of deflection_failed across an intent.
+  #     NOT BUILT. None of `self_service_attempted`, `self_service_abandoned`,
+  #     `knowledge_article_linked` or `deflection_failed` exists; all remain in
+  #     `planned_substrate`. What was built is an aggregation over inbound mail alone.
+  #   Why the nearest is not good enough: every type the pipeline emits is customer-shaped and
+  #   this one is content-shaped.
+  #     ANSWERED by the `topic` anchor. This clause is the one the build closed outright.
 
   # Person, because that is where the repetition is observable. Note the limitation honestly: the
   # gap this situation is really about belongs to an intent and affects everyone who has it, and

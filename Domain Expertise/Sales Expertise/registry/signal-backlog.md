@@ -15,7 +15,7 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - **169** patterns executable against the pipeline today
 - **142** patterns blocked, waiting on **148** distinct signals
 - **2** situation binding(s) waiting on an L2 type no pack emits
-- Substrate today: **34** fact paths · **34** observation kinds · **2** baselines
+- Substrate today: **106** fact paths · **34** observation kinds · **2** baselines
 
 ## The backlog
 

@@ -115,10 +115,17 @@ def test_resolving_a_mention_never_creates_anything() -> None:
 # ── the hot path ─────────────────────────────────────────────────────────────────
 
 def test_canon_facts_attach_to_the_document_not_its_author() -> None:
-    """The whole bug. Without this a refund policy is facts about a colleague."""
+    """The whole bug. Without this a refund policy is facts about a colleague.
+
+    The seam gained a middle term when file-store metadata began arriving: a Drive file has no
+    canon kind, and the SENDER of a Drive event is its `lastModifyingUser` — so every clause of
+    the security policy was a fact about whoever last fixed a typo in it. Canon still wins, because
+    a file the org tagged `policy` is a deliberate statement at rank 4; the document node beats the
+    sender for exactly the reason canon does.
+    """
     from genios_engine.context.pipeline import process_event
     source = inspect.getsource(process_event)
-    assert "content_subject = canon_node or sender_node" in source
+    assert "content_subject = canon_node or document_node or sender_node" in source
     assert "_resolve_subject(f.get(\"subject\"), name_to_node, content_subject)" in source
 
 

@@ -35,13 +35,22 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
-from genios_engine.context.domain_spec import _SPECS, spec_for
+from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.platform.ids import new_id
 
 #: The window every aggregate is measured over. Four weeks rather than a calendar month so the
 #: comparison against the previous window is like-for-like — a 28-day count and a 31-day count are
 #: not comparable, and the movement is the only part of an aggregate anyone can act on.
 WINDOW_DAYS = 28
+
+#: What a period situation claims about itself, as an int PERCENT — the `situations.SCORE_MAX`
+#: scale every score in `context_situations` uses. Named rather than inlined so the seam test can
+#: read the same number the writer uses: these were 7000/5000, and `situation_bso._bp` multiplies
+#: a stored score by 100 and clamps at 10000, so both saturated and every period situation reached
+#: Layer 3 claiming a fully-sourced record's certainty.
+PERIOD_CONFIDENCE_PCT = 70
+PERIOD_COVERAGE_PCT = 50
+
 
 def period_domains() -> tuple[str, ...]:
     """The domains that get a period situation: every registered domain that DECLARES a `tenant`
@@ -55,9 +64,12 @@ def period_domains() -> tuple[str, ...]:
     Domains without the anchor are skipped rather than defaulted. `type_for` would otherwise return
     its generic `<domain>_tenant`, which no situation file claims and the registry cannot resolve —
     the exact fault that kept `admin_person` and `fundraising_deal` dark, and it fails silently.
+
+    The query itself now lives in the registry as `domains_declaring`, because a second sweep
+    (`context/support_situations.py`) mints its own anchors and needed exactly the same question
+    asked of a different anchor. Two copies of it would be two places for the opt-in rule to drift.
     """
-    return tuple(sorted(d for d, spec in _SPECS.items()
-                        if spec.situation_types.get("tenant")))
+    return domains_declaring("tenant")
 
 
 def tenant_key(org_id: str) -> str:
@@ -171,7 +183,7 @@ def refresh_period_situations(store, org_id: str, *, now: datetime | None = None
                 "  confidence_identity, coverage, missing, inputs, first_seen_at, last_seen_at, "
                 "  computed_at) "
                 "values (:sid, :o, :c, :n, :st, :d, 'active', :conf, :conf, :conf, :conf, "
-                "  10000, :cov, cast(:missing as jsonb), cast(:inputs as jsonb), :now, :now, :now) "
+                "  100, :cov, cast(:missing as jsonb), cast(:inputs as jsonb), :now, :now, :now) "
                 "on conflict (org_id, correlation_id) do update set "
                 "  confidence_overall = excluded.confidence_overall, "
                 "  confidence_freshness = excluded.confidence_freshness, "
@@ -183,13 +195,21 @@ def refresh_period_situations(store, org_id: str, *, now: datetime | None = None
                  # Identity is certain — the subject is the tenant, and there is no merge question.
                  # Everything else is bounded by how much of the window the substrate saw, which is
                  # honestly partial on a mail-and-calendar tenant.
-                 "conf": 7000,
-                 "cov": 5000,
+                 #
+                 # PERCENT, per `situations.SCORE_MAX` — this row used to write 7000/5000/10000
+                 # basis points into columns every other writer fills with 0..100. Nothing on the
+                 # L2 side noticed (the numbers are only stored), but `situation_bso._bp`
+                 # multiplies by 100 and clamps: 5000 became coverage_bp=10000, so the one
+                 # situation that says "this is a window aggregate, not a subject" arrived at
+                 # Layer 3 claiming full coverage. `situation.coverage` is also handed to pack
+                 # rules as a plain fact, where 5000 clears any percent threshold an author writes.
+                 "conf": PERIOD_CONFIDENCE_PCT,
+                 "cov": PERIOD_COVERAGE_PCT,
                  "missing": json.dumps(["targets", "per-owner load", "cost per contact"]),
                  "inputs": json.dumps({"window_days": WINDOW_DAYS, "period": key, **aggregates})})
             written += 1
     return written
 
 
-__all__ = ["WINDOW_DAYS", "period_domains", "period_key", "refresh_period_situations",
-           "tenant_key", "tenant_node_id"]
+__all__ = ["PERIOD_CONFIDENCE_PCT", "PERIOD_COVERAGE_PCT", "WINDOW_DAYS", "period_domains",
+           "period_key", "refresh_period_situations", "tenant_key", "tenant_node_id"]

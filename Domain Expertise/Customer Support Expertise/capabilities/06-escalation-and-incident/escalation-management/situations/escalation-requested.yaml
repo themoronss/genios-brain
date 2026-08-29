@@ -29,37 +29,28 @@ description: >
   which is why replying faster to the same person is the reflex that makes it worse.
 
 matches:
-  # No shipped pack emits anything escalation-shaped, so l2_situation_types is empty rather than
-  # bound to the nearest plausible type. Binding this to unanswered_email would produce a system
-  # that nudges an agent to reply faster to the customer who has just told us that replying is
-  # not the problem.
-  l2_situation_types: []
-
-  pending_l2_situation_types:
-    - type: escalation_requested
-      owner_layer: L2
-      nearest_today: unanswered_email
-      note: >
-        Must mean: a request for ownership of a piece of work to move, carrying (a) the trigger
-        side — customer_initiated or internally_triggered, because those are different events
-        sharing a word — (b) the specific ask being made of the receiver, and (c) the named
-        receiver where one has been proposed. It must remain live until a receiver ACCEPTS, not
-        until someone replies. That distinction is the whole value of the type: the harmful
-        interval is between raising and acceptance, and every existing product closes it by
-        setting a flag, which nobody has to accept.
-        What would emit it: Layer 1 extraction of escalation language in an inbound message
-        (manager, escalate, VP, account team, unacceptable, formal complaint) plus a Layer 2
-        rule over a ticket-owner change accompanied by a stated reason. The obs kind pair
-        escalation_requested / escalation_accepted in planned_substrate is the real ask — either
-        alone is close to useless, because the whole point is measuring the gap between them.
-        Why unanswered_email is not good enough: an escalation request only resembles an
-        unanswered email while it is unanswered, which is the shortest part of its life. The
-        moment any agent sends any reply, the compromise binding falls silent — while the
-        escalation is still unaccepted, still unowned and still running. Worse, the two types
-        prescribe opposite handling: unanswered_email asks for a reply from the current owner,
-        and this situation exists because a reply from the current owner is exactly what the
-        customer has already rejected. Today the escalation is invisible until it arrives as an
-        executive email, at which point it is an account event rather than a ticket one.
+  # ROUTED SINCE 2026-08-29, as an APPROXIMATION and not as a record. `context/support_situations.py`
+  # reads a customer asking for somebody else out of the masked text L1 already keeps, opens an
+  # `escalation` anchor node against the ACCOUNT, and holds the situation live until a name that
+  # has not written on that thread before appears on it.
+  #
+  # Two of the file's three requirements survive intact and are the reason this was worth
+  # building. The interval stays open ACROSS replies — the raise is deliberately kept out of
+  # `contracts/open_loop.ASK_KINDS`, so an outbound reply cannot close it — and the situation is
+  # kept out of `DORMANT_AFTER_DAYS`, because an unaccepted escalation going quiet is the failure
+  # and not the resolution. Past `typical_duration_days` it is written `stale` and stays ACTIVE.
+  #
+  # The third does NOT survive and is declared on every row's `missing`: (a) the origin
+  # discriminator is half-blind, because mail sees a customer's raise well and an owner deciding
+  # "this is beyond me" not at all — so `origin` is written `customer_initiated` only where the
+  # message is genuinely inbound and `customer_initiated_share` must stay suppressed rather than
+  # computed against a denominator that does not exist; (b) acceptance is INFERRED from a new
+  # internal sender, which the domain's own backlog rates at 10000 bp with the line "acceptance is
+  # an act, not an inference" — it is wrong in both directions, so `escalation_acceptance_rate`
+  # cannot be trusted and only the raw interval is carried; (c) there is no un-escalate event
+  # anywhere in mail, so `de_escalation_rate` and `esc.it_bounced_back_down` stay dark.
+  l2_situation_types:
+    - escalation_requested
 
   # Account rather than person on purpose. An escalation attaches to the relationship, not to the
   # human who happened to send the message; the second escalation from a different contact at the

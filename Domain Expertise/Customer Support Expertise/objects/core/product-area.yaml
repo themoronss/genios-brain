@@ -1,0 +1,335 @@
+identity:
+  id: customer_support.obj.core.product_area
+  name: Product Area
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.voice_of_customer.product_feedback_routing
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: stable
+  aliases:
+  - component
+  - module
+  - feature area
+  - surface
+purpose:
+  statement: 'The part of the product a piece of support traffic is about, named the way the people
+    who BUILD it name it. It is the join between what customers report and who can change it.
+
+    '
+  discriminator: 'A product area is a property of the software; an intent is a property of the
+    request. "How do I export this" and "the export is broken" are one product area and two intents,
+    and a system that models only one of them either routes correctly and cannot see demand, or sees
+    demand and cannot route.
+
+    '
+  answers:
+  - Which team can actually change this?
+  - Where is contact volume concentrated, and is it moving?
+  - Do reports about this area cluster around one defect or spread across many?
+  - Which areas generate contacts that no article answers?
+attributes:
+- name: area_key
+  purpose: 'A stable identifier owned by the engineering organisation, not by support. Stable is the
+    whole requirement — a renamed area silently splits its own history in two.
+
+    '
+  type: value
+  data_type: string
+  required: true
+- name: display_name
+  purpose: What it is called in front of a customer, which is frequently not what it is called
+    internally.
+  type: value
+  data_type: string
+  required: false
+- name: owning_team
+  purpose: 'Who can change it. The single attribute that makes the object worth having — without it
+    routing is a taxonomy exercise and nothing arrives anywhere.
+
+    '
+  type: value
+  data_type: string
+  required: false
+- name: parent_area
+  purpose: 'The coarser area this belongs to, where a hierarchy exists. One level is usually enough;
+    deep trees are abandoned by the agents who have to pick from them.
+
+    '
+  type: reference
+  ref: customer_support.obj.core.product_area
+  data_type: ref
+  required: false
+- name: contact_volume
+  purpose: How much support traffic is about it, over a stated window. A rate, never a total —
+    a total tells you how big the area is, not whether anything changed.
+  type: derived
+  derived_from: [ticket.product_area]
+  data_type: integer
+  required: false
+- name: known_issue_count
+  purpose: 'Open defects filed against it. Read beside volume: high volume with no known issues is a
+    documentation or design problem, not an engineering one.
+
+    '
+  type: derived
+  derived_from: [ticket.product_area, issue.ref]
+  data_type: integer
+  required: false
+states:
+  initial: active
+  values:
+  - name: active
+    description: A live part of the product, receiving traffic.
+  - name: deprecated
+    description: 'Being retired. Contacts about a deprecated area are a migration signal, not a
+      support signal, and answering them as support hides a scheduling problem.
+
+      '
+  - name: unmapped
+    description: Traffic exists and no area has been assigned.
+    implies: 'The honest default on any tenant without a taxonomy, and it must stay visible. An
+      unmapped pile silently reassigned to a nearest-looking area is how a product team is told the
+      wrong thing with confidence.
+
+      '
+relationships:
+- target: customer_support.obj.core.issue
+  type: attaches_to
+  direction: inbound
+  cardinality: zero_or_many
+  weight_bp: 9000
+  confidence_bp: 6000
+  evidence:
+  - ticket
+  - manual_entry
+  priority: 1
+  description: The defects filed against it. The count is what turns a busy area into a fix
+    priority rather than a staffing request.
+- target: customer_support.obj.core.knowledge_article
+  type: covers
+  direction: inbound
+  cardinality: zero_or_many
+  weight_bp: 7000
+  confidence_bp: 6000
+  evidence:
+  - knowledge_base
+  priority: 2
+  description: 'What has been written about it. An area with volume and no articles is a content
+    gap with a location attached, which is the most actionable form the gap takes.
+
+    '
+- target: customer_support.obj.core.ticket
+  type: attaches_to
+  direction: inbound
+  cardinality: zero_or_many
+  weight_bp: 8000
+  confidence_bp: 4000
+  evidence:
+  - ticket
+  priority: 3
+  description: 'The traffic itself. Confidence is low deliberately: assigning a ticket to an area is
+    a classification, and an unreviewed classification is the input most likely to be wrong at
+    volume.
+
+    '
+- target: customer_support.obj.core.intent
+  type: references
+  direction: bidirectional
+  cardinality: zero_or_many
+  weight_bp: 6500
+  confidence_bp: 5000
+  evidence:
+  - derived
+  priority: 4
+  description: 'The reasons people write about this area. The pair is the finding — one area with a
+    single dominant intent is a defect or a doc gap; one area with many is simply a big area.
+
+    '
+inference_patterns:
+  deterministic:
+  - id: product_area.this_traffic_is_about_a_known_area
+    statement: 'A contact was classified into an area of the product, so demand and routing can be
+      reported against something a team owns.
+
+      '
+    status: needs_signal
+    note: 'There is no product taxonomy anywhere in this substrate — no area list, no owning team,
+      and no field on any captured object that names one. Deriving areas from customer wording would
+      invent a taxonomy the engineering organisation never agreed to, and every downstream number
+      would then be reported against categories that do not exist.
+
+      '
+    requires_signals:
+    - kind: fact_path
+      name: ticket.product_area
+      owner_layer: L1
+    - kind: fact_path
+      name: product_area.key
+      owner_layer: L1
+    yields:
+      confidence_bp: 0
+      attribute: area_key
+  - id: product_area.who_owns_this_part_of_the_product
+    statement: The area maps to a team that can change it, so feedback can be routed rather than
+      filed.
+    status: needs_signal
+    note: 'Requires an ownership map maintained outside support. Guessing it from who replied to past
+      threads produces routing that follows availability rather than responsibility.
+
+      '
+    requires_signals:
+    - kind: fact_path
+      name: product_area.owning_team
+      owner_layer: L1
+    yields:
+      confidence_bp: 0
+      attribute: owning_team
+  - id: product_area.contact_volume_here_is_moving
+    statement: 'Traffic about this area has risen against its own baseline — the shape that tells a
+      product team a release did something.
+
+      '
+    status: needs_signal
+    note: 'The window arithmetic exists (`context/periodic.py` computes this-window against
+      previous-window counts) and the PARTITION does not. Without an area key every count is
+      org-wide, which is the number nobody can act on.
+
+      '
+    requires_signals:
+    - kind: fact_path
+      name: ticket.product_area
+      owner_layer: L1
+    - kind: baseline
+      name: ticket_volume
+      owner_layer: L2
+    yields:
+      confidence_bp: 0
+      attribute: contact_volume
+  - id: product_area.volume_without_a_known_defect
+    statement: 'High contact volume with no open defect filed against the area — a documentation or
+      design problem being handled as a support problem.
+
+      '
+    status: needs_signal
+    note: 'Needs both halves: the area partition and a defect count filed against it. Neither exists,
+      and reporting the first without the second reliably sends a product team looking for a bug that
+      is not there.
+
+      '
+    requires_signals:
+    - kind: fact_path
+      name: ticket.product_area
+      owner_layer: L1
+    - kind: fact_path
+      name: issue.ref
+      owner_layer: L2
+    yields:
+      confidence_bp: 0
+      attribute: known_issue_count
+evidence:
+- source: ticket
+  strength_bp: 9000
+  independent_of:
+  - email
+  - derived
+  decays: false
+  description: 'A classification an agent or a router recorded at intake. Authoritative for the
+    assignment and unavailable here — no helpdesk is connected.
+
+    '
+- source: manual_entry
+  strength_bp: 8000
+  independent_of:
+  - email
+  - derived
+  decays: false
+  description: 'The area list and its ownership map, maintained by the engineering organisation. The
+    honest source for the taxonomy itself, and it has to be given to us rather than inferred.
+
+    '
+- source: derived
+  strength_bp: 2500
+  independent_of:
+  - crm
+  decays: true
+  description: 'Clustering of customer wording. Deliberately the weakest source here and never enough
+    to assert an area: it names what customers said, which is not the same as what the software is
+    divided into.
+
+    '
+constraints:
+- id: product_area.never_invent_the_taxonomy
+  statement: Never derive product areas from customer wording. The division of the software is the
+    engineering organisation's to state, not ours to guess.
+  hard: true
+- id: product_area.never_hide_the_unmapped_pile
+  statement: Never reassign unmapped traffic to a nearest-looking area. The unmapped count is a
+    finding and hiding it reports confidence nobody earned.
+  hard: true
+- id: product_area.never_report_a_total_as_a_trend
+  statement: Never report contact volume as a total. A big area and a worsening area look identical
+    without a baseline.
+  hard: true
+exceptions:
+- id: product_area.one_report_spanning_two_areas
+  statement: One report spanning two areas.
+  why: 'Genuinely common at integration boundaries, and forcing a single assignment sends it to
+    whichever team is listed first. Two areas with the primary marked beats one area chosen by a
+    tie-break.
+
+    '
+- id: product_area.the_area_was_renamed
+  statement: The area was renamed between releases.
+  why: 'The history splits in two and both halves look like a decline. This is why area_key is
+    required and display_name is not — the key must survive the rename.
+
+    '
+- id: product_area.volume_rose_because_usage_rose
+  statement: Contact volume rose because usage rose.
+  why: 'Not a defect and not a doc gap. Without a usage denominator the two are indistinguishable,
+    which is a limit on every conclusion this object supports.
+
+    '
+anti_patterns:
+- id: product_area.routing_by_who_answered_last
+  statement: Routing by who answered last time
+  cost: 'Follows availability rather than responsibility, concentrates every report on whoever is
+    most helpful, and leaves the owning team unaware their area is generating traffic.
+
+    '
+- id: product_area.a_taxonomy_too_deep_to_pick_from
+  statement: A taxonomy too deep for an agent to pick from
+  cost: 'Agents pick the first plausible entry under time pressure, so the data degrades to noise and
+    every report built on it is confidently wrong.
+
+    '
+- id: product_area.reporting_areas_with_no_owning_team
+  statement: Reporting areas with no owning team
+  cost: 'Produces a chart nobody can act on. The purpose of the partition is to reach a person who
+    can change the software; without that it is a filing system.
+
+    '
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: '2026-08-29'
+  review_status: unreviewed
+  confidence: experimental
+  notes: 'Authored to close a required-object failure. Two capabilities on the live `workaround_only`
+    route require it — `diagnosis_and_resolution.issue_reproduction` and
+    `voice_of_customer.product_feedback_routing` — so the object resolver raised
+    RequiredKnowledgeMissing and the route compiled to nothing even after `workaround` and
+    `bug_report` were written. It is referenced by 25 capabilities across the domain, which is why it
+    is core rather than scoped.
+
+    EVERY PATTERN IS needs_signal AND YIELDS 0, deliberately. There is no product taxonomy in this
+    substrate at all: no area list, no ownership map, no classification on any captured object. The
+    tempting move — clustering customer wording into areas — is refused by a hard constraint, because
+    it would invent categories the engineering organisation never agreed to and then report demand,
+    routing and content gaps against them. What the object contributes today is the discipline: areas
+    are the software''s division and not the customer''s vocabulary, the unmapped pile stays visible,
+    and volume is meaningless without a baseline.
+
+    '

@@ -158,6 +158,25 @@ def registered_domains() -> tuple[str, ...]:
     return tuple(sorted(_SPECS))
 
 
+def domains_declaring(anchor_type: str) -> tuple[str, ...]:
+    """Every registered domain that names a situation type for this anchor.
+
+    THE OPT-IN SHAPE for any Layer 2 sweep that mints its own anchor node. `context/periodic.py`
+    needed it first and listed its domains inline; `test_domain_names_appear_in_exactly_one_file_
+    in_the_context_layer` rejected that, correctly — a domain named in Layer 2 means adding a
+    domain requires editing Layer 2, and this registry exists precisely so it does not. Declaring
+    the anchor here is now the whole opt-in, for the tenant period read and for the seven
+    correspondence-derived support readings alike.
+
+    Domains WITHOUT the anchor are skipped rather than defaulted. `type_for` would otherwise
+    return its generic `<domain>_<anchor>`, which no situation file claims and the registry cannot
+    resolve — the exact fault that kept `admin_person` and `fundraising_deal` dark, and it fails
+    silently.
+    """
+    return tuple(sorted(d for d, spec in _SPECS.items()
+                        if spec.situation_types.get(anchor_type)))
+
+
 def is_registered(domain: str | None) -> bool:
     return (domain or "").strip().lower() in _SPECS
 
@@ -206,11 +225,91 @@ register(DomainSpec(
     # The tenant node is deliberately NOT in `ANCHOR_PRIORITY`: `choose_anchors` returns only the
     # strongest tier present, so a tenant node reachable from correspondence would swallow every
     # conversation in the org into one situation.
+    #
+    # THE SEVEN CORRESPONDENCE READINGS, minted by `context/support_situations.py`. Each gets its
+    # OWN anchor node type because `type_for` is a map from anchor to type and two readings
+    # sharing an anchor could not both be named. That constraint turned out to be the right
+    # design: `queue-overloaded.yaml` asks for per-item aging with "the item as a first-class
+    # subject", and `repeat-contact.yaml` says the finding "belongs to an INTENT" and that
+    # person-scope "finds the evidence; it does not describe the finding". So a `backlog_item` is
+    # one unmet ask, a `contact_intent` is one person and one topic, a `topic` is the topic
+    # itself, and a `mailbox` is one connected mailbox — never called a queue, because there is
+    # no queue object, no assignee and no rota anywhere in this system.
+    #
+    # None of these anchors is in `correlation.ANCHOR_PRIORITY`, for the same reason `tenant` is
+    # not: `choose_anchors` returns only the strongest tier present, so a synthetic anchor
+    # reachable from correspondence would swallow every conversation that touched it into one
+    # situation. `thread` in particular must stay out — correlation is already thread-first, and a
+    # thread tier would re-anchor every live sales and general correlation onto its own thread.
     situation_types={"company": "support_case", "person": "support_contact",
-                     "tenant": "support_period_review"},
+                     "tenant": "support_period_review",
+                     "thread": "first_response_overdue",
+                     "backlog_item": "ticket_aging",
+                     "escalation": "escalation_requested",
+                     "contact_intent": "repeat_contact",
+                     "topic": "knowledge_gap",
+                     "mailbox": "queue_overloaded",
+                     "workaround": "workaround_only"},
     expected_fields={
         "support_case": {"thread.ball_in_court": "whose turn it is"},
         "support_contact": {"thread.ball_in_court": "whose turn it is"},
+        # Every block below carries at least one field NOTHING writes, deliberately. A situation
+        # whose `missing` empties out the moment its mechanical facts land is how 34 of one org's
+        # 73 situations came to report full coverage on the strength of knowing whose turn it
+        # was — and these seven are approximations over mail, so the gap between what they show
+        # and what a helpdesk would show has to stay visible on every single row.
+        "first_response_overdue": {
+            "response.opened_at": "when the request arrived",
+            "response.target_at": "the deadline your stated policy implies",
+            # Absent by construction while this situation is open — that IS the situation — and
+            # absent for a different reason once it closes.
+            "response.first_reply_at": "when we actually replied",
+            # No per-customer target exists anywhere in this system. Never satisfied, so the card
+            # can never quietly become an SLA claim.
+            "entitlement.plan": "what this customer is actually entitled to",
+        },
+        "ticket_aging": {
+            "backlog.opened_at": "when the request first arrived",
+            "backlog.waiting_on": "whose turn it is",
+            "backlog.days_since_customer": "how long since they last wrote",
+            # There is no queue and no assignee. Never satisfied.
+            "backlog.queue": "which queue this belongs to and who owns it",
+        },
+        "escalation_requested": {
+            "escalation.origin": "who raised it",
+            # The two the corpus calls the act itself. Written only when a new internal name
+            # appears on the thread, which is an inference and not an acceptance.
+            "escalation.receiver_node_id": "who is taking it",
+            "escalation.accepted_at": "when a named person accepted",
+        },
+        "repeat_contact": {
+            "repeat.intent": "what they keep coming back about",
+            "repeat.ordinal": "how many times",
+            "repeat.prior_answered": "whether the earlier contact was answered",
+            # Needs help-centre telemetry nobody has connected. Never satisfied.
+            "repeat.self_service_seen": "whether they tried to find the answer themselves",
+        },
+        "knowledge_gap": {
+            "knowledge.distinct_askers": "how many different people asked",
+            "knowledge.answer_reuse_bp": "whether we already have a settled answer",
+            # The corpus's actual discriminator — write the article, or fix findability. Never
+            # satisfied, and commissioning a duplicate is the harm it warns about.
+            "knowledge.published_answer_seen": "whether a published answer already exists",
+        },
+        "queue_overloaded": {
+            "mailbox.flow_ratio": "arrivals against closures",
+            "mailbox.backlog_oldest_days": "how long the oldest open item has waited",
+            "mailbox.backlog_age_p90_days": "the shape of the wait at the tail",
+            # An alert nobody owns is a dashboard. Never satisfied.
+            "mailbox.owner": "who owns this workload",
+        },
+        "workaround_only": {
+            "workaround.provided_at": "when we handed them the workaround",
+            "workaround.cost": "what it costs them to keep doing it",
+            # Needs an engineering tracker. Never satisfied, which is why the best card this can
+            # produce is "say something", not "you can stop now".
+            "workaround.fix_state": "whether the underlying fault is fixed",
+        },
     }))
 
 register(DomainSpec(
@@ -238,14 +337,42 @@ register(DomainSpec(
     # The tenant node is deliberately NOT in `ANCHOR_PRIORITY`: `choose_anchors` returns only the
     # strongest tier present, so a tenant node reachable from correspondence would swallow every
     # conversation in the org into one situation.
+    #
+    # `document` is the RECORDS anchor, minted by `context/document_register.py` from the file
+    # metadata `capture/connectors/drive.py` already fetched and used to discard. Five authored
+    # capabilities — document_control, filing_and_retrieval, version_control,
+    # retention_and_archival, knowledge_base_maintenance — were complete knowledge with no
+    # trigger, because no node in the graph was a document.
+    #
+    # It is NOT in `ANCHOR_PRIORITY` and its title is not a canon alias, which are the same
+    # refusal twice: `choose_anchors` returns only the strongest tier present, so a document
+    # reachable from correspondence would take an email that merely mentions "Security Policy"
+    # and anchor it on the policy instead of on the customer who wrote it.
     situation_types={"company": "account_admin", "person": "admin_contact",
-                     "tenant": "admin_period_review"},
+                     "tenant": "admin_period_review",
+                     "document": "document_under_control"},
     expected_fields={
         "account_admin": {"subscription.current_period_end": "renewal date"},
         # An administrative counterparty is read through what we owe them and whose turn it is,
         # not through a pipeline stage. Both fields have real writers.
         "admin_contact": {"thread.ball_in_court": "whose turn it is",
                           "commitment.due_at": "what we owe them, and when"},
+        # TWO OF THESE FOUR HAVE NO WRITER AND ARE NOT MEANT TO GET ONE.
+        #
+        # `document.approved_at` is not a file-store concept: Drive keeps revisions, comments and
+        # suggestion-accepts, and inferring an approval from a modification history is the exact
+        # fabrication the corpus file forbids. `document.retention_until` needs a retention
+        # schedule this tenant has never stated anywhere, so there is no clock and none can be
+        # derived. Leaving them here is what keeps `missing` truthful on every single row — an
+        # artefact renders as "approval state unknown", never as "unapproved", which would be a
+        # finding the system invented. Records coverage claimed and absent is worse than absent,
+        # because it is what somebody relies on in an audit.
+        "document_under_control": {
+            "document.owner_email": "who owns it",
+            "document.version": "which revision the file store is on",
+            "document.approved_at": "approval state",
+            "document.retention_until": "when it must be destroyed",
+        },
     }))
 
 register(DomainSpec(

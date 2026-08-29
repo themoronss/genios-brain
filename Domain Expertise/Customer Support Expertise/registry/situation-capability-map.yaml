@@ -236,6 +236,194 @@ map:
         - customer_support.obj.core.satisfaction_score
         - customer_support.obj.core.sla_target
 
+  first_response_overdue:
+    situations:
+      - customer_support.sit.first_response_overdue
+    capabilities:
+      - customer_support.customer_communication.expectation_setting
+      - customer_support.customer_communication.response_drafting
+      - customer_support.entitlement_and_sla.breach_prevention
+      - customer_support.intake_and_triage.ticket_triage
+    objects:
+      load:
+        - customer_support.obj.core.commitment
+        - customer_support.obj.core.conversation
+        - customer_support.obj.core.entitlement
+        - customer_support.obj.core.requester
+        - customer_support.obj.core.sla_target
+        - customer_support.obj.core.ticket
+      optional:
+        - customer_support.obj.core.coverage_window
+        - customer_support.obj.core.escalation
+        - customer_support.obj.core.issue
+        - customer_support.obj.core.product_area
+        - customer_support.obj.core.queue
+        - customer_support.obj.core.support_agent
+        - customer_support.obj.core.workaround
+      never_load:
+        - customer_support.obj.core.customer_sentiment
+        - customer_support.obj.core.knowledge_article
+
+  ticket_aging:
+    situations:
+      - customer_support.sit.queue_overloaded
+    capabilities:
+      - customer_support.support_management.team_health
+      - customer_support.support_operations.capacity_planning
+      - customer_support.support_operations.queue_management
+      - customer_support.support_operations.workload_balancing
+    objects:
+      load:
+        - customer_support.obj.core.backlog
+        - customer_support.obj.core.capacity_plan
+        - customer_support.obj.core.queue
+        - customer_support.obj.core.support_agent
+        - customer_support.obj.core.ticket
+      optional:
+        - customer_support.obj.core.coverage_window
+        - customer_support.obj.core.sla_target
+      never_load:
+        - customer_support.obj.core.customer_sentiment
+        - customer_support.obj.core.entitlement
+        - customer_support.obj.core.requester
+
+  escalation_requested:
+    situations:
+      - customer_support.sit.escalation_requested
+    capabilities:
+      - customer_support.customer_communication.de_escalation
+      - customer_support.escalation_and_incident.escalation_management
+      - customer_support.escalation_and_incident.executive_escalation
+      - customer_support.support_management.account_relationship_management
+    objects:
+      load:
+        - customer_support.obj.core.customer_account
+        - customer_support.obj.core.customer_sentiment
+        - customer_support.obj.core.escalation
+        - customer_support.obj.core.escalation_owner
+        - customer_support.obj.core.named_contact
+        - customer_support.obj.core.requester
+        - customer_support.obj.core.ticket
+      optional:
+        - customer_support.obj.core.churn_risk
+        - customer_support.obj.core.entitlement
+        - customer_support.obj.core.satisfaction_score
+      never_load:
+        - customer_support.obj.core.backlog
+        - customer_support.obj.core.knowledge_article
+
+  repeat_contact:
+    situations:
+      - customer_support.sit.repeat_contact
+    capabilities:
+      - customer_support.intake_and_triage.duplicate_and_merge
+      - customer_support.knowledge_and_deflection.ai_deflection
+      - customer_support.knowledge_and_deflection.content_gap_analysis
+      - customer_support.knowledge_and_deflection.knowledge_authoring
+      - customer_support.knowledge_and_deflection.macro_management
+      - customer_support.knowledge_and_deflection.self_service_deflection
+      - customer_support.voice_of_customer.product_feedback_routing
+    objects:
+      load:
+        - customer_support.obj.core.content_gap
+        - customer_support.obj.core.conversation
+        - customer_support.obj.core.intent
+        - customer_support.obj.core.issue
+        - customer_support.obj.core.knowledge_article
+        - customer_support.obj.core.product_area
+        - customer_support.obj.core.requester
+        - customer_support.obj.core.ticket
+        - customer_support.obj.macro_management.macro
+      optional:
+        - customer_support.obj.core.bug_report
+        - customer_support.obj.core.customer_sentiment
+        - customer_support.obj.core.resolution
+        - customer_support.obj.core.satisfaction_score
+      never_load:
+        - customer_support.obj.core.escalation
+        - customer_support.obj.core.sla_target
+
+  knowledge_gap:
+    situations:
+      - customer_support.sit.repeat_contact
+    capabilities:
+      - customer_support.intake_and_triage.duplicate_and_merge
+      - customer_support.knowledge_and_deflection.ai_deflection
+      - customer_support.knowledge_and_deflection.content_gap_analysis
+      - customer_support.knowledge_and_deflection.knowledge_authoring
+      - customer_support.knowledge_and_deflection.macro_management
+      - customer_support.knowledge_and_deflection.self_service_deflection
+      - customer_support.voice_of_customer.product_feedback_routing
+    objects:
+      load:
+        - customer_support.obj.core.content_gap
+        - customer_support.obj.core.conversation
+        - customer_support.obj.core.intent
+        - customer_support.obj.core.issue
+        - customer_support.obj.core.knowledge_article
+        - customer_support.obj.core.product_area
+        - customer_support.obj.core.requester
+        - customer_support.obj.core.ticket
+        - customer_support.obj.macro_management.macro
+      optional:
+        - customer_support.obj.core.bug_report
+        - customer_support.obj.core.customer_sentiment
+        - customer_support.obj.core.resolution
+        - customer_support.obj.core.satisfaction_score
+      never_load:
+        - customer_support.obj.core.escalation
+        - customer_support.obj.core.sla_target
+
+  queue_overloaded:
+    situations:
+      - customer_support.sit.queue_overloaded
+    capabilities:
+      - customer_support.support_management.team_health
+      - customer_support.support_operations.capacity_planning
+      - customer_support.support_operations.queue_management
+      - customer_support.support_operations.workload_balancing
+    objects:
+      load:
+        - customer_support.obj.core.backlog
+        - customer_support.obj.core.capacity_plan
+        - customer_support.obj.core.queue
+        - customer_support.obj.core.support_agent
+        - customer_support.obj.core.ticket
+      optional:
+        - customer_support.obj.core.coverage_window
+        - customer_support.obj.core.sla_target
+      never_load:
+        - customer_support.obj.core.customer_sentiment
+        - customer_support.obj.core.entitlement
+        - customer_support.obj.core.requester
+
+  workaround_only:
+    situations:
+      - customer_support.sit.bug_awaiting_engineering
+    capabilities:
+      - customer_support.customer_communication.proactive_status_updates
+      - customer_support.diagnosis_and_resolution.workaround_management
+      - customer_support.escalation_and_incident.engineering_handoff
+      - customer_support.voice_of_customer.product_feedback_routing
+    objects:
+      load:
+        - customer_support.obj.core.bug_report
+        - customer_support.obj.core.commitment
+        - customer_support.obj.core.issue
+        - customer_support.obj.core.product_area
+        - customer_support.obj.core.ticket
+        - customer_support.obj.core.workaround
+      optional:
+        - customer_support.obj.core.conversation
+        - customer_support.obj.core.incident
+        - customer_support.obj.core.knowledge_article
+        - customer_support.obj.core.requester
+        - customer_support.obj.core.root_cause
+        - customer_support.obj.core.satisfaction_score
+      never_load:
+        - customer_support.obj.core.resolution
+        - customer_support.obj.core.sla_target
+
 # ── Blocked on Layers 1 and 2 ─────────────────────────────────────────────
 # These situations are authored and route NOTHING, because the type that would
 # trigger them is not in any shipped pack's signal_vocab. Not a defect in the
@@ -253,50 +441,36 @@ pending_l2_types:
   entitlement_mismatch:
     situations:
       - customer_support.sit.entitlement_expired
-  escalation_requested:
-    situations:
-      - customer_support.sit.escalation_requested
-  first_response_overdue:
-    situations:
-      - customer_support.sit.sla_breach_imminent
   incident_unresolved:
     situations:
       - customer_support.sit.major_incident_declared
   issue_under_diagnosis:
     situations:
       - customer_support.sit.issue_under_diagnosis
-  knowledge_gap:
-    situations:
-      - customer_support.sit.repeat_contact
   major_incident_declared:
     situations:
       - customer_support.sit.major_incident_declared
-  queue_overloaded:
-    situations:
-      - customer_support.sit.queue_overloaded
-  repeat_contact:
-    situations:
-      - customer_support.sit.repeat_contact
   sla_breach_imminent:
     situations:
       - customer_support.sit.sla_breach_imminent
-  ticket_aging:
-    situations:
-      - customer_support.sit.queue_overloaded
   ticket_reopened:
     situations:
       - customer_support.sit.ticket_reopened
-  workaround_only:
-    situations:
-      - customer_support.sit.bug_awaiting_engineering
 
 # ── Coverage ──────────────────────────────────────────────────────────────
 # Types this domain routes.
 routed_l2_types:
+  - escalation_requested
+  - first_response_overdue
+  - knowledge_gap
+  - queue_overloaded
   - relationship
+  - repeat_contact
   - support_case
   - support_contact
   - support_period_review
+  - ticket_aging
+  - workaround_only
 
 # Layer 2 emits these and NO situation in ANY domain binds them. Each is a signal
 # that compiles to nothing, silently. Global, not this domain's fault.
@@ -308,31 +482,23 @@ orphan_capabilities:
   - customer_support.diagnosis_and_resolution.resolution_delivery
   - customer_support.diagnosis_and_resolution.root_cause_analysis
   - customer_support.diagnosis_and_resolution.verification_and_closure
-  - customer_support.diagnosis_and_resolution.workaround_management
   - customer_support.escalation_and_incident.incident_management
   - customer_support.escalation_and_incident.major_incident_communication
   - customer_support.escalation_and_incident.postmortem
-  - customer_support.intake_and_triage.duplicate_and_merge
-  - customer_support.knowledge_and_deflection.ai_deflection
-  - customer_support.knowledge_and_deflection.content_gap_analysis
-  - customer_support.knowledge_and_deflection.knowledge_authoring
-  - customer_support.knowledge_and_deflection.macro_management
-  - customer_support.knowledge_and_deflection.self_service_deflection
-  - customer_support.voice_of_customer.product_feedback_routing
 
 # Authored but no capability's objects.yaml loads them.
 unreachable_objects: []
 
 stats:
-  l2_types_total: 13
-  l2_types_routed_here: 4
+  l2_types_total: 21
+  l2_types_routed_here: 11
   l2_types_unrouted_globally: 0
-  l2_types_pending: 16
-  situations: 19
+  l2_types_pending: 9
+  situations: 20
   capabilities: 49
   capabilities_stub: 0
   capabilities_complete: 49
-  capabilities_routed: 34
-  objects_total: 18
-  objects_core: 16
+  capabilities_routed: 42
+  objects_total: 21
+  objects_core: 19
   objects_scoped: 2

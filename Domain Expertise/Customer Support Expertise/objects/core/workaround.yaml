@@ -1,0 +1,372 @@
+identity:
+  id: customer_support.obj.core.workaround
+  name: Workaround
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.diagnosis_and_resolution.workaround_management
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: stable
+  aliases:
+  - temporary fix
+  - manual step
+  - interim measure
+  - stopgap
+purpose:
+  statement: 'A temporary measure that makes a customer''s problem stop hurting while the defect
+    behind it stays exactly where it was. It carries what they were told to do, what it costs them
+    to keep doing it, and how long they have been doing it.
+
+    '
+  discriminator: 'A workaround unblocks a person; a fix removes a fault. Every support system on
+    the market records the two identically — the ticket closes, the clock stops, the queue reports
+    health — and the customer is left performing a manual step every morning against a defect
+    nobody is telling them about. This object exists to hold that state open after the ticket that
+    created it has gone.
+
+    '
+  answers:
+  - Who is currently living on a temporary measure, and since when?
+  - What does it cost them — once, every day, or in degraded function?
+  - Has anyone told them anything since we handed it over?
+  - When the fix ships, who has to be called?
+attributes:
+- name: provided_at
+  purpose: 'When we handed it over. The clock the whole object is about, and the only part of it
+    correspondence can date precisely.
+
+    '
+  type: value
+  data_type: timestamp
+  required: true
+- name: description
+  purpose: 'What the customer was actually told to do, in the words they were told it in. Kept
+    verbatim because "restart the connector each morning" and "we have disabled the sync" are the
+    same record shape and completely different debts.
+
+    '
+  type: value
+  data_type: string
+  required: false
+- name: cost
+  purpose: 'What it costs to keep living on it: one_off, recurring, or degrading. THE POINT OF THE
+    OBJECT. A one-time configuration change and a manual step performed every morning are recorded
+    identically today and are not remotely the same thing. Absent means we could not tell — never
+    one_off.
+
+    '
+  type: value
+  data_type: enum
+  required: false
+- name: days_open
+  purpose: How long they have been on it. Ages independently of any ticket, which is the property
+    that makes the object worth having.
+  type: derived
+  derived_from: [workaround.provided_at, workaround.days_open]
+  data_type: integer
+  unit: days
+  required: false
+- name: quiet_since
+  purpose: 'How long since anybody said anything on the thread. Silence here is the failure, not
+    the resolution — the customer who gave up and the customer living happily on the measure look
+    identical, and only a human can tell them apart.
+
+    '
+  type: derived
+  derived_from: [workaround.quiet_since]
+  data_type: timestamp
+  required: false
+- name: superseded_by_fix_at
+  purpose: 'When the underlying defect was actually fixed, so the measure can be retired and the
+    customer told. The single highest-value moment this object exists to catch, and nothing in a
+    mailbox reliably supplies it.
+
+    '
+  type: value
+  data_type: timestamp
+  required: false
+states:
+  initial: provided
+  values:
+  - name: provided
+    description: A temporary measure has been handed over and the customer is using it.
+  - name: quiet
+    description: Nobody has said anything for long enough that the customer has stopped expecting to
+      hear from us.
+    implies: 'The state this object was built to make visible. It is NOT dormancy — an unaddressed
+      workaround going quiet is the situation continuing, so it must never be aged out of attention
+      the way a stale conversation is.
+
+      '
+  - name: retired
+    description: The defect is fixed and the customer has been told they can stop.
+  terminal:
+  - retired
+relationships:
+- target: customer_support.obj.core.issue
+  type: attaches_to
+  direction: outbound
+  cardinality: zero_or_one
+  weight_bp: 9000
+  confidence_bp: 3000
+  evidence:
+  - ticket
+  - manual_entry
+  priority: 1
+  description: 'The defect it defers. Confidence is deliberately low: without issue identity there
+    is no join, so many customers on one fault present as many unrelated workarounds and the number
+    that would prioritise the fix cannot be produced.
+
+    '
+- target: customer_support.obj.core.customer_account
+  type: attaches_to
+  direction: outbound
+  cardinality: one
+  weight_bp: 9500
+  confidence_bp: 8000
+  evidence:
+  - email
+  - crm
+  priority: 2
+  description: Who is living on it. Exactly one — the debt is owed to a specific customer, and a
+    workaround with no one attached is a note.
+- target: customer_support.obj.core.ticket
+  type: resolves
+  direction: outbound
+  cardinality: zero_or_many
+  weight_bp: 7000
+  confidence_bp: 5000
+  evidence:
+  - ticket
+  priority: 3
+  description: 'The tickets it closed. Zero is normal and expected here: the object must survive
+    every one of them closing, which is precisely why it is not modelled as a ticket field.
+
+    '
+- target: customer_support.obj.core.commitment
+  type: produces
+  direction: outbound
+  cardinality: zero_or_many
+  weight_bp: 6000
+  confidence_bp: 6000
+  evidence:
+  - email
+  priority: 4
+  description: 'The promise to come back when there is news. The object that keeps the relationship
+    alive during the wait, and the one an agent will not create unprompted because "nothing has
+    changed" feels like admitting there is nothing to say.
+
+    '
+inference_patterns:
+  deterministic:
+  - id: workaround.a_temporary_measure_was_handed_over
+    statement: 'An outbound message handed the customer something to do in the meantime. Read from
+      the words we wrote, which is the only place this event is ever recorded on a mail tenant.
+
+      '
+    status: executable
+    when:
+    - path: workaround.provided_at
+      op: '!='
+      value: null
+    yields:
+      confidence_bp: 6000
+      attribute: provided_at
+    evidence_fields:
+    - workaround.provided_at
+    - workaround.description
+    false_positive: 'A troubleshooting step offered while diagnosing is not a workaround — it is an
+      attempt to reproduce. The wording separates them imperfectly, so this carries 6000 and never
+      enough on its own to assert a customer is in debt.
+
+      '
+  - id: workaround.the_customer_has_gone_quiet_on_it
+    statement: 'Nobody has written since the measure was handed over. The state the object exists to
+      surface, and the one no ticket system can express after closure.
+
+      '
+    status: executable
+    when:
+    - path: workaround.provided_at
+      op: '!='
+      value: null
+    - path: workaround.quiet_since
+      op: '!='
+      value: null
+    yields:
+      confidence_bp: 5500
+      attribute: quiet_since
+      corroborates:
+      - workaround.a_temporary_measure_was_handed_over
+    evidence_fields:
+    - workaround.quiet_since
+    - workaround.days_open
+    false_positive: 'A customer perfectly happy with the measure is silent in exactly the same way as
+      one who gave up on us. This pattern reports the SILENCE and never a satisfaction reading;
+      anything that interprets the quiet is making it up.
+
+      '
+  - id: workaround.what_it_costs_them
+    statement: The wording was unambiguous about whether the measure is one-off, recurring or
+      degrading.
+    status: executable
+    when:
+    - path: workaround.cost
+      op: '!='
+      value: null
+    yields:
+      confidence_bp: 5000
+      attribute: cost
+    evidence_fields:
+    - workaround.cost
+    false_positive: 'Most wording is ambiguous, so this fires on the minority of cases. That is the
+      intended behaviour: an ABSENT cost means "we could not tell" and must never be defaulted to
+      one_off, which would silently reclassify the expensive cases as the cheap ones.
+
+      '
+  - id: workaround.the_fix_shipped_and_they_can_stop
+    statement: 'The defect was fixed, so the customer can stop doing the manual step. The cheapest
+      goodwill available anywhere in support and the one nobody collects.
+
+      '
+    status: needs_signal
+    note: 'A fix event lives in an engineering system. On a mail-only tenant it arrives only if
+      somebody happens to write, which is exactly the behaviour the situation above exists to prompt
+      rather than to measure. Inferring it from silence would retire a debt the customer is still
+      paying.
+
+      '
+    requires_signals:
+    - kind: obs_kind
+      name: bug_fixed
+      owner_layer: L1
+    - kind: fact_path
+      name: issue.resolution_kind
+      owner_layer: L1
+    yields:
+      confidence_bp: 0
+      attribute: superseded_by_fix_at
+  - id: workaround.how_many_customers_are_on_this_same_fault
+    statement: 'N accounts are living on a measure for one defect — the number that turns a
+      workaround backlog into a fix priority.
+
+      '
+    status: needs_signal
+    note: 'Depends entirely on issue identity. Without it every account has its own defect of one,
+      so the register can list who is in debt and can never say what they are in debt FOR.
+
+      '
+    requires_signals:
+    - kind: fact_path
+      name: issue.ref
+      owner_layer: L2
+    yields:
+      confidence_bp: 0
+      attribute: null
+evidence:
+- source: email
+  strength_bp: 6500
+  independent_of:
+  - crm
+  - derived
+  decays: true
+  description: 'The handover in our own words, and the silence afterwards. Strong for the fact that
+    something was offered and for when; weak for what it costs, and blind to anything given on a
+    call or a screen-share.
+
+    '
+- source: ticket
+  strength_bp: 8500
+  independent_of:
+  - email
+  - derived
+  decays: false
+  description: 'A resolution kind recorded against the ticket would be authoritative for the whole
+    object. No helpdesk is connected on this tenant, so nothing writes it today.
+
+    '
+- source: derived
+  strength_bp: 4000
+  independent_of:
+  - crm
+  decays: true
+  description: Elapsed time and quiet since — computed from the correspondence, honest about
+    duration and silent about meaning.
+constraints:
+- id: workaround.never_report_a_workaround_as_a
+  statement: Never report a workaround as a resolution. The customer's problem has not stopped; the
+    ticket has.
+  hard: true
+- id: workaround.never_default_an_unknown_cost
+  statement: Never default an unknown cost to one_off. Absent means we could not tell, and guessing
+    cheap hides the expensive cases.
+  hard: true
+- id: workaround.never_age_a_quiet_workaround_out
+  statement: Never age a quiet workaround out of attention. The silence is the situation, not its
+    expiry.
+  hard: true
+- id: workaround.never_claim_the_fix_shipped
+  statement: Never claim the fix shipped without a fix event. Silence is not a fix and telling a
+    customer to stop is unrecoverable if wrong.
+  hard: true
+exceptions:
+- id: workaround.the_customer_prefers_the_workaround
+  statement: The customer prefers the workaround to the fix.
+  why: 'It happens, and it does not close the issue — it lowers its priority. Recording their
+    preference is the right move; deleting the debt because they stopped complaining is not.
+
+    '
+- id: workaround.the_measure_was_given_on_a_call
+  statement: The measure was given on a call and only referenced in writing afterwards.
+  why: 'The date is the reference, not the handover, so days_open is understated. Prefer the earlier
+    of any reference over the message that mentions it.
+
+    '
+- id: workaround.a_troubleshooting_step_reads_as_a
+  statement: A troubleshooting step reads as a handover.
+  why: '"Try restarting it and let me know" is diagnosis, not a workaround. The tell is whether we
+    asked for something back; if we did, it is a test.
+
+    '
+anti_patterns:
+- id: workaround.closing_the_issue_when_the_ticket
+  statement: Closing the issue when the ticket closes
+  cost: 'The fault keeps generating tickets while the queue reports health, and the accumulating
+    population of customers in debt becomes invisible exactly as it grows.
+
+    '
+- id: workaround.reporting_a_count_of_workarounds
+  statement: Reporting a count of open workarounds without their cost
+  cost: 'Forty one-off configuration changes and forty daily manual steps produce the same number and
+    demand completely different responses.
+
+    '
+- id: workaround.telling_the_customer_to_stop_on
+  statement: Telling the customer to stop on inferred evidence
+  cost: 'If the fix did not actually ship, the customer breaks in production on our advice — the one
+    failure in this object that cannot be walked back.
+
+    '
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: '2026-08-29'
+  review_status: unreviewed
+  confidence: experimental
+  notes: 'Authored to close a required-object failure. `customer_support.sit.bug_awaiting_engineering`
+    routes `workaround_only` live, and both this object and `bug_report` were listed in its load-set
+    while existing only as planned_objects — so every compile of that route raised
+    RequiredKnowledgeMissing and the situation produced nothing at all. Measured before authoring:
+    the route resolved and the object resolver reported bug_report, product_area and workaround
+    missing.
+
+    Unusually for this corpus it has three EXECUTABLE patterns, because `context/support_situations.py`
+    writes `workaround.provided_at`, `workaround.description`, `workaround.cost`,
+    `workaround.days_open` and `workaround.quiet_since` from correspondence. Those facts are an
+    approximation of a helpdesk concept and nothing here asserts otherwise: there is no resolution
+    kind, no issue identity and no fix event, so the two patterns that would make the object
+    genuinely valuable — retire the measure, count the customers on one fault — stay needs_signal
+    and yield 0.
+
+    '

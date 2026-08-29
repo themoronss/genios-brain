@@ -14,8 +14,8 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 
 - **123** patterns executable against the pipeline today
 - **232** patterns blocked, waiting on **214** distinct signals
-- **5** situation binding(s) waiting on an L2 type no pack emits
-- Substrate today: **34** fact paths · **34** observation kinds · **2** baselines
+- **4** situation binding(s) waiting on an L2 type no pack emits
+- Substrate today: **106** fact paths · **34** observation kinds · **2** baselines
 
 ## The backlog
 
@@ -100,51 +100,51 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 | 77 | `prebrief_delivered` | obs_kind | L2 | 2 | 7500 | Action Item, Meeting |
 | 78 | `asset_in_custody` | l2_situation_type | L1 | 1 | 10000 | [situation] Asset in Custody |
 | 79 | `document_published` | obs_kind | L2 | 1 | 10000 | Document |
-| 80 | `document_under_control` | l2_situation_type | L1 | 1 | 10000 | [situation] Document Under Control |
-| 81 | `employee_lifecycle_event` | l2_situation_type | L1 | 1 | 10000 | [situation] Employee Lifecycle Event |
-| 82 | `filing.reference_number` | fact_path | L2 | 1 | 10000 | Filing |
-| 83 | `obligation_falls_due` | l2_situation_type | L1 | 1 | 10000 | [situation] Obligation Falls Due |
-| 84 | `spend_against_a_commitment` | l2_situation_type | L1 | 1 | 10000 | [situation] Spend Against a Commitment |
-| 85 | `vendor.bank_account_fingerprint` | fact_path | L1 | 1 | 9900 | Vendor |
-| 86 | `approver.effective_to` | fact_path | L1 | 1 | 9800 | Approver |
-| 87 | `contract_countersigned` | obs_kind | L2 | 1 | 9800 | Contract |
-| 88 | `escalation_requested` | obs_kind | L2 | 1 | 9800 | Escalation |
-| 89 | `event.capacity` | fact_path | L1 | 1 | 9800 | Event |
-| 90 | `leave.state` | fact_path | L1 | 1 | 9800 | Leave Request |
-| 91 | `minutes_adopted` | obs_kind | L2 | 1 | 9800 | Meeting |
-| 92 | `request.category` | fact_path | L1 | 1 | 9800 | Request |
-| 93 | `screening_result_returned` | obs_kind | L1 | 1 | 9800 | Vendor |
-| 94 | `employee.right_to_work_expires_at` | fact_path | L1 | 1 | 9700 | Employee Record |
-| 95 | `auto_renewal_imminent` | obs_kind | L2 | 1 | 9600 | Deadline |
-| 96 | `expense.receipt_present` | fact_path | L1 | 1 | 9600 | Expense Claim |
-| 97 | `asset.due_back_at` | fact_path | L1 | 1 | 9500 | Asset |
-| 98 | `calendar.event.previous_start_at` | fact_path | L1 | 1 | 9500 | Time Block |
-| 99 | `contract.cancellation_schedule` | fact_path | L1 | 1 | 9500 | Event |
-| 100 | `derived.entitlement_set_by_identity` | derived | L2 | 1 | 9500 | Access Right |
-| 101 | `document_review_overdue` | obs_kind | L2 | 1 | 9500 | Document |
-| 102 | `event.final_numbers_due_at` | fact_path | L1 | 1 | 9500 | Event |
-| 103 | `event.start_at` | fact_path | L1 | 1 | 9500 | Event |
-| 104 | `invoice.due_at` | fact_path | L1 | 1 | 9500 | Invoice |
-| 105 | `meeting.quorum_required` | fact_path | L1 | 1 | 9500 | Meeting |
-| 106 | `notifiable_event_detected` | obs_kind | L2 | 1 | 9500 | Compliance Obligation |
-| 107 | `payroll.cutoff_at` | fact_path | L1 | 1 | 9500 | Deadline |
-| 108 | `request.acknowledged_at` | fact_path | L1 | 1 | 9500 | Request |
-| 109 | `sod.conflict_pairs` | fact_path | L1 | 1 | 9500 | Access Right |
-| 110 | `trip.visa_state` | fact_path | L1 | 1 | 9500 | Trip |
-| 111 | `vendor.bank_verification_method` | fact_path | L1 | 1 | 9500 | Vendor |
-| 112 | `vendor.diligence_expires_at` | fact_path | L1 | 1 | 9500 | Vendor |
-| 113 | `expense.incurred_at` | fact_path | L1 | 1 | 9400 | Expense Claim |
-| 114 | `policy.claim_window_days` | fact_path | L1 | 1 | 9400 | Expense Claim |
-| 115 | `record.access_log` | fact_path | L1 | 1 | 9400 | Employee Record |
-| 116 | `derived.onboarding_completeness` | derived | L2 | 1 | 9200 | Employee Record |
-| 117 | `filing_due` | obs_kind | L2 | 1 | 9200 | Deadline |
-| 118 | `filing_overdue` | obs_kind | L2 | 1 | 9200 | Deadline |
-| 119 | `vendor_bank_detail_change` | obs_kind | L2 | 1 | 9200 | Invoice |
-| 120 | `asset_issued` | obs_kind | L2 | 1 | 9000 | Asset |
-| 121 | `calendar.event.category` | fact_path | L1 | 1 | 9000 | Time Block |
-| 122 | `calendar.event.transparency` | fact_path | L1 | 1 | 9000 | Time Block |
-| 123 | `derived.approver_availability` | derived | L2 | 1 | 9000 | Leave Request |
-| 124 | `derived.document_identity_cluster` | derived | L2 | 1 | 9000 | Document |
+| 80 | `employee_lifecycle_event` | l2_situation_type | L1 | 1 | 10000 | [situation] Employee Lifecycle Event |
+| 81 | `filing.reference_number` | fact_path | L2 | 1 | 10000 | Filing |
+| 82 | `obligation_falls_due` | l2_situation_type | L1 | 1 | 10000 | [situation] Obligation Falls Due |
+| 83 | `spend_against_a_commitment` | l2_situation_type | L1 | 1 | 10000 | [situation] Spend Against a Commitment |
+| 84 | `vendor.bank_account_fingerprint` | fact_path | L1 | 1 | 9900 | Vendor |
+| 85 | `approver.effective_to` | fact_path | L1 | 1 | 9800 | Approver |
+| 86 | `contract_countersigned` | obs_kind | L2 | 1 | 9800 | Contract |
+| 87 | `escalation_requested` | obs_kind | L2 | 1 | 9800 | Escalation |
+| 88 | `event.capacity` | fact_path | L1 | 1 | 9800 | Event |
+| 89 | `leave.state` | fact_path | L1 | 1 | 9800 | Leave Request |
+| 90 | `minutes_adopted` | obs_kind | L2 | 1 | 9800 | Meeting |
+| 91 | `request.category` | fact_path | L1 | 1 | 9800 | Request |
+| 92 | `screening_result_returned` | obs_kind | L1 | 1 | 9800 | Vendor |
+| 93 | `employee.right_to_work_expires_at` | fact_path | L1 | 1 | 9700 | Employee Record |
+| 94 | `auto_renewal_imminent` | obs_kind | L2 | 1 | 9600 | Deadline |
+| 95 | `expense.receipt_present` | fact_path | L1 | 1 | 9600 | Expense Claim |
+| 96 | `asset.due_back_at` | fact_path | L1 | 1 | 9500 | Asset |
+| 97 | `calendar.event.previous_start_at` | fact_path | L1 | 1 | 9500 | Time Block |
+| 98 | `contract.cancellation_schedule` | fact_path | L1 | 1 | 9500 | Event |
+| 99 | `derived.entitlement_set_by_identity` | derived | L2 | 1 | 9500 | Access Right |
+| 100 | `document_review_overdue` | obs_kind | L2 | 1 | 9500 | Document |
+| 101 | `event.final_numbers_due_at` | fact_path | L1 | 1 | 9500 | Event |
+| 102 | `event.start_at` | fact_path | L1 | 1 | 9500 | Event |
+| 103 | `invoice.due_at` | fact_path | L1 | 1 | 9500 | Invoice |
+| 104 | `meeting.quorum_required` | fact_path | L1 | 1 | 9500 | Meeting |
+| 105 | `notifiable_event_detected` | obs_kind | L2 | 1 | 9500 | Compliance Obligation |
+| 106 | `payroll.cutoff_at` | fact_path | L1 | 1 | 9500 | Deadline |
+| 107 | `request.acknowledged_at` | fact_path | L1 | 1 | 9500 | Request |
+| 108 | `sod.conflict_pairs` | fact_path | L1 | 1 | 9500 | Access Right |
+| 109 | `trip.visa_state` | fact_path | L1 | 1 | 9500 | Trip |
+| 110 | `vendor.bank_verification_method` | fact_path | L1 | 1 | 9500 | Vendor |
+| 111 | `vendor.diligence_expires_at` | fact_path | L1 | 1 | 9500 | Vendor |
+| 112 | `expense.incurred_at` | fact_path | L1 | 1 | 9400 | Expense Claim |
+| 113 | `policy.claim_window_days` | fact_path | L1 | 1 | 9400 | Expense Claim |
+| 114 | `record.access_log` | fact_path | L1 | 1 | 9400 | Employee Record |
+| 115 | `derived.onboarding_completeness` | derived | L2 | 1 | 9200 | Employee Record |
+| 116 | `filing_due` | obs_kind | L2 | 1 | 9200 | Deadline |
+| 117 | `filing_overdue` | obs_kind | L2 | 1 | 9200 | Deadline |
+| 118 | `vendor_bank_detail_change` | obs_kind | L2 | 1 | 9200 | Invoice |
+| 119 | `asset_issued` | obs_kind | L2 | 1 | 9000 | Asset |
+| 120 | `calendar.event.category` | fact_path | L1 | 1 | 9000 | Time Block |
+| 121 | `calendar.event.transparency` | fact_path | L1 | 1 | 9000 | Time Block |
+| 122 | `derived.approver_availability` | derived | L2 | 1 | 9000 | Leave Request |
+| 123 | `derived.document_cluster_key` | derived | L2 | 1 | 9000 | Document |
+| 124 | `derived.document_live_copies` | derived | L2 | 1 | 9000 | Document |
 | 125 | `derived.incident_window` | derived | L2 | 1 | 9000 | Access Right |
 | 126 | `derived.instrument_version_current` | derived | L2 | 1 | 9000 | Compliance Obligation |
 | 127 | `derived.performer_diversity` | derived | L2 | 1 | 9000 | Standard Operating Procedure |
@@ -420,7 +420,7 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - blocks **Standard Operating Procedure** / `sop.two_versions_in_circulation` (would yield 9000 bp)
 - Action Item: Needed to distinguish draft minutes from the circulated version. An action lifted from an uncirculated draft is not yet binding on anyone, and treating it as though it were is how a secretariat loses the room.
 - Action Item: Comparing an item across successive minute versions is what catches 'draft the policy' quietly becoming 'consider options for the policy' at sitting four. Nobody does this by hand, and it is the mechanism by which a matters-arising list stays short while achieving nothing.
-- Document: Requires a version string per artefact plus identity resolution across copies. Without it the commonest document-control incident in any organisation is structurally undetectable — and it is the one whose symptom is two teams in a meeting with different numbers.
+- Document: SATISFIED 2026-08-29 by context/documents.py, which projects file-store metadata onto a document node. Read what it is before resting anything on it: this is a per-file REVISION COUNTER, not a semantic version. Two independent copies of the handbook are both revision 1 on the day they are made and both revision 40 after a year of equal editing, so equality of this field proves nothing and inequality proves less.
 - Policy: Requires version identity across copies rather than only on the master. Until it exists, 'which version was I bound by' — the only version question a tribunal ever asks — cannot be answered from the system, and the honest reply is that we do not know.
 - Standard Operating Procedure: Requires version identity across copies, not just on the master. Until it exists, 'which version did they follow' — the only version question ever asked in anger — cannot be answered from the system, and the honest response to a tribunal is that we do not know.
 
@@ -542,7 +542,7 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - blocks **Document** / `doc.version_conflict_in_circulation` (would yield 9000 bp)
 - blocks **Policy** / `pol.superseded_but_still_circulating` (would yield 9000 bp)
 - blocks **Standard Operating Procedure** / `sop.two_versions_in_circulation` (would yield 9000 bp)
-- Document: The discriminator between a conflict and an orderly lineage. Supersession has a timestamp in every DMS and no representation here, so without it two live versions and a published successor look identical.
+- Document: STILL ABSENT, and it is the whole difference between this pattern and the weaker claim Layer 2 can already make. Supersession has a timestamp in every DMS and no emitter here, so v2 published with v1 correctly withdrawn is indistinguishable from two teams editing in parallel. `document_under_control` therefore carries `derived.document_live_copies` and says only that two live copies exist; promoting this pattern to executable on the two signals above would turn that into an assertion that the wrong version is in circulation, which nothing here can support.
 
 ### `obligation.jurisdiction` · fact_path
 
@@ -970,18 +970,6 @@ WHY BINDING TO admin_contact WOULD BE WRONG, specifically. (1) No identity. The 
 - blocks **Document** / `doc.approval_recorded_in_the_register` (would yield 10000 bp)
 - Document: Publication is a distinct event from approval and is currently unobservable. The gap between the two is where approved policies live unread for a quarter.
 
-### `document_under_control` · l2_situation_type
-
-- blocks **[situation] Document Under Control** / `admin.sit.document_under_control` (would yield 10000 bp)
-- Document Under Control: WHAT THE TYPE MUST MEAN. A specific document the organisation is accountable for, carrying its identity across versions — so that v3 of the security policy is the same DOCUMENT as v2 and a different VERSION. The payload must name the current version, its owner, its approval state and its retention date, because the four failures this subdomain exists to catch are: no owner, superseded copy in circulation, missing approval, and retained past the date it should have been destroyed. A type that carries only "a document exists" catches none of them.
-WHAT WOULD EMIT IT. Less than it first appears, and the correction matters because it changes who owns the work. `capture/connectors/drive.py` ALREADY EXISTS and is already dispatched: it lists Drive, downloads each file, extracts the text natively and hands it to the gate. What it does not do is project the file's METADATA into facts — the Drive response carries `id`, `modifiedTime`, `version` and `lastModifyingUser`, and the connector currently keeps only the name and the extracted body, so `document.id`, `document.version` and `document.owner` have no writer despite the data arriving.
-So the build is a projection plus a node type, not a connector: a `document` graph node keyed on the Drive file id, `document.*` facts written from the metadata already in hand, and Layer 2 holding document identity across versions — a merge problem of the same shape as person identity, which should be specified as one.
-`document.approved_at` and `document.retain_until` remain genuinely absent. Neither is a Drive concept; both come from a DMS or a retention policy, and neither may be inferred from a file's modification history.
-WHAT GOES WRONG TODAY. Nothing fires. All five records capabilities — document_control, filing_and_retrieval, version_control, retention_and_archival, knowledge_base_maintenance — are authored against a trigger that does not exist, so the subdomain is complete knowledge with no surface.
-WHY BINDING TO admin_contact WOULD BE WRONG, specifically. (1) An attachment is not a controlled document. It has no version identity, no owner and no approval state, so every inference pattern in this subdomain would resolve against a filename. (2) The same document arriving in four threads would be four documents, which inverts the one thing version_control exists to do. (3) Retention needs a destruction date; correspondence carries none, so `retention_and_archival` would advise on retention with no clock — confident advice about a date nobody set. (4) Compound: the system would report records coverage from an inbox, and records coverage claimed and absent is worse than absent, because it is what somebody relies on in an audit.
-
-- Document Under Control: closest type emitted today is `admin_contact` — close enough to be tempting, not close enough to be true
-
 ### `employee_lifecycle_event` · l2_situation_type
 
 - blocks **[situation] Employee Lifecycle Event** / `admin.sit.employee_lifecycle_event` (would yield 10000 bp)
@@ -1206,10 +1194,15 @@ WHY BINDING TO commitment.due_at WOULD BE WRONG, specifically. (1) A `commitment
 - blocks **Leave Request** / `lvr.approver_absent_no_delegate` (would yield 9000 bp)
 - Leave Request: The highest-value false-positive suppressor across the whole Admin brain. It stops the system chasing, escalating and eventually alarming about people who are demonstrably not there — and it is shared with approval, escalation and commitment.
 
-### `derived.document_identity_cluster` · derived
+### `derived.document_cluster_key` · derived
 
 - blocks **Document** / `doc.version_conflict_in_circulation` (would yield 9000 bp)
-- Document: Content or title-plus-hash clustering across attachments and links. The expensive half of the ask, and the half that turns a version field into a conflict detector.
+- Document: SATISFIED 2026-08-29 by context/document_register.py. NAMED FOR WHAT WAS BUILT: this entry used to read derived.document_identity_cluster, a path nothing writes and nothing ever will, so the prose said satisfied while the machine-readable half sent a reader (and signal-backlog.md) after an identifier that appears nowhere in the engine. The key is the title reduced past its decoration (v2, _FINAL, Copy of, (1), dates) and compared by EXACT equality — deliberately not fuzzy, because a false merge hides a second document behind the first.
+
+### `derived.document_live_copies` · derived
+
+- blocks **Document** / `doc.version_conflict_in_circulation` (would yield 9000 bp)
+- Document: SATISFIED 2026-08-29 by context/document_register.py, and it is the second half of what the old derived.document_identity_cluster name was standing in for: how many members of the cluster were edited recently enough to still be live, with a content hash separating a fork from a mirrored copy. Together these two turn a filename into a conflict detector; neither of them, alone or together, says which copy is the right one.
 
 ### `derived.incident_window` · derived
 

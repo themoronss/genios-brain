@@ -178,20 +178,17 @@ core_objects:
 #   python "Domain Expertise/_tools/plan.py"
 planned_objects:
   - {id: customer_support.obj.core.backlog, scope: core, referenced_by: 13}
-  - {id: customer_support.obj.core.bug_report, scope: core, referenced_by: 9}
   - {id: customer_support.obj.core.capacity_plan, scope: core, referenced_by: 5}
   - {id: customer_support.obj.core.content_gap, scope: core, referenced_by: 13}
   - {id: customer_support.obj.core.coverage_window, scope: core, referenced_by: 12}
   - {id: customer_support.obj.core.effort_score, scope: core, referenced_by: 8}
   - {id: customer_support.obj.core.escalation_owner, scope: core, referenced_by: 13}
-  - {id: customer_support.obj.core.intent, scope: core, referenced_by: 19}
-  - {id: customer_support.obj.core.product_area, scope: core, referenced_by: 25}
+  - {id: customer_support.obj.core.intent, scope: core, referenced_by: 20}
   - {id: customer_support.obj.core.quality_scorecard, scope: core, referenced_by: 9}
   - {id: customer_support.obj.core.queue, scope: core, referenced_by: 15}
   - {id: customer_support.obj.core.resolution, scope: core, referenced_by: 15}
   - {id: customer_support.obj.core.root_cause, scope: core, referenced_by: 6}
-  - {id: customer_support.obj.core.support_agent, scope: core, referenced_by: 33}
-  - {id: customer_support.obj.core.workaround, scope: core, referenced_by: 6}
+  - {id: customer_support.obj.core.support_agent, scope: core, referenced_by: 34}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Glossary — terms that mean something specific HERE and are routinely confused

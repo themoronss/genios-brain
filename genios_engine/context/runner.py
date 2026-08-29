@@ -275,6 +275,19 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             # Twenty-two authored capabilities are reachable only through these.
             from genios_engine.context.periodic import refresh_period_situations
             derived_rows += refresh_period_situations(store, org_id)
+            # The seven correspondence-derived support readings, in the same pass and for the
+            # same reason: a first-response clock, an aging item and a repeat contact are all
+            # computed from the thread state and open loops THIS drain just committed, and a
+            # reading refreshed only by a separate schedule is a reading that is always stale.
+            # Seven authored situation types were unroutable until these existed.
+            from genios_engine.context.support_situations import refresh_support_situations
+            derived_rows += refresh_support_situations(store, org_id)
+            # The records reading, in the same pass and for the same reason: a document's control
+            # gaps are computed from the file metadata THIS drain just projected, and the copy
+            # clustering has to re-run whenever a file lands or a second copy of one appears. It
+            # costs two queries and returns immediately on an org with no file store connected.
+            from genios_engine.context.document_register import refresh_document_situations
+            derived_rows += refresh_document_situations(store, org_id)
         except Exception:      # noqa: BLE001 — derived view, recomputed next drain
             from genios_engine.platform.logging import get_logger
             get_logger("genios.l2").exception("derived fact refresh failed for org=%s", org_id)

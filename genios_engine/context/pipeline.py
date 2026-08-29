@@ -21,6 +21,7 @@ from genios_engine.platform.config import get_settings
 from genios_engine.context.guard import _norm, annotate_grounding, keep_grounded
 from genios_engine.context.correlation import correlate_event
 from genios_engine.context.canon import register_canon_node, resolve_canon_mention
+from genios_engine.context.documents import register_document_node, resolve_owner_node
 from genios_engine.context.identity import (observe_person_name, resolve_company_mention,
                                             resolve_person_name)
 from genios_engine.context.llm.client import LLMClient
@@ -620,6 +621,36 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             sender_node = _person(sender_email)
             nodes += 1
 
+        # DOCUMENTS — a file becomes a node of its own, for exactly the reason canon does.
+        #
+        # `capture/connectors/drive.py` has always downloaded and extracted every Drive file, and
+        # the sender of a Drive event is its `lastModifyingUser`. So without this, every clause of
+        # the security policy was recorded as a fact about the colleague who last fixed a typo in
+        # it, and `document.id` / `document.version` / `document.owner_email` had no writer at all
+        # despite arriving in the same response as the body — five authored records capabilities
+        # with no trigger.
+        #
+        # The OWNER is resolved, never created: a Drive owner is usually a colleague who has
+        # written to nobody, and minting a node for them would add a person with no observations
+        # and no edges, which every other Layer 2 reading treats as somebody who went quiet. The
+        # EDITOR is `sender_node`, which the event already anchored.
+        document_node = None
+        doc_meta = (canon_meta or {}).get("document") or {}
+        if doc_meta.get("file_id"):
+            document_node = register_document_node(
+                conn, store, org_id=org_id, source=source, meta=doc_meta, content=content,
+                event_id=event_id,
+                owner_node=resolve_owner_node(conn, org_id=org_id,
+                                              email=doc_meta.get("owner_email")),
+                editor_node=sender_node, occurred_at=occurred_at)
+            if document_node:
+                nodes += 1
+                # Named in `touched` so the graph records what this event was about. It cannot
+                # anchor: `document` is absent from `ANCHOR_PRIORITY` on purpose, and
+                # `choose_anchors` returns only the strongest tier present — a document that could
+                # anchor would take every email mentioning a policy and file it under the policy.
+                touched.setdefault(document_node, "document")
+
         # NETWORK edges (who↔whom, who works where) — built for real correspondence only, skipped
         # for noise so newsletters don't pollute the relationship graph. Content above is kept
         # either way; this gate is about the NETWORK, not about deleting data.
@@ -780,7 +811,13 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # content; ordinary mail still attaches to its sender. Network edges below are
         # deliberately NOT rerouted — who corresponded with whom is a fact about people,
         # not about a document.
-        content_subject = canon_node or sender_node
+        #
+        # The document term sits BELOW canon and above the sender. Below canon because a file the
+        # org tagged `policy` is a deliberate statement at rank 4 and its canon node is the more
+        # authoritative subject; above the sender because a Drive file's sender is whoever last
+        # edited it, and filing a policy's contents on that colleague is the exact
+        # facts-about-the-wrong-subject bug this seam already exists to fix.
+        content_subject = canon_node or document_node or sender_node
         fact_n = 0
 
         # DEAL NODES. `deal.*` facts used to land on whichever person happened to be the subject,

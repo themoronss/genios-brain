@@ -80,38 +80,16 @@ matches:
         this way, the system reports SLA coverage it does not have. That is worse than a gap,
         because a gap gets fixed and a green dashboard does not.
 
-    - type: first_response_overdue
-      owner_layer: L2
-      nearest_today: unanswered_email
-      note: >
-        WHAT THE TYPE MUST MEAN. A ticket entitled to a first response has passed its
-        first-response target with no SUBSTANTIVE human reply. Two constraints have to live
-        inside the type or it is worse than nothing. First, substantive: an autoresponder, a
-        "we have received your request" macro or any reply that could have been sent without
-        reading the ticket must NOT satisfy it — the moment the field is satisfiable without
-        reading, the queue learns to satisfy it that way and the metric detaches from the
-        experience it was measuring. Second, distinct: first response is its own promise with
-        its own target, usually far tighter than resolution, and a type that collapses the two
-        hides the clock that is missed most often.
-
-        WHAT WOULD EMIT IT. ticket.created_at, ticket.first_response_at and
-        sla.target_first_response_at from Layer 1, plus a first_response_sent observation
-        carrying a substantiveness judgement — which is a Layer 2 classification problem, not
-        a timestamp comparison, and should be specified as one.
-
-        WHAT GOES WRONG TODAY. The most commonly promised and most commonly measured
-        commitment in support is invisible to this brain. Every downstream capability that
-        depends on it — expectation_setting, queue_management, the whole of breach_prevention
-        — is authored against a trigger that does not exist.
-
-        WHY BINDING TO unanswered_email WOULD BE WRONG, specifically. It fires on any
-        unanswered inbound, including the fifth message of a long thread, and cannot tell a
-        first contact from an ongoing exchange — which is the ONLY distinction this type is
-        about. It also lives entirely on email: chat, phone and portal contacts are where
-        first response is most often promised in minutes rather than hours, and they are
-        exactly the channels a mail-shaped signal cannot see. Binding here would produce a
-        first-response metric that is silent on the channels with the tightest first-response
-        promises.
+    # `first_response_overdue` MOVED OUT of this file on 2026-08-29, to
+    # `first-response-overdue.yaml` in this same capability folder, and the move is the point.
+    # Layer 2 can now compute a first-response clock from message timestamps against a policy the
+    # tenant STATES — but the finding it produces has not earned this file's name. Binding it here
+    # would put a mail-derived, entitlement-free clock under a card headlined "SLA Breach
+    # Imminent" on an org that has no SLAs, which is the compound failure item (4) above names:
+    # the system would report SLA coverage it does not have, and a green dashboard is nobody's
+    # backlog item. The clock got its own honestly-named file; `sla_breach_imminent` stays here,
+    # pending, because it is a forecast against a CONTRACTUAL clock and its load-set — sla_target,
+    # ticket, entitlement, covered time, holidays — still does not exist.
 
   # No `scope`. The enum offers person, deal, meeting and account; the natural scope of an SLA
   # clock is a TICKET, and there is no such value because the enum was written for a revenue

@@ -32,7 +32,82 @@ description: >
   ticket is in.
 
 matches:
-  l2_situation_types: []
+  # `workaround_only` ROUTES SINCE 2026-08-29 — the more valuable of the two types on this file,
+  # by its own note, because it marks the customers who are technically resolved and actually
+  # still broken. `context/support_situations.py` reads an outbound message handing over a
+  # temporary measure, anchors a `workaround` node on that customer, and holds it open while the
+  # conversation is quiet and no fix has been announced.
+  #
+  # THE ONE DELIBERATE LIFECYCLE DEVIATION, and the reason it could not live in
+  # `refresh_situations`: `DORMANT_AFTER_DAYS` is NOT applied. Silence is the situation, not its
+  # expiry — which is exactly the property this file's note demands when it says the type "must
+  # SURVIVE the ticket closing". It closes only on a fix being announced after the workaround, as
+  # `resolved_by='fact'`, so it re-opens by itself if that turns out to be wrong.
+  #
+  # WHAT IS LOST, on every row's `missing`.
+  # (1) The highest-value action the file names — "the thing you reported is fixed, you can stop
+  #     doing the workaround" — CANNOT fire, because nothing tells us the fix shipped. The closing
+  #     edge is wired anyway, and on an email-only tenant it fires only if somebody happens to
+  #     write, which is the behaviour the situation exists to prompt. The card available is the
+  #     second-best one: they have been on this for N days and have heard nothing.
+  # (2) NO ISSUE IDENTITY, so no blast radius. Without an issue record the reading is per-customer
+  #     and never per-defect, so "how many customers are on a workaround for the SAME fault" —
+  #     the number that prioritises the fix — cannot be produced, and
+  #     `workaround_only_issue_age` degrades from a per-defect age to a per-customer one.
+  # (3) `workaround.cost` is written ONLY where the wording is unambiguously one-off, recurring or
+  #     degrading. An absent value means "we could not tell", never "one-off" — which is the
+  #     distinction this file calls the whole point.
+  # (4) "Resolved" is inferred from SILENCE. A customer who gave up looks identical to one living
+  #     happily on the workaround, and the precision of the whole reading rests on one lexicon
+  #     match with no corroborating system record.
+  # (5) Recall is bounded by the channel: a workaround given on a call or a screen-share leaves
+  #     no trace, so the register of live workarounds is only ever the part written down in mail.
+  # (6) THE LOAD-SET DID NOT EXIST. Two of the five objects below — Bug Report and Workaround —
+  #     were planned_objects and nothing on disk, and a third (Product Area) is required by two
+  #     of the capabilities this route serves. `ObjectResolver` raises RequiredKnowledgeMissing on
+  #     a missing REQUIRED object, so from the day this type started routing until 2026-08-29 the
+  #     route resolved, the compile raised, `domain_shadow` counted it under `required_missing`,
+  #     and the situation produced nothing at all. All three are now authored. This entry stays
+  #     because the failure is invisible from here — `validate.py` tolerates a planned reference
+  #     by design, so a live route can be dead without a single error anywhere.
+  l2_situation_types:
+    - workaround_only
+
+  # ── THE CENSUS ENTRY THIS TYPE USED TO HAVE, kept rather than deleted ──────────────────────
+  #
+  # `workaround_only` was a `pending_l2_situation_types` entry until 2026-08-29. It cannot stay
+  # one — the schema and `validate.py` both make naming an EMITTED type there an error, because
+  # as written it would route nothing — but deleting it would erase the only record of what the
+  # approximation cannot say. So the original ask is kept here verbatim in structure, with each
+  # clause marked against what was actually built.
+  #
+  #   Must mean: a ticket was resolved by a workaround while the underlying issue remains open.
+  #     PARTLY BUILT. There is no ticket and no resolution state, so what is actually detected is
+  #     an outbound message handing over a temporary measure. The "while the issue remains open"
+  #     half is NOT built and is not detectable: nothing closes it but a fix nobody reports.
+  #   It must carry the workaround, the issue it defers to, and the workaround's ongoing cost.
+  #     PARTLY BUILT. `workaround.description` and `workaround.cost` are written, cost only where
+  #     the wording is unambiguous. The ISSUE IT DEFERS TO IS NOT BUILT — there is no issue
+  #     identity, so a one-time configuration change and a daily manual step are now told apart
+  #     while two customers on one defect still are not.
+  #   Crucially it must SURVIVE the ticket closing.
+  #     BUILT, and it is the reason this could not live in `refresh_situations`:
+  #     `DORMANT_AFTER_DAYS` is not applied, so silence keeps the situation open instead of
+  #     expiring it.
+  #   What would emit it: Layer 2 joining ticket_resolved with workaround_provided where the
+  #   linked issue is not closed, and holding the join open until the issue closes.
+  #     NOT BUILT AS SPECIFIED and it never will be on this substrate. None of `ticket_resolved`,
+  #     `workaround_provided` or a linked issue exists; a deterministic lexicon over sent mail is
+  #     the substitute, and it is a weaker instrument by design rather than by accident.
+  #   Why unanswered_email is not good enough: there is no thread left to be unanswered. The
+  #   ticket was closed politely, the customer said thank you, and the conversation ended.
+  #     STILL TRUE, and it is why the anchor is a `workaround` node on the customer rather than a
+  #     thread. The reading survives the conversation ending, which no thread-scoped type can.
+  #   What goes wrong today: the fix ships months later, nobody tells the customer, and the
+  #   cheapest goodwill in support is never collected.
+  #     STILL GOES WRONG. `workaround.superseded_by_fix_at` has no emitter — see the Workaround
+  #     object's `workaround.the_fix_shipped_and_they_can_stop`, which stays needs_signal — so the
+  #     highest-value action this file names still cannot fire.
 
   pending_l2_situation_types:
     - type: bug_awaiting_engineering
@@ -57,30 +132,6 @@ matches:
         promised anything are the entire population this situation exists to find. Nobody is
         late, so nothing fires, so the silence continues, which is the mechanism by which support
         organisations lose customers slowly and without a single recorded failure.
-    - type: workaround_only
-      owner_layer: L2
-      nearest_today: unanswered_email
-      note: >
-        Must mean: a ticket was resolved by a workaround while the underlying issue remains open.
-        It must carry the workaround, the issue it defers to, and the workaround's ongoing cost
-        to the customer — a one-time configuration change and a manual step performed every
-        morning are recorded identically today and are not remotely the same debt. Crucially it
-        must SURVIVE the ticket closing. Its whole purpose is keeping a customer attached to an
-        open defect after their ticket has gone, so a type scoped to an open ticket is
-        structurally incapable of expressing it. This is the more valuable of the two types on
-        this file, because it marks the customers who are technically resolved and actually still
-        broken, and no support system anywhere can currently list them.
-        What would emit it: Layer 2 joining ticket_resolved with workaround_provided where the
-        linked issue is not closed, and holding the join open until the issue closes.
-        Why unanswered_email is not good enough: there is no thread left to be unanswered. The
-        ticket was closed politely, the customer said thank you, and the conversation ended —
-        that is the defining property of the state. Every compromise the pipeline offers requires
-        a live thread or an open record, and this situation is defined by the absence of both.
-        What goes wrong today: the workaround is the last thing anyone records. The fix ships
-        months later, nobody tells the customer, and the cheapest goodwill available in support —
-        "the thing you reported is fixed, you can stop doing the workaround" — is never
-        collected.
-
   # Person. The thing decaying here is one human's confidence that anyone remembers them, and
   # they are usually the person who did the work of reporting it well. The scope enum has no
   # ticket member; person is the honest nearest because the subject genuinely is the individual
