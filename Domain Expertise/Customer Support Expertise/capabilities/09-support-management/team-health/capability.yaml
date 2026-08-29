@@ -3,7 +3,7 @@ identity:
   name: Team Health
   domain: customer_support
   subdomain: support_management
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Reading whether the people can keep doing this. Support is the only function whose daily
@@ -15,23 +15,66 @@ description: 'Reading whether the people can keep doing this. Support is the onl
 
   '
 question: Can this team keep doing this, and what in the queue is telling us it cannot?
+
+outcomes:
+- 'Leading signals watched rather than exit interviews: after-hours creep, terse internal tone, rising sick days, falling QA. Attrition is the lagging one and it lags by two quarters.'
+- 'Load reduced when the signals move, since this is the only function whose daily work is absorbing other people''s frustration.'
+- 'Emotional load treated as a real quantity with a budget, not as resilience. Continuous exposure without breaks is the mechanism, and it is invisible in every operational metric.'
+- 'The cause looked for upstream in the load curve, because the team that burned out in March resigns in September and the exit interviews will describe September.'
+- 'The negative outcome: work REFUSED or a service level renegotiated because the team cannot sustain it. A health function that never reduces load is a monitoring function.'
+failure_modes:
+- 'WATCHING ATTRITION. It is the outcome, it lags by two quarters, and by the time it moves the cause is unfixable retrospectively.'
+- 'READING WILLINGNESS AS CAPACITY. The people absorbing the load are the ones who will not complain, which is why they are absorbing it.'
+- 'FIXING AT THE EXIT INTERVIEW, which aims the remedy at a moment months after the damage.'
+- 'CELEBRATING THE HEROIC SHIFT, which tells everybody the sustainable state is the exception.'
+- 'MEASURING HEALTH WITH A SURVEY ONLY, which asks people under load to spend energy reporting that they are under load.'
+kpis:
+- name: after_hours_activity_trend
+  unit: percent
+  direction: lower_is_better
+  description: Work outside shift, trending. The earliest and most reliable leading signal available.
+- name: qa_score_drift
+  unit: ratio
+  description: Quality falling at constant volume. It precedes stated dissatisfaction by months.
+  direction: lower_is_better
+- name: load_intervention_rate
+  unit: percent
+  description: Signal movements that produced an actual load reduction. Without it this is monitoring.
+  direction: higher_is_better
+- name: attrition_lead_indicator_gap
+  unit: days
+  description: Time between the leading signals moving and attrition. Measures whether anybody acted in the window.
+  direction: higher_is_better
+handoffs:
+  upstream: [customer_support.support_operations.workload_balancing, customer_support.support_operations.capacity_planning,
+             customer_support.support_management.performance_management]
+  downstream: [customer_support.entitlement_and_sla.coverage_and_on_call, customer_support.support_management.agent_coaching]
+  parallel: [customer_support.customer_communication.de_escalation, customer_support.support_management.quality_assurance]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, swarming_support,
+           follow_the_sun, outsourced_bpo, named_tam]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, decision_frameworks,
-    kpis and handoffs, following quality-assurance in this subdomain. The expertise worth encoding is
-    the set of leading indicators that live in queue data rather than in a survey: unequal distribution
-    of hard work, quality falling while volume holds, rising reliance on canned responses, one person
-    absorbing every out-of-hours page, and the disappearance of the small unpaid acts — updating an article,
-    correcting a macro — that people stop doing first when they are depleted. Also worth stating: an engagement
-    survey measures what people are willing to say about a team they are still in, which is the last place
-    a problem shows up rather than the first.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
 
-    '
-  reviewed_at: '2026-08-24'
+    attrition_lead_indicator_gap is the KPI that makes this capability accountable rather than
+    observational. The leading signals move first and attrition follows two quarters later;
+    measuring the gap asks whether anybody used the window, which is the only question that
+    matters here.
+
+    The framing is the domain's own: support is the only function whose daily work is absorbing
+    other people's frustration, attrition is its dominant cost driver, and burnout is invisible
+    in every operational metric because the people absorbing the load are precisely the ones who
+    will not say so.
+
 admission:
-  accepted_content_hash: 8c6805ee61d43ee410e49946c7406d296bf9841f0a1f93bd67fdc8c4d2a951c7
+  accepted_content_hash: 81e66408c50a9df81e89c5b9a7255be14564cf1e1c3635de11c074d026f414fe

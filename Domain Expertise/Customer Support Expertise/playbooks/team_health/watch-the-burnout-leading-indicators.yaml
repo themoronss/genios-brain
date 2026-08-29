@@ -12,18 +12,80 @@ purpose:
   statement: Support burns people through unbroken emotional load. Team health is managed on leading signals
     — after-hours creep, terse internal tone, rising sick days, falling QA — with load and rotation adjusted
     BEFORE the resignation letter writes itself.
+
+when_to_use:
+  do_not_use_when:
+  - A major incident is running. Every signal is elevated for a reason everybody knows, and reading them as burnout during the response is noise.
 steps:
 - order: 1
-  name: Track the small signals monthly
-  description: After-hours activity, PTO actually taken, escalation exposure per person. The spreadsheet
-    is boring; the pattern is not.
-  actor: human
+  name: Watch the leading signals, not attrition
+  description: >
+    After-hours creep, terse internal tone, rising sick days, falling QA. Attrition is the outcome
+    and it lags the damage by about two quarters.
+  actor: system
+  objects_read: [customer_support.obj.core.support_agent, customer_support.obj.core.quality_scorecard]
+  done_when: The dashboard shows leading indicators.
 - order: 2
-  name: Rotate the heavy queues
-  description: Nobody owns the angriest queue for months straight. Rotation is burnout amortisation.
+  name: Do not read willingness as capacity
+  description: >
+    The people absorbing the load are the ones who will not complain about it, which is exactly why
+    they are the ones absorbing it.
   actor: human
+  done_when: Load is assessed independently of who is objecting.
 - order: 3
-  name: Make recovery legitimate
-  description: 'After a brutal incident week: explicit decompression, not a normal Monday. Recovery treated
-    as slack becomes attrition treated as surprise.'
+  name: Reduce load when the signals move
+  description: >
+    A health function that only reports is a monitoring function. The intervention is fewer
+    tickets, a shift off the queue, or a renegotiated service level.
   actor: human
+  objects_read: [customer_support.obj.core.backlog]
+  done_when: Something material changed for the people carrying it.
+- order: 4
+  name: Look upstream in the load curve
+  description: >
+    The team that burned out in March resigns in September. Aiming the remedy at the exit interview
+    aims it months past the cause.
+  actor: human
+  done_when: The intervention targets the period the damage happened in.
+- order: 5
+  name: Stop celebrating the heroic shift
+  description: >
+    Praising the exceptional effort tells everybody that the sustainable state is the exception,
+    which is how the load becomes normal.
+  actor: human
+  done_when: Recognition is not attached to unsustainable work.
+objects_used: [customer_support.obj.core.support_agent, customer_support.obj.core.backlog, customer_support.obj.core.quality_scorecard,
+               customer_support.obj.core.escalation, customer_support.obj.core.coverage_window]
+limits:
+- 'It detects and reduces load. It cannot fix a structural understaffing, which is capacity planning''s problem and usually the real cause.'
+- 'The signals are behavioural and therefore ambiguous — a quiet week and a disengaged one look alike.'
+failure_modes:
+- 'Step 3 skipped because the signals are ambiguous, which is always true and is not a reason.'
+- 'Step 5 breached constantly, because thanking somebody for a hard week is the natural thing to do.'
+variants:
+- applies_to: follow_the_sun
+  change: After-hours activity is the primary signal and it is structurally confusing, because somebody is always outside somebody''s hours.
+  why: The metric needs to be per-region or it means nothing.
+- applies_to: outsourced_bpo
+  change: The signals are the provider''s to see and the load is ours to set, which is the hardest version of this.
+  why: Cause and observation sit on opposite sides of the contract.
+- applies_to: smb_support
+  change: Small teams have no redundancy, so step 3 usually means refusing work rather than redistributing it.
+  why: There is nobody to redistribute to.
+references:
+- title: Burnout in high-emotional-labour roles
+  kind: research
+  note: Where continuous exposure without recovery, rather than volume alone, is identified as the mechanism.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is the one breached constantly and for good reasons — thanking somebody for a hard
+    week is the humane instinct, and doing it repeatedly establishes the unsustainable state as
+    the one that earns recognition.

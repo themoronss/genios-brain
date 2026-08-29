@@ -12,19 +12,75 @@ purpose:
   statement: Coaching moves one named skill per agent per cycle, evidenced from their real tickets, practised
     deliberately, re-measured next cycle — the same discipline as sales coaching, aimed at resolution
     craft.
+
+when_to_use:
+  do_not_use_when:
+  - The finding is a process, tooling or knowledge gap. Coaching it converts a fixable system problem into a permanent individual burden.
 steps:
 - order: 1
-  name: Diagnose from their actual tickets
-  description: 'Read a handful: where does quality leak — diagnosis depth, expectation-setting, closure
-    discipline?'
+  name: Look at the bottom decile, not the average
+  description: >
+    A mean CSAT can be fine while one recurring behaviour costs the worst ten per cent of their
+    tickets, and that is where the escalations live.
   actor: human
+  objects_read: [customer_support.obj.core.quality_scorecard, customer_support.obj.core.ticket]
+  done_when: The pattern was found in the tail.
 - order: 2
-  name: Set one focus with examples
-  description: '''This month: promise a next-update time in every open reply'' — with two of their own
-    tickets as before-examples.'
+  name: Check whether it is theirs to fix
+  description: >
+    A bad macro, an ambiguous policy or a missing article produces the same behaviour as a skill
+    gap. Coaching those asks somebody to compensate forever.
   actor: human
+  done_when: The cause is attributed to person or to system, deliberately.
 - order: 3
-  name: Re-measure and name the win
-  description: 'Next cycle, same lens: did it move? Progress named out loud is what makes coaching feel
-    like investment instead of surveillance.'
+  name: Name one skill
+  description: >
+    Several at once produces no movement on any and a demoralised agent. One per cycle is the
+    whole discipline.
   actor: human
+  done_when: The cycle has a single named focus.
+- order: 4
+  name: Practise, do not advise
+  description: >
+    "Be more concise" is an observation. Rewriting three of their replies together is coaching, and
+    only one of the two changes behaviour.
+  actor: human
+  done_when: The agent produced work differently during the session.
+- order: 5
+  name: Re-measure next cycle
+  description: >
+    Without it, coaching is a conversation and nobody knows whether it worked — including the agent.
+  actor: human
+  done_when: The same measure was taken again.
+objects_used: [customer_support.obj.core.support_agent, customer_support.obj.core.quality_scorecard, customer_support.obj.core.ticket,
+               customer_support.obj.core.satisfaction_score, customer_support.obj.core.knowledge_article]
+limits:
+- 'It moves one skill per cycle, which is slow by design and is the only rate that produces change.'
+- 'Step 1 needs per-agent ticket quality data, which small teams have too little of to be reliable.'
+failure_modes:
+- 'Step 2 skipped because coaching is within the manager''s control and fixing the macro is not.'
+- 'Step 5 dropped, which makes the whole cycle unfalsifiable and eventually optional.'
+variants:
+- applies_to: outsourced_bpo
+  change: Step 2 matters most and is hardest — the system causing the behaviour is often ours and the agent is theirs.
+  why: Attribution crosses an organisational boundary.
+- applies_to: swarming_support
+  change: Individual attribution is harder because tickets are shared; coaching shifts toward observed behaviour in the swarm.
+  why: There is no sole author to review.
+references:
+- title: Deliberate practice in skill development
+  kind: research
+  note: The single-focus, practise-then-re-measure structure, which is why advice alone reliably fails.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 2 is skipped for a structural reason rather than a careless one: coaching is within the
+    manager's control and fixing the macro is not, so the individual explanation is always the
+    available one.

@@ -13,3 +13,55 @@ purpose:
     it exposes a bad agent. QA that only grades people fixes the cheapest 20% of what it finds.
   answers:
   - What is ticket review actually for?
+
+heuristic:
+  statement: >
+    A bad ticket usually exposes a bad macro, a missing article or an ambiguous policy before it
+    exposes a bad agent. Quality assurance that only grades people fixes the cheapest twenty per
+    cent of what it finds.
+  why: >
+    Agents work inside a system of macros, articles, policies and tooling, and most poor outcomes
+    are that system failing them in a way that is invisible unless somebody looks for it. The
+    individual explanation is always available, always plausible and always cheaper to act on — and
+    acting on it fixes the problem for one person while leaving the cause to produce the same
+    outcome for everybody else, repeatedly, at a cost nobody attributes to it.
+  confidence_bp: 8500
+  applies_when: Any review of a poor customer outcome where an agent made a discretionary choice.
+  breaks_down_when: >
+    The system was fine and the agent did not use it. A correct macro ignored, an accurate article
+    unread, a clear policy misapplied — attributing those to the system protects somebody from
+    feedback they needed and tells the rest of the team that standards are negotiable. It also
+    breaks down where the systemic fix is out of reach: naming a product cause nobody will
+    prioritise leaves the agent with the same problem and no guidance, and a workaround coached
+    explicitly is better than a correct diagnosis nobody acts on.
+  reads: [customer_support.obj.core.ticket, customer_support.obj.core.knowledge_article, customer_support.obj.core.quality_scorecard]
+  contradicts: [customer_support.heu.performance_management.speed_pressure_surfaces_as_reopens]
+limits:
+- 'It concerns attribution, not standards. Some outcomes are individual and should be named as such.'
+- 'It needs reviewers who can see the systemic cause, which is a rarer skill than grading a reply.'
+failure_modes:
+- 'Used to avoid every difficult conversation, which is how a team learns that nothing is expected of it.'
+- 'Naming an unfixable systemic cause and leaving the agent without guidance, which is a correct diagnosis and no help.'
+variants:
+- applies_to: ai_first_support
+  change: Every finding is systemic by construction, so the heuristic becomes the entire method.
+  why: There is no individual to attribute to.
+- applies_to: outsourced_bpo
+  change: The system is usually ours and the agent is theirs, which makes honest attribution commercially uncomfortable and therefore rare.
+  why: The finding lands on whoever is not in the room.
+references:
+- title: Quality assurance calibration practice
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the practical limit: naming a product cause nobody will
+    prioritise leaves the agent with the same problem and no guidance, and an explicitly-coached
+    workaround serves them better than a correct diagnosis that changes nothing.

@@ -12,18 +12,80 @@ purpose:
   statement: Ticket QA reviews a stratified sample — some random, some high-risk (reopens, breaches, escalations)
     — against a rubric the whole team scored calibration rounds on, so feedback is consistent enough to
     be fair and specific enough to teach.
+
+when_to_use:
+  do_not_use_when:
+  - The purpose is to build a case about an individual. That is performance management, it has different evidence rules, and using QA sampling for it corrupts the sample.
 steps:
 - order: 1
   name: Stratify the sample
-  description: Random keeps honesty; risk-picked finds the lessons. Pure cherry-picking teaches only fear.
-  actor: human
+  description: >
+    Some random, some high-risk — reopens, breaches, escalations. Random alone misses the learning;
+    high-risk alone produces a picture made entirely of bad days.
+  actor: system
+  objects_read: [customer_support.obj.core.ticket, customer_support.obj.core.quality_scorecard]
+  done_when: Both strata are present in known proportion.
 - order: 2
-  name: Score against the shared rubric
-  description: Accuracy, completeness, tone, process — written anchors per grade. Reviewers calibrate
-    together monthly or drift apart silently.
+  name: Calibrate the reviewers first
+  description: >
+    Without calibration rounds the score measures who reviewed rather than what happened, and the
+    team notices before management does.
   actor: human
+  done_when: Reviewers score the same ticket within tolerance.
 - order: 3
-  name: Turn patterns into coaching, not verdicts
-  description: Per-agent patterns feed coaching; per-process patterns feed process fixes. A QA program
-    producing only scores produced nothing.
+  name: Read the system through the ticket
+  description: >
+    A bad reply usually exposes a bad macro, a missing article or an ambiguous policy. Grading the
+    agent fixes the cheapest fraction of what the review found.
   actor: human
+  objects_read: [customer_support.obj.core.knowledge_article]
+  done_when: Each finding has an attributed cause.
+- order: 4
+  name: Route by cause
+  description: >
+    Process findings to process, knowledge findings to authoring, skill findings to coaching. Only
+    the third belongs in a conversation with the agent.
+  actor: human
+  done_when: Findings left the review with an owner.
+- order: 5
+  name: Record when the agent did well under bad conditions
+  description: >
+    A review function that only ever finds fault is measuring the reviewer's standards, and the
+    team reads it that way.
+  actor: human
+  done_when: Good work in hard circumstances is on the record.
+objects_used: [customer_support.obj.core.ticket, customer_support.obj.core.quality_scorecard, customer_support.obj.core.support_agent,
+               customer_support.obj.core.knowledge_article, customer_support.obj.core.resolution]
+limits:
+- 'It samples. It cannot tell you about the tickets it did not read, which is nearly all of them.'
+- 'Step 3 needs reviewers who know the systems well enough to spot a macro problem, which is a different skill from grading a reply.'
+failure_modes:
+- 'Step 4 collapsing into coaching for everything, because coaching is the route the reviewer controls.'
+- 'Step 2 done once at launch and never repeated, after which drift accumulates invisibly.'
+variants:
+- applies_to: outsourced_bpo
+  change: Calibration must span both organisations or the scores are incomparable and the contract argues about them.
+  why: Two rubrics produce two truths.
+- applies_to: ai_first_support
+  change: Reviewing generated replies is the same discipline with the agent replaced by a model, and step 3 becomes almost the whole exercise.
+  why: There is no skill to coach; every finding is systemic.
+- applies_to: swarming_support
+  change: The unit of review is the thread rather than the agent, which makes step 3 natural and step 4 harder to route.
+  why: Nobody owns the reply.
+references:
+- title: Quality assurance calibration practice
+  kind: practitioner
+  note: Where inter-rater reliability is treated as the precondition for a score meaning anything.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 4 collapses into coaching for a structural reason: coaching is the route the reviewer
+    controls and fixing the macro is not, so the individual explanation is always available and
+    always chosen.
