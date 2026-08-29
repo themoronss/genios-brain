@@ -12,19 +12,76 @@ purpose:
   statement: An executive escalation is claimed by a named senior owner within the hour, with a direct
     line and a plan — because at this altitude the product problem has become a trust problem, and only
     visible ownership repairs trust.
+
+when_to_use:
+  do_not_use_when:
+  - The ordinary path is still working and being used. Pulling an executive in early removes the escalation ladder's meaning for everybody watching.
 steps:
 - order: 1
-  name: Acknowledge personally, immediately
-  description: A named human with authority replies fast — the escalating exec is testing whether anyone
-    owns this.
+  name: Claim it within the hour, by name
+  description: >
+    The hour after an executive escalation is when the customer decides what kind of company we
+    are. A named owner responding is most of the answer.
   actor: human
+  objects_read: [customer_support.obj.core.escalation, customer_support.obj.core.customer_account]
+  done_when: A specific senior person has responded personally.
 - order: 2
-  name: Rebuild the story before the callback
-  description: Full history read, internal misses acknowledged internally. Walking in unbriefed confirms
-    their thesis.
+  name: Work out what only they can decide
+  description: >
+    A credit, a commitment, a roadmap position, an exception. An executive arriving with nothing to
+    offer confirms the customer's worst reading of the situation.
   actor: human
+  done_when: The decision authority being brought is identified before the conversation.
 - order: 3
-  name: Close with cause AND change
-  description: Executives escalate to change the pattern, not just this ticket. 'Here is what we changed
-    so this class stops' is the actual deliverable.
+  name: Read it as an indictment of the path
+  description: >
+    The customer went around the process because the process visibly failed them. Treating them as
+    difficult misses the entire signal.
   actor: human
+  done_when: The framing is about our route, not their behaviour.
+- order: 4
+  name: Do not promise to end the call
+  description: >
+    A commitment made to relieve pressure converts a trust problem into a broken promise with a
+    date, which is a worse position than the one being escalated.
+  actor: human
+  objects_read: [customer_support.obj.core.commitment]
+  done_when: Every commitment made is one we can keep.
+- order: 5
+  name: Audit the ordinary path afterwards
+  description: >
+    Where did the normal route lose them? It is free, precise evidence and it is almost never
+    collected because the relief of resolution ends the interest.
+  actor: human
+  done_when: A finding about the path exists.
+objects_used: [customer_support.obj.core.escalation, customer_support.obj.core.escalation_owner, customer_support.obj.core.customer_account,
+               customer_support.obj.core.commitment, customer_support.obj.core.churn_risk]
+limits:
+- 'It handles the escalation; it cannot repair a relationship that has already decided to leave.'
+- 'Step 2 depends on the executive actually holding authority, which in some organisations is less than the title suggests.'
+failure_modes:
+- 'Step 5 skipped because the immediate crisis passed, which guarantees the next one.'
+- 'Step 4 breached under pressure in the room, which is exactly where and when it is hardest.'
+variants:
+- applies_to: named_tam
+  change: The escalation goes around the TAM, which is itself the finding — step 5 should start there.
+  why: The relationship owner was bypassed and that is information.
+- applies_to: enterprise_support
+  change: The customer's own executive is involved, so step 4 is doubly binding — a promise made at that level is repeated internally on their side within the hour.
+  why: The commitment is forwarded before it can be softened.
+references:
+- title: Executive escalation practice
+  kind: practitioner
+  note: Where the escalation is treated as diagnostic of the support path rather than of the customer.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is what makes the expense worth something, and it is skipped almost universally
+    because the relief of resolution ends the organisation's interest in how it got there.

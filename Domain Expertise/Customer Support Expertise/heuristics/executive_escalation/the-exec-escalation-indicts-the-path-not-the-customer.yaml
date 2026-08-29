@@ -13,3 +13,55 @@ purpose:
     the social cost. Treat each one as a free audit of where the ordinary process lost them.
   answers:
   - What does an executive escalation actually signal?
+
+heuristic:
+  statement: >
+    By the time a founder emails a founder, the normal path failed visibly enough to justify the
+    social cost of going around it. Treat every executive escalation as a free audit of where the
+    ordinary process lost them.
+  why: >
+    Escalating to an executive is socially expensive for the customer: it uses a relationship, it
+    risks looking unreasonable, and it can only be done a limited number of times. Nobody spends
+    that on a process that is merely slow. So the decision to escalate is strong evidence that the
+    ordinary route stopped being credible to them — and because they can usually say exactly where,
+    the escalation carries a precision that no survey or review produces.
+  confidence_bp: 8000
+  applies_when: A customer bypassing the support path to reach a senior person.
+  breaks_down_when: >
+    The escalation is habitual or commercial. Some customers escalate as a negotiating posture, and
+    some relationships have an executive channel by design — a named TAM's sponsor, an account
+    running an exception process. Reading those as path failures produces process changes aimed at
+    behaviour that was never a symptom. It also breaks down where the path did not fail but was
+    never known: a customer who did not know the support route exists has told you about
+    onboarding, not about the queue.
+  reads: [customer_support.obj.core.escalation, customer_support.obj.core.customer_account, customer_support.obj.core.churn_risk]
+  contradicts: [customer_support.heu.priority_and_severity.tone_is_not_severity]
+limits:
+- 'It says the path failed, not how. That still has to be asked, and the customer is the only one who can answer it.'
+- 'It concerns the escalation event, not the underlying issue, which may be entirely reasonable and slow for good reasons.'
+failure_modes:
+- 'Applied to a commercially motivated escalation, which produces process changes for a behaviour that was strategy.'
+- 'Used to defend support against the customer, which inverts the framing entirely.'
+variants:
+- applies_to: named_tam
+  change: An escalation that bypasses the TAM is a stronger signal, because the customer had a relationship route and chose not to use it.
+  why: The bypass is of a person, not of a queue.
+- applies_to: b2c
+  change: Rare, and usually about a specific person's situation rather than about a systemic path.
+  why: There is no relationship to spend.
+references:
+- title: Executive escalation practice
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is worth separating: a customer who did not know the support route
+    exists has told you about onboarding, not about the queue, and fixing the queue in response
+    changes nothing.

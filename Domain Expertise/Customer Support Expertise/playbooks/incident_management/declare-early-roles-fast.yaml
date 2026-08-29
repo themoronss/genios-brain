@@ -12,19 +12,86 @@ purpose:
   statement: When duplicate reports cluster or monitoring confirms, declare the incident and assign the
     three hats — commander, comms, fixers — because the declared incident gets coordination and the undeclared
     one gets chaos with the same outage.
+
+when_to_use:
+  do_not_use_when:
+  - It is one customer with one problem, however severe for them. Incident machinery on a single-account fault costs coordination and buys nothing.
 steps:
 - order: 1
-  name: Declare on threshold, not on certainty
-  description: N same-symptom reports in M minutes = incident until proven otherwise. Cheap to stand down;
-    expensive to stand up late.
+  name: Declare on the signal, not on certainty
+  description: >
+    Duplicate clustering or monitoring is enough. The first hour spent deciding whether this is an
+    incident is the hour the response most needed.
   actor: human
+  objects_read: [customer_support.obj.core.incident, customer_support.obj.core.ticket]
+  done_when: A declaration exists with a time on it.
 - order: 2
-  name: Separate command from keyboard
-  description: The commander coordinates and decides; fixers fix; comms communicates. One person doing
-    all three does none well.
+  name: Assign three hats immediately
+  description: >
+    Commander, comms, fixers. Without a commander there are several people fixing and nobody
+    deciding, which is the state most stalled incidents are in.
   actor: human
+  objects_read: [customer_support.obj.core.escalation_owner]
+  done_when: All three are named, out loud.
 - order: 3
-  name: Keep one timeline document live
-  description: Every action and finding timestamped as it happens — it runs the incident now and writes
-    the postmortem later.
+  name: Keep the commander out of the fix
+  description: >
+    The most capable person becomes commander and then starts debugging, which removes the only
+    person holding the whole picture.
   actor: human
+  done_when: The commander is coordinating rather than typing.
+- order: 4
+  name: Run comms in parallel, not afterwards
+  description: >
+    Customers learn from each other while the fix goes well. Comms is a concurrent workstream with
+    its own owner for exactly that reason.
+  actor: human
+  done_when: The first customer-facing update went out during the response.
+- order: 5
+  name: When stalled, check who is deciding
+  description: >
+    Adding engineers rarely speeds resolution. The bottleneck is usually a decision nobody owns.
+  actor: human
+  done_when: The stall was diagnosed as coordination or as capability, deliberately.
+- order: 6
+  name: Stand down cheaply
+  description: >
+    Declaration is only cheap if de-declaration is. Without an easy stand-down, the next
+    declaration is late again.
+  actor: human
+  done_when: Non-incidents are closed without ceremony or blame.
+objects_used: [customer_support.obj.core.incident, customer_support.obj.core.escalation, customer_support.obj.core.escalation_owner,
+               customer_support.obj.core.ticket, customer_support.obj.core.customer_account]
+limits:
+- 'It coordinates the response; it does not fix anything, and a well-run incident with no diagnosis is still an outage.'
+- 'Step 2 assumes people are available to fill three roles, which small teams cannot always do.'
+failure_modes:
+- 'Step 3 abandoned within twenty minutes because the commander can see the bug, which is the commonest incident-management failure there is.'
+- 'Step 6 absent, which makes step 1 slow permanently.'
+variants:
+- applies_to: swarming_support
+  change: Step 2 is easier and step 3 harder — everybody is a fixer by default and the commander role has to be claimed explicitly.
+  why: The culture is participation, and coordination reads as not helping.
+- applies_to: follow_the_sun
+  change: Commander handover between regions is its own step and is where long incidents lose their thread.
+  why: The picture lives in one person's head and shifts end.
+- applies_to: smb_support
+  change: Three hats may be two people; the commander and comms can combine, the commander and fixer cannot.
+  why: The separation that matters is deciding from doing.
+references:
+- title: Incident command practice
+  kind: framework
+  note: The commander/comms/fixer separation, and the rule that the commander does not fix.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 3 fails within twenty minutes in most incidents, because the commander is usually the
+    most capable person present and they can see the bug. Step 6 is what makes step 1 possible
+    at all.

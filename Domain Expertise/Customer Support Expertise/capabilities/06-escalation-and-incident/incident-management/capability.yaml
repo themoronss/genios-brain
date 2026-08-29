@@ -3,7 +3,7 @@ identity:
   name: Incident Management
   domain: customer_support
   subdomain: escalation_and_incident
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Running a fault that has stopped being one customer''s problem. The hard part is the declaration,
@@ -16,22 +16,66 @@ description: 'Running a fault that has stopped being one customer''s problem. Th
 
   '
 question: Is this still a ticket, and if it is not, who is running it and who is telling the customers?
+
+outcomes:
+- 'A declaration made EARLY, because the hard part is the declaration rather than the response — it is expensive and feels like admitting fault, so teams spend the first hour deciding.'
+- 'Three hats assigned fast: commander, comms, fixers. An incident with no commander has several people fixing and nobody deciding.'
+- 'A single owner of the decision, since mid-incident the scarce resource is coordination rather than engineering hands.'
+- 'Customers being told by somebody whose only job is telling them, in parallel with the fix rather than after it.'
+- 'The negative outcome: an incident STOOD DOWN quickly when it turns out not to be one. Cheap declaration only works if cheap de-declaration exists too.'
+failure_modes:
+- 'DELIBERATING THE DECLARATION. The first hour goes on deciding whether this is an incident, which is the hour the response most needed.'
+- 'ADDING ENGINEERS TO A STALLED INCIDENT. More people rarely speeds resolution; clearer ownership does, and the instinct is the reverse.'
+- 'THE COMMANDER ALSO FIXING, which removes the only person whose job was to hold the whole picture.'
+- 'COMMS AS AN AFTERTHOUGHT, so customers learn about the outage from each other while the fix is going well.'
+- 'NO STAND-DOWN PATH, which makes declaration expensive and therefore late, which is the original failure.'
+kpis:
+- name: time_to_declare
+  unit: minutes
+  description: First signal to declaration. The number that determines everything after it.
+  direction: lower_is_better
+- name: roles_assigned_lag
+  unit: minutes
+  direction: lower_is_better
+  description: Declaration to all three hats named.
+- name: commander_hands_off_rate
+  unit: percent
+  description: Incidents where the commander did not also do the fixing.
+  direction: higher_is_better
+- name: stand_down_rate
+  unit: percent
+  description: A target band. Some false declarations are the price of declaring early; none means declaration is still too expensive.
+  direction: target_band
+handoffs:
+  upstream: [customer_support.intake_and_triage.duplicate_and_merge, customer_support.escalation_and_incident.escalation_management]
+  downstream: [customer_support.escalation_and_incident.major_incident_communication, customer_support.escalation_and_incident.postmortem,
+               customer_support.diagnosis_and_resolution.resolution_delivery]
+  parallel: [customer_support.entitlement_and_sla.coverage_and_on_call, customer_support.escalation_and_incident.engineering_handoff]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, tiered_support, swarming_support, follow_the_sun,
+           premium_paid_support, embedded_in_product, ai_first_support]
+  offerings: [product, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Stub — identity, judgement and load-set only. Promote by adding outcomes, failure_modes (start
-    with under-declaration, the commander who debugs, and closing the incident while the customer-side
-    cleanup is still open), playbooks, heuristics with a why on each, mental_models, decision_frameworks,
-    kpis and handoffs, following escalation-management/ capability.yaml in this folder. It also owns the
-    situation major-incident-declared.yaml, which binds under pending_l2_situation_types (major_incident_declared,
-    incident_unresolved) because no shipped pack emits an incident signal — write that file in the same
-    pass.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. incident.severity, .status, .started_at
+    and incident_declared are all planned_substrate with no writer.
 
-    '
-  reviewed_at: '2026-08-24'
+    stand_down_rate as a target band is the KPI that makes early declaration possible. If
+    declaring is expensive and de-declaring is embarrassing, teams deliberate — and the
+    deliberation consumes exactly the hour the response needed. A non-zero stand-down rate is
+    the price of a cheap declaration and it should be visible rather than treated as error.
+
+    commander_hands_off_rate names the failure that recurs in every incident review: the most
+    capable person becomes commander and then starts fixing, which removes the only person
+    holding the whole picture.
+
 admission:
-  accepted_content_hash: 6e96f52bbf6ac3cf3d91e8cba20870873d2e9772d055db2974f485eecfb6e2b2
+  accepted_content_hash: b34eeef51483176c8b761fc0b836c1c2c3aae43ba6304749d42f7e1fbeb43a24

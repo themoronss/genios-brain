@@ -3,7 +3,7 @@ identity:
   name: Coverage & On-Call
   domain: customer_support
   subdomain: entitlement_and_sla
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Making sure somebody who can actually help is awake, reachable and accountable for every
@@ -16,26 +16,65 @@ description: 'Making sure somebody who can actually help is awake, reachable and
 
   '
 question: Is someone who can actually help awake, reachable and accountable right now?
+
+outcomes:
+- 'Staffing hours and on-call depth derived from what has been SOLD — the tiers, time zones and response promises in live contracts — rather than from historical volume.'
+- 'The map re-derived when sales sells something new, because a coverage model is a snapshot of last quarter''s contracts until somebody updates it.'
+- 'Somebody who can actually help awake and reachable for every hour a promise is live. Reachable and able are different tests and only one is usually checked.'
+- 'Escalation depth defined, so the on-call person knows who they can wake and under what conditions.'
+- 'The negative outcome: a promise identified as UNCOVERABLE with current staffing, raised before it is sold again rather than discovered during an incident.'
+failure_modes:
+- 'STAFFING FROM VOLUME HISTORY, which describes when tickets arrived and not when we promised to answer them.'
+- 'REACHABLE BUT NOT ABLE. A duty rota of people with no access and no authority is a phone tree.'
+- 'NO RE-DERIVATION WHEN A NEW TIER IS SOLD, so the contract and the roster diverge silently until an incident reveals it.'
+- 'TREATING CHRONIC OFF-HOURS PAGING AS DEDICATION. Regular pages are the roster and the contract map disagreeing.'
+- 'SINGLE-DEPTH ON-CALL, where the one person unreachable means the promise is simply not met.'
+kpis:
+- name: coverage_gap_hours
+  unit: hours
+  description: Hours where a live promise exists and nobody able is on. The number the whole capability produces.
+  direction: lower_is_better
+- name: contract_map_currency
+  unit: days
+  description: Time since coverage was re-derived from live contracts. It ages every time sales closes something.
+  direction: lower_is_better
+- name: off_hours_page_rate
+  unit: count
+  description: Pages outside working hours. Chronic load is capacity-planning debt wearing a pager, not commitment.
+  direction: lower_is_better
+- name: escalation_depth_reached
+  unit: percent
+  description: Pages resolved at first depth rather than requiring somebody else to be woken.
+  direction: higher_is_better
+handoffs:
+  upstream: [customer_support.entitlement_and_sla.entitlement_verification, customer_support.support_operations.capacity_planning]
+  downstream: [customer_support.entitlement_and_sla.breach_prevention, customer_support.escalation_and_incident.incident_management]
+  parallel: [customer_support.support_operations.workload_balancing, customer_support.support_management.team_health]
+applies_to:
+  models: [b2b, b2b2c, enterprise_support, mid_market_support, tiered_support, follow_the_sun, premium_paid_support,
+           named_tam, outsourced_bpo, field_service]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, decision_frameworks,
-    kpis and handoffs, following ../sla-management/capability.yaml. This capability owns no situation
-    in the current roster; the nearest pending L2 type is coverage_gap, and a situations/coverage-gap.yaml
-    would be the natural first addition when the roster next grows.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. entitlement.coverage_hours and
+    coverage_gap are planned_substrate with no writer.
 
-    The expertise to capture on promotion: nominal versus effective coverage — the roster says covered,
-    the skills matrix says nobody on it can fix this; the difference between reachable and responsive,
-    which is what an acknowledgement target actually measures; handover as a transfer of context rather
-    than of a pager, and why the tickets that fall through are almost always the ones mid-diagnosis; and
-    the on-call load question, since a rota that burns people out is a team_health problem that presents
-    first as a coverage one.
+    contract_map_currency is the KPI that names the structural failure: coverage is derived
+    once, from the contracts that existed then, and it ages every time sales closes a deal in a
+    new time zone or at a new tier. Nobody owns re-deriving it, so the gap is discovered during
+    the first incident that lands in it.
 
-    '
-  reviewed_at: '2026-08-24'
+    off_hours_page_rate is framed against the culture that reads chronic paging as commitment.
+    Regular off-hours pages are the roster and the contract map disagreeing, and treating them
+    as dedication is how the disagreement is never fixed.
+
 admission:
-  accepted_content_hash: 26b3c56fb3ddbe8746abab6b64f19a9a2b25f79b366d3f54d9686f7441a7aedc
+  accepted_content_hash: e8101cad734515e736df60d4395192ffe065af296fd05c07be1a80a86f285e6a

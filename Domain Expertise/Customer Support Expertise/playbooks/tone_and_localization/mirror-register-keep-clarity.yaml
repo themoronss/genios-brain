@@ -11,19 +11,79 @@ identity:
 purpose:
   statement: Match the customer's formality and language where possible, but never at clarity's expense
     — a warm reply that is misunderstood is a failed reply with good manners.
+
+when_to_use:
+  do_not_use_when:
+  - The message is a legal or contractual statement. Register-matching a formal notice introduces ambiguity into a document whose value is precision.
 steps:
 - order: 1
-  name: Read their register before writing
-  description: Terse engineer gets precise brevity; anxious founder gets structure and reassurance. One
-    voice, tuned per reader.
+  name: Read register from what they wrote
+  description: >
+    Not from where they are. National generalisations are wrong about the individual most of the
+    time, and the message in front of you is direct evidence.
   actor: human
+  objects_read: [customer_support.obj.core.requester]
+  done_when: The register decision cites their words.
 - order: 2
-  name: Localise meaning, not word-by-word
-  description: Dates, currency, idiom — translated for THEIR context. A literal translation of an idiom
-    is a small embarrassment shipped internationally.
+  name: Match formality, keep clarity
+  description: >
+    Mirroring an idiomatic customer in a second language produces a message neither party is sure
+    about. Clarity is the constraint; warmth is the variable.
   actor: human
+  done_when: A colleague unfamiliar with the thread could still tell what is being said.
 - order: 3
-  name: Keep product terms canonical
-  description: Feature names stay in product language across locales, or documentation and support stop
-    agreeing with each other.
+  name: Make empathy specific or leave it out
+  description: >
+    "We understand your frustration" understood nothing. Naming the situation — the launch, the
+    deadline, the third time this month — is what makes it land.
   actor: human
+  done_when: The acknowledgement refers to something true about this case.
+- order: 4
+  name: Translate meaning, not words
+  description: >
+    Commitment strength, politeness markers and hedges do not survive literal translation, and the
+    failure is invisible to the sender.
+  actor: human
+  done_when: A fluent speaker confirmed the intent survived.
+- order: 5
+  name: Strip warmth for the reader who wants the answer
+  description: >
+    An expert measuring speed experiences added empathy as padding. The same intervention that
+    de-escalates one customer irritates another.
+  actor: human
+  done_when: The register fits the reader rather than the policy.
+objects_used: [customer_support.obj.core.requester, customer_support.obj.core.customer_sentiment, customer_support.obj.core.named_contact,
+               customer_support.obj.core.ticket]
+limits:
+- 'It shapes how something is said. If the substance is wrong, this delivers it more agreeably.'
+- 'Step 4 needs fluent review capacity most teams do not have for every language they receive.'
+failure_modes:
+- 'Step 3 satisfied by a macro phrase, which is the formulaic empathy it exists to replace.'
+- 'Step 1 replaced by a country-to-register mapping, which is a stereotype implemented as configuration.'
+variants:
+- applies_to: follow_the_sun
+  change: Register must survive a handover between regions, or the customer experiences three different companies.
+  why: Consistency across shifts is a tone problem before it is a process one.
+- applies_to: ai_first_support
+  change: Step 3 is what generated replies do worst — generic empathy is the default output and it is detectable immediately.
+  why: The model has no situation to name.
+- applies_to: outsourced_bpo
+  change: Step 1 must override scripted register, which is usually the provider's standard rather than the customer's.
+  why: The script was written for an average customer who does not exist.
+references:
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+  note: Its advocacy-language findings are the evidence that framing changes outcomes independently of content.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 2 states the ordering that resolves the whole capability: clarity is the constraint and
+    warmth is the variable. Every failure here comes from treating them as equally negotiable.

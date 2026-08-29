@@ -3,7 +3,7 @@ identity:
   name: Engineering Handoff
   domain: customer_support
   subdomain: escalation_and_incident
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Converting a customer''s problem into something an engineering team can act on, and holding
@@ -18,23 +18,67 @@ description: 'Converting a customer''s problem into something an engineering tea
   '
 question: Is this a defect engineering can actually act on, and who still owns the customer while they
   do?
+
+outcomes:
+- 'One self-sufficient package: reproduction, environment, impact, and what support already ruled out. Every missing piece returns as a round trip.'
+- 'The customer relationship explicitly retained on our side while the defect sits with engineering, because that is the gap where the worst experiences happen.'
+- 'Impact expressed in terms engineering prioritises with — how many, how badly, which accounts — rather than in the urgency support feels.'
+- 'What was already eliminated stated, so engineering does not repeat the first three checks support already did.'
+- 'The negative outcome: a handoff HELD BACK as not yet actionable. A thin escalation returns in two days as questions, having burned queue time twice and customer patience once.'
+failure_modes:
+- 'THIN HANDOFFS. Underspecified escalations boomerang, and the round trip costs more than completing the package would have.'
+- 'HANDING OFF THE CUSTOMER WITH THE DEFECT. The ticket moves and the relationship should not; unowned during escalation is the commonest complaint.'
+- 'IMPACT AS URGENCY. Support feels the pressure and engineering prioritises on breadth, so the two sides optimise different things and read each other as unreasonable.'
+- 'NO RECORD OF WHAT WAS RULED OUT, which means the first thing engineering does is repeat the diagnosis.'
+- 'ESCALATING TO GET ATTENTION rather than because it is actionable, which trains engineering to discount support escalations generally.'
+kpis:
+- name: boomerang_rate
+  unit: percent
+  description: Handoffs returned for more information. The direct cost of an incomplete package.
+  direction: lower_is_better
+- name: package_completeness
+  unit: percent
+  description: Escalations carrying repro, environment, impact and exclusions.
+  direction: higher_is_better
+- name: customer_owner_retained
+  unit: percent
+  description: Escalated tickets with a named support owner still holding the customer.
+  direction: higher_is_better
+- name: engineering_acceptance_rate
+  unit: percent
+  description: Escalations engineering accepted as actionable. Low values mean support is escalating for attention.
+  direction: higher_is_better
+handoffs:
+  upstream: [customer_support.diagnosis_and_resolution.issue_reproduction, customer_support.diagnosis_and_resolution.diagnostics,
+             customer_support.escalation_and_incident.escalation_management]
+  downstream: [customer_support.diagnosis_and_resolution.resolution_delivery, customer_support.customer_communication.proactive_status_updates,
+               customer_support.voice_of_customer.product_feedback_routing]
+  parallel: [customer_support.diagnosis_and_resolution.workaround_management, customer_support.entitlement_and_sla.commitment_tracking]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, tiered_support, swarming_support, embedded_in_product,
+           premium_paid_support]
+  offerings: [product, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Stub — identity, judgement and load-set only. Promote by adding outcomes, failure_modes (the
-    unreproducible report, closing the ticket on filing, the report that describes the customer''s guess
-    at the cause rather than the observed behaviour, and the silent backlog where nobody tells support
-    the fix shipped), playbooks, heuristics with a why on each, mental_models, decision_frameworks, kpis
-    and handoffs, following escalation-management/capability.yaml in this folder. It owns bug-awaiting-engineering.yaml,
-    which binds under pending_l2_situation_types (bug_awaiting_engineering, workaround_only) — write it
-    in the same pass, and note there that workaround_only is the more valuable of the two signals because
-    it marks customers who are technically resolved and actually still broken.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. handoff_to_engineering and bug_filed are
+    planned_substrate obs kinds with no writer.
 
-    '
-  reviewed_at: '2026-08-24'
+    The boundary fails, as the description says, because the two sides optimise different
+    things: support optimises for the customer in front of them and engineering for breadth of
+    impact. Neither is wrong and neither reads the other as reasonable, which is why impact has
+    to be translated rather than asserted.
+
+    customer_owner_retained is the KPI that covers the gap the ticket system creates. When the
+    defect moves to engineering the ticket has a status and no holder, and that is the state
+    customers describe as being abandoned mid-problem.
+
 admission:
-  accepted_content_hash: b76aedb00991044a04c6a635294faecc99bacaf4fe768bd8bd3cb12e5b482878
+  accepted_content_hash: 37699bc47dbb50368305c6baf3b0310d0e608e48c7816403f9db593f38ac0ffb

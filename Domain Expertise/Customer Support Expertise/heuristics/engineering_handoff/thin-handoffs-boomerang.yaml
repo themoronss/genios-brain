@@ -14,3 +14,53 @@ purpose:
     clock.
   answers:
   - Why do fast escalations often resolve slower?
+
+heuristic:
+  statement: >
+    An underspecified escalation returns in two days as questions — having burned queue time twice
+    and the customer's patience once. Slower complete handoffs beat fast thin ones.
+  why: >
+    The apparent saving of sending early is real and local: support clears the ticket from their
+    queue today. The cost lands elsewhere and later — engineering spends time working out what they
+    were sent, sends it back, support re-engages with the context gone cold, and the customer
+    experiences a week of nothing. Because the cost is displaced across a team boundary and across
+    time, the incentive at the moment of sending is consistently wrong.
+  confidence_bp: 8500
+  applies_when: Any escalation across a team boundary where the receiver cannot ask a quick question.
+  breaks_down_when: >
+    The information can only be obtained by engineering. When the missing piece is a production log,
+    a database state or an internal trace, waiting to complete the package means waiting for
+    something support cannot get — and the right move is a fast partial handoff naming exactly what
+    is missing and why we cannot supply it. It also breaks down during incidents, where speed
+    genuinely dominates and a thin handoff to somebody already engaged is correct.
+  reads: [customer_support.obj.core.issue, customer_support.obj.core.bug_report, customer_support.obj.core.ticket]
+  contradicts: [customer_support.heu.incident_management.coordination_is_the_scarce_resource]
+limits:
+- 'It concerns completeness, not speed as such. A complete handoff sent quickly is strictly better than either.'
+- 'The boomerang cost is paid by two teams and measured by neither, which is why it persists.'
+failure_modes:
+- 'Used to delay an escalation for information nobody can obtain.'
+- 'Applied during incidents, where the round-trip cost is smaller than the delay cost.'
+variants:
+- applies_to: tiered_support
+  change: Strongest — each tier boundary is a boomerang opportunity and they compound.
+  why: The package is re-assessed at every level.
+- applies_to: swarming_support
+  change: Largely dissolves. The engineer is in the thread and the question is asked immediately.
+  why: There is no boundary for the package to cross.
+references:
+- title: Support-to-engineering escalation practice
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the one that makes this a heuristic rather than a rule: when the
+    missing piece is a production log support cannot access, waiting to complete the package is
+    waiting forever, and a fast partial handoff naming the gap is correct.

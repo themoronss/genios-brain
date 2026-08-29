@@ -13,3 +13,54 @@ purpose:
     Chronic on-call load is capacity planning debt wearing a pager.
   answers:
   - What does a noisy on-call rotation indicate?
+
+heuristic:
+  statement: >
+    Regular off-hours pages are not dedication — they are the roster and the contract map
+    disagreeing. Chronic on-call load is capacity-planning debt wearing a pager.
+  why: >
+    An on-call rotation exists to handle the exceptional. When it fires routinely, the work it is
+    absorbing is ordinary work happening outside the hours somebody staffed for, which means the
+    staffing model is wrong rather than the night being unlucky. The reason it persists is that the
+    absorption is invisible and praised: the person who answers at 2am is thanked, the gap is
+    closed, and no ticket is ever raised against the roster that caused it.
+  confidence_bp: 8000
+  applies_when: An on-call rotation firing repeatedly for non-exceptional work.
+  breaks_down_when: >
+    The load is genuinely exceptional and clustered — a bad release, a migration, a seasonal peak.
+    Re-planning capacity around a temporary spike over-staffs for the following quarter, and
+    treating a hard month as a structural signal is how a support organisation acquires cost it
+    cannot shed. It also breaks down where the on-call design is deliberate: some teams intentionally
+    run thin coverage with a paid rotation because the economics favour it, and the pages are the
+    plan rather than its failure.
+  reads: [customer_support.obj.core.coverage_window, customer_support.obj.core.support_agent, customer_support.obj.core.backlog]
+  contradicts: [customer_support.heu.capacity_planning.utilisation_above_eighty_is_a_queue]
+limits:
+- 'It diagnoses a staffing mismatch; closing it requires headcount or a renegotiated promise, neither of which support controls.'
+- 'Page counts alone do not distinguish exceptional from routine, which is the judgement it depends on.'
+failure_modes:
+- 'Used to demand headcount from a temporary spike.'
+- 'Ignored because the people absorbing it are willing, which is how the debt compounds until they leave.'
+variants:
+- applies_to: follow_the_sun
+  change: Pages should be near zero by design, so any chronic rate points at a specific uncovered window rather than at general understaffing.
+  why: The model exists to remove off-hours work entirely.
+- applies_to: premium_paid_support
+  change: Off-hours load is sold and staffed deliberately; the signal is whether it exceeds what was priced.
+  why: Some paging is revenue.
+references:
+- title: On-call and coverage design
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The willingness of the people absorbing it is what makes this debt invisible. The 2am answer
+    is thanked, the gap closes, and no ticket is ever raised against the roster that caused it —
+    until they leave.

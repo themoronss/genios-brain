@@ -3,7 +3,7 @@ identity:
   name: Major Incident Communication
   domain: customer_support
   subdomain: escalation_and_incident
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Telling a lot of customers the same true thing at the same time, repeatedly, while the facts
@@ -16,23 +16,66 @@ description: 'Telling a lot of customers the same true thing at the same time, r
 
   '
 question: What do we say, to whom, and when exactly do they hear from us next?
+
+outcomes:
+- 'One voice, on a stated cadence. During an outage the customer is not buying a fix — they are buying the ability to plan around it.'
+- 'Each update saying what is known, who is impacted, what is being done and when the next one comes. The next-update time is the most important line.'
+- 'ETAs given as ranges and under-promised, because a public restore time that slips once is noted and twice is a credibility incident of its own.'
+- 'Updates continuing on cadence when there is nothing new, since the gap is what customers fill with their own worse theory.'
+- 'The negative outcome: an ETA WITHHELD rather than guessed. "We do not have a reliable estimate and will update at 14:00" is a stronger message than a number that moves.'
+failure_modes:
+- 'MULTIPLE VOICES. Support, the status page and an engineer on social saying three slightly different things is worse than silence.'
+- 'OPTIMISTIC PUBLIC ETAs. The first slip is noted; the second makes every future statement discounted.'
+- 'UPDATING ONLY ON PROGRESS, which means customers hear from us when things go well and not when they do not.'
+- 'TECHNICAL DETAIL AS TRANSPARENCY. The customer needs impact and timing; the architecture is for the postmortem.'
+- 'STOPPING AT RESOLUTION WITH NO CLOSING MESSAGE, so customers are unsure whether it is over.'
+kpis:
+- name: cadence_adherence
+  unit: percent
+  description: Promised updates delivered on time during the incident. The whole promise.
+  direction: higher_is_better
+- name: eta_slip_count
+  unit: count
+  description: Public restore times missed. The second one costs more than the first by a wide margin.
+  direction: lower_is_better
+- name: single_voice_rate
+  unit: percent
+  description: Incidents where all external statements came from one owner.
+  direction: higher_is_better
+- name: inbound_during_incident
+  unit: count
+  description: Customer contacts asking for status. The measure of whether the comms were reaching them.
+  direction: lower_is_better
+handoffs:
+  upstream: [customer_support.escalation_and_incident.incident_management]
+  downstream: [customer_support.escalation_and_incident.postmortem, customer_support.support_management.account_relationship_management,
+               customer_support.customer_communication.proactive_status_updates]
+  parallel: [customer_support.customer_communication.de_escalation, customer_support.escalation_and_incident.executive_escalation]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, tiered_support, follow_the_sun, premium_paid_support,
+           embedded_in_product, community_support]
+  offerings: [product, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Stub — identity, judgement and load-set only. Promote by adding outcomes, failure_modes (the
-    optimistic ETA, the update that goes quiet exactly when the fix looks close, the all-clear published
-    before the customer-visible backlog has drained, and the status page that is technically accurate
-    and operationally useless), playbooks, heuristics with a why on each, mental_models, decision_frameworks,
-    kpis and handoffs, following escalation-management/ capability.yaml in this folder. Worth resolving
-    at promotion: the boundary with proactive_status_updates, which is the same discipline addressed to
-    one customer — the split is real (broadcast versus thread) but the heuristics overlap and should cross-reference
-    rather than be duplicated.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
 
-    '
-  reviewed_at: '2026-08-24'
+    inbound_during_incident is the KPI that tells you whether the communications worked, and it
+    is counter-intuitive: a well-communicated outage generates FEWER contacts than a smaller
+    badly-communicated one. Volume during an incident measures the gap in the comms, not the
+    size of the fault.
+
+    The framing that governs everything here is in the description — during an outage the
+    customer is not buying a fix, they are buying the ability to plan around it. That is why the
+    next-update time is the most important line in every message and why an honest absence of an
+    ETA beats a guessed one.
+
 admission:
-  accepted_content_hash: 6e0ed1a07c6e9c226d36f092632f1681ac556bc5b6f1475dec7897b28ae4af2c
+  accepted_content_hash: 334d50e8d346b02fee3aca3b3c70e5fe87427b3778b012d088f0b2ab5bab25e3

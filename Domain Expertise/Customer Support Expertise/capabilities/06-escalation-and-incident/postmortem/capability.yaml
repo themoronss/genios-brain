@@ -3,7 +3,7 @@ identity:
   name: Postmortem
   domain: customer_support
   subdomain: escalation_and_incident
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Turning something that already went wrong into a system that fails differently next time.
@@ -17,24 +17,65 @@ description: 'Turning something that already went wrong into a system that fails
   '
 question: What made this possible, what made it last as long as it did, and what changes so the next one
   is shorter?
+
+outcomes:
+- 'A changed system, not a document. A postmortem carrying actions with no named owner has produced a record of a meeting.'
+- 'Two questions answered separately: what made this possible, and what made it last as long as it did. The second is usually where the shorter next incident comes from.'
+- 'Few actions, owned and dated, whose completion somebody actually verifies. Everything else is theatre with a template.'
+- 'Blamelessness held as a practical requirement rather than as a courtesy, because the moment fault attaches to a person the facts arrive pre-laundered.'
+- 'The negative outcome: an action DECLINED with a reason — the fix costs more than the incident class is worth — rather than added to a list nobody works.'
+failure_modes:
+- 'BLAME. The moment fault attaches to a person, everyone''s memory develops gaps and the next incident''s facts are cleaned before they arrive.'
+- 'ANSWERING ONLY THE CAUSE. Duration is the other half and it is usually the more improvable one — detection, escalation, access, decision latency.'
+- 'TWENTY ACTIONS, which is a list nobody works and a guarantee that the important two are lost in it.'
+- 'ACTIONS WITH NO VERIFICATION, so the postmortem is complete and the system is unchanged.'
+- 'POSTMORTEMS FOR SEVERITY ONE ONLY, which misses the recurring medium incidents that cost more in aggregate.'
+kpis:
+- name: action_completion_verified
+  unit: percent
+  description: Actions confirmed done by somebody other than the owner. The measure that separates a changed system from a document.
+  direction: higher_is_better
+- name: actions_per_postmortem
+  unit: count
+  description: A target band. Twenty means nothing will happen; zero means the review found nothing, which is rarely true.
+  direction: target_band
+- name: repeat_incident_rate
+  unit: percent
+  description: Incidents in a class already reviewed. The outcome measure of the whole practice.
+  direction: lower_is_better
+- name: duration_action_share
+  unit: percent
+  description: Actions aimed at shortening the next incident rather than preventing it. Usually near zero and usually the cheaper half.
+  direction: higher_is_better
+handoffs:
+  upstream: [customer_support.escalation_and_incident.incident_management, customer_support.escalation_and_incident.major_incident_communication]
+  downstream: [customer_support.knowledge_and_deflection.knowledge_authoring, customer_support.voice_of_customer.product_feedback_routing,
+               customer_support.support_operations.support_analytics]
+  parallel: [customer_support.support_management.ticket_review, customer_support.diagnosis_and_resolution.root_cause_analysis]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, tiered_support, swarming_support, follow_the_sun,
+           premium_paid_support, embedded_in_product]
+  offerings: [product, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Stub — identity, judgement and load-set only. Promote by adding outcomes, failure_modes (the
-    ownerless action list, the single root cause where there were several contributing conditions, the
-    timeline reconstructed from memory rather than artefacts, the review that examines the fix and never
-    the detection lag, and the action that is "add more monitoring" with no named signal), playbooks,
-    heuristics with a why on each, mental_models, decision_frameworks, kpis and handoffs, following escalation-management/capability.yaml
-    in this folder. This is the only capability in the subdomain with a scoped object — customer_support.obj.postmortem.postmortem
-    — and it is scoped rather than core precisely because nothing else in the domain should be reading
-    a postmortem document; the moment a second capability wants it, that is a signal the findings are
-    not flowing back as issues and root_causes the way they should.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
 
-    '
-  reviewed_at: '2026-08-24'
+    duration_action_share is the KPI that names the half of postmortems that is systematically
+    skipped. Almost every review asks what caused the incident and almost none asks what made it
+    last four hours instead of forty minutes — and the second question usually has cheaper
+    answers: detection, an access request, a decision nobody was empowered to make.
+
+    action_completion_verified rather than completed, because self-reported completion is the
+    mechanism by which a postmortem process becomes a documentation process without anybody
+    deciding it should.
+
 admission:
-  accepted_content_hash: 672b0148372415e8c269b7aa2bcadd1b5439d16bc3b08a8ab915a05859401492
+  accepted_content_hash: 1e1bebaaa0e61241dadce1d6d617213af51af6344dcaec1b73d9257356145a9c
