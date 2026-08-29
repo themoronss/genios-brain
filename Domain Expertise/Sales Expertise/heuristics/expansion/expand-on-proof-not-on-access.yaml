@@ -14,3 +14,54 @@ purpose:
     is everything.
   answers:
   - When is an expansion conversation earned?
+
+heuristic:
+  statement: >
+    Having the badge and the relationships tempts a premature expansion pitch. Access without a
+    delivered result reads as upselling; the same pitch after a hit outcome reads as partnership.
+    Sequence is everything.
+  why: >
+    The pitch is identical in both cases and the interpretation is not. Before a result, the
+    customer has no evidence that the first purchase worked and reads an expansion ask as a vendor
+    optimising their own revenue — which also retroactively colours the original sale. After a
+    result, the same ask is an extension of something that demonstrably worked, and the customer's
+    own success is the argument. Nothing about the proposal changes; only its standing does.
+  confidence_bp: 8500
+  applies_when: An existing account where the initial scope has not yet produced a measurable outcome.
+  breaks_down_when: >
+    The customer asks first. When they raise the adjacent need themselves, waiting for proof is
+    withholding something they have already decided they want, and the delay is read as unresponsive
+    rather than as disciplined. It also breaks down where the outcome is structurally slow — a
+    multi-year implementation — and expansion into an adjacent area is what makes the original
+    business case reachable at all.
+  reads: [sales.obj.core.account, sales.obj.core.business_need, sales.obj.core.champion]
+  contradicts: [sales.heu.customer_success.login_metrics_lag__sponsor_strength_leads]
+limits:
+- 'It governs timing, not whether the expansion is right. A well-sequenced bad fit is still a bad fit.'
+- 'What counts as a delivered result is the customer''s judgement, not ours, and the two frequently differ.'
+failure_modes:
+- 'Applied when the customer initiated, which turns discipline into unresponsiveness.'
+- 'Used to defer indefinitely on accounts where a clean result will never be measurable.'
+variants:
+- applies_to: enterprise
+  change: Strongest. The adjacent buyer will ask the existing sponsor whether it worked, so the proof is checked directly.
+  why: The reference is internal and immediate.
+- applies_to: smb
+  change: Cycles are short enough that proof arrives quickly, which makes the sequence cheap to respect.
+  why: There is less waiting to do.
+references:
+- title: sales.obj.core.business_need
+  kind: internal
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the one that makes this a heuristic rather than a rule: when the
+    customer raises the adjacent need themselves, waiting for proof withholds something they
+    have already decided they want.

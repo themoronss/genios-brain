@@ -44,7 +44,7 @@ steps:
   description: >
     Twenty actions is a list nobody works, and the two that mattered are lost inside it.
   actor: human
-  objects_read: [customer_support.obj.core.postmortem]
+  objects_read: [customer_support.obj.postmortem.postmortem]
   done_when: Each action has a name and a date, and there are few of them.
 - order: 5
   name: Decline the actions not worth doing
@@ -60,7 +60,7 @@ steps:
     anyone deciding it should.
   actor: human
   done_when: Somebody other than the owner confirmed each action landed.
-objects_used: [customer_support.obj.core.incident, customer_support.obj.core.postmortem, customer_support.obj.core.root_cause,
+objects_used: [customer_support.obj.core.incident, customer_support.obj.postmortem.postmortem, customer_support.obj.core.root_cause,
                customer_support.obj.core.issue, customer_support.obj.core.escalation_owner]
 limits:
 - 'It changes systems it has authority over. Actions landing on other teams need their agreement, which this process cannot compel.'

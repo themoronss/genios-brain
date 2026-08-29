@@ -12,19 +12,79 @@ purpose:
   statement: 'Success reviews exist to renew the business case, not to tour dashboards. Each cadence answers
     one question with the customer: are you still getting the outcome you bought — and if not, what changes
     this quarter?'
+
+when_to_use:
+  conditions: [{path: relationship.nature, op: "=", value: customer}]
+  signals: [next_step_agreed, positive_reply]
+  do_not_use_when:
+  - The account is mid-escalation. A cadence review during an unresolved failure is asking them to discuss outcomes while they are blocked.
 steps:
 - order: 1
-  name: Anchor every review on the bought outcome
-  description: Open with the deal's original why and today's numbers against it. Usage stats support the
-    story; they are not the story.
+  name: Anchor on the outcome they bought
+  description: >
+    Not on the features they use. The review's only question is whether the thing they purchased is
+    happening, and a dashboard tour answers a different one.
   actor: human
+  objects_read: [sales.obj.core.account, sales.obj.core.business_need]
+  produces: A stated position on the bought outcome.
+  done_when: The outcome is named in their words and assessed.
 - order: 2
-  name: Surface risk while it is conversational
-  description: Sponsor changes, budget season, stalled adoption — asked about directly, kindly, every
-    review. Risks named early are projects; named late they are churn.
+  name: Bring the number, do not ask for it
+  description: >
+    Arriving without the measurement makes the review a status meeting. Arriving with it makes it a
+    business conversation.
   actor: human
+  done_when: The evidence is in the room before the discussion starts.
 - order: 3
-  name: Leave with owned actions on both sides
-  description: A review without follow-ups was a presentation. Two or three actions, owners, dates — theirs
-    and yours.
+  name: Surface risk while it is still conversational
+  description: >
+    A concern raised in a review is a discussion. The same concern raised at renewal is a
+    negotiation, and the difference is entirely when it was named.
   actor: human
+  objects_read: [sales.obj.core.risk]
+  done_when: Known risks were said out loud by us first.
+- order: 4
+  name: Leave with owned actions on both sides
+  description: >
+    A review producing only our actions is a service call. Their commitment is what makes it a
+    joint plan and what predicts whether anything changes.
+  actor: human
+  done_when: Both parties have a named action with a date.
+- order: 5
+  name: Re-set the business case if it has moved
+  description: >
+    The outcome they bought may no longer be the one they need. Renewing the case is the point of
+    the cadence; confirming the original one is nostalgia.
+  actor: human
+  done_when: The business case is current or explicitly re-agreed.
+objects_used: [sales.obj.core.account, sales.obj.core.business_need, sales.obj.core.risk, sales.obj.core.stakeholder]
+limits:
+- 'It renews the case; it cannot deliver the outcome, and a well-run review over an undelivered result accelerates the decision to leave.'
+- 'Step 2 needs measurement the customer agrees with, which requires having agreed it at the start.'
+failure_modes:
+- 'Step 1 replaced by a feature walkthrough, which is the default when there is no measured outcome to discuss.'
+- 'Step 3 avoided because naming a risk feels like admitting one, which converts it into a renewal surprise.'
+variants:
+- applies_to: enterprise
+  change: Step 4 must reach the economic buyer, not only the day-to-day contact, or the actions have no authority behind them.
+  why: The person in the review is often not the person who can commit.
+- applies_to: plg
+  change: The cadence is usage-triggered rather than calendar-driven, and step 2 comes from product data.
+  why: There is no relationship rhythm to attach it to.
+references:
+- title: sales.obj.core.business_need
+  kind: internal
+  note: The bought outcome lives there; a review without one has nothing to anchor on.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Promoted out of Phase-1 skeleton. Step 3 is the one that decides whether the cadence is
+    worth holding: a risk we name in a review is a discussion, and the same risk surfacing at
+    renewal is a negotiation.

@@ -14,3 +14,55 @@ purpose:
     with a departed sponsor is an at-risk account.'
   answers:
   - Which account-health signal deserves the most weight?
+
+heuristic:
+  statement: >
+    Usage dashboards tell you what already happened. The leading indicator is sponsor strength —
+    their standing, their engagement, their tenure. A healthy dashboard with a departed sponsor is
+    an at-risk account.
+  why: >
+    Usage is the aggregate behaviour of people who already adopted, and it persists for months
+    after the decision to renew has effectively been made or unmade. The sponsor is where that
+    decision actually lives: they defend the budget line, they explain the value internally, and
+    they are the reason the tool survived the last review. When they weaken or leave, nothing
+    changes in the usage data for a quarter and everything has changed about the renewal.
+  confidence_bp: 8000
+  applies_when: Any subscription relationship with an identifiable internal advocate.
+  breaks_down_when: >
+    The product has become infrastructure. Once a tool is embedded in how work happens, it survives
+    its sponsor comfortably, and reading a departure as risk there produces alarm about an account
+    nobody could remove if they wanted to. It also breaks down where the sponsor was never
+    load-bearing: some purchases are made centrally and used widely, and the individual who signed
+    has no continuing role.
+  reads: [sales.obj.core.champion, sales.obj.core.account, sales.obj.core.risk]
+  contradicts: [sales.heu.expansion.expand_on_proof__not_on_access]
+limits:
+- 'It is a leading indicator, not a verdict. A weakened sponsor is a reason to act, not a forecast.'
+- 'Sponsor strength is qualitative, which is why it loses to usage data in every dashboard.'
+failure_modes:
+- 'Departure escalated as churn risk on an embedded product, which spends credibility.'
+- 'Used to ignore usage decline, which is a lagging signal and still a real one.'
+variants:
+- applies_to: enterprise
+  change: Strongest. Renewals are decided in a review the sponsor either attends and defends or does not.
+  why: The purchase has to be re-justified to people who did not make it.
+- applies_to: plg
+  change: Weakest — adoption is bottom-up and there may be no sponsor at all, which makes usage the only available signal.
+  why: Nobody was ever advocating.
+references:
+- title: sales.obj.core.champion
+  kind: internal
+  note: Where sponsor strength is decomposed into standing, engagement and tenure rather than treated as a single impression.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is worth holding: once a product is genuinely embedded it outlives
+    its sponsor comfortably, and treating every departure as risk produces alarm about accounts
+    nobody could remove.

@@ -34,7 +34,7 @@ heuristic:
     notice it spends effort that the junior population, for whom a week's delay is genuinely
     inconvenient, needed.
   reads: [admin.obj.core.expense, admin.obj.core.employee_record]
-  contradicts: [admin.heu.expense_management.build_for_the_honest_majority]
+  contradicts: [admin.heu.budget_tracking.small_overruns_rehearse_big_ones]
 limits:
 - 'It is about speed, not about approval standards. Fast payment of claims that should have been refused is a different failure.'
 - 'The resentment is unmeasured by design — the process shows as completed, which is why nothing surfaces it.'

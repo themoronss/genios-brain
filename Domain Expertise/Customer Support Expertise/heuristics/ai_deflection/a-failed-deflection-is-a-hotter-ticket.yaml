@@ -33,7 +33,7 @@ heuristic:
     long queue: five minutes with a model beats forty minutes on hold, and the comparison must be
     against the real alternative rather than against an idealised human.
   reads: [customer_support.obj.core.ticket, customer_support.obj.core.customer_sentiment, customer_support.obj.core.requester]
-  contradicts: [customer_support.heu.self_service_deflection.deflection_is_capacity_too]
+  contradicts: [customer_support.heu.capacity_planning.deflection_is_capacity_too]
 limits:
 - 'It concerns the escalated subset, which is by construction the minority. It says nothing about the deflected majority.'
 - 'Temperature needs a session-to-ticket join most support stacks do not make.'

@@ -12,18 +12,76 @@ purpose:
   statement: Leads are not a number, they are a mix — and every source (inbound, referral, event, outbound,
     partner) has its own conversion honesty. Volume from a source that never closes is cost wearing a
     growth costume.
+
+when_to_use:
+  signals: [introduction, meeting_request]
+  do_not_use_when:
+  - Volume is too low for per-source conversion to mean anything. Below a few dozen closed outcomes per source, the ledger ranks noise.
 steps:
 - order: 1
   name: Tag every lead with its source at birth
-  description: Untagged leads make every later question unanswerable. The tag is set on entry, never reconstructed
-    from memory.
-  actor: human
+  description: >
+    Attributed later, sources are reconstructed from memory and the reconstruction favours whatever
+    the team believes already.
+  actor: system
+  objects_read: [sales.obj.core.lead]
+  done_when: No lead enters without a source.
 - order: 2
-  name: Read conversion per source monthly, to REVENUE
-  description: Leads-to-meeting flatters cheap sources; source-to-closed-won is the only honest column.
-  actor: human
+  name: Measure conversion to REVENUE, not to meeting
+  description: >
+    Every source looks good at the top. The differences appear at close, and a source that produces
+    meetings and no revenue is the one this ledger exists to find.
+  actor: system
+  objects_read: [sales.obj.core.opportunity]
+  done_when: Each source has a rate through to closed-won.
 - order: 3
-  name: Shift effort to the top two sources
-  description: Double down where closed-won concentrates; starve what only produces activity. Referrals
-    almost always win this audit — act accordingly.
+  name: Carry cost alongside conversion
+  description: >
+    A source converting at half the rate for a tenth of the effort is the better source, and
+    conversion alone says the opposite.
   actor: human
+  done_when: Effort or spend per source is stated.
+- order: 4
+  name: Shift effort to the top two
+  description: >
+    The ledger's output is a reallocation. Produced and not acted on, it is a monthly chart.
+  actor: human
+  done_when: Time moved, or the decision not to move it was made explicitly.
+- order: 5
+  name: Kill a source deliberately
+  description: >
+    Sources are added and rarely removed, and the dead one consumes attention indefinitely because
+    stopping feels like giving up.
+  actor: human
+  done_when: At least one source has been discontinued or explicitly retained with a reason.
+objects_used: [sales.obj.core.lead, sales.obj.core.opportunity, sales.obj.core.account, sales.obj.core.icp]
+limits:
+- 'Attribution is single-touch by construction here, which understates sources that influence rather than originate.'
+- 'It ranks past performance. A source that is scaling behaves differently from one at steady state.'
+failure_modes:
+- 'Step 2 measured to meetings because that data arrives sooner, which is where the source differences are invisible.'
+- 'Step 5 skipped, so the ledger grows a long tail of sources nobody has the heart to stop.'
+variants:
+- applies_to: enterprise
+  change: Deal counts are too low for rates; the ledger becomes a qualitative read on where the last ten wins started.
+  why: Statistical conversion needs volume this motion does not have.
+- applies_to: plg
+  change: Product-qualified signups are their own source and dominate; the ledger's job is to keep the human-sourced ones honest against it.
+  why: One source is structurally larger than the rest.
+references:
+- title: sales.obj.core.lead
+  kind: internal
+  note: Source is an attribute there, and step 1 exists because it is optional in most systems.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Promoted out of Phase-1 skeleton. Step 2 is where these ledgers usually fail — meeting-rate
+    data arrives weeks sooner than revenue data, and meeting rate is precisely the measure on
+    which every source looks acceptable.

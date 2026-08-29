@@ -33,7 +33,7 @@ heuristic:
     also breaks down in swarming models, where work moving between people is the design and the
     customer sees one thread throughout.
   reads: [customer_support.obj.core.ticket, customer_support.obj.core.support_agent, customer_support.obj.core.customer_sentiment]
-  contradicts: [customer_support.heu.routing_and_assignment.skill_beats_availability]
+  contradicts: [customer_support.heu.workload_balancing.fairness_is_felt_in_weights]
 limits:
 - 'It concerns visible handoffs. Internal consultation that the customer never sees costs nothing by this measure.'
 - 'It cannot distinguish a necessary transfer from an avoidable one, which is the judgement it depends on.'

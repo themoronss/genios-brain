@@ -11,24 +11,82 @@ identity:
 purpose:
   statement: Research is bounded prep, not procrastination with a dashboard. Fifteen minutes produces
     the four facts a first conversation needs; more than that is usually avoidance of the actual outreach.
+
+when_to_use:
+  conditions: [{absent: deal.status}]
+  signals: [introduction, meeting_request]
+  do_not_use_when:
+  - The meeting is already booked and imminent. Then this is briefing_and_preparation's job with a different output, and researching now competes with preparing.
 steps:
 - order: 1
   name: What do they sell and to whom
-  description: One sentence in their customer's words — from their pricing page and case studies, not
-    their About page.
+  description: >
+    Their business model in one sentence. Without it every subsequent fact is uninterpretable, and
+    it is the fact most often assumed from the company name.
   actor: human
+  produces: A one-line description of their business.
+  done_when: You could describe their customer to a colleague.
 - order: 2
   name: What changed recently
-  description: Funding, leadership change, launch, layoff, expansion — the freshest public event is the
-    likeliest reason a conversation is timely NOW.
+  description: >
+    Funding, a hire, a launch, a regulatory shift. Change is what creates a reason to talk now, and
+    a brief with no change in it explains why the outreach has no timing.
   actor: human
+  produces: A dated change.
+  done_when: There is a specific recent event, or an explicit note that there is none.
 - order: 3
   name: Who owns the problem
-  description: Name the likely owner of the problem you solve, and one adjacent person — a single-threaded
-    first touch is fine; a wrong-threaded one is not.
+  description: >
+    Not who has the title. The person whose numbers move if this is solved, which is frequently one
+    level below where the org chart points.
   actor: human
+  objects_read: [sales.obj.core.stakeholder]
+  done_when: A named person with a stated reason to care.
 - order: 4
-  name: What would make them say 'how did you know that'
-  description: One non-obvious fact — a tech choice, a hiring pattern, a market squeeze — that becomes
-    the cold email's first line.
+  name: Find the one line that earns the reply
+  description: >
+    The fact that makes them ask how you knew that. One is enough and it is the entire return on
+    the fifteen minutes.
   actor: human
+  produces: A specific, checkable observation.
+  done_when: The line could not have been written about any other company.
+- order: 5
+  name: Stop at fifteen minutes
+  description: >
+    Beyond that, research is avoidance of the outreach. The marginal fact does not change the first
+    message and the delay does.
+  actor: human
+  done_when: The brief is done and the message is sent the same day.
+objects_used: [sales.obj.core.account, sales.obj.core.stakeholder, sales.obj.core.buying_signal]
+limits:
+- 'Fifteen minutes buys a first conversation, not a qualification. Depth belongs after they reply.'
+- 'Public sources describe what a company says about itself, which is a different thing from what is happening inside it.'
+failure_modes:
+- 'Step 5 ignored, which is the most common failure and it is comfortable — research feels productive and outreach does not.'
+- 'Step 4 satisfied with something generic. A fact true of every company in the sector earns nothing.'
+variants:
+- applies_to: enterprise
+  change: Step 3 expands into a buying-committee sketch, because the problem owner and the budget holder are rarely the same person.
+  why: The decision is distributed and one name is not enough.
+- applies_to: plg
+  change: Steps 1 and 2 largely come from product usage rather than from public sources.
+  why: You already know what they are doing.
+references:
+- title: sales.obj.core.buying_signal
+  kind: internal
+  note: Step 2 is looking for one, and the object states which changes actually predict a conversation.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Promoted out of Phase-1 skeleton. The steps existed; when_to_use, done_when conditions,
+    limits, variants and metadata did not, which is why validate rejected it.
+
+    Step 5 is the whole playbook. The other four are what fifteen minutes buys, and the
+    constraint is what stops research becoming a comfortable substitute for outreach.

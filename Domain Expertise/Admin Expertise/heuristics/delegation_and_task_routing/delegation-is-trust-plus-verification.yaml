@@ -40,7 +40,7 @@ heuristic:
   - admin.obj.core.action_item
   - admin.obj.core.approver
   contradicts:
-  - admin.heu.commitment_tracking.a_promise_without_a_date_is_a_wish
+  - admin.heu.minutes_and_documentation.unminuted_decisions_dissolve
 
 limits:
 - It concerns the cadence, not the choice of owner. A perfectly cadenced delegation to the wrong person still fails.

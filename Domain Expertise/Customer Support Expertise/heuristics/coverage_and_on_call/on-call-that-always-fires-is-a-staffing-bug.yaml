@@ -34,7 +34,7 @@ heuristic:
     run thin coverage with a paid rotation because the economics favour it, and the pages are the
     plan rather than its failure.
   reads: [customer_support.obj.core.coverage_window, customer_support.obj.core.support_agent, customer_support.obj.core.backlog]
-  contradicts: [customer_support.heu.capacity_planning.utilisation_above_eighty_is_a_queue]
+  contradicts: [customer_support.heu.capacity_planning.deflection_is_capacity_too]
 limits:
 - 'It diagnoses a staffing mismatch; closing it requires headcount or a renegotiated promise, neither of which support controls.'
 - 'Page counts alone do not distinguish exceptional from routine, which is the judgement it depends on.'
