@@ -54,12 +54,22 @@ matches:
         the date it should have been destroyed. A type that carries only "a document exists"
         catches none of them.
 
-        WHAT WOULD EMIT IT. Layer 1 must supply `document.id`, `document.version`,
-        `document.owner`, `document.approved_at` and `document.retain_until` — none of which has a
-        writer, and none of which an email can be parsed for. This is a connector to a document
-        store (Drive, SharePoint, a DMS), not an extraction problem. Layer 2 then holds document
-        identity across versions, which is a merge problem of the same shape as person identity
-        and should be specified as one.
+        WHAT WOULD EMIT IT. Less than it first appears, and the correction matters because it
+        changes who owns the work. `capture/connectors/drive.py` ALREADY EXISTS and is already
+        dispatched: it lists Drive, downloads each file, extracts the text natively and hands it to
+        the gate. What it does not do is project the file's METADATA into facts — the Drive
+        response carries `id`, `modifiedTime`, `version` and `lastModifyingUser`, and the connector
+        currently keeps only the name and the extracted body, so `document.id`, `document.version`
+        and `document.owner` have no writer despite the data arriving.
+
+        So the build is a projection plus a node type, not a connector: a `document` graph node
+        keyed on the Drive file id, `document.*` facts written from the metadata already in hand,
+        and Layer 2 holding document identity across versions — a merge problem of the same shape
+        as person identity, which should be specified as one.
+
+        `document.approved_at` and `document.retain_until` remain genuinely absent. Neither is a
+        Drive concept; both come from a DMS or a retention policy, and neither may be inferred from
+        a file's modification history.
 
         WHAT GOES WRONG TODAY. Nothing fires. All five records capabilities — document_control,
         filing_and_retrieval, version_control, retention_and_archival, knowledge_base_maintenance

@@ -373,6 +373,48 @@ periodic situations. Named identically in `admin.sit.admin_service_under_load`,
 `customer_support.sit.queue_period_review` and `sales.sit.pipeline_period_review` so it reads as
 one build rather than three coincidences.
 
+## Session 4 — the period mechanism, built
+
+The largest single item in the pending list was not a connector. Twenty-three capabilities across
+all three domains asked about a WINDOW rather than a subject, and none could route because
+`context_situations` anchors on a graph node and no node's facts are "the whole queue this month".
+Three corpus files named it in identical words so it would read as one build.
+
+**The design, and why it adds no new concept.** `context/periodic.py` mints a `tenant` node per
+org, writes the window's aggregates onto it as ordinary facts — exactly as `derived.py` writes
+engagement onto people — and opens one situation per domain anchored there. `_load_context`,
+`_neighborhood`, `build_context_slice` and the whole compile path work unchanged. Teaching the
+compiler about anchorless situations would have put a second situation shape into a pipeline that
+has one.
+
+The tenant node is deliberately absent from `ANCHOR_PRIORITY`. `choose_anchors` returns only the
+strongest tier present, so a tenant node reachable from correspondence would fuse every
+conversation in the org into a single situation.
+
+Domains opt in by declaring `"tenant": "<domain>_period_review"` in `domain_spec`; the module asks
+the registry rather than listing domains. The first version listed them and
+`test_domain_names_appear_in_exactly_one_file_in_the_context_layer` rejected it, correctly — a
+domain named in Layer 2 means adding a domain requires editing Layer 2.
+
+**What it carries, and what it refuses to.** Counts and their previous-window twins, because one
+number is not a finding. No targets, no thresholds, no verdicts: whether 25 open deals is coverage
+or a drought needs a target nobody has stated, and inventing one would put a fabricated benchmark
+under every forecast. The absent inputs stay listed in `missing` on every situation.
+
+Measured read-only on the live org (production is read-only, so nothing was written): 25 open
+deals; 472 events this window against 750 last; 63 counterparties waiting on us; **32 commitments
+open and 30 of them overdue**; 80 active situations. That last pair is exactly the kind of finding
+no per-subject situation can surface.
+
+**Routing: 85 → 108 of 153.** Pending 68 → 45.
+
+**One correction to session 3.** `admin.sit.document_under_control` claimed the records subdomain
+needed a document-store connector. `capture/connectors/drive.py` already exists and is already
+dispatched — it lists Drive, downloads each file and extracts the text. What it does not do is
+project the file metadata it already receives (`id`, `version`, `modifiedTime`,
+`lastModifyingUser`) into `document.*` facts. The build is a projection and a node type, not a
+connector, and the file now says so.
+
 ## What is still NOT done
 
 * **Production is read-only right now, and only you can lift it.** Supabase releases it from the

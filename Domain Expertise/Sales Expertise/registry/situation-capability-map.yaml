@@ -269,6 +269,31 @@ map:
         - sales.obj.core.proposal
         - sales.obj.core.timeline
 
+  pipeline_period_review:
+    situations:
+      - sales.sit.pipeline_period_review
+    capabilities:
+      - sales.revenue_operations.forecasting
+      - sales.revenue_operations.quota_planning
+      - sales.revenue_operations.sales_analytics
+      - sales.revenue_operations.sales_operations
+      - sales.revenue_operations.territory_planning
+      - sales.sales_management.performance_management
+      - sales.sales_management.sales_coaching
+    objects:
+      load:
+        - sales.obj.core.account
+        - sales.obj.core.deal
+        - sales.obj.core.timeline
+      optional:
+        - sales.obj.core.budget
+        - sales.obj.core.buying_committee
+        - sales.obj.core.icp
+        - sales.obj.core.next_action
+        - sales.obj.core.objection
+        - sales.obj.core.opportunity
+        - sales.obj.core.risk
+
 # ── Blocked on Layers 1 and 2 ─────────────────────────────────────────────
 # These situations are authored and route NOTHING, because the type that would
 # trigger them is not in any shipped pack's signal_vocab. Not a defect in the
@@ -280,9 +305,6 @@ pending_l2_types:
   market_period_review:
     situations:
       - sales.sit.touch_outside_mail
-  pipeline_period_review:
-    situations:
-      - sales.sit.pipeline_period_review
 
 # ── Coverage ──────────────────────────────────────────────────────────────
 # Types this domain routes.
@@ -291,6 +313,7 @@ routed_l2_types:
   - investor_contact
   - investor_relationship
   - opportunity
+  - pipeline_period_review
   - prospect_relationship
   - relationship
 
@@ -304,27 +327,20 @@ orphan_capabilities:
   - sales.market_and_targeting.tam_sam_som
   - sales.prospecting_and_outreach.cold_calling
   - sales.prospecting_and_outreach.linkedin_outreach
-  - sales.revenue_operations.forecasting
-  - sales.revenue_operations.quota_planning
-  - sales.revenue_operations.sales_analytics
-  - sales.revenue_operations.sales_operations
-  - sales.revenue_operations.territory_planning
-  - sales.sales_management.performance_management
-  - sales.sales_management.sales_coaching
 
 # Authored but no capability's objects.yaml loads them.
 unreachable_objects: []
 
 stats:
-  l2_types_total: 10
-  l2_types_routed_here: 6
+  l2_types_total: 13
+  l2_types_routed_here: 7
   l2_types_unrouted_globally: 0
-  l2_types_pending: 3
+  l2_types_pending: 2
   situations: 15
   capabilities: 47
   capabilities_stub: 0
   capabilities_complete: 47
-  capabilities_routed: 36
+  capabilities_routed: 43
   objects_total: 29
   objects_core: 24
   objects_scoped: 5

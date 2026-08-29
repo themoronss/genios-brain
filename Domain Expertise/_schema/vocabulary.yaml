@@ -129,6 +129,16 @@ substrate:
   # Those exist only for a tenant who has connected that source, so a pattern resting on one is
   # true for some tenants and silently dead for the rest — which is what `needs_signal` is for.
   fact_paths:
+    # Period aggregates, written onto the tenant node by `context/periodic.py`. Computed, never
+    # extracted — they are not in any pack's `schema.fields` for the same reason `derived.*` is
+    # stripped from the extraction prompt.
+    - period.open_deals
+    - period.events_this_window
+    - period.events_prev_window
+    - period.counterparties_awaiting_us
+    - period.commitments_open
+    - period.commitments_overdue
+    - period.active_situations
     # ── deal (sales_v1) ────────────────────────────────────────────────────────
     - deal.status
     - deal.last_inbound
@@ -248,6 +258,12 @@ substrate:
     - investor_relationship     # fundraising, anchored on a company
     - investor_contact          # fundraising, anchored on a person
     - relationship              # general, anchored on a company or a person
+    # The three PERIOD types, anchored on the tenant node `context/periodic.py` mints. They are
+    # substrate rather than planned because the aggregates they carry are computed from facts that
+    # already exist — no connector is involved. Twenty-two capabilities were waiting on them.
+    - pipeline_period_review    # sales, anchored on the tenant, one window
+    - admin_period_review       # admin, anchored on the tenant, one window
+    - support_period_review     # support, anchored on the tenant, one window
 # ─────────────────────────────────────────────────────────────────────────────
 # PLANNED SUBSTRATE — asked for by authored expertise, emitted by nothing yet.
 #

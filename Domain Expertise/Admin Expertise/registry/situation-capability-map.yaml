@@ -178,14 +178,38 @@ map:
         - admin.obj.core.invoice
         - admin.obj.core.meeting
 
+  admin_period_review:
+    situations:
+      - admin.sit.admin_service_under_load
+    capabilities:
+      - admin.admin_operations.admin_analytics
+      - admin.admin_operations.business_continuity_administration
+      - admin.admin_operations.process_improvement
+      - admin.admin_operations.service_level_management
+      - admin.admin_operations.sop_management
+    objects:
+      load:
+        - admin.obj.core.commitment
+        - admin.obj.core.deadline
+        - admin.obj.core.document
+        - admin.obj.core.policy
+        - admin.obj.core.request
+        - admin.obj.core.sop
+      optional:
+        - admin.obj.core.action_item
+        - admin.obj.core.approval
+        - admin.obj.core.asset
+        - admin.obj.core.compliance_obligation
+        - admin.obj.core.employee_record
+        - admin.obj.core.escalation
+        - admin.obj.core.invoice
+        - admin.obj.core.vendor
+
 # ── Blocked on Layers 1 and 2 ─────────────────────────────────────────────
 # These situations are authored and route NOTHING, because the type that would
 # trigger them is not in any shipped pack's signal_vocab. Not a defect in the
 # authoring — it is the requirement list, stated where the compiler can count it.
 pending_l2_types:
-  admin_period_review:
-    situations:
-      - admin.sit.admin_service_under_load
   asset_in_custody:
     situations:
       - admin.sit.asset_in_custody
@@ -207,6 +231,7 @@ pending_l2_types:
 routed_l2_types:
   - account_admin
   - admin_contact
+  - admin_period_review
   - relationship
 
 # Layer 2 emits these and NO situation in ANY domain binds them. Each is a signal
@@ -215,11 +240,6 @@ unrouted_l2_types: []
 
 # Authored but unreachable — no situation routes into them.
 orphan_capabilities:
-  - admin.admin_operations.admin_analytics
-  - admin.admin_operations.business_continuity_administration
-  - admin.admin_operations.process_improvement
-  - admin.admin_operations.service_level_management
-  - admin.admin_operations.sop_management
   - admin.compliance_and_governance.audit_support
   - admin.compliance_and_governance.board_and_secretarial
   - admin.compliance_and_governance.data_protection_administration
@@ -251,15 +271,15 @@ orphan_capabilities:
 unreachable_objects: []
 
 stats:
-  l2_types_total: 10
-  l2_types_routed_here: 3
+  l2_types_total: 13
+  l2_types_routed_here: 4
   l2_types_unrouted_globally: 0
-  l2_types_pending: 6
+  l2_types_pending: 5
   situations: 14
   capabilities: 57
   capabilities_stub: 0
   capabilities_complete: 57
-  capabilities_routed: 26
+  capabilities_routed: 31
   objects_total: 25
   objects_core: 20
   objects_scoped: 5

@@ -64,6 +64,19 @@ def test_producible_vocabulary_is_small_and_closed():
         "account_admin", "admin_contact",
         "investor_relationship", "investor_contact",     # fundraising (L2-05)
         "relationship",
+        # The three PERIOD types, and they are a different SHAPE from everything above rather than
+        # three more subjects. Every other value here names a thing a situation is about — a deal,
+        # a person, an account. These name a WINDOW, anchored on the tenant node
+        # `context/periodic.py` mints, carrying counts and their previous-window twins.
+        #
+        # Twenty-three authored capabilities asked about a window and none could route, because
+        # `context_situations` anchors on a graph node and no node's facts are "the whole queue
+        # this month". Writing the aggregates onto a tenant node as ordinary facts is what let the
+        # existing compile path read them without learning a second situation shape.
+        #
+        # A domain opts in by declaring `"tenant": "<domain>_period_review"` in `domain_spec`; the
+        # set below therefore grows by one per opting-in domain and is still closed.
+        "pipeline_period_review", "admin_period_review", "support_period_review",
     }, "the L2 situation vocabulary changed — re-check every corpus route against it"
 
 

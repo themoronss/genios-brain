@@ -1,4 +1,4 @@
-# THIS SITUATION ROUTES NOTHING. The admin-operations subdomain reads the administrative FUNCTION
+# ROUTED SINCE 2026-08-29. Previously: The admin-operations subdomain reads the administrative FUNCTION
 # rather than any one counterparty — how requests arrive, how long they take, whether the process
 # holds. That is a portfolio read, and every anchor this system offers is a single subject.
 
@@ -8,7 +8,7 @@ identity:
   domain: admin
   owner_capability: admin.admin_operations.service_level_management
   version: 1.0.0
-  status: draft
+  status: stable
 
 description: >
   The administrative function itself is the subject: the shape of the request queue, how long
@@ -21,34 +21,17 @@ description: >
   one deal at a time.
 
 matches:
-  l2_situation_types: []
-  pending_l2_situation_types:
-    - type: admin_period_review
-      owner_layer: L2
-      nearest_today: admin_contact
-      note: >
-        WHAT THE TYPE MUST MEAN. A PERIOD, not a subject: a window over the whole administrative
-        queue, carrying volume by request type, turnaround against target, exception counts and
-        the processes that produced them. Its anchor is the tenant and the window, which is a
-        shape Layer 2 does not currently emit for anything.
-
-        WHAT WOULD EMIT IT. A portfolio situation emitter — the same missing machinery that blocks
-        `sales.sit.pipeline_period_review` and `customer_support.sit.queue_period_review`. All
-        three want one mechanism: periodic, tenant-anchored, aggregate-carrying. Named identically
-        across the three domains so it is visible as ONE Layer 2 build rather than three.
-
-        WHAT GOES WRONG TODAY. Nothing fires for service_level_management, admin_analytics,
-        process_improvement, sop_management or business_continuity_administration.
-
-        WHY BINDING TO admin_contact WOULD BE WRONG, specifically. (1) A per-counterparty anchor
-        cannot express an aggregate — "turnaround is slipping" is not a statement about one
-        contact, and asserted about one it is meaningless. (2) It would fire once per contact,
-        producing N copies of a single finding and spending the daily signal budget on repetition.
-        (3) Process improvement needs to see the same exception recur across DIFFERENT requests,
-        which is precisely the comparison a single-subject anchor forbids. (4) Business continuity
-        is about the absence of a person or a system; there is no anchor for an absence.
-  # No `scope`. The natural scope is TENANT + PERIOD, which the enum does not offer.
-
+  # BUILT. `context/periodic.py` mints a tenant node, writes the window's aggregates onto it as
+  # ordinary facts, and opens one situation per domain anchored there — so the compile path reads
+  # a period situation exactly as it reads any other. The type below is live.
+  #
+  # What arrives with it is a COUNT and its previous-window twin, never a verdict: open deals,
+  # events this window against last, counterparties waiting on us, commitments open and overdue.
+  # There are still no targets, no per-owner load and no cost-to-serve, and those remain listed in
+  # `missing` on every situation this produces rather than being estimated.
+  l2_situation_types:
+    - admin_period_review
+  scope: account
 also_serves:
   - admin.admin_operations.admin_analytics
   - admin.admin_operations.process_improvement
@@ -71,7 +54,7 @@ signals_of_decay: [timeline_slip]
 render:
   artifact_kind: brief
   render_hint: >
-    Unreachable today. When the type exists: report the period, the movement and the cause — never
+    report the period, the movement and the cause — never
     a single number without the comparison that makes it mean something.
   fallback:
     headline: "Administrative turnaround — period unmeasured"
@@ -87,7 +70,14 @@ metadata:
   confidence: experimental
   reviewed_at: '2026-08-29'
   notes: >
+    Built 2026-08-29. The argument against the per-subject binding is kept because it is what stops this being re-pointed at an anchor that cannot carry an aggregate:
+
+    WHY BINDING TO admin_contact WOULD BE WRONG, specifically. (1) A per-counterparty anchor cannot express an aggregate — "turnaround is slipping" is not a statement about one contact, and asserted about one it is meaningless. (2) It would fire once per contact, producing N copies of a single finding and spending the daily signal budget on repetition. (3) Process improvement needs to see the same exception recur across DIFFERENT requests, which is precisely the comparison a single-subject anchor forbids. (4) Business continuity is about the absence of a person or a system; there is no anchor for an absence. # No `scope`. The natural scope is TENANT + PERIOD, which the enum does not offer.
+
     Deliberately names the SAME missing mechanism as the Sales and Customer Support period
     situations. Three subdomains across three domains are blocked on one Layer 2 capability —
     tenant-anchored periodic situations — and stating it three times in the same words is what
     makes that legible as a single build.
+
+admission:
+  accepted_content_hash: ddb48cee8685453427ff2c89fb6597164d236f79eb2f68083034f44002eba853

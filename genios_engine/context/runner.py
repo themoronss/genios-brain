@@ -267,6 +267,12 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             from genios_engine.context.derived import compute as compute_derived
             from genios_engine.context.derived import compute_deal_view
             derived_rows = compute_derived(store, org_id) + compute_deal_view(store, org_id)
+            # PERIOD aggregates and their situations, in the same pass and for the same reason:
+            # they are computed from facts that now exist, they are cheap, and a period read that
+            # is only refreshed by a separate schedule is a period read that is always stale.
+            # Twenty-two authored capabilities are reachable only through these.
+            from genios_engine.context.periodic import refresh_period_situations
+            derived_rows += refresh_period_situations(store, org_id)
         except Exception:      # noqa: BLE001 — derived view, recomputed next drain
             from genios_engine.platform.logging import get_logger
             get_logger("genios.l2").exception("derived fact refresh failed for org=%s", org_id)

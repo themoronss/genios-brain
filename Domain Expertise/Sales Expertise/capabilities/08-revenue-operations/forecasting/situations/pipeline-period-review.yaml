@@ -1,4 +1,4 @@
-# THIS SITUATION ROUTES NOTHING. Seven capabilities across revenue-operations and sales-management
+# ROUTED SINCE 2026-08-29. Previously: Seven capabilities across revenue-operations and sales-management
 # read the PIPELINE and the TEAM over a period. Same missing mechanism as
 # `admin.sit.admin_service_under_load` and `customer_support.sit.queue_period_review` — named
 # identically in all three so it reads as one Layer 2 build and not three coincidences.
@@ -9,7 +9,7 @@ identity:
   domain: sales
   owner_capability: sales.revenue_operations.forecasting
   version: 1.0.0
-  status: draft
+  status: stable
 
 description: >
   The revenue motion over a window rather than any one deal: what the pipeline is worth against
@@ -23,33 +23,17 @@ description: >
   other asks whether the sum of them adds up.
 
 matches:
-  l2_situation_types: []
-  pending_l2_situation_types:
-    - type: pipeline_period_review
-      owner_layer: L2
-      nearest_today: deal
-      note: >
-        WHAT THE TYPE MUST MEAN. A window over the whole pipeline, anchored on the tenant,
-        carrying stage distribution, coverage against target, movement since the last window and
-        per-owner load. Movement is the requirement that makes it useful — a snapshot says what
-        the pipeline is, and only a comparison says whether it is getting better.
-
-        WHAT WOULD EMIT IT. Tenant-anchored periodic situations (shared with the Admin and Support
-        period types), plus quota, territory and owner facts that have no writer. `deal.value` is
-        also absent and is deliberately not derived — `context/derived.py` refuses to infer a
-        number nobody stated, and a forecast built on inferred values would be confidently wrong
-        in exactly the way forecasts must not be.
-
-        WHAT GOES WRONG TODAY. Nothing fires for forecasting, quota_planning, territory_planning,
-        sales_analytics, sales_operations, performance_management or sales_coaching.
-
-        WHY BINDING TO deal WOULD BE WRONG, specifically. (1) A forecast asserted on one deal is
-        not a forecast. (2) It would fire per deal, producing N copies of one number. (3) Coverage
-        is a ratio over the set; a single-deal anchor cannot express a ratio. (4) Coaching and
-        performance are about OUR people, and a deal-anchored situation carries the counterparty,
-        not the rep — so the sales-management half would reason about the wrong party entirely.
-  # No `scope`. The natural scope is TENANT + PERIOD, which the enum does not offer.
-
+  # BUILT. `context/periodic.py` mints a tenant node, writes the window's aggregates onto it as
+  # ordinary facts, and opens one situation per domain anchored there — so the compile path reads
+  # a period situation exactly as it reads any other. The type below is live.
+  #
+  # What arrives with it is a COUNT and its previous-window twin, never a verdict: open deals,
+  # events this window against last, counterparties waiting on us, commitments open and overdue.
+  # There are still no targets, no per-owner load and no cost-to-serve, and those remain listed in
+  # `missing` on every situation this produces rather than being estimated.
+  l2_situation_types:
+    - pipeline_period_review
+  scope: account
 also_serves:
   - sales.revenue_operations.quota_planning
   - sales.revenue_operations.territory_planning
@@ -74,7 +58,7 @@ signals_of_decay: [timeline_slip]
 render:
   artifact_kind: brief
   render_hint: >
-    Unreachable today. When the type exists: never state a forecast number without the coverage
+    never state a forecast number without the coverage
     ratio and the movement behind it — a number alone invites the confidence it has not earned.
   fallback:
     headline: "Pipeline — period unmeasured"
@@ -90,6 +74,13 @@ metadata:
   confidence: experimental
   reviewed_at: '2026-08-29'
   notes: >
+    Built 2026-08-29. The argument against the per-subject binding is kept because it is what stops this being re-pointed at an anchor that cannot carry an aggregate:
+
+    WHY BINDING TO deal WOULD BE WRONG, specifically. (1) A forecast asserted on one deal is not a forecast. (2) It would fire per deal, producing N copies of one number. (3) Coverage is a ratio over the set; a single-deal anchor cannot express a ratio. (4) Coaching and performance are about OUR people, and a deal-anchored situation carries the counterparty, not the rep — so the sales-management half would reason about the wrong party entirely. # No `scope`. The natural scope is TENANT + PERIOD, which the enum does not offer.
+
     Three domains, three subdomains, twenty-two capabilities, one missing Layer 2 mechanism:
     tenant-anchored periodic situations. Stated in the same words in all three files so the
     single build is visible from any of them.
+
+admission:
+  accepted_content_hash: 181d0889c30c2d83bdd0535d8fc5fb246ccc106e545d0356610b119735e4425b

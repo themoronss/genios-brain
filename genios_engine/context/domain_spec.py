@@ -171,8 +171,19 @@ def is_registered(domain: str | None) -> bool:
 register(DomainSpec(
     domain="sales",
     display_name="Sales",
+    # `tenant` is the PERIOD anchor. Twenty-two authored capabilities across the three domains ask
+    # about a WINDOW rather than a subject — coverage, backlog, turnaround, team health — and none
+    # could ever route, because `context_situations` anchors on a graph node and no node's facts are
+    # "the whole queue this month". `context/periodic.py` mints a tenant node, writes the aggregates
+    # onto it as ordinary facts, and anchors one situation per domain there, so the compile path
+    # needs no new concept.
+    #
+    # The tenant node is deliberately NOT in `ANCHOR_PRIORITY`: `choose_anchors` returns only the
+    # strongest tier present, so a tenant node reachable from correspondence would swallow every
+    # conversation in the org into one situation.
     situation_types={"deal": "deal", "company": "opportunity",
-                     "person": "prospect_relationship"},
+                     "person": "prospect_relationship",
+                     "tenant": "pipeline_period_review"},
     expected_fields={
         "deal": {"deal.stage": "pipeline stage", "deal.amount": "deal value",
                  "deal.close_date": "expected close date",
@@ -185,7 +196,18 @@ register(DomainSpec(
 register(DomainSpec(
     domain="support",
     display_name="Customer Support",
-    situation_types={"company": "support_case", "person": "support_contact"},
+    # `tenant` is the PERIOD anchor. Twenty-two authored capabilities across the three domains ask
+    # about a WINDOW rather than a subject — coverage, backlog, turnaround, team health — and none
+    # could ever route, because `context_situations` anchors on a graph node and no node's facts are
+    # "the whole queue this month". `context/periodic.py` mints a tenant node, writes the aggregates
+    # onto it as ordinary facts, and anchors one situation per domain there, so the compile path
+    # needs no new concept.
+    #
+    # The tenant node is deliberately NOT in `ANCHOR_PRIORITY`: `choose_anchors` returns only the
+    # strongest tier present, so a tenant node reachable from correspondence would swallow every
+    # conversation in the org into one situation.
+    situation_types={"company": "support_case", "person": "support_contact",
+                     "tenant": "support_period_review"},
     expected_fields={
         "support_case": {"thread.ball_in_court": "whose turn it is"},
         "support_contact": {"thread.ball_in_court": "whose turn it is"},
@@ -206,7 +228,18 @@ register(DomainSpec(
     # `admin_contact`, not `admin_person`, deliberately: it is the same word the two other
     # person-anchored lanes already use (`support_contact`, `investor_contact`), and consistency
     # in this name is not cosmetic — it is what a corpus author reads to know the lane exists.
-    situation_types={"company": "account_admin", "person": "admin_contact"},
+    # `tenant` is the PERIOD anchor. Twenty-two authored capabilities across the three domains ask
+    # about a WINDOW rather than a subject — coverage, backlog, turnaround, team health — and none
+    # could ever route, because `context_situations` anchors on a graph node and no node's facts are
+    # "the whole queue this month". `context/periodic.py` mints a tenant node, writes the aggregates
+    # onto it as ordinary facts, and anchors one situation per domain there, so the compile path
+    # needs no new concept.
+    #
+    # The tenant node is deliberately NOT in `ANCHOR_PRIORITY`: `choose_anchors` returns only the
+    # strongest tier present, so a tenant node reachable from correspondence would swallow every
+    # conversation in the org into one situation.
+    situation_types={"company": "account_admin", "person": "admin_contact",
+                     "tenant": "admin_period_review"},
     expected_fields={
         "account_admin": {"subscription.current_period_end": "renewal date"},
         # An administrative counterparty is read through what we owe them and whose turn it is,

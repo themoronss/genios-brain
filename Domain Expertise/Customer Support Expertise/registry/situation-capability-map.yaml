@@ -200,6 +200,42 @@ map:
         - customer_support.obj.macro_management.macro
         - customer_support.obj.postmortem.postmortem
 
+  support_period_review:
+    situations:
+      - customer_support.sit.queue_period_review
+    capabilities:
+      - customer_support.entitlement_and_sla.coverage_and_on_call
+      - customer_support.support_management.agent_coaching
+      - customer_support.support_management.performance_management
+      - customer_support.support_management.quality_assurance
+      - customer_support.support_management.team_health
+      - customer_support.support_management.ticket_review
+      - customer_support.support_operations.capacity_planning
+      - customer_support.support_operations.cost_to_serve
+      - customer_support.support_operations.queue_management
+      - customer_support.support_operations.support_analytics
+      - customer_support.support_operations.workload_balancing
+    objects:
+      load:
+        - customer_support.obj.core.backlog
+        - customer_support.obj.core.capacity_plan
+        - customer_support.obj.core.conversation
+        - customer_support.obj.core.coverage_window
+        - customer_support.obj.core.customer_account
+        - customer_support.obj.core.quality_scorecard
+        - customer_support.obj.core.queue
+        - customer_support.obj.core.resolution
+        - customer_support.obj.core.support_agent
+        - customer_support.obj.core.ticket
+      optional:
+        - customer_support.obj.core.customer_sentiment
+        - customer_support.obj.core.entitlement
+        - customer_support.obj.core.escalation
+        - customer_support.obj.core.incident
+        - customer_support.obj.core.knowledge_article
+        - customer_support.obj.core.satisfaction_score
+        - customer_support.obj.core.sla_target
+
 # ── Blocked on Layers 1 and 2 ─────────────────────────────────────────────
 # These situations are authored and route NOTHING, because the type that would
 # trigger them is not in any shipped pack's signal_vocab. Not a defect in the
@@ -244,9 +280,6 @@ pending_l2_types:
   sla_breach_imminent:
     situations:
       - customer_support.sit.sla_breach_imminent
-  support_period_review:
-    situations:
-      - customer_support.sit.queue_period_review
   ticket_aging:
     situations:
       - customer_support.sit.queue_overloaded
@@ -263,6 +296,7 @@ routed_l2_types:
   - relationship
   - support_case
   - support_contact
+  - support_period_review
 
 # Layer 2 emits these and NO situation in ANY domain binds them. Each is a signal
 # that compiles to nothing, silently. Global, not this domain's fault.
@@ -275,7 +309,6 @@ orphan_capabilities:
   - customer_support.diagnosis_and_resolution.root_cause_analysis
   - customer_support.diagnosis_and_resolution.verification_and_closure
   - customer_support.diagnosis_and_resolution.workaround_management
-  - customer_support.entitlement_and_sla.coverage_and_on_call
   - customer_support.escalation_and_incident.incident_management
   - customer_support.escalation_and_incident.major_incident_communication
   - customer_support.escalation_and_incident.postmortem
@@ -285,31 +318,21 @@ orphan_capabilities:
   - customer_support.knowledge_and_deflection.knowledge_authoring
   - customer_support.knowledge_and_deflection.macro_management
   - customer_support.knowledge_and_deflection.self_service_deflection
-  - customer_support.support_management.agent_coaching
-  - customer_support.support_management.performance_management
-  - customer_support.support_management.quality_assurance
-  - customer_support.support_management.team_health
-  - customer_support.support_management.ticket_review
-  - customer_support.support_operations.capacity_planning
-  - customer_support.support_operations.cost_to_serve
-  - customer_support.support_operations.queue_management
-  - customer_support.support_operations.support_analytics
-  - customer_support.support_operations.workload_balancing
   - customer_support.voice_of_customer.product_feedback_routing
 
 # Authored but no capability's objects.yaml loads them.
 unreachable_objects: []
 
 stats:
-  l2_types_total: 10
-  l2_types_routed_here: 3
+  l2_types_total: 13
+  l2_types_routed_here: 4
   l2_types_unrouted_globally: 0
-  l2_types_pending: 17
+  l2_types_pending: 16
   situations: 19
   capabilities: 49
   capabilities_stub: 0
   capabilities_complete: 49
-  capabilities_routed: 23
+  capabilities_routed: 34
   objects_total: 18
   objects_core: 16
   objects_scoped: 2
