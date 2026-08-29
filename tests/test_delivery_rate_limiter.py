@@ -17,12 +17,13 @@ def test_shared_hour_key_is_a_stream_for_chat_families():
 
 
 @pytest.fixture()
-def conn():
+def conn(live_db_url):
     try:
-        from genios_engine.platform.config import get_settings
         from genios_engine.platform.db import get_engine
         from sqlalchemy import text
-        url = get_settings().database_url
+        # The scratch database when one is set — never the configured (production) one.
+        # See tests/conftest.py::live_test_database_url for why that ordering matters.
+        url = live_db_url
         if not url:
             pytest.skip("no database configured")
         c = get_engine(url).connect()
