@@ -156,48 +156,78 @@ The graph was backed up to `*_bak_20260827_adminsupport` before anything was wri
 
 ---
 
-# Authoring: what is done and what is not
+# Authoring: complete
 
 | | at start | now |
 |---|---|---|
-| Admin capabilities hollow | 51 / 57 | **44 / 57** |
-| Customer Support hollow | 40 / 49 | **32 / 49** |
+| Admin capabilities hollow | 51 / 57 | **0 / 57** |
+| Customer Support hollow | 40 / 49 | **0 / 49** |
 | Sales hollow | 0 / 47 | 0 / 47 |
-| Corpus validate errors | 380 | **320** |
+| Incomplete playbooks + heuristics | 190 | **0** |
+| Corpus validate errors | 380 | **0** |
+| Whole-corpus `yaml.safe_load` failures | — | **0** (1351 files) |
 
-**Batch 1 — Customer Support, 8 capabilities**, chosen by reachability: every hollow capability the
-live `relationship`, `support_case` and `support_contact` situations actually reach.
-**Batch 2 — Admin, 7 capabilities**: executive support and meeting operations. None on a live route,
-and each one's notes say so.
+**153 of 153 capabilities authored**, all three domains at the same standard. Every capability is
+three real files:
 
-Each capability is three real files — `capability.yaml` (6 outcomes including the negative one, 6
-failure modes, 5 KPIs, handoffs, applies_to), a playbook (`when_to_use` with `do_not_use_when`,
-steps with observable `done_when`, limits, variants, references) and a heuristic (statement, why,
-`confidence_bp`, `applies_when`, and `breaks_down_when` — the field that carries most of the value).
+* `capability.yaml` — 5–6 outcomes *including the negative one*, 5–6 failure modes written as how a
+  competent-looking person gets it wrong, 4–5 KPIs, handoffs, applies_to. No numbers: thresholds
+  are Layer 4's and live in the pack.
+* a **playbook** — `when_to_use` with `do_not_use_when`, ordered steps each with an observable
+  `done_when`, limits, failure modes, model variants, references.
+* a **heuristic** — statement, why, `confidence_bp`, `applies_when`, and `breaks_down_when`, which
+  is the field carrying most of the value.
 
-Six genuine professional tensions are recorded through `contradicts` rather than smoothed away.
-Hiding them would make the brain read more confident than the profession is.
+## The measurements this corpus argues for
 
-## What is NOT done, and why
+Almost every capability is built around a number the function does not normally report, and in
+several cases around the *inversion* of the one it does:
 
-* **76 capabilities remain hollow** — 44 Admin, 32 Customer Support. None is on a live route: the
-  Admin ones need Admin situations that do not exist, and the Customer Support ones are bound to
-  `pending_l2_situation_types` that nothing emits. Filling them is real work with **zero routing
-  effect today**, which is why the two batches that were done were chosen by reachability instead.
-* **166 playbooks and heuristics are still skeletons** (102 Admin, 64 Customer Support, 8 Sales) —
-  they are the artifacts belonging to those same hollow capabilities, and they are the entire
-  remaining 320 validate errors. Every error is a missing `metadata`, `when_to_use`, `heuristic` or
-  `steps` key on a Phase-1 stub. Zero errors come from anything authored in this session.
-* **17 more Customer Support core objects are referenced and unauthored** — `issue`, `conversation`,
-  `support_agent`, `queue`, `backlog` and others. They block only situations bound to pending L2
-  types, so authoring them changes no routing until a support L2 extraction lane exists. Tracked in
-  `Customer Support Expertise/domain.yaml::planned_objects`.
-* **`investor_contact` is unrouted globally** — 7 live situations on this org, emitted by Layer 2 and
-  claimed by no domain. It is a Sales/fundraising corpus gap, outside this work, and it is the
-  single largest remaining routing loss on the design partner's org after `deal`.
-* **`fundraising_deal` × 4** — the fundraising spec has no `deal` mapping, so the same
-  generic-fallback fault that produced `admin_person` and `general_deal`. One line in
-  `domain_spec.py` plus a situation, not done here because it is the Sales lane.
+| Instead of | Because |
+|---|---|
+| actuals | **committed spend** — a line at 60% consumed with three open orders against it is overspent, and every actuals report says it is healthy |
+| deflection rate | **net deflection + escalation temperature** — a customer who gave up counts identically to one who was helped |
+| macro usage rate | **edit-before-send** — usage rate rewards exactly the send-as-is behaviour that destroys the trust macros save time to build |
+| time-to-close | **reopen rate, and reopen *friction*** — closure is ours to control, reopening is not; where reopening is hard the check is as gameable as the thing it checks |
+| article count | **article deflection yield** — count rises monotonically and says nothing |
+| attrition | **after-hours creep, QA drift, and the lead-indicator gap** — the team that burned out in March resigns in September |
+| ticket volume as support performance | **ticket volume as a product metric** — treated as ours it rewards deflecting the report rather than removing the cause |
+| count-based load fairness | **weighted variance beside perceived fairness** — count variance can be zero while the team can see the spread, and asserting fairness they know is false damages every other number |
+
+Several KPIs are deliberately **target bands rather than directions**, which is the least obvious
+call in the corpus and always argued in the file: `near_miss_reports` (zero means nobody is
+reporting, not that nothing happened), `stand_down_rate` (cheap declaration requires cheap
+de-declaration), `returned_to_supplier_rate` (zero means we absorb supplier errors forever),
+`refused_claim_count` (zero means every requested number was produced regardless of what the data
+supports), `policy_count` (the one metric in Admin whose right direction is sometimes downward).
+
+## Genuine professional tensions, recorded not smoothed
+
+`contradicts` is used throughout to name conflicts a practitioner actually holds, rather than
+presenting a brain more confident than the profession is. Among them: small-promises vs
+breach-clustering (under load they point at different tickets); silence-is-the-promise-breaker vs
+every-reply-sets-the-tone (send now vs send well); everything-kept-is-discoverable vs
+audit-pain-measures-record-debt (keep less vs keep more, resolved per record class); friction-begets-
+shadow-procurement vs auto-renewals-are-decisions (reviews push spend out of view);
+unminuted-decisions-dissolve vs governance-is-retrospective-evidence (what to omit is a governance
+judgement); SOPs-are-resilience vs workarounds-mark-the-real-process-map (which process to write
+down).
+
+## What is still NOT done
+
+* **`investor_contact` is unrouted globally** — 7 live situations on the design partner's org,
+  emitted by Layer 2 and bound by no domain. It is the single remaining routing warning from
+  `validate.py`, it is a Sales/fundraising corpus gap, and it is the largest routing loss left
+  after `deal`.
+* **`fundraising_deal` × 4** — same generic-fallback fault that produced `admin_person`. One line
+  in `domain_spec.py` plus a situation.
+* **17 Customer Support core objects referenced and unauthored** — `issue`, `conversation`,
+  `support_agent`, `queue`, `backlog` and others. They block only situations bound to
+  `pending_l2_situation_types` that nothing emits, so authoring them changes no routing until a
+  support L2 extraction lane exists. Tracked in `Customer Support Expertise/domain.yaml`.
+* **The 384 warnings are the real backlog** and they are honest: planned-but-unauthored object
+  references, and 15 situation triggers bound to L2 types no pack emits. `registry/signal-backlog.md`
+  ranks them.
 
 ## A hazard worth knowing before the next session
 
