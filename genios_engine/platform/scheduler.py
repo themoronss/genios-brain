@@ -56,8 +56,16 @@ def _loop(interval_seconds: float, initial_delay: float) -> None:
                       "the NEXT tick still fires on schedule", _SWEEP_TIMEOUT_S)
             from genios_engine.platform import ops_alert
             ops_alert.notify("scheduler_sweep_timeout", timeout_s=_SWEEP_TIMEOUT_S)
-        except Exception:                 # noqa: BLE001 — a crashed sweep must not kill the loop
+        except Exception as exc:          # noqa: BLE001 — a crashed sweep must not kill the loop
             _log.exception("scheduled maintenance sweep crashed")
+            # ...and it must not be QUIET either. A timeout alerted and a crash did not, which is
+            # exactly backwards: a hang is at least visible as a tick that never returns, whereas
+            # a crash completes the tick, logs one line nobody is tailing, and leaves the product
+            # looking healthy. Production spent four hours on 2026-08-29 with every write failing
+            # on a read-only database — a raise, not a hang — and nothing anywhere said so.
+            from genios_engine.platform import ops_alert
+            ops_alert.notify("scheduler_sweep_crashed",
+                             error=type(exc).__name__, detail=str(exc)[:300])
         if _stop.wait(interval_seconds):  # sleep until next tick (or until stop)
             return
 

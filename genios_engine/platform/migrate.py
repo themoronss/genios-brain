@@ -23,6 +23,63 @@ create table if not exists schema_migrations (
 """
 
 
+class ReadOnlyDatabaseError(RuntimeError):
+    """Migrations are pending and the server will not accept writes.
+
+    Raised INSTEAD of the driver's `ReadOnlySqlTransaction`, because the two need opposite
+    handling at boot and the driver error cannot be told apart from a genuine migration failure
+    without inspecting its message. See `apply_migrations` for why this one is survivable.
+    """
+
+
+def _pending(mdir: Path, ledger: dict[str, str]) -> list[Path]:
+    """Migration files not yet in the ledger, in filename order. Checksum drift still raises."""
+    out: list[Path] = []
+    for sql_file in sorted(mdir.glob("*.sql")):
+        cs = _checksum(sql_file)
+        if sql_file.name in ledger:
+            if ledger[sql_file.name] != cs:
+                raise RuntimeError(
+                    f"{sql_file.name} was edited after being applied "
+                    f"(checksum drift). Migrations are immutable — add a new file.")
+            continue
+        out.append(sql_file)
+    return out
+
+
+def _read_ledger(engine) -> dict[str, str] | None:
+    """The ledger as {filename: checksum}, or None if the table does not exist yet.
+
+    A SELECT, deliberately — it is the one way to learn whether there is anything to do that
+    works on a read-only server. The CREATE TABLE is deferred to the point where we already know
+    a migration has to be written.
+    """
+    from sqlalchemy.exc import SQLAlchemyError
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text("select filename, checksum from schema_migrations")).all()
+        return {r.filename: r.checksum for r in rows}
+    except SQLAlchemyError:
+        return None
+
+
+def _is_read_only(engine) -> bool:
+    """Whether the server will refuse writes. False for anything that cannot answer the question.
+
+    Asked of the SERVER (`show default_transaction_read_only`) rather than inferred from a failed
+    write, so the answer is available before anything has been attempted. A hot standby reports
+    the same way via `pg_is_in_recovery`, and both mean the same thing to a migration.
+    """
+    from sqlalchemy.exc import SQLAlchemyError
+    try:
+        with engine.connect() as conn:
+            if str(conn.execute(text("show default_transaction_read_only")).scalar()).lower() == "on":
+                return True
+            return bool(conn.execute(text("select pg_is_in_recovery()")).scalar())
+    except SQLAlchemyError:
+        return False        # sqlite and friends: no such setting, and no read-only mode to hit
+
+
 def _checksum(sql_file: Path) -> str:
     return hashlib.sha256(sql_file.read_bytes()).hexdigest()
 
@@ -87,21 +144,30 @@ def apply_migrations(database_url: str | None = None,
         raise RuntimeError("Set GENIOS_DATABASE_URL (in .env) before applying migrations.")
     engine = get_engine(url)
     mdir = migrations_dir or _MIGRATIONS
-    with engine.begin() as conn:
-        conn.execute(text(_LEDGER_DDL))
-        applied_rows = conn.execute(
-            text("select filename, checksum from schema_migrations")).all()
-    ledger = {r.filename: r.checksum for r in applied_rows}
+
+    # READ before WRITE. This used to open with the ledger's CREATE TABLE IF NOT EXISTS, which
+    # Postgres rejects on a read-only server EVEN WHEN THE TABLE ALREADY EXISTS — the read-only
+    # check runs before the IF NOT EXISTS check. Since `apply_migrations` is the first thing
+    # `main.lifespan` does, a read-only database (Supabase enforces one on disk quota) turned
+    # every boot into a crash, every deploy into a crash-loop, and took the API's still-working
+    # READS down with it. Asking the ledger a question first makes the fully-migrated case — the
+    # normal one — issue no DDL at all, so it boots fine whatever the server's write state.
+    ledger = _read_ledger(engine)
+    pending = _pending(mdir, ledger or {})
+    if ledger is not None and not pending:
+        return []
+
+    if _is_read_only(engine):
+        raise ReadOnlyDatabaseError(
+            f"{len(pending)} migration(s) pending and the database is in read-only mode: "
+            f"{', '.join(p.name for p in pending[:5])}"
+            f"{'...' if len(pending) > 5 else ''}. "
+            "Lift read-only on the database before deploying code that needs these.")
 
     applied: list[str] = []
-    for sql_file in sorted(mdir.glob("*.sql")):
-        cs = _checksum(sql_file)
-        if sql_file.name in ledger:
-            if ledger[sql_file.name] != cs:
-                raise RuntimeError(
-                    f"{sql_file.name} was edited after being applied "
-                    f"(checksum drift). Migrations are immutable — add a new file.")
-            continue                                   # already applied → skip
+    with engine.begin() as conn:
+        conn.execute(text(_LEDGER_DDL))
+    for sql_file in pending:
         # split on top-level ';' only — respects '...' strings, $$ bodies and -- line comments
         statements = _split_statements(sql_file.read_text())
         with engine.begin() as conn:                   # file + its ledger row: one tx
@@ -109,7 +175,7 @@ def apply_migrations(database_url: str | None = None,
                 conn.execute(text(stmt))
             conn.execute(text(
                 "insert into schema_migrations (filename, checksum) values (:f, :c)"),
-                {"f": sql_file.name, "c": cs})
+                {"f": sql_file.name, "c": _checksum(sql_file)})
         applied.append(sql_file.name)
     return applied
 

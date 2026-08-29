@@ -216,6 +216,31 @@ def _platform_spend_ceiling() -> None:
             "message": "GeniOS is briefly at capacity. Please try again shortly."})
 
 
+def _refuse_if_unbillable(org_id: str) -> None:
+    """Refuse a billable query the database could not record, BEFORE paying for it.
+
+    This is the one surface that spends real money per request. On a read-only database the old
+    order spent it anyway: `run_query` called Anthropic, the cost log failed, the credit deduct
+    failed, `_persist_decision_envelope` raised, and the caller got a 500. Both swallows are
+    deliberate — "never let billing break the answer" — but on a read-only server they stop being
+    a courtesy and become a leak, because there is no answer left to protect: every query billed
+    us, billed the tenant nothing, and returned an error. Production sat in exactly that state for
+    four hours on 2026-08-29.
+
+    Checking first costs one `show` on a connection the budget gate has already warmed, and turns
+    an expensive 500 into an immediate, honest 503.
+    """
+    from genios_engine.platform.migrate import _is_read_only
+    if _graph is None:
+        return                      # in-memory dev: no server to be read-only
+    if _is_read_only(_graph.engine):
+        from genios_engine.platform import ops_alert
+        ops_alert.notify("intelligence_query_refused_read_only", org_id=org_id)
+        raise HTTPException(
+            503, "intelligence is temporarily unavailable — the datastore is not accepting "
+                 "writes, so a result cannot be recorded. No credits were charged.")
+
+
 def _enforce_query_budget(org_id: str) -> None:
     from datetime import datetime, timezone
     try:                                                    # RPM burst (Noop cache → 0 → no cap)
@@ -299,6 +324,7 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
         return env
 
     _enforce_query_budget(org_id)          # L7: RPM + monthly credit guard before any LLM spend
+    _refuse_if_unbillable(org_id)          # ...and the guard that budget check cannot make
     env, res = run_query(org_id=org_id, module_id=module_id, question=question,
                          extra_facts=body.facts or {}, store=_graph, llm=_llm,
                          registry=_registry, graph_version=gv, eval_time=evaluation_time)

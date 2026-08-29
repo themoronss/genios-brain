@@ -41,12 +41,24 @@ async def lifespan(app: FastAPI):
     # every capture insert + the L2 drain erroring until someone ran migrate by hand.
     # The schema_migrations ledger makes this a cheap no-op when nothing is pending,
     # and a loud crash (restart + retry) beats silently serving broken SQL.
+    # ...with ONE exception, which is not a softening of the rule above but a case where the rule
+    # inverts. If the database is READ-ONLY, crashing achieves nothing a restart can fix — only a
+    # human lifting the write lock can — and it converts a partial outage (writes failing, reads
+    # fine) into a total one, because the crash-loop takes the API down too. So: log it as loudly
+    # as a crash would, and stay up serving the half that still works.
     if get_settings().use_real_db:
-        from genios_engine.platform.migrate import apply_migrations
-        applied = apply_migrations()
-        if applied:
-            import logging
-            logging.getLogger("genios.boot").info("migrations applied at boot: %s", applied)
+        import logging
+
+        from genios_engine.platform.migrate import ReadOnlyDatabaseError, apply_migrations
+        log = logging.getLogger("genios.boot")
+        try:
+            applied = apply_migrations()
+            if applied:
+                log.info("migrations applied at boot: %s", applied)
+        except ReadOnlyDatabaseError as exc:
+            log.error("DEGRADED BOOT — database is read-only, migrations NOT applied: %s", exc)
+            log.error("Reads are served; every write will fail until the write lock is lifted.")
+            app.state.degraded_read_only = str(exc)
     # Start the in-process auto-sync scheduler (cross-org L1→L2/L3/L5 sweep every N hours). Only when
     # a real DB is configured — no point sweeping in-memory dev. Disable via GENIOS_SCHEDULER_ENABLED.
     from genios_engine.platform.scheduler import start_scheduler, stop_scheduler

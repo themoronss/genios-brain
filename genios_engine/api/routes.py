@@ -68,7 +68,18 @@ def _bind_gate_costs(gate, org_id: str) -> None:
 
 
 @router.get("/health")
-def health() -> dict:
+def health(request: Request) -> dict:
+    """Liveness — and, when the process is alive but the database will not take writes, that too.
+
+    This used to answer a flat "ok" whichever way the database was pointing, which is how a
+    four-hour write outage passed every check that was watching. The process really was up; the
+    product was not. A degraded boot is reported here because it is the only signal that reaches
+    an uptime monitor, and a silent partial outage is the failure mode that costs the most.
+    """
+    degraded = getattr(request.app.state, "degraded_read_only", None)
+    if degraded:
+        return {"status": "degraded", "layer": "L1 capture", "writes": "unavailable",
+                "reason": degraded}
     return {"status": "ok", "layer": "L1 capture"}
 
 
