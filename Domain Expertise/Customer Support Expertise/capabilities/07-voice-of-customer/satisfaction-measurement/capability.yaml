@@ -3,7 +3,7 @@ identity:
   name: Satisfaction Measurement
   domain: customer_support
   subdomain: voice_of_customer
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Asking the customer how it went, and knowing what the answer is worth. The measurement is
@@ -16,23 +16,67 @@ description: 'Asking the customer how it went, and knowing what the answer is wo
   '
 question: What did the customer say about that interaction, and what is that answer actually evidence
   of?
+
+outcomes:
+- 'A short, in-moment survey whose comments are actually read weekly. The number trends the dashboard; the verbatims contain every improvement the number is hinting at.'
+- 'The score understood as a sample of the emotionally aroused rather than of the population, because the delighted and the furious answer and the middle stays silent.'
+- 'Trend read rather than level, since the absolute value is an artefact of the response population and the movement is not.'
+- 'The denominator stated whenever the number is. A score whose response rate nobody quotes is not evidence of anything.'
+- 'The negative outcome: a score REFUSED as a basis for a decision the sample cannot support — agent ranking on twelve responses is the standard example.'
+failure_modes:
+- 'TREATING CSAT AS A CENSUS. It is a sample of the vocal, and every conclusion drawn as if it were representative inherits that bias.'
+- 'CELEBRATING A NUMBER WITH NO DENOMINATOR, which is the most common presentation and the least informative.'
+- 'SURVEYING TOO OFTEN, which lowers response rate and biases the remaining sample further toward the aroused.'
+- 'READING THE SCORE AND NOT THE COMMENTS. The score says something changed; only the verbatims say what.'
+- 'RANKING AGENTS ON SMALL SAMPLES, which is statistically indefensible and personally consequential.'
+kpis:
+- name: response_rate
+  unit: percent
+  description: The denominator. Quoted with every score or the score is not evidence.
+  direction: higher_is_better
+- name: verbatim_read_rate
+  unit: percent
+  description: Comments actually read by somebody who can act. The number the improvements come from.
+  direction: higher_is_better
+- name: score_trend_stability
+  unit: ratio
+  description: Movement against sample variation. Distinguishes a real change from a small-sample wobble.
+  direction: higher_is_better
+- name: survey_frequency_per_customer
+  unit: count
+  description: A target band. Over-surveying lowers response and biases the remainder toward the aroused.
+  direction: target_band
+handoffs:
+  upstream: [customer_support.diagnosis_and_resolution.verification_and_closure, customer_support.voice_of_customer.sentiment_analysis]
+  downstream: [customer_support.voice_of_customer.feedback_synthesis, customer_support.support_management.agent_coaching,
+               customer_support.support_management.ticket_review]
+  parallel: [customer_support.support_operations.support_analytics, customer_support.voice_of_customer.churn_signal_detection]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, outsourced_bpo,
+           ai_first_support, plg_self_serve]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Stub — identity, description, question and load-set only. Promote by adding outcomes and failure_modes
-    first: the failure modes here are unusually well known (surveying after a save rather than after a
-    struggle, agent-level attribution of a product problem, response bias treated as signal) and they
-    carry more of the expertise than the outcomes do. Then heuristics with a `why`, the survey-instrument
-    decision framework, KPIs that include response representativeness rather than only response rate,
-    and handoffs to churn_signal_detection and agent_coaching. It also needs the csat_detractor situation,
-    which it owns. Nothing here can fire until a support pack emits csat.score and csat_submitted; see
-    the domain header.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. csat.score and csat_submitted are
+    planned_substrate with no writer.
 
-    '
-  reviewed_at: '2026-08-24'
+    response_rate is listed as a KPI rather than as a caveat, deliberately. A satisfaction score
+    presented without its denominator is the most common chart in support and the least
+    interpretable, and making the denominator a first-class metric is the only way it gets
+    quoted.
+
+    The negative outcome — refusing to let the score carry a decision it cannot support — is the
+    one that requires standing on. Agent ranking on twelve responses is statistically
+    indefensible and personally consequential, and it is done routinely because the number
+    exists.
+
 admission:
-  accepted_content_hash: ebf7f8c4f9e24080437033cd76060b98dbdca499b42a3d1d3005e4edb32d10a6
+  accepted_content_hash: 556e795267f59c26e702acd27066de42eb69dcd20a44579749b26abac041c167

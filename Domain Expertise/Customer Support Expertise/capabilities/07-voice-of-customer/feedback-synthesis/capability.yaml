@@ -3,7 +3,7 @@ identity:
   name: Feedback Synthesis
   domain: customer_support
   subdomain: voice_of_customer
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Turning many individual contacts into a claim about the product that someone outside support
@@ -15,23 +15,65 @@ description: 'Turning many individual contacts into a claim about the product th
 
   '
 question: What are all these contacts collectively saying that no single one of them says?
+
+outcomes:
+- 'Few themes, each carrying its verbatim quotes, counts and revenue weight — so product hears a pattern with evidence rather than a story with a hero.'
+- 'The loudest theme resisted. Volume measured honestly, not the memorability of the most recent complaint.'
+- 'A claim about the product that somebody outside support will act on, which is a different artefact from a summary of the queue.'
+- 'Counts and weight held together, since ten small customers and one large one saying the same thing are different arguments and both are real.'
+- 'The negative outcome: a theme reported as NOT actionable, or as a support problem rather than a product one. Synthesis that only ever produces product asks is advocacy.'
+failure_modes:
+- 'RECENCY AS FREQUENCY. This week''s memorable complaint feels bigger than last quarter''s steady drumbeat, and the whole discipline exists to defeat that.'
+- 'THEMES WITHOUT VERBATIMS, which product correctly discounts because the clustering is unauditable.'
+- 'TOO MANY THEMES. Fifteen is a list; four is an argument, and the reduction is where the thinking is.'
+- 'COUNTING TICKETS RATHER THAN CUSTOMERS, so one account filing forty tickets outweighs forty accounts filing one.'
+- 'SYNTHESIS AS ADVOCACY, which is detectable and costs support its credibility as a source.'
+kpis:
+- name: theme_count
+  unit: count
+  description: A target band. Too many is a list product will not read; too few hides real signal.
+  direction: target_band
+- name: verbatim_backing_rate
+  unit: percent
+  description: Themes carrying quotes and counts rather than assertion.
+  direction: higher_is_better
+- name: customer_vs_ticket_weighting
+  unit: ratio
+  description: Whether themes are weighted by distinct customers or by ticket volume. One account can dominate the second.
+  direction: target_band
+- name: theme_acted_on_rate
+  unit: percent
+  description: Themes that produced a decision — including a documented no. The measure of whether product is listening.
+  direction: higher_is_better
+handoffs:
+  upstream: [customer_support.voice_of_customer.sentiment_analysis, customer_support.support_operations.support_analytics,
+             customer_support.intake_and_triage.intent_classification]
+  downstream: [customer_support.voice_of_customer.product_feedback_routing, customer_support.knowledge_and_deflection.content_gap_analysis]
+  parallel: [customer_support.voice_of_customer.satisfaction_measurement, customer_support.support_management.account_relationship_management]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, named_tam, community_support,
+           plg_self_serve, embedded_in_product]
+  offerings: [product, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Stub — identity, description, question and load-set only. Promote by adding the failure modes
-    first (frequency mistaken for importance, themes that dissolve the moment anyone asks what to build,
-    synthesis that arrives after the roadmap was set, and the survivorship problem where the customers
-    who left are absent from every input), then heuristics with a `why`, the weighting framework that
-    trades volume against consequence and account value, KPIs on whether synthesis changed anything, and
-    handoffs into product_feedback_routing and content_gap_analysis. Executable today only in the weakest
-    sense: nothing in the substrate groups tickets by issue, so the clustering step is a needs_signal
-    against issue-level identity rather than a pattern.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
 
-    '
-  reviewed_at: '2026-08-24'
+    customer_vs_ticket_weighting is the KPI that determines whether the synthesis is true.
+    Counting tickets lets one heavy account outvote forty others, and it is the default in every
+    reporting tool because tickets are the row. Both weightings are legitimate for different
+    questions and reporting only one is how a theme becomes an artefact of a single customer.
+
+    theme_count as a target band is the discipline: fifteen themes is a list nobody acts on,
+    four is an argument, and the reduction from one to the other is where the actual synthesis
+    happens.
+
 admission:
-  accepted_content_hash: 5d1ee11b1e161b326244c5d6e3d6b5cc1c1954565e794dc8163f728632b7bb37
+  accepted_content_hash: ce8107f9aa389e169562538f12dc1884f6cb6d9a3df55c6e25b3bcbc80c0dc96

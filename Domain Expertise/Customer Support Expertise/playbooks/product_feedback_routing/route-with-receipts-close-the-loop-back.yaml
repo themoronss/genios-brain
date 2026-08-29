@@ -12,19 +12,77 @@ purpose:
   statement: Product feedback flows to product as themes with linked tickets and revenue context, and
     the answer — shipped, planned, or won't — flows BACK to every customer who asked, because a black-hole
     feedback pipe teaches customers to stop telling you things.
+
+when_to_use:
+  do_not_use_when:
+  - The request is really a support process gap. Forwarding it launders our own problem into product's backlog and it will sit there correctly deprioritised.
 steps:
 - order: 1
-  name: Attach every routed theme to its askers
-  description: The theme carries its ticket list. Product sees weight; support keeps the list for the
-    loop-back.
+  name: Send themes, not tickets
+  description: >
+    Raw forwarded complaints are unusable and product correctly ignores them. A theme with linked
+    tickets is a claim they can evaluate.
   actor: human
+  objects_read: [customer_support.obj.core.ticket, customer_support.obj.core.product_area]
+  done_when: The submission is a pattern with evidence attached.
 - order: 2
-  name: Get a disposition, even a no
-  description: Planned / researching / won't-do — any honest state beats silence. Support needs the answer
-    to represent it.
+  name: Match the form they accept
+  description: >
+    Routing fails on form more than on destination. Whatever product's intake expects — impact,
+    frequency, affected accounts — supply it rather than making them reformat.
   actor: human
+  done_when: No reformatting was needed at their end.
 - order: 3
-  name: Tell the askers when anything changes
-  description: '''The export you asked for shipped today'' is the cheapest delight in SaaS — and it only
-    happens if the asker list survived.'
+  name: Carry the commercial context
+  description: >
+    Which accounts, what revenue, what renewal proximity. It is the input product cannot get
+    elsewhere and it is what makes support's submissions distinctive.
+  actor: system
+  objects_read: [customer_support.obj.core.customer_account]
+  done_when: The business weight is stated and verifiable.
+- order: 4
+  name: Track it to an answer
+  description: >
+    Shipped, planned, or will not. An item with no answer is indistinguishable from one that was
+    never sent.
   actor: human
+  done_when: Every routed item has an outcome.
+- order: 5
+  name: Close the loop with every reporter
+  description: >
+    Including the noes, especially the noes. Customers who hear a reasoned decision keep reporting;
+    those who hear nothing stop, and the pipeline dries up quietly.
+  actor: human
+  objects_read: [customer_support.obj.core.requester]
+  done_when: The people who asked were told.
+objects_used: [customer_support.obj.core.ticket, customer_support.obj.core.customer_account, customer_support.obj.core.requester,
+               customer_support.obj.core.product_area, customer_support.obj.core.content_gap]
+limits:
+- 'It routes and reports back; it cannot make product prioritise, and most routed items will be declined.'
+- 'Step 3 needs account data support often cannot verify, and overstated revenue weight is detected quickly.'
+failure_modes:
+- 'Step 5 skipped for the noes, which is the majority and the whole reason the loop matters.'
+- 'Step 1 abandoned under volume, so individual tickets are forwarded and the channel loses credibility.'
+variants:
+- applies_to: named_tam
+  change: Step 5 is a conversation the TAM has, and the customer expects a reason rather than a status.
+  why: The relationship makes an unexplained no worse than silence would be from a stranger.
+- applies_to: community_support
+  change: The loop closes publicly, which multiplies its effect and makes an unanswered request permanently visible.
+  why: The backlog is readable by everybody.
+references:
+- title: Voice of customer practice
+  kind: practitioner
+  note: Where closing the loop is treated as the mechanism that sustains the feedback supply.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 fails on the noes, which are the majority. Telling a customer their request shipped
+    is easy and telling them it will not is the message that actually keeps them reporting.

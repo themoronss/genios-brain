@@ -13,3 +13,53 @@ purpose:
     exists precisely to defeat that bias — trust the tally over the echo.
   answers:
   - Why does synthesis beat team recollection?
+
+heuristic:
+  statement: >
+    This week's memorable complaint feels bigger than last quarter's steady drumbeat. Synthesis
+    exists precisely to defeat that bias — trust the tally over the echo.
+  why: >
+    Availability is how humans estimate frequency, and support work maximises it: the vivid,
+    recent, emotionally charged ticket is exactly the one everybody remembers and repeats in
+    meetings. Meanwhile the issue arriving twice a week for six months produces no memorable
+    moment at all. So unaided recall systematically ranks by drama, and a synthesis that does not
+    explicitly count is a mechanism for making that ranking look rigorous.
+  confidence_bp: 8500
+  applies_when: Any prioritisation of customer themes where somebody could recall examples instead.
+  breaks_down_when: >
+    The recent thing is genuinely new. A defect introduced last week has a small tally and a large
+    future, and the count is a lagging indicator that will rank it correctly only after it has done
+    its damage. It also breaks down where the memorable case is memorable because it is severe: one
+    customer losing data is not outweighed by two hundred asking about a UI label, and pure
+    frequency ranking says otherwise.
+  reads: [customer_support.obj.core.ticket, customer_support.obj.core.customer_account, customer_support.obj.core.product_area]
+  contradicts: [customer_support.heu.satisfaction_measurement.response_bias_bends_both_tails]
+limits:
+- 'It corrects for recall bias in ranking. It does not weight severity, which needs a separate axis.'
+- 'The tally is only as good as the clustering, which is a judgement upstream of it.'
+failure_modes:
+- 'Applied to a new defect, where frequency lags and the ranking is wrong for weeks.'
+- 'Used to dismiss a severe single case, which frequency ranking will always under-rank.'
+variants:
+- applies_to: b2c
+  change: Strongest. Volume makes tallies reliable and makes individual anecdotes almost purely misleading.
+  why: The sample is large enough that recall adds nothing.
+- applies_to: enterprise_support
+  change: Weakest. With twenty accounts, one account's experience is a substantial share of the truth and recall is not obviously worse than counting.
+  why: The tally has too few observations to beat judgement.
+references:
+- title: Voice of customer practice
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the one that needs a separate axis rather than an exception:
+    one customer losing data is not outweighed by two hundred asking about a label, and pure
+    frequency ranking says it is.

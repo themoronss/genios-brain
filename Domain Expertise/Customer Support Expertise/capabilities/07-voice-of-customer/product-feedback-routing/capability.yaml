@@ -3,7 +3,7 @@ identity:
   name: Product Feedback Routing
   domain: customer_support
   subdomain: voice_of_customer
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Getting a customer problem in front of the team that can actually change it, in a form they
@@ -17,23 +17,63 @@ description: 'Getting a customer problem in front of the team that can actually 
   '
 question: Who needs to know about this, in what form will they act on it, and did the customer ever hear
   back?
+
+outcomes:
+- 'Feedback reaching the team that can actually change it, in a form they will accept — themes with linked tickets and revenue context rather than forwarded complaints.'
+- 'The answer flowing BACK to every customer who raised it — shipped, planned, or will not — because the loop-back is how the pipeline funds itself.'
+- 'A "no" delivered as an answer rather than as silence. Customers who hear a reasoned no keep reporting; customers who hear nothing stop.'
+- 'Routing that fails on FORM rather than on destination, which is the actual failure mode: product knows who owns it and cannot use what arrived.'
+- 'The negative outcome: feedback NOT routed because it is a support process problem wearing a feature request. Forwarding it launders our own gap into product''s backlog.'
+failure_modes:
+- 'NO LOOP-BACK. The customer never learns what happened, concludes reporting is pointless, and the next signal never arrives.'
+- 'FORWARDING RAW TICKETS, which product cannot act on and correctly ignores.'
+- 'ROUTING BY GUESS. Sending to the wrong team costs a week and teaches both sides the channel is unreliable.'
+- 'ONLY ROUTING FEATURE REQUESTS, so defects framed as complaints never reach anybody.'
+- 'TREATING A NO AS A FAILURE TO REPORT, which is why so many noes are simply not communicated.'
+kpis:
+- name: loop_closed_rate
+  unit: percent
+  description: Reporters who heard an outcome, including a no. The number that determines future signal volume.
+  direction: higher_is_better
+- name: accepted_form_rate
+  unit: percent
+  description: Submissions product accepted without reformatting. Measures form, which is where routing actually fails.
+  direction: higher_is_better
+- name: routing_accuracy
+  unit: percent
+  description: Items reaching the owning team first time.
+  direction: higher_is_better
+- name: no_communicated_share
+  unit: percent
+  description: Declined items where the customer was told. Usually near zero and it is the cheapest trust available.
+  direction: higher_is_better
+handoffs:
+  upstream: [customer_support.voice_of_customer.feedback_synthesis, customer_support.escalation_and_incident.engineering_handoff]
+  downstream: [customer_support.support_management.account_relationship_management, customer_support.customer_communication.proactive_status_updates]
+  parallel: [customer_support.knowledge_and_deflection.content_gap_analysis, customer_support.voice_of_customer.churn_signal_detection]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, named_tam, plg_self_serve,
+           community_support, embedded_in_product]
+  offerings: [product, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Stub — identity, description, question and load-set only. Promote by adding the failure modes
-    (the silent black hole, feature-request framing that hides the underlying job, the same issue filed
-    repeatedly under different names, and routing by whoever answers rather than by ownership), heuristics
-    with a `why` on what makes a report credible to an engineer, a decision framework for when a contact
-    becomes a bug report versus a documentation gap versus a roadmap input, KPIs weighted to the return
-    leg, and handoffs from feedback_synthesis and into engineering_handoff. Nothing here is executable
-    until bug_filed and handoff_to_engineering are emitted; today the closed-loop half of this capability
-    is entirely a human practice.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
 
-    '
-  reviewed_at: '2026-08-24'
+    The description's observation is the design principle: routing fails far more often on FORM
+    than on destination. Product usually knows who owns the area and cannot act on what arrived,
+    so accepted_form_rate is the KPI rather than a delivery count.
+
+    no_communicated_share is near zero in almost every organisation and it is the cheapest trust
+    purchase available. A reasoned no keeps a customer reporting; silence teaches them the
+    channel is a suggestion box, and the signal supply dries up within two quarters.
+
 admission:
-  accepted_content_hash: 3f075cb897e6840ee212bb6f7a28e47a18f715238ac8a02ae938bb3adad783bf
+  accepted_content_hash: a884da52abd23168ec0d6a776efbf590c9d884a9b4da94e3b363ac4ad27e0338

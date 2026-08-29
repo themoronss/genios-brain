@@ -13,3 +13,53 @@ purpose:
     loop-back is not courtesy; it is how the feedback pipeline funds itself.
   answers:
   - Why loop dispositions back to requesters?
+
+heuristic:
+  statement: >
+    Customers who see their feedback answered — even with a no — report more, and better. The
+    loop-back is not courtesy; it is how the feedback pipeline funds itself.
+  why: >
+    Reporting costs the customer time and returns them nothing directly. They do it on the belief
+    that it might matter, and that belief is maintained or destroyed entirely by whether they ever
+    hear anything. A reasoned no confirms that somebody read it and thought about it, which is most
+    of what they wanted; silence confirms the opposite. So the loop-back is not a politeness cost —
+    it is the price of the input, and organisations that skip it are surprised when the signal
+    thins.
+  confidence_bp: 8000
+  applies_when: Any customer-originated feedback that reaches a decision.
+  breaks_down_when: >
+    The no is unreasoned. "We have decided not to do this" without a why is worse than silence,
+    because it confirms the request was received and dismissed — which is a stronger statement than
+    never having been read. It also breaks down at very high volume, where a personal loop-back is
+    impossible and a mass update reads as a newsletter rather than as an answer.
+  reads: [customer_support.obj.core.requester, customer_support.obj.core.customer_account, customer_support.obj.core.ticket]
+  contradicts: [customer_support.heu.feedback_synthesis.recency_is_not_frequency]
+limits:
+- 'It sustains reporting volume, not reporting quality directly, though the two correlate through engagement.'
+- 'It requires product to reach decisions, which is outside support''s control and is the usual blocker.'
+failure_modes:
+- 'Bare noes with no reasoning, which are worse than silence.'
+- 'Mass updates presented as personal answers, which customers detect and discount.'
+variants:
+- applies_to: community_support
+  change: Strongest and cheapest — one public answer closes the loop for everybody who asked and everybody watching.
+  why: The audience is shared.
+- applies_to: b2c
+  change: Weakest per customer and strongest in aggregate; a public roadmap is the realistic form of the loop.
+  why: Individual replies are impossible and the belief still needs maintaining.
+references:
+- title: Voice of customer practice
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case sets the bar: an unreasoned no is worse than silence, because it
+    confirms the request was received and dismissed, which is a stronger and more discouraging
+    statement than never having been read.
