@@ -1,0 +1,125 @@
+# The post-meeting half of the calendar read. `meeting-ahead.yaml` is its twin, and the split is
+# real rather than tidy: before a meeting the question is whether anyone is prepared, and after it
+# the question is whether anything survived. Those need different objects and opposite advice, and
+# a single situation covering both would have to hedge on which one it meant.
+
+identity:
+  id: admin.sit.meeting_left_open
+  name: Meeting Left Open
+  domain: admin
+  owner_capability: admin.meeting_operations.action_item_tracking
+  version: 1.0.0
+  status: stable
+
+description: >
+  A meeting with an external counterparty has happened and ended with something unresolved: no
+  record, no owner, or no next date. The read is about the residue, not the meeting.
+
+  This is the specific way administrative work evaporates. Nobody decides to drop an action item;
+  the meeting ends, everyone believes somebody else is writing it down, and the obligation exists
+  only in two people's memory until one of them is asked about it six weeks later. The
+  correspondence around the meeting is usually the only surviving record, which is why this reads
+  the thread and the commitments rather than any minutes document — there generally is none.
+
+  The failure this file exists to prevent is manufacturing a follow-up for a meeting that did not
+  need one. A cohort workshop attended as one participant among twenty has no residue and no
+  counterparty; sending a "recap" there is not merely useless, it discloses the attendee list to
+  the attendees. `meeting.open_loop` is true only when the meeting occurred, had an external
+  counterparty within a conversational size, and nothing followed it — three conditions the
+  calendar answers and a language model cannot.
+
+matches:
+  l2_situation_types:
+    - admin_contact
+    - relationship
+  # Same reasoning as the twin: the general lane carries 71 of 103 correlations and
+  # `capability_resolver` treats `general` as unclassified, so this must bind `relationship` to
+  # reach the people the meetings actually hang off. The narrowing is `meeting.open_loop`, which
+  # is a computed fact and not a classification.
+  scope: person
+  when:
+    - path: meeting.open_loop
+      op: "="
+      value: true
+
+also_serves:
+  - admin.meeting_operations.minutes_and_documentation
+
+objects:
+  load:
+    - admin.obj.core.action_item
+    - admin.obj.core.meeting
+  optional:
+    - admin.obj.core.commitment
+    - admin.obj.core.deadline
+    - admin.obj.core.document
+  never_load:
+    # The meeting is over. Preparation objects here would resolve to `unknown` and read as
+    # "considered and empty" rather than "not applicable to a meeting that has happened".
+    - admin.obj.core.approval
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+    - admin.obj.core.access_right
+
+# Below the pre-meeting read, which has a hard deadline this one does not — an unrecorded action
+# item is equally recoverable this afternoon or tomorrow, and a briefing is not.
+priority_bp: 5200
+typical_duration_days: 14
+
+signals_of_progress:
+  - next_step_agreed
+  - positive_reply
+  - meeting_request
+
+signals_of_decay:
+  - timeline_slip
+  - closed_lost_mention
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    A meeting with this person has happened and left something open. Never write "send a recap" as
+    the instruction — a recap of what is precisely the thing the reader does not have, and telling
+    them to write one is asking them to do the work the card exists to do.
+
+    Headline: name the person and what is unresolved — an undecided owner, an undated next step,
+    an unanswered question raised in the meeting.
+
+    Situation: what the correspondence shows was outstanding around that meeting, and whose turn
+    it is now. If the substrate holds no commitment and no unanswered thread, say the meeting left
+    nothing open and stop — that is the correct answer and it is one line.
+
+    Artifact: the message that closes the loop — confirms who owns what and by when, or answers
+    the question left hanging. One specific thing, addressed to the counterparty, never to a room.
+  fallback:
+    headline: "{entity} — meeting ended with an open loop"
+    situation: >-
+      A meeting with {entity} has happened and nothing on record closes what it left open.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    `meeting.open_loop` is live on three person nodes today, which is a small population and an
+    honest one: it is true only where the calendar can prove a meeting occurred with a
+    conversational-sized external counterparty and nothing followed. It was previously also being
+    written by the extractor as free text, because all three of `general`, `admin` and
+    `customer_support` declared it in `schema.fields`; it is now computed solely by
+    `meeting_lifecycle.reduce_meeting`, which is what makes a predicate on it safe to author.
+
+    Deliberately predicating on `open_loop` rather than on `meeting.occurred` plus an absence.
+    `reduce_meeting` already composes occurred + external_counterparty + not-followed-up into one
+    field, and restating that composition here would give the corpus a second, drifting copy of a
+    rule the engine owns.
+
+    What is missing: no fact records whether minutes exist, so `minutes_and_documentation` reads
+    the absence of a commitment as the absence of a record. That is a reasonable proxy on a
+    correspondence-only tenant and it is a proxy.
+
+admission:
+  accepted_content_hash: 5eeadc09a75e6ff09cf104150af2f05408a2445f57b571316d250244b5747ce2

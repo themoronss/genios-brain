@@ -63,6 +63,36 @@ def observation_vocabulary(effective: dict | None) -> tuple[str, ...]:
     return tuple(ordered)
 
 
+#: Fields a pack may DECLARE but the model must never be asked to find, because the engine
+#: computes them. Declaring a field in `schema.fields` serves two purposes that look the same and
+#: are not: it lets a capability cite the field as evidence, and it puts the field in the
+#: extraction prompt. For a computed field only the first is wanted.
+#:
+#: `context/meeting_lifecycle.py` derives five booleans from the calendar and opens with
+#: "Deterministic. No model. Every field is derivable from what the calendar already gives us."
+#: All three of `general`, `admin` and `customer_support` then declared them, so every extraction
+#: asked a language model to decide whether a meeting it cannot see was attended. It answered:
+#: on the design partner's graph `meeting.scheduled` holds `'Monday 10 Aug 2026, 10:30am -'` on
+#: 30 person nodes, `meeting.start_at` holds `'18th August 2026, 4:00 PM'` beside the calendar's
+#: clean ISO value, and `meeting.status` holds `canceled` where `meeting_lifecycle` and every
+#: authored predicate spell it `cancelled`.
+#:
+#: Those person-level guesses are not harmlessly ignored. They arrive in the NEIGHBOUR facts of
+#: every person-anchored situation — which is where `admin.obj.core.meeting`,
+#: `admin.obj.core.action_item`, `admin.obj.calendar_management.time_block` and
+#: `admin.obj.core.deadline` read them — so an authored inference pattern was resolving against
+#: whichever writer landed last.
+#:
+#: Stripped here rather than deleted from the packs, deliberately: the declarations are correct
+#: (a capability may cite these), pack bytes are immutable so removing them means a version bump
+#: and a `promote_packs` run on every existing tenant, and the same one-line mechanism already
+#: exists for `derived.*` immediately below.
+COMPUTED_FIELDS: tuple[str, ...] = (
+    "meeting.scheduled", "meeting.occurred", "meeting.attended",
+    "meeting.external_counterparty", "meeting.open_loop",
+)
+
+
 def field_vocabulary(effective: dict | None) -> tuple[str, ...]:
     """The fact field names the tenant's rules actually read, plus the engine's own."""
     declared: list[str] = []
@@ -70,9 +100,10 @@ def field_vocabulary(effective: dict | None) -> tuple[str, ...]:
         declared.extend((pack.get("schema") or {}).get("fields") or ())
     # `derived.*` is computed by the reasoner from other facts, never extracted. Offering it to
     # the model invites a plausible invented value that the engine then overwrites — or worse,
-    # does not, and a rule reads a number nobody measured.
+    # does not, and a rule reads a number nobody measured. `COMPUTED_FIELDS` is the same rule for
+    # fields whose names do not share a prefix.
     names = [f for f in dict.fromkeys(list(ENGINE_FIELDS) + declared)
-             if f and not f.startswith("derived.")]
+             if f and not f.startswith("derived.") and f not in COMPUTED_FIELDS]
     return tuple(names)
 
 

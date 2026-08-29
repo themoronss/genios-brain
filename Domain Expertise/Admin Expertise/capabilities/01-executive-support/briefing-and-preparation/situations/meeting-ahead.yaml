@@ -1,0 +1,148 @@
+# The first situation in this corpus that reads the CALENDAR rather than the mailbox.
+#
+# The design partner's graph holds 62 meeting nodes, 331 meeting facts and 140 `attended` edges,
+# and not one situation was about any of them. Not because meetings are unreachable — they arrive
+# in the neighbour facts of every person-anchored situation, which is exactly where
+# `admin.obj.core.meeting` and `admin.obj.calendar_management.time_block` were authored to read
+# them — but because no situation file claimed the read. Six Admin capabilities sat orphaned
+# behind that gap while their evidence was already in the slice.
+#
+# Deliberately NOT solved by making `meeting` an anchor type. `choose_anchors` returns only the
+# strongest tier present, by design, so adding `meeting` above `person` would move all 62 calendar
+# events out of the relationship situations that currently work and into 62 new ones — trading a
+# working lane for an empty one. The meeting is evidence about the person, and this file reads it
+# there.
+
+identity:
+  id: admin.sit.meeting_ahead
+  name: Meeting Ahead
+  domain: admin
+  owner_capability: admin.executive_support.briefing_and_preparation
+  version: 1.0.0
+  status: stable
+
+description: >
+  A meeting with this counterparty is on the calendar and has not been called off. The read is
+  preparatory and it is narrow: does the principal know what this meeting is for, what was last
+  said to this person, and what they are walking in owing them.
+
+  It is not a scheduling situation and not a reminder. The calendar already tells anyone the time;
+  what the calendar cannot tell them is that the last message in this thread was a question we
+  never answered, or that a document was promised for this meeting a fortnight ago. That join —
+  the meeting on one side, the correspondence and the open commitment on the other — is the only
+  thing here a person could not do faster themselves.
+
+  The failure this file exists to prevent is briefing on a meeting nobody needs briefing for. A
+  recurring internal stand-up, a cohort session with twenty attendees, a calendar hold with no
+  counterparty: each is a meeting, none is an occasion. `meeting.external_counterparty` is the
+  fact that separates them, and it is computed from the attendee list rather than guessed — which
+  it was, until the five derived lifecycle fields were removed from the extraction prompt.
+
+matches:
+  l2_situation_types:
+    - admin_contact
+    - relationship
+  # `relationship` as well as `admin_contact`, and the reason is arithmetic rather than
+  # ambition. 71 of this tenant's 103 correlations resolve to the `general` domain, which
+  # `capability_resolver` treats as UNCLASSIFIED — "consider every domain and let the predicates
+  # decide". Binding only `admin_contact` would aim this file at the one admin-typed situation
+  # the tenant has, while every meeting it is about hangs off a person in the general lane.
+  #
+  # The narrowing is done by `when`, not by the type, which is the honest way round: a meeting
+  # either exists on this counterparty or it does not, and that is a fact rather than a
+  # classification.
+  scope: person
+  when:
+    - exists: meeting.start_at
+    - path: meeting.status
+      op: "!="
+      value: cancelled
+
+also_serves:
+  - admin.meeting_operations.meeting_scheduling
+  - admin.meeting_operations.agenda_preparation
+  - admin.executive_support.calendar_management
+
+objects:
+  load:
+    - admin.obj.core.meeting
+    - admin.obj.core.commitment
+  optional:
+    - admin.obj.core.action_item
+    - admin.obj.core.deadline
+    - admin.obj.core.document
+    - admin.obj.core.approval
+  never_load:
+    # The meeting has not happened. Loading the post-meeting record objects here would resolve
+    # them cleanly to `unknown` and be read downstream as "checked, and there are none" — a
+    # confident empty answer about minutes that could not exist yet.
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+    - admin.obj.core.expense
+    - admin.obj.core.access_right
+
+# Above the post-meeting read: preparation has a deadline that the record does not, and advice
+# about a meeting that has already happened can wait an hour where advice about one starting in
+# an hour cannot.
+priority_bp: 6000
+typical_duration_days: 7
+
+signals_of_progress:
+  - meeting_request
+  - next_step_agreed
+  - positive_reply
+
+signals_of_decay:
+  - timeline_slip
+  - negative_reply
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    A meeting is coming with this person. Never restate the time and never write a reminder — the
+    calendar has already done both, and a card that says what the calendar says is the clearest
+    way to teach someone to stop reading cards.
+
+    Headline: name the person and the one thing that is unresolved going in. If nothing is
+    unresolved, say the meeting is clear — that is a useful answer and it is short.
+
+    Situation: the join. What was last said in correspondence with this person, whose turn it is,
+    and what we owe them that is still open. Date everything that has a date.
+
+    Artifact: what to send or settle BEFORE the meeting — answer the outstanding question, send
+    the promised document, or confirm the agenda. Never "prepare for the meeting" as an
+    instruction; name the specific thing that is missing.
+  fallback:
+    headline: "{entity} — meeting ahead, one thing still open"
+    situation: >-
+      A meeting with {entity} is on the calendar and something in the correspondence is unanswered.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Substrate verified on the live org before authoring rather than assumed. `meeting.start_at`,
+    `meeting.end_at`, `meeting.status` and `meeting.title` are present on all 62 meeting nodes;
+    `meeting.description` on 61; `meeting.location` on 15. They reach a person-anchored slice as
+    neighbour facts across 140 `attended` edges — measured directly through
+    `runner._neighborhood`, which returned nine `meeting.*` fields for each of the three most
+    connected people on the org.
+
+    `meeting.external_counterparty` and the other four derived lifecycle fields are now computed
+    only by `meeting_lifecycle.reduce_meeting`. They were also declared in three packs'
+    `schema.fields` — the L2 extraction whitelist — so the model was asked to guess five booleans
+    it cannot see and wrote `meeting.scheduled = 'Monday 10 Aug 2026, 10:30am -'` on 30 person
+    nodes. Predicating on them was unsafe until that was closed.
+
+    What is missing and would make this read materially better: nothing records whether a briefing
+    was already sent, so the situation cannot tell a first look from a fifth. `meeting.title` is
+    frequently a cohort session name rather than a subject, which is why the read leans on the
+    correspondence rather than the invitation.
+
+admission:
+  accepted_content_hash: a6e296b18a61aa59814d67a97e59eb5d3ca7699b09670e384849d904dadcfb56

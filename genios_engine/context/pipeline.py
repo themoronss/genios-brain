@@ -417,6 +417,32 @@ def _normalise_deal_status(value):
     return _DEAL_TERMINAL.get(raw.lower(), "open"), raw
 
 
+def _normalise_meeting_status(value):
+    """Free-text meeting status → the one spelling every reader was written against.
+
+    `context/meeting_lifecycle.py` already owns the set of words that mean "the event is off"
+    (`cancelled`, `canceled`, `declined`) because a calendar provider may send any of them. Every
+    AUTHORED predicate, however, compares a literal: `admin.obj.core.meeting`,
+    `admin.obj.core.action_item`, `admin.obj.core.deadline`, `admin.obj.core.escalation`,
+    `admin.obj.core.expense` and `admin.obj.calendar_management.time_block` all test
+    `meeting.status = cancelled`. A fact written `canceled` matches none of them and is not
+    reported missing either — it is present, it is simply a word nobody asked about.
+
+    On the design partner's graph both spellings are live on person nodes. Collapsing them here
+    means the tolerant set stays where it belongs (reading a provider's payload) and the stored
+    fact says one thing, which is the same division of labour `_normalise_deal_status` uses.
+
+    Imported from `meeting_lifecycle` rather than restated: two lists of the same synonyms drift,
+    and the drift is silent for exactly as long as nobody adds a sixth word.
+    """
+    from genios_engine.context.meeting_lifecycle import CANCELLED
+
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    return "cancelled" if raw.lower() in CANCELLED else raw
+
+
 def process_event(*, org_id: str, event_id: str, source: str, content: str,
                   sender_email: str | None, occurred_at: datetime | None,
                   llm: LLMClient, store: GraphStore, is_inbound: bool = False,
@@ -821,6 +847,11 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 subj = _deal_for(subj) or subj
             # ungrounded (paraphrased) fact → kept, but scored down instead of dropped.
             fact_rel = ex.relevance if f.get("_grounded", True) else ex.relevance * _GROUNDING_PENALTY
+            if field == "meeting.status":
+                normalised = _normalise_meeting_status(value)
+                if normalised is None:
+                    continue
+                value = normalised
             if field == "deal.status":
                 status, raw = _normalise_deal_status(value)
                 if status is None:

@@ -38,23 +38,65 @@ map:
   admin_contact:
     situations:
       - admin.sit.live_admin_contact
+      - admin.sit.meeting_ahead
+      - admin.sit.meeting_left_open
     capabilities:
+      - admin.executive_support.briefing_and_preparation
+      - admin.executive_support.calendar_management
       - admin.executive_support.commitment_tracking
       - admin.executive_support.inbox_and_correspondence
+      - admin.meeting_operations.action_item_tracking
+      - admin.meeting_operations.agenda_preparation
       - admin.meeting_operations.follow_up_coordination
+      - admin.meeting_operations.meeting_scheduling
+      - admin.meeting_operations.minutes_and_documentation
     objects:
       load:
+        - admin.obj.calendar_management.time_block
         - admin.obj.core.action_item
+        - admin.obj.core.approver
         - admin.obj.core.commitment
         - admin.obj.core.deadline
+        - admin.obj.core.document
+        - admin.obj.core.meeting
         - admin.obj.core.request
       optional:
-        - admin.obj.core.approval
-        - admin.obj.core.document
         - admin.obj.core.escalation
-        - admin.obj.core.meeting
+        - admin.obj.core.policy
       never_load:
         - admin.obj.core.access_right
+        - admin.obj.core.approval
+        - admin.obj.core.asset
+        - admin.obj.core.employee_record
+        - admin.obj.core.expense
+
+  relationship:
+    situations:
+      - admin.sit.meeting_ahead
+      - admin.sit.meeting_left_open
+    capabilities:
+      - admin.executive_support.briefing_and_preparation
+      - admin.executive_support.calendar_management
+      - admin.meeting_operations.action_item_tracking
+      - admin.meeting_operations.agenda_preparation
+      - admin.meeting_operations.meeting_scheduling
+      - admin.meeting_operations.minutes_and_documentation
+    objects:
+      load:
+        - admin.obj.calendar_management.time_block
+        - admin.obj.core.action_item
+        - admin.obj.core.approver
+        - admin.obj.core.commitment
+        - admin.obj.core.deadline
+        - admin.obj.core.document
+        - admin.obj.core.meeting
+      optional:
+        - admin.obj.core.escalation
+        - admin.obj.core.policy
+        - admin.obj.core.request
+      never_load:
+        - admin.obj.core.access_right
+        - admin.obj.core.approval
         - admin.obj.core.asset
         - admin.obj.core.employee_record
         - admin.obj.core.expense
@@ -70,6 +112,7 @@ pending_l2_types: {}
 routed_l2_types:
   - account_admin
   - admin_contact
+  - relationship
 
 # Layer 2 emits these and NO situation in ANY domain binds them. Each is a signal
 # that compiles to nothing, silently. Global, not this domain's fault.
@@ -96,8 +139,6 @@ orphan_capabilities:
   - admin.contract_and_vendor.vendor_onboarding
   - admin.contract_and_vendor.vendor_performance_management
   - admin.executive_support.approval_coordination
-  - admin.executive_support.briefing_and_preparation
-  - admin.executive_support.calendar_management
   - admin.executive_support.delegation_and_task_routing
   - admin.executive_support.gatekeeping
   - admin.facilities_and_assets.asset_issuance_and_recovery
@@ -111,10 +152,6 @@ orphan_capabilities:
   - admin.finance_administration.payables_administration
   - admin.finance_administration.receivables_follow_up
   - admin.finance_administration.reimbursement_processing
-  - admin.meeting_operations.action_item_tracking
-  - admin.meeting_operations.agenda_preparation
-  - admin.meeting_operations.meeting_scheduling
-  - admin.meeting_operations.minutes_and_documentation
   - admin.people_administration.access_and_identity_administration
   - admin.people_administration.attendance_and_leave
   - admin.people_administration.employee_records_administration
@@ -137,14 +174,14 @@ unreachable_objects: []
 
 stats:
   l2_types_total: 10
-  l2_types_routed_here: 2
+  l2_types_routed_here: 3
   l2_types_unrouted_globally: 0
   l2_types_pending: 0
-  situations: 2
+  situations: 4
   capabilities: 57
   capabilities_stub: 0
   capabilities_complete: 57
-  capabilities_routed: 3
+  capabilities_routed: 9
   objects_total: 25
   objects_core: 20
   objects_scoped: 5
