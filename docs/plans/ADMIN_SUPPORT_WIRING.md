@@ -333,6 +333,31 @@ through `runner._neighborhood`. Two faults made them untrustworthy first:
 `meeting` was deliberately NOT made an anchor type: `choose_anchors` returns only the strongest
 tier, so that would have moved 62 events out of the relationship situations that work.
 
+### Three objects the wiring exposed
+
+Routing the intake and voice-of-customer capabilities onto `relationship` cost one live situation:
+the route probe went 73 → 72 with `required_missing`. A missing REQUIRED object fails a route
+closed rather than degrading it — the same mechanism as Blocker 2 in session 1 — and the three
+missing ones were `customer_support.obj.core.conversation`, `issue` and `satisfaction_score`,
+declared required by eighteen capabilities between them.
+
+All three are now authored, and two of them are deliberately honest about being nearly empty on
+this substrate:
+
+* **conversation** — the real one. Every executable pattern rests on a fact with a writer
+  (`thread.ball_in_court`, `thread.last_inbound/outbound`, `derived.*`, `commitment.*`). The
+  glossary already separated it from a ticket, and on a tenant with no helpdesk it is the only
+  half of that pair that exists.
+* **issue** — one weak executable pattern and four `needs_signal`. The substrate has no issue
+  identity, no reproduction and no resolution kind, and approximating any of them would let eight
+  capabilities give confident advice about a defect nobody diagnosed.
+* **satisfaction_score** — one executable pattern, and it is a GUARD that yields nothing:
+  `derived.sentiment` sits one field away from every capability that wants a satisfaction number,
+  the substitution is trivial and would be undetectable in the output. Loading the object makes the
+  absence explicit instead.
+
+Corpus warnings fell 394 → 325 as a side effect — 69 planned-object references closed.
+
 ### Why 68 are pending rather than routed
 
 `select distinct field from graph_facts` on the live org returns eleven prefixes: meeting, other,

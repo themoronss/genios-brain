@@ -310,6 +310,6 @@ stats:
   capabilities_stub: 0
   capabilities_complete: 49
   capabilities_routed: 23
-  objects_total: 15
-  objects_core: 13
+  objects_total: 18
+  objects_core: 16
   objects_scoped: 2

@@ -1,0 +1,352 @@
+identity:
+  id: customer_support.obj.core.satisfaction_score
+  name: Satisfaction Score
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.voice_of_customer.satisfaction_measurement
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: stable
+  aliases:
+  - csat
+  - ces
+  - nps
+  - survey response
+purpose:
+  statement: 'A rating a customer gave us, on a scale we chose, at a moment we asked. It carries the
+    value, the instrument, what it was about, and — most importantly — whether it was volunteered or
+    solicited, because the two answer different questions.
+
+    '
+  discriminator: 'A satisfaction score is something the customer SAID when asked. Inferred sentiment
+    is something we concluded from how they wrote. The first is evidence about their opinion; the second
+    is evidence about our reading of their prose, and treating them as the same number is how a dashboard
+    reports satisfaction nobody expressed.
+
+    '
+  answers:
+  - What did this customer actually say when we asked?
+  - Is this account's satisfaction moving, against its own history?
+  - Which interactions produce low scores, and what do they have in common?
+  - Who responded and, more revealingly, who stopped responding?
+attributes:
+- name: value
+  purpose: The rating itself, on its own scale. Meaningless without the instrument.
+  type: value
+  data_type: number
+  required: true
+- name: instrument
+  purpose: 'Which question was asked — CSAT, CES, NPS. Required alongside the value because the three
+    measure different things and a mixed average measures nothing.
+
+    '
+  type: value
+  data_type: string
+  required: true
+- name: scale
+  purpose: 'The range and its direction. A 1 on a five-point CSAT and a 1 on a ten-point CES are opposite
+    findings, and normalising without the scale inverts them.
+
+    '
+  type: value
+  data_type: string
+  required: true
+- name: asked_at
+  purpose: When we asked. Half of the response-bias picture.
+  type: value
+  data_type: timestamp
+  required: false
+- name: responded_at
+  purpose: 'When they answered. The gap from `asked_at` is itself a signal — an immediate response to
+    a survey is usually a strong feeling in one direction or the other.
+
+    '
+  type: value
+  data_type: timestamp
+  required: false
+- name: solicited
+  purpose: 'Whether we asked or they volunteered. Volunteered feedback is rarer, more extreme, and not
+    comparable with solicited responses; averaging the two produces a number that describes neither
+    population.
+
+    '
+  type: value
+  data_type: boolean
+  required: false
+- name: about
+  purpose: What the rating was about — an interaction, a period, or the relationship as a whole.
+  type: value
+  data_type: string
+  required: false
+- name: verbatim
+  purpose: 'What they wrote alongside the number, where anything was written. Routinely the only part
+    of a survey response that tells anyone what to change.
+
+    '
+  type: value
+  data_type: string
+  required: false
+states:
+  initial: solicited_unanswered
+  values:
+  - name: solicited_unanswered
+    description: We asked and nothing came back.
+    implies: 'The most under-read state here. Non-response is not neutral — dissatisfied customers disproportionately
+      do not answer, so a rising response gap is usually a falling score that has not been measured.
+
+      '
+  - name: recorded
+    description: A rating exists with its instrument and scale.
+  - name: detractor
+    description: A rating at the low end of its own scale.
+    implies: 'Band membership is a property of the instrument, never a fixed number. Layer 4 owns the
+      threshold; this object owns the fact that the threshold belongs to the scale.
+
+      '
+relationships:
+- target: customer_support.obj.core.customer_account
+  type: rates
+  direction: outbound
+  cardinality: one
+  weight_bp: 9000
+  confidence_bp: 8000
+  evidence:
+  - survey
+  - crm
+  priority: 1
+  description: The organisation whose opinion this is. Exactly one — a score with no account is unusable.
+- target: customer_support.obj.core.named_contact
+  type: given_by
+  direction: outbound
+  cardinality: zero_or_one
+  weight_bp: 7500
+  confidence_bp: 7000
+  evidence:
+  - survey
+  priority: 2
+  description: 'The individual who answered. Zero-or-one because anonymous survey responses are common,
+    and an anonymous detractor at a large account is a genuinely harder problem than a named one.
+
+    '
+- target: customer_support.obj.core.ticket
+  type: rates
+  direction: outbound
+  cardinality: zero_or_one
+  weight_bp: 6500
+  confidence_bp: 6000
+  evidence:
+  - survey
+  priority: 3
+  description: The interaction it was about, for a transactional survey.
+- target: customer_support.obj.core.issue
+  type: attributed_to
+  direction: outbound
+  cardinality: zero_or_many
+  weight_bp: 5000
+  confidence_bp: 4000
+  evidence:
+  - survey
+  - manual_entry
+  priority: 4
+  description: 'The defect the verbatim blames, where one is identifiable. The link that turns satisfaction
+    reporting into a list of things to fix.
+
+    '
+inference_patterns:
+  deterministic:
+  - id: satisfaction.tone_is_not_a_score
+    statement: '`derived.sentiment` exists for this relationship. It is recorded as an observation about
+      tone and is explicitly NOT a satisfaction measurement.
+
+      '
+    status: executable
+    when:
+    - exists: derived.sentiment
+    yields:
+      confidence_bp: 3000
+      attribute: value
+    evidence_fields:
+    - derived.sentiment
+    false_positive: 'The whole pattern is a guard rather than a finding. It yields a null value on purpose:
+      it exists so a capability loading this object on a tenant with no survey data gets an explicit
+      "not measured" rather than silently reading tone as CSAT.
+
+      '
+    note: 'The single most important line in this object. Every downstream capability that wants a satisfaction
+      number will find sentiment sitting nearby, and the substitution is one line of code away and undetectable
+      in the output.
+
+      '
+  - id: satisfaction.customer_rated_us
+    statement: A customer gave a rating on a stated instrument and scale.
+    status: needs_signal
+    note: 'Needs a survey tool connector. There is no honest approximation: a rating is something a
+      person chose to give, and nothing in a mailbox is that.
+
+      '
+    requires_signals:
+    - kind: fact_path
+      name: csat.value
+      owner_layer: L1
+    - kind: fact_path
+      name: csat.instrument
+      owner_layer: L1
+    - kind: fact_path
+      name: csat.scale
+      owner_layer: L1
+    - kind: fact_path
+      name: csat.responded_at
+      owner_layer: L1
+    yields:
+      confidence_bp: 0
+      attribute: customer_rated_us
+  - id: satisfaction.response_rate_is_falling
+    statement: 'Fewer of the people we ask are answering, which is usually a falling score rather than
+      indifference.
+
+      '
+    status: needs_signal
+    note: Requires both halves — sends and responses. Without sends there is no denominator.
+    requires_signals:
+    - kind: fact_path
+      name: csat.asked_at
+      owner_layer: L1
+    - kind: fact_path
+      name: csat.responded_at
+      owner_layer: L1
+    yields:
+      confidence_bp: 0
+      attribute: response_rate_is_falling
+  - id: satisfaction.this_account_is_trending_down
+    statement: This account's own scores are moving against its own history.
+    status: needs_signal
+    note: 'A trend needs a series. Named separately from the point score because the point score is
+      rarely the finding — the movement is.
+
+      '
+    requires_signals:
+    - kind: fact_path
+      name: csat.value
+      owner_layer: L1
+    - kind: fact_path
+      name: csat.responded_at
+      owner_layer: L1
+    yields:
+      confidence_bp: 0
+      attribute: this_account_is_trending_down
+evidence:
+- source: survey
+  strength_bp: 9500
+  independent_of:
+  - email
+  - derived
+  - crm
+  decays: true
+  description: 'The customer''s own stated rating. The only authoritative source for this object and
+    one this tenant has no connector for. Decays because satisfaction is a state, not a fact.
+
+    '
+- source: email
+  strength_bp: 5000
+  independent_of:
+  - derived
+  - crm
+  decays: true
+  description: 'Volunteered praise or complaint in correspondence. Real evidence about opinion and NOT
+    a score — it has no scale, so it can corroborate a rating and can never stand in for one.
+
+    '
+- source: crm
+  strength_bp: 4000
+  independent_of:
+  - email
+  decays: true
+  description: Historical scores where a CRM holds them. Usually stale and usually unattributed.
+- source: derived
+  strength_bp: 2000
+  independent_of:
+  - crm
+  decays: true
+  description: 'Deliberately the weakest source in this object. `derived.sentiment` is a function of
+    message rhythm; it is not independent of email, it is not a rating, and its strength is set low
+    so that no combination of evidence can let it carry a satisfaction claim on its own.
+
+    '
+constraints:
+- id: satisfaction_score.never_present_inferred_sentiment_as_a
+  statement: Never present inferred sentiment as a satisfaction score. It has no scale, no instrument
+    and no respondent.
+  hard: true
+- id: satisfaction_score.never_average_across_instruments_csat_ces
+  statement: Never average across instruments. CSAT, CES and NPS answer different questions on different
+    scales.
+  hard: true
+- id: satisfaction_score.never_report_a_score_without_its
+  statement: Never report a score without its instrument and scale. The number alone is uninterpretable
+    and invites a wrong reading.
+  hard: true
+- id: satisfaction_score.never_treat_non_response_as_neutral
+  statement: Never treat non-response as neutral. It is the most common shape a detractor takes.
+  hard: true
+exceptions:
+- id: satisfaction_score.an_account_with_consistently_high_scores
+  statement: An account with consistently high scores churns.
+  why: 'Entirely normal and not a contradiction. Satisfaction measures the service experience; renewal
+    decisions are made by people who never file tickets, and a support survey has no visibility of them.
+
+    '
+- id: satisfaction_score.a_detractor_score_arrives_from_someone
+  statement: A detractor score arrives from someone with no authority at the account.
+  why: 'Still real feedback about the experience and weak evidence about the relationship. Weight the
+    finding, not the score — and never escalate to the account owner on one anonymous rating.
+
+    '
+- id: satisfaction_score.scores_rise_immediately_after_a_survey
+  statement: Scores rise immediately after a survey redesign.
+  why: 'Attribute the movement to the instrument before attributing it to the service. A changed question
+    is a changed measurement, and the series is broken at that date.
+
+    '
+- id: satisfaction_score.a_customer_writes_an_unprompted_complaint
+  statement: A customer writes an unprompted complaint and no survey exists.
+  why: 'Genuine evidence about opinion with no place in this object, because it has no scale. Record
+    it as feedback on the conversation; do not manufacture a score to hold it.
+
+    '
+anti_patterns:
+- id: satisfaction_score.sentiment_relabelled_as_csat
+  statement: Sentiment relabelled as CSAT
+  cost: 'Produces a satisfaction number no customer gave, on a scale nobody chose, and it will look
+    exactly like a real one on every dashboard downstream. The specific failure this object''s only
+    executable pattern exists to block.
+
+    '
+- id: satisfaction_score.a_single_company_wide_average
+  statement: A single company-wide average
+  cost: 'Mixes instruments, populations and periods into a number whose movement cannot be attributed
+    to anything — the definition of a metric that cannot be acted on.
+
+    '
+- id: satisfaction_score.chasing_detractors_without_reading_the_verbatim
+  statement: Chasing detractors without reading the verbatim
+  cost: 'The number says something is wrong and only the text says what. Outreach based on the score
+    alone asks the customer to explain a complaint they already explained.
+
+    '
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  notes: 'The third of three objects authored to close required-object failures found by the live route
+    probe. Like `issue`, it is honest that it is mostly empty on this substrate — one executable pattern
+    and three needs_signal.
+
+    That one executable pattern is a GUARD rather than a finding, and it is the reason this object is
+    worth having before any survey connector exists: `derived.sentiment` sits one field away from every
+    capability that wants a satisfaction number, the substitution is trivial to make, and it would be
+    undetectable in the output. Loading this object makes the absence explicit.
+
+    '
