@@ -12,19 +12,85 @@ purpose:
   statement: Capacity is forecast from ticket drivers × handle time × coverage promises — then stress-tested
     against launches, seasonality and the growth plan, because industry headcount ratios import someone
     else's product quality.
+
+when_to_use:
+  do_not_use_when:
+  - The demand spike is a live incident. Staffing decisions taken during one plan for a world that ends when the incident does.
 steps:
 - order: 1
-  name: Forecast demand from your own curves
-  description: Volume per customer cohort, seasonality, launch calendar. Your history, not a benchmark
-    blog.
+  name: Forecast from drivers, not from headcount ratios
+  description: >
+    Ticket drivers times handle time times coverage promises. Benchmark ratios encode another
+    company's product quality and self-service maturity.
   actor: human
+  objects_read: [customer_support.obj.core.backlog, customer_support.obj.core.support_plan]
+  done_when: The number derives from this product's demand.
 - order: 2
-  name: Model handle-time honestly, including the invisible
-  description: QA, coaching, knowledge work, meetings — agents are ~70% ticket-available at best. Planning
-    at 100% plans burnout.
+  name: Check the top driver for deflectability first
+  description: >
+    An article or a product fix that kills a driver adds capacity with no payroll and no ramp, and
+    it is the option the hiring process never surfaces.
   actor: human
+  objects_read: [customer_support.obj.core.content_gap, customer_support.obj.core.product_area]
+  done_when: The top drivers were tested before headcount was requested.
 - order: 3
-  name: Decide the buffer explicitly
-  description: Staffing at mean demand means failing every peak. Choose the percentile you staff for and
-    own what it costs either way.
+  name: Plan for peaks, not for the mean
+  description: >
+    Average-based planning is arithmetically guaranteed to be underwater at peak and idle between,
+    which is the worst of both.
   actor: human
+  done_when: The plan names the peak weeks and how they are covered.
+- order: 4
+  name: Include ramp
+  description: >
+    A hire approved today produces capacity next quarter, which is after the peak that justified
+    the request.
+  actor: human
+  done_when: Time-to-productivity is in the timeline.
+- order: 5
+  name: Hold utilisation below the queueing threshold
+  description: >
+    Past a point, waits rise non-linearly and every metric degrades together. Planning to full
+    utilisation is planning for a permanent queue.
+  actor: human
+  done_when: The target leaves headroom deliberately.
+- order: 6
+  name: Send self-inflicted demand back
+  description: >
+    Staffing for volume the product created is paying to keep a defect, permanently.
+  actor: human
+  done_when: Self-inflicted drivers are routed to product rather than absorbed.
+objects_used: [customer_support.obj.core.backlog, customer_support.obj.core.capacity_plan, customer_support.obj.core.support_agent,
+               customer_support.obj.core.coverage_window, customer_support.obj.core.product_area]
+limits:
+- 'It sizes the team; it cannot get the headcount approved, and the honest output is often a stated shortfall.'
+- 'Driver forecasting needs volume history by category, which requires the taxonomy to have been stable.'
+failure_modes:
+- 'Step 5 conceded under budget pressure, because headroom looks like waste in every spreadsheet.'
+- 'Step 2 skipped because deflection is somebody else''s roadmap and hiring is within our control.'
+variants:
+- applies_to: follow_the_sun
+  change: Step 3 is per region and the peaks do not align, so global averages hide local shortfalls entirely.
+  why: Coverage is continuous and demand is not.
+- applies_to: outsourced_bpo
+  change: Step 4 changes shape — the provider absorbs ramp, and the constraint becomes notice period and quality of the ramped agent.
+  why: Speed is bought and consistency is not.
+- applies_to: plg_self_serve
+  change: Step 2 dominates entirely. Deflection is the capacity model and headcount is the exception.
+  why: The economics do not support staffing to volume.
+references:
+- title: Queueing behaviour in service operations
+  kind: research
+  note: The non-linear relationship between utilisation and wait time, which is why step 5 is a hard constraint rather than a preference.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is conceded first under budget pressure because headroom reads as waste, and it is
+    the step whose violation degrades every other support metric simultaneously.

@@ -3,7 +3,7 @@ identity:
   name: Support Analytics
   domain: customer_support
   subdomain: support_operations
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Turning ticket data into claims a leader will act on, and refusing to make the ones the
@@ -15,23 +15,67 @@ description: 'Turning ticket data into claims a leader will act on, and refusing
 
   '
 question: What is the queue actually telling us, and which of these numbers is lying?
+
+outcomes:
+- 'Drivers first, averages second — what is generating tickets, by category, trend and per-account spike, because drivers are actionable and org-wide averages hide the story.'
+- 'Claims the data can carry, and a refusal to make the ones it cannot. Almost every support metric is trivially gameable and saying which is part of the output.'
+- 'Ticket volume read as the product''s error rate as experienced by humans, and routed accordingly.'
+- 'Distributions rather than means, since the tail is what customers experience and the mean is what the dashboard shows.'
+- 'The negative outcome: a requested number REFUSED with the reason. "Handle time by agent" on a mixed queue is a ranking of ticket difficulty wearing a performance label.'
+failure_modes:
+- 'LEADING WITH AVERAGES, which are comfortable, comparable and almost never actionable.'
+- 'REPORTING GAMEABLE METRICS WITHOUT THEIR COUNTERWEIGHT. Handle time falls when agents close early; that is a fact about the metric, not about the team.'
+- 'VOLUME AS A SUPPORT METRIC. It is a product metric, and treating it as a measure of support performance rewards deflection over resolution.'
+- 'ANALYSIS WITH NO ROUTE TO ACTION. A monthly deck read by support only has cost and no output.'
+- 'MAKING THE CLAIM THE DATA CANNOT CARRY because somebody asked for it, which spends the credibility of every number afterwards.'
+kpis:
+- name: driver_coverage
+  unit: percent
+  description: Volume attributable to a named driver rather than to a residual category.
+  direction: higher_is_better
+- name: distribution_reported_share
+  unit: percent
+  description: Metrics reported with a tail rather than as a mean.
+  direction: higher_is_better
+- name: analysis_to_action_rate
+  unit: percent
+  description: Findings that produced a decision somewhere. The measure of whether the function has an output.
+  direction: higher_is_better
+- name: refused_claim_count
+  unit: count
+  description: A target band. Zero means every requested number was produced regardless of what the data supports.
+  direction: target_band
+handoffs:
+  upstream: [customer_support.intake_and_triage.intent_classification, customer_support.diagnosis_and_resolution.verification_and_closure]
+  downstream: [customer_support.support_operations.capacity_planning, customer_support.voice_of_customer.product_feedback_routing,
+               customer_support.knowledge_and_deflection.content_gap_analysis, customer_support.support_operations.cost_to_serve]
+  parallel: [customer_support.support_management.performance_management, customer_support.voice_of_customer.feedback_synthesis]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, outsourced_bpo,
+           ai_first_support, plg_self_serve, embedded_in_product]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, decision_frameworks,
-    kpis and handoffs, following the queue-management capability in this subdomain. The reason to delay
-    promotion is that this capability describes how to read the other eight subdomains, so authoring it
-    early risks encoding a measurement view of triage, escalation and deflection that those capabilities
-    then contradict. When it is promoted, the load-bearing content is the counter-metric pairing table
-    and the distinction between a metric that measures the work and a metric that measures the people
-    — the two get conflated in every support review deck, and the conflation is what makes teams stop
-    trusting their own dashboards.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
 
-    '
-  reviewed_at: '2026-08-24'
+    refused_claim_count as a target band with a non-zero floor is the unusual call, and it is
+    the capability's spine. Almost every support metric is gameable — handle time falls when
+    agents close early, CSAT rises when the annoyed stop answering, deflection rate counts
+    abandonment as success — and an analytics function that produces every number requested
+    regardless of what the data supports has spent the credibility of the numbers that were
+    sound.
+
+    The framing that reorders everything is ticket volume as a product metric. Treating it as a
+    measure of support performance rewards deflection over resolution, which is the wrong
+    direction for the whole organisation.
+
 admission:
-  accepted_content_hash: 84f37d5e21105abd309a99ebd991c03f8aaf6d76367c254b0eac60da019810be
+  accepted_content_hash: 8bd72e3a368ec38980df953821294d50b050f3843c34b70bcbc6d1e7314c521e

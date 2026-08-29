@@ -3,7 +3,7 @@ identity:
   name: Capacity Planning
   domain: customer_support
   subdomain: support_operations
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Sizing the team against demand that is bursty, seasonal and partly self-inflicted. A plan
@@ -16,23 +16,66 @@ description: 'Sizing the team against demand that is bursty, seasonal and partly
 
   '
 question: Will we have enough of the right people on shift when the work actually arrives?
+
+outcomes:
+- 'Capacity forecast from ticket drivers times handle time times coverage promises, then stress-tested against launches and seasonality — because industry headcount ratios describe somebody else''s product.'
+- 'Peaks planned for rather than averaged away. A plan built on mean volume guarantees being underwater during peaks and idle between them.'
+- 'Deflection considered before hiring, since an article or a product fix that kills the top driver adds capacity with no payroll and no ramp.'
+- 'Ramp time included in the plan. A hire approved today produces capacity in a quarter, which is after the peak that justified them.'
+- 'The negative outcome: a demand driver identified as SELF-INFLICTED and sent back to product or process. Staffing for volume we created is paying to keep a defect.'
+failure_modes:
+- 'PLANNING ON AVERAGES, which is the arithmetic guarantee of being both underwater and idle.'
+- 'HEADCOUNT RATIOS FROM BENCHMARKS. They encode another company''s product quality, self-service maturity and customer mix.'
+- 'HIRING BEFORE CHECKING DEFLECTABILITY. The top driver is often an article or a fix, and that capacity arrives faster and cheaper.'
+- 'IGNORING RAMP, so the plan is correct and late by a quarter.'
+- 'FORECASTING VOLUME WITHOUT HANDLE TIME, which treats a password reset and an escalation as the same unit of demand.'
+kpis:
+- name: forecast_accuracy_at_peak
+  unit: percent
+  description: Predicted against actual during the busiest weeks. Accuracy on the average is easy and useless.
+  direction: higher_is_better
+- name: deflection_checked_before_hire
+  unit: percent
+  description: Capacity decisions where the top driver was tested for deflectability first.
+  direction: higher_is_better
+- name: ramp_included_share
+  unit: percent
+  description: Plans accounting for time-to-productivity rather than for start date.
+  direction: higher_is_better
+- name: utilisation
+  unit: percent
+  description: A target band. Above a threshold a queue forms and every other metric degrades; below it capacity is idle.
+  direction: target_band
+handoffs:
+  upstream: [customer_support.support_operations.support_analytics, customer_support.entitlement_and_sla.coverage_and_on_call]
+  downstream: [customer_support.support_operations.workload_balancing, customer_support.support_operations.cost_to_serve,
+               customer_support.support_management.team_health]
+  parallel: [customer_support.knowledge_and_deflection.content_gap_analysis, customer_support.knowledge_and_deflection.self_service_deflection]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, follow_the_sun,
+           outsourced_bpo, ai_first_support, plg_self_serve]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, decision_frameworks,
-    kpis and handoffs, following the queue-management capability in this subdomain. Promote this one before
-    support-analytics: a capacity conversation is the point at which support numbers get read by people
-    outside support, and the characteristic failures are worth encoding first — planning to the period
-    total instead of the interval, counting headcount rather than productive presence net of leave, training
-    and meetings, and treating attrition as an exception rather than a standing input. Also worth encoding
-    is the political reality that a capacity plan is usually the only budget artefact support owns, which
-    is why it tends to be written to be approvable rather than to be right.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. derived.backlog_age, ticket_volume and
+    first_response_time baselines are all planned_substrate with no writer.
 
-    '
-  reviewed_at: '2026-08-24'
+    utilisation is a target band with an upper bound, which is the counter-intuitive half of
+    queueing behaviour: past roughly eighty per cent, wait times rise non-linearly and every
+    other support metric degrades at once. Planning to full utilisation is planning for a
+    permanent queue, and it looks like efficiency in every spreadsheet.
+
+    deflection_checked_before_hire is the KPI that makes this capability's most valuable move
+    visible. Killing the top driver adds capacity with no payroll and no ramp, and it is almost
+    never considered because hiring is the tool the planning process is built around.
+
 admission:
-  accepted_content_hash: 991edce2105c01e22cc627978d1bc5eb564908bc3c40f02871bd77d52531b363
+  accepted_content_hash: 5680040f9058d9e64dcfeb00e0fba069809bd5bd0374096cf7f64c6cac7029ee

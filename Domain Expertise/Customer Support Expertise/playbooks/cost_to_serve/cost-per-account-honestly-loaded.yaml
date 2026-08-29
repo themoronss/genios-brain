@@ -12,18 +12,81 @@ purpose:
   statement: Cost-to-serve allocates real support cost to accounts and segments — tickets × handle time
     × loaded rate — surfacing which revenue is quietly negative and which tier pricing no longer matches
     reality.
+
+when_to_use:
+  do_not_use_when:
+  - The intention is to justify serving a customer less. The instrument is analytical; used to ration service it becomes a reason to under-serve somebody who is paying.
 steps:
 - order: 1
-  name: Compute per-account monthly
-  description: Interactions × time × rate, rolled to the account. Estimates beat absence; refine later.
+  name: Load the rate honestly
+  description: >
+    Salary, tooling, management, training and the escalation path. An unloaded rate understates
+    cost by enough to reverse the conclusion.
   actor: human
+  done_when: The rate includes what serving actually consumes.
 - order: 2
-  name: Rank against revenue
-  description: Cost ÷ ARR per account. The tail where the ratio exceeds one is a pricing or product conversation
-    waiting.
-  actor: human
+  name: Weight by handle time, not by ticket count
+  description: >
+    A password reset and a three-week escalation are not the same unit of cost, and counting
+    tickets says they are.
+  actor: system
+  objects_read: [customer_support.obj.core.ticket, customer_support.obj.core.effort_score]
+  done_when: Cost reflects effort rather than volume.
 - order: 3
-  name: Fix the driver before the customer
-  description: A high-cost account usually has a fixable cause — training gap, misconfiguration, one recurring
-    bug. Fix that first; repricing is the second lever, exit the last.
+  name: Allocate to accounts and to segments
+  description: >
+    Both, because the account view finds the outliers and the segment view finds the pricing
+    problem.
+  actor: system
+  objects_read: [customer_support.obj.core.customer_account, customer_support.obj.core.support_plan]
+  done_when: Cost is visible at both levels.
+- order: 4
+  name: Ask whose problem each cost is
+  description: >
+    Product weakness, pricing mismatch, or genuinely heavy usage. The answer is usually the first,
+    and it is the answer support is least positioned to see as such.
   actor: human
+  objects_read: [customer_support.obj.core.product_area]
+  done_when: Each material cost has an attributed cause.
+- order: 5
+  name: Route the finding to whoever can act
+  description: >
+    Product, pricing or account management. Computed and unrouted, this is an interesting number
+    with a cost of its own.
+  actor: human
+  done_when: Somebody with authority received it.
+objects_used: [customer_support.obj.core.customer_account, customer_support.obj.core.ticket, customer_support.obj.core.support_plan,
+               customer_support.obj.core.product_area, customer_support.obj.core.effort_score]
+limits:
+- 'It attributes cost, not value. A high-cost account may be a reference customer, a design partner or a source of the roadmap.'
+- 'Handle time is a poor proxy for effort where work is interleaved, which is most of the time.'
+failure_modes:
+- 'Step 4 skipped, so an expensive account is read as a difficult one and the product finding is lost.'
+- 'Used as an input to service rationing, which is the misuse this capability is most vulnerable to.'
+variants:
+- applies_to: plg_self_serve
+  change: Per-account cost is meaningless at volume; segment and cohort analysis is the whole exercise.
+  why: Individual accounts are too small to allocate against.
+- applies_to: enterprise_support
+  change: Per-account is the primary view and the numbers are large enough to change commercial terms.
+  why: Each account is material.
+- applies_to: named_tam
+  change: The TAM's cost dominates and it is a deliberate investment, which must be excluded or the analysis says the model is broken.
+  why: The expense is the product.
+references:
+- title: Cost-to-serve analysis
+  kind: practitioner
+  note: Where loaded-rate allocation is distinguished from headcount attribution.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 4 is what turns this from an accounting exercise into a useful one, and it is the step
+    support is worst positioned to take — an expensive account looks like a customer problem
+    from inside the queue.

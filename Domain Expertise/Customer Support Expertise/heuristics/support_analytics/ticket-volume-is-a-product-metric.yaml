@@ -13,3 +13,53 @@ purpose:
     is a product defect report written in tickets — analytics' highest use is routing it there.
   answers:
   - What is ticket-driver analysis really measuring?
+
+heuristic:
+  statement: >
+    Support volume is the product's error rate as experienced by humans. A rising driver category is
+    a defect report written in tickets, and routing it is analytics' highest use.
+  why: >
+    Every ticket is somebody who could not accomplish something and had to ask. In aggregate, that
+    is a direct measurement of where the product fails its users — more grounded than any usability
+    study, continuously collected, and free. Treating the volume as a support performance number
+    instead inverts the incentive completely: it rewards deflecting the report rather than removing
+    the cause, and the organisation optimises for not hearing about its own defects.
+  confidence_bp: 8500
+  applies_when: Volume trends attributable to identifiable product areas.
+  breaks_down_when: >
+    The growth is customer growth. Volume rising proportionally with accounts says nothing about
+    quality, and reading it as a defect signal produces alarm about a healthy business. It also
+    breaks down where the tickets are enablement rather than error — a complex product sold to
+    non-experts generates questions that are not defects, and routing them to engineering as bug
+    reports wastes both sides' time.
+  reads: [customer_support.obj.core.ticket, customer_support.obj.core.product_area, customer_support.obj.core.content_gap]
+  contradicts: [customer_support.heu.cost_to_serve.expensive_accounts_are_often_product_feedback]
+limits:
+- 'It concerns volume by driver, not total volume, which moves with growth and with seasonality.'
+- 'It cannot distinguish a defect from a design decision customers dislike, and both generate tickets.'
+failure_modes:
+- 'Total volume used as a quality signal, which confounds growth with degradation.'
+- 'Enablement questions routed as defects, which teaches engineering to ignore the channel.'
+variants:
+- applies_to: embedded_in_product
+  change: Strongest — the ticket carries the context, so the driver maps to a specific flow rather than to a category.
+  why: The instrumentation is already there.
+- applies_to: enterprise_support
+  change: Weaker as a rate and stronger as a set of specific findings, because volume is low and each ticket is detailed.
+  why: The sample is small and the reports are rich.
+references:
+- title: Service metrics and gaming
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The inversion is the point: treated as a support performance number, volume rewards
+    deflecting the report rather than removing the cause, and the organisation optimises for not
+    hearing about its own defects.
