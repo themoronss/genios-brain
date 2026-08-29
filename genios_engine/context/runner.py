@@ -124,6 +124,7 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
     recipients = [e for e in ((raw.get("to") or []) + (raw.get("cc") or [])) if e]
     res = process_event(org_id=org_id, event_id=row.event_id, source=row.source, content=content,
                         sender_email=row.sender, recipient_emails=recipients,
+                        sender_name=getattr(row, "sender_name", None),
                         occurred_at=row.occurred_at, llm=llm, store=store,
                         is_inbound=is_inbound, internal_emails=internal_emails,
                         internal_kind=getattr(row, "internal_kind", None),
@@ -144,6 +145,7 @@ def _pull(store: GraphStore, org_id: str, limit: int):
     with store.engine.connect() as c:
         return c.execute(text(
             "select se.event_id, se.source, se.object_type, se.actor->>'email' as sender, "
+            "se.actor->>'name' as sender_name, "
             "se.occurred_at, se.source_object_id, se.triage_lane, se.internal_kind, "
             "se.parent_object_id, se.domain_hints, "
             "rp.enc_content, "

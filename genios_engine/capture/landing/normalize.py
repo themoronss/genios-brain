@@ -41,7 +41,7 @@ def to_source_event(
         parent_object_id=raw.parent_object_id,
         dedup_key=compute_dedup_key(raw.source, raw.object_type, raw.source_object_id,
                                     raw.content_version),
-        actor=Actor(type=raw.actor_type, email=raw.actor_email),
+        actor=Actor(type=raw.actor_type, email=raw.actor_email, name=raw.actor_name),
         # Carried through the seam instead of dying in the payload blob. One sender per event was
         # never enough to say who a conversation is WITH — it is the root of targeting an
         # introducer as though they were the counterparty.

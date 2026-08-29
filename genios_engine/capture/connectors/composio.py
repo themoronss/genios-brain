@@ -86,6 +86,33 @@ def _extract_email(s: str | None) -> str | None:
     return m.group(0).lower() if m else None
 
 
+def _extract_display_name(s: str | None) -> str | None:
+    """The human name out of `"Deepthi Chandrashekhar" <deepthi@...>`, or None if there isn't one.
+
+    Parsed with `email.utils.parseaddr`, which is the standard's own reader for this — hand-rolled
+    quote stripping gets RFC 2047 encoded words and comma-in-quotes wrong, and both are ordinary in
+    real mail.
+
+    Returns None rather than a guess in the three cases where a source supplies something that is
+    not a name: an empty display part, a display part that IS the address (many clients repeat it),
+    and a bare local-part echo. Naming a person "ydvkhushi721" because that is what precedes the @
+    would be a confident lie, where showing the address is merely ugly — so the fallback stays the
+    address and this returns nothing.
+    """
+    if not s:
+        return None
+    from email.utils import parseaddr
+    name, addr = parseaddr(str(s))
+    name = (name or "").strip().strip('"').strip()
+    if not name:
+        return None
+    if _EMAIL.search(name):
+        return None                                  # the display part is just the address again
+    if addr and name.lower() == addr.split("@", 1)[0].lower():
+        return None                                  # ...or a bare local-part echo
+    return name
+
+
 def _extract_emails(*sources: Any) -> list[str]:
     """ALL distinct emails across the given header values (To/Cc can list many, comma-separated,
     each possibly "Name <addr>"). Order-preserving dedup so L2 can build one edge per recipient."""
@@ -420,7 +447,8 @@ class ComposioGmailConnector:
 
         objs = [RawObject(
             source="gmail", object_type="email_message", source_object_id=mid,
-            occurred_at=occurred, actor_email=sender_email, actor_type="external_contact",
+            occurred_at=occurred, actor_email=sender_email,
+            actor_name=_extract_display_name(sender), actor_type="external_contact",
             parent_object_id=thread,
             # Typed, so the participant set survives past the payload TTL — the raw dict
             # is encrypted and expires; this column does not.

@@ -445,6 +445,7 @@ def _normalise_meeting_status(value):
 
 def process_event(*, org_id: str, event_id: str, source: str, content: str,
                   sender_email: str | None, occurred_at: datetime | None,
+                  sender_name: str | None = None,
                   llm: LLMClient, store: GraphStore, is_inbound: bool = False,
                   recipient_emails: list[str] | None = None,
                   internal_emails: frozenset[str] | None = None,
@@ -538,9 +539,15 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             # nobody is in a business relationship with their own tooling.
             ntype = ("service" if (_is_automated_sender(email) or is_platform_sender(email))
                      else "person")
+            # NAME THE PERSON IF THE SOURCE NAMED THEM. Only the SENDER's name is known here —
+            # recipients arrive as bare addresses in To/Cc — so this applies to the one address
+            # the From header described, and everyone else keeps the address until they write to
+            # us. That asymmetry is the honest one: we name people who have spoken.
+            label = (sender_name if (sender_name and key == (sender_email or "").strip().lower())
+                     else email)
             node = store.find_or_create_node(
                 conn, org_id=org_id, node_type=ntype,
-                canonical_key=key, display_name=email, event_id=event_id)
+                canonical_key=key, display_name=label, event_id=event_id)
             touched[node] = ntype
             if key in internal_set:
                 internal_nodes.add(node)

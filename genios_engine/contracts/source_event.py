@@ -18,6 +18,18 @@ class Actor(BaseModel):
     type: str                       # internal_user | external_contact | agent | system | human
     email: str | None = None
     external_id: str | None = None
+    #: The human-readable name the source itself supplied — the display part of an email's
+    #: `From: "Deepthi Chandrashekhar" <deepthi@...>`.
+    #:
+    #: It was being parsed and thrown away, so `actor.name` was empty on all 1,397 of the design
+    #: partner's source events and 204 of her 340 graph nodes fell back to naming themselves after
+    #: an address. 69 of 115 live cards therefore headlined a machine identifier —
+    #: "ydvkhushi721@gmail.com — warming, needs opening", "antler.co — fit not assessed".
+    #:
+    #: Optional because plenty of senders supply none, and a missing name must stay missing rather
+    #: than be invented from the local-part: "ydvkhushi721" is not a person's name and rendering it
+    #: as one would be a confident lie where an address is merely ugly.
+    name: str | None = None
 
 
 def compute_dedup_key(source: str, object_type: str, source_object_id: str,

@@ -15,6 +15,8 @@ class RawObject:
     source_object_id: str
     occurred_at: datetime
     actor_email: str | None = None
+    #: The display name the source gave for the actor, when it gave one. See `Actor.name`.
+    actor_name: str | None = None
     actor_type: str = "external_contact"
     parent_object_id: str | None = None
     # For MUTABLE structured objects (CRM deal, calendar event, DB row) a connector sets a
