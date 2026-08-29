@@ -1,0 +1,113 @@
+# `approval_coordination`, `delegation_and_task_routing` and `gatekeeping` are the three
+# executive-support capabilities that were left orphaned once `inbox_and_correspondence` and
+# `commitment_tracking` had their door. All three read the same thing — a decision or a task that
+# is sitting with a named human — and none of them could be reached.
+
+identity:
+  id: admin.sit.decision_waiting_on_a_person
+  name: Decision Waiting on a Person
+  domain: admin
+  owner_capability: admin.executive_support.approval_coordination
+  version: 1.0.0
+  status: stable
+
+description: >
+  Something is waiting on a specific person and has been for long enough to be worth naming: an
+  answer we owe, a decision we asked for, or a task that was passed on and has not come back. The
+  read is about WHO holds it and whether they know they hold it.
+
+  Administrative delay is almost never refusal. It is a request that arrived without a deadline,
+  landed in a queue behind things that had one, and was never chased because chasing feels rude
+  and the person who asked assumes it is coming. The substrate can see this precisely — whose turn
+  it is, when either side last moved, and what was promised — and a person reading their own inbox
+  cannot, because the item they are waiting on is by definition not in front of them.
+
+  The failure this file exists to prevent is treating `pending` and `stuck` as the same state.
+  They are not. A request made yesterday to someone who answers weekly is pending and needs
+  nothing; the same request made a month ago is stuck and needs a different route, a different
+  person, or a decision to proceed without it. The distinguishing evidence is the counterparty's
+  own history, not a fixed number of days — and where that history is thin, the honest output says
+  so rather than picking a threshold.
+
+matches:
+  l2_situation_types:
+    - admin_contact
+    - relationship
+  scope: person
+  when:
+    - path: thread.ball_in_court
+      op: "="
+      value: them
+
+also_serves:
+  - admin.executive_support.delegation_and_task_routing
+  - admin.executive_support.gatekeeping
+  - admin.admin_operations.request_intake
+
+objects:
+  load:
+    - admin.obj.core.approval
+    - admin.obj.core.request
+  optional:
+    - admin.obj.core.approver
+    - admin.obj.core.commitment
+    - admin.obj.core.deadline
+    - admin.obj.core.escalation
+  never_load:
+    # None of this is about money, people records or property. Loading them would resolve them to
+    # `unknown` and read downstream as "checked, and there are none".
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+    - admin.obj.core.access_right
+
+priority_bp: 5800
+typical_duration_days: 14
+
+signals_of_progress:
+  - positive_reply
+  - next_step_agreed
+  - question
+
+signals_of_decay:
+  - timeline_slip
+  - negative_reply
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Something is sitting with this person. Never write "follow up" — say what is waiting, with
+    whom, and since when, because those three facts are the entire value here.
+
+    Headline: what is waiting and who holds it.
+
+    Situation: when we last heard from them, what they normally take, and whether this is outside
+    that. If we have too little history to say what is normal for them, say that instead of
+    implying the delay is unusual.
+
+    Artifact: the message that makes it easy to answer — restate the decision in one line, offer a
+    default we will proceed with if we hear nothing, and give a date. Never a bare reminder.
+  fallback:
+    headline: "{entity} — a decision is sitting with them"
+    situation: >-
+      Something was asked of {entity} and the record shows nothing back.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    `thread.ball_in_court = them` is the whole gate, and it is a real writer with wide coverage.
+    Deliberately no day threshold in the predicate: a fixed number would be a policy invented
+    here, and Layer 4 owns thresholds. What is normal for a counterparty is a property of that
+    counterparty's own history, which the render hint asks for explicitly.
+
+    `approval.state` would make this far sharper and has no writer. Not declared, not predicated
+    on, and named here so the gap is visible rather than felt.
+
+admission:
+  accepted_content_hash: 47b29b02ca18ab97f365f7f304e2e40c0a6ecf65f5e25d728af7d17230ab8740

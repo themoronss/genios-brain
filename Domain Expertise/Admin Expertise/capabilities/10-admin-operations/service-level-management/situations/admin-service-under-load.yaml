@@ -1,0 +1,93 @@
+# THIS SITUATION ROUTES NOTHING. The admin-operations subdomain reads the administrative FUNCTION
+# rather than any one counterparty — how requests arrive, how long they take, whether the process
+# holds. That is a portfolio read, and every anchor this system offers is a single subject.
+
+identity:
+  id: admin.sit.admin_service_under_load
+  name: Admin Service Under Load
+  domain: admin
+  owner_capability: admin.admin_operations.service_level_management
+  version: 1.0.0
+  status: draft
+
+description: >
+  The administrative function itself is the subject: the shape of the request queue, how long
+  things are taking against what was promised, which processes keep producing the same exception,
+  and whether the organisation could keep operating if a key person or system were unavailable.
+
+  This is the only Admin subdomain whose unit of analysis is a period rather than a thing. "Are we
+  meeting our turnaround" is not a question about a request; it is a question about all of them,
+  and answering it from one anchor at a time is the same category error as forecasting a pipeline
+  one deal at a time.
+
+matches:
+  l2_situation_types: []
+  pending_l2_situation_types:
+    - type: admin_period_review
+      owner_layer: L2
+      nearest_today: admin_contact
+      note: >
+        WHAT THE TYPE MUST MEAN. A PERIOD, not a subject: a window over the whole administrative
+        queue, carrying volume by request type, turnaround against target, exception counts and
+        the processes that produced them. Its anchor is the tenant and the window, which is a
+        shape Layer 2 does not currently emit for anything.
+
+        WHAT WOULD EMIT IT. A portfolio situation emitter — the same missing machinery that blocks
+        `sales.sit.pipeline_period_review` and `customer_support.sit.queue_period_review`. All
+        three want one mechanism: periodic, tenant-anchored, aggregate-carrying. Named identically
+        across the three domains so it is visible as ONE Layer 2 build rather than three.
+
+        WHAT GOES WRONG TODAY. Nothing fires for service_level_management, admin_analytics,
+        process_improvement, sop_management or business_continuity_administration.
+
+        WHY BINDING TO admin_contact WOULD BE WRONG, specifically. (1) A per-counterparty anchor
+        cannot express an aggregate — "turnaround is slipping" is not a statement about one
+        contact, and asserted about one it is meaningless. (2) It would fire once per contact,
+        producing N copies of a single finding and spending the daily signal budget on repetition.
+        (3) Process improvement needs to see the same exception recur across DIFFERENT requests,
+        which is precisely the comparison a single-subject anchor forbids. (4) Business continuity
+        is about the absence of a person or a system; there is no anchor for an absence.
+  # No `scope`. The natural scope is TENANT + PERIOD, which the enum does not offer.
+
+also_serves:
+  - admin.admin_operations.admin_analytics
+  - admin.admin_operations.process_improvement
+  - admin.admin_operations.sop_management
+  - admin.admin_operations.business_continuity_administration
+
+objects:
+  load:
+    - admin.obj.core.sop
+  optional:
+    - admin.obj.core.request
+    - admin.obj.core.deadline
+    - admin.obj.core.escalation
+
+priority_bp: 3600
+typical_duration_days: 30
+signals_of_progress: [next_step_agreed]
+signals_of_decay: [timeline_slip]
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    Unreachable today. When the type exists: report the period, the movement and the cause — never
+    a single number without the comparison that makes it mean something.
+  fallback:
+    headline: "Administrative turnaround — period unmeasured"
+    situation: >-
+      No period aggregate exists, so turnaround against target cannot be stated.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Deliberately names the SAME missing mechanism as the Sales and Customer Support period
+    situations. Three subdomains across three domains are blocked on one Layer 2 capability —
+    tenant-anchored periodic situations — and stating it three times in the same words is what
+    makes that legible as a single build.

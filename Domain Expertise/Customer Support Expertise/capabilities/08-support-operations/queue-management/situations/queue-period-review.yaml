@@ -1,0 +1,100 @@
+# THIS SITUATION ROUTES NOTHING. Ten capabilities across support-operations and
+# support-management read the QUEUE and the TEAM over a period — not any one customer — and no
+# anchor in this system is a period. Same missing mechanism as
+# `admin.sit.admin_service_under_load` and `sales.sit.pipeline_period_review`, named identically
+# in all three so it reads as one Layer 2 build.
+
+identity:
+  id: customer_support.sit.queue_period_review
+  name: Queue Period Review
+  domain: customer_support
+  owner_capability: customer_support.support_operations.queue_management
+  version: 1.0.0
+  status: draft
+
+description: >
+  The support operation itself over a window: what arrived, what cleared, where the backlog is
+  concentrated, who is carrying it, what it costs to serve, and whether the people doing it are
+  sustainable. Every question here is an aggregate and none of them is about a customer.
+
+  Two failures live in this subdomain and both are invisible from a single ticket. A queue that
+  clears on average while one segment starves — averages hide the customers who wait longest. And
+  a team that is meeting its numbers by working in a way it cannot keep working; team health is
+  the leading indicator of every other support metric and the last one anybody instruments.
+
+matches:
+  l2_situation_types: []
+  pending_l2_situation_types:
+    - type: support_period_review
+      owner_layer: L2
+      nearest_today: support_case
+      note: >
+        WHAT THE TYPE MUST MEAN. A window over the whole queue, anchored on the tenant, carrying
+        arrival and clearance rates, backlog age distribution, per-agent load, and cost per
+        contact. Distribution rather than average is the requirement — the finding is almost
+        always in the tail, and a mean hides exactly the segment that is failing.
+
+        WHAT WOULD EMIT IT. Tenant-anchored periodic situations, which Layer 2 does not emit for
+        anything, over ticket, assignment and time-spent facts that have no writer. Two builds,
+        and the periodic-situation half is shared with the Admin and Sales period situations.
+
+        WHAT GOES WRONG TODAY. Nothing fires for queue_management, workload_balancing,
+        capacity_planning, support_analytics, cost_to_serve, agent_coaching, performance_management,
+        quality_assurance, team_health or ticket_review.
+
+        WHY BINDING TO support_case WOULD BE WRONG, specifically. (1) An aggregate asserted about
+        one company is not an aggregate — "backlog is growing" said on an account page is
+        uninterpretable. (2) It would fire once per account, producing N copies of one finding.
+        (3) Team health and coaching are about OUR people; a customer-anchored situation carries
+        no internal person, so the whole support-management subdomain would be reasoning about
+        the wrong party. (4) Capacity planning needs arrival rate against capacity over time, and
+        a single-subject anchor has no time axis at all.
+  # No `scope`. The natural scope is TENANT + PERIOD, which the enum does not offer.
+
+also_serves:
+  # Coverage is a rota over a period, which is the same missing shape as the rest of this
+  # list — who is on, when, and whether the window is actually covered.
+  - customer_support.entitlement_and_sla.coverage_and_on_call
+  - customer_support.support_operations.workload_balancing
+  - customer_support.support_operations.capacity_planning
+  - customer_support.support_operations.support_analytics
+  - customer_support.support_operations.cost_to_serve
+  - customer_support.support_management.agent_coaching
+  - customer_support.support_management.performance_management
+  - customer_support.support_management.quality_assurance
+  - customer_support.support_management.team_health
+  - customer_support.support_management.ticket_review
+
+objects:
+  load:
+    - customer_support.obj.core.ticket
+  optional:
+    - customer_support.obj.core.sla_target
+    - customer_support.obj.core.entitlement
+
+priority_bp: 3800
+typical_duration_days: 30
+signals_of_progress: [next_step_agreed]
+signals_of_decay: [timeline_slip]
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    Unreachable today. When the type exists: report the distribution, never the average alone —
+    the finding is in the tail, and a mean is how the failing segment stays hidden.
+  fallback:
+    headline: "Support queue — period unmeasured"
+    situation: >-
+      No period aggregate exists, so queue health cannot be stated.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Ten capabilities behind one missing mechanism — the largest single unlock in this corpus, and
+    the reason it is worth naming precisely rather than leaving as ten silent orphans.

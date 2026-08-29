@@ -1,0 +1,97 @@
+# THIS SITUATION ROUTES NOTHING. Five diagnosis capabilities, and the substrate holds no issue —
+# no reproduction, no defect identity, no resolution state. The gap is the ISSUE object itself:
+# many tickets, one issue is what makes "forty customers hit this" expressible, and without it
+# every report is a fresh surprise.
+
+identity:
+  id: customer_support.sit.issue_under_diagnosis
+  name: Issue Under Diagnosis
+  domain: customer_support
+  owner_capability: customer_support.diagnosis_and_resolution.root_cause_analysis
+  version: 1.0.0
+  status: draft
+
+description: >
+  An underlying defect or gap is being worked on: what is actually wrong, whether it reproduces,
+  what makes it stop, and whether the customer has confirmed it did. The subject is the issue, not
+  the ticket — a ticket can be closed while the issue behind it is wide open, which is exactly
+  what "resolved" means when a workaround shipped.
+
+  The discipline this subdomain owns is holding those apart. A workaround that unblocks a customer
+  is a resolution and not a fix, and a system that cannot express the difference will report a
+  defect as closed while it continues to generate tickets.
+
+matches:
+  l2_situation_types: []
+  pending_l2_situation_types:
+    - type: issue_under_diagnosis
+      owner_layer: L1
+      nearest_today: support_case
+      note: >
+        WHAT THE TYPE MUST MEAN. A defect with identity across the tickets that report it,
+        carrying reproduction state (reproduced, not reproduced, intermittent), current
+        resolution (none, workaround, fix) and verification state. Identity across tickets is the
+        hard requirement: without it `root_cause_analysis` sees one report at a time, which is the
+        one view from which a root cause is invisible.
+
+        WHAT WOULD EMIT IT. `issue.id`, `issue.reproduction_state`, `issue.resolution_kind` and
+        `issue.verified_at`, plus a ticket-to-issue link. No writer exists. Clustering distinct
+        reports onto one issue is a Layer 2 identity problem of the same shape as person merge and
+        should be specified as one, not left to a per-ticket classifier.
+
+        WHAT GOES WRONG TODAY. Nothing fires for root_cause_analysis, issue_reproduction,
+        workaround_management, resolution_delivery or verification_and_closure.
+
+        WHY BINDING TO support_case WOULD BE WRONG, specifically. (1) `support_case` is anchored
+        on a company; an issue spans companies, so the binding would produce one root-cause
+        analysis per customer of the same defect — the exact fragmentation the issue object
+        exists to remove. (2) No reproduction state, so `issue_reproduction` would advise on
+        reproducing something with no record of whether it reproduces. (3) No verification, so
+        `verification_and_closure` would treat a last reply as confirmation, and a customer going
+        quiet is not a customer confirming a fix. (4) Compound: closure inferred from silence
+        reports defects as resolved that are still live, which is the failure this subdomain is
+        built to prevent.
+  # No `scope`. The natural scope is an ISSUE; the enum does not offer one.
+
+also_serves:
+  - customer_support.diagnosis_and_resolution.issue_reproduction
+  - customer_support.diagnosis_and_resolution.workaround_management
+  - customer_support.diagnosis_and_resolution.resolution_delivery
+  - customer_support.diagnosis_and_resolution.verification_and_closure
+
+objects:
+  load:
+    - customer_support.obj.core.ticket
+  optional:
+    - customer_support.obj.core.customer_account
+    - customer_support.obj.core.commitment
+    - customer_support.obj.postmortem.postmortem
+
+priority_bp: 7000
+typical_duration_days: 21
+signals_of_progress: [next_step_agreed, positive_reply]
+signals_of_decay: [negative_reply, timeline_slip]
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    Unreachable today. When the type exists: never say "resolved" without saying by what — a fix
+    and a workaround are different states with different consequences.
+  fallback:
+    headline: "{entity} — issue state unverified"
+    situation: >-
+      A reported problem from {entity} has no recorded reproduction or resolution state.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    `incident_management`, `major_incident_communication` and `postmortem` are NOT served here.
+    An incident is declared by a human and inferring one would be the system declaring an
+    incident, which is not its call. They remain orphaned deliberately and that is recorded in
+    `customer_support.sit.this_is_bigger_than_a_reply`.

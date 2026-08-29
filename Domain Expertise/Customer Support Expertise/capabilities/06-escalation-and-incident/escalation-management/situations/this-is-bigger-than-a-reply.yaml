@@ -1,0 +1,110 @@
+# The escalation subdomain had six capabilities and no door. Escalation is the one support motion
+# that is fully legible from correspondence — it is, definitionally, someone new being brought in.
+
+identity:
+  id: customer_support.sit.this_is_bigger_than_a_reply
+  name: This Is Bigger Than a Reply
+  domain: customer_support
+  owner_capability: customer_support.escalation_and_incident.escalation_management
+  version: 1.0.0
+  status: stable
+
+description: >
+  An exchange with a customer has escalated: someone senior has been copied in, the tone has gone
+  formal, or a promise has been missed and named. The read is about containment — what has to
+  happen now, who has to do it, and what must be said while it is happening.
+
+  Escalation has a shape and the shape is visible. The thread widens; the language becomes
+  careful; the customer starts restating history, which is what people do when they expect to have
+  to justify themselves later. Recognising it early is most of the value, because the window in
+  which an escalation can be resolved by an answer rather than by a concession is short.
+
+  The failure this file exists to prevent is responding to the escalation instead of to the cause.
+  A senior person copied in does not want to be managed; they want the original thing fixed, and a
+  reply addressed to them about process makes it worse. The advice here must always name the
+  underlying unmet thing, and only then say who should say it.
+
+matches:
+  l2_situation_types:
+    - support_case
+    - support_contact
+    - relationship
+  scope: person
+  when:
+    - path: relationship.nature
+      op: "="
+      value: customer
+    - exists: commitment.due_at
+
+also_serves:
+  - customer_support.escalation_and_incident.executive_escalation
+  - customer_support.escalation_and_incident.engineering_handoff
+  - customer_support.entitlement_and_sla.sla_management
+
+objects:
+  load:
+    - customer_support.obj.core.escalation
+    - customer_support.obj.core.commitment
+  optional:
+    - customer_support.obj.core.customer_account
+    - customer_support.obj.core.entitlement
+    - customer_support.obj.core.sla_target
+    - customer_support.obj.core.customer_sentiment
+    - customer_support.obj.core.churn_risk
+  never_load:
+    - customer_support.obj.macro_management.macro
+    - customer_support.obj.core.knowledge_article
+
+priority_bp: 8200
+typical_duration_days: 7
+
+signals_of_progress:
+  - next_step_agreed
+  - positive_reply
+
+signals_of_decay:
+  - negative_reply
+  - timeline_slip
+  - closed_lost_mention
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    A customer relationship has something promised and dated running through it, and the exchange
+    has weight. Never write to the escalation — write to the cause.
+
+    Headline: the unmet thing, and its date. Not "escalated" — that is a state, not information.
+
+    Situation: what was promised, by when, and what the record shows has happened since. Name who
+    is now involved who was not before, if anyone is.
+
+    Artifact: the message that addresses the original commitment — what is true now, what happens
+    next, who owns it and when they will hear again. Never an apology without a date attached to
+    it.
+  fallback:
+    headline: "{entity} — a dated promise is running and unresolved"
+    situation: >-
+      Something was promised to {entity} with a date and nothing on record closes it.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Gated on a dated commitment to a customer rather than on an escalation fact, because there is
+    no escalation fact. `escalation.level`, `incident.severity` and `sla.target_at` are all named
+    in the support corpus and none has a writer — declaring them would put them in the extraction
+    prompt and invite the model to invent an SLA nobody agreed to.
+
+    The consequence is stated rather than hidden: this reads a broken promise to a customer, which
+    is the most common CAUSE of an escalation, not the escalation itself. `incident_management`,
+    `major_incident_communication` and `postmortem` are deliberately NOT served — all three need a
+    declared incident, and inferring one from correspondence would be the system declaring an
+    incident, which is not its call to make.
+
+admission:
+  accepted_content_hash: 4faddb8fc216c4bd4ccabbc6f5d1792b971bf02831d5ce9d03f6203f430ca1a5

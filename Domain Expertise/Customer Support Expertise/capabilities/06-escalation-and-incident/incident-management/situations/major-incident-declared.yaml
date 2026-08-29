@@ -80,6 +80,8 @@ matches:
   scope: account
 
 also_serves:
+  # A postmortem cannot exist without a declared incident, so it waits on the same type.
+  - customer_support.escalation_and_incident.postmortem
   - customer_support.escalation_and_incident.major_incident_communication
   - customer_support.support_operations.queue_management
   - customer_support.escalation_and_incident.engineering_handoff

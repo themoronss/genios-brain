@@ -14,15 +14,26 @@ domain: Sales Expertise
 map:
   deal:
     situations:
+      - sales.sit.agreement_without_a_signature
+      - sales.sit.commercial_conversation_open
+      - sales.sit.deal_without_a_stated_problem
       - sales.sit.enterprise_deal
       - sales.sit.field_evidence_on_the_market
       - sales.sit.out_of_profile_deal
     capabilities:
+      - sales.closing.closing
+      - sales.closing.contract_management
       - sales.closing.legal_review
       - sales.closing.procurement
+      - sales.discovery_and_solution.discovery
+      - sales.discovery_and_solution.need_analysis
+      - sales.discovery_and_solution.value_proposition
       - sales.market_and_targeting.icp_definition
       - sales.market_and_targeting.market_research
+      - sales.proposal_and_commercials.negotiation
+      - sales.proposal_and_commercials.objection_handling
       - sales.proposal_and_commercials.pricing
+      - sales.proposal_and_commercials.proposal_creation
       - sales.qualification.buying_committee_analysis
       - sales.qualification.champion_identification
       - sales.qualification.decision_maker_identification
@@ -35,12 +46,13 @@ map:
       load:
         - sales.obj.core.account
         - sales.obj.core.budget
+        - sales.obj.core.business_need
         - sales.obj.core.company
         - sales.obj.core.competitor
-        - sales.obj.core.contract
         - sales.obj.core.deal
-        - sales.obj.core.icp
-        - sales.obj.core.pricing
+        - sales.obj.core.next_action
+        - sales.obj.core.objection
+        - sales.obj.core.pain_point
         - sales.obj.core.stakeholder
         - sales.obj.icp_definition.disqualifier
         - sales.obj.icp_definition.fit_analysis
@@ -49,23 +61,30 @@ map:
       optional:
         - sales.obj.core.buying_signal
         - sales.obj.core.opportunity
-        - sales.obj.core.pain_point
-        - sales.obj.core.persona
-        - sales.obj.core.proposal
         - sales.obj.core.risk
       never_load:
         - sales.obj.core.buying_committee
         - sales.obj.core.champion
+        - sales.obj.core.contract
         - sales.obj.core.decision_maker
+        - sales.obj.core.icp
+        - sales.obj.core.lead
+        - sales.obj.core.persona
+        - sales.obj.core.pricing
+        - sales.obj.core.proposal
         - sales.obj.core.timeline
 
   opportunity:
     situations:
+      - sales.sit.deal_without_a_stated_problem
       - sales.sit.field_evidence_on_the_market
       - sales.sit.inbound_fit_check
       - sales.sit.inbound_lead
       - sales.sit.out_of_profile_deal
     capabilities:
+      - sales.discovery_and_solution.discovery
+      - sales.discovery_and_solution.need_analysis
+      - sales.discovery_and_solution.value_proposition
       - sales.market_and_targeting.icp_definition
       - sales.market_and_targeting.market_research
       - sales.proposal_and_commercials.pricing
@@ -80,13 +99,14 @@ map:
     objects:
       load:
         - sales.obj.core.account
+        - sales.obj.core.business_need
         - sales.obj.core.company
         - sales.obj.core.competitor
         - sales.obj.core.deal
         - sales.obj.core.icp
         - sales.obj.core.lead
         - sales.obj.core.next_action
-        - sales.obj.core.pricing
+        - sales.obj.core.pain_point
         - sales.obj.icp_definition.disqualifier
         - sales.obj.icp_definition.fit_analysis
         - sales.obj.market_research.market_finding
@@ -94,25 +114,29 @@ map:
       optional:
         - sales.obj.core.buying_signal
         - sales.obj.core.opportunity
-        - sales.obj.core.pain_point
         - sales.obj.core.persona
-        - sales.obj.core.proposal
         - sales.obj.core.risk
+        - sales.obj.core.stakeholder
       never_load:
         - sales.obj.core.budget
         - sales.obj.core.buying_committee
         - sales.obj.core.champion
+        - sales.obj.core.contract
         - sales.obj.core.decision_maker
+        - sales.obj.core.pricing
+        - sales.obj.core.proposal
         - sales.obj.core.timeline
 
   prospect_relationship:
     situations:
+      - sales.sit.first_touch_unanswered
       - sales.sit.inbound_fit_check
       - sales.sit.inbound_lead
       - sales.sit.outbound_prospect
     capabilities:
       - sales.market_and_targeting.icp_definition
       - sales.prospecting_and_outreach.account_research
+      - sales.prospecting_and_outreach.cold_email
       - sales.prospecting_and_outreach.follow_up
       - sales.prospecting_and_outreach.lead_generation
       - sales.prospecting_and_outreach.meeting_booking
@@ -122,6 +146,7 @@ map:
       load:
         - sales.obj.core.account
         - sales.obj.core.company
+        - sales.obj.core.contact
         - sales.obj.core.icp
         - sales.obj.core.lead
         - sales.obj.core.next_action
@@ -132,12 +157,15 @@ map:
         - sales.obj.core.buying_signal
         - sales.obj.core.champion
         - sales.obj.core.competitor
-        - sales.obj.core.deal
         - sales.obj.core.pain_point
       never_load:
         - sales.obj.core.budget
         - sales.obj.core.buying_committee
+        - sales.obj.core.deal
         - sales.obj.core.decision_maker
+        - sales.obj.core.objection
+        - sales.obj.core.pricing
+        - sales.obj.core.proposal
         - sales.obj.core.timeline
 
   investor_relationship:
@@ -194,6 +222,7 @@ map:
 
   relationship:
     situations:
+      - sales.sit.first_touch_unanswered
       - sales.sit.live_account_relationship
       - sales.sit.outbound_prospect
     capabilities:
@@ -206,6 +235,7 @@ map:
       - sales.post_sale_and_growth.renewal
       - sales.post_sale_and_growth.upsell
       - sales.prospecting_and_outreach.account_research
+      - sales.prospecting_and_outreach.cold_email
       - sales.prospecting_and_outreach.follow_up
       - sales.prospecting_and_outreach.outreach
       - sales.sales_management.relationship_management
@@ -213,6 +243,7 @@ map:
       load:
         - sales.obj.core.account
         - sales.obj.core.company
+        - sales.obj.core.contact
         - sales.obj.core.contract
         - sales.obj.core.icp
         - sales.obj.core.lead
@@ -227,20 +258,31 @@ map:
         - sales.obj.core.business_need
         - sales.obj.core.champion
         - sales.obj.core.competitor
-        - sales.obj.core.deal
         - sales.obj.core.decision_maker
         - sales.obj.core.pain_point
-        - sales.obj.core.pricing
       never_load:
         - sales.obj.core.budget
         - sales.obj.core.buying_committee
+        - sales.obj.core.deal
+        - sales.obj.core.objection
+        - sales.obj.core.pricing
+        - sales.obj.core.proposal
         - sales.obj.core.timeline
 
 # ── Blocked on Layers 1 and 2 ─────────────────────────────────────────────
 # These situations are authored and route NOTHING, because the type that would
 # trigger them is not in any shipped pack's signal_vocab. Not a defect in the
 # authoring — it is the requirement list, stated where the compiler can count it.
-pending_l2_types: {}
+pending_l2_types:
+  channel_touch:
+    situations:
+      - sales.sit.touch_outside_mail
+  market_period_review:
+    situations:
+      - sales.sit.touch_outside_mail
+  pipeline_period_review:
+    situations:
+      - sales.sit.pipeline_period_review
 
 # ── Coverage ──────────────────────────────────────────────────────────────
 # Types this domain routes.
@@ -258,18 +300,9 @@ unrouted_l2_types: []
 
 # Authored but unreachable — no situation routes into them.
 orphan_capabilities:
-  - sales.closing.closing
-  - sales.closing.contract_management
   - sales.discovery_and_solution.demo
-  - sales.discovery_and_solution.discovery
-  - sales.discovery_and_solution.need_analysis
-  - sales.discovery_and_solution.value_proposition
   - sales.market_and_targeting.tam_sam_som
-  - sales.proposal_and_commercials.negotiation
-  - sales.proposal_and_commercials.objection_handling
-  - sales.proposal_and_commercials.proposal_creation
   - sales.prospecting_and_outreach.cold_calling
-  - sales.prospecting_and_outreach.cold_email
   - sales.prospecting_and_outreach.linkedin_outreach
   - sales.revenue_operations.forecasting
   - sales.revenue_operations.quota_planning
@@ -286,12 +319,12 @@ stats:
   l2_types_total: 10
   l2_types_routed_here: 6
   l2_types_unrouted_globally: 0
-  l2_types_pending: 0
-  situations: 9
+  l2_types_pending: 3
+  situations: 15
   capabilities: 47
   capabilities_stub: 0
   capabilities_complete: 47
-  capabilities_routed: 27
+  capabilities_routed: 36
   objects_total: 29
   objects_core: 24
   objects_scoped: 5

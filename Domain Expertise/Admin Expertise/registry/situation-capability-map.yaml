@@ -15,97 +15,192 @@ map:
   account_admin:
     situations:
       - admin.sit.live_account_admin
+      - admin.sit.money_owed_either_way
+      - admin.sit.vendor_relationship_live
     capabilities:
+      - admin.contract_and_vendor.contract_administration
+      - admin.contract_and_vendor.procurement_administration
+      - admin.contract_and_vendor.renewal_management
+      - admin.contract_and_vendor.vendor_onboarding
+      - admin.contract_and_vendor.vendor_performance_management
       - admin.executive_support.commitment_tracking
       - admin.executive_support.inbox_and_correspondence
+      - admin.finance_administration.expense_management
+      - admin.finance_administration.invoice_processing
+      - admin.finance_administration.payables_administration
+      - admin.finance_administration.receivables_follow_up
+      - admin.finance_administration.reimbursement_processing
       - admin.meeting_operations.follow_up_coordination
     objects:
       load:
         - admin.obj.core.action_item
-        - admin.obj.core.commitment
-        - admin.obj.core.deadline
-        - admin.obj.core.request
-      optional:
         - admin.obj.core.approval
+        - admin.obj.core.commitment
+        - admin.obj.core.contract
+        - admin.obj.core.deadline
+        - admin.obj.core.expense
+        - admin.obj.core.invoice
+        - admin.obj.core.policy
+        - admin.obj.core.request
+        - admin.obj.core.vendor
+      optional:
+        - admin.obj.core.budget_line
+        - admin.obj.core.compliance_obligation
         - admin.obj.core.document
         - admin.obj.core.escalation
-        - admin.obj.core.meeting
       never_load:
         - admin.obj.core.access_right
         - admin.obj.core.asset
         - admin.obj.core.employee_record
+        - admin.obj.core.meeting
 
   admin_contact:
     situations:
+      - admin.sit.date_bound_logistics
+      - admin.sit.decision_waiting_on_a_person
       - admin.sit.live_admin_contact
       - admin.sit.meeting_ahead
       - admin.sit.meeting_left_open
+      - admin.sit.money_owed_either_way
+      - admin.sit.vendor_relationship_live
     capabilities:
+      - admin.admin_operations.request_intake
+      - admin.contract_and_vendor.contract_administration
+      - admin.contract_and_vendor.procurement_administration
+      - admin.contract_and_vendor.renewal_management
+      - admin.contract_and_vendor.vendor_onboarding
+      - admin.contract_and_vendor.vendor_performance_management
+      - admin.executive_support.approval_coordination
       - admin.executive_support.briefing_and_preparation
       - admin.executive_support.calendar_management
       - admin.executive_support.commitment_tracking
+      - admin.executive_support.delegation_and_task_routing
+      - admin.executive_support.gatekeeping
       - admin.executive_support.inbox_and_correspondence
+      - admin.finance_administration.expense_management
+      - admin.finance_administration.invoice_processing
+      - admin.finance_administration.payables_administration
+      - admin.finance_administration.receivables_follow_up
+      - admin.finance_administration.reimbursement_processing
       - admin.meeting_operations.action_item_tracking
       - admin.meeting_operations.agenda_preparation
       - admin.meeting_operations.follow_up_coordination
       - admin.meeting_operations.meeting_scheduling
       - admin.meeting_operations.minutes_and_documentation
+      - admin.travel_and_events.event_coordination
+      - admin.travel_and_events.itinerary_management
+      - admin.travel_and_events.travel_booking
     objects:
       load:
         - admin.obj.calendar_management.time_block
         - admin.obj.core.action_item
         - admin.obj.core.approver
+        - admin.obj.core.budget_line
         - admin.obj.core.commitment
+        - admin.obj.core.contract
         - admin.obj.core.deadline
         - admin.obj.core.document
-        - admin.obj.core.meeting
-        - admin.obj.core.request
-      optional:
-        - admin.obj.core.escalation
         - admin.obj.core.policy
+        - admin.obj.core.request
+        - admin.obj.core.sop
+        - admin.obj.core.vendor
+        - admin.obj.event_coordination.event
+        - admin.obj.travel_booking.trip
+      optional:
+        - admin.obj.core.compliance_obligation
+        - admin.obj.core.escalation
       never_load:
         - admin.obj.core.access_right
         - admin.obj.core.approval
         - admin.obj.core.asset
         - admin.obj.core.employee_record
         - admin.obj.core.expense
+        - admin.obj.core.invoice
+        - admin.obj.core.meeting
 
   relationship:
     situations:
+      - admin.sit.date_bound_logistics
+      - admin.sit.decision_waiting_on_a_person
       - admin.sit.meeting_ahead
       - admin.sit.meeting_left_open
+      - admin.sit.money_owed_either_way
+      - admin.sit.vendor_relationship_live
     capabilities:
+      - admin.admin_operations.request_intake
+      - admin.contract_and_vendor.contract_administration
+      - admin.contract_and_vendor.procurement_administration
+      - admin.contract_and_vendor.renewal_management
+      - admin.contract_and_vendor.vendor_onboarding
+      - admin.contract_and_vendor.vendor_performance_management
+      - admin.executive_support.approval_coordination
       - admin.executive_support.briefing_and_preparation
       - admin.executive_support.calendar_management
+      - admin.executive_support.delegation_and_task_routing
+      - admin.executive_support.gatekeeping
+      - admin.finance_administration.expense_management
+      - admin.finance_administration.invoice_processing
+      - admin.finance_administration.payables_administration
+      - admin.finance_administration.receivables_follow_up
+      - admin.finance_administration.reimbursement_processing
       - admin.meeting_operations.action_item_tracking
       - admin.meeting_operations.agenda_preparation
       - admin.meeting_operations.meeting_scheduling
       - admin.meeting_operations.minutes_and_documentation
+      - admin.travel_and_events.event_coordination
+      - admin.travel_and_events.itinerary_management
+      - admin.travel_and_events.travel_booking
     objects:
       load:
         - admin.obj.calendar_management.time_block
         - admin.obj.core.action_item
         - admin.obj.core.approver
+        - admin.obj.core.budget_line
         - admin.obj.core.commitment
+        - admin.obj.core.contract
         - admin.obj.core.deadline
         - admin.obj.core.document
-        - admin.obj.core.meeting
-      optional:
-        - admin.obj.core.escalation
         - admin.obj.core.policy
         - admin.obj.core.request
+        - admin.obj.core.sop
+        - admin.obj.core.vendor
+        - admin.obj.event_coordination.event
+        - admin.obj.travel_booking.trip
+      optional:
+        - admin.obj.core.compliance_obligation
+        - admin.obj.core.escalation
       never_load:
         - admin.obj.core.access_right
         - admin.obj.core.approval
         - admin.obj.core.asset
         - admin.obj.core.employee_record
         - admin.obj.core.expense
+        - admin.obj.core.invoice
+        - admin.obj.core.meeting
 
 # ── Blocked on Layers 1 and 2 ─────────────────────────────────────────────
 # These situations are authored and route NOTHING, because the type that would
 # trigger them is not in any shipped pack's signal_vocab. Not a defect in the
 # authoring — it is the requirement list, stated where the compiler can count it.
-pending_l2_types: {}
+pending_l2_types:
+  admin_period_review:
+    situations:
+      - admin.sit.admin_service_under_load
+  asset_in_custody:
+    situations:
+      - admin.sit.asset_in_custody
+  document_under_control:
+    situations:
+      - admin.sit.document_under_control
+  employee_lifecycle_event:
+    situations:
+      - admin.sit.employee_lifecycle_event
+  obligation_falls_due:
+    situations:
+      - admin.sit.obligation_falls_due
+  spend_against_a_commitment:
+    situations:
+      - admin.sit.spend_against_a_commitment
 
 # ── Coverage ──────────────────────────────────────────────────────────────
 # Types this domain routes.
@@ -123,7 +218,6 @@ orphan_capabilities:
   - admin.admin_operations.admin_analytics
   - admin.admin_operations.business_continuity_administration
   - admin.admin_operations.process_improvement
-  - admin.admin_operations.request_intake
   - admin.admin_operations.service_level_management
   - admin.admin_operations.sop_management
   - admin.compliance_and_governance.audit_support
@@ -132,26 +226,13 @@ orphan_capabilities:
   - admin.compliance_and_governance.licence_and_registration
   - admin.compliance_and_governance.policy_administration
   - admin.compliance_and_governance.statutory_filing
-  - admin.contract_and_vendor.contract_administration
-  - admin.contract_and_vendor.procurement_administration
   - admin.contract_and_vendor.purchase_order_management
-  - admin.contract_and_vendor.renewal_management
-  - admin.contract_and_vendor.vendor_onboarding
-  - admin.contract_and_vendor.vendor_performance_management
-  - admin.executive_support.approval_coordination
-  - admin.executive_support.delegation_and_task_routing
-  - admin.executive_support.gatekeeping
   - admin.facilities_and_assets.asset_issuance_and_recovery
   - admin.facilities_and_assets.asset_register
   - admin.facilities_and_assets.health_and_safety_administration
   - admin.facilities_and_assets.maintenance_coordination
   - admin.facilities_and_assets.workplace_management
   - admin.finance_administration.budget_tracking
-  - admin.finance_administration.expense_management
-  - admin.finance_administration.invoice_processing
-  - admin.finance_administration.payables_administration
-  - admin.finance_administration.receivables_follow_up
-  - admin.finance_administration.reimbursement_processing
   - admin.people_administration.access_and_identity_administration
   - admin.people_administration.attendance_and_leave
   - admin.people_administration.employee_records_administration
@@ -163,9 +244,6 @@ orphan_capabilities:
   - admin.records_and_documentation.knowledge_base_maintenance
   - admin.records_and_documentation.retention_and_archival
   - admin.records_and_documentation.version_control
-  - admin.travel_and_events.event_coordination
-  - admin.travel_and_events.itinerary_management
-  - admin.travel_and_events.travel_booking
   - admin.travel_and_events.travel_expense_administration
   - admin.travel_and_events.visa_and_documentation
 
@@ -176,12 +254,12 @@ stats:
   l2_types_total: 10
   l2_types_routed_here: 3
   l2_types_unrouted_globally: 0
-  l2_types_pending: 0
-  situations: 4
+  l2_types_pending: 6
+  situations: 14
   capabilities: 57
   capabilities_stub: 0
   capabilities_complete: 57
-  capabilities_routed: 9
+  capabilities_routed: 26
   objects_total: 25
   objects_core: 20
   objects_scoped: 5

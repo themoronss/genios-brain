@@ -1,0 +1,95 @@
+# THIS SITUATION ROUTES NOTHING. Five facilities capabilities, and the substrate holds no asset:
+# no serial, no holder, no service date. Custodial failures are silent for years and then
+# discovered all at once, by an auditor or an insurer — which is exactly why inferring them from
+# correspondence would be worse than admitting the gap.
+
+identity:
+  id: admin.sit.asset_in_custody
+  name: Asset in Custody
+  domain: admin
+  owner_capability: admin.facilities_and_assets.asset_register
+  version: 1.0.0
+  status: draft
+
+description: >
+  Something the organisation owns or is responsible for is in somebody's hands, or in a space it
+  is accountable for, and the record of that has to be true: who holds it, since when, what
+  condition it is in, and when it is next due attention.
+
+  Custody is the whole discipline. An asset register that is merely a purchase list answers no
+  question anyone actually asks — the questions are "who has the laptop that person took when
+  they left" and "when was that inspected", and both are about the current holder rather than the
+  original buyer. Maintenance and health-and-safety are the same structure with a statutory clock
+  attached.
+
+matches:
+  l2_situation_types: []
+  pending_l2_situation_types:
+    - type: asset_in_custody
+      owner_layer: L1
+      nearest_today: admin_contact
+      note: >
+        WHAT THE TYPE MUST MEAN. A specific identified asset with a current holder, a custody
+        start date, a condition state and a next-due date. Identity must survive transfer — the
+        same laptop moving between three people is one asset with three custody spells, and a
+        type that mints a new asset per mention makes recovery impossible, which is the single
+        thing asset_issuance_and_recovery exists to do.
+
+        WHAT WOULD EMIT IT. `asset.id`, `asset.holder`, `asset.custody_from`, `asset.condition`
+        and `asset.next_due_at`, from an asset register, an MDM or a facilities system. No writer
+        exists and none should be extracted: an asset mentioned in an email is not an asset in
+        custody, and treating it as one produces a register that is confidently wrong.
+
+        WHAT GOES WRONG TODAY. Nothing fires for asset_register, asset_issuance_and_recovery,
+        maintenance_coordination, workplace_management or health_and_safety_administration.
+
+        WHY BINDING TO admin_contact WOULD BE WRONG, specifically. (1) No identity. The same asset
+        named in two threads would be two assets, inverting recovery. (2) No custody transfer —
+        correspondence records that something was sent, not that responsibility moved, and those
+        differ exactly when someone leaves. (3) Health and safety carries statutory inspection
+        dates; there is no such date in a mailbox, so the capability with legal exposure would be
+        the one advising from the thinnest evidence. (4) Compound: a register assembled from
+        correspondence looks like a register and is not one, and the difference surfaces during an
+        insurance claim.
+  # No `scope`. The natural scope is an ASSET; the enum does not offer one.
+
+also_serves:
+  - admin.facilities_and_assets.asset_issuance_and_recovery
+  - admin.facilities_and_assets.maintenance_coordination
+  - admin.facilities_and_assets.workplace_management
+  - admin.facilities_and_assets.health_and_safety_administration
+
+objects:
+  load:
+    - admin.obj.core.asset
+  optional:
+    - admin.obj.core.deadline
+    - admin.obj.core.request
+    - admin.obj.core.vendor
+
+priority_bp: 4400
+typical_duration_days: 180
+signals_of_progress: [next_step_agreed]
+signals_of_decay: [timeline_slip]
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    Unreachable today. When the type exists: lead with the holder and the date, never with the
+    purchase. The question is always "who has it now".
+  fallback:
+    headline: "{entity} — custody unverified"
+    situation: >-
+      An asset associated with {entity} has no recorded current holder.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Authored as a named gap so `index.py` reports the subdomain as blocked on a type rather than
+    reporting five capabilities as unreachable with no reason attached.

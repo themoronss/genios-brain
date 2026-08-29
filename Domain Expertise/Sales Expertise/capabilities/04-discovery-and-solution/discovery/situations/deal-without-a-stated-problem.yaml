@@ -1,0 +1,113 @@
+# The discovery subdomain had four capabilities and no door. Its question — "what problem are they
+# actually trying to solve" — is the one the substrate can most nearly answer, because a deal that
+# is moving without a stated problem shows up as an absence: correspondence, a stage, a next step,
+# and nothing anywhere saying what is broken.
+
+identity:
+  id: sales.sit.deal_without_a_stated_problem
+  name: Deal Without a Stated Problem
+  domain: sales
+  owner_capability: sales.discovery_and_solution.discovery
+  version: 1.0.0
+  status: stable
+
+description: >
+  An open deal is progressing and no need, pain or business driver has been recorded against it.
+  The read is about that gap, not about the stage: a deal can reach a proposal without anyone ever
+  saying out loud what problem is being bought, and it usually does.
+
+  This is the most common way a forecast is wrong for a reason nobody can name afterwards. The
+  conversation is warm, the meetings happen, the stage advances — and the deal dies at the point
+  where somebody internal asks the buyer to justify the spend, because the justification was never
+  established with them. The absence is the signal, and it is invisible in every pipeline view
+  ever built, because pipeline views show what IS recorded.
+
+  The failure this file exists to prevent is reading the absence as an instruction to interrogate.
+  A buyer who has not stated a problem has usually implied one, and the correspondence carries it;
+  the move is to reflect it back and have it confirmed or corrected, not to send a discovery
+  questionnaire to somebody three conversations in. It is also emphatically not a reason to slow a
+  deal down — a fast deal with an unstated problem is still a fast deal, and the advice is to name
+  the problem while it moves.
+
+matches:
+  l2_situation_types:
+    - deal
+    - opportunity
+  scope: deal
+  when:
+    - path: deal.status
+      op: "="
+      value: open
+    - absent: business_need
+
+also_serves:
+  - sales.discovery_and_solution.need_analysis
+  - sales.discovery_and_solution.value_proposition
+
+objects:
+  load:
+    - sales.obj.core.business_need
+    - sales.obj.core.deal
+  optional:
+    - sales.obj.core.pain_point
+    - sales.obj.core.stakeholder
+    - sales.obj.core.next_action
+    - sales.obj.core.timeline
+  never_load:
+    # Commercial machinery. Loading it here invites advice about terms for a purchase whose
+    # purpose is not yet on record — the exact inversion this situation exists to catch.
+    - sales.obj.core.pricing
+    - sales.obj.core.proposal
+    - sales.obj.core.contract
+
+priority_bp: 6800
+typical_duration_days: 21
+
+signals_of_progress:
+  - next_step_agreed
+  - meeting_request
+  - positive_reply
+
+signals_of_decay:
+  - timeline_slip
+  - negative_reply
+  - closed_lost_mention
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    An open deal with no problem on record. Never write "do discovery" — that is the category, not
+    the advice, and the reader already knows the category.
+
+    Headline: name the account and say what is not on record. One clause.
+
+    Situation: what the correspondence DOES imply they are trying to solve, quoted or paraphrased
+    from what they actually wrote, and what stage the deal has reached without it. If the
+    correspondence implies nothing, say so plainly — that is a different and more urgent read.
+
+    Artifact: a message that reflects the implied problem back for confirmation, in their words.
+    Never a list of discovery questions, and never anything that reads as starting over.
+  fallback:
+    headline: "{entity} — open deal, no problem stated"
+    situation: >-
+      The {entity} deal is progressing and nothing on record says what problem is being solved.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Predicates on an ABSENCE, which is deliberate and is the only honest way to reach this
+    subdomain from the current substrate. `business_need` has a writer; nothing writes a
+    discovery-quality score, and inventing one would be a number nobody measured.
+
+    `demo` is not served here. A demo situation needs to know a demo happened or was asked for,
+    and the substrate has no such fact — `meeting.title` is not reliable enough to carry it. Left
+    orphaned rather than routed on a guess.
+
+admission:
+  accepted_content_hash: 839e3a3b712875be6fdd933eeecdb7f5c8bdb2ae6bb347c5cbd713ef7613c668

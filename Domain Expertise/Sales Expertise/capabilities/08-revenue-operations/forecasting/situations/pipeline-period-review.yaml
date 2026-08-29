@@ -1,0 +1,95 @@
+# THIS SITUATION ROUTES NOTHING. Seven capabilities across revenue-operations and sales-management
+# read the PIPELINE and the TEAM over a period. Same missing mechanism as
+# `admin.sit.admin_service_under_load` and `customer_support.sit.queue_period_review` — named
+# identically in all three so it reads as one Layer 2 build and not three coincidences.
+
+identity:
+  id: sales.sit.pipeline_period_review
+  name: Pipeline Period Review
+  domain: sales
+  owner_capability: sales.revenue_operations.forecasting
+  version: 1.0.0
+  status: draft
+
+description: >
+  The revenue motion over a window rather than any one deal: what the pipeline is worth against
+  what it needs to be, where coverage is thin, whether the territories and quotas are consistent
+  with the plan, and whether the people running it are running it well.
+
+  Forecasting is the discipline here and it is not arithmetic. A forecast is a claim about which
+  deals will close, and its quality is decided by how honestly the underlying deals are read —
+  which is why `pipeline_management` and `revenue_intelligence`, which read one deal at a time,
+  are routed and these are not. They are different jobs: one asks whether this deal is real, the
+  other asks whether the sum of them adds up.
+
+matches:
+  l2_situation_types: []
+  pending_l2_situation_types:
+    - type: pipeline_period_review
+      owner_layer: L2
+      nearest_today: deal
+      note: >
+        WHAT THE TYPE MUST MEAN. A window over the whole pipeline, anchored on the tenant,
+        carrying stage distribution, coverage against target, movement since the last window and
+        per-owner load. Movement is the requirement that makes it useful — a snapshot says what
+        the pipeline is, and only a comparison says whether it is getting better.
+
+        WHAT WOULD EMIT IT. Tenant-anchored periodic situations (shared with the Admin and Support
+        period types), plus quota, territory and owner facts that have no writer. `deal.value` is
+        also absent and is deliberately not derived — `context/derived.py` refuses to infer a
+        number nobody stated, and a forecast built on inferred values would be confidently wrong
+        in exactly the way forecasts must not be.
+
+        WHAT GOES WRONG TODAY. Nothing fires for forecasting, quota_planning, territory_planning,
+        sales_analytics, sales_operations, performance_management or sales_coaching.
+
+        WHY BINDING TO deal WOULD BE WRONG, specifically. (1) A forecast asserted on one deal is
+        not a forecast. (2) It would fire per deal, producing N copies of one number. (3) Coverage
+        is a ratio over the set; a single-deal anchor cannot express a ratio. (4) Coaching and
+        performance are about OUR people, and a deal-anchored situation carries the counterparty,
+        not the rep — so the sales-management half would reason about the wrong party entirely.
+  # No `scope`. The natural scope is TENANT + PERIOD, which the enum does not offer.
+
+also_serves:
+  - sales.revenue_operations.quota_planning
+  - sales.revenue_operations.territory_planning
+  - sales.revenue_operations.sales_analytics
+  - sales.revenue_operations.sales_operations
+  - sales.sales_management.performance_management
+  - sales.sales_management.sales_coaching
+
+objects:
+  load:
+    - sales.obj.core.deal
+  optional:
+    - sales.obj.core.opportunity
+    - sales.obj.core.timeline
+    - sales.obj.core.risk
+
+priority_bp: 3400
+typical_duration_days: 30
+signals_of_progress: [next_step_agreed]
+signals_of_decay: [timeline_slip]
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    Unreachable today. When the type exists: never state a forecast number without the coverage
+    ratio and the movement behind it — a number alone invites the confidence it has not earned.
+  fallback:
+    headline: "Pipeline — period unmeasured"
+    situation: >-
+      No period aggregate exists, so coverage against target cannot be stated.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Three domains, three subdomains, twenty-two capabilities, one missing Layer 2 mechanism:
+    tenant-anchored periodic situations. Stated in the same words in all three files so the
+    single build is visible from any of them.

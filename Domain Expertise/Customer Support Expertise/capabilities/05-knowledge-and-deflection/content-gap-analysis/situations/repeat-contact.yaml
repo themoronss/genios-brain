@@ -89,6 +89,12 @@ matches:
   scope: person
 
 also_serves:
+  # Three deflection mechanisms that all need the same thing this type would carry: an
+  # identity for the QUESTION, so a repeat can be recognised as a repeat. Without it a macro
+  # library, an AI deflector and a duplicate detector are each guessing at sameness.
+  - customer_support.knowledge_and_deflection.macro_management
+  - customer_support.knowledge_and_deflection.ai_deflection
+  - customer_support.intake_and_triage.duplicate_and_merge
   - customer_support.knowledge_and_deflection.knowledge_authoring
   - customer_support.knowledge_and_deflection.self_service_deflection
   - customer_support.voice_of_customer.product_feedback_routing

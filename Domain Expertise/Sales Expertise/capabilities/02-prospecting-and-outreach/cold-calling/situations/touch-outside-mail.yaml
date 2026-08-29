@@ -1,0 +1,109 @@
+# THIS SITUATION ROUTES NOTHING. Four Sales capabilities whose evidence is, by definition, not in
+# the mailbox: a call, a LinkedIn message, a product demonstration, and the size of a market. The
+# first three are channels this tenant has no connector for; the fourth is not a per-account read
+# at all.
+
+identity:
+  id: sales.sit.touch_outside_mail
+  name: Touch Outside Mail
+  domain: sales
+  owner_capability: sales.prospecting_and_outreach.cold_calling
+  version: 1.0.0
+  status: draft
+
+description: >
+  A meaningful interaction happened somewhere the system cannot see — a phone call, a social
+  message, a demonstration — or the question being asked is about a market rather than a
+  counterparty. Either way the evidence is outside the graph.
+
+  The reason this matters more than it looks is that the missing channels are where the highest-
+  intent moments happen. A prospect who takes a call is further along than one who replies to an
+  email, and a demo is usually the single most informative event in a deal. Reading a pipeline
+  from mail alone systematically underweights exactly the accounts that are moving fastest.
+
+matches:
+  l2_situation_types: []
+  pending_l2_situation_types:
+    - type: channel_touch
+      owner_layer: L1
+      nearest_today: relationship
+      note: >
+        WHAT THE TYPE MUST MEAN. An interaction on a non-mail channel, carrying the channel, the
+        direction, the participants, the outcome and — for a call or a demo — whether it connected
+        and what was shown. Outcome is the requirement: a dialled number and a conversation are
+        the same event to a log and completely different events to a seller.
+
+        WHAT WOULD EMIT IT. Layer 1 connectors that do not exist — a dialler or telephony
+        provider, a LinkedIn export, a demo or meeting-recording tool. This is a capture problem,
+        not an extraction one: no amount of reading email recovers a call that happened.
+
+        WHAT GOES WRONG TODAY. Nothing fires for cold_calling, linkedin_outreach or demo.
+
+        WHY BINDING TO relationship WOULD BE WRONG, specifically. (1) It would infer a call from
+        the absence of mail, which is not evidence of anything. (2) `demo` advice built on a
+        meeting title is advice built on a string somebody typed into a calendar — the design
+        partner's `meeting.title` values are largely cohort session names. (3) Channel-specific
+        expertise is the entire content of these capabilities; opening mechanics for a call and
+        for an email are different disciplines, and serving one with the other's evidence
+        produces confident advice about a conversation that may never have happened.
+
+    - type: market_period_review
+      owner_layer: L2
+      nearest_today: opportunity
+      note: >
+        WHAT THE TYPE MUST MEAN. A market rather than an account — segment size, reachable share,
+        and where the current customer base actually sits within it. Its anchor is a SEGMENT and a
+        window.
+
+        WHAT WOULD EMIT IT. The same tenant-anchored periodic mechanism named in
+        `sales.sit.pipeline_period_review`, plus external market data the graph has no source for.
+
+        WHAT GOES WRONG TODAY. Nothing fires for tam_sam_som.
+
+        WHY BINDING TO opportunity WOULD BE WRONG, specifically. A market size asserted on one
+        account is not a market size. `icp_definition` and `market_research` — the two neighbours
+        that ARE routed — read a single account against a profile, which is a genuinely different
+        and genuinely per-account question; sizing is not.
+  # No `scope`. A call has no anchor the enum offers, and a market is not a subject at all.
+
+also_serves:
+  - sales.prospecting_and_outreach.linkedin_outreach
+  - sales.discovery_and_solution.demo
+  - sales.market_and_targeting.tam_sam_som
+
+objects:
+  load:
+    - sales.obj.core.contact
+  optional:
+    - sales.obj.core.company
+    - sales.obj.core.icp
+    - sales.obj.market_research.market_map
+
+priority_bp: 3000
+typical_duration_days: 30
+signals_of_progress: [meeting_request, positive_reply]
+signals_of_decay: [negative_reply]
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    Unreachable today. When the channels exist: never describe a call from its metadata alone —
+    connected and dialled are different events, and only one of them is worth advising on.
+  fallback:
+    headline: "{entity} — activity outside mail is not visible"
+    situation: >-
+      Interactions with {entity} on channels other than mail are not captured.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Carries two pending types rather than one because the four capabilities split cleanly into a
+    CAPTURE gap (three channels, Layer 1) and an AGGREGATION gap (market sizing, the same periodic
+    mechanism three other files name). Merging them into one type would hide that they are two
+    different builds with two different owners.

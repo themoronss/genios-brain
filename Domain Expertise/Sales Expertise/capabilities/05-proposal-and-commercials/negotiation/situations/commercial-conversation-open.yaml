@@ -1,0 +1,112 @@
+# The commercial subdomain's door. Its question — "on what terms would both sides say yes" —
+# only becomes live once someone has raised terms, and the substrate says so through the
+# objection and pricing objects rather than through any stage word.
+
+identity:
+  id: sales.sit.commercial_conversation_open
+  name: Commercial Conversation Open
+  domain: sales
+  owner_capability: sales.proposal_and_commercials.negotiation
+  version: 1.0.0
+  status: stable
+
+description: >
+  An open deal where terms are in play: an objection has been raised, a price has been discussed,
+  or a proposal is outstanding. The read is about the commercial position — what has been asked
+  for, what has been conceded, and what is still unanswered.
+
+  Commercial conversations fail in a specific way that is visible in correspondence and invisible
+  in a CRM: the buyer raises an objection, the seller answers a DIFFERENT objection, and both
+  sides proceed as though it were settled. The unanswered one resurfaces at signature, when it is
+  most expensive and least recoverable. What makes the read worth doing is the join between what
+  was asked and what was actually answered.
+
+  The failure this file exists to prevent is advising a concession. Discounting is the move
+  available when nothing else has been tried, and it is almost never the move that is missing —
+  the missing move is usually an answer to a question that was asked two messages ago. Never
+  produce advice whose content is "offer a lower price".
+
+matches:
+  l2_situation_types:
+    - deal
+  scope: deal
+  when:
+    - path: deal.status
+      op: "="
+      value: open
+    - exists: objection
+
+also_serves:
+  - sales.proposal_and_commercials.objection_handling
+  - sales.proposal_and_commercials.proposal_creation
+
+objects:
+  load:
+    - sales.obj.core.objection
+    - sales.obj.core.deal
+  optional:
+    - sales.obj.core.pricing
+    - sales.obj.core.proposal
+    - sales.obj.core.budget
+    - sales.obj.core.decision_maker
+    - sales.obj.core.competitor
+  never_load:
+    # The account is past qualification by definition here, and loading the qualification set
+    # would produce advice about establishing fit for a deal that is discussing terms.
+    - sales.obj.core.icp
+    - sales.obj.core.lead
+
+priority_bp: 7800
+typical_duration_days: 14
+
+signals_of_progress:
+  - next_step_agreed
+  - positive_reply
+  - verbal_yes
+
+signals_of_decay:
+  - timeline_slip
+  - negative_reply
+  - closed_lost_mention
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Terms are in play on an open deal. Never advise a discount, and never describe the state as
+    "negotiating" without saying what specifically is unresolved.
+
+    Headline: the objection or term that is outstanding, and who it is waiting on.
+
+    Situation: what was asked, what was answered, and the gap between them. Quote the ask where
+    the correspondence supports it. If everything asked has been answered, say the commercial
+    position is clear and name what happens next.
+
+    Artifact: the reply that answers the actual objection — evidence, a reference, a scoped
+    alternative, or a direct question about what would make it acceptable. Price is the last
+    lever, not the first.
+  fallback:
+    headline: "{entity} — an objection is still open"
+    situation: >-
+      Terms are under discussion on the {entity} deal and something asked has not been answered.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Gated on `exists: objection` rather than on a stage word, and the difference is load-bearing.
+    `deal.stage` on the design partner's org holds `engaged`, `new`, `evaluating` and
+    `rejected from cohort` — no `negotiation` and no `proposing` — because its deals are largely
+    investor and accelerator conversations. A stage-gated commercial situation would route zero
+    there and would look correct while doing so.
+
+    `pricing` is already routed through `sales.sit.enterprise_deal` and is deliberately not
+    re-served here; two doors into one capability from the same anchor spend the signal budget
+    twice to say one thing.
+
+admission:
+  accepted_content_hash: 6267e385cd731356b1773c0973c86227bb3e66685c591a53d2db61454162eee4

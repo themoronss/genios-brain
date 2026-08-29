@@ -1,0 +1,121 @@
+# The outreach CHANNEL capabilities had no door of their own. `outreach` is reached through
+# `sales.sit.outbound_prospect`; `cold_email` is where the expertise about the message itself
+# lives — deliverability, opening mechanics, what a second touch may and may not say — and none
+# of it could be reached.
+
+identity:
+  id: sales.sit.first_touch_unanswered
+  name: First Touch Unanswered
+  domain: sales
+  owner_capability: sales.prospecting_and_outreach.cold_email
+  version: 1.0.0
+  status: stable
+
+description: >
+  We wrote to someone with whom we have no established relationship, and nothing came back. The
+  read is about the MESSAGE and the sequence, not about the person: what was sent, how long ago,
+  and whether anything about it is worth changing before it is sent again.
+
+  Cold outreach fails in ways that are diagnosable from the record and are almost never about the
+  prospect. The same message sent three times is not persistence, it is the same experiment run
+  three times; a follow-up that adds no new information gives the recipient nothing to respond to
+  that they did not already decline to respond to. What the substrate can establish is the shape
+  of the sequence — how many touches, over what span, with what gap — and that shape is most of
+  the diagnosis.
+
+  The failure this file exists to prevent is the reflex "no reply, follow up". Sometimes the
+  correct answer is to stop: a fourth touch to a silent stranger costs the domain reputation that
+  every other conversation depends on, and it is worth more than the prospect. When the advice is
+  to write again, it must say what the new message can offer that the last one did not.
+
+matches:
+  l2_situation_types:
+    - prospect_relationship
+    - relationship
+  scope: person
+  when:
+    - path: thread.ball_in_court
+      op: "="
+      value: them
+    - fn: edge_count
+      op: "<="
+      value: 1
+    - absent: thread.last_inbound
+
+also_serves:
+  - sales.prospecting_and_outreach.follow_up
+
+objects:
+  load:
+    - sales.obj.core.contact
+    - sales.obj.core.next_action
+  optional:
+    - sales.obj.core.persona
+    - sales.obj.core.company
+    - sales.obj.core.icp
+    - sales.obj.core.lead
+  never_load:
+    # There is no deal, no need on record and nobody to negotiate with. Every one of these would
+    # resolve to `unknown` and read downstream as "assessed and absent" — a confident empty
+    # answer about a relationship that has not started.
+    - sales.obj.core.deal
+    - sales.obj.core.pricing
+    - sales.obj.core.proposal
+    - sales.obj.core.objection
+    - sales.obj.core.buying_committee
+
+# Below the situations that read live relationships. An unanswered stranger is real work and it
+# is never the most valuable thing in an inbox that also contains an open deal.
+priority_bp: 3200
+typical_duration_days: 21
+
+signals_of_progress:
+  - positive_reply
+  - meeting_request
+  - question
+
+signals_of_decay:
+  - negative_reply
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    A first approach went unanswered. Never write "follow up" as the advice, and never send the
+    same message again with a nudge on the front.
+
+    Headline: how many times we have written, over what span. That single sentence is usually the
+    whole diagnosis and the reader rarely has it to hand.
+
+    Situation: what the sequence looks like and what the last message asked for. If the sequence
+    is already long, say so and recommend stopping — that is a real answer and it protects
+    everything else sent from this domain.
+
+    Artifact: a message that offers something the previous one did not — a specific reason this
+    person in particular, a piece of evidence, or a genuinely easier ask. If there is nothing new
+    to offer, say that instead of inventing it.
+  fallback:
+    headline: "{entity} — first approach, no reply"
+    situation: >-
+      We wrote to {entity} and nothing came back; the record shows no prior relationship.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    `cold_calling` and `linkedin_outreach` are deliberately NOT served here. Both are real
+    capabilities and neither has any substrate on a mail-and-calendar tenant — there is no fact
+    that records a call or a LinkedIn message, so routing them would produce advice about a
+    channel the system cannot see. They stay orphaned, which is the honest state, rather than
+    reached on a guess.
+
+    The `absent: thread.last_inbound` clause is what makes this a COLD situation rather than a
+    quiet one. A person who has replied before and gone silent is a different read with different
+    advice, and it belongs to `outbound_prospect` and the relationship situations, not here.
+
+admission:
+  accepted_content_hash: 31518809c8bf7318988570cadfcf6e5d48a261c14d302a7218ed8e3584ec368c

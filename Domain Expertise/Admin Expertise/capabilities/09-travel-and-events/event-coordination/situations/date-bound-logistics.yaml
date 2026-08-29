@@ -1,0 +1,107 @@
+# The travel-and-events subdomain had five capabilities and no door, while the calendar substrate
+# that would feed it — 62 meeting nodes with titles, locations, times and attendees — was already
+# reaching every person-anchored slice.
+
+identity:
+  id: admin.sit.date_bound_logistics
+  name: Date-Bound Logistics
+  domain: admin
+  owner_capability: admin.travel_and_events.event_coordination
+  version: 1.0.0
+  status: stable
+
+description: >
+  Something with a fixed date and a physical or logistical dependency is coming up with this
+  counterparty — an event, a visit, a trip, a session at a venue. The read is about what has to be
+  true before that date and is not yet.
+
+  Logistics fail on lead time, and lead time is the one thing a calendar entry does not carry. The
+  event is on the fifteenth; the thing that makes it possible had to happen on the first. Nobody
+  discovers this by looking at the calendar, because the calendar shows the event and not its
+  prerequisites — those live in the correspondence, undated and unowned.
+
+  The failure this file exists to prevent is producing logistics advice for a video call. A
+  meeting with a URL in its location has no travel, no venue and no dependency; treating it as an
+  event is the fastest way to make this whole subdomain look foolish. A physical location, or a
+  correspondence trail about arrangements, is what makes this situation real.
+
+matches:
+  l2_situation_types:
+    - admin_contact
+    - relationship
+  scope: person
+  when:
+    - exists: meeting.location
+    - path: meeting.status
+      op: "!="
+      value: cancelled
+
+also_serves:
+  - admin.travel_and_events.itinerary_management
+  - admin.travel_and_events.travel_booking
+
+objects:
+  load:
+    - admin.obj.event_coordination.event
+    - admin.obj.core.deadline
+  optional:
+    - admin.obj.travel_booking.trip
+    - admin.obj.core.meeting
+    - admin.obj.core.commitment
+    - admin.obj.core.approval
+  never_load:
+    - admin.obj.core.employee_record
+    - admin.obj.core.access_right
+    - admin.obj.core.invoice
+
+priority_bp: 5000
+typical_duration_days: 30
+
+signals_of_progress:
+  - next_step_agreed
+  - positive_reply
+  - meeting_request
+
+signals_of_decay:
+  - timeline_slip
+  - negative_reply
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    Something with a date and a place is coming. If the location is a video link, produce nothing
+    — there are no logistics for a call, and saying so is better than inventing some.
+
+    Headline: the event, its date, and the nearest unmet prerequisite.
+
+    Situation: what the correspondence shows has been arranged and what has not, with dates where
+    dates exist. Say plainly which arrangements have no owner on record.
+
+    Artifact: the message that settles the outstanding arrangement — confirm the booking, ask for
+    the detail that is missing, or hand the item to whoever owns it. One thing, named.
+  fallback:
+    headline: "{entity} — dated logistics, something unconfirmed"
+    situation: >-
+      Something with a fixed date and a place is arranged with {entity} and part of it is
+      unconfirmed.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    `meeting.location` is live on 15 of 62 meeting nodes on the design partner's org, and most of
+    those 15 are Google Meet URLs. That is the honest coverage: this situation will be rare, and
+    the render hint refuses the video-call case explicitly rather than letting the model decide.
+
+    `travel_expense_administration` and `visa_and_documentation` are NOT served. A visa
+    application and a travel expense claim are both real capabilities and neither has any
+    substrate on a mail-and-calendar tenant — no fact records a document application or a
+    reimbursable expense. Left orphaned rather than reached on a guess.
+
+admission:
+  accepted_content_hash: d2876b485080e6c3cefd57aacc09a875c5bccf62d331f36ce14ff051235f563b

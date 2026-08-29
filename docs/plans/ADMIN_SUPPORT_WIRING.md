@@ -297,30 +297,72 @@ both halves and is mutation-tested.
 Side effect worth having: the real-Postgres lane went from 315s to ~41s. Most of that time was
 round-trips to a database in another region.
 
+## Session 3 — every capability now has a door or a named reason it has none
+
+The brief was to finish the wiring. The finding that shaped it: all 10 declared situation types
+were already producible, so nothing was blocked by Layer 2 typing. **113 of 153 capabilities were
+simply not named by any registry map entry**, because `situation-capability-map.yaml` is GENERATED
+from situation files and there were 25 of them for 153 capabilities.
+
+### Final accounting
+
+| | count |
+|---|---|
+| capabilities authored | 153 |
+| **routed** — a live L2 type reaches them | **85** |
+| **pending** — bound to a named L2 type that nothing emits | **68** |
+| **silent orphans** | **0** |
+
+Situation files 25 → 40. Corpus stays at 0 validate errors.
+
+### The meeting lane, and the two faults under it
+
+62 meeting nodes, 331 facts, 140 `attended` edges — and no situation about any of them. They were
+never unreachable: they arrive in the neighbour facts of every person-anchored slice, measured
+through `runner._neighborhood`. Two faults made them untrustworthy first:
+
+* `general`, `admin` and `customer_support` declared the five DERIVED lifecycle fields in
+  `schema.fields`, which is the L2 extraction whitelist, so a model was asked to guess five
+  booleans it cannot see — `meeting.scheduled` held `'Monday 10 Aug 2026, 10:30am -'` on 30 person
+  nodes. `COMPUTED_FIELDS` strips them from the prompt while leaving the declaration (the same
+  mechanism that already existed for `derived.*`).
+* `meeting.status` arrived as both `cancelled` and `canceled`, and every authored predicate
+  compares the literal. `_normalise_meeting_status` collapses it at the write path, importing the
+  synonym set from `meeting_lifecycle` rather than restating it.
+
+`meeting` was deliberately NOT made an anchor type: `choose_anchors` returns only the strongest
+tier, so that would have moved 62 events out of the relationship situations that work.
+
+### Why 68 are pending rather than routed
+
+`select distinct field from graph_facts` on the live org returns eleven prefixes: meeting, other,
+thread, relationship, derived, deal, party, commitment, role, company, attendees. There is no
+`document.*`, `invoice.*`, `asset.*`, `employee.*`, `compliance.*`, `ticket.*` or `sla.*`. Routing
+those subdomains anyway would report coverage the system does not have — which for
+`compliance_and_governance` is not a missed insight but a false assurance. Each pending file
+records, in the corpus's existing house format: what the type must mean, what would emit it, what
+goes wrong today, and specifically why the nearest available binding would be wrong.
+
+**One Layer 2 mechanism unblocks 22 capabilities across all three domains**: tenant-anchored
+periodic situations. Named identically in `admin.sit.admin_service_under_load`,
+`customer_support.sit.queue_period_review` and `sales.sit.pipeline_period_review` so it reads as
+one build rather than three coincidences.
+
 ## What is still NOT done
 
 * **Production is read-only right now, and only you can lift it.** Supabase releases it from the
-  dashboard (temporarily disable read-only mode, reclaim space, then it stays writable). Freeing
-  space means deleting `expertise_packages` rows on the live org — a stop-and-ask, so it has not
-  been touched. Nothing in this session's work is deployed, so the growth continues at the old rate
-  until it is.
-* **One leaked `idle in transaction` session on production** (pid 3053874 at the time of writing,
-  ~20 minutes old, from a killed pytest process running `feedback/store.py`). Terminating it rolls
-  back writes that were never committed; it was refused by the sandbox and is left for you. It will
-  block a real Layer 6 run for as long as it lives.
-* **`GENIOS_USE_DOMAIN_COMPILER` is unset**, so the compiled brain — all 153 authored capabilities —
-  does not run in a normal sweep. The whole sync chain behind it is verified (L1 → `process_pending`
-  → derived → situations → `run_all` → `build_cards_for_org`) and the flag is the only remaining
-  switch. It is an env change on the DO app, so it is a deploy, so it is yours to call. **Do not
-  turn it on before the packages fix is deployed** — with the flag on, every sweep for every tenant
-  wrote the rows that filled the disk.
-* **Company-anchored situations route but carry almost no evidence.** Measured per anchor:
-  `relationship` 9.2 facts, `deal` 4.3, but `investor_relationship` (company) 1.4, `opportunity`
-  0.5, `support_case` 0.0. Person nodes hold 1,279 facts across 129 nodes; company nodes hold 18
-  across 40. Routing is not the constraint any more — account-level extraction is. This is the next
-  real piece of work and it is a build, not a fix.
-* **17 Customer Support core objects referenced and unauthored** — unchanged from session 1. They
-  block only situations bound to `pending_l2_situation_types` that nothing emits.
+  dashboard. Freeing space means deleting `expertise_packages` rows on the live org — a
+  stop-and-ask, so it has not been touched. Nothing in sessions 2 or 3 is deployed.
+* **`GENIOS_USE_DOMAIN_COMPILER` is unset**, so the compiled brain does not run in a normal sweep.
+  The whole chain behind it is verified. It is an env change on the DO app, so it is a deploy, so
+  it is yours to call — and it must not be turned on before the `expertise_packages` fix ships.
+* **Evidence, not routing, is now the constraint.** Measured per anchor: `relationship` 9.2 facts,
+  `deal` 4.3, `investor_relationship` (company) 1.4, `opportunity` 0.5, `support_case` 0.0. Person
+  nodes hold 1,279 facts across 129; company nodes hold 18 across 40. Account-level extraction is
+  the next real build.
+* **The 68 pending capabilities need Layer 1 connectors**, not corpus work: a document store, a
+  compliance register, an HRIS, an asset register, a finance system, a helpdesk, a dialler. Each
+  is named in the file that waits on it.
 
 ## A hazard worth knowing before the next session
 

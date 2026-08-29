@@ -1,0 +1,128 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# THIS SITUATION ROUTES NOTHING. That is the point of the file.
+#
+# Five records capabilities were authored and unreachable, and the reason is not that nobody
+# wrote a situation — it is that the substrate holds no document. `select distinct field from
+# graph_facts` on the design partner's org returns eleven prefixes: meeting, other, thread,
+# relationship, derived, deal, party, commitment, role, company, attendees. There is no
+# `document.*`, no version, no owner, no retention clock.
+#
+# The available compromise is to bind these to `admin_contact` and read attachments off the
+# correspondence. That would route five capabilities, light up a subdomain, and be wrong in the
+# specific way that never gets fixed: an attachment is not a controlled document, and a system
+# that says it is will report records coverage it does not have.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.sit.document_under_control
+  name: Document Under Control
+  domain: admin
+  owner_capability: admin.records_and_documentation.document_control
+  version: 1.0.0
+  status: draft
+
+description: >
+  A document the organisation is accountable for exists in a state somebody must maintain: it has
+  a current version, an owner, a place it lives, and a date after which keeping it is a liability
+  rather than an asset. The read is about whether that state is true or merely assumed.
+
+  Records work is invisible until it is urgent, and then it is the only thing that matters. The
+  auditor, the insurer and the acquirer all ask the same question in different words — can you
+  produce the document, prove it is the current one, and show who approved it — and the answer is
+  decided years earlier by whether anyone was maintaining the register.
+
+  What makes this a genuine capability rather than a filing metaphor is the version question. Two
+  people acting on two versions of the same policy is not a filing problem; it is a decision made
+  on a document that was superseded, and nothing in an inbox will ever surface it.
+
+matches:
+  # No real binding exists. Empty because everything that matters is in the list below and none
+  # of it ships.
+  l2_situation_types: []
+
+  pending_l2_situation_types:
+
+    - type: document_under_control
+      owner_layer: L1
+      nearest_today: admin_contact
+      note: >
+        WHAT THE TYPE MUST MEAN. A specific document the organisation is accountable for, carrying
+        its identity across versions — so that v3 of the security policy is the same DOCUMENT as
+        v2 and a different VERSION. The payload must name the current version, its owner, its
+        approval state and its retention date, because the four failures this subdomain exists to
+        catch are: no owner, superseded copy in circulation, missing approval, and retained past
+        the date it should have been destroyed. A type that carries only "a document exists"
+        catches none of them.
+
+        WHAT WOULD EMIT IT. Layer 1 must supply `document.id`, `document.version`,
+        `document.owner`, `document.approved_at` and `document.retain_until` — none of which has a
+        writer, and none of which an email can be parsed for. This is a connector to a document
+        store (Drive, SharePoint, a DMS), not an extraction problem. Layer 2 then holds document
+        identity across versions, which is a merge problem of the same shape as person identity
+        and should be specified as one.
+
+        WHAT GOES WRONG TODAY. Nothing fires. All five records capabilities — document_control,
+        filing_and_retrieval, version_control, retention_and_archival, knowledge_base_maintenance
+        — are authored against a trigger that does not exist, so the subdomain is complete
+        knowledge with no surface.
+
+        WHY BINDING TO admin_contact WOULD BE WRONG, specifically. (1) An attachment is not a
+        controlled document. It has no version identity, no owner and no approval state, so every
+        inference pattern in this subdomain would resolve against a filename. (2) The same
+        document arriving in four threads would be four documents, which inverts the one thing
+        version_control exists to do. (3) Retention needs a destruction date; correspondence
+        carries none, so `retention_and_archival` would advise on retention with no clock —
+        confident advice about a date nobody set. (4) Compound: the system would report records
+        coverage from an inbox, and records coverage claimed and absent is worse than absent,
+        because it is what somebody relies on in an audit.
+
+  # No `scope`. The enum offers person, deal, meeting and account; the natural scope here is a
+  # DOCUMENT, and adding it is a Layer 2 change rather than a word in this file.
+
+also_serves:
+  - admin.records_and_documentation.filing_and_retrieval
+  - admin.records_and_documentation.version_control
+  - admin.records_and_documentation.retention_and_archival
+  - admin.records_and_documentation.knowledge_base_maintenance
+
+objects:
+  load:
+    - admin.obj.core.document
+  optional:
+    - admin.obj.core.approval
+    - admin.obj.core.policy
+    - admin.obj.core.deadline
+
+priority_bp: 4000
+typical_duration_days: 365
+
+signals_of_progress:
+  - next_step_agreed
+
+signals_of_decay:
+  - timeline_slip
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    Unreachable today. When the type exists: never describe a document by its filename alone —
+    name what it governs, which version is current, and who owns it. The headline is the gap, not
+    the document.
+  fallback:
+    headline: "{entity} — document state unverified"
+    situation: >-
+      A document associated with {entity} has no recorded owner or current version.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Authored as an explicit gap rather than left as five silent orphans. Before this file,
+    `index.py` reported the five records capabilities as unreachable with no reason attached; it
+    now reports the subdomain as blocked on a named type, which is the difference between a
+    backlog item and an absence nobody has words for.

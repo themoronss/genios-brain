@@ -1,0 +1,119 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# THIS SITUATION ROUTES NOTHING, and of everything in this corpus it is the one where routing it
+# anyway would do the most damage.
+#
+# A compliance obligation has an EXTERNAL deadline that nobody in the organisation agreed to and
+# nobody can renegotiate, and breaching it is automatic. `commitment.due_at` — the nearest thing
+# the substrate has to a date — is a promise a person made in an email. Reading one as the other
+# would produce a system that reports statutory coverage while watching a founder's follow-ups.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.sit.obligation_falls_due
+  name: Obligation Falls Due
+  domain: admin
+  owner_capability: admin.compliance_and_governance.statutory_filing
+  version: 1.0.0
+  status: draft
+
+description: >
+  Something the organisation is legally or contractually bound to do has a date approaching, and
+  the evidence that it was done has to survive being asked about later. The read is about the
+  obligation, its date, its owner and its evidence — in that order, because an obligation with a
+  date and no owner is the normal state and the dangerous one.
+
+  Compliance administration is not law. Somebody else drafted the obligation; this subdomain is
+  about whether anyone is maintaining the register, the calendar and the proof. In a regulated
+  reading the evidence IS the deliverable — work performed correctly and undocumented did not
+  happen — which is why an obligation marked done with nothing attached is a finding rather than
+  a success.
+
+  The failure mode is uniform across every capability here: obligations are silent right up until
+  they are breached, and by then the only available action is disclosure.
+
+matches:
+  l2_situation_types: []
+
+  pending_l2_situation_types:
+
+    - type: obligation_falls_due
+      owner_layer: L1
+      nearest_today: commitment.due_at
+      note: >
+        WHAT THE TYPE MUST MEAN. A named external obligation — a filing, a licence renewal, a
+        board resolution, a data-protection deadline — with its statutory date, the authority that
+        set it, its owner, and the evidence artefact that will prove it was met. It must carry
+        whether the date is fixed or rolling, because a rolling one recurs and a system that
+        forgets that is useful once.
+
+        WHAT WOULD EMIT IT. `obligation.authority`, `obligation.due_at`, `obligation.owner`,
+        `obligation.evidence_ref` and `obligation.recurrence`. None has a writer. The source is a
+        compliance register or a filing calendar — a connector — not an inbox: an obligation
+        exists whether or not anybody emailed about it, and an obligation nobody emailed about is
+        precisely the one that gets missed.
+
+        WHAT GOES WRONG TODAY. Nothing fires. All six capabilities — statutory_filing,
+        licence_and_registration, policy_administration, board_and_secretarial, audit_support,
+        data_protection_administration — are authored against a trigger that does not exist.
+
+        WHY BINDING TO commitment.due_at WOULD BE WRONG, specifically. (1) Category error. A
+        commitment is a promise a person made and can renegotiate; an obligation is imposed and
+        cannot. Advice that treats a filing deadline as reschedulable is advice to breach. (2)
+        Coverage inverted. The obligations that get missed are the ones nobody discussed, so
+        binding to correspondence would cover exactly the obligations that were already visible
+        and miss exactly the ones that were not. (3) No evidence chain. `commitment` carries no
+        artefact reference, so `audit_support` — whose entire job is producing the proof — would
+        have nothing to point at. (4) Compound: the system would show a compliance surface built
+        from a founder's promises. In an audit that is not a gap, it is a misrepresentation.
+
+  # No `scope`. The natural scope is an OBLIGATION, which the enum does not offer, and person is
+  # the fudge that would make each obligation belong to whoever last mentioned it.
+
+also_serves:
+  - admin.compliance_and_governance.licence_and_registration
+  - admin.compliance_and_governance.policy_administration
+  - admin.compliance_and_governance.board_and_secretarial
+  - admin.compliance_and_governance.audit_support
+  - admin.compliance_and_governance.data_protection_administration
+
+objects:
+  load:
+    - admin.obj.core.compliance_obligation
+  optional:
+    - admin.obj.statutory_filing.filing
+    - admin.obj.core.deadline
+    - admin.obj.core.policy
+    - admin.obj.core.document
+
+priority_bp: 9000
+typical_duration_days: 90
+
+signals_of_progress:
+  - next_step_agreed
+
+signals_of_decay:
+  - timeline_slip
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    Unreachable today. When the type exists: name the obligation, the authority, the date and the
+    owner. Never soften a statutory date with hedging language — it is not negotiable and writing
+    as though it were is the error this subdomain exists to prevent.
+  fallback:
+    headline: "{entity} — obligation date unverified"
+    situation: >-
+      An obligation associated with {entity} has no recorded owner or statutory date.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    The highest-priority pending type in the Admin domain and deliberately the most explicit about
+    why it must not be faked. Every other gap in this corpus costs a missed insight; this one
+    would cost a false assurance, and the two are not the same kind of wrong.
