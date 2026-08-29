@@ -398,6 +398,19 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the heartbeat
             _log.exception("retention purge failed for reasoning_context_payloads")
             retention["reasoning_context_payloads"] = "error"
+        # expertise_packages, and this one is not theoretical: it reached 995 MB — 67% of the whole
+        # database — and took the project over its disk quota into read-only, which stops every
+        # write the product makes. Content-addressing (see contracts/domain_expertise.py) stops the
+        # rewrite-when-nothing-changed half; a package still legitimately mints a new id whenever
+        # the org-global graph version advances, so the table needs a sweep as well as a fix.
+        try:
+            from genios_engine.packs.compiler.expertise_publisher import (
+                purge_superseded_expertise_packages,
+            )
+            retention["expertise_packages"] = purge_superseded_expertise_packages(_graph.engine)
+        except Exception:                                    # noqa: BLE001 — never kill the heartbeat
+            _log.exception("retention purge failed for expertise_packages")
+            retention["expertise_packages"] = "error"
     # L1 PARKED DRAIN: a park is "look at this again", so something has to look. Riding the
     # existing heartbeat on purpose — a new Celery periodic task would spend the quota-limited
     # Upstash broker on a pass that is cheap and idempotent here.

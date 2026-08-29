@@ -100,10 +100,31 @@ class BusinessSituationObject:
         setter(self, "metadata", freeze_mapping(self.metadata))
 
     def to_semantic_dict(self) -> dict[str, Any]:
+        """The package's CONTENT — what `expertise_id` and `semantic_hash` address.
+
+        `trace_id` is deliberately absent, and its absence is the whole point of the method.
+        A trace id identifies one OBSERVATION of a package, not the package: `domain_shadow`
+        mints a fresh `new_id("trace")` per situation per sweep, so including it made every
+        compile content-address to a brand-new id even when the situation, the knowledge, the
+        graph version and every capability were byte-identical. The publisher's
+        `on conflict (org_id, expertise_id) do nothing` then never fired, and each sweep wrote a
+        fresh ~238 kB row per situation. On the design partner's database that reached 4,086 rows
+        and 995 MB — 67% of the entire database, on a table holding 127 distinct situations — and
+        the project crossed its disk quota into read-only, which stops every write the product
+        makes, not just this one.
+
+        The determinism test that should have caught this passes a CONSTANT `trace_id` from its
+        fixture, so it proved the compiler deterministic in everything except the one field that
+        is never constant in production. `test_a_repeat_compile_does_not_mint_a_new_package` drives
+        it the way `domain_shadow` does, with a different trace id each time.
+
+        The trace id is still stored — it has its own column, and it is what ties a package back to
+        the sweep that observed it. It just does not participate in the content address, which is
+        what "content-addressed" means.
+        """
         return {
             "org_id": self.org_id,
             "schema_version": self.schema_version,
-            "trace_id": self.trace_id,
             "visibility": self.visibility,
             "id": self.id,
             "signal_ids": self.signal_ids,
@@ -194,15 +215,34 @@ class SituationContextSlice:
         setter(self, "metadata", freeze_mapping(self.metadata))
 
     def to_semantic_dict(self) -> dict[str, Any]:
+        """The slice's CONTENT — what `semantic_hash` addresses.
+
+        Two fields the dataclass carries are deliberately absent, and both are observation
+        metadata rather than content: `trace_id` (which sweep looked) and `evaluation_time`
+        (when it looked). What the slice IS — the facts, observations, neighbours and edges of one
+        anchor — is pinned exactly by `graph_version` and `selector_version`, which are here. Two
+        sweeps over an unchanged graph see the same slice, and should hash to the same slice.
+
+        This is not a cosmetic distinction. `context_slice_hash` is carried in the expertise
+        package's metadata, so it feeds the PACKAGE's content address: while these two fields were
+        hashed in, every sweep minted a new package id for unchanged knowledge, the publisher's
+        `on conflict do nothing` never fired, and each sweep wrote a fresh ~238 kB row per
+        situation. On the design partner's database that reached 4,086 rows and 995 MB — 67% of the
+        whole database for 127 distinct situations — and the project crossed its disk quota into
+        read-only, which stops every write the product makes, not only this one.
+
+        Removing the clock from the slice's identity does NOT make reasoning time-blind: the
+        evaluation time is passed to the reasoner in its own right, decisions and audit bundles are
+        written per run, and the field remains on the dataclass for anyone reading a slice. It just
+        does not decide whether this is the same slice.
+        """
         return {
             "org_id": self.org_id,
             "schema_version": self.schema_version,
-            "trace_id": self.trace_id,
             "visibility": self.visibility,
             "id": self.id,
             "graph_version": self.graph_version,
             "selector_version": self.selector_version,
-            "evaluation_time": self.evaluation_time,
             "root_entity_ids": self.root_entity_ids,
             "facts": self.facts,
             "observations": self.observations,
@@ -307,10 +347,31 @@ class ExpertisePackage:
         setter(self, "metadata", freeze_mapping(self.metadata))
 
     def to_semantic_dict(self) -> dict[str, Any]:
+        """The package's CONTENT — what `expertise_id` and `semantic_hash` address.
+
+        `trace_id` is deliberately absent, and its absence is the whole point of the method.
+        A trace id identifies one OBSERVATION of a package, not the package: `domain_shadow`
+        mints a fresh `new_id("trace")` per situation per sweep, so including it made every
+        compile content-address to a brand-new id even when the situation, the knowledge, the
+        graph version and every capability were byte-identical. The publisher's
+        `on conflict (org_id, expertise_id) do nothing` then never fired, and each sweep wrote a
+        fresh ~238 kB row per situation. On the design partner's database that reached 4,086 rows
+        and 995 MB — 67% of the entire database, on a table holding 127 distinct situations — and
+        the project crossed its disk quota into read-only, which stops every write the product
+        makes, not just this one.
+
+        The determinism test that should have caught this passes a CONSTANT `trace_id` from its
+        fixture, so it proved the compiler deterministic in everything except the one field that
+        is never constant in production. `test_a_repeat_compile_does_not_mint_a_new_package` drives
+        it the way `domain_shadow` does, with a different trace id each time.
+
+        The trace id is still stored — it has its own column, and it is what ties a package back to
+        the sweep that observed it. It just does not participate in the content address, which is
+        what "content-addressed" means.
+        """
         return {
             "org_id": self.org_id,
             "schema_version": self.schema_version,
-            "trace_id": self.trace_id,
             "visibility": self.visibility,
             "id": self.id,
             "situation_id": self.situation_id,
@@ -332,8 +393,19 @@ class ExpertisePackage:
 
 
 def expertise_id(body: Mapping[str, Any]) -> str:
-    """Content-address a package body before the id field itself exists."""
-    return stable_id("expertise", body)
+    """Content-address a package body before the id field itself exists.
+
+    `trace_id` is dropped here rather than by the caller, because this is the ONE place every
+    caller passes through and the builder's `body` is a hand-written dict that will be edited
+    again. `ExpertisePackage.to_semantic_dict` makes the same exclusion for the same reason; the
+    two must agree, or the id and the hash disagree about what the package is and the publisher's
+    immutability check rejects a package identical to the one it already holds.
+
+    See `to_semantic_dict` for what this cost: a fresh trace id per sweep meant a fresh id per
+    sweep, `on conflict (org_id, expertise_id) do nothing` never fired, and unchanged knowledge
+    was rewritten at ~238 kB a situation until the database went read-only.
+    """
+    return stable_id("expertise", {k: v for k, v in body.items() if k != "trace_id"})
 
 
 __all__ = [

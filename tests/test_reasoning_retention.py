@@ -78,13 +78,24 @@ def test_scheduled_maintenance_purges_expired_reasoning_context_payloads(monkeyp
     from genios_engine.reason import store as reason_store
     monkeypatch.setattr(reason_store, "ReasoningStore", _ReasoningStore)
 
+    # expertise_packages is the retention pass that exists because its absence took the production
+    # database over its disk quota into read-only. Stubbed the same way as the reasoning store so
+    # this test asserts the sweep RUNS it, with the tenant's engine — not merely that a key appeared
+    # in the result.
+    packages_calls = []
+    from genios_engine.packs.compiler import expertise_publisher
+    monkeypatch.setattr(expertise_publisher, "purge_superseded_expertise_packages",
+                        lambda eng, **kw: (packages_calls.append(eng), 4)[1])
+
     result = routes.run_maintenance_sweep()
 
     assert result["retention"] == {
         "raw_payloads": 1,
         "prepared_content": 2,
         "reasoning_context_payloads": 3,
+        "expertise_packages": 4,
     }
+    assert packages_calls == [engine]
     assert len(_ReasoningStore.calls) == 1
     called_engine, eval_time = _ReasoningStore.calls[0]
     assert called_engine is engine
