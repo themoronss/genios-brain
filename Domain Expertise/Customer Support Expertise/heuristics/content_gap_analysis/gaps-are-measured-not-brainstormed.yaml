@@ -13,3 +13,54 @@ purpose:
     the customers'. When they disagree, the log is right — write what was searched, not what seems dignified.
   answers:
   - Who decides what knowledge gets written next?
+
+heuristic:
+  statement: >
+    The team's guess at missing content reflects the team's mental model; the search log reflects
+    the customers'. When they disagree, the log is right — write what was searched for, not what
+    seems missing.
+  why: >
+    Support agents know the product deeply and have long since stopped experiencing it as a
+    newcomer. Their sense of what is confusing is calibrated on the questions they find annoying to
+    answer, which is a different set from the questions customers cannot self-serve. The search log
+    has no such filter: it is a direct record of intent, expressed in the customer's own words, at
+    the moment they wanted something and did not get it.
+  confidence_bp: 8500
+  applies_when: Any content prioritisation where usage data exists.
+  breaks_down_when: >
+    The gap is in something customers cannot name. A capability nobody knows exists produces no
+    searches, so the log is silent about exactly the content that would have the largest effect —
+    and there the team's knowledge is the only available source. It also breaks down after a launch:
+    the log describes the previous product for weeks, and following it delays the content the new
+    thing needs.
+  reads: [customer_support.obj.core.content_gap, customer_support.obj.core.knowledge_article]
+  contradicts: [customer_support.heu.knowledge_authoring.wrong_articles_are_worse_than_missing_ones]
+limits:
+- 'It ranks demand. It says nothing about whether the answer should be an article or a product change.'
+- 'Search logs are noisy and require interpretation, which is where team judgement legitimately returns.'
+failure_modes:
+- 'Followed literally after a launch, when the log describes a product that no longer exists.'
+- 'Used to dismiss agent input entirely, losing the one source that covers unknown-unknowns.'
+variants:
+- applies_to: ai_first_support
+  change: Deflection failures are a richer signal than raw searches, because the model already tried and named what it could not answer.
+  why: The failure is labelled.
+- applies_to: enterprise_support
+  change: Volume is too low for search logs to rank reliably, and the account team's input is proportionally more valuable.
+  why: Small samples make frequency meaningless.
+references:
+- title: Knowledge-centred service
+  kind: methodology
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the blind spot in the method: a capability nobody knows exists
+    generates no searches, so the log is silent about exactly the content with the largest
+    potential effect.

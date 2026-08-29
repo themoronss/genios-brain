@@ -3,7 +3,7 @@ identity:
   name: Content Gap Analysis
   domain: customer_support
   subdomain: knowledge_and_deflection
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Reading the queue backwards to find the answers that do not exist — and the ones that exist
@@ -16,21 +16,67 @@ description: 'Reading the queue backwards to find the answers that do not exist 
 
   '
 question: Which questions keep arriving because we never answered them well enough?
+
+outcomes:
+- 'A roadmap written by failed searches and deflection misses — what customers looked for and did not find, ranked by frequency.'
+- 'The two gap types held apart: a missing article and an unfindable one need different fixes, and that distinction is the whole capability.'
+- 'Gaps measured rather than brainstormed, because the team''s guess reflects the team''s mental model and the search log reflects the customers''.'
+- 'Repeat contacts read as content gaps, since a question arriving weekly is an answer that does not exist or cannot be found.'
+- 'The negative outcome: a gap identified as a PRODUCT problem rather than a content one. Some questions keep arriving because the product is confusing, and an article is a way of not fixing it.'
+failure_modes:
+- 'BRAINSTORMING THE BACKLOG. What the team thinks is missing is a description of what the team finds hard, which is a different population.'
+- 'CONFLATING MISSING WITH UNFINDABLE. Writing a second article about something already documented adds a duplicate and does not fix the retrieval failure.'
+- 'IGNORING THE SEARCH LOG BECAUSE IT IS MESSY. It is the only direct evidence of what customers wanted and could not get.'
+- 'RANKING BY EFFORT RATHER THAN BY FREQUENCY, which produces the articles that were easiest to write.'
+- 'ANSWERING A PRODUCT PROBLEM WITH DOCUMENTATION, which is choosing to keep the confusion permanently.'
+kpis:
+- name: gap_source_measured_share
+  unit: percent
+  description: Backlog items derived from search or contact data rather than from suggestion.
+  direction: higher_is_better
+- name: failed_search_rate
+  unit: percent
+  description: Searches ending with nothing opened. The direct measure of the gap.
+  direction: lower_is_better
+- name: unfindable_vs_missing_split
+  unit: ratio
+  description: Gaps classified as retrieval failures against authoring failures. Without the split, both get articles.
+  direction: target_band
+- name: repeat_contact_reduction
+  unit: percent
+  description: Fall in repeat question volume after an article ships. The outcome measure.
+  direction: higher_is_better
+handoffs:
+  upstream: [customer_support.knowledge_and_deflection.ai_deflection, customer_support.support_operations.support_analytics,
+             customer_support.knowledge_and_deflection.self_service_deflection]
+  downstream: [customer_support.knowledge_and_deflection.knowledge_authoring, customer_support.voice_of_customer.product_feedback_routing]
+  parallel: [customer_support.intake_and_triage.intent_classification, customer_support.knowledge_and_deflection.macro_management]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, ai_first_support, plg_self_serve,
+           community_support, embedded_in_product]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Promote by adding outcomes, failure_modes (chiefly: commissioning a duplicate instead of fixing
-    findability, and ranking gaps by ticket count so that every gap found is one we were already surviving),
-    heuristics with a why, decision_frameworks for the missing-versus-unfindable sort, kpis and handoffs.
-    This capability owns the customer_support.sit.repeat_contact situation, which binds to pending L2
-    types repeat_contact and knowledge_gap — neither is emitted today, so the analysis is currently a
-    human reading exports rather than anything the engine can trigger.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. knowledge_gap and self_service_abandoned
+    are planned_substrate with no writer.
 
-    '
-  reviewed_at: '2026-08-24'
+    unfindable_vs_missing_split is the distinction the description calls the whole capability,
+    and it is stated as a ratio band because both failure modes are real and a healthy estate
+    has some of each. Conflating them produces the specific waste of writing a second article
+    about something already documented, which adds a duplicate and leaves the retrieval failure
+    untouched.
+
+    The negative outcome is the one that requires refusing work: some questions keep arriving
+    because the product is confusing, and writing the article is choosing to keep the confusion
+    permanently while appearing to have solved it.
+
 admission:
-  accepted_content_hash: 1e7ada4ea94b08a9161477994fe16e5f0f5806273c719855e51e6a4eec800eb9
+  accepted_content_hash: 8873dbdae9723a640785f8ba66be5bc27684857fa14dc2f1e72090e4d5ef28b4

@@ -3,7 +3,7 @@ identity:
   name: AI Deflection
   domain: customer_support
   subdomain: knowledge_and_deflection
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Putting a model between the question and the queue, and owning what it says. The failure
@@ -16,22 +16,67 @@ description: 'Putting a model between the question and the queue, and owning wha
 
   '
 question: Can a model answer this safely, and does it know when to stop trying?
+
+outcomes:
+- 'Automated answers attempting the known and handing off the unknown gracefully, with full context carried across so the human never asks the customer to repeat what the bot already heard.'
+- 'A model that knows when to stop trying. The failure that matters is not the occasional wrong answer — it is the confident wrong answer that costs the customer time before a human sees it.'
+- 'Deflection measured net of the temperature it creates, because every minute in a bot loop pre-heats the ticket the human eventually gets.'
+- 'The exit available at any point and obvious, since a customer who cannot find the way out is being held rather than helped.'
+- 'The negative outcome: a question class REMOVED from the bot because it answers it badly. Coverage that produces confident wrong answers is negative value.'
+failure_modes:
+- 'MEASURING DEFLECTION RATE ALONE. It flatters — a customer who gave up and left counts identically to one who was helped.'
+- 'CONFIDENT WRONG ANSWERS. A hedge-free incorrect answer costs the customer the time to act on it plus the time to recover.'
+- 'CONTEXT LOST AT HANDOFF, so the human opens with a question the customer has already answered twice.'
+- 'NO VISIBLE EXIT, which converts assistance into containment and is precisely what customers describe when they say they were stuck with a bot.'
+- 'EXPANDING COVERAGE TO RAISE THE RATE, which adds exactly the classes the model handles worst.'
+kpis:
+- name: net_deflection
+  unit: percent
+  description: Deflected minus those that returned as tickets. The only honest version of the headline number.
+  direction: higher_is_better
+- name: escalation_temperature_delta
+  unit: ratio
+  description: Sentiment of bot-escalated tickets against direct ones. The cost deflection rate hides.
+  direction: lower_is_better
+- name: context_carried_rate
+  unit: percent
+  description: Handoffs where the human had what the customer already said.
+  direction: higher_is_better
+- name: confident_wrong_rate
+  unit: percent
+  description: Answers given without hedging that were incorrect. The failure that matters most and is measured least.
+  direction: lower_is_better
+handoffs:
+  upstream: [customer_support.intake_and_triage.channel_intake, customer_support.intake_and_triage.intent_classification,
+             customer_support.knowledge_and_deflection.knowledge_authoring]
+  downstream: [customer_support.intake_and_triage.routing_and_assignment, customer_support.knowledge_and_deflection.content_gap_analysis]
+  parallel: [customer_support.knowledge_and_deflection.self_service_deflection, customer_support.customer_communication.response_drafting]
+applies_to:
+  models: [b2c, b2b, b2b2c, ai_first_support, plg_self_serve, smb_support, mid_market_support, community_support,
+           embedded_in_product, outsourced_bpo]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Promote by adding outcomes, failure_modes (start with: containment reported as resolution, no
-    unprompted handover on frustration or on commercial intent, and answers ungrounded in a citable article),
-    heuristics with a why, decision_frameworks for the assert-versus-cite boundary, kpis and handoffs.
-    This is the capability most likely to be promoted for the wrong reason — a vendor demo rather than
-    a queue reading — so it deliberately stays a stub until self_service_deflection''s measurement discipline
-    exists to inherit, because an AI deflection programme built on an unaudited containment metric inherits
-    every failure mode of the human one and adds fabrication to it.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. self_service_attempted and
+    self_service_abandoned are planned_substrate obs kinds with no writer.
 
-    '
-  reviewed_at: '2026-08-24'
+    net_deflection and escalation_temperature_delta exist as a pair because the headline metric
+    is the most flattering number in support: a customer who gave up and left counts identically
+    to one who was helped, and a customer who spent nine minutes in a loop before reaching a
+    human counts as neither.
+
+    confident_wrong_rate is the measurement almost nobody takes and the one that decides whether
+    deflection is worth having. A hedged wrong answer costs a redirect; a confident one costs
+    the time spent acting on it plus the time recovering plus the customer's trust in every
+    subsequent answer.
+
 admission:
-  accepted_content_hash: 4b2df029b814c58a6f0c7b84709a144df3c2021a3d2b756fb4c718ad6178cbbd
+  accepted_content_hash: b0994a3c995a85bf7974d907dc4ca6168e87b9e2380d939febe3215d352898ca

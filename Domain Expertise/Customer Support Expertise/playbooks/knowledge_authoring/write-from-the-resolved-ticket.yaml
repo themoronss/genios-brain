@@ -12,18 +12,81 @@ purpose:
   statement: The best article is a cleaned-up resolution that just worked, written the same week while
     the context is fresh — knowledge authored from real tickets answers real questions in the customer's
     own vocabulary.
+
+when_to_use:
+  do_not_use_when:
+  - The resolution was a workaround for a defect that should be fixed. Documenting it makes the bug permanent and the article becomes the reason nobody prioritises the fix.
 steps:
 - order: 1
-  name: Trigger on repeat resolutions
-  description: Third same-shape resolution in a month = article owed. The trigger is mechanical, not inspirational.
+  name: Write it while the ticket is open
+  description: >
+    The context is complete exactly once. A week later what gets written is a description of the
+    product rather than an answer to the question.
   actor: human
+  objects_read: [customer_support.obj.core.ticket, customer_support.obj.core.resolution]
+  done_when: The article exists before the ticket is archived.
 - order: 2
-  name: Write the customer's question as the title
-  description: Title = what they type when stuck, symptoms included. Internal feature names find nobody
-    searching in panic.
+  name: Use the customer's words in the title
+  description: >
+    They search for what they experienced, not for what we call the feature. An article titled with
+    our vocabulary is unfindable by everybody who needs it.
   actor: human
+  objects_read: [customer_support.obj.core.intent]
+  done_when: The title matches the phrasing in the original ticket.
 - order: 3
-  name: Date it and own it
-  description: Every article carries a review date and an owner. Undated knowledge rots into confident
-    misinformation.
+  name: Publish the cleaned-up resolution, not a new document
+  description: >
+    The best article is the reply that just worked, tidied. Rewriting it into documentation prose
+    removes the specificity that made it useful.
   actor: human
+  done_when: The steps are the ones that actually resolved it.
+- order: 4
+  name: Check whether an article already exists
+  description: >
+    Two articles answering one question diverge, and the reader finds whichever ranks higher rather
+    than whichever is right.
+  actor: human
+  objects_read: [customer_support.obj.core.knowledge_article]
+  done_when: The answer lives in one place.
+- order: 5
+  name: Delete stale content rather than caveat it
+  description: >
+    A hedge transfers the problem to a reader with less information than the author had, and they
+    will follow the steps anyway.
+  actor: human
+  done_when: Nothing live carries a may-be-out-of-date banner instead of a decision.
+objects_used: [customer_support.obj.core.knowledge_article, customer_support.obj.core.ticket, customer_support.obj.core.resolution,
+               customer_support.obj.core.intent, customer_support.obj.core.content_gap]
+limits:
+- 'It captures what was learned; it cannot make the product simpler, which is the larger lever on ticket volume.'
+- 'Step 2 needs the original wording, which is lost if the ticket was summarised on close.'
+failure_modes:
+- 'Step 1 deferred to a writing sprint, which produces documentation rather than answers.'
+- 'Step 4 skipped under time pressure, which is how a knowledge base acquires three answers to the same question.'
+variants:
+- applies_to: community_support
+  change: The best article is often a community answer promoted and edited, and step 2 is free because the asker wrote the title.
+  why: The customer's language is already there.
+- applies_to: ai_first_support
+  change: Article quality becomes the ceiling on deflection quality — a model over a thin base invents confidently.
+  why: The base is the model's ground truth.
+- applies_to: enterprise_support
+  change: Fewer, deeper articles beat many shallow ones, because the audience is small and technical.
+  why: The volume argument for breadth does not apply.
+references:
+- title: Knowledge-centred service
+  kind: methodology
+  note: Where capture-at-resolution is the defining practice and the reason the discipline works at all.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1 is the whole methodology in one instruction. Every failure downstream — wrong
+    vocabulary, product-description prose, duplicate articles — is a symptom of writing after
+    the context has gone.

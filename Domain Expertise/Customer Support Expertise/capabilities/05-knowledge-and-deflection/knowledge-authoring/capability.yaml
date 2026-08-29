@@ -3,7 +3,7 @@ identity:
   name: Knowledge Authoring
   domain: customer_support
   subdomain: knowledge_and_deflection
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Writing the answer once, in the words the customer used to ask it, while the ticket that
@@ -16,21 +16,67 @@ description: 'Writing the answer once, in the words the customer used to ask it,
 
   '
 question: What did we just learn that should never have to be worked out again?
+
+outcomes:
+- 'The answer written once, in the words the customer used to ask it, while the ticket that proved it was missing is still open.'
+- 'Authoring treated as a resolution activity rather than as documentation, because the context is complete exactly once and it decays within the week.'
+- 'Articles written from resolutions that actually worked, so they answer real questions in real language rather than describing the product.'
+- 'Stale content DELETED rather than caveated, since a wrong article costs a ticket plus the customer''s time following bad steps plus their trust in every other article.'
+- 'The negative outcome: an article NOT written because the underlying fault should be fixed instead. Documenting a workaround for a bug is choosing to keep the bug.'
+failure_modes:
+- 'WRITING LATER. The context is complete at resolution and gone within a week, and what gets written afterwards is a description of the product rather than an answer.'
+- 'WRITING IN OUR VOCABULARY, so the article is unfindable by anybody who does not already know what the feature is called.'
+- 'CAVEATING STALE CONTENT. "This may be out of date" transfers the problem to a reader with less information than the author had.'
+- 'DOCUMENTING AROUND A DEFECT, which converts a bug into a supported workflow and removes the pressure to fix it.'
+- 'AUTHORING AS A SEPARATE ROLE, which puts the writing furthest from the person who has the context.'
+kpis:
+- name: authored_within_week_share
+  unit: percent
+  description: Articles written while the source ticket was still fresh.
+  direction: higher_is_better
+- name: customer_language_match
+  unit: percent
+  description: Articles whose title matches how customers search rather than how we name the feature.
+  direction: higher_is_better
+- name: article_deflection_yield
+  unit: count
+  description: Tickets avoided per article. The measure that separates useful articles from a large library.
+  direction: higher_is_better
+- name: stale_article_rate
+  unit: percent
+  description: Live articles with incorrect steps. Each one costs more than a missing article does.
+  direction: lower_is_better
+handoffs:
+  upstream: [customer_support.diagnosis_and_resolution.resolution_delivery, customer_support.knowledge_and_deflection.content_gap_analysis,
+             customer_support.escalation_and_incident.postmortem]
+  downstream: [customer_support.knowledge_and_deflection.ai_deflection, customer_support.knowledge_and_deflection.self_service_deflection,
+               customer_support.knowledge_and_deflection.macro_management]
+  parallel: [customer_support.customer_communication.response_drafting, customer_support.support_management.ticket_review]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, ai_first_support,
+           plg_self_serve, community_support, embedded_in_product, outsourced_bpo]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Promote by adding outcomes, failure_modes (start with the two that dominate: authoring from
-    the product''s vocabulary rather than the customer''s, and treating publication as completion rather
-    than as the start of a maintenance obligation), playbooks, heuristics, mental_models, kpis and handoffs.
-    The upstream is resolution_delivery and content_gap_analysis; the downstream is self_service_deflection
-    and macro_management. It stays a stub until there is a real position on who authors — the solver,
-    a writer, or a reviewer — because every other decision in the file follows from that one.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. knowledge_article_linked is a
+    planned_substrate obs kind with no writer.
 
-    '
-  reviewed_at: '2026-08-24'
+    article_deflection_yield is the KPI that distinguishes a knowledge base from a library.
+    Article count rises monotonically and says nothing; tickets avoided per article says which
+    twenty articles are carrying the estate and which two hundred are maintenance cost.
+
+    The negative outcome is the one that requires discipline: documenting a workaround for a
+    defect converts a bug into a supported workflow and removes the pressure that would have
+    fixed it. Sometimes the right output of a resolved ticket is a bug report rather than an
+    article.
+
 admission:
-  accepted_content_hash: 713f6d3d944de3f5dc1418958dbdd3650c94177430b6e10ea3e769485f19b011
+  accepted_content_hash: 3f5dd11ea903538a05302d719ce71b05acb8c26590bcc4893b1b88dbd27c6423

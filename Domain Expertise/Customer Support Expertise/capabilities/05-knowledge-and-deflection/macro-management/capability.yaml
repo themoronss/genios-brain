@@ -3,7 +3,7 @@ identity:
   name: Macro Management
   domain: customer_support
   subdomain: knowledge_and_deflection
-  version: 0.1.0
+  version: 0.2.0
   status: stable
   stub: false
 description: 'Curating the canned responses that make an agent fast, and pruning the ones that make the
@@ -16,21 +16,63 @@ description: 'Curating the canned responses that make an agent fast, and pruning
 
   '
 question: Which canned reply makes this faster without making it feel canned?
+
+outcomes:
+- 'Macros as scaffolding the agent personalises — name, specifics, next step — never a send-as-is.'
+- 'Edit-before-send as the measured discipline, because an unedited macro is the thing customers detect instantly.'
+- 'A small library, pruned. Macro count grows monotonically and each addition makes the right one harder to find, so agents write from scratch anyway.'
+- 'Macros retired when the underlying answer changes, since a stale macro is a stale article that also sounds personal.'
+- 'The negative outcome: a macro DELETED because the situation it covers deserves an individual reply. Some answers cannot be templated without being worse.'
+failure_modes:
+- 'SEND-AS-IS. One mismatched pronoun or an answer to a question they did not ask, and the customer stops reading and starts escalating.'
+- 'MACRO COUNT AS COVERAGE, which makes the library unnavigable and pushes agents back to writing from nothing.'
+- 'TEMPLATING THE APOLOGY. A canned apology is worse than none, because it proves the apology was not about them.'
+- 'NO PRUNING WHEN THE ANSWER CHANGES, so a macro delivers last quarter''s instructions in a personal voice.'
+- 'MEASURING MACRO USAGE RATE, which rewards exactly the send-as-is behaviour the discipline exists to prevent.'
+kpis:
+- name: edit_before_send_rate
+  unit: percent
+  description: Macro sends that were personalised first. The discipline, measured directly.
+  direction: higher_is_better
+- name: macro_library_size
+  unit: count
+  description: A target band. Beyond a point, additions reduce findability and agents stop using the library.
+  direction: target_band
+- name: template_detection_complaints
+  unit: count
+  description: Customers explicitly noting a canned reply. Rare, and each one represents many who noticed silently.
+  direction: lower_is_better
+- name: stale_macro_rate
+  unit: percent
+  description: Macros carrying instructions that are no longer correct.
+  direction: lower_is_better
+handoffs:
+  upstream: [customer_support.knowledge_and_deflection.knowledge_authoring, customer_support.support_management.ticket_review]
+  downstream: [customer_support.customer_communication.response_drafting, customer_support.customer_communication.tone_and_localization]
+  parallel: [customer_support.knowledge_and_deflection.ai_deflection, customer_support.support_management.agent_coaching]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, outsourced_bpo,
+           ai_first_support, community_support]
+  offerings: [product, service, hybrid]
+
 metadata:
   owner: Customer Support
   created_by: ai
   reviewed_by: harsh
-  last_updated: '2026-08-08'
+  last_updated: '2026-08-27'
   review_status: approved
   confidence: experimental
-  notes: 'Promote by adding outcomes, failure_modes (the first three: unedited sends, macros that outlive
-    the product behaviour they describe, and macros written to close a ticket rather than to answer a
-    question), heuristics with a why, kpis and handoffs. This capability owns the only scoped object in
-    the subdomain — customer_support.obj.macro_management.macro — so promotion should happen alongside
-    that object rather than before it. The measurement that would make this real, macro usage joined to
-    reopen and satisfaction data, needs signals Layer 1 does not emit yet.
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
 
-    '
-  reviewed_at: '2026-08-24'
+    edit_before_send_rate is the KPI that makes this capability coherent, and macro usage rate —
+    the number most helpdesks report — is its exact opposite. Usage rate rewards send-as-is,
+    which is the behaviour that destroys the trust the macro was saving time to build.
+
+    macro_library_size as a target band is the counter-intuitive half: beyond a point every
+    addition makes the right macro harder to find, agents give up and write from scratch, and
+    the library's cost is entirely maintenance with none of the speed.
+
 admission:
-  accepted_content_hash: 36768b152a8a58c1662ffdd5575caeeaa5d21c53cf6b71b61d1b895899c4ec84
+  accepted_content_hash: 34b91d9f0eb417dd903708a653524f4261b733ab8fd5909f0648be1165e583f5
