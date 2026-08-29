@@ -401,8 +401,17 @@ def test_engagement_is_relative_to_the_account_and_deal_value_is_never_invented(
     body = body[body.index('"""', body.index('"""') + 3) + 3:]      # drop the docstring
     written = {line.split('"')[1] for line in body.splitlines()
                if '"deal.' in line and 'pairs.append' in line}
-    assert written == {"deal.last_inbound", "deal.status"}, (
+    assert written == {"deal.last_inbound", "deal.status", "deal.stage"}, (
         f"compute_deal_view must write only rolled-up truth, writes {written}")
+    # `deal.stage` joined this set when the roll-up stopped writing its own vocabulary
+    # (`engaged`, `evaluating`, `proposing`) straight into `deal.status` at authority rank 100 —
+    # which outranks the extraction path and un-routed every Sales deal situation on the next
+    # sync. It is not a new claim: it is the same word already derived from observations,
+    # published where readers expect the rich version, exactly as pipeline.py does.
+    #
+    # The guard this test exists for is `deal.value`, and it is now asserted directly rather
+    # than implied by the set — a guessed deal size flows straight into prioritisation.
+    assert "deal.value" not in written, "deal.value must never be derived; nobody stated it"
 
 
 # ── one intelligence, four surfaces ────────────────────────────────────────────

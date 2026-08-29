@@ -22,6 +22,8 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
+from genios_engine.context.pipeline import _normalise_deal_status
+
 #: Observation kinds that carry direction. Weighted by how strongly each commits the counterparty:
 #: a booked next step is worth more than a warm reply, an explicit loss more than a single
 #: objection. Grounded in the kinds the extractor actually emits, not an invented taxonomy.
@@ -122,6 +124,10 @@ def compute(store, org_id: str, *, now: datetime | None = None) -> int:
 
 #: Observation kinds that place a relationship at a stage. Ordered by how far along they put it,
 #: so the furthest-reached stage wins rather than the most recent noise.
+#:
+#: These words are a STAGE vocabulary, not a status one. `engaged`, `evaluating` and `proposing`
+#: all describe a deal that is OPEN, and `pipeline._normalise_deal_status` is the single place
+#: that mapping lives — see `_stage_pairs` below for why this distinction is load-bearing.
 _STAGE_BY_KIND: tuple[tuple[str, str], ...] = (
     ("closed_lost_mention", "lost"),
     ("proposal_sent", "proposing"),
@@ -209,8 +215,28 @@ def compute_deal_view(store, org_id: str, *, now: datetime | None = None) -> int
         for company, last_inbound in rows:
             if last_inbound:
                 pairs.append((company, "deal.last_inbound", last_inbound))
+        # THE STAGE IS NOT THE STATUS, and conflating them silently un-routes the entire deal lane.
+        #
+        # This roll-up used to write its own vocabulary — `new`, `engaged`, `evaluating`,
+        # `proposing` — straight into `deal.status`, bypassing `_normalise_deal_status`, at
+        # authority_rank 100. Rank 100 outranks the extractor's rank-2 write, so every sync
+        # OVERWROTE the canonical `open` the extraction path had just produced. Six `sales_v1`
+        # rules and all three Sales `deal` situations gate on the literal `open`, so the effect
+        # was that the deal lane worked immediately after a backfill and went to zero again on the
+        # next sync — on the design partner's org, 20 of 20 deal situations `no_route_predicate`
+        # with `deal.status` reading `engaged` (23), `evaluating` and `new`.
+        #
+        # The fix is not a new mapping. It is using the one that already exists, and publishing
+        # the rich word where readers expect to find it: `deal.stage`, exactly as the extraction
+        # path does. `deal_cooling`, `slots.py` and `card_builder.py` all already prefer
+        # `deal.stage` for display and fall back to status, so the informative word is not lost.
         for company, stage in best_stage.items():
-            pairs.append((company, "deal.status", stage))
+            status, raw = _normalise_deal_status(stage)
+            if status is None:
+                continue
+            pairs.append((company, "deal.status", status))
+            if raw.lower() != status:
+                pairs.append((company, "deal.stage", raw))
         for node_id, field, value in pairs:
             c.execute(text(
                 "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, "

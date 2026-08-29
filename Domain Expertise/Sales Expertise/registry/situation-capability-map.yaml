@@ -168,6 +168,30 @@ map:
         - sales.obj.core.proposal
         - sales.obj.core.timeline
 
+  investor_contact:
+    situations:
+      - sales.sit.live_investor_contact
+    capabilities:
+      - sales.investor_relations.investor_relations
+      - sales.prospecting_and_outreach.account_research
+    objects:
+      load:
+        - sales.obj.core.account
+        - sales.obj.core.company
+        - sales.obj.core.contact
+        - sales.obj.investor_relations.investor_conversation
+      optional:
+        - sales.obj.core.icp
+        - sales.obj.core.next_action
+        - sales.obj.core.pain_point
+        - sales.obj.core.risk
+        - sales.obj.core.stakeholder
+      never_load:
+        - sales.obj.core.budget
+        - sales.obj.core.competitor
+        - sales.obj.core.pricing
+        - sales.obj.core.proposal
+
   relationship:
     situations:
       - sales.sit.live_account_relationship
@@ -222,6 +246,7 @@ pending_l2_types: {}
 # Types this domain routes.
 routed_l2_types:
   - deal
+  - investor_contact
   - investor_relationship
   - opportunity
   - prospect_relationship
@@ -229,8 +254,7 @@ routed_l2_types:
 
 # Layer 2 emits these and NO situation in ANY domain binds them. Each is a signal
 # that compiles to nothing, silently. Global, not this domain's fault.
-unrouted_l2_types:
-  - investor_contact
+unrouted_l2_types: []
 
 # Authored but unreachable — no situation routes into them.
 orphan_capabilities:
@@ -260,10 +284,10 @@ unreachable_objects: []
 
 stats:
   l2_types_total: 10
-  l2_types_routed_here: 5
-  l2_types_unrouted_globally: 1
+  l2_types_routed_here: 6
+  l2_types_unrouted_globally: 0
   l2_types_pending: 0
-  situations: 8
+  situations: 9
   capabilities: 47
   capabilities_stub: 0
   capabilities_complete: 47

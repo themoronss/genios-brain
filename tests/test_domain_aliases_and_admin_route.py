@@ -124,3 +124,43 @@ def test_a_capability_domain_the_tenant_has_no_pack_for_is_counted_not_guessed()
     src = inspect.getsource(domain_shadow.shadow_compile)
     assert 'counts["no_tenant_pack"] += 1' in src
     assert "if pack is None:" in src
+
+
+# ── every type Layer 2 emits has a door ─────────────────────────────────────────
+def test_no_producible_situation_type_is_globally_unrouted():
+    """The failure this file keeps rediscovering, now asserted once for every type.
+
+    Three times the same shape has cost a whole lane: `general_deal`, then `admin_person`, then
+    `investor_contact` and `fundraising_deal`. In each case `domain_spec` described a domain
+    partially, the missing anchor fell to `type_for`'s generic `<domain>_<anchor>` default, and
+    the resulting name was claimed by no situation file. Nothing errors — the situations simply
+    compile to nothing, and the only way anybody finds out is by reading a routing probe.
+
+    A type is 'routed' when SOME domain's registry index has an entry for it. That is a weaker
+    claim than any particular situation matching, which depends on live facts — but it is the one
+    that catches a type with no door at all."""
+    from genios_engine.context.domain_spec import registered_domains, spec_for
+    from genios_engine.reason.domain_shadow import expert_catalog
+
+    producible = set()
+    for domain in registered_domains():
+        producible.update(spec_for(domain).situation_types.values())
+
+    catalog = expert_catalog()
+    claimed = set()
+    for record in catalog.domains.values():
+        claimed.update(getattr(record, "routes", {}) or {})
+
+    orphans = sorted(producible - claimed)
+    assert not orphans, (
+        f"Layer 2 can emit {orphans} and no situation in any domain binds them — every one is a "
+        "lane that compiles to nothing, silently. Either author a situation for it or stop "
+        "producing the type.")
+
+
+def test_fundraising_deals_stay_in_the_investor_lane():
+    """A deal node minted from an investor thread is real — the extractor reads a VC pass as a
+    lost deal — but it must not be handed to Sales situations that gate on `deal.status = open`
+    and reason about pipeline stage. It resolves to the investor reading instead."""
+    assert situation_type("deal", "fundraising") == "investor_relationship"
+    assert situation_type("deal", "sales") == "deal"

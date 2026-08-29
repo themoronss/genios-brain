@@ -30,6 +30,7 @@ from genios_engine.context.backfill import (
     backfill_deal_nodes,
     backfill_layer2,
 )
+from genios_engine.context.domain_spec import spec_for
 from genios_engine.context.pipeline import process_event
 
 NOW = datetime(2026, 8, 1, tzinfo=timezone.utc)
@@ -262,12 +263,26 @@ def test_a_later_message_about_the_account_reaches_the_deal(pg_store):
             conn, org_id=org, domain="sales", node_types={company: "company"})
         assert set(lifted.values()) == {"company", "deal"}, lifted
 
-        # Scoped to domains where a deal is a thing. `deal.status` is extracted from investor and
-        # recruiting mail too, so an unconditional lift would retype every `investor_relationship`
-        # as `fundraising_deal` — which no capability claims. One empty lane traded for another.
+        # Scoped to domains where a deal is a thing. `admin` has no deal anchor at all, so the
+        # lift must not invent one: an admin thread about a vendor stays on the vendor.
+        assert lift_companies_to_their_deals(
+            conn, org_id=org, domain="admin",
+            node_types={company: "company"}) == {company: "company"}
+
+        # `fundraising` DOES lift — but the hazard that used to make it unsafe is gone, and the
+        # assertion has to say why rather than just accept the new answer. `deal.status` is
+        # extracted from investor mail too, so on a founder's inbox most investor accounts acquire
+        # a deal node. Lifting used to retype those `fundraising_deal` — a type no capability
+        # claims, trading one empty lane for another. `domain_spec` now names fundraising's deal
+        # anchor `investor_relationship`, the type the investor-relations capability is built on,
+        # so the lift lands the group in a lane that answers instead of a lane that does not
+        # exist. The guard that matters is therefore not "does fundraising lift" but "does what it
+        # lifts into have a door" — asserted here, and globally in
+        # test_no_producible_situation_type_is_globally_unrouted.
         assert lift_companies_to_their_deals(
             conn, org_id=org, domain="fundraising",
-            node_types={company: "company"}) == {company: "company"}
+            node_types={company: "company"}) != {company: "company"}
+        assert spec_for("fundraising").situation_types["deal"] == "investor_relationship"
 
 
 def test_the_backfill_reanchors_a_situation_that_was_already_correlated(pg_store):

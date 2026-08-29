@@ -224,7 +224,22 @@ register(DomainSpec(
     # as `opportunity` made every one of this org's sixteen sales-domain situations a
     # non-customer: six VCs, three accelerator programmes, an introduction bot and the product's
     # own address. Zero were a customer, and the rules acting on them were written for buyers.
-    situation_types={"company": "investor_relationship", "person": "investor_contact"},
+    # `deal` maps to `investor_relationship`, and it is NOT the same concession as typing an
+    # investor as an `opportunity` — which is what the paragraph above is about.
+    #
+    # A `deal` node exists only because `deal.*` facts were extracted, and an investor thread
+    # produces them freely: the extractor reads a VC pass as a lost deal. So a deal-anchored
+    # fundraising correlation is real, and without a mapping it fell to `type_for`'s generic
+    # `<domain>_<anchor>` default and became `fundraising_deal` — a name no situation file claims
+    # and the registry cannot resolve. Four of the design partner's situations sat there.
+    #
+    # It resolves to `investor_relationship` rather than to `deal` deliberately. Both readings are
+    # of the same fundraising conversation, so it stays in the investor lane where the corpus
+    # knows nobody is buying — mapping it to `deal` would hand it to Sales situations that gate on
+    # `deal.status = open` and reason about pipeline stages, which is the exact error this spec
+    # was written to stop.
+    situation_types={"company": "investor_relationship", "person": "investor_contact",
+                     "deal": "investor_relationship"},
     expected_fields={
         "investor_relationship": {
             "funding.round": "which round this is",
