@@ -213,21 +213,114 @@ unminuted-decisions-dissolve vs governance-is-retrospective-evidence (what to om
 judgement); SOPs-are-resilience vs workarounds-mark-the-real-process-map (which process to write
 down).
 
+## Session 2 — making a sync produce intelligence, and what that uncovered
+
+The brief was "wire it so that whenever data syncs, intelligence gets built properly". Three
+routing faults were closed, and chasing the proof on the live org surfaced a production incident
+that had nothing to do with routing.
+
+### Routing: 50/80 → 73/80, and `no_route_type` is now zero
+
+| Fault | Live effect | Fix |
+|---|---|---|
+| `deal.status` had two writers, one of which did not normalise, at authority_rank 100 | every sync overwrote the canonical `open` with `engaged`/`evaluating`/`new`; all three Sales deal situations gate on `open`, so the deal lane emptied on every sync and refilled on every backfill | `derived.compute_deal_view` routes through `_normalise_deal_status` and publishes the rich word as `deal.stage`; deal 0 → 13 routed |
+| `investor_contact` claimed by no situation file | 6 live situations matched nothing, every sweep | `sales.sit.live_investor_contact` |
+| `fundraising` had no `deal` anchor, so `type_for` fell to its generic default | `fundraising_deal` × 4, unclaimable by construction | `domain_spec` maps it to `investor_relationship`; also makes `lift_companies_to_their_deals` safe in fundraising for the first time |
+
+`test_no_producible_situation_type_is_globally_unrouted` is now a standing guard: a future L2 type
+without a door fails the suite instead of quietly emptying a lane. The 7 situations still unrouted
+are `lost` deals, which is the correct answer.
+
+Compile on the live org after the fixes: **80 situations → 73 compiled → 73 reasoned → 73 decided**,
+562 capability instances, and `no_tenant_pack` / `required_missing` / `incomplete` all absent.
+
+### The incident: `expertise_packages` took production read-only
+
+Found while trying to back up the live org before a live compile — `CREATE TABLE AS` was refused
+with `cannot execute in a read-only transaction`. The production database has
+`default_transaction_read_only = on` and `pg_is_in_recovery = false`: it is the primary, and
+Supabase had put the project into read-only for crossing its disk quota. **Every write the product
+makes was failing** — syncs, facts, signals, cards, not only the compile.
+
+`expertise_packages` was **995 MB of a 1489 MB database — 67%** — holding 4,086 rows for 127
+distinct situations, every row's payload averaging 238 kB and every row's `semantic_hash` distinct.
+That last number is the tell. The publisher's `on conflict (org_id, expertise_id) do nothing` is
+correct and never fired, because the id it conflicts on was new every time.
+
+Two fields were being hashed as content when both are observation metadata:
+
+* `ExpertisePackage.trace_id` — `domain_shadow` mints `new_id("trace")` per situation per sweep;
+* `SituationContextSlice.evaluation_time` — the wall clock, reaching the package's content address
+  through `context_slice_hash` in its metadata.
+
+`test_contract_envelope_and_compiler_are_deterministic` asserted `first.id == second.id` and passed
+throughout, because its fixture supplies a constant trace id and a constant `NOW`. It proved the
+compiler deterministic in every field except the two that are never constant in production.
+
+**Fixed**: both are out of the content address (`to_semantic_dict` and `expertise_id`, which must
+agree or the id and the hash disagree about what the package is). Migration **0076** drops
+`trace_id` from `expertise_payload_projection` — left alone the clause does not fail, it evaluates
+to NULL and a CHECK passes on NULL, so the constraint would keep its name and silently stop
+checking.
+
+**Not fully fixed by content-addressing, and this is stated rather than left to be discovered**:
+`SituationContextSlice.graph_version` is ORG-GLOBAL, so any write anywhere in the tenant advances
+the version every situation's slice carries. A package therefore legitimately mints a new id on
+each sync that touched anything — ~17 MB per sync for this org's 73 situations. Removing
+`graph_version` from the address too would bound it harder and was deliberately NOT done: it is
+what binds a package to the graph it observed and what the reasoning snapshot's integrity guard
+compares. `purge_superseded_expertise_packages` keeps the newest 3 per (org, situation) and runs on
+the maintenance heartbeat. Three, not one, because the newest is what the current card cites and
+the ones behind it are what an audit of yesterday's card replays against.
+
+### The test suite could write to production, in two independent ways
+
+Both are pre-existing, both are now closed, and the second is how a draft `admin@1.0.0` reached
+production's `pack_registry` in session 1.
+
+1. **Nine `conn` fixtures** resolved their URL from `get_settings().database_url` and opened a
+   transaction against it. On CI, with no `.env`, they skipped and looked harmless; on a developer
+   machine they held row and tuple locks on a paying tenant's `execution_outcomes`, `learning_runs`
+   and `delivery_*` tables for the length of each test. A pytest process killed mid-test never
+   reaches the rollback, and Supabase runs `idle_in_transaction_session_timeout = 0`, so the locks
+   are held until a human notices. One such leak blocked this suite for hours and read as a flaky
+   test.
+2. **Nine more modules** call `make_registry()` at import time, which resolves its URL from global
+   settings and registers every pack in `BUILTIN_PACKS` into whatever it finds.
+
+`tests/conftest.py` now pins `GENIOS_DATABASE_URL` for the whole test process — to the scratch
+database when `GENIOS_TEST_DATABASE_URL` is set, and to empty otherwise, which is exactly the state
+CI has always run in. Migrations are applied at conftest import because the second class of caller
+runs during collection, before any fixture. `tests/test_tests_never_touch_production.py` guards
+both halves and is mutation-tested.
+
+Side effect worth having: the real-Postgres lane went from 315s to ~41s. Most of that time was
+round-trips to a database in another region.
+
 ## What is still NOT done
 
-* **`investor_contact` is unrouted globally** — 7 live situations on the design partner's org,
-  emitted by Layer 2 and bound by no domain. It is the single remaining routing warning from
-  `validate.py`, it is a Sales/fundraising corpus gap, and it is the largest routing loss left
-  after `deal`.
-* **`fundraising_deal` × 4** — same generic-fallback fault that produced `admin_person`. One line
-  in `domain_spec.py` plus a situation.
-* **17 Customer Support core objects referenced and unauthored** — `issue`, `conversation`,
-  `support_agent`, `queue`, `backlog` and others. They block only situations bound to
-  `pending_l2_situation_types` that nothing emits, so authoring them changes no routing until a
-  support L2 extraction lane exists. Tracked in `Customer Support Expertise/domain.yaml`.
-* **The 384 warnings are the real backlog** and they are honest: planned-but-unauthored object
-  references, and 15 situation triggers bound to L2 types no pack emits. `registry/signal-backlog.md`
-  ranks them.
+* **Production is read-only right now, and only you can lift it.** Supabase releases it from the
+  dashboard (temporarily disable read-only mode, reclaim space, then it stays writable). Freeing
+  space means deleting `expertise_packages` rows on the live org — a stop-and-ask, so it has not
+  been touched. Nothing in this session's work is deployed, so the growth continues at the old rate
+  until it is.
+* **One leaked `idle in transaction` session on production** (pid 3053874 at the time of writing,
+  ~20 minutes old, from a killed pytest process running `feedback/store.py`). Terminating it rolls
+  back writes that were never committed; it was refused by the sandbox and is left for you. It will
+  block a real Layer 6 run for as long as it lives.
+* **`GENIOS_USE_DOMAIN_COMPILER` is unset**, so the compiled brain — all 153 authored capabilities —
+  does not run in a normal sweep. The whole sync chain behind it is verified (L1 → `process_pending`
+  → derived → situations → `run_all` → `build_cards_for_org`) and the flag is the only remaining
+  switch. It is an env change on the DO app, so it is a deploy, so it is yours to call. **Do not
+  turn it on before the packages fix is deployed** — with the flag on, every sweep for every tenant
+  wrote the rows that filled the disk.
+* **Company-anchored situations route but carry almost no evidence.** Measured per anchor:
+  `relationship` 9.2 facts, `deal` 4.3, but `investor_relationship` (company) 1.4, `opportunity`
+  0.5, `support_case` 0.0. Person nodes hold 1,279 facts across 129 nodes; company nodes hold 18
+  across 40. Routing is not the constraint any more — account-level extraction is. This is the next
+  real piece of work and it is a build, not a fix.
+* **17 Customer Support core objects referenced and unauthored** — unchanged from session 1. They
+  block only situations bound to `pending_l2_situation_types` that nothing emits.
 
 ## A hazard worth knowing before the next session
 
