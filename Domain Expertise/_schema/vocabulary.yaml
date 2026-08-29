@@ -297,6 +297,15 @@ planned_substrate:
 
   # Would be shipped by a support_v1 pack's schema.signal_vocab.
   l2_situation_types:
+    # Named by an authored situation but missing from this census until 2026-08-29, so
+    # `touch-outside-mail.yaml` carried two asks that validate.py could only report as warnings
+    # and backlog.py could not count at all. Both are confirmed BLOCKED on a source the tenant has
+    # not connected — `channel_touch` on a dialler / LinkedIn / meeting-recorder, and
+    # `market_period_review` on external market data no SaaS in the stack contains. Listing them
+    # is the point: the census records what is asked for, and an ask nobody records is an ask
+    # nobody is tracking.
+    - channel_touch
+    - market_period_review
     - sla_breach_imminent
     - sla_breached
     - first_response_overdue

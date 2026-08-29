@@ -78,6 +78,18 @@ class RoutePlan:
     #: Which situation the copy came from — a package can match several, and "whose words are
     #: these" must be answerable from the package alone.
     render_situation_id: str | None = None
+    #: The authored `priority_bp` of the highest-priority situation on this route.
+    #:
+    #: It travels for the same reason `render` does — it is authored expertise, not a runtime
+    #: reading. Until it did, the corpus's 30 distinct priorities (3000–9600 across 48 situations)
+    #: were used to SORT the route and then discarded, so the Decision Maker saw no declared
+    #: priority, fell back to a neutral 5000, and every compiled signal scored
+    #: (5000 + 50) / 100 = 50. On the design partner's org that was 193 of 223 signals and 104 of
+    #: 115 cards at exactly the same score, in one urgency band — a ranked product that had never
+    #: ranked anything.
+    priority_bp: int | None = None
+    #: Which situation the priority came from, for the same reason `render_situation_id` exists.
+    priority_situation_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

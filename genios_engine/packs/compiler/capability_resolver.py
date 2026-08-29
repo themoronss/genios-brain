@@ -171,6 +171,9 @@ class CapabilityResolver:
         render: dict | None = None
         render_situation_id: str | None = None
         render_rank: tuple[int, str] | None = None
+        priority_bp: int | None = None
+        priority_situation_id: str | None = None
+        priority_rank: tuple[int, str] | None = None
         saw_index_route = False
 
         for domain_id in domain_ids:
@@ -207,6 +210,19 @@ class CapabilityResolver:
                 # rendered against an empty template: no guidance in the prompt, and a fallback
                 # of "{entity}" / "{stage}" that shipped the literal word "open" as a situation
                 # line on ten of the design partner's eighteen live cards.
+                # THE AUTHORED PRIORITY IS EXPERTISE TOO, and it used to be read here, used to
+                # sort, and then dropped on the floor. Ranked over EVERY selected situation
+                # rather than only those carrying card copy: a situation can rank a route without
+                # authoring its words, and reading priority off the copy-winner would let a
+                # rendering decision quietly decide the ranking.
+                authored_priority = authored.get("priority_bp")
+                if authored_priority is not None:
+                    p_rank = (-int(authored_priority), situation_id)
+                    if priority_rank is None or p_rank < priority_rank:
+                        priority_rank = p_rank
+                        priority_bp = int(authored_priority)
+                        priority_situation_id = situation_id
+
                 render_block = authored.get("render")
                 if isinstance(render_block, Mapping) and render_block:
                     # A type can match several situations. Rank by the priority the AUTHOR
@@ -321,6 +337,8 @@ class CapabilityResolver:
             hollow_capability_ids=tuple(sorted(hollow_capabilities)),
             render=render,
             render_situation_id=render_situation_id,
+            priority_bp=priority_bp,
+            priority_situation_id=priority_situation_id,
         )
 
 

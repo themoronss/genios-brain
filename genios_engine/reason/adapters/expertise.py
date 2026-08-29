@@ -90,7 +90,8 @@ def _universal_required_fields(package: ExpertisePackage) -> tuple[str, ...]:
     return tuple(sorted(set.intersection(*per_pattern)))
 
 
-def _default_dag(required_fields: tuple[str, ...]) -> tuple[ReasonerSpec, ...]:
+def _default_dag(required_fields: tuple[str, ...],
+                 authored_priority_bp: int | None = None) -> tuple[ReasonerSpec, ...]:
     """A conservative, situation-agnostic reasoning DAG that always terminates in a decision.
 
     understand (context) -> evaluate (risk) -> the mandatory REQUIRED constraint -> rank/score
@@ -114,10 +115,18 @@ def _default_dag(required_fields: tuple[str, ...]) -> tuple[ReasonerSpec, ...]:
         output_kind="candidate_checks",
         failure_policy=_REQUIRED,
     )
+    # `core.risk` measures pressure; it does not RULE on priority, so the declared-override path
+    # found nothing and every compiled candidate fell back to a neutral 5000 utility — which is
+    # why every compiled card scored exactly 50. The situation author already ruled: the corpus
+    # carries 30 distinct `priority_bp` values across 48 situations. Handing that ruling to the
+    # unit as config is what turns it back into a ranking.
+    priority_config: dict[str, object] = {"source_reasoner": "core.risk"}
+    if authored_priority_bp is not None:
+        priority_config["authored_priority_bp"] = int(authored_priority_bp)
     priority = ReasonerSpec(
         "core.priority", "1.0.0",
         dependencies=("core.risk", "core.constraint"),
-        config={"source_reasoner": "core.risk"},
+        config=priority_config,
         failure_policy=_REQUIRED,
     )
     confidence = ReasonerSpec(
@@ -293,7 +302,7 @@ def expertise_capability_manifest(
         domain=domain,
         root_entity_type=str(root_entity_type or "entity"),
         goal=_goal(package, situation_type),
-        reasoners=_default_dag(gate_fields),
+        reasoners=_default_dag(gate_fields, package.metadata.get("authored_priority_bp")),
         plays=plays,
         required_fields=gate_fields,
         selection_fields=required_fields,

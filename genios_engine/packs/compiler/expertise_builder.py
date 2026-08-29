@@ -110,6 +110,11 @@ class ExpertiseBuilder:
             # card claimed.
             "render": plan.render,
             "render_situation_id": plan.render_situation_id,
+            # The authored priority, carried for the same reason and hashed the same way. It is a
+            # property of the SITUATION, not of this evaluation, so it is stable across compiles
+            # and does not churn the content address the way `trace_id` did.
+            "authored_priority_bp": plan.priority_bp,
+            "priority_situation_id": plan.priority_situation_id,
         }
         body = {
             "org_id": situation.org_id,
