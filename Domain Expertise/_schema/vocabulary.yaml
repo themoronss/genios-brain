@@ -369,6 +369,9 @@ substrate:
   # returned NoExpertiseRoute for 73 of 73 situations. A vocabulary check is only worth running
   # against the substrate that actually produces the value.
   l2_situation_types:
+    - channel_touch             # sales, anchored on a MEETING with an external party.
+                                #   `context/meeting_touch.py`. Serves `demo` only —
+                                #   calls and LinkedIn are in planned, still unwritten.
     - deal                      # sales, anchored on a deal
     - opportunity               # sales, anchored on a company
     - prospect_relationship     # sales, anchored on a person

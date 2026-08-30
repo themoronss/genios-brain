@@ -282,6 +282,12 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             # Seven authored situation types were unroutable until these existed.
             from genios_engine.context.support_situations import refresh_support_situations
             derived_rows += refresh_support_situations(store, org_id)
+            # The one non-mail channel the graph actually holds. `demo` was unroutable not because
+            # the corpus was thin but because a meeting with an outside party — 48 of them on the
+            # design partner's org — reached no situation at all. Same pass, same reason: it reads
+            # the calendar facts this drain just committed.
+            from genios_engine.context.meeting_touch import refresh_channel_touch_situations
+            derived_rows += refresh_channel_touch_situations(store, org_id)
             # The records reading, in the same pass and for the same reason: a document's control
             # gaps are computed from the file metadata THIS drain just projected, and the copy
             # clustering has to re-run whenever a file lands or a second copy of one appears. It

@@ -200,9 +200,14 @@ register(DomainSpec(
     # The tenant node is deliberately NOT in `ANCHOR_PRIORITY`: `choose_anchors` returns only the
     # strongest tier present, so a tenant node reachable from correspondence would swallow every
     # conversation in the org into one situation.
+    # `meeting` is the one non-mail channel that is CAPTURED rather than inferred — see
+    # `context/meeting_touch.py`. It is kept out of `ANCHOR_PRIORITY` for the same reason `tenant`
+    # is: `choose_anchors` returns only the strongest tier present, so a meeting reachable from
+    # correspondence would swallow the conversation it belongs to.
     situation_types={"deal": "deal", "company": "opportunity",
                      "person": "prospect_relationship",
-                     "tenant": "pipeline_period_review"},
+                     "tenant": "pipeline_period_review",
+                     "meeting": "channel_touch"},
     expected_fields={
         "deal": {"deal.stage": "pipeline stage", "deal.amount": "deal value",
                  "deal.close_date": "expected close date",
@@ -210,6 +215,11 @@ register(DomainSpec(
         "opportunity": {"thread.ball_in_court": "whose turn it is",
                         "commitment.due_at": "agreed next step"},
         "prospect_relationship": {"thread.ball_in_court": "whose turn it is"},
+        # Every one of these is a thing a calendar cannot know, declared so `missing` can never
+        # empty out and a demo capability can see how much of its channel it is looking at.
+        "channel_touch": {"meeting.external_counterparty": "who from outside was there",
+                          "meeting.start_at": "when it happened",
+                          "meeting.status": "whether it still stands"},
     }))
 
 register(DomainSpec(

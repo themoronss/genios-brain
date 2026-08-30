@@ -22,31 +22,23 @@ description: >
   from mail alone systematically underweights exactly the accounts that are moving fastest.
 
 matches:
-  l2_situation_types: []
+  # PARTLY BOUND, 2026-08-30. `context/meeting_touch.py` mints `channel_touch` from the one
+  # non-mail channel the graph actually holds: a calendar meeting carrying
+  # `meeting.external_counterparty` — 48 of them on the design partner's org. That is a RECORDED
+  # event, so the objection below ("it would infer a call from the absence of mail") does not
+  # apply to it; the objection stands, and this does not do that.
+  #
+  # It serves `demo` and NOT `cold_calling` or `linkedin_outreach`: a dialled number and a
+  # LinkedIn message appear in no calendar. Every situation says so in `missing` and in
+  # `inputs.not_served`, so a capability can see how much of its channel it is looking at rather
+  # than reading a third of one as the whole.
+  l2_situation_types:
+    - channel_touch
+  # THE REST OF THE TYPE IS STILL MISSING, and validate.py will not let it be listed both as
+  # emitted and as pending, so it is recorded here instead of silently disappearing: calls
+  # (dialler/telephony) and LinkedIn touches have no source and reach nothing. `cold_calling` and
+  # `linkedin_outreach` therefore remain unserved by this route even though the type now emits.
   pending_l2_situation_types:
-    - type: channel_touch
-      owner_layer: L1
-      nearest_today: relationship
-      note: >
-        WHAT THE TYPE MUST MEAN. An interaction on a non-mail channel, carrying the channel, the
-        direction, the participants, the outcome and — for a call or a demo — whether it connected
-        and what was shown. Outcome is the requirement: a dialled number and a conversation are
-        the same event to a log and completely different events to a seller.
-
-        WHAT WOULD EMIT IT. Layer 1 connectors that do not exist — a dialler or telephony
-        provider, a LinkedIn export, a demo or meeting-recording tool. This is a capture problem,
-        not an extraction one: no amount of reading email recovers a call that happened.
-
-        WHAT GOES WRONG TODAY. Nothing fires for cold_calling, linkedin_outreach or demo.
-
-        WHY BINDING TO relationship WOULD BE WRONG, specifically. (1) It would infer a call from
-        the absence of mail, which is not evidence of anything. (2) `demo` advice built on a
-        meeting title is advice built on a string somebody typed into a calendar — the design
-        partner's `meeting.title` values are largely cohort session names. (3) Channel-specific
-        expertise is the entire content of these capabilities; opening mechanics for a call and
-        for an email are different disciplines, and serving one with the other's evidence
-        produces confident advice about a conversation that may never have happened.
-
     - type: market_period_review
       owner_layer: L2
       nearest_today: opportunity

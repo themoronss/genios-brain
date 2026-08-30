@@ -64,6 +64,13 @@ def test_producible_vocabulary_is_small_and_closed():
         "account_admin", "admin_contact",
         "investor_relationship", "investor_contact",     # fundraising (L2-05)
         "relationship",
+        # The one NON-MAIL channel the graph records rather than infers: a calendar meeting with an
+        # external counterparty, minted per meeting by `context/meeting_touch.py`. It is a third of
+        # its authored type on purpose — `demo` is a meeting and is now reachable, while
+        # `cold_calling` and `linkedin_outreach` are not, because a dialled number and a LinkedIn
+        # message appear in no calendar. Every row says so in `missing` and `inputs.not_served`,
+        # which is what keeps a partial view from being read as a whole one.
+        "channel_touch",
         # The three PERIOD types, and they are a different SHAPE from everything above rather than
         # three more subjects. Every other value here names a thing a situation is about — a deal,
         # a person, an account. These name a WINDOW, anchored on the tenant node
