@@ -184,6 +184,17 @@ substrate:
     # other three now have their own names in planned_substrate.fact_paths below, unwritten,
     # which is the only place a name with no writer belongs. Do not attach a pattern to this
     # entry unless the thing it counts is an ACCOUNT's contacts per week.
+    #
+    # AND THE WRITER REACHED NOTHING UNTIL 2026-08-30. Having a writer is not the same as having
+    # a measurement, which is the one thing this list is supposed to distinguish.
+    # `baselines._account_rows` filtered `node_type='company'` on the edge's FROM side, while
+    # `pipeline.py::_works_at` writes PERSON -> COMPANY — so it matched only `owns`
+    # (company -> deal) edges, looked up a deal id in a person-keyed map, and wrote a contact
+    # rate for zero accounts. Measured read-only on the design partner's org that morning:
+    # `baselines` held 387 rows — 129 people x 3 person-level metrics — and not one
+    # `contact_frequency` row, from a build that had run ten minutes earlier. The hermetic test
+    # covering it used a fake connection that returns its edge list whatever SQL it is handed.
+    # With the direction fixed the same org yields 37 accounts, 27 of them with real history.
     - derived.contact_frequency
     # ── the seven correspondence readings (context/support_situations.py) ──────
     #

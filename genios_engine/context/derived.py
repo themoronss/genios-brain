@@ -49,6 +49,82 @@ def _rate(count: int, days: int) -> float:
     return count / days if days > 0 else 0.0
 
 
+def _new_acc() -> dict:
+    return {"recent": 0, "baseline": 0, "pos": 0.0, "neg": 0.0, "progress_recent": 0}
+
+
+def _accumulate(acc: dict, kind: str, recent_n: int, baseline_n: int) -> None:
+    """Fold one (kind, recent_n, baseline_n) group into an accumulator."""
+    acc["recent"] += recent_n
+    acc["baseline"] += baseline_n
+    weight = _SENTIMENT_WEIGHTS.get(kind)
+    if weight is not None:
+        # Sentiment reads the WHOLE baseline window, not just the recent one: a single sour
+        # reply this fortnight should not outweigh a quarter of warm ones.
+        if weight > 0:
+            acc["pos"] += weight * baseline_n
+        else:
+            acc["neg"] += -weight * baseline_n
+    if kind in _PROGRESS_KINDS:
+        acc["progress_recent"] += recent_n
+
+
+def _metrics(acc: dict) -> tuple[float, float, float]:
+    """(engagement, sentiment, momentum) from one accumulator. ONE formula, two callers.
+
+    `compute` folds one PERSON's observations into an accumulator; `compute_account_view` folds
+    the union of an account's people's observations into the same shape. The arithmetic has to be
+    literally shared or `derived.engagement` means one thing on a person and a subtly different
+    thing on the company above them — and the sales pack compares both against the same
+    threshold (`derived.engagement <= 0.5`), so a second formula would be invisible until it
+    mis-fired.
+    """
+    recent_rate = _rate(acc["recent"], _RECENT_DAYS)
+    baseline_rate = _rate(acc["baseline"], _BASELINE_DAYS)
+    # Engagement is a RATIO against this relationship's own history, never an absolute count —
+    # "halved" has to mean halved for THIS account, whether it ran at forty emails a week or
+    # four. A node with no history reads 1.0 (neutral), not 0.0, or every brand-new contact
+    # would look like it had gone cold.
+    engagement = 1.0 if baseline_rate <= 0 else min(recent_rate / baseline_rate, 3.0)
+    total = acc["pos"] + acc["neg"]
+    sentiment = 0.0 if total <= 0 else (acc["pos"] - acc["neg"]) / total
+    momentum = _rate(acc["progress_recent"], _RECENT_DAYS) * 7.0     # progress events/week
+    return engagement, sentiment, momentum
+
+
+def _observation_counts(c, org_id: str, recent_from: datetime, baseline_from: datetime):
+    """Per (node, kind) recent/baseline observation counts. One bulk query, no per-node reads."""
+    return c.execute(text(
+        "select subject_node_id, kind, "
+        "count(*) filter (where occurred_at >= :recent) as recent_n, "
+        "count(*) filter (where occurred_at >= :baseline) as baseline_n "
+        "from graph_observations "
+        "where org_id = :o and status = 'active' and occurred_at >= :baseline "
+        "group by subject_node_id, kind"),
+        {"o": org_id, "recent": recent_from, "baseline": baseline_from}).all()
+
+
+#: The one INSERT every derived writer uses. `graph_facts` is version-keyed — its only unique
+#: index is `fact_version_id` — so a derived value is a RECOMPUTE, not a new observation of
+#: history: it overwrites its own deterministic version id rather than appending a row per drain.
+#: Otherwise every sync would grow the table by three rows per node forever and a reader picking
+#: "latest" would be sifting duplicates.
+_UPSERT_FACT = (
+    "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, "
+    "field, value, value_type, status, authority_rank, confidence, occurred_at, "
+    "valid_from, visibility_scope) values "
+    "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), :t, 'active', 100, 0.9, :now, :now, 'org') "
+    "on conflict (fact_version_id) do update set value = excluded.value, "
+    "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from")
+
+
+def _write_fact(c, org_id: str, node_id: str, field: str, value: str, value_type: str,
+                now: datetime) -> None:
+    c.execute(text(_UPSERT_FACT), {
+        "vid": f"fv_derived_{node_id}_{field}", "fid": f"f_derived_{node_id}_{field}",
+        "o": org_id, "n": node_id, "f": field, "v": value, "t": value_type, "now": now})
+
+
 def compute(store, org_id: str, *, now: datetime | None = None) -> int:
     """Write derived.* for every node this org has observations on. Returns rows written.
 
@@ -60,64 +136,19 @@ def compute(store, org_id: str, *, now: datetime | None = None) -> int:
     baseline_from = now - timedelta(days=_BASELINE_DAYS)
 
     with store.engine.begin() as c:
-        rows = c.execute(text(
-            "select subject_node_id, kind, "
-            "count(*) filter (where occurred_at >= :recent) as recent_n, "
-            "count(*) filter (where occurred_at >= :baseline) as baseline_n "
-            "from graph_observations "
-            "where org_id = :o and status = 'active' and occurred_at >= :baseline "
-            "group by subject_node_id, kind"),
-            {"o": org_id, "recent": recent_from, "baseline": baseline_from}).all()
+        rows = _observation_counts(c, org_id, recent_from, baseline_from)
 
         per_node: dict[str, dict] = {}
         for node_id, kind, recent_n, baseline_n in rows:
-            acc = per_node.setdefault(node_id, {
-                "recent": 0, "baseline": 0, "pos": 0.0, "neg": 0.0, "progress_recent": 0})
-            acc["recent"] += recent_n
-            acc["baseline"] += baseline_n
-            weight = _SENTIMENT_WEIGHTS.get(kind)
-            if weight is not None:
-                # Sentiment reads the WHOLE baseline window, not just the recent one: a single
-                # sour reply this fortnight should not outweigh a quarter of warm ones.
-                if weight > 0:
-                    acc["pos"] += weight * baseline_n
-                else:
-                    acc["neg"] += -weight * baseline_n
-            if kind in _PROGRESS_KINDS:
-                acc["progress_recent"] += recent_n
+            _accumulate(per_node.setdefault(node_id, _new_acc()), kind, recent_n, baseline_n)
 
         written = 0
         for node_id, acc in per_node.items():
-            recent_rate = _rate(acc["recent"], _RECENT_DAYS)
-            baseline_rate = _rate(acc["baseline"], _BASELINE_DAYS)
-            # Engagement is a RATIO against this relationship's own history, never an absolute
-            # count — "halved" has to mean halved for THIS account, whether it ran at forty
-            # emails a week or four. A node with no history reads 1.0 (neutral), not 0.0, or
-            # every brand-new contact would look like it had gone cold.
-            engagement = 1.0 if baseline_rate <= 0 else min(recent_rate / baseline_rate, 3.0)
-            total = acc["pos"] + acc["neg"]
-            sentiment = 0.0 if total <= 0 else (acc["pos"] - acc["neg"]) / total
-            momentum = _rate(acc["progress_recent"], _RECENT_DAYS) * 7.0   # progress events/week
-
+            engagement, sentiment, momentum = _metrics(acc)
             for field, value in (("derived.engagement", engagement),
                                  ("derived.sentiment", sentiment),
                                  ("derived.momentum", momentum)):
-                c.execute(text(
-                    "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, "
-                    "field, value, value_type, status, authority_rank, confidence, occurred_at, "
-                    "valid_from, visibility_scope) values "
-                    "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), 'number', 'active', 100, 0.9, "
-                    ":now, :now, 'org') "
-                    # graph_facts is version-keyed: its only unique index is fact_version_id.
-                    # A derived value is a RECOMPUTE, not a new observation of history, so it
-                    # overwrites its own deterministic version id rather than appending a row per
-                    # drain — otherwise every sync would grow the table by three rows per node
-                    # forever, and a reader picking "latest" would be sifting duplicates.
-                    "on conflict (fact_version_id) do update set value = excluded.value, "
-                    "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from"),
-                    {"vid": f"fv_derived_{node_id}_{field}", "fid": f"f_derived_{node_id}_{field}",
-                     "o": org_id, "n": node_id, "f": field,
-                     "v": repr(round(value, 4)), "now": now})
+                _write_fact(c, org_id, node_id, field, repr(round(value, 4)), "number", now)
                 written += 1
     return written
 
@@ -238,19 +269,233 @@ def compute_deal_view(store, org_id: str, *, now: datetime | None = None) -> int
             if raw.lower() != status:
                 pairs.append((company, "deal.stage", raw))
         for node_id, field, value in pairs:
-            c.execute(text(
-                "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, "
-                "field, value, value_type, status, authority_rank, confidence, occurred_at, "
-                "valid_from, visibility_scope) values "
-                "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), 'string', 'active', 100, 0.9, "
-                ":now, :now, 'org') "
-                "on conflict (fact_version_id) do update set value = excluded.value, "
-                "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from"),
-                {"vid": f"fv_derived_{node_id}_{field}", "fid": f"f_derived_{node_id}_{field}",
-                 "o": org_id, "n": node_id, "f": field,
-                 "v": f'"{value}"', "now": now})
+            _write_fact(c, org_id, node_id, field, f'"{value}"', "string", now)
             written += 1
     return written
 
 
-__all__ = ["compute", "compute_deal_view"]
+#: The two words `thread.ball_in_court` is allowed to hold. Anything else on a person is dropped
+#: rather than rolled up: on the design partner's graph the field holds `us` (63) and `them` (59)
+#: — and on one node a bare email address, which the extractor produced and no reader compares
+#: against. Rolling that up would put an address where every predicate expects a side.
+_BALL_WORDS = ("us", "them")
+
+
+def _person_neighbours(c, org_id: str) -> dict[str, set[str]]:
+    """account node -> the person nodes one hop away, IN EITHER EDGE DIRECTION.
+
+    THIS IS THE BUG THIS FUNCTION EXISTS TO NOT REPEAT, and it is worth naming precisely because
+    two shipped roll-ups already have it.
+
+    `pipeline.py::_works_at` writes the edge PERSON -> COMPANY. Both existing account roll-ups
+    assume the opposite:
+
+      * `compute_deal_view` selects `e.from_node_id as company` and joins facts on `e.to_node_id`.
+        The only edges with a company on the FROM side are `owns` (company -> deal), and deals
+        carry no thread facts — so on the live graph it writes `deal.*` onto persons and deals and
+        reaches a company NEVER. 33 of 40 companies hold zero facts of any kind.
+      * `baselines.py::_account_rows` filters `n.node_type = 'company'` on `e.from_node_id`, lands
+        on the 33 `owns` edges, looks up `person_times[<deal id>]`, finds nothing, and writes a
+        contact rate for zero accounts. Measured on production the morning this was written:
+        `baselines` held 387 rows for the org — exactly 129 people x 3 person metrics — and not
+        one `contact_frequency` row, from a build that had run ten minutes earlier.
+
+    `support_situations.py` already found this and fixed it in place, with the comment "Accept
+    both rather than assume, or a whole tenant's roll-up is silently empty". That is the rule
+    applied here.
+
+    Reading BOTH directions is also what makes the writer agree with the reader: `reason/runner.py`
+    builds its 1-hop adjacency undirected (`adj[from].add(to)` and `adj[to].add(from)`), so
+    `neighbor_has_obs` on a company already sees its people's observations. A writer that walks
+    the graph more narrowly than the reader produces facts that contradict the predicates.
+    """
+    neighbours: dict[str, set[str]] = {}
+    for row in c.execute(text(
+            "select a.node_id as account, p.node_id as person "
+            "from graph_nodes a "
+            "join graph_edges e on e.org_id = a.org_id "
+            "  and (e.from_node_id = a.node_id or e.to_node_id = a.node_id) "
+            "  and e.valid_to is null "
+            "join graph_nodes p on p.org_id = a.org_id and p.valid_to is null "
+            "  and p.node_type = 'person' "
+            "  and p.node_id = case when e.from_node_id = a.node_id "
+            "                       then e.to_node_id else e.from_node_id end "
+            "where a.org_id = :o and a.valid_to is null "
+            "  and a.node_type in ('company', 'deal')"), {"o": org_id}):
+        neighbours.setdefault(row.account, set()).add(row.person)
+    return neighbours
+
+
+def compute_account_view(store, org_id: str, *, now: datetime | None = None) -> int:
+    """Roll person-level truth up to the COMPANY and DEAL nodes. Returns rows written.
+
+    `compute_deal_view` established the shape: the deal is the roll-up of its threads, and asking
+    a language model to restate something already known exactly would be inviting a guess. This
+    is the same argument one level out. A company's state IS its people's state — nobody writes
+    an email "to Acme", they write to a person who works there — so every account-level fact here
+    is an aggregate of rows that already exist, never a new claim.
+
+    WHAT IT IS AND IS NOT WORTH, measured rather than assumed, because the obvious claim is
+    wrong. On the design partner's graph person nodes hold 1,279 facts across 129 nodes while
+    COMPANY nodes hold 18 across 40 — 33 of the 40 hold none — and 49 of the org's 103 live
+    situations are anchored on a company or a deal. It is tempting to conclude that the
+    account-anchored half of the product reasons over empty nodes. IT DOES NOT.
+    `adapters/native.py` already resolves a root field absent on the anchor from its 1-hop
+    neighbourhood, and `reason/runner.py::_neighbourhood` fills that with the latest value per
+    field across neighbours. Running this function read-only against production and comparing
+    every value it would write against what that borrow already finds: across the 287 values in
+    the six fields the comparison covers, the borrow finds all 287 and this changes 5 — 2
+    `derived.sentiment` and 3 `deal.status`, on the 7 accounts with more than one person.
+
+    So the honest value here is narrow and worth stating plainly rather than overselling:
+
+      * The value becomes the ACCOUNT's. The borrow takes whichever neighbour was written last,
+        so a company with four contacts inherited one person's engagement ratio; this computes
+        the ratio over the union of its people's observations. It matters on 7 accounts today
+        and on every multi-contact account the org ever adds.
+      * The fact becomes the account's OWN, at `context_scope` root rather than `neighbor`, so
+        evidence refs cite the account instead of a person who happens to work there.
+      * It exists as a ROW, which the borrow never produces. Everything that reads `graph_facts`
+        without going through the reasoner's neighbourhood — read models, `entity_360`, card
+        rendering, exports — saw an empty company and now does not.
+
+    The one strictly-new signal is not here at all: `derived.contact_frequency`, which no person
+    carries and the borrow therefore cannot find. It comes from `reason/baselines.py`, whose
+    account pass had the same edge-direction defect and wrote a contact rate for ZERO accounts;
+    fixed alongside this, it yields 37.
+
+    WHAT IS DELIBERATELY NOT DERIVED, and this is the same line `compute_deal_view` holds:
+
+      * `deal.value`. There is no honest way to infer a number nobody stated, and a wrong one
+        flows straight into prioritisation. `sales.deal_cooling` REQUIRES it and returned
+        INSUFFICIENT_CONTEXT on 501 runs for that reason; `deal.value` is present on exactly one
+        node in the org. This function closes three of that capability's four required fields and
+        leaves the fourth open, so those runs stay insufficient — correctly.
+      * `account.industry`, `account.geography`, `account.employee_count`, `account.segment`.
+        These are the Sales corpus's top-ranked asks (8, 3, 2 and 2 blocked patterns) and none is
+        derivable from correspondence. They are firmographic enrichment; guessing an industry
+        from an email domain is exactly the fabrication the rule above forbids. They stay in
+        `planned_substrate` with no writer, which is where a name with no measurement belongs.
+      * Committee size. The Buying Committee object wants a roster, and only 6 of 40 companies
+        have more than one person attached, so a count would describe our contact list rather
+        than their committee.
+
+    Ownership is split from `compute_deal_view` on purpose: that function already writes
+    `deal.status`/`deal.stage` onto DEAL nodes (32 of 33 on production) through the `involves`
+    edge, and it works. This one writes those two fields for COMPANIES only, so one row never has
+    two writers racing over the same `fact_version_id`. `derived.*` and `thread.*` on companies
+    and deals have no other writer at all.
+    """
+    now = now or datetime.now(timezone.utc)
+    recent_from = now - timedelta(days=_RECENT_DAYS)
+    baseline_from = now - timedelta(days=_BASELINE_DAYS)
+
+    with store.engine.begin() as c:
+        neighbours = _person_neighbours(c, org_id)
+        if not neighbours:
+            return 0
+        people = {p for members in neighbours.values() for p in members}
+
+        # Three bulk reads for the whole org, then all folding in memory — the same reason
+        # `compute` refuses per-node round-trips. Against a remote Postgres a per-account read
+        # would be 73 network turns for this org alone.
+        obs_counts: dict[str, list[tuple[str, int, int]]] = {}
+        for node_id, kind, recent_n, baseline_n in _observation_counts(
+                c, org_id, recent_from, baseline_from):
+            if node_id in people:
+                obs_counts.setdefault(node_id, []).append((kind, recent_n, baseline_n))
+
+        stage_kinds: dict[str, set[str]] = {}
+        for row in c.execute(text(
+                "select subject_node_id, kind from graph_observations "
+                "where org_id = :o and status = 'active'"), {"o": org_id}):
+            if row.subject_node_id in people:
+                stage_kinds.setdefault(row.subject_node_id, set()).add(row.kind)
+
+        thread_facts: dict[str, dict[str, str]] = {}
+        for row in c.execute(text(
+                "select subject_node_id, field, value #>> '{}' as v from graph_facts "
+                "where org_id = :o and status = 'active' and valid_to is null "
+                "  and field in ('thread.last_inbound', 'thread.last_outbound', "
+                "                'thread.ball_in_court')"), {"o": org_id}):
+            if row.subject_node_id in people and row.v:
+                thread_facts.setdefault(row.subject_node_id, {})[row.field] = row.v
+
+        node_types = {r.node_id: r.node_type for r in c.execute(text(
+            "select node_id, node_type from graph_nodes where org_id = :o and valid_to is null "
+            "and node_type in ('company', 'deal')"), {"o": org_id})}
+
+        kind_to_stage = dict(_STAGE_BY_KIND)
+        written = 0
+        for account, members in neighbours.items():
+            acc = _new_acc()
+            saw_observation = False
+            for person in members:
+                for kind, recent_n, baseline_n in obs_counts.get(person, ()):
+                    _accumulate(acc, kind, recent_n, baseline_n)
+                    saw_observation = True
+            # An account with no observations in the window gets NO derived.* at all, rather than
+            # the neutral 1.0 `_metrics` returns for an empty accumulator. The neutral value is
+            # right for a person we have merely not heard from lately and wrong for an account we
+            # have never heard from: "engagement is normal" and "there is nothing to measure" are
+            # different claims, and only the first should reach a rule.
+            if saw_observation:
+                engagement, sentiment, momentum = _metrics(acc)
+                for field, value in (("derived.engagement", engagement),
+                                     ("derived.sentiment", sentiment),
+                                     ("derived.momentum", momentum)):
+                    _write_fact(c, org_id, account, field, repr(round(value, 4)), "number", now)
+                    written += 1
+
+            # Correspondence, rolled up under the names the readers already use. The account's
+            # last inbound is the LATEST across its people — an account is not quiet because one
+            # contact is. These are ISO timestamp strings written by the same extractor, so max()
+            # on the string is max() on the instant.
+            for field in ("thread.last_inbound", "thread.last_outbound"):
+                values = [thread_facts[p][field] for p in members
+                          if field in thread_facts.get(p, {})]
+                if values:
+                    _write_fact(c, org_id, account, field, f'"{max(values)}"', "string", now)
+                    written += 1
+
+            # `us` WINS over `them`, and the asymmetry is deliberate: if anyone at the account is
+            # waiting on us, the account is waiting on us. Taking the majority or the most recent
+            # would let one answered contact hide an unanswered one, which is the failure the
+            # field exists to catch.
+            ball = {thread_facts[p].get("thread.ball_in_court") for p in members
+                    if p in thread_facts}
+            for word in _BALL_WORDS:
+                if word in ball:
+                    _write_fact(c, org_id, account, "thread.ball_in_court", f'"{word}"',
+                                "string", now)
+                    written += 1
+                    break
+
+            # Stage, for COMPANIES only — see the ownership note in the docstring. The furthest
+            # stage any of the account's people reached wins, and it is published through
+            # `_normalise_deal_status` exactly as `compute_deal_view` does: the rank-100 write
+            # outranks the extractor's rank-2 one, so writing a stage word into `deal.status`
+            # here would un-route every Sales deal situation on the next sync, which is the
+            # regression that cost the deal lane 20 of 20 situations once already.
+            if node_types.get(account) != "company":
+                continue
+            best: str | None = None
+            for person in members:
+                for kind in stage_kinds.get(person, ()):
+                    stage = kind_to_stage.get(kind)
+                    if stage and (best is None or _STAGE_RANK[stage] > _STAGE_RANK[best]):
+                        best = stage
+            if best is None:
+                continue
+            status, raw = _normalise_deal_status(best)
+            if status is None:
+                continue
+            _write_fact(c, org_id, account, "deal.status", f'"{status}"', "string", now)
+            written += 1
+            if raw.lower() != status:
+                _write_fact(c, org_id, account, "deal.stage", f'"{raw}"', "string", now)
+                written += 1
+    return written
+
+
+__all__ = ["compute", "compute_account_view", "compute_deal_view"]

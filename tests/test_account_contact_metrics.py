@@ -170,3 +170,56 @@ def test_the_corpus_now_calls_these_substrate_rather_than_planned():
     assert "derived.contact_frequency" not in v["planned_substrate"]["fact_paths"]
     assert "contact_rate_per_account" in v["substrate"]["baselines"]
     assert "contact_rate_per_account" not in v["planned_substrate"]["baselines"]
+
+
+# ── the direction, proved against a real graph ───────────────────────────────────────────────
+#
+# Everything above this line runs against `_FakeConn`, which returns its edge list whatever SQL
+# it is handed. That is fine for the arithmetic and USELESS for the query, and the gap was not
+# theoretical: `_account_rows` filtered `node_type='company'` on `e.from_node_id` while
+# `pipeline.py::_works_at` writes the edge PERSON -> COMPANY, so on the live graph it matched
+# only the 33 `owns` (company -> deal) edges, looked up `person_times[<deal id>]`, found nothing,
+# and wrote a contact rate for ZERO accounts.
+#
+# Measured on production the morning this was fixed: `baselines` held 387 rows for the design
+# partner's org — 129 people x 3 person-level metrics — and not one `contact_frequency` row,
+# from a build that had run ten minutes earlier. The fake connection reported the feature
+# working the whole time.
+def test_the_account_query_finds_companies_on_the_real_graph(pg_store):
+    """The regression test the fake connection could never be. Seeds `works_at` the way the
+    pipeline writes it and asserts the SQL comes back with the company on the right side."""
+    from sqlalchemy import text
+
+    from tests.test_deal_status_survives_a_sync import _seed_org
+
+    org = "acct_contact_direction"
+    _seed_org(pg_store, org)
+    with pg_store.engine.begin() as conn:
+        for node_id, node_type, key in (("co_real", "company", "acme.test"),
+                                        ("p_real", "person", "p@acme.test"),
+                                        ("d_real", "deal", "deal:acme.test")):
+            conn.execute(text(
+                "insert into graph_nodes (node_id, version, org_id, node_type, canonical_key, "
+                "display_name, identity_strength, attributes, valid_from) "
+                "values (:n, 1, :o, :t, :k, :n, 1.0, '{}'::jsonb, now()) "
+                "on conflict do nothing"),
+                {"n": node_id, "o": org, "t": node_type, "k": key})
+        for edge_id, etype, src, dst in (("e_works", "works_at", "p_real", "co_real"),
+                                         ("e_owns", "owns", "co_real", "d_real")):
+            conn.execute(text(
+                "insert into graph_edges (edge_version_id, edge_id, org_id, edge_type, "
+                "from_node_id, to_node_id, authority_rank, confidence, valid_from) "
+                "values (:v, :e, :o, :t, :f, :d, 2, 0.9, now()) on conflict do nothing"),
+                {"v": f"ev_{edge_id}", "e": edge_id, "o": org, "t": etype, "f": src, "d": dst})
+
+    with pg_store.engine.connect() as conn:
+        rows = _account_rows(conn, org, {"p_real": [_ago(1), _ago(2)]}, NOW)
+
+    keys = {r["k"] for r in rows}
+    assert "contact_frequency:co_real" in keys, (
+        "the account query still reads the edge in one direction only — this is the shape that "
+        "produced zero contact_frequency rows on production while looking like it worked")
+    assert not any(k.endswith(":d_real") for k in keys), (
+        "a DEAL was treated as an account; the old filter matched exactly this `owns` edge")
+    freq = next(r for r in rows if r["k"] == "contact_frequency:co_real")
+    assert freq["v"] > 0.0, "the company's own people's history did not reach it"

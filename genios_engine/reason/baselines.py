@@ -82,14 +82,38 @@ def _account_rows(c, org_id: str, person_times: dict[str, list], eval_time: date
 
     Reuses the event scan the per-person pass already did — `person_times` is keyed by person
     node_id — so this costs exactly one extra query (the edges) rather than a second history read.
-    Edge direction follows `derived.compute_deal_view`: from_node_id is the company, to_node_id
-    the person.
+
+    EDGE DIRECTION, and why this query is not the obvious one. It used to say "from_node_id is
+    the company, to_node_id the person", following `derived.compute_deal_view`. Both were wrong
+    about the graph they run on: `pipeline.py::_works_at` writes the edge PERSON -> COMPANY, so
+    the only edges with a company on the FROM side are `owns` (company -> deal). This filter
+    matched those 33, looked up `person_times[<deal node id>]`, found nothing, and produced a
+    contact rate for ZERO accounts while looking like it had worked.
+
+    That is not a hypothetical. On production the morning this was fixed, `baselines` held 387
+    rows for the design partner's org — 129 people x 3 person-level metrics, and not one
+    `contact_frequency` or `contact_rate_per_account` row — from a build that had run ten minutes
+    before. The hermetic test that covered this seeded the edge company -> person, so it proved
+    a query correct that matched nothing on the real graph.
+
+    Matching on the PERSON side and taking the company from the other end is direction-agnostic:
+    it finds the account whichever way the edge was written, which is what
+    `support_situations.py` already does for the same reason.
     """
     edges = c.execute(text(
-        "select e.from_node_id as company, e.to_node_id as person "
-        "from graph_edges e join graph_nodes n "
-        "  on n.org_id = e.org_id and n.node_id = e.from_node_id and n.valid_to is null "
-        "where e.org_id = :o and n.node_type = 'company'"), {"o": org_id}).fetchall()
+        "select case when nf.node_type = 'company' then e.from_node_id else e.to_node_id end "
+        "         as company, "
+        "       case when nf.node_type = 'company' then e.to_node_id else e.from_node_id end "
+        "         as person "
+        "from graph_edges e "
+        "join graph_nodes nf on nf.org_id = e.org_id and nf.node_id = e.from_node_id "
+        "  and nf.valid_to is null "
+        "join graph_nodes nt on nt.org_id = e.org_id and nt.node_id = e.to_node_id "
+        "  and nt.valid_to is null "
+        "where e.org_id = :o and e.valid_to is null "
+        "  and (nf.node_type = 'company') <> (nt.node_type = 'company') "
+        "  and 'company' in (nf.node_type, nt.node_type) "
+        "  and 'person' in (nf.node_type, nt.node_type)"), {"o": org_id}).fetchall()
 
     by_company: dict[str, list] = {}
     for e in edges:

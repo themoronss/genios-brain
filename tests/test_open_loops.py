@@ -391,9 +391,18 @@ def test_engagement_is_relative_to_the_account_and_deal_value_is_never_invented(
 
     from genios_engine.context import derived
 
-    src = inspect.getsource(derived.compute)
+    # Pinned on `_metrics` rather than `compute`, because that is where the arithmetic moved when
+    # `compute_account_view` began deriving the same three fields for companies and deals. The
+    # point of the shared helper is that there is exactly ONE engagement formula: the sales pack
+    # compares person-level and account-level `derived.engagement` against the same threshold, so
+    # a second copy of this expression would diverge silently.
+    src = inspect.getsource(derived._metrics)
     assert "recent_rate / baseline_rate" in src, "engagement must be a ratio, not a raw count"
     assert "1.0 if baseline_rate <= 0" in src, "a new contact must read neutral, not cold"
+    assert "_metrics(acc)" in inspect.getsource(derived.compute), (
+        "compute must use the shared formula, not a second copy of it")
+    assert "_metrics(acc)" in inspect.getsource(derived.compute_account_view), (
+        "the account roll-up must use the shared formula, not a second copy of it")
     # Check the CODE, not the prose. The first version of this assertion matched the docstring
     # sentence saying deal.value is never derived, and would have passed just as happily on a
     # function that derived it while claiming otherwise.

@@ -267,8 +267,17 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     if done or affected:
         try:
             from genios_engine.context.derived import compute as compute_derived
-            from genios_engine.context.derived import compute_deal_view
+            from genios_engine.context.derived import compute_account_view, compute_deal_view
             derived_rows = compute_derived(store, org_id) + compute_deal_view(store, org_id)
+            # ACCOUNT level, after the person level and for the same reason: it is an aggregate
+            # of the facts the two passes above just committed, so it has to run behind them.
+            # 33 of 40 companies on the design partner's org hold no fact row at all. The
+            # reasoner still SEES their people's facts — `adapters/native.py` borrows a missing
+            # root field from the 1-hop neighbourhood — so this is not the difference between
+            # reasoning and not reasoning; it is the difference between the account's own
+            # aggregate and whichever neighbour was written last, and between a row existing for
+            # every non-reasoner reader and not. See `compute_account_view` for the measurement.
+            derived_rows += compute_account_view(store, org_id)
             # PERIOD aggregates and their situations, in the same pass and for the same reason:
             # they are computed from facts that now exist, they are cheap, and a period read that
             # is only refreshed by a separate schedule is a period read that is always stale.

@@ -13,7 +13,7 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 ## Where the brain stands
 
 - **120** patterns executable against the pipeline today
-- **152** patterns blocked, waiting on **141** distinct signals
+- **152** patterns blocked, waiting on **144** distinct signals
 - **9** situation binding(s) waiting on an L2 type no pack emits
 - Substrate today: **106** fact paths · **34** observation kinds · **2** baselines
 
@@ -24,29 +24,29 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 | 1 | `entitlement.plan` | fact_path | L1/L2 | 9 | 9500 | Entitlement, Named Contact, Postmortem, Requester, Support Plan, Ticket |
 | 2 | `account.renewal_at` | fact_path | L1/L2 | 9 | 9000 | Churn Risk, Customer Account, Customer Sentiment, Entitlement, Escalation, Support Plan, Ticket |
 | 3 | `csat.score` | fact_path | L1/L2 | 9 | 9000 | Churn Risk, Commitment, Customer Account, Customer Sentiment, Macro, SLA Target, Ticket |
-| 4 | `derived.contact_frequency` | derived | L2 | 9 | 9000 | Churn Risk, Customer Account, Customer Sentiment, Entitlement, Escalation, Knowledge Article, Named Contact, Requester, Support Plan |
-| 5 | `entitlement.expires_at` | fact_path | L1/L2 | 7 | 10000 | Customer Account, Entitlement, Postmortem, Support Plan, Ticket |
-| 6 | `incident_declared` | obs_kind | L2 | 7 | 10000 | Churn Risk, Escalation, Incident, Postmortem |
-| 7 | `escalation_requested` | obs_kind | L2 | 7 | 9500 | Churn Risk, Customer Account, Escalation, Knowledge Article, Macro, Named Contact, Requester |
-| 8 | `cancellation_threat` | obs_kind | L2 | 7 | 9200 | Churn Risk, Commitment, Customer Account, Customer Sentiment, Escalation, Macro, Ticket |
-| 9 | `sla.target_first_response_at` | fact_path | L1/L2 | 6 | 10000 | Customer Sentiment, SLA Target, Support Plan, Ticket |
-| 10 | `ticket.created_at` | fact_path | L1/L2 | 6 | 9700 | Customer Account, Incident, Named Contact, Postmortem, Ticket |
-| 11 | `incident.started_at` | fact_path | L1 | 6 | 9500 | Customer Sentiment, Incident, Postmortem |
-| 12 | `angry_language` | obs_kind | L2 | 6 | 8200 | Commitment, Customer Sentiment, Escalation, Incident, Postmortem, Ticket |
-| 13 | `incident.status` | fact_path | L1 | 5 | 10000 | Churn Risk, Customer Sentiment, Incident, Postmortem |
-| 14 | `sla.clock_state` | fact_path | L1 | 5 | 10000 | Churn Risk, Commitment, Escalation, SLA Target, Ticket |
-| 15 | `sla.target_resolution_at` | fact_path | L1 | 5 | 10000 | Churn Risk, Commitment, SLA Target, Ticket |
-| 16 | `ticket.status` | fact_path | L1/L2 | 5 | 10000 | Churn Risk, Commitment, Customer Account, Ticket |
-| 17 | `derived.escalation_pressure` | derived | L2 | 5 | 9200 | Commitment, Customer Account, Incident, Postmortem, Ticket |
-| 18 | `contact_rate_per_account` | baseline | L2 | 5 | 9000 | Customer Account, Escalation, Knowledge Article, Named Contact, Requester |
-| 19 | `sla_breach` | obs_kind | L2 | 4 | 10000 | Churn Risk, Customer Sentiment, Escalation, SLA Target |
-| 20 | `macro_applied` | obs_kind | L2 | 4 | 9800 | Macro |
-| 21 | `entitlement.coverage_hours` | fact_path | L1/L2 | 4 | 9500 | Entitlement, SLA Target, Support Plan |
-| 22 | `incident.severity` | fact_path | L1 | 4 | 9500 | Churn Risk, Incident, Postmortem |
-| 23 | `ticket.reopen_count` | fact_path | L1 | 4 | 9500 | Customer Sentiment, Escalation, Macro, Ticket |
-| 24 | `ticket_reopened` | obs_kind | L2 | 4 | 9500 | Churn Risk, Knowledge Article, Macro, Ticket |
-| 25 | `self_service_attempted` | obs_kind | L2 | 4 | 9200 | Incident, Knowledge Article, Requester |
-| 26 | `csat_submitted` | obs_kind | L2 | 4 | 9000 | Churn Risk, Customer Sentiment, Macro, Ticket |
+| 4 | `entitlement.expires_at` | fact_path | L1/L2 | 7 | 10000 | Customer Account, Entitlement, Postmortem, Support Plan, Ticket |
+| 5 | `incident_declared` | obs_kind | L2 | 7 | 10000 | Churn Risk, Escalation, Incident, Postmortem |
+| 6 | `escalation_requested` | obs_kind | L2 | 7 | 9500 | Churn Risk, Customer Account, Escalation, Knowledge Article, Macro, Named Contact, Requester |
+| 7 | `cancellation_threat` | obs_kind | L2 | 7 | 9200 | Churn Risk, Commitment, Customer Account, Customer Sentiment, Escalation, Macro, Ticket |
+| 8 | `sla.target_first_response_at` | fact_path | L1/L2 | 6 | 10000 | Customer Sentiment, SLA Target, Support Plan, Ticket |
+| 9 | `ticket.created_at` | fact_path | L1/L2 | 6 | 9700 | Customer Account, Incident, Named Contact, Postmortem, Ticket |
+| 10 | `incident.started_at` | fact_path | L1 | 6 | 9500 | Customer Sentiment, Incident, Postmortem |
+| 11 | `angry_language` | obs_kind | L2 | 6 | 8200 | Commitment, Customer Sentiment, Escalation, Incident, Postmortem, Ticket |
+| 12 | `incident.status` | fact_path | L1 | 5 | 10000 | Churn Risk, Customer Sentiment, Incident, Postmortem |
+| 13 | `sla.clock_state` | fact_path | L1 | 5 | 10000 | Churn Risk, Commitment, Escalation, SLA Target, Ticket |
+| 14 | `sla.target_resolution_at` | fact_path | L1 | 5 | 10000 | Churn Risk, Commitment, SLA Target, Ticket |
+| 15 | `ticket.status` | fact_path | L1/L2 | 5 | 10000 | Churn Risk, Commitment, Customer Account, Ticket |
+| 16 | `derived.escalation_pressure` | derived | L2 | 5 | 9200 | Commitment, Customer Account, Incident, Postmortem, Ticket |
+| 17 | `contact_rate_per_account` | baseline | L2 | 5 | 9000 | Customer Account, Escalation, Knowledge Article, Named Contact, Requester |
+| 18 | `sla_breach` | obs_kind | L2 | 4 | 10000 | Churn Risk, Customer Sentiment, Escalation, SLA Target |
+| 19 | `macro_applied` | obs_kind | L2 | 4 | 9800 | Macro |
+| 20 | `entitlement.coverage_hours` | fact_path | L1/L2 | 4 | 9500 | Entitlement, SLA Target, Support Plan |
+| 21 | `incident.severity` | fact_path | L1 | 4 | 9500 | Churn Risk, Incident, Postmortem |
+| 22 | `ticket.reopen_count` | fact_path | L1 | 4 | 9500 | Customer Sentiment, Escalation, Macro, Ticket |
+| 23 | `ticket_reopened` | obs_kind | L2 | 4 | 9500 | Churn Risk, Knowledge Article, Macro, Ticket |
+| 24 | `self_service_attempted` | obs_kind | L2 | 4 | 9200 | Incident, Knowledge Article, Requester |
+| 25 | `csat_submitted` | obs_kind | L2 | 4 | 9000 | Churn Risk, Customer Sentiment, Macro, Ticket |
+| 26 | `derived.person_contact_rate` | derived | L2 | 4 | 9000 | Customer Sentiment, Escalation, Named Contact, Requester |
 | 27 | `ticket.channel` | fact_path | L1/L2 | 4 | 9000 | Entitlement, Named Contact, Requester, Support Plan |
 | 28 | `self_service_abandoned` | obs_kind | L2 | 4 | 8800 | Customer Sentiment, Incident, Knowledge Article, Requester |
 | 29 | `account.arr` | fact_path | L1/L2 | 4 | 7500 | Entitlement, Escalation, Named Contact, Ticket |
@@ -63,105 +63,108 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 | 40 | `reproduction_confirmed` | obs_kind | L2 | 3 | 8500 | Escalation, Named Contact, Requester |
 | 41 | `ticket_volume` | baseline | L2 | 3 | 8500 | Incident, Macro, Product Area |
 | 42 | `ces_submitted` | obs_kind | L2 | 3 | 7800 | Churn Risk, Customer Sentiment, Requester |
-| 43 | `knowledge_article_linked` | obs_kind | L2 | 3 | 7500 | Knowledge Article, Macro |
-| 44 | `csat.responded_at` | fact_path | L1 | 3 | 0 | Satisfaction Score |
-| 45 | `ticket.product_area` | fact_path | L1 | 3 | 0 | Product Area |
-| 46 | `commitment.state` | fact_path | L1 | 2 | 10000 | Commitment |
-| 47 | `escalation_accepted` | obs_kind | L2 | 2 | 10000 | Escalation |
-| 48 | `ticket.first_response_at` | fact_path | L1 | 2 | 9800 | SLA Target, Ticket |
-| 49 | `commitment.owner` | fact_path | L1 | 2 | 9200 | Commitment |
-| 50 | `commitment.recipient` | fact_path | L1 | 2 | 9200 | Commitment |
-| 51 | `product.released_at` | fact_path | L1 | 2 | 9000 | Knowledge Article, Macro |
-| 52 | `product.surface_version` | fact_path | L1 | 2 | 9000 | Knowledge Article, Macro |
-| 53 | `ticket.severity` | fact_path | L1/L2 | 2 | 8800 | Entitlement, Support Plan |
-| 54 | `account.health_score` | fact_path | L1 | 2 | 8500 | Churn Risk, Customer Sentiment |
-| 55 | `derived.backlog_age` | derived | L2 | 2 | 8500 | Incident, SLA Target |
-| 56 | `handoff_to_engineering` | obs_kind | L1/L2 | 2 | 8500 | Bug Report, Postmortem |
-| 57 | `champion_change` | obs_kind | L2 | 2 | 8000 | Customer Account, Named Contact |
-| 58 | `macro.body_text` | fact_path | L1 | 2 | 8000 | Macro |
-| 59 | `resolution_time` | baseline | L2 | 2 | 7000 | Churn Risk |
-| 60 | `csat.value` | fact_path | L1 | 2 | 0 | Satisfaction Score |
-| 61 | `issue.resolution_kind` | fact_path | L1 | 2 | 0 | Issue, Workaround |
-| 62 | `bug_awaiting_engineering` | l2_situation_type | L2 | 1 | 10000 | [situation] Bug Awaiting Engineering |
-| 63 | `csat_detractor` | l2_situation_type | L2 | 1 | 10000 | [situation] CSAT Detractor |
-| 64 | `entitlement_expired` | l2_situation_type | L2 | 1 | 10000 | [situation] Entitlement Expired |
-| 65 | `entitlement_mismatch` | l2_situation_type | L2 | 1 | 10000 | [situation] Entitlement Expired |
-| 66 | `incident_unresolved` | l2_situation_type | L2 | 1 | 10000 | [situation] Major Incident Declared |
-| 67 | `issue_under_diagnosis` | l2_situation_type | L1 | 1 | 10000 | [situation] Issue Under Diagnosis |
-| 68 | `major_incident_declared` | l2_situation_type | L2 | 1 | 10000 | [situation] Major Incident Declared |
-| 69 | `sla_breach_imminent` | l2_situation_type | L2 | 1 | 10000 | [situation] SLA Breach Imminent |
-| 70 | `ticket_reopened` | l2_situation_type | L2 | 1 | 10000 | [situation] Ticket Reopened |
-| 71 | `first_response_sent` | obs_kind | L2 | 1 | 9800 | SLA Target |
-| 72 | `macro.edit_distance_at_send` | fact_path | L1 | 1 | 9800 | Macro |
-| 73 | `macro.macro_ref` | fact_path | L1 | 1 | 9800 | Macro |
-| 74 | `entitlement.clock_basis` | fact_path | L1 | 1 | 9500 | Entitlement |
-| 75 | `incident.detected_at` | fact_path | L1 | 1 | 9500 | Postmortem |
-| 76 | `knowledge.owner_id` | fact_path | L1 | 1 | 9500 | Knowledge Article |
-| 77 | `leaver_confirmed` | obs_kind | L2 | 1 | 9500 | Knowledge Article |
-| 78 | `callback_promised` | obs_kind | L2 | 1 | 9200 | Commitment |
-| 79 | `knowledge.viewed_at` | fact_path | L1 | 1 | 9200 | Knowledge Article |
-| 80 | `root_cause_identified` | obs_kind | L2 | 1 | 9200 | Postmortem |
-| 81 | `accessibility_need_stated` | obs_kind | L2 | 1 | 9000 | Requester |
-| 82 | `account.contact_role` | fact_path | L1 | 1 | 9000 | Requester |
-| 83 | `conversation.from_address` | fact_path | L1 | 1 | 9000 | Requester |
-| 84 | `derived.affected_account_count` | derived | L2 | 1 | 9000 | Incident |
-| 85 | `entitlement_expired` | obs_kind | L2 | 1 | 9000 | Entitlement |
-| 86 | `ticket.resolved_at` | fact_path | L1 | 1 | 9000 | SLA Target |
-| 87 | `derived.sentiment_by_author` | derived | L2 | 1 | 8800 | Customer Sentiment |
-| 88 | `entitlement.entitled_severity_levels` | fact_path | L1 | 1 | 8800 | Entitlement |
-| 89 | `rca_requested` | obs_kind | L2 | 1 | 8800 | Postmortem |
-| 90 | `search.query_text` | fact_path | L1 | 1 | 8800 | Knowledge Article |
-| 91 | `search.result_count` | fact_path | L1 | 1 | 8800 | Knowledge Article |
-| 92 | `commitment_renegotiated` | obs_kind | L2 | 1 | 8500 | Commitment |
-| 93 | `derived.sentiment_prior` | derived | L2 | 1 | 8500 | Customer Sentiment |
-| 94 | `derived.sentiment_trend` | derived | L2 | 1 | 8500 | Customer Sentiment |
-| 95 | `diagnostic_artifact_attached` | obs_kind | L2 | 1 | 8500 | Requester |
-| 96 | `entitlement.seat_count` | fact_path | L1 | 1 | 8500 | Entitlement |
-| 97 | `entitlement.seats_in_use` | fact_path | L1 | 1 | 8500 | Entitlement |
-| 98 | `macro.use_count_30d` | fact_path | L1 | 1 | 8500 | Macro |
-| 99 | `product.active_usage_trend` | fact_path | L1 | 1 | 8500 | Churn Risk |
-| 100 | `workaround_provided` | obs_kind | L2 | 1 | 8500 | Ticket |
-| 101 | `blame_attribution` | obs_kind | L2 | 1 | 8000 | Postmortem |
-| 102 | `conversation.language` | fact_path | L1 | 1 | 8000 | Requester |
-| 103 | `derived.macro_similarity` | derived | L2 | 1 | 8000 | Macro |
-| 104 | `derived.requester_active_hours` | derived | L2 | 1 | 8000 | Requester |
-| 105 | `entitlement.coverage_timezone` | fact_path | L1 | 1 | 8000 | Entitlement |
-| 106 | `stakeholder_left` | obs_kind | L2 | 1 | 8000 | Named Contact |
-| 107 | `customer_tone_baseline` | baseline | L2 | 1 | 7800 | Customer Sentiment |
-| 108 | `budget_approved` | obs_kind | L2 | 1 | 7500 | Named Contact |
-| 109 | `contract_requested` | obs_kind | L2 | 1 | 7500 | Support Plan |
-| 110 | `derived.backlog_age` | fact_path | L2 | 1 | 7500 | Postmortem |
-| 111 | `entitlement.named_contacts` | fact_path | L1 | 1 | 7500 | Entitlement |
-| 112 | `knowledge.body_text` | fact_path | L1 | 1 | 7200 | Macro |
-| 113 | `commitment_delivery_rate` | baseline | L2 | 1 | 7000 | Commitment |
-| 114 | `derived.escalation_pressure` | fact_path | L2 | 1 | 7000 | Requester |
-| 115 | `entitlement_verification_interval` | baseline | L2 | 1 | 7000 | Entitlement |
-| 116 | `sla_clock_paused` | obs_kind | L2 | 1 | 7000 | SLA Target |
-| 117 | `article_link_rate` | baseline | L2 | 1 | 6800 | Knowledge Article |
-| 118 | `contract.auto_renew` | fact_path | L1 | 1 | 6800 | Churn Risk |
-| 119 | `contract.end_at` | fact_path | L1 | 1 | 6800 | Churn Risk |
-| 120 | `contract.notice_period_days` | fact_path | L1 | 1 | 6800 | Churn Risk |
-| 121 | `ticket.priority` | fact_path | L2 | 1 | 6000 | Support Plan |
-| 122 | `reproduction_failed` | obs_kind | L2 | 1 | 5500 | Named Contact |
-| 123 | `knowledge.view_count_30d` | fact_path | L1 | 1 | 3500 | Knowledge Article |
-| 124 | `knowledge_feedback_submitted` | obs_kind | L2 | 1 | 3500 | Knowledge Article |
-| 125 | `bug.customer_last_told_at` | fact_path | L2 | 1 | 0 | Bug Report |
-| 126 | `bug.engineering_state` | fact_path | L1 | 1 | 0 | Bug Report |
-| 127 | `bug.ref` | fact_path | L1 | 1 | 0 | Bug Report |
-| 128 | `conversation.answered_count` | fact_path | L2 | 1 | 0 | Conversation |
-| 129 | `conversation.channel` | fact_path | L1 | 1 | 0 | Conversation |
-| 130 | `conversation.external_ref` | fact_path | L1 | 1 | 0 | Conversation |
-| 131 | `conversation.participants` | fact_path | L1 | 1 | 0 | Conversation |
-| 132 | `conversation.request_count` | fact_path | L2 | 1 | 0 | Conversation |
-| 133 | `csat.asked_at` | fact_path | L1 | 1 | 0 | Satisfaction Score |
-| 134 | `csat.instrument` | fact_path | L1 | 1 | 0 | Satisfaction Score |
-| 135 | `csat.scale` | fact_path | L1 | 1 | 0 | Satisfaction Score |
-| 136 | `issue.affected_accounts` | fact_path | L1 | 1 | 0 | Issue |
-| 137 | `issue.reproduction_state` | fact_path | L1 | 1 | 0 | Issue |
-| 138 | `issue.reproduction_steps` | fact_path | L1 | 1 | 0 | Issue |
-| 139 | `product_area.key` | fact_path | L1 | 1 | 0 | Product Area |
-| 140 | `product_area.owning_team` | fact_path | L1 | 1 | 0 | Product Area |
-| 141 | `ticket.issue_ref` | fact_path | L1 | 1 | 0 | Issue |
+| 43 | `derived.contact_frequency` | derived | L2 | 3 | 7800 | Churn Risk, Entitlement, Knowledge Article |
+| 44 | `knowledge_article_linked` | obs_kind | L2 | 3 | 7500 | Knowledge Article, Macro |
+| 45 | `csat.responded_at` | fact_path | L1 | 3 | 0 | Satisfaction Score |
+| 46 | `ticket.product_area` | fact_path | L1 | 3 | 0 | Product Area |
+| 47 | `commitment.state` | fact_path | L1 | 2 | 10000 | Commitment |
+| 48 | `escalation_accepted` | obs_kind | L2 | 2 | 10000 | Escalation |
+| 49 | `ticket.first_response_at` | fact_path | L1 | 2 | 9800 | SLA Target, Ticket |
+| 50 | `commitment.owner` | fact_path | L1 | 2 | 9200 | Commitment |
+| 51 | `commitment.recipient` | fact_path | L1 | 2 | 9200 | Commitment |
+| 52 | `product.released_at` | fact_path | L1 | 2 | 9000 | Knowledge Article, Macro |
+| 53 | `product.surface_version` | fact_path | L1 | 2 | 9000 | Knowledge Article, Macro |
+| 54 | `ticket.severity` | fact_path | L1/L2 | 2 | 8800 | Entitlement, Support Plan |
+| 55 | `account.health_score` | fact_path | L1 | 2 | 8500 | Churn Risk, Customer Sentiment |
+| 56 | `derived.backlog_age` | derived | L2 | 2 | 8500 | Incident, SLA Target |
+| 57 | `handoff_to_engineering` | obs_kind | L1/L2 | 2 | 8500 | Bug Report, Postmortem |
+| 58 | `champion_change` | obs_kind | L2 | 2 | 8000 | Customer Account, Named Contact |
+| 59 | `macro.body_text` | fact_path | L1 | 2 | 8000 | Macro |
+| 60 | `resolution_time` | baseline | L2 | 2 | 7000 | Churn Risk |
+| 61 | `csat.value` | fact_path | L1 | 2 | 0 | Satisfaction Score |
+| 62 | `issue.resolution_kind` | fact_path | L1 | 2 | 0 | Issue, Workaround |
+| 63 | `bug_awaiting_engineering` | l2_situation_type | L2 | 1 | 10000 | [situation] Bug Awaiting Engineering |
+| 64 | `csat_detractor` | l2_situation_type | L2 | 1 | 10000 | [situation] CSAT Detractor |
+| 65 | `entitlement_expired` | l2_situation_type | L2 | 1 | 10000 | [situation] Entitlement Expired |
+| 66 | `entitlement_mismatch` | l2_situation_type | L2 | 1 | 10000 | [situation] Entitlement Expired |
+| 67 | `incident_unresolved` | l2_situation_type | L2 | 1 | 10000 | [situation] Major Incident Declared |
+| 68 | `issue_under_diagnosis` | l2_situation_type | L1 | 1 | 10000 | [situation] Issue Under Diagnosis |
+| 69 | `major_incident_declared` | l2_situation_type | L2 | 1 | 10000 | [situation] Major Incident Declared |
+| 70 | `sla_breach_imminent` | l2_situation_type | L2 | 1 | 10000 | [situation] SLA Breach Imminent |
+| 71 | `ticket_reopened` | l2_situation_type | L2 | 1 | 10000 | [situation] Ticket Reopened |
+| 72 | `first_response_sent` | obs_kind | L2 | 1 | 9800 | SLA Target |
+| 73 | `macro.edit_distance_at_send` | fact_path | L1 | 1 | 9800 | Macro |
+| 74 | `macro.macro_ref` | fact_path | L1 | 1 | 9800 | Macro |
+| 75 | `entitlement.clock_basis` | fact_path | L1 | 1 | 9500 | Entitlement |
+| 76 | `incident.detected_at` | fact_path | L1 | 1 | 9500 | Postmortem |
+| 77 | `knowledge.owner_id` | fact_path | L1 | 1 | 9500 | Knowledge Article |
+| 78 | `leaver_confirmed` | obs_kind | L2 | 1 | 9500 | Knowledge Article |
+| 79 | `callback_promised` | obs_kind | L2 | 1 | 9200 | Commitment |
+| 80 | `knowledge.viewed_at` | fact_path | L1 | 1 | 9200 | Knowledge Article |
+| 81 | `root_cause_identified` | obs_kind | L2 | 1 | 9200 | Postmortem |
+| 82 | `accessibility_need_stated` | obs_kind | L2 | 1 | 9000 | Requester |
+| 83 | `account.contact_role` | fact_path | L1 | 1 | 9000 | Requester |
+| 84 | `conversation.from_address` | fact_path | L1 | 1 | 9000 | Requester |
+| 85 | `derived.affected_account_count` | derived | L2 | 1 | 9000 | Incident |
+| 86 | `entitlement_expired` | obs_kind | L2 | 1 | 9000 | Entitlement |
+| 87 | `ticket.resolved_at` | fact_path | L1 | 1 | 9000 | SLA Target |
+| 88 | `derived.sentiment_by_author` | derived | L2 | 1 | 8800 | Customer Sentiment |
+| 89 | `entitlement.entitled_severity_levels` | fact_path | L1 | 1 | 8800 | Entitlement |
+| 90 | `rca_requested` | obs_kind | L2 | 1 | 8800 | Postmortem |
+| 91 | `search.query_text` | fact_path | L1 | 1 | 8800 | Knowledge Article |
+| 92 | `search.result_count` | fact_path | L1 | 1 | 8800 | Knowledge Article |
+| 93 | `commitment_renegotiated` | obs_kind | L2 | 1 | 8500 | Commitment |
+| 94 | `derived.sentiment_prior` | derived | L2 | 1 | 8500 | Customer Sentiment |
+| 95 | `derived.sentiment_trend` | derived | L2 | 1 | 8500 | Customer Sentiment |
+| 96 | `diagnostic_artifact_attached` | obs_kind | L2 | 1 | 8500 | Requester |
+| 97 | `entitlement.seat_count` | fact_path | L1 | 1 | 8500 | Entitlement |
+| 98 | `entitlement.seats_in_use` | fact_path | L1 | 1 | 8500 | Entitlement |
+| 99 | `macro.use_count_30d` | fact_path | L1 | 1 | 8500 | Macro |
+| 100 | `product.active_usage_trend` | fact_path | L1 | 1 | 8500 | Churn Risk |
+| 101 | `workaround_provided` | obs_kind | L2 | 1 | 8500 | Ticket |
+| 102 | `blame_attribution` | obs_kind | L2 | 1 | 8000 | Postmortem |
+| 103 | `conversation.language` | fact_path | L1 | 1 | 8000 | Requester |
+| 104 | `derived.macro_similarity` | derived | L2 | 1 | 8000 | Macro |
+| 105 | `derived.requester_active_hours` | derived | L2 | 1 | 8000 | Requester |
+| 106 | `entitlement.coverage_timezone` | fact_path | L1 | 1 | 8000 | Entitlement |
+| 107 | `stakeholder_left` | obs_kind | L2 | 1 | 8000 | Named Contact |
+| 108 | `customer_tone_baseline` | baseline | L2 | 1 | 7800 | Customer Sentiment |
+| 109 | `budget_approved` | obs_kind | L2 | 1 | 7500 | Named Contact |
+| 110 | `contract_requested` | obs_kind | L2 | 1 | 7500 | Support Plan |
+| 111 | `derived.backlog_age` | fact_path | L2 | 1 | 7500 | Postmortem |
+| 112 | `entitlement.named_contacts` | fact_path | L1 | 1 | 7500 | Entitlement |
+| 113 | `knowledge.body_text` | fact_path | L1 | 1 | 7200 | Macro |
+| 114 | `commitment_delivery_rate` | baseline | L2 | 1 | 7000 | Commitment |
+| 115 | `derived.escalation_pressure` | fact_path | L2 | 1 | 7000 | Requester |
+| 116 | `derived.person_inbound_share` | derived | L2 | 1 | 7000 | Customer Account |
+| 117 | `entitlement_verification_interval` | baseline | L2 | 1 | 7000 | Entitlement |
+| 118 | `sla_clock_paused` | obs_kind | L2 | 1 | 7000 | SLA Target |
+| 119 | `article_link_rate` | baseline | L2 | 1 | 6800 | Knowledge Article |
+| 120 | `contract.auto_renew` | fact_path | L1 | 1 | 6800 | Churn Risk |
+| 121 | `contract.end_at` | fact_path | L1 | 1 | 6800 | Churn Risk |
+| 122 | `contract.notice_period_days` | fact_path | L1 | 1 | 6800 | Churn Risk |
+| 123 | `derived.account_distinct_contacts` | derived | L2 | 1 | 6500 | Support Plan |
+| 124 | `ticket.priority` | fact_path | L2 | 1 | 6000 | Support Plan |
+| 125 | `reproduction_failed` | obs_kind | L2 | 1 | 5500 | Named Contact |
+| 126 | `knowledge.view_count_30d` | fact_path | L1 | 1 | 3500 | Knowledge Article |
+| 127 | `knowledge_feedback_submitted` | obs_kind | L2 | 1 | 3500 | Knowledge Article |
+| 128 | `bug.customer_last_told_at` | fact_path | L2 | 1 | 0 | Bug Report |
+| 129 | `bug.engineering_state` | fact_path | L1 | 1 | 0 | Bug Report |
+| 130 | `bug.ref` | fact_path | L1 | 1 | 0 | Bug Report |
+| 131 | `conversation.answered_count` | fact_path | L2 | 1 | 0 | Conversation |
+| 132 | `conversation.channel` | fact_path | L1 | 1 | 0 | Conversation |
+| 133 | `conversation.external_ref` | fact_path | L1 | 1 | 0 | Conversation |
+| 134 | `conversation.participants` | fact_path | L1 | 1 | 0 | Conversation |
+| 135 | `conversation.request_count` | fact_path | L2 | 1 | 0 | Conversation |
+| 136 | `csat.asked_at` | fact_path | L1 | 1 | 0 | Satisfaction Score |
+| 137 | `csat.instrument` | fact_path | L1 | 1 | 0 | Satisfaction Score |
+| 138 | `csat.scale` | fact_path | L1 | 1 | 0 | Satisfaction Score |
+| 139 | `issue.affected_accounts` | fact_path | L1 | 1 | 0 | Issue |
+| 140 | `issue.reproduction_state` | fact_path | L1 | 1 | 0 | Issue |
+| 141 | `issue.reproduction_steps` | fact_path | L1 | 1 | 0 | Issue |
+| 142 | `product_area.key` | fact_path | L1 | 1 | 0 | Product Area |
+| 143 | `product_area.owning_team` | fact_path | L1 | 1 | 0 | Product Area |
+| 144 | `ticket.issue_ref` | fact_path | L1 | 1 | 0 | Issue |
 
 ## Why each one matters
 
@@ -225,28 +228,6 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 
 - SLA Target: The only thing that can falsify an SLA programme. Without it, 'we hit our targets' is unfalsifiable — which is exactly why targets get set where they can be hit.
 - Ticket: Ranked below reopens deliberately. A survey score is cheap for the customer to give and cheap to game with a well-timed ask; a reopen costs them effort and cannot be prompted. Both are worth having and the reopen is worth more.
-
-### `derived.contact_frequency` · derived
-
-- blocks **Churn Risk** / `cs.churn.the_same_unresolved_thing_asked_again` (would yield 7800 bp)
-- blocks **Customer Account** / `account.the_relationship_is_one_person_deep` (would yield 7000 bp)
-- blocks **Customer Sentiment** / `cs.sent.reopened_or_repeat_contact` (would yield 8200 bp)
-- blocks **Entitlement** / `ent.serving_beyond_what_was_bought` (would yield 6500 bp)
-- blocks **Escalation** / `esc.the_diagnosis_restarted` (would yield 7500 bp)
-- blocks **Knowledge Article** / `ka.repeat_contact_after_self_service` (would yield 7000 bp)
-- blocks **Named Contact** / `contact.is_a_proxy_for_someone_else` (would yield 5500 bp)
-- blocks **Requester** / `req.repeat_contact_inside_a_week` (would yield 9000 bp)
-- blocks **Support Plan** / `plan.the_named_caller_limit_is_being_exceeded` (would yield 6500 bp)
-- Churn Risk: Needed to distinguish three contacts about one thing from three unrelated contacts. Today each is read as a fresh surprise by a different agent, which is also how it feels to the customer.
-- Customer Account: Per-person inbound share within an account. The graph holds the people and the messages; nothing aggregates one against the other.
-- Customer Sentiment: Needed to catch repeat contact that arrives as new tickets rather than reopens, which is what most customers actually do and what happens by default whenever they use a different channel. Reopen counts alone under-report repeat contact badly.
-
-- Entitlement: Support effort is entirely invisible today — the substrate can see a thread going quiet but not an account consuming four times its tier. Over-service is therefore undetectable until renewal, which is the latest and most expensive moment to find it.
-
-- Escalation: Needed to separate a genuine re-diagnosis from routine follow-up. Without it this pattern flags every reassignment and gets muted within a week.
-- Knowledge Article: Already planned. Needs to be sliced by intent, not just by account — an account contacting more overall is not the same as an account contacting again about the SAME thing.
-- Requester: The highest-value missing signal on this object. Three individually reasonable tickets from one person in a week is a content gap, a product defect or a failed first resolution, and it is invisible to every capability that reads one ticket at a time. Everything the executable graph-degree heuristic below approximates, this would state.
-
 
 ### `entitlement.expires_at` · fact_path
 
@@ -450,6 +431,7 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - Escalation: Three contacts in a week is normal for a heavy integrator and alarming for a quiet one. Without the per-account baseline this fires on the customers who use the product most, which is the exact inverse of the intent.
 - Knowledge Article: Needed so 'shortly after' means something relative to how often this account contacts us anyway. Absolute windows mis-fire badly on high-touch enterprise accounts.
 - Requester: Needed to make frequency readable — a power user's fourth contact is noise, a quiet customer's second is a signal, and an absolute threshold cannot tell them apart.
+NOTE THE MISMATCH, deliberately left standing rather than quietly fixed: this baseline is the ACCOUNT's own 56-day norm, and the rate above is a PERSON's. "A power user" in the sentence before is an individual, so the comparator this pattern actually wants is a per-person norm that nobody has proposed, costed or written. Recording the wrong-but- nearest baseline with this note is honest; silently comparing a person against an account's norm is the same class of error this pattern was just rescued from.
 
 
 ### `sla_breach` · obs_kind
@@ -537,6 +519,22 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - Customer Sentiment: Deliberately authored as corroboration at 7000 rather than as ground truth at 9500, which is where most teams would put it. A survey is answered by the delighted and the furious — the middle, where churn actually lives, does not reply — it arrives after the feeling has already changed, and it is heavily influenced by whether the last agent was likeable. It is the best evidence we will get about a past moment and poor evidence about the present one. Its real value is not the read; it is the calibration pair against whatever this object inferred at the time.
 
 - Macro: Needed with the send so the score can be attributed to the reply that produced it rather than to the ticket in general.
+
+### `derived.person_contact_rate` · derived
+
+- blocks **Customer Sentiment** / `cs.sent.reopened_or_repeat_contact` (would yield 8200 bp)
+- blocks **Escalation** / `esc.the_diagnosis_restarted` (would yield 7500 bp)
+- blocks **Named Contact** / `contact.is_a_proxy_for_someone_else` (would yield 5500 bp)
+- blocks **Requester** / `req.repeat_contact_inside_a_week` (would yield 9000 bp)
+- Customer Sentiment: Needed to catch repeat contact that arrives as new tickets rather than reopens, which is what most customers actually do and what happens by default whenever they use a different channel. Reopen counts alone under-report repeat contact badly.
+PER PERSON. Frustration is felt by the human who had to come back, and this object's own purpose insists a read is "attributed to a named person wherever the evidence permits — a read attributed to a thread is a read about a mailbox". The ask was written as `derived.contact_frequency` until that name shipped as an ACCOUNT rate, which would have attributed one colleague's repeat contact to everybody at their company.
+
+- Escalation: Needed to separate a genuine re-diagnosis from routine follow-up. Without it this pattern flags every reassignment and gets muted within a week.
+PER PERSON: a re-diagnosis is one customer writing repeatedly to re-explain what they already explained, and a routine follow-up is that same customer writing once. The ask read `derived.contact_frequency` until that name shipped as an ACCOUNT rate, which sums over colleagues who were never asked anything and would rise on a reassignment nobody noticed.
+- Named Contact: This person's own contacts per week. A relay reports often and reproduces nothing, and it is the conjunction that names them a proxy — either half alone describes an ordinary busy contact or an ordinary unlucky one. Written as `derived.contact_frequency` until that name shipped as an ACCOUNT rate, which says how loud the company is and nothing about which person is doing the talking. Deliberately the RATE and not `derived.person_inbound_share`: a high share means the relationship runs through this person, which is `relationship_weight` and account fragility, not evidence that they are speaking for somebody else.
+- Requester: The highest-value missing signal on this object. Three individually reasonable tickets from one person in a week is a content gap, a product defect or a failed first resolution, and it is invisible to every capability that reads one ticket at a time. Everything the executable graph-degree heuristic below approximates, this would state.
+PER PERSON, and this used to be written `derived.contact_frequency`. That name shipped in `reason/baselines.py` as an ACCOUNT's contacts per week, rolled up through the works_at edge — which cannot answer this pattern at all. A fifty-seat account whose aggregate rate is unremarkable can still contain one person on their fourth ticket in a week, and that person is the entire finding here. The pattern stayed needs_signal after the account rate shipped; it was the name, not the pattern, that claimed to be served.
+
 
 ### `ticket.channel` · fact_path
 
@@ -690,6 +688,16 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 
 - Requester: The direct measure. Worth having because effort predicts retention more reliably than satisfaction does — a calm customer who has re-explained the same problem three times is a churn risk that no sentiment score will surface.
 
+
+### `derived.contact_frequency` · derived
+
+- blocks **Churn Risk** / `cs.churn.the_same_unresolved_thing_asked_again` (would yield 7800 bp)
+- blocks **Entitlement** / `ent.serving_beyond_what_was_bought` (would yield 6500 bp)
+- blocks **Knowledge Article** / `ka.repeat_contact_after_self_service` (would yield 7000 bp)
+- Churn Risk: Needed to distinguish three contacts about one thing from three unrelated contacts. Today each is read as a fresh surprise by a different agent, which is also how it feels to the customer.
+- Entitlement: Support effort is entirely invisible today — the substrate can see a thread going quiet but not an account consuming four times its tier. Over-service is therefore undetectable until renewal, which is the latest and most expensive moment to find it.
+
+- Knowledge Article: Account level, and correctly so: a failed deflection is the ACCOUNT coming back, whoever types the second message. Shipped in reason/baselines.py, so this is no longer an ask — the remaining gap is the slice: it needs to be cut by intent, not just by account, because an account contacting more overall is not the same as an account contacting again about the SAME thing.
 
 ### `knowledge_article_linked` · obs_kind
 
@@ -1136,6 +1144,11 @@ WHY BINDING TO unanswered_email WOULD BE WRONG, specifically — and this is the
 - Requester: Deliberately capped at 7000 even once it ships. Prior escalations are as much a record of how often we failed this person as of how they behave, and a system that quietly derates them for it is punishing the customer for our history.
 
 
+### `derived.person_inbound_share` · derived
+
+- blocks **Customer Account** / `account.the_relationship_is_one_person_deep` (would yield 7000 bp)
+- Customer Account: Basis points of this account's inbound attributable to one person. The graph holds the people and the messages; nothing aggregates one against the other. This ask used to be written as `derived.contact_frequency`, which is an ACCOUNT's contacts per week — it shipped, this pattern did not become executable, and it never could have: concentration is a proportion of a whole and no rate contains one. Same number as `inbound_share` on Named Contact, from which `contact_concentration` here is defined to be computed.
+
 ### `entitlement_verification_interval` · baseline
 
 - blocks **Entitlement** / `ent.verification_record_is_stale` (would yield 7000 bp)
@@ -1165,6 +1178,11 @@ WHY BINDING TO unanswered_email WOULD BE WRONG, specifically — and this is the
 
 - blocks **Churn Risk** / `cs.churn.locked_in_and_the_risk_is_next_year` (would yield 6800 bp)
 - Churn Risk: The notice period, not the end date, is what makes a risk urgent. An account with eighteen months left and a ninety-day notice window has a decision point in fifteen months, not eighteen.
+
+### `derived.account_distinct_contacts` · derived
+
+- blocks **Support Plan** / `plan.the_named_caller_limit_is_being_exceeded` (would yield 6500 bp)
+- Support Plan: How many distinct individuals raised something from this account inside the window. An INTEGER COUNT, because that is the only shape a named-caller allowance can be compared against — `entitlement.plan` names a number of people, and no contacts-per-week rate and no inbound share can be turned into one. Written as `derived.contact_frequency` until that name shipped as an account's contact RATE: an account can double its volume without adding a caller and add three callers without changing its volume, so the shipped number is not a weaker version of this one, it is a different fact. The false_positive below already assumed a count — one person on several addresses inflates it — which is the clue the name was wrong.
 
 ### `ticket.priority` · fact_path
 
