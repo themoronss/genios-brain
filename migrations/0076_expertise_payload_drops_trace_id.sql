@@ -15,6 +15,28 @@
 -- package to the sweep that observed it. It just is not in the payload, so it is not asserted
 -- against the payload.
 alter table expertise_packages drop constraint if exists expertise_payload_projection;
+
+-- EXISTING ROWS CARRY THE OLD SHAPE, and the constraint is added against them, not only against
+-- future writes. Adding it without this line fails the whole migration on any database that has
+-- ever run the old publisher:
+--
+--   CheckViolation: check constraint "expertise_payload_projection" of relation
+--   "expertise_packages" is violated by some row
+--
+-- which is exactly how the first deploy of this migration died at boot — `apply_migrations` runs
+-- before the app serves, so the pod never came up. On production the offending rows were written
+-- in the minutes AFTER the table was truncated, by the still-running old code, so "we cleared the
+-- table" is not protection: the old writer refills it until the new code is live.
+--
+-- Stripping the key is lossless. `trace_id` remains a NOT NULL COLUMN and still ties a package to
+-- the sweep that observed it; it simply stops being part of the payload, which is the whole point
+-- of the change. Deleting the rows would also work — they are regenerated on the next sweep — but
+-- an UPDATE keeps the content-address stable for packages whose knowledge has not changed, so the
+-- publisher's `on conflict do nothing` keeps firing instead of rewriting every situation once.
+update expertise_packages
+   set payload = payload - 'trace_id'
+ where payload ? 'trace_id';
+
 alter table expertise_packages add constraint expertise_payload_projection check (
     payload->>'org_id' = org_id
     and payload->>'id' = expertise_id
