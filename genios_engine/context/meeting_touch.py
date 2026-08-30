@@ -65,17 +65,42 @@ _MEETINGS = (
     "select n.node_id, n.display_name, "
     "  max(case when f.field = 'meeting.start_at' then f.value #>> '{}' end) as start_at, "
     "  max(case when f.field = 'meeting.status' then f.value #>> '{}' end) as status, "
-    "  max(case when f.field = 'meeting.external_counterparty' then f.value #>> '{}' end) "
-    "    as counterparty "
-    "from graph_nodes n join graph_facts f "
+    "  array_agg(distinct att.display_name) as counterparties "
+    "from graph_nodes n "
+    "left join graph_facts f "
     "  on f.org_id = n.org_id and f.subject_node_id = n.node_id and f.status = 'active' "
+    # WHO WAS THERE IS NOT RECORDED ON THE MEETING. `meeting.external_counterparty` is written on
+    # the PERSON — 48 of them here, and zero on any meeting node. The first version asked the
+    # meeting for its own counterparty and matched NOTHING: 62 meetings, 331 facts, every one
+    # filtered out by a `having` on a fact that is never there. The link is the `attended` edge.
+    "join graph_edges e "
+    "  on e.org_id = n.org_id and e.edge_type = 'attended' "
+    "  and (e.from_node_id = n.node_id or e.to_node_id = n.node_id) "
+    "join graph_nodes att "
+    "  on att.org_id = n.org_id and att.valid_to is null "
+    "  and att.node_id = case when e.from_node_id = n.node_id "
+    "                         then e.to_node_id else e.from_node_id end "
+    # EVERY external attendee, not one of them. The first fix aggregated with `max()`, which picks
+    # the alphabetically-last name among the people who were there — so four unrelated meetings,
+    # including one titled "Intro: Hirdesh & Rohit", all reported the same counterparty. A single
+    # name is a claim about who the meeting was with; picking it by sort order is a wrong one.
+    "join graph_facts xf "
+    "  on xf.org_id = n.org_id and xf.subject_node_id = att.node_id "
+    "  and xf.field = 'meeting.external_counterparty' and xf.status = 'active' "
     "where n.org_id = :o and n.node_type = 'meeting' and n.valid_to is null "
+    # US IS NOT A COUNTERPARTY. `meeting.external_counterparty` is written on the owner's own
+    # person node too, so every meeting listed the founder as someone it reached — and one
+    # meeting listed ONLY him, which is an internal calendar entry reported as an outside touch.
+    # The internal set is derived the way `runner._internal_emails` derives it: seats, the account
+    # owner, and the connected mailbox. A meeting left with nobody external is not a touch and
+    # falls out through the `having`.
+    "  and lower(coalesce(att.canonical_key, '')) not in ( "
+    "     select lower(email) from org_seats where org_id = :o and active and email is not null "
+    "     union select lower(email) from orgs where id = :o and email is not null "
+    "     union select lower(external_account_id) from connections "
+    "       where org_id = :o and external_account_id like '%@%' ) "
     "group by n.node_id, n.display_name "
-    # An INTERNAL meeting is not a touch. The whole type is about reaching someone outside, and a
-    # standup with a counterparty column of null is the org talking to itself — 14 of the design
-    # partner's 62 meetings. Filtering here rather than in Python keeps the scan one query.
-    "having max(case when f.field = 'meeting.external_counterparty' then f.value #>> '{}' end) "
-    "  is not null"
+    "having count(distinct att.node_id) > 0"
 )
 
 
@@ -104,7 +129,7 @@ def refresh_channel_touch_situations(store, org_id: str, *,
 
             inputs = {
                 "channel": "meeting",
-                "counterparty": r.counterparty,
+                "counterparties": [x for x in (r.counterparties or []) if x],
                 "occurred_at": r.start_at,
                 # Names the reader's own blind spot in the row, not only in `missing`: this served
                 # `demo` and could not have served the other two capabilities on the type.
