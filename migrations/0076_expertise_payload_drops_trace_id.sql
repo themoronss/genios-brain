@@ -16,6 +16,26 @@
 -- against the payload.
 alter table expertise_packages drop constraint if exists expertise_payload_projection;
 
+-- LOCK BEFORE CLEANING, because the old code is still running while this migration runs.
+--
+-- The first attempt did the UPDATE and then added the constraint, and failed anyway. Every clause
+-- was individually satisfied by every row in the table at the time — measured, all six at zero
+-- violations — so the rows this migration could SEE were not the problem. The rows it could not
+-- see were: the deploy is zero-downtime, the previous pod keeps serving and keeps sweeping, and
+-- `PostgresExpertisePublisher` writes a fresh row with `trace_id` in the payload on every
+-- situation of every sweep. That is not a theoretical window — this table went from 76 rows to
+-- 304 in the time between a manual truncate and the failed deploy.
+--
+-- So a row written between the UPDATE and the constraint's own lock is included in the validation
+-- and fails it, and the whole transaction rolls back — which is why the ledger still stopped at
+-- 0075 and all 304 rows still carried `trace_id` afterwards.
+--
+-- Taking ACCESS EXCLUSIVE up front closes the window: the old writer blocks for the few hundred
+-- milliseconds this takes, the set of rows is then fixed, and the constraint validates exactly
+-- what the UPDATE just cleaned. `ADD CONSTRAINT` takes this lock anyway; asking for it earlier
+-- only moves it, it does not hold anything longer than the statement already would.
+lock table expertise_packages in access exclusive mode;
+
 -- EXISTING ROWS CARRY THE OLD SHAPE, and the constraint is added against them, not only against
 -- future writes. Adding it without this line fails the whole migration on any database that has
 -- ever run the old publisher:
