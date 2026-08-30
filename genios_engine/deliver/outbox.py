@@ -304,6 +304,27 @@ def card_backlog_counts(conn, org_id: str, now: datetime) -> tuple[int, int]:
 
 # ── enqueue ───────────────────────────────────────────────────────────────────────
 #
+#: The FROM + WHERE that decides whether a card may be PUSHED at all, shared VERBATIM by both
+#: push lanes. Binds ``:o`` and ``:authority_time``; the caller appends its own select list, its
+#: own dedupe clause and its own locking.
+#:
+#: Extracted rather than retyped, because "the agent lane got a looser gate than the human lane"
+#: is the specific way this wiring goes wrong, and it goes wrong SILENTLY: the human lane's
+#: filter is nine joins and a 40-clause authority predicate, so a second copy that drops one
+#: clause still returns plausible cards. It would show up as an external machine being handed a
+#: card no person was allowed to see — a card whose pack was paused, whose decision was
+#: superseded, or which expired — and the only visible symptom would be that the agent got MORE
+#: than the dashboard. One string means the two lanes cannot disagree about what "pushable"
+#: means, even by accident.
+PUSHABLE_CARDS_SQL = (
+    "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id " +
+    AUTHORITATIVE_SIGNAL_JOINS +
+    "where k.org_id=:o and k.state in ('queued','surfaced') "
+    "and s.status='open' and k.expires_at>:authority_time and " +
+    AUTHORITATIVE_SIGNAL_PREDICATE + " "
+    "and k.urgency_band in ('high','critical') "
+)
+#
 # `channel` is REQUIRED on every enqueue path below, and deliberately has no default.
 #
 # It used to default to the string "slack" in all three (here, `enqueue_digest`, and
@@ -349,13 +370,8 @@ def enqueue_pending(engine, org_id: str, channel: str,
             "select k.card_id,k.signal_id,k.headline,k.situation,k.urgency_band,"
             "k.assignee,k.score_block,authority_cfg.effective as effective_config," +
             AUTHORITATIVE_SCORE_SQL + " as score,s.reasoning_run_id,"
-            "s.reasoning_decision_hash,s.authority_pack_revision,s.authority_expires_at "
-            "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id " +
-            AUTHORITATIVE_SIGNAL_JOINS +
-            "where k.org_id=:o and k.state in ('queued','surfaced') "
-            "and s.status='open' and k.expires_at>:authority_time and " +
-            AUTHORITATIVE_SIGNAL_PREDICATE + " "
-            "and k.urgency_band in ('high','critical') "
+            "s.reasoning_decision_hash,s.authority_pack_revision,s.authority_expires_at " +
+            PUSHABLE_CARDS_SQL +
             "and not exists (select 1 from delivery_outbox ob where ob.org_id=k.org_id "
             "and ob.card_id=k.card_id and ob.channel=:ch) "
             "for share of k,s,rr,ro,selected_rc,rcap,authority_ctx,authority_cfg,authority_pack"),
@@ -418,16 +434,25 @@ def enqueue_agent_push(engine, org_id: str, card_id: str) -> int:
     """
     queued = 0
     with engine.begin() as c:
-        agents = c.execute(text(
-            "select agent_id from agent_registry "
-            "where org_id=:o and status='active' and webhook_url is not null"),
-            {"o": org_id}).fetchall()
+        # `connected_executors`, not a second hand-written predicate. The one this replaced was
+        # `status='active' and webhook_url is not null`, which is looser than the registry
+        # predicate every other agent surface uses, in two ways that both end badly:
+        #
+        #   * it never checked `signals.read`, while `deliver/agent_api.py` enforces it on the
+        #     POLL of the identical bytes (`push._card_projection` IS the /v1/signals
+        #     projection). So the push path handed a machine, unasked, exactly the data its
+        #     scope says it may not fetch — the push being the looser of the two on the same
+        #     payload is the whole reason scopes stop meaning anything.
+        #   * `is not null` admits the empty string, and `channels/agent.py` returns False on an
+        #     empty url — so an agent registered without one burned all four retry slots and
+        #     landed in `failed_terminal` for a message that never had anywhere to go.
+        agents = connected_executors(c, org_id)
         if not agents:
             return 0
         card = c.execute(text(
             "select signal_id from cards where card_id=:c and org_id=:o"),
             {"c": card_id, "o": org_id}).first()
-        for a in agents:
+        for agent_id in agents:
             row_id = new_id("ob")
             res = c.execute(text(
                 "insert into delivery_outbox (id, org_id, card_id, channel, payload, "
@@ -437,10 +462,67 @@ def enqueue_agent_push(engine, org_id: str, card_id: str) -> int:
                 "on conflict (org_id, card_id, channel, coalesce(recipient, '')) do nothing"),
                 {"i": row_id, "o": org_id, "c": card_id,
                  "p": json.dumps({"kind": "agent_card_push", "card_id": card_id}),
-                 "sig": card.signal_id if card else None, "agent": a.agent_id,
+                 "sig": card.signal_id if card else None, "agent": agent_id,
                  "cclass": ChannelClass.AGENT.value})
             queued += res.rowcount
     return queued
+
+
+def enqueue_agent_lane(engine, org_id: str, *, agents: list[str],
+                       eval_time: datetime | None = None) -> dict:
+    """The agent lane's own pass over this org's pushable cards. Returns ``{"queued", "cards"}``.
+
+    This exists because the agent lane CANNOT be a rung inside the sweep's
+    ``for channel in channels:`` loop, and that is a law rather than a preference:
+    ``deliverable_channels`` subtracts ``routing.AGENT_TRANSPORTS`` deliberately (law 1 — a human
+    delivery may never ride an agent transport), so an executor is invisible to channel
+    resolution by construction. Resolution for this lane comes from ``agent_registry``, which is
+    a different table describing a different kind of recipient: a machine that registered a
+    webhook and a scope, not a surface a tenant configured for a person.
+
+    ``agents`` is passed in, never defaulted and never resolved here, for exactly the reason the
+    block comment above ``enqueue_pending`` gives for ``channel``: the caller has to have LOOKED.
+    The caller also needs the same answer to decide whether this org is reachable at all, and two
+    independent resolutions of "who can we reach" is how the sweep would come to report a state
+    it is not acting on.
+
+    The eligibility filter is ``PUSHABLE_CARDS_SQL`` — the human lane's, verbatim, not a copy.
+    Everything the dashboard's push respects therefore holds here too: the nine authority joins,
+    ``status='open'``, unexpired, and the high/critical band. The consequence worth stating
+    plainly is the one that matters most: a card the human lane suppresses is not smuggled to a
+    machine through the side door. That leaves the lane strictly NARROWER than
+    ``pipeline.py``'s build-time ``enqueue_agent_push``, which pushes every card it builds at any
+    band — so wiring this in cannot widen what any existing agent receives.
+
+    Fan-out already-done cards are skipped in Python rather than in SQL: the unique index makes
+    ``enqueue_agent_push`` idempotent anyway, so this is only about not opening one transaction
+    per card per tick forever. Steady state after the first pass is zero transactions, and the
+    check is per (card, agent) so an agent registered LATER still receives the cards that were
+    already live when it arrived.
+    """
+    now = eval_time or datetime.now(timezone.utc)
+    if not agents:
+        return {"queued": 0, "cards": 0}
+    with engine.connect() as c:
+        # No `for share` here, unlike `enqueue_pending`. This read is followed by one write
+        # transaction PER CARD, so holding the graph and pack rows across the loop would block
+        # every reasoning write for the length of it — and it would buy nothing, because the
+        # drain re-proves authority (`push._card_projection`) immediately before the POST and
+        # cancels the row if it has lapsed. The enqueue is an intent, not a promise to send.
+        eligible = [r[0] for r in c.execute(
+            text("select k.card_id " + PUSHABLE_CARDS_SQL + "order by k.card_id"),
+            {"o": org_id, "authority_time": now})]
+        if not eligible:
+            return {"queued": 0, "cards": 0}
+        covered = {(r[0], r[1]) for r in c.execute(text(
+            "select card_id, recipient from delivery_outbox "
+            "where org_id=:o and channel='agent_push'"), {"o": org_id})}
+    todo = [card_id for card_id in eligible
+            if any((card_id, agent_id) not in covered for agent_id in agents)]
+    queued = 0
+    for card_id in todo:
+        queued += enqueue_agent_push(engine, org_id, card_id)
+    return {"queued": queued, "cards": len(todo)}
 
 
 def enqueue_digest(engine, org_id: str, channel: str,
@@ -775,6 +857,33 @@ def _cancel(engine, row: dict, detail: str, out: dict) -> None:
     out["cancelled"] += 1
 
 
+def _park(engine, row: dict, now: datetime, *, detail: str, out: dict) -> None:
+    """Park a row that had nowhere to go: `UNDELIVERABLE`, not a failure, and revivable.
+
+    This function was CALLED and never defined — a `NameError` waiting in the drain's
+    no-transport branch, and `drain()` runs outside `run_distribution`'s per-org `try`, so the
+    first row to reach it would have taken down the whole sweep for every tenant rather than one.
+    It became reachable the moment an executor could be deactivated between enqueue and drain.
+
+    Attempts are deliberately NOT incremented. The retry ladder counts transport failures, and
+    nothing was attempted here — burning a slot would march a correctly-configured tenant toward
+    `failed_terminal` for the time they spent unconfigured. `next_attempt_at` is left alone for
+    the same reason: `revive_undeliverable` sets it when the configuration actually changes, and
+    a parked row must not wake itself on a timer to discover the same missing adapter.
+
+    The status and `last_error` written here are exactly what `revive_undeliverable` selects on,
+    which is what makes "a card becomes deliverable the moment a channel exists" true rather
+    than aspirational.
+    """
+    with engine.begin() as c:
+        c.execute(text(
+            "update delivery_outbox set status=:parked, last_error=:e where id=:i"),
+            {"parked": UNDELIVERABLE, "e": detail, "i": row["id"]})
+        _mark_lifecycle(c, row, "undeliverable", "undeliverable", now,
+                        detail={"reason": detail})
+    out["undeliverable"] = out.get("undeliverable", 0) + 1
+
+
 def _finish(engine, row: dict, now: datetime, *, ok: bool, detail: str, terminal: bool,
             out: dict, delay_minutes: int | None = None, decision=None) -> None:
     with engine.begin() as c:
@@ -891,12 +1000,23 @@ def run_distribution(engine, *, base_url: str | None = None,
               # pipeline is broken upstream; `unrouted` means cards exist with nobody to send
               # them to. Both previously presented as a clean zero.
               "band_starved": 0, "unrouted": 0, "org_failures": 0,
-              # Orgs with reasoning worth delivering and NO channel to deliver it on. This is
-              # the live tenant's actual state and it used to be invisible: the sweep queued to
-              # a hardcoded 'slack', the drain wrote `failed_terminal`, and the pass reported
-              # `queued: 1` — delivery work that had already failed before anyone read the
-              # number. Counting it here is what makes "nobody registered a channel" a fact the
-              # operator can see instead of three dead rows nobody looks at.
+              # Rows queued to this org's registered EXECUTORS. Kept out of `queued` on purpose:
+              # that number answers "how much did we ask of a person this tick", and folding
+              # machine deliveries into it makes the human load unreadable — an org with four
+              # agents would report five times the attention it actually spent.
+              "agent_pushed": 0,
+              # Orgs with reasoning worth delivering and NO LANE AT ALL to deliver it on —
+              # neither a human channel nor a registered executor. This is the live tenant's
+              # actual state and it used to be invisible: the sweep queued to a hardcoded
+              # 'slack', the drain wrote `failed_terminal`, and the pass reported `queued: 1` —
+              # delivery work that had already failed before anyone read the number.
+              #
+              # "no human channel" is NOT the same condition and must not be counted here. An
+              # org whose only recipient is an agent is reached on every tick; calling it
+              # unreachable would send an operator to fix a tenant whose delivery works, and
+              # would make the one number that is supposed to mean "nothing we produce can get
+              # out" mean something weaker. That org gets a log line naming the real gap
+              # instead.
               "no_deliverable_channel": 0,
               # The v2 control plane's shadow resolution: how the unwired path WOULD have routed
               # the same cards this tick. The measurement a cutover decision needs.
@@ -921,6 +1041,13 @@ def run_distribution(engine, *, base_url: str | None = None,
             # reports them — it is the org whose numbers matter most.
             with engine.connect() as c:
                 channels = deliverable_channels(c, org)
+                # The OTHER push lane, and it has to be resolved separately rather than found
+                # among the channels above: `deliverable_channels` subtracts the agent
+                # transports on purpose (law 1), so an executor is invisible to channel
+                # resolution by construction. Resolved here, once, because the same answer
+                # decides two things — whether the agent lane runs, and whether this org is
+                # unreachable — and those two must never be able to disagree.
+                agents = connected_executors(c, org)
                 starved, unrouted = card_backlog_counts(c, org, now)
             totals["band_starved"] += starved
             totals["unrouted"] += unrouted
@@ -930,16 +1057,27 @@ def run_distribution(engine, *, base_url: str | None = None,
             # reminder can name the card it belongs to.
             totals["linked"] += link_commitment_cards(engine, org)
 
-            if not channels:
+            if not channels and not agents:
                 # Fail loudly, write nothing. Queueing here is not "trying" — the drain has
                 # already decided the outcome, so a row would be a failure we manufactured and
                 # then reported as work. The tenant has to register a channel
                 # (PUT /api/org/{org}/channels/slack); until then this is the honest state.
                 totals["no_deliverable_channel"] += 1
                 _log.warning(
-                    "org=%s has no deliverable channel — nothing proactive can be sent. "
-                    "%d card(s) below the push band, %d unrouted. Register one with "
-                    "PUT /api/org/%s/channels/slack.", org, starved, unrouted, org)
+                    "org=%s has no deliverable channel and no registered executor — nothing "
+                    "proactive can be sent. %d card(s) below the push band, %d unrouted. "
+                    "Register one with PUT /api/org/%s/channels/slack.",
+                    org, starved, unrouted, org)
+            elif not channels:
+                # A different fact, and saying "nothing can be sent" here would be false: the
+                # agent lane below reaches this org on every tick. What is missing is a surface
+                # for a PERSON, so nobody sees the same cards their machines are acting on —
+                # worth an operator's attention, but not the same failure and not the same fix.
+                _log.warning(
+                    "org=%s has no human channel — %d registered executor(s) still receive its "
+                    "pushable cards, but no person does. %d card(s) below the push band, "
+                    "%d unrouted. Add a human surface with PUT /api/org/%s/channels/slack.",
+                    org, len(agents), starved, unrouted, org)
             for channel in channels:
                 pending = enqueue_pending(engine, org, channel, base_url=base_url)
                 totals["queued"] += pending["queued"]
@@ -948,6 +1086,14 @@ def run_distribution(engine, *, base_url: str | None = None,
                 # actually leaves the building.
                 totals["reminders"] += enqueue_executive_messages(
                     engine, org, channel, base_url=base_url)
+            # The agent lane, OUTSIDE the loop above and unreachable from inside it. The loop
+            # walks channels the tenant registered for people; this walks executors the tenant's
+            # machines registered for themselves, from `agent_registry`. Same cards, same
+            # eligibility filter, different recipient table — which is the whole of routing laws
+            # 1 and 2 expressed as two passes instead of one. An org with no executor never
+            # enters it: `agents` is empty and the call is a return, not a query.
+            totals["agent_pushed"] += enqueue_agent_lane(
+                engine, org, agents=agents, eval_time=now)["queued"]
             shadow = shadow_resolve_v2(engine, org, now=now)
             totals["v2_shadow_resolved"] += shadow["resolved"]
             totals["v2_shadow_unroutable"] += sum(shadow["unroutable"].values())
