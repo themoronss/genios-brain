@@ -83,8 +83,12 @@ render:
     it.
   fallback:
     headline: "{entity} — a dated promise is running and unresolved"
+    # Was "... and nothing on record ...", which opens on the hole in our records rather
+    # than on the fact the reader acts from. Same evidence, and only one of the two is a
+    # finding. The sibling of this fault shipped 25 empty-reading cards to the design
+    # partner on 2026-08-30; this file is the same shape, caught before it routed.
     situation: >-
-      Something was promised to {entity} with a date and nothing on record closes it.
+      Something was promised to {entity} with a date and it is still running.
 
 metadata:
   owner: Customer Support

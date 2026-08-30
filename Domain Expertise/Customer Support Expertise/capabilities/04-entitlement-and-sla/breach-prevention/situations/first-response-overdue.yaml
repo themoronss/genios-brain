@@ -123,7 +123,19 @@ render:
     sees email only, and any hours quoted are calendar hours across the stated working window
     with holidays unknown.
   fallback:
-    headline: "Nobody has replied to {who} yet"
+    # "Nobody has replied ... yet" reports OUR inaction; "{who} is waiting" reports the fact about
+    # the world that makes this worth reading. Same evidence, and only the second one is a
+    # finding. This headline shipped verbatim on 8 of the design partner's 47 live cards on
+    # 2026-08-30 and read as one more thing the system had not seen happen. The situation itself
+    # is NOT marked `states_absence`: somebody really is waiting, so the card keeps its authority
+    # to instruct — only the words change.
+    #
+    # "is owed a reply" and not "is waiting on a reply" because of the 60-character cap: the
+    # longest live subjects here are 39-42 characters ("Thread with
+    # zacharygoldman@makeportals.com"), and the longer phrasing went 1 to 4 over on 3 of the 23
+    # live cards and was trimmed to "... is waiting on a", which reads as a broken card. Checked
+    # against every subject this situation currently carries; none exceeds the cap.
+    headline: "{who} is owed a reply"
     situation: >-
       They wrote {days} days ago and no reply has gone back. The deadline is from your stated
       first-response policy, not from a contract, and this reading sees email only.

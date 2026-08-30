@@ -79,8 +79,10 @@ render:
     this situation exists to prevent.
 
     Headline: the account and the fit judgment, in the reader's terms — what about this account
-    matches or contradicts who we sell to. If the evidence does not support a fit read, name
-    what is missing instead. Never a status line, never a generic phrase.
+    matches or contradicts who we sell to. If the evidence does not support a fit read, put the
+    fit question itself in the headline; never narrate the shortfall ("fit unknown, no context
+    yet", "no facts to assess fit" both shipped to a real user and told him nothing he could act
+    on). Never a status line, never a generic phrase.
 
     Situation: the one or two specifics from what they actually wrote that decide fit — what
     they do, what they asked for, who they are. Evidence, not process vocabulary.
@@ -91,6 +93,12 @@ render:
     headline: "{entity} — fit not assessed"
     situation: >-
       Interest arrived from {entity} and nobody has judged yet whether it fits who we sell to.
+    # "Nobody has judged yet" is the state of our own assessment, not of the account. 4 of the
+    # design partner's 47 live cards came from here on 2026-08-30 and 3 read as pure absence
+    # ("afore.vc — fit unknown, no context yet", "suvan.vc — no facts to assess fit"), all at
+    # level `prescriptive` — an order to do nothing nameable. The fit question is worth putting
+    # in front of a human; it is not worth putting in front of one as a command.
+    states_absence: true
 
 metadata:
   owner: Sales

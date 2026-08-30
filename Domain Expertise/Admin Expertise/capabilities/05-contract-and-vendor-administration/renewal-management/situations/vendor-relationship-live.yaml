@@ -85,9 +85,13 @@ render:
     who can answer.
   fallback:
     headline: "{entity} — supplier relationship, no renewal date on record"
+    # Was "... and nothing on record ...", which opens on the hole in our records rather
+    # than on the fact the reader acts from. Same evidence, and only one of the two is a
+    # finding. The sibling of this fault shipped 25 empty-reading cards to the design
+    # partner on 2026-08-30; this file is the same shape, caught before it routed.
     situation: >-
-      We appear to be contractually engaged with {entity} and nothing on record dates the next
-      decision.
+      We appear to be contractually engaged with {entity} and the next renewal decision is
+      undated.
 
 metadata:
   owner: Admin

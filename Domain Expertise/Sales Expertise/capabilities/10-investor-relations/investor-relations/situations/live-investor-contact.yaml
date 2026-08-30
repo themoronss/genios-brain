@@ -101,8 +101,13 @@ render:
     chase, and never a follow-up when the ball is on us.
   fallback:
     headline: "{entity} — investor conversation, no next date set"
+    # Was "... and nothing on record says what happens next", which opens on the gap in our
+    # records rather than on the fact the reader acts from. The finding is that a live fundraising
+    # conversation carries no next date — which is exactly what the headline above already claims,
+    # and exactly how the sibling situation live_investor_relationship words it. One live card
+    # carried the old wording on 2026-08-30.
     situation: >-
-      A fundraising conversation is open with {entity} and nothing on record says what happens next.
+      An open fundraising conversation with {entity} and no next date on the record.
 
 metadata:
   owner: Sales

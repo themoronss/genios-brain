@@ -239,6 +239,10 @@
             "situation": {
               "type": "string",
               "minLength": 3
+            },
+            "states_absence": {
+              "type": "boolean",
+              "description": "TRUE when these words describe what is NOT on record rather than what IS. A situation predicated on an absence (matches.when carries an `absent:` clause, or the fallback's whole content is a gap) cannot instruct, because there is nothing to instruct about. Declaring it here makes the card ABSTAIN: it is written at level `review` (\"a human must look, and here is the exact question\") instead of `prescriptive`, and it does not earn the app or agent surface.\n\nMeasured on the design partner's org, 2026-08-30: 47 live cards, every one of them `prescriptive`, and 25 of the 47 said only that something was missing \u2014 \"errorcore.dev: no problem documented yet\", \"boardy.ai: no concerns logged yet\". 13 came from sales.sit.deal_without_a_stated_problem and 3 from sales.sit.inbound_fit_check, both of which are DEFINED by an absence. The build-time clarity gate that should have caught them (deliver/card_builder.py::clarity_verdict) is keyed on three legacy pack reason codes and matched 0 of the 47.\n\nDo NOT set this on a situation reporting a fact about the WORLD that happens to be negative. \"They wrote nine days ago and no reply has gone back\" is a finding \u2014 somebody is waiting. \"Nothing on record says what problem is being solved\" is a fact about our own records. That is the line this flag draws."
             }
           }
         }

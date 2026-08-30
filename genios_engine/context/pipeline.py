@@ -22,8 +22,8 @@ from genios_engine.context.guard import _norm, annotate_grounding, keep_grounded
 from genios_engine.context.correlation import correlate_event
 from genios_engine.context.canon import register_canon_node, resolve_canon_mention
 from genios_engine.context.documents import register_document_node, resolve_owner_node
-from genios_engine.context.identity import (observe_person_name, resolve_company_mention,
-                                            resolve_person_name)
+from genios_engine.context.identity import (observe_company_name, observe_person_name,
+                                            resolve_company_mention, resolve_person_name)
 from genios_engine.context.llm.client import LLMClient
 
 _WEEKDAYS = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
@@ -765,6 +765,14 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 name_to_node[_norm(str(name))] = known
                 touched[known] = "company"
                 nodes += 1
+                # And KEEP the name. The mention resolved through exact key equality against the
+                # company's own anchor, so this is the human name for a node that has been
+                # displaying its email domain since the day it was created — the reason 19 of the
+                # design partner's 47 card headlines opened on a hostname. Recorded as an alias
+                # either way; promoted to the display name only while none better exists.
+                observe_company_name(conn, org_id=org_id, node_id=known, name=str(name),
+                                     event_id=event_id)
+                store.name_company_node(conn, org_id=org_id, node_id=known, name=str(name))
             elif etype == "person" and name and (person_hit := resolve_person_name(
                     conn, org_id=org_id, name=str(name))):
                 # A person named in prose without an email — "Rohit said yes" — reaching the person we

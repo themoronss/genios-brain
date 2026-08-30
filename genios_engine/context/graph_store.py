@@ -104,6 +104,49 @@ class GraphStore:
                                event_id=event_id)
         return node_id
 
+    def name_company_node(self, conn, *, org_id: str, node_id: str,
+                          name: str | None) -> bool:
+        """Give a company node a human name, but only while it is still called after its anchor.
+
+        A company is anchored on an email domain, so it is created called "devdashlabs.com" and
+        the loop above never revisits that: it re-registers aliases on every later sighting and
+        leaves `display_name` exactly as the first event wrote it. So the name a card prints was
+        decided by the one fact that is guaranteed NOT to be a name. Measured on the design
+        partner's org: 19 of 47 live card headlines opened on a hostname — "errorcore.dev: no
+        problem documented yet", "rizvi.nu: no problem recorded yet" — while the extractor had
+        already pulled "DevDash Labs", "Crescere Labs", "Titan Capital" and "Z Fellows" out of
+        that same mailbox.
+
+        The caller has already resolved the name to THIS node by exact key equality against the
+        node's own anchor key, so nothing here is inferred from similarity.
+
+        Promotion happens only while the display name restates the anchor. A name from anywhere
+        else — a connector, a human, an earlier and better mention — outranks a prose mention and
+        must never be overwritten by one. Returns True when the node was renamed.
+        """
+        cleaned = str(name or "").strip()
+        if not cleaned:
+            return False
+        row = conn.execute(text(
+            "select canonical_key, display_name from graph_nodes "
+            "where org_id=:o and node_id=:n and valid_to is null"),
+            {"o": org_id, "n": node_id}).first()
+        if row is None:
+            return False
+        current = str(row.display_name or "").strip()
+        anchor = str(row.canonical_key or "").strip()
+        # Compare the rendered strings rather than carry a flag, so this is also true of every
+        # node created before the promotion existed — which is all of them.
+        if current and current.casefold() != anchor.casefold():
+            return False
+        if cleaned.casefold() == current.casefold():
+            return False
+        conn.execute(text(
+            "update graph_nodes set display_name=:dn "
+            "where org_id=:o and node_id=:n and valid_to is null"),
+            {"dn": cleaned, "o": org_id, "n": node_id})
+        return True
+
     def map_identity(self, conn, *, org_id: str, source: str, source_object_id: str,
                      node_id: str) -> None:
         conn.execute(text(

@@ -227,7 +227,19 @@ def _real_sources(store, org_id: str, node_id: str) -> set[str]:
 _SETTLED_STATUSES = frozenset({"rejected", "lost", "won", "closed", "churned", "declined"})
 
 
-def _surfaces(facts: dict, signal: dict, actions: list) -> list[str]:
+def states_absence(template: dict | None) -> bool:
+    """Does this situation's authored copy describe a GAP IN OUR RECORDS rather than a finding?
+
+    Declared by the situation author in `render.fallback.states_absence` and carried on the
+    audited capability snapshot, so the answer is pinned to the capability version that wrote the
+    card and cannot drift under it. Read here rather than inferred from the prose, because
+    inferring it means regex-matching a sentence the model may word any number of ways, and a
+    card's authority must not depend on how a sentence happened to come out.
+    """
+    return bool(((template or {}).get("fallback") or {}).get("states_absence"))
+
+
+def _surfaces(facts: dict, signal: dict, actions: list, *, has_finding: bool = True) -> list[str]:
     """Which surfaces this card is valid on.
 
     Four surfaces ask four different questions and were being served one answer. The app asks
@@ -239,8 +251,17 @@ def _surfaces(facts: dict, signal: dict, actions: list) -> list[str]:
     So `ask` and `api` are unconditional: withholding a closed deal from someone who asked about it
     is that surface's failure mode. `app` and `agent` are earned. A card that reaches neither is
     not discarded — it is history, and history has two surfaces of its own.
+
+    A card with NO FINDING fails that test on the same reasoning, one step earlier. "What is
+    happening with errorcore.dev?" is answered perfectly well by "an open deal, and nothing on
+    record says what problem it solves" — so it keeps `ask` and `api`. "What should I do right
+    now?" is not answered by it at all. On the design partner's org, 16 of 47 cards were exactly
+    that and every one of them sat in the app queue costing a reader the seconds to find out the
+    system knew nothing.
     """
     surfaces = ["ask", "api"]
+    if not has_finding:
+        return surfaces
     def _val(field):
         v = facts.get(field)
         return v.get("value") if isinstance(v, dict) and "value" in v else v
@@ -386,6 +407,32 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time) ->
         # and `snooze` remain: the user must still be able to dismiss or defer it.
         actions = [a for a in actions if a.get("type") in ("wrong", "snooze")]
 
+    # NOTHING-TO-SAY GATE. `clarity_verdict` above asks the same question and answers it from a
+    # three-entry map of LEGACY pack reason codes; the compiled lane's codes are `opportunity`,
+    # `first_response_overdue`, `investor_relationship`, `investor_contact`, so on the design
+    # partner's org it matched 0 of 47 cards. Meanwhile `_apply_abstention` passed all 47 because
+    # the tenant's pack is promoted, which is a statement about AUTHORITY and not about whether
+    # this particular card found anything. Nothing else asked, so every card shipped
+    # `prescriptive` — including 25 whose entire content was that something was missing:
+    # "errorcore.dev: no problem documented yet", "boardy.ai: no concerns logged yet".
+    #
+    # The situation AUTHOR answers it here instead, once, for every card the situation will ever
+    # produce. That is the right place: whether a situation is defined by an absence is a fact
+    # about the expertise (`matches.when: [{absent: business_need}]`), not about one render's
+    # luck, and it is reviewed and version-hashed with the rest of the file.
+    #
+    # `review`, not `observation`: the vocabulary reserves review for "something is missing and a
+    # human must look", which names what this card is. Downgrading is not hiding — the card still
+    # answers Ask and the API, it just stops claiming the authority to give an order it cannot
+    # phrase.
+    has_finding = not states_absence(template)
+    if not has_finding:
+        level = str(_ABSTENTION.REVIEW)
+        abstained = abstained or (
+            "this situation is defined by what is missing from the record, so there is no "
+            "instruction to give — a human has to establish the fact first")
+        actions = [a for a in actions if a.get("type") in ("wrong", "snooze")]
+
     score_inputs = signal.get("score_inputs") or {}
     card_expires_at = eval_time + timedelta(days=EXPIRY_DAYS)
     decision_expires_at = signal.get("decision_expires_at")
@@ -449,7 +496,7 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time) ->
         # call for different user actions and a single number cannot tell them apart.
         "confidence_vector": {k: score_inputs.get(k) for k in ("C", "U", "I", "R")},
         "actions": actions, "why": _why(signal.get("evidence"), facts),
-        "surfaces": _surfaces(facts, signal, actions),
+        "surfaces": _surfaces(facts, signal, actions, has_finding=has_finding),
         "context_tags": _context_tags(node_type, attrs, facts, sources),
         "config_snapshot_id": signal.get("config_snapshot_id"),
         "template_version": (effective.get("templates", {}) or {}).get("_version"),

@@ -93,8 +93,12 @@ render:
     the question left hanging. One specific thing, addressed to the counterparty, never to a room.
   fallback:
     headline: "{entity} — meeting ended with an open loop"
+    # Was "... and nothing on record ...", which opens on the hole in our records rather
+    # than on the fact the reader acts from. Same evidence, and only one of the two is a
+    # finding. The sibling of this fault shipped 25 empty-reading cards to the design
+    # partner on 2026-08-30; this file is the same shape, caught before it routed.
     situation: >-
-      A meeting with {entity} has happened and nothing on record closes what it left open.
+      A meeting with {entity} has happened and what it left open is still open.
 
 metadata:
   owner: Admin

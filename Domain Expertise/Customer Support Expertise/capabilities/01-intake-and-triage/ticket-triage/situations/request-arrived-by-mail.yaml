@@ -94,9 +94,13 @@ render:
     doing, who is doing it and when they will hear next — never "we're looking into it" with no
     date attached.
   fallback:
-    headline: "{entity} — asked us something, no reply yet"
+    headline: "{entity} — asked us something, still waiting"
+    # Was "... and nothing on record ...", which opens on the hole in our records rather
+    # than on the fact the reader acts from. Same evidence, and only one of the two is a
+    # finding. The sibling of this fault shipped 25 empty-reading cards to the design
+    # partner on 2026-08-30; this file is the same shape, caught before it routed.
     situation: >-
-      {entity} is waiting on an answer from us and nothing on record says one has been sent.
+      {entity} is waiting on an answer from us and no reply has gone back.
 
 metadata:
   owner: Customer Support

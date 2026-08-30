@@ -104,8 +104,12 @@ render:
     when the ball is on us.
   fallback:
     headline: "{entity} — open admin loop, no date set"
+    # Was "... and nothing on record ...", which opens on the hole in our records rather
+    # than on the fact the reader acts from. Same evidence, and only one of the two is a
+    # finding. The sibling of this fault shipped 25 empty-reading cards to the design
+    # partner on 2026-08-30; this file is the same shape, caught before it routed.
     situation: >-
-      An administrative item is open with {entity} and nothing on record says when it is due.
+      An administrative item is open with {entity} and carries no due date on the record.
 
 metadata:
   owner: Admin

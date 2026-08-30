@@ -85,8 +85,12 @@ render:
     with their process, never as a request for their signature.
   fallback:
     headline: "{entity} — agreed, not signed"
+    # Was "... and nothing on record ...", which opens on the hole in our records rather
+    # than on the fact the reader acts from. Same evidence, and only one of the two is a
+    # finding. The sibling of this fault shipped 25 empty-reading cards to the design
+    # partner on 2026-08-30; this file is the same shape, caught before it routed.
     situation: >-
-      {entity} has agreed and nothing on record says what is left before signature.
+      {entity} has agreed and the signature is still outstanding.
 
 metadata:
   owner: Sales

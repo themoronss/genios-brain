@@ -79,7 +79,11 @@ render:
     An open deal with no problem on record. Never write "do discovery" — that is the category, not
     the advice, and the reader already knows the category.
 
-    Headline: name the account and say what is not on record. One clause.
+    Headline: name the account and the QUESTION a human has to settle — what this buyer is
+    trying to fix. Not a narration of the gap: "no problem documented yet" tells the reader only
+    that the system has nothing, which is not worth the seconds it costs to read. This card
+    abstains (level `review`), so the headline must read as a question put to a person, never as
+    an instruction.
 
     Situation: what the correspondence DOES imply they are trying to solve, quoted or paraphrased
     from what they actually wrote, and what stage the deal has reached without it. If the
@@ -91,6 +95,13 @@ render:
     headline: "{entity} — open deal, no problem stated"
     situation: >-
       The {entity} deal is progressing and nothing on record says what problem is being solved.
+    # These words state a gap in OUR RECORDS, not a fact about the account, so a card that ships
+    # them has nothing to instruct about. On the design partner's org (2026-08-30) this situation
+    # produced 13 of 47 live cards and all 13 read as an absence — "errorcore.dev: no problem
+    # documented yet", "rizvi.nu: no problem recorded yet" — every one of them at level
+    # `prescriptive`. The gap is real and worth recording; the authority to give an order is not
+    # earned by it. `review` names the question instead, and keeps it off the app queue.
+    states_absence: true
 
 metadata:
   owner: Sales

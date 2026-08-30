@@ -249,3 +249,53 @@ def test_a_rejected_pair_is_never_proposed_again() -> None:
     assert "'merged','rejected'" in source
     # The pair is ordered first, so (A,B) and (B,A) are one proposal, not two.
     assert "sorted((left_node_id, right_node_id))" in source
+
+
+# ── a company's NAME reaching the node built from its DOMAIN ─────────────────────
+
+def test_a_two_word_company_name_can_reach_its_own_domain_node() -> None:
+    """The gap that left 19 of 47 live card headlines showing a hostname.
+
+    `company_slug` joins words with a space ("DevDash Labs" -> "devdash labs"); `domain_root`
+    never contains one ("devdashlabs.com" -> "devdashlabs"). The two therefore never met, and a
+    company written as two words was unreachable from the node built out of its own email
+    domain. Measured on the design partner's org: 22 company nodes carrying live cards, and
+    exactly ONE resolved from any of the 77 company names the extractor had already pulled out
+    of that mailbox. With the squashed key it is six.
+    """
+    from genios_engine.context.identity import company_name_keys
+
+    assert company_name_keys("DevDash Labs") == ["devdash labs", "devdashlabs"]
+    assert domain_root("devdashlabs.com") in company_name_keys("DevDash Labs")
+    assert domain_root("crescerelabs.com") in company_name_keys("Crescere Labs, Inc")
+    assert domain_root("zfellows.com") in company_name_keys("Z Fellows")
+
+
+def test_the_exact_slug_is_offered_before_the_squashed_one() -> None:
+    """Order is authority. A node registered under the name as WRITTEN must not lose a mention to
+    a different node whose domain root happens to squash the same way."""
+    from genios_engine.context.identity import company_name_keys
+
+    assert company_name_keys("Titan Capital")[0] == "titan capital"
+
+
+def test_a_one_word_name_gains_no_second_key() -> None:
+    """Squashing only ever removes a separator. With no separator there is nothing to derive, and
+    offering the same key twice would just be two identical lookups."""
+    from genios_engine.context.identity import company_name_keys
+
+    assert company_name_keys("Acme") == ["acme"]
+    assert company_name_keys(None) == []
+    assert company_name_keys("!!!") == []
+
+
+def test_squashing_is_a_derivation_and_still_never_a_similarity_match() -> None:
+    """The law holds: keys are DERIVED loosely and COMPARED exactly. "Surge" must not reach
+    surgeahead.com — on the design partner's org the extractor really does hold "Surge" (Peak XV's
+    accelerator) alongside a surgeahead.com node, and any containment or edit-distance rule would
+    have confidently renamed an unrelated company."""
+    from genios_engine.context.identity import company_name_keys
+
+    assert domain_root("surgeahead.com") not in company_name_keys("Surge")
+    assert domain_root("myzyner.com") not in company_name_keys("Zyner")
+    assert domain_root("peakxv.com") not in company_name_keys("Peak XV Partners")

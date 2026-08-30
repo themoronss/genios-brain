@@ -147,6 +147,30 @@ def resolve_alias_candidates(conn, *, org_id: str, alias_type: str,
         {"o": org_id, "t": alias_type, "k": alias_key}).fetchall())
 
 
+def company_name_keys(name: str | None) -> list[str]:
+    """The keys a prose company name may be looked up by. Derivation, never comparison.
+
+    `company_slug` joins words with a space ("DevDash Labs" → "devdash labs") while
+    `domain_root` cannot contain one ("devdashlabs.com" → "devdashlabs"). The two therefore
+    never met, and a company whose name is written as two words was unreachable from the node
+    built out of its own email domain. Measured on the design partner's org: 22 company nodes
+    carrying live cards, and exactly ONE of them ("Actual AI" → actual.ai, which survives only
+    because the dot in the domain becomes the same space) resolved from any of the 77 company
+    names the extractor had already pulled out of that org's mail. With the space-insensitive
+    key it is six.
+
+    This stays inside the module's law. Fuzziness is allowed in how a key is DERIVED — stripping
+    "Inc.", lowercasing, taking a domain's label — and forbidden in how keys are COMPARED.
+    Removing the separator is a derivation of exactly that kind; both keys are then matched by
+    string equality, and an ambiguous key still resolves to nobody.
+    """
+    slug = company_slug(name)
+    if not slug:
+        return []
+    squashed = slug.replace(" ", "")
+    return [slug] if squashed == slug else [slug, squashed]
+
+
 def resolve_company_mention(conn, *, org_id: str, name: str | None) -> str | None:
     """A company named in prose → an existing company node, or None.
 
@@ -154,8 +178,11 @@ def resolve_company_mention(conn, *, org_id: str, name: str | None) -> str | Non
     so the mention stays an observation rather than becoming an orphan node. This is the
     P1 anchor rule holding, not a failure.
     """
-    return resolve_alias(conn, org_id=org_id, alias_type=ALIAS_COMPANY_NAME,
-                         alias_key=company_slug(name) or "")
+    for key in company_name_keys(name):
+        hit = resolve_alias(conn, org_id=org_id, alias_type=ALIAS_COMPANY_NAME, alias_key=key)
+        if hit:
+            return hit
+    return None
 
 
 def resolve_person_name(conn, *, org_id: str, name: str | None) -> str | None:
@@ -253,6 +280,31 @@ def observe_person_name(conn, *, org_id: str, node_id: str, name: str | None,
         "created_by_event_id) values (:o, :t, :k, :n, 'observed', :ev) "
         "on conflict (org_id, alias_type, alias_key) do nothing"),
         {"o": org_id, "t": ALIAS_PERSON_NAME, "k": key, "n": node_id, "ev": event_id})
+
+
+def observe_company_name(conn, *, org_id: str, node_id: str, name: str | None,
+                         event_id: str | None = None) -> None:
+    """Record what a company is CALLED, next to the domain that actually identifies it.
+
+    The company twin of `observe_person_name`, and it exists for the same reason: the anchor and
+    the name arrive separately. A company node is anchored on an email domain, so it is born
+    called "devdashlabs.com" — which is why 19 of the design partner's 47 live card headlines
+    opened on a hostname ("errorcore.dev: no problem documented yet") while the words "DevDash
+    Labs" and "Crescere Labs" sat in the same graph as extracted company mentions.
+
+    Written only after the mention ALREADY resolved to this node by exact key equality against
+    the node's own anchor, so the association is not a guess. Like its person twin this writes an
+    alias and nothing else; the display-name promotion is a node write and lives with the other
+    node writes, in the store.
+    """
+    key = company_slug(name)
+    if not key:
+        return
+    conn.execute(text(
+        "insert into graph_aliases (org_id, alias_type, alias_key, node_id, origin, "
+        "created_by_event_id) values (:o, :t, :k, :n, 'observed', :ev) "
+        "on conflict (org_id, alias_type, alias_key) do nothing"),
+        {"o": org_id, "t": ALIAS_COMPANY_NAME, "k": key, "n": node_id, "ev": event_id})
 
 
 def _json(value: dict) -> str:
