@@ -26,12 +26,12 @@ from genios_engine.executive import sweep
 
 from tests.executive_fakes import FakeEngine
 from tests.test_executive_sweep import PACK, persisted, world
-from tests.test_executive_execution import NOW
+from tests.test_executive_execution import NOW, build
 
 
-def nudged(db, *, channel="slack"):
+def nudged(db, *, channel="slack", execution=None):
     """Drive a real commitment to the point where Layer 5 has decided to speak."""
-    execution, engine = persisted(db, state=ExecutionState.PENDING)
+    execution, engine = persisted(db, execution=execution, state=ExecutionState.PENDING)
     if channel != "slack":
         db.executions[0]["channel_id"] = channel
     rung = execution.escalation[0]
@@ -57,6 +57,24 @@ def test_a_layer_five_reminder_becomes_a_queued_message():
     assert row["channel"] == "slack" and row["status"] == "queued"
     assert row["card_id"].startswith(bridge.EXECUTIVE_PREFIX)
     assert bridge.parse_executive_card_id(row["card_id"])[0] == execution.execution_id
+
+
+def test_an_unowned_commitments_reminder_still_reaches_the_wire():
+    """The shape of every commitment in production, carried end to end.
+
+    ``enqueue_executive_messages`` filters on ``x.assignee is not null`` and uses that column as
+    the outbox ``recipient``, so a commitment whose recipient column was NULL could never become
+    a message no matter how loudly Layer 5 decided to speak — and 195/195 of the live tenant's
+    commitments carried NULL there. Nothing owns this one either; it simply has somebody to
+    reach, and that is enough to put it on the wire, addressed to the seat that mans the queue.
+    """
+    db = world(owner="")
+    db.set_facts("deal_9", {"deal.status": "open"}, attrs={})
+    _, engine = nudged(db, execution=build(facts={}).require())
+
+    assert db.events_of("execution.reminded"), "Layer 5 decided to speak about unowned work"
+    assert bridge.enqueue_executive_messages(engine, "org_1", "slack") == 1
+    assert db.delivery_outbox[0]["recipient"] == "seat_mgr"
 
 
 def test_the_message_says_only_what_layer_five_grounded():

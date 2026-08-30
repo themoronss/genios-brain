@@ -260,6 +260,23 @@ class CommunicationPlan:
     reason_code: str
     assignee: str | None = None
     cc: tuple[str, ...] = ()
+    #: The seat manning the admin queue, when nobody OWNS this.
+    #:
+    #: `assignee` answers "who is accountable"; an admin-queue plan has no answer to that by
+    #: definition, and the invariant below enforces it. But `routable` below was deriving "is
+    #: there somebody to DELIVER to" from that same field, which made the two questions one —
+    #: and the answer to both was None for every commitment this system has ever built.
+    #:
+    #: Measured on production 2026-08-30: 203/203 rows in `executions` carry
+    #: `communication.assignee = null`, `routing_rule = 'rule3_admin_queue'` and
+    #: `payload.remindable = false`; `execution_events` holds zero rows of kind
+    #: `execution.reminded`. The same `resolve_owner` call, on the same orgs, at the same
+    #: moment, put `seat_owner` on 130/130 of the live cards — because `deliver/router.py`
+    #: reads `Assignment.recipient` and Layer 5 read `Assignment.seat_id`.
+    #:
+    #: So the queue seat travels ON the plan. Ownership stays absent (nothing is nudged into an
+    #: empty room); reachability becomes true (there is a real person on the other end).
+    queue_seat: str | None = None
 
     def __post_init__(self) -> None:
         setattr_ = object.__setattr__
@@ -276,20 +293,47 @@ class CommunicationPlan:
         setattr_(self, "cc", require_sorted_unique(self.cc, "cc recipient"))
         if self.channel_class is ChannelClass.NONE and self.interrupt:
             raise ValueError("a silent communication plan cannot interrupt")
+        if self.queue_seat is not None:
+            setattr_(self, "queue_seat", require_identifier(self.queue_seat, "queue seat"))
         if self.audience is AudienceClass.ADMIN_QUEUE and self.assignee is not None:
             raise ValueError("an admin-queue plan has no assignee by definition")
+        # The mirror invariant.  A queue seat on an OWNED plan would mean two recipients with no
+        # rule for which one wins, and `recipient` below would silently pick the owner — the
+        # kind of ambiguity that is only ever discovered by the person who did not get paged.
+        if self.queue_seat is not None and self.audience is not AudienceClass.ADMIN_QUEUE:
+            raise ValueError("only an admin-queue plan has a queue seat")
+
+    @property
+    def recipient(self) -> str | None:
+        """Who this actually REACHES: its owner, or the seat manning the triage queue.
+
+        Distinct from `assignee` on purpose — see `queue_seat`.  This is the value the outbox,
+        the per-recipient attention budget and the escalation ladder all need, and the value
+        `deliver/router.py` has already been using for cards since the card path was fixed.
+        """
+        return self.assignee or self.queue_seat
 
     @property
     def routable(self) -> bool:
         """True when there is somebody to deliver to.  An unrouted commitment still exists —
-        it is tracked, escalated and reported on; it simply reaches the triage queue instead."""
-        return self.assignee is not None
+        it is tracked, escalated and reported on; it simply reaches the triage queue instead.
+
+        Now derived from `recipient` rather than `assignee`, which is what the sentence above
+        always claimed.  While it read `assignee`, "deliverable" and "owned" were the same
+        field, and since `deal.owner` / `relationship.owner` / `commitment.actor` have no
+        `write_fact` producer anywhere in this repo (verified: 0 rows of each on production,
+        `graph_nodes.attributes` empty on all 361 live nodes), "owned" is False for every
+        commitment of every tenant, permanently.  That made `remindable` False everywhere, which
+        made `reminder.decide_reminder` return `not_remindable` on its first line, which is why
+        the Reminder Unit — the layer's highest-value unit — had never fired once in production.
+        """
+        return self.recipient is not None
 
     def to_semantic_dict(self) -> dict[str, Any]:
         return {"audience": self.audience.value, "channel_class": self.channel_class.value,
                 "channel_id": self.channel_id, "interrupt": self.interrupt, "tone": self.tone,
                 "format_kind": self.format_kind, "reason_code": self.reason_code,
-                "assignee": self.assignee, "cc": self.cc}
+                "assignee": self.assignee, "cc": self.cc, "queue_seat": self.queue_seat}
 
 
 @dataclass(frozen=True, slots=True)
@@ -567,7 +611,11 @@ class ExecutionObject:
             channel_id=comms["channel_id"], interrupt=bool(comms["interrupt"]),
             tone=comms["tone"], format_kind=comms["format_kind"],
             reason_code=comms["reason_code"], assignee=comms.get("assignee"),
-            cc=tuple(comms.get("cc") or ()))
+            cc=tuple(comms.get("cc") or ()),
+            # `.get`, not `[...]`: every row written before this field existed lacks the key,
+            # and 203 of them are open on production right now. They rehydrate as unreachable,
+            # which is exactly what they were — `sweep._process_one` heals them on its next pass.
+            queue_seat=comms.get("queue_seat"))
         escalation = tuple(
             EscalationStep(day_offset=item["day_offset"],
                            action=EscalationAction(item["action"]),

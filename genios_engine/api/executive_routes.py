@@ -227,20 +227,28 @@ def reassign(execution_id: str, seat_id: str = Body(..., embed=True),
     outcome record in two.
     """
     _require_db()
+    from genios_engine.contracts.execution import AudienceClass
     from genios_engine.executive import execution_store as store
-    from genios_engine.executive.assignment import PgSeatDirectory
+    from genios_engine.executive.assignment import Assignment, PgSeatDirectory
+    from genios_engine.executive.communication import reassign as reassign_plan
     with _graph.engine.begin() as c:
         seat = PgSeatDirectory(conn=c, org_id=ctx.org_id).active_seat(seat_id)
         if seat is None:
             raise HTTPException(422, f"{seat_id} is not an active seat in this org")
-        open_row = c.execute(text(
-            "select 1 from executions where org_id=:o and execution_id=:x and closed_at is null"),
-            {"o": ctx.org_id, "x": execution_id}).first()
-        if open_row is None:
+        loaded = store.load(c, ctx.org_id, execution_id)
+        if loaded is None or loaded[1]["closed_at"] is not None:
             raise HTTPException(404, "no open commitment with that id")
-        store.reassign(c, org_id=ctx.org_id, execution_id=execution_id, assignee=seat,
-                       audience="owner", routing_rule="manual_reassign", at=_now(),
-                       actor=ctx.actor_id or "human")
+        # Rebuild the PLAN, not just the column. `store.reassign` writes the payload only when
+        # it is handed one, and the payload is what `store.load` rehydrates `remindable` and the
+        # owner from — so a column-only reassign returned 200, changed the dashboard, and left
+        # `decide_reminder` refusing with `not_remindable` on every subsequent sweep.
+        plan = reassign_plan(
+            loaded[0].communication,
+            Assignment(seat, AudienceClass.OWNER, "manual_reassign"),
+            reason_code="manual_reassign")
+        store.reassign(c, org_id=ctx.org_id, execution_id=execution_id, assignee=plan.recipient,
+                       audience=plan.audience.value, routing_rule="manual_reassign", at=_now(),
+                       actor=ctx.actor_id or "human", plan=plan)
     return {"reassigned": True, "execution_id": execution_id, "assignee": seat}
 
 

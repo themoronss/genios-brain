@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import inspect
 from datetime import datetime, timedelta, timezone
+from typing import NamedTuple
 
 import pytest
 
@@ -35,6 +36,13 @@ NOW = datetime(2026, 8, 29, 9, 0, tzinfo=timezone.utc)
 
 
 # ── a database small enough to reason about ───────────────────────────────────────────────────
+class _Counts(NamedTuple):
+    """The shape ``commitment_backlog_counts`` reads: named fields on an indexable row."""
+
+    open_now: int
+    unreachable: int
+
+
 class _Result:
     def __init__(self, rows):
         self._rows = list(rows)
@@ -100,6 +108,15 @@ class _Conn:
             return _Result([(self.world["cards"].get(p["o"], {}).get("standard", 0),)])
         if "k.assignee is null" in sql:
             return _Result([(self.world["cards"].get(p["o"], {}).get("unrouted", 0),)])
+        if "count(*) as open_now" in sql:
+            # Layer 5's backlog. Defaults to (0, 0) so every existing scenario keeps meaning
+            # what it meant; a test that cares sets `commitments` on its org.
+            block = self.world.get("commitments", {}).get(p["o"], {})
+            # A NAMED row, because the production read uses `row.open_now`. Real SQLAlchemy rows
+            # answer to both index and attribute; a bare tuple here would raise AttributeError
+            # inside the per-org `except`, and the pass would report `org_failures` instead of
+            # the counts — a green-looking double hiding the exact call under test.
+            return _Result([_Counts(block.get("open", 0), block.get("unreachable", 0))])
         raise AssertionError(f"the fake database does not model: {sql[:120]}")
 
 
@@ -145,7 +162,8 @@ def sweep(monkeypatch):
     return calls
 
 
-def world(channels=None, cards=None, agents=None, pushable=None, agent_rows=None):
+def world(channels=None, cards=None, agents=None, pushable=None, agent_rows=None,
+          commitments=None):
     """``agents``/``pushable``/``agent_rows`` are the agent lane's three inputs.
 
     ``agents``    : org → executor ids that pass ``connected_executors``.
@@ -155,7 +173,10 @@ def world(channels=None, cards=None, agents=None, pushable=None, agent_rows=None
     ``agent_rows``: org → (card_id, agent_id) pairs already in ``delivery_outbox``.
     """
     return {"channels": channels or {}, "cards": cards or {}, "agents": agents or {},
-            "pushable": pushable or {}, "agent_rows": agent_rows or {}}
+            "pushable": pushable or {}, "agent_rows": agent_rows or {},
+            # org → {"open": n, "unreachable": n}: Layer 5's backlog, which the sweep reports
+            # whether or not this tenant has anywhere to send anything.
+            "commitments": commitments or {}}
 
 
 # ── the resolution itself ─────────────────────────────────────────────────────────────────────
@@ -422,6 +443,41 @@ def test_the_unreachable_log_line_names_which_lane_is_missing(sweep, caplog):
     assert "nothing" not in agent_only, "it is reachable; saying otherwise is false"
     assert "no deliverable channel and no registered executor" in neither
     assert "nothing proactive can be sent" in neither
+
+
+def test_a_silent_commitment_backlog_is_reported_rather_than_accumulated(sweep, caplog):
+    """170 rows sat `pending` for a week while every counter in this pass read zero.
+
+    Two distinct silences, two distinct fixes, so they are two distinct log lines. A tenant with
+    no push channel cannot SEND a reminder (register a channel); a commitment with no recipient
+    cannot HAVE one decided (add an admin seat). Reporting only the first would send the founder
+    to configure Slack for work that would still never be nudged once he had.
+    """
+    import logging
+
+    engine = _Engine(world(channels={"org_1": ["in_app"]},
+                           commitments={"org_1": {"open": 170, "unreachable": 170}}))
+    with caplog.at_level(logging.WARNING, logger="genios.deliver.outbox"):
+        totals = outbox.run_distribution(engine, base_url="", eval_time=NOW)
+
+    assert totals["open_commitments"] == 170 and totals["unreachable_commitments"] == 170
+    joined = " ".join(caplog.messages)
+    assert "170 open commitment(s)" in joined and "org_seats" in joined
+    assert "no deliverable channel" in joined, "the channel gap is still its own report"
+
+
+def test_a_reachable_backlog_is_counted_without_being_alarmed_about(sweep, caplog):
+    """The counterweight. Commitments that HAVE a recipient are normal operation, not a fault —
+    warning about them would make the seats warning worthless within a day."""
+    import logging
+
+    engine = _Engine(world(channels={"org_1": ["slack"]},
+                           commitments={"org_1": {"open": 12, "unreachable": 0}}))
+    with caplog.at_level(logging.WARNING, logger="genios.deliver.outbox"):
+        totals = outbox.run_distribution(engine, base_url="", eval_time=NOW)
+
+    assert totals["open_commitments"] == 12 and totals["unreachable_commitments"] == 0
+    assert not [m for m in caplog.messages if "org_seats" in m]
 
 
 # ── the regression lock ───────────────────────────────────────────────────────────────────────

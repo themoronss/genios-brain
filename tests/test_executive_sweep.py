@@ -24,7 +24,12 @@ import pytest
 from genios_engine.contracts.execution import ExecutionState
 from genios_engine.executive import execution_store as store
 from genios_engine.executive import sweep
-from genios_engine.executive.assignment import PgSeatDirectory, resolve_owner
+from genios_engine.executive.assignment import (
+    PgSeatDirectory,
+    StaticSeatDirectory,
+    resolve_owner,
+)
+from genios_engine.executive.execution import build_from_decision
 from genios_engine.platform.canonical import canonical_dumps, semantic_hash
 
 from tests.executive_fakes import FakeDB, FakeEngine, UnhandledStatement
@@ -119,20 +124,118 @@ def test_planning_counts_refusals_by_reason_not_as_one_skipped_bucket():
     assert report.reasons == {"no_steps": 1} and report.examined == 1
 
 
-def test_an_unowned_deal_is_still_committed_to_just_unrouted():
-    """Dropping it is how a system quietly stops mentioning the accounts nobody owns."""
+def test_an_unowned_deal_is_committed_unowned_but_still_reachable():
+    """Dropping it is how a system quietly stops mentioning the accounts nobody owns.
+
+    Ownership and recipiency are answered separately and both answers are recorded. The
+    commitment stays UNOWNED — audience `admin_queue`, `payload.communication.assignee` null,
+    routing rule `rule3_admin_queue` — so nothing claims a person promised this. But the
+    `assignee` COLUMN carries the seat that will actually receive it, exactly as `cards.assignee`
+    already does, and that is what the executive bridge's `x.assignee is not null` predicate,
+    the outbox recipient and the escalation ladder all read.
+    """
     db = world(owner="")
     db.set_facts("deal_9", {"deal.status": "open"}, attrs={})
     planted(db)
     sweep.plan_commitments(FakeEngine(db), "org_1", eval_time=NOW, effective=PACK)
     row = db.open_execution()
     assert row is not None
-    # Still unowned — `assignee` stays NULL on the EXECUTION, which is what keeps the escalation
-    # ladder silent for work nobody promised. Only the card's recipient changed (deliver/router),
-    # so an unowned item is visible without anyone being nudged as though they owed it.
-    assert row["assignee"] is None and row["routing_rule"] == "rule3_admin_queue"
-    assert row["audience"] == "admin_queue"
-    assert not db.execution_escalations, "an unowned commitment escalates into an empty room"
+    assert row["routing_rule"] == "rule3_admin_queue" and row["audience"] == "admin_queue"
+    assert row["assignee"] == "seat_mgr", "the admin mans the queue; the row must say so"
+    payload = json.loads(row["payload"])
+    assert payload["communication"]["assignee"] is None, "still nobody's to OWN"
+    assert payload["remindable"] is True
+    assert db.execution_escalations, "a reachable commitment gets the ladder it was promised"
+
+
+def test_a_commitment_with_no_admin_to_receive_it_gets_no_ladder():
+    """The counterweight: reachability is measured, never assumed.
+
+    An org with no active admin has nobody on the other end at all. The commitment is still
+    planned and still tracked — never dropped — but its ladder is empty and it is not
+    remindable, because escalating into an empty room is noise rather than diligence.
+    """
+    db = world(owner="")
+    db.seats["seat_mgr"]["role"] = "member"          # the org's only admin is gone
+    db.set_facts("deal_9", {"deal.status": "open"}, attrs={})
+    planted(db)
+    sweep.plan_commitments(FakeEngine(db), "org_1", eval_time=NOW, effective=PACK)
+    row = db.open_execution()
+    assert row is not None and row["routing_rule"] == "rule3_unrouted"
+    assert row["assignee"] is None
+    assert json.loads(row["payload"])["remindable"] is False
+    assert not db.execution_escalations, "an unreachable commitment escalates into an empty room"
+
+
+def unreachable_commitment():
+    """A commitment built the way all 203 production rows were: with nobody resolvable.
+
+    Not a contrived fixture. Until this fix the ONLY resolvable owner rules read facts no
+    producer writes, so every commitment ever built came out of the builder in exactly this
+    shape — `remindable=false`, empty ladder, `communication.assignee=null`.
+    """
+    return build_from_decision(
+        make_decision(), org_id="org_1", reasoning_run_id="run_1", config_snapshot_id="cfg_1",
+        decision_hash=semantic_hash({"fixture": "legacy"}), eval_time=NOW,
+        directory=StaticSeatDirectory({}), facts={}, available_channels={"slack", "in_app"},
+        subject_ref="deal_9", subject_type="deal").require()
+
+
+def test_a_commitment_stored_unreachable_is_healed_when_the_directory_can_name_somebody():
+    """The 170 rows that were already sitting silent when the defect was found.
+
+    ``plan_commitments`` never re-examines a decision that already has a live commitment, so a
+    row built unreachable stays unreachable for the whole of its life — no replan, no second
+    chance. Reachability is the one thing on a commitment that is a fact about the ORG rather
+    than a promise to its owner, so the lifecycle pass re-asks it and heals the row in place.
+    """
+    db = world(owner="")                     # nobody owns it, exactly as production has it
+    db.set_facts("deal_9", {"deal.status": "open"}, attrs={})
+    execution, engine = persisted(db, execution=unreachable_commitment(),
+                                  state=ExecutionState.PENDING)
+    assert execution.remindable is False and db.open_execution()["assignee"] is None
+
+    report = sweep.run_lifecycle(engine, eval_time=NOW + timedelta(days=2), effective=PACK)
+
+    row = db.open_execution()
+    assert row["assignee"] == "seat_mgr"
+    # The channel is re-asked too, not only the recipient: `in_app` was chosen BECAUSE nobody
+    # could be reached, and leaving it would make the commitment remindable but still uncarried
+    # — Layer 6's bridge matches on the channel Layer 5 recorded.
+    assert row["routing_rule"] == "reachability_restored_band_critical_interrupt"
+    assert row["channel_id"] == "slack" and row["interrupt"] is True
+    assert json.loads(row["payload"])["remindable"] is True
+    assert report.reminded == 1 and db.events_of("execution.reminded")
+    # The frozen half stays frozen. The heal never invents ladder rungs the commitment never
+    # promised — it was woken by the untouched trigger, which needs no ladder at all.
+    assert not db.execution_escalations
+    assert db.events_of("execution.reminded")[0]["reason_code"] == "untouched"
+
+
+def test_healing_is_idempotent_and_never_fires_when_there_is_nobody():
+    """Two guarantees in one place, because they are the two ways a heal goes wrong.
+
+    A heal that ran every pass would rewrite the routing row forever; a heal that invented a
+    recipient would nudge an empty room. The first is proved by running the sweep twice, the
+    second by an org whose only admin is gone.
+    """
+    db = world(owner="")
+    db.set_facts("deal_9", {"deal.status": "open"}, attrs={})
+    _, engine = persisted(db, execution=unreachable_commitment(), state=ExecutionState.PENDING)
+    sweep.run_lifecycle(engine, eval_time=NOW + timedelta(days=2), effective=PACK)
+    reassignments = len(db.events_of("execution.reassigned"))
+    sweep.run_lifecycle(engine, eval_time=NOW + timedelta(days=3), effective=PACK)
+    assert len(db.events_of("execution.reassigned")) == reassignments, "healed once, not on every pass"
+
+    orphan = FakeDB()
+    orphan.add_seat("seat_rep", email="rep@acme.io")          # a member, no admin anywhere
+    orphan.channels = ["slack"]
+    orphan.set_facts("deal_9", {"deal.status": "open"}, attrs={})
+    _, orphan_engine = persisted(orphan, execution=unreachable_commitment(),
+                                 state=ExecutionState.PENDING)
+    sweep.run_lifecycle(orphan_engine, eval_time=NOW + timedelta(days=2), effective=PACK)
+    assert orphan.open_execution()["assignee"] is None
+    assert not orphan.events_of("execution.reminded"), "nobody to nudge, so nothing is said"
 
 
 # --- pass 2: first delivery ---------------------------------------------------------------

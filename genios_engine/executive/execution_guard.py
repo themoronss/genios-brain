@@ -172,7 +172,7 @@ def validate(execution: ExecutionObject, state: ValidationInput) -> GuardVerdict
     #    when a rep leaves, their commitments are exactly what must not disappear with them.
     if execution.communication.routable and not state.owner_active:
         return GuardVerdict(GuardAction.REROUTE, "owner_inactive",
-                            f"assignee {execution.communication.assignee} is no longer active")
+                            f"recipient {execution.communication.recipient} is no longer active")
 
     # 8. The deadline passed with nothing observed. Expired, not cancelled — the distinction is
     #    what lets Layer 7 tell "we chose not to" apart from "we ran out of time", and only the

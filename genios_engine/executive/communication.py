@@ -125,10 +125,23 @@ def plan_communication(context: ExecutionContext, assignment: Assignment, *,
     channels = set(available_channels or ())
     band = band_of(context.priority_bp, settings)
 
-    # 1. Nobody owns it. It lands on the admin surface and waits for a human to claim it. Pushing
-    #    an unrouted commitment would mean choosing a recipient at random, which is worse than
-    #    the queue: it creates the appearance of ownership without any.
-    if not assignment.routed:
+    # 1. There is NOBODY — not an owner, not even an admin to triage it. It lands on the card
+    #    surface and waits. Pushing here would mean choosing a recipient at random, which is
+    #    worse than the queue: it creates the appearance of ownership without any.
+    #
+    #    The test used to be `not assignment.routed` — "nobody OWNS it" — and that is a much
+    #    larger set. `deal.owner`, `relationship.owner` and `commitment.actor` have no
+    #    `write_fact` producer anywhere in this repo and `graph_nodes.attributes` is never
+    #    populated, so `routed` is False for EVERY commitment of EVERY tenant, forever
+    #    (production 2026-08-30: 203/203 executions, `routing_rule='rule3_admin_queue'`). This
+    #    branch therefore swallowed the whole layer: every commitment came out `in_app`,
+    #    `assignee=null`, `remindable=false`, and not one reminder was ever decided.
+    #
+    #    The honest test is whether anyone can be REACHED. When rule 3 resolves an admin seat
+    #    there is a real person on the other end, so the commitment routes by band like any
+    #    other. Ownership still stays absent — the audience remains ADMIN_QUEUE and the card
+    #    still says "unclaimed" — because being shown work is not the same as owning it.
+    if assignment.recipient is None:
         return CommunicationPlan(
             audience=AudienceClass.ADMIN_QUEUE, channel_class=ChannelClass.IN_APP,
             channel_id=IN_APP_CHANNEL, interrupt=False,
@@ -141,43 +154,97 @@ def plan_communication(context: ExecutionContext, assignment: Assignment, *,
             audience=AudienceClass.AGENT, channel_class=ChannelClass.AGENT,
             channel_id=AGENT_CHANNEL, interrupt=False, tone="machine",
             format_kind="agent_task", reason_code="autonomous_agent_executable",
+            # No `queue_seat` here, and that is the point: a machine is doing the whole thing,
+            # so the plan is deliberately not routable and the commitment is deliberately not
+            # remindable. Nudging a person about work a machine already owns is the reminder
+            # engine at its worst. (This branch is unreachable on both live orgs today —
+            # neither has registered the `agent` channel.)
             assignee=assignment.seat_id)
 
     tone = "urgent" if band == "critical" else _TONE_BY_TYPE.get(context.execution_type, "direct")
+    return _route_by_band(assignment, band=band, confidence_bp=context.confidence_bp, tone=tone,
+                          channels=channels, settings=settings)
+
+
+def _route_by_band(assignment: Assignment, *, band: str, confidence_bp: int, tone: str,
+                   channels: set[str], settings: Mapping[str, Any]) -> CommunicationPlan:
+    """Branches 3-6: how loudly, given that there IS somebody to reach.
+
+    Extracted so `replan_for_recipient` below can ask the identical question without a second
+    copy of the band rules. Two copies would not fail loudly; they would drift, and a tenant who
+    turned the noise down would find one of them still shouting.
+    """
     chat = next((name for name in CHAT_CHANNELS if name in channels), None)
     band_rank = _BAND_RANK[band]
 
     # 3. Loud enough to interrupt — but only if the reasoner is actually sure. A high score with
     #    low confidence is a hypothesis, and hypotheses do not get to buzz someone's phone.
-    if chat and may_interrupt(band, context.confidence_bp, settings):
+    if chat and may_interrupt(band, confidence_bp, settings):
         return CommunicationPlan(
             audience=assignment.audience, channel_class=ChannelClass.CHAT, channel_id=chat,
             interrupt=True, tone=tone, format_kind="card",
-            reason_code=f"band_{band}_interrupt", assignee=assignment.seat_id)
+            reason_code=f"band_{band}_interrupt", assignee=assignment.seat_id,
+            queue_seat=assignment.queue_seat)
 
     # 4. Worth pushing, not worth interrupting. Same channel, no urgency framing.
     if chat and band_rank >= _BAND_RANK[str(settings["push_band"])]:
-        reason = (f"band_{band}_push" if context.confidence_bp
+        reason = (f"band_{band}_push" if confidence_bp
                   >= int(settings["interrupt_min_confidence_bp"])
                   else f"band_{band}_push_low_confidence")
         return CommunicationPlan(
             audience=assignment.audience, channel_class=ChannelClass.CHAT, channel_id=chat,
             interrupt=False, tone=tone, format_kind="card", reason_code=reason,
-            assignee=assignment.seat_id)
+            assignee=assignment.seat_id, queue_seat=assignment.queue_seat)
 
     # 5. Routine. It goes in the batch, where routine work belongs.
     if DIGEST_CHANNEL in channels or chat:
         return CommunicationPlan(
             audience=assignment.audience, channel_class=ChannelClass.DIGEST,
             channel_id=DIGEST_CHANNEL, interrupt=False, tone=tone, format_kind="digest_item",
-            reason_code=f"band_{band}_digest", assignee=assignment.seat_id)
+            reason_code=f"band_{band}_digest", assignee=assignment.seat_id,
+            queue_seat=assignment.queue_seat)
 
     # 6. The org has registered nothing. The card surface still works, and the commitment is
     #    still tracked, reminded and escalated — it simply waits to be found rather than sent.
     return CommunicationPlan(
         audience=assignment.audience, channel_class=ChannelClass.IN_APP, channel_id=IN_APP_CHANNEL,
         interrupt=False, tone=tone, format_kind="card", reason_code="no_channel_registered",
-        assignee=assignment.seat_id)
+        assignee=assignment.seat_id, queue_seat=assignment.queue_seat)
+
+
+def replan_for_recipient(plan: CommunicationPlan, assignment: Assignment, *, priority_bp: int,
+                         confidence_bp: int,
+                         available_channels: frozenset[str] | set[str] | None = None,
+                         cfg: Mapping[str, Any] | None = None,
+                         reason_code: str = "reachability_restored") -> CommunicationPlan:
+    """Re-ask *where and how loudly* for a commitment that had nobody to reach.
+
+    Distinct from ``reassign`` above, which keeps the channel because reassignment changes only
+    who does the work. Here the channel itself was mis-decided: branch 1 sends a commitment to
+    the card surface *because* there is no recipient, so a plan built while the directory was
+    empty says ``in_app`` for a reason that has stopped being true. Leaving it would make the
+    heal half a heal — the commitment becomes remindable, and then Layer 6's bridge (which obeys
+    Layer 5's recorded ``channel_id``) declines to carry the reminder anywhere.
+
+    Only ever called when the old plan had no recipient and the new assignment does. A plan that
+    already names somebody keeps the channel it was given: that one WAS decided on true inputs.
+    """
+    if plan.routable or assignment.recipient is None:
+        return plan
+    settings = _config(cfg)
+    band = band_of(priority_bp, settings)
+    tone = "urgent" if band == "critical" else plan.tone
+    replanned = _route_by_band(assignment, band=band, confidence_bp=confidence_bp, tone=tone,
+                               channels=set(available_channels or ()), settings=settings)
+    return CommunicationPlan(
+        audience=replanned.audience, channel_class=replanned.channel_class,
+        channel_id=replanned.channel_id, interrupt=replanned.interrupt, tone=replanned.tone,
+        format_kind=replanned.format_kind,
+        # The band branch's own code is kept as a suffix rather than replaced: "why is this on
+        # Slack?" and "why did it start being on Slack?" are different questions and the row has
+        # to answer both.
+        reason_code=f"{reason_code}_{replanned.reason_code}",
+        assignee=replanned.assignee, cc=plan.cc, queue_seat=replanned.queue_seat)
 
 
 def reassign(plan: CommunicationPlan, assignment: Assignment, *,
@@ -189,10 +256,15 @@ def reassign(plan: CommunicationPlan, assignment: Assignment, *,
     mint a second copy of the same commitment for the escalation ladder to chase separately.
     """
     if not assignment.routed:
+        # Handing work back to the queue keeps the queue's own seat, so the commitment stays
+        # REACHABLE while becoming unowned again. Dropping it here is what made the reroute path
+        # a one-way trip to silence: `execution_guard` rule 7 reroutes when an owner goes
+        # inactive, and the replacement plan had nobody on it at all.
         return CommunicationPlan(
             audience=AudienceClass.ADMIN_QUEUE, channel_class=ChannelClass.IN_APP,
             channel_id=IN_APP_CHANNEL, interrupt=False, tone=plan.tone, format_kind="card",
-            reason_code=f"{reason_code}_unrouted", assignee=None)
+            reason_code=f"{reason_code}_unrouted", assignee=None,
+            queue_seat=assignment.queue_seat)
     return CommunicationPlan(
         audience=assignment.audience, channel_class=plan.channel_class,
         channel_id=plan.channel_id, interrupt=plan.interrupt, tone=plan.tone,
@@ -202,4 +274,4 @@ def reassign(plan: CommunicationPlan, assignment: Assignment, *,
 
 __all__ = ["AGENT_CHANNEL", "CHAT_CHANNELS", "COMMUNICATION_VERSION", "DEFAULTS",
            "DIGEST_CHANNEL", "IN_APP_CHANNEL", "band_of", "may_interrupt",
-           "plan_communication", "projected_score", "reassign"]
+           "plan_communication", "projected_score", "reassign", "replan_for_recipient"]

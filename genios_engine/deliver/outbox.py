@@ -302,6 +302,24 @@ def card_backlog_counts(conn, org_id: str, now: datetime) -> tuple[int, int]:
     return int(starved), int(unrouted)
 
 
+def commitment_backlog_counts(conn, org_id: str) -> tuple[int, int]:
+    """(open commitments, of which nobody can be reached about) — diagnostics, not delivery.
+
+    The card counts above answer "how much intelligence is sitting unsent". They cannot answer
+    "how much WORK is sitting untracked-by-anyone", and that is the number that was invisible
+    while Layer 5 was silent: on 2026-08-30 this org had 167 commitments `pending`, every one of
+    them unreachable, and every pass of every sweep reported a clean zero.
+
+    `assignee is null` is the honest test for the second number now that the column holds the
+    RECIPIENT rather than the owner: a null there means no owner AND no admin to triage it, so
+    the commitment cannot be nudged, escalated or delivered by any path at all.
+    """
+    row = conn.execute(text(
+        "select count(*) as open_now, count(*) filter (where assignee is null) as unreachable "
+        "from executions where org_id=:o and closed_at is null"), {"o": org_id}).first()
+    return (int(row.open_now or 0), int(row.unreachable or 0)) if row else (0, 0)
+
+
 # ── enqueue ───────────────────────────────────────────────────────────────────────
 #
 #: The FROM + WHERE that decides whether a card may be PUSHED at all, shared VERBATIM by both
@@ -1000,6 +1018,10 @@ def run_distribution(engine, *, base_url: str | None = None,
               # pipeline is broken upstream; `unrouted` means cards exist with nobody to send
               # them to. Both previously presented as a clean zero.
               "band_starved": 0, "unrouted": 0, "org_failures": 0,
+              # Layer 5's backlog, which has its own two failure modes and used to have no
+              # counter at all: work that exists (`open_commitments`) and work that exists with
+              # nobody able to receive it (`unreachable_commitments`).
+              "open_commitments": 0, "unreachable_commitments": 0,
               # Rows queued to this org's registered EXECUTORS. Kept out of `queued` on purpose:
               # that number answers "how much did we ask of a person this tick", and folding
               # machine deliveries into it makes the human load unreadable — an org with four
@@ -1049,8 +1071,23 @@ def run_distribution(engine, *, base_url: str | None = None,
                 # unreachable — and those two must never be able to disagree.
                 agents = connected_executors(c, org)
                 starved, unrouted = card_backlog_counts(c, org, now)
+                # The commitment backlog, reported alongside the card backlog because the two
+                # fail independently and only together say what this tenant is actually missing.
+                open_commitments, unreachable = commitment_backlog_counts(c, org)
             totals["band_starved"] += starved
             totals["unrouted"] += unrouted
+            totals["open_commitments"] += open_commitments
+            totals["unreachable_commitments"] += unreachable
+            if unreachable:
+                # Never silent. A commitment nobody can be reached about is not nudged, not
+                # escalated and not delivered — it simply accumulates, which is exactly what 170
+                # rows did for a week while every counter here read zero. This is a SEATS
+                # problem, not a channel problem, and the two need different fixes.
+                _log.warning(
+                    "org=%s has %d open commitment(s), %d of which nobody can be reached "
+                    "about — no owner and no active admin seat to triage them. They are "
+                    "tracked and will never be nudged. Add an admin seat to org_seats.",
+                    org, open_commitments, unreachable)
 
             # Linking is bookkeeping on our own rows, not a send, so it runs regardless of
             # whether there is anywhere to send — and it runs BEFORE the reminder enqueue so a
@@ -1065,9 +1102,10 @@ def run_distribution(engine, *, base_url: str | None = None,
                 totals["no_deliverable_channel"] += 1
                 _log.warning(
                     "org=%s has no deliverable channel and no registered executor — nothing "
-                    "proactive can be sent. %d card(s) below the push band, %d unrouted. "
+                    "proactive can be sent. %d card(s) below the push band, %d unrouted, "
+                    "%d open commitment(s) with reminders that cannot leave the building. "
                     "Register one with PUT /api/org/%s/channels/slack.",
-                    org, starved, unrouted, org)
+                    org, starved, unrouted, open_commitments, org)
             elif not channels:
                 # A different fact, and saying "nothing can be sent" here would be false: the
                 # agent lane below reaches this org on every tick. What is missing is a surface

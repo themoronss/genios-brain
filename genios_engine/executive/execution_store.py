@@ -32,7 +32,11 @@ from typing import Any
 
 from sqlalchemy import text
 
-from genios_engine.contracts.execution import ExecutionObject, ExecutionState
+from genios_engine.contracts.execution import (
+    CommunicationPlan,
+    ExecutionObject,
+    ExecutionState,
+)
 from genios_engine.executive.collect import ExecutionOutcome
 from genios_engine.executive.execution_guard import ValidationInput
 from genios_engine.executive.lifecycle import Transition
@@ -99,7 +103,14 @@ def persist(conn, execution: ExecutionObject, *, next_check_at: datetime | None 
         "capv": execution.capability_version, "play": metadata.get("play_id"),
         "ph": execution.plan_hash, "st": state.value, "goal": execution.goal,
         "sref": execution.subject_ref, "stype": metadata.get("subject_type"),
-        "asg": comms.assignee, "aud": comms.audience.value, "ch": comms.channel_id,
+        # The RECIPIENT, not the owner. `executions.assignee` is read as "who does this reach"
+        # by every consumer it has — the executive bridge's `x.assignee is not null` predicate,
+        # the outbox row's `recipient`, and `resolve_escalation_target`'s `owner_seat` — and it
+        # is the same column `cards.assignee` already fills from `Assignment.recipient` (130/130
+        # of the live tenant's cards carry `seat_owner`; 195/195 of its commitments carried
+        # null). Ownership lives in `payload.communication.assignee`, where it stays null for an
+        # admin-queue plan exactly as the contract requires.
+        "asg": comms.recipient, "aud": comms.audience.value, "ch": comms.channel_id,
         "chc": comms.channel_class.value, "int": comms.interrupt,
         "rule": metadata.get("routing_rule") or comms.reason_code,
         "pri": execution.priority_bp, "conf": execution.confidence_bp,
@@ -259,10 +270,15 @@ def validation_input(conn, execution: ExecutionObject, row: Any, *, now: datetim
             subject_status = str(raw.get("value") if isinstance(raw, Mapping) else raw or "")
 
     owner_active = True
-    if execution.communication.assignee:
+    # The RECIPIENT's seat, not only the owner's. Guard rule 7 reroutes when `routable` is true
+    # and this is false; now that an admin-queue plan is routable through its queue seat, a
+    # deactivated admin has to be able to trip the same rule — otherwise a commitment addressed
+    # to a seat that no longer exists would keep being "delivered" forever.
+    recipient = execution.communication.recipient
+    if recipient:
         seat = conn.execute(text(
             "select 1 from org_seats where org_id=:o and seat_id=:s and active"),
-            {"o": org_id, "s": execution.communication.assignee}).first()
+            {"o": org_id, "s": recipient}).first()
         owner_active = seat is not None
 
     superseded = conn.execute(text(
@@ -397,17 +413,52 @@ def action_completions(conn, org_id: str, execution_id: str) -> dict[str, dateti
 
 
 def reassign(conn, *, org_id: str, execution_id: str, assignee: str | None, audience: str,
-             routing_rule: str, at: datetime, actor: str = "system") -> None:
+             routing_rule: str, at: datetime, actor: str = "system",
+             plan: CommunicationPlan | None = None) -> None:
     """Point a live commitment at somebody else.
 
     Routing is deliberately not part of ``execution_id``, which is exactly what makes this a
     plain update rather than a new commitment: handing work to a colleague must not restart the
     escalation ladder or duplicate the row the outcome will be recorded against.
+
+    ``plan`` is the new communication plan, and passing it is what makes the reassignment
+    REAL. This function used to update three columns and nothing else, while ``load`` rehydrates
+    the ``ExecutionObject`` — and therefore ``remindable`` and ``communication.assignee`` —
+    from ``payload`` alone. So every reassignment was invisible to the unit that matters:
+    ``POST /commitments/{id}/reassign`` returned ``{"reassigned": true}``, the column changed,
+    and ``decide_reminder`` still refused on the next sweep with ``not_remindable`` because the
+    payload still said what it said at build time. The one escape hatch a founder had from a
+    silent queue was a no-op, and it reported success.
+
+    Left optional so callers that only want the audit trail keep working, but every caller in
+    the engine passes it.
     """
+    params: dict[str, Any] = {"a": assignee, "au": audience, "r": routing_rule,
+                              "o": org_id, "x": execution_id}
+    plan_set = ""
+    if plan is not None:
+        # `jsonb_set` twice rather than rewriting `payload`: the plan, the ladder and the
+        # identity in there are frozen promises, and a wholesale rewrite from a rehydrated
+        # object is how a reassignment quietly becomes a re-plan.
+        #
+        # The channel COLUMNS move with it. They are a projection of the same plan, and Layer 6
+        # reads them rather than the payload — `enqueue_executive_messages` matches on
+        # `x.channel_id` and copies `x.interrupt` onto the outbox row. Updating the payload alone
+        # would leave the two disagreeing about where a reminder is meant to go, which reads
+        # downstream as "Layer 5 planned the card surface" and drops the message.
+        plan_set = (", channel_id=:ch, channel_class=:chc, interrupt=:int"
+                    ", payload = jsonb_set(jsonb_set(payload, '{communication}', "
+                    "cast(:comms as jsonb), true), '{remindable}', "
+                    "cast(:remindable as jsonb), true)")
+        params["ch"] = plan.channel_id
+        params["chc"] = plan.channel_class.value
+        params["int"] = plan.interrupt
+        params["comms"] = canonical_dumps(plan.to_semantic_dict())
+        params["remindable"] = "true" if plan.routable else "false"
     conn.execute(text(
-        "update executions set assignee=:a, audience=:au, routing_rule=:r, updated_at=now() "
-        "where org_id=:o and execution_id=:x and closed_at is null"),
-        {"a": assignee, "au": audience, "r": routing_rule, "o": org_id, "x": execution_id})
+        "update executions set assignee=:a, audience=:au, routing_rule=:r, updated_at=now()"
+        + plan_set +
+        " where org_id=:o and execution_id=:x and closed_at is null"), params)
     log_event(conn, org_id=org_id, execution_id=execution_id, kind="execution.reassigned",
               reason_code=routing_rule, actor=actor,
               detail={"assignee": assignee, "audience": audience}, occurred_at=at)

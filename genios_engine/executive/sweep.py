@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from typing import Any
 
@@ -42,7 +42,10 @@ from genios_engine.executive.assignment import (
     resolve_owner,
 )
 from genios_engine.executive.collect import collect_outcome
-from genios_engine.executive.communication import reassign as reassign_plan
+from genios_engine.executive.communication import (
+    reassign as reassign_plan,
+)
+from genios_engine.executive.communication import replan_for_recipient
 from genios_engine.executive.execution import build_execution, execution_config
 from genios_engine.executive.execution_guard import GuardAction, validate, validate_for_delivery
 from genios_engine.executive.interpret import build_context
@@ -309,6 +312,53 @@ class _Step:
     closed: int = 0
 
 
+def _heal_reachability(conn, execution: ExecutionObject, *, org_id: str, now: datetime,
+                       cfg: Mapping[str, Any]) -> ExecutionObject:
+    """Give a commitment its recipient back when the directory can name one today.
+
+    Reachability is the one thing on a commitment that is a fact about the ORG, not a promise to
+    the owner.  The plan, the actions and the escalation ladder are frozen deliberately — retuning
+    a pack must never rewrite what somebody was told on Monday — but "is there anybody to nudge"
+    is answered by ``org_seats`` as it stands right now, and freezing that answer at build time is
+    what turned a directory gap into a permanent silence.
+
+    Measured on production 2026-08-30: 203 commitments, 195 of them for the paying tenant, every
+    one carrying ``payload.remindable = false`` because ``resolve_owner`` fell to rule 3 at build
+    time.  ``org_seats`` holds an active admin for both orgs, so rule 3 resolves a queue seat
+    today; without this heal those rows would stay silent for the rest of their lives, because
+    ``plan_commitments`` never re-examines a decision that already has a live commitment.
+
+    Deliberately narrow.  It only ever adds a recipient to a plan that has none, it never removes
+    one, it never touches the ladder (rungs the commitment never had must not appear
+    retroactively — the deadline and untouched triggers are what wake these rows), and it is a
+    no-op for anything built after this fix.  Idempotent: the healed row is routable, so the
+    first condition is false on every subsequent pass.
+    """
+    if execution.communication.routable:
+        return execution
+    directory = PgSeatDirectory(conn=conn, org_id=org_id)
+    facts, attrs = ({}, {})
+    if execution.subject_ref:
+        facts, attrs = _node_facts(conn, org_id, execution.subject_ref)
+    assignment = resolve_owner(facts=facts, attrs=attrs, directory=directory)
+    if assignment.recipient is None:
+        return execution                    # genuinely nobody in this org — stay quiet, honestly
+    # `replan_for_recipient`, not `reassign_plan`: the channel was decided by branch 1 BECAUSE
+    # there was nobody to send to, so it has to be re-asked with the recipient present. Keeping
+    # `in_app` here would leave the commitment remindable and still uncarried — Layer 6's bridge
+    # matches on the channel Layer 5 recorded, and it would go on matching nothing.
+    plan = replan_for_recipient(
+        execution.communication, assignment, priority_bp=execution.priority_bp,
+        confidence_bp=execution.confidence_bp,
+        available_channels=store.active_channels(conn, org_id), cfg=cfg.get("communication"))
+    store.reassign(conn, org_id=org_id, execution_id=execution.execution_id,
+                   assignee=plan.recipient, audience=plan.audience.value,
+                   routing_rule=plan.reason_code, at=now, plan=plan)
+    _log.info("execution %s became reachable via %s (%s); it was built unreachable",
+              execution.execution_id, assignment.recipient, assignment.reason_code)
+    return replace(execution, communication=plan, remindable=plan.routable)
+
+
 def _process_one(conn, row: Mapping[str, Any], *, now: datetime,
                  cfg: Mapping[str, Any]) -> _Step:
     """Validate → transition → observe → decide → speak, for one commitment."""
@@ -318,6 +368,7 @@ def _process_one(conn, row: Mapping[str, Any], *, now: datetime,
         return _Step("vanished")
     execution, current = loaded
     state = ExecutionState(current["state"])
+    execution = _heal_reachability(conn, execution, org_id=org_id, now=now, cfg=cfg)
 
     validation = store.validation_input(conn, execution, current, now=now,
                                         signal_id=current.get("signal_id"))
@@ -345,8 +396,12 @@ def _process_one(conn, row: Mapping[str, Any], *, now: datetime,
         assignment = resolve_owner(facts=facts, attrs=attrs, directory=directory)
         plan = reassign_plan(execution.communication, assignment, reason_code="owner_inactive")
         store.reassign(conn, org_id=org_id, execution_id=execution.execution_id,
-                       assignee=plan.assignee, audience=plan.audience.value,
-                       routing_rule=plan.reason_code, at=now)
+                       # `plan.recipient`, and `plan=` so the PAYLOAD moves too. Without the
+                       # second argument the reroute changed three columns while `load` kept
+                       # rehydrating the old plan from `payload`, so a rerouted commitment went
+                       # on being judged against the owner who had already left.
+                       assignee=plan.recipient, audience=plan.audience.value,
+                       routing_rule=plan.reason_code, at=now, plan=plan)
         return _Step("rerouted", reassigned=1)
 
     if verdict.action is GuardAction.SUPPRESS:
