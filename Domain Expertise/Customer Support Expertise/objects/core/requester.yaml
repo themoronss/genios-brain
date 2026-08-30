@@ -804,14 +804,16 @@ attributes:
 
 - name: contact_frequency
   purpose: >
-    The number that turns three unremarkable tickets into one alarming pattern. Not emitted
+    The number that turns three unremarkable tickets into one alarming pattern. THIS PERSON's
+    contacts per week, not their employer's — a Requester is one human, and the account-level
+    rate that ships today would fill this field with their colleagues' traffic. Not emitted
     today; the source path recorded here is an ask, not a fact, and is deliberately named so
     that backlog.py counts it. It is the highest-value missing signal on this object.
   type: value
   data_type: number
   unit: contacts_per_week
   source_paths:
-  - derived.contact_frequency
+  - derived.person_contact_rate
   validation: ">= 0"
   constraints: >
     Must be read against lifetime_ticket_count and first_seen_at. A power user's fourth contact
@@ -1500,19 +1502,33 @@ inference_patterns:
       exception req.repeat_contact_that_is_healthy.
     requires_signals:
     - kind: derived
-      name: derived.contact_frequency
+      name: derived.person_contact_rate
       owner_layer: L2
       note: >
         The highest-value missing signal on this object. Three individually reasonable tickets
         from one person in a week is a content gap, a product defect or a failed first
         resolution, and it is invisible to every capability that reads one ticket at a time.
         Everything the executable graph-degree heuristic below approximates, this would state.
+
+        PER PERSON, and this used to be written `derived.contact_frequency`. That name shipped
+        in `reason/baselines.py` as an ACCOUNT's contacts per week, rolled up through the
+        works_at edge — which cannot answer this pattern at all. A fifty-seat account whose
+        aggregate rate is unremarkable can still contain one person on their fourth ticket in a
+        week, and that person is the entire finding here. The pattern stayed needs_signal after
+        the account rate shipped; it was the name, not the pattern, that claimed to be served.
     - kind: baseline
       name: contact_rate_per_account
       owner_layer: L2
       note: >
         Needed to make frequency readable — a power user's fourth contact is noise, a quiet
         customer's second is a signal, and an absolute threshold cannot tell them apart.
+
+        NOTE THE MISMATCH, deliberately left standing rather than quietly fixed: this baseline is
+        the ACCOUNT's own 56-day norm, and the rate above is a PERSON's. "A power user" in the
+        sentence before is an individual, so the comparator this pattern actually wants is a
+        per-person norm that nobody has proposed, costed or written. Recording the wrong-but-
+        nearest baseline with this note is honest; silently comparing a person against an
+        account's norm is the same class of error this pattern was just rescued from.
 
   - id: req.shared_mailbox_is_not_a_person
     statement: The contact arrived from a role address rather than an individual, so no
@@ -1607,7 +1623,9 @@ inference_patterns:
       Directionally right and structurally wrong, which is why it sits at 5500. edge_count is
       graph degree, not contact count in a window. It is kept because the alternative today is
       no repeat-contact signal whatsoever, and it should be retired the day
-      derived.contact_frequency ships — the needs_signal pattern above declares that it
+      derived.person_contact_rate ships — NOT the day derived.contact_frequency did, which has
+      already happened and changed nothing here, because that one counts an account and this
+      pattern stands in for a person — the needs_signal pattern above declares that it
       corroborates this one, which is the honest relationship: an independent and better
       measurement of the same thing.
 
@@ -3546,8 +3564,10 @@ metadata:
     The four asks that would change this object most, in order:
     (1) conversation.from_address — the cheapest signal in the backlog and the one whose absence
     corrupts the most fields, because without it a role mailbox is silently modelled as a person;
-    (2) derived.contact_frequency — turns three unremarkable tickets into one alarming pattern and
-    retires the graph-degree heuristic that currently stands in for it;
+    (2) derived.person_contact_rate — turns three unremarkable tickets into one alarming pattern
+    and retires the graph-degree heuristic that currently stands in for it. Per person: the
+    account-level derived.contact_frequency shipped and left every pattern on this object exactly
+    where it was, because a Requester is a human and that number counts a company;
     (3) diagnostic_artifact_attached — the best evidence of fluency there is, arriving unasked in
     the first message and discarded;
     (4) escalation_requested — there is no escalation signal of any kind in the substrate, so the

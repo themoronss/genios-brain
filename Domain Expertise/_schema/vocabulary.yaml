@@ -171,9 +171,19 @@ substrate:
     - derived.momentum        # engine-computed trajectory
     - derived.engagement      # engine-computed two-way volume vs prior fortnight
     - derived.sentiment       # engine-computed observation balance
-    # Account level, not person level: reason/baselines.py rolls each company's people up through
-    # the works_at edge and writes contacts/week over the recent window. Paired with the
-    # contact_rate_per_account baseline below — a rate is not evidence without its own norm.
+    # ACCOUNT-LEVEL CONTACT RATE, and nothing else. reason/baselines.py rolls each company's
+    # people up through the works_at edge and writes contacts/week over the recent window.
+    # Paired with the contact_rate_per_account baseline below — a rate is not evidence without
+    # its own norm.
+    #
+    # THE NAME USED TO COVER FOUR MEASUREMENTS AND SHIP ONE. Eleven authored patterns named
+    # `derived.contact_frequency`; only five of them wanted this account rate. Four wanted a
+    # PERSON's contact rate, one wanted a person's SHARE of an account's inbound, and one wanted
+    # a COUNT of distinct callers. backlog.py therefore reported this signal as "unblocks 11"
+    # and shipping the writer unblocked 2 — the count was of a name, not of a measurement. The
+    # other three now have their own names in planned_substrate.fact_paths below, unwritten,
+    # which is the only place a name with no writer belongs. Do not attach a pattern to this
+    # entry unless the thing it counts is an ACCOUNT's contacts per week.
     - derived.contact_frequency
     # ── the seven correspondence readings (context/support_situations.py) ──────
     #
@@ -604,6 +614,35 @@ planned_substrate:
     - incident.started_at
     - derived.escalation_pressure
     - derived.backlog_age
+    # ── the three contact measurements that were hiding inside `derived.contact_frequency` ──
+    #
+    # NOTHING WRITES THESE. They are here rather than in `substrate` for exactly the reason the
+    # census exists: `reason/baselines.py` writes one account-level rate, and the six patterns
+    # below were asking that one name for three other numbers. A share is not a rate, a person is
+    # not an account, and a count of callers is neither. Sharing one name made the backlog claim
+    # eleven patterns unblocked when two were.
+    #
+    # Each name states its ANCHOR and its UNIT, because the anchor and the unit are the two things
+    # the old name left to the reader to guess:
+    - derived.person_contact_rate     # contacts/week from ONE person. Same unit as
+                                      #   derived.contact_frequency, different denominator
+                                      #   population — an individual, not the company they
+                                      #   work at. Wanted by req.repeat_contact_inside_a_week,
+                                      #   cs.sent.reopened_or_repeat_contact,
+                                      #   esc.the_diagnosis_restarted,
+                                      #   contact.is_a_proxy_for_someone_else.
+    - derived.person_inbound_share    # basis points of an ACCOUNT's inbound attributable to one
+                                      #   person. Dimensionless proportion, so it can never be
+                                      #   compared against the contact_rate_per_account baseline
+                                      #   the way a rate can. Already named inside the corpus as
+                                      #   named_contact.inbound_share, from which
+                                      #   customer_account.contact_concentration is computed.
+                                      #   Wanted by account.the_relationship_is_one_person_deep.
+    - derived.account_distinct_contacts  # how many distinct individuals contacted us from one
+                                      #   account inside the window. An integer count: it is what
+                                      #   a named-caller allowance is compared against, and
+                                      #   neither a rate nor a share can produce it. Wanted by
+                                      #   plan.the_named_caller_limit_is_being_exceeded.
 
 
   # ── Added by Admin ────────────────────────────────────────────────────────────────────

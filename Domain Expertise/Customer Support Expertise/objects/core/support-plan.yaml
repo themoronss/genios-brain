@@ -599,7 +599,17 @@ inference_patterns:
         than abuse.
       status: needs_signal
       requires_signals:
-        - {kind: derived, name: derived.contact_frequency, owner_layer: L2}
+        - {kind: derived, name: derived.account_distinct_contacts, owner_layer: L2,
+           note: "How many distinct individuals raised something from this account inside the
+                  window. An INTEGER COUNT, because that is the only shape a named-caller
+                  allowance can be compared against — `entitlement.plan` names a number of
+                  people, and no contacts-per-week rate and no inbound share can be turned into
+                  one. Written as `derived.contact_frequency` until that name shipped as an
+                  account's contact RATE: an account can double its volume without adding a
+                  caller and add three callers without changing its volume, so the shipped
+                  number is not a weaker version of this one, it is a different fact. The
+                  false_positive below already assumed a count — one person on several
+                  addresses inflates it — which is the clue the name was wrong."}
         - {kind: fact_path, name: entitlement.plan, owner_layer: L2}
       yields:
         confidence_bp: 6500

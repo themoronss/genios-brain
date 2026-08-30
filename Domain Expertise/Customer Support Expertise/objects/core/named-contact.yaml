@@ -649,7 +649,16 @@ inference_patterns:
       status: needs_signal
       requires_signals:
         - {kind: obs_kind, name: reproduction_failed, owner_layer: L2}
-        - {kind: derived, name: derived.contact_frequency, owner_layer: L2}
+        - {kind: derived, name: derived.person_contact_rate, owner_layer: L2,
+           note: "This person's own contacts per week. A relay reports often and reproduces
+                  nothing, and it is the conjunction that names them a proxy — either half alone
+                  describes an ordinary busy contact or an ordinary unlucky one. Written as
+                  `derived.contact_frequency` until that name shipped as an ACCOUNT rate, which
+                  says how loud the company is and nothing about which person is doing the
+                  talking. Deliberately the RATE and not `derived.person_inbound_share`: a high
+                  share means the relationship runs through this person, which is
+                  `relationship_weight` and account fragility, not evidence that they are
+                  speaking for somebody else."}
       yields:
         confidence_bp: 5500
         attribute: contact_role

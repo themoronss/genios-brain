@@ -564,9 +564,14 @@ inference_patterns:
         one departure away from having no route in at all.
       status: needs_signal
       requires_signals:
-        - {kind: derived, name: derived.contact_frequency, owner_layer: L2,
-           note: "Per-person inbound share within an account. The graph holds the people and the
-                  messages; nothing aggregates one against the other."}
+        - {kind: derived, name: derived.person_inbound_share, owner_layer: L2,
+           note: "Basis points of this account's inbound attributable to one person. The graph
+                  holds the people and the messages; nothing aggregates one against the other.
+                  This ask used to be written as `derived.contact_frequency`, which is an
+                  ACCOUNT's contacts per week — it shipped, this pattern did not become
+                  executable, and it never could have: concentration is a proportion of a whole
+                  and no rate contains one. Same number as `inbound_share` on Named Contact,
+                  from which `contact_concentration` here is defined to be computed."}
       yields:
         confidence_bp: 7000
         attribute: contact_concentration
