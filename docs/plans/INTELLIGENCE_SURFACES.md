@@ -1,5 +1,17 @@
-> **Created:** 2026-08-26 · **Status:** Active
+> **Created:** 2026-08-26 · **Status:** Active — PARTIALLY SHIPPED (item 1 done, item 2 half done, items 3-5 open)
 > **Purpose:** One intelligence, four surfaces. Define what each surface is FOR, and stop shipping the same card to all of them.
+
+## Where this actually stands — verified against code 2026-08-30
+
+| # | The work | State | Evidence |
+|---|---|---|---|
+| 1 | A card knows its surfaces | **DONE** | `migrations/0075_card_surfaces.sql`; `deliver/card_builder.py:230 _surfaces()` computes `{app, agent, ask, api}` at build time; `deliver/store.py:126,156` persists it. A settled deal (`_SETTLED_STATUSES`) at momentum ≤ 0 now returns `["ask","api"]` only — the Antler card is off the app queue. |
+| 2 | Each surface filters on it | **HALF DONE** | The app filter shipped: `deliver/store.py:310` — `and 'app' = any(k.surfaces)`. **The agent gateway never got its filter**: `deliver/agent_api.py:82` still selects from `cards` with no `surfaces` predicate, so an agent is still offered every card including ones with nothing to execute. This is the single smallest open item in this plan. |
+| 3 | The app's card becomes an instruction | **PARTIAL** | `do_nothing_consequence` now travels the whole way (`migrations/0070_signal_decision_columns.sql` → `deliver/pipeline.py:64` → `card_builder.py:444`). `why_now` is populated by `card_builder.py:87 _why_now()` for **three reason codes only** (`commitment_overdue`, `meeting_no_followup`, `unanswered_email`) and returns `None` for every other one — deliberately, so it cannot invent a reason, but the coverage gap is real. |
+| 4 | The agent's card becomes executable | **PARTIAL** | `migrations/0073_agent_delegations.sql` and the agent delivery lane exist (`99ed200`, `d360677`). The plan's actual bar — "prove one delegation end to end **against a real agent**" — has not been met; that is a live-integration step, not code. |
+| 5 | The package surface | **NOT STARTED** | No LangChain/LangGraph/npm client on the current engine. The only such code on disk is under `_legacy_brain/sdks/`, which the engine does not use. Correctly last. |
+
+The plan's ordering section also lists **"corpus content — 136 of 153 capabilities carry identity and purpose only"** as item 4 of 5. That number is stale: the Sales, Admin and Customer Support corpora were authored to completion between 2026-08-26 and 2026-08-29 (`e6de45d`, `e5851c1`, `bd75aa1`, `a112026` — corpus validate at zero errors). Routing coverage, not authoring, is now the live constraint — see `ADMIN_SUPPORT_WIRING.md`.
 
 # The problem, stated once
 

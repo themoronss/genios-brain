@@ -1,4 +1,4 @@
-> **Created:** 2026-08-27 · **Status:** Active
+> **Created:** 2026-08-27 · **Status:** 🔵 Reference — **its headline is now false.** The `deal` node exists, Admin/CS have a pack lane, and Sales routing is 43/47 rather than the ~27 this file predicts. Four of its seven findings are closed; three remain and are named below. Re-verified 2026-08-30.
 > **Purpose:** Why a complete Sales corpus still changes nothing on the live org. Every claim below was measured against `org_e97e86f858ad48b2bbf64b8a`, read-only. Nothing was deleted.
 
 # The one-sentence finding
@@ -217,3 +217,24 @@ Admin 51, Customer Support 40. Sales is 0. Blocked behind L3-1 regardless.
   during a trial is irreversible and was not part of what the analysis needed.
 * **No Layer 2 code was changed.** This document is the diagnosis; the fixes are separate work with
   their own tests.
+
+## Re-verification — 2026-08-30
+
+This document did its job: it found why nine batches of Sales authoring moved nothing, and the fix followed. Keeping the original text is right — but the headline must not be read as current.
+
+### Closed
+
+- **L2-1 · "There is no `deal` node. This is the big one." — DONE.** Minted at `context/pipeline.py:863` (`node_type="deal"`, `canonical_key="deal:" + company`); `deal` is in `_NODE_TYPES` at `:161`; both edges written at `:871-873` (`company owns deal`, `deal involves person`), with an inline note on why the person edge is load-bearing for a one-hop neighbourhood read. Backfill at `context/backfill.py:162 backfill_deal_nodes`, status normalisation at `:299 normalise_deal_status`, stage preserved at `:330`. `deal` is in the closed producible vocabulary at `tests/test_l3_route_vocabulary_contract.py:53`. Covered by `test_deal_node_from_correspondence.py`, `test_deal_join_wiring.py`, `test_deal_status_survives_a_sync.py`, `test_deal_conversation_join.py`.
+- **L3-1 · "Admin and Customer Support cannot deliver at all" — DONE.** `packs/admin_v1.py` and `packs/support_v1.py` exist; `packs/wiring.py:20` — `BUILTIN_PACKS = [SALES_V1, GENERAL_V1, ADMIN_V1, SUPPORT_V1]`, with both in `DEFAULT_PACKS` at `:30-31`. `support_v1.py:10-19` documents the `support` vs `customer_support` id trap. **This was the second half of the headline.**
+- **L3-2 · Three unauthored CS core objects — DONE.** `Domain Expertise/Customer Support Expertise/objects/core/{customer-account,named-contact,support-plan}.yaml`, plus `conversation`, `issue`, `satisfaction-score` (`6392498`) and `workaround`, `bug-report`, `product-area` (`68a4a8f`).
+- **L3-3 · "91 hollow capabilities" — DONE, zero.** `admit.py --check` → 0 HOLLOW; 153/153 `identity.status: stable`, 153/153 `review_status: approved`, 0 stubs.
+
+**The headline number specifically.** Sales unrouted is **4 of 47** — `demo`, `tam_sam_som`, `cold_calling`, `linkedin_outreach`. **None** of the ~20 this file names at lines 148-151 (`closing`, `negotiation`, `pricing`, `proposal_creation`, …) is among them.
+
+### Still open — these are the reason this file is Reference and not archived
+
+- **L2-2 · Eleven observation kinds emitted by nothing.** Undiagnosed and unchanged. The obs synonym normaliser at `context/pipeline.py:189-220` **predates this document** (`f462ff4`, 2026-08-05), so it is not the fix. Whether the eleven appear on a live org: **UNVERIFIED**, needs a DB.
+- **L2-3 · `commitment.status` / `commitment.text` on 3 of 31 commitment nodes.** The forward writer now writes all three together (`context/pipeline.py:1138-1140`), but **there is no backfill** — `commitment` does not appear in `context/backfill.py` at all. Historical rows stay broken unless the graph is rebuilt.
+- **L2-4 · No stage history.** `deal.stage` is written only as a current value (`pipeline.py:908`, `derived.py:239`, `backfill.py:330`). No `stage_history` or `time_in_stage` anywhere in `context/`.
+
+One meta-note: this file's line 214-219 says "**No Layer 2 code was changed**". That was true of the diagnosis and is no longer true of the world — Layer 2 has changed substantially since, largely because of this file.

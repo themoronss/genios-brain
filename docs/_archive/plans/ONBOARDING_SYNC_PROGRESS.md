@@ -1,4 +1,4 @@
-> **Created:** 2026-08-14 · **Status:** Active
+> **Created:** 2026-08-14 · **Status:** ✅ Done — all four parts shipped; verified against code 2026-08-30
 > **Purpose:** Make the real-user onboarding sync (Gmail + Calendar, 2 months, no count cap) complete reliably and show honest, human-readable, refresh-proof progress on the frontend.
 
 # Onboarding Sync + Progress
@@ -47,3 +47,14 @@ Grounded in a 3-agent code audit (2026-08-14) of the connect→sync→L1→L2→
 
 ## Alignment
 - In-process BackgroundTasks only (no Celery/Upstash — quota). Never leak v1/v2 or L1/L2/L3 to users. Progress is derived/DB-backed so a restart resumes truthfully.
+
+## Closure — verified against code 2026-08-30
+
+Every part of this plan is in the tree. Archived on that basis.
+
+- **Part 1 (one Sync click, 2 months, no cap, background).** `api/routes.py:1104` — `_BACKFILL_MAX_ROUNDS = 200  # 200 × 25 = ~5000 messages ceiling per source (was 24 ≈ 600)`; `:1106` — `_SOURCE_EVENT_CAP = {"gcal": 2000}` (was 150). Both ceilings kept and explicit, exactly as specified.
+- **Part 2 (DB-backed progress).** `migrations/0054_onboarding_progress.sql` + `genios_engine/platform/progress.py` (`start` / `set_phase` / `finish` / `read`, one row per org, `phases` jsonb). Endpoint `GET /api/org/{org_id}/onboarding-progress` at `genios_engine/api/home_routes.py:137`.
+- **Part 3 (frontend).** Separate repo — `genios-dashboard/src/components/integrations/sync-progress.tsx` polls the endpoint (~4s) and renders the plain-language phases; `src/lib/api.ts:633` is the client; `src/hooks/use-onboarding.ts:67` records that authoritative live progress moved to `<SyncProgress>`.
+- **Part 4 (robustness).** Composio bounded explicitly — `capture/connectors/composio_base.py:31` (`timeout=60`) and `:47` (`.result(timeout=_EXEC_TIMEOUT_S)`), with the reasoning for both written into the file; Anthropic bounded at `context/llm/client.py:38`. The `/context/process` bug is fixed and documented against regression at `api/routes.py:1565-1569` (`limit` → `max_total`).
+
+**One thing this closure does NOT claim.** The plan's `## Verify` section asks for a prod end-to-end run on a real org watched through every phase. That is an operational check, not a code state, and it was not re-run for this audit. It is recorded as closed because the flow has since carried real design-partner orgs (Gmail + Calendar) all the way to a populated graph — but if you want the phase-by-phase observation specifically, that observation has not been made.

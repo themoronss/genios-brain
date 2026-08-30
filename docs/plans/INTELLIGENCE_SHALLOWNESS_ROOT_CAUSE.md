@@ -1,4 +1,4 @@
-> **Created:** 2026-08-22 · **Status:** Active
+> **Created:** 2026-08-22 · **Status:** 🔵 Reference — historical audit, **substantially remediated**. Read it for the reasoning, not as a to-do list. Its open items were folded into `IMPLEMENTATION_PROGRAM.md` (2026-08-23) the next day. Re-verified 2026-08-30.
 > **Purpose:** Code+data-grounded root-cause of why the app's suggestions read as "no intelligence" — why junk (`invite@thegenios.com`) surfaces, why dead rejections surface, and why the single most important live thread (Antler/Theresa) produces zero cards.
 > **Method:** 10 parallel investigators over live Postgres (`org_e97e86f858ad48b2bbf64b8a`) + engine source → 78 findings → 18 adversarial refutation agents → 13 confirmed, 5 refuted/narrowed.
 > **Scope:** ANALYSIS ONLY. No code was changed. Sibling of `INTELLIGENCE_QA_ROHIT_AUDIT.md` (2026-08-12) — several RCs there are re-confirmed here with exact failing clauses.
@@ -257,3 +257,20 @@ Recorded so they don't get re-litigated:
 - Re-confirms `INTELLIGENCE_QA_ROHIT_AUDIT.md` RC1 (thin extraction), RC2 (constant Impact), RC3 (dead self-filter / `org_seats` empty, investors-as-deals), RC4 (hollow commitments, dupes, staleness) — now with exact failing clauses and a live-repro for each.
 - Extends `INTELLIGENCE_DEEP_SALES.md`'s field-drift finding: it is not just `deal.status` vs `deal.stage`, it is that **no `deal` node type exists at all**, so the bridge never runs.
 - Nothing in this document was implemented. Read-only throughout.
+
+## Re-verification — 2026-08-30
+
+An audit is a photograph, and this one was taken eight days and roughly two hundred commits ago. It is being marked Reference rather than Active because most of what it found has been fixed and leaving it Active implies a backlog that no longer exists. Its headline findings, checked against code:
+
+**Closed:**
+
+- **"The engine has no idea who the counterparty is or which direction the email went" — the central finding — is FIXED.** `context/extract/envelope.py` now assembles From / To / direction and hands it to the model; `context/extract/prompt.py:14` passes `direction` (inbound/outbound), `:17` passes `we_are` (the account owner's own addresses, "never a counterparty"), and `:34-42` asks for a `roles` array resolved from the envelope (`counterparty | introducer | introduced | …`). `envelope.py:35-39` is careful in the right way: with no self-identity set the direction is `unknown` rather than guessed.
+- **"`I` = 55 constant, so the `high` band at 70 is arithmetically unreachable" — FIXED.** `reason/scoring.py:72` — `impact()` is a real function of `(value, p90, linked_deal)`, and the constant is gone from the file.
+- **"Copy is empty — the invention guard kills 25 of 41 cards"** — worked and partly closed. `679982d` ("a card was falling back to template copy for reasons that were bugs") plus `deliver/slots.py:63`, which records that the model was not hallucinating but had been handed the wrong premise. The *rate* on a live queue is **UNVERIFIED**.
+- **"Junk scores highest because missing data has a higher score"** and **the ranking/tier findings** — addressed by the same scoring rework; live distribution **UNVERIFIED**.
+
+**Not confirmed either way:**
+
+- **The `champion_quiet` / `MappingProxyType`-vs-`isinstance(dict)` finding is UNVERIFIED.** `champion_quiet` still exists as a rule (`packs/general_v1.py:84,155,212`) and `reason/engine.py:44` still tests `isinstance(value, dict)`. Whether a `MappingProxyType` still reaches that line was not established by this pass. If the rule matters, prove it with a test rather than a grep.
+- **"72% of email dropped (N-02)"** — this is a live-data measurement and needs a DB. Related and important: `IMPLEMENTATION_PROGRAM.md` gap **L1-02** measured "109 emails irrecoverably deleted", and the drop path itself is still open — see `docs/plans/GRAPH_QUALITY_FIX.md` in the workspace, where the LLM gate's ability to delete violates that plan's own stated law.
+- **"0 documents parsed"** — the document lane has since been built (`context/document_register.py`, `context/documents.py`, the Drive projection). Live counts **UNVERIFIED**.

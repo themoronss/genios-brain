@@ -1,4 +1,4 @@
-> **Created:** 2026-08-25 · **Status:** Active
+> **Created:** 2026-08-25 · **Status:** Active — **the cutover has NOT happened.** `GENIOS_USE_DOMAIN_COMPILER` is still default-`False` and is set in no environment. Most of the Phase-2 blocker list has closed since; two items survive. Re-verified 2026-08-30.
 > **Purpose:** Switch card generation from the legacy pack rules to the compiled L3 capability corpus. The live path is DONE and proven on the design partner's org; the env var is the remaining flip.
 
 # Where we actually are
@@ -680,3 +680,28 @@ green, corpus errors 412 → 380, hollow 99 → 91.
 PYTHONPATH=. .venv/bin/python scripts/corpus_route_probe.py          # per-type route coverage
 PYTHONPATH=. .venv/bin/python "Domain Expertise/_tools/admit.py" --check   # admission + hollow queue
 ```
+
+## Re-verification — 2026-08-30
+
+### The flip, precisely
+
+`GENIOS_USE_DOMAIN_COMPILER` → `platform/config.py:110`, `use_domain_compiler: bool = False`. Read at exactly one site, `reason/runner.py:1373`, which does now run `shadow_compile(..., live=True)` — so this file's line 164-170 correction ("it runs the live pass, not a measurement pass") is **accurate**. The variable is absent from `.env`, `.env.production`, `.env.example`, `Procfile` and every yaml/json in the repo.
+
+Two things follow. First, **the cutover is still a pending human flip**, and per `ADMIN_SUPPORT_WIRING.md` it must come *after* the production read-only lift and migration `0076`. Second, the switch is still a **global process boolean** with no tenant or domain dimension — `runner.py:1373` is unconditional on org. That is `IMPLEMENTATION_PROGRAM.md` gap **L3-11**, and it is open.
+
+### Blockers that have closed
+
+| This file says | Now |
+|---|---|
+| "Only 1 of 152 capabilities routes; 17 of 60 situations find no route … the LARGEST remaining gap" (177-179) | **STALE — 121 of 153 route.** See `ADMIN_SUPPORT_WIRING.md`. |
+| "Every compiled card renders as an `observation` … `review_state='draft'`" (180-183) | **DONE.** 153/153 stable + approved + hash-admitted; `admit.py --check` → 174 admitted, 0 drifted. Gate at `packs/compiler/capability_resolver.py:109 _admission_reason`, `:139 require_admission: bool = True`. |
+| "`account_admin` routes but CANNOT DELIVER … only `sales_v1` and `general_v1` exist … the largest structural gap left" (638-644) | **DONE.** `packs/admin_v1.py`, `packs/support_v1.py`, `packs/wiring.py:20,30-31`. |
+| "91 hollow capabilities (51 admin, 40 customer_support)" + "three unauthored CS core objects" (645-663) | **DONE.** Zero hollow; all three objects authored. |
+| "`review_state` is still `draft` on every live package" (668-670) | **DONE.** |
+| "11 of 18 compiled cards rendered `raw_slot` rather than `llm`" (184-187) | **PARTIALLY SUPERSEDED** — the `ADMIN_SUPPORT_WIRING.md` session-1 live run reported `build_cards built 4 · llm 4 · raw_slot 0` for the CS lane. Whole-queue state **UNVERIFIED**. |
+
+### Blockers that survive
+
+- **`CardStore.claim_build` refuses a claim when ANY card row exists for the signal, including an expired one.** Unchanged: `deliver/store.py:49` and `:55` both carry `and not exists (select 1 from cards k where k.signal_id = …)` with **no expiry predicate**. This file already called it "pre-existing, unfixed" and it still is.
+- **The L2 worker count at deploy time** (193-195 / 675-676) — a deploy-time value to confirm from `/health/readiness`, not a code change. **UNVERIFIED.**
+- `deal.value` absent and deliberately never derived (191-192) — unchanged, and deliberate.

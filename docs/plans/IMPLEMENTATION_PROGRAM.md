@@ -1,4 +1,5 @@
-> **Created:** 2026-08-23 · **Status:** 🟢 Active — awaiting owner approval to start Phase 0/0B
+> **Created:** 2026-08-23 · **Status:** 🟢 Active for SIX named gaps only — the other ~100 are closed. This is now a frozen audit register, not a live tracker.
+> **Corrected:** 2026-08-30. The old status line read "awaiting owner approval to start Phase 0/0B". That was already untrue when it was written: **Phases 0 and 0B shipped in `944b4f7`, the same commit that first added this file to git** (2026-08-24, "close 97 of 106 audited gaps across all seven layers"). Phases 1-7 landed in that commit too. Nobody was waiting for approval; the work was in the same changeset as the plan.
 > **Purpose:** The full implementation program derived from the Secret War audit (73 docs / 145k words) cross-verified against live code at `harsh/mvp@b739bd5` and the design-partner org's real Postgres. Covers all 7 layers, 106 canonical gaps, 0 unassigned.
 > **Method:** 11 parallel readers over the audit package with live code/DB cross-check → one max-effort synthesis. Audit basis commit == current HEAD, so every `[CODE]` claim is current.
 > **Companion:** `INTELLIGENCE_SHALLOWNESS_ROOT_CAUSE.md` (2026-08-22) — the independent data-grounded root-cause that this program reconciles against.
@@ -6,6 +7,34 @@
 I'll verify the load-bearing numbers I need for the program (failing test IDs, LLM call sites, corpus counts) before writing.
 All 9 failing tests named. Now the LLM call inventory.
 # GeniOS — FULL IMPLEMENTATION PROGRAM
+
+## Closure record — reconstructed 2026-08-30
+
+**This document contains no closure record of its own.** There is no status section, no checklist, no tick, no "CLOSED" marker against any of the 106 gaps — a grep for those words returns only false positives (a meeting title in a live-data example at line 221, and the words "fails OPEN" / "OPEN agent door" at lines 80 and 963). The `**Gaps closed:**` line under each Phase is a forward-looking *assignment* of which gaps that phase is meant to close, not a record that it did.
+
+The only closure record is in git: `git show 944b4f7`. `git log -- docs/plans/IMPLEMENTATION_PROGRAM.md` returns exactly one commit, and that commit both created this file and closed ~97 of its gaps.
+
+**Register:** 106 gaps — L1 15 · L2 17 · L3 14 · L4 11 · L5 8 · L6 19 · L7 12 · X 10 (matches §6.9, lines 1269-1280).
+
+**Closed:** ~97 in `944b4f7` (2026-08-24), plus **L3-09/L3-09b** (corpus depth) by the authoring programme of 2026-08-25 → 08-29. The plan recorded 152 capabilities / 152 draft / 0 approved / 149 stubs; the corpus today is **153 `capability.yaml`, 0 draft, 0 stubs**, and `corpus validate` is at zero errors. That was the largest single item of the nine that `944b4f7` left behind.
+
+Twelve closed gaps were spot-checked against live code and all twelve are genuinely closed — L1-01, L1-04, L1-07, L1-08, L1-10, L1-12, L2-14, L2-15, L5-01, L5-07, L6-12, L6-19, X-04, X-09. The commit's own claim is trustworthy.
+
+**Still open — verified in code on 2026-08-30:**
+
+| ID | What it is | Where it stands |
+|---|---|---|
+| **X-07** | The ten ADRs are unratified | `ADR_RATIFICATION.md` — 10 `[ ] RATIFIED`, none ticked. **Owner action, not code.** Line 1036 of this plan makes ADR-02 and ADR-07 preconditions for Phase 1. |
+| **X-01** | Provenance / client-isolation envelope | `client_context_id` appears three times in the whole engine, all as a `None` default (`context/graph_store.py:343,355,359`). Deliberately deferred (line 1247) until a second tenant class exists. |
+| **L1-13** | Deletion / revocation subsystem | Zero `tombstone` references anywhere in `genios_engine/`. Only the calendar half (`showDeleted`) landed. |
+| **L5-06b** | Governed agent handoff | `deliver/agent_api.py` has claim / expiry / release / result, but no approval token and no signed receipt. |
+| **L3-11** | Activation is one global boolean | `platform/config.py:110` — `use_domain_compiler: bool = False`. The measurement-vs-cutover half closed; the scoped promotion key did not. |
+| **L7-04** | First human verdict | The seam is wired (`feedback/store.py:118-119`, `feedback/units.py:63`). Whether a human has ever actually voted is a live-DB fact and is **UNVERIFIED**. |
+
+Roughly two more of the original nine cannot be named: **no artifact in the repo enumerates which nine `944b4f7` left open.** That missing list is itself the gap in the record.
+
+**What shipped 2026-08-29/30 is NOT this plan's backlog.** The read-only-database survival, account-level `contact_frequency`, authored priority reaching the card score, sender display names, the eight new L2 situation types, delivery channel resolution and the agent lane, Layer 5 commitment reachability, and the contact-signal name split are all defects found *after* `944b4f7` — mostly surfaced by the compiled-brain cutover and the corpus programme. Several extend a gap that was already closed (L1-05, L3-12, L6-01/L6-11, the data half of L5-03); none of them are among the six above.
+
 ### Secret War audit → executable remediation, all seven layers, audit dependency order preserved
 
 **Baseline:** `harsh/mvp@b739bd5` — confirmed HEAD, zero commits since the audit was written. Every `[CODE]` claim below was verified at this commit. Design-partner org: `org_e97e86f858ad48b2bbf64b8a` (Rohit Swerashi, founder raising money).

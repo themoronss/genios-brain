@@ -1,4 +1,5 @@
-> **Created:** 2026-08-24 · **Status:** Active
+> **Created:** 2026-08-24 · **Status:** Active — BLOCKED ON A HUMAN, not on code
+> **Verified:** 2026-08-30 — 0 of 10 boxes ticked. No engineering work will move this; it needs the owner to read ten paragraphs and tick or override. It is the oldest genuinely open item in either plan directory.
 > **Purpose:** The ten unratified ADRs (X-07), each drafted with a recommendation grounded in what the code already does — so ratification is reading and ticking, not researching. Tick `[x] RATIFIED` (or write the alternative you choose) and the decision is made.
 
 # ADR Ratification — the ten open decisions

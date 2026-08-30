@@ -1,4 +1,4 @@
-> **Created:** 2026-08-27 · **Status:** Active
+> **Created:** 2026-08-27 · **Status:** Active — **and its numbers are nine commits behind.** Routing is **121 routed / 32 named-pending / 0 silent of 153**, not the 85 or 108 written below. Exactly two things are blocked on a human; several sections have closed entirely. Re-verified 2026-08-30.
 > **Purpose:** Wire the Admin and Customer Support domains end to end, the way Sales was. Every number below was measured against `org_e97e86f858ad48b2bbf64b8a`. Nothing was deleted.
 
 # The one-sentence finding
@@ -454,3 +454,29 @@ and untouched.
 4. **A support or admin L2 extraction lane** — `planned_substrate` names 25 Admin and 20 Customer
    Support situation types and roughly 70 fact paths with no writer. That, not authoring, is what
    makes these two domains something other than a correspondence reader wearing a support hat.
+
+## Re-verification — 2026-08-30
+
+This file was the frontier when it was written and much of it has since shipped. Corrections, in the order the claims appear.
+
+### The routing number
+
+**121 routed / 32 named-pending / 0 silent, of 153.** Sales 43/47, Admin 36/57, Customer Support 42/49 — read from the `stats:` block of each domain's `registry/situation-capability-map.yaml`. So the two counts in this file (85 at lines 312-314, 108 at line 409) are both superseded; commit `68a4a8f`'s claim of 108 → 121 is confirmed. **"0 silent" still holds** — every one of the 32 orphans is named by a situation bound to a pending L2 type.
+
+Offline corroboration: `Domain Expertise/_tools/admit.py --check` → *174 already admitted, 0 stamped, 0 drifted, 28 blocked, **0 HOLLOW*** (the 28 blocked are `*.sit.*` situations, which `admit.py:16-18` says the resolver does not gate on). `_tools/validate.py` → **0 errors**, 283 warnings.
+
+> Note for whoever re-measures: `scripts/corpus_route_probe.py` **requires a database** (it dies at `reason/runner.py:487` without one). The offline path is `_tools/admit.py --check` plus the `stats:` blocks. `_tools/index.py` recomputes them but **writes three files**, so it is not a read-only check.
+
+### Still blocked on a human — both, still
+
+1. **Production is read-only and migration `0076` is pending.** Confirmed by `a0a397e`'s own commit body, which quotes production: *"1 migration(s) pending and the database is in read-only mode: 0076_expertise_payload_drops_trace_id.sql"*. What changed since this file was written is that the app now **degrades instead of crash-looping** — `platform/migrate.py`, `main.py`, and a 503 before the LLM call in `api/intelligence_routes.py`, guarded by `tests/test_migrate_read_only.py` and `tests/test_read_only_outage_behaviour.py`. The read-only lift itself is still yours. **Live state UNVERIFIED** — this audit had no DB access.
+2. **`GENIOS_USE_DOMAIN_COMPILER` is still unset.** `platform/config.py:110` — `use_domain_compiler: bool = False`, read at exactly one site (`reason/runner.py:1373`), and absent from `.env`, `.env.production`, `.env.example`, `Procfile` and every yaml/json in the repo. The precondition this file states — read-only lift and `0076` first, then the flip — is still the right order.
+
+The `expertise_packages` fix itself **is in code**: `contracts/domain_expertise.py:102-145` and `:349-392` drop `trace_id` from `to_semantic_dict`, `:395-408` strips it in `expertise_id()`, and `:217-259` drops `trace_id` + `evaluation_time` from the slice address (`graph_version` deliberately kept, line 244). It is `0076` that has not been applied.
+
+### Sections that have closed
+
+- **"The 68 pending capabilities need Layer 1 connectors" (lines 430-432) — now 32**, and this file's own document-store item is closed (`context/document_register.py`, `context/documents.py`, the `capture/connectors/drive.py` projection). The 32 that remain: Admin 21 (compliance, facilities, people, travel, PO, budget), CS 7 (diagnosis-and-resolution ×4, escalation-and-incident ×3), Sales 4 (`demo`, `tam_sam_som`, `cold_calling`, `linkedin_outreach`).
+- **"A hazard worth knowing" (lines 434-441)** — that running the suite registers `BUILTIN_PACKS` into whatever `GENIOS_DATABASE_URL` points at — **is CLOSED.** `tests/conftest.py:41-47` pins `GENIOS_DATABASE_URL` (to `GENIOS_TEST_DATABASE_URL`, else `""`), and `tests/test_tests_never_touch_production.py` guards it (`d860b8e`, `ae63ef9`). That section should be read as history.
+- **"Recommended order from here" (lines 445-456) is entirely stale.** Item 1 was done in this file's own session 2; items 2 and 3 ("166 skeleton playbooks", "76 hollow capabilities") are contradicted by `admit.py --check` → 0 hollow and `validate.py` → 0 errors; item 4 (an Admin/CS L2 lane) is largely built — `context/support_situations.py`, `context/periodic.py`, `context/document_register.py`.
+- **"Evidence, not routing, is now the constraint" (lines 426-429) — partially closed.** `97aeb46` shipped the account-level roll-up (`derived.contact_frequency` + `contact_rate_per_account` across `works_at`, written by `reason/baselines.py`); `867dae8` fixed `actor.name` at capture, where 69 of 115 cards had been headlining an email address; `0eaf94e` split the overloaded name into `derived.person_contact_rate` and `derived.account_distinct_contacts`. Both new names are in `planned_substrate` with **no writer yet**. Live per-anchor fact density: **UNVERIFIED**.
