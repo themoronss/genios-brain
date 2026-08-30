@@ -596,6 +596,33 @@ class Finding:
 
 # ── reading 1 · the first-response clock ─────────────────────────────────────────────────────
 
+def _first_response_fires(desk: Desk, thread_id: str, msgs: list) -> bool:
+    """Does the first-response clock own this thread? One predicate, asked by two readings.
+
+    Extracted rather than restated. This module's header states the rule it lives by — two
+    readings disagreeing about the same thread "would produce a queue that is overloaded and an
+    item that is not aging" — and `read_backlog_items` has to ask exactly this question to know
+    which items are already reported next door.
+    """
+    node = desk.thread_node.get(thread_id)
+    if not node or not msgs or msgs[0].internal:
+        return False                      # we started it: nobody is waiting on a first reply
+    if desk.thread_first.get(thread_id, msgs[0].at) < msgs[0].at:
+        return False                      # it began before the snapshot: its arrival is unknown
+    opened_at = msgs[0].at
+    if any(m.internal and m.at > opened_at for m in msgs):
+        return False                      # somebody replied: this is not a first-response miss
+    return desk.now > advance_working_hours(opened_at, desk.policy)
+
+
+def first_response_threads(desk: Desk) -> frozenset[str]:
+    """The threads `read_first_response` will mint a situation for, from the same snapshot."""
+    if not desk.we_know_who_we_are:
+        return frozenset()
+    return frozenset(t for t, msgs in desk.by_thread().items()
+                     if _first_response_fires(desk, t, msgs))
+
+
 def read_first_response(desk: Desk) -> list[Finding]:
     """A request arrived and nobody has replied inside the stated policy.
 
@@ -608,16 +635,11 @@ def read_first_response(desk: Desk) -> list[Finding]:
         return []
     out: list[Finding] = []
     for thread_id, msgs in desk.by_thread().items():
-        node = desk.thread_node.get(thread_id)
-        if not node or msgs[0].internal:
-            continue                      # we started it: nobody is waiting on a first reply
-        if desk.thread_first.get(thread_id, msgs[0].at) < msgs[0].at:
-            continue                      # it began before the snapshot: its arrival is unknown
-        opened_at = msgs[0].at
-        replies = [m for m in msgs if m.internal and m.at > opened_at]
-        target_at = advance_working_hours(opened_at, desk.policy)
-        if replies or desk.now <= target_at:
+        if not _first_response_fires(desk, thread_id, msgs):
             continue
+        node = desk.thread_node[thread_id]      # `_first_response_fires` already required it
+        opened_at = msgs[0].at
+        target_at = advance_working_hours(opened_at, desk.policy)
         overdue_h = round((desk.now - target_at).total_seconds() / 3600.0, 2)
         out.append(Finding(
             anchor=ANCHOR_THREAD, canonical_key=f"thread:{thread_id}",
@@ -660,9 +682,29 @@ def read_backlog_items(desk: Desk) -> list[Finding]:
     size and age forever. Requiring the ball to be in our court on the item's own thread drops
     them, because an outbound message puts it in theirs.
     """
+    # THE OTHER READING GETS THESE. A thread with the first-response clock running has had NO
+    # internal message on it at all — we never answered, so `ball` is trivially "us" and every ask
+    # extracted from it qualifies here as well. Measured on the design partner's org on
+    # 2026-08-30: 10 of the 11 threads carrying a first-response clock also carried backlog items,
+    # 23 of the 41 in total, up to 7 on one thread — one per ask kind the lexicon found in the
+    # same unanswered mail.
+    #
+    # `first_response_overdue` yields nothing and `ticket_aging` does, for three reasons and not
+    # as a tie-break. It is one card per thread against up to seven. It names the finding ("nobody
+    # replied") where aging restates it more weakly ("this waited longer than comparable work") off
+    # the SAME clock — on a thread with no reply, age and overdue time are the same number. And
+    # this reading's own docstring scopes it to items nobody committed to inside a worked
+    # relationship; a thread we never wrote on was never worked.
+    #
+    # NOT a suppression: the yield is keyed on the other reading actually FIRING, not on the
+    # thread merely looking unanswered. A never-answered thread that first-response skips — one
+    # that began before the snapshot, or is not yet past its deadline — has no clock next door, so
+    # it stays here and is still reported.
+    reported_next_door = first_response_threads(desk)
     open_loops = [lp for lp in desk.loops if lp.status == "open"]
     qualifying = [lp for lp in open_loops
-                  if lp.thread_id and desk.ball(lp.thread_id) == "us"]
+                  if lp.thread_id and desk.ball(lp.thread_id) == "us"
+                  and lp.thread_id not in reported_next_door]
     if not qualifying:
         return []
     ages = [round((desk.now - lp.opened_at).total_seconds() / 86400.0, 3) for lp in qualifying]
@@ -1557,7 +1599,8 @@ __all__ = [
     "ANCHOR_THREAD", "ANCHOR_TOPIC", "ANCHOR_WORKAROUND", "Desk", "Finding", "INTENT_LEXICON",
     "Loop", "LOOKBACK_DAYS", "Message", "QUIET_DAYS", "READINGS", "ResponsePolicy",
     "advance_working_hours", "answer_reuse_bp", "classify_intent", "clause_around", "desk_domains", "gather",
-    "percentile_bp", "read_backlog_items", "read_escalations", "read_first_response",
+    "first_response_threads", "percentile_bp", "read_backlog_items", "read_escalations",
+    "read_first_response",
     "read_knowledge_gaps", "read_mailbox_load", "read_repeat_contacts", "read_workarounds",
     "reads_as_escalation", "reads_as_fix", "reads_as_workaround",
     "refresh_support_situations", "repeat_window_days", "reply_turnaround_days",

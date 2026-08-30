@@ -77,6 +77,15 @@ _GRAMMAR_WORDS = frozenset({
     "before", "after", "during", "once", "until", "unless", "however", "meanwhile", "otherwise",
     "given", "based", "regarding", "attached", "per", "via", "both", "either", "neither", "each",
     "every", "any", "all", "some", "most", "more", "less", "last", "next", "final",
+    # Earned on 2026-08-30 from the design partner's 56 live cards, counts from `reject_detail`.
+    # Every one is a form of a word ALREADY in this list, which is why they read as omissions
+    # rather than as new judgements: `apologies` opens a late reply (6 rejected artifacts) and
+    # `apologise` is nowhere here; `reaching` is "Reaching out about…" and `reach` is above it;
+    # `met` is `meet`, `wanted` is `want`, `introduction` is `introduce`, and `where` is the one
+    # wh-word missing from a row that already holds who/how/why/what/which/when. The suffix rule
+    # cannot recover any of them — it strips ve/ll/re/s/t/d/m, and "met" is not "meet" plus a
+    # letter — so each has to be written down.
+    "apologies", "apologise", "apologize", "reaching", "where", "met", "wanted", "introduction",
     # Earned on 2026-08-27, each from a card that fell back to template copy on this word alone.
     # `the` is the striking one: the commonest word in English was not here, so any model
     # sentence opening "The proposal…" was read as an invented company. Articles are a closed
@@ -174,6 +183,18 @@ def _expand_dates(s: str) -> list[str]:
             continue
         mon, abbr = dt.strftime("%B").lower(), dt.strftime("%b").lower()
         out += [mon, abbr, str(dt.day), str(dt.year), f"{mon} {dt.day}"]
+        # THE CLOCK HALF, on the same principle as the month name and for the same reason it is
+        # not in `_GRAMMAR_WORDS`: "UTC" and "PM" are FAITHFUL RENDERINGS of a fact timestamp, so
+        # they are grounded from that timestamp and from nothing else. Two live cards were thrown
+        # away over this on 2026-08-30 — `V-02:name:UTC` discarded a first-response body and
+        # `V-02:name:PM` a draft reply, both for restating a time the facts carry. Blanket-
+        # exempting them would license "9 AM" on an evidence timestamp of 21:00; deriving them
+        # keeps the wrong one rejected. The offset is read from the ORIGINAL matched text, since
+        # `fromisoformat` has already normalised it away.
+        if m.group(0)[10:11] in ("T", " "):
+            out.append(dt.strftime("%p").lower())
+        if re.match(r"(?::\d{2}(?:\.\d+)?)?(?:\+00:00|Z)", s[m.end():m.end() + 24]):
+            out += ["utc", "gmt"]
         # The WEEKDAY of a fact date is that date restated, not a new claim — "Friday" for
         # 2026-07-24 is as faithful as "July 24". A live draft was discarded whole over exactly
         # this word. Derived from the date, so a Friday that is really a Tuesday stays rejected.
@@ -200,7 +221,25 @@ def _corpus(facts: dict, slots: dict,
         parts.append(str(q.get("quote") or ""))
         if q.get("name"):
             parts.append(str(q["name"]))
-    for f in facts.values():
+    for name, f in facts.items():
+        # THE FIELD NAME IS HALF THE PROMPT, AND WAS NO PART OF THE CORPUS. `_prompt` dumps the
+        # fact record with its KEYS — the model is handed `"thread.ball_in_court": "us"` and
+        # writes the only English sentence that says — then the guard, which was built from the
+        # VALUES alone, found no "ball" anywhere and judged it an invented company.
+        #
+        # Measured on the design partner's org after the 2026-08-30 re-sync: `V-02:name:Ball`
+        # rejected the SITUATION line on 28 of 56 cards. Half the queue lost its written body to
+        # one idiom, and because `first_response_overdue`'s fallback names no subject, 11 of
+        # those collapsed onto a single byte-identical sentence in the Mac app.
+        #
+        # The module's law already covered this and was simply never applied to the keys: "a
+        # word the system itself put in the prompt cannot be evidence of invention." A field name
+        # is schema vocabulary, not a claim about the world — `response.opened_at`,
+        # `derived.momentum`, `relationship.nature`. Where the extractor mints an `other.*` name
+        # out of the mail itself (`other.yc_application_cycle` on this org), the token came from
+        # the source text, so grounding it is right for exactly the same reason the quotes are.
+        # Split on the separators so the corpus holds words rather than identifiers.
+        parts.append(str(name).replace(".", " ").replace("_", " "))
         v = f.get("value") if isinstance(f, dict) else f
         s = json.dumps(v, default=str) if not isinstance(v, str) else v
         parts.append(s)
@@ -255,13 +294,34 @@ def _interpolate(tpl: str, slots: dict) -> str:
     return re.sub(r"\s{2,}", " ", tpl.format(**slots)).strip(" —·-")
 
 
+def _cap(text: str, cap: int) -> str:
+    """Bring a deterministic line under `cap` WITHOUT cutting a sentence in half.
+
+    `_fit` — whole sentences, then whole clauses — is the ladder the MODEL's output already
+    walks, and the fallback was not walking it. `_trim_to_word` alone cuts at the last space
+    before the cap, which is a word boundary and nothing more.
+
+    Measured on the design partner's org after the 2026-08-30 re-sync: `first_response_overdue`
+    interpolates to 165 characters against the 140 cap, and all eleven of its live cards shipped
+    a body ending on the word "and" — "…not from a contract, and" — 25 characters short of the
+    end of the clause. A word boundary is not a thought boundary, and a reader cannot tell a
+    sentence that stopped from a card that broke.
+
+    `_trim_to_word` stays as the last rung for the case it was written for: a single token longer
+    than the cap has no sentence and no clause to fall back to.
+    """
+    if len(text) <= cap:
+        return text
+    return _fit(text, cap) or _trim_to_word(text, cap)
+
+
 def _fallback(template: dict, slots: dict) -> dict:
     fb = template.get("fallback", {})
-    head = _trim_to_word(_interpolate(fb.get("headline", "{entity}"), slots), HEADLINE_CAP)
-    sit = _trim_to_word(_interpolate(fb.get("situation", "{stage}"), slots), SITUATION_CAP)
+    head = _cap(_interpolate(fb.get("headline", "{entity}"), slots), HEADLINE_CAP)
+    sit = _cap(_interpolate(fb.get("situation", "{stage}"), slots), SITUATION_CAP)
     # Cutting every unsubstantiated clause can empty the line. A card still has to name its
     # subject, so the entity carries it alone rather than the card shipping blank.
-    head = head or _trim_to_word(str(slots.get("entity") or ""), HEADLINE_CAP)
+    head = head or _cap(str(slots.get("entity") or ""), HEADLINE_CAP)
     return {"headline": head, "situation": sit,
             "artifact": {"kind": template.get("artifact_kind", "draft"),
                          "body": "", "mode": "raw_slot"},
@@ -318,7 +378,8 @@ def _trim_to_word(text: str, cap: int) -> str:
 
 
 def _fit(text: str, cap: int) -> str | None:
-    """The longest leading run of COMPLETE sentences that fits, or None if not even the first does.
+    """The longest leading run of COMPLETE sentences that fits; whole clauses when there is no
+    sentence to find; None when neither has anything that fits.
 
     This is not truncation (Law 3): nothing is cut mid-word, no ellipsis is added, and what
     remains is a whole grounded sentence — the same move `_interpolate` makes when it drops a
@@ -330,10 +391,17 @@ def _fit(text: str, cap: int) -> str | None:
     """
     if len(text) <= cap:
         return text
-    clause = _fit_clauses(text, cap)
-    if clause is not None:
-        return clause
     kept = ""
+    # SENTENCES FIRST, CLAUSES ONLY AFTER. This order was the other way round, and a clause
+    # boundary can sit INSIDE a sentence — `_CLAUSE_SPLIT` breaks on ", owner" as readily as on an
+    # em-dash — so the clause rule was allowed to keep a leading run that ended half a sentence
+    # in. `queue_overloaded`'s 157-character fallback came out as "…has stopped moving. No queue",
+    # stopping two words into its second sentence, while the sentence rule had a whole 93-character
+    # answer available. Clause-splitting exists for the case the docstring of `_fit_clauses` names —
+    # a headline, which is one fragment with no terminal punctuation and therefore no sentence run
+    # to find — and asking it second costs that case nothing: the sentence rule returns nothing
+    # there, and the clause rule still runs.
+    #
     # A dot inside a hostname or an address is not a sentence boundary. Splitting naively cut
     # "antler.co passed on Residency" down to "antler." and
     # "deepthi.chandrashekhar@nsrcel.iimb.ac.in replied" to "deepthi. chandrashekhar@nsrcel. iimb.
@@ -347,7 +415,7 @@ def _fit(text: str, cap: int) -> str | None:
         if len(candidate) > cap:
             break
         kept = candidate + " "
-    return kept.strip() or None
+    return kept.strip() or _fit_clauses(text, cap)
 
 
 def _prompt(reason_code: str, template: dict, facts: dict, slots: dict,

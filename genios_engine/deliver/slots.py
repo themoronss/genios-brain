@@ -50,6 +50,14 @@ def _fval(facts: dict, field: str):
 #: real user. A duration the system cannot compute must be omitted, never worded.
 _CLOCK = {
     "deal_health": "deal.last_inbound",       # composite verdict clocks off the deal's last touch
+    # THE COMPILED LANE HAS NO RULE AT ALL, so `clock_path` arrives None and this map is the only
+    # clock it will ever get. `first_response_overdue` writes `response.opened_at` on every row it
+    # mints (`context/support_situations.read_first_response`), and its fallback body says how
+    # long somebody has been waiting — the single most row-specific thing on the card. Without
+    # this entry `_fval(facts, "")` returned None, `days` collapsed to the sentinel, and all
+    # eleven of the design partner's live cards read "several days ago" on 2026-08-30. Identical
+    # words for waits of 4, 24 and 43 days.
+    "first_response_overdue": "response.opened_at",
 }
 
 

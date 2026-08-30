@@ -136,9 +136,39 @@ render:
     # live cards and was trimmed to "... is waiting on a", which reads as a broken card. Checked
     # against every subject this situation currently carries; none exceeds the cap.
     headline: "{who} is owed a reply"
+    # THE BODY NAMED NOBODY. "They wrote {days} days ago..." opens on a pronoun with no antecedent
+    # and mentions no subject at all — every other situation in this corpus interpolates {entity}
+    # into its fallback, and this file was the only one that did not. Combined with `{days}`
+    # collapsing to its sentinel (the compiled lane passes no clock; fixed in `deliver/slots.py`)
+    # every row rendered the SAME 165 characters, then hit the 140-character cap and stopped on
+    # the word "and". Measured on the design partner's org on 2026-08-30: 11 live cards, 11
+    # byte-identical bodies, 11 cut mid-clause, under 11 correct and distinct headlines. Four in a
+    # row in the Mac app read as one broken sentence repeated.
+    #
+    # A per-subject card whose body cannot mention its own subject is not a card. This carries the
+    # three things that make one row different from the next — WHO (the thread and the address on
+    # it), HOW LONG (days since their message, from `response.opened_at`), and WHOSE TURN (ours;
+    # the reading only fires when no internal reply exists at all).
+    #
+    # SIZED AGAINST THE REAL POPULATION, not guessed. Interpolated over all 11 live subjects the
+    # longest is 140 of 140 ("Thread with nitesh.pant@devdashlabs.com", 39 characters) and the
+    # median is 129. A three-digit day count on that same longest subject reaches 141, and the
+    # `_cap` ladder added alongside this drops the whole trailing clause rather than cutting a
+    # word — so the overflow case degrades to "…29 days since they wrote", which is still a
+    # finished sentence. That is why the caveat is last.
+    #
+    # THREE em-dash clauses, deliberately, because `_interpolate` cuts the clause holding a slot
+    # it cannot substantiate. Should `response.opened_at` ever be missing, the day clause alone
+    # goes and the subject and whose-turn survive; a two-clause phrasing lost the subject with it.
+    #
+    # "your stated policy, not a contract" is the sentence this file exists to protect — there is
+    # no per-customer target anywhere in this system and the word SLA must never appear. It is
+    # shortened from "your stated first-response policy" only to fit; "this reading sees email
+    # only" moves out of the body to `render_hint` and to every row's `missing`, where it already
+    # was.
     situation: >-
-      They wrote {days} days ago and no reply has gone back. The deadline is from your stated
-      first-response policy, not from a contract, and this reading sees email only.
+      {who} — nobody replied and it is our move — {days} days since they wrote — your stated
+      policy, not a contract.
 
 metadata:
   owner: Customer Support
