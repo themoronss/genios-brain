@@ -221,6 +221,12 @@ def _corpus(facts: dict, slots: dict,
         parts.append(str(q.get("quote") or ""))
         if q.get("name"):
             parts.append(str(q["name"]))
+        # The author's address is grounded for exactly the reason the quote is: it came off the
+        # source event, not from the model. Without it "nikhil@addis.im asked about pricing" —
+        # the whole point of the card — is rejected as an invented name whenever the address is
+        # not already a fact value.
+        if q.get("author"):
+            parts.append(str(q["author"]))
     for name, f in facts.items():
         # THE FIELD NAME IS HALF THE PROMPT, AND WAS NO PART OF THE CORPUS. `_prompt` dumps the
         # fact record with its KEYS — the model is handed `"thread.ball_in_court": "us"` and
@@ -418,6 +424,21 @@ def _fit(text: str, cap: int) -> str | None:
     return kept.strip() or _fit_clauses(text, cap)
 
 
+def _speaker(q: dict) -> str:
+    """Who said this line — the counterparty, the account holder, or nobody we can name.
+
+    Tri-state because `from_counterparty` is: None means the event that minted the observation is
+    no longer there to name an author, and "unattributed" is the only truthful label for it. The
+    model is told plainly rather than left to guess, because a guess here reads as a fact.
+    """
+    stance = q.get("from_counterparty")
+    if stance is False:
+        return "the account holder wrote"
+    if stance is True:
+        return f'{q.get("author") or "the other side"} wrote'
+    return "source unattributed"
+
+
 def _prompt(reason_code: str, template: dict, facts: dict, slots: dict,
             quotes: list[dict] | None = None) -> str:
     kind = template.get("artifact_kind", "draft")
@@ -427,9 +448,18 @@ def _prompt(reason_code: str, template: dict, facts: dict, slots: dict,
     # join from where the renderer was already looking.
     said = ""
     if quotes:
-        lines = "\n".join(f'- [{q.get("kind")}] "{q.get("quote")}"' for q in quotes[:8])
+        # ATTRIBUTED, because an unlabelled list of sentences is a misattribution waiting to
+        # happen. 161 of the 526 observations on the design partner's org were extracted from the
+        # FOUNDER'S OWN outgoing mail, and handed to the model in one undifferentiated block they
+        # read exactly like the counterparty's — "they asked about pricing" written off a sentence
+        # we sent. Naming the speaker is also half of what the card owes the reader: who wrote,
+        # what they asked, how long ago, whose turn it is.
+        lines = "\n".join(
+            f'- [{q.get("kind")}] {_speaker(q)}: "{q.get("quote")}"' for q in quotes[:8])
         said = (f"\nWhat was actually said (verbatim, newest first) — quote or paraphrase THESE, "
-                f"they are what makes the card specific:\n{lines}\n")
+                f"they are what makes the card specific. Attribute each line to the speaker named "
+                f"beside it and NEVER present something the account holder wrote as something the "
+                f"other side asked:\n{lines}\n")
     # GROUNDED SLOTS ONLY. `compute_slots` fills an absent fact with a sentinel — days
     # "several", stage "open", money "no value set", concerns "several open items" — so the
     # deterministic fallback template still reads as a sentence. Handing those to the model

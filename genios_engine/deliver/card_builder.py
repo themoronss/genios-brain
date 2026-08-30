@@ -158,28 +158,109 @@ def load_node(store, org_id: str, node_id: str) -> tuple[str, str, dict, dict]:
     return (nd.display_name or "this account"), nd.node_type, attrs, facts
 
 
-def load_evidence_quotes(store, org_id: str, node_id: str, limit: int = 8) -> list[dict]:
-    """The counterparty's OWN WORDS, and the human name behind the address.
+#: Observation kinds that record only that a NAME occurred, not that anything was SAID. Measured
+#: on the design partner's org: `mention:person` averages 31 characters ("Boardy Boardman"),
+#: `mention:company` 36 ("pablo@yappjam.com"), `mention:entity` 37 — and `email_relevance` plus the
+#: `email_noise:*` kinds carry no text at all (0 of 121 rows had one). A card whose only quote is
+#: somebody's name still cannot say what that person asked, which is the whole point of holding a
+#: quote. Keyed on the KIND, which the extractor types, rather than on how long the text is or what
+#: it looks like — the same reason `states_absence` is declared rather than sniffed from the prose.
+_NAMING_ONLY_KINDS: frozenset[str] = frozenset({
+    "mention:person", "mention:company", "mention:entity", "email_relevance",
+})
+
+
+def quotable(quotes: list[dict]) -> list[dict]:
+    """The quotes that let a card say WHAT WAS ASKED: the counterparty's own words, with content.
+
+    Two filters, and both are about honesty rather than taste. `from_counterparty` because 161 of
+    the 526 observations on the design partner's org were minted from the FOUNDER'S OWN outgoing
+    mail — quoting those back as "what they asked" attributes our words to them. And
+    `_NAMING_ONLY_KINDS` because an extracted name is not a statement.
+    """
+    return [q for q in (quotes or ())
+            if q.get("from_counterparty") is True
+            and str(q.get("kind") or "") not in _NAMING_ONLY_KINDS
+            and str(q.get("quote") or "").strip()]
+
+
+#: Every observation is minted onto a PERSON node — 512 of 526 on the design partner's org, the
+#: other 14 onto a service, and NEVER onto a thread or a company. This loader asked for
+#: `subject_node_id = <the card's own node>`; 38 of the 55 live cards are keyed on a company or a
+#: thread, so for every one of them the join returned ZERO ROWS. Not evidence with empty text — no
+#: rows at all. That is the whole reason 48 of 55 cards had nothing to quote, and it is why the
+#: renderer wrote from about five typed scalars: there was no content in the prompt because the
+#: query could not reach any.
+#:
+#: So the subject is resolved to its observations by NODE TYPE, along links the graph already
+#: records, and each lane is scoped as tightly as the graph allows:
+#:
+#:   thread  → observations minted from events in THAT EXACT THREAD
+#:             (`source_events.parent_object_id` is the Gmail thread id the node is keyed on).
+#:             Not "the people on the thread", which would let a card about one conversation quote
+#:             a sentence from a different one.
+#:   company → observations of the people who `works_at` it. Broader by nature, and honest at that
+#:             width: the card names the company, and these are its people.
+#:   person  → its own, which is what already worked for 7 of 55.
+_QUOTES_SQL = """
+with subject as (
+    select node_id, node_type, canonical_key
+      from graph_nodes
+     where org_id = :o and node_id = :n and valid_to is null
+), reachable as (
+    select o.observation_id
+      from graph_observations o join subject s on o.subject_node_id = s.node_id
+     where o.org_id = :o
+    union
+    select o.observation_id
+      from graph_observations o
+      join source_events se on se.event_id = o.created_by_event_id
+      join subject s on s.node_type = 'thread'
+                    and ('thread:' || se.parent_object_id) = s.canonical_key
+     where o.org_id = :o and se.org_id = :o
+    union
+    select o.observation_id
+      from graph_observations o
+      join graph_edges e on e.from_node_id = o.subject_node_id
+      join subject s on s.node_type = 'company' and e.to_node_id = s.node_id
+     where o.org_id = :o and e.org_id = :o
+       and e.valid_to is null and e.edge_type = 'works_at'
+)
+select o.kind, o.occurred_at, sr.evidence, se.actor ->> 'email' as author
+  from graph_observations o
+  join graph_source_refs sr on sr.observation_id = o.observation_id
+  left join source_events se on se.event_id = o.created_by_event_id
+ where o.org_id = :o and o.status = 'active'
+   and o.kind not like 'email_noise%'
+   and o.observation_id in (select observation_id from reachable)
+ order by o.occurred_at desc nulls last
+ limit :lim
+"""
+
+
+def load_evidence_quotes(store, org_id: str, node_id: str, limit: int = 8,
+                         identities: tuple[str, ...] = ()) -> list[dict]:
+    """The counterparty's OWN WORDS, the human name behind the address, and WHO SAID IT.
 
     The renderer's entire world was `graph_nodes` + `graph_facts` — two queries, about five typed
     key/value pairs — and it was then asked to write a thread-specific reply. The substance a
-    person would use sits one join away and was never fetched: `graph_source_refs.evidence` holds
-    the exact quoted sentence each observation was extracted from, and a `mention:person`
-    observation holds the real name for an address the node is keyed on.
+    person would use sits one join away: `graph_source_refs.evidence` holds the exact quoted
+    sentence each observation was extracted from, and a `mention:person` observation holds the real
+    name for an address the node is keyed on.
 
-    That is why the copy has no content: there was no content in the prompt. Newest first, and
-    bounded — the point is a handful of load-bearing quotes, not the whole thread.
+    `author` is the third thing, and it is what makes a quote safe to print. The evidence table
+    says what was said and never who said it, so the founder's own outgoing sentences — 161 of 526
+    here — were indistinguishable from the counterparty's. `source_events.actor` knows, and every
+    one of the 526 observations joins to its event, so the attribution costs nothing.
+
+    Newest first, and bounded — the point is a handful of load-bearing quotes, not the whole
+    thread.
     """
+    mine = {str(i).strip().lower() for i in identities if "@" in str(i)}
     try:
         with store.engine.connect() as c:
-            rows = c.execute(text(
-                "select o.kind, o.occurred_at, sr.evidence "
-                "from graph_observations o "
-                "join graph_source_refs sr on sr.observation_id = o.observation_id "
-                "where o.org_id=:o and o.subject_node_id=:n and o.status='active' "
-                "and o.kind not like 'email_noise%' "
-                "order by o.occurred_at desc nulls last limit :lim"),
-                {"o": org_id, "n": node_id, "lim": limit}).fetchall()
+            rows = c.execute(text(_QUOTES_SQL),
+                             {"o": org_id, "n": node_id, "lim": limit}).fetchall()
     except Exception:      # noqa: BLE001 — richer context is an enrichment, never a hard failure
         return []
     out: list[dict] = []
@@ -188,8 +269,14 @@ def load_evidence_quotes(store, org_id: str, node_id: str, limit: int = 8) -> li
         quote = str(ev.get("text") or "").strip()
         if not quote:
             continue
+        author = str(r.author or "").strip().lower() or None
         out.append({"kind": r.kind, "quote": quote[:300],
                     "name": str(ev.get("name") or "").strip() or None,
+                    "author": author,
+                    # Tri-state on purpose. False = we know we wrote it; None = the event that
+                    # minted it is gone, so nobody can say whose words these are, and a card must
+                    # not claim them as the counterparty's on a guess.
+                    "from_counterparty": (None if author is None else author not in mine),
                     "occurred_at": r.occurred_at.isoformat() if r.occurred_at else None})
     return out
 
@@ -251,6 +338,11 @@ def _surfaces(facts: dict, signal: dict, actions: list, *, has_finding: bool = T
     So `ask` and `api` are unconditional: withholding a closed deal from someone who asked about it
     is that surface's failure mode. `app` and `agent` are earned. A card that reaches neither is
     not discarded — it is history, and history has two surfaces of its own.
+
+    `has_finding` is false for two different failures and both end here: the situation is defined
+    by a gap in OUR RECORDS (`states_absence`), or the card cannot quote one thing the counterparty
+    said (`quotable`). Different causes, identical consequence — neither can answer "what should I
+    do right now", and both answer "what is happening here" perfectly well.
 
     A card with NO FINDING fails that test on the same reasoning, one step earlier. "What is
     happening with errorcore.dev?" is answered perfectly well by "an open deal, and nothing on
@@ -335,7 +427,8 @@ def _context_tags(node_type: str, attrs: dict, facts: dict, sources: set[str]) -
     return sorted(tags)
 
 
-def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time) -> dict:
+def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
+                quotes: list[dict] | None = None) -> dict:
     """E0 output — a complete card.v1 minus the rendered copy (E1) and persisted state."""
     node_id = signal["subject_node_id"]
     name, node_type, attrs, facts = load_node(store, org_id, node_id)
@@ -433,6 +526,37 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time) ->
             "instruction to give — a human has to establish the fact first")
         actions = [a for a in actions if a.get("type") in ("wrong", "snooze")]
 
+    # NO-EVIDENCE GATE. The gate above asks whether the SITUATION is defined by an absence. This
+    # one asks a narrower and more damning question: can this card quote anything anybody actually
+    # said? Measured on the design partner's org on 2026-08-31, 48 of the 55 live cards could not.
+    #
+    # That is what the reader was seeing. A card written from five typed scalars can say THAT
+    # somebody wrote — "Thread with nikhil@addis.im is owed a reply. They wrote several days ago
+    # and no reply has gone back." — and cannot say WHAT they wrote, why it matters, or what the
+    # reply should contain. Its Run Play button offers to draft a response to a message whose
+    # contents are not in the process. Forty-eight of those are not forty-eight cards; they are
+    # noise with a headline, and each one costs a reader the seconds to discover the system has
+    # nothing.
+    #
+    # `review` is the honest level and the vocabulary already names it: "something is missing and
+    # a human must look". The missing thing is the message itself, and the exact question is "open
+    # the thread". `ask` and `api` are kept for the same reason `states_absence` keeps them —
+    # "what is happening with this account" is still answerable from the typed facts; only "what
+    # should I do right now" stops pretending.
+    #
+    # The bar is deliberately low: ONE sentence from the counterparty is enough. This is not a
+    # quality filter and must never become one — a terse card with a real finding passes. It only
+    # rejects the case where there is no finding to be terse about. `quotable` sets the bar, and
+    # only two things fail it: our own outgoing words (which cannot evidence what THEY asked) and
+    # a bare extracted name (which is not something anybody said).
+    has_quote = bool(quotable(quotes))
+    if not has_quote:
+        level = str(_ABSTENTION.REVIEW)
+        abstained = abstained or (
+            "nothing this account said is on record, so there is no way to say what they asked "
+            "for or draft a reply to it — open the thread")
+        actions = [a for a in actions if a.get("type") in ("wrong", "snooze")]
+
     score_inputs = signal.get("score_inputs") or {}
     card_expires_at = eval_time + timedelta(days=EXPIRY_DAYS)
     decision_expires_at = signal.get("decision_expires_at")
@@ -496,7 +620,8 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time) ->
         # call for different user actions and a single number cannot tell them apart.
         "confidence_vector": {k: score_inputs.get(k) for k in ("C", "U", "I", "R")},
         "actions": actions, "why": _why(signal.get("evidence"), facts),
-        "surfaces": _surfaces(facts, signal, actions, has_finding=has_finding),
+        "surfaces": _surfaces(facts, signal, actions,
+                              has_finding=has_finding and has_quote),
         "context_tags": _context_tags(node_type, attrs, facts, sources),
         "config_snapshot_id": signal.get("config_snapshot_id"),
         "template_version": (effective.get("templates", {}) or {}).get("_version"),

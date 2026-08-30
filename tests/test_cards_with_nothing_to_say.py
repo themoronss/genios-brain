@@ -61,6 +61,14 @@ FINDING_TEMPLATE = {
 }
 
 
+#: A single real sentence from the other side. These tests are about the ABSENCE gate, and a
+#: separate gate (added 2026-08-31) drops any card that cannot quote anybody — see
+#: `test_a_card_must_quote_what_was_said.py`. Handing every case one quote keeps the two apart, so
+#: a failure here means what it says rather than "no evidence was stubbed".
+_QUOTED = [{"kind": "question", "quote": "Can you send pricing before Thursday?",
+            "author": "hv@errorcore.dev", "from_counterparty": True}]
+
+
 @pytest.fixture
 def draft(monkeypatch):
     """Build a card the way the live pipeline does, with the graph reads stubbed out."""
@@ -69,11 +77,11 @@ def draft(monkeypatch):
     monkeypatch.setattr(card_builder, "_real_sources", lambda *_a, **_k: set())
     monkeypatch.setattr(card_builder, "resolve_assignee", lambda *_a, **_k: ("u1", "rule"))
 
-    def _build(template, *, level="prescriptive", reason_code="opportunity"):
+    def _build(template, *, level="prescriptive", reason_code="opportunity", quotes=_QUOTED):
         signal = {"signal_id": "sig_1", "subject_node_id": "n1", "reason_code": reason_code,
                   "level": level, "score": 70, "capability_render": template}
         return card_builder.build_draft(object(), "org_1", signal,
-                                        {"pack_id": "sales"}, EVAL)
+                                        {"pack_id": "sales"}, EVAL, quotes=quotes)
     return _build
 
 
@@ -114,7 +122,11 @@ def test_an_empty_card_leaves_the_app_queue_but_still_answers_a_question(draft):
 def test_a_real_finding_keeps_the_app_queue_and_its_authority(draft):
     """The rule is fewer EMPTY cards, not fewer cards. "They wrote nine days ago and no reply has
     gone back" names a person waiting on the other end; suppressing that to improve a count would
-    be the same failure wearing the opposite mask."""
+    be the same failure wearing the opposite mask.
+
+    It keeps that authority on the strength of the evidence behind it, which the fixture supplies:
+    a card that also cannot quote anybody is a different failure and is caught by a different gate.
+    """
     card = draft(FINDING_TEMPLATE, reason_code="first_response_overdue")
     assert card["level"] == "prescriptive"
     assert "app" in card["surfaces"]

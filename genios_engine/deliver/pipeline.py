@@ -183,15 +183,24 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             # structurally unable to say "this is outside what I have been taught". Downgrading
             # keeps the observation (which is real and useful) and drops only the instruction.
             sig = _apply_abstention(sig, effective)
-            draft = build_draft(graph, org_id, sig, effective, eval_time)         # E0
-            # What the counterparty actually said, and their real name. Both were already in the
-            # graph and neither reached the renderer, which is why 37 of 41 cards shipped as
-            # template stubs with an empty draft body.
-            quotes = load_evidence_quotes(graph, org_id, sig["subject_node_id"])
+            # LOADED BEFORE THE BUILD, and that ordering is the fix to a gate that could never
+            # have fired. `build_draft` runs `clarity_verdict` over `signal["observations"]` — and
+            # this line used to come AFTER the build, so the gate read an empty list on every card
+            # ever built and could only ever return "grounded". It survived unnoticed because the
+            # compiled lane's reason codes are not in its map either.
+            #
+            # What the counterparty actually said, their real name, and who said it. All three
+            # were already in the graph and none reached the renderer, which is why 37 of 41 cards
+            # shipped as template stubs with an empty draft body. `identities` is passed so the
+            # loader can tell the founder's own outgoing sentences from the counterparty's.
+            quotes = load_evidence_quotes(
+                graph, org_id, sig["subject_node_id"], identities=identities)
             # The clarity gate needs to know WHAT they asked for, not only that they wrote. The
             # kinds come from the same evidence the renderer now receives, so the gate and the
             # copy are reasoning about one set of facts rather than two.
             sig = {**sig, "observations": [{"kind": q.get("kind")} for q in quotes]}
+            draft = build_draft(graph, org_id, sig, effective, eval_time,   # E0
+                                quotes=quotes)
             copy = render_copy(                                                    # E1
                 reason_code=draft["_reason_code"], template=draft["_template"],
                 facts=draft["_facts"], slots=draft["_slots"], llm=llm,
