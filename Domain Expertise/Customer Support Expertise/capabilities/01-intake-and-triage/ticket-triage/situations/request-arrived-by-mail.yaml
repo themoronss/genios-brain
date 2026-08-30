@@ -122,4 +122,4 @@ metadata:
     orphaned rather than reached on a guess.
 
 admission:
-  accepted_content_hash: c18401bcd2d0386817270f966f64a4ba1ed94d81b84e322b83877ada69e94c9b
+  accepted_content_hash: 08af653253443072bd88b26b37e5b18e02f711d8cae2e057020badefe62d4acc

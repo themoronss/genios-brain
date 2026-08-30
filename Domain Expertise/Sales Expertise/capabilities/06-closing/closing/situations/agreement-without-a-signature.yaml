@@ -110,4 +110,4 @@ metadata:
     inbox. It is gated correctly and it will be quiet.
 
 admission:
-  accepted_content_hash: 0ae0892481f10455c3e94b85d0faf140f3391a4c2745e182afd714337ef3c720
+  accepted_content_hash: c8d7c732ad715a845136ad20cffc64780a55c5df8d55c0b53a5ea03e8e2b1d51
