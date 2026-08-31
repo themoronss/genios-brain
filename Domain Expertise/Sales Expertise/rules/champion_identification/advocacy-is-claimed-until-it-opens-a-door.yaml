@@ -1,0 +1,125 @@
+identity:
+  id: sales.rule.champion_identification.advocacy_is_claimed_until_it_opens_a_door
+  name: Advocacy is claimed until it opens a door
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.champion_identification
+  subdomain: qualification
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A champion who has never produced access to someone we could not reach ourselves has
+    demonstrated goodwill, not advocacy. Recording them as a confirmed champion converts a hope into a
+    fact, and every coverage number downstream inherits it.'
+  answers:
+  - May this contact be recorded as a confirmed champion?
+  - What evidence upgrades a supportive contact?
+  not:
+  - A judgement about the person's sincerity. Most are entirely sincere.
+  - A rule about how many champions a deal needs.
+
+rule:
+  statement: 'A contact MUST NOT be recorded as a confirmed champion on the basis of stated support
+    alone. Confirmation requires a completed internal action attributable to them — an introduction
+    made, a meeting arranged with a seat we had not reached, a review booked. Until then the contact
+    is recorded as a likely champion, and coverage computed from likely champions must say so.'
+  spans:
+  - sales.obj.core.champion
+  - sales.obj.core.decision_maker
+  - sales.obj.core.buying_committee
+  when:
+  - {path: deal.status, op: "=", value: open}
+  - {no_obs: introduction}
+  - {fn: edge_count, op: "<=", value: 2}
+  then: 'Hold the contact at likely-champion, and recommend the smallest internal ask that would
+    settle it. Do not count the seat as covered on their assurance.'
+  severity: warning
+  why: 'The error is silent and self-reinforcing. A seller who believes they have a champion stops
+    looking for one, so the misclassification removes the very activity that would have corrected it —
+    and it does so early, when there was still time. It also propagates: committee coverage, forecast
+    category and deal-review confidence are all computed from the champion field, and none of them can
+    tell a tested champion from a friendly contact once the field says confirmed.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'THE CONTACT IS THE APPROVER. Where they can buy it themselves there is no door to open, and
+    demanding an introduction as proof is incoherent. This is the exception that fires most often in
+    smaller motions and the one a rule written for enterprise gets wrong.'
+  - 'ACCESS ALREADY EXISTED. Where we reached the other seats independently, the champion cannot
+    demonstrate advocacy by opening a door that is already open. The equivalent evidence is an
+    internal action of comparable risk — a document circulated, a business case co-authored.'
+  - 'AN ENVIRONMENT WHERE INTRODUCTIONS ARE NOT MADE. Some organisations route all vendor contact
+    through procurement by policy. The absence says something about the process rather than about the
+    person, and requires a different test rather than a downgrade.'
+  - 'A RENEWAL OR EXPANSION. The advocacy already happened and is evidenced by the existing contract;
+    re-testing an established relationship treats history as absent.'
+  - 'THE ACTION HAPPENED OFF-CHANNEL. An introduction made in person or by phone leaves no
+    `introduction` observation. Absence of the trace is not absence of the act, which is why this is a
+    warning and not a block — and why a human confirmation should be able to satisfy it.'
+
+objects_used:
+- sales.obj.core.champion
+- sales.obj.core.decision_maker
+- sales.obj.core.buying_committee
+- sales.obj.core.stakeholder
+
+outcomes:
+- Champion status is earned by an observable action rather than by assurance.
+- Coverage built on untested advocates is labelled as such.
+
+failure_modes:
+- 'APPLIED TO A SINGLE-BUYER DEAL. Demands proof of a door that does not exist.'
+- 'READ AS DISTRUST OF THE CONTACT. The rule is about what the RECORD may claim, not about the
+  person''s sincerity, and framing it otherwise makes sellers stop recording champions at all.'
+- 'SATISFIED BY ANY INTRODUCTION. An introduction to a peer at the same level is not access to an
+  unreached seat, and counting it restores the original error in a form that passes the check.'
+
+limits:
+- '`introduction` (104 rows / 27 nodes on the design partner''s org) marks that an introduction was
+  mentioned, not who introduced whom to what seniority. The rule can see that advocacy-shaped activity
+  occurred and cannot verify it opened the right door.'
+- '`edge_count` measures breadth of relationship, not committee coverage, so the narrowness proxy is
+  approximate in both directions.'
+
+variants:
+- applies_to: enterprise
+  change: Require access to a seat in a DIFFERENT function; a lateral introduction inside the same
+    team is not the evidence being asked for.
+  why: Cross-functional advocacy is the thing that is scarce.
+- applies_to: channel
+  change: The door is to the end customer, and a partner rep who will not open it is a coach whatever
+    their enthusiasm.
+  why: The whole commercial value of the partner is access.
+- applies_to: smb
+  change: Do not apply; the first exception is the normal case here.
+  why: The contact is the buyer.
+
+metrics:
+- name: access_conversion_rate
+  unit: percent
+  description: Share of recorded champions who produced access to an unreached seat.
+  direction: higher_is_better
+- name: unconfirmed_champion_share
+  unit: percent
+  description: Share of live deals whose champion is still likely rather than confirmed. What this
+    rule makes visible instead of rounding away.
+  direction: lower_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: Champion as a tested role; this rule supplies the test the methodology leaves to judgement.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. Warning rather than blocking because of the last exception: an
+    introduction made by phone leaves no observation, and a blocking rule would downgrade real
+    champions on the strength of a missing trace. `limits` states exactly how far `introduction` can
+    be trusted — it records that an introduction was mentioned, not who was introduced to whom.'

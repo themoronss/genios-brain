@@ -782,11 +782,13 @@ inference_patterns:
       yields: {confidence_bp: 9000, attribute: uncontrolled_copies_known}
       requires_signals:
         - {kind: fact_path, name: document.version, owner_layer: L1,
-           note: "Requires a version string per artefact plus identity resolution across copies. Without it the commonest document-control incident in any organisation is structurally undetectable — and it is the one whose symptom is two teams in a meeting with different numbers."}
-        - {kind: derived, name: derived.document_identity_cluster, owner_layer: L2,
-           note: "Content or title-plus-hash clustering across attachments and links. The expensive half of the ask, and the half that turns a version field into a conflict detector."}
+           note: "SATISFIED 2026-08-29 by context/documents.py, which projects file-store metadata onto a document node. Read what it is before resting anything on it: this is a per-file REVISION COUNTER, not a semantic version. Two independent copies of the handbook are both revision 1 on the day they are made and both revision 40 after a year of equal editing, so equality of this field proves nothing and inequality proves less."}
+        - {kind: derived, name: derived.document_cluster_key, owner_layer: L2,
+           note: "SATISFIED 2026-08-29 by context/document_register.py. NAMED FOR WHAT WAS BUILT: this entry used to read derived.document_identity_cluster, a path nothing writes and nothing ever will, so the prose said satisfied while the machine-readable half sent a reader (and signal-backlog.md) after an identifier that appears nowhere in the engine. The key is the title reduced past its decoration (v2, _FINAL, Copy of, (1), dates) and compared by EXACT equality — deliberately not fuzzy, because a false merge hides a second document behind the first."}
+        - {kind: derived, name: derived.document_live_copies, owner_layer: L2,
+           note: "SATISFIED 2026-08-29 by context/document_register.py, and it is the second half of what the old derived.document_identity_cluster name was standing in for: how many members of the cluster were edited recently enough to still be live, with a content hash separating a fork from a mirrored copy. Together these two turn a filename into a conflict detector; neither of them, alone or together, says which copy is the right one."}
         - {kind: obs_kind, name: document_superseded, owner_layer: L2,
-           note: "The discriminator between a conflict and an orderly lineage. Supersession has a timestamp in every DMS and no representation here, so without it two live versions and a published successor look identical."}
+           note: "STILL ABSENT, and it is the whole difference between this pattern and the weaker claim Layer 2 can already make. Supersession has a timestamp in every DMS and no emitter here, so v2 published with v1 correctly withdrawn is indistinguishable from two teams editing in parallel. `document_under_control` therefore carries `derived.document_live_copies` and says only that two live copies exist; promoting this pattern to executable on the two signals above would turn that into an assertion that the wrong version is in circulation, which nothing here can support."}
 
     - id: doc.classification_exceeded_by_distribution
       statement: "A restricted or special-category document has been sent to an external recipient."

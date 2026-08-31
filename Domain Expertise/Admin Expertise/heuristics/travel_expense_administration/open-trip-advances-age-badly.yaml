@@ -1,0 +1,66 @@
+identity:
+  id: admin.heu.travel_expense_administration.open_trip_advances_age_badly
+  name: Open trip advances age badly
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.travel_and_events.travel_expense_administration
+  subdomain: travel_and_events
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Unreconciled advances drift toward write-offs and awkwardness. The week-after-return closure
+    window is where trip finance stays clean at trivial cost.
+  answers:
+  - Why close trip expenses fast?
+
+heuristic:
+  statement: >
+    Unreconciled advances drift toward write-offs and awkwardness. The week-after-return closure
+    window is where trip finance stays clean at trivial cost.
+  why: >
+    An advance is company money in a personal account, and the longer it stays there the harder the
+    conversation becomes: the traveller has spent it, partly on the trip and partly not, and can no
+    longer separate the two. What was a five-minute reconciliation at week one becomes a
+    negotiation at month three and a write-off at month six — not because anyone acted badly, but
+    because the evidence required to settle it honestly stopped existing.
+  confidence_bp: 8000
+  applies_when: Any cash advance or trip float issued ahead of travel.
+  breaks_down_when: >
+    The trip is genuinely still resolving — a supplier invoice that arrives six weeks later, a
+    disputed hotel charge, a refund in progress. Forcing closure there produces a claim that must be
+    reopened, which is worse than a tracked open item with a stated reason. It also breaks down
+    where advances are structurally unnecessary: pressing a closure discipline on a corporate-card
+    estate spends effort on a risk that was already designed out.
+  reads: [admin.obj.core.expense, admin.obj.core.employee_record]
+  contradicts: [admin.heu.expense_management.slow_reimbursement_is_a_loan_from_staff]
+limits:
+- 'It concerns advances and trip floats specifically, not reimbursement claims, which have the opposite cash direction.'
+- 'The window is a design choice; this heuristic argues that one must exist, not what it should be.'
+failure_modes:
+- 'Applied to genuinely unresolved trips, producing claims that reopen.'
+- 'Enforced as a deadline with no help attached, which makes late closure a personal failing rather than a process one.'
+variants:
+- applies_to: executive_office
+  change: The assistant closes it, because the principal will not — and the advance is in the principal''s account.
+  why: The person holding the money is the person least available to reconcile it.
+- applies_to: distributed
+  change: Advances are more common where cards are impractical, so the exposure is larger and the closure harder.
+  why: Distance makes both the issuance and the chase slower.
+references:
+- title: Travel and expense reconciliation practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    contradicts slow-reimbursement-is-a-loan-from-staff because the cash flows the opposite way:
+    that heuristic is about the company holding the employee's money, this one about the
+    employee holding the company's. Both age badly and the remedies pull against each other
+    under a shared closure deadline.

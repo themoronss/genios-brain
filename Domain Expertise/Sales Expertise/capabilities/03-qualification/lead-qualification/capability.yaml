@@ -4,12 +4,12 @@ identity:
   domain: sales
   subdomain: qualification
   version: 1.0.0
-  status: draft
+  status: stable
   stub: false
 description: 'Establishing whether a real purchase is possible: whether money exists, whether someone
   can approve it, whether there is a reason to act now, and whether the account is one we should want.
-  Qualification is a filter, not a stage — its output is as often a disqualification as a next step,
-  and a capability that only ever says yes is not qualifying anything.
+  Qualification is a filter, not a stage — its output is as often a disqualification as a next step, and
+  a capability that only ever says yes is not qualifying anything.
 
   '
 question: Is a real purchase possible here, with whom, and by when?
@@ -62,12 +62,15 @@ applies_to:
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ''
+  reviewed_by: harsh
   last_updated: '2026-08-08'
-  review_status: unreviewed
+  review_status: approved
   confidence: provisional
-  notes: 'Note what is NOT here: no thresholds, no scores, no rules. Those are Layer 4''s arithmetic
-    and live in the pack manifest. This file declares which knowledge to load and what the capability
-    is for. The moment a number appears in a capability file, the Layer 3/4 boundary has leaked.
+  notes: 'Note what is NOT here: no thresholds, no scores, no rules. Those are Layer 4''s arithmetic and
+    live in the pack manifest. This file declares which knowledge to load and what the capability is for.
+    The moment a number appears in a capability file, the Layer 3/4 boundary has leaked.
 
     '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: c40d0922554bcbf769065b76e2b8ebca275c87a2b1a0eb71e18aebdc2fb9a93c

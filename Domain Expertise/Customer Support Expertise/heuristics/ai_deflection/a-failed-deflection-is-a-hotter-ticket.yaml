@@ -1,0 +1,66 @@
+identity:
+  id: customer_support.heu.ai_deflection.a_failed_deflection_is_a_hotter_ticket
+  name: A failed deflection is a hotter ticket
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.ai_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every minute in a bot loop pre-heats the ticket the human eventually gets. Deflection rate
+    alone flatters; measure deflection minus the escalation-temperature it causes.
+  answers:
+  - Is a high deflection rate automatically good?
+
+heuristic:
+  statement: >
+    Every minute in a bot loop pre-heats the ticket the human eventually gets. Deflection rate alone
+    flatters — measure deflection minus the escalation temperature it causes.
+  why: >
+    A failed self-service attempt is not neutral. The customer has spent effort, been told things
+    that did not help, and arrives at the human having already concluded that this company wastes
+    their time. So the tickets that do escalate are systematically harder than the ones that would
+    have arrived directly, and the deflection metric — which counts only what did not arrive — has
+    no way to see it. The saving is real and the cost is real and only one of them is instrumented.
+  confidence_bp: 8000
+  applies_when: Any automated tier placed ahead of human support.
+  breaks_down_when: >
+    The deflection is genuinely good and fast. A customer who got the right answer in twenty seconds
+    is warmer, not cooler, and treating all automation as a tax misses that a good bot improves
+    sentiment for the majority who never escalate. It also breaks down where the alternative is a
+    long queue: five minutes with a model beats forty minutes on hold, and the comparison must be
+    against the real alternative rather than against an idealised human.
+  reads: [customer_support.obj.core.ticket, customer_support.obj.core.customer_sentiment, customer_support.obj.core.requester]
+  contradicts: [customer_support.heu.capacity_planning.deflection_is_capacity_too]
+limits:
+- 'It concerns the escalated subset, which is by construction the minority. It says nothing about the deflected majority.'
+- 'Temperature needs a session-to-ticket join most support stacks do not make.'
+failure_modes:
+- 'Used to argue against automation entirely, which ignores the customers it served well.'
+- 'Measured as raw sentiment of escalated tickets without the comparison to direct ones, which confounds hard questions with bad deflection.'
+variants:
+- applies_to: b2c
+  change: The effect is large in aggregate and small per customer, which makes it invisible in individual reviews and obvious in the trend.
+  why: Volume converts a mild irritation into a reputation.
+- applies_to: enterprise_support
+  change: Strongest per interaction. A named account routed to a bot reads it as a downgrade in what they bought.
+  why: The automation contradicts the service they are paying for.
+references:
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the fair comparison: five minutes with a model beats forty
+    minutes on hold, and this heuristic is often used to compare automation against an idealised
+    human who does not exist in the queue.

@@ -1,0 +1,68 @@
+identity:
+  id: admin.heu.statutory_filing.late_filings_compound_beyond_the_fine
+  name: Late filings compound beyond the fine
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.statutory_filing
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The penalty is the visible cost; the invisible ones — lost good-standing, banking friction,
+    diligence red flags at fundraise — surface at the worst moments. Statutory punctuality is cheap reputation
+    insurance.
+  answers:
+  - What does a late filing actually cost?
+
+heuristic:
+  statement: >
+    The penalty is the visible cost of a late filing. The invisible ones — lost good standing,
+    banking friction, a red flag in diligence — surface at the worst possible moments, which makes
+    statutory punctuality cheap reputation insurance.
+  why: >
+    A late filing is priced by the organisation as its fine, which is usually small and budgetable.
+    But the filing record is public and durable, and it is read by people making decisions about you
+    under time pressure: a bank onboarding, an acquirer's checklist, a regulator deciding how much
+    attention you warrant. In each case the lateness is not evaluated on its merits — it is used as a
+    cheap proxy for how the organisation is run, which is a far larger claim than the fine represents.
+  confidence_bp: 8000
+  applies_when: Any public filing whose timeliness is visible to third parties.
+  breaks_down_when: >
+    The filing is not public and the regime treats lateness as routine — some returns are late for
+    most filers, the penalty is nominal, and no third party ever sees it. Spending scarce
+    administrative capacity to be punctual there takes it from a deadline that is visible. It also
+    breaks down where punctuality is bought with accuracy: a filed-on-time return that must be
+    amended twice is read worse than a late correct one, and the pressure this heuristic creates is
+    exactly what produces it.
+  reads: [admin.obj.core.compliance_obligation, admin.obj.core.deadline]
+  contradicts: [admin.heu.gatekeeping.the_gatekeeper_is_the_brand_s_first_draft]
+limits:
+- 'It argues for punctuality, not for prioritising filings above everything. Capacity is finite and the visible deadlines should win.'
+- 'It says nothing about accuracy, which the same time pressure degrades.'
+failure_modes:
+- 'Used to justify filing something known to be wrong in order to hit a date.'
+- 'Applied uniformly, so nominal-penalty non-public returns consume the same care as public ones.'
+variants:
+- applies_to: startup_lean
+  change: Strongest form. The filing record is one of very few public signals about the company, and it is read at every raise.
+  why: There is no track record to outweigh it.
+- applies_to: multi_entity
+  change: A single late entity taints the group in diligence, regardless of the other entities' records.
+  why: Reviewers aggregate upward and do not net off.
+references:
+- title: Statutory filing calendars and penalty regimes
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the one that matters operationally: an on-time return amended
+    twice reads worse than a late correct one, and the pressure this heuristic creates is
+    exactly what produces the amendments.

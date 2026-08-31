@@ -3,26 +3,104 @@ identity:
   name: Relationship Management
   domain: sales
   subdomain: sales_management
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Sustained upkeep of key relationships independent of any live deal — investors, partners,
+  executive sponsors, past champions who moved. Almost entirely non-deal-linked, which is why it is
+  the first thing dropped and the last thing recoverable.
 
-description: >
-  Sustained upkeep of key relationships independent of any live deal — investors, partners,
-  executive sponsors, past champions who moved. Almost entirely non-deal-linked, which is why
-  the engine keeps its rules in the general pack rather than the sales one.
+  '
+question: Are the relationships that matter being maintained?
 
-question: "Are the relationships that matter being maintained?"
+outcomes:
+- 'A tiered set, so the cadence goes to the relationships that warrant it. Not every contact gets
+  sustained attention, and pretending otherwise means nobody does — the tiering is what makes the
+  discipline affordable.'
+- 'Give-touches scheduled like pipeline work. What will we GIVE this relationship this period — an
+  insight, an introduction, a relevant note — asked as a calendar question, because a touch that asks
+  for nothing does not happen unless it is scheduled.'
+- 'The balance read before any ask. Every request draws down; every give deposits. Accounts contacted
+  only at renewal and upsell run permanently overdrawn, and an overdrawn relationship answers a tender
+  rather than taking a call.'
+- 'Multi-threading built in peacetime. Executive-to-executive and peer-to-peer lines are cheap to
+  create when nothing is wrong and nearly impossible to create when something is.'
+- 'Champions tracked when they LEAVE. A past champion inside a new company is the warmest possible
+  opening and is lost by default, because the relationship was filed against an account rather than
+  against a person.'
+- 'A decision to let a relationship lapse. The negative outcome: a tier nobody can service is a list,
+  and admitting which relationships are not being maintained is more useful than a cadence that exists
+  on paper.'
 
+failure_modes:
+- 'TRANSACTIONAL CONTACT ONLY. Renewal, upsell, escalation — every touch an ask. The relationship
+  degrades invisibly and its condition is discovered at the moment it is needed.'
+- 'EVERY CONTACT IN THE TIER. Produces a cadence nobody can sustain, and it collapses to the same
+  transactional pattern with more guilt attached.'
+- 'GIVE-TOUCHES LEFT TO GOODWILL. Anything not scheduled loses to anything that is, and a
+  no-ask touch has no deadline of its own.'
+- 'SINGLE-THREADED AT EXECUTIVE LEVEL. One relationship, one departure, and the account has no memory
+  of us above the day-to-day.'
+- 'CHAMPIONS LOST ON DEPARTURE. Filed against the company, so the person disappears from view exactly
+  when they become most valuable.'
+- 'MEASURED BY TOUCH COUNT. Produces contact without content, which the recipient reads correctly as
+  a process rather than as a relationship.'
+
+kpis:
+- name: give_to_ask_ratio
+  unit: ratio
+  description: Value-touches against requests, per relationship. The balance this whole capability
+    manages, and it is almost never computed.
+  direction: higher_is_better
+- name: tier_cadence_adherence
+  unit: percent
+  description: Share of tiered relationships contacted within their intended interval.
+  direction: higher_is_better
+- name: executive_thread_count
+  unit: count
+  description: Distinct senior relationships per key account. One is a single point of failure.
+  direction: higher_is_better
+- name: champion_follow_rate
+  unit: percent
+  description: Share of departed champions still tracked at their new organisation.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.qualification.champion_identification
+  - sales.post_sale_and_growth.customer_success
+  downstream:
+  - sales.post_sale_and_growth.renewal
+  - sales.prospecting_and_outreach.lead_generation
+  parallel:
+  - sales.investor_relations.investor_relations
+  - sales.post_sale_and_growth.churn_prevention
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Semantically the closest remaining capability to the design
+    partner''s largest live population — 23 `relationship` situations — without being in that route
+    set.
+
+    Its substrate position is genuinely good and unusual for a management capability: the balance in
+    outcome three is close to computable. `thread.last_inbound` and `thread.last_outbound` are dense
+    on the live org, and what distinguishes a give from an ask is the message content rather than its
+    direction — which is the one part the record cannot supply. So the CADENCE is observable and the
+    balance is not, which is stated rather than assumed.
+
+    No numbers: tier sizes and contact intervals are Layer 4''s arithmetic.
+
+    '
+  reviewed_at: '2026-08-27'
+
+admission:
+  accepted_content_hash: 1b4f52d33d662c8ef579f11d2df3a188aa662c73dbc6a1d7505e7b040ee2d909

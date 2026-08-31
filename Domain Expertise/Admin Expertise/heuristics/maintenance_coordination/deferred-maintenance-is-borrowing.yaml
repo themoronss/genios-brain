@@ -1,0 +1,66 @@
+identity:
+  id: admin.heu.maintenance_coordination.deferred_maintenance_is_borrowing
+  name: Deferred maintenance is borrowing
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.maintenance_coordination
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Skipped servicing books a future failure with interest — downtime, emergency rates, collateral
+    damage. The maintenance budget is cheaper on schedule than on demand, always.
+  answers:
+  - What does postponed maintenance really cost?
+
+heuristic:
+  statement: >
+    Skipped servicing books a future failure with interest — downtime, emergency rates, collateral
+    damage. Maintenance is cheaper on schedule than on demand, always.
+  why: >
+    Deferring maintenance converts a known, schedulable, negotiated cost into an unknown one that
+    arrives at the worst moment and is paid at emergency prices. The interest is not metaphorical:
+    a failed component often damages adjacent ones, the downtime has its own cost, and the
+    contractor charges a premium for responding today. Because the saving is immediate and visible
+    in this quarter's budget and the cost is deferred and attributed to bad luck, the trade is made
+    repeatedly by people who would never accept it if both sides were on the same page.
+  confidence_bp: 8500
+  applies_when: Equipment with a known service interval and a failure mode that damages more than itself.
+  breaks_down_when: >
+    The asset is being retired. Servicing something scheduled for replacement in three months is
+    spending against a life that will not be used, and the manufacturer's interval assumes a full
+    lifecycle. It also breaks down where the interval is vendor-set for revenue rather than for
+    reliability — some service schedules are commercial products, and following them faithfully is
+    paying a subscription described as prudence.
+  reads: [admin.obj.core.asset, admin.obj.core.vendor, admin.obj.core.budget_line]
+  contradicts: [admin.heu.health_and_safety_administration.near_misses_are_the_cheapest_teachers]
+limits:
+- 'It argues against deferral, not for every scheduled task. The interval itself may be wrong.'
+- 'It cannot price the deferral, which is why the argument loses to a specific budget number.'
+failure_modes:
+- 'Used to justify following a vendor schedule that exists for the vendor''s benefit.'
+- 'Applied to assets near end of life, where the spend cannot be recovered.'
+variants:
+- applies_to: regulated
+  change: Some intervals are statutory and the argument does not arise — deferral is a breach rather than a trade.
+  why: The decision has been removed.
+- applies_to: startup_lean
+  change: Weakest, because the asset base is small and mostly leased, and the landlord carries the interval.
+  why: The debt is somebody else's.
+references:
+- title: Planned preventive maintenance practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the one practitioners argue about: some vendor service
+    intervals are commercial products rather than reliability requirements, and following them
+    faithfully is paying a subscription described as prudence.

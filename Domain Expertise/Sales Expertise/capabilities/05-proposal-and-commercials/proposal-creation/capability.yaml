@@ -3,25 +3,112 @@ identity:
   name: Proposal Creation
   domain: sales
   subdomain: proposal_and_commercials
-  version: 0.1.0
-  status: draft
-  stub: true
-
-description: >
-  Assembling scope, pricing and terms into a document the champion can circulate without
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Assembling scope, pricing and terms into a document the champion can circulate without
   editing. The audience is the room we are not in.
 
-question: "What exactly are we proposing, at what price, on what terms?"
+  '
+question: What exactly are we proposing, at what price, on what terms?
 
+outcomes:
+- 'A document written for the reader who was never in a meeting. The champion already agrees; the
+  proposal''s job is to survive being forwarded to someone sceptical who will skim it in four minutes
+  and form the view that decides the deal.'
+- 'Their problem restated in their words, before anything about us. A buyer who feels understood on
+  page one reads page two; one who finds a company overview reads nothing, and both outcomes are
+  decided before any argument has been made.'
+- 'ONE recommendation, not a menu. Three options outsource our judgement to the busiest people in the
+  organisation, and the reliable effect is not a choice but a deferral while they work out which one
+  they were supposed to pick.'
+- 'Saying yes made mechanical. Validity date, start date, signature block, named next step — every
+  missing mechanic is a delay loop, and each loop is another week in the window where deals are lost
+  for reasons unrelated to their merit.'
+- 'Scope stated precisely enough to be refused. The negative outcome: a proposal vague enough that
+  nobody could object to it is also one nobody can approve, and its ambiguity resurfaces as a dispute
+  in the first month of delivery.'
+- 'A document that does not need us present. If it has to be walked through to make sense, it will
+  not make sense in the meeting we are not invited to — which is the meeting where it is decided.'
+
+failure_modes:
+- 'WRITING FOR THE CHAMPION. They are already convinced and are not the audience; the proposal is a
+  tool they use on someone else, and one written for them gives them nothing to use.'
+- 'OPENING WITH US. Company background, logos and credentials on page one spend the only attention
+  the sceptical reader will give, on the least relevant content in the document.'
+- 'THREE OPTIONS AS RISK MANAGEMENT. It feels generous and reads as an absence of judgement; the buyer
+  either defers or picks the cheapest, and neither was the intent.'
+- 'PRICE WITHOUT THE MECHANISM. A number with no validity date, no start date and no signature block
+  requires a further exchange to act on, and every further exchange is a week.'
+- 'SCOPE VAGUE ENOUGH TO BE SAFE. Ambiguity that avoids an objection now creates a dispute later, and
+  the person who inherits it never saw the trade being made.'
+- 'A PROPOSAL THAT NEEDS PRESENTING. Sent after a walkthrough it works; forwarded to the sceptic it
+  collapses, and forwarding is what actually happens to it.'
+
+kpis:
+- name: forward_survival_rate
+  unit: percent
+  description: Share of proposals that produced a response from someone who was not in the meetings.
+    The only direct measure of whether the document works without us.
+  direction: higher_is_better
+- name: single_recommendation_share
+  unit: percent
+  description: Share of proposals carrying one recommendation rather than a menu.
+  direction: higher_is_better
+- name: mechanics_completeness
+  unit: percent
+  description: Share of proposals containing validity date, start date, signature block and named next
+    step.
+  direction: higher_is_better
+- name: proposal_to_response_days
+  unit: days
+  description: Days from sending to a substantive reply. A document requiring interpretation shows up
+    here before it shows up anywhere else.
+  direction: lower_is_better
+- name: post_signature_scope_dispute_rate
+  unit: percent
+  description: Share of accounts raising a scope disagreement in their first period. The cost of
+    vagueness, measured where it actually lands.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.discovery_and_solution.value_proposition
+  - sales.proposal_and_commercials.pricing
+  - sales.qualification.decision_maker_identification
+  downstream:
+  - sales.proposal_and_commercials.negotiation
+  - sales.closing.closing
+  - sales.closing.legal_review
+  parallel:
+  - sales.proposal_and_commercials.objection_handling
+  - sales.qualification.buying_committee_analysis
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached through `sales.sit.enterprise_deal` and
+    `sales.sit.out_of_profile_deal`, the second of which binds to `opportunity` — live on the design
+    partner''s org.
+
+    `proposal_sent` has 9 rows on that org, which makes this one of the few closing-side capabilities
+    with a real live marker. What it does NOT have is any view of the document itself, so nothing here
+    can be checked by the engine — the outcomes are written as authoring discipline, and the
+    forward-survival KPI is the only one that could in principle be measured from correspondence, by
+    observing whether a reply arrives from an address that had not appeared before.
+
+    No numbers: validity periods and price levels are Layer 4''s arithmetic and the pack''s.
+
+    '
+  reviewed_at: '2026-08-27'
+
+admission:
+  accepted_content_hash: ac3a228f1f20637263d2045f40af582d1e0dd8674980267fad6e970f2f10be4b

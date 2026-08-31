@@ -1,0 +1,203 @@
+identity:
+  id: sales.pb.deal_review.evidence_first_deal_review
+  name: Evidence-first deal review
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.sales_management.deal_review
+  subdomain: sales_management
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'A deal review interrogates the deal, not the rep''s narration skills. The four questions
+    — what has the BUYER done lately, who else is engaged, what date does the buyer own, what kills
+    this — asked against the record, produce coaching instead of ceremony.'
+  answers:
+  - What does a deal review consist of, and what does it produce?
+  - How is a review kept from becoming a status meeting?
+  not:
+  - A forecast meeting. This inspects deals; the roll-up is computed elsewhere.
+  - A performance review. The subject is the deal, and confusing the two destroys the input.
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  - sales.sit.out_of_profile_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - proposal_sent
+  - verbal_yes
+  - security_review_started
+  do_not_use_when:
+  - 'The reviewer has not read the record. Without an independent input the meeting is a narration
+    and every later step of this playbook is theatre.'
+  - 'Bad news is punished. Inspection under those conditions produces optimistic reporting, and the
+    review then degrades the data it was meant to check.'
+  - 'The deal is small and short-cycle. The overhead exceeds anything the inspection could find.'
+
+steps:
+- order: 1
+  name: Read the record before the meeting
+  description: 'The reviewer arrives having seen thread activity, reply latency, stakeholder breadth
+    and which gates the record shows. A review where the record is narrated rather than read has only
+    one input, and it rewards storytelling by construction.'
+  actor: human
+  objects_read:
+  - sales.obj.core.deal
+  - sales.obj.core.buying_committee
+  produces: An independent read of the deal, formed before the seller speaks.
+  done_when: The reviewer can state the buyer's last action without being told.
+
+- order: 2
+  name: Ask what the BUYER did, not what the seller did
+  description: '"What did THEY do since we last spoke?" Seller motion without buyer motion is a
+    one-sided courtship whatever the stage says, and it is the question that most reliably separates a
+    deal from a hope.'
+  actor: human
+  objects_read:
+  - sales.obj.core.deal
+  produces: A buyer-action account with dates.
+  done_when: Every claimed advance has a buyer action attached.
+
+- order: 3
+  name: Ask each gate for its evidence
+  description: 'Verified approver, real budget, a date the buyer owns, a stated decision process. The
+    record can be asked for `contract_requested`, `legal_review`, `security_review_started`,
+    `budget_approved` — and "none recorded" is a true and useful answer where "the champion says so"
+    is not.'
+  actor: human
+  objects_read:
+  - sales.obj.core.decision_maker
+  - sales.obj.core.budget
+  - sales.obj.core.timeline
+  produces: A gate-by-gate evidenced/asserted split.
+  done_when: Every gate is marked evidenced, asserted or absent.
+
+- order: 4
+  name: Push hardest where the story is smoothest
+  description: 'Attention naturally flows to the deals that sound uncertain, which are
+    disproportionately the ones being described accurately. Say the allocation aloud so it is read as
+    a rule rather than as suspicion of the person.'
+  actor: human
+  produces: Scrutiny allocated inversely to narrative fluency.
+  done_when: The most confident deal in the room received the most evidence questions.
+  skip_when: The seller's fluency comes from long experience of that specific account.
+
+- order: 5
+  name: Name what kills this deal
+  description: 'One sentence on the most likely cause of loss, from the reviewer and from the seller
+    separately. Where the two differ, the difference is the most valuable output of the meeting — and
+    it is invisible if only one of them is asked.'
+  actor: human
+  objects_read:
+  - sales.obj.core.risk
+  - sales.obj.core.competitor
+  produces: Two independent kill hypotheses and their divergence.
+  done_when: Both parties have named a risk without hearing the other's first.
+
+- order: 6
+  name: Downgrade or close when the evidence says so
+  description: 'A review that has never killed a deal is not inspecting. Disqualification is the
+    output that gives every other output credibility, and its absence over a quarter is evidence about
+    the review rather than about the pipeline.'
+  actor: human
+  produces: A stage, a downgrade, or a close with a reason.
+  done_when: The review's verdict is recorded, including when it is negative.
+
+- order: 7
+  name: Leave with one action, owned and dated
+  description: 'Each reviewed deal exits with a single next move. Reviews producing no action are
+    status theatre with a calendar slot, and sellers correctly learn to prepare for them rather than
+    to use them.'
+  actor: human
+  objects_read:
+  - sales.obj.core.next_action
+  produces: One owned, dated deal-advancing action per deal.
+  done_when: No deal leaves the review without one.
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.decision_maker
+- sales.obj.core.budget
+- sales.obj.core.timeline
+- sales.obj.core.buying_committee
+- sales.obj.core.champion
+- sales.obj.core.risk
+- sales.obj.core.competitor
+- sales.obj.core.next_action
+
+outcomes:
+- Every gate is marked evidenced, asserted or absent.
+- The review produces verdicts including negative ones.
+- Each deal leaves with one owned, dated action.
+
+failure_modes:
+- 'THE RECORD NARRATED RATHER THAN READ. Removes the review''s only independent input and turns the
+  whole exercise into an assessment of the seller''s preparation.'
+- 'FORWARD-LOOKING QUESTIONS ONLY. "What is next" is answerable with intention; only the past has
+  evidence, which is why steps 2 and 3 look backwards.'
+- 'ACTIVITY MISTAKEN FOR PROGRESS. Many meetings and no gate cleared feels healthier than a quiet deal
+  that cleared two, and it is not.'
+- 'NEVER DISQUALIFYING. The review keeps its comfort and loses its meaning; the forecast inherits the
+  problem a quarter later.'
+- 'BECOMING A PERFORMANCE EVENT. Optimistic reporting from then on, permanently.'
+
+limits:
+- Only as good as the record; on a partially-connected tenant the evidence questions return absences
+  that are about capture rather than about the deal.
+- Says nothing about how to win the deal, only about whether it is what it appears to be.
+- Cannot allocate its own frequency — which deals to review how often is a management question.
+
+variants:
+- applies_to: enterprise
+  change: Step 3 expands to the full committee, and single-threading is treated as a gate failure in
+    its own right rather than as a risk factor.
+  why: In a committee, one relationship is a single point of failure regardless of its quality.
+- applies_to: smb
+  change: Collapse to steps 2, 6 and 7. There are few gates, and the buyer-action question carries
+    nearly all the information.
+  why: Overhead has to match the deal.
+- applies_to: channel
+  change: The buyer whose actions matter is the END customer; partner activity is seller activity in
+    a different costume.
+  why: Otherwise every channel deal reviews as active.
+- applies_to: inside_sales
+  change: Run at the aggregate — forecast deviation by seller — rather than per deal, and reserve
+    individual review for the outliers it identifies.
+  why: Per-deal inspection is not affordable at volume, and the aggregate finds the same problems.
+
+metrics:
+- name: evidenced_gate_share
+  unit: percent
+  description: Share of gates supported by the record.
+  direction: higher_is_better
+- name: review_to_action_rate
+  unit: percent
+  description: Share of reviewed deals leaving with an owned, dated action.
+  direction: higher_is_better
+- name: post_review_disqualification_rate
+  unit: percent
+  description: Share of reviews ending in a downgrade or close.
+  direction: target_band
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: The gate set step 3 asks for evidence against.
+- title: The Challenger Sale
+  kind: methodology
+  author: Dixon and Adamson
+  note: On buyer behaviour rather than seller activity as the measure of a deal's progress.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 3, 4, 5 and 6 are new. Step 5''s independent kill
+    hypotheses are the part most reviews skip: asking both parties separately makes the divergence
+    visible, and the divergence is where the deal is actually misunderstood.'

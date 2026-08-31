@@ -1,0 +1,99 @@
+identity:
+  id: customer_support.pb.ai_deflection.deflect_with_an_exit
+  name: Deflect with an exit
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.ai_deflection
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Automated answers attempt the known and hand off the unknown gracefully — with full context
+    carried over, so the human never asks the customer to repeat what the bot already collected.
+
+when_to_use:
+  do_not_use_when:
+  - The customer is already escalated or upset. Interposing a model between an angry person and a human is the single most reliable way to make it worse.
+  - The question class has a safety, billing or security consequence. Confident wrong there is not a support failure.
+steps:
+- order: 1
+  name: Attempt only what is known
+  description: >
+    Coverage expanded to raise the deflection rate adds exactly the classes the model handles
+    worst, which is where confident wrong answers come from.
+  actor: system
+  objects_read: [customer_support.obj.core.knowledge_article, customer_support.obj.core.intent]
+  done_when: The answerable set is bounded deliberately.
+- order: 2
+  name: Hedge or stop
+  description: >
+    An answer given without confidence should be labelled as uncertain or not given. The
+    unhedged wrong answer is the expensive failure mode.
+  actor: system
+  done_when: Uncertainty is expressed rather than smoothed.
+- order: 3
+  name: Keep the exit visible at every turn
+  description: >
+    A customer who cannot find the way out is being contained, not helped, and that is exactly the
+    experience they describe afterwards.
+  actor: system
+  done_when: Reaching a human is one action from anywhere in the flow.
+- order: 4
+  name: Carry the context across
+  description: >
+    The human must never ask what the customer already told the bot. It is the most reliable
+    generator of the "nobody is listening" reaction.
+  actor: system
+  objects_read: [customer_support.obj.core.ticket, customer_support.obj.core.requester]
+  done_when: The handoff includes the transcript and what was attempted.
+- order: 5
+  name: Measure net, and measure temperature
+  description: >
+    Deflection rate alone counts abandonment as success. The tickets that arrive after a bot loop
+    arrive hotter, and that cost belongs to this capability.
+  actor: system
+  done_when: Both numbers are reported together.
+- order: 6
+  name: Remove classes it answers badly
+  description: >
+    Negative-value coverage is worse than no coverage, and the rate metric will always argue
+    against removing it.
+  actor: human
+  done_when: Poorly-performing classes have been withdrawn.
+objects_used: [customer_support.obj.core.knowledge_article, customer_support.obj.core.intent, customer_support.obj.core.ticket,
+               customer_support.obj.core.requester, customer_support.obj.core.content_gap]
+limits:
+- 'It deflects known questions. It cannot substitute for missing knowledge, and pointing a model at a thin knowledge base produces confident invention.'
+- 'Step 5 needs post-handoff sentiment, which requires linking the bot session to the resulting ticket — a join most stacks do not make.'
+failure_modes:
+- 'Step 6 blocked by the deflection-rate target, which is the metric arguing for its own inflation.'
+- 'Step 3 implemented as an exit that requires three refusals, which is containment with a door.'
+variants:
+- applies_to: enterprise_support
+  change: Deflection should be narrow and conservative; a named account reaching a bot is often itself the complaint.
+  why: They are paying for people.
+- applies_to: b2c
+  change: Volume makes deflection economically necessary, so steps 2 and 6 carry the whole quality burden.
+  why: There is no alternative to automation at that scale.
+- applies_to: community_support
+  change: A wrong answer is public and persistent, which raises the cost of step 2 considerably.
+  why: The error is indexed and read by future searchers.
+references:
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+  note: Channel-switching after a failed self-service attempt is its highest-effort event, which is what escalation_temperature_delta measures.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 6 is the one the metric fights. A deflection-rate target argues permanently for keeping
+    classes the model handles badly, which is why removal has to be owned by somebody not
+    measured on the rate.

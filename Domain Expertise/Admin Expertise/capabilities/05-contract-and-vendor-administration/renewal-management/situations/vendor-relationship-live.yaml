@@ -1,0 +1,120 @@
+# The contract-and-vendor subdomain had six capabilities and no door. On a correspondence tenant a
+# vendor is not a row in a procurement system — it is a counterparty we exchange mail with about
+# an agreement, and that is a thing the substrate can see.
+
+identity:
+  id: admin.sit.vendor_relationship_live
+  name: Vendor Relationship Live
+  domain: admin
+  owner_capability: admin.contract_and_vendor.renewal_management
+  version: 1.0.0
+  status: stable
+
+description: >
+  A counterparty we buy from, subscribe to, or are otherwise contractually bound to, read through
+  the correspondence rather than through a contract register — because on most organisations there
+  is no register, and where there is one it is out of date in exactly the ways that matter.
+
+  What goes wrong with vendors is not usually price and not usually performance. It is dates. A
+  renewal passes unnoticed and auto-renews for a year at terms nobody would have accepted; a
+  notice period expires three weeks before anyone looks; an onboarding is half complete and the
+  invoice arrives anyway. Every one of those is a date somebody knew about once, in an email.
+
+  The failure this file exists to prevent is treating supplier silence as satisfaction. A vendor
+  who has stopped writing is not necessarily performing — they may have stopped because the
+  contact left, because the service is unattended, or because renewal is automatic and they have
+  nothing to ask us for. That reading is the opposite of the one a quiet customer gets, and
+  applying the customer reading to a supplier is the specific error this file guards.
+
+matches:
+  l2_situation_types:
+    - admin_contact
+    - account_admin
+    - relationship
+  scope: account
+  when:
+    - path: relationship.direction
+      op: "="
+      value: outbound
+
+also_serves:
+  - admin.contract_and_vendor.contract_administration
+  - admin.contract_and_vendor.vendor_performance_management
+  - admin.contract_and_vendor.vendor_onboarding
+  - admin.contract_and_vendor.procurement_administration
+
+objects:
+  load:
+    - admin.obj.core.vendor
+    - admin.obj.core.contract
+  optional:
+    - admin.obj.core.deadline
+    - admin.obj.core.commitment
+    - admin.obj.core.invoice
+    - admin.obj.core.document
+  never_load:
+    - admin.obj.core.employee_record
+    - admin.obj.core.access_right
+    - admin.obj.core.asset
+
+priority_bp: 5400
+typical_duration_days: 90
+
+signals_of_progress:
+  - next_step_agreed
+  - positive_reply
+
+signals_of_decay:
+  - timeline_slip
+  - negative_reply
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    A supplier relationship. Never write about pipeline, value or closing — we are the buyer, and
+    sales language applied to a supplier reads as nonsense to the person holding the budget.
+
+    Headline: the nearest date that matters, or the fact that no date is on record. "No renewal
+    date recorded" is a genuinely useful headline and it is common.
+
+    Situation: what we appear to be bound to, what has been promised in either direction, and when
+    either side last moved. Date what is dated and name what is not.
+
+    Artifact: the message that establishes the date or the term — ask for the renewal date, the
+    notice period, or written confirmation of what was agreed. Specific, short, and to the person
+    who can answer.
+  fallback:
+    headline: "{entity} — supplier relationship, no renewal date on record"
+    # Was "... and nothing on record ...", which opens on the hole in our records rather
+    # than on the fact the reader acts from. Same evidence, and only one of the two is a
+    # finding. The sibling of this fault shipped 25 empty-reading cards to the design
+    # partner on 2026-08-30; this file is the same shape, caught before it routed.
+    situation: >-
+      We appear to be contractually engaged with {entity} and the next renewal decision is
+      undated.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Gated on `relationship.direction = outbound`, which is the only substrate fact that separates
+    a supplier from a customer. Coverage is partial and the consequence is honest: vendors whose
+    direction was never extracted will not reach this situation rather than being mistaken for
+    customers.
+
+    `purchase_order_management` is deliberately NOT served. A purchase order is a document type
+    with no writer anywhere in the substrate, and routing it here would produce advice about a PO
+    the system has never seen.
+
+    `subscription.current_period_end` is named in the admin spec's `expected_fields` and has a
+    writer only for structured billing sources. Where it exists it is the best fact this situation
+    could read; where it does not, the read falls back to correspondence, which is why the
+    fallback headline names the absence.
+
+admission:
+  accepted_content_hash: 10be5c0001a804c17bae7d82ab0231bd4bc927d33bb3c5f36fc0c199d8ab7859

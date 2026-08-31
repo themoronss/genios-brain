@@ -1,0 +1,88 @@
+identity:
+  id: admin.pb.vendor_performance_management.vendor_scorecards_that_inform_renewals
+  name: Vendor scorecards that inform renewals
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.vendor_performance_management
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Key vendors get lightweight scorecards — delivery, quality, responsiveness, incidents — reviewed
+    periodically WITH them, feeding renewal decisions, because vendor accountability requires memory and
+    memory requires records.
+
+when_to_use:
+  do_not_use_when:
+  - The supplier is trivial and replaceable. Scorecarding a stationery vendor consumes review time the material relationships need.
+steps:
+- order: 1
+  name: Take the measures from the agreement
+  description: >
+    Anything scored that nobody agreed to is unenforceable and reads as moving the goalposts, which
+    costs the credibility the rest of the process needs.
+  actor: human
+  objects_read: [admin.obj.core.contract, admin.obj.core.vendor]
+  done_when: Every measure traces to a term.
+- order: 2
+  name: Log incidents when they happen
+  description: >
+    Team grumbles are real and unusable. Contract-time amnesia forgives everything that was never
+    written down, and the writing has to happen in the moment.
+  actor: human
+  objects_read: [admin.obj.core.escalation]
+  done_when: A failure has a dated record with what it cost.
+- order: 3
+  name: Review with the vendor, on a cadence
+  description: >
+    A score they first see at renewal is a tactic and will be treated as one. Shown quarterly it is
+    a relationship instrument and usually fixes things without escalation.
+  actor: human
+  done_when: The vendor has seen the record and responded to it.
+- order: 4
+  name: Agree the escalation route while things are fine
+  description: >
+    Discovered during a failure, escalation means whoever answers. Agreed in advance it reaches
+    someone whose numbers the problem affects.
+  actor: human
+  done_when: A named route above the account manager exists.
+- order: 5
+  name: Feed it into the renewal
+  description: >
+    The performance record's only leverage is the renewal decision. Unconnected, the process is
+    documentation and the vendor knows.
+  actor: human
+  objects_read: [admin.obj.core.deadline]
+  done_when: The renewal review received the record before the notice date.
+objects_used: [admin.obj.core.vendor, admin.obj.core.contract, admin.obj.core.escalation, admin.obj.core.action_item, admin.obj.core.deadline]
+limits:
+- 'It measures against the agreement, so a bad agreement produces a good scorecard. Renegotiation is a different capability.'
+- 'Leverage requires an alternative. Against a vendor we cannot leave, this produces a record of tolerance.'
+failure_modes:
+- 'Step 2 done retrospectively before a review, which reconstructs the year through whoever is most annoyed.'
+- 'Step 3 held without consequence, which teaches the supplier precisely what the cadence is worth.'
+variants:
+- applies_to: outsourced
+  change: Steps 1 to 4 are the primary management instrument rather than a supplement, since delivery is entirely theirs.
+  why: There is no internal team whose observation substitutes for the record.
+- applies_to: startup_lean
+  change: Steps 2 and 5 only, for the two or three vendors that matter.
+  why: Formal scorecards at this size cost more than the leverage they create.
+references:
+- title: Vendor management scorecards
+  kind: practitioner
+  note: The reviewed-with-the-vendor practice is what separates a scorecard from a case file.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 3 is what makes this a relationship instrument rather than a case file, and step 5 is
+    what gives it consequence. Without both, the scorecard is documentation and the vendor works
+    that out before we do.

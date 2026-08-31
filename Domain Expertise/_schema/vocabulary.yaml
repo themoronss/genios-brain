@@ -106,77 +106,345 @@ closed:
 # ─────────────────────────────────────────────────────────────────────────────
 substrate:
 
-  # Typed fact paths declared by the shipped packs' schema.fields. Eleven. That is all.
+  # Typed fact paths the reasoner can read off a node.
+  #
+  # PROVENANCE, checked against the code rather than remembered (2026-08-26). Three producers,
+  # and the union of them is this list:
+  #   1. `context/extract/vocab.py::ENGINE_FIELDS` — what the engine requires of every tenant
+  #      regardless of pack, so a pack may add to it and may not remove it.
+  #   2. `packs/sales_v1.py` and `packs/general_v1.py` `schema.fields` — what each shipped pack
+  #      declares and its rules read.
+  #   3. Three fields the L2 pipeline writes directly and no pack declares — named below.
+  #
+  # This list used to hold twelve, which understated the substrate by eleven and forced honest
+  # patterns about meetings, correspondence direction and counterparty role to be marked
+  # `needs_signal` when they can in fact fire today. The check that matters is not "is it in a
+  # pack manifest" but "does anything WRITE it and can a predicate READ it": `reason/runner.py`
+  # `_load_context` selects every active fact on the node with no field filter, and
+  # `context/situation_bso.py` `build_context_slice` passes them through unfiltered, so any field
+  # Layer 2 writes is evaluable by the predicate grammar.
+  #
+  # What is deliberately NOT here: the L1 structured-connector fields (`deal.stage`,
+  # `deal.amount`, `meeting.title`, `meeting.location`, ... in `capture/structured/registry.py`).
+  # Those exist only for a tenant who has connected that source, so a pattern resting on one is
+  # true for some tenants and silently dead for the rest — which is what `needs_signal` is for.
   fact_paths:
+    # Period aggregates, written onto the tenant node by `context/periodic.py`. Computed, never
+    # extracted — they are not in any pack's `schema.fields` for the same reason `derived.*` is
+    # stripped from the extraction prompt.
+    - period.open_deals
+    - period.events_this_window
+    - period.events_prev_window
+    - period.counterparties_awaiting_us
+    - period.commitments_open
+    - period.commitments_overdue
+    - period.active_situations
+    # ── deal (sales_v1) ────────────────────────────────────────────────────────
     - deal.status
     - deal.last_inbound
-    - deal.value
+    - deal.value              # declared, and absent in practice — never derived, see below
+    # ── correspondence (ENGINE_FIELDS; both packs read them) ───────────────────
     - thread.last_inbound
+    - thread.last_outbound    # the other half of the pair; attention.py already reads it
     - thread.ball_in_court
+    # ── commitment (ENGINE_FIELDS + general_v1) ────────────────────────────────
     - commitment.due_at
     - commitment.action
+    - commitment.text         # pipeline.py writes it beside due_at; `action` is the reader's name
+    - commitment.status       # pipeline.py writes 'open' with due_at. Undeclared by any pack
+    # ── meeting (general_v1) ───────────────────────────────────────────────────
     - meeting.status
     - meeting.start_at
+    - meeting.end_at
+    - meeting.scheduled
+    - meeting.occurred
+    - meeting.attended
+    - meeting.external_counterparty
+    - meeting.open_loop       # meeting_lifecycle.py: it ended with something unresolved
+    # ── the lens: what the counterparty IS to us (sales_v1) ────────────────────
+    - relationship.nature
+    - relationship.direction
+    - party.role              # pipeline.py writes it; card_builder reads it. No pack declares it
+    - role                    # legacy flat names, still written and still read. Superseded by
+    - company                 #   party.role / the works_at edge, not yet removed
+    # ── engine-computed (never extracted; context/derived.py) ──────────────────
     - derived.momentum        # engine-computed trajectory
     - derived.engagement      # engine-computed two-way volume vs prior fortnight
     - derived.sentiment       # engine-computed observation balance
+    # ACCOUNT-LEVEL CONTACT RATE, and nothing else. reason/baselines.py rolls each company's
+    # people up through the works_at edge and writes contacts/week over the recent window.
+    # Paired with the contact_rate_per_account baseline below — a rate is not evidence without
+    # its own norm.
+    #
+    # THE NAME USED TO COVER FOUR MEASUREMENTS AND SHIP ONE. Eleven authored patterns named
+    # `derived.contact_frequency`; only five of them wanted this account rate. Four wanted a
+    # PERSON's contact rate, one wanted a person's SHARE of an account's inbound, and one wanted
+    # a COUNT of distinct callers. backlog.py therefore reported this signal as "unblocks 11"
+    # and shipping the writer unblocked 2 — the count was of a name, not of a measurement. The
+    # other three now have their own names in planned_substrate.fact_paths below, unwritten,
+    # which is the only place a name with no writer belongs. Do not attach a pattern to this
+    # entry unless the thing it counts is an ACCOUNT's contacts per week.
+    #
+    # AND THE WRITER REACHED NOTHING UNTIL 2026-08-30. Having a writer is not the same as having
+    # a measurement, which is the one thing this list is supposed to distinguish.
+    # `baselines._account_rows` filtered `node_type='company'` on the edge's FROM side, while
+    # `pipeline.py::_works_at` writes PERSON -> COMPANY — so it matched only `owns`
+    # (company -> deal) edges, looked up a deal id in a person-keyed map, and wrote a contact
+    # rate for zero accounts. Measured read-only on the design partner's org that morning:
+    # `baselines` held 387 rows — 129 people x 3 person-level metrics — and not one
+    # `contact_frequency` row, from a build that had run ten minutes earlier. The hermetic test
+    # covering it used a fake connection that returns its edge list whatever SQL it is handed.
+    # With the direction fixed the same org yields 37 accounts, 27 of them with real history.
+    - derived.contact_frequency
+    # ── the seven correspondence readings (context/support_situations.py) ──────
+    #
+    # Computed, never extracted, and deliberately NOT named `ticket.*` / `sla.*` / `ticket.queue`
+    # even where the build note asked for them. This tenant has no helpdesk: there is no ticket,
+    # no queue and no SLA object, so a fact path asserting one would be a fabricated record wearing
+    # the corpus's vocabulary. `response.*` is a clock computed from message timestamps against a
+    # policy the tenant STATED, `backlog.*` is one unmet ask from the open-loop ledger, `mailbox.*`
+    # is one connected mailbox and not a routing decision. The `ticket.*`/`sla.*`/`entitlement.*`
+    # families stay in planned_substrate, unwritten, which is what keeps the difference visible.
+    #
+    # first_response_overdue — the clock, and where it came from
+    - response.opened_at
+    - response.target_at
+    - response.target_source     # tenant_policy | engine_default. NEVER entitlement: no
+                                 #   per-customer target exists anywhere in this system.
+    - response.channel
+    - response.overdue_hours
+    # ticket_aging — one unmet ask, with the two clocks kept apart
+    - backlog.opened_at
+    - backlog.age_days
+    - backlog.days_since_customer    # separate from age on purpose: an old item being worked and
+    - backlog.days_since_we_touched  #   an old item nobody has touched share an age, not a finding
+    - backlog.waiting_on
+    - backlog.open_asks
+    - backlog.ask_repeats
+    - backlog.age_percentile_bp
+    # escalation_requested — the raise, and the acceptance that has not happened
+    - escalation.requested_at
+    - escalation.origin
+    - escalation.ask_text
+    - escalation.thread_id
+    - escalation.account_node_id
+    - escalation.requester_node_id
+    - escalation.receiver_named
+    - escalation.status
+    # repeat_contact — the ordinal is a FLOOR, never an exact count
+    - repeat.intent
+    - repeat.ordinal
+    - repeat.window_days
+    - repeat.first_contact_at
+    - repeat.latest_contact_at
+    - repeat.prior_answered
+    # knowledge_gap — volume and answer stability. `published_answer_seen` is deliberately absent
+    #   from this list: nothing writes it, and it is the corpus's real discriminator between
+    #   "write the article" and "fix findability".
+    - knowledge.intent
+    - knowledge.distinct_askers
+    - knowledge.distinct_accounts
+    - knowledge.asks_this_window
+    - knowledge.asks_prev_window
+    - knowledge.answered_count
+    - knowledge.answer_reuse_bp
+    - knowledge.first_asked_at
+    - knowledge.last_asked_at
+    # queue_overloaded — one connected mailbox. The ratios are PRECOMPUTED because the predicate
+    #   grammar above compares a path to a LITERAL and has no fact-to-fact form, so Layer 4 cannot
+    #   divide two of these. If Layer 2 does not materialise them, no rule can express them.
+    - mailbox.loops_opened
+    - mailbox.loops_opened_prev
+    - mailbox.loops_closed
+    - mailbox.loops_closed_prev
+    - mailbox.loops_open_now
+    - mailbox.loops_open_prev
+    - mailbox.loops_reopened
+    - mailbox.loops_opened_baseline
+    - mailbox.backlog_oldest_days
+    - mailbox.backlog_age_p50_days
+    - mailbox.backlog_age_p90_days
+    - mailbox.backlog_over_14d
+    - mailbox.threads_awaiting_us
+    - mailbox.threads_awaiting_us_oldest_days
+    - mailbox.flow_ratio
+    - mailbox.arrival_vs_baseline
+    - mailbox.backlog_delta
+    - mailbox.reply_turnaround_days   # named for what it measures: a loop closes on OUR reply,
+                                      #   so this is time-to-reply and not time-to-resolution
+    # workaround_only — `workaround.cost` is written only when the wording is unambiguous, so an
+    #   absent value means "we could not tell" rather than "one-off"
+    - workaround.provided_at
+    - workaround.description
+    - workaround.cost
+    - workaround.days_open
+    - workaround.quiet_since
+    # ── the file's own record of itself (context/documents.py) ────────────────
+    #
+    # Projected at authority rank 3 from the metadata `capture/connectors/drive.py` was already
+    # fetching and discarding. `document.approved_at`, `document.review_due_at`,
+    # `document.classification` and `document.retention_until` stay in planned_substrate below and
+    # are NOT moved up with these: none is a file-store concept, none has a writer, and inferring
+    # any of them from a modification history is the one thing the situation file forbids by name.
+    # That split is what keeps `missing` truthful on every records row — an artefact reports
+    # "approval state unknown", never "unapproved".
+    - document.id
+    - document.title
+    - document.version          # a file-store REVISION COUNTER, not a semantic version: v3 of the
+                                #   security policy is not `version: 3`
+    - document.modified_at
+    - document.created_at
+    - document.owner_email
+    - document.last_modified_by  # very often NOT the owner; the two are kept apart deliberately
+    - document.mime
+    - document.location
+    - document.shared
+    - document.content_hash      # over the PII-masked text, which is the only form L2 ever sees
+    # Copy clustering (context/document_register.py) — the derived half of the corpus's
+    # `derived.document_identity_cluster` ask. It answers "two live copies of this exist" and
+    # deliberately not "the wrong version is in circulation": supersession has no emitter here, so
+    # a correctly withdrawn v1 and two teams editing in parallel are the same picture.
+    - derived.document_cluster_key
+    - derived.document_live_copies
 
-  # Observation kinds Layer 2 emits today, union of both shipped packs.
+  # Observation kinds Layer 2 emits.
+  #
+  # GENERATED FROM `genios_engine/context/vocabulary.py::CANONICAL_OBS_KINDS`, which is the
+  # complete set the extractor is offered — `extract/vocab.py::observation_vocabulary` unions the
+  # tenant's rule-referenced kinds WITH the canonical set and never restricts to them, precisely
+  # so the kinds carrying the most intent keep being captured before a rule exists to read them.
+  #
+  # This list held eighteen of the thirty-four. The sixteen it omitted are not theoretical: on the
+  # design partner's org today `positive_reply` (57), `negative_reply` (8), `meeting_request`
+  # (128), `question` (65), `next_step_agreed` (17) and `objection_timing` (2) are all present in
+  # `graph_observations` — while every one of `budget_approved`, `budget_freeze`,
+  # `champion_change`, `contract_requested`, `discount_pressure`, `objection_price`,
+  # `legal_review` and `verbal_yes` on the old list has zero rows. The old list was a sales-deal
+  # ontology, and it made the honest expertise about correspondence, meetings and administrative
+  # obligation unauthorable — the very domains a non-sales tenant lives in.
   obs_kinds:
+    # positive (OBS_POSITIVE)
     - budget_approved
-    - budget_freeze
-    - champion_change
-    - closed_lost_mention
-    - competitor
+    - buying_intent
+    - champion_engaged
     - contract_requested
     - demo_requested
+    - next_step_agreed
+    - positive_reply
+    - pricing_discussed
+    - security_review_started
+    - stakeholder_added
+    - verbal_yes
+    # negative (OBS_NEGATIVE)
+    - budget_freeze
+    - champion_change
+    - churn_risk
+    - closed_lost_mention
+    - competitor
     - discount_pressure
+    - going_dark
+    - negative_reply
+    - objection
+    - objection_authority
+    - objection_integration
+    - objection_price
+    - objection_security
+    - objection_timing
+    - price_pushback
+    - stakeholder_left
+    - timeline_slip
+    # neutral (OBS_NEUTRAL) — no polarity, high intent
     - followup_sent
     - introduction
     - legal_review
-    - objection
-    - objection_price
-    - pricing_discussed
+    - meeting_request
     - proposal_sent
-    - security_review_started
-    - timeline_slip
-    - verbal_yes
+    - question
 
   # Learned per-entity baselines available to {baseline: ...} thresholds.
   baselines:
     - reply_cadence
+    - contact_rate_per_account   # per-company contacts/week over the 56d window (reason/baselines.py)
 
   # Layer 2 situation types a situation file may bind to via `matches.l2_situation_types`.
   # Union of both packs' schema.signal_vocab. A situation naming a type outside this list
   # can never be looked up at runtime — validate.py errors.
+  # Layer 2 situation types a situation file may bind to via `matches.l2_situation_types`.
+  #
+  # GENERATED FROM `genios_engine/context/domain_spec.py` — the ONLY producer of the value the
+  # compiler looks up (`capability_resolver` does `domain.routes.get(situation.type)`).
+  #
+  # This list used to be the union of both packs' `schema.signal_vocab` — Layer 3 SIGNAL REASON
+  # CODES, which Layer 2 never emits. Validating against it meant "0 errors, 715 warnings"
+  # certified nothing about whether a single route could ever be reached, and live compilation
+  # returned NoExpertiseRoute for 73 of 73 situations. A vocabulary check is only worth running
+  # against the substrate that actually produces the value.
   l2_situation_types:
-    - stalled_deal
-    - objection_open
-    - buying_signal
-    - cooling_deal
-    - single_threaded_deal
-    - competitor_in_live_deal
-    - going_dark_after_proposal
-    - deal_sentiment_negative
-    - deal_health
-    - pricing_objection
-    - verbal_yes_not_closed
-    - contract_requested
-    - security_review_pending
-    - champion_left
-    - budget_freeze
-    - discount_pressure
-    - legal_in_review
-    - timeline_slip
-    - demo_requested
-    - proposal_no_response
-    - closed_lost_risk
-    - commitment_overdue
-    - unanswered_email
-    - champion_quiet
-    - meeting_no_followup
-    - intro_followup
-
+    - channel_touch             # sales, anchored on a MEETING with an external party.
+                                #   `context/meeting_touch.py`. Serves `demo` only —
+                                #   calls and LinkedIn are in planned, still unwritten.
+    - deal                      # sales, anchored on a deal
+    - opportunity               # sales, anchored on a company
+    - prospect_relationship     # sales, anchored on a person
+    - support_case              # support, anchored on a company
+    - support_contact           # support, anchored on a person
+    - account_admin             # admin, anchored on a company
+    - admin_contact             # admin, anchored on a person. Added with the `domain_spec` entry
+                                #   that produces it: only `company` was described, so a
+                                #   person-anchored admin situation fell to the generic
+                                #   `<domain>_<anchor>` default (`admin_person`) and no situation
+                                #   file could claim it.
+    - investor_relationship     # fundraising, anchored on a company
+    - investor_contact          # fundraising, anchored on a person
+    - relationship              # general, anchored on a company or a person
+    # The three PERIOD types, anchored on the tenant node `context/periodic.py` mints. They are
+    # substrate rather than planned because the aggregates they carry are computed from facts that
+    # already exist — no connector is involved. Twenty-two capabilities were waiting on them.
+    - pipeline_period_review    # sales, anchored on the tenant, one window
+    - admin_period_review       # admin, anchored on the tenant, one window
+    - support_period_review     # support, anchored on the tenant, one window
+    # The seven CORRESPONDENCE readings, minted by `context/support_situations.py`. They are
+    # substrate rather than planned because nothing new had to be connected: a mailbox already
+    # carries the shape of a service desk — a request arrives, somebody replies or does not, the
+    # same person comes back about the same thing, a customer asks for a manager, we hand out a
+    # workaround and go quiet.
+    #
+    # Every one is an APPROXIMATION and none of them may be read as a record. There is no ticket,
+    # no queue, no assignee and no SLA on this tenant, so each situation caps its `coverage` and
+    # names what it cannot see in `missing` on every row — entitlement, holidays, other channels,
+    # resolution as distinct from reply, help-centre telemetry. The families those would need
+    # (`ticket.*`, `sla.*`, `entitlement.*`, `csat.*`) stay unwritten in planned_substrate
+    # deliberately: the gap between an inference and a record has to stay visible, because the
+    # failure this whole section exists to prevent is a card labelled "SLA Breach Imminent" on an
+    # org that has no SLAs.
+    #
+    # Each declares its OWN anchor node type in `domain_spec`, because `type_for` maps one anchor
+    # to one type. That constraint matched what the corpus already asked for: per-item aging
+    # "needs the item to be a first-class subject" (queue-overloaded.yaml) and a content gap
+    # "belongs to an INTENT" rather than to the person who reported it (repeat-contact.yaml).
+    - first_response_overdue    # support, anchored on the thread the request arrived in
+    - ticket_aging              # support, anchored on one unmet ask (`backlog_item`)
+    - escalation_requested      # support, anchored on the raise (`escalation`)
+    - repeat_contact            # support, anchored on one person and one topic (`contact_intent`)
+    - knowledge_gap             # support, anchored on the topic itself (`topic`)
+    - queue_overloaded          # support, anchored on one connected mailbox (`mailbox`)
+    - workaround_only           # support, anchored on the workaround a customer lives on
+    # The RECORDS reading, minted by `context/document_register.py` on a `document` node that
+    # `context/documents.py` projects from file-store metadata. Substrate rather than planned
+    # because nothing new had to be connected: `capture/connectors/drive.py` already listed every
+    # file, downloaded it and extracted its text, and simply threw the id, the revision counter,
+    # the modification stamp and the owner away — so `document.*` had no writer while the data was
+    # arriving in the same response as the body.
+    #
+    # It mints one situation per GAP and never one per file, which is the situation file's own
+    # render hint ("the headline is the gap, not the document"): a Drive of four hundred files
+    # would otherwise produce four hundred cards saying a document exists.
+    #
+    # Two of the four failures this subdomain exists to catch do NOT survive the approximation and
+    # must not be papered over. Missing approval cannot be read from a file store at all, and
+    # retention needs a schedule the tenant has never stated — so `retention_and_archival` gets a
+    # route and an empty hand, and both are named in `missing` on every row.
+    - document_under_control    # admin, anchored on one file (`document`)
 # ─────────────────────────────────────────────────────────────────────────────
 # PLANNED SUBSTRATE — asked for by authored expertise, emitted by nothing yet.
 #
@@ -205,23 +473,25 @@ planned_substrate:
 
   # Would be shipped by a support_v1 pack's schema.signal_vocab.
   l2_situation_types:
+    # Named by an authored situation but missing from this census until 2026-08-29, so
+    # `touch-outside-mail.yaml` carried two asks that validate.py could only report as warnings
+    # and backlog.py could not count at all. Both are confirmed BLOCKED on a source the tenant has
+    # not connected — `channel_touch` on a dialler / LinkedIn / meeting-recorder, and
+    # `market_period_review` on external market data no SaaS in the stack contains. Listing them
+    # is the point: the census records what is asked for, and an ask nobody records is an ask
+    # nobody is tracking.
+    - channel_touch
+    - market_period_review
     - sla_breach_imminent
     - sla_breached
-    - first_response_overdue
     - ticket_reopened
-    - ticket_aging
-    - repeat_contact
-    - escalation_requested
     - major_incident_declared
     - incident_unresolved
     - csat_detractor
     - entitlement_expired
     - entitlement_mismatch
-    - knowledge_gap
     - deflection_failed
-    - queue_overloaded
     - bug_awaiting_engineering
-    - workaround_only
     - churn_risk_from_support
     - coverage_gap
     - quality_review_failed
@@ -356,9 +626,37 @@ planned_substrate:
     - incident.severity
     - incident.status
     - incident.started_at
-    - derived.contact_frequency
     - derived.escalation_pressure
     - derived.backlog_age
+    # ── the three contact measurements that were hiding inside `derived.contact_frequency` ──
+    #
+    # NOTHING WRITES THESE. They are here rather than in `substrate` for exactly the reason the
+    # census exists: `reason/baselines.py` writes one account-level rate, and the six patterns
+    # below were asking that one name for three other numbers. A share is not a rate, a person is
+    # not an account, and a count of callers is neither. Sharing one name made the backlog claim
+    # eleven patterns unblocked when two were.
+    #
+    # Each name states its ANCHOR and its UNIT, because the anchor and the unit are the two things
+    # the old name left to the reader to guess:
+    - derived.person_contact_rate     # contacts/week from ONE person. Same unit as
+                                      #   derived.contact_frequency, different denominator
+                                      #   population — an individual, not the company they
+                                      #   work at. Wanted by req.repeat_contact_inside_a_week,
+                                      #   cs.sent.reopened_or_repeat_contact,
+                                      #   esc.the_diagnosis_restarted,
+                                      #   contact.is_a_proxy_for_someone_else.
+    - derived.person_inbound_share    # basis points of an ACCOUNT's inbound attributable to one
+                                      #   person. Dimensionless proportion, so it can never be
+                                      #   compared against the contact_rate_per_account baseline
+                                      #   the way a rate can. Already named inside the corpus as
+                                      #   named_contact.inbound_share, from which
+                                      #   customer_account.contact_concentration is computed.
+                                      #   Wanted by account.the_relationship_is_one_person_deep.
+    - derived.account_distinct_contacts  # how many distinct individuals contacted us from one
+                                      #   account inside the window. An integer count: it is what
+                                      #   a named-caller allowance is compared against, and
+                                      #   neither a rate nor a share can produce it. Wanted by
+                                      #   plan.the_named_caller_limit_is_being_exceeded.
 
 
   # ── Added by Admin ────────────────────────────────────────────────────────────────────
@@ -376,7 +674,14 @@ planned_substrate:
     - obligation.due_at
     - obligation.authority
     - obligation.jurisdiction
-    - document.version
+    # `document.version` LEFT this list when `context/documents.py` began projecting file-store
+    # metadata. The four below stayed, and staying is the point rather than an oversight: none is
+    # a file-store concept. A file store keeps revisions, comments and suggestion-accepts and not
+    # one of them is an approval; a retention date needs a schedule this tenant has never stated,
+    # so there is no clock and none can be derived; a classification needs DLP labels nobody has
+    # applied; and a review date is self-imposed by somebody who has not imposed it. Two of them
+    # sit in `document_under_control`'s `expected_fields` and are never satisfiable there, which
+    # is what makes that situation's `missing` tell the truth on every single row.
     - document.approved_at
     - document.review_due_at
     - document.classification
@@ -405,7 +710,6 @@ planned_substrate:
   baselines:
     - first_response_time
     - resolution_time
-    - contact_rate_per_account
     - ticket_volume
     # ── Added by Admin ──
     - approval_turnaround

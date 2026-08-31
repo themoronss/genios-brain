@@ -1,0 +1,126 @@
+identity:
+  id: sales.rule.upsell.do_not_grow_a_shrinking_account
+  name: Do not grow a shrinking account
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.upsell
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'Selling more of a product an account is disengaging from is growth that accelerates
+    churn. It reports as expansion in the quarter it happens and as a larger loss in the year it
+    resolves, and the two events are far enough apart that nobody connects them.'
+  answers:
+  - May this account be offered an expansion?
+  - What has to be true before more is sold?
+  not:
+  - A rule about which accounts to save. That is churn prevention.
+  - A prohibition on selling to accounts with problems. It is about direction of travel.
+
+rule:
+  statement: 'An upsell or capacity expansion MUST NOT be recommended for an account whose engagement
+    is falling. Where engagement is in decline, the recommended action is the diagnostic conversation
+    from churn prevention, and expansion is withheld until the direction has changed.'
+  spans:
+  - sales.obj.core.account
+  - sales.obj.core.opportunity
+  - sales.obj.core.risk
+  when:
+  - {path: derived.engagement, op: "<", value: 1}
+  - {exists: thread.last_inbound}
+  then: 'Suppress expansion candidates and surface the engagement decline as the item, routing to the
+    churn-prevention diagnostic rather than to a commercial offer.'
+  severity: blocking
+  why: 'The two effects are separated by enough time that the organisation cannot see the connection.
+    The expansion books immediately and the churn resolves at the renewal, so the motion that caused
+    the loss is measured only by the revenue it added — and it is measured by whoever is compensated
+    on expansion, who is rarely the person who carries the renewal. The customer''s reading is worse
+    than the numbers: being sold more of something they are not using is direct evidence that nobody
+    on our side is paying attention to whether it works, which is precisely the doubt that was
+    already forming.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'THE EXPANSION IS THE FIX. Occasionally under-provisioning is the CAUSE of the disengagement — too
+    few seats to reach the team that would have adopted it, a tier that excludes the feature they
+    needed. The distinguishing evidence is that the customer has said so; without that, this is the
+    most self-serving exception available.'
+  - 'A CUSTOMER-INITIATED REQUEST. Where they have asked to expand, refusing on an engagement metric
+    substitutes our reading for their intent, and they can see something we cannot.'
+  - 'ENGAGEMENT FALLING FOR A KNOWN BENIGN REASON. A seasonal cycle, a planned pause, a project between
+    phases. Requires the reason to be recorded, because "there is probably a reason" is how this rule
+    gets switched off.'
+  - 'A CONTRACTUAL TRUE-UP. Where usage has already exceeded a committed level, billing the overage is
+    an administrative fact rather than a sales motion, and gating it creates a commercial gap.'
+  - 'ENGAGEMENT MEASURED ON A CHANNEL THE ACCOUNT NO LONGER USES. A relationship that moved to a
+    portal or to in-person contact reads as declining and is not; the honest state is unknown rather
+    than falling.'
+
+objects_used:
+- sales.obj.core.account
+- sales.obj.core.opportunity
+- sales.obj.core.risk
+- sales.obj.core.champion
+
+outcomes:
+- Expansion is offered only where the direction of travel supports it.
+- A declining account is routed to diagnosis rather than to a commercial offer.
+
+failure_modes:
+- 'THE EXPANSION-IS-THE-FIX EXCEPTION ASSUMED. It is real and it is also the story a seller tells; it
+  requires the customer to have said so.'
+- 'READ AS "DO NOT CONTACT". The rule redirects the motion to a diagnostic conversation; withdrawing
+  entirely from a declining account is the worse failure.'
+- 'ENGAGEMENT TREATED AS TRUTH ON A PARTIAL TENANT. The fifth exception exists because a healthy
+  account working off-channel is indistinguishable from a declining one.'
+
+limits:
+- '`derived.engagement` is computed from correspondence only — it cannot see product usage, which is
+  the thing this rule is really about. On a tenant whose relationship runs elsewhere it will be wrong
+  in the cautious direction.'
+- Cannot distinguish a decline from a plateau, which for a stable mature account is normal.
+
+variants:
+- applies_to: enterprise
+  change: Measure engagement per function; a quiet sponsor with an active technical team is a
+    different risk from a quiet account, and only the first should gate an expansion.
+  why: Account-level aggregation hides which relationship is actually cooling.
+- applies_to: smb
+  change: The reading is clean — one contact, one relationship — and the rule is at its most reliable.
+  why: No aggregation, no handover.
+- applies_to: channel
+  change: The engagement that matters is the end customer's and we cannot see it; the partner's
+    engagement is a weak proxy and should be labelled as one.
+  why: We are one relationship removed from the usage.
+
+metrics:
+- name: upsell_on_low_engagement_rate
+  unit: percent
+  description: Share of expansions sold into declining accounts. What this rule drives to zero.
+  direction: lower_is_better
+- name: post_upsell_retention
+  unit: percent
+  description: Retention of expanded accounts against the base. Below the base is the evidence that
+    the rule is being circumvented.
+  direction: higher_is_better
+
+references:
+- title: Practitioner expansion operations
+  kind: practitioner
+  note: Expansion into low-engagement accounts retains materially worse than the base, and the effect
+    is invisible to anyone measured on expansion because it resolves a renewal cycle later.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new and blocking. Unusually for this batch it rests on a signal that genuinely
+    exists — `derived.engagement` is computed for 74 nodes on the design partner''s org — so the gate
+    is evaluable rather than aspirational. The fifth exception is the real weakness and is stated: a
+    healthy account that moved off-channel reads exactly like a declining one.'

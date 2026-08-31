@@ -1,0 +1,68 @@
+identity:
+  id: admin.heu.purchase_order_management.the_match_defeats_the_confident_invoice
+  name: The match defeats the confident invoice
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.purchase_order_management
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Over-billing survives on plausibility — invoices that look right, approved by people without
+    the original terms at hand. The three-way match removes plausibility from the equation entirely.
+  answers:
+  - How does routine over-billing get through?
+
+heuristic:
+  statement: >
+    Over-billing survives on plausibility — invoices that look right, approved by people who do not
+    have the original terms in front of them. The three-way match removes plausibility from the
+    decision entirely.
+  why: >
+    An approver looking at an invoice has one artefact and a memory. The invoice is designed to look
+    correct, the amount is usually close to expected, and the cost of querying it is a conversation
+    with a supplier. So approval converges on plausibility, which is exactly the property a wrong
+    invoice optimises for. Matching against the order and the receipt replaces the judgement with an
+    arithmetic identity, and arithmetic does not find things plausible.
+  confidence_bp: 8500
+  applies_when: Trade payables where an order and a receipt event both exist.
+  breaks_down_when: >
+    The receipt leg is fictional. For services, receipt is somebody confirming work happened, and
+    where that confirmation is a formality the match compares paperwork with paperwork and returns a
+    confident pass — which is worse than no match, because it retires the human scepticism that
+    would otherwise apply. It also breaks down where the order was written from the same wrong
+    assumption as the invoice: matching confirms internal consistency, not that the price was right.
+  reads: [admin.obj.core.invoice, admin.obj.core.vendor, admin.obj.core.budget_line]
+  contradicts: [admin.heu.procurement_administration.friction_begets_shadow_procurement]
+limits:
+- 'It defeats over-billing and duplicates. It says nothing about whether the thing should have been bought.'
+- 'Its strength is entirely the receipt leg, which is the weakest of the three for anything that is not physical goods.'
+failure_modes:
+- 'Trusted for services where receipt is a rubber stamp, which converts a control into a confident pass.'
+- 'Exceptions cleared under volume pressure, which is the state a mismatch-heavy queue reliably produces.'
+variants:
+- applies_to: outsourced
+  change: The receipt must come from whoever consumed the service, not from the administrator processing the invoice.
+  why: Otherwise both legs originate from the same side of the transaction.
+- applies_to: startup_lean
+  change: Weaker and cheaper to replace — one person who knows what was ordered beats a formal match at twenty invoices a month.
+  why: The control exists because approvers lose context at volume, and there is no volume yet.
+references:
+- title: Three-way match practice
+  kind: practitioner
+  note: Order, receipt, invoice. The receipt is the leg that fails for services, which is where most spend now is.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The receipt leg is the whole strength of a three-way match and it is fictional for most
+    service spend, where confirmation is a formality. A match that compares paperwork with
+    paperwork returns a confident pass and retires the scepticism that would otherwise have
+    applied.

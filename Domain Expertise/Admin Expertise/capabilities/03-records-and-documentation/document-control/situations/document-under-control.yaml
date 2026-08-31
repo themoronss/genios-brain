@@ -1,0 +1,146 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# THIS SITUATION NOW ROUTES, AND ONLY HALF OF IT DOES.
+#
+# It was authored as an explicit gap. `select distinct field from graph_facts` on the design
+# partner's org returned eleven prefixes and none of them was `document`, so five records
+# capabilities were complete knowledge with no trigger.
+#
+# What closed it was a projection, not a connector. `capture/connectors/drive.py` was already
+# listing every file, downloading it and extracting its text — and discarding the id, the revision
+# counter, the modification stamp and the owner that arrived in the same response. Those now land
+# as `document.*` facts on a `document` node (`context/documents.py`), copies of one document are
+# clustered across the file store, and `context/document_register.py` opens one situation per
+# CONTROL GAP — never one per file, per the render hint below.
+#
+# The compromise this file refused is still refused. Nothing is bound to `admin_contact` and no
+# attachment is read as a controlled document: the anchor is a real file with a real id, and a
+# document mentioned in four threads is one document rather than four.
+#
+# TWO OF THE FOUR FAILURES DO NOT SURVIVE, and they are named in `missing` on every row rather
+# than approximated. Missing approval cannot be read from a file store at all — revisions,
+# comments and suggestion-accepts are not approvals, and inferring one from a modification history
+# is exactly what the note below forbids. Retention needs a schedule the tenant has never stated,
+# so there is no clock and none can be derived: `retention_and_archival` is routed and has nothing
+# true to say. A superseded copy survives as half of itself — "two live copies exist" is provable,
+# "the wrong version is in circulation" is not, because supersession has no emitter.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.sit.document_under_control
+  name: Document Under Control
+  domain: admin
+  owner_capability: admin.records_and_documentation.document_control
+  version: 1.0.0
+  status: draft
+
+description: >
+  A document the organisation is accountable for exists in a state somebody must maintain: it has
+  a current version, an owner, a place it lives, and a date after which keeping it is a liability
+  rather than an asset. The read is about whether that state is true or merely assumed.
+
+  Records work is invisible until it is urgent, and then it is the only thing that matters. The
+  auditor, the insurer and the acquirer all ask the same question in different words — can you
+  produce the document, prove it is the current one, and show who approved it — and the answer is
+  decided years earlier by whether anyone was maintaining the register.
+
+  What makes this a genuine capability rather than a filing metaphor is the version question. Two
+  people acting on two versions of the same policy is not a filing problem; it is a decision made
+  on a document that was superseded, and nothing in an inbox will ever surface it.
+
+matches:
+  # Layer 2 mints this on a `document` node — one file, keyed on the id its store issued, so a
+  # document mentioned in four threads is still one document. `domain_spec.py` declares the anchor
+  # (`"document": "document_under_control"` on the admin spec) and that declaration is the whole
+  # opt-in; `context/document_register.py` writes the row.
+  l2_situation_types: [document_under_control]
+
+  # WHAT THE APPROXIMATION CANNOT SAY, kept as a record rather than deleted with the pending block.
+  # The four failures this subdomain exists to catch are: no owner, superseded copy in circulation,
+  # missing approval, and retained past its destruction date. The type above fires on the first,
+  # partially on the second, and on neither of the last two.
+  #
+  # NO OWNER — fires, weakly. The file store names an owner and the graph can say whether that
+  # person is anybody this tenant has seen in four months. It cannot tell a leaver from somebody on
+  # parental leave, and those two demand opposite responses — which is exactly why
+  # `doc.owner_left_the_organisation` asks for `employee.end_at` from an HRIS and stays
+  # `needs_signal`. The claim carried is "owner unverified", never "the owner has left".
+  #
+  # SUPERSEDED COPY — half of it fires. Clustering titles and content across the file store proves
+  # that two live copies of one document exist. It cannot separate a fork from an orderly lineage,
+  # because supersession has a timestamp in every document management system and no emitter here:
+  # v2 published with v1 correctly withdrawn is indistinguishable from two teams editing in
+  # parallel. `doc.version_conflict_in_circulation` therefore stays `needs_signal` on
+  # `document_superseded` alone, its other two signals now satisfied.
+  #
+  # MISSING APPROVAL — does not fire, and must not be approximated. `document.approved_at` is not a
+  # file-store concept and has no writer. Revisions, comments and suggestion-accepts are not
+  # approvals, and inferring one from a modification history is what this file forbade before the
+  # type existed. `doc.approval_recorded_in_the_register` and `doc.signed_original_exists` stay
+  # `needs_signal`, so half of document_control stays dark and every artefact renders as "approval
+  # state unknown" — never "unapproved", which would be a finding the system invented.
+  #
+  # RETAINED PAST ITS DATE — does not fire, and there is no clock to start. `document.retention_until`
+  # needs a retention schedule this tenant has never stated anywhere. `retention_and_archival` is
+  # routed by `also_serves` below and will have nothing true to say; the same holds for
+  # `document.classification` (no DLP labels) and `document.review_due_at` (a self-imposed date
+  # nobody has set). All four are in the situation's `missing` on every row so nobody reads records
+  # coverage into what is a file listing with four gap checks over it.
+  #
+  # ONE PRECONDITION, not a loss: a file store must actually be connected. It is an OAuth scope on
+  # the Google account the mailbox already uses rather than a new source system — but a tenant who
+  # has not authorised it mints zero of these.
+
+  # No `scope`. The enum offers person, deal, meeting and account; the natural scope here is a
+  # DOCUMENT, and Layer 2 now has that anchor even though this enum still cannot name it.
+
+also_serves:
+  - admin.records_and_documentation.filing_and_retrieval
+  - admin.records_and_documentation.version_control
+  - admin.records_and_documentation.retention_and_archival
+  - admin.records_and_documentation.knowledge_base_maintenance
+
+objects:
+  load:
+    - admin.obj.core.document
+  optional:
+    - admin.obj.core.approval
+    - admin.obj.core.policy
+    - admin.obj.core.deadline
+
+priority_bp: 4000
+typical_duration_days: 365
+
+signals_of_progress:
+  - next_step_agreed
+
+signals_of_decay:
+  - timeline_slip
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    Never describe a document by its filename alone — name what it governs, which revision the
+    file store is on, and who owns it. The headline is the gap, not the document: say "this policy
+    has no verified owner" or "two copies of this are being edited", never "a document exists".
+    Say "approval state unknown" and never "unapproved" — nothing here can see an approval. Say
+    "owner unverified" and never "the owner has left" — nothing here can tell a departure from
+    leave.
+  fallback:
+    headline: "{entity} — document state unverified"
+    situation: >-
+      A document associated with {entity} has no recorded owner or current version.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Authored as an explicit gap rather than left as five silent orphans, and now bound. The gap
+    it named turned out to be a projection rather than a connector: the file metadata was already
+    arriving and being discarded. What the binding buys is a real anchor for four of the five
+    records capabilities; what it does not buy is approval or retention, and both stay visibly
+    absent in `missing` rather than being inferred from a modification history.

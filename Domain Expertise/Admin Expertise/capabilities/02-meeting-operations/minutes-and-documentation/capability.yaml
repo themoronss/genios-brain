@@ -1,28 +1,114 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.meeting_operations.minutes_and_documentation
   name: Minutes & Documentation
   domain: admin
   subdomain: meeting_operations
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Producing the durable record of a meeting: decisions distinguished from discussion, actions
+  with named owners and dates, dissent recorded where it matters, and the whole thing filed where it can
+  be found by someone who was not there. In governed contexts the minute is the evidence, and an undocumented
+  decision did not happen.
 
-description: >
-  Producing the durable record of a meeting: decisions distinguished from discussion, actions
-  with named owners and dates, dissent recorded where it matters, and the whole thing filed
-  where it can be found by someone who was not there. In governed contexts the minute is the
-  evidence, and an undocumented decision did not happen.
+  '
+question: What was decided, by whom, and where is that written down?
 
-question: "What was decided, by whom, and where is that written down?"
+outcomes:
+- 'Decisions separated from discussion. A minute that narrates the conversation buries the three
+  sentences that are the actual record, and a reader who was not there cannot find them.'
+- 'Actions with named owners and dates, extractable without reading the prose. An action inside a
+  paragraph is a sentence; an action in a list with an owner is a commitment.'
+- 'Circulated the same day, while memory still agrees. Minutes that arrive on Friday document a
+  meeting nobody quite remembers, and corrections at that distance are negotiations.'
+- 'Dissent recorded where it mattered. In a governed context the fact that somebody objected is part
+  of the decision, and a consensus-shaped minute misrepresents what happened.'
+- 'Filed where somebody who was not there can find it. An accurate minute nobody can locate is
+  indistinguishable from no minute, which is most of the value lost after all the work.'
+- 'The negative outcome, and the one that requires nerve: a decision recorded as NOT taken. Meetings
+  routinely end with everyone believing something was agreed; writing down that it was not is what
+  prevents it being assumed for a month.'
+
+failure_modes:
+- 'TRANSCRIBING. Length is inversely related to usefulness here — a full account of the discussion is
+  the format that guarantees nobody reads it and the decisions are unfindable.'
+- 'SMOOTHING DISAGREEMENT. Minutes written toward consensus lose the one thing a future reader most
+  needs: that this was contested and by whom.'
+- 'ACTIONS WITHOUT OWNERS. "The team will look into it" is the single most common line in bad minutes
+  and it commits nobody.'
+- 'CIRCULATING LATE. Every day of delay reduces both accuracy and the chance of correction, and after
+  a week the minute becomes the version of record by default rather than by agreement.'
+- 'MINUTING WHAT WAS SAID RATHER THAN WHAT WAS DECIDED. The two diverge most in exactly the meetings
+  that matter, where the decision emerges from several people''s partial statements.'
+- 'TREATING THE MINUTE AS ADMINISTRATIVE. In a governed context it is the evidence, and work performed
+  correctly and undocumented did not happen.'
+
+kpis:
+- name: same_day_circulation_rate
+  unit: percent
+  description: Share of minutes circulated the day of the meeting. The variable that governs both
+    accuracy and correctability.
+  direction: higher_is_better
+- name: action_owner_completeness
+  unit: percent
+  description: Share of recorded actions with a named person and a date.
+  direction: higher_is_better
+- name: decision_findability
+  unit: percent
+  description: Share of decisions locatable by someone who was not present, without reading the whole
+    minute.
+  direction: higher_is_better
+- name: correction_rate
+  unit: percent
+  description: Share of minutes materially corrected after circulation. A target band — zero usually
+    means nobody is reading them.
+  direction: target_band
+- name: re_litigation_rate
+  unit: percent
+  description: Share of decisions reopened at a later meeting. The outcome measure this capability
+    exists to move.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - admin.meeting_operations.agenda_preparation
+  - admin.meeting_operations.meeting_scheduling
+  downstream:
+  - admin.meeting_operations.action_item_tracking
+  - admin.meeting_operations.follow_up_coordination
+  - admin.records_and_documentation.filing_and_retrieval
+  parallel:
+  - admin.compliance_and_governance.board_and_secretarial
+  - admin.records_and_documentation.retention_and_archival
+
+applies_to:
+  models: [executive_office, in_house, shared_services, startup_lean, distributed, hybrid,
+           enterprise_admin, multi_entity, regulated, outsourced]
+  offerings: [coordinative, assurance]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route today.
+
+    The Admin domain's evidential atom. Its domain.yaml states the property this capability is
+    the clearest instance of: in a governed context the output is EVIDENCE rather than an
+    action, and work performed correctly and undocumented did not happen.
+
+    Substrate support is limited to the meeting lifecycle — meeting.occurred, meeting.open_loop
+    and commitment.due_at can tell you a meeting happened and left something unresolved, which
+    is the trigger, not the record. The minute itself is a document and documents are not
+    captured.
+
+    The negative outcome is the one that takes nerve and is worth calling out: recording that a
+    decision was NOT taken. Meetings routinely end with everyone believing something was agreed,
+    and writing down that it was not is what stops it being assumed for a month.
+
+admission:
+  accepted_content_hash: 13e3dbe713f8f91f8fae98b6d836692606ca2b43d77dd3e45fb6d0bc17966160

@@ -1,0 +1,152 @@
+identity:
+  id: admin.heu.commitment_tracking.forgotten_beats_broken_for_damage
+  name: Forgotten beats broken for damage
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.commitment_tracking
+  subdomain: executive_support
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: A renegotiated promise shows respect; a forgotten one shows the person did not register.
+    People forgive the first almost indefinitely and remember the second almost permanently.
+  answers:
+  - Which failure mode of promises costs more trust?
+  - Is it worth spending a message to move a date we are going to miss anyway?
+  - When a promise is going to slip, what is the highest-value administrative act available?
+  not:
+  - A judgement about whether the promise should have been made. Tracking takes the promise as given.
+  - A prioritisation rule. Which promise to save first is a different question with different inputs.
+
+heuristic:
+  statement: 'A promise that will be missed should be renegotiated BEFORE its date, even when the new
+    date is worse than the old one and even when nothing has been done. The message costs one line and
+    converts a broken promise into a managed one; the same message sent the day after is an excuse.'
+  why: 'The counterparty is not tracking your delivery, they are tracking whether they can plan around
+    you. A date moved in advance leaves their plan intact and their model of you intact. A date that
+    passes in silence forces them to discover the miss themselves, and what they learn is not that you
+    were late — it is that they will not be told, which is the expensive lesson because it applies to
+    every future promise rather than to this one.'
+  confidence_bp: 8500
+  applies_when: 'The obligation is dated, undischarged, and the date is still ahead. Both regimes it
+    distinguishes — before and after — are readable from `commitment.due_at` against the evaluation
+    time, without any status field.'
+  breaks_down_when: 'Four regimes, and the first is the one that matters most on live data.
+
+    ONE — THE DATE IS OURS, NOT THEIRS. A due date the extractor inferred, that the counterparty never
+    saw, is an internal target. Renegotiating it aloud announces a slip nobody was waiting for and
+    manufactures the very disappointment the heuristic exists to avoid. Only a date the other side
+    relied on is worth renegotiating; where the promise came from a meeting or an inbound thread and
+    the date appears only on our side, treat it as internal.
+
+    TWO — HIGH-FREQUENCY OPERATIONAL PROMISES. Between parties exchanging many small commitments a
+    week, per-promise renegotiation is noise and the relationship is judged on aggregate reliability.
+    Batch it into the next scheduled exchange instead.
+
+    THREE — WHEN THE RENEGOTIATION IS THE THIRD ONE. Advance notice stops buying goodwill once it
+    becomes a pattern; the second move reads as professionalism, and by the third the counterparty is
+    no longer reading the dates. Past that point the honest act is to drop the promise or change who
+    owns it, not to move it again.
+
+    FOUR — WHEN THE DELAY IS THEIRS. If the obligation is blocked on something the counterparty owes
+    us, a proactive renegotiation accepts blame for their gap and quietly resets the clock in their
+    favour. State the blocker instead.'
+  reads:
+  - admin.obj.core.commitment
+  - admin.obj.core.deadline
+  - commitment.due_at
+  - commitment.status
+  - thread.ball_in_court
+  contradicts:
+  - admin.heu.request_intake.untracked_requests_punish_the_polite
+  pattern_ref:
+  - cmt.dated_promise
+  - cmt.past_due
+  - cmt.we_owe_this_one
+  - dl.date_passed_undischarged
+
+when_to_use:
+  situations:
+  - admin.sit.live_account_admin
+  conditions:
+  - {exists: commitment.due_at}
+  - {path: thread.ball_in_court, op: "=", value: us}
+  signals:
+  - followup_sent
+  - timeline_slip
+  do_not_use_when:
+  - The date was never communicated to the other side — that is an internal target, not a promise.
+  - The obligation is blocked on the counterparty; say what is blocking rather than moving our date.
+  - This would be the third move of the same date; renegotiation has stopped being credible.
+
+objects_used:
+- admin.obj.core.commitment
+- admin.obj.core.deadline
+- admin.obj.core.escalation
+
+outcomes:
+- A dated promise that will slip carries an advance message rather than an after-the-fact apology.
+- The ledger distinguishes promises that were renegotiated from promises that were missed.
+
+failure_modes:
+- 'APPLIED TO EVERY DATE. Renegotiating trivial or internal dates trains the counterparty to ignore
+  the messages, which costs exactly the credibility the heuristic was protecting.'
+- 'USED AS PERMISSION TO SLIP. "We told them" becomes a substitute for delivering. The heuristic
+  bounds the damage of a miss; it does not price the miss at zero.'
+- 'MOVED WITHOUT A REASON. A new date offered with no cause reads as an estimate, so the counterparty
+  discounts it, and the next slip is the one they were already expecting.'
+
+limits:
+- Says nothing about which of several slipping promises to save. That is a prioritisation question.
+- Assumes the promise was accepted. A unilateral intention nobody relied on needs no renegotiation.
+- Silent on internal promises between colleagues, where the reputational arithmetic is different and
+  the cost of the extra message is often higher than the cost of the slip.
+
+variants:
+- applies_to: regulated
+  change: A statutory or filing date cannot be renegotiated at all; the equivalent move is to notify
+    early and open the extension or late-filing route the regime provides.
+  why: The counterparty is a regime, not a person, and it does not trade goodwill for notice.
+- applies_to: outsourced
+  change: Renegotiate against the service definition rather than in free text, because the promise
+    the client relies on is the written one and a bilateral note does not amend it.
+  why: An outsourced function's promises are contractual; an informal move creates two versions.
+- applies_to: startup_lean
+  change: Fold the renegotiation into the next message already going out rather than sending its own.
+  why: With no administrative layer, an extra message costs founder attention, which is the scarcer
+    resource here than counterparty goodwill.
+
+metrics:
+- name: renegotiated_before_due_rate
+  unit: percent
+  description: Share of slipped promises whose date was moved before it passed.
+  direction: higher_is_better
+- name: repeat_renegotiation_rate
+  unit: percent
+  description: Share of promises whose date moved more than once. The regime where this heuristic
+    stops holding, made countable.
+  direction: lower_is_better
+
+references:
+- title: Getting Things Done
+  kind: book
+  author: David Allen
+  note: The renegotiation-of-agreements argument — that an unkept agreement with oneself or others
+    costs attention until it is either done or explicitly renegotiated.
+- title: Administrative practice — advance notice of slippage
+  kind: practitioner
+  note: Standard executive-assistant discipline; stated here with its breakdown regimes, which is
+    the part the practice does not write down.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The `breaks_down_when` regimes are the point of
+    the file: the first of them — an internal date the counterparty never saw — is the common case on
+    live data, because Layer 2 extracts a due date from OUR sentence as readily as from a mutual one.'

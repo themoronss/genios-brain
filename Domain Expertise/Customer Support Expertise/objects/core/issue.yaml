@@ -1,0 +1,383 @@
+identity:
+  id: customer_support.obj.core.issue
+  name: Issue
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.diagnosis_and_resolution.root_cause_analysis
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: stable
+  aliases:
+  - defect
+  - bug
+  - underlying problem
+  - root cause
+purpose:
+  statement: 'The thing that is actually wrong, held apart from every report of it. It carries identity
+    across the tickets and conversations that surface it, the state of its diagnosis, and what — if
+    anything — currently makes it stop.
+
+    '
+  discriminator: 'A ticket is one customer''s experience of an issue; the issue is what is broken. The
+    distinction is not academic: a ticket closes when a customer is unblocked, and an issue closes when
+    the defect is gone. A workaround closes the first and not the second, which is exactly what "resolved"
+    means far more often than anyone intends.
+
+    '
+  answers:
+  - Is this the same problem somebody already reported?
+  - Does it reproduce, and under what conditions?
+  - What currently makes it stop — a fix, a workaround, or nothing?
+  - How many customers are affected, and which ones?
+attributes:
+- name: identity_block
+  purpose: What makes two reports the same issue. The hardest and most valuable part of this object.
+  type: composite
+  contains:
+  - issue_ref
+  - title
+  - first_seen_at
+- name: issue_ref
+  purpose: 'A stable identifier that survives every re-report. Without it there is no "many tickets,
+    one issue" and every occurrence is a fresh surprise.
+
+    '
+  type: value
+  data_type: string
+  required: true
+- name: title
+  purpose: What is broken, in terms an engineer and a support agent would both recognise.
+  type: value
+  data_type: string
+  required: false
+- name: first_seen_at
+  purpose: When the issue was first reported by anyone. The clock that ages a defect.
+  type: value
+  data_type: timestamp
+  required: false
+- name: reproduction_state
+  purpose: 'Whether it reproduces. Three values, not two: reproduced, not reproduced, and intermittent
+    — and the third is the one that matters, because an intermittent defect treated as not-reproduced
+    is closed and returns.
+
+    '
+  type: value
+  data_type: string
+  required: false
+- name: resolution_kind
+  purpose: 'What currently makes it stop: none, workaround, or fix. Held separately from any ticket''s
+    state because the two move independently and conflating them is this domain''s most expensive reporting
+    error.
+
+    '
+  type: value
+  data_type: string
+  required: false
+- name: verified_at
+  purpose: 'When the customer confirmed it stopped. Distinct from when we believed it was fixed — silence
+    is not confirmation, and a system that treats it as such reports defects closed that are still live.
+
+    '
+  type: value
+  data_type: timestamp
+  required: false
+- name: affected_accounts
+  purpose: 'Which organisations have hit it. A list, because the count is what turns a bug into a priority
+    and the membership is who has to be told when it is fixed.
+
+    '
+  type: value
+  data_type: list
+  required: false
+- name: severity
+  purpose: 'How broken it is — a property of the fault itself, never of what we intend to do about it.
+    Kept apart from ticket priority deliberately; the glossary calls collapsing the two the single most
+    expensive triage error there is.
+
+    '
+  type: value
+  data_type: string
+  required: false
+states:
+  initial: reported
+  values:
+  - name: reported
+    description: Somebody has said it is broken and nobody has established whether it is.
+  - name: under_diagnosis
+    description: Reproduction is being attempted or a cause is being established.
+    implies: 'The state where an intermittent defect is most often lost — a failed reproduction reads
+      as "not a bug" and the report is closed.
+
+      '
+  - name: worked_around
+    description: Customers are unblocked and the defect is untouched.
+    implies: 'The most under-reported state in support. Every ticket can be closed while the issue keeps
+      generating new ones, and only this object can express that.
+
+      '
+  - name: fixed_unverified
+    description: We believe it is fixed and no affected customer has confirmed.
+  - name: verified
+    description: An affected customer has confirmed it stopped.
+  terminal:
+  - verified
+relationships:
+- target: customer_support.obj.core.ticket
+  type: reported_by
+  direction: inbound
+  cardinality: many
+  weight_bp: 9500
+  confidence_bp: 8000
+  evidence:
+  - email
+  - crm
+  priority: 1
+  description: 'The reports that surfaced it. One-or-many is the whole point of the object — an issue
+    with exactly one report is indistinguishable from a ticket, and the value appears at the second.
+
+    '
+- target: customer_support.obj.core.customer_account
+  type: affects
+  direction: outbound
+  cardinality: zero_or_many
+  weight_bp: 8500
+  confidence_bp: 7000
+  evidence:
+  - email
+  - crm
+  priority: 2
+  description: 'Who is hitting it. The membership decides who must be told when it is fixed, which is
+    the step most often skipped.
+
+    '
+- target: customer_support.obj.core.conversation
+  type: discussed_in
+  direction: outbound
+  cardinality: zero_or_many
+  weight_bp: 7000
+  confidence_bp: 6000
+  evidence:
+  - email
+  priority: 3
+  description: The exchanges in which it was raised, which are where the reproduction detail lives.
+- target: customer_support.obj.postmortem.postmortem
+  type: produces
+  direction: outbound
+  cardinality: zero_or_one
+  weight_bp: 5000
+  confidence_bp: 5000
+  evidence:
+  - manual_entry
+  priority: 4
+  description: The review a serious issue earns, where one was written.
+inference_patterns:
+  deterministic:
+  - id: issue.a_customer_is_describing_something_broken
+    statement: 'A customer relationship has an unanswered inbound. It is the weakest possible evidence
+      that an issue exists and it is the only evidence this substrate offers.
+
+      '
+    status: executable
+    when:
+    - path: relationship.nature
+      op: '='
+      value: customer
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    yields:
+      confidence_bp: 4000
+      attribute: issue_ref
+    evidence_fields:
+    - relationship.nature
+    - thread.ball_in_court
+    false_positive: 'Most unanswered customer mail is not a defect report. Deliberately given low confidence
+      so it can never carry a diagnosis on its own — it exists to let a situation load this object,
+      not to assert that something is broken.
+
+      '
+  - id: issue.same_problem_as_an_existing_one
+    statement: 'This report is another instance of an issue already known. The single most valuable
+      inference in the subdomain and the one with no substrate at all.
+
+      '
+    status: needs_signal
+    note: 'Requires issue identity across reports — a clustering problem of the same shape as person
+      merge, and it must be specified as one. Approximating it with subject-line similarity produces
+      false merges, and a false merge hides a second defect behind the first.
+
+      '
+    requires_signals:
+    - kind: fact_path
+      name: issue.ref
+      owner_layer: L2
+    - kind: fact_path
+      name: ticket.issue_ref
+      owner_layer: L1
+    yields:
+      confidence_bp: 0
+      attribute: same_problem_as_an_existing_one
+  - id: issue.reproduces
+    statement: The defect has been reproduced under stated conditions.
+    status: needs_signal
+    note: 'Reproduction happens in an engineering system, not in a mailbox. No writer exists and inferring
+      it from correspondence would produce a reproduction claim nobody made.
+
+      '
+    requires_signals:
+    - kind: fact_path
+      name: issue.reproduction_state
+      owner_layer: L1
+    - kind: fact_path
+      name: issue.reproduction_steps
+      owner_layer: L1
+    yields:
+      confidence_bp: 0
+      attribute: reproduces
+  - id: issue.is_only_worked_around
+    statement: 'Customers are unblocked and the defect is untouched — the state that lets a queue report
+      itself healthy while continuing to generate the same tickets.
+
+      '
+    status: needs_signal
+    note: 'Needs an explicit resolution kind. Cannot be inferred from a ticket closing, because a ticket
+      closes identically for a fix and a workaround, which is the entire problem.
+
+      '
+    requires_signals:
+    - kind: fact_path
+      name: issue.resolution_kind
+      owner_layer: L1
+    yields:
+      confidence_bp: 0
+      attribute: is_only_worked_around
+  - id: issue.affects_many_accounts
+    statement: N accounts have hit this, which is what turns a defect into a priority.
+    status: needs_signal
+    note: Depends entirely on issue identity; without it every account has its own issue of one.
+    requires_signals:
+    - kind: fact_path
+      name: issue.ref
+      owner_layer: L2
+    - kind: fact_path
+      name: issue.affected_accounts
+      owner_layer: L1
+    yields:
+      confidence_bp: 0
+      attribute: affects_many_accounts
+evidence:
+- source: engineering_system
+  strength_bp: 9500
+  independent_of:
+  - email
+  - crm
+  - derived
+  decays: false
+  description: 'Authoritative for reproduction, cause and fix state, and the only honest source for
+    any of them. No connector exists today, which is why almost every pattern here is needs_signal.
+
+    '
+- source: email
+  strength_bp: 6000
+  independent_of:
+  - crm
+  - derived
+  decays: true
+  description: 'What the customer experienced, in their words. Excellent for symptoms and impact; worthless
+    for cause, and treating a customer''s diagnosis as the cause is a recurring failure.
+
+    '
+- source: crm
+  strength_bp: 4500
+  independent_of:
+  - email
+  decays: true
+  description: Who is affected, where an account is resolvable. Never the technical state.
+- source: derived
+  strength_bp: 3500
+  independent_of:
+  - crm
+  decays: true
+  description: 'Rhythm and tone around a report. Weak here by construction — frustration correlates
+    with severity loosely and with priority not at all.
+
+    '
+constraints:
+- id: issue.never_infer_a_cause_from_a
+  statement: Never infer a cause from a customer's description. They report symptoms; the cause is established
+    elsewhere.
+  hard: true
+- id: issue.never_treat_a_closed_ticket_as
+  statement: Never treat a closed ticket as a closed issue. The two close for different reasons and
+    one of them is a workaround.
+  hard: true
+- id: issue.never_treat_silence_as_verification_a
+  statement: Never treat silence as verification. A customer who stops writing has not confirmed a fix.
+  hard: true
+- id: issue.severity_is_a_property_of_the
+  statement: Severity is a property of the fault; priority is a decision about attention. Never write
+    one into the other.
+  hard: true
+exceptions:
+- id: issue.the_customer_reports_it_as_fixed
+  statement: The customer reports it as fixed and it recurs a week later.
+  why: 'Intermittent, not fixed. This is the case `reproduction_state` needs three values for — a failed
+    reproduction is not evidence of absence, and closing on one is how a defect returns with a much
+    angrier reporter attached.
+
+    '
+- id: issue.one_report_high_severity_no_other
+  statement: One report, high severity, no other account affected.
+  why: 'Affected count is a priority input, never a severity input. A severe defect hitting one customer
+    is still severe, and down-weighting it because it is rare is how a system talks an operator out
+    of a real fault.
+
+    '
+- id: issue.two_reports_with_near_identical_wording
+  statement: Two reports with near-identical wording from the same account.
+  why: 'More likely one person re-sending than two occurrences. Duplicate detection must run on requester
+    and time before it runs on wording, and this object cannot do either today.
+
+    '
+- id: issue.the_workaround_is_acceptable_to_the
+  statement: The workaround is acceptable to the customer indefinitely.
+  why: 'The issue stays open and its priority legitimately drops. Do not let customer satisfaction close
+    a defect record — that is precisely how a known fault becomes an unknown one.
+
+    '
+anti_patterns:
+- id: issue.clustering_by_subject_line
+  statement: Clustering by subject line
+  cost: 'Produces false merges, and a false merge hides a second defect behind the first — a failure
+    that is invisible until the second defect is discovered independently, much later.
+
+    '
+- id: issue.reporting_resolved_without_the_kind
+  statement: Reporting "resolved" without the kind
+  cost: 'Fix and workaround are different outcomes with different consequences, and a report that does
+    not distinguish them tells the reader the queue is healthier than it is.
+
+    '
+- id: issue.inferring_severity_from_tone
+  statement: Inferring severity from tone
+  cost: 'The angriest reporter is frequently the one with the smallest problem and the least patience;
+    the most serious defects are often reported calmly by someone technical.
+
+    '
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  notes: 'Authored to close a required-object failure, and it is the most honest object in this corpus
+    about how little it can currently do: one weak executable pattern and four needs_signal. That is
+    the true state — the substrate has no issue identity, no reproduction and no resolution kind — and
+    writing it that way is deliberate. An object that inferred those from correspondence would let eight
+    capabilities produce confident advice about a defect nobody diagnosed.
+
+    The gap it names is the same one `customer_support.sit.issue_under_diagnosis` waits on, so the object
+    and the situation point at one Layer 1 build rather than two.
+
+    '

@@ -1179,12 +1179,18 @@ inference_patterns:
             resolution and satisfaction: making somebody come back reliably costs more than resolving fast
             ever gains.
         - kind: derived
-          name: derived.contact_frequency
+          name: derived.person_contact_rate
           owner_layer: L2
           note: >
             Needed to catch repeat contact that arrives as new tickets rather than reopens, which is what
             most customers actually do and what happens by default whenever they use a different channel.
             Reopen counts alone under-report repeat contact badly.
+
+            PER PERSON. Frustration is felt by the human who had to come back, and this object's own
+            purpose insists a read is "attributed to a named person wherever the evidence permits — a
+            read attributed to a thread is a read about a mailbox". The ask was written as
+            `derived.contact_frequency` until that name shipped as an ACCOUNT rate, which would have
+            attributed one colleague's repeat contact to everybody at their company.
 
     - id: cs.sent.effort_grievance_from_ces
       statement: The customer reported that resolving this was hard, regardless of whether they said they were satisfied.

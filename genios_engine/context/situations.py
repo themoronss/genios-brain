@@ -162,14 +162,51 @@ def identity_score(*, open_merge_proposals: int) -> int:
     return 40 if open_merge_proposals == 1 else 20
 
 
+#: THE UNIT OF EVERY SCORE ON `context_situations`. All four confidence dimensions and `coverage`
+#: are an int PERCENT, 0..SCORE_MAX — never basis points. Stated as a constant because it was
+#: stated NOWHERE, and three direct writers (`periodic.py` and, following it, the support and
+#: document readings) picked basis points instead. The seam that punishes that is
+#: `situation_bso._bp`, which multiplies the stored number by 100 and clamps at 10000: a coverage
+#: honestly capped at 25 (knowledge_gap) or 30 (escalation) arrived at Layer 3 as
+#: coverage_bp=10000 — full, records-grade certainty — and `expertise_builder`'s
+#: `min(situation.confidence_bp, expert.coverage_bp)` had nothing left to cap. Measured on the
+#: eight inferred readings whose entire honesty story IS that cap. `reason/runner.py` also
+#: publishes `situation.coverage` to pack rules as a plain fact, where an authored threshold of
+#: `>= 60` reads as a percent, so a stored 5000 clears every gate an author can write.
+SCORE_MAX = 100
+
+#: The score returned when a domain registers no expectations. Sentinel, not a percentage: it is
+#: outside 0..100 on purpose so no consumer can average it into a number and lose the distinction
+#: between "nothing is missing" and "we never said what complete means here".
+COVERAGE_UNKNOWN = -1
+
+
+def coverage_is_known(score: int) -> bool:
+    """Whether a coverage number means anything. Gates must consult this before trusting it."""
+    return score != COVERAGE_UNKNOWN
+
+
 def coverage_score(*, present_fields: set[str], expected: dict[str, str]) -> tuple[int, list[str]]:
     """How complete the picture is, and the plain-language names of what is missing.
 
     Reported beside confidence, never inside it: not knowing a close date does not make
     the stage we do know less true.
     """
+    # "We expect nothing" is neither 100% covered nor 0% known, and both readings cause harm.
+    #
+    # Scoring it 0 invents a gap that does not exist and makes every situation in a new domain
+    # look broken the day it is added — absence read as negative evidence, which this codebase
+    # refuses everywhere else.
+    #
+    # Scoring it 100 is what let 34 of one org's 73 situations report `missing=[]` and full
+    # coverage, and it hands a downstream gate reading "no actionable output when required
+    # context is unknown" a green light earned by ignorance.
+    #
+    # The honest answer is a third state. `coverage_status` carries it so a consumer can tell
+    # "complete" from "we never said what complete means here", while the number stays neutral
+    # rather than asserting either.
     if not expected:
-        return 100, []
+        return COVERAGE_UNKNOWN, ["coverage unknown — no expectations registered for this domain"]
     missing = [label for f, label in sorted(expected.items()) if f not in present_fields]
     known = len(expected) - len(missing)
     return int(round(100 * known / len(expected))), missing
@@ -198,6 +235,7 @@ def score_situation(*, event_count: int, source_count: int,
     identity = identity_score(open_merge_proposals=open_merge_proposals)
     coverage, missing = coverage_score(present_fields=present_fields,
                                        expected=expected_fields)
+    coverage_known = coverage_is_known(coverage)
 
     # Minimum, not average — you are only as sure as your weakest link. A dimension with
     # no basis is left OUT rather than scored zero, so "we cannot tell how current this
@@ -212,6 +250,10 @@ def score_situation(*, event_count: int, source_count: int,
         missing=tuple(missing),
         inputs={"event_count": event_count, "source_count": source_count,
                 "freshness_known": freshness_known,
+                # Same shape as freshness: a dimension with no basis is REPORTED as having no
+                # basis rather than being scored, so "we never said what complete means for this
+                # domain" cannot be read as "this is fully covered".
+                "coverage_known": coverage_known,
                 "open_discrepancies": open_discrepancies,
                 "open_merge_proposals": open_merge_proposals,
                 "last_seen_at": last_seen_at.isoformat() if last_seen_at else None,
@@ -441,6 +483,16 @@ def active_situations(conn, *, org_id: str, domain: str | None = None,
     Ordered by confidence: a situation we are sure about is worth more thought than one
     assembled from a single unverified email. Ordering is NOT prioritisation — which
     situation matters most is a decision, and this layer does not make decisions.
+
+    THE JOIN IS A LEFT JOIN, and it used to be an inner one. Not every situation comes from a
+    correlation: `periodic.py` and `support_situations.py` write theirs directly, with a synthetic
+    correlation id and no `context_correlations` row, because their subject is a window or a
+    computed anchor rather than a group of events. An inner join made every one of them invisible
+    to this endpoint while `reason/domain_shadow.py` — which already left-joins — compiled them
+    happily, so the API and the reasoner disagreed about what was live. `event_count` coalesces to
+    0 for the same reason a missing freshness is excluded rather than zeroed: it is an absence of
+    correlation, not a situation with no evidence, and the evidence those rows do have is already
+    priced into `confidence_evidence`.
     """
     filters = "and s.domain = :dom " if domain else ""
     params: dict = {"o": org_id, "lim": limit}
@@ -452,9 +504,9 @@ def active_situations(conn, *, org_id: str, domain: str | None = None,
         "       s.confidence_consistency, s.confidence_identity, s.coverage, s.missing, "
         "       s.first_seen_at, s.last_seen_at, s.anchor_node_id, "
         "       n.display_name as anchor_name, n.node_type as anchor_type, "
-        "       c.event_count "
+        "       coalesce(c.event_count, 0) as event_count "
         "from context_situations s "
-        "join context_correlations c on c.org_id = s.org_id "
+        "left join context_correlations c on c.org_id = s.org_id "
         "     and c.correlation_id = s.correlation_id "
         "left join graph_nodes n on n.org_id = s.org_id and n.node_id = s.anchor_node_id "
         "     and n.valid_to is null "

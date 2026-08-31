@@ -1,28 +1,114 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.meeting_operations.meeting_scheduling
   name: Meeting Scheduling
   domain: admin
   subdomain: meeting_operations
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Finding a slot that works for a set of calendars, time zones and seniority constraints,
+  with the right attendees and no more. The hard part is never the free/busy lookup; it is knowing who
+  is genuinely required, who is being invited defensively, and what the meeting costs in aggregate attention.
 
-description: >
-  Finding a slot that works for a set of calendars, time zones and seniority constraints, with
-  the right attendees and no more. The hard part is never the free/busy lookup; it is knowing
-  who is genuinely required, who is being invited defensively, and what the meeting costs in
-  aggregate attention.
+  '
+question: When can these specific people meet without damaging the rest of the week?
 
-question: "When can these specific people meet without damaging the rest of the week?"
+outcomes:
+- 'A slot booked once, with everything the meeting needs to happen well — right people, agenda line,
+  timezone-checked time, room or link. Every reschedule multiplies coordination cost across every
+  attendee, so the first pass is where the whole saving is.'
+- 'The attendee list justified person by person. Who is genuinely required, who is being invited
+  defensively, and who only needs the outcome — three different answers, and only the first belongs
+  in the room.'
+- 'The aggregate cost stated, not just the slot found. Eight people for an hour is a working day; a
+  scheduling function that never says so is optimising a calendar and spending a budget nobody sees.'
+- 'Time zones resolved against each participant''s working day, not converted arithmetically. A
+  technically valid 07:00 is a slot somebody will attend badly.'
+- 'Seniority constraints handled without making them the only constraint. The most senior calendar
+  usually wins by default, which is efficient and routinely puts the meeting where the people doing
+  the work cannot prepare.'
+- 'The negative outcome: a meeting NOT scheduled, replaced by a document, a decision, or an async
+  thread. It is the highest-value output of this capability and the one no scheduling tool produces.'
+
+failure_modes:
+- 'TREATING IT AS A FREE/BUSY PROBLEM. The lookup is trivial and is not the work; who should be there
+  is the work, and a scheduler that only solves availability books the wrong meeting efficiently.'
+- 'DEFENSIVE INVITING. Adding people so nobody feels excluded is the single largest source of wasted
+  meeting cost, and it is socially cheap to do and expensive to undo.'
+- 'CONVERTING TIME ZONES ARITHMETICALLY. 09:00 in one place is correct and useless if it is 22:00
+  where half the attendees live, and the calendar shows both as available.'
+- 'RESCHEDULING TO SOLVE ONE PERSON''S CONFLICT. One move touches every attendee''s calendar, their
+  preparation, and everything adjacent to it. Chronic rescheduling is read as a priority signal
+  whatever the stated reason.'
+- 'SCHEDULING WITHOUT A PURPOSE LINE. A meeting with no stated purpose cannot have its attendee list
+  questioned, which is exactly why the purpose gets skipped.'
+- 'BOOKING THE SLOT AND NOT THE PREPARATION. If the pre-read is due the night before and the
+  principal has no time the night before, the meeting was scheduled and not arranged.'
+
+kpis:
+- name: first_pass_success_rate
+  unit: percent
+  description: Share of meetings that happened as first scheduled. The number that captures the whole
+    proposition, because every failure here is multiplied by the attendee count.
+  direction: higher_is_better
+- name: reschedule_rate
+  unit: percent
+  description: Share of scheduled meetings moved at least once.
+  direction: lower_is_better
+- name: attendee_count_vs_purpose
+  unit: ratio
+  description: A target band. Rising average attendance with no change in meeting type is the
+    signature of defensive inviting.
+  direction: target_band
+- name: out_of_hours_slot_rate
+  unit: percent
+  description: Share of slots landing outside a participant's working day.
+  direction: lower_is_better
+- name: converted_to_async_rate
+  unit: percent
+  description: Share of requests resolved without a meeting. A target band — zero means the question
+    is never asked.
+  direction: target_band
+
+handoffs:
+  upstream:
+  - admin.executive_support.calendar_management
+  - admin.executive_support.gatekeeping
+  - admin.admin_operations.request_intake
+  downstream:
+  - admin.meeting_operations.agenda_preparation
+  - admin.executive_support.briefing_and_preparation
+  - admin.travel_and_events.itinerary_management
+  parallel:
+  - admin.meeting_operations.follow_up_coordination
+  - admin.facilities_and_assets.workplace_management
+
+applies_to:
+  models: [executive_office, in_house, shared_services, startup_lean, distributed, hybrid,
+           enterprise_admin, multi_entity, outsourced, automated_first]
+  offerings: [coordinative]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route today.
+
+    Its substrate is real and its expertise is mostly outside it. meeting.start_at,
+    meeting.scheduled and meeting.occurred make a reschedule visible, and
+    meeting.external_counterparty separates a broadcast from a two-party meeting. None of that
+    answers the question the capability is actually about, which is who genuinely needs to be in
+    the room — attendees, seniority and defensive invitation have no representation in the
+    graph.
+
+    converted_to_async_rate is deliberately a target band rather than something to maximise. A
+    scheduling function that converts everything has stopped scheduling; one that converts
+    nothing has never asked the question.
+
+admission:
+  accepted_content_hash: 4989affbde7634a9e4ad48453f223faeb4239bbeb091eb32fa72c5192ea4e67d

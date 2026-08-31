@@ -1,0 +1,98 @@
+identity:
+  id: sales.heu.forecasting.the_slip_pattern_is_the_signal
+  name: The slip pattern is the signal
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.forecasting
+  subdomain: revenue_operations
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: A deal that slips one quarter happens; a deal slipping its second quarter is telling you
+    it is not a commit — buyer urgency this weak usually never signs.
+  answers:
+  - How should a slipped deal be re-categorised?
+  - What does a repeated slip actually mean?
+  not:
+  - A rule about killing deals. Downgrading a category is not closing an opportunity.
+
+heuristic:
+  statement: 'Count slips per deal and treat the SECOND one as a category change rather than as a date
+    change. Each slip arrives with its own credible explanation, which is exactly why they are
+    forgiven individually and why the pattern is never seen — the reason is always local and the
+    signal is only visible across them.'
+  why: 'A close date is the buyer''s urgency expressed as a date. When it moves twice, the specific
+    reasons given are usually true and also beside the point: an organisation that genuinely needed
+    this would have absorbed one obstacle, and one that absorbs neither is telling you the priority is
+    lower than anyone stated. The seller cannot see this because they experience two separate
+    conversations, each with a satisfying cause.'
+  confidence_bp: 8300
+  applies_when: 'A deal has moved its expected close date more than once, with the date having come
+    from the buyer rather than from the seller.'
+  breaks_down_when: 'THE DATE WAS ALWAYS OURS. A close date the seller chose and the buyer never
+    confirmed has not slipped — it was never a date, and counting its movement measures our
+    optimism rather than their urgency.
+
+    A SINGLE EXTERNAL EVENT MOVED EVERYTHING. A reorganisation, an acquisition or a budget freeze
+    slips every deal at that account, and the pattern is about the organisation rather than about
+    this purchase.
+
+    LONG PROCUREMENT CYCLES WITH FIXED GATES. Public-sector and regulated buying moves on committee
+    calendars; a miss is a calendar artefact and carries no information about urgency.
+
+    THE SLIP CAME WITH PROGRESS. A date that moved while paper advanced — legal engaged, security
+    started, a signatory named — is a schedule correction, not a decay signal, and downgrading it
+    punishes a deal that is working.
+
+    WHEN IT IS APPLIED TO THE SELLER. The pattern is evidence about the buyer; used as a performance
+    finding it produces sellers who stop entering honest dates, which destroys the input.'
+  reads:
+  - sales.obj.core.deal
+  - sales.obj.core.timeline
+  - deal.status
+  - derived.momentum
+  contradicts:
+  - sales.heu.legal_review.redlines_mean_the_deal_is_real
+  pattern_ref:
+  - dl.momentum_collapse_after_proposal
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  - sales.sit.out_of_profile_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: timeline_slip}
+  signals:
+  - timeline_slip
+  - closed_lost_mention
+  do_not_use_when:
+  - The date was the seller's and the buyer never confirmed it.
+  - One external event slipped every deal at that account.
+  - The date moved while paper advanced; that is a schedule correction.
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.timeline
+- sales.obj.core.risk
+
+limits:
+- Requires the slip to be recorded as a slip. `timeline_slip` exists (26 rows on the design partner's
+  org) and marks that a date moved, not how many times — the count this heuristic turns on has to be
+  derived from date history rather than from the observation.
+- Says nothing about whether to keep working the deal, only about where it belongs in the forecast.
+- Cannot distinguish a buyer-owned date from a seller-assumed one, which is the first breakdown regime
+  and the most common misfire.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The mechanism is the addition — each slip has a
+    true local explanation, which is precisely why they are forgiven one at a time and the pattern is
+    never assembled.'

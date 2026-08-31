@@ -14,9 +14,11 @@ Knowledge-in, DAG-supplied. It never decides — it only shapes what Layer 4 wil
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 from typing import Any
 
 from genios_engine.contracts.domain_expertise import ExpertisePackage
+from genios_engine.platform.canonical import stable_id
 from genios_engine.contracts.reasoning import (
     CapabilityManifest,
     FailurePolicy,
@@ -55,7 +57,41 @@ def _executable_required_fields(package: ExpertisePackage) -> tuple[str, ...]:
     return tuple(sorted(fields))
 
 
-def _default_dag(required_fields: tuple[str, ...]) -> tuple[ReasonerSpec, ...]:
+def _universal_required_fields(package: ExpertisePackage) -> tuple[str, ...]:
+    """Fields EVERY executable pattern needs — the ones without which nothing can run.
+
+    The selector should pull the union of what any pattern might use; the sufficiency gate must
+    ask for far less. Stamping the union onto `core.context` made a single value-dependent pattern
+    veto the whole capability: `expertise.opportunity` requires `deal.value` because one pattern
+    reads it, and almost no email states a deal size, so all 18 situations on the design partner's
+    org returned INSUFFICIENT_CONTEXT while every other field they needed was present.
+
+    That contradicted this DAG's own stated intent — "a thin situation degrades confidence instead
+    of being blocked out of reasoning entirely". A pattern whose inputs are absent simply does not
+    fire; the patterns that CAN fire still should.
+    """
+    per_pattern: list[set[str]] = []
+    for obj in package.objects:
+        definition = obj.get("definition") if isinstance(obj, Mapping) else None
+        patterns = (definition or {}).get("inference_patterns") or {}
+        if not isinstance(patterns, Mapping):
+            continue
+        for group in ("deterministic", "heuristic"):
+            for pattern in patterns.get(group, []) or []:
+                if not isinstance(pattern, Mapping) or pattern.get("status") != "executable":
+                    continue
+                fields = {str(f) for f in pattern.get("evidence_fields", []) or []}
+                fields |= {str(c["path"]) for c in pattern.get("when", []) or []
+                           if isinstance(c, Mapping) and c.get("path")}
+                if fields:
+                    per_pattern.append(fields)
+    if not per_pattern:
+        return ()
+    return tuple(sorted(set.intersection(*per_pattern)))
+
+
+def _default_dag(required_fields: tuple[str, ...],
+                 authored_priority_bp: int | None = None) -> tuple[ReasonerSpec, ...]:
     """A conservative, situation-agnostic reasoning DAG that always terminates in a decision.
 
     understand (context) -> evaluate (risk) -> the mandatory REQUIRED constraint -> rank/score
@@ -79,10 +115,18 @@ def _default_dag(required_fields: tuple[str, ...]) -> tuple[ReasonerSpec, ...]:
         output_kind="candidate_checks",
         failure_policy=_REQUIRED,
     )
+    # `core.risk` measures pressure; it does not RULE on priority, so the declared-override path
+    # found nothing and every compiled candidate fell back to a neutral 5000 utility — which is
+    # why every compiled card scored exactly 50. The situation author already ruled: the corpus
+    # carries 30 distinct `priority_bp` values across 48 situations. Handing that ruling to the
+    # unit as config is what turns it back into a ranking.
+    priority_config: dict[str, object] = {"source_reasoner": "core.risk"}
+    if authored_priority_bp is not None:
+        priority_config["authored_priority_bp"] = int(authored_priority_bp)
     priority = ReasonerSpec(
         "core.priority", "1.0.0",
         dependencies=("core.risk", "core.constraint"),
-        config={"source_reasoner": "core.risk"},
+        config=priority_config,
         failure_policy=_REQUIRED,
     )
     confidence = ReasonerSpec(
@@ -101,21 +145,44 @@ def _default_dag(required_fields: tuple[str, ...]) -> tuple[ReasonerSpec, ...]:
     return (context, risk, constraint, priority, confidence, planning)
 
 
-def _plays(package: ExpertisePackage) -> tuple[PlayDefinition, ...]:
-    """Playbook `expert_rules` (definitions carrying steps) become read-only review plays.
+#: How many plays a manifest carries. A cap is legitimate (the Decision Maker ranks a small
+#: candidate set, not a corpus); a SILENT cap is not — see `_plays`' receipt fields.
+MAX_PLAYS = 4
+
+
+def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]:
+    """Playbook `expert_rules` (definitions carrying steps) become read-only review plays —
+    plus a RECEIPT of everything this conversion refused or cut.
+
+    The old shape was three silent judgments in a row: a rule without steps was `continue`d (no
+    trace), the fifth play onward was `break`ed (no trace), and an empty result appended a
+    hardcoded "review the situation" (indistinguishable from authored content). Consequence,
+    `[MODELLED]` but structural: a 1,748-file corpus could compile successfully, hash into a new
+    manifest version, and still emit one generic play — activation would LOOK successful while
+    producing generic output, which is precisely the state L3's flip must be able to detect.
+
+    Ordering is deterministic before the cap is applied (rule id, not corpus iteration order),
+    so which plays survive the cut cannot depend on file-system enumeration.
 
     Everything Layer 3 supplies is advisory knowledge, so every play is read_only and leaves any
-    outreach to explicit human approval. A safe review play is always provided so the manifest's
-    non-empty-plays invariant holds even when the package authored no playbook.
+    outreach to explicit human approval.
     """
-    plays: list[PlayDefinition] = []
+    candidates: list[tuple[str, PlayDefinition]] = []
+    skipped: dict[str, str] = {}
     seen: set[str] = set()
-    for rule in package.expert_rules:
+    for position, rule in enumerate(package.expert_rules):
         if not isinstance(rule, Mapping):
+            skipped[f"unmapped_{position}"] = "not_a_mapping"
             continue
+        rule_id = str(rule.get("id") or f"rule_{position}")
         definition = rule.get("definition") or {}
         raw_steps = definition.get("steps") if isinstance(definition, Mapping) else None
         if not raw_steps:
+            # A rule with no steps is a NON-STEPS artifact class (a heuristic, a threshold, a
+            # question), not a defect — but this adapter only knows how to consume steps, and
+            # saying so per class is what makes "add a typed consumer" a visible piece of work
+            # instead of a quiet loss.
+            skipped[rule_id] = "no_steps_artifact_unsupported"
             continue
         steps = tuple(
             str(step.get("description") or step.get("name")) if isinstance(step, Mapping)
@@ -124,20 +191,35 @@ def _plays(package: ExpertisePackage) -> tuple[PlayDefinition, ...]:
         )
         steps = tuple(s for s in steps if s and s != "None")
         if not steps:
+            skipped[rule_id] = "steps_empty_after_normalisation"
             continue
-        play_id = str(rule.get("id") or f"play_{len(plays)}").replace(" ", "_")[:120]
+        play_id = rule_id.replace(" ", "_")[:120]
         if play_id in seen:
+            skipped[rule_id] = "duplicate_play_id"
             continue
         seen.add(play_id)
-        plays.append(PlayDefinition(
+        candidates.append((play_id, PlayDefinition(
             play_id, "1.0.0", str(definition.get("name") or play_id)[:200],
             steps=steps,
             read_only=True,
             tags=("human_approval", "playbook"),
             metadata={"source": "expert_playbook", "external_recipient_required": False},
-        ))
-        if len(plays) >= 4:
-            break
+        )))
+
+    candidates.sort(key=lambda pair: pair[0])
+    plays = [play for _, play in candidates[:MAX_PLAYS]]
+    truncated = [play_id for play_id, _ in candidates[MAX_PLAYS:]]
+    for play_id in truncated:
+        skipped[play_id] = f"over_play_cap_{MAX_PLAYS}"
+
+    receipt = {
+        "authored_rules": len(package.expert_rules),
+        "plays_emitted": len(plays),
+        "skipped_rule_ids": dict(sorted(skipped.items())),
+        "truncation_reason": (f"deterministic cap at {MAX_PLAYS} plays, ordered by rule id"
+                              if truncated else None),
+        "generic_fallback_used": not plays,
+    }
     if not plays:
         plays.append(PlayDefinition(
             "review_situation", "1.0.0", "Review the compiled expertise",
@@ -147,35 +229,61 @@ def _plays(package: ExpertisePackage) -> tuple[PlayDefinition, ...]:
                 "Leave any outreach or system change for explicit human approval.",
             ),
             read_only=True,
-            tags=("human_approval", "review"),
+            # `review` AND `non_prescriptive`: this play was written by the ADAPTER, not by any
+            # expert, and a card built from it must never render as a confident instruction —
+            # that would be the compiler failing while its output reads as advice.
+            tags=("human_approval", "review", "non_prescriptive"),
             metadata={"source": "adapter_default", "external_recipient_required": False},
         ))
-    return tuple(plays)
+    return tuple(plays), receipt
 
 
 def _goal(package: ExpertisePackage, situation_type: str) -> Goal:
-    statement = f"Resolve the {situation_type} situation using the compiled expertise."
+    """The FIRST capability's question is the statement; the rest become success criteria.
+
+    Taking only the first and dropping the others silently meant a package compiled from three
+    capabilities looked identical to one compiled from one — the other two questions vanished
+    without a trace. They are secondary by position (the router ordered them), not disposable.
+    """
+    questions = []
     for capability in package.capabilities:
         definition = capability.get("definition") if isinstance(capability, Mapping) else None
         question = (definition or {}).get("question")
         if question:
-            statement = str(question)
-            break
+            questions.append(str(question))
+    statement = questions[0] if questions else (
+        f"Resolve the {situation_type} situation using the compiled expertise.")
     return Goal(
         f"expertise.{situation_type}",
         statement,
+        success_criteria=tuple(questions[1:4]),
         constraints=("Never send or mutate an external system autonomously.",),
     )
 
 
 def expertise_capability_manifest(
     package: ExpertisePackage, *, root_entity_type: str,
+    live_delivery_enabled: bool = False,
 ) -> CapabilityManifest:
-    """One ExpertisePackage -> one CapabilityManifest driving Layer 4's reasoning."""
+    """One ExpertisePackage -> one CapabilityManifest driving Layer 4's reasoning.
+
+    ``live_delivery_enabled`` defaults to False — the measurement pass must stay advisory. It is
+    True only on the cutover path, because the delivery authority predicate reads it directly
+    (``rcap.manifest->'live_delivery_enabled' = 'true'``): a signal whose capability snapshot says
+    False can never become a card, however complete the rest of its audit bundle is.
+    """
     situation_type = str(package.metadata.get("situation_type") or "situation")
+    plays, play_receipt = _plays(package)
     domain_ids = package.metadata.get("domain_ids") or ()
     domain = str(domain_ids[0]) if domain_ids else "general"
     required_fields = _executable_required_fields(package)
+    # SELECT the union, GATE on the intersection — two different questions that shared one answer.
+    # The manifest's own `required_fields` is BOTH: the orchestrator gates on it
+    # (`initial_missing`) and native's selector seeds from it. It carries the gate set, and the
+    # union reaches the selector through the reasoner specs and play preconditions, which
+    # `_selected_fields` unions in anyway. So nothing stops being pulled; a capability simply
+    # stops being vetoed by a field only one of its patterns reads.
+    gate_fields = _universal_required_fields(package)
 
     knowledge_hash = semantic_hash({
         "capabilities": package.capabilities,
@@ -187,31 +295,79 @@ def expertise_capability_manifest(
         "brain_snapshot_id": package.brain_snapshot_id,
     })
 
-    return CapabilityManifest(
+    manifest = CapabilityManifest(
         capability_id=f"expertise.{situation_type}",
+        # Provisional — replaced below once the manifest's own content can be hashed.
         version=f"exp.{knowledge_hash[:16]}",
         domain=domain,
         root_entity_type=str(root_entity_type or "entity"),
         goal=_goal(package, situation_type),
-        reasoners=_default_dag(required_fields),
-        plays=_plays(package),
-        required_fields=required_fields,
+        reasoners=_default_dag(gate_fields, package.metadata.get("authored_priority_bp")),
+        plays=plays,
+        required_fields=gate_fields,
+        selection_fields=required_fields,
         policies=("read_only", "human_approval_required", "evidence_required"),
-        live_delivery_enabled=False,          # typed L3->L4 path stays advisory until cutover
+        live_delivery_enabled=live_delivery_enabled,   # advisory by default; True only on cutover
         do_nothing_consequence=(
             f"The {situation_type} situation is left unaddressed while its evidence compounds."
         ),
         metadata={
             "adapter": ADAPTER_ID,
             "adapter_version": ADAPTER_VERSION,
+            # What the play conversion refused or cut — so "compiled fine, emitted one generic
+            # play" is a readable state instead of a successful-looking silence.
+            "play_receipt": play_receipt,
             "situation_type": situation_type,
+            # The situation's own card copy. Delivery reads it off `rcap.manifest` — the same
+            # audited snapshot the authority predicate already joins — so a card's wording is
+            # pinned to the capability version that produced it and cannot drift underneath it.
+            "render": package.metadata.get("render"),
+            "render_situation_id": package.metadata.get("render_situation_id"),
             "expertise_id": package.id,
             "brain_snapshot_id": package.brain_snapshot_id,
             "object_coverage_bp": package.metadata.get("object_coverage_bp"),
             "knowledge_hash": knowledge_hash,
             "schema": "capability.v1",
+            # The three learned brains, TYPED — not only folded into `knowledge_hash`.
+            #
+            # Organization, Behavior and Adaptive values entered the decision at exactly two
+            # places, both identity-only: the manifest `version` string and this `knowledge_hash`.
+            # A repo-wide grep for the three names under `reason/` found zero read sites. So a
+            # tenant could approve an organization rule, watch the hash change, and nothing about
+            # any decision would differ — governance and personalisation were provenance theatre.
+            #
+            # Carrying them as structure is what lets a reasoner CONSULT them. Counts travel
+            # alongside so "did any brain actually influence this?" is answerable from the
+            # manifest rather than by diffing hashes between runs.
+            "brains": {
+                "organization": list(package.organization_rules or ()),
+                "behavior": list(package.behavior_patterns or ()),
+                "adaptive": list(package.adaptive_preferences or ()),
+            },
+            "brain_influence": {
+                "organization": len(package.organization_rules or ()),
+                "behavior": len(package.behavior_patterns or ()),
+                "adaptive": len(package.adaptive_preferences or ()),
+                # True when every brain is empty: the manifest is authored expertise only, and a
+                # personalisation claim about this decision would be false.
+                "hash_only": not any((package.organization_rules,
+                                      package.behavior_patterns,
+                                      package.adaptive_preferences)),
+            },
         },
     )
+
+    # Re-version on the MANIFEST's content, not only the knowledge's.
+    #
+    # `knowledge_hash` covers the compiled expertise, but the manifest built from it also varies
+    # with the situation: goal, root entity type, the plays that survived conversion, the gate and
+    # selection sets. Two situations therefore produced two different manifests under one version,
+    # and the audit store's immutability guard correctly refused the second — "immutable capability
+    # version mismatch". A version that does not move when the thing it names moves is not a
+    # version. Two hashes, not one: knowledge first so the lineage stays legible at a glance,
+    # manifest second so the identity is honest.
+    content = stable_id("capmanifest", manifest.to_semantic_dict()).split("_", 1)[-1]
+    return replace(manifest, version=f"exp.{knowledge_hash[:12]}.{content[:12]}")
 
 
 __all__ = ["expertise_capability_manifest", "ADAPTER_ID", "ADAPTER_VERSION"]

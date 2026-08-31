@@ -1,0 +1,67 @@
+identity:
+  id: admin.heu.payables_administration.payment_reliability_is_credit
+  name: Payment reliability is credit
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.payables_administration
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Vendors extend better terms, priority and flexibility to reliably-paying customers — informal
+    credit built by boring punctuality. The payables reputation is an asset the balance sheet never shows.
+  answers:
+  - What does consistent payment timing earn?
+
+heuristic:
+  statement: >
+    Vendors extend better terms, priority and flexibility to customers who pay reliably. It is
+    informal credit built by boring punctuality, and it is an asset the balance sheet never shows.
+  why: >
+    Suppliers carry their own working-capital risk and price it, mostly informally: who gets the
+    engineer first, who gets the extra week, who gets the renewal held open. Those decisions are made
+    by people who remember being paid on time, and they are made long before any formal credit
+    assessment. The organisation that pays predictably therefore buys optionality it never
+    negotiated for, at no cost beyond doing on schedule what it was going to do anyway.
+  confidence_bp: 7500
+  applies_when: Ongoing supplier relationships where discretion exists on the vendor's side.
+  breaks_down_when: >
+    Cash is genuinely constrained. Paying to terms while running out of money is optimising a
+    relationship asset against solvency, and the correct move is an early, honest conversation about
+    revised terms — which preserves more goodwill than silent lateness and far more than punctual
+    insolvency. It also breaks down where the vendor has no discretion to extend: a marketplace or a
+    utility gives the same treatment to everybody and punctuality buys nothing but the absence of a
+    penalty.
+  reads: [admin.obj.core.vendor, admin.obj.core.invoice, admin.obj.core.contract]
+  contradicts: [admin.heu.receivables_follow_up.awkwardness_is_expensive]
+limits:
+- 'It argues for predictability, not for speed. Reliably on terms beats erratically early.'
+- 'The asset is unmeasured and unbookable, which is why it loses every argument against a short-term cash decision.'
+failure_modes:
+- 'Used to justify paying early, which spends working capital to buy goodwill that punctuality already bought.'
+- 'Cited to avoid a necessary conversation about extended terms, which converts a negotiation into a default.'
+variants:
+- applies_to: startup_lean
+  change: Strongest and least believed. A small customer who pays on time is memorable to a supplier precisely because most do not.
+  why: The cohort norm is late, so punctuality is a large relative signal.
+- applies_to: enterprise_admin
+  change: Weaker as goodwill and stronger as leverage — suppliers price the relationship formally and reliability appears in the terms rather than in favours.
+  why: Scale converts the informal asset into a negotiated one.
+references:
+- title: Working capital and supplier relations
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    contradicts awkwardness-is-expensive because they sit on opposite sides of the same ledger:
+    this one says pay predictably to build goodwill, that one says chase what you are owed
+    without embarrassment. An organisation that applies only one becomes either a slow payer
+    with clean receivables or a punctual payer nobody owes on time.

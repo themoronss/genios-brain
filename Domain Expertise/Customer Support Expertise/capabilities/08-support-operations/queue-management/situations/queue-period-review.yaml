@@ -1,0 +1,90 @@
+# ROUTED SINCE 2026-08-29. Previously: Ten capabilities across support-operations and
+# support-management read the QUEUE and the TEAM over a period — not any one customer — and no
+# anchor in this system is a period. Same missing mechanism as
+# `admin.sit.admin_service_under_load` and `sales.sit.pipeline_period_review`, named identically
+# in all three so it reads as one Layer 2 build.
+
+identity:
+  id: customer_support.sit.queue_period_review
+  name: Queue Period Review
+  domain: customer_support
+  owner_capability: customer_support.support_operations.queue_management
+  version: 1.0.0
+  status: stable
+
+description: >
+  The support operation itself over a window: what arrived, what cleared, where the backlog is
+  concentrated, who is carrying it, what it costs to serve, and whether the people doing it are
+  sustainable. Every question here is an aggregate and none of them is about a customer.
+
+  Two failures live in this subdomain and both are invisible from a single ticket. A queue that
+  clears on average while one segment starves — averages hide the customers who wait longest. And
+  a team that is meeting its numbers by working in a way it cannot keep working; team health is
+  the leading indicator of every other support metric and the last one anybody instruments.
+
+matches:
+  # BUILT. `context/periodic.py` mints a tenant node, writes the window's aggregates onto it as
+  # ordinary facts, and opens one situation per domain anchored there — so the compile path reads
+  # a period situation exactly as it reads any other. The type below is live.
+  #
+  # What arrives with it is a COUNT and its previous-window twin, never a verdict: open deals,
+  # events this window against last, counterparties waiting on us, commitments open and overdue.
+  # There are still no targets, no per-owner load and no cost-to-serve, and those remain listed in
+  # `missing` on every situation this produces rather than being estimated.
+  l2_situation_types:
+    - support_period_review
+  scope: account
+also_serves:
+  # Coverage is a rota over a period, which is the same missing shape as the rest of this
+  # list — who is on, when, and whether the window is actually covered.
+  - customer_support.entitlement_and_sla.coverage_and_on_call
+  - customer_support.support_operations.workload_balancing
+  - customer_support.support_operations.capacity_planning
+  - customer_support.support_operations.support_analytics
+  - customer_support.support_operations.cost_to_serve
+  - customer_support.support_management.agent_coaching
+  - customer_support.support_management.performance_management
+  - customer_support.support_management.quality_assurance
+  - customer_support.support_management.team_health
+  - customer_support.support_management.ticket_review
+
+objects:
+  load:
+    - customer_support.obj.core.ticket
+  optional:
+    - customer_support.obj.core.sla_target
+    - customer_support.obj.core.entitlement
+
+priority_bp: 3800
+typical_duration_days: 30
+signals_of_progress: [next_step_agreed]
+signals_of_decay: [timeline_slip]
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    report the distribution, never the average alone —
+    the finding is in the tail, and a mean is how the failing segment stays hidden.
+  fallback:
+    headline: "Support queue — period unmeasured"
+    situation: >-
+      No period aggregate exists, so queue health cannot be stated.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Built 2026-08-29. The argument against the per-subject binding is kept because it is what stops this being re-pointed at an anchor that cannot carry an aggregate:
+
+    WHY BINDING TO support_case WOULD BE WRONG, specifically. (1) An aggregate asserted about one company is not an aggregate — "backlog is growing" said on an account page is uninterpretable. (2) It would fire once per account, producing N copies of one finding. (3) Team health and coaching are about OUR people; a customer-anchored situation carries no internal person, so the whole support-management subdomain would be reasoning about the wrong party. (4) Capacity planning needs arrival rate against capacity over time, and a single-subject anchor has no time axis at all. # No `scope`. The natural scope is TENANT + PERIOD, which the enum does not offer.
+
+    Ten capabilities behind one missing mechanism — the largest single unlock in this corpus, and
+    the reason it is worth naming precisely rather than leaving as ten silent orphans.
+
+admission:
+  accepted_content_hash: 7cdb010caac17c937ceb140f1d68d309a6dfa932490334f27d446161d490badc

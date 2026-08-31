@@ -13,9 +13,9 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 ## Where the brain stands
 
 - **123** patterns executable against the pipeline today
-- **232** patterns blocked, waiting on **209** distinct signals
-- **0** situation binding(s) waiting on an L2 type no pack emits
-- Substrate today: **12** fact paths · **18** observation kinds · **1** baselines
+- **232** patterns blocked, waiting on **214** distinct signals
+- **4** situation binding(s) waiting on an L2 type no pack emits
+- Substrate today: **106** fact paths · **34** observation kinds · **2** baselines
 
 ## The backlog
 
@@ -98,138 +98,143 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 | 75 | `expense.merchant` | fact_path | L1 | 2 | 8000 | Expense Claim |
 | 76 | `admin_request_volume` | baseline | L2 | 2 | 7500 | Request, Standard Operating Procedure |
 | 77 | `prebrief_delivered` | obs_kind | L2 | 2 | 7500 | Action Item, Meeting |
-| 78 | `document_published` | obs_kind | L2 | 1 | 10000 | Document |
-| 79 | `filing.reference_number` | fact_path | L2 | 1 | 10000 | Filing |
-| 80 | `vendor.bank_account_fingerprint` | fact_path | L1 | 1 | 9900 | Vendor |
-| 81 | `approver.effective_to` | fact_path | L1 | 1 | 9800 | Approver |
-| 82 | `contract_countersigned` | obs_kind | L2 | 1 | 9800 | Contract |
-| 83 | `escalation_requested` | obs_kind | L2 | 1 | 9800 | Escalation |
-| 84 | `event.capacity` | fact_path | L1 | 1 | 9800 | Event |
-| 85 | `leave.state` | fact_path | L1 | 1 | 9800 | Leave Request |
-| 86 | `minutes_adopted` | obs_kind | L2 | 1 | 9800 | Meeting |
-| 87 | `request.category` | fact_path | L1 | 1 | 9800 | Request |
-| 88 | `screening_result_returned` | obs_kind | L1 | 1 | 9800 | Vendor |
-| 89 | `employee.right_to_work_expires_at` | fact_path | L1 | 1 | 9700 | Employee Record |
-| 90 | `auto_renewal_imminent` | obs_kind | L2 | 1 | 9600 | Deadline |
-| 91 | `expense.receipt_present` | fact_path | L1 | 1 | 9600 | Expense Claim |
-| 92 | `asset.due_back_at` | fact_path | L1 | 1 | 9500 | Asset |
-| 93 | `calendar.event.previous_start_at` | fact_path | L1 | 1 | 9500 | Time Block |
-| 94 | `contract.cancellation_schedule` | fact_path | L1 | 1 | 9500 | Event |
-| 95 | `derived.entitlement_set_by_identity` | derived | L2 | 1 | 9500 | Access Right |
-| 96 | `document_review_overdue` | obs_kind | L2 | 1 | 9500 | Document |
-| 97 | `event.final_numbers_due_at` | fact_path | L1 | 1 | 9500 | Event |
-| 98 | `event.start_at` | fact_path | L1 | 1 | 9500 | Event |
-| 99 | `invoice.due_at` | fact_path | L1 | 1 | 9500 | Invoice |
-| 100 | `meeting.quorum_required` | fact_path | L1 | 1 | 9500 | Meeting |
-| 101 | `notifiable_event_detected` | obs_kind | L2 | 1 | 9500 | Compliance Obligation |
-| 102 | `payroll.cutoff_at` | fact_path | L1 | 1 | 9500 | Deadline |
-| 103 | `request.acknowledged_at` | fact_path | L1 | 1 | 9500 | Request |
-| 104 | `sod.conflict_pairs` | fact_path | L1 | 1 | 9500 | Access Right |
-| 105 | `trip.visa_state` | fact_path | L1 | 1 | 9500 | Trip |
-| 106 | `vendor.bank_verification_method` | fact_path | L1 | 1 | 9500 | Vendor |
-| 107 | `vendor.diligence_expires_at` | fact_path | L1 | 1 | 9500 | Vendor |
-| 108 | `expense.incurred_at` | fact_path | L1 | 1 | 9400 | Expense Claim |
-| 109 | `policy.claim_window_days` | fact_path | L1 | 1 | 9400 | Expense Claim |
-| 110 | `record.access_log` | fact_path | L1 | 1 | 9400 | Employee Record |
-| 111 | `derived.onboarding_completeness` | derived | L2 | 1 | 9200 | Employee Record |
-| 112 | `filing_due` | obs_kind | L2 | 1 | 9200 | Deadline |
-| 113 | `filing_overdue` | obs_kind | L2 | 1 | 9200 | Deadline |
-| 114 | `vendor_bank_detail_change` | obs_kind | L2 | 1 | 9200 | Invoice |
-| 115 | `asset_issued` | obs_kind | L2 | 1 | 9000 | Asset |
-| 116 | `calendar.event.category` | fact_path | L1 | 1 | 9000 | Time Block |
-| 117 | `calendar.event.transparency` | fact_path | L1 | 1 | 9000 | Time Block |
-| 118 | `derived.approver_availability` | derived | L2 | 1 | 9000 | Leave Request |
-| 119 | `derived.document_identity_cluster` | derived | L2 | 1 | 9000 | Document |
-| 120 | `derived.incident_window` | derived | L2 | 1 | 9000 | Access Right |
-| 121 | `derived.instrument_version_current` | derived | L2 | 1 | 9000 | Compliance Obligation |
-| 122 | `derived.performer_diversity` | derived | L2 | 1 | 9000 | Standard Operating Procedure |
-| 123 | `derived.recipient_is_external` | derived | L2 | 1 | 9000 | Document |
-| 124 | `derived.threshold_position` | derived | L2 | 1 | 9000 | Compliance Obligation |
-| 125 | `escalation_accepted` | obs_kind | L2 | 1 | 9000 | Escalation |
-| 126 | `event.contracted_minimum` | fact_path | L1 | 1 | 9000 | Event |
-| 127 | `event.licences_required` | fact_path | L1 | 1 | 9000 | Event |
-| 128 | `expense_claim_submitted` | obs_kind | L2 | 1 | 9000 | Trip |
-| 129 | `filing.penalty_basis` | fact_path | L1 | 1 | 9000 | Filing |
-| 130 | `filing_submitted` | obs_kind | L2 | 1 | 9000 | Filing |
-| 131 | `leave.evidence_due_at` | fact_path | L1 | 1 | 9000 | Leave Request |
-| 132 | `leave_evidence_received` | obs_kind | L2 | 1 | 9000 | Leave Request |
-| 133 | `licence_evidenced` | obs_kind | L2 | 1 | 9000 | Event |
-| 134 | `meeting.convened_at` | fact_path | L1 | 1 | 9000 | Meeting |
-| 135 | `meeting.notice_period_days` | fact_path | L1 | 1 | 9000 | Meeting |
-| 136 | `meeting.papers_deadline_at` | fact_path | L1 | 1 | 9000 | Meeting |
-| 137 | `request.type` | fact_path | L1 | 1 | 9000 | Request |
-| 138 | `retention_period_elapsed` | obs_kind | L2 | 1 | 9000 | Deadline |
-| 139 | `sla.target_resolution_at` | fact_path | L1 | 1 | 9000 | Request |
-| 140 | `sop.tooling_referenced` | fact_path | L1 | 1 | 9000 | Standard Operating Procedure |
-| 141 | `sop_executed` | obs_kind | L2 | 1 | 9000 | Standard Operating Procedure |
-| 142 | `system_change_recorded` | obs_kind | L2 | 1 | 9000 | Standard Operating Procedure |
-| 143 | `trip.claim_due_at` | fact_path | L1 | 1 | 9000 | Trip |
-| 144 | `trip.itinerary_source` | fact_path | L1 | 1 | 9000 | Trip |
-| 145 | `trip_departed` | obs_kind | L2 | 1 | 9000 | Trip |
-| 146 | `vendor.registration_number` | fact_path | L1 | 1 | 9000 | Vendor |
-| 147 | `calendar.event.hold_expires_at` | fact_path | L1 | 1 | 8800 | Time Block |
-| 148 | `derived.identity_owner_resolvable` | derived | L2 | 1 | 8800 | Access Right |
-| 149 | `renewal_window_open` | obs_kind | L2 | 1 | 8800 | Budget Line |
-| 150 | `vendor.onboarding_state` | fact_path | L1 | 1 | 8800 | Vendor |
-| 151 | `derived.attestation_coverage` | derived | L2 | 1 | 8500 | Policy |
-| 152 | `derived.days_by_jurisdiction_12m` | derived | L2 | 1 | 8500 | Trip |
-| 153 | `derived.escalation_pressure` | derived | L2 | 1 | 8500 | Escalation |
-| 154 | `derived.grant_provenance_completeness` | derived | L2 | 1 | 8500 | Access Right |
-| 155 | `derived.reporting_distance` | derived | L2 | 1 | 8500 | Approver |
-| 156 | `derived.vendor_first_seen` | derived | L2 | 1 | 8500 | Invoice |
-| 157 | `event.attendee_data_retention_until` | fact_path | L1 | 1 | 8500 | Event |
-| 158 | `event.end_at` | fact_path | L1 | 1 | 8500 | Event |
-| 159 | `final_invoice_received` | obs_kind | L2 | 1 | 8500 | Event |
-| 160 | `leave.carry_over_expires_at` | fact_path | L1 | 1 | 8500 | Leave Request |
-| 161 | `meeting.attendees` | fact_path | L1 | 1 | 8500 | Action Item |
-| 162 | `meeting.interests_declared` | fact_path | L1 | 1 | 8500 | Meeting |
-| 163 | `payment_released` | obs_kind | L2 | 1 | 8500 | Approval |
-| 164 | `person.working_hours` | fact_path | L1 | 1 | 8500 | Time Block |
-| 165 | `policy.exception_count` | fact_path | L1 | 1 | 8500 | Policy |
-| 166 | `policy.exception_expiry_at` | fact_path | L1 | 1 | 8500 | Policy |
-| 167 | `return_to_work_recorded` | obs_kind | L2 | 1 | 8500 | Leave Request |
-| 168 | `sop_step_skipped` | obs_kind | L2 | 1 | 8500 | Standard Operating Procedure |
-| 169 | `trip.unused_credit_expires_at` | fact_path | L1 | 1 | 8500 | Trip |
-| 170 | `vendor.last_reviewed_at` | fact_path | L1 | 1 | 8500 | Vendor |
-| 171 | `verbal_request_captured` | obs_kind | L2 | 1 | 8500 | Request |
-| 172 | `derived.reporting_line` | derived | L2 | 1 | 8400 | Expense Claim |
-| 173 | `commitment.previous_due_at` | fact_path | L2 | 1 | 8200 | Commitment |
-| 174 | `derived.invoice_fingerprint` | derived | L2 | 1 | 8200 | Invoice |
-| 175 | `derived.reschedule_count` | derived | L2 | 1 | 8200 | Time Block |
-| 176 | `expense.state` | fact_path | L1 | 1 | 8200 | Expense Claim |
-| 177 | `asset.last_verified_at` | fact_path | L1 | 1 | 8000 | Asset |
-| 178 | `calendar.free_capacity_minutes` | fact_path | L2 | 1 | 8000 | Time Block |
-| 179 | `derived.absence_occasions_12m` | derived | L2 | 1 | 8000 | Leave Request |
-| 180 | `derived.claim_fingerprint` | derived | L2 | 1 | 8000 | Expense Claim |
-| 181 | `derived.concurrent_travel_to_destination` | derived | L2 | 1 | 8000 | Trip |
-| 182 | `derived.contains_personal_data` | derived | L2 | 1 | 8000 | Document |
-| 183 | `derived.control_enforcement_rate` | derived | L2 | 1 | 8000 | Policy |
-| 184 | `derived.preparation_lead_time` | derived | L2 | 1 | 8000 | Deadline |
-| 185 | `derived.request_similarity` | derived | L2 | 1 | 8000 | Request |
-| 186 | `derived.supplier_role_count_per_event` | derived | L2 | 1 | 8000 | Event |
-| 187 | `derived.team_absence_overlap` | derived | L2 | 1 | 8000 | Leave Request |
-| 188 | `sla_breach` | obs_kind | L2 | 1 | 8000 | Vendor |
-| 189 | `sop_execution_observed` | obs_kind | L2 | 1 | 8000 | Standard Operating Procedure |
-| 190 | `vendor.service_level_target` | fact_path | L1 | 1 | 8000 | Vendor |
-| 191 | `asset.last_seen_at` | fact_path | L1 | 1 | 7500 | Asset |
-| 192 | `decision_recorded` | obs_kind | L2 | 1 | 7500 | Meeting |
-| 193 | `derived.approval_rejection_rate` | derived | L2 | 1 | 7500 | Approver |
-| 194 | `derived.backlog_age` | derived | L2 | 1 | 7500 | Request |
-| 195 | `derived.calendar_density` | derived | L2 | 1 | 7500 | Time Block |
-| 196 | `derived.decision_density` | derived | L2 | 1 | 7500 | Meeting |
-| 197 | `derived.merchant_category_sensitivity` | derived | L2 | 1 | 7500 | Expense Claim |
-| 198 | `derived.period_activity` | derived | L2 | 1 | 7500 | Filing |
-| 199 | `derived.request_repeat_rate` | derived | L2 | 1 | 7500 | Request |
-| 200 | `policy_breach_observed` | obs_kind | L2 | 1 | 7500 | Policy |
-| 201 | `contract.price_uplift_index` | fact_path | L1 | 1 | 7000 | Contract |
-| 202 | `derived.meeting_attendance_rate` | derived | L2 | 1 | 7000 | Meeting |
-| 203 | `derived.policy_clause_coverage` | derived | L2 | 1 | 7000 | Expense Claim |
-| 204 | `person.seniority` | fact_path | L1 | 1 | 7000 | Request |
-| 205 | `trip.return_at` | fact_path | L1 | 1 | 7000 | Time Block |
-| 206 | `derived.vendor_channel_norm` | derived | L2 | 1 | 6800 | Invoice |
-| 207 | `asset.issued_at` | fact_path | L1 | 1 | 6500 | Asset |
-| 208 | `derived.commitment_clustering` | derived | L2 | 1 | 6500 | Budget Line |
-| 209 | `derived.pool_loan_duration` | derived | L2 | 1 | 6500 | Asset |
+| 78 | `asset_in_custody` | l2_situation_type | L1 | 1 | 10000 | [situation] Asset in Custody |
+| 79 | `document_published` | obs_kind | L2 | 1 | 10000 | Document |
+| 80 | `employee_lifecycle_event` | l2_situation_type | L1 | 1 | 10000 | [situation] Employee Lifecycle Event |
+| 81 | `filing.reference_number` | fact_path | L2 | 1 | 10000 | Filing |
+| 82 | `obligation_falls_due` | l2_situation_type | L1 | 1 | 10000 | [situation] Obligation Falls Due |
+| 83 | `spend_against_a_commitment` | l2_situation_type | L1 | 1 | 10000 | [situation] Spend Against a Commitment |
+| 84 | `vendor.bank_account_fingerprint` | fact_path | L1 | 1 | 9900 | Vendor |
+| 85 | `approver.effective_to` | fact_path | L1 | 1 | 9800 | Approver |
+| 86 | `contract_countersigned` | obs_kind | L2 | 1 | 9800 | Contract |
+| 87 | `escalation_requested` | obs_kind | L2 | 1 | 9800 | Escalation |
+| 88 | `event.capacity` | fact_path | L1 | 1 | 9800 | Event |
+| 89 | `leave.state` | fact_path | L1 | 1 | 9800 | Leave Request |
+| 90 | `minutes_adopted` | obs_kind | L2 | 1 | 9800 | Meeting |
+| 91 | `request.category` | fact_path | L1 | 1 | 9800 | Request |
+| 92 | `screening_result_returned` | obs_kind | L1 | 1 | 9800 | Vendor |
+| 93 | `employee.right_to_work_expires_at` | fact_path | L1 | 1 | 9700 | Employee Record |
+| 94 | `auto_renewal_imminent` | obs_kind | L2 | 1 | 9600 | Deadline |
+| 95 | `expense.receipt_present` | fact_path | L1 | 1 | 9600 | Expense Claim |
+| 96 | `asset.due_back_at` | fact_path | L1 | 1 | 9500 | Asset |
+| 97 | `calendar.event.previous_start_at` | fact_path | L1 | 1 | 9500 | Time Block |
+| 98 | `contract.cancellation_schedule` | fact_path | L1 | 1 | 9500 | Event |
+| 99 | `derived.entitlement_set_by_identity` | derived | L2 | 1 | 9500 | Access Right |
+| 100 | `document_review_overdue` | obs_kind | L2 | 1 | 9500 | Document |
+| 101 | `event.final_numbers_due_at` | fact_path | L1 | 1 | 9500 | Event |
+| 102 | `event.start_at` | fact_path | L1 | 1 | 9500 | Event |
+| 103 | `invoice.due_at` | fact_path | L1 | 1 | 9500 | Invoice |
+| 104 | `meeting.quorum_required` | fact_path | L1 | 1 | 9500 | Meeting |
+| 105 | `notifiable_event_detected` | obs_kind | L2 | 1 | 9500 | Compliance Obligation |
+| 106 | `payroll.cutoff_at` | fact_path | L1 | 1 | 9500 | Deadline |
+| 107 | `request.acknowledged_at` | fact_path | L1 | 1 | 9500 | Request |
+| 108 | `sod.conflict_pairs` | fact_path | L1 | 1 | 9500 | Access Right |
+| 109 | `trip.visa_state` | fact_path | L1 | 1 | 9500 | Trip |
+| 110 | `vendor.bank_verification_method` | fact_path | L1 | 1 | 9500 | Vendor |
+| 111 | `vendor.diligence_expires_at` | fact_path | L1 | 1 | 9500 | Vendor |
+| 112 | `expense.incurred_at` | fact_path | L1 | 1 | 9400 | Expense Claim |
+| 113 | `policy.claim_window_days` | fact_path | L1 | 1 | 9400 | Expense Claim |
+| 114 | `record.access_log` | fact_path | L1 | 1 | 9400 | Employee Record |
+| 115 | `derived.onboarding_completeness` | derived | L2 | 1 | 9200 | Employee Record |
+| 116 | `filing_due` | obs_kind | L2 | 1 | 9200 | Deadline |
+| 117 | `filing_overdue` | obs_kind | L2 | 1 | 9200 | Deadline |
+| 118 | `vendor_bank_detail_change` | obs_kind | L2 | 1 | 9200 | Invoice |
+| 119 | `asset_issued` | obs_kind | L2 | 1 | 9000 | Asset |
+| 120 | `calendar.event.category` | fact_path | L1 | 1 | 9000 | Time Block |
+| 121 | `calendar.event.transparency` | fact_path | L1 | 1 | 9000 | Time Block |
+| 122 | `derived.approver_availability` | derived | L2 | 1 | 9000 | Leave Request |
+| 123 | `derived.document_cluster_key` | derived | L2 | 1 | 9000 | Document |
+| 124 | `derived.document_live_copies` | derived | L2 | 1 | 9000 | Document |
+| 125 | `derived.incident_window` | derived | L2 | 1 | 9000 | Access Right |
+| 126 | `derived.instrument_version_current` | derived | L2 | 1 | 9000 | Compliance Obligation |
+| 127 | `derived.performer_diversity` | derived | L2 | 1 | 9000 | Standard Operating Procedure |
+| 128 | `derived.recipient_is_external` | derived | L2 | 1 | 9000 | Document |
+| 129 | `derived.threshold_position` | derived | L2 | 1 | 9000 | Compliance Obligation |
+| 130 | `escalation_accepted` | obs_kind | L2 | 1 | 9000 | Escalation |
+| 131 | `event.contracted_minimum` | fact_path | L1 | 1 | 9000 | Event |
+| 132 | `event.licences_required` | fact_path | L1 | 1 | 9000 | Event |
+| 133 | `expense_claim_submitted` | obs_kind | L2 | 1 | 9000 | Trip |
+| 134 | `filing.penalty_basis` | fact_path | L1 | 1 | 9000 | Filing |
+| 135 | `filing_submitted` | obs_kind | L2 | 1 | 9000 | Filing |
+| 136 | `leave.evidence_due_at` | fact_path | L1 | 1 | 9000 | Leave Request |
+| 137 | `leave_evidence_received` | obs_kind | L2 | 1 | 9000 | Leave Request |
+| 138 | `licence_evidenced` | obs_kind | L2 | 1 | 9000 | Event |
+| 139 | `meeting.convened_at` | fact_path | L1 | 1 | 9000 | Meeting |
+| 140 | `meeting.notice_period_days` | fact_path | L1 | 1 | 9000 | Meeting |
+| 141 | `meeting.papers_deadline_at` | fact_path | L1 | 1 | 9000 | Meeting |
+| 142 | `request.type` | fact_path | L1 | 1 | 9000 | Request |
+| 143 | `retention_period_elapsed` | obs_kind | L2 | 1 | 9000 | Deadline |
+| 144 | `sla.target_resolution_at` | fact_path | L1 | 1 | 9000 | Request |
+| 145 | `sop.tooling_referenced` | fact_path | L1 | 1 | 9000 | Standard Operating Procedure |
+| 146 | `sop_executed` | obs_kind | L2 | 1 | 9000 | Standard Operating Procedure |
+| 147 | `system_change_recorded` | obs_kind | L2 | 1 | 9000 | Standard Operating Procedure |
+| 148 | `trip.claim_due_at` | fact_path | L1 | 1 | 9000 | Trip |
+| 149 | `trip.itinerary_source` | fact_path | L1 | 1 | 9000 | Trip |
+| 150 | `trip_departed` | obs_kind | L2 | 1 | 9000 | Trip |
+| 151 | `vendor.registration_number` | fact_path | L1 | 1 | 9000 | Vendor |
+| 152 | `calendar.event.hold_expires_at` | fact_path | L1 | 1 | 8800 | Time Block |
+| 153 | `derived.identity_owner_resolvable` | derived | L2 | 1 | 8800 | Access Right |
+| 154 | `renewal_window_open` | obs_kind | L2 | 1 | 8800 | Budget Line |
+| 155 | `vendor.onboarding_state` | fact_path | L1 | 1 | 8800 | Vendor |
+| 156 | `derived.attestation_coverage` | derived | L2 | 1 | 8500 | Policy |
+| 157 | `derived.days_by_jurisdiction_12m` | derived | L2 | 1 | 8500 | Trip |
+| 158 | `derived.escalation_pressure` | derived | L2 | 1 | 8500 | Escalation |
+| 159 | `derived.grant_provenance_completeness` | derived | L2 | 1 | 8500 | Access Right |
+| 160 | `derived.reporting_distance` | derived | L2 | 1 | 8500 | Approver |
+| 161 | `derived.vendor_first_seen` | derived | L2 | 1 | 8500 | Invoice |
+| 162 | `event.attendee_data_retention_until` | fact_path | L1 | 1 | 8500 | Event |
+| 163 | `event.end_at` | fact_path | L1 | 1 | 8500 | Event |
+| 164 | `final_invoice_received` | obs_kind | L2 | 1 | 8500 | Event |
+| 165 | `leave.carry_over_expires_at` | fact_path | L1 | 1 | 8500 | Leave Request |
+| 166 | `meeting.attendees` | fact_path | L1 | 1 | 8500 | Action Item |
+| 167 | `meeting.interests_declared` | fact_path | L1 | 1 | 8500 | Meeting |
+| 168 | `payment_released` | obs_kind | L2 | 1 | 8500 | Approval |
+| 169 | `person.working_hours` | fact_path | L1 | 1 | 8500 | Time Block |
+| 170 | `policy.exception_count` | fact_path | L1 | 1 | 8500 | Policy |
+| 171 | `policy.exception_expiry_at` | fact_path | L1 | 1 | 8500 | Policy |
+| 172 | `return_to_work_recorded` | obs_kind | L2 | 1 | 8500 | Leave Request |
+| 173 | `sop_step_skipped` | obs_kind | L2 | 1 | 8500 | Standard Operating Procedure |
+| 174 | `trip.unused_credit_expires_at` | fact_path | L1 | 1 | 8500 | Trip |
+| 175 | `vendor.last_reviewed_at` | fact_path | L1 | 1 | 8500 | Vendor |
+| 176 | `verbal_request_captured` | obs_kind | L2 | 1 | 8500 | Request |
+| 177 | `derived.reporting_line` | derived | L2 | 1 | 8400 | Expense Claim |
+| 178 | `commitment.previous_due_at` | fact_path | L2 | 1 | 8200 | Commitment |
+| 179 | `derived.invoice_fingerprint` | derived | L2 | 1 | 8200 | Invoice |
+| 180 | `derived.reschedule_count` | derived | L2 | 1 | 8200 | Time Block |
+| 181 | `expense.state` | fact_path | L1 | 1 | 8200 | Expense Claim |
+| 182 | `asset.last_verified_at` | fact_path | L1 | 1 | 8000 | Asset |
+| 183 | `calendar.free_capacity_minutes` | fact_path | L2 | 1 | 8000 | Time Block |
+| 184 | `derived.absence_occasions_12m` | derived | L2 | 1 | 8000 | Leave Request |
+| 185 | `derived.claim_fingerprint` | derived | L2 | 1 | 8000 | Expense Claim |
+| 186 | `derived.concurrent_travel_to_destination` | derived | L2 | 1 | 8000 | Trip |
+| 187 | `derived.contains_personal_data` | derived | L2 | 1 | 8000 | Document |
+| 188 | `derived.control_enforcement_rate` | derived | L2 | 1 | 8000 | Policy |
+| 189 | `derived.preparation_lead_time` | derived | L2 | 1 | 8000 | Deadline |
+| 190 | `derived.request_similarity` | derived | L2 | 1 | 8000 | Request |
+| 191 | `derived.supplier_role_count_per_event` | derived | L2 | 1 | 8000 | Event |
+| 192 | `derived.team_absence_overlap` | derived | L2 | 1 | 8000 | Leave Request |
+| 193 | `sla_breach` | obs_kind | L2 | 1 | 8000 | Vendor |
+| 194 | `sop_execution_observed` | obs_kind | L2 | 1 | 8000 | Standard Operating Procedure |
+| 195 | `vendor.service_level_target` | fact_path | L1 | 1 | 8000 | Vendor |
+| 196 | `asset.last_seen_at` | fact_path | L1 | 1 | 7500 | Asset |
+| 197 | `decision_recorded` | obs_kind | L2 | 1 | 7500 | Meeting |
+| 198 | `derived.approval_rejection_rate` | derived | L2 | 1 | 7500 | Approver |
+| 199 | `derived.backlog_age` | derived | L2 | 1 | 7500 | Request |
+| 200 | `derived.calendar_density` | derived | L2 | 1 | 7500 | Time Block |
+| 201 | `derived.decision_density` | derived | L2 | 1 | 7500 | Meeting |
+| 202 | `derived.merchant_category_sensitivity` | derived | L2 | 1 | 7500 | Expense Claim |
+| 203 | `derived.period_activity` | derived | L2 | 1 | 7500 | Filing |
+| 204 | `derived.request_repeat_rate` | derived | L2 | 1 | 7500 | Request |
+| 205 | `policy_breach_observed` | obs_kind | L2 | 1 | 7500 | Policy |
+| 206 | `contract.price_uplift_index` | fact_path | L1 | 1 | 7000 | Contract |
+| 207 | `derived.meeting_attendance_rate` | derived | L2 | 1 | 7000 | Meeting |
+| 208 | `derived.policy_clause_coverage` | derived | L2 | 1 | 7000 | Expense Claim |
+| 209 | `person.seniority` | fact_path | L1 | 1 | 7000 | Request |
+| 210 | `trip.return_at` | fact_path | L1 | 1 | 7000 | Time Block |
+| 211 | `derived.vendor_channel_norm` | derived | L2 | 1 | 6800 | Invoice |
+| 212 | `asset.issued_at` | fact_path | L1 | 1 | 6500 | Asset |
+| 213 | `derived.commitment_clustering` | derived | L2 | 1 | 6500 | Budget Line |
+| 214 | `derived.pool_loan_duration` | derived | L2 | 1 | 6500 | Asset |
 
 ## Why each one matters
 
@@ -415,7 +420,7 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - blocks **Standard Operating Procedure** / `sop.two_versions_in_circulation` (would yield 9000 bp)
 - Action Item: Needed to distinguish draft minutes from the circulated version. An action lifted from an uncirculated draft is not yet binding on anyone, and treating it as though it were is how a secretariat loses the room.
 - Action Item: Comparing an item across successive minute versions is what catches 'draft the policy' quietly becoming 'consider options for the policy' at sitting four. Nobody does this by hand, and it is the mechanism by which a matters-arising list stays short while achieving nothing.
-- Document: Requires a version string per artefact plus identity resolution across copies. Without it the commonest document-control incident in any organisation is structurally undetectable — and it is the one whose symptom is two teams in a meeting with different numbers.
+- Document: SATISFIED 2026-08-29 by context/documents.py, which projects file-store metadata onto a document node. Read what it is before resting anything on it: this is a per-file REVISION COUNTER, not a semantic version. Two independent copies of the handbook are both revision 1 on the day they are made and both revision 40 after a year of equal editing, so equality of this field proves nothing and inequality proves less.
 - Policy: Requires version identity across copies rather than only on the master. Until it exists, 'which version was I bound by' — the only version question a tribunal ever asks — cannot be answered from the system, and the honest reply is that we do not know.
 - Standard Operating Procedure: Requires version identity across copies, not just on the master. Until it exists, 'which version did they follow' — the only version question ever asked in anger — cannot be answered from the system, and the honest response to a tribunal is that we do not know.
 
@@ -537,7 +542,7 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - blocks **Document** / `doc.version_conflict_in_circulation` (would yield 9000 bp)
 - blocks **Policy** / `pol.superseded_but_still_circulating` (would yield 9000 bp)
 - blocks **Standard Operating Procedure** / `sop.two_versions_in_circulation` (would yield 9000 bp)
-- Document: The discriminator between a conflict and an orderly lineage. Supersession has a timestamp in every DMS and no representation here, so without it two live versions and a published successor look identical.
+- Document: STILL ABSENT, and it is the whole difference between this pattern and the weaker claim Layer 2 can already make. Supersession has a timestamp in every DMS and no emitter here, so v2 published with v1 correctly withdrawn is indistinguishable from two teams editing in parallel. `document_under_control` therefore carries `derived.document_live_copies` and says only that two live copies exist; promoting this pattern to executable on the two signals above would turn that into an assertion that the wrong version is in circulation, which nothing here can support.
 
 ### `obligation.jurisdiction` · fact_path
 
@@ -950,14 +955,54 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - Meeting: Executive support's core deliverable and it leaves no typed trace — a brief is an attachment or a five-minute corridor conversation. Without it the function's most valuable output is also its least measurable, which is a familiar and expensive combination.
 
 
+### `asset_in_custody` · l2_situation_type
+
+- blocks **[situation] Asset in Custody** / `admin.sit.asset_in_custody` (would yield 10000 bp)
+- Asset in Custody: WHAT THE TYPE MUST MEAN. A specific identified asset with a current holder, a custody start date, a condition state and a next-due date. Identity must survive transfer — the same laptop moving between three people is one asset with three custody spells, and a type that mints a new asset per mention makes recovery impossible, which is the single thing asset_issuance_and_recovery exists to do.
+WHAT WOULD EMIT IT. `asset.id`, `asset.holder`, `asset.custody_from`, `asset.condition` and `asset.next_due_at`, from an asset register, an MDM or a facilities system. No writer exists and none should be extracted: an asset mentioned in an email is not an asset in custody, and treating it as one produces a register that is confidently wrong.
+WHAT GOES WRONG TODAY. Nothing fires for asset_register, asset_issuance_and_recovery, maintenance_coordination, workplace_management or health_and_safety_administration.
+WHY BINDING TO admin_contact WOULD BE WRONG, specifically. (1) No identity. The same asset named in two threads would be two assets, inverting recovery. (2) No custody transfer — correspondence records that something was sent, not that responsibility moved, and those differ exactly when someone leaves. (3) Health and safety carries statutory inspection dates; there is no such date in a mailbox, so the capability with legal exposure would be the one advising from the thinnest evidence. (4) Compound: a register assembled from correspondence looks like a register and is not one, and the difference surfaces during an insurance claim.
+
+- Asset in Custody: closest type emitted today is `admin_contact` — close enough to be tempting, not close enough to be true
+
 ### `document_published` · obs_kind
 
 - blocks **Document** / `doc.approval_recorded_in_the_register` (would yield 10000 bp)
 - Document: Publication is a distinct event from approval and is currently unobservable. The gap between the two is where approved policies live unread for a quarter.
 
+### `employee_lifecycle_event` · l2_situation_type
+
+- blocks **[situation] Employee Lifecycle Event** / `admin.sit.employee_lifecycle_event` (would yield 10000 bp)
+- Employee Lifecycle Event: WHAT THE TYPE MUST MEAN. A person's employment state changing on a date, carrying the direction (join, change, leave), the effective date, and the set of administrative steps that state change requires — with each step's owner and completion state. Direction and date are not optional: the same checklist run backwards is offboarding, and a type that cannot tell them apart would advise granting access to someone who has left.
+WHAT WOULD EMIT IT. `employment.status`, `employment.effective_at`, `employment.direction` and per-step completion facts, from an HRIS or an identity provider. None has a writer and none should be extracted: employment status inferred from correspondence is a guess about a person's job, and being wrong about that is a category of wrong this system should not risk.
+WHAT GOES WRONG TODAY. Nothing fires for any of the six capabilities — onboarding_administration, offboarding_administration, access_and_identity_administration, employee_records_administration, attendance_and_leave, payroll_input_administration.
+WHY BINDING TO admin_contact WOULD BE WRONG, specifically. (1) Inference about a person's employment from their mail is a guess with consequences — an offboarding checklist raised against someone who has not left is both wrong and insulting. (2) The steps are invisible in correspondence. Access revocation happens in an identity provider, not in an email, so the capability that matters most would be blind precisely where it matters. (3) Employment data carries its own access constraints; putting it in a graph built for commercial correspondence, with commercial visibility rules, is a privacy design decision that no situation file should make by implication. (4) Compound: an offboarding surface that cannot see revocation would report the risk as handled.
+
+- Employee Lifecycle Event: closest type emitted today is `admin_contact` — close enough to be tempting, not close enough to be true
+
 ### `filing.reference_number` · fact_path
 
 - blocks **Filing** / `fil.acknowledgement_received` (would yield 10000 bp)
+
+### `obligation_falls_due` · l2_situation_type
+
+- blocks **[situation] Obligation Falls Due** / `admin.sit.obligation_falls_due` (would yield 10000 bp)
+- Obligation Falls Due: WHAT THE TYPE MUST MEAN. A named external obligation — a filing, a licence renewal, a board resolution, a data-protection deadline — with its statutory date, the authority that set it, its owner, and the evidence artefact that will prove it was met. It must carry whether the date is fixed or rolling, because a rolling one recurs and a system that forgets that is useful once.
+WHAT WOULD EMIT IT. `obligation.authority`, `obligation.due_at`, `obligation.owner`, `obligation.evidence_ref` and `obligation.recurrence`. None has a writer. The source is a compliance register or a filing calendar — a connector — not an inbox: an obligation exists whether or not anybody emailed about it, and an obligation nobody emailed about is precisely the one that gets missed.
+WHAT GOES WRONG TODAY. Nothing fires. All six capabilities — statutory_filing, licence_and_registration, policy_administration, board_and_secretarial, audit_support, data_protection_administration — are authored against a trigger that does not exist.
+WHY BINDING TO commitment.due_at WOULD BE WRONG, specifically. (1) Category error. A commitment is a promise a person made and can renegotiate; an obligation is imposed and cannot. Advice that treats a filing deadline as reschedulable is advice to breach. (2) Coverage inverted. The obligations that get missed are the ones nobody discussed, so binding to correspondence would cover exactly the obligations that were already visible and miss exactly the ones that were not. (3) No evidence chain. `commitment` carries no artefact reference, so `audit_support` — whose entire job is producing the proof — would have nothing to point at. (4) Compound: the system would show a compliance surface built from a founder's promises. In an audit that is not a gap, it is a misrepresentation.
+
+- Obligation Falls Due: closest type emitted today is `commitment.due_at` — close enough to be tempting, not close enough to be true
+
+### `spend_against_a_commitment` · l2_situation_type
+
+- blocks **[situation] Spend Against a Commitment** / `admin.sit.spend_against_a_commitment` (would yield 10000 bp)
+- Spend Against a Commitment: WHAT THE TYPE MUST MEAN. A committed amount or entitlement, the limit it is committed against, the amount consumed so far, and the state of the paperwork that authorises it. Both sides are required — a commitment with no limit is just a payment, and a limit with no commitments is just a number. The comparison IS the situation.
+WHAT WOULD EMIT IT. `purchase_order.id`, `purchase_order.matched_state`, `budget_line.limit`, `budget_line.consumed`, `expense.state` and `authorisation.reference`, from a finance system, an expense tool or a travel desk. No writer exists and none is an inbox: the authoritative record of a purchase order is in the system that raised it, and the email about it is a copy at best.
+WHAT GOES WRONG TODAY. Nothing fires for budget_tracking, purchase_order_management, travel_expense_administration or visa_and_documentation.
+WHY BINDING TO commitment.due_at WOULD BE WRONG, specifically. (1) A `commitment` is a promise a person made in a message; it carries no amount and no limit, so the comparison that defines this situation cannot be made. (2) It would fire on every dated promise — `admin.sit.money_owed_either_way` already reads those correctly, and a second door onto the same fact would spend the signal budget twice to say less. (3) Three-way match — order, receipt, invoice — is the core of purchase_order_management and needs three records the substrate has one of. (4) A visa application has a lodgement date and a decision date set by a consulate, which is an external clock of the same kind as a statutory obligation and must not be modelled as something we promised.
+
+- Spend Against a Commitment: closest type emitted today is `commitment.due_at` — close enough to be tempting, not close enough to be true
 
 ### `vendor.bank_account_fingerprint` · fact_path
 
@@ -1149,10 +1194,15 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - blocks **Leave Request** / `lvr.approver_absent_no_delegate` (would yield 9000 bp)
 - Leave Request: The highest-value false-positive suppressor across the whole Admin brain. It stops the system chasing, escalating and eventually alarming about people who are demonstrably not there — and it is shared with approval, escalation and commitment.
 
-### `derived.document_identity_cluster` · derived
+### `derived.document_cluster_key` · derived
 
 - blocks **Document** / `doc.version_conflict_in_circulation` (would yield 9000 bp)
-- Document: Content or title-plus-hash clustering across attachments and links. The expensive half of the ask, and the half that turns a version field into a conflict detector.
+- Document: SATISFIED 2026-08-29 by context/document_register.py. NAMED FOR WHAT WAS BUILT: this entry used to read derived.document_identity_cluster, a path nothing writes and nothing ever will, so the prose said satisfied while the machine-readable half sent a reader (and signal-backlog.md) after an identifier that appears nowhere in the engine. The key is the title reduced past its decoration (v2, _FINAL, Copy of, (1), dates) and compared by EXACT equality — deliberately not fuzzy, because a false merge hides a second document behind the first.
+
+### `derived.document_live_copies` · derived
+
+- blocks **Document** / `doc.version_conflict_in_circulation` (would yield 9000 bp)
+- Document: SATISFIED 2026-08-29 by context/document_register.py, and it is the second half of what the old derived.document_identity_cluster name was standing in for: how many members of the cluster were edited recently enough to still be live, with a content hash separating a fork from a mirrored copy. Together these two turn a filename into a conflict detector; neither of them, alone or together, says which copy is the right one.
 
 ### `derived.incident_window` · derived
 
@@ -1592,3 +1642,4 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 
 - blocks **Asset** / `ast.pool_item_held_beyond_the_pool_window` (would yield 6500 bp)
 - Asset: A learned per-category baseline, exactly like reply_cadence. Pool assets have no formal due date, so the only workable definition of overdue is statistical: far longer than this category is normally out for.
+

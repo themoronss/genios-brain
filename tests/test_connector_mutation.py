@@ -72,3 +72,82 @@ def test_drive_since_skips_download_of_unchanged_files():
     assert ids == ["new"]                                   # old file dropped
     # and crucially the old file was NEVER downloaded — one download call, for "new" only
     assert c._x.calls.count("GOOGLEDRIVE_DOWNLOAD_FILE") == 1
+
+
+# ── the fields-mask retry, which used to fire on every failure ──────────────────────────────
+
+class _FailingExec:
+    """Fails the first LIST with a given error, then succeeds. Counts the attempts, because the
+    cost this test is about is the SECOND CALL, not the final answer."""
+
+    def __init__(self, error: BaseException):
+        self._error = error
+        self.attempts: list[dict] = []
+
+    def execute(self, slug: str, arguments: dict) -> dict:
+        self.attempts.append(dict(arguments))
+        if len(self.attempts) == 1:
+            raise self._error
+        return {"files": []}
+
+
+def test_a_rejected_fields_mask_is_retried_once_without_it():
+    """The mask is an ENRICHMENT, never a dependency. `fields` is a Drive parameter, not a Composio
+    one, and whether it survives the unpinned tool wrapper is not something we control — so a
+    rejection of the argument must not stop the only call this connector has."""
+    c = _drive({})
+    c._x = _FailingExec(ValueError("400 Bad Request: unknown parameter 'fields'"))
+    assert c._list(limit=5, page_token=None) == {"files": []}
+    assert len(c._x.attempts) == 2
+    assert "fields" in c._x.attempts[0] and "fields" not in c._x.attempts[1]
+
+
+def test_an_auth_or_quota_failure_is_not_paid_for_twice():
+    """The bug: `except Exception` retried on EVERYTHING. An expired token, a 429 or an exhausted
+    quota has nothing to do with the mask, and dropping `fields` cannot fix any of them — so each
+    one cost a second identical call against the connector's only endpoint, doubling the pressure
+    at exactly the moment we are being rate-limited. The retry now needs positive evidence that the
+    ARGUMENT was rejected."""
+    for error in (RuntimeError("401 Unauthorized"),
+                  RuntimeError("429 Too Many Requests"),
+                  RuntimeError("403 quota exceeded for this project"),
+                  RuntimeError("connection reset by peer")):
+        c = _drive({})
+        c._x = _FailingExec(error)
+        try:
+            c._list(limit=5, page_token=None)
+        except Exception as raised:
+            assert raised is error, error
+        else:
+            raise AssertionError(f"{error!r} was swallowed by the mask retry")
+        assert len(c._x.attempts) == 1, f"{error!r} cost a second identical call"
+
+
+def test_a_provider_message_that_mentions_fields_while_denying_access_still_does_not_retry():
+    """The two hint lists are ordered, and this is why. A 403 body can quote the request back —
+    `fields` included — so a message-substring test that checked the mask hints first would read a
+    permission denial as an argument rejection and retry it."""
+    c = _drive({})
+    c._x = _FailingExec(RuntimeError("403 insufficient permission for fields=files(id,name)"))
+    try:
+        c._list(limit=5, page_token=None)
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("a 403 was swallowed")
+    assert len(c._x.attempts) == 1
+
+
+def test_a_hung_call_is_not_waited_out_twice():
+    """`composio_base.execute` bounds every call with `.result(timeout=...)`, so a hung Drive call
+    surfaces as TimeoutError. Retrying it makes the connector wait the whole deadline a second time
+    before the sweep learns anything — and the scheduler processes connections on one thread."""
+    c = _drive({})
+    c._x = _FailingExec(TimeoutError())
+    try:
+        c._list(limit=5, page_token=None)
+    except TimeoutError:
+        pass
+    else:
+        raise AssertionError("the deadline was swallowed")
+    assert len(c._x.attempts) == 1

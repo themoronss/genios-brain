@@ -275,8 +275,19 @@ class PermissionVerificationPlugin(_ConstraintPlugin):
 
     @staticmethod
     def _approval_declared(play: PlayDefinition) -> tuple[bool, Any]:
+        """Does this play respect the capability's human-approval policy?
+
+        `no_action` satisfies it. The policy exists so nothing REACHES the world without a human
+        saying yes; a do-nothing play reaches nothing, so demanding an approval boundary on it is
+        asking who authorised the absence of an act. This is not academic: the explicit WAIT
+        candidate every legacy capability now carries was eliminated on this check, and when the
+        wait candidate dies alongside a blocked primary, the whole decision is BLOCKED and no
+        signal is emitted at all.
+        """
         boundary = play.metadata.get("execution_boundary")
-        return (boundary == "human_approval_required" or "human_approval" in play.tags), boundary
+        declared = (boundary in ("human_approval_required", "no_action")
+                    or "human_approval" in play.tags)
+        return declared, boundary
 
     @staticmethod
     def _verification_guards(play: PlayDefinition) -> tuple[Mapping[str, Any], ...]:

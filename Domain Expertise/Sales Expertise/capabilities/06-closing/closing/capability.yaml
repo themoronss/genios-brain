@@ -3,26 +3,111 @@ identity:
   name: Closing
   domain: sales
   subdomain: closing
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Driving the final sequence: verbal agreement, paper, signature, and the mutual plan that
+  gets there. Closing is administration when qualification was done and rescue when it was not.
 
-description: >
-  Driving the final sequence: verbal agreement, paper, signature, and the mutual plan that
-  gets there. Closing is administration when qualification was done and rescue when it was
-  not.
+  '
+question: What is the last thing standing between here and signature?
 
-question: "What is the last thing standing between here and signature?"
+outcomes:
+- 'A named single obstacle rather than a general sense of nearly-there. Deals at this stage are
+  blocked by one thing at a time — a signature, an unanswered clause, an unbooked review — and the
+  capability''s output is that thing with an owner and a date, not an assessment of how close we are.'
+- 'Urgency borrowed from the buyer''s own dated need. A compelling event the buyer owns moves a deal;
+  a seller''s quarter-end moves nothing and signals that our interest is in our own calendar, which is
+  the one thing a buyer at this stage is watching for.'
+- 'Objections surfaced while they are still cheap. A trial close early in the sequence converts a
+  late crisis into an early conversation, and the cost of asking is a question the buyer was going to
+  answer eventually anyway.'
+- 'Every remaining step dated and owned by whoever actually performs it. A mutual plan is not a
+  courtesy document — it is the mechanism that makes the buyer''s internal delays visible before they
+  become our slipped date.'
+- 'Verbal agreement treated as a state, not an outcome. `verbal_yes` without paper is a promise
+  operating in exactly the window where budgets freeze and sponsors move, and the capability''s job
+  from that point is to shorten the window rather than to celebrate it.'
+- 'A recognised rescue. The negative outcome: where qualification was not done, closing cannot supply
+  it, and pressure applied to an unqualified deal converts a slow no into a fast one. Naming that is
+  more useful than a closing technique.'
 
+failure_modes:
+- 'PRESSURE SUBSTITUTED FOR PROCESS. Closing technique applied to a deal with no verified approver or
+  budget produces the appearance of urgency and no movement, because the obstacle was never the
+  buyer''s willingness.'
+- 'SELLER URGENCY LEAKING INTO THE CONVERSATION. Quarter-end language tells the buyer that a discount
+  is coming if they wait, which is both a delay and a discount, caused by asking.'
+- 'ASKING AND THEN TALKING. The silence after a clean close is where the buyer decides. Filling it
+  with reassurance answers an objection they had not made and reopens the decision.'
+- 'A MUTUAL PLAN THAT IS OURS. A sequence the buyer never agreed to is a seller''s wish list; the
+  value is entirely in their having committed to the dates.'
+- 'CELEBRATING THE VERBAL YES. Forecast moves, attention moves, and the deal enters its most fragile
+  period with less oversight than it had a week earlier.'
+- 'CHASING THE SIGNATURE INSTEAD OF THE BLOCKER. "Any update?" asks the buyer to do our diagnosis. The
+  useful question names the specific step we believe is outstanding and asks whether that is right.'
+
+kpis:
+- name: verbal_to_signature_days
+  unit: days
+  description: Time between agreement in principle and execution. The window in which deals are lost
+    for reasons unrelated to their merit, and the one number this capability can genuinely shorten.
+  direction: lower_is_better
+- name: named_blocker_share
+  unit: percent
+  description: Share of late-stage deals whose single obstacle is named with an owner. The alternative
+    is a status field saying "closing".
+  direction: higher_is_better
+- name: buyer_owned_event_share
+  unit: percent
+  description: Share of closes driven by a buyer's dated need rather than by our period end.
+  direction: higher_is_better
+- name: mutual_plan_agreement_rate
+  unit: percent
+  description: Share of late-stage deals where the buyer has explicitly agreed the remaining sequence.
+  direction: higher_is_better
+- name: late_stage_slip_rate
+  unit: percent
+  description: Share of deals that reached verbal agreement and then missed their own stated date.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.proposal_and_commercials.negotiation
+  - sales.qualification.decision_maker_identification
+  downstream:
+  - sales.closing.contract_management
+  - sales.closing.legal_review
+  - sales.post_sale_and_growth.onboarding
+  parallel:
+  - sales.closing.procurement
+  - sales.sales_management.deal_review
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached through `sales.sit.enterprise_deal` (`also_serves`),
+    bound to the `deal` type.
+
+    Bounding what it can do today: the live org carries zero `deal` situations, and `verbal_yes`,
+    `contract_requested` and `legal_review` all have zero observation rows. `proposal_sent` has 9 and
+    `timeline_slip` has 26, so the slip half of this capability has evidence and the agreement half
+    does not. The outcomes are written accordingly — they lean on named blockers and dated sequences,
+    which are recordable, rather than on detecting agreement, which currently is not.
+
+    No numbers: how long a verbal-to-signature window may run before it is a risk is Layer 4''s
+    arithmetic.
+
+    '
+  reviewed_at: '2026-08-27'
+
+admission:
+  accepted_content_hash: fc76c5711d061845f1d6cfdcbd3647fdc70f47a32baafe47080d26f43e356917

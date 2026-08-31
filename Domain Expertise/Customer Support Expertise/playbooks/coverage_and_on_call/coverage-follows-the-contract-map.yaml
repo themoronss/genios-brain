@@ -1,0 +1,88 @@
+identity:
+  id: customer_support.pb.coverage_and_on_call.coverage_follows_the_contract_map
+  name: Coverage follows the contract map
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.coverage_and_on_call
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Staffing hours and on-call depth are derived from what has been SOLD — the tiers, timezones
+    and response promises in live contracts — and re-derived when sales sells something new, not discovered
+    at the first 3am P1.
+
+when_to_use:
+  do_not_use_when:
+  - Coverage is uniform and unpromised. Where there is no contractual window, this is a staffing question rather than an entitlement one.
+steps:
+- order: 1
+  name: Start from what has been sold
+  description: >
+    Tiers, time zones and response promises in live contracts. Volume history tells you when
+    tickets arrived, not when we promised to answer.
+  actor: human
+  objects_read: [customer_support.obj.core.support_plan, customer_support.obj.core.customer_account]
+  produces: A coverage requirement map.
+  done_when: Every promised hour is on the map.
+- order: 2
+  name: Test reachable AND able
+  description: >
+    A rota of people without access or authority is a phone tree. Only one of those two tests is
+    usually run.
+  actor: human
+  objects_read: [customer_support.obj.core.support_agent]
+  done_when: The person on call can actually act.
+- order: 3
+  name: Define escalation depth
+  description: >
+    The on-call person needs to know who they may wake and under what conditions, before the night
+    it matters.
+  actor: human
+  done_when: Depth two and three exist and are named.
+- order: 4
+  name: Re-derive when something new is sold
+  description: >
+    A coverage model is a snapshot of last quarter's contracts. It ages on every deal in a new
+    region or at a new tier, and nobody owns noticing.
+  actor: human
+  objects_read: [customer_support.obj.core.coverage_window]
+  done_when: The map has a trigger, not just a review date.
+- order: 5
+  name: Raise the gap before it is sold again
+  description: >
+    A promise nobody can cover is cheaper to refuse at the negotiation than to discover at 3am.
+  actor: human
+  done_when: Uncoverable commitments are named to the people making them.
+objects_used: [customer_support.obj.core.support_plan, customer_support.obj.core.coverage_window, customer_support.obj.core.support_agent,
+               customer_support.obj.core.customer_account, customer_support.obj.core.escalation_owner]
+limits:
+- 'It maps and staffs; it does not create headcount, and the honest output is often a stated gap.'
+- 'Step 1 requires visibility of contracts, which support frequently does not have.'
+failure_modes:
+- 'Step 4 without an owner, so re-derivation happens after the first incident in the new window.'
+- 'Step 2 satisfied by a name on a rota, which is reachable and says nothing about able.'
+variants:
+- applies_to: follow_the_sun
+  change: Steps 1 and 3 dominate, and the handover between regions is where the gap actually sits.
+  why: Coverage is continuous on paper and discontinuous at the boundary.
+- applies_to: outsourced_bpo
+  change: Step 2 must be verified across the boundary, where tier labels substitute for capability.
+  why: The provider abstracts exactly what this step is testing.
+references:
+- title: On-call and coverage design
+  kind: practitioner
+  note: Where chronic paging is treated as a staffing signal rather than as a commitment signal.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 4 has no owner in most organisations, which is why coverage models describe the
+    contracts that existed when they were written. The trigger has to be a sale, not a calendar.

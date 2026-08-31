@@ -1,0 +1,66 @@
+identity:
+  id: admin.heu.health_and_safety_administration.near_misses_are_the_cheapest_teachers
+  name: Near-misses are the cheapest teachers
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.health_and_safety_administration
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every accident was preceded by near-misses nobody recorded. A near-miss log with follow-ups
+    is the highest-ROI safety instrument an office can run.
+  answers:
+  - What predicts workplace accidents?
+
+heuristic:
+  statement: >
+    Every accident was preceded by near misses nobody recorded. A near-miss log with follow-ups is
+    the highest-return safety instrument an office can run.
+  why: >
+    Serious incidents are rare, which makes them useless as a learning signal — by the time you have
+    enough of them to see a pattern, the pattern has already cost somebody. Near misses share the
+    same causes and occur far more often, so they are the only source of data available in advance.
+    They are also free: nobody was hurt, nothing was damaged, and the only cost is somebody taking
+    two minutes to say what nearly happened.
+  confidence_bp: 8500
+  applies_when: Any workplace with recurring physical activity, however low-hazard it appears.
+  breaks_down_when: >
+    Reporting is unsafe. Where a near-miss report becomes a performance conversation or an
+    investigation of the reporter, the rate falls to zero and the silence is read as safety — which
+    is worse than having no log, because it produces confidence. It also breaks down where the log
+    is collected and never actioned: an organisation with a documented list of known risks and no
+    response has manufactured evidence against itself and taught its staff that reporting is
+    pointless.
+  reads: [admin.obj.core.escalation, admin.obj.core.action_item]
+  contradicts: [admin.heu.maintenance_coordination.deferred_maintenance_is_borrowing]
+limits:
+- 'It concerns learning, not compliance. The statutory obligations exist independently of any near-miss programme.'
+- 'The signal is only as good as the reporting rate, which is a cultural variable this heuristic cannot set.'
+failure_modes:
+- 'Reporting rate treated as a bad number, which drives it to zero and is then celebrated.'
+- 'Collected without follow-up, which converts a safety instrument into documented negligence.'
+variants:
+- applies_to: distributed
+  change: Largely inapplicable to domestic workspaces where there is no shared environment to observe.
+  why: Near misses are noticed by bystanders and there are none.
+- applies_to: regulated
+  change: Near-miss reporting may itself be mandated, which fixes the rate problem and creates the follow-up problem.
+  why: Volume arrives whether or not the response capacity does.
+references:
+- title: Health and safety statutory duties
+  kind: standard
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the one that inverts the metric: where reporting is unsafe the
+    rate goes to zero and the silence is read as safety, which is worse than no log because it
+    produces confidence.

@@ -1,27 +1,76 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.admin_operations.admin_analytics
   name: Admin Analytics
   domain: admin
   subdomain: admin_operations
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Measuring the function: volumes, cycle times, backlog, rework, cost per transaction and
+  the demand pattern behind them. The purpose is to find the repeated request that should have been a
+  self-service answer, which is where almost all administrative capacity is recovered.
 
-description: >
-  Measuring the function: volumes, cycle times, backlog, rework, cost per transaction and the
-  demand pattern behind them. The purpose is to find the repeated request that should have
-  been a self-service answer, which is where almost all administrative capacity is recovered.
+  '
+question: Where is administrative effort actually going, and what is it costing?
 
-question: "Where is administrative effort actually going, and what is it costing?"
+outcomes:
+- 'One honest page monthly — volumes, cycle times, backlog, cost per request class — because an unmeasured support function is invisible at budget time.'
+- 'The demand pattern behind the volume, not just the volume. The purpose is to find the repeated request that should have been a self-service page.'
+- 'Rework counted separately, since a request handled twice is a different problem from two requests.'
+- 'Cost per transaction by class, which is what makes an automation argument arguable rather than asserted.'
+- 'The negative outcome: a service reported as NOT worth its cost. A function that only ever reports growth is advocating rather than measuring.'
+failure_modes:
+- 'REPORTING VOLUME ALONE, which grows with the organisation and says nothing about whether the function is working.'
+- 'AVERAGES ONLY, so the request class that takes three weeks is invisible inside a comfortable mean.'
+- 'NO REWORK MEASURE, which makes a function that does everything twice look busy rather than broken.'
+- 'MEASURING TO JUSTIFY RATHER THAN TO LEARN, which is detectable and destroys the credibility of every subsequent number.'
+- 'A DASHBOARD NOBODY READS. The page has to be narrated, because a support function''s work is invisible by design and numbers do not narrate themselves.'
+kpis:
+- name: cost_per_request_class
+  unit: money
+  description: What each class actually costs to serve. The number that makes automation arguments concrete.
+  direction: lower_is_better
+- name: rework_rate
+  unit: percent
+  description: Requests handled more than once. Distinguishes busy from broken.
+  direction: lower_is_better
+- name: repeat_question_share
+  unit: percent
+  description: Requests that are the same question asked again. Each one is a self-service page that does not exist.
+  direction: lower_is_better
+- name: report_readership
+  unit: percent
+  description: Whether the monthly page is actually read. An unread measurement programme is a cost with no output.
+  direction: higher_is_better
+handoffs:
+  upstream: [admin.admin_operations.request_intake, admin.admin_operations.service_level_management]
+  downstream: [admin.admin_operations.process_improvement, admin.records_and_documentation.knowledge_base_maintenance,
+               admin.finance_administration.budget_tracking]
+  parallel: [admin.admin_operations.sop_management, admin.contract_and_vendor.vendor_performance_management]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, outsourced, hybrid, automated_first]
+  offerings: [coordinative, assurance]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. derived.approval_latency and
+    admin_request_volume are planned_substrate with no writer.
+
+    report_readership is an unusual KPI and it belongs here because of what the description
+    says: admin done well disappears. A measurement programme nobody reads is a cost with no
+    output, and this is the one function whose existence proof depends on somebody having read
+    the page.
+
+    repeat_question_share is the capability's actual purpose expressed as a number — every
+    repeated request is a self-service page that does not exist, and finding them is worth more
+    than any efficiency gain on handling them.
+
+admission:
+  accepted_content_hash: 64b8443d81dd3d260d3cf23a14ed1796462bed5624bdd3d966c78416d8dfc210

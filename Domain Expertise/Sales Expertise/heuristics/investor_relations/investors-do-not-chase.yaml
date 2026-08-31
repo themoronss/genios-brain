@@ -1,0 +1,65 @@
+identity:
+  id: sales.heu.investor_relations.investors_do_not_chase
+  name: Investors do not chase
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.investor_relations.investor_relations
+  subdomain: investor_relations
+  version: 1.0.0
+  status: draft
+  aliases:
+  - Silence is not neutral in a raise
+purpose:
+  statement: Corrects the reflex a seller brings to a quiet thread. In a deal, a buyer who wants the
+    product will eventually surface; in a raise, the counterparty has no such incentive and attrition
+    is free to them. So a conversation waiting on us does not stall visibly — it disappears, and it
+    does so without ever producing a signal that anything went wrong.
+  answers:
+  - Whose silence should worry me — theirs or mine?
+  - Is a quiet investor thread evidence of anything?
+heuristic:
+  statement: When the turn is ours, the clock is running against us and nobody will tell us. Age the
+    conversations where we owe the reply before the ones where they do.
+  why: 'A fund sees far more companies than it can fund and loses nothing by dropping one. There is
+    no cost to them in never following up, and a partial reply left unanswered reads to them as a company
+    that lost momentum — the one attribute a raise cannot afford to project. The asymmetry is structural:
+    our silence is informative to them, theirs is not informative to us.'
+  confidence_bp: 7500
+  applies_when: The last message came from the investing party and something was asked or offered in
+    it.
+  breaks_down_when: 'Three regimes. A deliberate hold — waiting for a metric or a lead before replying
+    — looks identical from the correspondence and is often correct. A courtesy close leaves the turn
+    nominally ours with nothing owed. And inside a programme''s application window the programme''s
+    own deadline dominates: their calendar outranks our turn.'
+  reads:
+  - thread.ball_in_court
+  - thread.last_inbound
+  - derived.engagement
+  - sales.obj.investor_relations.investor_conversation
+objects_used:
+- sales.obj.investor_relations.investor_conversation
+- sales.obj.core.company
+outcomes:
+- Conversations waiting on us sort above conversations waiting on them, which is the reverse of the
+  sales default.
+- Ball-in-court age becomes the primary number on this set rather than days-since-contact.
+failure_modes:
+- Reading it as a mandate to reply immediately with nothing to say. A fast empty reply spends the turn
+  without moving anything.
+- Applying it to a courtesy close, producing a chase where no answer was ever expected.
+limits:
+- It is a statement about whose turn it is, not about whether the investor is interested. A prompt reply
+  to a party that has already decided changes nothing.
+metrics:
+- name: ball_in_our_court_age
+  unit: days
+  direction: lower_is_better
+  description: Age of the oldest conversation waiting on us.
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-25'
+  review_status: approved
+  confidence: experimental

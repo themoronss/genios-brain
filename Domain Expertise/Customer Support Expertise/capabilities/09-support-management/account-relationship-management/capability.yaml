@@ -1,42 +1,124 @@
-# Stub. Identity, purpose and load-set only — see quality-assurance in this subdomain for the
-# shape a promoted capability takes.
-
 identity:
   id: customer_support.support_management.account_relationship_management
   name: Account Relationship Management
   domain: customer_support
   subdomain: support_management
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Holding a support relationship with a named account across time, rather than answering its
+  tickets one at a time. This is the technical-account-management motion: the same people, a known environment,
+  a history of what has already gone wrong, and a standing obligation that does not reset when a ticket
+  closes. The unit of work is the relationship, so the signals that matter are the ones no single ticket
+  contains — an account that has stopped writing in, a new named contact nobody has met, an escalation
+  that was resolved technically and never repaired socially. It is also where support silence is read
+  correctly: from an account that used to file tickets, quiet is a warning rather than a result.
 
-description: >
-  Holding a support relationship with a named account across time, rather than answering its
-  tickets one at a time. This is the technical-account-management motion: the same people, a
-  known environment, a history of what has already gone wrong, and a standing obligation that
-  does not reset when a ticket closes. The unit of work is the relationship, so the signals that
-  matter are the ones no single ticket contains — an account that has stopped writing in, a new
-  named contact nobody has met, an escalation that was resolved technically and never repaired
-  socially. It is also where support silence is read correctly: from an account that used to file
-  tickets, quiet is a warning rather than a result.
+  '
+question: Where does the support relationship with this account actually stand, between tickets?
 
-question: "Where does the support relationship with this account actually stand, between tickets?"
+outcomes:
+- 'A stated position on where the relationship stands BETWEEN tickets. The unit of work is the
+  relationship, so the deliverable exists on the days when nothing is open — a capability that only
+  produces output when a ticket does is ticket handling with a longer name.'
+- 'Silence from a previously active account read as a warning rather than a result. This is the one
+  place in support where quiet is dangerous, and every queue metric improves when it happens.'
+- 'A new named contact identified and met before they file their first ticket. The successor nobody
+  introduced is how an account relationship decays with nothing visibly breaking.'
+- 'Escalations closed SOCIALLY as well as technically. A resolved escalation that was never repaired
+  with the person who raised it leaves the relationship worse than before it was fixed, and the
+  ticket says closed.'
+- 'Repeat patterns named across tickets — the same product area three times, the same question from
+  three people. Individually each is handled; together they are a finding no single case contains.'
+- 'The negative outcome: an account correctly assessed as needing NOTHING. Most quiet accounts are
+  fine, and a motion that cannot produce "no action" will produce a check-in for every one of them
+  until the account team stops reading it.'
+
+failure_modes:
+- 'READING QUIET AS HEALTHY. Every operational metric improves when an account stops writing in, and
+  the churn arrives with no warning and a six-month-old last ticket.'
+- 'CHECKING IN WITH NOTHING TO SAY. Outreach whose only content is asking how things are going
+  spends the relationship rather than building it, and it is what a cadence with no substance
+  degenerates into.'
+- 'CHASING AN ACCOUNT WE OWE. The elapsed-time instrument is direction-blind. A check-in sent to an
+  account waiting on our answer proves we neither replied nor noticed.'
+- 'MANAGING THE ACCOUNT THROUGH ITS LOUDEST CONTACT. The most active person is rarely the one who
+  decides, and a relationship built entirely on them is one departure from having no route in.'
+- 'RESETTING ON TICKET CLOSE. Account strain outlives the case that caused it; a relationship view
+  that clears when the ticket does reads green through the month an account decides to leave.'
+- 'DUPLICATING THE ACCOUNT TEAM. Support sees things sales does not and vice versa; running a
+  parallel relationship without telling them produces two uncoordinated conversations with the same
+  customer, which the customer notices immediately.'
+
+kpis:
+- name: account_silence_misread_rate
+  unit: percent
+  description: Share of accounts read as settled that turned out to be disengaged. The feedback loop
+    for the judgement this capability most often gets wrong.
+  direction: lower_is_better
+- name: contact_coverage
+  unit: percent
+  description: Share of accounts with more than one established contact. The single-point-of-failure
+    measure.
+  direction: higher_is_better
+- name: post_escalation_repair_rate
+  unit: percent
+  description: Share of escalations followed by a relationship-level close, not just a technical one.
+  direction: higher_is_better
+- name: support_originated_churn_warning_lead_time
+  unit: days
+  description: How far ahead of a churn event support raised a concern. Support usually sees it
+    first; this measures whether anyone was told.
+  direction: higher_is_better
+- name: no_action_share
+  unit: percent
+  description: Share of account reviews concluding that nothing was needed. A target band — near
+    zero means the motion is manufacturing contact, near total means it is not looking.
+  direction: target_band
+
+handoffs:
+  upstream:
+  - customer_support.voice_of_customer.churn_signal_detection
+  - customer_support.escalation_and_incident.escalation_management
+  - customer_support.entitlement_and_sla.entitlement_verification
+  downstream:
+  - customer_support.voice_of_customer.feedback_synthesis
+  - customer_support.customer_communication.proactive_status_updates
+  - customer_support.support_management.ticket_review
+  parallel:
+  - customer_support.entitlement_and_sla.commitment_tracking
+  - customer_support.support_operations.cost_to_serve
+
+applies_to:
+  models: [b2b, b2b2c, enterprise_support, mid_market_support, named_tam, premium_paid_support,
+           tiered_support, follow_the_sun, proactive_support, b2b2c_reseller_support, field_service]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following quality-assurance in this subdomain. This is
-    the capability that owns the two situations in this domain binding `champion_quiet` and
-    `intro_followup`, which makes it one of the few able to route on day one — see
-    situations/named-contact-gone-quiet.yaml and situations/new-account-contact.yaml. The
-    expertise worth encoding first is the inversion against sales: sales reads a quiet contact as
-    neutral and support should read it as decay, because a supported account that has stopped
-    asking for help has usually either solved its problem elsewhere or stopped expecting us to
-    solve it. Second is that contact-handover moments are where entitlement knowledge is lost, and
-    the first experience a new named contact has sets the tone for the remainder of the contract.
+    Promoted out of Phase-1 stub. Reachable from the live relationship and support_contact
+    routes, and the owner of both customer_support.obj.core.customer_account and
+    customer_support.obj.core.named_contact — the two objects authored alongside it, whose
+    absence was aborting four of the design partner's live routes.
+
+    The best-served capability in this batch. Its unit of work is the relationship rather than
+    the ticket, and the relationship is exactly what a correspondence-only substrate can see:
+    thread.last_inbound and thread.last_outbound make silence measurable from both sides,
+    thread.ball_in_court decides which of the two readings of silence applies,
+    derived.engagement and derived.momentum give a trend against the account's own history, and
+    party.role separates the contact who is loud from the contact who decides.
+
+    The outcome most likely to be dropped in implementation is the last one. Most quiet accounts
+    are fine, and a motion that cannot conclude 'no action' will generate a check-in for every
+    one of them until the account team stops reading its cards. That is why no_action_share is a
+    target band rather than something to minimise.
+
+admission:
+  accepted_content_hash: 3f69e33f603363b177376c394056a070af117197e2a48d793144685dbb28c425

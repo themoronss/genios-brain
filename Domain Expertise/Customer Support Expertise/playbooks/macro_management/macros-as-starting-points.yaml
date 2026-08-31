@@ -1,0 +1,90 @@
+identity:
+  id: customer_support.pb.macro_management.macros_as_starting_points
+  name: Macros as starting points
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.macro_management
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A macro is scaffolding the agent personalises — name, specifics, next step — never a send-as-is.
+    Macro discipline is measured by edit-before-send, because unedited macros are how customers learn
+    they are tickets.
+
+when_to_use:
+  do_not_use_when:
+  - The reply is an apology for a specific failure. A canned apology is worse than none, because it proves the apology was not about them.
+steps:
+- order: 1
+  name: Treat the macro as a starting point
+  description: >
+    Scaffolding to be personalised — their name, their specifics, their next step. Send-as-is is
+    the failure this whole capability exists to prevent.
+  actor: human
+  objects_read: [customer_support.obj.core.knowledge_article]
+  done_when: The sent message differs from the template.
+- order: 2
+  name: Answer the question they asked
+  description: >
+    A macro adjacent to their question tells the customer, unmistakably, that nobody read the
+    message.
+  actor: human
+  done_when: The macro fits the actual question rather than the category.
+- order: 3
+  name: Keep the library small enough to navigate
+  description: >
+    Every addition makes the right one harder to find. Past a point agents stop searching and write
+    from scratch, which is the library costing money and saving none.
+  actor: human
+  done_when: Macros were replaced rather than added.
+- order: 4
+  name: Retire on answer change
+  description: >
+    A stale macro is a stale article that also sounds personal, which is a worse combination than
+    either alone.
+  actor: human
+  done_when: Macros track the underlying knowledge.
+- order: 5
+  name: Measure edits, not usage
+  description: >
+    Usage rate rewards send-as-is. Edit-before-send is the number that describes the behaviour we
+    want.
+  actor: system
+  done_when: The reported metric is the edit rate.
+objects_used: [customer_support.obj.core.knowledge_article, customer_support.obj.core.ticket, customer_support.obj.core.requester,
+               customer_support.obj.core.intent]
+limits:
+- 'It speeds correct replies. A macro cannot make a wrong answer right, and a well-personalised wrong answer is still wrong.'
+- 'Step 5 needs edit tracking most helpdesk tooling does not surface.'
+failure_modes:
+- 'Step 3 abandoned because deleting a macro somebody uses feels obstructive, so the library grows past usability.'
+- 'Step 1 reduced to inserting a merge field, which produces a personalised template that reads exactly like a template.'
+variants:
+- applies_to: outsourced_bpo
+  change: Send-as-is is the default behaviour under handle-time pressure, so step 5 has to be contractual rather than cultural.
+  why: The incentive runs the other way.
+- applies_to: b2c
+  change: Volume makes macros essential and personalisation shallow; the realistic target is the first line, not the whole message.
+  why: Time per ticket is measured in seconds.
+- applies_to: enterprise_support
+  change: Macros are scaffolding only, and a detected template on a named account is a relationship event.
+  why: The customer expects to be known.
+references:
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+  note: Its findings on perceived effort explain why a detected template raises effort even when the content was correct.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is the structural fix. Every helpdesk reports macro usage rate, which rewards exactly
+    the send-as-is behaviour steps 1 and 2 are trying to prevent.

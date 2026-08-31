@@ -20,6 +20,51 @@ from genios_engine.reason.authority import (
 CLAIM_MINUTES = 15
 
 
+def _agent_scope(c, org_id: str, agent_id: str) -> dict:
+    """The agent's stored data-scope policy (segments/fact_types/min_confidence/max_age_days). This
+    is what the dashboard sets; it MUST be enforced on every read/claim so a scoped key can't read
+    outside its slice. Missing/blank → empty scope = no restriction (owner-equivalent)."""
+    r = c.execute(text("select scope from agent_registry where org_id=:o and agent_id=:a"),
+                  {"o": org_id, "a": agent_id}).first()
+    s = (r.scope if r and r.scope is not None else {}) or {}
+    if isinstance(s, str):
+        try:
+            s = json.loads(s or "{}")
+        except Exception:      # noqa: BLE001
+            s = {}
+    return s if isinstance(s, dict) else {}
+
+
+def _scope_filter(scope: dict, params: dict, now: datetime) -> str:
+    """Extra SQL enforcing the agent scope (mutates params). Empty/None dimensions = unrestricted.
+    Signals alias is `s`. connectors are not filterable on signals yet (no source column) — tracked."""
+    frags = []
+    segs = scope.get("segments")
+    if segs:                                   # only these segments' subjects are visible
+        frags.append("s.subject_node_id in (select node_id from segment_members "
+                     "where org_id=:o and segment_id = any(:_segs))")
+        params["_segs"] = list(segs)
+    fts = scope.get("fact_types")
+    if fts:                                     # only these reason_codes
+        frags.append("s.reason_code = any(:_fts)")
+        params["_fts"] = list(fts)
+    try:
+        minc = float(scope.get("min_confidence") or 0)
+    except (TypeError, ValueError):
+        minc = 0.0
+    if minc > 0:
+        frags.append("s.score >= :_minc")
+        params["_minc"] = minc
+    maxage = scope.get("max_age_days")
+    if maxage:
+        try:
+            frags.append("s.created_at >= :_agecut")
+            params["_agecut"] = now - timedelta(days=int(maxage))
+        except (TypeError, ValueError):
+            frags.pop()
+    return (" and " + " and ".join(frags)) if frags else ""
+
+
 def _meter(c, org_id, agent_id, field, period):
     c.execute(text(
         f"insert into agent_metering (org_id, agent_id, period, {field}) values (:o,:a,:p,1) "
@@ -45,8 +90,9 @@ def poll_signals(store, org_id: str, agent_id: str, *, since=None, eval_time=Non
     params = {"o": org_id, "authority_time": eval_time}
     if since is not None:
         q += " and k.created_at > :since"; params["since"] = since
-    q += " order by selected_rc.final_utility_bp desc, k.card_id"
     with store.engine.begin() as c:
+        q += _scope_filter(_agent_scope(c, org_id, agent_id), params, eval_time)   # enforce agent scope
+        q += " order by selected_rc.final_utility_bp desc, k.card_id"
         rows = [dict(r) for r in c.execute(text(q), params).mappings()]
         _meter(c, org_id, agent_id, "reads", _period(eval_time))
     return rows
@@ -55,7 +101,9 @@ def poll_signals(store, org_id: str, agent_id: str, *, since=None, eval_time=Non
 def get_artifact(store, org_id: str, signal_id: str, agent_id: str, *, eval_time=None) -> dict | None:
     """GET /v1/signals/{id}/artifact — the pre-rendered draft (a DB read; pure margin by design)."""
     eval_time = eval_time or datetime.now(timezone.utc)
+    params = {"o": org_id, "s": signal_id, "authority_time": eval_time}
     with store.engine.begin() as c:
+        scope_sql = _scope_filter(_agent_scope(c, org_id, agent_id), params, eval_time)
         r = c.execute(text(
             "select k.artifact, k.headline, k.situation, k.render_mode from cards k "
             "join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
@@ -63,9 +111,8 @@ def get_artifact(store, org_id: str, signal_id: str, agent_id: str, *, eval_time
             " where k.org_id=:o and k.signal_id=:s "
             "and k.state in ('queued','surfaced','snoozed','claimed','delivered') "
             "and k.expires_at > :authority_time and s.status='open' and "
-            + AUTHORITATIVE_SIGNAL_PREDICATE),
-            {"o": org_id, "s": signal_id,
-             "authority_time": eval_time}).mappings().first()
+            + AUTHORITATIVE_SIGNAL_PREDICATE + scope_sql),   # enforce agent scope
+            params).mappings().first()
         _meter(c, org_id, agent_id, "reads", _period(eval_time))
     return dict(r) if r else None
 
@@ -80,6 +127,8 @@ def claim(store, org_id: str, signal_id: str, agent_id: str, *, eval_time=None) 
         # the SELECT and the grant.
         c.execute(text("select graph_version from graph_versions where org_id=:o for share"),
                   {"o": org_id})
+        claim_params = {"o": org_id, "s": signal_id, "authority_time": eval_time}
+        scope_sql = _scope_filter(_agent_scope(c, org_id, agent_id), claim_params, eval_time)
         card = c.execute(text(
             "select k.card_id, k.state, k.expires_at, "
             "(rcap.manifest->'policies') ? 'human_approval_required' as approval_required "
@@ -88,11 +137,10 @@ def claim(store, org_id: str, signal_id: str, agent_id: str, *, eval_time=None) 
             " where k.org_id=:o and k.signal_id=:s "
             "and k.state in ('queued','surfaced','snoozed','delivered','claimed') "
             "and k.expires_at > :authority_time and s.status='open' and "
-            + AUTHORITATIVE_SIGNAL_PREDICATE +
+            + AUTHORITATIVE_SIGNAL_PREDICATE + scope_sql +   # enforce agent scope before granting the lock
             " for update of k, s for share of rr, ro, selected_rc, rcap, authority_ctx, "
             "authority_cfg, authority_pack"),
-            {"o": org_id, "s": signal_id,
-             "authority_time": eval_time}).mappings().first()
+            claim_params).mappings().first()
         if card is None:
             return {"ok": False, "status": 404, "error": "no_card"}
         if card["approval_required"]:

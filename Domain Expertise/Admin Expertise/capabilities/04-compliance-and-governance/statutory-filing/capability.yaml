@@ -1,28 +1,75 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.compliance_and_governance.statutory_filing
   name: Statutory Filing
   domain: admin
   subdomain: compliance_and_governance
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Running the statutory calendar: annual returns, tax filings, regulatory submissions and
+  registrations, each with a fixed external deadline that does not negotiate. Filing deadlines are the
+  only administrative dates with automatic financial penalties attached, which makes them the ones least
+  tolerant of a manual reminder.
 
-description: >
-  Running the statutory calendar: annual returns, tax filings, regulatory submissions and
-  registrations, each with a fixed external deadline that does not negotiate. Filing deadlines
-  are the only administrative dates with automatic financial penalties attached, which makes
-  them the ones least tolerant of a manual reminder.
+  '
+question: What must be filed with which authority, by when, and has it been submitted?
 
-question: "What must be filed with which authority, by when, and has it been submitted?"
+outcomes:
+- 'One calendar of every statutory obligation, worked BACKWARDS from the deadline through review, preparation and data collection.'
+- 'The data-needed date, not just the file-by date. Late filings are almost never late submissions; they are late inputs.'
+- 'A preparer and a reviewer named per filing. Same-person prepare-and-file is where the arithmetic errors survive.'
+- 'Submission confirmed and evidenced, not assumed from a sent form. Rejections arrive quietly and the deadline does not move.'
+- 'The negative outcome: an extension SOUGHT deliberately, in advance, where the regime allows it — which is a decision, unlike a late filing.'
+failure_modes:
+- 'DIARISING THE DEADLINE ONLY. Every step before it is then improvised, and the improvisation happens in the last week.'
+- 'LAST-MINUTE PREPARATION. Statutory filings are the one class of administrative work with automatic penalties, and the errors made under time pressure are the ones that trigger correspondence for months.'
+- 'ASSUMING SUBMITTED MEANS ACCEPTED. A rejected filing is an unfiled filing and the notification is easy to miss.'
+- 'TREATING THE PENALTY AS THE COST. Lost good standing, banking friction and diligence flags all surface later and are larger.'
+- 'ONE CALENDAR ACROSS ENTITIES. Deadlines are per registrant, and a merged view hides the one that is different.'
+kpis:
+- name: on_time_filing_rate
+  unit: percent
+  direction: higher_is_better
+  description: Filings submitted and accepted by the statutory date.
+- name: data_ready_lead_time
+  unit: days
+  description: How early the inputs were complete. The leading indicator; the filing date is the lagging one.
+  direction: higher_is_better
+- name: rejection_rate
+  unit: percent
+  description: Submissions bounced back. Almost entirely a function of preparation time.
+  direction: lower_is_better
+- name: penalty_incidents
+  unit: count
+  direction: lower_is_better
+  description: Automatic penalties incurred. The visible cost, and the smallest one.
+handoffs:
+  upstream: [admin.finance_administration.budget_tracking, admin.compliance_and_governance.board_and_secretarial,
+             admin.people_administration.payroll_input_administration]
+  downstream: [admin.compliance_and_governance.audit_support, admin.compliance_and_governance.licence_and_registration]
+  parallel: [admin.records_and_documentation.retention_and_archival, admin.finance_administration.payables_administration]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, outsourced, hybrid, startup_lean]
+  offerings: [assurance, transactional]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. filing_due and filing_overdue are
+    planned_substrate with no writer, and obligation.due_at, .authority and .jurisdiction do not
+    exist in the graph.
+
+    This is the Admin domain's clearest instance of its own thesis — most administrative
+    deadlines are EXTERNAL and non-negotiable, and no amount of prioritisation moves them. It is
+    also the only class of administrative work with automatic financial penalties, which is why
+    the KPI set puts data_ready_lead_time above on_time_filing_rate: by the time the filing date
+    is missed, everything that caused it happened weeks earlier.
+
+admission:
+  accepted_content_hash: 77dfb557820dd4bba1ee1333c371d54d9526298e3bace1f798f0d1fa898cd819

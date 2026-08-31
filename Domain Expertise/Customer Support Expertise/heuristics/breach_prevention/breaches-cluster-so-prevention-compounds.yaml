@@ -1,0 +1,85 @@
+identity:
+  id: customer_support.heu.breach_prevention.breaches_cluster_so_prevention_compounds
+  name: Breaches cluster, so prevention compounds
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.breach_prevention
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: stable
+purpose:
+  statement: >
+    Breaches do not arrive independently. They arrive together, because the conditions that cause one
+    — an absent owner, a coverage gap, a volume spike — cause all of them, which means the earliest
+    intervention prevents several and the latest prevents one.
+  answers:
+  - Why is an hour of prevention worth more than a day of recovery?
+  - What should a shift do first when several cases are at risk?
+
+heuristic:
+  statement: >
+    When one case is about to breach, look for the shared cause rather than the case. Breaches are a
+    symptom of a condition, and the condition is usually one person, one queue or one hour.
+  why: >
+    Independent failures would be spread evenly across the week; observed breaches are not. They
+    concentrate around handovers, absences and spikes, because those conditions apply to every case in
+    the same bucket simultaneously. Treating each breach as its own incident means fixing the same
+    cause repeatedly, one ticket at a time, while it continues to generate more.
+  confidence_bp: 7500
+  applies_when: More than one case in the same queue, shift or assignee is forecast at risk.
+  breaks_down_when: >
+    The cases are genuinely unrelated — a hard defect, an unavailable customer, an external
+    dependency. Searching for a shared cause there wastes the window that individual attention would
+    have used, and the search feels productive while it is happening. It also breaks down in very
+    small queues, where two at-risk cases is a coincidence rather than a pattern and treating it as
+    systemic produces a reorganisation over noise.
+  reads:
+  - customer_support.obj.core.backlog
+  - customer_support.obj.core.coverage_window
+  - customer_support.obj.core.support_agent
+  contradicts:
+  - customer_support.heu.commitment_tracking.the_small_promises_carry_the_relationship
+  pattern_ref:
+  - account.load_is_concentrated_on_one_product_area
+
+limits:
+- It says nothing about which breach matters most. Clustering is about cause; account stake and severity decide order.
+- >
+  It needs enough volume for a cluster to be distinguishable from coincidence, which most small
+  queues do not have.
+
+failure_modes:
+- >
+  Systemic explanations found where none exists. The search for a shared cause is satisfying and
+  consumes exactly the window that individual intervention needed.
+- >
+  Used to defer individual action until the pattern is understood. The cheap intervention per case
+  and the search for the cause are concurrent, not sequential.
+
+variants:
+- applies_to: follow_the_sun
+  change: The dominant cluster is the handover hour, and it is predictable in advance rather than detected.
+  why: The condition recurs on a schedule, which makes it preventable rather than merely explicable.
+- applies_to: outsourced_bpo
+  change: Clusters often follow shift rosters that are invisible from our side, so the pattern is detectable and the cause is not.
+  why: The organisational boundary hides the variable that explains it.
+
+references:
+- title: The Practice of Cloud System Administration
+  kind: book
+  author: Limoncelli, Chalup, Hogan
+  note: Its treatment of correlated failure — that shared conditions produce simultaneous symptoms — is the same argument applied to a queue rather than to a fleet.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    `contradicts` names the small-promises heuristic because under load they genuinely disagree: this
+    one says work the cluster of contractual clocks, that one says the uncontracted callback is what
+    the customer will remember. Both are right and the trade is made per case, not by policy.

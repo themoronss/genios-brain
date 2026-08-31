@@ -1,0 +1,113 @@
+# The closing subdomain's door. `legal_review` and `procurement` already reach it through
+# `sales.sit.enterprise_deal`; `closing` and `contract_management` did not, which left the
+# subdomain able to advise on the obstacles to a signature and not on the signature.
+
+identity:
+  id: sales.sit.agreement_without_a_signature
+  name: Agreement Without a Signature
+  domain: sales
+  owner_capability: sales.closing.closing
+  version: 1.0.0
+  status: stable
+
+description: >
+  An open deal where agreement has been expressed and nothing has been signed. The read is about
+  the distance between the two — what is procedurally left, who owns each step, and what date
+  anybody has committed to.
+
+  Verbal agreement is the least reliable state a deal can be in, and the reason is structural
+  rather than psychological: the person who says yes is frequently not the person who signs, and
+  the steps between them — legal, procurement, security review, a purchase order — belong to
+  people who were not in the conversation and have their own queue. A deal at this point does not
+  need persuading; it needs someone to name the remaining steps and their owners while the
+  goodwill lasts.
+
+  The failure this file exists to prevent is treating a signature delay as cooling. It usually is
+  not. It is usually a form nobody has been asked to start, and advice that reads as pressure at
+  this moment damages the relationship that just agreed to buy.
+
+matches:
+  l2_situation_types:
+    - deal
+  scope: deal
+  when:
+    - path: deal.status
+      op: "="
+      value: open
+    - has_obs: verbal_yes
+
+also_serves:
+  - sales.closing.contract_management
+
+objects:
+  load:
+    - sales.obj.core.deal
+    - sales.obj.core.next_action
+  optional:
+    - sales.obj.core.contract
+    - sales.obj.core.decision_maker
+    - sales.obj.core.stakeholder
+    - sales.obj.core.timeline
+    - sales.obj.core.risk
+  never_load:
+    # Nothing here is about whether to sell to them. Loading the targeting set at signature
+    # produces advice about fit for an account that has already agreed to buy.
+    - sales.obj.core.icp
+    - sales.obj.core.lead
+    - sales.obj.core.persona
+
+priority_bp: 8600
+typical_duration_days: 21
+
+signals_of_progress:
+  - verbal_yes
+  - next_step_agreed
+  - contract_requested
+
+signals_of_decay:
+  - timeline_slip
+  - closed_lost_mention
+  - negative_reply
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Someone has agreed and nothing is signed. Never write anything that reads as chasing — this is
+    the moment a relationship is easiest to damage and the delay is almost never reluctance.
+
+    Headline: name what stands between the agreement and the signature, or say it is unknown —
+    "unknown" is the honest and common answer and it is what the next message should fix.
+
+    Situation: who agreed, when, and which procedural step has an owner and which does not. Date
+    what is dated; say plainly what is undated.
+
+    Artifact: the message that names the remaining steps and asks who owns each — offered as help
+    with their process, never as a request for their signature.
+  fallback:
+    headline: "{entity} — agreed, not signed"
+    # Was "... and nothing on record ...", which opens on the hole in our records rather
+    # than on the fact the reader acts from. Same evidence, and only one of the two is a
+    # finding. The sibling of this fault shipped 25 empty-reading cards to the design
+    # partner on 2026-08-30; this file is the same shape, caught before it routed.
+    situation: >-
+      {entity} has agreed and the signature is still outstanding.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Gated on the `verbal_yes` OBSERVATION rather than on a fact, because no fact records
+    agreement — `deal.status` stays `open` right up to the signature and `deal.stage` is a model
+    word. `verbal_yes` is in the canonical observation set and is extracted from correspondence.
+
+    Known limit, stated rather than hidden: `verbal_yes` has low coverage on a founder inbox, so
+    this situation will be rare until the observation extractor is exercised on a real sales
+    inbox. It is gated correctly and it will be quiet.
+
+admission:
+  accepted_content_hash: c8d7c732ad715a845136ad20cffc64780a55c5df8d55c0b53a5ea03e8e2b1d51

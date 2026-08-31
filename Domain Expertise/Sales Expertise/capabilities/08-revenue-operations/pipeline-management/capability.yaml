@@ -3,25 +3,114 @@ identity:
   name: Pipeline Management
   domain: sales
   subdomain: revenue_operations
-  version: 0.1.0
-  status: draft
-  stub: true
-
-description: >
-  Coverage, stage balance, velocity and hygiene. Most pipeline problems are three quarters
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Coverage, stage balance, velocity and hygiene. Most pipeline problems are three quarters
   old by the time they show up in a forecast.
 
-question: "Is there enough of the right work in flight?"
+  '
+question: Is there enough of the right work in flight?
 
+outcomes:
+- 'A count of deals that are actually alive. Coverage arithmetic over a set containing dead deals is
+  not a weak measure, it is a wrong one, and it is wrong in the reassuring direction — which is why
+  hygiene precedes counting rather than following it.'
+- 'Every open deal carrying a dated next step owned by someone. A deal with no next step is a memory
+  the seller has not yet let go of, and it is the single most reliable marker of the corpses inside a
+  healthy-looking number.'
+- 'Stage assigned from buyer behaviour rather than from seller intention. A deal is at proposal when a
+  proposal was sent — `proposal_sent` is an observation the pipeline can check — and stage definitions
+  that admit intention make every downstream metric uninterpretable.'
+- 'Age surfaced against the stage''s own normal, not against a flat threshold. A deal sitting long in
+  a stage that is naturally slow is not a problem; the same age in a fast stage is the earliest thing
+  worth acting on.'
+- 'Deals closed lost with a reason and a revisit date. The negative outcome, and the one the whole
+  capability turns on: a pipeline that cannot shrink cannot inform anything, and a seller who is never
+  asked to close a deal will carry it indefinitely.'
+- 'A gap named early enough to be actionable. Reporting a coverage shortfall in the quarter it bites
+  is reporting history; the useful output names it while there is still time to build.'
+
+failure_modes:
+- 'COUNTING BEFORE CLEANING. The comfort of a coverage ratio computed over a contaminated set is the
+  most expensive comfort in the function, because it removes the pressure that would have fixed it.'
+- 'HYGIENE AS AN ADMINISTRATIVE RITUAL. A weekly pass that updates fields without changing any
+  decision is a tax on the seller and teaches them the pipeline is for management rather than for
+  them.'
+- 'STAGE INFLATION BY NEGOTIATION. Stages that move because the seller argued for it rather than
+  because the buyer did something make every conversion rate a fiction, and the fiction compounds
+  across quarters.'
+- 'A UNIFORM AGEING THRESHOLD. Flags the naturally slow stages constantly and the genuinely stalled
+  fast ones never, and the resulting alert stream is ignored within a month.'
+- 'KILLING DEALS WITHOUT A REASON OR A DATE. Closing lost is correct; closing lost with no recorded
+  cause discards the only learning the loss produces, and with no revisit date discards the pipeline.'
+- 'MISTAKING VOLUME FOR COVERAGE. More deals of the wrong shape is a worse position than fewer of the
+  right shape, and a coverage target with no qualification standard reliably produces the first.'
+
+kpis:
+- name: dated_next_step_share
+  unit: percent
+  description: Share of open deals carrying a next step with a date. The cheapest honest measure of
+    whether the pipeline is real.
+  direction: higher_is_better
+- name: coverage_after_hygiene
+  unit: ratio
+  description: Coverage computed only over deals with recent buyer activity. The pre-hygiene number is
+    not a weaker version of this; it is a different and misleading one.
+  direction: target_band
+- name: stage_age_vs_stage_norm
+  unit: ratio
+  description: Time in stage divided by that stage's own median. The relative reading that makes an
+    ageing flag worth reading.
+  direction: lower_is_better
+- name: buyer_activity_recency
+  unit: days
+  description: Days since the last thing the BUYER did. Seller activity is not evidence of life.
+  direction: lower_is_better
+- name: closed_lost_with_reason_share
+  unit: percent
+  description: Share of losses carrying a recorded cause. Everything the function could learn from
+    losing is downstream of this.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.qualification.lead_qualification
+  - sales.market_and_targeting.icp_definition
+  downstream:
+  - sales.revenue_operations.forecasting
+  - sales.sales_management.deal_review
+  - sales.revenue_operations.revenue_intelligence
+  parallel:
+  - sales.revenue_operations.sales_operations
+  - sales.sales_management.performance_management
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached through `sales.sit.out_of_profile_deal`
+    (`also_serves`), which binds to `deal` and to `opportunity` — a live type with 18 situations on
+    the design partner''s org — and matches on `deal.status = open`.
+
+    Written against what exists rather than against a CRM: `deal.status` (45 rows / 38 nodes),
+    `deal.last_inbound` (41), `derived.momentum` and `derived.engagement` (74 each), and the
+    `proposal_sent` observation. Deliberately NOT written against `deal.value` — it is declared, it is
+    present on one node, and it is never derived, so any outcome resting on deal size would be
+    unauthorable here. That is why the outcomes are about liveness and next steps rather than about
+    weighted value.
+
+    No numbers: coverage ratios, ageing thresholds and zombie windows are Layer 4''s arithmetic.
+
+    '
+  reviewed_at: '2026-08-26'
+
+admission:
+  accepted_content_hash: e09127fc35247c5b8fd1452037249133ee4f674e269b6ce4eb7c7b20788c48ac

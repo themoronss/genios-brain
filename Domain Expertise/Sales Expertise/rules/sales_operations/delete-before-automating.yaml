@@ -1,0 +1,72 @@
+identity:
+  id: sales.rule.sales_operations.delete_before_automating
+  name: Delete before automating
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.sales_operations
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'Automating a requirement that should not exist makes it permanent and cheap. The cost
+    disappears from view while the process survives indefinitely, and nobody ever revisits it because
+    it no longer hurts anyone visibly.'
+  answers:
+  - May this be automated?
+  not:
+  - An argument against automation. It sets the order, not the verdict.
+
+rule:
+  statement: 'A recurring manual process MUST be tested for deletion before it is automated. Where it
+    cannot name a decision it feeds, the recommendation MUST be removal rather than tooling, and an
+    automation shipped without that test MUST be recorded as unexamined.'
+  spans:
+  - sales.obj.core.deal
+  - sales.obj.core.next_action
+  when:
+  - {path: deal.status, op: "=", value: open}
+  then: 'Require the decision-feed test before an automation recommendation, and prefer removal where
+    the test fails.'
+  severity: advisory
+  why: 'Automation changes the politics of a process, not only its cost. Manual friction is what
+    eventually forces a review — someone complains, the burden is visible, the requirement gets
+    challenged. Automating it removes the complaint and therefore removes the only mechanism that
+    would ever have questioned it, so a useless process becomes both invisible and immortal in the
+    same act. The order matters because it is far harder to delete something that costs nobody
+    anything.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'A COMPLIANCE OR AUDIT REQUIREMENT. It cannot be deleted, so the only question is whether it can
+    be made cheaper.'
+  - 'AN AUTOMATION THAT REPLACES THE PROCESS ENTIRELY. Where the tooling removes the human step rather
+    than accelerating it, that IS the deletion in a different form.'
+  - 'A PROCESS FEEDING A DECISION THAT IS RARE AND HIGH-STAKES. Frequency is not the test; a field used
+    once a year for a large decision earns its place.'
+  - 'A CHEAP AUTOMATION AND AN EXPENSIVE ARGUMENT. Where removal would take months of negotiation and
+    the automation is trivial, doing both — automate now, delete later — is pragmatic, provided the
+    deletion stays on a list rather than being forgotten.'
+  - 'SOMETHING INTRODUCED THIS PERIOD. It has no usage evidence yet, and demanding proof before use
+    prevents anything from being tried.'
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.next_action
+
+limits:
+- Process and tooling are entirely outside the corpus substrate, so this rule cannot be evaluated by
+  the engine — advisory, and recorded so the ordering is stated rather than assumed.
+- Cannot tell a process that feeds a rare decision from one that feeds none.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new and advisory. The political argument in `why` is the part worth keeping —
+    manual friction is the only mechanism that ever forces a process to be questioned, and automating
+    it removes that mechanism, which is how a useless requirement becomes immortal.'

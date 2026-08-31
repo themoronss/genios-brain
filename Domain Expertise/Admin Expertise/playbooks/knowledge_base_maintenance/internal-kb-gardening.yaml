@@ -1,0 +1,89 @@
+identity:
+  id: admin.pb.knowledge_base_maintenance.internal_kb_gardening
+  name: Internal KB gardening
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.knowledge_base_maintenance
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The internal knowledge base stays alive through scheduled gardening — owners per section,
+    review dates, dead-link sweeps, usage-informed pruning — because an unmaintained wiki converges on
+    confidently wrong.
+
+when_to_use:
+  do_not_use_when:
+  - The content is a living document with a single owner who uses it daily. Gardening ceremony there is overhead.
+steps:
+- order: 1
+  name: Assign an owner per section, not per page
+  description: >
+    Per-page ownership does not survive contact with volume. Per-section ownership gives somebody a
+    manageable surface and a reason to notice drift.
+  actor: human
+  produces: An ownership map.
+  done_when: Every page falls under a named owner.
+- order: 2
+  name: Rank by usage before reviewing anything
+  description: >
+    A uniform cadence spends the same attention on a page nobody opens as on the one everybody
+    follows, which makes the calendar unworkable and the important pages under-reviewed.
+  actor: system
+  produces: A usage-ordered review list.
+  done_when: The review order reflects readership.
+- order: 3
+  name: Retire rather than caveat
+  description: >
+    A page marked possibly-out-of-date is still read as an answer by someone in a hurry. Retirement
+    with a pointer to the current answer is the only honest option.
+  actor: human
+  done_when: Nothing carries a hedge in place of a decision.
+- order: 4
+  name: Merge duplicates to one canonical answer
+  description: >
+    Two pages answering one question diverge, and the reader finds whichever ranks higher rather
+    than whichever is right.
+  actor: human
+  done_when: One answer per question, with redirects from the rest.
+- order: 5
+  name: Read the failed searches
+  description: >
+    The question people asked and did not find is the only input that names a gap rather than
+    describing what already exists.
+  actor: human
+  produces: A content-gap list.
+  done_when: The failed-search set has been looked at, or its absence is recorded as a tooling gap.
+objects_used: [admin.obj.core.document, admin.obj.core.sop, admin.obj.core.request]
+limits:
+- 'Steps 2 and 5 need usage analytics. Without them the cadence falls back to uniform, which is the failure mode this playbook exists to avoid.'
+- 'It maintains accuracy, not coverage. A perfectly gardened base can still answer none of the questions people have.'
+failure_modes:
+- 'Step 3 softened into a banner, which is the compromise everybody reaches and it preserves the wrong answer.'
+- 'Step 4 skipped because merging requires deciding who was right.'
+variants:
+- applies_to: distributed
+  change: Steps 3 and 4 matter more — there is no colleague to correct the page in conversation.
+  why: In an office a wrong page is caught verbally; distributed, it is followed.
+- applies_to: outsourced
+  change: The base is the training material, so step 1 ownership must sit with the party accountable for outcomes, not the party writing.
+  why: Otherwise the pages describe the process the vendor prefers.
+references:
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+  note: Its deflection findings are the argument for step 5 — a failed self-service attempt costs more than never having tried.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 3 is where every KB effort compromises, and the compromise — a banner instead of a
+    retirement — preserves exactly the wrong answer for exactly the reader least able to spot
+    it.

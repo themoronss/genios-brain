@@ -1,0 +1,88 @@
+identity:
+  id: admin.pb.contract_administration.one_contract_register_all_obligations
+  name: One contract register, all obligations
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.contract_administration
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every executed contract lands in one register with parties, value, dates, renewal terms and
+    OUR obligations extracted — because the org must know what it has promised without re-reading PDFs
+    under pressure.
+
+when_to_use:
+  do_not_use_when:
+  - The agreement imposes nothing on us and has no term. Click-through terms with no spend and no obligation are noise in a register that must stay readable.
+steps:
+- order: 1
+  name: Extract OUR obligations, not theirs
+  description: >
+    Vendor management already watches what they owe. The exposure sits in what we agreed to do —
+    notify, maintain, provide, restrict — and forgot.
+  actor: human
+  objects_read: [admin.obj.core.contract]
+  produces: A dated obligation list.
+  done_when: Each of our obligations has a trigger or a date.
+- order: 2
+  name: Diarise the NOTICE date, never the end date
+  description: >
+    A ninety-day notice period on a contract ending in sixty days means the decision is already
+    made. The end date is the least useful date in the agreement.
+  actor: agent
+  objects_read: [admin.obj.core.deadline]
+  done_when: The alert fires with the notice window still open.
+- order: 3
+  name: Attach amendments to the parent
+  description: >
+    Operative terms spread across three documents mean the register describes the first one, which
+    is the version nobody is operating under.
+  actor: human
+  done_when: The agreement and its amendments resolve as one instrument.
+- order: 4
+  name: Register per agreement, not per supplier
+  description: >
+    One supplier can hold three agreements with different terms, and a supplier-level row averages
+    them into something true of none.
+  actor: human
+  done_when: Each executed agreement has its own row.
+- order: 5
+  name: Surface the clauses that create work for us
+  description: >
+    Insurance to maintain, audits to permit, data to delete on termination. These are the ones
+    discovered during an exit, at the point of maximum cost.
+  actor: human
+  done_when: Work-creating clauses are on somebody's list rather than in the document.
+objects_used: [admin.obj.core.contract, admin.obj.core.vendor, admin.obj.core.deadline, admin.obj.core.compliance_obligation, admin.obj.core.document]
+limits:
+- 'Extraction is manual. Nothing in the substrate reads a contract, so coverage is a function of somebody sitting down with it.'
+- 'It administers the agreement; it does not negotiate or interpret it.'
+failure_modes:
+- 'Step 1 inverted into tracking their obligations, which is the natural instinct and leaves ours unmanaged.'
+- 'Step 2 set to the end date because that is the field the system has.'
+variants:
+- applies_to: multi_entity
+  change: Step 4 gains the contracting entity, because the same supplier agreement may not cover an affiliate.
+  why: Entitlement follows the signatory, and group-level rows hide that.
+- applies_to: startup_lean
+  change: Steps 1 and 2 only, on a short list. Most exposure at this size is one auto-renewal and one data-deletion clause.
+  why: The register is small enough that the sophistication is unnecessary and the two dates are not.
+references:
+- title: Contract lifecycle management practice
+  kind: practitioner
+  note: Where obligation extraction is distinguished from repository management — the distinction this playbook is built on.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1's inversion is the interesting failure: every instinct and every vendor-management
+    tool watches what the counterparty owes, and the unmanaged exposure is what we agreed to and
+    forgot.

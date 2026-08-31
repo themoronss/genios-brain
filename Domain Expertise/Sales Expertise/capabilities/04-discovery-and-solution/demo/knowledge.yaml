@@ -1,31 +1,20 @@
-# Knowledge manifest for sales.discovery_and_solution.demo — REFERENCES ONLY, the sibling of objects.yaml.
-#
-# objects.yaml says which NOUNS to load. This says which EXPERTISE applies.
-#
-#   core   -> <kind>/core/             referenced by more than one capability
-#   scoped -> <kind>/demo/         referenced by this capability alone
-#
-# The same scope rule as objects, enforced from the reference graph: MEDDICC referenced by
-# four capabilities must be core, or it becomes four copies that drift.
-
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
 capability: sales.discovery_and_solution.demo
-
 playbooks:
   core: []
-  scoped: []
-
+  scoped:
+  - sales.pb.demo.discovery_anchored_demo
 heuristics:
   core: []
-  scoped: []
-
+  scoped:
+  - sales.heu.demo.show_less_to_sell_more
 mental_models:
   core: []
   scoped: []
-
 rules:
   core: []
-  scoped: []
-
+  scoped:
+  - sales.rule.demo.no_demo_without_a_problem_list
 decision_frameworks:
   core: []
   scoped: []

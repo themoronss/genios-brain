@@ -5,6 +5,9 @@ from genios_engine.capture.source_registry import BUILDABLE_SOURCES
 from genios_engine.capture.landing.repository import (InMemorySourceEventRepository,
                                                       SourceEventRepository)
 from genios_engine.platform.config import get_settings
+from genios_engine.platform.logging import get_logger
+
+_log = get_logger("genios.platform.wiring")
 
 # The switch between REAL and dev is here, driven entirely by .env — no code change.
 #   DATABASE_URL set   → Postgres/Supabase repo   (else in-memory)
@@ -41,10 +44,13 @@ COMPOSIO_SOURCE_TYPES: frozenset[str] = frozenset({
 })
 
 
-def make_connector_for(connection) -> SourceConnector:
+def make_connector_for(connection, relevance=None) -> SourceConnector:
     """Build the right connector for ONE org's connection, dispatched by source_type.
     Composio API key is global (GeniOS's); per-org identity is composio_user_id. Every
-    source sits behind the same SourceConnector interface — the pipeline is agnostic."""
+    source sits behind the same SourceConnector interface — the pipeline is agnostic.
+
+    `relevance` (optional): the SAME S2 classifier the pipeline uses. Passed to Gmail so it can
+    gate on the list snippet and skip full-body fetches for confident drops (huge speedup)."""
     s = get_settings()
     st = connection.source_type
     # Client's own database — no Composio; read-only pull → structured route.
@@ -56,6 +62,15 @@ def make_connector_for(connection) -> SourceConnector:
             identity_field=cfg["identity_field"],
             watermark_col=cfg.get("watermark_col", "updated_at"), source=st)
     if not s.use_real_composio:
+        # The fake is a GMAIL fixture. Returning it for every source_type meant a local run or
+        # demo could "prove" Notion, Drive, HubSpot or Calendar coverage using Gmail data —
+        # unfalsifiable in exactly the setting where it gets shown to someone. Refuse instead:
+        # a missing fixture is a fact worth surfacing, not one worth papering over.
+        if st not in ("gmail", "google_mail"):
+            raise ValueError(
+                f"no offline fixture for source_type={st!r}; set GENIOS_USE_REAL_COMPOSIO to "
+                "exercise it, or add a fixture connector. The Gmail fake must not stand in for "
+                "another source.")
         from genios_engine.capture.connectors.fake import FakeGmailConnector
         return FakeGmailConnector(org_id=connection.org_id,
                                   connection_id=connection.connection_id)
@@ -64,7 +79,8 @@ def make_connector_for(connection) -> SourceConnector:
         from genios_engine.capture.connectors.composio import ComposioGmailConnector
         ocr = make_ocr()                        # scanned-PDF attachments need OCR (native-only if off)
         return ComposioGmailConnector(api_key=key, user_id=uid,
-                                      connected_account_id=s.composio_gmail_account or None, ocr=ocr)
+                                      connected_account_id=s.composio_gmail_account or None, ocr=ocr,
+                                      relevance=relevance)
     if st in ("gcal", "calendar", "google_calendar"):
         from genios_engine.capture.connectors.calendar import ComposioCalendarConnector
         return ComposioCalendarConnector(api_key=key, user_id=uid)
@@ -93,6 +109,11 @@ def make_ocr():
     if getattr(s, "enable_ocr", False):
         from genios_engine.capture.documents.tesseract import TesseractOcr
         return TesseractOcr()
+    # Deliberately-off is a legitimate state, but a silent None is how 369 documents came to be
+    # labelled `unsupported` — a terminal-sounding verdict for files the router never tried to
+    # read. `route_document` now returns `ocr_unavailable` for those; log once so the operator
+    # side of that story is visible too.
+    _log.info("OCR disabled (enable_ocr=false): scanned documents will park as ocr_unavailable")
     return None
 
 
@@ -232,17 +253,26 @@ def make_pack_registry():
     return make_registry(s.database_url)
 
 
-def make_relevance_classifier():
+def make_relevance_classifier(org_id: str | None = None):
     """The L1 S2 relevance gate. Prefers the LLM junk-gate whenever an Anthropic key is present
     (production) — it is the one reliable filter that keeps noise OUT of the graph, replacing the
     over-aggressive regex drops. Falls back to the deterministic classifier only when explicitly
-    opted in (dev), and to None (off) otherwise — so the hermetic test suite is unchanged."""
+    opted in (dev), and to None (off) otherwise — so the hermetic test suite is unchanged.
+
+    Pass `org_id` wherever the caller knows the tenant: the gate then writes its token usage to
+    llm_costs like every other LLM call. Without it the gate still works, it just spends money
+    invisibly — which is how reported spend drifted below the real Anthropic bill."""
     s = get_settings()
     if s.l1_llm_gate and s.use_real_llm:
         from genios_engine.capture.gate.relevance import LLMRelevanceClassifier
         from genios_engine.context.llm.client import LLMClient
-        return LLMRelevanceClassifier(
+        gate = LLMRelevanceClassifier(
             LLMClient(api_key=s.anthropic_api_key, model=s.anthropic_model))
+        if org_id:
+            store = make_graph_store()
+            if store is not None:
+                gate.bind_costs(store.record_cost, org_id)
+        return gate
     if s.enable_l1_relevance:
         from genios_engine.capture.gate.relevance import DeterministicRelevanceClassifier
         return DeterministicRelevanceClassifier()

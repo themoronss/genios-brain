@@ -1,0 +1,122 @@
+identity:
+  id: sales.pb.forecasting.evidence_based_commit
+  name: Evidence-based commit
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.forecasting
+  subdomain: revenue_operations
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'A forecast category is a claim about evidence, not confidence. Commit means paper is
+    moving and the buyer has said the date; best case means a credible path exists; everything else is
+    pipeline.'
+  answers:
+  - What does each forecast category actually require?
+  - How is a forecast review run so that something is learned?
+  not:
+  - Pipeline hygiene, which decides what is in the set at all.
+  - Quota planning. This predicts; that allocates.
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  - sales.sit.out_of_profile_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - proposal_sent
+  - timeline_slip
+  do_not_use_when:
+  - 'The forecast is used as a commitment device rather than a prediction. Under that framing the
+    number is negotiated, not derived, and no category discipline survives it.'
+  - 'The pipeline has not been cleaned. Categorising a contaminated set produces precise nonsense.'
+  - 'There are too few deals for a category distribution to mean anything.'
+
+steps:
+- order: 1
+  name: Define the categories behaviourally
+  description: 'Commit requires a buyer-stated date and paper in motion. Best case requires a credible
+    path with a named next step. Written as observable conditions, so two people place the same deal
+    identically — a category that means confident aggregates incomparable claims.'
+  actor: human
+  objects_read:
+  - sales.obj.core.deal
+  - sales.obj.core.contract
+  produces: Category definitions expressed as evidence tests.
+  done_when: No category definition contains a word describing a feeling.
+
+- order: 2
+  name: Place deals against the definitions, not against the target
+  description: 'The gap between the forecast and the number is a fact about the quarter, not an input
+    to categorisation. The moment deals are placed to close the gap, the forecast has stopped
+    measuring anything.'
+  actor: human
+  produces: A category per deal, derived from evidence.
+  done_when: No deal moved category because the total was short.
+
+- order: 3
+  name: Interrogate the deltas, not the levels
+  description: 'What moved this week and why. A review that walks the same list at the same numbers is
+    a status meeting; the learning is entirely in the changes, and reviewing only those also makes the
+    meeting shorter.'
+  actor: human
+  produces: An explanation per movement.
+  done_when: Every category change this period has a stated cause.
+
+- order: 4
+  name: Downgrade on the second slip
+  description: 'Each slip arrives with a credible local reason, which is why they are forgiven one at
+    a time. Two slips is the buyer telling us the urgency is weaker than stated, and it is available
+    long before the outcome.'
+  actor: human
+  objects_read:
+  - sales.obj.core.timeline
+  produces: A category downgrade where the pattern warrants it.
+  done_when: No twice-slipped deal is still in commit.
+  skip_when: The date moved while paper advanced, or one external event moved everything.
+
+- order: 5
+  name: Track forecast against actual per person
+  description: 'Systematic over- or under-calling is correctable and is worth more than any single
+    quarter''s accuracy, because it applies to every forecast that person gives afterwards. Two
+    sellers cancelling out looks accurate and is two uncorrected biases.'
+  actor: system
+  produces: A per-seller bias figure over several periods.
+  done_when: Accuracy is measured per person as well as in aggregate.
+
+- order: 6
+  name: Remove a popular deal when the evidence says so
+  description: 'A forecast that never excludes a deal everyone expects to close is a summary of hope.
+    The exclusion is the whole discipline, and it is the only part of the exercise that is
+    uncomfortable.'
+  actor: human
+  produces: At least one evidence-based exclusion where warranted.
+  done_when: Category placement survives the question of what evidence supports it.
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.timeline
+- sales.obj.core.contract
+- sales.obj.core.risk
+
+limits:
+- '`deal.value` is present on a single node of the design partner''s org and is never derived, so a
+  weighted forecast is not computable there — this playbook produces categories and counts rather
+  than a number.'
+- Depends on close dates being buyer-stated; where they are seller-assumed, step 4 measures our
+  optimism instead of their urgency.
+- Says nothing about how to improve the underlying win rate.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 2, 4 and 6 are new. Step 2 is the one that decides
+    whether any of the rest matters — placing deals to close the gap to target is the single act that
+    converts a forecast from a measurement into a negotiation.'

@@ -3,26 +3,114 @@ identity:
   name: Buying Committee Analysis
   domain: sales
   subdomain: qualification
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Mapping the set of people whose agreement is jointly necessary, and measuring coverage
+  against it. In most enterprise losses the committee was never wrong about us; it was never fully
+  mapped.
 
-description: >
-  Mapping the set of people whose agreement is jointly necessary, and measuring coverage
-  against it. In most enterprise losses the committee was never wrong about us; it was never
-  fully mapped.
+  '
+question: How many seats must agree, and how many have we actually engaged?
 
-question: "How many seats must agree, and how many have we actually engaged?"
+outcomes:
+- 'A seat list derived from the decision''s shape rather than from who has appeared so far. The
+  committee that exists and the committee we have met are different sets, and the whole capability is
+  the discipline of writing down the first one — because a map built from the inbox can only ever
+  contain the people who already wrote to us.'
+- 'Every seat marked ally, neutral, hostile or UNKNOWN, with unknown treated as the dangerous state.
+  An unmapped seat is not a neutral one; it is a person who will form a view without us and express
+  it at review time.'
+- 'A named skeptic. If nobody on the map is one, the map is incomplete rather than the deal safe —
+  every real committee contains someone whose job is to find the reason not to, and their absence
+  from our picture means we have not met them yet.'
+- 'Coverage measured as seats engaged over seats required, not as contacts collected. `edge_count`
+  gives the breadth of the relationship and is the closest thing the record has to this number.'
+- 'Access tested rather than assurance accepted. "Everyone is on board", relayed by one contact, is a
+  claim; a meeting where the other seats appear is evidence, and asking for the second is the
+  cheapest test of the first.'
+- 'A stated verdict that the committee is unmappable, where that is true. The negative outcome: some
+  buyers will not expose their process, and recording that as a risk is more useful than a confident
+  diagram assembled from one person''s account.'
 
+failure_modes:
+- 'MAPPING THE PEOPLE WE HAVE MET. The map assembles itself from the thread and is then mistaken for
+  the committee. It is the same error as counting the pipeline before cleaning it, applied to people.'
+- 'ACCEPTING THE CHAMPION''S MAP AS THE MAP. A champion describes the committee as they experience it,
+  which reliably omits their own rivals and the people who outrank them.'
+- 'TREATING UNKNOWN AS NEUTRAL. The most consequential of the four states, and the one that disappears
+  fastest into an optimistic summary.'
+- 'COUNTING CONTACTS AS COVERAGE. Five people in one function is not breadth; it is one seat with
+  redundancy, and it reads as coverage on every dashboard.'
+- 'MAPPING ONCE. Committees reorganise, people are promoted and replaced mid-cycle, and a map drawn at
+  qualification is archaeology by the proposal.'
+- 'CONFUSING ATTENDANCE WITH AGREEMENT. A person who joined the call and said nothing has not agreed;
+  silence in a group setting is the standard way disagreement is deferred.'
+
+kpis:
+- name: seat_coverage
+  unit: percent
+  description: Seats engaged over seats the decision requires. The capability's central number, and
+    the one that distinguishes breadth from volume.
+  direction: higher_is_better
+- name: unknown_seat_share
+  unit: percent
+  description: Share of identified seats whose position is unknown. The risk measure — a full map with
+    high unknowns is not a mapped committee.
+  direction: lower_is_better
+- name: named_skeptic_rate
+  unit: percent
+  description: Share of mapped committees containing a named skeptic. A low rate is evidence about the
+    mapping, not about the buyers.
+  direction: higher_is_better
+- name: multi_seat_meeting_rate
+  unit: percent
+  description: Share of deals where seats beyond the primary contact have appeared in a live
+    conversation. Access tested rather than assumed.
+  direction: higher_is_better
+- name: late_stakeholder_surprise_rate
+  unit: percent
+  description: Share of deals where a previously unknown seat materially affected the outcome after
+    the proposal. The failure this capability exists to prevent, measured after the fact.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.qualification.lead_qualification
+  - sales.prospecting_and_outreach.account_research
+  downstream:
+  - sales.qualification.stakeholder_mapping
+  - sales.qualification.decision_maker_identification
+  - sales.sales_management.deal_review
+  parallel:
+  - sales.qualification.champion_identification
+  - sales.closing.procurement
+
+applies_to:
+  models: [b2b, enterprise, mid_market, b2b2c, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. It OWNS `sales.sit.enterprise_deal`, which binds to the `deal`
+    type and matches on `deal.status = open`.
+
+    Stated because it bounds what this capability can do today: `deal` carries ZERO situations on the
+    design partner''s org — every live situation there is company- or person-anchored — so this
+    capability is authored for tenants with a deal-shaped motion rather than for the current one. The
+    honest evidence available for coverage is `edge_count` (relationship breadth) and `party.role`;
+    the observations that would sharpen it, `champion_change` and `stakeholder_added`, have no rows.
+
+    No numbers: how many seats a deal size implies, and what coverage is sufficient, are Layer 4''s
+    arithmetic and belong in the pack manifest.
+
+    '
+  reviewed_at: '2026-08-26'
+
+admission:
+  accepted_content_hash: fcab81955402ad8fadd52fa96fa5a6b893ca06c54839d07670e448f0a76f49ca

@@ -1,41 +1,81 @@
-# Stub. Identity, purpose and load-set only — see queue-management in this subdomain for the
-# shape a promoted capability takes.
-
 identity:
   id: customer_support.support_operations.cost_to_serve
   name: Cost to Serve
   domain: customer_support
   subdomain: support_operations
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Working out what it actually costs to support a given customer, plan or product area, and
+  what that fact obliges someone to do. The cost is almost never spread the way people expect — it concentrates
+  in a handful of accounts, a couple of product areas and a small set of endlessly repeated questions
+  — and until the total is split by cause it justifies nothing except hiring. The finding usually belongs
+  to somebody else: a segment that is unprofitable to serve is normally a product gap or a mis-sold plan,
+  so cutting service to fix it treats the symptom that is visible instead of the cause that is not.
 
-description: >
-  Working out what it actually costs to support a given customer, plan or product area, and
-  what that fact obliges someone to do. The cost is almost never spread the way people expect —
-  it concentrates in a handful of accounts, a couple of product areas and a small set of
-  endlessly repeated questions — and until the total is split by cause it justifies nothing
-  except hiring. The finding usually belongs to somebody else: a segment that is unprofitable to
-  serve is normally a product gap or a mis-sold plan, so cutting service to fix it treats the
-  symptom that is visible instead of the cause that is not.
+  '
+question: What does serving this customer really cost us, and is that cost a support problem or somebody
+  else's?
 
-question: "What does serving this customer really cost us, and is that cost a support problem or somebody else's?"
+outcomes:
+- 'Real support cost allocated to accounts and segments — tickets times handle time times loaded rate — surfacing which revenue is quietly negative.'
+- 'The cost read as a QUESTION about ownership: is this a support problem, a product problem or a pricing problem? The answer is usually not support.'
+- 'Tier pricing tested against actual cost, since the tier that no longer covers its service is invisible until somebody computes it.'
+- 'The expensive account understood as the heaviest user of the product''s weakest path rather than as a difficult customer.'
+- 'The negative outcome: an account or segment identified as UNPROFITABLE TO SERVE at current terms, said plainly to the people who set terms.'
+failure_modes:
+- 'ALLOCATING BY TICKET COUNT ALONE, which treats a password reset and a three-week escalation as equal units of cost.'
+- 'UNLOADED RATES. Salary without tooling, management, training and the cost of the escalation path understates by a wide margin.'
+- 'TREATING THE EXPENSIVE ACCOUNT AS A BEHAVIOUR PROBLEM. They are usually the heaviest user of the weakest path, which is a product finding.'
+- 'COMPUTING IT AND ROUTING IT NOWHERE. Cost-to-serve with no owner downstream is an interesting number.'
+- 'USING IT TO RATION SERVICE, which converts an analytical instrument into a reason to serve a paying customer worse.'
+kpis:
+- name: cost_per_account
+  unit: money
+  description: Loaded support cost by account. The base output.
+  direction: lower_is_better
+- name: negative_margin_revenue_share
+  unit: percent
+  description: Revenue whose support cost exceeds its contribution. The finding that changes pricing rather than staffing.
+  direction: lower_is_better
+- name: product_attributed_cost_share
+  unit: percent
+  description: Cost traced to a specific product weakness rather than to customer behaviour. Usually the majority.
+  direction: higher_is_better
+- name: finding_routed_rate
+  unit: percent
+  description: Cost findings that reached somebody who could act — product, pricing or account management.
+  direction: higher_is_better
+handoffs:
+  upstream: [customer_support.support_operations.support_analytics, customer_support.support_operations.capacity_planning]
+  downstream: [customer_support.voice_of_customer.product_feedback_routing, customer_support.support_management.account_relationship_management,
+               customer_support.entitlement_and_sla.entitlement_verification]
+  parallel: [customer_support.voice_of_customer.churn_signal_detection, customer_support.support_operations.workload_balancing]
+applies_to:
+  models: [b2b, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, named_tam,
+           premium_paid_support, outsourced_bpo, plg_self_serve]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following the queue-management capability in this
-    subdomain. Promotion needs the attribution model settled first, because every version of
-    this capability lives or dies on how contact effort is allocated to accounts and how much
-    overhead is loaded onto it — get that wrong and the output is precise, defensible and
-    useless. The expertise worth encoding is the set of moves available once the number exists:
-    price change, plan redesign, product fix, documentation, proactive outreach and, last and
-    most often reached for, service reduction. It is also the capability most likely to be used
-    against the support team that produced it, which is a fact about how it should be written
-    rather than a reason not to write it.
+    Promoted out of Phase-1 stub. Not on a live route. account.arr and ticket handle time are
+    planned_substrate with no writer.
+
+    product_attributed_cost_share is the KPI that reframes the whole output, and it is usually
+    the majority. The account filing forty tickets a month is not a difficult customer — it is
+    the heaviest user of the product's weakest path, and cost-to-serve's most valuable product
+    is a roadmap item rather than a service reduction.
+
+    finding_routed_rate exists because this analysis is routinely performed, presented and then
+    not owned by anybody. A cost finding that reaches nobody with authority over pricing,
+    product or the account is an interesting number.
+
+admission:
+  accepted_content_hash: 72f02a0fa7c537807b297504df90df04a70d186fd3ab2d3f84a85348f3c45099

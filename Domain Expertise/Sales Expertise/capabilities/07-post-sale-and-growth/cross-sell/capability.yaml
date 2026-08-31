@@ -1,28 +1,116 @@
 identity:
   id: sales.post_sale_and_growth.cross_sell
-  name: Cross Sell
+  name: Cross-sell
   domain: sales
   subdomain: post_sale_and_growth
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+  parent_capability: sales.post_sale_and_growth.expansion
+description: 'Selling an adjacent product into an existing account. Behaves like a new sale with a
+  warm start: the committee is usually different, and assuming it is the same is the standard error.
 
-description: >
-  Selling an adjacent product into an existing account. Behaves like a new sale with a warm
-  start: the committee is usually different, and assuming it is the same is the standard
-  error.
+  '
+question: Is there a different product this account needs?
 
-question: "Is there a different product this account needs?"
+outcomes:
+- 'A qualified new sale, run with the discipline of one. The warm start shortens the introduction and
+  changes nothing else — there is still a different problem, a different budget and usually a
+  different set of people, and treating it as an extension of the existing relationship is the error
+  this capability exists to prevent.'
+- 'The bridge found in the observed workflow rather than in the catalogue. Where does their process
+  leave our product for a spreadsheet or a rival tool — that gap is the only honest reason for a
+  second product, and it is the one the customer will recognise.'
+- 'The new buying committee mapped from zero. The people who bought the first product frequently have
+  no authority over the second, and the champion who advocated once may have no standing in the
+  function that would use it.'
+- 'A pilot inside the existing trust rather than a fresh sales cycle. A scoped trial with the existing
+  champion is the cheapest possible proof and it converts the warm start into something that actually
+  shortens the path.'
+- 'Separate value ledgers per product. Blended value hides which product is earning its place, and at
+  renewal it produces a single number nobody can defend line by line.'
+- 'A refusal to cross-sell where the fit is weak. The negative outcome, and the one with the largest
+  downside: a failed second product does not stay contained — it spends the first product''s
+  credibility and weakens a renewal that was not at risk.'
 
+failure_modes:
+- 'TREATING IT AS AN EXTENSION. The relationship is warm and the sale is new; skipping qualification
+  because the logo is familiar produces a stalled deal that also costs standing.'
+- 'SELLING FROM THE CATALOGUE. "You have product A, so you might want B" is a vendor''s logic, and
+  the customer hears it as one. The bridge has to be a gap they experience.'
+- 'ASSUMING THE SAME COMMITTEE. The commonest structural error, and it surfaces late — the champion
+  agrees enthusiastically and then discovers they have no authority in the other function.'
+- 'BURNING THE CHAMPION. Asking an advocate to carry a second product into a function where they have
+  no standing spends their credibility on our behalf and returns nothing.'
+- 'BLENDED VALUE REPORTING. One number covering both products means neither can be defended
+  separately, and at renewal the weaker one contaminates the stronger.'
+- 'CROSS-SELLING TO HIT A NUMBER. The fit is weakest exactly when the pressure is highest, and the
+  cost lands on the core renewal rather than on the quarter.'
+
+kpis:
+- name: workflow_bridge_share
+  unit: percent
+  description: Share of cross-sell attempts grounded in an observed workflow gap rather than in the
+    product catalogue.
+  direction: higher_is_better
+- name: new_committee_mapped_rate
+  unit: percent
+  description: Share of cross-sell deals where the second product's buyers were mapped rather than
+    assumed to be the first product's.
+  direction: higher_is_better
+- name: pilot_conversion_rate
+  unit: percent
+  description: Share of scoped pilots that became purchases.
+  direction: higher_is_better
+- name: cross_sell_attach_rate
+  unit: percent
+  description: Share of accounts holding more than one product.
+  direction: higher_is_better
+- name: core_renewal_after_failed_cross_sell
+  unit: percent
+  description: Renewal rate of the first product after an unsuccessful cross-sell. The downside this
+    capability is really governed by, and it is invisible to any attach-rate target.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.post_sale_and_growth.customer_success
+  - sales.post_sale_and_growth.expansion
+  downstream:
+  - sales.discovery_and_solution.discovery
+  - sales.qualification.buying_committee_analysis
+  parallel:
+  - sales.post_sale_and_growth.upsell
+  - sales.post_sale_and_growth.renewal
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub, and it completes the post-sale-and-growth subdomain — all
+    seven capabilities in it now carry real expertise.
+
+    It sits under `expansion`, which is on the live route set (`sales.sit.live_account_relationship`,
+    23 situations), so it is one hop from live traffic. The observable half is genuinely available:
+    `edge_count` and `party.role` show whether the relationship has reached a second function, which
+    is exactly what the third outcome asks for. The unobservable half is the workflow gap — the record
+    holds no product usage, so the bridge in outcome two is human observation.
+
+    The last KPI is the one that should govern this capability and almost never does. An attach-rate
+    target measures the upside and is blind to the downside, and the downside here is a renewal that
+    was not at risk until we sold into a poor fit.
+
+    No numbers: what constitutes sufficient fit is Layer 4''s arithmetic.
+
+    '
+  reviewed_at: '2026-08-27'
+
+admission:
+  accepted_content_hash: 0d1f303ddfaead517acd533e769a9e1376e43c95e601828abae91e69579a3238

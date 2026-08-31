@@ -1,0 +1,65 @@
+identity:
+  id: admin.heu.attendance_and_leave.untaken_leave_is_a_liability_twice
+  name: Untaken leave is a liability twice
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.attendance_and_leave
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Accrued leave sits on the balance sheet AND signals burnout risk. Chronic non-takers are
+    not heroes to celebrate — they are single-point failures fatiguing quietly.
+  answers:
+  - Is high accrued leave good news?
+
+heuristic:
+  statement: >
+    Accrued leave sits on the balance sheet AND signals burnout risk. Chronic non-takers are not
+    heroes to celebrate — they are single points of failure, fatiguing quietly.
+  why: >
+    Untaken leave is a real financial liability that grows silently, and it accumulates in exactly
+    the people who are hardest to replace, because they are the ones who feel they cannot step away.
+    The two facts have the same cause and the organisation reads only the visible half — dedication —
+    while the other half compounds. It is also self-concealing: the person will not raise it, since
+    not taking leave is how they are being useful, and nobody else experiences a cost until they stop.
+  confidence_bp: 8000
+  applies_when: Any accrual-based leave scheme where balances carry forward.
+  breaks_down_when: >
+    The accrual is an artefact of a recent joiner or a scheme change rather than of behaviour, where
+    reading it as burnout produces an odd conversation with somebody who has been there four months.
+    It also breaks down where taking leave is genuinely constrained by a temporary event — a launch,
+    a filing season, a court date — and the correct response is to protect the leave afterwards
+    rather than to treat the person as at risk during it.
+  reads: [admin.obj.core.employee_record]
+  contradicts: [admin.heu.payroll_input_administration.payroll_errors_echo_beyond_their_size]
+limits:
+- 'It identifies a signal, not a cause. Why somebody is not taking leave requires asking them.'
+- 'The liability half applies only where balances carry forward or are paid out.'
+failure_modes:
+- 'Treated as a policy problem and solved by capping carry-over, which removes the signal without addressing the fatigue.'
+- 'Raised as a performance conversation, which is how a wellbeing observation becomes a grievance.'
+variants:
+- applies_to: startup_lean
+  change: Strongest. Unlimited-leave policies remove the balance-sheet half and the fatigue half becomes invisible entirely.
+  why: With no accrual there is no number, and the signal disappears while the risk does not.
+- applies_to: regulated
+  change: Some regimes mandate minimum leave taken, which converts the heuristic into a compliance obligation.
+  why: The state has already decided that non-taking is a risk.
+references:
+- title: Statutory leave administration
+  kind: standard
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The startup variant is the one worth reading: an unlimited-leave policy removes the accrual
+    and therefore the number, so the fatigue signal disappears while the risk it measured does
+    not.

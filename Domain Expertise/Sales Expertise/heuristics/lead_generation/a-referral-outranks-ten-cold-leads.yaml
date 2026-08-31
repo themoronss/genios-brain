@@ -1,0 +1,69 @@
+identity:
+  id: sales.heu.lead_generation.a_referral_outranks_ten_cold_leads
+  name: A referral outranks ten cold leads
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.lead_generation
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Referred buyers arrive with borrowed trust: they close faster, negotiate less, and churn
+    less. An hour spent earning one referral routinely beats a day of cold sourcing, so referral-asking
+    deserves a scheduled place, not leftover time.'
+  answers:
+  - Where should the next hour of pipeline work go?
+
+heuristic:
+  statement: >
+    Referred buyers arrive with borrowed trust — they close faster, negotiate less and churn less.
+    An hour earning one referral routinely beats a day of cold sourcing, which is why asking
+    deserves a scheduled place rather than leftover time.
+  why: >
+    A referral transfers something no amount of outreach can manufacture: a third party the buyer
+    already trusts has vouched for the outcome. That removes most of the early qualification
+    friction, shortens the evaluation, and starts the relationship above the scepticism a cold
+    approach has to climb out of. The reason it stays under-used is that asking feels like spending
+    social capital and cold sourcing feels like work, so the activity with the worse return is the
+    one that gets scheduled.
+  confidence_bp: 8500
+  applies_when: An existing customer or contact who has had a good outcome and is willing to say so.
+  breaks_down_when: >
+    The referral is unqualified. A warm introduction to somebody outside the profile closes slowly
+    or not at all, and the borrowed trust makes it harder to disqualify — the seller persists out of
+    obligation to the referrer. It also breaks down where referrals are scarce by structure: a new
+    market, a first product or a small installed base has nobody to ask, and prioritising referral
+    activity there produces very little pipeline and a lot of waiting.
+  reads: [sales.obj.core.account, sales.obj.core.champion, sales.obj.core.lead]
+  contradicts: [sales.heu.account_research.research_decays__ship_it_the_same_day]
+limits:
+- 'It concerns the return per hour, not the total available. Referrals do not scale with effort the way outbound does.'
+- 'It assumes a delivered outcome to refer on the strength of.'
+failure_modes:
+- 'Chasing a referred lead outside the profile because the introduction created obligation.'
+- 'Treating referral as a strategy where the installed base cannot supply enough of them.'
+variants:
+- applies_to: enterprise
+  change: Strongest. A reference from a peer at a comparable company shortens an evaluation that would otherwise run months.
+  why: The buyer's risk is career risk and a peer's endorsement addresses it directly.
+- applies_to: plg
+  change: The referral is product-mediated — an invite, a shared workspace — and it scales in a way the human version does not.
+  why: The mechanism is built in rather than asked for.
+references:
+- title: sales.obj.core.champion
+  kind: internal
+  note: The person who refers is usually the champion, and their willingness is the measure of whether the outcome landed.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the expensive one: borrowed trust makes a poorly-fitting
+    referral harder to disqualify, because the seller persists out of obligation to the person
+    who made the introduction.

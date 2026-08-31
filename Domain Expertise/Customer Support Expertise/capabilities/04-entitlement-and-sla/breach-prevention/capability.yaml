@@ -1,43 +1,126 @@
-# STUB — identity, purpose and load-set only. See ../sla-management/capability.yaml for shape.
-
 identity:
   id: customer_support.entitlement_and_sla.breach_prevention
   name: Breach Prevention
   domain: customer_support
   subdomain: entitlement_and_sla
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'The work of not breaching, which happens hours before the breach and while nothing about
+  the ticket looks different yet. It is a separate capability from sla_management because managing a clock
+  is bookkeeping and preventing a breach is forecasting: the useful signal is not the time remaining but
+  the assignee''s other open deadlines, the coverage handover the deadline falls across, and whether the
+  last outbound message actually asked the customer for anything. The characteristic failure is a queue
+  that alerts at the moment of breach, which is not a warning but a notification about the past — and
+  the second is alerting so early and so often that the warning becomes background noise and every ticket
+  is permanently amber.
 
-description: >
-  The work of not breaching, which happens hours before the breach and while nothing about the
-  ticket looks different yet. It is a separate capability from sla_management because managing
-  a clock is bookkeeping and preventing a breach is forecasting: the useful signal is not the
-  time remaining but the assignee's other open deadlines, the coverage handover the deadline
-  falls across, and whether the last outbound message actually asked the customer for anything.
-  The characteristic failure is a queue that alerts at the moment of breach, which is not a
-  warning but a notification about the past — and the second is alerting so early and so often
-  that the warning becomes background noise and every ticket is permanently amber.
+  '
+question: Which tickets will breach if nobody changes anything, and what is the earliest cheap intervention?
 
-question: "Which tickets will breach if nobody changes anything, and what is the earliest cheap intervention?"
+outcomes:
+- 'A list of cases that WILL breach if nobody changes anything — produced while nothing about them
+  looks different yet. A queue that alerts at the moment of breach is not warning anyone, it is
+  reporting the past.'
+- 'The earliest cheap intervention named, not just the risk. "This will breach" is a fact; "this
+  will breach and the assignee has three other deadlines this afternoon" is an action.'
+- 'The forecast built from the assignee''s other deadlines, the coverage handover the deadline
+  falls across, and whether our last outbound actually asked the customer for anything — not from
+  time remaining, which is the one input every tool uses and the least predictive.'
+- 'A pause taken where a pause is legitimate, and refused where it is not. Stopping a clock by
+  asking the customer a question we do not need the answer to is the most common way a breach
+  metric is met without the customer being served.'
+- 'The negative outcome, and the one that decides whether this capability is trusted at all: cases
+  correctly identified as NOT at risk. An instrument that leaves every ticket permanently amber has
+  the same information content as one that says nothing.'
+- 'A breach that is going to happen, communicated before it does. An unavoidable breach that the
+  customer was warned about costs a fraction of the same breach discovered by the customer.'
+
+failure_modes:
+- 'ALERTING AT THE BREACH. It is the default in every helpdesk, it is trivially easy to implement,
+  and it is a notification about something that already happened.'
+- 'ALERTING SO EARLY AND SO OFTEN THAT NOTHING IS AMBER. The opposite failure and the more common
+  one in mature queues. A warning that fires on everything is background, and after a fortnight
+  nobody can name which tickets are actually at risk.'
+- 'FORECASTING FROM TIME REMAINING ALONE. It ignores the two things that actually determine the
+  outcome — whether the owner has capacity, and whether the deadline lands across a handover.'
+- 'STOPPING THE CLOCK INSTEAD OF DOING THE WORK. Asking a question to move the case into
+  pending-customer meets the target and serves nobody, and customers notice the pattern faster than
+  managers do.'
+- 'PREVENTING ONE BREACH AT THE COST OF THREE. Pulling an agent onto an at-risk case without
+  looking at what they were holding is how a single amber ticket becomes a cluster of them.'
+- 'TREATING THE TARGET AS THE GOAL. The target is a contractual floor. A queue optimised to clear
+  it exactly will do so by responding to the easiest cases first, which is precisely backwards.'
+
+kpis:
+- name: breach_rate
+  unit: percent
+  description: Share of targets missed. The outcome measure, and on its own the one most easily met
+    by gaming the pause.
+  direction: lower_is_better
+- name: prevented_breach_rate
+  unit: percent
+  description: Share of forecast-at-risk cases that did not breach after an intervention. What this
+    capability actually claims to do.
+  direction: higher_is_better
+- name: warning_lead_time
+  unit: hours
+  description: Time between a case being flagged and its deadline. The difference between a warning
+    and a notification, expressed as a number.
+  direction: higher_is_better
+- name: false_amber_rate
+  unit: percent
+  description: Share of flagged cases that were never going to breach. The metric that keeps the
+    instrument trusted, and the one omitted from every SLA dashboard.
+  direction: lower_is_better
+- name: clock_pause_share
+  unit: percent
+  description: Share of cases whose target was met with a pause in the window. A target band — some
+    pauses are legitimate, a rising share is the gaming signal.
+  direction: target_band
+
+handoffs:
+  upstream:
+  - customer_support.entitlement_and_sla.sla_management
+  - customer_support.entitlement_and_sla.entitlement_verification
+  - customer_support.support_operations.workload_balancing
+  downstream:
+  - customer_support.escalation_and_incident.escalation_management
+  - customer_support.customer_communication.proactive_status_updates
+  - customer_support.customer_communication.expectation_setting
+  parallel:
+  - customer_support.entitlement_and_sla.coverage_and_on_call
+  - customer_support.support_operations.capacity_planning
+
+applies_to:
+  models: [b2b, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support,
+           swarming_support, follow_the_sun, named_tam, premium_paid_support, outsourced_bpo,
+           proactive_support, field_service]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following ../sla-management/capability.yaml, and by
-    authoring situations/sla-breach-imminent.yaml (customer_support.sit.sla_breach_imminent),
-    which this capability owns and which binds to the pending L2 types sla_breach_imminent and
-    first_response_overdue.
+    Promoted out of Phase-1 stub. Reachable from the live support_case and support_contact
+    routes.
 
-    The expertise to capture on promotion: the intervention ladder, cheapest first — reply,
-    reassign, borrow, escalate, renegotiate — and the fact that its rungs get dramatically more
-    expensive as the deadline approaches, which is the entire argument for acting early. Also
-    the alert-fatigue trade-off, why an unassigned ticket is a stronger predictor than an old
-    one, and why a deadline landing inside a coverage handover deserves attention before the
-    handover rather than after.
+    Almost none of it is executable today and the reason is worth stating precisely rather than
+    as a general shortfall: this capability forecasts, and every input to the forecast —
+    sla.target_first_response_at, sla.clock_state, ticket.status, derived.backlog_age, the
+    coverage window — is in planned_substrate with no writer. The one input it does have is
+    thread.ball_in_court, which answers the question the tools get wrong: whether our last
+    outbound actually asked the customer for anything, or whether the clock is ours.
+
+    The KPI set is built around the failure that kills these systems in practice. breach_rate
+    alone is met by pausing clocks, so clock_pause_share sits beside it as a target band, and
+    false_amber_rate guards the opposite failure where every ticket is permanently at risk and
+    the instrument stops being read.
+
+admission:
+  accepted_content_hash: 1c4aef8052f218340c052b577e4915a974f2ed7fba4448184c06aa7c99d00a14

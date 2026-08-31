@@ -1,40 +1,79 @@
-# Stub. Identity, purpose and load-set only — see queue-management in this subdomain for the
-# shape a promoted capability takes.
-
 identity:
   id: customer_support.support_operations.workload_balancing
   name: Workload Balancing
   domain: customer_support
   subdomain: support_operations
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Deciding who works what, given that agents are not interchangeable units of capacity. An
+  even split of ticket count across an uneven split of difficulty is not balance — it is a slow queue
+  and a quietly resentful team — so the load being balanced is open work in progress and skill match,
+  not throughput. The hard part is the specialist: routing everything difficult to the one person who
+  can do it optimises this week and manufactures a single point of failure, which is why some deliberately
+  inefficient assignment is the price of a team that still functions when that person is on leave.
 
-description: >
-  Deciding who works what, given that agents are not interchangeable units of capacity. An even
-  split of ticket count across an uneven split of difficulty is not balance — it is a slow queue
-  and a quietly resentful team — so the load being balanced is open work in progress and skill
-  match, not throughput. The hard part is the specialist: routing everything difficult to the
-  one person who can do it optimises this week and manufactures a single point of failure, which
-  is why some deliberately inefficient assignment is the price of a team that still functions
-  when that person is on leave.
+  '
+question: Who should be working what right now, and who is quietly carrying this queue?
 
-question: "Who should be working what right now, and who is quietly carrying this queue?"
+outcomes:
+- 'Load balanced on effective weight — complexity times current work in progress — because ten password resets and ten incident escalations are not the same shift.'
+- 'The person quietly carrying the queue identified. Agents know exactly whose load is heavy regardless of what the count dashboard says.'
+- 'Work in progress capped, since an agent holding twelve open tickets is context-switching rather than working.'
+- 'Difficulty distributed as well as volume, because giving the capable agent every hard ticket is a promotion into burnout.'
+- 'The negative outcome: work REFUSED into a queue that is full, rather than assigned to somebody already over capacity because the count looked even.'
+failure_modes:
+- 'BALANCING BY COUNT. An even split of tickets across an uneven split of difficulty is not balance; it is a slow queue with a fair-looking dashboard.'
+- 'IGNORING WORK IN PROGRESS. Two agents with the same daily count and different open loads are not equally available.'
+- 'ROUTING HARD WORK TO THE CAPABLE. It is locally optimal every time and it is how the best agent leaves.'
+- 'FAIRNESS CLAIMED FROM A COUNT DASHBOARD, which everybody on the team can see is false, and the claim itself corrodes morale.'
+- 'NO CEILING, so an over-loaded queue accepts more because assignment logic has no concept of full.'
+kpis:
+- name: weighted_load_variance
+  unit: ratio
+  description: Spread of effective load across agents. Count variance can be zero while this is large.
+  direction: lower_is_better
+- name: wip_per_agent
+  unit: count
+  description: A target band. Above it agents context-switch; below it they are idle waiting.
+  direction: target_band
+- name: difficulty_concentration
+  unit: percent
+  description: Share of hard tickets held by the top decile of agents. The burnout pathway.
+  direction: lower_is_better
+- name: perceived_fairness
+  unit: percent
+  description: Agents who consider the distribution fair. It is the outcome the count dashboard claims and does not deliver.
+  direction: higher_is_better
+handoffs:
+  upstream: [customer_support.intake_and_triage.routing_and_assignment, customer_support.support_operations.capacity_planning]
+  downstream: [customer_support.support_management.team_health, customer_support.entitlement_and_sla.breach_prevention]
+  parallel: [customer_support.entitlement_and_sla.coverage_and_on_call, customer_support.support_management.performance_management]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, swarming_support,
+           follow_the_sun, outsourced_bpo]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following the queue-management capability in this
-    subdomain. Promotion is worth doing once the queue-management heuristics are settled, since
-    this capability inherits its selection order from them and would otherwise encode a second,
-    conflicting one. The genuinely novel expertise to capture on promotion is the tension
-    between skill-based routing and skill development — the assignment that resolves fastest is
-    almost never the assignment that grows the team — plus the reading of concentration, where
-    one agent holding a disproportionate share of the hard work is a resourcing risk long before
-    it is a performance story.
+    Promoted out of Phase-1 stub. Not on a live route. ticket.assignee and derived.backlog_age
+    are planned_substrate with no writer.
+
+    weighted_load_variance and perceived_fairness are the pair that matters. Count variance can
+    be exactly zero while the weighted spread is enormous, and the team can see it — which is
+    why fairness claimed from a count dashboard corrodes morale rather than reassuring anybody.
+    Agents always know whose queue is heavy.
+
+    difficulty_concentration names the pathway by which good agents leave. Routing hard work to
+    the capable person is locally optimal on every individual ticket and is a promotion into
+    burnout when repeated for a year.
+
+admission:
+  accepted_content_hash: 36db46b453ef88f1bcd1d058372d15ca351b2353db6cc2666336782077884b6c

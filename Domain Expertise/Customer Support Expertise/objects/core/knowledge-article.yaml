@@ -771,8 +771,11 @@ inference_patterns:
     - kind: derived
       name: derived.contact_frequency
       owner_layer: L2
-      note: Already planned. Needs to be sliced by intent, not just by account — an account contacting
-        more overall is not the same as an account contacting again about the SAME thing.
+      note: 'Account level, and correctly so: a failed deflection is the ACCOUNT coming back, whoever
+        types the second message. Shipped in reason/baselines.py, so this is no longer an ask — the
+        remaining gap is the slice: it needs to be cut by intent, not just by account, because an
+        account contacting more overall is not the same as an account contacting again about the
+        SAME thing.'
     - kind: baseline
       name: contact_rate_per_account
       owner_layer: L2

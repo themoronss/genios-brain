@@ -1,0 +1,124 @@
+identity:
+  id: sales.rule.procurement.independent_steps_run_in_parallel
+  name: Independent steps run in parallel
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.procurement
+  subdomain: closing
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'The order a purchasing process runs in is almost never chosen — it is the order the
+    requests happened to arrive in. Steps that do not depend on each other therefore run in sequence
+    by default, and the accumulated queue time is the largest avoidable delay in the closing stage.'
+  answers:
+  - Must this step wait for the previous one?
+  - Where is the time in this procurement cycle actually going?
+  not:
+  - A rule about which steps exist. That is the buyer's checklist.
+  - Permission to skip a step. Parallel is not the same as omitted.
+
+rule:
+  statement: 'A procurement or onboarding step MUST NOT be recommended as blocked by another unless a
+    stated dependency exists between them. Where several outstanding steps are independent, the
+    recommendation MUST be to start them concurrently, and any plan presenting them serially MUST
+    name the dependency for each ordering it imposes.'
+  spans:
+  - sales.obj.core.contract
+  - sales.obj.core.timeline
+  - sales.obj.core.next_action
+  when:
+  - {path: deal.status, op: "=", value: open}
+  - {exists: commitment.due_at}
+  - {has_obs: security_review_started}
+  then: 'Recommend starting the remaining independent steps now rather than after the current one, and
+    require a stated dependency for any step held back.'
+  severity: warning
+  why: 'Serial execution is a default rather than a decision, and defaults are invisible — nobody
+    chose it, so nobody examines it. The cost compounds because each step carries queue time as well
+    as work time: five independent steps of two days work and five days queue take thirty-five days in
+    sequence and seven in parallel, and neither the buyer nor the seller experiences any single step
+    as slow. That is why the delay is attributed to procurement being procurement rather than to a
+    sequencing choice nobody made.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'A GENUINE DEPENDENCY. Vendor setup frequently cannot begin before a signed contract exists, and
+    a purchase order cannot be raised before vendor setup completes. Real ordering constraints are the
+    reason this rule requires them to be NAMED rather than forbidding sequence.'
+  - 'A BUYER PROCESS THAT MANDATES THE ORDER. Some organisations run a defined gate sequence and will
+    not accept concurrent submissions. Pushing against it costs goodwill and changes nothing.'
+  - 'CAPACITY ON OUR SIDE. Where the same person must complete every submission, parallel starts do
+    not shorten anything and produce several half-finished ones, which is worse than one at a time.'
+  - 'A STEP WHOSE OUTPUT CHANGES A LATER SUBMISSION. Starting a form that will have to be redone once
+    an earlier answer is known creates rework, and rework restarts queues — the specific failure the
+    surrounding playbook is built to avoid.'
+  - 'AN UNMEETABLE REQUIREMENT NOT YET RESOLVED. Where one condition may end the deal, parallelising
+    the rest invests effort in a process that may be about to stop.'
+
+objects_used:
+- sales.obj.core.contract
+- sales.obj.core.timeline
+- sales.obj.core.next_action
+- sales.obj.core.buying_committee
+
+outcomes:
+- Sequencing becomes a decision with stated reasons rather than an accident.
+- Queue time is counted alongside work time in the remaining plan.
+
+failure_modes:
+- 'PARALLEL READ AS SIMULTANEOUS SUBMISSION OF EVERYTHING. Overloads both sides and produces the
+  rework the third and fourth exceptions describe.'
+- 'DEPENDENCIES ASSERTED WITHOUT BEING REAL. "Legal has to finish first" is frequently a habit, and a
+  rule satisfied by an unexamined claim has changed nothing.'
+- 'APPLIED WHERE THE BUYER MANDATES THE ORDER. Spends relationship capital arguing with a gate
+  sequence that will not move.'
+
+limits:
+- The record holds no procurement step graph at all — `commitment.due_at` and
+  `security_review_started` are the only nearby evidence, and neither expresses a dependency. This
+  rule can prompt the question and cannot verify the answer.
+- Cannot see the buyer's internal queue lengths, which is where most of the duration sits.
+
+variants:
+- applies_to: enterprise
+  change: Ask the vendor-onboarding team directly which submissions can be concurrent; they usually
+    know and are rarely asked.
+  why: The constraint lives in their system, not in the sponsor's understanding of it.
+- applies_to: regulated
+  change: Sequence is frequently prescribed; the useful application is confirming which steps are
+    prescribed rather than assuming all of them are.
+  why: Organisations over-apply their own regulatory sequence out of caution.
+- applies_to: smb
+  change: Rarely applies; there is no multi-step process to sequence.
+  why: One person, one decision.
+
+metrics:
+- name: parallel_step_share
+  unit: percent
+  description: Share of independent steps run concurrently.
+  direction: higher_is_better
+- name: queue_time_share
+  unit: percent
+  description: Share of the procurement cycle spent waiting rather than working. The quantity serial
+    ordering inflates, and the one nobody measures.
+  direction: lower_is_better
+
+references:
+- title: Practitioner procurement operations
+  kind: practitioner
+  note: Queue time dominates work time in multi-step purchasing, which is why sequencing rather than
+    effort is the lever.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. Warning rather than blocking because the record holds no dependency graph
+    — the rule can ask whether an ordering was chosen and cannot verify the answer, and a blocking
+    version would gate on evidence that does not exist.'

@@ -1,0 +1,120 @@
+identity:
+  id: admin.pb.meeting_scheduling.schedule_once_correctly
+  name: Schedule once, correctly
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.meeting_scheduling
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: stable
+purpose:
+  statement: >
+    Book a meeting with everything it needs to happen well in one pass — the right people, a purpose
+    line, a timezone-checked slot, the room or link, and the preparation time. Every reschedule
+    multiplies coordination cost across every attendee, so the first pass is where the entire saving
+    lives.
+  answers:
+  - Who genuinely needs to be in this room?
+  - What has to be true for this meeting to happen exactly once?
+
+when_to_use:
+  conditions:
+  - {exists: meeting.start_at}
+  signals:
+  - meeting_request
+  do_not_use_when:
+  - The request could be a document or a decision. Establish that first; scheduling a meeting that
+    should not exist efficiently is the most expensive thing this capability can do.
+
+steps:
+- order: 1
+  name: Write the purpose line before opening a calendar
+  description: >
+    A meeting with no stated purpose cannot have its attendee list questioned, which is exactly why
+    the purpose gets skipped.
+  actor: human
+  produces: One sentence.
+  done_when: The purpose exists and names an outcome, not a topic.
+- order: 2
+  name: Justify each attendee against that purpose
+  description: >
+    Required, optional, or informed afterwards — three different answers. Defensive inviting is the
+    single largest source of wasted meeting cost, and it is socially cheap to do and expensive to undo.
+  actor: human
+  objects_read: [admin.obj.core.meeting]
+  produces: A justified attendee list.
+  done_when: Every name has a reason that is not "so they are not left out".
+- order: 3
+  name: State the aggregate cost
+  description: >
+    Eight people for an hour is a working day. A scheduling function that never says so is optimising
+    a calendar while spending a budget nobody sees.
+  actor: system
+  produces: A person-hours figure.
+  done_when: The cost is visible to whoever is approving the meeting.
+- order: 4
+  name: Check the slot against each participant's working day
+  description: >
+    Arithmetic conversion produces technically valid times that somebody will attend badly. Free is
+    not the same as available.
+  actor: system
+  produces: A slot inside everyone's day, or a named exception.
+  done_when: No participant is being asked to attend outside their hours without knowing it.
+- order: 5
+  name: Attach everything the meeting needs
+  description: >
+    Agenda line, link or room, pre-read, and the preparation time on the calendars of whoever has to
+    prepare. A meeting booked without these is scheduled rather than arranged.
+  actor: human
+  done_when: Nobody has to ask a question to attend.
+- order: 6
+  name: Resist the first reschedule
+  description: >
+    One move touches every attendee's calendar, their preparation and everything adjacent. Before
+    moving it, check whether the meeting can proceed without the person who cannot make it.
+  actor: human
+  done_when: The reschedule was necessary rather than reflexive.
+
+objects_used:
+- admin.obj.core.meeting
+- admin.obj.core.request
+- admin.obj.core.action_item
+
+limits:
+- >
+  Steps 2 and 4 need an attendee list resolved to people whose working hours we know. The graph holds
+  meeting.external_counterparty and not the roster, so both are human judgements here.
+- It cannot prevent the meeting being unnecessary. That test belongs to agenda_preparation and should have run first.
+
+failure_modes:
+- Step 3 computed and never shown, which makes it a statistic rather than a check.
+- Step 6 applied rigidly, so a meeting proceeds without the one person it was for.
+
+variants:
+- applies_to: distributed
+  change: Step 4 dominates and rotates — a recurring meeting fixed at one region's convenience is a standing tax on the others.
+  why: Fairness across time zones is only visible across a series, not within one booking.
+- applies_to: automated_first
+  change: Steps 1 and 2 stay human; 3 to 5 automate cleanly.
+  why: Availability is a solved problem and attendee justification is not.
+- applies_to: enterprise_admin
+  change: Step 6 becomes a negotiation between assistants, and its cost is what makes step 1 worth doing properly.
+  why: At scale a reschedule is a multi-party renegotiation.
+
+references:
+- title: admin.obj.core.meeting
+  kind: internal
+  note: meeting.external_counterparty and meeting.occurred are what make a badly scheduled meeting visible after the fact.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Steps 1 to 3 are the capability; 4 and 5 are the craft; 6 is where the savings are realised. A
+    scheduling function that starts at step 4 is a free/busy lookup with good manners.

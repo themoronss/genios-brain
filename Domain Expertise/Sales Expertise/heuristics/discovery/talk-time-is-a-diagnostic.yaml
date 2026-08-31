@@ -1,0 +1,144 @@
+identity:
+  id: sales.heu.discovery.talk_time_is_a_diagnostic
+  name: Talk time is a diagnostic
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.discovery
+  subdomain: discovery_and_solution
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: If the seller talked more than a third of a discovery call, discovery did not happen — a
+    pitch did, wearing discovery's calendar slot. Review talk ratio before reviewing anything else
+    about the call.
+  answers:
+  - How can a discovery call be assessed quickly?
+  - What is the first thing to check when a discovery produced nothing?
+  not:
+  - A claim that silence is skill. A seller who says nothing useful is not doing discovery either.
+  - A coaching method. It is a screening measure that says where to look.
+
+heuristic:
+  statement: 'Use talk ratio as a screen, not as a score. It is a cheap proxy for whether the seller
+    was extracting or transmitting, and its value is that it can be checked without listening to the
+    call — a bad ratio means the call is worth reviewing, and a good one means the problem, if there
+    is one, is somewhere else.'
+  why: 'Discovery is an extraction task and its failure mode is substitution: the seller is uncertain,
+    an explanation is available and comfortable, and the slot fills with our content instead of
+    theirs. The ratio catches this because it is a property of the whole call rather than of any
+    moment in it, and it cannot be improved by intent — a seller who believes they asked good
+    questions and talked for most of the call did not, whatever they remember.'
+  confidence_bp: 7200
+  applies_when: 'A discovery conversation with a buyer, where the objective is to understand a
+    situation rather than to explain a product.'
+  breaks_down_when: 'A BUYER WHO GIVES SHORT ANSWERS. Some people answer in sentences regardless of
+    the question. The ratio then measures their style rather than our questioning, and the useful
+    signal is whether the ANSWERS carried content, not how long they were.
+
+    A TECHNICAL DEEP-DIVE. Where the buyer has asked us to explain something, transmitting is the
+    task and a low seller ratio would be a failure to answer.
+
+    LATER-STAGE CONVERSATIONS. Once the problem is understood, the balance legitimately shifts. The
+    heuristic belongs to discovery and importing it into a proposal review produces a seller who will
+    not answer questions.
+
+    A GROUP CALL. Ratio across several buyers hides that one person spoke and the rest did not, which
+    is the more informative fact and the one a single number erases.
+
+    WHEN IT BECOMES THE TARGET. A seller optimising for talk ratio asks long questions and gives
+    minimal answers, which is a worse call in both directions — this is a standard metric-as-target
+    failure and it is easy to induce by reporting the number back.'
+  reads:
+  - sales.obj.core.business_need
+  - sales.obj.core.pain_point
+  - meeting.attended
+  contradicts:
+  - sales.heu.demo.show_less_to_sell_more
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.inbound_lead
+  conditions:
+  - {exists: meeting.end_at}
+  - {path: meeting.status, op: "!=", value: cancelled}
+  signals:
+  - meeting_request
+  - question
+  do_not_use_when:
+  - The buyer asked us to explain something; transmitting is the task.
+  - It is a later-stage conversation where the balance legitimately shifts.
+  - It is a group call, where a single ratio hides who actually spoke.
+
+objects_used:
+- sales.obj.core.business_need
+- sales.obj.core.pain_point
+- sales.obj.core.persona
+
+outcomes:
+- Discovery calls are screened cheaply before anyone listens to them.
+- A pitch occupying a discovery slot is identified as such.
+
+failure_modes:
+- 'USED AS A SCORE. Produces sellers optimising the ratio — long questions, short answers — which is a
+  worse call and looks better.'
+- 'APPLIED TO EVERY CALL TYPE. Imports a discovery standard into conversations where explaining is the
+  job.'
+- 'READ WITHOUT THE ANSWERS. A high buyer ratio with no content is not discovery either; the ratio
+  says where to look, not what was found.'
+
+limits:
+- 'Not observable in the record at all. There are no call transcripts — `meeting.attended` and
+  `meeting.end_at` say a meeting happened and nothing about what was said inside it. This is a human
+  review practice, and it is authored here because it is the correct first check, not because the
+  engine can perform it.'
+- Cannot distinguish a good question from a long one.
+- Silent on written discovery, which is increasingly where it happens.
+
+variants:
+- applies_to: enterprise
+  change: Measure per participant rather than per call; the informative fact is which stakeholders
+    spoke, and a single ratio hides it.
+  why: A committee call where one person answered everything is a specific and important failure.
+- applies_to: smb
+  change: The ratio is at its most reliable — one buyer, one conversation, no group dynamics.
+  why: Nothing to aggregate away.
+- applies_to: inside_sales
+  change: Screen at the aggregate by seller rather than per call; the pattern is more reliable than
+    any single conversation at this volume.
+  why: Individual calls are too short and too numerous for per-call review.
+
+metrics:
+- name: buyer_talk_ratio
+  unit: percent
+  description: Share of the conversation spoken by the buyer.
+  direction: higher_is_better
+- name: quantified_problem_share
+  unit: percent
+  description: Share of discoveries carrying a buyer-supplied cost figure. The content check that
+    talk ratio alone cannot provide.
+  direction: higher_is_better
+
+references:
+- title: SPIN Selling
+  kind: methodology
+  author: Neil Rackham
+  note: The original research finding that successful calls are distinguished by question density and
+    by buyer speaking time, not by seller articulacy.
+- title: Goodhart's law
+  kind: research
+  note: Named because this metric is an unusually easy one to game, and reporting it back to sellers
+    is how the gaming gets induced.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The specific one-third figure was removed — a
+    threshold in a Layer 3 file is a boundary leak — and it is recast as a SCREEN rather than a score,
+    which is also what protects it from the metric-as-target failure in the fifth breakdown regime.'

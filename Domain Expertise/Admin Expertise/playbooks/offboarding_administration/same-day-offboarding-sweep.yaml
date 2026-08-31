@@ -1,0 +1,92 @@
+identity:
+  id: admin.pb.offboarding_administration.same_day_offboarding_sweep
+  name: Same-day offboarding sweep
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.offboarding_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Departure triggers a same-day sweep — access revoked, assets recovered, knowledge handed
+    over, payroll and records closed — from a checklist, because lingering access is a security hole and
+    lingering loose ends are future disputes.
+
+when_to_use:
+  do_not_use_when:
+  - The departure is contested or under investigation. Then access and asset handling follow a legal instruction, not a standard sweep.
+steps:
+- order: 1
+  name: Run it as one sweep, on the day
+  description: >
+    Staggered offboarding means each step happens eventually, and the window between them is the
+    entire exposure.
+  actor: human
+  objects_read: [admin.obj.core.employee_record]
+  done_when: Access, assets and handover moved together.
+- order: 2
+  name: Revoke from a list that includes the informal systems
+  description: >
+    The identity provider is easy. The tool somebody expensed and the shared credential nobody owns
+    are where residual access actually sits.
+  actor: agent
+  objects_read: [admin.obj.core.access_right]
+  done_when: The sweep covered systems outside the directory.
+- order: 3
+  name: Hand over OWNERSHIP, not just tasks
+  description: >
+    A vendor relationship, a running process, an account only they could administer. Task handover
+    is visible and ownership handover is not.
+  actor: human
+  objects_read: [admin.obj.core.vendor, admin.obj.core.action_item]
+  done_when: Every owned thing has a new named owner.
+- order: 4
+  name: Recover assets against the issued list
+  description: >
+    Goodwill recovers most of it, and the cases it does not are the awkward ones. A list makes the
+    conversation administrative rather than personal.
+  actor: agent
+  objects_read: [admin.obj.core.asset]
+  done_when: Each issued item is returned, written off, or being chased.
+- order: 5
+  name: Settle pay and close the record
+  description: >
+    Final pay is the last financial interaction and it gets discussed. Records close and retain
+    rather than delete, because obligations outlive employment.
+  actor: human
+  done_when: Settlement is correct and the record is retained per rule.
+objects_used: [admin.obj.core.employee_record, admin.obj.core.access_right, admin.obj.core.asset, admin.obj.core.vendor, admin.obj.core.action_item]
+limits:
+- 'Step 2 is bounded by the system inventory, and shadow SaaS is precisely what an inventory lacks.'
+- 'Step 3 depends on the leaver cooperating, which correlates with how steps 1 to 5 are framed.'
+failure_modes:
+- 'Step 3 reduced to a task list, which leaves the vendor relationship and the shared account with nobody.'
+- 'Step 1 spread over a fortnight because the person is working their notice, which is exactly the window the sweep exists to close.'
+variants:
+- applies_to: distributed
+  change: Step 4 involves shipping and is the step that stalls; it needs a courier and a deadline, not a request.
+  why: There is no desk to leave a laptop on.
+- applies_to: regulated
+  change: Steps 2 and 5 are evidenced and the revocation timeline may itself be a control.
+  why: Residual access is a finding regardless of whether it was used.
+- applies_to: startup_lean
+  change: Steps 2 and 3. Everyone owns something informally and nobody has written down what.
+  why: Ownership is entirely tacit at this size, which is what makes the exit expensive.
+references:
+- title: Joiner-mover-leaver practice
+  kind: practitioner
+  note: Where the leaver sweep is treated as a single event rather than a set of independent tasks.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1's insistence on a single day is what the notice period erodes. Spreading the sweep
+    across a fortnight because the person is still working feels reasonable and is exactly the
+    window the sweep exists to close.

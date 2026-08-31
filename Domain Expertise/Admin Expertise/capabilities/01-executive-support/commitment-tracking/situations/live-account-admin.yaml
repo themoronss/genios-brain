@@ -1,0 +1,132 @@
+# The Admin domain's FIRST situation file. Fifty-seven capabilities were authored here and none
+# of them could ever be reached: `routes` is built per L2 situation type FROM the situation files,
+# so a domain with zero of them is content with no door. Two of the design partner's sixty active
+# situations are `account_admin`, and both failed with "no expertise route for situation type
+# 'account_admin' in domains ['admin']" — not judged and rejected, never looked at.
+
+identity:
+  id: admin.sit.live_account_admin
+  name: Live Account Admin
+  domain: admin
+  owner_capability: admin.executive_support.commitment_tracking
+  version: 1.0.0
+  status: stable
+
+description: >
+  An administrative relationship with an outside organisation, read at the ACCOUNT level: what we
+  owe them, what they owe us, and which of those has a date on it. This is the Admin domain's atom
+  — an OBLIGATION with an owner and a deadline — seen from the counterparty rather than from the
+  queue.
+
+  It is emphatically not a deal and not a support case. Nothing is being sold, nobody is being
+  evaluated on value, and the thing that goes wrong is not a loss but a lapse: a reschedule nobody
+  answered, an application whose reviewer went quiet, a form that was returned and never
+  acknowledged. The two live instances on the design partner's org are exactly that shape — a
+  founder asking to move a session, and a grant programme holding an application "received and
+  under review" with no date attached to the review.
+
+  The failure mode this file exists to prevent is reading an administrative silence as
+  disinterest. An unanswered reschedule is not a cooling relationship; it is an open loop with an
+  owner, and the owner is usually us.
+
+matches:
+  l2_situation_types:
+    - account_admin
+  # ACCOUNT, not person. `domain_spec` types a company-anchored admin situation `account_admin`
+  # and a person-anchored one falls to the generic `admin_person`; the latter is a different read
+  # with a different next move and is deliberately not claimed here.
+  scope: account
+  # No `when:` narrowing, and not an empty key. An administrative obligation is worth reading
+  # precisely when no deal-shaped predicate is true — that is the whole population this situation
+  # serves, and narrowing on deal state would suppress every one of them.
+
+also_serves:
+  - admin.executive_support.inbox_and_correspondence
+  - admin.meeting_operations.follow_up_coordination
+
+objects:
+  load:
+    - admin.obj.core.commitment
+    - admin.obj.core.deadline
+  optional:
+    - admin.obj.core.action_item
+    - admin.obj.core.approval
+    - admin.obj.core.request
+    - admin.obj.core.meeting
+    - admin.obj.core.escalation
+  never_load:
+    # Objects about OUR OWN people and OUR OWN property. A counterparty organisation has no
+    # employee record in our system, no access right to our estate and none of our assets, so
+    # each of these resolves cleanly to `unknown` and is then read downstream as "assessed and
+    # absent" rather than "never applicable" — a confident empty answer, which is worse than none.
+    - admin.obj.core.employee_record
+    - admin.obj.core.access_right
+    - admin.obj.core.asset
+
+priority_bp: 4500
+typical_duration_days: 21
+
+signals_of_progress:
+  - next_step_agreed
+  - positive_reply
+  - meeting_request
+
+signals_of_decay:
+  - timeline_slip
+  - negative_reply
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    An administrative obligation with an outside organisation. There is no deal, no pipeline and
+    no value to prove — never write about stage, budget, close date or "blocking commitment" in
+    the sales sense, and never read an administrative silence as disinterest.
+
+    Headline: the open loop and who is holding it. Name the organisation, and say whether the
+    next move is ours or theirs — that single fact is what this card is for.
+
+    Situation: what was actually asked or promised, and whether anything dates it. If the
+    obligation has no date, say so plainly; an undated obligation is the specific thing that goes
+    missing, and naming it is more useful than inventing urgency.
+
+    Artifact: the reply that closes the loop — answer the request, acknowledge the item, or ask
+    for the date nobody has set. Never a status check for its own sake.
+  fallback:
+    headline: "{entity} — open admin loop, no date set"
+    # Was "... and nothing on record ...", which opens on the hole in our records rather
+    # than on the fact the reader acts from. Same evidence, and only one of the two is a
+    # finding. The sibling of this fault shipped 25 empty-reading cards to the design
+    # partner on 2026-08-30; this file is the same shape, caught before it routed.
+    situation: >-
+      An administrative item is open with {entity} and carries no due date on the record.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-26'
+  notes: >
+    DELIVERS. It did not, until `genios_engine/packs/admin_v1.py` shipped, and the reason it did
+    not is worth keeping: a compiled decision is persisted under the tenant's effective config for
+    the capability's OWN domain, and `ReasoningStore.persist_complete` refuses the write unless
+    `config_pack == capability_pack` (`ConfigSnapshotMismatch`). This capability's domain is
+    `admin`; the only pack modules that existed were `sales_v1` and `general_v1`. So every Admin
+    situation was compiled, reasoned over, and then counted under `no_tenant_pack` and thrown
+    away — 57 authored capabilities that were never judged, only skipped.
+
+    The `admin` pack carries no legacy rules and is not meant to. It exists so this lane has
+    authority; the reasoning is the corpus. Authoring this inside the Sales corpus the way
+    `investor_relations` was would have made it deliverable and would have been a lie —
+    fundraising is a motion the same seller runs, and administering a counterparty account is not.
+
+    Still true and still a Layer 2 gap: every genuinely administrative TRIGGER — an approval past
+    its threshold, a filing due, an invoice that does not match its PO — rests on facts nothing
+    writes. See `_schema/vocabulary.yaml::planned_substrate`. This situation reads an
+    administrative relationship through correspondence, commitments and meetings, which is real
+    and is a fraction of the domain.
+
+admission:
+  accepted_content_hash: 6fbdfb1fb853447b296c1f52b25f292dde39b2dd6ed77f9efecf8b3ee8ee44e8

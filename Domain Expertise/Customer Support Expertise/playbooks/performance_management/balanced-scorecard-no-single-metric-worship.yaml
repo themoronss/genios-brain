@@ -1,0 +1,88 @@
+identity:
+  id: customer_support.pb.performance_management.balanced_scorecard_no_single_metric_worship
+  name: Balanced scorecard, no single-metric worship
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.performance_management
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Agent performance reads quality (QA, reopens), efficiency (handle time, throughput) and customer
+    outcome (CSAT) TOGETHER — because any one of them alone is trivially gameable and the gaming always
+    taxes the other two.
+
+when_to_use:
+  do_not_use_when:
+  - The sample is too small to support a conclusion. A judgement on a handful of tickets is indefensible and it goes on a file that outlasts the manager.
+steps:
+- order: 1
+  name: Read all three axes together
+  description: >
+    Quality, efficiency and customer outcome. Any one alone is gameable, and the gaming is
+    invisible in the metric being gamed.
+  actor: human
+  objects_read: [customer_support.obj.core.quality_scorecard, customer_support.obj.core.satisfaction_score]
+  done_when: No conclusion rests on a single number.
+- order: 2
+  name: Normalise for the work assigned
+  description: >
+    An agent holding escalations and one holding resets are not comparable. Ranking them measures
+    the queue and records it as performance.
+  actor: human
+  objects_read: [customer_support.obj.core.ticket, customer_support.obj.core.support_agent]
+  done_when: Comparison is like for like.
+- order: 3
+  name: Pair speed with reopens
+  description: >
+    Handle-time pressure produces early thin closures. The saving reappears as reopens plus a
+    second, angrier ticket, and only the pair shows it.
+  actor: system
+  done_when: Efficiency is never reported alone.
+- order: 4
+  name: Cite tickets, not aggregates
+  description: >
+    The conclusion goes on a record. An aggregate cannot be discussed with the person it is about,
+    and specific tickets can.
+  actor: human
+  done_when: Findings reference examples.
+- order: 5
+  name: Say it, with a path
+  description: >
+    Avoiding the conversation lets somebody keep failing until exit is the only remaining option.
+    That is not kindness.
+  actor: human
+  done_when: The person knows where they stand and what would change it.
+objects_used: [customer_support.obj.core.support_agent, customer_support.obj.core.quality_scorecard, customer_support.obj.core.ticket,
+               customer_support.obj.core.satisfaction_score, customer_support.obj.core.effort_score]
+limits:
+- 'It judges against a standard; it does not set the standard, and an unrealistic one produces defensible unfairness.'
+- 'CSAT sample sizes per agent are usually too small to carry the weight this process puts on them.'
+failure_modes:
+- 'Step 2 skipped because normalisation is hard and the raw ranking is available.'
+- 'Step 5 deferred repeatedly, which converts a coachable gap into a termination.'
+variants:
+- applies_to: outsourced_bpo
+  change: The metrics are contractual, so step 3''s counterweights must be in the agreement or the provider optimises the paid number.
+  why: The incentive is written down and it is one-sided.
+- applies_to: swarming_support
+  change: Individual attribution is weak, so assessment shifts toward observed contribution rather than ticket outcomes.
+  why: Nobody owns a ticket end to end.
+references:
+- title: Balanced scorecards in service operations
+  kind: practitioner
+  note: Where each single metric is paired with the behaviour that improves it without improving service.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 2 is skipped because normalisation is genuinely hard and the raw ranking is sitting
+    there. The result measures queue assignment, records it as performance, and puts it on a
+    file.

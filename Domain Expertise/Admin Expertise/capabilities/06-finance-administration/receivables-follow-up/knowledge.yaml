@@ -1,31 +1,19 @@
-# Knowledge manifest for admin.finance_administration.receivables_follow_up — REFERENCES ONLY, the sibling of objects.yaml.
-#
-# objects.yaml says which NOUNS to load. This says which EXPERTISE applies.
-#
-#   core   -> <kind>/core/             referenced by more than one capability
-#   scoped -> <kind>/receivables-follow-up/    referenced by this capability alone
-#
-# The same scope rule as objects, enforced from the reference graph: MEDDICC referenced by
-# four capabilities must be core, or it becomes four copies that drift.
-
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
 capability: admin.finance_administration.receivables_follow_up
-
 playbooks:
   core: []
-  scoped: []
-
+  scoped:
+  - admin.pb.receivables_follow_up.collections_as_courteous_system
 heuristics:
   core: []
-  scoped: []
-
+  scoped:
+  - admin.heu.receivables_follow_up.awkwardness_is_expensive
 mental_models:
   core: []
   scoped: []
-
 rules:
   core: []
   scoped: []
-
 decision_frameworks:
   core: []
   scoped: []

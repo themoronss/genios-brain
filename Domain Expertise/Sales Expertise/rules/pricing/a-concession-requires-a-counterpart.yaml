@@ -1,0 +1,131 @@
+identity:
+  id: sales.rule.pricing.a_concession_requires_a_counterpart
+  name: A concession requires a counterpart
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.pricing
+  subdomain: proposal_and_commercials
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'Price movement is exchanged or it is disclosed. A concession granted with nothing
+    received tells the buyer that the stated price contained slack and that waiting is how it is
+    released — and both lessons apply to every future negotiation with that account.'
+  answers:
+  - May this discount be offered?
+  - What has to be true for a price to move?
+  not:
+  - A rule about how large a concession may be. Bands and floors are Layer 4's arithmetic.
+  - A prohibition on discounting.
+
+rule:
+  statement: 'A proposed price reduction MUST name the counterpart it is exchanged for — term,
+    volume, prepayment, a deliverable reference, an earlier signature — and that counterpart must be
+    something the buyer has actually agreed to. A reduction with no named get MUST NOT be surfaced as
+    a recommended action.'
+  spans:
+  - sales.obj.core.pricing
+  - sales.obj.core.proposal
+  - sales.obj.core.contract
+  when:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: pricing_discussed}
+  then: 'Require a named counterpart on any discount candidate. Where none exists, recommend
+    diagnosing the objection instead — the cause behind "too expensive" is usually not price.'
+  severity: blocking
+  why: 'The asymmetry between the cost and the lesson is what makes this worth a gate rather than
+    coaching. The discount is a one-off number; what the buyer learns is permanent, transfers to the
+    renewal and the expansion, and travels to whoever they talk to. A seller under pressure at the end
+    of a period is also precisely the person least able to weigh that trade, which is why the
+    discipline has to sit outside the moment.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'A CORRECTION, NOT A CONCESSION. Where the price was structurally wrong for the segment — the
+    packaging assumed a scale this buyer does not have — the movement is a repair and requires no
+    counterpart. The distinguishing question is whether the same price would be quoted to the next
+    buyer of this shape; if not, it was an error.'
+  - 'A PUBLISHED PROMOTION OR STANDARD BAND. A discount available to everyone on stated terms is a
+    price, not a concession, and is not negotiated.'
+  - 'THE END-OF-PROCESS FORMALITY. A token reduction closing a procurement ritual has a counterpart
+    that is procedural rather than commercial — the signature itself. Real and frequently abused,
+    which is why it must be small and explicitly labelled as such.'
+  - 'A DELIBERATE STRATEGIC ENTRY. A knowingly cheap first contract taken to establish a beachhead,
+    where the expansion mechanism is written into the agreement. Without that mechanism in the paper,
+    this exception is the story told about an ordinary discount.'
+  - 'REFERENCE VALUE IN A NEW SEGMENT. Being first is genuine consideration — but only where the
+    reference is actually requested and delivered, and it stops being an exception the moment it is
+    assumed rather than agreed.'
+
+objects_used:
+- sales.obj.core.pricing
+- sales.obj.core.proposal
+- sales.obj.core.contract
+- sales.obj.core.budget
+- sales.obj.core.objection
+
+outcomes:
+- No discount is recommended without something received for it.
+- Price objections route to diagnosis before they route to a number.
+
+failure_modes:
+- 'A COSMETIC COUNTERPART. A logo permission nobody will use satisfies the rule and none of its
+  purpose; the buyer recognises the trade as fake and draws the same conclusion.'
+- 'READ AS "NEVER DISCOUNT". Produces deals lost on a price that was genuinely wrong for the segment,
+  which the first exception exists to prevent.'
+- 'APPLIED WHERE THE SELLER HAS NO DISCRETION. In a fixed-price motion the rule gates an action that
+  was never available, and the useful advice was to escalate.'
+
+limits:
+- '`pricing_discussed` has one row and `objection_price` and `discount_pressure` have zero on the
+  design partner''s org, so this rule currently has almost nothing to fire on. It is authored ahead of
+  the signal and that is recorded rather than disguised.'
+- Cannot judge whether a named counterpart is worth the reduction; it requires one to exist.
+
+variants:
+- applies_to: enterprise
+  change: The counterpart must be defensible to the approver who was not in the room, and is normally
+    structural — term, commitment, expansion rights.
+  why: Governed concessions are reviewed by someone with no context but the record.
+- applies_to: smb
+  change: Prefer a packaging change as the counterpart — less scope for less money — over a straight
+    reduction.
+  why: It preserves the list price a peer will compare against within weeks.
+- applies_to: channel
+  change: The counterpart is negotiated with whoever funds the margin, which is frequently the partner.
+  why: Otherwise the seller concedes something the partner pays for.
+
+metrics:
+- name: unreciprocated_concession_rate
+  unit: percent
+  description: Share of concessions with no named counterpart. What this rule drives to zero.
+  direction: lower_is_better
+- name: counterpart_delivery_rate
+  unit: percent
+  description: Share of named counterparts actually delivered — the reference given, the term signed.
+    A high concession rate with low delivery means the gate is being satisfied on paper.
+  direction: higher_is_better
+
+references:
+- title: Never Split the Difference
+  kind: book
+  author: Chris Voss
+  note: Concessions as information in a repeated game.
+- title: Practitioner deal-desk policy
+  kind: practitioner
+  note: The get-for-give requirement is standard in governed deal desks; stating its exceptions is
+    what stops it being applied to a genuine pricing error.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. Blocking rather than warning despite the thin live signal, because the
+    failure it prevents is asymmetric — the discount is one-off and the lesson is permanent — and
+    because the seller under end-of-period pressure is the person least able to weigh it. `limits`
+    records that the observations it reads are effectively absent on the live org today.'

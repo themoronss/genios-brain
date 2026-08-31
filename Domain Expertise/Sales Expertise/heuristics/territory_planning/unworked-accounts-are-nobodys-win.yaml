@@ -1,0 +1,89 @@
+identity:
+  id: sales.heu.territory_planning.unworked_accounts_are_nobodys_win
+  name: Unworked accounts are nobody's win
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.territory_planning
+  subdomain: revenue_operations
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: An account sitting in a territory that cannot reach it is not covered — it is warehoused.
+    Coverage means worked, and honesty about workable capacity beats a map that looks complete.
+  answers:
+  - What does coverage actually mean?
+  - Why does a fully-assigned market still leave accounts untouched?
+  not:
+  - An argument for smaller territories. It argues for honest ones.
+
+heuristic:
+  statement: 'Measure coverage as accounts WORKED, never as accounts assigned. The two diverge
+    silently and in one direction: assignment is free and working is not, so every territory drifts
+    towards holding more than it can reach — and the map continues to show full coverage throughout,
+    because assignment is what the map records.'
+  why: 'Warehousing is worse than an unassigned account, not equal to it. An unowned account is
+    visibly a gap and someone eventually notices; an owned-but-unworked account is invisible, and its
+    invisibility is produced by the ownership. It also removes the possibility of rescue — nobody else
+    will approach an account that belongs to a colleague, so the assignment actively prevents the
+    coverage it was supposed to create.'
+  confidence_bp: 8500
+  applies_when: 'A team with assigned territories and any way of observing whether accounts were
+    contacted.'
+  breaks_down_when: 'DELIBERATE LONG-CYCLE HOLDING. Some strategic accounts are assigned to be worked
+    over years rather than quarters, and quarterly contact is not the measure of whether that is
+    happening.
+
+    ACCOUNTS COVERED BY MARKETING OR A PARTNER. Where another motion reaches them, direct seller
+    contact is the wrong measure of coverage and its absence says nothing.
+
+    A SEASONAL BUYING PATTERN. An account contacted once a year, in its buying window, is correctly
+    covered — and looks warehoused for the other three quarters.
+
+    WHEN USED TO JUSTIFY SHRINKING TERRITORIES INDEFINITELY. Every reduction improves the worked
+    share, and past a point the team is comfortable and the market is unattended. The heuristic is
+    about honesty, not about smallness.
+
+    NEW TERRITORIES. In the first period nothing has been worked yet, and the measure is describing a
+    start rather than a failure.'
+  reads:
+  - sales.obj.core.account
+  - sales.obj.core.icp
+  - thread.last_outbound
+  contradicts:
+  - sales.heu.quota_planning.a_missed_quota_everyone_missed_is_a_planning_error
+  pattern_ref: []
+
+when_to_use:
+  conditions:
+  - {absent: thread.last_outbound}
+  signals:
+  - followup_sent
+  do_not_use_when:
+  - The account is a deliberate multi-year hold.
+  - Another motion — marketing, a partner — covers it.
+  - The territory was drawn this period and nothing has been worked yet.
+
+objects_used:
+- sales.obj.core.account
+- sales.obj.core.icp
+- sales.obj.core.lead
+
+limits:
+- Assignment data is not in the corpus substrate — the graph holds correspondence per account and not
+  who owns it, so the worked half of this measure is derivable and the assigned half is not. It
+  becomes computable only for a tenant whose ownership data reaches the record.
+- Cannot distinguish an account never contacted from one contacted off-channel.
+- Says nothing about how to decide which accounts to drop when capacity is genuinely short.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The addition is why warehousing is WORSE than
+    non-assignment rather than equivalent to it — the ownership makes the gap invisible and
+    simultaneously prevents anyone else from closing it.'

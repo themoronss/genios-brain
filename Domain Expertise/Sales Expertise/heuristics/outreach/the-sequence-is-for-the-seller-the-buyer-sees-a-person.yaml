@@ -1,0 +1,142 @@
+identity:
+  id: sales.heu.outreach.the_sequence_is_for_the_seller__the_buyer_sees_a_person
+  name: The sequence is for the seller; the buyer sees a person
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.outreach
+  subdomain: prospecting_and_outreach
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: Buyers do not experience your automation stages — they experience one person being either
+    relevant or annoying. Any touch you would be embarrassed to have read back to you in a meeting
+    should not be in the sequence.
+  answers:
+  - Is this sequence step acceptable?
+  not:
+  - An argument against sequencing. Structure is how a seller stays consistent; it is not the problem.
+  - A style guide. It is a test applied per step, not a rule about tone.
+
+heuristic:
+  statement: 'Judge every step by the read-aloud test: if this message were read back to you by the
+    recipient in the first minute of the meeting it is trying to book, would it help or would you
+    explain it? Steps that need explaining exist to satisfy the sequence, not the reader, and they are
+    reliably the ones that cost the reply.'
+  why: 'A sequence is a seller-side artefact — it exists so that consistency does not depend on
+    memory — and its failure mode is that its own logic becomes the justification for each message.
+    The recipient has no access to that logic. They see a series of messages from one person and form
+    a single judgement about that person, so the sequence''s worst step, not its average, sets what
+    they think. The read-aloud test works because it forces the sender into the recipient''s frame,
+    which is the frame the outcome is actually decided in.'
+  confidence_bp: 8600
+  applies_when: 'Any unsolicited multi-touch contact, in any channel, before a reply has been received.'
+  breaks_down_when: 'A GENUINELY ROUTINE ADMINISTRATIVE MESSAGE. A calendar confirmation or a document
+    delivery would sound odd read aloud and is entirely appropriate. The test is for persuasion, not
+    for logistics.
+
+    HIGH-CONTEXT EXISTING RELATIONSHIPS. Between people who already correspond, a short low-content
+    message is normal and would read as stilted if held to this standard.
+
+    WHERE EMBARRASSMENT IS MISCALIBRATED. A seller new to the profession is embarrassed by ordinary
+    directness and comfortable with familiar clichés, so the test inherits their calibration. It works
+    as a check on an experienced writer and is weak as a teaching device.
+
+    CHANNELS WITH DIFFERENT NORMS. A message that reads badly aloud may be exactly right in a medium
+    where brevity is the convention. The test is about substance, not register, and applying it to
+    register produces uniformly over-written outreach.
+
+    WHEN THE MEETING WILL NEVER HAPPEN. The test imagines a meeting; for a step whose purpose is to
+    close the file, there is no meeting to be embarrassed in, and the relevant standard is whether the
+    message leaves the door open.'
+  reads:
+  - sales.obj.core.lead
+  - sales.obj.core.persona
+  - sales.obj.core.pain_point
+  contradicts:
+  - sales.heu.follow_up.silence_is_an_answer_about_timing__not_value
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.outbound_prospect
+  conditions:
+  - {path: thread.ball_in_court, op: "=", value: them}
+  - {fn: edge_count, op: "<=", value: 1}
+  signals:
+  - followup_sent
+  do_not_use_when:
+  - The message is logistical rather than persuasive.
+  - The relationship already carries regular correspondence; the norms are different there.
+  - The step's purpose is to close the file rather than to earn a meeting.
+
+objects_used:
+- sales.obj.core.lead
+- sales.obj.core.persona
+- sales.obj.core.icp
+- sales.obj.core.pain_point
+
+outcomes:
+- Every step in a sequence can be justified to the recipient, not only to the sequence.
+- Steps that exist because the calendar has a slot are removed rather than reworded.
+
+failure_modes:
+- 'APPLIED TO REGISTER RATHER THAN SUBSTANCE. Produces long, formal, carefully-worded outreach that
+  still has nothing to say, which is worse than a short bad message because it takes longer to ignore.'
+- 'USED TO JUSTIFY REMOVING ALL STRUCTURE. Without a sequence, consistency depends on the seller''s
+  memory and the failure moves from annoying to absent.'
+- 'SELF-ASSESSED BY THE AUTHOR ALONE. The person who wrote the step is the least able to be
+  embarrassed by it; the test is far stronger read by someone else.'
+
+limits:
+- Calibrated to the writer's judgement, so it is a check rather than a standard.
+- Says nothing about targeting — a perfectly acceptable message to the wrong person still fails.
+- Cannot be evaluated by the engine at all; it is a human test on human-authored copy.
+
+variants:
+- applies_to: enterprise
+  change: Read it aloud imagining the recipient forwarding it internally, because that is what a
+    committee member does with a message they find useful.
+  why: The relevant audience is the one the recipient shows it to.
+- applies_to: smb
+  change: The imagined meeting is a short call with an operator who is busy; brevity passes the test
+    that formality fails.
+  why: The standard is the recipient's time, not the sender's care.
+- applies_to: channel
+  change: Imagine it read aloud by the partner to THEIR customer, which is the use it will actually be
+    put to.
+  why: A partner forwards what makes them look good.
+
+metrics:
+- name: positive_reply_share
+  unit: percent
+  description: Share of replies that are not refusals — the number a provocative sequence cannot game.
+  direction: higher_is_better
+- name: sequence_step_variance
+  unit: percent
+  description: Share of steps carrying a different argument from the previous one.
+  direction: higher_is_better
+
+references:
+- title: The Challenger Sale
+  kind: methodology
+  author: Dixon and Adamson
+  note: The insistence that a seller earn attention by teaching, which is what a step has to do to
+    survive the read-aloud test.
+- title: Practitioner outbound norms
+  kind: practitioner
+  note: The read-aloud test is folk practice among experienced sellers and is rarely written down;
+    stating its breakdown regimes is what makes it usable by someone who is not already good.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page; the original statement is kept because it is the
+    sharpest line in the sequence literature. `limits` states that this heuristic is not machine
+    evaluable — it is a human test on human copy — which is worth recording rather than dressing as a
+    pattern the engine could run.'

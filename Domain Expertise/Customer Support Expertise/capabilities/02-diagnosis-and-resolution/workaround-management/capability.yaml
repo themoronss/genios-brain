@@ -1,41 +1,81 @@
-# STUB — identity, description, question and metadata only. Promotion instructions in metadata.
-
 identity:
   id: customer_support.diagnosis_and_resolution.workaround_management
   name: Workaround Management
   domain: customer_support
   subdomain: diagnosis_and_resolution
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Giving the customer a way to keep working while the fault is still there, and then holding
+  the fact that it is still there. A workaround is a genuine resolution and a genuine debt at the same
+  time: it closes tickets, drains escalation pressure, and quietly removes the only signal that was keeping
+  the defect funded — which is why the most dangerous workaround is the one that works well. It has to
+  be recorded against the issue with an owner and a condition for retirement, and the customer has to
+  know they are on one, because a workaround they mistake for a fix becomes the behaviour they build on
+  and the thing they complain about when it is finally taken away.
 
-description: >
-  Giving the customer a way to keep working while the fault is still there, and then holding the
-  fact that it is still there. A workaround is a genuine resolution and a genuine debt at the
-  same time: it closes tickets, drains escalation pressure, and quietly removes the only signal
-  that was keeping the defect funded — which is why the most dangerous workaround is the one
-  that works well. It has to be recorded against the issue with an owner and a condition for
-  retirement, and the customer has to know they are on one, because a workaround they mistake
-  for a fix becomes the behaviour they build on and the thing they complain about when it is
-  finally taken away.
+  '
+question: What lets them keep working today without letting anyone believe the fault is gone?
 
-question: "What lets them keep working today without letting anyone believe the fault is gone?"
+outcomes:
+- 'The customer working again today, with the fault still openly acknowledged as present. A workaround is a genuine resolution and a genuine debt at the same time.'
+- 'Every issued workaround carrying the real fix''s ticket and a review date, so relief today does not silently become the permanent answer.'
+- 'Honest labelling — the customer told this is temporary and why — because a workaround presented as a fix removes the pressure that would have produced one.'
+- 'A register of live workarounds, since nothing outlives a temporary fix that works well enough.'
+- 'The negative outcome: a workaround REFUSED because it would mask a fault that needs to stay visible. Relief that hides a data-integrity problem is not help.'
+failure_modes:
+- 'PRESENTING IT AS A FIX. It ends the conversation and removes every incentive that would have produced the real one.'
+- 'NO REVIEW DATE, so the temporary measure becomes undocumented product behaviour that the next upgrade breaks.'
+- 'NOT TRACKING WHO HAS ONE, which means the eventual fix cannot be communicated to the people relying on the alternative.'
+- 'WORKING AROUND A FAULT THAT SHOULD REMAIN VISIBLE — a data corruption or a silent failure, where masking is the harm.'
+- 'CLOSING THE TICKET ON THE WORKAROUND, which is the mechanism by which the underlying defect disappears from the queue.'
+kpis:
+- name: workaround_with_tracked_fix_share
+  unit: percent
+  description: Live workarounds linked to an open fix ticket. Without the link the debt is invisible.
+  direction: higher_is_better
+- name: workaround_age
+  unit: days
+  description: How long temporary measures have been in place. The fossilisation measure.
+  direction: lower_is_better
+- name: honest_labelling_rate
+  unit: percent
+  description: Workarounds the customer was told were temporary.
+  direction: higher_is_better
+- name: upgrade_breakage_from_workarounds
+  unit: count
+  description: Incidents caused by an undocumented workaround meeting a release.
+  direction: lower_is_better
+handoffs:
+  upstream: [customer_support.diagnosis_and_resolution.diagnostics, customer_support.diagnosis_and_resolution.issue_reproduction]
+  downstream: [customer_support.escalation_and_incident.engineering_handoff, customer_support.diagnosis_and_resolution.resolution_delivery,
+               customer_support.knowledge_and_deflection.knowledge_authoring]
+  parallel: [customer_support.customer_communication.expectation_setting, customer_support.entitlement_and_sla.commitment_tracking]
+applies_to:
+  models: [b2b, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, named_tam,
+           premium_paid_support, embedded_in_product, field_service]
+  offerings: [product, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, kpis and
-    handoffs, following the sibling root-cause-analysis/capability.yaml. The judgement to write
-    down first is when NOT to ship one: a workaround with a worse failure mode than the fault, a
-    workaround that requires the customer to remember something forever, and a workaround
-    offered before the fault is understood well enough to know what it is working around. The
-    kpis should carry the debt view rather than the relief view — count of accounts on live
-    workarounds and their age, not workarounds delivered. This capability is the main producer
-    of the planned obs kind workaround_provided and of the pending L2 type workaround_only;
-    both belong to the situation bug-awaiting-engineering, which is owned by engineering_handoff
-    rather than here.
+    Promoted out of Phase-1 stub. Not on a live route. workaround_provided is a
+    planned_substrate obs kind with no writer.
+
+    The dual nature stated in the description is the capability: a workaround is a genuine
+    resolution AND a genuine debt, and every failure mode here comes from treating it as only
+    one of the two. Treated only as a resolution the fault disappears from the queue; treated
+    only as a debt the customer stays blocked while a proper fix is built.
+
+    upgrade_breakage_from_workarounds is the KPI that captures the long-run cost. Untracked
+    workarounds become undocumented product behaviour, and the release that breaks them arrives
+    without anybody connecting the two.
+
+admission:
+  accepted_content_hash: 69b44528219e2da63ec96a680db5b8522485a539ad502d058203c7986ac9388e

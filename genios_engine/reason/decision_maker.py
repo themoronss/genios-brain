@@ -237,8 +237,26 @@ def score_candidate(request: Any, components: Mapping[str, int],
     explicit override from the priority authority replaces the formula outright, for the cases
     where an organisation's own rule outranks the general scoring model.
     """
+    formula = _weighted_utility(request, components)
     if priority_override is not None:
+        # The override stays authoritative — an organisation's own rule outranking the general
+        # model is the documented intent. What is NOT intended is that the legacy adapter
+        # supplies one for EVERY candidate, so the formula has never once decided anything and
+        # nobody could see by how much the two disagree. Recording the formula's answer beside
+        # the override makes the cutover a measurement instead of a leap: compare them on real
+        # traffic first, then move authority.
+        # score_components is a strict integer-basis-point map, so the divergence is recorded as
+        # a number rather than a label: `formula_utility` next to the final utility says both
+        # what the model would have chosen and what actually decided, and the two being equal is
+        # itself the signal that the override changed nothing.
+        components["formula_utility"] = formula
         return priority_override
+    components["formula_utility"] = formula
+    return formula
+
+
+def _weighted_utility(request, components: dict[str, int]) -> int:
+    """The ranking model: reward impact, success and urgency; penalise effort and risk."""
     weights = request.capability.ranking_weights
     weighted = (
         components["impact"] * weights["impact"]

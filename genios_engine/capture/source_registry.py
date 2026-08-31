@@ -66,9 +66,32 @@ class SourceDescriptor:
     # () means NOT ENUMERATED (tenant-defined, e.g. client DB tables) — never "none".
     object_types: tuple[str, ...] = ()
 
+    #: Does an object from this source ever CHANGE after we first see it?
+    #:
+    #: An email does not: once sent it is fixed, so its id alone is a safe dedup key. A CRM deal,
+    #: a calendar event and a database row all do, and for those the id alone is a trap — the
+    #: dedup ledger says "already seen" and the object freezes at whatever state it happened to
+    #: be in the first time. Deal stage, account status, meeting time: all stuck, silently, with
+    #: every generic test still green because gmail (immutable) is what the tests exercise.
+    #:
+    #: Immutable by default because most sources are, and because the cost of the two mistakes
+    #: is not symmetric: a wrongly-mutable source re-lands harmlessly, a wrongly-immutable one
+    #: loses every update forever.
+    immutable: bool = True
+    #: The field carrying "when this version was made" — `updatedAt`, `etag`, a watermark.
+    #: Required for a mutable source: without it there is nothing to fold into the dedup key.
+    version_field: str | None = None
+
     def __post_init__(self) -> None:
         if self.family not in FAMILIES:
             raise ValueError(f"{self.source}: unknown family {self.family!r}")
+        # A mutable source with no version field cannot be deduped correctly, and discovering
+        # that at capture time — per object, silently — is exactly the failure this catches at
+        # import time instead.
+        if not self.immutable and not self.version_field:
+            raise ValueError(
+                f"{self.source}: declared mutable but names no version_field — its objects "
+                "would freeze at first-seen state")
 
 
 SOURCES: tuple[SourceDescriptor, ...] = (
@@ -82,34 +105,48 @@ SOURCES: tuple[SourceDescriptor, ...] = (
     SourceDescriptor("teams", "communication"),
     SourceDescriptor("whatsapp", "communication"),
     SourceDescriptor("sms", "communication"),
+    # A meeting is rescheduled, cancelled and re-titled; `updated` is what makes the new
+    # version land instead of being deduped away as "already seen".
     SourceDescriptor("gcal", "communication", capability="calendar", buildable=True,
                      aliases=("calendar", "google_calendar"),
-                     object_types=("calendar_event",)),
-    SourceDescriptor("mscal", "communication", capability="calendar"),
+                     object_types=("calendar_event",),
+                     immutable=False, version_field="updated"),
+    SourceDescriptor("mscal", "communication", capability="calendar",
+                     immutable=False, version_field="lastModifiedDateTime"),
 
     # ── knowledge ────────────────────────────────────────────────────────────────
     SourceDescriptor("notion", "knowledge", capability="document_store", buildable=True,
-                     object_types=("page",)),
+                     object_types=("page",),
+                     immutable=False, version_field="last_edited_time"),
     SourceDescriptor("gdrive", "knowledge", capability="document_store", buildable=True,
-                     aliases=("drive", "google_drive"), object_types=("file",)),
+                     aliases=("drive", "google_drive"), object_types=("file",),
+                     immutable=False, version_field="modifiedTime"),
     SourceDescriptor("confluence", "knowledge"),
     SourceDescriptor("upload", "knowledge", deliberate=True,
                      object_types=("document_chunk",)),
 
     # ── enterprise systems ───────────────────────────────────────────────────────
+    # THE case this flag exists for. A deal's whole value is its stage, and stage changes —
+    # freezing it at first-seen means the CRM integration reports a pipeline that stopped moving
+    # the day it was connected, with every generic test still green.
     SourceDescriptor("hubspot", "enterprise_system", capability="crm", buildable=True,
-                     object_types=("deal",)),
-    SourceDescriptor("salesforce", "enterprise_system", capability="crm"),
+                     object_types=("deal",),
+                     immutable=False, version_field="updatedAt"),
+    SourceDescriptor("salesforce", "enterprise_system", capability="crm",
+                     immutable=False, version_field="LastModifiedDate"),
     SourceDescriptor("pipedrive", "enterprise_system"),
     SourceDescriptor("stripe", "enterprise_system", capability="finance",
-                     object_types=("subscription",)),
+                     object_types=("subscription",),
+                     immutable=False, version_field="updated"),
     SourceDescriptor("razorpay", "enterprise_system", capability="finance"),
     SourceDescriptor("zendesk", "enterprise_system", capability="support_desk"),
     SourceDescriptor("intercom", "enterprise_system", capability="support_desk"),
     SourceDescriptor("mixpanel", "enterprise_system", capability="product_usage"),
     # The client's own database. Object types are the tenant's tables — unenumerable here.
+    # The client's own database. Object types are the tenant's tables — unenumerable here.
+    # Rows change by definition; the watermark column is configured per connection.
     SourceDescriptor("postgres", "enterprise_system", capability="product_usage",
-                     buildable=True),
+                     buildable=True, immutable=False, version_field="updated_at"),
     SourceDescriptor("database", "enterprise_system", buildable=True),
     SourceDescriptor("mysql", "enterprise_system", buildable=True),
 
@@ -184,3 +221,20 @@ BUILDABLE_SOURCES: frozenset[str] = frozenset(
 
 PROVIDER_CAPABILITY: dict[str, str] = {
     key: d.capability for key, d in _BY_ID.items() if d.capability is not None}
+
+
+def is_mutable(source: str) -> bool:
+    """Does this source's objects change after first sight?
+
+    Unknown sources answer False — the same default a descriptor gets — because an unregistered
+    source is not evidence of mutability, and treating it as mutable would park every object
+    from it for lacking a version we never asked any connector to supply.
+    """
+    d = descriptor_of(source)
+    return bool(d and not d.immutable)
+
+
+def version_field_for(source: str) -> str | None:
+    """The field a mutable source must carry a version in."""
+    d = descriptor_of(source)
+    return d.version_field if d else None

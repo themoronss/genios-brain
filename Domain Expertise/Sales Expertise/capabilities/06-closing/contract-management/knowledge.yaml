@@ -1,31 +1,20 @@
-# Knowledge manifest for sales.closing.contract_management — REFERENCES ONLY, the sibling of objects.yaml.
-#
-# objects.yaml says which NOUNS to load. This says which EXPERTISE applies.
-#
-#   core   -> <kind>/core/             referenced by more than one capability
-#   scoped -> <kind>/contract-management/    referenced by this capability alone
-#
-# The same scope rule as objects, enforced from the reference graph: MEDDICC referenced by
-# four capabilities must be core, or it becomes four copies that drift.
-
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
 capability: sales.closing.contract_management
-
 playbooks:
   core: []
-  scoped: []
-
+  scoped:
+  - sales.pb.contract_management.contract_velocity
 heuristics:
   core: []
-  scoped: []
-
+  scoped:
+  - sales.heu.contract_management.unsigned_is_unwon
 mental_models:
   core: []
   scoped: []
-
 rules:
   core: []
-  scoped: []
-
+  scoped:
+  - sales.rule.contract_management.an_obligation_leaves_the_document
 decision_frameworks:
   core: []
   scoped: []

@@ -1,0 +1,136 @@
+# The Admin domain's PERSON anchor. `live-account-admin.yaml` is its account-level twin, and the
+# split is not cosmetic: a company holds almost no facts of its own, so an account-level read is
+# assembled from the neighbourhood, while a person-level read is assembled from the person — who
+# wrote last, whose turn it is, and what we owe THEM specifically.
+#
+# It exists because `domain_spec` described only the company anchor. A person-anchored admin
+# situation therefore fell to `type_for`'s generic `<domain>_<anchor>` default and became
+# `admin_person`: a name no situation file claims, absent from `_schema/vocabulary.yaml`, and
+# unresolvable by the registry. The design partner carries one today, and it has never routed.
+# The same fault, in the same shape, as the `general_deal` gap that kept the whole deal lane dark.
+
+identity:
+  id: admin.sit.live_admin_contact
+  name: Live Admin Contact
+  domain: admin
+  owner_capability: admin.executive_support.inbox_and_correspondence
+  version: 1.0.0
+  status: stable
+
+description: >
+  A named individual we are administratively engaged with, read at the PERSON level: what they
+  asked us for, what we promised them, and which side the next move sits on. The counterparty here
+  is a person rather than an account — a programme coordinator, a registrar, an accountant, a
+  landlord's agent, a scheduler — and frequently there is no account at all, because they wrote
+  from a personal address or from an organisation we hold nothing else about.
+
+  What separates this from a prospect relationship is the direction of obligation. A prospect is
+  being persuaded; an administrative contact is being ANSWERED. Nobody is evaluating value, there
+  is no stage to advance, and the thing that goes wrong is not a loss but a lapse — a form
+  returned and never acknowledged, a date requested and never given, a document sent to somebody
+  who was waiting for it a fortnight ago.
+
+  The failure this file exists to prevent is reading administrative silence as disinterest. An
+  administrative counterparty who has gone quiet is usually not cooling; they are usually waiting,
+  or they have finished and consider the matter closed. Those two readings need opposite actions
+  and the substrate distinguishes them with one fact — `thread.ball_in_court`.
+
+matches:
+  l2_situation_types:
+    - admin_contact
+  # PERSON, not account. `domain_spec` types a person-anchored admin situation `admin_contact`
+  # and a company-anchored one `account_admin`; the latter is claimed by
+  # `admin.sit.live_account_admin` and is deliberately not claimed here.
+  scope: person
+  # No `when:` narrowing, and not an empty key — the same reasoning as the account-level twin.
+  # An administrative obligation is worth reading precisely when no deal-shaped predicate is
+  # true, so narrowing on one would suppress the entire population this situation serves. The
+  # discrimination that matters happens downstream, on ball_in_court, not here.
+
+also_serves:
+  - admin.executive_support.commitment_tracking
+  - admin.meeting_operations.follow_up_coordination
+
+objects:
+  load:
+    - admin.obj.core.request
+    - admin.obj.core.commitment
+  optional:
+    - admin.obj.core.deadline
+    - admin.obj.core.action_item
+    - admin.obj.core.approval
+    - admin.obj.core.meeting
+    - admin.obj.core.document
+  never_load:
+    # Objects about OUR OWN people, OUR OWN estate and OUR OWN money. An outside administrative
+    # contact has no employee record here, no access right to our systems and none of our assets;
+    # each would resolve cleanly to `unknown` and then be read downstream as "assessed and absent"
+    # rather than "never applicable" — a confident empty answer, which is worse than none.
+    - admin.obj.core.employee_record
+    - admin.obj.core.access_right
+    - admin.obj.core.asset
+    - admin.obj.core.expense
+
+# Below the account-level twin (4500) on purpose. When both fire on the same counterparty, the
+# account read is the one that carries the obligation, and the person read is a way into it.
+priority_bp: 4000
+typical_duration_days: 14
+
+signals_of_progress:
+  - next_step_agreed
+  - positive_reply
+  - followup_sent
+
+signals_of_decay:
+  - timeline_slip
+  - negative_reply
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    An administrative obligation with a named individual. There is no deal, no pipeline and
+    nothing being sold — never write about stage, budget, close date, or "the opportunity", and
+    never read administrative silence as cooling interest.
+
+    Headline: name the person and say which side the next move is on. That one fact is the whole
+    point of the card, and it is the fact an operator most often has wrong.
+
+    Situation: what was actually asked or promised, and what dates it. If nothing dates it, say
+    so plainly rather than manufacturing urgency — an undated obligation is precisely the kind
+    that goes missing, and naming it as undated is more useful than inventing a deadline.
+
+    Artifact: the reply that closes the loop — answer what was asked, acknowledge what arrived,
+    or request the date nobody has set. Never a status check for its own sake, and never a chase
+    when the ball is on us.
+  fallback:
+    headline: "{entity} — open admin loop, no date set"
+    # Was "... and nothing on record ...", which opens on the hole in our records rather
+    # than on the fact the reader acts from. Same evidence, and only one of the two is a
+    # finding. The sibling of this fault shipped 25 empty-reading cards to the design
+    # partner on 2026-08-30; this file is the same shape, caught before it routed.
+    situation: >-
+      An administrative item is open with {entity} and carries no due date on the record.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Ships with the `domain_spec` entry that produces its type and with the `admin` pack that gives
+    it authority. All three are required and none is sufficient alone: without the spec entry the
+    type is `admin_person` and unclaimable, without a situation file the type routes nothing
+    (routes are built per L2 type FROM the situation files), and without `packs/admin_v1.py` the
+    compiled decision is refused by `persist_complete` under `no_tenant_pack`.
+
+    What it can read is correspondence, commitments and meetings. What it cannot read is every
+    genuinely administrative TRIGGER — an approval past its threshold, a filing due, an invoice
+    that does not match its PO — because nothing writes those facts. See
+    `_schema/vocabulary.yaml::planned_substrate`. That is a Layer 2 gap and is named as one
+    rather than approximated with a correspondence predicate that happens to be nearby.
+
+admission:
+  accepted_content_hash: 897ef7179a4e0a80c68610f5bec7cee1174e301c508548382900a9af4b39d986

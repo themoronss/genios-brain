@@ -1,0 +1,66 @@
+identity:
+  id: customer_support.heu.satisfaction_measurement.response_bias_bends_both_tails
+  name: Response bias bends both tails
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.satisfaction_measurement
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The delighted and the furious answer surveys; the middle stays silent. Treat CSAT as a trend
+    line of the vocal, never as a census — and never celebrate a number whose denominator is 8% of tickets.
+  answers:
+  - What does a CSAT score actually represent?
+
+heuristic:
+  statement: >
+    The delighted and the furious answer surveys; the middle stays silent. Treat satisfaction scores
+    as a trend line of the vocal, never as a census — and never celebrate a number whose denominator
+    nobody quoted.
+  why: >
+    Responding to a survey costs effort and returns nothing, so it is done by people with a reason:
+    gratitude or grievance. The resulting distribution is bimodal and the mean sits between two
+    peaks where almost nobody actually is. This makes the level nearly meaningless and the
+    composition highly informative — and it means the score can improve because the annoyed stopped
+    responding, which reads identically to service getting better.
+  confidence_bp: 8500
+  applies_when: Any voluntary satisfaction survey with a response rate below most of the population.
+  breaks_down_when: >
+    Response rates are genuinely high — an embedded one-click rating that most customers answer.
+    There the sample approaches the population and the level becomes interpretable, which is the
+    argument for in-moment micro-surveys over emailed ones. It also breaks down for the trend claim
+    when the instrument changes: a new survey, a new channel or a new trigger point resets the
+    population, and comparing across that boundary compares two different samples.
+  reads: [customer_support.obj.core.satisfaction_score, customer_support.obj.core.customer_sentiment]
+  contradicts: [customer_support.heu.sentiment_analysis.politeness_can_be_the_last_stage_of_leaving]
+limits:
+- 'It concerns interpretation, not collection. The survey is still worth running.'
+- 'It cannot tell you what the silent middle thinks, only that the score does not.'
+failure_modes:
+- 'Used to dismiss satisfaction data entirely rather than to read it correctly.'
+- 'Trend compared across an instrument change, which compares two populations.'
+variants:
+- applies_to: plg_self_serve
+  change: In-product one-click ratings can reach high response rates, which weakens the bias substantially.
+  why: The cost of responding is near zero.
+- applies_to: enterprise_support
+  change: The bias is severe and the sample tiny, so the score should be treated as a set of individual signals rather than as a measure.
+  why: Each response is a named account, not a data point.
+references:
+- title: Survey response bias in service measurement
+  kind: research
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The consequence worth stating plainly: the score can improve because the annoyed stopped
+    responding, and that reads identically to service getting better in every chart anybody
+    looks at.

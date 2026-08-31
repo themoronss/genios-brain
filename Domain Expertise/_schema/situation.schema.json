@@ -2,55 +2,125 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "genios://domain-expertise/situation.schema.json",
   "title": "Expert Brain Situation",
-  "description": "The level between a capability and its objects. A situation exists so the compiler loads five objects instead of forty. Lives in situations/ INSIDE the capability folder that owns it.\n\nCrucially it carries an EXPLICIT binding to Layer 2 — `matches.l2_situation_types` must name types the pipeline actually emits, otherwise the registry lookup silently misses and the capability never compiles. Silently: nothing errors, nothing logs, the compile just produces nothing.\n\nA situation whose real trigger the pipeline does NOT emit yet declares it under `matches.pending_l2_situation_types` instead. That is the situation-level twin of `inference_patterns[].status: needs_signal`, and it exists for the same reason: a second domain arrives before its pack does, and the choice is otherwise between authoring a lie (binding to a type that means something else) and authoring nothing. A pending binding routes nothing today and says exactly what Layer 1 or 2 must emit for it to start routing. At least one of the two lists must be non-empty.\n\nA situation may serve capabilities beyond its owner; list them in `also_serves`. Ownership decides where the file lives, not who may use it.",
+  "description": "The level between a capability and its objects. A situation exists so the compiler loads five objects instead of forty. Lives in situations/ INSIDE the capability folder that owns it.\n\nCrucially it carries an EXPLICIT binding to Layer 2 \u2014 `matches.l2_situation_types` must name types the pipeline actually emits, otherwise the registry lookup silently misses and the capability never compiles. Silently: nothing errors, nothing logs, the compile just produces nothing.\n\nA situation whose real trigger the pipeline does NOT emit yet declares it under `matches.pending_l2_situation_types` instead. That is the situation-level twin of `inference_patterns[].status: needs_signal`, and it exists for the same reason: a second domain arrives before its pack does, and the choice is otherwise between authoring a lie (binding to a type that means something else) and authoring nothing. A pending binding routes nothing today and says exactly what Layer 1 or 2 must emit for it to start routing. At least one of the two lists must be non-empty.\n\nA situation may serve capabilities beyond its owner; list them in `also_serves`. Ownership decides where the file lives, not who may use it.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["identity", "description", "matches", "objects", "metadata"],
-
+  "required": [
+    "identity",
+    "description",
+    "matches",
+    "objects",
+    "metadata"
+  ],
   "properties": {
-
     "identity": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "domain", "owner_capability", "version", "status"],
+      "required": [
+        "id",
+        "name",
+        "domain",
+        "owner_capability",
+        "version",
+        "status"
+      ],
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z0-9_]+\\.sit\\.[a-z0-9_]+$", "description": "<domain>.sit.<snake_name>. Flat namespace across the domain, because a situation is looked up by Layer 2 type and not by path." },
-        "name": { "type": "string" },
-        "domain": { "type": "string", "pattern": "^[a-z0-9_]+$" },
-        "owner_capability": { "type": "string", "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+\\.[a-z0-9_]+$", "description": "The capability whose folder holds this file. validate.py checks it against the path." },
-        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
-        "status": { "enum": ["draft", "review", "stable", "deprecated"] },
-        "stub": { "type": "boolean", "default": false }
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+\\.sit\\.[a-z0-9_]+$",
+          "description": "<domain>.sit.<snake_name>. Flat namespace across the domain, because a situation is looked up by Layer 2 type and not by path."
+        },
+        "name": {
+          "type": "string"
+        },
+        "domain": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "owner_capability": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+\\.[a-z0-9_]+$",
+          "description": "The capability whose folder holds this file. validate.py checks it against the path."
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "review",
+            "stable",
+            "deprecated"
+          ]
+        },
+        "stub": {
+          "type": "boolean",
+          "default": false
+        }
       }
     },
-
-    "description": { "type": "string", "minLength": 20 },
-
+    "description": {
+      "type": "string",
+      "minLength": 20
+    },
     "matches": {
       "type": "object",
       "additionalProperties": false,
-      "description": "The join to Layer 2. Authored, so it is testable — a test asserts every emitted L2 type resolves to at least one capability.",
+      "description": "The join to Layer 2. Authored, so it is testable \u2014 a test asserts every emitted L2 type resolves to at least one capability.",
       "anyOf": [
-        { "required": ["l2_situation_types"], "properties": { "l2_situation_types": { "minItems": 1 } } },
-        { "required": ["pending_l2_situation_types"], "properties": { "pending_l2_situation_types": { "minItems": 1 } } }
+        {
+          "required": [
+            "l2_situation_types"
+          ],
+          "properties": {
+            "l2_situation_types": {
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "required": [
+            "pending_l2_situation_types"
+          ],
+          "properties": {
+            "pending_l2_situation_types": {
+              "minItems": 1
+            }
+          }
+        }
       ],
       "properties": {
         "l2_situation_types": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Validated against vocabulary substrate.l2_situation_types. Naming a type outside it is an ERROR, because it can never be looked up."
         },
         "pending_l2_situation_types": {
           "type": "array",
-          "description": "Types this situation's real trigger needs, that no shipped pack emits yet. Routes nothing today; index.py ignores it and backlog.py reports it. Naming a type here that the pipeline ALREADY emits is an error — it belongs in l2_situation_types.",
+          "description": "Types this situation's real trigger needs, that no shipped pack emits yet. Routes nothing today; index.py ignores it and backlog.py reports it. Naming a type here that the pipeline ALREADY emits is an error \u2014 it belongs in l2_situation_types.",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["type"],
+            "required": [
+              "type"
+            ],
             "properties": {
-              "type": { "type": "string", "pattern": "^[a-z0-9_]+$" },
-              "owner_layer": { "enum": ["L1", "L2"] },
-              "note": { "type": "string" },
+              "type": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+$"
+              },
+              "owner_layer": {
+                "enum": [
+                  "L1",
+                  "L2"
+                ]
+              },
+              "note": {
+                "type": "string"
+              },
               "nearest_today": {
                 "type": "string",
                 "description": "The closest type the pipeline does emit, when one exists. Names the compromise explicitly rather than letting a reader assume the binding above is exact."
@@ -60,67 +130,187 @@
         },
         "when": {
           "type": "array",
-          "items": { "$ref": "object.schema.json#/$defs/predicate" },
+          "items": {
+            "$ref": "object.schema.json#/$defs/predicate"
+          },
           "description": "Optional extra narrowing on top of the type match, in the engine's grammar."
         },
-        "scope": { "enum": ["person", "deal", "meeting", "account"] }
-      }
-    },
-
-    "also_serves": {
-      "type": "array",
-      "items": { "type": "string" },
-      "description": "Capability ids beyond the owner that this situation routes into. Enterprise Deal is owned by buying_committee_analysis and also serves legal_review, procurement and deal_review — one file, many consumers, resolved into a set by index.py."
-    },
-
-    "objects": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["load"],
-      "description": "The load-set. The whole point of this file: five objects, not forty.",
-      "properties": {
-        "load": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-        "optional": { "type": "array", "items": { "type": "string" } },
-        "never_load": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "Explicitly excluded even if a capability lists them as required — e.g. Buying Committee in a self-serve B2C flow."
+        "scope": {
+          "enum": [
+            "person",
+            "deal",
+            "meeting",
+            "account"
+          ]
         }
       }
     },
-
+    "also_serves": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Capability ids beyond the owner that this situation routes into. Enterprise Deal is owned by buying_committee_analysis and also serves legal_review, procurement and deal_review \u2014 one file, many consumers, resolved into a set by index.py."
+    },
+    "objects": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "load"
+      ],
+      "description": "The load-set. The whole point of this file: five objects, not forty.",
+      "properties": {
+        "load": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "optional": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "never_load": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Explicitly excluded even if a capability lists them as required \u2014 e.g. Buying Committee in a self-serve B2C flow."
+        }
+      }
+    },
     "priority_bp": {
       "type": "integer",
       "minimum": 0,
       "maximum": 10000,
       "description": "Relative business importance of this situation class. Advisory input to Layer 4's Priority Unit; Layer 3 never ranks."
     },
-
-    "typical_duration_days": { "type": "integer", "minimum": 0 },
-
+    "typical_duration_days": {
+      "type": "integer",
+      "minimum": 0
+    },
     "signals_of_progress": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "description": "Observation kinds that indicate this situation is resolving. Feeds Layer 5 success_events."
     },
-
     "signals_of_decay": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": {
+        "type": "string"
+      }
     },
-
+    "render": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "How a card built from this situation must READ. Optional, and absent means the delivery layer falls back to the tenant pack's own template.\n\nIt lives here rather than in the pack because a compiled signal's reason_code is its situation TYPE, and no pack authors those keys \u2014 so the pack lookup returned an empty template for every compiled card: no guidance in the renderer's prompt, and a fallback that shipped the bare `{stage}` slot (the literal word \"open\") as the situation line. The copy is also expertise in its own right: what a reader must be told about this situation is the same kind of judgment as which objects to load, it is reviewed with the rest of the file, and it is hashed into the capability version so rewording cannot silently change what an already-audited card claimed.\n\nThe `fallback` strings are DETERMINISTIC \u2014 no model runs \u2014 and may name only slots the renderer computes: entity, who, days, stage, money, action, concerns. Any clause holding a slot the system could not compute is dropped before the line renders, so write each clause so the sentence survives without it.",
+      "required": [
+        "render_hint",
+        "fallback"
+      ],
+      "properties": {
+        "artifact_kind": {
+          "type": "string",
+          "description": "What the attached artifact IS \u2014 draft_reply, draft_intro, brief. Also names the card's action button. Defaults to a generic draft when absent."
+        },
+        "render_hint": {
+          "type": "string",
+          "minLength": 40,
+          "description": "The instruction handed to the copy renderer: what the headline, the situation line and the artifact must each say for THIS situation. This is the field that stops every card in a situation type reading alike, so it has to name the specific judgment the reader needs, not restate the situation's description."
+        },
+        "fallback": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "headline",
+            "situation"
+          ],
+          "description": "The deterministic copy used when no model is available or the render is rejected. It must be honest on its own: it ships to a real user.",
+          "properties": {
+            "headline": {
+              "type": "string",
+              "minLength": 3
+            },
+            "situation": {
+              "type": "string",
+              "minLength": 3
+            },
+            "states_absence": {
+              "type": "boolean",
+              "description": "TRUE when these words describe what is NOT on record rather than what IS. A situation predicated on an absence (matches.when carries an `absent:` clause, or the fallback's whole content is a gap) cannot instruct, because there is nothing to instruct about. Declaring it here makes the card ABSTAIN: it is written at level `review` (\"a human must look, and here is the exact question\") instead of `prescriptive`, and it does not earn the app or agent surface.\n\nMeasured on the design partner's org, 2026-08-30: 47 live cards, every one of them `prescriptive`, and 25 of the 47 said only that something was missing \u2014 \"errorcore.dev: no problem documented yet\", \"boardy.ai: no concerns logged yet\". 13 came from sales.sit.deal_without_a_stated_problem and 3 from sales.sit.inbound_fit_check, both of which are DEFINED by an absence. The build-time clarity gate that should have caught them (deliver/card_builder.py::clarity_verdict) is keyed on three legacy pack reason codes and matched 0 of the 47.\n\nDo NOT set this on a situation reporting a fact about the WORLD that happens to be negative. \"They wrote nine days ago and no reply has gone back\" is a finding \u2014 somebody is waiting. \"Nothing on record says what problem is being solved\" is a fact about our own records. That is the line this flag draws."
+            }
+          }
+        }
+      }
+    },
     "metadata": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["owner", "last_updated", "review_status"],
+      "required": [
+        "owner",
+        "last_updated",
+        "review_status"
+      ],
       "properties": {
-        "owner": { "type": "string" },
-        "created_by": { "enum": ["human", "ai", "ai_human_reviewed"] },
-        "reviewed_by": { "type": "string" },
-        "last_updated": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-        "review_status": { "enum": ["unreviewed", "in_review", "approved"] },
-        "confidence": { "enum": ["experimental", "provisional", "stable"] },
-        "notes": { "type": "string" }
+        "owner": {
+          "type": "string"
+        },
+        "created_by": {
+          "enum": [
+            "human",
+            "ai",
+            "ai_human_reviewed"
+          ]
+        },
+        "reviewed_by": {
+          "type": "string"
+        },
+        "last_updated": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "review_status": {
+          "enum": [
+            "unreviewed",
+            "in_review",
+            "approved"
+          ]
+        },
+        "confidence": {
+          "enum": [
+            "experimental",
+            "provisional",
+            "stable"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "reviewed_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "The date the named reviewer accepted this content. Distinct from last_updated, which moves whenever anyone edits."
+        }
+      }
+    },
+    "admission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accepted_content_hash"
+      ],
+      "description": "The production-admission record. A named reviewer accepted the exact BYTES below it: the hash is over the document MINUS this block, so an edit after review silently un-accepts and the capability stops carrying authority. Without this block in the schema the ceremony existed in 153 files and in the resolver and in no contract, which is how it went unvalidated.",
+      "properties": {
+        "accepted_content_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "semantic_hash of the document with `admission` removed. Stamp it with _tools/admit.py, never by hand \u2014 a hand-typed hash accepts nothing."
+        }
       }
     }
   }

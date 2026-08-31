@@ -1,0 +1,118 @@
+identity:
+  id: sales.rule.revenue_intelligence.a_signal_without_a_baseline_is_a_threshold
+  name: A signal without a baseline is a threshold
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.revenue_intelligence
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'Every behavioural signal in this capability is a deviation from a rhythm. Without the
+    rhythm it silently becomes an absolute cut-off — which flags the fast correspondents and misses
+    the slow ones going quiet, the exact inversion of what was wanted.'
+  answers:
+  - May this deal be assessed on a latency or cadence signal?
+  - What should happen when there is no baseline?
+  not:
+  - A rule about the threshold value, which is Layer 4's.
+  - A rule about which signals to compute.
+
+rule:
+  statement: 'A latency, cadence or engagement signal MUST NOT be raised for a counterparty with no
+    learned baseline. Where `reply_cadence` is unavailable, the deal is reported as unassessable on
+    behavioural signals rather than assessed against a default, and the absence is surfaced as a
+    coverage gap rather than as deal risk.'
+  spans:
+  - sales.obj.core.deal
+  - sales.obj.core.buying_signal
+  when:
+  - {exists: thread.last_inbound}
+  - {absent: derived.engagement}
+  then: 'Suppress behavioural risk candidates for this deal and record it under baseline coverage.
+    Structural signals — single-threading, an unanswered proposal — are unaffected and may still fire.'
+  severity: blocking
+  why: 'The substitution is silent, which is what makes it dangerous. A system with no baseline does
+    not fail — it falls back to whatever constant is in the code, produces confident output, and is
+    wrong in a systematically biased direction: fast-moving relationships breach an absolute cut-off
+    routinely while slow ones never do, so the alerts concentrate on the healthiest correspondents.
+    The failure is invisible from inside the alert stream, because every individual alert looks
+    reasonable. Blocking is proportionate for that reason — a warning would be dismissed as noise
+    exactly like the alerts it is warning about.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'A STRUCTURAL SIGNAL. Single-threading, a proposal with no response, or a champion departure are
+    not deviations from a rhythm and do not need one. Only the behavioural family is gated, and
+    reading this rule as silence on a deal with no baseline is the commonest misapplication.'
+  - 'AN EXPLICIT ORGANISATION-WIDE DEFAULT. Where a tenant has deliberately set a fallback for new
+    relationships and understands that it is a threshold rather than a signal, the substitution is
+    informed rather than silent, which is the entire objection.'
+  - 'A SHORT-CYCLE MOTION. Where deals close in days, no baseline will ever accumulate and raw silence
+    genuinely carries the information — the timescale compensates for the missing statistics.'
+  - 'A COUNTERPARTY INHERITING A HOUSEHOLD BASELINE. A new contact at an account the organisation has
+    corresponded with for years can reasonably borrow the account''s rhythm. Weaker than a personal
+    baseline, better than a constant, and it must be labelled as borrowed.'
+  - 'RETROSPECTIVE ANALYSIS. When studying closed deals after the fact, the full history is available
+    and a baseline can be computed backwards even though none existed at the time.'
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.buying_signal
+- sales.obj.core.opportunity
+
+outcomes:
+- Behavioural signals fire only where a rhythm exists to deviate from.
+- Missing baselines are reported as coverage rather than as risk.
+
+failure_modes:
+- 'READ AS SILENCE ON THE DEAL. Structural signals are unaffected; treating a baseline gap as a reason
+  to say nothing at all discards the signals that never needed one.'
+- 'BASELINE COVERAGE NEVER REPORTED. The gate then quietly suppresses a large share of the pipeline
+  and nobody knows how large.'
+
+limits:
+- '`reply_cadence` is the only learned baseline the engine has, so this rule can only speak about the
+  latency family; cadence and breadth signals have no baseline mechanism at all today and are
+  therefore governed by nothing.'
+- Cannot tell a genuinely new relationship from one whose history is simply not captured.
+
+variants:
+- applies_to: enterprise
+  change: Baselines are per stakeholder; an account-level rhythm is the borrowed fallback and is
+    labelled as such.
+  why: Committee members correspond at very different rates.
+- applies_to: smb
+  change: The short-cycle exception is the normal case; raw silence is the signal and the gate rarely
+    binds.
+  why: There is no time for a rhythm to form.
+
+metrics:
+- name: baseline_coverage
+  unit: percent
+  description: Share of active counterparties with a learned cadence. This rule's own denominator, and
+    the number that says how much of the pipeline it is currently silencing.
+  direction: higher_is_better
+- name: suppressed_signal_count
+  unit: count
+  description: Behavioural signals withheld for want of a baseline. Should be visible, not silent.
+  direction: lower_is_better
+
+references:
+- title: Base rate neglect
+  kind: research
+  note: Why a constant threshold applied across heterogeneous relationships produces alerts
+    concentrated on the fastest correspondents rather than on the cooling ones.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. `limits` is the honest part: `reply_cadence` is the ONLY learned baseline
+    in the substrate, so this rule genuinely governs the latency family and nothing else, and the
+    cadence and breadth signals the playbook lists have no baseline mechanism at all today.'

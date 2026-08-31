@@ -1,0 +1,95 @@
+identity:
+  id: admin.pb.board_and_secretarial.board_rhythm_and_record
+  name: Board rhythm and record
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.board_and_secretarial
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Board operations run on rhythm — scheduled meetings, packs out days ahead, minutes and resolutions
+    filed properly — because governance quality is judged later, from the record, by people who were not
+    there.
+
+when_to_use:
+  conditions: [{exists: meeting.start_at}]
+  do_not_use_when:
+  - The meeting is not a constituted body. Applying board ceremony to a management meeting produces records nobody needs and dilutes the ones that matter.
+steps:
+- order: 1
+  name: Work the calendar backwards from the constitution
+  description: >
+    Notice periods, pack lead times and filing deadlines are fixed externally. Scheduling forwards
+    from availability is how a validly-called meeting becomes an invalid one.
+  actor: human
+  objects_read: [admin.obj.core.deadline, admin.obj.core.meeting]
+  done_when: Every date derives from a required interval rather than from a free slot.
+- order: 2
+  name: Issue notice and confirm quorum before the room fills
+  description: >
+    These are the two grounds a decision is most easily unwound on, and both are settled in advance
+    or not at all.
+  actor: human
+  done_when: Notice is evidenced and quorum is arithmetically confirmed, not assumed.
+- order: 3
+  name: Circulate the pack with time to read it
+  description: >
+    A board that has not read cannot decide; it can only ratify, and ratification is what a
+    challenge later characterises it as.
+  actor: human
+  objects_read: [admin.obj.core.document]
+  done_when: The pack went out with days, not hours, of runway.
+- order: 4
+  name: Manage conflicts, do not merely note them
+  description: >
+    Declaring an interest is half the record. Whether the member withdrew from the vote is the half
+    a reader checks.
+  actor: human
+  done_when: Each declared interest has a stated handling.
+- order: 5
+  name: Write resolutions separately from discussion
+  description: >
+    A decision, its terms, and who carried it — extractable without reading the narrative, because a
+    year later the narrative is not what anyone wants.
+  actor: human
+  done_when: Resolutions stand alone.
+- order: 6
+  name: Update the registers now
+  description: >
+    A register brought current at audit is a reconstruction dated by the update. Between meetings is
+    when this capability is actually performed.
+  actor: agent
+  done_when: The register reflects the event within days of it.
+objects_used: [admin.obj.core.meeting, admin.obj.core.document, admin.obj.core.approval, admin.obj.core.deadline, admin.obj.core.compliance_obligation]
+limits:
+- 'It assumes a constitution to work backwards from. Where the articles are unread, step 1 is guesswork with ceremony.'
+- 'It cannot make a badly-run board decide well; it makes a well-run board provable.'
+failure_modes:
+- 'Step 6 deferred, which is the single most common secretarial failure and the least visible until diligence.'
+- 'Step 3 compressed because the pack was late, which converts a decision meeting into a briefing.'
+variants:
+- applies_to: multi_entity
+  change: Steps 1, 2 and 6 multiply per entity, and the intervals differ. One calendar across entities is wrong somewhere.
+  why: Each entity has its own constitution and its own registrar.
+- applies_to: startup_lean
+  change: Steps 2, 4 and 5 survive; 1, 3 and 6 compress. Investors read the record at the next round.
+  why: The board is small and the scrutiny is deferred, not absent.
+references:
+- title: Companies Act secretarial practice — notice, quorum, resolutions
+  kind: standard
+  note: The source of step 1 and step 2 as validity conditions rather than courtesies.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 6 is the whole difference between a maintained governance record and a reconstructed
+    one, and it is performed between meetings — which is why it is the step with no forcing
+    event and the one that silently does not happen.

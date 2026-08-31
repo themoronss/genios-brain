@@ -16,7 +16,11 @@ def _seed(engine, org):
     with engine.begin() as c:
         c.execute(text("insert into orgs (id,name,subscription_tier) values (:o,'S','startup') "
                        "on conflict (id) do update set subscription_tier='startup'"), {"o": org})
-        for nid, nt, name in [("p1", "person", "Priya"), ("c1", "company", "Acme")]:
+        # Ids are module-prefixed because `graph_nodes`'s primary key is (node_id, version) with
+        # no org in it. Six test modules seeded a node called `p1`, so on a SHARED test database
+        # the second one to run hit `on conflict do nothing`, silently seeded nothing, and failed
+        # on an assertion about segment membership that had no connection to the real cause.
+        for nid, nt, name in [("seg_p1", "person", "Priya"), ("seg_c1", "company", "Acme")]:
             c.execute(text("insert into graph_nodes (node_id,org_id,node_type,display_name) "
                            "values (:n,:o,:t,:d) on conflict do nothing"),
                       {"n": nid, "o": org, "t": nt, "d": name})
@@ -43,14 +47,14 @@ def test_segments_full_lifecycle():
     assert any(s["id"] == sid for s in listing["segments"])
 
     # add members (only real nodes counted; a bogus id is ignored)
-    added = S.add_members(sid, S.AddMembers(contact_ids=["p1", "c1", "ghost"]), org=org)
+    added = S.add_members(sid, S.AddMembers(contact_ids=["seg_p1", "seg_c1", "ghost"]), org=org)
     assert added["added"] == 2
 
     members = S.list_members(sid, org=org)
-    assert members["count"] == 2 and {m["contact_id"] for m in members["members"]} == {"p1", "c1"}
+    assert members["count"] == 2 and {m["contact_id"] for m in members["members"]} == {"seg_p1", "seg_c1"}
 
     # remove one
-    S.remove_member(sid, "c1", org=org)
+    S.remove_member(sid, "seg_c1", org=org)
     assert S.list_members(sid, org=org)["count"] == 1
 
     # update
@@ -59,7 +63,7 @@ def test_segments_full_lifecycle():
 
     # contact override → moves p1 to a second segment
     seg2 = S.create_segment(S.CreateSegment(name="Customers", cluster_type="Customer"), org=org)
-    S.set_contact_segment("p1", S.ContactSegment(segment_id=seg2["id"]), org=org)
+    S.set_contact_segment("seg_p1", S.ContactSegment(segment_id=seg2["id"]), org=org)
     assert S.list_members(sid, org=org)["count"] == 0            # override cleared old membership
     assert S.list_members(seg2["id"], org=org)["count"] == 1
 

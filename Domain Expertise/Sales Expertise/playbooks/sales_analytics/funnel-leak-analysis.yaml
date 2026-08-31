@@ -1,0 +1,112 @@
+identity:
+  id: sales.pb.sales_analytics.funnel_leak_analysis
+  name: Funnel leak analysis
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.sales_analytics
+  subdomain: revenue_operations
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'Aggregate win rate hides where deals actually die. Conversion is measured stage to
+    stage, sliced by source and segment — the sharpest drop is the constraint, and one constraint per
+    period is what actually moves.'
+  answers:
+  - Where is the funnel actually losing deals?
+  - How many problems should be worked at once?
+  not:
+  - Revenue intelligence, which surfaces questions nobody asked.
+  - Forecasting. This explains the funnel; that predicts its output.
+
+when_to_use:
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - proposal_sent
+  - closed_lost_mention
+  do_not_use_when:
+  - 'Stage definitions are negotiated rather than behavioural. Conversion is then corrupted at source
+    and the analysis produces precise nonsense.'
+  - 'The deal count is too small. Rates that swing on single outcomes look precise and are not.'
+  - 'Nobody will own the fix. Identifying a constraint that nothing acts on adds a report and changes
+    nothing.'
+
+steps:
+- order: 1
+  name: Instrument stage conversion AND time-in-stage
+  description: 'Both numbers per stage. A stage that converts poorly is an obvious leak; a stage that
+    converts well and holds deals twice as long as any other is a bottleneck that a conversion-only
+    view reports as healthy.'
+  actor: system
+  objects_read:
+  - sales.obj.core.deal
+  produces: Conversion and duration per stage.
+  done_when: No stage is being judged on conversion alone.
+
+- order: 2
+  name: Slice before concluding
+  description: 'A healthy average routinely hides one segment bleeding out. Source by segment is the
+    minimum cut, and it is the step most often skipped because the aggregate is already available.'
+  actor: system
+  objects_read:
+  - sales.obj.core.icp
+  produces: Conversion by source and segment.
+  done_when: No conclusion rests on an unsliced figure.
+
+- order: 3
+  name: Find the sharpest drop, not the lowest number
+  description: 'A stage with low absolute conversion may be doing its job — qualification is supposed
+    to reject. The constraint is where conversion falls furthest below what that stage should produce,
+    which is a different question from where it is lowest.'
+  actor: human
+  produces: One identified constraint with its evidence.
+  done_when: The chosen stage is defended against the stage that merely looks worst.
+
+- order: 4
+  name: Fix one constraint per period
+  description: 'The biggest leak gets the process change, the enablement and the review attention.
+    Effort spread across every weak metric moves none of them, and the reporting grows either way.'
+  actor: human
+  produces: One change, owned, with a stated expected effect.
+  done_when: Exactly one constraint is being worked.
+
+- order: 5
+  name: Re-measure the same cut afterwards
+  description: 'The same slice, the same stages, the following period. A fix declared without a
+    re-measurement is an opinion, and the next constraint is chosen from a picture nobody verified.'
+  actor: system
+  produces: Before and after on the identical cut.
+  done_when: The change either moved the number or is known not to have.
+
+- order: 6
+  name: Retire reports nobody acts on
+  description: 'A dashboard that answers no question is a cost with an audience, and its worst effect
+    is making the numbers that matter harder to find. Retiring one is the analytics function applying
+    its own standard to itself.'
+  actor: human
+  produces: A smaller reporting surface.
+  done_when: Every standing report can name a decision it feeds.
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.opportunity
+- sales.obj.core.icp
+
+limits:
+- Stage history is not in the corpus substrate; `deal.status` is a current value, so this playbook
+  runs where a tenant's CRM history reaches the record and not on correspondence alone.
+- Says nothing about WHY a stage leaks, which is where the fix comes from.
+- Attribution is deliberately out of scope; every model is a set of assumptions about credit.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 3, 5 and 6 are new. Step 3 is the substantive one —
+    the lowest conversion is frequently a stage doing its job, and choosing it wastes a period on a
+    qualification step that was supposed to reject.'

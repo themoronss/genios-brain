@@ -26,4 +26,7 @@ def get_channel(name: str):
     if name == "slack":
         from genios_engine.deliver.channels.slack import SlackWebhookChannel
         return SlackWebhookChannel()
+    if name == "agent_push":
+        from genios_engine.deliver.channels.agent import AgentWebhookChannel
+        return AgentWebhookChannel()
     return None

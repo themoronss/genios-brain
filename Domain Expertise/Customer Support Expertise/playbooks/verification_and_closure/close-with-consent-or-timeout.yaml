@@ -1,0 +1,88 @@
+identity:
+  id: customer_support.pb.verification_and_closure.close_with_consent_or_timeout
+  name: Close with consent or timeout
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.verification_and_closure
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A ticket closes when the customer confirms, or after a stated silence window with an easy
+    reopen — never unilaterally the moment an agent believes. Closure discipline is what keeps reopen
+    rates honest.
+
+when_to_use:
+  conditions: [{path: thread.ball_in_court, op: "=", value: them}]
+  do_not_use_when:
+  - The customer has already confirmed. Asking again is an administrative loop that reads as not having listened.
+steps:
+- order: 1
+  name: Ask a question they can answer in one word
+  description: >
+    A verification question requiring effort manufactures the silence it then treats as consent.
+    "Is this working for you now?" is answerable in a second.
+  actor: human
+  objects_read: [customer_support.obj.core.ticket]
+  done_when: The question costs the customer almost nothing to answer.
+- order: 2
+  name: Close on confirmation
+  description: >
+    The customer saying it works is the only unambiguous closure signal available. Everything else
+    is inference.
+  actor: human
+  done_when: Confirmation exists, or the timeout path is being used deliberately.
+- order: 3
+  name: Warn before closing on silence
+  description: >
+    A stated window with a notice lets the customer object. Closing silently means they discover it
+    and read it as being dropped.
+  actor: agent
+  done_when: The customer was told closure was coming and when.
+- order: 4
+  name: Make reopening trivial
+  description: >
+    If reopening means filing again, the reopen rate falls and the failure does not — the customer
+    just returns as a new ticket with no history.
+  actor: system
+  done_when: Reopening is one action from the customer's side.
+- order: 5
+  name: Never close on agent belief alone
+  description: >
+    It is the largest single source of reopens and it makes time-to-close look excellent, which is
+    why it survives.
+  actor: human
+  done_when: No closure rests only on our assessment.
+objects_used: [customer_support.obj.core.ticket, customer_support.obj.core.resolution, customer_support.obj.core.requester,
+               customer_support.obj.core.satisfaction_score]
+limits:
+- 'It cannot force a reply. The timeout path exists because some customers will never confirm and holding forever helps nobody.'
+- 'It measures closure quality, not resolution quality; a correctly closed wrong fix still reopens.'
+failure_modes:
+- 'Step 3 implemented as a system notification nobody reads, which is a silent closure with an audit trail.'
+- 'Step 5 quietly abandoned at month end, which is when the closure numbers are being looked at.'
+variants:
+- applies_to: b2c
+  change: Timeout closure is the norm and step 4 carries the whole weight, because confirmation rates are structurally low.
+  why: Volume and low engagement make explicit confirmation unrealistic.
+- applies_to: enterprise_support
+  change: Step 2 is expected and a timeout closure on a named account reads as carelessness.
+  why: There is a relationship and a person who can be asked.
+references:
+- title: Ticket closure practice
+  kind: practitioner
+  note: Where reopen rate is treated as the integrity check on every closure-speed metric.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 4 is what keeps step 2 and step 3 honest. Where reopening is hard, the reopen rate
+    falls without anything improving, and the returning customer appears as a fresh ticket with
+    no history attached.

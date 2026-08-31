@@ -36,7 +36,29 @@ def get_engine(database_url: str) -> Engine:
     #   tcp_user_timeout   — cap unacked in-flight sends (ms) so a mid-query death fails fast
     #   connect_timeout    — bound the initial connect
     #   statement_timeout  — no single server query can run unbounded (server-side, ms)
-    return create_engine(url, pool_pre_ping=True, pool_size=8, max_overflow=4,
+    # Every argument below is psycopg-specific. Passing them to any other driver is not a
+    # degraded experience, it is a TypeError at connect time — which is why the migration
+    # ledger's own test suite could not run against sqlite: `apply_migrations` accepts a URL,
+    # and the first thing it did with a valid one was crash. Pooling arguments are equally
+    # Postgres-shaped; SQLAlchemy's sqlite default pool is the right one there.
+    if not url.startswith("postgresql"):
+        return create_engine(url)
+
+    # Sized to the pooler we are ACTUALLY pointed at, not to the one we used to use.
+    #
+    # The 8+4 budget above is the SESSION-pooler answer (15 concurrent clients, hard cap). The
+    # deployment moved to the TRANSACTION pooler — the very thing the comment above recommends —
+    # and nothing re-read the numbers, so the whole capture path kept throttling itself against a
+    # limit that no longer exists. That is why "we already made this fast" and "it is slow again"
+    # were both true: nobody regressed it, the calibration simply went stale where it could not
+    # be seen. Deriving it from the port means it cannot go stale again.
+    #
+    # Transaction mode hands each TRANSACTION a backend and returns it immediately, so client
+    # slots are not held for the life of a connection and a larger app-side pool is exactly what
+    # it is built for.
+    transaction_pooler = ":6543/" in url
+    pool_size, overflow = (24, 12) if transaction_pooler else (8, 4)
+    return create_engine(url, pool_pre_ping=True, pool_size=pool_size, max_overflow=overflow,
                          pool_recycle=1800, pool_timeout=15,
                          connect_args={
                              "prepare_threshold": None,

@@ -1,28 +1,75 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.facilities_and_assets.health_and_safety_administration
   name: Health & Safety Administration
   domain: admin
   subdomain: facilities_and_assets
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'The administrative spine of health and safety: risk assessments, inspection and test schedules,
+  training records, incident logging and statutory reporting. The obligation is personal and non-delegable
+  at the top of the organisation, which makes the evidence trail the whole point.
 
-description: >
-  The administrative spine of health and safety: risk assessments, inspection and test
-  schedules, training records, incident logging and statutory reporting. The obligation is
-  personal and non-delegable at the top of the organisation, which makes the evidence trail
-  the whole point.
+  '
+question: Are the statutory safety obligations for this site current and evidenced?
 
-question: "Are the statutory safety obligations for this site current and evidenced?"
+outcomes:
+- 'Risk assessments current for the activities actually carried out, not for the ones the template assumed.'
+- 'Inspection and test schedules run to date, with the certificates held. The obligation is personal and non-delegable, and the evidence is what discharges it.'
+- 'Training records complete per person and per hazard, because a trained workforce with no record is an untrained one to a regulator.'
+- 'Every incident logged, including the ones where nothing happened. Near misses are the cheapest instrument available and the only one that costs nothing to collect.'
+- 'The negative outcome: an activity STOPPED or a space closed because the assessment or the test says so. A safety function that has never stopped anything is a records function.'
+failure_modes:
+- 'GENERIC RISK ASSESSMENTS. A template for an office describes an office, and the injuries happen in the specific thing this office does differently.'
+- 'CERTIFICATES HELD AND SCHEDULES UNTRACKED, so the last test is evidenced and the next one is missed.'
+- 'LOGGING ONLY INJURIES. Every accident was preceded by near misses nobody recorded, and the near misses were free.'
+- 'TRAINING DELIVERED WITHOUT A RECORD, which is indistinguishable from not delivering it.'
+- 'TREATING IT AS ADMINISTRATION UNTIL AN INCIDENT, at which point it is a personal liability with a paper trail that either exists or does not.'
+kpis:
+- name: assessment_currency
+  unit: percent
+  description: Risk assessments in date for activities currently performed.
+  direction: higher_is_better
+- name: statutory_test_adherence
+  unit: percent
+  direction: higher_is_better
+  description: Inspections and tests completed by their due date.
+- name: near_miss_reports
+  unit: count
+  description: A target band, and it should be non-trivial. Zero near misses means nobody is reporting, not that nothing happened.
+  direction: target_band
+- name: near_miss_follow_up_rate
+  unit: percent
+  description: Reported near misses with an action taken. Without this the log is a collection.
+  direction: higher_is_better
+handoffs:
+  upstream: [admin.facilities_and_assets.workplace_management, admin.compliance_and_governance.policy_administration]
+  downstream: [admin.compliance_and_governance.audit_support, admin.facilities_and_assets.maintenance_coordination,
+               admin.admin_operations.business_continuity_administration]
+  parallel: [admin.people_administration.onboarding_administration, admin.compliance_and_governance.statutory_filing]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid]
+  offerings: [assurance]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    near_miss_reports is deliberately a target band with a non-trivial floor, which is the
+    opposite of how safety metrics usually read. Zero near misses does not mean a safe
+    workplace; it means nobody is reporting, and the reporting is the only cheap instrument in
+    the whole domain.
+
+    The description's framing — the obligation is personal and non-delegable — is why the
+    negative outcome is stated as stopping an activity. A safety administration function that
+    has never stopped anything has never exercised the authority the obligation implies.
+
+admission:
+  accepted_content_hash: 097582932a8029f2d9fc121312f06c528358f623bb2b310465f35b4dad74291b

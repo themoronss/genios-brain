@@ -1,27 +1,73 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.facilities_and_assets.workplace_management
   name: Workplace Management
   domain: admin
   subdomain: facilities_and_assets
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Day-to-day running of the physical environment: space and seating, supplies, cleaning, utilities,
+  access and the service requests that arrive when any of them fail. Workplace administration is judged
+  almost entirely on response time to small things.
 
-description: >
-  Day-to-day running of the physical environment: space and seating, supplies, cleaning,
-  utilities, access and the service requests that arrive when any of them fail. Workplace
-  administration is judged almost entirely on response time to small things.
+  '
+question: Is the workplace usable today, and who fixes it when it is not?
 
-question: "Is the workplace usable today, and who fixes it when it is not?"
+outcomes:
+- 'Supplies held to par levels rather than reordered when somebody notices they are gone. Running out is a failure of the reorder point, not of the person who used the last one.'
+- 'Spaces bookable and actually available, because a room that is booked and occupied by someone else is worse than no booking system.'
+- 'Issues reported easily and closed visibly. The visibility is what makes people keep reporting.'
+- 'Environment friction measured in the aggregate, since it is paid in unmeasured minutes by everyone and never appears as a cost anywhere.'
+- 'The negative outcome: a service reduced or a space repurposed deliberately, because usage says so rather than because nobody complained.'
+failure_modes:
+- 'REORDERING ON NOTICING. It guarantees running out, and the person who reports it is the person who needed it.'
+- 'BOOKING SYSTEMS WITHOUT ENFORCEMENT, which is worse than none — people plan around a reservation that does not hold.'
+- 'CLOSING TICKETS WITHOUT TELLING THE REPORTER, which teaches everyone that reporting achieves nothing and reduces the reporting rate to the loudest people only.'
+- 'TREATING SMALL THINGS AS SMALL. Broken chairs and dead markers are individually trivial and collectively say nobody here cares.'
+- 'OPTIMISING FOR THE VISIBLE. The reception area is immaculate and the thing people use forty times a day is broken.'
+kpis:
+- name: stockout_rate
+  unit: percent
+  description: Par-level items unavailable when needed. The reorder point failing, not the user.
+  direction: lower_is_better
+- name: booking_reliability
+  unit: percent
+  description: Reservations that held. A booking system below this is worse than nothing.
+  direction: higher_is_better
+- name: issue_closure_visible_rate
+  unit: percent
+  description: Reported issues where the reporter was told the outcome. What sustains the reporting rate.
+  direction: higher_is_better
+- name: repeat_issue_rate
+  unit: percent
+  description: The same fault reported again. Distinguishes closed from fixed.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.admin_operations.request_intake, admin.facilities_and_assets.asset_register]
+  downstream: [admin.facilities_and_assets.maintenance_coordination, admin.facilities_and_assets.health_and_safety_administration]
+  parallel: [admin.people_administration.onboarding_administration, admin.meeting_operations.meeting_scheduling]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, hybrid, outsourced, startup_lean]
+  offerings: [coordinative, transactional]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    repeat_issue_rate is the KPI that distinguishes closed from fixed, and it is the one
+    workplace ticketing systems never carry — closure is a state change and recurrence is a
+    pattern nobody queries for.
+
+    The capability is judged, as its description says, on friction nobody measures. Every
+    failure mode here is individually trivial and the aggregate is what people mean when they
+    describe what it is like to work somewhere.
+
+admission:
+  accepted_content_hash: ab2067e07cc48082dc4afc810a09e8de1916c2c3b98455cbb7e99859d5643fa6

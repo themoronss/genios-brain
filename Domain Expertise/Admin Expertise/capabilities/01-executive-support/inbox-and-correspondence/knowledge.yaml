@@ -1,31 +1,20 @@
-# Knowledge manifest for admin.executive_support.inbox_and_correspondence — REFERENCES ONLY, the sibling of objects.yaml.
-#
-# objects.yaml says which NOUNS to load. This says which EXPERTISE applies.
-#
-#   core   -> <kind>/core/             referenced by more than one capability
-#   scoped -> <kind>/inbox-and-correspondence/    referenced by this capability alone
-#
-# The same scope rule as objects, enforced from the reference graph: MEDDICC referenced by
-# four capabilities must be core, or it becomes four copies that drift.
-
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
 capability: admin.executive_support.inbox_and_correspondence
-
 playbooks:
   core: []
-  scoped: []
-
+  scoped:
+  - admin.pb.inbox_and_correspondence.triage_to_five_outcomes
 heuristics:
   core: []
-  scoped: []
-
+  scoped:
+  - admin.heu.inbox_and_correspondence.response_speed_is_reputation
 mental_models:
   core: []
   scoped: []
-
 rules:
   core: []
-  scoped: []
-
+  scoped:
+  - admin.rule.inbox_and_correspondence.a_draft_may_not_commit_the_principal
 decision_frameworks:
   core: []
   scoped: []

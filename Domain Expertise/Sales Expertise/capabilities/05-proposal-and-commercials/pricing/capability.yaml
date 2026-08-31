@@ -3,26 +3,121 @@ identity:
   name: Pricing
   domain: sales
   subdomain: proposal_and_commercials
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Price level, packaging, term and discount policy. The structural decisions — what is
+  metered, what is committed — outlast any single negotiation and are usually made carelessly.
 
-description: >
-  Price level, packaging, term and discount policy. The structural decisions — what is
-  metered, what is committed — outlast any single negotiation and are usually made
-  carelessly.
+  '
+question: What should this cost, and how should it be structured?
 
-question: "What should this cost, and how should it be structured?"
+outcomes:
+- 'A price presented only after the value it is being compared against exists. A number given before
+  that comparison is compared to zero, and no subsequent argument recovers the position — this is an
+  ordering decision, not a persuasion one, and it is the single highest-leverage choice in the
+  capability.'
+- 'Structure decided before level. What is metered, what is committed and over what term shapes every
+  later renewal and expansion conversation; the level is renegotiable annually and the structure
+  effectively is not.'
+- 'Every concession carrying a get. A discount exchanged for a longer term, a reference, an earlier
+  signature or an annual prepay is a trade; the same discount given because someone frowned is a
+  disclosure that the list price was fiction.'
+- 'A price objection read as evidence rather than as resistance. Buyers with no money disengage — they
+  do not haggle — so a stated objection on price is usually confirmation that a budget exists and the
+  conversation has become real. `objection_price` and `pricing_discussed` are the observations that
+  mark it.'
+- 'A floor that is known before the conversation and does not move during it. The negative outcome:
+  a deal declined on price is a legitimate result, and a capability that has never produced one is
+  discovering its floor live, in front of the buyer, every time.'
+- 'Consistency across the account base, so that a customer who compares notes with a peer finds a
+  reason rather than an inconsistency.'
 
+failure_modes:
+- 'DISCOUNTING TO CREATE URGENCY. A unilateral cut teaches the buyer that the floor is discoverable by
+  waiting, which lengthens the negotiation it was meant to shorten and shrinks the deal it was meant
+  to close.'
+- 'ELABORATING AFTER THE NUMBER. Nervous justification following the price reads as apology, and it
+  invites the buyer to negotiate against the seller''s own evident discomfort rather than against the
+  value.'
+- 'TREATING PRICE AS THE OBJECTION IT IS PHRASED AS. "Too expensive" is the socially acceptable form of
+  several different objections — no budget, no urgency, no confidence in the outcome, a cheaper
+  alternative. Answering the words rather than the cause discounts against a problem discounting
+  cannot solve.'
+- 'STRUCTURE DECIDED BY WHOEVER ASKS. Bespoke metering agreed deal by deal produces a book of contracts
+  nobody can compare, price, or renew consistently, and the cost lands on a team that had no say.'
+- 'ANCHORING WITH NO ROOM AND NO REASON. A first number chosen for comfort leaves nowhere to trade,
+  and every subsequent movement then has to come from margin.'
+- 'CONCEDING TO A PROCUREMENT RITUAL. A last-minute demand for a token reduction is frequently a
+  process requirement rather than a commercial position, and meeting it with real margin is paying
+  cash for a formality.'
+
+kpis:
+- name: average_discount_depth
+  unit: percent
+  description: Mean reduction from list. Useful only beside the next metric — a low mean over deals
+    that all conceded something is a different condition from a low mean over deals that did not.
+  direction: lower_is_better
+- name: unreciprocated_concession_rate
+  unit: percent
+  description: Share of concessions granted without a corresponding get. The metric that separates
+    negotiating from conceding.
+  direction: lower_is_better
+- name: price_objection_conversion
+  unit: percent
+  description: Share of deals raising a price objection that still closed. Typically higher than the
+    base rate, which is the evidence for treating the objection as a buying signal.
+  direction: higher_is_better
+- name: value_before_price_rate
+  unit: percent
+  description: Share of deals where the price was first stated after an agreed value case.
+  direction: higher_is_better
+- name: structure_variance
+  unit: count
+  description: Distinct commercial structures live in the book. Each one is a renewal, a comparison
+    and a billing edge case somebody inherits.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.discovery_and_solution.value_proposition
+  - sales.market_and_targeting.market_research
+  downstream:
+  - sales.proposal_and_commercials.proposal_creation
+  - sales.proposal_and_commercials.negotiation
+  - sales.closing.contract_management
+  parallel:
+  - sales.proposal_and_commercials.objection_handling
+  - sales.qualification.decision_maker_identification
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. This was the LAST hollow capability sitting inside a live
+    type''s route set — it is reached through `sales.sit.field_evidence_on_the_market` (`also_serves`),
+    which binds to `deal` and to `opportunity`, and `opportunity` carries 18 live situations on the
+    design partner''s org.
+
+    Stated plainly, because it changes how much this capability can currently do: the observations it
+    most wants — `objection_price`, `discount_pressure`, `budget_approved` — have ZERO rows on that
+    org, and `pricing_discussed` has one. `deal.value` is declared, present on a single node, and
+    deliberately never derived. So the outcomes are written to be useful from correspondence and
+    ordering rather than from commercial telemetry, and nothing here rests on knowing the deal size.
+
+    No numbers, by contract: anchors, floors, discount bands and approval thresholds are Layer 4''s
+    arithmetic and belong in the pack manifest. A capability file that named a discount band would be
+    a boundary leak of the most consequential kind.
+
+    '
+  reviewed_at: '2026-08-26'
+
+admission:
+  accepted_content_hash: 18286f9df976ca97b0676843ba95bb01d9fb6764cfa2d6b52097f6d21fc60d02

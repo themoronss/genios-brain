@@ -5,6 +5,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from genios_engine.contracts.visibility import Visibility
+
 
 class SyncMode(str, Enum):
     backfill = "backfill"
@@ -16,6 +18,18 @@ class Actor(BaseModel):
     type: str                       # internal_user | external_contact | agent | system | human
     email: str | None = None
     external_id: str | None = None
+    #: The human-readable name the source itself supplied — the display part of an email's
+    #: `From: "Deepthi Chandrashekhar" <deepthi@...>`.
+    #:
+    #: It was being parsed and thrown away, so `actor.name` was empty on all 1,397 of the design
+    #: partner's source events and 204 of her 340 graph nodes fell back to naming themselves after
+    #: an address. 69 of 115 live cards therefore headlined a machine identifier —
+    #: "ydvkhushi721@gmail.com — warming, needs opening", "antler.co — fit not assessed".
+    #:
+    #: Optional because plenty of senders supply none, and a missing name must stay missing rather
+    #: than be invented from the local-part: "ydvkhushi721" is not a person's name and rendering it
+    #: as one would be a confident lie where an address is merely ugly.
+    name: str | None = None
 
 
 def compute_dedup_key(source: str, object_type: str, source_object_id: str,
@@ -54,4 +68,19 @@ class SourceEvent(BaseModel):
     # to L2 — provenance is L1's to know, so L2 honours this instead of guessing from the
     # source name. See capture.internal_knowledge for why canon sits above rank 3.
     internal_kind: str | None = None
-    schema_version: int = 3                 # v3: + internal_kind (additive only)
+    # WHO ELSE was on this message. First-class because the alternative is a deadline: To/Cc
+    # survived only inside the encrypted `raw_payloads` blob, which carries a 30-day TTL, so the
+    # design partner's backfilled correspondence loses its recipient data on 2026-09-16 and even
+    # best-effort reconstruction stops being possible. It is also the only way to tell a message
+    # sent TO one person from one that copied nine — which is the difference between a
+    # conversation and a broadcast, and neither L2 nor any rule could previously see it.
+    recipients: tuple[str, ...] = ()
+    # WHO could see the original — the source's own ACL, derived per source family at the
+    # normalize seam (capture/visibility_rules.py). None means "no derivation rule covered this
+    # source", and the gate PARKS such an event as `visibility_unknown` rather than publishing:
+    # an audience we cannot name is not an audience we may assume. The contract existed, fully
+    # tested, and nothing on the capture path called it — every event landed org-scoped, so a
+    # two-person private thread and a company-wide page were indistinguishable to every layer
+    # above.
+    visibility: Visibility | None = None
+    schema_version: int = 5                 # v5: + visibility · v4: + recipients (additive)

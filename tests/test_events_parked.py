@@ -53,4 +53,4 @@ def test_parked_event_lands_in_store():
 
     items = parked.list("o")
     assert len(items) == 1
-    assert items[0].reason_code == "mapping_missing"
+    assert items[0].reason_code == "visibility_unknown"  # unregistered source: provenance fails before the mapping

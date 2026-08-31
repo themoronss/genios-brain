@@ -1,0 +1,165 @@
+identity:
+  id: sales.pb.follow_up.value_add_follow_up
+  name: Value-add follow up
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.follow_up
+  subdomain: prospecting_and_outreach
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'Every follow-up must give before it asks. A bare "just checking in" spends attention and
+    returns nothing; a follow-up that carries a relevant insight, a mutual connection, or an answer to
+    something they said re-earns the reply it asks for.'
+  answers:
+  - What goes in a follow-up that is not a reminder that we are waiting?
+  not:
+  - A cadence. When to send is decided by the heuristics; this is what to put in it.
+  - A nurture programme. This is one message on one thread with one ask.
+
+when_to_use:
+  situations:
+  - sales.sit.outbound_prospect
+  - sales.sit.inbound_lead
+  conditions:
+  - {path: thread.ball_in_court, op: "=", value: them}
+  - {exists: thread.last_inbound}
+  signals:
+  - followup_sent
+  - question
+  do_not_use_when:
+  - 'The outstanding move is ours. There is nothing to follow up on; there is something to answer, and
+    a value-add message sent in that state reads as a deflection.'
+  - 'They declined explicitly. A gift attached to an ask after a no is a negotiation tactic and is
+    read as one.'
+  - 'There is genuinely nothing to add. Sending anyway to keep the cadence alive is the exact message
+    this playbook exists to prevent — the honest alternative is to park the thread with a date.'
+
+steps:
+- order: 1
+  name: Reread the last exchange before writing
+  description: 'The follow-up must reference what THEY last said, not what you last sent. A thread that
+    ignores their words announces it is a sequence, not a conversation — and the buyer can tell within
+    one line.'
+  actor: human
+  objects_read:
+  - sales.obj.core.next_action
+  - sales.obj.core.pain_point
+  produces: A named reference point from their own message.
+  done_when: The draft quotes or answers something the counterparty actually wrote.
+
+- order: 2
+  name: Check whose move it is before assuming silence
+  description: 'A thread where we owe the answer is not a follow-up situation at all. This is one
+    predicate — `thread.ball_in_court` — and skipping it is how a well-written value-add message ends
+    up being the thing that costs the relationship.'
+  actor: system
+  produces: A direction verdict for the thread.
+  done_when: The thread is confirmed to be waiting on them.
+  skip_when: The direction cannot be read at all, in which case the safe default is to answer.
+
+- order: 3
+  name: Attach one thing of value
+  description: 'A relevant case, a data point about their market, an introduction, an answer to an open
+    question — one, not three. The test is whether this message would be worth reading if they never
+    buy; if the answer is no, the message is a reminder wearing a gift.'
+  actor: human
+  objects_read:
+  - sales.obj.core.competitor
+  - sales.obj.core.pain_point
+  produces: One piece of context that did not exist in the previous message.
+  done_when: The message survives the would-this-be-worth-reading-anyway test.
+
+- order: 4
+  name: Name the next step and its size
+  description: 'Ask for the smallest useful commitment — a short call, a yes or no on fit, a pointer to
+    the right person. Large asks on cold threads select for silence, and the silence is then misread as
+    disinterest rather than as the cost of the ask.'
+  actor: human
+  produces: A single, explicitly small ask.
+  done_when: The message contains exactly one request and its size is stated.
+
+- order: 5
+  name: Stop on the stated stop
+  description: 'A "not now" with a named quarter is a scheduled follow-up, not an invitation to persist
+    this week. Record the date, close the loop, and return exactly then — returning early spends the
+    goodwill the deferral created.'
+  actor: human
+  objects_read:
+  - sales.obj.core.timeline
+  produces: A dated return, or a closed thread.
+  done_when: No thread with a stated return date is contacted before it.
+
+objects_used:
+- sales.obj.core.next_action
+- sales.obj.core.lead
+- sales.obj.core.pain_point
+- sales.obj.core.timeline
+- sales.obj.core.competitor
+
+outcomes:
+- Each follow-up carries something the previous one did not.
+- No follow-up is sent into a thread where the outstanding move is ours.
+- Deferrals with a date are honoured rather than tested.
+
+failure_modes:
+- 'VALUE-ADD AS DECORATION. An article attached to an otherwise unchanged nudge. Buyers read the ask
+  and ignore the wrapper, and the wrapper costs credibility the second time.'
+- 'THREE THINGS INSTEAD OF ONE. A message carrying several pieces of value reads as a newsletter and
+  gets filed rather than answered.'
+- 'THE ASK GROWS WITH THE TOUCH NUMBER. Escalating from a short call to a full evaluation as silence
+  continues is the opposite of what the silence is telling you.'
+- 'RETURNING EARLY ON A DEFERRAL. The single fastest way to convert a warm not-now into a no.'
+
+limits:
+- Says nothing about cadence; sending a well-crafted message at the wrong interval still fails.
+- Depends on having something genuinely relevant to say, which is a research problem rather than a
+  writing one.
+- Cannot help on a thread where nothing is known about the counterparty beyond an address.
+
+variants:
+- applies_to: enterprise
+  change: The value-add should be aimed at the buying committee's collective problem rather than at
+    the individual, because the recipient's job is to forward it internally.
+  why: In a committee the message that travels is the one that helps the recipient look informed.
+- applies_to: smb
+  change: Shorter, more concrete, and tied to something the owner can act on this week.
+  why: The buyer is the operator; abstract market context has no purchase.
+- applies_to: channel
+  change: The value goes to the partner's own commercial position, not to the end customer's problem.
+  why: The partner is buying a way to sell, not a way to operate.
+
+metrics:
+- name: new_information_share
+  unit: percent
+  description: Share of follow-ups carrying something worth sending regardless of the reply.
+  direction: higher_is_better
+- name: reply_rate_by_touch_number
+  unit: percent
+  description: Reply rate at each successive touch.
+  direction: higher_is_better
+
+references:
+- title: The Challenger Sale
+  kind: methodology
+  author: Dixon and Adamson
+  note: Teaching as the basis of a seller's right to the buyer's attention — the argument underneath
+    step 3.
+- title: SPIN Selling
+  kind: methodology
+  author: Neil Rackham
+  note: Small, explicit advances rather than large asks — step 4.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a four-step sketch; the original steps are preserved and step 2 is new. That
+    step exists because this capability sits on `sales.sit.inbound_lead`, whose whole predicate is
+    `thread.ball_in_court = us` — a value-add follow-up compiled from that situation without a
+    direction check would be sent into precisely the threads that are waiting on our answer.'

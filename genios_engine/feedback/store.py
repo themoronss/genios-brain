@@ -69,15 +69,37 @@ def _load_enterprise(conn, org_id: str, since: datetime) -> tuple[dict, ...]:
 
     A row without a resolvable source event is isolated (not returned) rather than promoted to an
     org-visible fact — the join itself is the lineage check.
+
+    ``entity_id`` (the fact's ``subject_node_id``, when the ref points at a fact) lets a unit tell
+    "10 observations about 10 different companies" apart from "10 observations about the same one"
+    — a ref with no fact behind it (edge- or observation-sourced) carries ``entity_id = None``, and
+    a unit that needs entity diversity must treat that as unknown, not as a distinct entity.
     """
     rows = conn.execute(text(
         "select r.source_ref_id, r.source, r.independence_group, r.event_id, "
+        "gf.subject_node_id as entity_id, "
         "e.object_type, e.internal_kind, e.occurred_at "
         "from graph_source_refs r join source_events e "
         "  on e.org_id = r.org_id and e.event_id = r.event_id "
+        "left join graph_facts gf "
+        "  on gf.org_id = r.org_id and gf.fact_version_id = r.fact_version_id "
         "where r.org_id = :o and e.occurred_at >= :s "
         "order by e.occurred_at desc limit 5000"),
         {"o": org_id, "s": since}).mappings().all()
+
+    # The inner join above IS the lineage check, and an inner join drops rows in silence. A ref
+    # whose source event is gone was deliberately withheld from learning — that is the no-silent-
+    # drop contract's exact subject — and until now the withholding left no trace, so "isolated
+    # for missing lineage" and "never existed" were the same observation. Count them and record
+    # the isolation, in the ledger migration 0046 created for it and nothing ever wrote to.
+    dropped = conn.execute(text(
+        "select count(*) from graph_source_refs r "
+        "where r.org_id = :o and not exists ("
+        "  select 1 from source_events e where e.org_id = r.org_id and e.event_id = r.event_id)"),
+        {"o": org_id}).scalar() or 0
+    if dropped:
+        _record_rejection(conn, org_id, "enterprise.lineage",
+                          f"lineage_unresolvable: {dropped} refs have no source event")
     return tuple(dict(r) for r in rows)
 
 
@@ -86,7 +108,15 @@ def _load_enterprise(conn, org_id: str, since: datetime) -> tuple[dict, ...]:
 #: verdict ledger (calibration's `canonical_judgments`) and the 0046 hardening `learning_event_inbox`.
 #: The table name is resolved at runtime through ``_read_optional_seam`` so we never bake a
 #: not-yet-created table into a SQL string the reference-ratchet would (correctly) reject.
-_OPTIONAL_FEEDBACK_TABLE = "canonical_judgments"
+#: `canonical_judgments` was never a table. It is a CTE defined inside
+#: `AUDITED_CARD_JUDGMENTS_CTES` (reason/authority.py) and consumed only by
+#: `feedback/calibrate.py`, so `to_regclass('public.canonical_judgments')` returns NULL and the
+#: seam silently resolved to nothing, forever. No migration could ever have fixed it — the name
+#: belongs to a query, not to storage — so every plan that treated this as "the table is missing"
+#: was chasing something that could not exist.
+#:
+#: The real ledger of human judgments is `card_feedback_verdicts` (migration 0034).
+_OPTIONAL_FEEDBACK_TABLE = "card_feedback_verdicts"
 _OPTIONAL_INBOX_TABLE = "learning_event_inbox"
 
 
@@ -94,11 +124,41 @@ def _read_optional_seam(conn, table: str, org_id: str, since: datetime, time_col
     if not _table_exists(conn, table):
         return ()
     try:
+        # `order by 1` orders by whatever column happens to sit first, which is not a contract —
+        # a column reordering silently changes which 5000 rows a learning run sees. Order by the
+        # time column the caller named, which is the only ordering that means anything here.
         stmt = text(f"select * from {table} where org_id = :o and {time_col} >= :s "  # noqa: S608
-                    "order by 1 desc limit 5000")
+                    f"order by {time_col} desc limit 5000")
         return tuple(dict(r) for r in conn.execute(stmt, {"o": org_id, "s": since}).mappings())
-    except Exception:  # noqa: BLE001 — a shape mismatch isolates the seam, never fails the run
+    except Exception as exc:  # noqa: BLE001 — a shape mismatch isolates the seam, never fails the run
+        # Isolate, but LEAVE A RECORD. `learning_input_rejections` exists (migration 0046) and
+        # its own comment calls it "sanitized isolation of a malformed/lineage-less input" — and
+        # nothing in the codebase ever wrote to it. So the layer's isolation ledger recorded
+        # nothing, and an input the system deliberately quarantined was indistinguishable from
+        # one that never arrived. That is the no-silent-drop contract failing in the one place
+        # built to uphold it.
+        _record_rejection(conn, org_id, table, f"{type(exc).__name__}: {exc}"[:400])
         return ()
+
+
+def _record_rejection(conn, org_id: str, seam: str, reason: str) -> None:
+    """Note that a seam was isolated, without letting the note itself break the run.
+
+    Best-effort by design: a learning run must not fail because its own audit write failed, and
+    the alternative — raising here — would turn a recoverable seam problem into a lost run.
+    """
+    try:
+        from genios_engine.platform.ids import new_id
+        conn.execute(text(
+            "insert into learning_input_rejections "
+            "(id, org_id, seam, source_ref, reason_code, created_at) "
+            "values (:id, :o, :seam, :ref, :code, now())"),
+            {"id": new_id("lrej"), "o": org_id, "seam": seam,
+             # the seam is the source; the exception text is the code, truncated to the column's
+             # purpose (a reason, not a stack trace)
+             "ref": seam, "code": reason[:200]})
+    except Exception:      # noqa: BLE001 — an audit row is never worth losing the run over
+        pass
 
 
 def _load_feedback(conn, org_id: str, since: datetime) -> tuple[dict, ...]:

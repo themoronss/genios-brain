@@ -1,27 +1,90 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.records_and_documentation.document_control
   name: Document Control
   domain: admin
   subdomain: records_and_documentation
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Governing documents as controlled artefacts rather than files: one authoritative location,
+  a known owner, an approval state, a classification, and a review date. Uncontrolled documents do not
+  announce themselves — they surface as two teams working from different numbers.
 
-description: >
-  Governing documents as controlled artefacts rather than files: one authoritative location, a
-  known owner, an approval state, a classification, and a review date. Uncontrolled documents
-  do not announce themselves — they surface as two teams working from different numbers.
+  '
+question: Is this the current, approved, correctly classified version of this document?
 
-question: "Is this the current, approved, correctly classified version of this document?"
+outcomes:
+- 'One authoritative location per binding document, and every other copy visibly labelled as not
+  it. Uncontrolled documents do not announce themselves — they surface as two teams working from
+  different numbers.'
+- 'A named owner per document. Ownership is what makes a review date enforceable; without it the
+  date passes and nobody was responsible for noticing.'
+- 'An approval state that is visible on the document itself, not held in a separate system nobody
+  opens. A draft that reads like a policy will be followed like one.'
+- 'A classification applied at creation. Applied later it is a retro-fit exercise that never
+  finishes, and the documents most needing it are the ones already circulating.'
+- 'The negative outcome: a document formally WITHDRAWN, with the withdrawal visible where the
+  document was. Deleting it silently leaves every downloaded copy authoritative forever.'
+failure_modes:
+- 'CONTROLLING THE REPOSITORY AND NOT THE COPIES. The library is immaculate and the version people
+  actually use is the attachment in a two-year-old email thread.'
+- 'REVIEW DATES SET AND NEVER WORKED. A calendar of expired reviews is worse than no dates — it
+  proves the control exists and is not operating.'
+- 'CLASSIFYING BY CAUTION. Marking everything confidential removes the meaning of the label and
+  pushes real work onto unmanaged channels.'
+- 'CONFUSING CONTROL WITH RESTRICTION. Access control is a security question; document control is
+  an accuracy question, and locking a document down does nothing about it being wrong.'
+- 'TREATING THE PDF AS THE DOCUMENT. The obligations, dates and owner are the document; the file is
+  a rendering of it, and only one of those can be reasoned over.'
+kpis:
+- name: controlled_document_coverage
+  unit: percent
+  description: Share of binding documents with an owner, a state and a review date.
+  direction: higher_is_better
+- name: overdue_review_share
+  unit: percent
+  description: Share of controlled documents past their review date. The number that separates a
+    control that exists from one that operates.
+  direction: lower_is_better
+- name: superseded_in_circulation
+  unit: count
+  description: Instances of an old version being acted on. The outcome measure, and the only one
+    that catches the copies problem.
+  direction: lower_is_better
+- name: time_to_locate_current_version
+  unit: minutes
+  description: How long it takes someone who did not file it to find the authoritative copy.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.records_and_documentation.version_control, admin.compliance_and_governance.policy_administration,
+             admin.contract_and_vendor.contract_administration]
+  downstream: [admin.records_and_documentation.retention_and_archival, admin.compliance_and_governance.audit_support,
+               admin.records_and_documentation.filing_and_retrieval]
+  parallel: [admin.records_and_documentation.knowledge_base_maintenance, admin.compliance_and_governance.data_protection_administration]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, distributed, executive_office]
+  offerings: [assurance, coordinative]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route: Admin carries two situations and neither
+    loads a document object.
+
+    Substrate support is the weakest in this subdomain and the gap is exact — document.version,
+    document.approved_at, document.review_due_at, document.classification and
+    document.retention_until are all in planned_substrate with no writer. Nothing in a
+    correspondence-only tenant can tell you which version of an attachment is authoritative.
+
+    Written anyway because the failure it prevents is not detectable after the fact: two teams
+    working from different numbers looks like a disagreement, not a document-control incident,
+    and by the time anyone reconciles it the wrong version has been acted on.
+
+admission:
+  accepted_content_hash: 5c6b3275436e8a13c5c0199f8000c19344daaf2b6732f958829507001aa222be

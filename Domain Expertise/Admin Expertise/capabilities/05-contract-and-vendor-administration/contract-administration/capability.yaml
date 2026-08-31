@@ -1,28 +1,73 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.contract_and_vendor.contract_administration
   name: Contract Administration
   domain: admin
   subdomain: contract_and_vendor
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Owning the contract as a live instrument rather than a signed PDF: extracting the obligations,
+  dates and notice periods, holding the executed copy, tracking amendments, and surfacing the clauses
+  that impose work on us. The signature is where most organisations stop paying attention and where the
+  obligations start.
 
-description: >
-  Owning the contract as a live instrument rather than a signed PDF: extracting the
-  obligations, dates and notice periods, holding the executed copy, tracking amendments, and
-  surfacing the clauses that impose work on us. The signature is where most organisations stop
-  paying attention and where the obligations start.
+  '
+question: What have we actually agreed, and what does it require us to do and by when?
 
-question: "What have we actually agreed, and what does it require us to do and by when?"
+outcomes:
+- 'OUR obligations extracted from the contract and dated, because the signature is where most organisations stop paying attention and where the obligations start.'
+- 'Notice periods diarised with the notice date, not the end date. A ninety-day notice on a contract that ends in sixty is already renewed.'
+- 'The executed copy held and identifiable, with amendments attached to it rather than filed separately.'
+- 'Auto-renewals converted back into decisions by alerting inside the notice window.'
+- 'The negative outcome: a contract allowed to lapse deliberately, or a renewal declined, because somebody was shown the decision in time to make it.'
+failure_modes:
+- 'FILING THE PDF AND CALLING IT ADMINISTRATION. The obligations, dates and notice terms are the contract; the file is a rendering nobody can reason over.'
+- 'DIARISING THE END DATE. By the time it arrives the notice window has closed and the renewal already happened.'
+- 'AMENDMENTS FILED SEPARATELY. The operative terms are then spread across three documents and the register describes the first one.'
+- 'TRACKING THEIR OBLIGATIONS AND NOT OURS. Vendor management watches what they owe; the exposure is what we agreed to do and forgot.'
+- 'ONE REGISTER ROW PER SUPPLIER RATHER THAN PER AGREEMENT, which merges terms that differ.'
+kpis:
+- name: obligation_extraction_coverage
+  unit: percent
+  description: Executed contracts with our obligations extracted rather than only stored.
+  direction: higher_is_better
+- name: notice_window_alert_lead
+  unit: days
+  description: Warning before the notice deadline, not the end date.
+  direction: higher_is_better
+- name: unintended_auto_renewals
+  unit: count
+  description: Renewals nobody decided. The outcome measure of the whole capability.
+  direction: lower_is_better
+- name: amendment_linkage_rate
+  unit: percent
+  description: Amendments attached to their parent agreement.
+  direction: higher_is_better
+handoffs:
+  upstream: [admin.contract_and_vendor.procurement_administration, admin.compliance_and_governance.board_and_secretarial]
+  downstream: [admin.contract_and_vendor.renewal_management, admin.finance_administration.payables_administration,
+               admin.compliance_and_governance.audit_support]
+  parallel: [admin.contract_and_vendor.vendor_performance_management, admin.records_and_documentation.version_control]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, outsourced, startup_lean]
+  offerings: [assurance, transactional]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. contract.end_at, .notice_period_days,
+    .auto_renew and .counterparty are all planned_substrate with no writer.
+
+    The distinction that carries the capability is in its own description: the contract is a
+    live instrument, not a signed PDF. Every failure mode here follows from treating the
+    artefact as the thing — a register of files answers 'do we have it' and none of the
+    questions that cost money.
+
+admission:
+  accepted_content_hash: 13fea0b05b8fe2de9a0670a40d79846b7fe39f0c26ae57c5a77cf816065601a7

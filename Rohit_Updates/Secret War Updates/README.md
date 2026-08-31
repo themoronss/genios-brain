@@ -37,7 +37,7 @@ Specifications, reference HTML, screenshots and modelled applications are not pr
 | 2 | [Layer numbering and semantic map](00-Methodology/02-Layer-Numbering-and-Semantic-Map.md) | Reconcile Atlas and runtime layer names |
 | 3 | [Source and commit manifest](00-Methodology/03-Source-and-Commit-Manifest.md) | Pin every inspected source and reference boundary |
 | 4 | [Customer intelligence contract](00-Methodology/04-Customer-Intelligence-Contract.md) | Define the founder-facing decision standard |
-| 5 | [Status legend and audit method](00-Methodology/05-Status-Legend-and-Audit-Method.md) | Define Built, Partial, Shadow, Stub, Missing and Outcome-proven |
+| 5 | [Status legend and audit method](00-Methodology/05-Status-Legend-and-Audit-Method.md) | Define Absent, Stub, Present, Wired, Live, Tested and Outcome-proven. "Shadow" is not an eighth state — it is shorthand for Present+Wired+Tested with `live_delivery_enabled=False` |
 
 ## Cross-layer synthesis index
 

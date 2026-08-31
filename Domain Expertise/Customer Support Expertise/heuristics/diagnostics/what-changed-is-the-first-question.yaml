@@ -1,0 +1,89 @@
+identity:
+  id: customer_support.heu.diagnostics.what_changed_is_the_first_question
+  name: What changed is the first question
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.diagnostics
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: stable
+purpose:
+  statement: >
+    A system that worked and stopped had something change, and the customer usually knows what it was.
+    Asking is one sentence and it eliminates more hypotheses than any other single question available.
+  answers:
+  - Where should diagnosis start on a regression?
+  - Why does the customer often hold the answer without knowing it?
+
+heuristic:
+  statement: >
+    Working then broken means something changed. Ask before you investigate — theirs, ours, or the
+    world's.
+  why: >
+    The space of possible causes is enormous and the space of recent changes is small and usually
+    enumerable by the person affected. It is the highest-yield question in diagnosis by a wide margin
+    and it is skipped constantly, because it feels like a formality and because engineers prefer to
+    look at the system rather than ask the human.
+  confidence_bp: 8500
+  applies_when: The behaviour previously worked for this customer and now does not.
+  breaks_down_when: >
+    It never worked. A first-time integration failure has no change window and the question wastes a
+    round trip on a customer who is already confused about what normal looks like. It also breaks
+    down where the customer genuinely cannot see the change — a silently upgraded dependency, a
+    provider-side rollout, an expired certificate — in which case "nothing changed" is true from
+    their side and false, and treating their answer as conclusive sends the case in the wrong
+    direction with confidence.
+  reads:
+  - customer_support.obj.core.issue
+  - customer_support.obj.core.ticket
+  - customer_support.obj.core.product_area
+  contradicts:
+  - customer_support.heu.account_relationship_management.support_sees_churn_first
+  pattern_ref:
+  - account.volume_spike_is_change_not_growth
+
+limits:
+- >
+  It narrows the search; it does not identify the cause. A change window with four changes in it is
+  progress and not an answer.
+- >
+  It relies on the customer's visibility, which is bounded by their own architecture. Their honest
+  "nothing" is evidence about what they can see, not about the world.
+
+failure_modes:
+- >
+  Accepting "nothing changed" and stopping. It is the most common answer and it is frequently false
+  from our side of the boundary — a release, a config rollout, a certificate.
+- >
+  Asked so vaguely it cannot be answered. "Did anything change?" gets "no"; "what changed in the
+  twenty-four hours before this started, including anything you would not think mattered" gets a list.
+
+variants:
+- applies_to: enterprise_support
+  change: The question must be asked of the right person. The requester may have no visibility of a platform change their own infrastructure team made.
+  why: Change visibility is distributed in large organisations, and the requester is rarely where it lives.
+- applies_to: embedded_in_product
+  change: Largely answerable from our own side, which converts the question from a round trip into a lookup.
+  why: We hold the version and configuration history ourselves.
+
+references:
+- title: Debugging — The Nine Indispensable Rules
+  kind: book
+  author: David J. Agans
+  note: >
+    Rule 6, "what did you change", stated for engineers. The customer-facing version has an extra
+    failure mode: they may not know.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The breakdown case matters more than the heuristic. "Nothing changed" is the answer most often
+    given and least often true, and a system that treats it as conclusive is worse than one that
+    never asked.

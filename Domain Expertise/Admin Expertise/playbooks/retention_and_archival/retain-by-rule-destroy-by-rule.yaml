@@ -1,0 +1,84 @@
+identity:
+  id: admin.pb.retention_and_archival.retain_by_rule_destroy_by_rule
+  name: Retain by rule, destroy by rule
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.retention_and_archival
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every record class has a stated retention period from legal and business need; expiry triggers
+    review-then-destruction, logged — because keep-everything-forever is a liability strategy and delete-at-whim
+    is a compliance incident.
+
+when_to_use:
+  do_not_use_when:
+  - A legal hold is live on the matter. The schedule is suspended, not applied faster.
+steps:
+- order: 1
+  name: Classify by record class, not by document
+  description: >
+    Per-document judgement does not scale and is not defensible. A class carries the obligation and
+    the period; a document merely belongs to one.
+  actor: human
+  objects_read: [admin.obj.core.document]
+  done_when: The record sits in a class with a stated period.
+- order: 2
+  name: Take the period from the class, not from the longest rule you know
+  description: >
+    Applying the longest applicable period across the whole estate drags personal data to a
+    seven-year retention it was never entitled to, and it feels prudent.
+  actor: human
+  done_when: The period is traceable to a specific obligation.
+- order: 3
+  name: Expiry triggers a review, not a delete
+  description: >
+    Automatic destruction is how a live matter loses its evidence. Review is one step and it is the
+    step that makes disposal defensible.
+  actor: agent
+  objects_read: [admin.obj.core.deadline]
+  done_when: A human decision exists before anything is destroyed.
+- order: 4
+  name: Log the destruction
+  description: >
+    Defensible disposal IS the log. Without it, destroyed and lost are the same fact.
+  actor: agent
+  done_when: The record of what was destroyed, when and under which rule exists.
+- order: 5
+  name: Release holds when the matter closes
+  description: >
+    An unreleased hold silently converts to keep-forever, and it is invisible because it looks like compliance.
+  actor: human
+  done_when: No hold outlives its matter.
+objects_used: [admin.obj.core.document, admin.obj.core.compliance_obligation, admin.obj.core.deadline, admin.obj.core.policy]
+limits:
+- 'It assumes a classification scheme exists. Without one, every step degrades to per-document judgement.'
+- 'It cannot find the copies. Retention applied to the repository leaves the same data in inboxes and exports.'
+failure_modes:
+- 'Step 3 automated end-to-end because it is cheaper, which removes the only checkpoint that catches a live matter.'
+- 'Step 5 owned by nobody, which is why unreleased holds are the most common quiet failure here.'
+variants:
+- applies_to: regulated
+  change: Steps 1, 2 and 4 are externally specified and audited; the discretion is only in step 3.
+  why: The schedule is a control, and controls are evidenced rather than exercised.
+- applies_to: startup_lean
+  change: One short schedule with three classes beats a detailed one nobody applies.
+  why: The realistic alternative at this size is no schedule, not a better one.
+references:
+- title: ISO 15489 — records management
+  kind: standard
+  note: Where disposal is defined as an authorised, documented act rather than a deletion.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 3 is the one under pressure to automate away, and it is the only checkpoint that
+    catches a live matter before its evidence is destroyed.

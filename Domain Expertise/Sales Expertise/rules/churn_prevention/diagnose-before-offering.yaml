@@ -1,0 +1,126 @@
+identity:
+  id: sales.rule.churn_prevention.diagnose_before_offering
+  name: Diagnose before offering
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.churn_prevention
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'An offer made before the driver is known contaminates the diagnosis it should have
+    followed. The customer discusses what was put in front of them rather than what is actually wrong,
+    and the real cause is never stated because it stopped being the subject.'
+  answers:
+  - May a save offer be made on this account?
+  - What has to be established first?
+  not:
+  - A rule about which save to offer. That follows from the driver.
+  - A prohibition on discounting, which is legitimate for one of the four drivers.
+
+rule:
+  statement: 'A retention offer — discount, extension, credit, additional service — MUST NOT be
+    recommended for an at-risk account until the driver is recorded as one of value gap, sponsor loss,
+    budget constraint or product gap. Where no driver is recorded, the recommended action is the
+    diagnostic conversation.'
+  spans:
+  - sales.obj.core.account
+  - sales.obj.core.risk
+  - sales.obj.core.pricing
+  when:
+  - {path: derived.engagement, op: "<", value: 1}
+  - {absent: commitment.action}
+  then: 'Recommend the diagnostic conversation as the next action and withhold offer-shaped candidates
+    until a driver exists on the record.'
+  severity: blocking
+  why: 'The contamination is one-way and permanent for that conversation. Once a discount is on the
+    table the customer engages with the discount — accepting, declining or negotiating it — and the
+    value gap or the sponsor problem that actually drove the decision goes unmentioned, because
+    nobody raises a second issue when the first has already produced an offer. So the offer does not
+    merely fail to address the cause, it removes the only opportunity to learn it, and the account
+    then churns later for a reason that was recoverable and never spoken.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'THE CUSTOMER STATED THE DRIVER UNPROMPTED. Where they have said plainly that the budget was cut,
+    the diagnosis is done and requiring a further conversation is bureaucracy.'
+  - 'A CONTRACTUAL DEADLINE INSIDE THE DIAGNOSTIC WINDOW. Where a notice period expires before a
+    conversation can be arranged, an extension offered purely to create time is procedural rather
+    than a save — and should be labelled as such so it is not mistaken for one.'
+  - 'A STANDING COMMERCIAL PROGRAMME. A published loyalty or multi-year structure available to
+    everyone is a price, not a save, and it is not gated by this rule.'
+  - 'AN OFFER THAT COSTS NOTHING AND IS ALWAYS RIGHT. Re-onboarding, additional training, a review
+    with a specialist — these address a value gap and are harmless against the other three drivers, so
+    they may be offered while the diagnosis is in progress.'
+  - 'A RELATIONSHIP WHERE THE DIAGNOSTIC CONVERSATION WILL NOT HAPPEN. Some accounts will not take
+    the call. The honest resolution is a written diagnostic question rather than an ungrounded offer,
+    and the rule should be read as requiring the attempt rather than the outcome.'
+
+objects_used:
+- sales.obj.core.account
+- sales.obj.core.risk
+- sales.obj.core.pricing
+- sales.obj.core.champion
+- sales.obj.core.contract
+
+outcomes:
+- Every save offer follows a recorded driver.
+- The diagnostic conversation happens while the customer is still willing to explain.
+
+failure_modes:
+- 'THE DRIVER RECORDED AS A GUESS. A field filled in to satisfy the gate has satisfied the gate and
+  nothing else; the driver has to come from what the customer said.'
+- 'READ AS DELAY. The rule reorders two acts, it does not slow the response — and speed at the
+  behavioural signal is exactly what the surrounding capability is built on.'
+- 'THE HARMLESS-OFFER EXCEPTION STRETCHED. Re-onboarding is harmless; a credit is not, and treating
+  the two alike reintroduces the contamination through the exception.'
+
+limits:
+- The record cannot hold a driver today — there is no field for it, and `commitment.action` is being
+  used as a proxy for "some deliberate response exists". This rule is therefore a sequencing prompt
+  rather than a verified gate.
+- '`churn_risk` has zero rows on the design partner''s org, so the at-risk state itself is inferred
+  from `derived.engagement` rather than named.'
+
+variants:
+- applies_to: enterprise
+  change: The diagnosis usually needs more than one conversation, because the driver sits above the
+    day-to-day relationship; the rule requires the first, not all of them.
+  why: The person who can explain the decision is often not the person we talk to.
+- applies_to: smb
+  change: One conversation resolves it, and the window is short enough that the sequencing matters
+    more than the thoroughness.
+  why: The user, the buyer and the decision are the same person.
+- applies_to: channel
+  change: The driver has to be obtained from the end customer through the partner, and a partner's
+    account of it is second-hand evidence that should be recorded as such.
+  why: The partner has their own reason to characterise the loss.
+
+metrics:
+- name: driver_identified_rate
+  unit: percent
+  description: Share of at-risk accounts with a driver recorded before any offer.
+  direction: higher_is_better
+- name: offer_before_diagnosis_rate
+  unit: percent
+  description: Share of save offers made with no recorded driver. What this rule drives to zero.
+  direction: lower_is_better
+
+references:
+- title: Practitioner customer-success operations
+  kind: practitioner
+  note: Driver-segmented save rates differ enormously, and the single blended save motion appears
+    effective only because budget-driven cases are the ones that get recorded as such.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new and blocking despite resting on a proxy, because the damage is not a failed
+    save — it is the permanent loss of the chance to learn the real cause, in the one conversation
+    where the customer was still willing to explain it.'

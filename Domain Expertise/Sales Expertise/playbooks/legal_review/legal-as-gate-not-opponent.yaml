@@ -1,0 +1,192 @@
+identity:
+  id: sales.pb.legal_review.legal_as_gate__not_opponent
+  name: Legal as a gate, not an opponent
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.legal_review
+  subdomain: closing
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'Buyer legal is doing its job: bounding risk. Deals stall here when sellers treat redlines
+    as combat. The play is triage — accept the harmless fast, package the real disagreements few, and
+    keep the business sponsor watching the clock.'
+  answers:
+  - How is a contract review moved through quickly without conceding what matters?
+  - What does a seller actually do when redlines arrive?
+  not:
+  - Legal advice. Positions and fallbacks are set by our own counsel; this is how they are carried.
+  - Negotiation of commercial terms, which happened before the paper went out.
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: legal_review}
+  signals:
+  - legal_review
+  - contract_requested
+  do_not_use_when:
+  - 'The objections are structural — liability exceeding contract value, ownership of output, refusal
+    of the pricing model. Those are commercial disagreements that went out on paper by mistake, and
+    triaging them as redlines buries the real problem.'
+  - 'The buyer signs standard terms unmodified. There is no review to manage.'
+  - 'Our own fallback positions have not been agreed internally. Running triage without them means
+    every item escalates, which is the failure the playbook exists to prevent.'
+
+steps:
+- order: 1
+  name: Ask what the paper process requires, early
+  description: 'Mandatory addenda, insurance requirements, a standard-terms policy, a security schedule
+    — all knowable in week one and usually discovered in the final fortnight. Asking converts a
+    surprise into a scheduled step and costs one question.'
+  actor: human
+  objects_read:
+  - sales.obj.core.contract
+  - sales.obj.core.timeline
+  produces: The buyer's paper requirements, known before the paper is sent.
+  done_when: No contractual precondition is discovered after agreement in principle.
+
+- order: 2
+  name: Agree our own fallbacks before the first redline
+  description: 'For each term that matters, know the position, the acceptable fallback and the walk-away
+    — decided with our counsel, not during the exchange. Without this, triage is impossible because
+    nothing can be sorted into a pile.'
+  actor: human
+  produces: A position, a fallback and a limit per material term.
+  done_when: Every likely redline has a pre-agreed response.
+
+- order: 3
+  name: Triage the redlines in one pass
+  description: 'Three piles — accept, fallback, escalate. Most land in the first, and accepting them
+    the same day is the cheapest credibility available: it demonstrates that our objections, when they
+    come, are about something.'
+  actor: human
+  objects_read:
+  - sales.obj.core.risk
+  produces: Every redline sorted, with the accept pile returned immediately.
+  done_when: The first response covers all redlines rather than the easy ones.
+
+- order: 4
+  name: Return the whole document at once
+  description: 'One consolidated response rather than clause-by-clause exchange. Twenty rounds of
+    document tennis is where the weeks go, and each round costs days of queue time on both sides
+    regardless of how small the item is.'
+  actor: human
+  produces: A single marked-up return covering everything.
+  done_when: No item is being negotiated in its own separate thread.
+
+- order: 5
+  name: Negotiate principles, counsel to counsel, with business context
+  description: 'On the genuinely contested items, get the two lawyers talking with the commercial
+    rationale in front of them. Counsel arguing without context defends the clause; counsel with
+    context solves the underlying risk, often in a way neither side had drafted.'
+  actor: human
+  produces: Resolution of the contested items in one conversation rather than several exchanges.
+  done_when: The remaining disagreements have been discussed rather than exchanged.
+
+- order: 6
+  name: Keep the sponsor watching the clock
+  description: '"Two clauses remain; at this pace, signature slips past your date" — said to the
+    BUSINESS buyer. Legal optimises for risk and is right to; only the business owns the date, and a
+    sponsor who does not know it is slipping cannot apply the pressure that is theirs to apply.'
+  actor: human
+  objects_read:
+  - sales.obj.core.champion
+  - sales.obj.core.decision_maker
+  produces: A sponsor informed of the schedule consequence.
+  done_when: The business owner knows the current date risk.
+
+- order: 7
+  name: Record what was conceded and why
+  description: 'Terms accepted to save time are discovered at renewal or at the first incident. Writing
+    down what was given, and the reason, is what stops the next negotiation starting from a position
+    nobody chose.'
+  actor: system
+  objects_read:
+  - sales.obj.core.contract
+  produces: A record of accepted deviations from standard terms.
+  done_when: No concession exists only in an executed document nobody re-reads.
+
+objects_used:
+- sales.obj.core.contract
+- sales.obj.core.risk
+- sales.obj.core.timeline
+- sales.obj.core.buying_committee
+- sales.obj.core.champion
+- sales.obj.core.decision_maker
+
+outcomes:
+- Redlines are answered in one consolidated pass rather than in rounds.
+- Contested items are resolved between counsel with commercial context present.
+- The business sponsor owns the date and knows when it is at risk.
+
+failure_modes:
+- 'CLAUSE PING-PONG. The largest avoidable delay at this stage, and it feels like diligence.'
+- 'EVERYTHING ESCALATED. If every item is a principle, the buyer''s counsel stops distinguishing, and
+  the one position that mattered gets the same treatment as the rest.'
+- 'LEGAL LEFT TO OWN THE DATE. No incentive to hurry and no view of the commercial consequence.'
+- 'PAPER PROCESS DISCOVERED LATE. A known, askable fact turned into a fortnight of surprise.'
+- 'CONCESSIONS UNRECORDED. Rediscovered at renewal, from a position nobody would have chosen.'
+
+limits:
+- Cannot rescue a commercial disagreement that reached paper unresolved; step 3 will mis-sort it as a
+  redline.
+- Depends on internal counsel being available to agree fallbacks in advance, which small organisations
+  frequently lack.
+- '`legal_review` and `contract_requested` have zero rows on the design partner''s org, so nothing
+  here can currently be triggered from the record on that tenant.'
+
+variants:
+- applies_to: enterprise
+  change: Expect a standard playbook and heavy markup with no sentiment content; steps 2 and 4 carry
+    almost all the cycle-time gain.
+  why: Volume is procedural, so the only lever is how many rounds it takes.
+- applies_to: mid_market
+  change: Fewer redlines, more genuinely negotiated; step 5 matters more and step 4 less.
+  why: Each item is a real position rather than a template clause.
+- applies_to: regulated
+  change: Some terms are non-negotiable on the buyer's side by statute, and identifying those first
+    prevents spending the relationship on an argument that cannot be won.
+  why: The counterparty has no authority to concede them.
+- applies_to: channel
+  change: Two contracts — partner and end customer — with different papers and often different
+    counsel. Sequence them, because the partner's terms constrain what can be offered downstream.
+  why: A concession to the customer the partner agreement forbids is not a concession, it is a defect.
+
+metrics:
+- name: redline_cycle_time
+  unit: days
+  description: First redline to execution.
+  direction: lower_is_better
+- name: exchange_rounds
+  unit: count
+  description: Document round-trips before execution.
+  direction: lower_is_better
+- name: same_day_acceptance_share
+  unit: percent
+  description: Share of redlines accepted on the first pass.
+  direction: higher_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: The paper-process dimension, which exists because this stage is discovered late in most deals.
+- title: Practitioner contracting operations
+  kind: practitioner
+  note: Consolidated single-pass response and pre-agreed fallbacks are the two interventions with the
+    largest measured effect on contract cycle time.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 1, 2, 4 and 7 are new. Step 2 is the precondition
+    the original assumed: triage is impossible without pre-agreed fallbacks, because there is nothing
+    to sort the redlines into, and a team without them escalates everything by default.'

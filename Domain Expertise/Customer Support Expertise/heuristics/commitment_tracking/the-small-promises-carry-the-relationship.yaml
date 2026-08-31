@@ -1,0 +1,90 @@
+identity:
+  id: customer_support.heu.commitment_tracking.the_small_promises_carry_the_relationship
+  name: The small promises carry the relationship
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.commitment_tracking
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: stable
+purpose:
+  statement: >
+    A missed callback damages trust more than a slow fix, because the fix was never fully in our
+    control and the callback entirely was. Customers grade us on the promises we chose to make, not
+    on the problems we inherited.
+  answers:
+  - Why does a customer forgive a two-week bug and not a missed Tuesday update?
+  - Which promises should be tracked hardest when capacity is short?
+
+heuristic:
+  statement: >
+    Break a small promise and the customer stops believing the large ones. The callback is not minor
+    — it is the only evidence they have about whether we do what we say.
+  why: >
+    Resolution time is visibly constrained by engineering, priority and the nature of the defect,
+    and customers know it. A promised update at 4pm has no such excuse: it required one person to
+    remember one thing. Missing it is therefore read as a statement about attention rather than
+    about capacity, and attention is the thing the whole relationship is a proxy for.
+  confidence_bp: 8500
+  applies_when: A specific, human-made promise with a date exists, distinct from any contractual target.
+  breaks_down_when: >
+    A genuine emergency intervened AND the customer was told. A missed callback explained the next
+    morning by a P1 outage costs almost nothing, because the explanation is itself evidence of
+    attention. It also breaks down where the promise was never accepted — a unilateral "I'll try to
+    get to this today" carries none of this weight, and treating it as though it does inflates the
+    ledger until the real promises cannot be found.
+  reads:
+  - customer_support.obj.core.commitment
+  - customer_support.obj.core.named_contact
+  - has_been_let_down
+  contradicts:
+  - customer_support.heu.breach_prevention.breaches_cluster_so_prevention_compounds
+  pattern_ref:
+  - contact.we_have_let_this_person_down_before
+  - account.quiet_after_a_broken_promise
+
+limits:
+- >
+  It is about promises to a PERSON. Credibility here is personal and does not transfer when the
+  contact changes, which is why the commitment edge on named_contact is weighted separately from the
+  account's.
+- It says nothing about which promises to make. That is expectation_setting's problem, and the two are routinely conflated.
+
+failure_modes:
+- >
+  Used to justify never promising anything specific. A support function that avoids commitments to
+  avoid missing them is unreadable to the customer, who then invents their own timeline.
+- >
+  Applied to contractual targets. Those are watched by a tool and governed by a different failure
+  mode; the whole point of this heuristic is the promises nothing is watching.
+
+variants:
+- applies_to: enterprise_support
+  change: The effect compounds — enterprise contacts report upward, so a missed callback becomes a fact in somebody else's status report.
+  why: The promise is repeated internally before it is broken externally.
+- applies_to: b2c
+  change: Weaker per interaction and stronger in aggregate, because there is no relationship to draw down but the pattern shows in public reviews.
+  why: The consumer channel has no memory per customer and a very long memory in public.
+
+references:
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+  note: >
+    Its core asymmetry — effort and broken expectations drive disloyalty far harder than delight
+    drives loyalty — is the evidence base for weighting a missed callback above a slow fix.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    `contradicts` names the breach-prevention heuristic on purpose. Under load those two point in
+    opposite directions — prevention says work the cluster of at-risk contractual clocks, this says
+    the uncontracted callback is what the customer will remember. The tension is real and a
+    practitioner resolves it per case rather than by policy.

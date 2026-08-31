@@ -1,31 +1,20 @@
-# Knowledge manifest for sales.revenue_operations.quota_planning — REFERENCES ONLY, the sibling of objects.yaml.
-#
-# objects.yaml says which NOUNS to load. This says which EXPERTISE applies.
-#
-#   core   -> <kind>/core/             referenced by more than one capability
-#   scoped -> <kind>/quota-planning/    referenced by this capability alone
-#
-# The same scope rule as objects, enforced from the reference graph: MEDDICC referenced by
-# four capabilities must be core, or it becomes four copies that drift.
-
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
 capability: sales.revenue_operations.quota_planning
-
 playbooks:
   core: []
-  scoped: []
-
+  scoped:
+  - sales.pb.quota_planning.bottom_up_quota_sanity
 heuristics:
   core: []
-  scoped: []
-
+  scoped:
+  - sales.heu.quota_planning.a_missed_quota_everyone_missed_is_a_planning_error
 mental_models:
   core: []
   scoped: []
-
 rules:
   core: []
-  scoped: []
-
+  scoped:
+  - sales.rule.quota_planning.the_bottom_up_number_exists_first
 decision_frameworks:
   core: []
   scoped: []

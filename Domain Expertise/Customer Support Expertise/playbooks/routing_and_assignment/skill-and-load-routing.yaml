@@ -1,0 +1,91 @@
+identity:
+  id: customer_support.pb.routing_and_assignment.skill_and_load_routing
+  name: Skill and load routing
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.routing_and_assignment
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A ticket goes to the person who can actually resolve it with capacity to do so — skills-first,
+    load-balanced second, round-robin never, because a fast wrong assignment is two assignments.
+
+when_to_use:
+  do_not_use_when:
+  - The team is small enough that everybody sees everything. Formal routing there adds latency and removes the informal claiming that already works.
+steps:
+- order: 1
+  name: Decide the queue and the person separately
+  description: >
+    Queue routing fails on taxonomy — a ticket with no obvious home. Person routing fails on skill
+    and load. One decision cannot fail two ways well.
+  actor: human
+  objects_read: [customer_support.obj.core.queue, customer_support.obj.core.ticket]
+  done_when: Both were chosen, not one inferred from the other.
+- order: 2
+  name: Match skill before load
+  description: >
+    A fast wrong assignment costs two handoffs and the customer sees both. Load-balancing an
+    unqualified assignment optimises the wrong thing quickly.
+  actor: human
+  objects_read: [customer_support.obj.core.support_agent]
+  done_when: The assignee could plausibly finish it.
+- order: 3
+  name: Never round-robin
+  description: >
+    It is fair to agents and indifferent to customers. Fairness across a team is a rostering
+    concern, not a routing rule.
+  actor: system
+  done_when: No assignment was made purely by rotation.
+- order: 4
+  name: Keep the owner through the escalation
+  description: >
+    While the defect sits with engineering, the customer relationship still belongs to somebody.
+    Unowned during escalation is where the worst experiences happen.
+  actor: human
+  objects_read: [customer_support.obj.core.escalation]
+  done_when: A named person holds the customer even when they do not hold the work.
+- order: 5
+  name: Hold rather than park
+  description: >
+    Assigning to somebody who cannot progress it looks like routing and is a delay with a name on
+    it. An honest hold is better and is visible.
+  actor: human
+  done_when: Unroutable tickets are held with a reason rather than distributed.
+objects_used: [customer_support.obj.core.ticket, customer_support.obj.core.queue, customer_support.obj.core.support_agent,
+               customer_support.obj.core.escalation, customer_support.obj.core.customer_account]
+limits:
+- 'Skill matching needs a skills model most teams hold informally, and formalising it badly is worse than the informal version.'
+- 'It routes work; whether the queue has anybody able to do it is a capacity question.'
+failure_modes:
+- 'Step 4 dropped at handoff, which is the single largest source of the "nobody is talking to me" complaint.'
+- 'Step 2 inverted under load, because load is visible and skill is not.'
+variants:
+- applies_to: swarming_support
+  change: Steps 1 to 3 largely dissolve — work is claimed rather than assigned — and step 4 becomes the whole capability.
+  why: Swarming solves routing and creates an ownership question.
+- applies_to: follow_the_sun
+  change: Step 4 must survive a regional handover, which means ownership transfers explicitly rather than lapsing at end of shift.
+  why: The default is that nobody owns it overnight.
+- applies_to: outsourced_bpo
+  change: Step 2 depends on a skills picture across an organisational boundary, which is usually a tier number rather than a capability.
+  why: The provider abstracts exactly the information routing needs.
+references:
+- title: Support routing practice
+  kind: practitioner
+  note: Where handoff count is identified as tracking satisfaction more closely than resolution time.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 4 is where the customer experience is decided and it is the step no routing system
+    models. While the defect is with engineering the ticket has a status and no holder, and that
+    is the state customers describe as being abandoned.

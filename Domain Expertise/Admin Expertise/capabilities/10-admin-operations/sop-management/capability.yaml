@@ -1,28 +1,75 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.admin_operations.sop_management
   name: SOP Management
   domain: admin
   subdomain: admin_operations
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Authoring and maintaining standard operating procedures: capturing the real process, assigning
+  ownership, versioning, and reviewing when the process changes rather than on a calendar. An SOP that
+  has drifted from practice is worse than none, because it is what the new joiner follows.
 
-description: >
-  Authoring and maintaining standard operating procedures: capturing the real process,
-  assigning ownership, versioning, and reviewing when the process changes rather than on a
-  calendar. An SOP that has drifted from practice is worse than none, because it is what the
-  new joiner follows.
+  '
+question: Is there a written, current procedure for this, and does it match what we actually do?
 
-question: "Is there a written, current procedure for this, and does it match what we actually do?"
+outcomes:
+- 'A written procedure that matches what is actually done, captured from a real run rather than from how somebody remembers it.'
+- 'An owner per SOP, since an unowned procedure decays silently and nobody is responsible for noticing.'
+- 'Review triggered by the process CHANGING, not by a calendar. A date-driven review of an unchanged process is a signature.'
+- 'Tested by somebody who was not the author, because an SOP only its author can follow is a note.'
+- 'The negative outcome: an SOP RETIRED because the process no longer exists. A library of procedures for work nobody does is what makes people stop consulting the library.'
+failure_modes:
+- 'WRITING FROM MEMORY. The real process has edge cases and an order the author has automated away in their own head.'
+- 'CALENDAR REVIEW ON A STATIC PROCESS, which produces a review queue of no-ops and trains people to close them unread.'
+- 'NO SECOND READER, so the gaps that only the author can fill stay invisible until they are on leave.'
+- 'SOPs AS COMPLIANCE ARTEFACTS, written to exist rather than to be followed, which is detectable within one paragraph.'
+- 'ONE ENORMOUS DOCUMENT covering a whole function, which is never read and never updated.'
+kpis:
+- name: sop_coverage_of_critical_processes
+  unit: percent
+  description: Processes that would stop if one person were away, with a current procedure.
+  direction: higher_is_better
+- name: second_reader_tested_share
+  unit: percent
+  description: SOPs successfully executed by somebody who did not write them. The only real test.
+  direction: higher_is_better
+- name: change_triggered_review_share
+  unit: percent
+  description: Reviews prompted by the process changing rather than by a date.
+  direction: higher_is_better
+- name: retirement_rate
+  unit: percent
+  description: A target band. Zero means the library only grows, which is how it stops being consulted.
+  direction: target_band
+handoffs:
+  upstream: [admin.admin_operations.process_improvement, admin.records_and_documentation.knowledge_base_maintenance]
+  downstream: [admin.people_administration.onboarding_administration, admin.admin_operations.business_continuity_administration,
+               admin.compliance_and_governance.audit_support]
+  parallel: [admin.admin_operations.service_level_management, admin.records_and_documentation.document_control]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, outsourced, hybrid, distributed]
+  offerings: [coordinative, assurance]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    second_reader_tested_share is the only honest measure of an SOP and almost nobody collects
+    it. A procedure is not written until somebody who did not write it has executed it, because
+    the author has automated the edge cases away in their own head and cannot see the gaps.
+
+    change_triggered_review_share rather than a calendar cadence, because a date-driven review
+    of a process that has not changed produces a queue of no-ops — and a queue of no-ops trains
+    people to close review tasks without reading them, which then applies to the ones that
+    mattered.
+
+admission:
+  accepted_content_hash: 63025e27a4e98c1c1e8a802506757be0fe4e96dbae61f2e91da72568f84012de

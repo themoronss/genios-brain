@@ -1,0 +1,147 @@
+identity:
+  id: sales.heu.contract_management.unsigned_is_unwon
+  name: Unsigned is unwon
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.contract_management
+  subdomain: closing
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: A verbal yes changes nothing in the world — budgets freeze, sponsors leave, priorities
+    shift right up to the signature. Forecast and behave accordingly, and celebrate on ink rather than
+    on intent.
+  answers:
+  - What may be relied on before signature?
+  - How should a verbally-agreed deal be treated?
+  not:
+  - A claim that verbal agreement is meaningless. It is strong evidence, and it is not an outcome.
+  - A rule about forecast categories, which have their own definitions.
+
+heuristic:
+  statement: 'Treat agreement in principle as the START of the most fragile period in the deal rather
+    than the end of the process, and increase attention at that moment rather than relaxing it. The
+    events that undo a verbal yes — a freeze, a reorganisation, a sponsor moving, a late competitor —
+    are uncorrelated with anything about the deal, so nothing about how well it was run reduces them
+    and only elapsed time does.'
+  why: 'The behavioural failure is the mechanism, not the events. A deal that has been verbally agreed
+    is experienced as finished: it moves in the forecast, the seller''s attention moves to the next
+    one, and the review stops asking about it — so the period of maximum exposure receives the least
+    oversight of the entire cycle. That is why the losses in this window feel like bad luck. They are
+    ordinary organisational events happening to a deal nobody is watching.'
+  confidence_bp: 8800
+  applies_when: 'Agreement in principle exists and no contract has been executed.'
+  breaks_down_when: 'A PURCHASE ORDER OR EQUIVALENT ALREADY EXISTS. In some motions the commercial
+    commitment is the PO and the contract is administrative; treating that as unwon misreads which
+    document carries the obligation.
+
+    A LONG-STANDING RELATIONSHIP WITH A RELIABLE PATTERN. Where an account has honoured verbal
+    agreement many times, the base rate genuinely differs — though it changes the moment their
+    sponsor does, which is the failure this exception most often produces.
+
+    WHERE THE PAPER IS A FORMALITY WITH A KNOWN DATE. A scheduled signing with a named signatory and a
+    booked slot is a queue with a length, not an open-ended risk.
+
+    WHEN IT BECOMES A REASON TO DISTRUST THE BUYER. The heuristic is about organisational events, not
+    about sincerity, and a seller who behaves as though the buyer might renege damages the
+    relationship at the moment it is most valuable.
+
+    IN SHORT TRANSACTIONAL CYCLES. Where signature follows agreement within hours there is no window
+    to be exposed in, and the caution is overhead.'
+  reads:
+  - sales.obj.core.contract
+  - sales.obj.core.deal
+  - sales.obj.core.timeline
+  - derived.momentum
+  contradicts:
+  - sales.heu.legal_review.redlines_mean_the_deal_is_real
+  pattern_ref:
+  - dl.verbal_yes_without_paper
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: verbal_yes}
+  signals:
+  - verbal_yes
+  - contract_requested
+  - timeline_slip
+  do_not_use_when:
+  - A purchase order already exists and carries the commitment.
+  - Signature is scheduled with a named signatory and a booked slot.
+  - The cycle is short enough that agreement and signature happen together.
+
+objects_used:
+- sales.obj.core.contract
+- sales.obj.core.deal
+- sales.obj.core.timeline
+- sales.obj.core.risk
+
+outcomes:
+- Attention rises at agreement rather than falling.
+- The verbal-to-signature window is measured and treated as exposure.
+
+failure_modes:
+- 'READ AS PESSIMISM. Behaving as though the buyer might renege damages the relationship at its most
+  valuable moment; the heuristic is about organisational events, not about people.'
+- 'USED TO WITHHOLD FORECAST HONESTY. The point is to keep watching, not to hide a deal that is
+  genuinely likely to close.'
+- 'APPLIED WHERE A PO EXISTS. Misreads which document actually carries the commitment.'
+
+limits:
+- '`verbal_yes` has zero rows on the design partner''s org, so the state this heuristic is entirely
+  about is not detectable there; `proposal_sent` is the nearest available and it is earlier and
+  weaker.'
+- Says nothing about how to shorten the window, only that it should be treated as risk.
+- Cannot distinguish a buyer-side queue from buyer-side reconsideration, which need opposite responses.
+
+variants:
+- applies_to: enterprise
+  change: The window is long by construction and the exposure is real; the countermeasure is a
+    scheduled signature with a named signatory rather than increased vigilance.
+  why: Watching a long queue more closely does not shorten it.
+- applies_to: smb
+  change: The window should be hours and the heuristic reduces to having paper ready before the
+    conversation that produces the yes.
+  why: All the latency is ours.
+- applies_to: channel
+  change: A partner's verbal yes is two steps from a signature — theirs and the customer's — and each
+    step carries its own exposure.
+  why: Two agreements, two windows.
+
+metrics:
+- name: verbal_to_paper_hours
+  unit: hours
+  description: Agreement to document sent. The half we control.
+  direction: lower_is_better
+- name: post_verbal_loss_rate
+  unit: percent
+  description: Share of verbally-agreed deals that did not close. The quantity this heuristic claims
+    is larger than sellers expect.
+  direction: lower_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: The paper-process dimension, which exists because verbal agreement routinely precedes an
+    unmapped and unmeasured sequence.
+- title: Practitioner forecasting discipline
+  kind: practitioner
+  note: Commit categories defined on executed paper rather than on verbal agreement are standard in
+    well-run forecasts precisely because of the loss rate in this window.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The addition is the mechanism: the losses in
+    this window are not bad luck, they are ordinary organisational events happening to a deal that
+    stopped being watched at exactly the moment it became most exposed — which also explains why the
+    fourth breakdown regime matters, since the remedy is attention rather than suspicion.'

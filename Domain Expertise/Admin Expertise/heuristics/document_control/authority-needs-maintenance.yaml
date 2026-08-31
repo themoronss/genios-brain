@@ -1,0 +1,66 @@
+identity:
+  id: admin.heu.document_control.authority_needs_maintenance
+  name: Authority needs maintenance
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.document_control
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A document's bindingness decays as reality moves. The review date is not bureaucracy — it
+    is the renewal fee on the document's right to be obeyed.
+  answers:
+  - Why do controlled documents need review dates?
+
+heuristic:
+  statement: >
+    A document's authority decays with the reality it described. The review date is not bureaucracy
+    — it is the renewal fee on its right to be obeyed.
+  why: >
+    Nobody re-reads a policy to check it still matches the world; they follow it. So an out-of-date
+    binding document does not fail loudly, it quietly makes correct behaviour non-compliant and
+    non-compliant behaviour normal. The review date exists because the decay is invisible from
+    inside, and the only reliable trigger is a calendar rather than a person noticing.
+  confidence_bp: 8000
+  applies_when: Any document that binds behaviour — policy, SOP, standing instruction, contract schedule.
+  breaks_down_when: >
+    The document describes something that genuinely does not change — a statutory definition, a
+    company number, a signed historical agreement. Reviewing those on a cycle produces a calendar of
+    no-ops that trains people to close review tasks without reading, which then applies to the
+    documents that did need reading. It also breaks down where review is performed as a date-stamp:
+    a reviewed-but-unchanged document with no evidence anyone read it is worse than an obviously
+    stale one, because it looks current.
+  reads: [admin.obj.core.document, admin.obj.core.policy]
+  contradicts: [admin.heu.policy_administration.policy_count_inversely_predicts_compliance]
+limits:
+- 'It argues for a review cycle, not for a change. Most reviews should conclude no change and say so.'
+- 'No substrate support: nothing writes document.review_due_at, so this is a human discipline today.'
+failure_modes:
+- 'Applied uniformly, producing a review calendar large enough that reviews become signatures.'
+- 'Used to justify rewriting a document that was correct, which resets everyone who had learned it.'
+variants:
+- applies_to: regulated
+  change: The cycle is externally set and non-negotiable, and the evidence of review matters as much as the review.
+  why: An unreviewed control is a finding regardless of whether the document was still right.
+- applies_to: startup_lean
+  change: Event-driven rather than calendar-driven — review on funding, headcount step, or a new jurisdiction.
+  why: At this stage reality moves in jumps, not continuously, and a calendar misses both.
+references:
+- title: ISO 9001 — control of documented information
+  kind: standard
+  note: Where periodic review is a requirement rather than good practice.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    contradicts the policy-count heuristic on purpose: this one adds maintenance load per
+    document, that one argues the smallest possible document set. Together they say the right
+    thing — few documents, genuinely maintained.

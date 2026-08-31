@@ -162,6 +162,41 @@ class DeclaredOverridePlugin:
         ),)
 
 
+class AuthoredPriorityPlugin:
+    """The priority the SITUATION AUTHOR declared, carried on the compiled capability's config.
+
+    `DeclaredOverridePlugin` covers a source that ruled at runtime. This covers the case where the
+    ruling was made in the corpus and compiled in — which is every compiled capability, because
+    `core.risk` measures pressure and never rules on priority. With neither present the Decision
+    Maker's formula ran on neutral components, returned 5,000bp, and `domain_shadow` turned that
+    into `score = (5000 + 50) / 100 = 50` for every compiled signal alike: 193 of 223 signals and
+    104 of 115 cards at the same score on the design partner's org, all in one urgency band.
+
+    The corpus is not short of opinions about this — 48 situations carry `priority_bp` and they
+    take 30 distinct values from 3,000 to 9,600. The number was read at compile time, used to
+    rank which situation's card copy won, and then dropped. Everything needed to rank was already
+    written down; nothing carried it.
+
+    Published only when the compiler put one there. An absent authored priority stays absent
+    rather than becoming a neutral 5,000, for the same reason the override never becomes a zero:
+    "the author said nothing" and "the author said middling" are different claims, and only the
+    second should outrank the formula.
+    """
+
+    plugin_id = "authored_priority"
+
+    def contribute(self, view: UnitView) -> tuple[Observation, ...]:
+        raw = view.config.get("authored_priority_bp")
+        if raw is None:
+            return ()
+        return (Observation(
+            plugin_id=self.plugin_id,
+            kind="priority.authored",
+            metrics={"priority_override_bp": integer(raw, "authored_priority_bp")},
+            reason_codes=("priority_authored_by_situation",),
+        ),)
+
+
 class PriorityReasoner(ReasoningUnit):
     """Business Evaluation · the priority inputs; the orchestrator's math stage ranks candidates.
 
@@ -176,7 +211,13 @@ class PriorityReasoner(ReasoningUnit):
     #: The reserved pair.  `tests/test_unit_roster.py` asserts that no other unit in the roster
     #: declares either of these, and that this one declares both.
     publishes = ("urgency_bp", "priority_override_bp")
-    plugins = (DeclaredUrgencyPlugin(), MaximumUrgencyPlugin(), DeclaredOverridePlugin())
+    # ORDER IS THE PRECEDENCE RULE. `evaluate_metrics` keeps the LAST override observation it
+    # sees, so the authored priority is offered first and a source that ruled at RUNTIME overrides
+    # it — a live ruling about THIS node beats a general one about its situation type. The two
+    # are rarely both present today (nothing on the compiled path publishes `priority_bp` at
+    # runtime), which is exactly why the order has to be decided now rather than discovered later.
+    plugins = (DeclaredUrgencyPlugin(), MaximumUrgencyPlugin(), AuthoredPriorityPlugin(),
+               DeclaredOverridePlugin())
 
     def retrieve(self, request: ReasoningRequest, spec: ReasonerSpec,
                  prior: Mapping[str, ReasonerResult]) -> UnitView:

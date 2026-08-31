@@ -1,0 +1,66 @@
+identity:
+  id: customer_support.heu.agent_coaching.averages_hide_the_coachable_moment
+  name: Averages hide the coachable moment
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.agent_coaching
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: An agent's mean CSAT can be fine while one recurring behaviour costs them their worst 10%
+    of tickets. Coach the pattern in the bottom decile, not the comfortable average.
+  answers:
+  - Where in an agent's tickets does coaching value live?
+
+heuristic:
+  statement: >
+    An agent's mean scores can be entirely fine while one recurring behaviour costs them their worst
+    ten per cent of tickets. Coach the pattern in the bottom decile, not the comfortable average.
+  why: >
+    Averages are dominated by the routine majority, which most agents handle well. The behaviour
+    worth changing shows up only under specific conditions — an angry customer, an ambiguous
+    request, a case outside their knowledge — and those are rare enough to leave the mean
+    untouched while producing nearly all of the escalations, reopens and complaints. So a
+    performance view built on averages is looking at exactly the tickets where nothing needs to
+    change.
+  confidence_bp: 8000
+  applies_when: An agent with enough ticket volume for a tail to be distinguishable from noise.
+  breaks_down_when: >
+    The bottom decile is just hard tickets. An agent given the escalations has a worse tail by
+    construction, and coaching them on it is coaching them for having been trusted with difficult
+    work. Distinguishing the two requires comparing like with like, which most quality data does
+    not support. It also breaks down at low volume, where ten per cent is one ticket and the
+    pattern is an anecdote.
+  reads: [customer_support.obj.core.support_agent, customer_support.obj.core.quality_scorecard, customer_support.obj.core.ticket]
+  contradicts: [customer_support.heu.performance_management.speed_pressure_surfaces_as_reopens]
+limits:
+- 'It locates the coachable behaviour; it does not establish whether the agent or the system caused it.'
+- 'Tail analysis needs volume, which junior agents and small teams do not have.'
+failure_modes:
+- 'Coaching an agent for holding the hard queue, which is the most demoralising version of this.'
+- 'Applied at volumes where the decile is a single ticket.'
+variants:
+- applies_to: enterprise_support
+  change: Volume is too low for deciles; the review is per-ticket and the pattern is found by reading rather than by ranking.
+  why: Twenty tickets a month has no tail.
+- applies_to: b2c
+  change: Strongest — high volume makes the tail statistically meaningful and the routine majority genuinely uninformative.
+  why: The average is almost entirely composed of easy work.
+references:
+- title: Deliberate practice in skill development
+  kind: research
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the one that does real damage: an agent trusted with the
+    escalations has a worse tail by construction, and coaching them on it is coaching them for
+    having been given hard work.

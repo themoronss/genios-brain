@@ -355,6 +355,13 @@ class CapabilityManifest:
     reasoners: tuple[ReasonerSpec, ...]
     plays: tuple[PlayDefinition, ...]
     required_fields: tuple[str, ...] = ()
+    #: Fields to PULL into the snapshot, when that is wider than what gates the decision.
+    #: `required_fields` answers "without this, nothing can run"; this answers "fetch it if it is
+    #: there". Merging them let one value-dependent inference pattern veto an entire capability,
+    #: and narrowing the merged value to fix that emptied the selector too — leaving a snapshot
+    #: with no facts, hence no evidence, hence an `evidence_required` policy that eliminated every
+    #: candidate. They are two questions and now have two answers.
+    selection_fields: tuple[str, ...] = ()
     intelligence_objects: tuple[IntelligenceObject, ...] = ()
     ranking_weights: Mapping[str, int] = field(default_factory=lambda: {
         "impact": 35, "success": 30, "urgency": 20, "effort": 10, "risk": 5})
@@ -392,6 +399,8 @@ class CapabilityManifest:
             raise ValueError("duplicate intelligence object")
         object.__setattr__(self, "required_fields", tuple(sorted(set(
             _strings(self.required_fields)))))
+        object.__setattr__(self, "selection_fields", tuple(sorted(set(
+            _strings(self.selection_fields)))))
         weights = dict(self.ranking_weights)
         required = {"impact", "success", "urgency", "effort", "risk"}
         if set(weights) != required or any(isinstance(v, bool) or not isinstance(v, int)
@@ -434,6 +443,11 @@ class CapabilityManifest:
                 "domain": self.domain, "root_entity_type": self.root_entity_type,
                 "goal": self.goal, "reasoners": self.reasoners, "plays": self.plays,
                 "required_fields": self.required_fields,
+                # Must be here as well as on the dataclass: the audit store hashes the
+                # RAW fields while `capability_snapshot_id` hashes this dict, and a
+                # field present in one and absent from the other makes every manifest
+                # fail "capability_snapshot_id does not match manifest content".
+                "selection_fields": self.selection_fields,
                 "intelligence_objects": self.intelligence_objects,
                 "ranking_weights": self.ranking_weights, "policies": self.policies,
                 "live_delivery_enabled": self.live_delivery_enabled,

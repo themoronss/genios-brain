@@ -1,0 +1,67 @@
+identity:
+  id: admin.heu.onboarding_administration.day_one_is_remembered_forever
+  name: Day one is remembered forever
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.onboarding_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A joiner greeted by a working laptop and a plan tells that story for years; one who waited
+    three days for email tells that one instead. Onboarding admin is employer branding delivered as logistics.
+  answers:
+  - What does day-one readiness signal?
+
+heuristic:
+  statement: >
+    A joiner greeted by a working laptop and a plan tells that story for years. One who waited three
+    days for email tells that one instead. Onboarding administration is employer branding delivered
+    as logistics.
+  why: >
+    The first day is the only workplace experience an employee has with no prior context to
+    interpret it against, so it becomes the reference point everything else is measured from. It is
+    also the single most repeatable story they own — told to candidates, to former colleagues, to
+    their next employer's interviewer. The organisation therefore buys or loses a durable
+    reputational asset with a set of tasks that are individually trivial and collectively decisive.
+  confidence_bp: 8000
+  applies_when: Any permanent hire with a defined start date.
+  breaks_down_when: >
+    The role's reality diverges sharply from the first day. A flawless onboarding into a chaotic team
+    reads as a facade within a fortnight and the goodwill inverts — the polish becomes evidence that
+    the organisation optimises appearances. It also breaks down for experienced hires who expect
+    friction and read excessive ceremony as bureaucracy, where the useful signal is competence and
+    speed rather than welcome.
+  reads: [admin.obj.core.employee_record, admin.obj.core.asset, admin.obj.core.access_right]
+  contradicts: [admin.heu.access_and_identity_administration.access_accumulates_never_evaporates]
+limits:
+- 'It argues for the first day, not for the first quarter, which is where retention is actually decided.'
+- 'The asset is reputational and unmeasurable, so it loses to any cost argument framed per hire.'
+failure_modes:
+- 'Over-produced onboarding that sets an expectation the job does not meet.'
+- 'Used to justify provisioning generously on day one, which is where accumulated access starts.'
+variants:
+- applies_to: distributed
+  change: Strongest and hardest. There is no office to absorb a gap and no colleague to lend a cable.
+  why: Everything the joiner needs must have arrived, configured, in advance.
+- applies_to: startup_lean
+  change: Expectations are lower and the signal is different — competence rather than polish is what surprises people.
+  why: Nobody expects process; they notice whether anyone thought about them.
+references:
+- title: Onboarding as employer branding
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    contradicts access-accumulates-never-evaporates because they pull opposite ways on day one:
+    this heuristic wants everything working immediately, that one warns that generous initial
+    provisioning is where the accumulated permission set begins. Role templates are how both are
+    satisfied.

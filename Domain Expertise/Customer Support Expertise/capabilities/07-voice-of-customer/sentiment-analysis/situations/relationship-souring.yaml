@@ -1,0 +1,112 @@
+# The voice-of-customer subdomain had four capabilities and no door, while `derived.sentiment`,
+# `derived.momentum` and `derived.engagement` are computed on every relationship in the graph and
+# were being read by nothing in this domain.
+
+identity:
+  id: customer_support.sit.relationship_souring
+  name: Relationship Souring
+  domain: customer_support
+  owner_capability: customer_support.voice_of_customer.sentiment_analysis
+  version: 1.0.0
+  status: stable
+
+description: >
+  The tone or the rhythm of an existing relationship has turned. The read is about what changed
+  and whether anything in the record explains it.
+
+  Dissatisfaction is expressed long before it is stated. The replies get shorter, the questions
+  get more procedural, somebody new is copied in, the gaps get longer. None of that is a
+  complaint and all of it is information, and it is the kind of information a person misses in
+  their own inbox precisely because each individual message is unremarkable.
+
+  The failure this file exists to prevent is inferring feeling from a single message. A curt reply
+  is a curt reply; people are busy, and reading one terse line as a churn signal produces advice
+  that is both wrong and slightly insulting to act on. What makes a change meaningful is that it
+  is a change — against this relationship's own baseline, not against a general idea of warmth.
+  Where there is not enough history to establish a baseline, the honest output says the history is
+  too thin rather than reporting a trend.
+
+matches:
+  l2_situation_types:
+    - support_contact
+    - support_case
+    - relationship
+  scope: person
+  when:
+    - exists: derived.sentiment
+    - path: relationship.nature
+      op: "="
+      value: customer
+
+also_serves:
+  - customer_support.voice_of_customer.satisfaction_measurement
+  - customer_support.voice_of_customer.feedback_synthesis
+
+objects:
+  load:
+    - customer_support.obj.core.customer_sentiment
+    - customer_support.obj.core.named_contact
+  optional:
+    - customer_support.obj.core.churn_risk
+    - customer_support.obj.core.customer_account
+    - customer_support.obj.core.commitment
+    - customer_support.obj.core.escalation
+  never_load:
+    - customer_support.obj.postmortem.postmortem
+    - customer_support.obj.macro_management.macro
+    - customer_support.obj.core.sla_target
+
+priority_bp: 6400
+typical_duration_days: 30
+
+signals_of_progress:
+  - positive_reply
+  - next_step_agreed
+  - meeting_request
+
+signals_of_decay:
+  - negative_reply
+  - timeline_slip
+  - closed_lost_mention
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    Something about this relationship has changed. Never report a sentiment score and never use
+    the word "sentiment" — a number about a person's feelings is both unconvincing and slightly
+    creepy in a card.
+
+    Headline: what changed, in observable terms — slower replies, a new person copied in, a
+    question that reads as procedural.
+
+    Situation: the change against this relationship's own history, with the evidence. If the
+    history is too short to call it a change, say exactly that and stop.
+
+    Artifact: the message that opens the subject without accusing — ask directly whether something
+    is not working, offer the specific thing that would help. Never "checking in".
+  fallback:
+    headline: "{entity} — the tone of this relationship has shifted"
+    situation: >-
+      Something in the exchange with {entity} has changed against how it usually runs.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    `derived.sentiment`, `derived.momentum` and `derived.engagement` are computed by
+    `context/derived.py` from message rhythm, never extracted, and `field_vocabulary` strips
+    `derived.*` from the extraction prompt — so they are the rare case of a substrate fact with
+    exactly one writer and no ambiguity. That is why this situation can gate on one.
+
+    `product_feedback_routing` is NOT served: routing feedback to a product owner needs somewhere
+    to route it to, and no fact expresses a product area or an internal owner. `sentiment_analysis`
+    and `satisfaction_measurement` are served together because on this substrate they are the same
+    read at two horizons, and splitting them would produce two cards saying one thing.
+
+admission:
+  accepted_content_hash: 7ab3080439872f3d22ac26674987ac72008a541873c72e8d2405cad5a27ffea0

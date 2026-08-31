@@ -1,0 +1,83 @@
+identity:
+  id: admin.pb.purchase_order_management.po_discipline_with_three_way_match
+  name: PO discipline with three-way match
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.purchase_order_management
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Committed spend gets a PO before the vendor starts; invoices match PO and receipt before
+    payment — the three-way match that catches over-billing, duplicates and never-ordered charges mechanically.
+
+when_to_use:
+  do_not_use_when:
+  - The spend is below the PO threshold. Raising orders for trivial purchases is the friction that produces off-process spend.
+steps:
+- order: 1
+  name: Raise the order before the commitment
+  description: >
+    A PO raised after the invoice is data entry. The control only exists in the window before
+    somebody told the supplier to proceed.
+  actor: human
+  objects_read: [admin.obj.core.request, admin.obj.core.budget_line]
+  done_when: The order exists before the supplier was instructed.
+- order: 2
+  name: Charge it to the line that will be reported on
+  description: >
+    A correct total on the wrong budget line produces a position that reports healthy and is not,
+    and the correction happens at year end when it is useless.
+  actor: human
+  done_when: The line is the one the budget owner watches.
+- order: 3
+  name: Track consumption, not just issuance
+  description: >
+    An exhausted order discovered by an invoice is a payment held while a new PO is raised, which
+    is a supplier relationship cost for a bookkeeping omission.
+  actor: system
+  done_when: Remaining value is visible before the next invoice.
+- order: 4
+  name: Amend when scope moves, do not raise a second order
+  description: >
+    A second PO splits the history and makes consumption unknowable, which is how the match starts
+    failing on everything.
+  actor: human
+  done_when: The change is on the original order.
+- order: 5
+  name: Close orders and release the residual
+  description: >
+    Open forever means committed spend accumulates and the budget position becomes fiction.
+  actor: agent
+  done_when: Completed orders are closed and the unused value returned.
+objects_used: [admin.obj.core.budget_line, admin.obj.core.invoice, admin.obj.core.vendor, admin.obj.core.request, admin.obj.core.approval]
+limits:
+- 'It assumes a receipt event exists. For services, the receipt is somebody confirming work happened, which is the weakest link in every three-way match.'
+- 'It cannot prevent a bad purchase, only an uncontrolled one.'
+failure_modes:
+- 'Step 5 owned by nobody, which is why stale open POs are near-universal and rarely on anyone''s list.'
+- 'Step 1 relaxed for urgent purchases, after which urgent becomes the default framing.'
+variants:
+- applies_to: outsourced
+  change: Step 3's receipt confirmation must come from the party who received the service, not the party administering the PO.
+  why: Otherwise the match confirms that paperwork agrees with paperwork.
+- applies_to: startup_lean
+  change: Steps 1 and 5 only. Consumption tracking is overhead when there are twenty orders.
+  why: The failure at this size is uncontrolled commitment, not budget-position fidelity.
+references:
+- title: Three-way match practice
+  kind: practitioner
+  note: Order, receipt, invoice — and the receipt is the leg that fails for services.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 has no forcing event, which is why open POs accumulate everywhere and why committed-
+    spend figures are treated as unreliable by the people who produce them.

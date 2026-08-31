@@ -19,9 +19,8 @@ matches:
   # else here is an ERROR, because the registry lookup would never resolve and the failure
   # would be silent — the capability simply never compiles and nobody sees why.
   l2_situation_types:
-    - demo_requested
-    - buying_signal
-    - intro_followup
+    - prospect_relationship
+    - opportunity
   scope: person
   when:
     # Inbound means the ball arrived with us. Without this narrowing the situation also

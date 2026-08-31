@@ -1,0 +1,97 @@
+identity:
+  id: customer_support.pb.major_incident_communication.one_voice_on_the_clock
+  name: One voice, on the clock
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.major_incident_communication
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: During a major incident, updates come from one owner, on a stated cadence, saying what is
+    known, impacted, being done, and when next — the comms discipline that keeps a technical event from
+    becoming a trust event.
+
+when_to_use:
+  do_not_use_when:
+  - The incident affects one account. Broadcast comms there tells uninvolved customers about a problem they do not have.
+steps:
+- order: 1
+  name: Appoint one voice
+  description: >
+    Support, the status page and an engineer on social saying three slightly different things is
+    worse than silence, because now the customer must decide which of us to believe.
+  actor: human
+  objects_read: [customer_support.obj.core.incident]
+  done_when: All external statements come from one owner.
+- order: 2
+  name: State the cadence and hold it
+  description: >
+    The next-update time is the most important line in the message. It is what converts an
+    unbounded wait into a bounded one.
+  actor: human
+  done_when: Every update names when the next arrives.
+- order: 3
+  name: Say known, impacted, doing, next
+  description: >
+    Four things, in that order. Architecture is for the postmortem; the customer needs to know
+    whether they are affected and what to do about their afternoon.
+  actor: human
+  objects_read: [customer_support.obj.core.customer_account]
+  done_when: The update answers all four without technical detail.
+- order: 4
+  name: Under-promise the ETA, or withhold it
+  description: >
+    A public restore time that slips once is noted and twice discounts everything afterwards.
+    "No reliable estimate, next update at 14:00" is stronger than a number that moves.
+  actor: human
+  done_when: Any stated time is one we expect to beat.
+- order: 5
+  name: Update on the clock with nothing new
+  description: >
+    The gap is what customers fill with a worse theory. A no-progress update on time is the whole
+    proposition.
+  actor: human
+  done_when: No promised update was skipped for lack of news.
+- order: 6
+  name: Close it explicitly
+  description: >
+    Stopping at resolution leaves customers unsure whether it is over, and they check rather than
+    trust.
+  actor: human
+  done_when: A final message stated the incident is closed.
+objects_used: [customer_support.obj.core.incident, customer_support.obj.core.customer_account, customer_support.obj.core.escalation_owner,
+               customer_support.obj.core.named_contact]
+limits:
+- 'It communicates; it has no effect on restore time and should never be resourced from the fix.'
+- 'Step 3 depends on impact being known, which early in an incident it often is not — and saying so is part of the message.'
+failure_modes:
+- 'Step 4 abandoned under pressure from customers demanding a time, which is the moment the discipline exists for.'
+- 'Step 1 breached by a well-meaning engineer being helpful publicly.'
+variants:
+- applies_to: enterprise_support
+  change: Named accounts expect a direct message as well as the status page, and the two must not disagree.
+  why: A status page is not communication to somebody with a contract.
+- applies_to: b2c
+  change: The status page IS the channel and step 1 is mostly about social media discipline.
+  why: There is no per-customer route at that volume.
+- applies_to: follow_the_sun
+  change: The single voice must transfer between regions without changing tone or contradicting the last update.
+  why: Continuity is the promise being kept.
+references:
+- title: Incident communication practice
+  kind: practitioner
+  note: Where cadence adherence, not update content, is identified as the variable customers actually respond to.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is the whole discipline. Updating on the clock when there is nothing to say is what
+    proves somebody is still holding it, and it is the update everybody wants to skip.

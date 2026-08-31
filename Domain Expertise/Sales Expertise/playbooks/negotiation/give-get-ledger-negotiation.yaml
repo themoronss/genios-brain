@@ -1,0 +1,197 @@
+identity:
+  id: sales.pb.negotiation.give_get_ledger_negotiation
+  name: The give-get ledger
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.negotiation
+  subdomain: proposal_and_commercials
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'Enter negotiation with three lists: what you must have, what you can trade, and what you
+    will walk from. Every buyer ask meets a counter-ask from the trade list, and the ledger is what
+    keeps the exchange honest in both directions.'
+  answers:
+  - How is a negotiation prepared for, and how is it conducted?
+  - What stops a negotiation becoming a sequence of one-way concessions?
+  not:
+  - Pricing. What the number should be is decided before this begins.
+  - Contract drafting. The terms agreed here are papered elsewhere.
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: proposal_sent}
+  signals:
+  - discount_pressure
+  - objection_price
+  - contract_requested
+  do_not_use_when:
+  - 'Pricing is published and non-negotiable. There is nothing to trade and the conversation is about
+    fit.'
+  - 'The deal is not qualified. Negotiating terms with someone who cannot approve them produces
+    agreements that have to be renegotiated with the person who can.'
+  - 'The buyer''s asks are substantive requirements rather than commercial positions — a liability
+    limit, a data-residency term. Those are answered, not traded.'
+
+steps:
+- order: 1
+  name: Write the three lists before the call
+  description: 'Must-have, tradeable, walk-away — decided cold, with whoever must approve them. Floors
+    invented under pressure are not floors; they are the position of the person with the least
+    perspective at the moment they have the most at stake.'
+  actor: human
+  objects_read:
+  - sales.obj.core.pricing
+  - sales.obj.core.budget
+  produces: Three explicit lists, agreed internally.
+  done_when: The seller can concede or refuse without needing to ask anyone.
+
+- order: 2
+  name: Name their FULL list first
+  description: '"Beyond price, what else needs to work for you?" Solving items one at a time lets the
+    list regrow — each concession is banked and the next ask arrives — and the seller experiences a
+    buyer who keeps asking rather than their own failure to bound the set.'
+  actor: human
+  objects_read:
+  - sales.obj.core.objection
+  produces: The buyer's complete set of asks, before any is answered.
+  done_when: The buyer has confirmed the list is complete.
+
+- order: 3
+  name: Look for the non-price currency first
+  description: 'Term length, payment schedule, scope, start date, reference rights, support level.
+    Price is the most expensive instrument and the easiest to reach for, and a negotiation conducted
+    only in price has spent the dearest currency while leaving the cheap ones untouched.'
+  actor: human
+  objects_read:
+  - sales.obj.core.contract
+  - sales.obj.core.timeline
+  produces: A trade proposed in a currency other than price wherever one exists.
+  done_when: Non-price levers were considered before any discount was offered.
+
+- order: 4
+  name: Trade explicitly
+  description: '"We can do X if you can do Y" — every time. It keeps the exchange respectful, it
+    preserves the price''s credibility, and it is the only mechanism that stops the renewal starting
+    from this deal''s floor.'
+  actor: human
+  produces: Paired gives and gets, recorded.
+  done_when: No concession exists in the ledger without its counterpart.
+
+- order: 5
+  name: Check the trade is deliverable
+  description: 'A negotiated scope or start date that implementation cannot meet is a loss booked as a
+    win and discovered by somebody else. The check costs one conversation and is skipped under exactly
+    the time pressure that makes it necessary.'
+  actor: human
+  objects_read:
+  - sales.obj.core.risk
+  produces: Confirmation that what was traded can be delivered.
+  done_when: No commitment has been made that delivery has not seen.
+
+- order: 6
+  name: Price the closing ritual separately
+  description: 'The late demand from purchasing is usually a requirement to show that a negotiation
+    happened. Hold a small concession back specifically for it, label it as final, and do not reopen
+    the commercial in response — a reserved concession satisfies the ritual at no incremental cost.'
+  actor: human
+  produces: A labelled closing concession, reserved in advance.
+  done_when: The final ask was met without the wider terms being revisited.
+  optional: true
+
+- order: 7
+  name: Keep the walk-away alive
+  description: 'A deal you cannot leave is a deal you cannot negotiate. Below the floor, say so kindly
+    and offer the version that does work — an organisation whose floor has never held does not have
+    one, and every buyer eventually finds that out.'
+  actor: human
+  produces: Either terms at or above the floor, or a clean decline with an alternative.
+  done_when: The floor held, or the deal was declined deliberately.
+
+objects_used:
+- sales.obj.core.pricing
+- sales.obj.core.decision_maker
+- sales.obj.core.budget
+- sales.obj.core.contract
+- sales.obj.core.proposal
+- sales.obj.core.timeline
+- sales.obj.core.objection
+- sales.obj.core.risk
+
+outcomes:
+- The buyer's whole list is known before the first trade.
+- Concessions are paired, deliverable, and mostly non-price.
+- The floor is real because it has occasionally been held to a decline.
+
+failure_modes:
+- 'ONE ASK AT A TIME. The list regrows indefinitely and each concession is pocketed.'
+- 'PRICE AS THE ONLY CURRENCY. The most expensive lever spent first, the cheap ones never used.'
+- 'FLOORS SET IN THE ROOM. Decided under maximum pressure and minimum perspective.'
+- 'TRADES NOBODY CAN DELIVER. Booked as a win, discovered as a loss by the implementation team.'
+- 'THE RITUAL MET BY REOPENING THE COMMERCIAL. Converts a ceremony into a real renegotiation at the
+  moment we are least able to walk.'
+
+limits:
+- Assumes the seller has authority to trade; where they do not, the useful skill is escalation.
+- Says nothing about what the price should be.
+- '`discount_pressure` and `objection_price` have zero rows on the design partner''s org, so nothing
+  in this playbook is currently triggerable there.'
+
+variants:
+- applies_to: enterprise
+  change: Step 1 involves an approver who is not present, so the tradeable range must be agreed in
+    advance and every get must be defensible to them afterwards.
+  why: Governed concessions are reviewed by someone with only the record in front of them.
+- applies_to: smb
+  change: Compress to steps 2, 4 and 7; there is one negotiator and a short list.
+  why: The overhead of a full ledger exceeds the value at this deal size.
+- applies_to: channel
+  change: Run the ledger with whoever bears the margin — often the partner — and keep the customer's
+    asks and the partner's separate.
+  why: A concession to the customer funded by the partner is a defect, not a trade.
+- applies_to: inside_sales
+  change: Pre-set floors centrally and remove step 1 from the seller; at this cadence the lists cannot
+    be prepared per deal.
+  why: The preparation has to be organisational to exist at all.
+
+metrics:
+- name: full_list_obtained_rate
+  unit: percent
+  description: Share of negotiations where the complete set of asks preceded the first concession.
+  direction: higher_is_better
+- name: non_price_trade_share
+  unit: percent
+  description: Share of concessions settled in a currency other than price.
+  direction: higher_is_better
+- name: reciprocation_rate
+  unit: percent
+  description: Share of gives carrying a named get.
+  direction: higher_is_better
+
+references:
+- title: Never Split the Difference
+  kind: book
+  author: Chris Voss
+  note: On bounding the counterparty's asks early and on the asymmetry of late-stage pressure.
+- title: Getting to Yes
+  kind: book
+  author: Fisher and Ury
+  note: Interests rather than positions, and the walk-away as the source of negotiating power — the
+    argument behind steps 3 and 7.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a four-step sketch. Steps 3, 5 and 6 are new. Step 5 is the one that is
+    skipped most and costs most — it is skipped precisely under the time pressure that makes an
+    undeliverable trade likely, and the person who discovers the failure is never the person who made
+    it.'

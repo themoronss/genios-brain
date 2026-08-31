@@ -1,39 +1,82 @@
-# Stub. Identity, purpose and load-set only — see quality-assurance in this subdomain for the
-# shape a promoted capability takes.
-
 identity:
   id: customer_support.support_management.ticket_review
   name: Ticket Review
   domain: customer_support
   subdomain: support_management
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Reading a specific ticket, or a specific set of them, to work out what happened and what
+  it says about the system that produced it. Distinct from quality assurance in both sample and purpose:
+  QA samples randomly to measure a population, review selects deliberately to understand an event — the
+  reopen, the breach, the one the customer wrote in about twice. The subject is the path the ticket took
+  rather than the agent who handled it, and the moment a review starts producing verdicts about people
+  it stops producing findings about the process, because everyone present begins managing their exposure
+  instead of reconstructing the timeline.
 
-description: >
-  Reading a specific ticket, or a specific set of them, to work out what happened and what it
-  says about the system that produced it. Distinct from quality assurance in both sample and
-  purpose: QA samples randomly to measure a population, review selects deliberately to understand
-  an event — the reopen, the breach, the one the customer wrote in about twice. The subject is
-  the path the ticket took rather than the agent who handled it, and the moment a review starts
-  producing verdicts about people it stops producing findings about the process, because everyone
-  present begins managing their exposure instead of reconstructing the timeline.
+  '
+question: What actually happened on this ticket, and what does it say about how we work?
 
-question: "What actually happened on this ticket, and what does it say about how we work?"
+outcomes:
+- 'A stratified sample — some random, some high-risk — because random alone misses the reopens and breaches, and high-risk alone measures only the bad days.'
+- 'A rubric the whole team has calibrated on, so feedback is about the work rather than about whose reviewer you drew.'
+- 'The system read through the ticket. A bad ticket usually exposes a bad macro, a missing article or an ambiguous policy before it exposes a bad agent.'
+- 'Findings routed by cause — process, knowledge or skill — since only the third belongs in coaching.'
+- 'The negative outcome: a review concluding the AGENT DID WELL under bad conditions. QA that only ever finds fault is measuring the reviewer''s standards.'
+failure_modes:
+- 'GRADING PEOPLE ONLY. QA that grades individuals fixes the cheapest twenty per cent of what it finds and leaves the systemic causes to recur.'
+- 'UNCALIBRATED REVIEWERS, which makes the score a property of who reviewed rather than of the ticket.'
+- 'RANDOM SAMPLING ALONE, which misses the reopens, breaches and escalations where the learning concentrates.'
+- 'HIGH-RISK SAMPLING ALONE, which produces a picture composed entirely of bad days and demoralises accordingly.'
+- 'REVIEWING FOR SCORE RATHER THAN FOR CAUSE, which produces a number and no change.'
+kpis:
+- name: calibration_drift
+  unit: ratio
+  description: Score variance between reviewers on the same ticket. Above a threshold the scores are about reviewers.
+  direction: lower_is_better
+- name: system_cause_share
+  unit: percent
+  description: Findings attributed to macro, article or policy rather than to the agent. Usually the majority and usually understated.
+  direction: higher_is_better
+- name: sample_stratification
+  unit: ratio
+  description: Balance of random against high-risk in the sample. Either alone gives a distorted picture.
+  direction: target_band
+- name: finding_to_change_rate
+  unit: percent
+  description: Reviews that produced a change to a macro, an article, a policy or a skill plan.
+  direction: higher_is_better
+handoffs:
+  upstream: [customer_support.diagnosis_and_resolution.verification_and_closure, customer_support.support_management.quality_assurance]
+  downstream: [customer_support.support_management.agent_coaching, customer_support.knowledge_and_deflection.macro_management,
+               customer_support.knowledge_and_deflection.knowledge_authoring, customer_support.support_management.performance_management]
+  parallel: [customer_support.voice_of_customer.satisfaction_measurement, customer_support.support_operations.support_analytics]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, outsourced_bpo,
+           swarming_support, ai_first_support]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following quality-assurance in this subdomain. The
-    expertise worth encoding: selection is the whole method — a review of tickets chosen because
-    they went badly is a census of failure modes, and a review of tickets chosen because a manager
-    noticed them is a census of what managers notice. The highest-yield selections are reopens,
-    tickets with more than two owners, and anything the customer escalated after we thought it was
-    closed. Also worth stating explicitly is that this capability shares almost all its inputs
-    with postmortem and differs only in scope: one ticket rather than one incident.
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    system_cause_share is the KPI that decides whether this is quality assurance or performance
+    surveillance. A bad ticket usually exposes a bad macro, a missing article or an ambiguous
+    policy before it exposes a bad agent, and a review function that grades only people fixes
+    the cheapest fraction of what it finds while leaving the causes to recur across everybody.
+
+    calibration_drift is the precondition for any of it meaning anything: without calibration
+    rounds the score is a property of which reviewer the ticket drew, and the agents work that
+    out faster than management does.
+
+    This completes the Customer Support corpus — 49 of 49.
+
+admission:
+  accepted_content_hash: 535eb210ba5a39e269c967596443ddf268532188321fc19fa46797932262b588

@@ -1,0 +1,122 @@
+identity:
+  id: sales.pb.performance_management.leading_indicator_scorecard
+  name: The leading-indicator scorecard
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.sales_management.performance_management
+  subdomain: sales_management
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'Manage inputs weeks before outputs can move: pipeline created, buyer meetings held,
+    stage conversion, deal velocity. Revenue is the trailing echo of these, and a scorecard of leading
+    indicators is the only one a weekly conversation can act on.'
+  answers:
+  - Which numbers belong in a weekly management rhythm?
+  - How is a slide acted on before it becomes a miss?
+  not:
+  - Coaching, which establishes what to change once the number says who.
+  - Quota planning, which sets the target this measures against.
+
+when_to_use:
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - proposal_sent
+  - meeting_request
+  do_not_use_when:
+  - 'No correlation history exists. Choosing indicators without it produces a guess presented as a
+    scorecard, and everyone manages to numbers that predict nothing.'
+  - 'The only available inputs are seller-generated. An input rhythm on gameable numbers invites
+    exactly the gaming.'
+  - 'The cycle is short enough that outcomes arrive inside the decision window.'
+
+steps:
+- order: 1
+  name: Pick indicators from YOUR funnel's history
+  description: 'Which early numbers actually correlated with outcomes here. A borrowed scorecard is
+    usually only partly right for any specific motion, and the wrong half is managed just as hard as
+    the right half.'
+  actor: human
+  objects_read:
+  - sales.obj.core.deal
+  produces: Three or four indicators with evidence they predict.
+  done_when: Each indicator can show its correlation in this funnel.
+
+- order: 2
+  name: Prefer inputs a buyer participates in
+  description: 'Meetings held and stage conversion require the other side to act; calls made and
+    emails sent do not. An input rhythm built on seller-only numbers measures compliance with an
+    instruction rather than progress.'
+  actor: human
+  produces: A scorecard weighted towards two-sided evidence.
+  done_when: No indicator can be moved by our side alone.
+
+- order: 3
+  name: Review at the trend level, not the week
+  description: 'A bad week is noise; a sustained slide is a conversation. Reacting to single weeks
+    trains the team to manage the reporting, which is a fast and durable way to destroy the input
+    data.'
+  actor: human
+  produces: Trend readings rather than point readings.
+  done_when: No intervention was triggered by one period alone.
+
+- order: 4
+  name: Separate the number from the diagnosis
+  description: 'Attainment says WHO needs attention and never says why. Two sellers missing by the
+    same amount — one with no pipeline, one with pipeline that will not close — need opposite
+    interventions, and the number cannot distinguish them.'
+  actor: human
+  objects_read:
+  - sales.obj.core.opportunity
+  produces: A recorded cause per flagged seller.
+  done_when: No intervention was chosen from the number alone.
+
+- order: 5
+  name: Intervene on the input, early and small
+  description: 'A pipeline-creation slide gets a sourcing block this week — not a revenue conversation
+    at quarter end, by which point the causes are two months old and nothing can be done about them.'
+  actor: human
+  produces: A small, immediate action on the input that moved.
+  done_when: The intervention targets the input rather than the outcome.
+
+- order: 6
+  name: Check the distribution before diagnosing anyone
+  description: 'If most of the team is missing, the plan is the thing they have in common. Diagnosing
+    individuals in that situation burns trust, changes nothing, and guarantees the same plan fails
+    again — and the distribution costs nothing to look at.'
+  actor: human
+  produces: A plan-versus-people verdict before any individual conversation.
+  done_when: The distribution was read first.
+
+- order: 7
+  name: Re-test the indicators periodically
+  description: 'Correlations decay as the motion changes. A scorecard that was right two years ago is
+    managed with the same conviction and predicts less each quarter, silently.'
+  actor: system
+  produces: A refreshed correlation check per indicator.
+  done_when: No indicator is in use without recent evidence that it still predicts.
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.opportunity
+- sales.obj.core.next_action
+
+limits:
+- Attainment, quota and revenue are not in the corpus substrate; correspondence-derived activity is,
+  which is the half step 2 explicitly warns against relying on.
+- Says nothing about how to run the coaching conversation the diagnosis leads to.
+- Correlation is not causation, and step 1 finds the first without establishing the second.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 2, 4, 6 and 7 are new. Step 2 is the qualifier the
+    original lacked — an input rhythm is only safe on numbers a buyer participates in, because a
+    seller-only input can be moved without anything actually changing.'

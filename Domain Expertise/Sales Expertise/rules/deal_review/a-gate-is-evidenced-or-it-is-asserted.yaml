@@ -1,0 +1,128 @@
+identity:
+  id: sales.rule.deal_review.a_gate_is_evidenced_or_it_is_asserted
+  name: A gate is evidenced or it is asserted
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.sales_management.deal_review
+  subdomain: sales_management
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'Every claim about a deal is either supported by something in the record or supported by
+    somebody saying so. Both are legitimate inputs; collapsing them into one is what lets a confident
+    account be read as a verified one.'
+  answers:
+  - Which parts of this deal are evidenced?
+  - May this deal be forecast on the strength of what has been claimed?
+  not:
+  - A rule about which gates matter. The gate set comes from the methodology.
+  - A judgement about the seller's honesty. An assertion is a normal and often correct input.
+
+rule:
+  statement: 'A deal gate MUST be recorded with its evidential basis — an observation or fact in the
+    record, or an assertion by a named person. A gate marked cleared without either MUST NOT be
+    treated as cleared in any downstream roll-up, and a deal whose critical gates are entirely
+    asserted MUST NOT be placed in a committed forecast category.'
+  spans:
+  - sales.obj.core.deal
+  - sales.obj.core.decision_maker
+  - sales.obj.core.budget
+  when:
+  - {path: deal.status, op: "=", value: open}
+  - {no_obs: proposal_sent}
+  then: 'Mark the affected gates as asserted, carry the deal at its evidenced stage, and surface the
+    evidence gap as the review''s first item rather than as a footnote.'
+  severity: warning
+  why: 'The two kinds of support degrade differently. Evidence stays true; an assertion decays as the
+    deal ages, because the thing the champion said in week two describes a state of the world that has
+    since moved. A record that does not keep them apart therefore does not merely lose precision — it
+    silently converts stale assertions into standing facts, and it does so most in the long deals
+    where the drift matters most. Keeping the basis attached costs one field and is the difference
+    between a forecast that can be audited and one that can only be believed.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'EARLY-STAGE DEALS. Before any artefact has been exchanged, nearly everything is asserted and that
+    is correct. The rule is about not MISLABELLING assertions, not about requiring evidence that
+    cannot exist yet — applying it as a bar this early would disqualify every new deal.'
+  - 'EVIDENCE THAT LIVES OUTSIDE THE CAPTURED CHANNELS. A signed order form in a procurement portal, a
+    budget approved in a finance system, a decision taken in a meeting nobody minuted. The gate is
+    genuinely evidenced and the record cannot see it; the honest resolution is a recorded human
+    attestation naming where the evidence sits, not a downgrade.'
+  - 'AN ASSERTION FROM THE PERSON WITH THE AUTHORITY. The economic buyer saying they have the budget is
+    a materially stronger input than the champion relaying it. Treating all assertions as equal
+    discards a real distinction, even though neither is record evidence.'
+  - 'A NEGATIVE GATE. "There is no competitor" cannot be evidenced by anything in a record, since
+    absence of a `competitor` observation is not proof of absence. Negative claims are assertions by
+    construction and should not be penalised as though evidence were withheld.'
+  - 'A TENANT WITH NO ARTEFACT CAPTURE AT ALL. Where nothing generates gate observations, this rule
+    marks every deal asserted and says nothing useful. It should report that state once rather than
+    flagging every deal individually.'
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.decision_maker
+- sales.obj.core.budget
+- sales.obj.core.proposal
+- sales.obj.core.contract
+
+outcomes:
+- Every gate carries its basis, and the two kinds are never merged.
+- Committed forecast categories require at least some record evidence.
+
+failure_modes:
+- 'ASSERTIONS TREATED AS FAILURES. They are a normal input; the rule is about labelling, and read as a
+  bar it makes sellers stop recording what they were told.'
+- 'ABSENCE OF AN OBSERVATION READ AS DISPROOF. Especially for negative gates, where no evidence is
+  possible in principle.'
+- 'APPLIED WITHOUT A CAPTURE CHECK. On a tenant with no artefact capture the rule fires on everything
+  and is switched off within a week, taking the useful part with it.'
+
+limits:
+- Depends on the observation set actually being emitted. On the design partner''s org
+  `contract_requested`, `budget_approved` and `legal_review` have zero rows, so nearly every gate
+  there is asserted — which is a true statement about the evidence available, and a poor basis for
+  discriminating between deals.
+- Says nothing about how much evidence is enough for a given forecast category.
+
+variants:
+- applies_to: enterprise
+  change: Attestation by a named person with stated authority is a recognised third basis, sitting
+    between record evidence and an unattributed assertion.
+  why: Long cycles generate evidence in systems the seller cannot connect, and the alternative is a
+    permanently unevidenced pipeline.
+- applies_to: smb
+  change: Reduce to a single gate — did the buyer do something that costs them — because the full gate
+    set is overhead a short cycle cannot carry.
+  why: One evidenced buyer action is worth more than five labelled assertions here.
+
+metrics:
+- name: evidenced_gate_share
+  unit: percent
+  description: Share of gates with record support.
+  direction: higher_is_better
+- name: committed_without_evidence_rate
+  unit: percent
+  description: Share of committed-category deals whose gates are entirely asserted. What this rule
+    exists to make visible.
+  direction: lower_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: The gate set; this rule adds the basis field the methodology assumes and does not require.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new and deliberately a warning. On the design partner''s org the gate
+    observations this rule reads — `contract_requested`, `budget_approved`, `legal_review` — have zero
+    rows, so a blocking version would mark every deal unevidenced and discriminate between none of
+    them. `limits` states that plainly rather than letting the rule look more decisive than the data
+    it runs on.'

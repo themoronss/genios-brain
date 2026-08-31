@@ -1,28 +1,73 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.compliance_and_governance.policy_administration
   name: Policy Administration
   domain: admin
   subdomain: compliance_and_governance
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Owning the policy lifecycle from drafting through approval, publication, acknowledgement
+  and periodic review. Administration is the difference between a policy that exists and a policy that
+  is in force: an unacknowledged policy is unenforceable, and an unreviewed one drifts out of alignment
+  with the law it was written against.
 
-description: >
-  Owning the policy lifecycle from drafting through approval, publication, acknowledgement and
-  periodic review. Administration is the difference between a policy that exists and a policy
-  that is in force: an unacknowledged policy is unenforceable, and an unreviewed one drifts
-  out of alignment with the law it was written against.
+  '
+question: Which policy applies here, is it current, and has the affected population acknowledged it?
 
-question: "Which policy applies here, is it current, and has the affected population acknowledged it?"
+outcomes:
+- 'A policy set small enough to be read. Beyond a handful, each addition reduces attention to all of them.'
+- 'Acknowledgement captured per affected population, because an unacknowledged policy is unenforceable and the enforcement is the point.'
+- 'Review on schedule against the law it was written to, since policy drifts out of alignment without changing a word.'
+- 'Written for the reader who must follow it, not for the lawyer who must defend it. An unfollowable policy produces performative compliance and real ignorance.'
+- 'The negative outcome: policies RETIRED or merged. The compliance-maximising move is often deleting one, not adding one.'
+failure_modes:
+- 'ADDING A POLICY IN RESPONSE TO AN INCIDENT. It feels like control and it is the mechanism by which the set becomes unreadable.'
+- 'ACKNOWLEDGEMENT AS A CLICK. Recorded consent to a document nobody opened proves the record exists, not that the policy is in force.'
+- 'WRITING FOR DEFENSIBILITY. A policy that survives legal review and no operator can apply has optimised the wrong reader.'
+- 'REVIEWING THE TEXT AND NOT THE ALIGNMENT. The words are unchanged and the statute moved.'
+- 'NO OWNER, SO NO REVIEW. An unowned policy is one nobody is responsible for noticing has gone wrong.'
+kpis:
+- name: policy_count
+  unit: count
+  description: A target band, deliberately. It is the one metric that should sometimes be driven down.
+  direction: target_band
+- name: acknowledgement_coverage
+  unit: percent
+  description: Affected population that has acknowledged the current version.
+  direction: higher_is_better
+- name: overdue_review_share
+  unit: percent
+  direction: lower_is_better
+  description: Policies past review. The control-operating measure.
+- name: policy_readability_complaints
+  unit: count
+  description: Occasions somebody had to ask what a policy meant. The proxy for the reader test.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.compliance_and_governance.board_and_secretarial, admin.records_and_documentation.document_control]
+  downstream: [admin.people_administration.onboarding_administration, admin.compliance_and_governance.audit_support,
+               admin.admin_operations.sop_management]
+  parallel: [admin.compliance_and_governance.data_protection_administration, admin.records_and_documentation.retention_and_archival]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, distributed]
+  offerings: [assurance]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. policy_attestation_due and
+    policy_review_overdue are both planned_substrate with no writer.
+
+    policy_count is listed as a target BAND rather than something to minimise or maximise, which
+    is unusual and deliberate: it is the only metric in this domain where the correct direction
+    of travel is sometimes downward, and every policy function in existence measures it as
+    coverage.
+
+admission:
+  accepted_content_hash: 09be2a467eed187eedf409f4d879f0a0e30b210b4963d924d115505445bfc126

@@ -1,28 +1,124 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.executive_support.inbox_and_correspondence
   name: Inbox & Correspondence
   domain: admin
   subdomain: executive_support
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Running correspondence as a ledger of open obligations rather than a list of unread items:
+  separating what needs the principal from what needs anyone, drafting on their behalf, and making sure
+  nothing that was promised in writing quietly falls out of view. The inbox is where most administrative
+  debt is created and where almost none of it is tracked.
 
-description: >
-  Running correspondence as a ledger of open obligations rather than a list of unread items:
-  separating what needs the principal from what needs anyone, drafting on their behalf, and
-  making sure nothing that was promised in writing quietly falls out of view. The inbox is
-  where most administrative debt is created and where almost none of it is tracked.
+  '
+question: Is every message that needs an answer answered, once, by the right person?
 
-question: "Is every message that needs an answer answered, once, by the right person?"
+outcomes:
+- 'Every open thread carries a direction — ours to answer, theirs to answer, or nobody''s — and the
+  first of those three is the only one that generates work. `thread.ball_in_court` is the densest
+  fact Layer 2 produces about correspondence, and reading it before anything else is what separates
+  an inbox from a queue.'
+- 'A reply that closes the loop rather than acknowledging it. An acknowledgement that promises a later
+  answer converts one open thread into two obligations, and is the commonest way a managed inbox
+  increases the debt it exists to reduce.'
+- 'The threads that need the principal SPECIFICALLY, named and short. Not "important" — a message is
+  routed to the principal only when the answer requires their authority, their relationship or their
+  judgement, and every other message routed to them is attention taken from those three.'
+- 'Silence classified rather than counted. A quiet thread where we owe the reply is a debt; a quiet
+  thread where they owe it is a wait; a quiet thread past this correspondent''s own rhythm is a
+  different event from either. Treating all three as "no reply" is the shallow reading this capability
+  exists to beat.'
+- 'A recorded decision to NOT answer. The negative outcome, and the one no inbox process states: some
+  correspondence is correctly abandoned, and abandoning it deliberately is cheaper than carrying it
+  and cheaper than the guilt-driven reply three weeks later that reopens a closed matter.'
+- 'No obligation created on the principal''s behalf that they have not seen. A drafted reply that
+  commits them to a date, a price or an introduction is a promise with their name on it.'
+
+failure_modes:
+- 'ANSWERING TO EMPTY THE INBOX. Zero unread is achievable by replying "thanks, will revert" to
+  everything, which discharges nothing and creates a second obligation per message. The count improves
+  and the debt grows.'
+- 'ROUTING BY SENDER SENIORITY. Seniority predicts the cost of getting it wrong, not whether the
+  principal is required. A junior person asking for a decision only the principal can make outranks a
+  senior person sending an update.'
+- 'READING VOLUME AS URGENCY. A correspondent who sends five messages is not more owed than one who
+  sent a single question a fortnight ago — and the five-message thread is often someone chasing
+  because the single question was never answered.'
+- 'DRAFTING IN THE ASSISTANT''S VOICE ON A RELATIONSHIP MESSAGE. Routine correspondence tolerates a
+  drafted reply; a message from someone who believes they are talking to the principal does not, and
+  the discovery that they were not is worse than a slower answer.'
+- 'TREATING EVERY UNANSWERED THREAD AS AN OPEN LOOP. Newsletters, notifications, automated receipts
+  and courtesy closings all look like unanswered inbound and none of them is owed a reply. An inbox
+  process that cannot make that cut delivers a list nobody trusts.'
+- 'LOSING THE PROMISE INSIDE THE REPLY. The obligation created by a sent message — a document, a
+  date, an introduction — is the debt; the sent message is only its receipt. An inbox that tracks
+  threads and not the promises inside them loses exactly the thing that damages standing.'
+
+kpis:
+- name: owed_reply_latency
+  unit: hours
+  description: Time to answer, counted only on threads where the ball was genuinely ours. Counting it
+    across all inbound mixes our debt with their silence and makes the number unactionable.
+  direction: lower_is_better
+- name: principal_touch_share
+  unit: percent
+  description: Share of inbound that reached the principal at all. Falling share with stable outcomes
+    is the capability working; falling share with rising escalations is filtering, not triage.
+  direction: target_band
+- name: acknowledgement_without_closure_rate
+  unit: percent
+  description: Share of replies that promised a later answer rather than giving one. Every point of
+    this is a new obligation the inbox created for itself.
+  direction: lower_is_better
+- name: unanswered_owed_thread_age
+  unit: days
+  description: Age of the oldest thread where the next move is ours. The single number that says
+    whether correspondence is under control.
+  direction: lower_is_better
+- name: misrouted_to_principal_rate
+  unit: percent
+  description: Share of principal-routed messages that needed neither their authority, relationship
+    nor judgement.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - admin.admin_operations.request_intake
+  - admin.executive_support.gatekeeping
+  downstream:
+  - admin.executive_support.commitment_tracking
+  - admin.executive_support.approval_coordination
+  - admin.executive_support.delegation_and_task_routing
+  parallel:
+  - admin.meeting_operations.follow_up_coordination
+  - admin.executive_support.briefing_and_preparation
+
+applies_to:
+  models: [executive_office, in_house, shared_services, startup_lean, distributed, hybrid,
+           outsourced, automated_first, multi_entity, regulated, enterprise_admin]
+  offerings: [coordinative, transactional, assurance]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
   confidence: experimental
+  notes: 'Promoted out of Phase-1 stub. Reached on the live route through `admin.sit.live_account_admin`
+    `also_serves`, so both of the design partner''s `account_admin` situations compile through it.
+
+    Written against correspondence facts Layer 2 actually holds — `thread.ball_in_court`,
+    `thread.last_inbound`, `thread.last_outbound` — and against the observation kinds it actually
+    emits, including `question`, `positive_reply` and `negative_reply`, which the corpus vocabulary
+    omitted until this batch. The distinction the outcomes turn on is direction, not urgency, because
+    direction is the fact that decides whether the next act is a reply or a wait.
+
+    No numbers: how long is too long, and how to weight an ageing thread, are Layer 4''s arithmetic.
+
+    '
+  reviewed_at: '2026-08-26'
+
+admission:
+  accepted_content_hash: 577016164a948e9a2925a67e6086addeb3903c570517243b846fbbbf1071156e

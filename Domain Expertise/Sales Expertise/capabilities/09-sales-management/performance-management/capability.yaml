@@ -3,25 +3,102 @@ identity:
   name: Performance Management
   domain: sales
   subdomain: sales_management
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Attainment, activity, conversion and ramp measured per seller, with the diagnosis
+  separated from the number. Two reps missing quota for opposite reasons need opposite interventions.
 
-description: >
-  Attainment, activity, conversion and ramp measured per seller, with the diagnosis separated
-  from the number. Two reps missing quota for opposite reasons need opposite interventions.
+  '
+question: Is each seller on track, and if not, what is the cause?
 
-question: "Is each seller on track, and if not, what is the cause?"
+outcomes:
+- 'The number and the diagnosis kept apart. Attainment says WHO needs attention and never says why;
+  two sellers missing by the same amount — one with no pipeline, one with pipeline that will not close
+  — need opposite interventions, and the number cannot distinguish them.'
+- 'Leading indicators chosen from this funnel''s own history rather than from a template. Which early
+  numbers actually correlated with outcomes here is knowable, and the generic set is usually only
+  partly right for any specific motion.'
+- 'Trends reviewed rather than weeks. A bad week is noise; a three-week slide is a conversation, and
+  reacting to single weeks trains everyone to manage the reporting instead of the work.'
+- 'Intervention on the input, early and small. A pipeline-creation slide gets a sourcing block this
+  week — not an end-of-quarter conversation about revenue, by which time the causes are two months
+  old and nothing can be done about them.'
+- 'Ramp separated from tenure in every comparison. A new seller measured against a full-tenure number
+  is being judged on arithmetic, and mixing the two populations makes both figures meaningless.'
+- 'A stated finding that the plan rather than the person is at fault. The negative outcome: where most
+  of the team misses, diagnosing individuals burns trust and guarantees the same plan fails again.'
 
+failure_modes:
+- 'MANAGING FROM TRAILING NUMBERS. By the time revenue misses, its causes are weeks old — a rhythm
+  built on outcomes is a post-mortem rhythm with accountability and no possibility of rescue.'
+- 'NUMBER TREATED AS DIAGNOSIS. Missing quota is a fact; why is a separate investigation, and skipping
+  it produces the same generic intervention regardless of cause.'
+- 'REACTING TO SINGLE WEEKS. Noise treated as signal, and the team learns to manage the weekly
+  reporting rather than the pipeline.'
+- 'A TEMPLATE SCORECARD. Indicators borrowed from a generic model rather than derived from this
+  funnel''s history, which means half of them predict nothing here.'
+- 'RAMP MIXED INTO THE COMPARISON. Both figures become uninterpretable and new sellers are managed
+  against arithmetic they cannot beat.'
+- 'DIAGNOSING PEOPLE WHEN EVERYONE MISSED. The distribution was available immediately and nobody
+  looked at it first.'
+
+kpis:
+- name: leading_indicator_correlation
+  unit: ratio
+  description: How strongly each chosen indicator actually predicted outcomes in this funnel. The test
+    that separates a real scorecard from a borrowed one.
+  direction: higher_is_better
+- name: intervention_lead_time
+  unit: days
+  description: Days between an input trend turning and an intervention. The whole difference between
+    management and post-mortem.
+  direction: lower_is_better
+- name: diagnosis_recorded_rate
+  unit: percent
+  description: Share of misses with a recorded cause rather than only a number.
+  direction: higher_is_better
+- name: ramp_adjusted_comparison_rate
+  unit: percent
+  description: Share of performance comparisons that excluded ramping sellers.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.revenue_operations.sales_analytics
+  - sales.revenue_operations.quota_planning
+  downstream:
+  - sales.sales_management.sales_coaching
+  - sales.revenue_operations.sales_operations
+  parallel:
+  - sales.sales_management.deal_review
+  - sales.revenue_operations.forecasting
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Management rather than execution, so no situation triggers it.
+
+    The separation in the first outcome is the whole capability and it is also the boundary with
+    `sales_coaching`: this one identifies WHO and coaching establishes WHAT to change. Running them
+    together produces the pep talk — a number delivered as feedback with no behaviour attached to it.
+
+    Substrate: attainment and quota are not in the record at all. Correspondence-derived activity is,
+    which means the engine can see the least informative half of a scorecard and not the outcomes half
+    — the reverse of what this capability recommends relying on.
+
+    No numbers: which indicators, over what window, are Layer 4''s arithmetic.
+
+    '
+  reviewed_at: '2026-08-27'
+
+admission:
+  accepted_content_hash: 3dc4eeadca98750ceefb9cef278213e2ef326e033aaf1324b30e2d2af45d82da

@@ -2,18 +2,31 @@ from __future__ import annotations
 
 import base64
 import binascii
+import os
 import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import Any
 
+# Run the cheap deterministic junk rules (Gmail labels + automated senders) BEFORE the S2 LLM prime,
+# so obvious junk never costs a model call. On by default; set false for a clean rollback to
+# LLM-gates-everything behaviour.
+_DET_JUNK_PREFILTER = os.environ.get("GENIOS_L1_DET_JUNK", "true").lower() != "false"
+
 # Bounded concurrency for the per-message full-body fetch (the slow part: one Composio call per
 # message). This is NETWORK-ONLY work — no DB touched here — so it never pressures the DB pool; the
 # ceiling keeps us under Composio's rate limits and avoids a thread explosion inside a background
 # backfill. DB writes stay in run_sync's own separate bounded pool.
-_FETCH_WORKERS = 6
+# Per-page full-body fetches. These are Composio HTTP calls — pure network wait, no DB slot and
+# no local CPU — so the only reason this was 6 is caution inherited from the DB budget next door.
+_FETCH_WORKERS = int(os.environ.get("GENIOS_L1_FETCH_WORKERS", "12"))
 
 from genios_engine.capture.documents.native import process_document
+# The fetch decision and the gate decision key on the SAME threshold, or they drift — and this
+# import is load-bearing at RUNTIME only (_skip_body), which is exactly how its absence shipped:
+# the module imported cleanly, every test passed, and the first real fetch with a drop verdict
+# raised NameError and took the whole gmail sync down.
+from genios_engine.capture.gate.relevance import DROP_BELOW_RELEVANCE
 
 from .base import RawObject, SourceBatch
 
@@ -73,6 +86,33 @@ def _extract_email(s: str | None) -> str | None:
     return m.group(0).lower() if m else None
 
 
+def _extract_display_name(s: str | None) -> str | None:
+    """The human name out of `"Deepthi Chandrashekhar" <deepthi@...>`, or None if there isn't one.
+
+    Parsed with `email.utils.parseaddr`, which is the standard's own reader for this — hand-rolled
+    quote stripping gets RFC 2047 encoded words and comma-in-quotes wrong, and both are ordinary in
+    real mail.
+
+    Returns None rather than a guess in the three cases where a source supplies something that is
+    not a name: an empty display part, a display part that IS the address (many clients repeat it),
+    and a bare local-part echo. Naming a person "ydvkhushi721" because that is what precedes the @
+    would be a confident lie, where showing the address is merely ugly — so the fallback stays the
+    address and this returns nothing.
+    """
+    if not s:
+        return None
+    from email.utils import parseaddr
+    name, addr = parseaddr(str(s))
+    name = (name or "").strip().strip('"').strip()
+    if not name:
+        return None
+    if _EMAIL.search(name):
+        return None                                  # the display part is just the address again
+    if addr and name.lower() == addr.split("@", 1)[0].lower():
+        return None                                  # ...or a bare local-part echo
+    return name
+
+
 def _extract_emails(*sources: Any) -> list[str]:
     """ALL distinct emails across the given header values (To/Cc can list many, comma-separated,
     each possibly "Name <addr>"). Order-preserving dedup so L2 can build one edge per recipient."""
@@ -126,17 +166,25 @@ class ComposioGmailConnector:
     source = "gmail"
 
     def __init__(self, *, api_key: str, user_id: str,
-                 connected_account_id: str | None = None, ocr=None) -> None:
+                 connected_account_id: str | None = None, ocr=None, relevance=None) -> None:
         self._api_key = api_key
         self._user_id = user_id
         self._account = connected_account_id or None
         self._client: Any = None
         self._ocr = ocr          # OcrEngine | None — for scanned-PDF attachments (native-only if None)
+        # Optional S2 classifier. When it can batch-gate on the cheap LIST snippet, we skip the slow
+        # per-message full-body fetch for confident DROPS — full-fetch runs ONLY for keepers. The
+        # SAME instance is handed to the pipeline, so its primed verdict is reused (no re-call).
+        self._relevance = relevance
 
     def _client_(self) -> Any:
         if self._client is None:
             from composio import Composio          # lazy: only needed on real runs
-            self._client = Composio(api_key=self._api_key)
+            # Explicit timeout — see composio_base.ComposioExec._c() for why omitting it leaves the
+            # underlying httpx client with NO bound at all, which can wedge the single-threaded
+            # scheduler forever on one stalled Gmail call. This connector has no ThreadPoolExecutor
+            # deadline wrapper (unlike ComposioExec), so this is its ONLY defense against a hang.
+            self._client = Composio(api_key=self._api_key, timeout=60)
         return self._client
 
     def _execute(self, slug: str, arguments: dict[str, Any]) -> Any:
@@ -213,6 +261,9 @@ class ComposioGmailConnector:
             source_object_id=f"{mid}::{att.get('attachmentId') or att.get('filename') or idx}",
             occurred_at=occurred, actor_email=sender_email, actor_type="external_contact",
             parent_object_id=mid,
+            # An attachment belongs to the same conversation as its message, so it carries the
+            # same participant set — otherwise a deck arrives with no idea who it was sent to.
+            recipients=tuple(to_emails) + tuple(cc_emails),
             raw={
                 "subject": att.get("filename") or "attachment",
                 "body": "",
@@ -250,14 +301,77 @@ class ComposioGmailConnector:
         cursor = data.get("nextPageToken") or data.get("next_page_token")
         if not messages:
             return SourceBatch(objects=[], next_cursor=cursor)
-        # Each message needs a per-message full-body fetch (the slow ~0.5s Composio call). Run them
-        # CONCURRENTLY with a bounded pool — network only, so the DB pool is untouched and the backend
-        # stays responsive. ex.map preserves order, so the batch is deterministic; one message failing
-        # is already handled inside _to_objects/_full_message (falls back to the list row).
+
+        # FAST PATH: gate on the cheap LIST snippet first, then full-fetch ONLY the keepers. On a
+        # newsletter-heavy inbox this skips ~95% of the slow per-message calls. Needs a classifier
+        # that can batch-prime (prime()) and answer verdict_for(id). Bias is KEEP: anything not a
+        # confident DROP is full-fetched, so recall (and L2's full body) is preserved.
+        rel = self._relevance
+        if rel is not None and hasattr(rel, "prime") and hasattr(rel, "verdict_for"):
+            from genios_engine.capture.gate.rules import light_junk
+            light: list[tuple[dict, list[RawObject]]] = [(m, self._to_objects(m, fetch_full=False))
+                                                         for m in messages]
+            # DETERMINISTIC PRE-FILTER — the cheap rules run BEFORE the LLM, not after. Gmail's own
+            # PROMOTIONS/SOCIAL/SPAM labels and clearly-automated senders are high-confidence junk we
+            # can drop from the LIST fields alone, so they never cost an S2 gate call. On a real inbox
+            # this is most of the volume. Header-only bulk signals (List-Unsubscribe) still need the
+            # full body → they stay on the LLM path. Flag-guarded (GENIOS_L1_DET_JUNK) for rollback.
+            det_junk: set[int] = set()
+            if _DET_JUNK_PREFILTER:
+                for m, objs in light:
+                    if objs and light_junk(objs[0].raw.get("labelIds"), objs[0].actor_email,
+                                           bool(objs[0].raw.get("has_attachment"))):
+                        det_junk.add(id(m))
+            all_light = [o for m, objs in light if id(m) not in det_junk for o in objs]
+            try:
+                rel.prime(all_light)                          # LLM only on what the rules couldn't settle
+            except Exception:      # noqa: BLE001 — gate failure → treat all as keepers (full-fetch)
+                pass
+            # A "drop" verdict is NOT sufficient to skip the body fetch.
+            #
+            # The gate only DELETES on a drop the model was confident about; below
+            # DROP_BELOW_RELEVANCE it parks instead, and its own comment promises the park
+            # "keeps a payload and can be re-adjudicated when the gate improves". That promise
+            # was empty on this path: the fetch decision here ran FIRST and keyed on
+            # `disposition == "drop"` alone, so every message the gate later parked had already
+            # been reduced to a list snippet — the same snippet the model had just judged. Worse,
+            # with no MIME payload `_walk` yields no attachment parts either, so a deck or
+            # contract on a message the model called junk became no event at all.
+            #
+            # Same threshold, same constant, so the two surfaces cannot drift apart again.
+            def _skip_body(objs) -> bool:
+                if not objs:
+                    return False
+                v = rel.verdict_for(objs[0].source_object_id)
+                if not v or v.disposition != "drop":
+                    return False
+                # Unconfident drop → the gate will PARK it, and a park needs a body to be worth
+                # anything. Only confident junk is cheap enough to leave unfetched.
+                return not (v.relevance is not None and v.relevance >= DROP_BELOW_RELEVANCE)
+
+            keepers = [m for m, objs in light
+                       if id(m) not in det_junk and not _skip_body(objs)]
+            drops = {id(m) for m, _ in light} - {id(m) for m in keepers}
+            # full-fetch keepers concurrently; CONFIDENT junk keeps its light (snippet) object —
+            # the pipeline gate re-reads the SAME primed verdict and drops it without another
+            # call. Unconfident drops are fetched in full so the park they become is recoverable.
+            fetched: dict[int, list[RawObject]] = {}
+            if keepers:
+                workers = min(_FETCH_WORKERS, len(keepers))
+                with ThreadPoolExecutor(max_workers=workers) as ex:
+                    for m, sub in zip(keepers, ex.map(lambda mm: self._to_objects(mm, fetch_full=True),
+                                                      keepers)):
+                        fetched[id(m)] = sub
+            objs: list[RawObject] = []
+            for m, light_objs in light:
+                objs.extend(light_objs if id(m) in drops else fetched.get(id(m), light_objs))
+            return SourceBatch(objects=objs, next_cursor=cursor)
+
+        # LEGACY PATH (no priming classifier): full-fetch every message concurrently.
         workers = min(_FETCH_WORKERS, len(messages))
         with ThreadPoolExecutor(max_workers=workers) as ex:
             per_message = list(ex.map(self._to_objects, messages))
-        objs: list[RawObject] = [o for sub in per_message for o in sub]
+        objs = [o for sub in per_message for o in sub]
         return SourceBatch(objects=objs, next_cursor=cursor)
 
     def _to_raw(self, m: dict) -> RawObject | None:
@@ -265,26 +379,31 @@ class ComposioGmailConnector:
         objs = self._to_objects(m)
         return objs[0] if objs else None
 
-    def _to_objects(self, m: dict) -> list[RawObject]:
+    def _to_objects(self, m: dict, fetch_full: bool | None = None) -> list[RawObject]:
         """One Gmail message → [email_message] + one [email_attachment] per file. The email carries
         the FULL body (walked from MIME parts, snippet only as fallback); each attachment is text-
-        extracted (native/OCR) exactly like a Drive file so its content reaches the graph too."""
+        extracted (native/OCR) exactly like a Drive file so its content reaches the graph too.
+
+        fetch_full: None → decide by need_full (legacy); True → always full-fetch (keepers); False →
+        LIGHT (list snippet only, NO per-message call) — used to gate cheaply before deciding."""
         mid = m.get("messageId") or m.get("id") or m.get("message_id")
         if not mid:
             return []
         mid = str(mid)
 
-        # Pull the FULL MIME message UNLESS the list row already carries a complete MIME structure
-        # (payload.parts, walked below). A flat body string of ANY length may be Gmail's clipped
-        # preview — and for deep extraction a signal (competitor, pricing, legal, budget) can sit
-        # anywhere in the body, so we never feed the LLM a possibly-truncated body. Full-fetch is one
-        # extra call for exactly the at-risk emails; if it fails we fall back to the list row (safe).
-        # (Was: only fetched full when body < 400 chars → a 500-char clip of a 2,000-char email slipped
-        #  through truncated → the LLM missed everything past the clip.)
+        # Full-fetch policy. For keepers we pull the FULL MIME message (a signal can sit anywhere in
+        # the body); for a LIGHT pass (fetch_full=False) we use only the cheap list snippet so the
+        # gate can drop obvious junk WITHOUT paying ~2000 per-message fetches. Legacy (None) keeps the
+        # old need_full behaviour so nothing else changes.
         list_body = m.get("messageText") or m.get("body") or ""
         list_body = list_body if isinstance(list_body, str) else ""
         list_payload = m.get("payload") if isinstance(m.get("payload"), dict) else None
-        need_full = not (list_payload and list_payload.get("parts"))
+        if fetch_full is False:
+            need_full = False
+        elif fetch_full is True:
+            need_full = True
+        else:
+            need_full = not (list_payload and list_payload.get("parts"))
         full = self._full_message(mid) if need_full else {}
         src = full or m                                  # prefer the full message for every field
         payload = (src.get("payload") if isinstance(src.get("payload"), dict) else list_payload)
@@ -328,8 +447,12 @@ class ComposioGmailConnector:
 
         objs = [RawObject(
             source="gmail", object_type="email_message", source_object_id=mid,
-            occurred_at=occurred, actor_email=sender_email, actor_type="external_contact",
+            occurred_at=occurred, actor_email=sender_email,
+            actor_name=_extract_display_name(sender), actor_type="external_contact",
             parent_object_id=thread,
+            # Typed, so the participant set survives past the payload TTL — the raw dict
+            # is encrypted and expires; this column does not.
+            recipients=tuple(to_emails) + tuple(cc_emails),
             raw={
                 "subject": subject,
                 "body": body,                 # FULL text now → preprocess → L2
@@ -374,6 +497,7 @@ class ComposioGmailConnector:
                 source_object_id=f"{mid}::{a.get('attachmentId') or a.get('filename') or i}",
                 occurred_at=occurred, actor_email=sender_email, actor_type="external_contact",
                 parent_object_id=mid,          # links the file back to its email
+                recipients=tuple(to_emails) + tuple(cc_emails),
                 raw={
                     "subject": a.get("filename") or "attachment",
                     "body": r.text,            # extracted document text → L2 facts

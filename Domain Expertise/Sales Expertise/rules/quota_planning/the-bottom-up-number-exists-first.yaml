@@ -1,0 +1,79 @@
+identity:
+  id: sales.rule.quota_planning.the_bottom_up_number_exists_first
+  name: The bottom-up number exists first
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.quota_planning
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A capacity figure produced after the target is known is not a capacity figure. It is the
+    target, restated with arithmetic around it, and everyone who reads it afterwards believes the plan
+    was derived when it was assumed.'
+  answers:
+  - Is this quota plan derived or back-solved?
+  - What order must the two numbers be produced in?
+  not:
+  - A rule about what the target should be.
+  - A prohibition on stretch goals, which are legitimate when named.
+
+rule:
+  statement: 'A quota plan MUST record the bottom-up capacity figure with the date it was produced,
+    before the top-down target is applied. Where the two differ, the gap MUST be recorded with the
+    named strategy intended to close it; a plan in which the two figures match exactly and no gap
+    strategy exists MUST be flagged as unverified.'
+  spans:
+  - sales.obj.core.account
+  - sales.obj.core.deal
+  - sales.obj.core.icp
+  when:
+  - {path: deal.status, op: "=", value: open}
+  then: 'Require the dated bottom-up figure and the gap statement before the plan is treated as
+    derived rather than distributed.'
+  severity: advisory
+  why: 'The order is the whole difference between a plan and a justification, and it is invisible
+    afterwards — a back-solved bottom-up figure looks identical to a derived one, carries the same
+    arithmetic, and persuades the same people. Recording the date is the only cheap way to preserve
+    the distinction, and the distinction matters because the two documents fail differently: a derived
+    plan that misses reveals a wrong assumption, and a back-solved one reveals nothing at all.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'A DECLARED STRETCH. Where leadership set an ambitious number knowingly and said so, the gap IS
+    the strategy and naming it as a stretch satisfies the rule. This is legitimate and the failure is
+    only ever in leaving it unsaid.'
+  - 'A NEW MOTION WITH NO CONVERSION HISTORY. The bottom-up figure would be a judgement dressed as
+    arithmetic, and the honest record is the judgement with its assumptions stated.'
+  - 'A SMALL TEAM WHERE TERRITORIES DO NOT EXIST. With a handful of sellers and no boundaries, there
+    is no territory potential to sum and the exercise is a single company-level estimate.'
+  - 'A MID-PERIOD RESET. Where a plan is being corrected in-flight, the original bottom-up figure
+    already exists and re-deriving it is duplication rather than discipline.'
+  - 'A PLAN INHERITED FROM AN ACQUISITION OR A PARENT. The number arrives fixed from outside; the rule
+    should record that fact rather than demand an arithmetic that nobody here is permitted to change.'
+
+objects_used:
+- sales.obj.core.account
+- sales.obj.core.deal
+- sales.obj.core.icp
+
+limits:
+- Nothing in the substrate carries quota, territory or headcount data, so this rule cannot be
+  evaluated by the engine at all — it is advisory and exists so that a compiled answer about planning
+  states the ordering requirement rather than assuming it was met.
+- Cannot detect a back-solved figure from its content; only the recorded date distinguishes it, and a
+  date can be entered dishonestly.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new and deliberately `advisory` — the substrate holds none of the data this
+    concerns, so a stronger severity would assert an enforcement the engine cannot perform. It is
+    recorded because the ordering is the single thing that separates a quota plan from a quota
+    distribution, and it is invisible in the finished document.'

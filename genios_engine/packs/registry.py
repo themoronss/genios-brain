@@ -139,6 +139,16 @@ class PackRegistry:
         effective = {"pack_id": pack_id, "version": tp.version, "state": tp.state,
                      "scoring": eff_scoring, "rules": manifest["rules"],
                      "plays": manifest.get("plays", {}),
-                     "templates": manifest.get("templates", {})}   # L5 card templates
+                     "templates": manifest.get("templates", {}),   # L5 card templates
+                     # The pack's OUTBOUND vocabulary — the fields and observation kinds it
+                     # reasons over, and the hints L1 should gate on. sales_v1.py labels this
+                     # block "L2 extraction whitelist ... domain vocabulary lives here, not in
+                     # the engine", and dropping it here severed that contract: L1's domain
+                     # hints stayed a hardcoded 8-keyword regex and L2's extraction prompt a
+                     # module constant with no pack parameter, so a sales pack and a support
+                     # pack produced byte-identical capture. A rule that reads `deal.status`
+                     # while the extractor was never told the name is a dead rule by design.
+                     "schema": manifest.get("schema", {}),
+                     "capture": manifest.get("capture", {})}
         sid = self.persist_effective_snapshot(org_id, pack_id, effective, cause="pack_apply")
         return effective, sid

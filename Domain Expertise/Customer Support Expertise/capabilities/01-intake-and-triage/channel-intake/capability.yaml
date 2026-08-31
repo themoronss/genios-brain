@@ -3,37 +3,80 @@ identity:
   name: Channel Intake
   domain: customer_support
   subdomain: intake_and_triage
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Receiving contact from wherever it arrives — email, chat, phone, in-product, community,
+  social, or forwarded by an account manager who was told over lunch — and turning it into units of promised
+  work without discarding what the channel itself said. The channel is never just a pipe: a phone call
+  carries urgency its transcript loses, a chat carries an expectation that someone is present right now,
+  and an emailed "quick question" from a named contact is frequently the third attempt rather than the
+  first. The hard judgement is where one arrival becomes two tickets and where two arrivals are one, because
+  every clock, entitlement check and routing decision downstream inherits that split and none of them
+  can revisit it cheaply.
 
-description: >
-  Receiving contact from wherever it arrives — email, chat, phone, in-product, community, social,
-  or forwarded by an account manager who was told over lunch — and turning it into units of
-  promised work without discarding what the channel itself said. The channel is never just a pipe:
-  a phone call carries urgency its transcript loses, a chat carries an expectation that someone is
-  present right now, and an emailed "quick question" from a named contact is frequently the third
-  attempt rather than the first. The hard judgement is where one arrival becomes two tickets and
-  where two arrivals are one, because every clock, entitlement check and routing decision
-  downstream inherits that split and none of them can revisit it cheaply.
+  '
+question: What arrived, through which door, and is it one piece of work or several?
 
-question: "What arrived, through which door, and is it one piece of work or several?"
+outcomes:
+- 'One queue, many doors — the channel recorded, and priority decided by content and customer rather than by which door it came through.'
+- 'Contact turned into a unit of work with a reporter, an account and a stated ask, including the one forwarded by an account manager who was told over lunch.'
+- 'One arrival split when it is several problems, because a single ticket carrying three issues resolves one of them and closes.'
+- 'The channel kept as a fact rather than as a priority, since channel is evidence about the customer''s preference and nothing about the impact.'
+- 'The negative outcome: something arriving through a channel we do not support, answered once and redirected, rather than silently establishing a new door.'
+failure_modes:
+- 'PRIORITISING THE INTERRUPTIVE CHANNEL. Phone and social feel urgent because they interrupt, and triaging on that trains customers to escalate their channel rather than describe their impact.'
+- 'A QUEUE PER CHANNEL, which produces different service for the same problem depending on how the customer felt like contacting us.'
+- 'ACCEPTING THE VERBAL FORWARD WITHOUT CAPTURING IT, so the most important issues arrive with the least information.'
+- 'ONE TICKET FOR THREE PROBLEMS, which closes when the easiest is solved.'
+- 'ANSWERING ON A CHANNEL WE DO NOT SUPPORT, once, kindly — which is how an unsupported door becomes a permanent one with no staffing behind it.'
+kpis:
+- name: single_queue_share
+  unit: percent
+  description: Contacts landing in the common queue rather than a channel-specific one.
+  direction: higher_is_better
+- name: channel_priority_correlation
+  unit: ratio
+  description: How strongly priority tracks channel rather than impact. Should be near zero and rarely is.
+  direction: lower_is_better
+- name: multi_issue_split_rate
+  unit: percent
+  description: Arrivals carrying several problems that were split.
+  direction: higher_is_better
+- name: uncaptured_verbal_share
+  unit: percent
+  description: Issues raised in conversation that never became a ticket. Invisible by definition, estimated from later surprises.
+  direction: lower_is_better
+handoffs:
+  upstream: [customer_support.support_management.account_relationship_management]
+  downstream: [customer_support.intake_and_triage.intent_classification, customer_support.intake_and_triage.priority_and_severity,
+               customer_support.intake_and_triage.duplicate_and_merge]
+  parallel: [customer_support.entitlement_and_sla.entitlement_verification, customer_support.knowledge_and_deflection.ai_deflection]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, swarming_support,
+           follow_the_sun, named_tam, community_support, outsourced_bpo, ai_first_support, embedded_in_product, plg_self_serve]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Stub — identity, purpose and load-set only. Promote by writing failure_modes FIRST rather
-    than outcomes: the expertise in intake is almost entirely about channel-specific loss (what a
-    phone intake drops that an email intake keeps, why a forwarded contact arrives with the wrong
-    requester attached, how a chat that ends without a ticket becomes an invisible promise). Then
-    add heuristics for the one-arrival-many-tickets split and for deciding when a channel's
-    implied expectation should and should not reach the priority decision. Handoffs are already
-    clear: downstream into intent_classification and ticket_triage, parallel with
-    duplicate_and_merge. Blocked in practice on the Conversation object being authored, since
-    intake's central distinction — conversation is not ticket — has nothing to reference until
-    then.
+    Promoted out of Phase-1 stub. Not on a live route — the design partner's org carries one
+    support_case and one support_contact situation and neither loads an intake object.
+
+    ticket.channel is planned_substrate with no writer, so channel_priority_correlation cannot
+    be computed today. It is stated anyway because it is the number that would expose the
+    failure this capability exists to prevent, and naming the ask is what backlog.py is for.
+
+    uncaptured_verbal_share is deliberately described as unmeasurable-but-estimable. The most
+    consequential issues arrive as a sentence to an account manager, and a capability that only
+    models the channels it can see will report clean intake while the important things bypass
+    it.
+
+admission:
+  accepted_content_hash: 81c202840d5588d6a0d6d1b50532186de82934aeebe90681f74438a96244c4fe

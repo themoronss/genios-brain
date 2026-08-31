@@ -3,36 +3,80 @@ identity:
   name: Intent Classification
   domain: customer_support
   subdomain: intake_and_triage
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Deciding what the customer is actually trying to get done, which is regularly not what they
+  wrote. The durable signal is the outcome they would accept rather than the words they used — "how do
+  I export this" and "your export is broken" are the same intent when the feature exists and cannot be
+  found, and different intents when it does not exist at all. A taxonomy only earns its cost if two agents
+  independently pick the same label, and every taxonomy drifts past that point unless somebody is actively
+  deleting categories rather than only adding them. The failure worth watching for is the catch-all bucket
+  quietly becoming the largest one, because at that point classification has stopped carrying information
+  while still costing a decision per ticket.
 
-description: >
-  Deciding what the customer is actually trying to get done, which is regularly not what they
-  wrote. The durable signal is the outcome they would accept rather than the words they used —
-  "how do I export this" and "your export is broken" are the same intent when the feature exists
-  and cannot be found, and different intents when it does not exist at all. A taxonomy only earns
-  its cost if two agents independently pick the same label, and every taxonomy drifts past that
-  point unless somebody is actively deleting categories rather than only adding them. The failure
-  worth watching for is the catch-all bucket quietly becoming the largest one, because at that
-  point classification has stopped carrying information while still costing a decision per ticket.
+  '
+question: What is this customer actually trying to get done?
 
-question: "What is this customer actually trying to get done?"
+outcomes:
+- 'The outcome the customer would ACCEPT identified, which is the durable signal — not the words they used, which are a description of their current theory.'
+- 'Labels that change what happens next: the route, the priority, the macro. A label nobody branches on is taxonomy hobbyism.'
+- 'Classification from the body text rather than from the category dropdown, because customers mislabel their own tickets constantly and the dropdown was a guess made in a hurry.'
+- 'The question behind the question surfaced — "how do I export this" frequently means "I have a board meeting at four".'
+- 'The negative outcome: a label set to UNKNOWN and routed to a human, rather than forced into the nearest category. A forced label routes confidently to the wrong place.'
+failure_modes:
+- 'TRUSTING THE DROPDOWN. It is the field the customer spent least time on and the one systems weight most.'
+- 'A TAXONOMY WITH NO BRANCHES. Twenty labels and three routes means seventeen of them are decoration that somebody maintains.'
+- 'CLASSIFYING THE WORDS, NOT THE GOAL. The literal question is answerable and leaves the person exactly as blocked.'
+- 'FORCING A LABEL. Nearest-category assignment produces confident wrong routing, which costs more than an honest unknown.'
+- 'TAXONOMY GROWTH AS PRECISION. Every added label reduces the accuracy of all of them, because the boundaries get finer than the evidence.'
+kpis:
+- name: label_branch_ratio
+  unit: ratio
+  description: Labels that change downstream behaviour, over labels that exist. Below one, the taxonomy is decoration.
+  direction: higher_is_better
+- name: reclassification_rate
+  unit: percent
+  description: Labels corrected after triage. A target band — zero means nobody is checking.
+  direction: target_band
+- name: dropdown_override_rate
+  unit: percent
+  description: Cases where the customer-selected category was wrong. Usually high and usually unmeasured.
+  direction: target_band
+- name: unknown_label_share
+  unit: percent
+  description: Honest unknowns. A target band; zero means labels are being forced.
+  direction: target_band
+handoffs:
+  upstream: [customer_support.intake_and_triage.channel_intake]
+  downstream: [customer_support.intake_and_triage.routing_and_assignment, customer_support.knowledge_and_deflection.ai_deflection,
+               customer_support.intake_and_triage.priority_and_severity]
+  parallel: [customer_support.knowledge_and_deflection.content_gap_analysis, customer_support.voice_of_customer.feedback_synthesis]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, ai_first_support,
+           outsourced_bpo, embedded_in_product, plg_self_serve, community_support]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Stub — identity, purpose and load-set only. Promote by adding failure_modes (catch-all
-    growth, label-per-team rather than label-per-customer-outcome, classification that mirrors the
-    org chart and therefore cannot survive a reorg), heuristics for collapsing near-duplicate
-    labels, and mental_models for the relationship between intent and deflection — a taxonomy that
-    cannot be joined to knowledge articles cannot answer the only question leadership asks of it,
-    which is what to write next. KPIs should include inter-rater agreement before volume-by-label,
-    because volume-by-label with poor agreement is confidently wrong. Handoffs: upstream from
-    channel_intake, downstream into ticket_triage, self_service_deflection and
-    content_gap_analysis.
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    label_branch_ratio is the test the whole capability rests on and it is the one no taxonomy
+    review applies. A label that changes no route, no priority and no macro costs maintenance
+    and returns nothing, and taxonomies accumulate those faster than they accumulate useful
+    ones.
+
+    Three of the four KPIs are target bands rather than directions, which is unusual and correct
+    here: zero reclassification means nobody checks, zero unknowns means labels are being
+    forced, and a dropdown override rate of zero would mean customers classify themselves
+    accurately, which they do not.
+
+admission:
+  accepted_content_hash: 482294ca399146bb78b0da7b9496e43984ec515308e941e93f7a2d71348e2343

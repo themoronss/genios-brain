@@ -1,0 +1,66 @@
+identity:
+  id: admin.heu.filing_and_retrieval.search_does_not_replace_structure
+  name: Search does not replace structure
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.filing_and_retrieval
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Search finds what you can name; structure finds what you forgot exists. The contract you
+    do not remember signing is only findable by walking the vendor folder — keep both paths alive.
+  answers:
+  - Does good search make filing conventions obsolete?
+
+heuristic:
+  statement: >
+    Search finds what you can name. Structure finds what you forgot exists. Keep both paths alive,
+    because the expensive retrieval failures are all in the second category.
+  why: >
+    A query is a hypothesis about what is there. It works whenever the retriever already knows what
+    they are looking for, which covers most retrievals and none of the important ones. The contract
+    nobody remembers signing, the policy that was superseded, the commitment made two years ago —
+    none of these can be searched for, because the retriever does not know the words. Only walking a
+    structure surfaces them, which is why an organisation that has let its taxonomy rot discovers
+    its obligations during diligence.
+  confidence_bp: 8000
+  applies_when: Any records estate where obligations or history matter, rather than active working files.
+  breaks_down_when: >
+    The corpus is small enough to hold in one head, where structure is overhead and search is
+    instant. It also breaks down where the search index is genuinely richer than the taxonomy —
+    full-text over well-written documents can beat a folder tree built by someone who did not
+    anticipate the question, and insisting on structure there produces a taxonomy maintained for its
+    own sake.
+  reads: [admin.obj.core.document, admin.obj.core.contract]
+  contradicts: [admin.heu.knowledge_base_maintenance.trust_is_the_kb_s_only_metric]
+limits:
+- 'It says keep both, not prefer structure. A taxonomy that is worse than search is not defended by this.'
+- 'It is about retrieval, not storage cost, which is a separate and usually smaller problem.'
+failure_modes:
+- 'Cited to justify a folder tree nobody browses, which is structure in name only.'
+- 'Read as an argument against search tooling, which it is not — the failure is relying on search alone.'
+variants:
+- applies_to: regulated
+  change: Structure is mandatory, because the retrieval question is defined by a record class rather than by content.
+  why: An auditor asks for a class, and no query expresses a class the documents were not tagged with.
+- applies_to: startup_lean
+  change: Largely inapplicable until the corpus outgrows one person's memory, which happens abruptly.
+  why: The failure arrives with the first departure, not gradually.
+references:
+- title: ISO 15489 — records management
+  kind: standard
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The breakdown case is real and worth holding: a rich full-text index over well-written
+    documents genuinely beats a badly guessed folder tree, and insisting on structure there
+    maintains a taxonomy for its own sake.

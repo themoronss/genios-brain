@@ -1,28 +1,73 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.compliance_and_governance.licence_and_registration
   name: Licence & Registration
   domain: admin
   subdomain: compliance_and_governance
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Maintaining the register of licences, permits, registrations and certifications the organisation
+  trades under, together with their jurisdictions, conditions and renewal windows. A lapsed licence is
+  usually discovered by a counterparty during due diligence, at the worst possible moment.
 
-description: >
-  Maintaining the register of licences, permits, registrations and certifications the
-  organisation trades under, together with their jurisdictions, conditions and renewal
-  windows. A lapsed licence is usually discovered by a counterparty during due diligence, at
-  the worst possible moment.
+  '
+question: Which permissions do we hold, where do they apply, and when do they lapse?
 
-question: "Which permissions do we hold, where do they apply, and when do they lapse?"
+outcomes:
+- 'A register of every permission the organisation trades under, with jurisdiction, conditions and expiry. Not a folder of certificates.'
+- 'Renewal runway sized to the AUTHORITY''s processing time, not to ours. A thirty-day reminder on a ninety-day approval is a lapse with a calendar entry.'
+- 'Conditions tracked, not just expiry. Most licences carry obligations — notify on change of control, maintain insurance — and breaching one voids the licence while the date is still valid.'
+- 'Coverage checked when the business changes: a new jurisdiction, a new activity, a new entity. Lapses are usually expansions nobody re-checked.'
+- 'The negative outcome: an activity STOPPED or deferred because the permission for it does not exist. A register that has never blocked anything is a filing cabinet.'
+failure_modes:
+- 'TRACKING EXPIRY AND IGNORING CONDITIONS. The certificate is valid and the licence is not, which is discovered by an insurer.'
+- 'REMINDERS SIZED TO OUR CONVENIENCE. Renewal lead time is set by the regulator''s queue and is routinely months.'
+- 'ONE REGISTER ACROSS ENTITIES AND JURISDICTIONS. The same activity needs different permissions in different places, and a merged row hides the gap.'
+- 'ASSUMING RENEWAL IS AUTOMATIC BECAUSE IT HAS BEEN. Conditions change between cycles and the change arrives in a letter nobody routed.'
+- 'DISCOVERING SCOPE AT DILIGENCE. A lapse found by a counterparty''s lawyer taints the contracts signed during the gap.'
+kpis:
+- name: register_completeness
+  unit: percent
+  description: Permissions on the register versus those actually relied on. The denominator is the hard part.
+  direction: higher_is_better
+- name: renewal_lead_time_vs_authority_sla
+  unit: ratio
+  description: Our runway against the authority's stated processing time. Below 1 is a planned lapse.
+  direction: higher_is_better
+- name: lapse_days
+  unit: days
+  description: Total days operated without a required permission. The only number that matters retroactively.
+  direction: lower_is_better
+- name: condition_breach_count
+  unit: count
+  description: Licence conditions missed while the licence was in date.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.contract_and_vendor.contract_administration, admin.compliance_and_governance.policy_administration]
+  downstream: [admin.compliance_and_governance.statutory_filing, admin.compliance_and_governance.audit_support]
+  parallel: [admin.finance_administration.budget_tracking, admin.compliance_and_governance.board_and_secretarial]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid]
+  offerings: [assurance]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    No substrate: licence_expiring is in planned_substrate with no writer, and there is no
+    licence object in the graph.
+
+    The KPI worth arguing about is renewal_lead_time_vs_authority_sla. Every licence register
+    carries reminder dates and almost none of them are sized against the regulator's processing
+    queue, which is where the lapses actually come from — the reminder fired on time and the
+    approval took eleven weeks.
+
+admission:
+  accepted_content_hash: d4c8082826128038f05e8163ba32a6b726f94c968ba7cf469f9086ef3c380aef

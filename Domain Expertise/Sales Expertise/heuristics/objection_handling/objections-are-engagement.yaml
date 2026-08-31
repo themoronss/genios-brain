@@ -1,0 +1,148 @@
+identity:
+  id: sales.heu.objection_handling.objections_are_engagement
+  name: Objections are engagement
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.objection_handling
+  subdomain: proposal_and_commercials
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: People do not argue with products they have dismissed — they leave. The dangerous account
+    is the politely silent one; the objecting one is negotiating its way to yes. Welcome the pushback
+    and worry about the quiet.
+  answers:
+  - Is an objection bad news?
+  - Which account in the pipeline should worry a seller most?
+  not:
+  - A claim that all objections are surmountable. Some are correct and end the deal.
+  - Encouragement to provoke objections. It is about how to read them, not how to cause them.
+
+heuristic:
+  statement: 'Read an objection as evidence of continued engagement and a silence as evidence of its
+    absence, then invert the usual attention: the deal that argued this week is healthier than the one
+    that agreed pleasantly and went quiet. Objecting costs the buyer time and social effort, and
+    people do not spend either on a vendor they have already excluded.'
+  why: 'Disengaging is free and objecting is not. A buyer who has decided against us has no reason to
+    explain themselves — the polite non-answer is available, socially easier, and carries no risk of
+    an argument. So the act of raising a concern is a costly signal, in the technical sense: it is
+    credible precisely because it would be irrational for someone who had already left. This also
+    explains the asymmetry sellers feel — objections arrive with emotional weight and silence arrives
+    with none, so attention flows to exactly the wrong half of the pipeline.'
+  confidence_bp: 8000
+  applies_when: 'An active deal where the counterparty has raised a substantive concern rather than a
+    procedural one.'
+  breaks_down_when: 'A SCRIPTED OR PROCUREMENT OBJECTION. A standard-form challenge raised because the
+    process requires one carries no engagement information at all, and reading it as enthusiasm
+    over-reads a formality.
+
+    THE SAME OBJECTION RAISED REPEATEDLY. A concern that returns after being answered is not renewed
+    engagement; it is an unresolved blocker, or a polite proxy for a decision already taken.
+
+    AN OBJECTION FROM SOMEONE WITH NO STAKE. A challenge from a person who will neither use nor pay
+    for the product is often positioning rather than evaluation, and its energy says nothing about the
+    account.
+
+    WHERE SILENCE IS STRUCTURAL. Long-cycle procurement, holiday periods and buyers whose process
+    forbids vendor contact during evaluation all produce quiet that carries no negative signal. The
+    heuristic''s warning about silence is calibrated to relationships that were previously responsive.
+
+    A CORRECT AND FATAL OBJECTION. Where the concern is legitimate and unanswerable, treating it as a
+    buying signal is how a deal is kept alive for a quarter past the point anyone should have stopped.'
+  reads:
+  - sales.obj.core.objection
+  - sales.obj.core.competitor
+  - derived.sentiment
+  - derived.engagement
+  contradicts:
+  - sales.heu.revenue_intelligence.latency_is_the_earliest_honest_signal
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: objection}
+  signals:
+  - objection
+  - objection_timing
+  - negative_reply
+  do_not_use_when:
+  - The objection is a standard procurement form-filling challenge.
+  - The same objection has returned after being answered.
+  - The concern is legitimate and unanswerable; that is a stop, not a signal.
+
+objects_used:
+- sales.obj.core.objection
+- sales.obj.core.competitor
+- sales.obj.core.risk
+- sales.obj.core.stakeholder
+
+outcomes:
+- Objecting accounts are not deprioritised relative to agreeable quiet ones.
+- Silence in a previously responsive relationship is treated as the warning.
+
+failure_modes:
+- 'USED AS REASSURANCE. "They are objecting, so it is going well" applied to a deal whose objections
+  are correct keeps it alive well past the point of honesty.'
+- 'INVITING OBJECTIONS TO FEEL PROGRESS. Manufactured pushback carries none of the signal, because the
+  cost that made it credible was never paid.'
+- 'APPLIED TO ANY VOCAL PERSON. Energy from someone with no stake is positioning, not evaluation.'
+
+limits:
+- Says nothing about how to answer, only about how to read the arrival.
+- Cannot distinguish a substantive objection from a procedural one; `objection` marks that one
+  occurred and carries no such classification.
+- The comparison it rests on — objecting deals versus quiet ones — needs both populations, and with 4
+  `objection` rows on the design partner's org the sample is far too small to test locally.
+
+variants:
+- applies_to: enterprise
+  change: Weight objections from the economic buyer and the skeptic seat far above those from
+    evaluators; the same challenge means different things by seat.
+  why: Engagement matters most from the people who can stop it.
+- applies_to: smb
+  change: Silence is a stronger negative signal here because there is no committee to hide behind and
+    no process to blame.
+  why: One person, one decision, no procedural excuse for quiet.
+- applies_to: channel
+  change: Objections routed through the partner are filtered and softened; absence of them says more
+    about the partner than about the customer.
+  why: The signal passes through an intermediary with their own incentives.
+
+metrics:
+- name: objection_bearing_deal_conversion
+  unit: percent
+  description: Close rate of objection-bearing deals versus silent ones. The direct test.
+  direction: higher_is_better
+- name: silent_account_share
+  unit: percent
+  description: Share of open deals with no substantive counterparty input in a meaningful window. The
+    population this heuristic argues should be worried about.
+  direction: lower_is_better
+
+references:
+- title: SPIN Selling
+  kind: methodology
+  author: Neil Rackham
+  note: On objections rising as a proportion of interaction in engaged accounts, and falling to zero
+    in disengaged ones.
+- title: Costly signalling
+  kind: research
+  note: The mechanism — a signal is credible when it would be irrational for a sender who did not
+    hold the underlying state, which is exactly why objecting is informative and agreeing is not.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The costly-signalling framing is the addition —
+    it explains WHY the inversion holds rather than asserting it, and it also predicts the first
+    breakdown regime: a scripted procurement objection is not costly to raise, so it carries no
+    signal.'

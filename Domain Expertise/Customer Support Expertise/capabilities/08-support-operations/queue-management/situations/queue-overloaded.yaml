@@ -30,50 +30,111 @@ description: >
   and who has been forgotten — never simply how many are open.
 
 matches:
-  l2_situation_types: []
+  # ROUTED SINCE 2026-08-29, and the two types are DIFFERENT SHAPES built from one ledger.
+  # `queue_overloaded` anchors on a `mailbox` node — one connected mailbox — and carries the
+  # rates and the age distribution. `ticket_aging` anchors on a `backlog_item` node, one per
+  # unmet ask, which is what this file asked for in its own words: per-item aging "needs the item
+  # to be a first-class subject". Both come from `context/support_situations.py`.
+  #
+  # THE FILE'S TWO INSISTENCES ARE BOTH KEPT. It is not per-thread — the load reading is anchored
+  # on the mailbox — and it is not count-shaped: what is carried is the oldest open item, the p50
+  # and p90 of the wait, and the size of the tail over fourteen days. The average is never
+  # reported. The second of the three rules that opens it is the anti-pattern this file is
+  # actually about — a pile SHRINKING while getting OLDER, which every count-based signal reads
+  # as improvement — and the third is cosmetic closure, caught because `record_ask` reopens a
+  # loop when the customer asks again.
+  #
+  # WHAT IS LOST, on every row's `missing`.
+  # (1) THERE IS NO QUEUE. No queue object, no assignee, no rota. The only honest partition on a
+  #     mail tenant is one connected mailbox, and on a founder inbox that degenerates to the whole
+  #     org — so every string produced says "this mailbox", never "this queue", and
+  #     `workload_balancing` still has nothing it can move people between. The file's own line —
+  #     an alert nobody owns is a dashboard — is a fair charge against this build, and the answer
+  #     is to route the card to a named human at delivery, not to pretend the fact exists.
+  # (2) CLOSURE IS NOT RESOLUTION. A loop closes on OUR reply on the thread, so a holding reply
+  #     zeroes the age of exactly the calcified item this exists to find, and the turnaround
+  #     figure is named `mailbox.reply_turnaround_days` for that reason. Partly recovered:
+  #     `mailbox.loops_reopened` is real evidence of the bulk-closure failure, lagging by however
+  #     long the customer takes to re-ask.
+  # (3) ARRIVAL COMPLETENESS. Only the nine `ASK_KINDS` enter the ledger and none of them is
+  #     support-native — no ticket_created, no bug_filed, no refund_requested. "The export is
+  #     broken" counts only if the extractor labelled it a question, so demand is systematically
+  #     UNDER-counted and the ratio it feeds is biased low. This is the largest fidelity loss and
+  #     it is not fixable without a support extraction vocabulary.
+  # (4) NO ARRIVAL-SIDE ATTRIBUTION and NO ENTITLED ORDER. The output can say demand rose; it
+  #     cannot say a release or a broken page caused it, which is the half this file says usually
+  #     tells a manager to fix something this week rather than to hire.
+  # (5) For `ticket_aging`: comparable work means comparable work in this ORG, not in its queue,
+  #     so a billing question and a production outage sit in one distribution; and recall is
+  #     bounded by the extractor rather than by the mailbox.
+  # (6) THE LOAD-SET IS STILL SHORT. Three of the four objects below — Queue, Backlog and
+  #     Support Agent — plus Capacity Plan from `capacity_planning`'s manifest exist only as
+  #     planned_objects, and `ObjectResolver` raises RequiredKnowledgeMissing on a missing
+  #     REQUIRED object. So both types above route, resolve, and compile to nothing;
+  #     `domain_shadow` counts them under `required_missing`. Measured 2026-08-29 against the real
+  #     catalog. It is written here because `validate.py` tolerates a planned reference by design
+  #     and reports no error for a live route that cannot produce a single package. Authoring
+  #     Queue and Support Agent is also the honest blocker on loss (1) below — they cannot be
+  #     written as records on this tenant, only as the definitions that say what is absent.
+  l2_situation_types:
+    - queue_overloaded
+    - ticket_aging
 
-  pending_l2_situation_types:
-    - type: queue_overloaded
-      owner_layer: L2
-      nearest_today: unanswered_email
-      note: >
-        Must mean: for a named queue, arrivals are exceeding closures and the backlog's age
-        distribution has degraded — expressed as a comparison of two rates plus the shape of the
-        wait, never as a count. It must be emitted per queue, with an owner attached, because a
-        queue with no named owner is not a queue and an alert nobody owns is a dashboard. It
-        should carry the arrival-side attribution where Layer 2 can compute it (a release, a
-        campaign, a broken page, an incident), because the count tells a manager to hire and the
-        composition usually tells them to fix something that will land this week.
-        What would emit it: derived.backlog_age and ticket.queue from planned_substrate, against
-        the ticket_volume baseline so that "overloaded" is relative to this queue's own normal
-        rather than to a constant. The band itself is Layer 4 arithmetic and must not be baked
-        into the type; what Layer 2 owes is the rates and the distribution.
-        Why unanswered_email is not good enough: it is wrong in both dimensions at once. It is
-        per-thread, so counting instances gives you a number of conversations rather than a
-        volume of work — and forty simple password resets and forty escalated integration faults
-        produce the same number. And it counts SIZE, when the entire finding here is AGE: a
-        shrinking pile of steadily older tickets reads as improvement under any count-based
-        signal and is the precise opposite of it. Today the queue's condition is visible only in
-        a reporting tool a human has to open, which means it is discovered on the day someone
-        looks rather than on the day it turned.
-    - type: ticket_aging
-      owner_layer: L2
-      nearest_today: commitment_overdue
-      note: >
-        Must mean: an individual open item has waited materially longer than comparable work in
-        its queue, with time-since-last-customer-contact carried separately from time-since-open
-        — an old ticket that is being actively worked and an old ticket nobody has touched are
-        completely different findings that share an age. It must also distinguish waiting on the
-        customer from waiting on us, because collapsing those is how a queue reports health it
-        does not have.
-        What would emit it: Layer 2 over ticket.created_at, ticket.status and derived.backlog_age
-        relative to the resolution_time baseline for the queue.
-        Why commitment_overdue is not good enough, and this is the sharp one: commitment_overdue
-        requires a promise to exist before it can fire. The aging tickets that actually matter are
-        precisely the ones nobody promised anything about — no owner, no next step, no committed
-        date, which is exactly why they aged. Nobody committed, so nothing is overdue, so the
-        oldest item in the queue is invisible to the only elapsed-time signal the pipeline has.
-        The tickets that generate commitment_overdue are the well-managed ones.
+  # ── THE CENSUS ENTRIES THESE TYPES USED TO HAVE, kept rather than deleted ──────────────────
+  #
+  # Both were `pending_l2_situation_types` until 2026-08-29. Neither can stay one — the schema and
+  # `validate.py` both make naming an EMITTED type there an error, because as written it would
+  # route nothing — but deleting them would erase the only record of what the approximation cannot
+  # say. Each original ask is kept, clause by clause, marked against what was actually built.
+  #
+  # queue_overloaded
+  #   Must mean: for a named QUEUE, arrivals exceeding closures and a degraded age distribution —
+  #   two rates plus the shape of the wait, never a count.
+  #     PARTLY BUILT. The rates and the shape are built and the average is never reported. THE
+  #     QUEUE IS NOT: the subject is one connected mailbox, which on a founder inbox is the whole
+  #     org, so every string says "this mailbox".
+  #   It must be emitted per queue, with an OWNER attached, because an alert nobody owns is a
+  #   dashboard.
+  #     NOT BUILT, and the charge stands. `org_seats` is empty and no helpdesk supplies an
+  #     assignee, so `mailbox.owner` is deliberately left unwritten rather than guessed. The
+  #     answer is to route the card to a named human at delivery, not to invent the fact.
+  #   It should carry the arrival-side attribution — a release, a campaign, a broken page.
+  #     NOT BUILT. Nothing in the substrate attributes a rise in demand to a cause, which is the
+  #     half that usually tells a manager to fix something this week rather than to hire.
+  #   What would emit it: derived.backlog_age and ticket.queue against the ticket_volume baseline,
+  #   with the band left to Layer 4.
+  #     NOT BUILT AS SPECIFIED. `ticket.queue` has no writer and never will on a mailbox;
+  #     `mailbox.*` is computed from the open-loop ledger instead. `ticket_volume` as a learned
+  #     baseline is also absent — `mailbox.loops_opened_baseline` is a per-sweep computation, not
+  #     a stored baseline. THE BAND IS NOT LAYER 4 EITHER: the three opening rules live in Layer 2
+  #     as a mint-gate, which is a declared deviation from this clause and is recorded in the
+  #     build notes rather than hidden here.
+  #   Why unanswered_email is not good enough: it is per-thread and it counts SIZE when the
+  #   finding is AGE.
+  #     ANSWERED. The reading is anchored on the mailbox, and what it carries is the oldest item,
+  #     p50, p90 and the tail over fourteen days — a pile shrinking while getting older opens it.
+  #
+  # ticket_aging
+  #   Must mean: an individual open item that has waited materially longer than comparable work,
+  #   with time-since-last-customer-contact carried SEPARATELY from time-since-open.
+  #     BUILT. `backlog.days_since_customer` and `backlog.days_since_we_touched` are written
+  #     apart from `backlog.age_days`, so an item being worked and an item nobody has touched stop
+  #     sharing an age.
+  #   In its QUEUE.
+  #     NOT BUILT. Comparable work means comparable work in this org, so a billing question and a
+  #     production outage sit in one distribution.
+  #   It must distinguish waiting on the customer from waiting on us.
+  #     BUILT — `backlog.waiting_on` comes from `thread.ball_in_court`.
+  #   What would emit it: Layer 2 over ticket.created_at, ticket.status and derived.backlog_age
+  #   relative to the resolution_time baseline for the queue.
+  #     NOT BUILT AS SPECIFIED. There is no ticket and no `resolution_time` baseline; the band is
+  #     the org's own median reply turnaround with a floor, and it is named
+  #     `mailbox.reply_turnaround_days` because a loop closes on OUR REPLY and not on a
+  #     resolution. Calling it resolution time would put a wrong word under every number here.
+  #   Why commitment_overdue is not good enough: it needs a promise to exist, and the aging items
+  #   that matter are the ones nobody promised anything about.
+  #     STILL TRUE, and it is why this reading opens on the age of an unmet ask rather than on a
+  #     commitment.
 
   # No scope. The enum offers person, deal, meeting and account, and the subject of this
   # situation is a queue owned by a team. Picking `account` because it is the least wrong would
@@ -116,6 +177,20 @@ objects:
 
 priority_bp: 7200
 typical_duration_days: 10
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    Report the distribution and the oldest open item, never the average — the finding is in the
+    tail, and a mean is how the failing segment stays hidden. Say "this mailbox", never "this
+    queue": there is no queue object, no assignee and no rota behind this, and the arrival count
+    is only the requests an extractor recognised as asks, so it understates demand. Name the
+    oldest item and how long it has waited before naming any total.
+  fallback:
+    headline: "Oldest work in this mailbox is not being served"
+    situation: >-
+      Arrivals are outrunning closures in this mailbox and the oldest end of it has stopped
+      moving. No queue, owner or resolution state exists behind this reading.
 
 signals_of_progress:
   - ticket_resolved

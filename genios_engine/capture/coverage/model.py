@@ -15,6 +15,12 @@ PACK_REQUIREMENTS: dict[str, dict[str, list[str]]] = {
                 "recommended": ["product_usage", "incident"]},
     "admin":   {"required": ["finance", "communication"],
                 "recommended": ["document_store"]},
+    # A founder raising money has no CRM and does not need one — the pipeline lives in the
+    # inbox and the calendar. Requiring `crm` here (as `sales` does) would report a correctly
+    # connected fundraising tenant as permanently incomplete, which is the same failure as
+    # reporting an unassessed one as ready, pointed the other way.
+    "fundraising": {"required": ["communication"],
+                    "recommended": ["calendar", "document_store"]},
 }
 
 # Derived from the source registry, not hand-listed: this list drifting from the family
@@ -42,7 +48,30 @@ def compute_coverage(domain: str, connected: dict[str, str],
     policy yields no email data), so it does NOT change coverage_ready; but it is real context, so it
     is surfaced as its own dimension instead of being invisible — the dashboard used to show
     'not connected' no matter how much knowledge was written (see LAYER1_CAPTURE_FIXES #10)."""
-    reqs = PACK_REQUIREMENTS.get(domain, {"required": [], "recommended": []})
+    # An UNREGISTERED domain has no requirements, and "no requirements" satisfied the readiness
+    # test trivially: ask for coverage on `fundraising` — this org's actual domain — and the
+    # answer was "ready" with nothing connected. Every negative inference downstream ("they did
+    # not reply", "no meeting was booked") then looks licensed, when in truth we had never
+    # established what a complete picture for that domain even is.
+    #
+    # Fail closed and say why, rather than inventing a readiness nobody assessed.
+    if domain not in PACK_REQUIREMENTS:
+        return {
+            "domain": domain,
+            "capabilities": {},
+            "missing_required": [],
+            "missing_recommended": [],
+            "coverage_ready": False,
+            "coverage_state": "unknown_domain",
+            "reason": (f"no capability requirements registered for domain {domain!r} — "
+                       "coverage cannot be assessed, so no negative inference is licensed"),
+            # Every readiness predicate false: an unassessed domain grants no permissions.
+            "readiness": {p: False for preds in _READINESS.values() for p in preds}
+                         | {"has_company_canon": company_knowledge_count > 0},
+            "company_knowledge": {"present": company_knowledge_count > 0,
+                                  "count": company_knowledge_count},
+        }
+    reqs = PACK_REQUIREMENTS[domain]
 
     def status_of(cap: str) -> str:
         return connected.get(cap, "not_connected")
@@ -63,6 +92,7 @@ def compute_coverage(domain: str, connected: dict[str, str],
         "missing_required": missing_required,
         "missing_recommended": missing_recommended,
         "coverage_ready": len(missing_required) == 0,
+        "coverage_state": "assessed",
         "readiness": readiness,
         "company_knowledge": {"present": company_knowledge_count > 0,
                               "count": company_knowledge_count},

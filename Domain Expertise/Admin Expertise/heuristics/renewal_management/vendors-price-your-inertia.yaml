@@ -1,0 +1,66 @@
+identity:
+  id: admin.heu.renewal_management.vendors_price_your_inertia
+  name: Vendors price your inertia
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.renewal_management
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Auto-renewal pricing assumes nobody is watching — which is usually correct. The mere existence
+    of an active renewal review changes quotes before a word is negotiated.
+  answers:
+  - Why do watched renewals cost less?
+
+heuristic:
+  statement: >
+    Auto-renewal pricing assumes nobody is watching, which is usually correct. The mere existence of
+    an active renewal review changes quotes before a word is negotiated.
+  why: >
+    Renewal pricing is set against an expected probability of challenge, and for most customers that
+    probability is close to zero — the renewal passes unexamined and the uplift is retained. Vendors
+    can observe which accounts engage: a usage question, an early enquiry, a request for the
+    termination terms. Those signals move an account out of the inertia cohort, and the quote moves
+    with it. The saving therefore begins before any negotiating position exists, which is why the
+    review is worth running even when the answer will be to renew.
+  confidence_bp: 7500
+  applies_when: Subscription or service renewals where the vendor has pricing discretion.
+  breaks_down_when: >
+    The vendor genuinely has no discretion — a public price list, a regulated tariff, a marketplace
+    purchase. Signalling engagement there produces no movement and costs the relationship a little
+    goodwill for nothing. It also breaks down where switching is not credible: a vendor who knows the
+    migration is a year of work prices accordingly, and an engaged review without an alternative is
+    engagement the vendor can safely ignore.
+  reads: [admin.obj.core.vendor, admin.obj.core.contract, admin.obj.core.budget_line]
+  contradicts: [admin.heu.vendor_onboarding.fraud_enters_as_a_familiar_email]
+limits:
+- 'It concerns price, not value. A discounted subscription nobody uses is a cheaper waste.'
+- 'The effect is largest on accounts that have never engaged and decays once engagement is expected.'
+failure_modes:
+- 'Engagement performed without preparation, which the vendor reads correctly as a bluff.'
+- 'Used to justify reviewing everything, which spends more attention than the recovered spend is worth.'
+variants:
+- applies_to: startup_lean
+  change: Strong and rarely used — small accounts assume they have no leverage and vendors price that assumption.
+  why: The uplift is applied precisely where challenge is least expected.
+- applies_to: enterprise_admin
+  change: Weaker as a signal, because engagement is expected and priced in from the start.
+  why: The inertia cohort does not contain accounts of that size.
+references:
+- title: Software asset management practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the practical limit: a vendor who knows the migration is a year
+    of work prices accordingly, and engagement without a credible alternative is engagement they
+    can safely ignore.

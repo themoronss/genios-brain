@@ -3,25 +3,100 @@ identity:
   name: LinkedIn Outreach
   domain: sales
   subdomain: prospecting_and_outreach
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+  parent_capability: sales.prospecting_and_outreach.outreach
+description: 'A channel inside outreach. Distinct expertise: warm-path discovery through mutual
+  connections, profile-signal reading, and the platform''s own volume limits.
 
-description: >
-  A channel inside outreach. Distinct expertise: warm-path discovery through mutual
-  connections, profile-signal reading, and the platform's own volume limits.
+  '
+question: How do we use a social graph to earn a conversation?
 
-question: "How do we use a social graph to earn a conversation?"
+outcomes:
+- 'Recognition established before the request. A connection request from a stranger is judged in
+  about two seconds on one question — do I recognise this person — and being usefully visible in
+  their world beforehand is the only reliable way to make that answer yes.'
+- 'Warm paths found and used properly. A mutual connection is an asset that can be spent once; asking
+  for an introduction is worth far more than name-dropping one, and the two are frequently confused.'
+- 'The same personalisation bar as email. The medium changes the greeting and not the standard —
+  LinkedIn feels social, which tempts an ask that email discipline would have caught immediately.'
+- 'Conversations moved off-platform once they are real. The message thread''s job is to earn the
+  email or the call; long selling inside it is a channel doing work it is bad at.'
+- 'Platform limits respected as a constraint on strategy, not as an obstacle to route around.
+  Automation that games them risks the account the whole channel depends on, and the account is not
+  recoverable.'
+- 'A decision to skip the channel for a segment. The negative outcome: some buyers are not present or
+  not receptive there, and using it anyway produces activity that looks like coverage.'
 
+failure_modes:
+- 'A COLD REQUEST WITH A PITCH ATTACHED. The most common approach and the least effective; it fails at
+  the recognition question before anything else is read.'
+- 'SOCIAL TONE MISTAKEN FOR A LOWER BAR. The platform is casual and the recipient''s judgement is not,
+  and an ask that would embarrass us in email embarrasses us here too.'
+- 'NAME-DROPPING A MUTUAL CONNECTION. Spends the connection''s credibility without their knowledge,
+  and it is discovered the moment the recipient asks them about it.'
+- 'SELLING IN THE MESSAGE THREAD. It is a poor medium for it and a good one for earning the medium
+  where selling works.'
+- 'AUTOMATED AT SCALE. Risks the account the entire channel rests on, and the loss is permanent in a
+  way an email domain problem usually is not.'
+- 'COMMENTING WITHOUT SUBSTANCE. Visibility built from empty agreement is worse than none — it
+  establishes recognition of a person who says nothing.'
+
+kpis:
+- name: request_acceptance_rate
+  unit: percent
+  description: Share of connection requests accepted. Almost entirely a function of recognition, which
+    is what the pre-work buys.
+  direction: higher_is_better
+- name: warm_path_usage_rate
+  unit: percent
+  description: Share of approaches that used a genuine introduction rather than a cold request.
+  direction: higher_is_better
+- name: off_platform_conversion
+  unit: percent
+  description: Share of real conversations that moved to email or a call.
+  direction: higher_is_better
+- name: reply_rate_per_person
+  unit: percent
+  description: Replies over people approached, never over messages sent.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.prospecting_and_outreach.outreach
+  - sales.prospecting_and_outreach.account_research
+  downstream:
+  - sales.prospecting_and_outreach.meeting_booking
+  - sales.prospecting_and_outreach.follow_up
+  parallel:
+  - sales.prospecting_and_outreach.cold_email
+  - sales.prospecting_and_outreach.cold_calling
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. A channel under `outreach`, which owns
+    `sales.sit.outbound_prospect` on the live `relationship` type.
+
+    Not observable in the record — no social-platform connector exists, so requests, acceptances and
+    message threads are all outside the graph. `introduction` (104 rows on the design partner''s org)
+    is the nearest adjacent signal and it captures introductions made anywhere, not on this platform
+    specifically.
+
+    No numbers: request volumes and platform limits are Layer 4''s arithmetic and change without
+    notice.
+
+    '
+  reviewed_at: '2026-08-27'
+
+admission:
+  accepted_content_hash: 3b22dc9b8bfd6614b1cf063682546bfc72e0d8dec68f9321607503626f038650

@@ -1,37 +1,19 @@
-# FULL capability for 07-voice-of-customer.
-#
-# The premise of this file, and the reason it is the full one in this subdomain: support holds
-# the highest-frequency contact with the customer of any function in the company and is
-# structurally the last party asked whether the account is safe. The renewal conversation
-# happens between an account team and a procurement contact; the evidence sits in a queue
-# nobody in that conversation reads. Closing that gap is most of the work here, and it is an
-# organisational problem wearing a data problem's clothes.
-#
-# NO NUMBERS. Every trend, delta and threshold this capability implies is Layer 4 arithmetic
-# and lives in the pack manifest. What lives here is which way to read the arithmetic when it
-# arrives, and which reading is the one experts get wrong.
-#
-# Playbooks, heuristics, mental models and decision frameworks moved OUT of this
-# file and into knowledge.yaml + the artifact folders. They are files now because a
-# Layer 6 suggestion needs an id and a version to point at, and because a framework
-# used by four capabilities cannot live inline in all four.
-
 identity:
   id: customer_support.voice_of_customer.churn_signal_detection
   name: Churn Signal Detection
   domain: customer_support
   subdomain: voice_of_customer
   version: 1.0.0
-  status: draft
+  status: stable
   stub: false
-description: 'Reading a support relationship for evidence that the customer has begun leaving, early
-  enough that someone can still do something about it. The discipline is almost entirely about resisting
-  the obvious read: the angry ticket feels like the risk and is usually the opposite, because a customer
-  who still argues with us still expects the argument to be worth having. The account that quietly stopped
+description: 'Reading a support relationship for evidence that the customer has begun leaving, early enough
+  that someone can still do something about it. The discipline is almost entirely about resisting the
+  obvious read: the angry ticket feels like the risk and is usually the opposite, because a customer who
+  still argues with us still expects the argument to be worth having. The account that quietly stopped
   asking has moved its effort somewhere else — often into a migration plan — and it generates no event
   at all, which is why detection here is a problem of noticing absence against a baseline rather than
-  of catching a signal. Support''s output is not a score; it is a briefing that names what changed,
-  whose confidence was lost, and who outside support now owns the conversation.
+  of catching a signal. Support''s output is not a score; it is a briefing that names what changed, whose
+  confidence was lost, and who outside support now owns the conversation.
 
   '
 question: Which of these accounts has already started leaving, and what tells us that before they say
@@ -53,28 +35,26 @@ failure_modes:
 - Reading anger as the risk. The loudest account is usually the one still trying; the account that stopped
   writing has already had the internal conversation about replacing us.
 - Waiting for the survey. A detractor response arrives after the ticket that caused it, which arrived
-  after the decision it merely confirmed. Anything that depends on the customer choosing to tell us
-  is by construction late.
+  after the decision it merely confirmed. Anything that depends on the customer choosing to tell us is
+  by construction late.
 - Judging contact volume against the queue instead of against the account's own history. A heavy integrator
-  raising fewer tickets and a light user raising more look identical in aggregate and mean opposite
-  things.
-- Raising a flag with no receiving owner. A churn risk routed to a dashboard is a note; the account
-  still leaves, and the note is later used as evidence that the system worked.
-- Scoring the logo rather than the relationship. Renewals are defended by a person whose credibility
-  was spent on us; when that person changes, the account's history resets even though the score does
-  not.
+  raising fewer tickets and a light user raising more look identical in aggregate and mean opposite things.
+- Raising a flag with no receiving owner. A churn risk routed to a dashboard is a note; the account still
+  leaves, and the note is later used as evidence that the system worked.
+- Scoring the logo rather than the relationship. Renewals are defended by a person whose credibility was
+  spent on us; when that person changes, the account's history resets even though the score does not.
 - Escalating every flag to an executive, which trains the executive to stop reading flags and destroys
   the channel the genuine cases needed.
-- Treating the closed ticket as the end of the exposure. Resolution closes the work item; the effort
-  the customer spent getting there is what they will recall when asked to defend the spend.
+- Treating the closed ticket as the end of the exposure. Resolution closes the work item; the effort the
+  customer spent getting there is what they will recall when asked to defend the spend.
 - Detecting risk during a live incident, when everyone is angry and the signal has no power to discriminate
   between accounts.
 - Letting support own both the sensing and the intervention. Support can see it and usually cannot fix
   it — the save is commercial and needs someone able to change terms.
 - Suppressing a flag because it cannot be proven. The standard of proof that satisfies a reviewer becomes
   available after the renewal decision has been taken.
-- Confusing an account that no longer needs us with one that no longer wants us. Both go quiet; only
-  one is a loss, and telling them apart needs usage, which support frequently cannot see.
+- Confusing an account that no longer needs us with one that no longer wants us. Both go quiet; only one
+  is a loss, and telling them apart needs usage, which support frequently cannot see.
 kpis:
 - name: churn_risk_lead_time
   unit: days
@@ -87,22 +67,21 @@ kpis:
 - name: support_first_detection_share
   unit: percent
   direction: higher_is_better
-  description: 'Share of churned accounts where support had raised a flag before any other function.
-    Measures whether the earliest sensor is being read, and falls when the briefing cadence lapses long
-    before it falls for any reason to do with detection quality.
+  description: 'Share of churned accounts where support had raised a flag before any other function. Measures
+    whether the earliest sensor is being read, and falls when the briefing cadence lapses long before
+    it falls for any reason to do with detection quality.
 
     '
 - name: flagged_account_save_rate
   unit: percent
   direction: higher_is_better
-  description: Share of flagged accounts retained. Attribution is contested and should be treated as
-    directional.
+  description: Share of flagged accounts retained. Attribution is contested and should be treated as directional.
 - name: false_positive_rate
   unit: percent
   direction: target_band
   description: 'Deliberately a band and not a minimum. Near-zero means the bar has been set where only
-    the undeniable qualifies, and the quiet accounts are being missed; a high rate means the account
-    team has stopped reading flags, which is the same failure by a different route.
+    the undeniable qualifies, and the quiet accounts are being missed; a high rate means the account team
+    has stopped reading flags, which is the same failure by a different route.
 
     '
 - name: quiet_account_review_coverage
@@ -166,19 +145,22 @@ applies_to:
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ''
+  reviewed_by: harsh
   last_updated: '2026-08-08'
-  review_status: unreviewed
+  review_status: approved
   confidence: provisional
   notes: 'Almost nothing in this capability can fire today and the file says so rather than pretending
     otherwise. Detecting a contact-volume drop needs a per-account baseline the pipeline does not keep;
     reading effort needs ticket history; reading a relationship change needs a stable requester identity
     across threads. The nearest thing the substrate genuinely emits is champion_quiet, and binding churn
-    to it would produce a detector that only ever fires on email silence from a single named contact
-    — which is a fragment of the real signal presented as the whole of it. The concrete asks are derived.contact_frequency,
+    to it would produce a detector that only ever fires on email silence from a single named contact —
+    which is a fragment of the real signal presented as the whole of it. The concrete asks are derived.contact_frequency,
     contact_rate_per_account and churn_risk_from_support; until those exist this capability is a reading
     discipline for a human, not an automated detector. What is deliberately absent: any threshold for
     what counts as a volume drop, any weighting between the triangulation channels, and any risk score.
     All three are Layer 4''s arithmetic, and this file would be wrong to guess at them.
 
     '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: e99bc50a017ceefde6c6156e3dfe1cc6fd91264760ac3ce42ee9a3b0a04119bf

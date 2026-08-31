@@ -1,0 +1,199 @@
+identity:
+  id: sales.pb.pricing.anchor_and_hold_with_reasons
+  name: Anchor and hold, with reasons
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.pricing
+  subdomain: proposal_and_commercials
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'Price is communicated with confidence after value is established, anchored high enough
+    to leave room, and defended with reasons — never moved just because someone frowned. Every
+    concession has a get.'
+  answers:
+  - How is a price stated, and how is it defended?
+  - What happens between the first number and the signed one?
+  not:
+  - A pricing model. What to charge is decided upstream; this is how it is carried into a conversation.
+  - A negotiation method for non-price terms.
+
+when_to_use:
+  situations:
+  - sales.sit.field_evidence_on_the_market
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - pricing_discussed
+  - proposal_sent
+  do_not_use_when:
+  - 'Pricing is published and uniform. There is no anchor to set and the conversation is about fit.'
+  - 'Value has not been established and cannot be in this conversation. The playbook''s first step is
+    then unsatisfiable, and running the rest of it anyway is how a number gets compared to zero.'
+  - 'The seller has no discretion over the number. The relevant skill is escalation, not defence.'
+
+steps:
+- order: 1
+  name: Know the floor before the conversation
+  description: 'Decide the walk-away and the tradeable range in advance, with whoever must approve
+    them. A floor discovered live is a floor discovered by the buyer, and it is discovered every
+    time — which is how an organisation ends up with a price list nobody believes.'
+  actor: human
+  objects_read:
+  - sales.obj.core.pricing
+  produces: A pre-agreed floor and a list of acceptable trades.
+  done_when: The seller can say no without needing to ask anyone.
+
+- order: 2
+  name: Value first, price second — always in that order
+  description: 'A number given before the value story is a number compared to zero. Present price only
+    after the buyer has agreed, in their own words, what the outcome is worth to them. This is an
+    ordering decision rather than a persuasion one, which is why it is the highest-leverage step here.'
+  actor: human
+  objects_read:
+  - sales.obj.core.pain_point
+  - sales.obj.core.business_need
+  produces: An agreed value case, stated by the buyer.
+  done_when: The buyer has articulated the value before hearing the number.
+
+- order: 3
+  name: State the price plainly and stop talking
+  description: 'Nervous elaboration after the number reads as apology and invites negotiation against
+    the seller''s discomfort rather than against the value. Say it, then stop — the buyer''s response
+    is the most informative thing in the whole conversation and it only arrives in silence.'
+  actor: human
+  produces: A clearly stated price and an unprompted buyer reaction.
+  done_when: The number was stated once, without qualification.
+
+- order: 4
+  name: Diagnose the objection before answering it
+  description: '"Too expensive" is the socially acceptable form of at least four different objections
+    — no budget, no urgency, no confidence in the outcome, a cheaper alternative. Discounting answers
+    only the first, so answering the words rather than the cause spends margin on a problem margin
+    cannot solve.'
+  actor: human
+  objects_read:
+  - sales.obj.core.objection
+  - sales.obj.core.competitor
+  - sales.obj.core.budget
+  produces: A named cause behind the price objection.
+  done_when: The seller can say which of the four this is, with evidence.
+
+- order: 5
+  name: Trade, never gift
+  description: 'Any movement is exchanged — longer term, a case study actually delivered, a faster
+    signature, annual prepay. "What can you do on price" is answered with "what can you do on term".
+    A cosmetic get is worse than none: the buyer recognises it and learns the same lesson with added
+    theatre.'
+  actor: human
+  objects_read:
+  - sales.obj.core.contract
+  - sales.obj.core.timeline
+  produces: A concession with a named, real counterpart.
+  done_when: No movement has been made without something received.
+
+- order: 6
+  name: Separate the procurement ritual from the commercial position
+  description: 'A late token demand is frequently a process requirement — somebody must be able to
+    report a negotiation happened. Recognise it, meet it small and clearly labelled, and do not spend
+    weeks defending against a formality or real margin satisfying one.'
+  actor: human
+  produces: A closing concession sized to the ritual rather than to the ask.
+  done_when: The distinction was made deliberately rather than by default.
+  optional: true
+
+- order: 7
+  name: Decline when the floor is reached
+  description: 'A deal lost on price is a legitimate outcome and the only thing that makes the floor
+    real. An organisation that has never walked away does not have a floor; it has an opening
+    position, and every buyer eventually learns which.'
+  actor: human
+  produces: Either a deal at or above the floor, or a clean decline.
+  done_when: The floor held or the deal was declined, with the reason recorded.
+
+objects_used:
+- sales.obj.core.pricing
+- sales.obj.core.budget
+- sales.obj.core.competitor
+- sales.obj.core.proposal
+- sales.obj.core.objection
+- sales.obj.core.contract
+- sales.obj.core.business_need
+- sales.obj.core.pain_point
+- sales.obj.core.timeline
+
+outcomes:
+- Price is stated after value, once, without qualification.
+- Every concession carries a real counterpart.
+- The floor is known in advance and occasionally held to a decline.
+
+failure_modes:
+- 'PRICE BEFORE VALUE. Unrecoverable within the same conversation, and the most common single error.'
+- 'ELABORATING AFTER THE NUMBER. Converts the seller''s nerves into the buyer''s leverage.'
+- 'DISCOUNTING AT THE FIRST FROWN. Teaches the buyer the floor is found by waiting, and the lesson
+  outlives the deal.'
+- 'ANSWERING THE WORDS "TOO EXPENSIVE". Spends margin against a cause that was never about money.'
+- 'A FLOOR THAT HAS NEVER HELD. Not a floor. Every buyer discovers this eventually and the ones who
+  compare notes discover it faster.'
+
+limits:
+- Cannot rescue a price that is structurally wrong for the segment; that is a packaging problem.
+- Assumes seller discretion, which many motions do not grant.
+- Says nothing about how to set the list price in the first place.
+
+variants:
+- applies_to: enterprise
+  change: Steps 1 and 5 involve an approver who is not in the room, so the tradeable range must be
+    agreed before the conversation and the gets must be defensible to that person afterwards.
+  why: Governed concessions need a rationale that survives without the seller present.
+- applies_to: smb
+  change: Prefer packaging changes over discounts — less for less rather than the same for less.
+  why: Price integrity is compared with peers within weeks in this segment.
+- applies_to: channel
+  change: The trade is negotiated with whoever bears the margin, which is often the partner rather
+    than the end customer.
+  why: A discount to the customer that the partner funds is a concession the seller did not make and
+    the partner did not agree to.
+- applies_to: inside_sales
+  change: Reduce to steps 2, 3 and 5 with a hard-coded floor; there is neither time nor authority for
+    diagnosis at this cadence.
+  why: The velocity does not support a four-way objection diagnosis.
+
+metrics:
+- name: value_before_price_rate
+  unit: percent
+  description: Share of deals where price followed an agreed value case.
+  direction: higher_is_better
+- name: unreciprocated_concession_rate
+  unit: percent
+  description: Share of concessions with no get.
+  direction: lower_is_better
+- name: price_objection_conversion
+  unit: percent
+  description: Share of price-objection deals that still closed.
+  direction: higher_is_better
+
+references:
+- title: SPIN Selling
+  kind: methodology
+  author: Neil Rackham
+  note: Value before price, and the finding that price objections rise as a proportion of objections
+    when value has not been established.
+- title: Never Split the Difference
+  kind: book
+  author: Chris Voss
+  note: Silence after the number, and concessions as information.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 1, 4, 6 and 7 are new. Step 4 is the substantive
+    addition — discounting answers only one of the four things "too expensive" can mean, so a
+    playbook that goes straight from objection to trade spends margin on causes margin cannot address.
+    Step 7 exists because a floor that has never held is not a floor.'

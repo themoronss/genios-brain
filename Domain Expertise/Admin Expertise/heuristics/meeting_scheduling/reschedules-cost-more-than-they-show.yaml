@@ -1,0 +1,75 @@
+identity:
+  id: admin.heu.meeting_scheduling.reschedules_cost_more_than_they_show
+  name: Reschedules cost more than they show
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.meeting_scheduling
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: stable
+purpose:
+  statement: >
+    One move touches every attendee's calendar, their preparation and everything they booked around
+    it. Chronic rescheduling is read by everyone as a priority signal, whatever reason is given.
+  answers:
+  - What does a reschedule actually cost?
+  - Why does moving a meeting damage a relationship that the meeting itself would not have?
+
+heuristic:
+  statement: >
+    The cost of a reschedule is the attendee count times the preparation already done, plus one
+    inference about how much they matter to us.
+  why: >
+    The visible cost is finding a new slot, which is small. The invisible costs are larger and
+    compound: preparation done for a date that moved, adjacent bookings arranged around it, and the
+    signal sent to everyone who cleared time. That last one is why the second reschedule of the same
+    meeting is qualitatively worse than the first — one is circumstance, two is a statement, and
+    people act on the statement by deprioritising us in return.
+  confidence_bp: 8000
+  applies_when: A meeting with more than two attendees, or any meeting somebody prepared for.
+  breaks_down_when: >
+    The meeting would have been useless as scheduled. Moving a meeting because the pre-read is not
+    ready, or the decision-maker cannot attend, is cheaper than holding it and needing a second one —
+    and holding it anyway to avoid the reschedule is the more expensive error. It also breaks down in
+    cultures and roles where short-notice movement is normal and carries no signal at all, in which
+    case reading it as a priority statement is a projection.
+  reads:
+  - admin.obj.core.meeting
+  - admin.obj.core.action_item
+  contradicts:
+  - admin.heu.agenda_preparation.no_decision_no_meeting
+
+limits:
+- It is about the second and third move, not the first. One reschedule is ordinary.
+- It cannot see preparation, which is the largest component of the cost it describes.
+
+failure_modes:
+- Used to hold a meeting that should have moved, producing a session that achieves nothing and a second meeting anyway.
+- Applied to internal standing meetings, where movement is routine and the signal reading is invented.
+
+variants:
+- applies_to: executive_office
+  change: Strongest form — the principal's reschedule cascades through several other assistants' work.
+  why: The blast radius is other people's scheduling, not just their calendars.
+- applies_to: startup_lean
+  change: Much weaker. Short-notice movement is the norm and nobody reads a signal into it.
+  why: The cost of preparation is lower and the tolerance for change is higher.
+
+references:
+- title: admin.obj.core.meeting
+  kind: internal
+  note: meeting.scheduled versus meeting.occurred is the only observable trace of this in the current substrate.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the one to hold onto. This heuristic is most often misused to justify
+    running a meeting that should have moved, which produces the cost it was trying to avoid plus a
+    wasted hour.

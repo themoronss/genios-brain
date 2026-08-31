@@ -1,0 +1,92 @@
+identity:
+  id: sales.heu.cold_email.reply_rate_beats_open_rate__always
+  name: Reply rate beats open rate, always
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.cold_email
+  subdomain: prospecting_and_outreach
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: Opens measure subject lines; replies measure relevance. Optimising opens grows a list of
+    people who glanced; optimising replies grows a pipeline.
+  answers:
+  - Which cold-email metric should decisions be made on?
+  not:
+  - A claim that subject lines are unimportant. They matter and they are not the objective.
+
+heuristic:
+  statement: 'Judge every change to a cold-email programme on reply rate per person, and treat open
+    rate as diagnostic only. The two can move in opposite directions — a subject line that overstates
+    the message raises opens and lowers replies — so optimising the first can actively damage the
+    second while every dashboard improves.'
+  why: 'Open rate is the cheapest metric to move and the least connected to anything. It responds to
+    curiosity, urgency and ambiguity, all of which are available without improving the message at all,
+    and the techniques that raise it most are precisely the ones that disappoint the reader on the
+    next line. Reply rate cannot be moved that way: it requires the message to be worth answering,
+    which is the actual objective and is much harder, which is why the softer metric is the one that
+    gets managed.'
+  confidence_bp: 8800
+  applies_when: 'Any cold-email programme where both metrics are available.'
+  breaks_down_when: 'OPEN TRACKING IS UNRELIABLE. Privacy protections have made open rates
+    substantially fictional in many mail clients, so the metric is not merely weak — it is frequently
+    wrong, and comparing it across segments compares different levels of fiction.
+
+    VERY SMALL VOLUMES. Reply rate over a handful of sends is noise, and open rate is not better; the
+    honest answer is that neither is informative yet.
+
+    A DELIBERATE AWARENESS OBJECTIVE. Where the goal is genuinely to be known rather than to start a
+    conversation, opens are closer to the objective — though this is also the most common excuse for
+    a programme that produces no replies.
+
+    DIAGNOSING A DELIVERABILITY PROBLEM. A collapse in opens is a useful early signal that messages
+    are not arriving at all, which is a different question from whether they are any good.
+
+    WHEN REPLY RATE IS GAMED BY PROVOCATION. Confrontational messages raise total replies and lower
+    positive ones, which is why the positive share matters alongside the headline number.'
+  reads:
+  - sales.obj.core.lead
+  - thread.last_outbound
+  - thread.last_inbound
+  contradicts:
+  - sales.heu.cold_calling.calls_are_for_conversations_email_cannot_start
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.outbound_prospect
+  conditions:
+  - {exists: thread.last_outbound}
+  signals:
+  - positive_reply
+  - negative_reply
+  do_not_use_when:
+  - Volumes are too small for either rate to be informative.
+  - The objective is genuinely awareness rather than conversation.
+  - Diagnosing deliverability, where an open collapse is the useful signal.
+
+objects_used:
+- sales.obj.core.lead
+- sales.obj.core.persona
+- sales.obj.core.icp
+
+limits:
+- Reply rate IS derivable from the graph — `thread.last_outbound` and `thread.last_inbound` are both
+  present, and `email_noise:automated` separates a real reply from an autoresponder. Open rate is not
+  in the graph at all, which means the engine can compute the metric this heuristic prefers and not
+  the one it argues against.
+- Says nothing about how to raise the reply rate.
+- Cannot see whether a reply was positive without the polarity observations, which are sparse.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. Worth noting in `limits` and unusual in this
+    corpus: the metric this heuristic argues FOR is computable from the graph and the one it argues
+    against is not, so the engine is structurally on the right side of this argument.'

@@ -1,0 +1,135 @@
+identity:
+  id: admin.rule.request_intake.a_repeat_ask_is_a_defect_report
+  name: A repeat ask is a defect report
+  kind: rule
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.request_intake
+  subdomain: admin_operations
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'The same requester asking the same thing again is evidence that the previous answer did
+    not work. Serving it a second time is cheaper than finding out why, which is exactly why it keeps
+    happening and why the underlying defect survives indefinitely.'
+  answers:
+  - Is this new demand or a broken answer being re-asked?
+  - When does a request warrant fixing something rather than serving something?
+  not:
+  - A rule about refusing repeat requests. The request is still served; the point is what else happens.
+  - A duplicate-detection rule for two people asking the same thing, which is normal demand.
+
+rule:
+  statement: 'Where a requester raises a request materially equivalent to one already answered for
+    them, the intake MUST record it as a repeat and raise a defect candidate against the answer — the
+    SOP, the document, or the process it depended on. It MUST NOT be counted as new demand for the
+    purpose of capacity, and it MUST still be served.'
+  spans:
+  - admin.obj.core.request
+  - admin.obj.core.sop
+  - admin.obj.core.document
+  when:
+  - {exists: thread.last_inbound}
+  - {path: thread.ball_in_court, op: "=", value: us}
+  - {has_obs: question}
+  then: 'Serve the request, mark it a repeat against the earlier one, and open a defect candidate
+    naming the artefact that failed. Exclude it from new-demand counts.'
+  severity: advisory
+  why: 'Repeat volume is the cheapest available signal about the quality of an administrative
+    function''s own answers, and it is routinely spent as evidence of demand instead. The two readings
+    prescribe opposite remedies — more capacity, or one fix — and choosing the first when the second
+    was correct is how administrative functions grow while getting worse. It is advisory rather than
+    blocking because the equivalence judgement is genuinely uncertain and a wrong classification here
+    should never stop the request being served.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'GENUINELY RECURRING WORK. A monthly report, a quarterly filing, a routine access renewal — the
+    same request by design. Reading these as defects produces a fix candidate against a process that
+    is working exactly as intended, and it is the commonest false positive.'
+  - 'THE CIRCUMSTANCES CHANGED. The same question asked about a new counterparty, a new entity or a
+    new period is new work wearing familiar words. Equivalence is about the ANSWER being reusable, not
+    about the wording matching.'
+  - 'THE FIRST ANSWER WAS CORRECT AND THE REQUESTER DID NOT ACT ON IT. A repeat can be evidence about
+    the requester rather than about the answer. Distinguishing them needs evidence of whether the
+    answer was received and understood; without it, the defect candidate is a guess and should be
+    marked as one.'
+  - 'DELIBERATE RE-ASK AFTER A REFUSAL. Escalation by repetition is a different phenomenon, and
+    treating it as a defect report rewards the behaviour the queue exists to neutralise.'
+  - 'A THIRD PARTY ASKING THE SAME THING. Two different people asking the same question is normal
+    demand and often means the answer should be published — a knowledge gap, not a defect in an answer
+    already given.'
+
+objects_used:
+- admin.obj.core.request
+- admin.obj.core.sop
+- admin.obj.core.document
+- admin.obj.core.commitment
+
+outcomes:
+- Repeat volume is read as a quality signal instead of a capacity signal.
+- Each repeat produces a fix candidate against a named artefact.
+
+failure_modes:
+- 'FIRING ON RECURRING WORK. Generates fix candidates against healthy processes and the fix queue
+  stops being taken seriously.'
+- 'USED TO DEFLECT THE REQUEST. The rule requires the request still be served; a function that answers
+  a repeat with "we are fixing the underlying issue" has failed the requester twice.'
+- 'DEFECT RAISED WITHOUT NAMING THE ARTEFACT. "Something is wrong with visas" is not actionable; the
+  candidate has to name the SOP or document that failed, or it is a complaint.'
+
+limits:
+- '`has_obs: question` marks that a question was asked, not that it repeats an earlier one — the
+  equivalence judgement is not available from the observation alone, and on the design partner''s org
+  `question` appears 65 times with no repeat structure attached. The rule is honest about needing that
+  comparison to be made elsewhere, which is why it is advisory.'
+- Cannot see whether the first answer was actually delivered, only that a request preceded it.
+- Says nothing about which defect to fix first.
+
+variants:
+- applies_to: shared_services
+  change: Repeat rate is tracked per requesting function; one function repeating means its onboarding
+    to the service is the defect, not the answer.
+  why: The same artefact can work for one audience and fail for another.
+- applies_to: automated_first
+  change: Equivalence is machine-proposed against the answer corpus and human-confirmed, and a
+    confirmed repeat updates the corpus rather than only the queue.
+  why: When answers are published, the fix and the artefact are the same object.
+- applies_to: regulated
+  change: A repeat against a controlled procedure is logged as a procedure-effectiveness observation,
+    which has its own review path.
+  why: In a regime, evidence that a procedure is not followed is itself reportable.
+
+metrics:
+- name: repeat_ask_share
+  unit: percent
+  description: Share of requests repeating an earlier one from the same requester.
+  direction: lower_is_better
+- name: repeat_to_fix_conversion
+  unit: percent
+  description: Share of repeats that produced a fix candidate against a named artefact. The rule doing
+    its job, as opposed to merely classifying.
+  direction: higher_is_better
+
+references:
+- title: Failure demand
+  kind: research
+  author: John Seddon
+  note: The systems-thinking distinction between value demand and demand created by a system's own
+    failure to do something right — this rule is that distinction applied to an admin queue.
+- title: ITIL problem management
+  kind: framework
+  note: The incident-versus-problem split, which is the same argument in service-management language.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. `question` (65 observations on the design partner''s org) became
+    authorable only in this batch — it is emitted by Layer 2 and was missing from the corpus substrate
+    list. Severity is advisory because equivalence cannot be established from the available evidence,
+    and the honest position is a candidate rather than a verdict.'

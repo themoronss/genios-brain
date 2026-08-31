@@ -1,0 +1,85 @@
+identity:
+  id: admin.pb.asset_issuance_and_recovery.issue_and_recover_with_signatures
+  name: Issue and recover with signatures
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.asset_issuance_and_recovery
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Assets are issued against signed acknowledgment and recovered against the issue record —
+    condition noted both ways — because unsigned issuance makes recovery a negotiation and disputes a
+    coin-toss.
+
+when_to_use:
+  do_not_use_when:
+  - The item is consumable. Custody chains on stationery cost more than the stationery and train people to ignore the process for things that matter.
+steps:
+- order: 1
+  name: Issue against a signature, framed as mutual
+  description: >
+    The acknowledgement protects the holder — returned it, here is the record — as much as the
+    company. Framed as distrust it produces resistance to the one artefact that helps them.
+  actor: human
+  objects_read: [admin.obj.core.asset, admin.obj.core.employee_record]
+  done_when: A named person has acknowledged receipt.
+- order: 2
+  name: Record condition on the way out
+  description: >
+    Noted only on issue, every return becomes an argument about wear that neither side can win.
+  actor: human
+  done_when: Condition is on record before it leaves.
+- order: 3
+  name: Capture transfers
+  description: >
+    Equipment changes hands far more often than it is issued or returned, and the register otherwise
+    names somebody who has not held it for two years.
+  actor: agent
+  done_when: The custodian is current.
+- order: 4
+  name: Give recovery an owner and a date
+  description: >
+    Nobody is waiting for the item, so nothing forces recovery. It needs the same treatment as any
+    other obligation with no natural pressure behind it.
+  actor: human
+  objects_read: [admin.obj.core.deadline]
+  done_when: Each expected return has a name and a date.
+- order: 5
+  name: Write off deliberately rather than carry forever
+  description: >
+    Perpetually outstanding items are what make a register stop being believed, and disbelief
+    invalidates every other entry in it.
+  actor: human
+  done_when: Unrecoverable items have a decision.
+objects_used: [admin.obj.core.asset, admin.obj.core.employee_record, admin.obj.core.approval, admin.obj.core.deadline]
+limits:
+- 'It tracks custody, not condition over time. An item held for four years is accounted for and may be unusable.'
+- 'Step 3 depends on people reporting a transfer that inconveniences nobody to hide.'
+failure_modes:
+- 'Step 1 skipped for senior staff, which is where the highest-value items are.'
+- 'Step 5 avoided because writing off feels like admitting loss, so the register carries fiction indefinitely.'
+variants:
+- applies_to: distributed
+  change: Step 4 involves shipping and needs a courier and a deadline rather than a request; recovery rates fall sharply without it.
+  why: There is no desk to leave it on and no colleague to hand it to.
+- applies_to: startup_lean
+  change: Steps 1 and 4. A spreadsheet with signatures beats an asset system nobody updates.
+  why: The exposure is a handful of laptops and it is entirely a recovery problem.
+references:
+- title: Asset custody practice
+  kind: practitioner
+  note: Signed issuance and dated recovery are the two controls that survive every simplification.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 4 exists because recovery has no natural forcing event. Everything else in this
+    playbook works by itself; recovery only happens if somebody's name is against a date.

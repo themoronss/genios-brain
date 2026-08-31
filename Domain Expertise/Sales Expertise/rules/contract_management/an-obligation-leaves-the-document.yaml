@@ -1,0 +1,128 @@
+identity:
+  id: sales.rule.contract_management.an_obligation_leaves_the_document
+  name: An obligation leaves the document
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.contract_management
+  subdomain: closing
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A commitment that exists only inside an executed contract is a commitment nobody is
+    tracking. Renewal dates, notice windows and non-standard clauses all sit in a file that is read
+    twice — when it is signed and when something has already gone wrong.'
+  answers:
+  - What has to happen when a contract executes?
+  - Where do contractual obligations actually live?
+  not:
+  - A contract-review standard. It governs extraction, not drafting.
+  - A rule about which terms are acceptable.
+
+rule:
+  statement: 'On execution, every dated or conditional obligation the contract creates — renewal date,
+    notice window, price review, committed milestone, non-standard clause — MUST be extracted as a
+    tracked obligation with an owner and a date. A contract with dated terms and no corresponding
+    tracked obligations MUST be flagged as unextracted.'
+  spans:
+  - sales.obj.core.contract
+  - sales.obj.core.account
+  - sales.obj.core.timeline
+  when:
+  - {path: deal.status, op: "=", value: won}
+  - {absent: commitment.due_at}
+  then: 'Raise extraction as the immediate post-close action, naming renewal, notice and any
+    non-standard term as the items to record.'
+  severity: blocking
+  why: 'Contracts are read twice — at signature and after a failure — and everything between those two
+    readings depends on someone having remembered. The failure mode is symmetrical and both directions
+    are expensive: an auto-renewal that passes unnoticed commits the customer to a year they did not
+    choose, and a notice window missed on our side does the same to us. Neither is a judgement error;
+    both are the absence of a date in any system that produces reminders, and the moment the
+    extraction is cheap is the day of signature, when someone has just read the document.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'A CONTRACT MANAGEMENT SYSTEM ALREADY DOING IT. Where an existing system extracts and reminds,
+    duplicating the obligations produces two registers that disagree within a year — which is worse
+    than one, and the disagreement always surfaces at the renewal.'
+  - 'A FULLY STANDARD AGREEMENT ON PUBLISHED TERMS. Where the term, notice and renewal are the same
+    for every customer and are held centrally, per-contract extraction is redundant.'
+  - 'A PERPETUAL OR ONE-OFF ENGAGEMENT. A single deliverable with no ongoing term creates no dated
+    obligations beyond its own completion.'
+  - 'AN OBLIGATION CONDITIONAL ON SOMETHING THAT MAY NEVER HAPPEN. A clause triggered by an event —
+    a volume threshold, a service credit — has no date to record; it should be registered as a
+    condition to watch rather than forced into a dated form it does not have.'
+  - 'A CONTRACT WE DID NOT DRAFT AND CANNOT PARSE. Where the buyer''s paper is long and bespoke,
+    extracting everything is a legal exercise rather than an administrative one — the honest partial
+    application is to extract the dates and flag the rest as unreviewed.'
+
+objects_used:
+- sales.obj.core.contract
+- sales.obj.core.account
+- sales.obj.core.timeline
+- sales.obj.core.risk
+
+outcomes:
+- Renewal and notice dates exist outside the document from day one.
+- Non-standard clauses have an owner rather than a filing location.
+
+failure_modes:
+- 'EXTRACTION INTO A SECOND REGISTER NOBODY OWNS. Two sources of truth, disagreeing quietly until the
+  renewal makes it matter.'
+- 'DATES EXTRACTED, DEVIATIONS NOT. The dates are easy and the clauses are the part that binds; a
+  half-applied rule captures the easy half and reports as satisfied.'
+- 'APPLIED TO EVERY STANDARD AGREEMENT. Produces volume that hides the contracts with genuinely
+  unusual terms.'
+
+limits:
+- The contract document is not in the record — this rule fires on a won deal with no dated commitment
+  against it, which is a proxy for extraction not having happened and cannot verify what was extracted.
+- Cannot distinguish a standard agreement from a bespoke one, which is what the second and fifth
+  exceptions turn on.
+
+variants:
+- applies_to: enterprise
+  change: Non-standard clauses are routed to whoever will have to honour them — legal, security,
+    delivery — rather than held by the account owner alone.
+  why: The account owner will not be there at the renewal, and frequently not at the obligation.
+- applies_to: smb
+  change: Reduce to renewal and notice dates; there are rarely deviations to capture.
+  why: Standard paper, long-lived contract, and the renewal is the whole risk.
+- applies_to: regulated
+  change: Deviations are recorded as control exceptions with an approver named, not merely as tracked
+    obligations.
+  why: The regime asks on whose authority the standard term was varied.
+
+metrics:
+- name: renewal_date_capture_rate
+  unit: percent
+  description: Share of executed contracts with dates extracted on execution day.
+  direction: higher_is_better
+- name: non_standard_clause_capture_rate
+  unit: percent
+  description: Share of deviations recorded outside the document.
+  direction: higher_is_better
+- name: missed_notice_window_count
+  unit: count
+  description: Notice windows that passed without a decision. The failure this rule exists to make
+    impossible, counted in both directions.
+  direction: lower_is_better
+
+references:
+- title: Practitioner contract administration
+  kind: practitioner
+  note: Obligation extraction at execution is standard in mature contract management and almost
+    entirely absent where contracts are owned by a sales function.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new and blocking despite firing on a proxy, because the failure is silent,
+    symmetrical and expensive in both directions — and because the day of signature is the only moment
+    when someone has just read the document and the extraction is nearly free.'

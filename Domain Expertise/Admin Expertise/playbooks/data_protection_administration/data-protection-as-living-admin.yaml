@@ -1,0 +1,86 @@
+identity:
+  id: admin.pb.data_protection_administration.data_protection_as_living_admin
+  name: Data protection as living admin
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.data_protection_administration
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The processing register, consent records, DSR handling and breach clock are maintained as
+    operational routines — not annual panics — because data protection failures are administrative failures
+    long before they are legal ones.
+
+when_to_use:
+  do_not_use_when:
+  - No personal data is involved. Applying the register discipline to anonymous aggregates costs attention the real datasets need.
+steps:
+- order: 1
+  name: Register the activity when it starts, not at review time
+  description: >
+    A register reconstructed annually is accurate for a day. Entry at creation is the only version
+    that stays true, and it costs a paragraph.
+  actor: human
+  objects_read: [admin.obj.core.document]
+  done_when: The activity, its data, its basis and its owner are recorded.
+- order: 2
+  name: State the basis deliberately, and live with what it obliges
+  description: >
+    Consent brings withdrawal rights and a record-keeping burden; legitimate interest brings a
+    balancing test. Choosing by convenience means the obligations that follow were never accepted.
+  actor: human
+  done_when: The basis is chosen with its consequences named.
+- order: 3
+  name: Align retention to the register
+  description: >
+    Storage convenience and the stated period drift apart quietly, and only the register is
+    defensible when the question is asked.
+  actor: human
+  objects_read: [admin.obj.core.compliance_obligation]
+  done_when: The retention period on the dataset matches the register entry.
+- order: 4
+  name: Start the DSR clock when they asked
+  description: >
+    In whatever words, through whatever channel. Recognition is our problem, not the deadline's.
+  actor: human
+  done_when: The clock is dated from the inbound, not the triage.
+- order: 5
+  name: Review access by asking who can reach it, not who is on the team
+  description: >
+    A manager confirming their headcount has not reviewed access. Service accounts, exports and
+    inherited permissions are where the exposure lives.
+  actor: human
+  done_when: The review names at least what it examined, and revocations happened or were argued.
+objects_used: [admin.obj.core.document, admin.obj.core.compliance_obligation, admin.obj.core.access_right, admin.obj.core.policy]
+limits:
+- 'It maintains the administration, not the lawfulness. A perfectly kept register of unlawful processing is a well-documented problem.'
+- 'Step 5 depends on identity tooling that can enumerate effective access, which most estates cannot.'
+failure_modes:
+- 'Step 1 deferred to a quarterly sweep, which is the annual panic on a shorter cycle.'
+- 'Step 4 measured from triage because that is when the ticket was created, which is how a compliant team misses a statutory deadline.'
+variants:
+- applies_to: multi_entity
+  change: Basis and retention vary by jurisdiction for the same activity, so one register row is wrong somewhere.
+  why: The obligation is territorial and the processing is not.
+- applies_to: outsourced
+  change: Step 5 extends across the processor boundary, and the register must name them.
+  why: Their access is our exposure and their logs are not ours by default.
+references:
+- title: GDPR Article 30 — records of processing activities
+  kind: standard
+  note: The register is a legal requirement in its own right, which is why step 1 is the capability rather than a support activity.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 4 is where compliant teams fail: the clock is dated from triage because that is when
+    the ticket exists, and the statutory window ran from the customer's sentence three days
+    earlier.

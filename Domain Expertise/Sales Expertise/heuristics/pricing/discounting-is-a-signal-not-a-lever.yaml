@@ -1,0 +1,148 @@
+identity:
+  id: sales.heu.pricing.discounting_is_a_signal__not_a_lever
+  name: Discounting is a signal, not a lever
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.pricing
+  subdomain: proposal_and_commercials
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: A fast unilateral discount tells the buyer your list price was fiction and your floor is
+    discoverable by waiting. It buys smaller deals AND longer negotiations — the opposite of both
+    intended effects.
+  answers:
+  - Should we discount to move this deal?
+  - What does an unprompted price cut actually communicate?
+  not:
+  - An argument against ever discounting. It is an argument against discounting unilaterally.
+  - A pricing strategy. What the list price should be is decided elsewhere.
+
+heuristic:
+  statement: 'Treat every price movement as information the buyer will use, not as a lever you are
+    pulling. A concession granted without a corresponding get discloses two things at once — that the
+    stated price was negotiable and that patience is what unlocks it — and both of those apply to
+    every future negotiation with that account, not only to this one.'
+  why: 'The buyer is running an experiment whether or not they intend to, and a unilateral cut is the
+    result. It establishes that the list price contained slack, which reframes every later number as
+    an opening position, and it establishes that waiting is the mechanism, which is the behaviour it
+    then rewards. The compounding is what makes it expensive: the discount is a one-off, the lesson
+    is permanent, and it transfers to the renewal, the expansion, and to whoever they tell.'
+  confidence_bp: 8400
+  applies_when: 'A price has been stated and the buyer has pushed back or gone quiet on it, and the
+    seller has discretion over the number.'
+  breaks_down_when: 'A GENUINE STRUCTURAL MISMATCH. Where the price is simply wrong for the segment —
+    the packaging assumes a scale this buyer does not have — holding the line defends an error. The
+    fix is structure, not discipline, and refusing to move here is stubbornness wearing the costume
+    of principle.
+
+    A PUBLISHED, NON-NEGOTIABLE PRICE. Where price is transparent and uniform by policy, there is no
+    lever and no signal; the conversation is about fit or about nothing.
+
+    PROCUREMENT RITUAL AT THE END. A late demand for a token reduction is frequently a process
+    requirement — somebody must be able to report that they negotiated. A small, clearly-labelled,
+    reciprocated concession closes it, and treating it as a commercial position spends weeks arguing
+    against a formality.
+
+    A DELIBERATE LAND-AND-EXPAND ENTRY. A knowingly cheap first contract bought to establish a
+    beachhead is a strategy, not a concession — provided the mechanism for later expansion exists in
+    the contract. Where it does not, this exception is the story sellers tell about a discount.
+
+    THE FIRST CUSTOMERS IN A NEW SEGMENT. Reference value is real consideration and can be the get.
+    It stops being valid the moment the reference is not actually asked for and delivered.'
+  reads:
+  - sales.obj.core.pricing
+  - sales.obj.core.budget
+  - sales.obj.core.competitor
+  - derived.momentum
+  contradicts:
+  - sales.heu.follow_up.silence_is_an_answer_about_timing__not_value
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.field_evidence_on_the_market
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - pricing_discussed
+  - objection_price
+  - discount_pressure
+  do_not_use_when:
+  - The price is structurally wrong for this segment; fix the structure rather than holding a line.
+  - Pricing is published and uniform, so there is no discretion to signal with.
+  - The ask is a late procurement formality rather than a commercial position.
+
+objects_used:
+- sales.obj.core.pricing
+- sales.obj.core.budget
+- sales.obj.core.competitor
+- sales.obj.core.proposal
+
+outcomes:
+- Every price movement is exchanged for something nameable.
+- The floor is decided before the conversation rather than discovered during it.
+
+failure_modes:
+- 'HELD AS A POINT OF PRIDE. Refusing a justified structural correction because moving would "send a
+  signal" loses deals the pricing was wrong for.'
+- 'THE GET IS COSMETIC. A logo permission nobody will use is not consideration, and the buyer knows
+  it — a fake trade signals the same thing as a gift, with added theatre.'
+- 'APPLIED AFTER THE FACT. Once a unilateral discount has been given, this heuristic has nothing to
+  say; its whole content is about the moment before.'
+
+limits:
+- Says nothing about what the price should be, only about how it may move.
+- Assumes the seller has discretion; in many motions they do not, and the relevant skill is escalation.
+- The observations that would let a system see this — `objection_price`, `discount_pressure` — have
+  zero rows on the design partner's org, so today this is authored knowledge with no live trigger.
+
+variants:
+- applies_to: enterprise
+  change: The get is usually structural — term length, expansion commitments, a named reference — and
+    the approval for any movement sits with someone who was not in the conversation.
+  why: Large concessions are governed, so the trade has to be defensible to a third party.
+- applies_to: smb
+  change: Prefer packaging changes to discounts; giving less for less preserves the price integrity
+    that a small buyer will compare with a peer within the month.
+  why: Word travels fastest in the segment where the deals are smallest.
+- applies_to: channel
+  change: Margin moves through the partner and a discount to the end customer distorts the partner's
+    economics; the trade has to be with whoever bears the cost.
+  why: Two commercial relationships, one number.
+
+metrics:
+- name: unreciprocated_concession_rate
+  unit: percent
+  description: Share of concessions granted with no get.
+  direction: lower_is_better
+- name: discount_to_close_correlation
+  unit: ratio
+  description: Whether deeper discounts actually closed faster. Usually they did not, which is the
+    direct test of the lever theory this heuristic rejects.
+  direction: lower_is_better
+
+references:
+- title: Never Split the Difference
+  kind: book
+  author: Chris Voss
+  note: On concessions as information, and on the cost of unilateral movement in a repeated game.
+- title: SPIN Selling
+  kind: methodology
+  author: Neil Rackham
+  note: Price objections as evidence of engagement rather than of resistance — the finding underneath
+    reading them as a signal.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The procurement-ritual regime is the one most
+    often missed in both directions: sellers either concede real margin to it or spend weeks arguing
+    with a formality. `limits` records that the observations which would let the engine detect any of
+    this are absent on the live org.'

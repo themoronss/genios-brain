@@ -1,0 +1,68 @@
+identity:
+  id: admin.heu.data_protection_administration.the_register_is_the_audit
+  name: The register is the audit
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.data_protection_administration
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Most data-protection scrutiny reduces to 'show me your records'. An org that can produce
+    its processing register, consents and DSR log has already passed; one that must reconstruct them has
+    already failed.
+  answers:
+  - What does data-protection readiness actually look like?
+
+heuristic:
+  statement: >
+    Most data-protection scrutiny reduces to "show me your records". An organisation that can produce
+    its processing register, consents and DSR log has largely passed; one that must reconstruct them
+    has largely failed, before anyone examines the processing itself.
+  why: >
+    A regulator cannot inspect your intentions and will not audit your code. They ask for the
+    artefacts the law requires you to maintain, and the state of those artefacts is treated as
+    evidence of the state of everything behind them — reasonably, because an organisation that
+    maintains its register is usually an organisation that thinks about processing before starting it.
+    The register is therefore both the deliverable and the proxy.
+  confidence_bp: 8000
+  applies_when: Routine supervisory contact, a DSR, or diligence — anywhere records are requested before conduct is examined.
+  breaks_down_when: >
+    The contact is complaint-driven. A specific person alleging specific harm is not answered by a
+    tidy register, and treating the register as the defence produces a response that reads as
+    evasion. It also breaks down where the records are good and the processing is not: an accurate
+    register of unlawful processing accelerates the finding rather than preventing it, which is the
+    case nobody plans for because the register is treated as the compliance artefact rather than as
+    a description.
+  reads: [admin.obj.core.document, admin.obj.core.compliance_obligation]
+  contradicts: [admin.heu.retention_and_archival.everything_kept_is_discoverable]
+limits:
+- 'It is about administrative readiness, not lawfulness. The two are correlated and not the same.'
+- 'The proxy fails in both directions — good records over bad processing, and bad records over careful processing.'
+failure_modes:
+- 'Used to prioritise the register over fixing the processing it describes.'
+- 'Applied to a complaint, where the individual wants an answer about themselves and gets a governance summary.'
+variants:
+- applies_to: regulated
+  change: The record set is larger and specified, so the proxy is stronger and the excuse for gaps is smaller.
+  why: Nothing about the expectation is discoverable only at inspection.
+- applies_to: startup_lean
+  change: The register is short enough that maintaining it is trivial and the absence is therefore harder to explain.
+  why: Scale is the usual mitigation and it is unavailable here.
+references:
+- title: GDPR Article 30 — records of processing activities
+  kind: standard
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the honest one: an accurate register of unlawful processing
+    accelerates the finding. The register is a description, and treating it as the compliance
+    artefact is how a team optimises the proxy.

@@ -23,9 +23,8 @@ description: >
 
 matches:
   l2_situation_types:
-    - stalled_deal
-    - cooling_deal
-    - closed_lost_risk
+    - deal
+    - opportunity
   scope: deal
   when:
     # Only on live deals. Once the deal closes the reading becomes calibration, which is a

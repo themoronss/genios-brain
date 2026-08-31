@@ -1,0 +1,114 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# THIS SITUATION ROUTES NOTHING, and here the reason to refuse a compromise binding is not only
+# correctness — it is that the data does not belong in this graph.
+#
+# Six people-administration capabilities are authored and unreachable. The substrate holds no
+# employee record, and the honest response is a connector to an HR system with its own access
+# control, not an attempt to reconstruct employment events from a founder's mailbox.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.sit.employee_lifecycle_event
+  name: Employee Lifecycle Event
+  domain: admin
+  owner_capability: admin.people_administration.onboarding_administration
+  version: 1.0.0
+  status: draft
+
+description: >
+  Somebody is joining, changing role, or leaving, and a set of administrative steps has to happen
+  in a defined window: access granted or revoked, records created or closed, payroll informed,
+  equipment issued or recovered. The read is about which of those steps has an owner and which
+  has quietly not happened.
+
+  Onboarding and offboarding are the same problem read in opposite directions, and offboarding is
+  the one that hurts. Access outlives employment by months in most organisations, and nobody
+  notices because the failure produces no symptom until it produces a serious one. What makes it a
+  genuine capability is the checklist-against-a-clock structure: it is not that anyone forgets the
+  steps, it is that no single person can see all of them at once.
+
+matches:
+  l2_situation_types: []
+
+  pending_l2_situation_types:
+
+    - type: employee_lifecycle_event
+      owner_layer: L1
+      nearest_today: admin_contact
+      note: >
+        WHAT THE TYPE MUST MEAN. A person's employment state changing on a date, carrying the
+        direction (join, change, leave), the effective date, and the set of administrative steps
+        that state change requires — with each step's owner and completion state. Direction and
+        date are not optional: the same checklist run backwards is offboarding, and a type that
+        cannot tell them apart would advise granting access to someone who has left.
+
+        WHAT WOULD EMIT IT. `employment.status`, `employment.effective_at`, `employment.direction`
+        and per-step completion facts, from an HRIS or an identity provider. None has a writer and
+        none should be extracted: employment status inferred from correspondence is a guess about
+        a person's job, and being wrong about that is a category of wrong this system should not
+        risk.
+
+        WHAT GOES WRONG TODAY. Nothing fires for any of the six capabilities —
+        onboarding_administration, offboarding_administration, access_and_identity_administration,
+        employee_records_administration, attendance_and_leave, payroll_input_administration.
+
+        WHY BINDING TO admin_contact WOULD BE WRONG, specifically. (1) Inference about a person's
+        employment from their mail is a guess with consequences — an offboarding checklist raised
+        against someone who has not left is both wrong and insulting. (2) The steps are invisible
+        in correspondence. Access revocation happens in an identity provider, not in an email, so
+        the capability that matters most would be blind precisely where it matters. (3) Employment
+        data carries its own access constraints; putting it in a graph built for commercial
+        correspondence, with commercial visibility rules, is a privacy design decision that no
+        situation file should make by implication. (4) Compound: an offboarding surface that
+        cannot see revocation would report the risk as handled.
+
+  # No `scope`. The natural scope is an EMPLOYMENT RELATIONSHIP, which the enum does not offer.
+
+also_serves:
+  - admin.people_administration.offboarding_administration
+  - admin.people_administration.access_and_identity_administration
+  - admin.people_administration.employee_records_administration
+  - admin.people_administration.attendance_and_leave
+  - admin.people_administration.payroll_input_administration
+
+objects:
+  load:
+    - admin.obj.core.employee_record
+  optional:
+    - admin.obj.core.access_right
+    - admin.obj.attendance_and_leave.leave_request
+    - admin.obj.core.asset
+    - admin.obj.core.deadline
+
+priority_bp: 7000
+typical_duration_days: 30
+
+signals_of_progress:
+  - next_step_agreed
+
+signals_of_decay:
+  - timeline_slip
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    Unreachable today. When the type exists: lead with the direction and the date, then the
+    step that has no owner. Never infer employment state from correspondence.
+  fallback:
+    headline: "{entity} — lifecycle step unverified"
+    situation: >-
+      An employment change involving {entity} has steps with no recorded owner.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    The only pending type in this corpus whose objection is partly about data governance rather
+    than only about correctness. Recorded here because a future reader looking for the cheapest
+    way to light up six capabilities will find the argument attached to the file rather than
+    having to reconstruct it.

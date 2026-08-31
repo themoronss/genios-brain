@@ -88,16 +88,24 @@ def build_route_ladder(*, audience: AudienceClass, band: str, interrupt: bool,
     intrusive = (interrupt and push_allowed
                  and priority in (DeliveryPriority.CRITICAL, DeliveryPriority.HIGH))
 
+    # The pull surface is a CHANNEL, and like any other it has to be one the recipient actually
+    # has. It was appended unconditionally, so a delivery with no lawful route came out as
+    # "queued to in_app" instead of a materialization failure — silent loss wearing the shape of
+    # success, and precisely the case a coverage report would then count as delivered.
+    floor = [PULL_SURFACE] if PULL_SURFACE in available_channels else []
+
     if intrusive:
-        # Law 3: prefer a push channel the recipient actually has, then always the durable floor.
+        # Law 3: prefer a push channel the recipient actually has, then the durable floor.
         pushes = [c for c in human_channels if c in PUSH_CHANNELS]
-        ladder = _dedupe_preserving_order([*pushes, PULL_SURFACE, *human_channels])
+        ladder = _dedupe_preserving_order([*pushes, *floor, *human_channels])
     else:
         # Law 4: non-intrusive work is a pull-surface batch; no second "digest" duplicate (law 5).
-        ladder = (PULL_SURFACE,)
+        ladder = tuple(floor)
 
     if not ladder:
-        raise NoRouteError("no lawful channel available for this delivery")
+        raise NoRouteError(
+            "no lawful channel available for this delivery — the pull surface is not among the "
+            f"recipient's channels {sorted(available_channels)}")
     return ladder
 
 

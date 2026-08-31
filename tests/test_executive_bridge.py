@@ -26,12 +26,12 @@ from genios_engine.executive import sweep
 
 from tests.executive_fakes import FakeEngine
 from tests.test_executive_sweep import PACK, persisted, world
-from tests.test_executive_execution import NOW
+from tests.test_executive_execution import NOW, build
 
 
-def nudged(db, *, channel="slack"):
+def nudged(db, *, channel="slack", execution=None):
     """Drive a real commitment to the point where Layer 5 has decided to speak."""
-    execution, engine = persisted(db, state=ExecutionState.PENDING)
+    execution, engine = persisted(db, execution=execution, state=ExecutionState.PENDING)
     if channel != "slack":
         db.executions[0]["channel_id"] = channel
     rung = execution.escalation[0]
@@ -49,7 +49,8 @@ def test_a_layer_five_reminder_becomes_a_queued_message():
     assert not db.delivery_outbox
 
     bridge.link_commitment_cards(engine, "org_1")
-    queued = bridge.enqueue_executive_messages(engine, "org_1", base_url="https://app.test")
+    queued = bridge.enqueue_executive_messages(engine, "org_1", "slack",
+                                               base_url="https://app.test")
 
     assert queued == 1 and len(db.delivery_outbox) == 1
     row = db.delivery_outbox[0]
@@ -58,12 +59,30 @@ def test_a_layer_five_reminder_becomes_a_queued_message():
     assert bridge.parse_executive_card_id(row["card_id"])[0] == execution.execution_id
 
 
+def test_an_unowned_commitments_reminder_still_reaches_the_wire():
+    """The shape of every commitment in production, carried end to end.
+
+    ``enqueue_executive_messages`` filters on ``x.assignee is not null`` and uses that column as
+    the outbox ``recipient``, so a commitment whose recipient column was NULL could never become
+    a message no matter how loudly Layer 5 decided to speak — and 195/195 of the live tenant's
+    commitments carried NULL there. Nothing owns this one either; it simply has somebody to
+    reach, and that is enough to put it on the wire, addressed to the seat that mans the queue.
+    """
+    db = world(owner="")
+    db.set_facts("deal_9", {"deal.status": "open"}, attrs={})
+    _, engine = nudged(db, execution=build(facts={}).require())
+
+    assert db.events_of("execution.reminded"), "Layer 5 decided to speak about unowned work"
+    assert bridge.enqueue_executive_messages(engine, "org_1", "slack") == 1
+    assert db.delivery_outbox[0]["recipient"] == "seat_mgr"
+
+
 def test_the_message_says_only_what_layer_five_grounded():
     """The bridge has no access to the graph and cannot look anything up. That is what makes the
     invention guarantee structural rather than a matter of discipline."""
     db = world()
     _, engine = nudged(db)
-    bridge.enqueue_executive_messages(engine, "org_1")
+    bridge.enqueue_executive_messages(engine, "org_1", "slack")
 
     payload = json.loads(db.delivery_outbox[0]["payload"])
     text = payload["blocks"][0]["text"]["text"]
@@ -83,7 +102,7 @@ def test_a_commitment_planned_for_the_digest_is_not_pushed():
     """Respecting this is the whole reason Layer 5 was given the channel decision."""
     db = world()
     nudged(db, channel="digest")
-    assert bridge.enqueue_executive_messages(FakeEngine(db), "org_1") == 0
+    assert bridge.enqueue_executive_messages(FakeEngine(db), "org_1", "slack") == 0
     assert not db.delivery_outbox
 
 
@@ -92,14 +111,14 @@ def test_an_unrouted_commitment_is_never_pushed():
     _, engine = nudged(db)
     db.executions[0]["assignee"] = None
     db.delivery_outbox.clear()
-    assert bridge.enqueue_executive_messages(engine, "org_1") == 0
+    assert bridge.enqueue_executive_messages(engine, "org_1", "slack") == 0
 
 
 def test_enqueueing_twice_queues_one_message():
     db = world()
     _, engine = nudged(db)
-    first = bridge.enqueue_executive_messages(engine, "org_1")
-    second = bridge.enqueue_executive_messages(engine, "org_1")
+    first = bridge.enqueue_executive_messages(engine, "org_1", "slack")
+    second = bridge.enqueue_executive_messages(engine, "org_1", "slack")
     assert first == 1 and second == 0 and len(db.delivery_outbox) == 1
 
 
@@ -108,11 +127,11 @@ def test_a_second_reminder_is_a_second_message():
     because day 1 already sent."""
     db = world()
     execution, engine = nudged(db)
-    bridge.enqueue_executive_messages(engine, "org_1")
+    bridge.enqueue_executive_messages(engine, "org_1", "slack")
 
     later = execution.escalation[1]
     sweep.run_lifecycle(engine, eval_time=later.fires_at + timedelta(minutes=1), effective=PACK)
-    assert bridge.enqueue_executive_messages(engine, "org_1") == 1
+    assert bridge.enqueue_executive_messages(engine, "org_1", "slack") == 1
     assert len(db.delivery_outbox) == 2
 
 
@@ -121,7 +140,7 @@ def test_a_closed_commitment_is_cancelled_at_send_not_delivered():
     window. Sending it then is the exact nudge this layer exists to never send."""
     db = world()
     _, engine = nudged(db)
-    bridge.enqueue_executive_messages(engine, "org_1")
+    bridge.enqueue_executive_messages(engine, "org_1", "slack")
     card_id = db.delivery_outbox[0]["card_id"]
 
     with engine.begin() as conn:
@@ -137,7 +156,7 @@ def test_a_closed_commitment_is_cancelled_at_send_not_delivered():
 def test_an_expired_commitment_is_not_delivered_either():
     db = world()
     _, engine = nudged(db)
-    bridge.enqueue_executive_messages(engine, "org_1")
+    bridge.enqueue_executive_messages(engine, "org_1", "slack")
     card_id = db.delivery_outbox[0]["card_id"]
     with engine.begin() as conn:
         beyond = db.executions[0]["expires_at"] + timedelta(hours=1)
@@ -218,7 +237,7 @@ def test_a_corrupt_event_detail_degrades_instead_of_raising():
     db = world()
     _, engine = nudged(db)
     db.execution_events[-1]["detail"] = "not json at all"
-    assert bridge.enqueue_executive_messages(engine, "org_1") == 1
+    assert bridge.enqueue_executive_messages(engine, "org_1", "slack") == 1
     payload = json.loads(db.delivery_outbox[0]["payload"])
     assert payload["text"], "a message still ships, worded from the commitment alone"
 

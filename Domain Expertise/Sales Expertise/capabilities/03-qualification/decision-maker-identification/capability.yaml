@@ -3,26 +3,115 @@ identity:
   name: Decision Maker Identification
   domain: sales
   subdomain: qualification
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Establishing authority from evidence rather than from title. In most B2B motions the
+  approver is discovered, never announced, so this capability leans almost entirely on inference
+  patterns.
 
-description: >
-  Establishing authority from evidence rather than from title. In most B2B motions the
-  approver is discovered, never announced, so this capability leans almost entirely on
-  inference patterns.
+  '
+question: Who can actually approve this, and how do we know?
 
-question: "Who can actually approve this, and how do we know?"
+outcomes:
+- 'Authority established from a past act, not from a title or a self-description. The reliable
+  question is how the last comparable purchase was approved; who decides invites the answer the person
+  wishes were true, and both are given in perfect good faith.'
+- 'The money test applied and passed. The approver can reallocate budget, not merely spend an
+  allocated line — if the request has to go up from them, they are a recommender and the deal has not
+  yet met the person who decides.'
+- 'A distinction between the person who can say YES and the person who can say NO. Several people
+  hold a veto and exactly one usually holds approval; a capability that reports "decision maker" as
+  one field cannot express that, and the veto holders are where deals actually die.'
+- 'The approver reached early, through the champion, with a reason that serves them. The buyer takes
+  meetings that de-risk their own quarter, and an approach framed around our need is the one that
+  does not get accepted.'
+- 'A recorded verdict of unknown where the approver has not been identified. The negative outcome:
+  most deals reach the proposal with an assumed approver, and writing down that the authority is
+  unverified is what lets a review ask the only question that matters.'
+- 'Authority re-checked when the organisation moves. Approval thresholds change with reorganisations,
+  budget cycles and headcount, and an approver verified two quarters ago may no longer be one.'
 
+failure_modes:
+- 'READING TITLE AS AUTHORITY. Title inflation is universal and asymmetric — it overstates authority
+  far more often than it understates it — so a seniority-based guess is biased in the direction that
+  loses deals.'
+- 'ASKING WHO DECIDES. The question invites an aspirational answer and the person answering usually
+  believes it. It is also socially difficult to answer honestly, which is why the process question
+  outperforms it.'
+- 'ACCEPTING SELF-DESCRIBED AUTHORITY. The contact who says they can approve is frequently describing
+  their intent to recommend strongly, and both parties leave the conversation with different beliefs.'
+- 'STOPPING AT THE FIRST PLAUSIBLE APPROVER. The person who can spend an allocated line is often
+  mistaken for the person who can reallocate; the distinction only becomes visible at the moment the
+  number exceeds the line.'
+- 'GOING AROUND THE CHAMPION TO REACH THEM. It occasionally works and reliably costs the champion,
+  which is a bad trade because the champion is needed after the meeting as well as before it.'
+- 'VERIFYING ONCE. Approval authority is a property of the organisation at a moment, and reorganisations
+  are exactly when large purchases stall.'
+
+kpis:
+- name: evidenced_authority_share
+  unit: percent
+  description: Share of live deals where the approver is established by a past act rather than by
+    title or self-description.
+  direction: higher_is_better
+- name: economic_buyer_contact_rate
+  unit: percent
+  description: Share of deals where the approver has been in a live conversation with us.
+  direction: higher_is_better
+- name: authority_discovery_lead_time
+  unit: days
+  description: Days from deal creation to the approver being evidenced. Late discovery is the single
+    most reliable predictor of a slipped close date.
+  direction: lower_is_better
+- name: veto_holder_count
+  unit: count
+  description: Identified holders of a no, tracked separately from the holder of the yes.
+  direction: higher_is_better
+- name: unverified_approver_share
+  unit: percent
+  description: Share of proposals sent into a deal whose approver is still assumed.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.qualification.champion_identification
+  - sales.qualification.buying_committee_analysis
+  downstream:
+  - sales.closing.closing
+  - sales.proposal_and_commercials.proposal_creation
+  - sales.closing.procurement
+  parallel:
+  - sales.qualification.stakeholder_mapping
+  - sales.sales_management.deal_review
+
+applies_to:
+  models: [b2b, enterprise, mid_market, b2b2c, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached through `sales.sit.enterprise_deal` (`also_serves`),
+    bound to the `deal` type.
+
+    The description''s own claim — that this capability "leans almost entirely on inference patterns"
+    — is worth testing rather than repeating, and it does not survive contact with the substrate.
+    `budget_approved` and `contract_requested` have zero rows on the design partner''s org;
+    `party.role` (705 rows) says what a counterparty is to us and not what they may authorise. So the
+    inference available today is weak, and the outcomes are deliberately written around a HUMAN
+    discovery act — the process question, the money test — with the record used to hold the verdict
+    rather than to produce it.
+
+    No numbers: what spend level implies which approver is Layer 4''s arithmetic, and in most tenants
+    it is not knowable at all because `deal.value` is never derived.
+
+    '
+  reviewed_at: '2026-08-27'
+
+admission:
+  accepted_content_hash: ab77bd9fde9f7b77e97cf04d1938e7db55230d4d343741eb12c8fa6e706c5fea

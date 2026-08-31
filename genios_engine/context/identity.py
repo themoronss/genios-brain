@@ -112,12 +112,63 @@ def record_alias(conn, *, org_id: str, node_id: str, alias_type: str, alias_key:
 
 
 def resolve_alias(conn, *, org_id: str, alias_type: str, alias_key: str) -> str | None:
-    """Look up a key. Exact match only — this is the whole matching algorithm."""
+    """Look up a key. Exact match only — this is the whole matching algorithm.
+
+    AMBIGUITY IS NOT A MATCH. When more than one node answers to a key, this returns None rather
+    than the first row. Two people called "John" at different companies is ordinary, and handing
+    a mention to whichever John was inserted first silently moves every fact, commitment and
+    thread state written from that mention onto the wrong person — a merge nobody proposed,
+    nobody reviewed, and nothing records.
+    """
     if not alias_key:
         return None
-    return conn.execute(text(
+    rows = conn.execute(text(
         "select node_id from graph_aliases where org_id=:o and alias_type=:t "
-        "and alias_key=:k"), {"o": org_id, "t": alias_type, "k": alias_key}).scalar()
+        "and alias_key=:k limit 2"), {"o": org_id, "t": alias_type, "k": alias_key}).fetchall()
+    if len(rows) != 1:
+        # 0 → nothing is called that, which is the ordinary answer and already handled by callers.
+        # 2+ → the key does not identify anyone, and saying so is the only safe reply.
+        return None
+    return rows[0][0]
+
+
+def resolve_alias_candidates(conn, *, org_id: str, alias_type: str,
+                             alias_key: str) -> tuple[str, ...]:
+    """Every node answering to a key — so a caller can SEE an ambiguity rather than infer it.
+
+    `resolve_alias` returning None conflates "nobody" with "several", and a surface asking the
+    user to disambiguate needs to tell those apart.
+    """
+    if not alias_key:
+        return ()
+    return tuple(r[0] for r in conn.execute(text(
+        "select node_id from graph_aliases where org_id=:o and alias_type=:t "
+        "and alias_key=:k order by node_id"),
+        {"o": org_id, "t": alias_type, "k": alias_key}).fetchall())
+
+
+def company_name_keys(name: str | None) -> list[str]:
+    """The keys a prose company name may be looked up by. Derivation, never comparison.
+
+    `company_slug` joins words with a space ("DevDash Labs" → "devdash labs") while
+    `domain_root` cannot contain one ("devdashlabs.com" → "devdashlabs"). The two therefore
+    never met, and a company whose name is written as two words was unreachable from the node
+    built out of its own email domain. Measured on the design partner's org: 22 company nodes
+    carrying live cards, and exactly ONE of them ("Actual AI" → actual.ai, which survives only
+    because the dot in the domain becomes the same space) resolved from any of the 77 company
+    names the extractor had already pulled out of that org's mail. With the space-insensitive
+    key it is six.
+
+    This stays inside the module's law. Fuzziness is allowed in how a key is DERIVED — stripping
+    "Inc.", lowercasing, taking a domain's label — and forbidden in how keys are COMPARED.
+    Removing the separator is a derivation of exactly that kind; both keys are then matched by
+    string equality, and an ambiguous key still resolves to nobody.
+    """
+    slug = company_slug(name)
+    if not slug:
+        return []
+    squashed = slug.replace(" ", "")
+    return [slug] if squashed == slug else [slug, squashed]
 
 
 def resolve_company_mention(conn, *, org_id: str, name: str | None) -> str | None:
@@ -127,8 +178,11 @@ def resolve_company_mention(conn, *, org_id: str, name: str | None) -> str | Non
     so the mention stays an observation rather than becoming an orphan node. This is the
     P1 anchor rule holding, not a failure.
     """
-    return resolve_alias(conn, org_id=org_id, alias_type=ALIAS_COMPANY_NAME,
-                         alias_key=company_slug(name) or "")
+    for key in company_name_keys(name):
+        hit = resolve_alias(conn, org_id=org_id, alias_type=ALIAS_COMPANY_NAME, alias_key=key)
+        if hit:
+            return hit
+    return None
 
 
 def resolve_person_name(conn, *, org_id: str, name: str | None) -> str | None:
@@ -136,10 +190,14 @@ def resolve_person_name(conn, *, org_id: str, name: str | None) -> str | None:
 
     Reads the observed name-alias that `observe_person_name` writes — the read side that was
     missing, leaving those aliases write-only. So a bare-name mention ("Rohit said yes") no longer
-    piles onto the message's sender. Exact key match only. Same-name people share one key (the first
-    claimant holds it), so this links the mention to that anchored person; a name nothing is anchored
-    under returns None and stays an observation (the anchor rule holding). Never creates a node and
-    never merges — two people sharing a name is ordinary, not a duplicate.
+    piles onto the message's sender. Exact key match only.
+
+    A name shared by several anchored people resolves to NOBODY, not to the first claimant. Two
+    "John"s at different companies is ordinary; picking one moves every fact and commitment
+    written from that mention onto the wrong person, and nothing anywhere records that a choice
+    was made. An unresolved mention stays an observation, which is recoverable.
+
+    Never creates a node and never merges.
     """
     return resolve_alias(conn, org_id=org_id, alias_type=ALIAS_PERSON_NAME,
                          alias_key=person_name_key(name) or "")
@@ -222,6 +280,31 @@ def observe_person_name(conn, *, org_id: str, node_id: str, name: str | None,
         "created_by_event_id) values (:o, :t, :k, :n, 'observed', :ev) "
         "on conflict (org_id, alias_type, alias_key) do nothing"),
         {"o": org_id, "t": ALIAS_PERSON_NAME, "k": key, "n": node_id, "ev": event_id})
+
+
+def observe_company_name(conn, *, org_id: str, node_id: str, name: str | None,
+                         event_id: str | None = None) -> None:
+    """Record what a company is CALLED, next to the domain that actually identifies it.
+
+    The company twin of `observe_person_name`, and it exists for the same reason: the anchor and
+    the name arrive separately. A company node is anchored on an email domain, so it is born
+    called "devdashlabs.com" — which is why 19 of the design partner's 47 live card headlines
+    opened on a hostname ("errorcore.dev: no problem documented yet") while the words "DevDash
+    Labs" and "Crescere Labs" sat in the same graph as extracted company mentions.
+
+    Written only after the mention ALREADY resolved to this node by exact key equality against
+    the node's own anchor, so the association is not a guess. Like its person twin this writes an
+    alias and nothing else; the display-name promotion is a node write and lives with the other
+    node writes, in the store.
+    """
+    key = company_slug(name)
+    if not key:
+        return
+    conn.execute(text(
+        "insert into graph_aliases (org_id, alias_type, alias_key, node_id, origin, "
+        "created_by_event_id) values (:o, :t, :k, :n, 'observed', :ev) "
+        "on conflict (org_id, alias_type, alias_key) do nothing"),
+        {"o": org_id, "t": ALIAS_COMPANY_NAME, "k": key, "n": node_id, "ev": event_id})
 
 
 def _json(value: dict) -> str:

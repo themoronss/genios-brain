@@ -1,0 +1,65 @@
+identity:
+  id: customer_support.heu.incident_management.coordination_is_the_scarce_resource
+  name: Coordination is the scarce resource
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.incident_management
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Mid-incident, more engineers rarely speeds resolution — clearer ownership does. When progress
+    stalls, check who is deciding before adding who is typing.
+  answers:
+  - What does a stalled incident usually lack?
+
+heuristic:
+  statement: >
+    Mid-incident, more engineers rarely speeds resolution — clearer ownership does. When progress
+    stalls, check who is deciding before adding who is typing.
+  why: >
+    Incident work is mostly serial: form a hypothesis, test it, decide what it means, choose the
+    next one. Extra people cannot parallelise a decision chain, and each additional participant adds
+    a communication edge, a status question and a plausible alternative theory. So the marginal
+    engineer usually slows the loop while making everybody feel that more is being done — which is
+    why the instinct to add people persists despite being wrong most of the time.
+  confidence_bp: 8000
+  applies_when: An incident that has stalled with several people already engaged.
+  breaks_down_when: >
+    The work is genuinely parallel — checking twenty shards, restoring several regions, contacting
+    many customers. There, capacity is the constraint and coordination is not, and withholding
+    people on principle extends the outage. It also breaks down where the missing element is a
+    specific capability rather than a decision: nobody in the room has access to the system that
+    failed, and clearer ownership does not conjure the credential.
+  reads: [customer_support.obj.core.incident, customer_support.obj.core.escalation_owner]
+  contradicts: [customer_support.heu.workload_balancing.fairness_is_felt_in_weights]
+limits:
+- 'It concerns stalled incidents. Early on, getting the right person in is exactly correct.'
+- 'It cannot distinguish a coordination stall from a capability one, which is the judgement it asks for.'
+failure_modes:
+- 'Used to keep people out of an incident that genuinely needs hands.'
+- 'Cited by a commander who is themselves the bottleneck, which is the case it least helps.'
+variants:
+- applies_to: swarming_support
+  change: Strongest, because the default is everybody joining and the coordination cost is highest.
+  why: The model optimises participation and incidents punish it.
+- applies_to: follow_the_sun
+  change: The stall is often a handover rather than a decision, and adding the incoming region is correct.
+  why: The bottleneck is context transfer, not ownership.
+references:
+- title: Incident command practice
+  kind: framework
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the one that makes this dangerous as a rule: a commander who is
+    themselves the bottleneck can cite it to keep help out, which is the exact situation it
+    least applies to.

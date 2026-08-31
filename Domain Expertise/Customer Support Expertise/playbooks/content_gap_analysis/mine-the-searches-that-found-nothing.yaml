@@ -1,0 +1,90 @@
+identity:
+  id: customer_support.pb.content_gap_analysis.mine_the_searches_that_found_nothing
+  name: Mine the searches that found nothing
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.content_gap_analysis
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The KB roadmap is written by failed searches and deflection misses — what customers looked
+    for and did not find, ranked by frequency, becomes next month's authoring list.
+
+when_to_use:
+  do_not_use_when:
+  - Search and contact data are unavailable. Running this on intuition produces the team's mental model with a process wrapped around it.
+steps:
+- order: 1
+  name: Start from failed searches
+  description: >
+    What customers looked for and did not find is the only direct evidence of a gap. Everything
+    else is inference about people who are not in the room.
+  actor: system
+  objects_read: [customer_support.obj.core.content_gap]
+  produces: A frequency-ranked list of unanswered queries.
+  done_when: The list comes from logs rather than from suggestions.
+- order: 2
+  name: Add repeat contacts and deflection misses
+  description: >
+    A question arriving weekly is an answer that does not exist or cannot be found, and the
+    deflection failures name the same gap from the other side.
+  actor: system
+  objects_read: [customer_support.obj.core.ticket]
+  done_when: Both sources feed one ranked backlog.
+- order: 3
+  name: Split missing from unfindable
+  description: >
+    A second article about something already documented adds a duplicate and does not fix
+    retrieval. The two need different work.
+  actor: human
+  objects_read: [customer_support.obj.core.knowledge_article]
+  done_when: Each gap is classified before it is assigned.
+- order: 4
+  name: Rank by frequency, not by ease
+  description: >
+    Ranking by effort produces the articles that were easiest to write, which is uncorrelated with
+    what customers needed.
+  actor: human
+  done_when: The order reflects demand.
+- order: 5
+  name: Send product problems to product
+  description: >
+    Some questions recur because the product is confusing. An article there is a way of not fixing
+    it, and it makes the confusion permanent.
+  actor: human
+  objects_read: [customer_support.obj.core.product_area]
+  done_when: Content and product causes are separated.
+objects_used: [customer_support.obj.core.content_gap, customer_support.obj.core.knowledge_article, customer_support.obj.core.ticket,
+               customer_support.obj.core.intent, customer_support.obj.core.product_area]
+limits:
+- 'Search logs show what was searched, not what was needed. A customer who did not know what to call it never appears.'
+- 'It identifies gaps; closing them is authoring, and the backlog is worthless without capacity behind it.'
+failure_modes:
+- 'Step 3 skipped, so every gap gets an article and the findability problem compounds.'
+- 'Step 5 avoided because writing an article is within our control and a product change is not.'
+variants:
+- applies_to: plg_self_serve
+  change: Steps 1 and 5 dominate. There is no human layer, so every gap is either content or product.
+  why: The queue that would have absorbed it does not exist.
+- applies_to: community_support
+  change: Unanswered forum questions are the gap list, already in customer language and already ranked by views.
+  why: The community instruments itself.
+references:
+- title: Knowledge-centred service
+  kind: methodology
+  note: Where demand-driven authoring is contrasted with anticipatory documentation.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is the one avoided for a structural reason: writing an article is within support's
+    control and a product change is not, so the content answer is always available and always
+    tempting.

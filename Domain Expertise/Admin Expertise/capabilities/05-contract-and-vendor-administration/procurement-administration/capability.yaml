@@ -1,28 +1,73 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.contract_and_vendor.procurement_administration
   name: Procurement Administration
   domain: admin
   subdomain: contract_and_vendor
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Running the buying process to policy: requisition, competitive requirement, approval thresholds,
+  conflict-of-interest checks and documentation. Procurement administration is mostly the prevention of
+  a specific failure — spend that is committed before anyone with authority agreed to it.
 
-description: >
-  Running the buying process to policy: requisition, competitive requirement, approval
-  thresholds, conflict-of-interest checks and documentation. Procurement administration is
-  mostly the prevention of a specific failure — spend that is committed before anyone with
-  authority agreed to it.
+  '
+question: Has this purchase gone through the approvals and controls it is required to?
 
-question: "Has this purchase gone through the approvals and controls it is required to?"
+outcomes:
+- 'A fast compliant path for routine spend, so the compliant path is also the easy one. When it is not, corporate cards become the real procurement system.'
+- 'Approval thresholds that match the actual authority to commit, not a round number inherited from a template.'
+- 'Competitive requirement applied where it changes the outcome — above a level where three quotes are worth the fortnight they cost.'
+- 'Conflicts of interest surfaced at requisition, when disclosure is cheap, rather than at audit.'
+- 'The negative outcome: spend REFUSED or re-scoped before commitment. A procurement function that has never stopped a purchase is a purchase-order desk.'
+failure_modes:
+- 'GATING EVERYTHING EQUALLY. Over-gated small purchases breed shadow buying, which is invisible, unnegotiated and unvetted — a worse outcome than the leak the gate prevented.'
+- 'THRESHOLDS SET AND NEVER REVISITED. Inflation quietly converts a mid-size purchase into a board-level approval.'
+- 'THREE QUOTES AS RITUAL. Two courtesy quotes around a chosen vendor satisfies the control and informs nothing.'
+- 'APPROVAL AFTER COMMITMENT. The requisition arrives to legitimise a purchase already agreed verbally, and refusing it is now an argument about trust.'
+- 'CONFLICTS ASKED ABOUT AT AUDIT, when disclosure is expensive and looks like concealment.'
+kpis:
+- name: compliant_path_cycle_time
+  unit: days
+  description: Requisition to approved. The number that decides whether the policy is followed.
+  direction: lower_is_better
+- name: post_commitment_approval_share
+  unit: percent
+  description: Approvals sought after the purchase was agreed. The control failing quietly.
+  direction: lower_is_better
+- name: off_process_spend_share
+  unit: percent
+  description: Spend arriving as expenses or cards rather than through procurement. The shadow measure.
+  direction: lower_is_better
+- name: refusal_or_rescope_rate
+  unit: percent
+  description: A target band. Zero means the function is administrative rather than a control.
+  direction: target_band
+handoffs:
+  upstream: [admin.admin_operations.request_intake, admin.finance_administration.budget_tracking]
+  downstream: [admin.contract_and_vendor.purchase_order_management, admin.contract_and_vendor.vendor_onboarding,
+               admin.contract_and_vendor.contract_administration]
+  parallel: [admin.executive_support.approval_coordination, admin.finance_administration.payables_administration]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, outsourced]
+  offerings: [transactional, assurance]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. approval.state, .approver,
+    .threshold_value and derived.approval_latency are all planned_substrate with no writer.
+
+    The capability exists to prevent one specific failure — spend committed before anyone with
+    authority agreed — and its own worst failure mode is the cure. Every KPI here is paired
+    against that: compliant_path_cycle_time and off_process_spend_share move together, and a
+    procurement function optimising control without watching cycle time drives spend into
+    channels it cannot see at all.
+
+admission:
+  accepted_content_hash: 394845382fc223fd8ab0fd09af2f4d31cf9190cbf105daad5ffc306077748b7d

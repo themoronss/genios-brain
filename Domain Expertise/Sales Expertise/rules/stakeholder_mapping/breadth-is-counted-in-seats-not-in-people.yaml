@@ -1,0 +1,133 @@
+identity:
+  id: sales.rule.stakeholder_mapping.breadth_is_counted_in_seats_not_in_people
+  name: Breadth is counted in seats, not in people
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.stakeholder_mapping
+  subdomain: qualification
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'Several contacts inside one function are one thread with redundancy. Counting them as
+    multi-threaded satisfies every coverage metric and leaves the deal exactly as exposed as it was,
+    because the risks that remove a thread — a reorganisation, a budget change, a team reassignment —
+    remove the whole function at once.'
+  answers:
+  - Is this deal actually multi-threaded?
+  - What may be counted towards breadth?
+  not:
+  - A rule about how much breadth is enough. That threshold is Layer 4's.
+  - A prohibition on having several contacts in one team, which is often useful.
+
+rule:
+  statement: 'Relationship breadth MUST be computed over distinct functions or seats, not over
+    connected individuals. A deal whose contacts all sit in one function MUST be reported as
+    single-threaded regardless of how many people are involved, and any coverage figure derived from a
+    raw person count MUST be labelled as a person count.'
+  spans:
+  - sales.obj.core.stakeholder
+  - sales.obj.core.buying_committee
+  - sales.obj.core.champion
+  when:
+  - {path: deal.status, op: "=", value: open}
+  - {fn: edge_count, op: ">", value: 1}
+  then: 'Recompute breadth across `party.role` groupings before reporting it, and where all contacts
+    resolve to one function, raise single-threading despite the person count.'
+  severity: warning
+  why: 'The failure is one of correlated risk being reported as diversified risk, which is the same
+    error as a portfolio holding five shares in one company. The events that take a thread away are
+    almost never about the individual — a team is reassigned, a function is reorganised, a budget line
+    moves — so the people inside one function fail together. A metric that cannot see this improves
+    exactly when a seller adds the cheapest possible contacts, which are the ones nearest to the
+    relationship they already have, and therefore the ones most correlated with it.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'THE DECISION GENUINELY SITS IN ONE FUNCTION. A tool bought and used entirely inside one team,
+    below any cross-functional approval threshold, has one seat by design, and reporting it as
+    single-threaded is accurate but not actionable — it should be recorded as low-exposure rather than
+    as a risk.'
+  - 'SENIORITY WITHIN A FUNCTION. A manager and their director are not fully correlated; a
+    reorganisation frequently moves one and not the other. Weaker than cross-functional breadth,
+    stronger than two peers, and worth recording as partial rather than collapsing to either.'
+  - 'FUNCTION IS UNRESOLVABLE. `party.role` is absent for many counterparties, and where the grouping
+    cannot be computed the honest output is that breadth is unknown — not that it is one, and not that
+    it is the person count.'
+  - 'A MATRIXED BUYER. In organisations where people hold dual reporting lines, functional grouping
+    understates real diversity. The rule biases towards caution here, which is the right direction but
+    should be stated rather than presented as precision.'
+  - 'AN EXTERNAL ADVISOR OR CONSULTANT. Someone outside the buyer''s org chart entirely is genuinely
+    uncorrelated with any internal function, and a rule that groups by internal role has nowhere to
+    put them.'
+
+objects_used:
+- sales.obj.core.stakeholder
+- sales.obj.core.buying_committee
+- sales.obj.core.champion
+- sales.obj.core.decision_maker
+
+outcomes:
+- Coverage reflects correlated risk rather than headcount.
+- Cosmetic widening does not improve the reported number.
+
+failure_modes:
+- 'FUNCTION INFERRED FROM A JOB TITLE STRING. Produces confident and arbitrary groupings; where the
+  grouping is a guess, the third exception applies and the answer is unknown.'
+- 'READ AS DISCOURAGING INTRA-TEAM CONTACT. More relationships inside a function is usually good; the
+  rule governs what may be COUNTED, not who may be contacted.'
+- 'APPLIED TO A GENUINELY SINGLE-FUNCTION PURCHASE. Generates a permanent risk flag on a deal whose
+  shape is correct, and the flag is then ignored everywhere else too.'
+
+limits:
+- '`edge_count` is a raw count of connected nodes and carries no functional grouping at all; the
+  regrouping this rule requires depends on `party.role`, which is dense (705 rows / 124 nodes on the
+  design partner''s org) but absent for many counterparties.'
+- Cannot see a matrixed reporting structure, and cannot distinguish a peer from a manager within a
+  function without seniority evidence the record does not hold.
+
+variants:
+- applies_to: enterprise
+  change: Require three or more distinct functions before a deal is reported as genuinely
+    multi-threaded, and treat seniority-only breadth as partial.
+  why: The approval structure spans functions, so exposure that does not is not diversified.
+- applies_to: mid_market
+  change: Two functions is a reasonable bar and is usually achievable through the champion.
+  why: Fewer functions exist to spread across.
+- applies_to: smb
+  change: Do not apply; single-function is the correct shape and the flag would be permanent.
+  why: There is one team and one buyer.
+- applies_to: channel
+  change: Partner and end customer are different organisations, not different functions — count them
+    separately rather than summing them into one breadth figure.
+  why: Breadth at the partner does not protect against exposure at the customer.
+
+metrics:
+- name: functional_breadth
+  unit: count
+  description: Distinct functions with substantive contact. The number this rule substitutes for a
+    person count.
+  direction: higher_is_better
+- name: cosmetic_breadth_share
+  unit: percent
+  description: Share of deals whose person count suggests breadth and whose functional count does not.
+    Exactly the population this rule exists to find.
+  direction: lower_is_better
+
+references:
+- title: The Challenger Customer
+  kind: book
+  author: Adamson, Dixon, Spenner and Toman
+  note: On consensus requiring advocates across functions rather than several inside one.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. Only writable because `party.role` entered the corpus substrate in this
+    session — without it there is no way to express "group the contacts by function before counting
+    them", and breadth could only ever be a headcount.'

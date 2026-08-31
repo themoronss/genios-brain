@@ -3,25 +3,110 @@ identity:
   name: Objection Handling
   domain: sales
   subdomain: proposal_and_commercials
-  version: 0.1.0
-  status: draft
-  stub: true
-
-description: >
-  Separating the stated objection from the real one, and responding specifically. A raised
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Separating the stated objection from the real one, and responding specifically. A raised
   objection is engagement — the dangerous account is the silent one.
 
-question: "What is the concern behind what they said, and how do we address it?"
+  '
+question: What is the concern behind what they said, and how do we address it?
 
+outcomes:
+- 'The full set of objections surfaced before any of them is answered. The stated one is usually the
+  most comfortable one; answering it in isolation resolves nothing and invites the next, which is why
+  a well-handled single objection is so often followed by another.'
+- 'The real concern named, distinct from its phrasing. "Too expensive" carries at least four
+  different meanings, and each of them needs a different response — only one of which is a discount.'
+- 'An objection answered with evidence rather than with adjectives. A named customer, a number, a
+  demonstrable behaviour; assertions of quality answer a doubt about quality with more of the thing
+  being doubted.'
+- 'Explicit closure confirmed. An objection nobody confirmed as settled is still open, and it will
+  reappear at the moment the deal has least room to absorb it — asking is one sentence.'
+- 'Objections treated as a positive signal about the account. `objection` and `negative_reply` both
+  indicate someone is still engaged enough to argue; the account that has gone quiet is the one worth
+  worrying about, and this inversion is the capability''s central claim.'
+- 'A recorded verdict that the objection is fatal. The negative outcome: some concerns are correct and
+  unanswerable — a missing capability, a regulatory position, a price genuinely above the budget —
+  and naming that ends a deal honestly instead of extending it with technique.'
+
+failure_modes:
+- 'ANSWERING BEFORE UNDERSTANDING. The single most common error, and it multiplies: each answered
+  surface objection reveals another, and the seller experiences it as a buyer who keeps moving the
+  goalposts rather than as their own sequencing.'
+- 'DEFENSIVENESS. Converts a question into a position. The buyer stops exploring and starts defending
+  the objection they only half-held, and it becomes real in the act of being challenged.'
+- 'TREATING SILENCE AS AGREEMENT. Especially in a group setting, where saying nothing is the standard
+  way disagreement is deferred to a private conversation we will not be in.'
+- 'ANSWERING WITH ENTHUSIASM. Adjectives answer a doubt with more of the thing being doubted; evidence
+  is the only currency at this moment.'
+- 'NEVER CONFIRMING CLOSURE. The objection stays live in the buyer''s mind and dead in the seller''s
+  notes, and it resurfaces at the worst possible time.'
+- 'TECHNIQUE APPLIED TO A CORRECT OBJECTION. Where the concern is legitimate and unanswerable, handling
+  it well simply delays an honest no and spends the relationship on the way.'
+
+kpis:
+- name: full_set_surfaced_rate
+  unit: percent
+  description: Share of objection conversations where the seller asked what else before answering.
+    The behavioural discipline the whole capability turns on.
+  direction: higher_is_better
+- name: objection_recurrence_rate
+  unit: percent
+  description: Share of objections that reappeared after being answered. High means they were
+    answered rather than resolved.
+  direction: lower_is_better
+- name: evidence_backed_response_rate
+  unit: percent
+  description: Share of responses citing a named reference, a number or a demonstrable behaviour.
+  direction: higher_is_better
+- name: confirmed_closure_rate
+  unit: percent
+  description: Share of objections explicitly confirmed as settled by the buyer.
+  direction: higher_is_better
+- name: objection_bearing_deal_conversion
+  unit: percent
+  description: Close rate of deals that raised objections against those that raised none. Usually
+    higher, which is the evidence for the capability's central claim.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.discovery_and_solution.discovery
+  - sales.proposal_and_commercials.proposal_creation
+  downstream:
+  - sales.proposal_and_commercials.negotiation
+  - sales.closing.closing
+  parallel:
+  - sales.proposal_and_commercials.pricing
+  - sales.qualification.champion_identification
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Reached through `sales.sit.enterprise_deal` (`also_serves`),
+    bound to the `deal` type.
+
+    This is one of the few closing-side capabilities with a genuine live signal. On the design
+    partner''s org `objection` has 4 rows, `objection_timing` 2 and `negative_reply` 8 — small, and
+    real — while `positive_reply` has 57, which is what makes the central claim measurable in
+    principle: the comparison the last KPI asks for is between deals that produced objections and
+    deals that produced only agreement. `objection_price` has zero rows, so the price-objection
+    branch specifically has no trigger.
+
+    No numbers: how many objections is too many, and how long an unconfirmed one may stand, are Layer
+    4''s arithmetic.
+
+    '
+  reviewed_at: '2026-08-27'
+
+admission:
+  accepted_content_hash: a4f91274b847897ffc9883b32b308972b9f58437f343351a60981b6262805709

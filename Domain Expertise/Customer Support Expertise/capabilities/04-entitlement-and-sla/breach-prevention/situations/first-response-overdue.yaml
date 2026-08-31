@@ -1,0 +1,193 @@
+# Situation — First Response Overdue.
+#
+# WHY THIS IS A SEPARATE FILE FROM sla-breach-imminent.yaml, which carried this type as pending
+# until 2026-08-29 and whose header says routing nothing is the point of it.
+#
+# Layer 2 can now compute a first-response clock: the earliest visible message on a Gmail thread
+# is inbound, nobody internal has written since, and the deadline implied by the tenant's STATED
+# policy has passed. That is a real, useful and entirely honest finding. It is not an SLA. There
+# is no per-customer target anywhere in this system, so one org-wide declaration applies to
+# everybody, and the word for that is a policy.
+#
+# Binding the clock into the SLA file would have put it under a card headlined "SLA Breach
+# Imminent" on an org with no SLAs — the exact compound failure that file's own notes describe,
+# where the system reports coverage it does not have and the mislabel is undetectable from the
+# outside. The mislabel is the failure mode, not the arithmetic underneath it. So the arithmetic
+# ships here, named for what it measures, and sla_breach_imminent stays pending next door.
+
+identity:
+  id: customer_support.sit.first_response_overdue
+  name: First Response Overdue
+  domain: customer_support
+  owner_capability: customer_support.entitlement_and_sla.breach_prevention
+  version: 1.0.0
+  status: draft
+
+description: >
+  A request arrived by mail, the deadline our own stated first-response policy implies has
+  passed, and nobody has replied. Not a contractual breach and not a forecast — a plain statement
+  that the promise this organisation made to itself has been missed on a specific conversation,
+  while there is still somebody at the other end of it. The value is in the first half of the
+  sentence rather than the second: everybody already knows the queue has old threads in it, and
+  what nobody has is the specific list of people who wrote first and have heard nothing back.
+
+matches:
+  # BUILT. `context/support_situations.py` anchors on the existing `thread` node, so the compile
+  # path reads this exactly as it reads any other situation. `thread` is deliberately NOT in
+  # `correlation.ANCHOR_PRIORITY`: correlation is already thread-first, and a thread tier would
+  # re-anchor every live sales and general correlation onto its own thread.
+  #
+  # THE CLOCK, precisely. `opened_at` is the earliest message on the thread and it must be
+  # inbound; a thread whose first visible message is ours has nobody waiting on a first reply. A
+  # thread that began before the engine's window is skipped entirely rather than dated from the
+  # first message we happen to hold, because a fabricated arrival time would put a fabricated
+  # deadline under it. The deadline is then advanced across the stated working window, so a
+  # request arriving at 17:55 on a Friday is not late on Saturday morning.
+  #
+  # WHAT IS LOST, declared on every row's `missing` rather than left for someone to discover.
+  # (1) ENTITLEMENT — the biggest loss and the reason this file exists separately. There is no
+  #     per-customer target, so this cannot say one customer bought four hours and another
+  #     twenty-four, cannot detect entitlement_mismatch, and has not earned the word SLA.
+  #     `response.target_source` rides in the payload as `tenant_policy` or `engine_default` and
+  #     is NEVER `entitlement`; the copy says "your stated policy".
+  # (2) COVERED TIME. The working window is implementable; holidays and coverage handovers are
+  #     not knowable from mail and calendar, so a deadline crossing a public holiday reads as
+  #     due. Reported, never silent.
+  # (3) SUBSTANTIVENESS. Any internal reply on the thread stops the clock, so a human-typed
+  #     "thanks, we've received this" satisfies it — which is precisely the
+  #     autoresponder-satisfies-first-response anti-pattern `ticket.yaml` names. This build
+  #     cannot tell a holding reply from an answer.
+  # (4) CHANNEL. Email only, and chat, phone and portal are exactly the channels with the
+  #     tightest first-response promises. Small for a design partner whose support runs over
+  #     mail; not a general claim, and this must never be presented as an org-wide first-response
+  #     metric on a tenant with other channels.
+  # (5) TICKET IDENTITY. A Gmail thread approximates a request. Two raised in one thread merge,
+  #     one split across two threads double-counts, and a resolved thread that gets a new
+  #     question gets no second clock — so a reopen is invisible.
+  # (6) POPULATION. Selection is "the earliest message was inbound", not "this is a support
+  #     request", so on a mailbox where investors and prospects dominate the fired set is a mix.
+  #     The engine also refuses to run this reading at all when it cannot establish which
+  #     addresses are ours, because an empty set of internal identities would make every thread
+  #     read as never answered.
+  l2_situation_types:
+    - first_response_overdue
+
+  # Person. The subject is genuinely the individual who wrote and is waiting. The enum has no
+  # ticket member and account would be wrong here in the way sla-breach-imminent.yaml describes:
+  # one requester routinely holds several conversations with separate clocks.
+  scope: person
+
+also_serves:
+  # expectation_setting because the cheapest repair for a missed first response is telling them
+  # when to expect one. response_drafting because the action is a reply and somebody has to write
+  # it. ticket_triage because a thread nobody has answered is usually a thread nobody has read.
+  - customer_support.customer_communication.expectation_setting
+  - customer_support.customer_communication.response_drafting
+  - customer_support.intake_and_triage.ticket_triage
+
+objects:
+  load:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.requester
+  optional:
+    # sla_target where a tenant has actually stated one — it turns "our policy" into a number
+    # with a name. entitlement is optional for the same reason and is absent on this tenant.
+    - customer_support.obj.core.sla_target
+    - customer_support.obj.core.entitlement
+  never_load:
+    # The intervention is a reply, not research. Loading article content turns a two-minute
+    # acknowledgement into a drafting task, and the drafting takes longer than the reply that was
+    # already late.
+    - customer_support.obj.core.knowledge_article
+    # A missed first response costs the same whether the customer is calm or furious, and loading
+    # the mood read reprioritises attention toward the loud ones — so the quiet people who wrote
+    # once and were never answered go on being unanswered, which is the whole population here.
+    - customer_support.obj.core.customer_sentiment
+
+priority_bp: 7000
+typical_duration_days: 2
+
+signals_of_progress:
+  - followup_sent
+  - first_response_sent
+signals_of_decay:
+  - escalation_requested
+  - angry_language
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Name the person who wrote and how long they have been waiting, and say the deadline came from
+    OUR stated policy — never call it an SLA, never imply this customer is entitled to anything.
+    The reader needs one thing: what to say back today. Do not report a first-response rate; this
+    sees email only, and any hours quoted are calendar hours across the stated working window
+    with holidays unknown.
+  fallback:
+    # "Nobody has replied ... yet" reports OUR inaction; "{who} is waiting" reports the fact about
+    # the world that makes this worth reading. Same evidence, and only the second one is a
+    # finding. This headline shipped verbatim on 8 of the design partner's 47 live cards on
+    # 2026-08-30 and read as one more thing the system had not seen happen. The situation itself
+    # is NOT marked `states_absence`: somebody really is waiting, so the card keeps its authority
+    # to instruct — only the words change.
+    #
+    # "is owed a reply" and not "is waiting on a reply" because of the 60-character cap: the
+    # longest live subjects here are 39-42 characters ("Thread with
+    # zacharygoldman@makeportals.com"), and the longer phrasing went 1 to 4 over on 3 of the 23
+    # live cards and was trimmed to "... is waiting on a", which reads as a broken card. Checked
+    # against every subject this situation currently carries; none exceeds the cap.
+    headline: "{who} is owed a reply"
+    # THE BODY NAMED NOBODY. "They wrote {days} days ago..." opens on a pronoun with no antecedent
+    # and mentions no subject at all — every other situation in this corpus interpolates {entity}
+    # into its fallback, and this file was the only one that did not. Combined with `{days}`
+    # collapsing to its sentinel (the compiled lane passes no clock; fixed in `deliver/slots.py`)
+    # every row rendered the SAME 165 characters, then hit the 140-character cap and stopped on
+    # the word "and". Measured on the design partner's org on 2026-08-30: 11 live cards, 11
+    # byte-identical bodies, 11 cut mid-clause, under 11 correct and distinct headlines. Four in a
+    # row in the Mac app read as one broken sentence repeated.
+    #
+    # A per-subject card whose body cannot mention its own subject is not a card. This carries the
+    # three things that make one row different from the next — WHO (the thread and the address on
+    # it), HOW LONG (days since their message, from `response.opened_at`), and WHOSE TURN (ours;
+    # the reading only fires when no internal reply exists at all).
+    #
+    # SIZED AGAINST THE REAL POPULATION, not guessed. Interpolated over all 11 live subjects the
+    # longest is 140 of 140 ("Thread with nitesh.pant@devdashlabs.com", 39 characters) and the
+    # median is 129. A three-digit day count on that same longest subject reaches 141, and the
+    # `_cap` ladder added alongside this drops the whole trailing clause rather than cutting a
+    # word — so the overflow case degrades to "…29 days since they wrote", which is still a
+    # finished sentence. That is why the caveat is last.
+    #
+    # THREE em-dash clauses, deliberately, because `_interpolate` cuts the clause holding a slot
+    # it cannot substantiate. Should `response.opened_at` ever be missing, the day clause alone
+    # goes and the subject and whose-turn survive; a two-clause phrasing lost the subject with it.
+    #
+    # "your stated policy, not a contract" is the sentence this file exists to protect — there is
+    # no per-customer target anywhere in this system and the word SLA must never appear. It is
+    # shortened from "your stated first-response policy" only to fit; "this reading sees email
+    # only" moves out of the body to `render_hint` and to every row's `missing`, where it already
+    # was.
+    situation: >-
+      {who} — nobody replied and it is our move — {days} days since they wrote — your stated
+      policy, not a contract.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-08-29"
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    first_response_sent is a planned obs kind and nothing emits it, so signals_of_progress is
+    aspirational except for followup_sent. That is recorded rather than left implicit, and it
+    does not affect routing.
+
+    Status stays `draft` and reviewed_by is empty because no named human has accepted these
+    bytes. `admit.py` refuses to stamp an admission without one, correctly — the ceremony exists
+    so a person, not a generator, decides what carries production authority. Promotion to
+    `stable` plus an admission hash is the reviewer's step, not this file's.
+
+    The situation deliberately does NOT resolve itself into silence. It closes as
+    `resolved_by='fact'` the moment a reply lands, which means it reopens by itself if the reply
+    turns out not to have been ours — and it never goes dormant on age, because a thread nobody
+    answered going quiet is the finding rather than its expiry.

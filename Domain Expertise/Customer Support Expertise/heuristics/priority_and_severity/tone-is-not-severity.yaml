@@ -1,0 +1,68 @@
+identity:
+  id: customer_support.heu.priority_and_severity.tone_is_not_severity
+  name: Tone is not severity
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.priority_and_severity
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Angry is a communication state, not an impact measure. Triage by tone rewards shouting and
+    buries the polite customer with the real outage — the most expensive mistake an intake queue makes.
+  answers:
+  - Does an angry customer's ticket rank higher?
+
+heuristic:
+  statement: >
+    Angry is a communication state, not an impact measure. Triage by tone rewards shouting and
+    buries the polite customer with the real outage — the most expensive mistake an intake function
+    makes.
+  why: >
+    Emotional intensity correlates with the customer's personality, their culture, their week and
+    their prior experience of us, and only weakly with how broken the thing is. Meanwhile the
+    person with the genuinely severe problem is often measured and precise, because severity
+    produces focus rather than fury. So a queue ordered by tone is close to uncorrelated with a
+    queue ordered by impact — and it is self-reinforcing, because customers learn quickly which one
+    they are in.
+  confidence_bp: 8500
+  applies_when: Any triage decision where the report carries emotional register.
+  breaks_down_when: >
+    The tone is itself the business risk. A furious economic buyer threatening to cancel is a
+    retention event, and while their technical severity may be low, the priority is genuinely high —
+    that is priority responding to account stake, not to volume, and the distinction is easy to lose
+    while defending this heuristic. It also breaks down where tone is the only signal available:
+    a customer who cannot articulate the fault but is clearly frightened is telling you something,
+    and dismissing it as register discards the report.
+  reads: [customer_support.obj.core.customer_sentiment, customer_support.obj.core.ticket, customer_support.obj.core.requester]
+  contradicts: [customer_support.heu.channel_intake.the_loud_channel_is_not_the_urgent_one]
+limits:
+- 'It concerns severity and ranking. It says nothing about the reply, which absolutely should respond to tone.'
+- 'Sentiment is measurable and severity is not, so the wrong one is the easier to instrument.'
+failure_modes:
+- 'Read as licence to ignore an upset customer, which is a de-escalation failure dressed as triage discipline.'
+- 'Used to dismiss the only signal a non-technical reporter could give.'
+variants:
+- applies_to: enterprise_support
+  change: Tone from a named executive is a relationship event that legitimately raises priority through account stake.
+  why: The commercial exposure is real and is not severity.
+- applies_to: b2c
+  change: Public tone carries reputational risk, which is a different axis again and should be named as such rather than smuggled into severity.
+  why: Otherwise the queue is ordered by audience size.
+references:
+- title: ITIL 4 — incident prioritisation
+  kind: framework
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the one that needs care: a furious economic buyer threatening to
+    cancel genuinely raises priority — through account stake, not through volume — and defending
+    this heuristic too hard is how that gets missed.

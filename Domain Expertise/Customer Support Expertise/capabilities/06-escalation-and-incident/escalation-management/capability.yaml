@@ -1,45 +1,26 @@
-# FULL capability — the one complete file in subdomain 06. The other five are stubs.
-#
-# The whole subdomain hangs off one distinction that ticketing software refuses to make:
-# an escalation is a TRANSFER OF OWNERSHIP with a named receiver and a written reason.
-# Every product on the market models it as a flag, a priority bump or a tag — a property of
-# the ticket rather than an event between two people. That modelling error is upstream of
-# almost everything below: a flag has no receiver, so nobody accepted it; a flag carries no
-# reason, so nobody knows what they were asked for; and a flag has no exit, so it stays on
-# forever and stops meaning anything.
-#
-# No numbers in this file. Thresholds — how long before escalation, how many contacts count
-# as repeat, what share of the queue may carry the flag — are Layer 4's arithmetic and live
-# in the pack manifest. The judgement about WHAT to measure lives here; the number does not.
-#
-# Playbooks, heuristics, mental models and decision frameworks moved OUT of this
-# file and into knowledge.yaml + the artifact folders. They are files now because a
-# Layer 6 suggestion needs an id and a version to point at, and because a framework
-# used by four capabilities cannot live inline in all four.
-
 identity:
   id: customer_support.escalation_and_incident.escalation_management
   name: Escalation Management
   domain: customer_support
   subdomain: escalation_and_incident
   version: 1.0.0
-  status: draft
+  status: stable
   stub: false
-description: 'Moving a piece of work from the person who owns it to a person better placed to finish
-  it, on purpose, with the reason and the accumulated context travelling with it. Escalation is not
-  urgency, not anger and not seniority — those are things that often accompany it and are routinely
-  mistaken for it. It is a named receiver accepting responsibility for a specific ask, plus a stated
-  condition under which ownership comes back. The capability includes the decision not to escalate,
-  which is the more common correct answer and the one that gets made by default rather than on purpose.
+description: 'Moving a piece of work from the person who owns it to a person better placed to finish it,
+  on purpose, with the reason and the accumulated context travelling with it. Escalation is not urgency,
+  not anger and not seniority — those are things that often accompany it and are routinely mistaken for
+  it. It is a named receiver accepting responsibility for a specific ask, plus a stated condition under
+  which ownership comes back. The capability includes the decision not to escalate, which is the more
+  common correct answer and the one that gets made by default rather than on purpose.
 
   '
-question: This has outgrown its current owner — who takes it, what are we asking them for, and what
-  do they already know?
+question: This has outgrown its current owner — who takes it, what are we asking them for, and what do
+  they already know?
 outcomes:
 - A named person has accepted the transfer. Not a queue, not a channel, not a rota — a person who knows
   they now own it.
-- 'The reason is written as a reason and not as a mood: what is happening, why normal handling will
-  not finish it, and what specifically is being asked of the receiver.'
+- 'The reason is written as a reason and not as a mood: what is happening, why normal handling will not
+  finish it, and what specifically is being asked of the receiver.'
 - The context moved with the ticket — what was tried, what was ruled out and why, and what the customer
   has already been told, so the receiver's first act is progress rather than a re-diagnosis.
 - The trigger is recorded as customer-initiated or internally-triggered, because the two are different
@@ -49,20 +30,20 @@ outcomes:
 - 'An exit condition exists: the stated circumstance under which this returns to ordinary ownership.'
 - Where the answer was not to escalate, that is a recorded decision with a reason, not an absence.
 failure_modes:
-- 'Escalating the ticket without escalating the context. The receiver opens a thread with no brief,
-  asks the customer to describe the problem, and the customer — who has already described it twice —
-  concludes that escalating made things actively worse. This is the characteristic failure of the capability
-  and it is a handoff defect, not a technical one.
+- 'Escalating the ticket without escalating the context. The receiver opens a thread with no brief, asks
+  the customer to describe the problem, and the customer — who has already described it twice — concludes
+  that escalating made things actively worse. This is the characteristic failure of the capability and
+  it is a handoff defect, not a technical one.
 
   '
 - 'An escalation with no named receiver: a post into a channel, a tag on a ticket, a mention of a team.
-  Nobody''s workload changed, so nobody''s evening got shorter, so nothing happened. It felt like an
-  escalation to the person who raised it and looked like noise to everyone else.
+  Nobody''s workload changed, so nobody''s evening got shorter, so nothing happened. It felt like an escalation
+  to the person who raised it and looked like noise to everyone else.
 
   '
-- 'Treating a customer-initiated escalation as a process problem. The ticket gets reprioritised and
-  worked faster, the loss of confidence that actually caused the escalation is never addressed, and
-  the account escalates again next quarter about something smaller.
+- 'Treating a customer-initiated escalation as a process problem. The ticket gets reprioritised and worked
+  faster, the loss of confidence that actually caused the escalation is never addressed, and the account
+  escalates again next quarter about something smaller.
 
   '
 - 'The mirror error: treating an internally-triggered escalation as a relationship event and apologising
@@ -70,9 +51,9 @@ failure_modes:
   to watch for problems we would otherwise have quietly fixed.
 
   '
-- 'Escalating for cover rather than for help — transferring ownership so the risk belongs to someone
-  else. Receivers learn to discount that agent''s escalations, which means the one that genuinely mattered
-  gets the discounted response.
+- 'Escalating for cover rather than for help — transferring ownership so the risk belongs to someone else.
+  Receivers learn to discount that agent''s escalations, which means the one that genuinely mattered gets
+  the discounted response.
 
   '
 - 'Escalations with no exit. The flag persists after the reason has gone, the escalated pool grows monotonically,
@@ -83,9 +64,9 @@ failure_modes:
   owner, and experiences the whole thing as being ignored faster.
 
   '
-- 'Escalating to seniority instead of to capability. A director cannot reproduce the fault; what has
-  been bought is attention and what has been spent is hours. Correct only when the thing needed is a
-  decision or a concession, which is a different capability.
+- 'Escalating to seniority instead of to capability. A director cannot reproduce the fault; what has been
+  bought is attention and what has been spent is hours. Correct only when the thing needed is a decision
+  or a concession, which is a different capability.
 
   '
 - 'Letting volume set the bar. When the customers who shout get escalations and the ones who wait politely
@@ -135,25 +116,25 @@ kpis:
   direction: target_band
 - name: de_escalation_rate
   unit: percent
-  description: 'Share of escalations that returned to ordinary ownership on a stated exit condition
-    rather than being closed while still flagged. Tests whether the loop can terminate.
+  description: 'Share of escalations that returned to ordinary ownership on a stated exit condition rather
+    than being closed while still flagged. Tests whether the loop can terminate.
 
     '
   direction: higher_is_better
 - name: escalation_resolution_time
   unit: hours
-  description: Accepted to exit. Compare against the same issue class resolved without escalation —
-    if escalating is not faster, the mechanism is ceremony.
+  description: Accepted to exit. Compare against the same issue class resolved without escalation — if
+    escalating is not faster, the mechanism is ceremony.
   direction: lower_is_better
 - name: repeat_escalation_accounts
   unit: count
-  description: Accounts escalating more than once in a period. A generator to be found, not a set of
-    tickets to be worked.
+  description: Accounts escalating more than once in a period. A generator to be found, not a set of tickets
+    to be worked.
   direction: lower_is_better
 - name: post_escalation_retention
   unit: percent
-  description: 'Share of escalated accounts still present at their next renewal. Slow, noisy and the
-    only KPI here that measures whether any of this worked.
+  description: 'Share of escalated accounts still present at their next renewal. Slow, noisy and the only
+    KPI here that measures whether any of this worked.
 
     '
   direction: higher_is_better
@@ -204,19 +185,22 @@ applies_to:
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ''
+  reviewed_by: harsh
   last_updated: '2026-08-08'
-  review_status: unreviewed
+  review_status: approved
   confidence: provisional
   notes: 'Two structural notes for a reviewer. First, escalation is deliberately NOT modelled as a property
     of a ticket anywhere in this file; it is an event with two parties, which is why the load-set requires
-    escalation_owner and why several KPIs measure the interval between raising and acceptance rather
-    than time to resolution. Second, nothing in this capability is executable against today''s substrate
-    — there is no escalation observation kind, no escalation_requested situation type and no ticket
-    fact path in the shipped packs. The corresponding situation file, escalation-requested.yaml, therefore
+    escalation_owner and why several KPIs measure the interval between raising and acceptance rather than
+    time to resolution. Second, nothing in this capability is executable against today''s substrate —
+    there is no escalation observation kind, no escalation_requested situation type and no ticket fact
+    path in the shipped packs. The corresponding situation file, escalation-requested.yaml, therefore
     binds under pending_l2_situation_types, and that is the honest state rather than a defect. The two
     signals that would unlock the most here are the obs kinds escalation_requested and escalation_accepted:
-    the pair, not either alone, because the gap between them is the interval this capability exists
-    to shorten.
+    the pair, not either alone, because the gap between them is the interval this capability exists to
+    shorten.
 
     '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: dfd377569d0c8f11c44847cfe1059d747446bcd4cdd55e5d305fbac5119b9d08

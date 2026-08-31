@@ -1,0 +1,170 @@
+identity:
+  id: customer_support.pb.entitlement_verification.verify_before_the_meter_starts
+  name: Verify before the meter starts
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.entitlement_and_sla.entitlement_verification
+  subdomain: entitlement_and_sla
+  version: 1.0.0
+  status: stable
+purpose:
+  statement: >
+    Establish what this customer is owed BEFORE the first reply goes out, because the first reply is
+    where a target gets quoted and a quoted target becomes a commitment whether or not it was ever
+    owed. The whole sequence is designed to move the uncomfortable half — telling someone they are
+    not entitled to what they are asking for — into the first exchange, where it costs a sentence,
+    rather than after work has started, where it costs the relationship.
+  answers:
+  - What may we promise this customer without exceeding what they bought?
+  - Is this request covered at all, and by which entity's agreement?
+  - What is the real deadline, once the calendar is applied to the target?
+  not:
+  - Running the clock on an individual case — customer_support.obj.core.sla_target owns that.
+  - Deciding priority. Entitlement bounds the promise; severity and account stake decide the order.
+
+when_to_use:
+  situations:
+  - customer_support.sit.customer_awaiting_reply
+  conditions:
+  - {path: relationship.nature, op: "IN", value: [customer, partner, unknown]}
+  signals:
+  - question
+  - meeting_request
+  do_not_use_when:
+  - The request is about security, data loss or safety. Answer first; entitlement is irrelevant to
+    whether somebody is told their credentials are exposed.
+  - A major incident is running. Communication goes out by blast radius, not by tier, and pausing to
+    check plans delays every affected customer.
+  - The account is mid-renewal or in a grace period. Verification is fine; using the result to
+    decline is the most avoidable churn event in support.
+
+steps:
+- order: 1
+  name: Resolve the contracting entity, not the domain
+  description: >
+    Establish WHICH organisation holds the agreement before reading any plan. Domain matching is
+    cheap, usually right, and silently wrong for exactly the corporate structures where entitlement
+    matters — a subsidiary resolved to its parent spends purchased capacity nobody bought, and it
+    surfaces at renewal.
+  actor: system
+  objects_read:
+  - customer_support.obj.core.customer_account
+  produces: The account this request is entitled under.
+  done_when: One contracting entity is named, or the account is explicitly recorded as unresolved.
+- order: 2
+  name: Read the recorded terms, not the tier name
+  description: >
+    A tier is a display label over a bundle, and custom agreements keep the label while changing the
+    clause being relied on. Read the targets, the coverage window and the escalation rights as
+    recorded; treat "Premium" as a name.
+  actor: system
+  objects_read:
+  - customer_support.obj.core.support_plan
+  produces: The plan's actual targets and rights.
+  done_when: Targets, coverage and channel entitlement are each either read or recorded as absent.
+- order: 3
+  name: Check it is in force, and which way it is failing
+  description: >
+    Active, grace, lapsed and pending-start are four different answers. Grace is the one that gets
+    collapsed, and collapsing it produces a refusal aimed at a customer who is completing their
+    renewal.
+  actor: system
+  objects_read:
+  - customer_support.obj.core.support_plan
+  - customer_support.obj.core.entitlement
+  produces: A plan state.
+  done_when: The state is one of the four, with the date it was derived from.
+- order: 4
+  name: Apply the calendar before quoting anything
+  description: >
+    Convert the target into a wall-clock moment using coverage hours, covered days and the holiday
+    calendar. Four hours on a business-hours plan at 17:45 on a Friday is Monday morning, and both
+    sides read the same sentence and expect different days.
+  actor: system
+  produces: An effective deadline, as a date and time.
+  done_when: A moment exists, not a duration — or coverage is recorded as unknown and no target is quoted.
+- order: 5
+  name: Say the downward answer now, if there is one
+  description: >
+    If the request is outside coverage, outside channel, or beyond the plan, say so in the first
+    exchange and say what we will do instead. Early it is a sentence; after work has started it is
+    a customer who feels caught out, and they are right to.
+  actor: human
+  produces: A stated coverage verdict.
+  done_when: The customer has been told what is and is not covered, or a deliberate exception is recorded.
+- order: 6
+  name: Record any exception as an exception
+  description: >
+    When we choose to exceed the plan — which is often correct — write down that it was a choice.
+    Unrecorded over-delivery becomes the customer's baseline, and the next person to serve the actual
+    agreement takes the complaint.
+  actor: human
+  produces: A recorded, dated exception.
+  done_when: The exception exists somewhere the next agent will see it, or no exception was granted.
+
+objects_used:
+- customer_support.obj.core.support_plan
+- customer_support.obj.core.customer_account
+- customer_support.obj.core.entitlement
+- customer_support.obj.core.named_contact
+- customer_support.obj.core.sla_target
+
+limits:
+- >
+  Steps 2 to 4 need contract or billing data. On a correspondence-only tenant they resolve to
+  "unknown", and the playbook's honest output is step 5 saying we do not have the agreement on file
+  — which is still better than a defaulted tier, because a default is a fabricated contract.
+- >
+  It says nothing about whether the request is reasonable. Entitlement is a ceiling on the promise
+  and never a judgement about the customer.
+- >
+  Enforcement of a named-caller limit is deliberately absent. Detecting the overage is useful;
+  refusing the eleventh caller on a ten-caller plan saves one ticket and costs a renewal argument.
+
+failure_modes:
+- >
+  Run as a gate rather than as a bound. The output is what may be PROMISED; someone reading it as
+  what may be DONE will withhold a two-minute answer to protect a tier boundary.
+- >
+  Run once at account creation and cached. Entitlement expires quietly, and the cache is stale in
+  exactly the direction that produces an angry customer.
+- >
+  Step 4 skipped because the number looked like an answer. It is the most commonly dropped step and
+  the one that causes breaches nobody saw coming.
+
+variants:
+- applies_to: plg_self_serve
+  change: >
+    Steps 1 to 3 collapse into a plan lookup and step 5 becomes an in-product statement rather than
+    a message. The sequence survives; the ceremony does not.
+  why: Self-serve entitlement is uniform and machine-readable, which is the case this playbook is least needed for.
+- applies_to: b2b2c_reseller_support
+  change: >
+    Step 1 splits: the entitled entity is the partner, the affected party is the end customer, and
+    both are needed. Answering the end customer directly can breach the partner agreement.
+  why: The contract and the person suffering are different organisations, which step 1 otherwise forces into one.
+- applies_to: named_tam
+  change: Step 5 is a conversation the TAM has, not a sentence in a ticket.
+  why: A downward verification inside a named relationship is a commercial exchange, not an administrative one.
+
+references:
+- title: ITIL 4 — Service Level Management
+  kind: framework
+  note: Where the requirement to define coverage alongside a target is explicit rather than implied.
+- title: customer_support.obj.core.support_plan
+  kind: internal
+  note: Every step here reads that object; its `exceptions` section is where this playbook is legitimately wrong.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Written as a six-step sequence because the ORDER is the expertise. Resolving the entity before
+    reading the plan, and applying the calendar before quoting anything, are the two transpositions
+    that produce almost every entitlement failure worth having.

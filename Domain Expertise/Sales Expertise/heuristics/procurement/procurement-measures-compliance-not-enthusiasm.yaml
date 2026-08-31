@@ -1,0 +1,152 @@
+identity:
+  id: sales.heu.procurement.procurement_measures_compliance__not_enthusiasm
+  name: Procurement measures compliance, not enthusiasm
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.procurement
+  subdomain: closing
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: "Procurement KPIs are cost and process adherence — your product's brilliance is not their
+    concern. Give them completeness and speed; save the value story for people paid to care about
+    value."
+  answers:
+  - How should a seller behave towards a purchasing function?
+  - Why does the usual sales approach fail here?
+  not:
+  - A claim that procurement is hostile. They are measured differently, which is not the same thing.
+  - Advice to bypass them. Routing around procurement is how a deal acquires an enemy.
+
+heuristic:
+  statement: 'Optimise for being the easiest vendor to process, not the most compelling one. The
+    currency procurement actually rewards is a complete document returned the same day; the currency
+    sellers habitually offer — differentiation, outcomes, references — is spent on someone whose
+    performance is not measured by any of it.'
+  why: 'Roles behave according to what they are measured on, and a purchasing function is measured on
+    savings achieved, cycle time and policy compliance. None of those improve because the product is
+    good. A vendor who returns documents immediately makes their cycle-time number better and their
+    compliance number safer, which is a genuine service to them and costs us almost nothing — and it
+    is why the fastest-processed vendors are usually the least interesting ones in the room, not the
+    best-liked.'
+  confidence_bp: 8400
+  applies_when: 'A formal purchasing function is involved and the commercial decision has already been
+    taken by the business.'
+  breaks_down_when: 'PROCUREMENT IS ALSO THE DECIDER. In some organisations — particularly commodity
+    categories and public sector — purchasing genuinely selects the vendor, and withholding the value
+    story means never making the case to the person making the choice.
+
+    A STRATEGIC-SOURCING FUNCTION. Mature procurement teams evaluate total cost, risk and supplier
+    capability rather than unit price, and they will engage substantively on value. Treating them as
+    a processing desk insults the one procurement group that would have been an ally.
+
+    THE FIRST VENDOR IN A NEW CATEGORY. Where no policy or precedent exists, procurement is
+    improvising and often welcomes help defining the requirements — a rare and valuable position that
+    compliance-first behaviour forfeits.
+
+    WHEN COMPLIANCE IS BEING USED AS A REFUSAL. Occasionally an unmeetable requirement is how a
+    decision that was made elsewhere gets executed. Endless document-returning against that is effort
+    spent on a foregone conclusion, and the tell is requirements that grow as they are satisfied.
+
+    WHERE THE BUSINESS SPONSOR HAS DISENGAGED. Procurement has no deadline of its own. Perfect
+    compliance with no sponsor watching is how a decided deal spends a quarter in a queue.'
+  reads:
+  - sales.obj.core.contract
+  - sales.obj.core.pricing
+  - sales.obj.core.timeline
+  - commitment.due_at
+  contradicts:
+  - sales.heu.pricing.discounting_is_a_signal__not_a_lever
+  pattern_ref:
+  - cmt.dated_promise
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {exists: commitment.due_at}
+  signals:
+  - security_review_started
+  - contract_requested
+  - legal_review
+  do_not_use_when:
+  - Procurement is the decider rather than the processor.
+  - The team is strategic-sourcing and will engage substantively on total cost and risk.
+  - Requirements keep growing as they are met; that is a refusal, not a process.
+
+objects_used:
+- sales.obj.core.contract
+- sales.obj.core.pricing
+- sales.obj.core.timeline
+- sales.obj.core.buying_committee
+
+outcomes:
+- Effort is spent on turnaround rather than on persuasion.
+- The value story is kept for the people measured on value.
+
+failure_modes:
+- 'READ AS DISMISSIVENESS. Procurement notices being treated as an obstacle, and an already adversarial
+  function becomes a slower one.'
+- 'COMPLIANCE WITHOUT A SPONSOR. Perfect responsiveness into a queue nobody is timing.'
+- 'APPLIED TO STRATEGIC SOURCING. Forfeits the one purchasing relationship that would have argued for
+  us internally.'
+
+limits:
+- Says nothing about which commercial terms to concede, which is where the money is.
+- Cannot distinguish a processing desk from a deciding one without asking, and the cost of guessing
+  wrong is asymmetric — treating a decider as a desk is the more expensive error.
+- '`security_review_started` has one row and `contract_requested` has none on the design partner''s
+  org, so the stage is effectively undetectable there today.'
+
+variants:
+- applies_to: enterprise
+  change: Expect a formal vendor-onboarding portal with its own queue; the lever is completeness on
+    first submission, because a returned form restarts the clock.
+  why: Rework, not review, is where the weeks go.
+- applies_to: regulated
+  change: Requirements are statutory and non-negotiable; identify the unmeetable ones immediately
+    rather than working through them in order.
+  why: The counterparty has no authority to waive them, so an early no saves both sides weeks.
+- applies_to: smb
+  change: Usually no procurement function at all, and this heuristic has nothing to act on.
+  why: The buyer and the process are the same person.
+- applies_to: channel
+  change: The partner often owns the procurement relationship and their responsiveness is what is
+    being measured, not ours.
+  why: Our turnaround reaches the customer through them.
+
+metrics:
+- name: document_turnaround_time
+  unit: hours
+  description: Time to return a requested document.
+  direction: lower_is_better
+- name: first_submission_acceptance_rate
+  unit: percent
+  description: Share of submissions accepted without rework. Rework restarts the queue, so this
+    predicts cycle time better than turnaround alone.
+  direction: higher_is_better
+
+references:
+- title: Practitioner procurement operations
+  kind: practitioner
+  note: Purchasing scorecards are built on savings, cycle time and compliance; none of the three
+    respond to product differentiation, which is the whole basis of this heuristic.
+- title: MEDDICC
+  kind: methodology
+  note: The paper-process dimension, which treats procurement as a knowable sequence rather than as a
+    negotiation.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The second breakdown regime is the one that
+    matters most in practice — a strategic-sourcing team is the rarest and most valuable ally in a
+    large account, and compliance-first behaviour is exactly how a seller fails to notice they have
+    met one.'

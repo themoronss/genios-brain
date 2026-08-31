@@ -1,0 +1,66 @@
+identity:
+  id: customer_support.heu.cost_to_serve.expensive_accounts_are_often_product_feedback
+  name: Expensive accounts are often product feedback
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.cost_to_serve
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The account filing forty tickets a month is not a bad customer — it is the heaviest user
+    of the product's weakest path. Cost-to-serve's best output is a product roadmap item, not a firing
+    list.
+  answers:
+  - What should a high cost-to-serve account trigger first?
+
+heuristic:
+  statement: >
+    The account filing forty tickets a month is not a bad customer — it is the heaviest user of the
+    product's weakest path. Cost-to-serve's best output is a roadmap item, not a service reduction.
+  why: >
+    Support volume from a single account concentrates where that account's usage meets the
+    product's weaknesses. Their ticket count is therefore a measurement of the product, sampled by
+    whoever uses it hardest, and it is usually the most detailed such measurement anybody has. Read
+    as a customer characteristic it produces a plan to serve them less; read as a product signal it
+    produces a fix that reduces cost for everybody who would have hit the same path later.
+  confidence_bp: 8000
+  applies_when: A cost outlier concentrated in a small number of product areas.
+  breaks_down_when: >
+    The cost is genuinely behavioural. Some accounts route every internal question through support
+    rather than training their own people, and no product change addresses that — the answer is
+    enablement or a commercial conversation. It also breaks down where the account's usage is
+    genuinely unique: a single customer at the edge of the product's design is not evidence about
+    the path everybody else takes, and building for them is how a roadmap gets captured.
+  reads: [customer_support.obj.core.customer_account, customer_support.obj.core.product_area, customer_support.obj.core.ticket]
+  contradicts: [customer_support.heu.capacity_planning.deflection_is_capacity_too]
+limits:
+- 'It reframes the finding; it does not make product act on it, which is where most of these die.'
+- 'It requires the cost to be concentrated. Diffuse high cost across many areas is a different story.'
+failure_modes:
+- 'Applied to genuinely behavioural cost, producing roadmap work that changes nothing.'
+- 'Used to justify building for one large account, which is roadmap capture with a cost justification.'
+variants:
+- applies_to: enterprise_support
+  change: Strongest and most dangerous — the outlier account is large enough to capture the roadmap, so the uniqueness test matters more.
+  why: Their money can buy the fix regardless of whether it generalises.
+- applies_to: plg_self_serve
+  change: Cost outliers are cohorts rather than accounts, which makes the product reading almost automatic.
+  why: No single customer is large enough to be an exception.
+references:
+- title: Cost-to-serve analysis
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the expensive one: a single customer at the edge of the
+    product's design is not evidence about the common path, and this heuristic is how a large
+    account's cost profile captures a roadmap.

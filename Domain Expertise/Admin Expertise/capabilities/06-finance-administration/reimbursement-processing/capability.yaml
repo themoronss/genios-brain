@@ -1,27 +1,74 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.finance_administration.reimbursement_processing
   name: Reimbursement Processing
   domain: admin
   subdomain: finance_administration
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Closing the loop on approved claims: payment scheduling, payroll or bank routing, confirmation
+  to the claimant and query handling. Reimbursement is the most personally felt administrative service
+  in the company; a slow one is remembered far longer than its value.
 
-description: >
-  Closing the loop on approved claims: payment scheduling, payroll or bank routing,
-  confirmation to the claimant and query handling. Reimbursement is the most personally felt
-  administrative service in the company; a slow one is remembered far longer than its value.
+  '
+question: Has this approved claim actually been paid back, and when?
 
-question: "Has this approved claim actually been paid back, and when?"
+outcomes:
+- 'A published clock from submission to payment, and status visible without asking. This is the one finance process every employee personally experiences.'
+- 'Rejections explained kindly with a fix path, because the claimant will otherwise resubmit the same thing or stop claiming.'
+- 'Payment routed and confirmed, so the claimant knows it happened rather than checking their bank hopefully.'
+- 'Queries answered by somebody who can see the claim, not routed to a queue that asks them to resubmit it.'
+- 'The negative outcome: a claim REJECTED clearly rather than left pending. Silence is the worst outcome available and it is the default when a claim is awkward.'
+failure_modes:
+- 'NO PUBLISHED CLOCK, so every claimant invents their own expectation and is disappointed against it.'
+- 'STATUS INVISIBLE, which generates the query volume that then justifies not having time to fix the status.'
+- 'REJECTION WITHOUT A ROUTE. The claimant does not know what would have worked and neither does the next claimant.'
+- 'BATCHING TO THE PAYROLL CYCLE WITHOUT SAYING SO, so a claim submitted on the wrong day silently waits five weeks.'
+- 'TREATING THIS AS THE LAST STEP OF EXPENSES RATHER THAN AS A SERVICE, which is why it is the least designed and most felt part of finance.'
+kpis:
+- name: submission_to_payment_days
+  unit: days
+  description: The published clock, measured from the claimant's action.
+  direction: lower_is_better
+- name: tail_latency_days
+  unit: days
+  description: The slowest decile. One claim stuck six weeks does more damage than the mean improves.
+  direction: lower_is_better
+- name: status_query_rate
+  unit: percent
+  description: Claims generating a "where is it" question. The visibility measure.
+  direction: lower_is_better
+- name: rejection_with_fix_path_rate
+  unit: percent
+  direction: higher_is_better
+  description: Rejections that told the claimant what would work.
+handoffs:
+  upstream: [admin.finance_administration.expense_management, admin.travel_and_events.travel_expense_administration]
+  downstream: [admin.finance_administration.payables_administration, admin.people_administration.payroll_input_administration]
+  parallel: [admin.finance_administration.budget_tracking, admin.admin_operations.service_level_management]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, hybrid, distributed, startup_lean, outsourced]
+  offerings: [transactional]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    Deliberately a separate capability from expense_management rather than its last step, and
+    the reason is in the description: this is the most personally felt administrative service in
+    the company, and treating it as a downstream consequence of expense policy is exactly why it
+    is the least designed part of finance.
+
+    tail_latency_days sits beside the mean on purpose. One claim stuck for six weeks does more
+    reputational damage than a better average repairs, because people compare and the outlier is
+    what gets discussed.
+
+admission:
+  accepted_content_hash: 401374ca11a0a78629fe6ac44fddf9e6bfee6770aa24abed9be945a63e4e604d

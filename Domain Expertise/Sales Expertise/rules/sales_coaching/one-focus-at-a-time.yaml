@@ -1,0 +1,74 @@
+identity:
+  id: sales.rule.sales_coaching.one_focus_at_a_time
+  name: One focus at a time
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.sales_management.sales_coaching
+  subdomain: sales_management
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A coaching session that produces several improvements produces none. The list feels
+    thorough to the person giving it and is unprioritised to the person receiving it, so the rational
+    response is to work on whichever is easiest — or on nothing.'
+  answers:
+  - How many things may a coaching cycle ask someone to change?
+  not:
+  - A limit on what may be discussed, only on what is agreed as the focus.
+
+rule:
+  statement: 'A coaching cycle MUST agree exactly one focus behaviour per person, drawn from observed
+    interactions and stated in the seller''s own words. A cycle MUST NOT begin a new focus until the
+    previous one has been re-measured on the same lens.'
+  spans:
+  - sales.obj.core.deal
+  - sales.obj.core.next_action
+  - sales.obj.core.objection
+  when:
+  - {exists: thread.last_outbound}
+  then: 'Require a single named focus and a closing measurement on the prior one before a new cycle
+    opens.'
+  severity: advisory
+  why: 'Two constraints bind at once and both point the same way. Deliberate practice needs a single
+    target — attention divided across several behaviours produces rehearsal of none — and an
+    unprioritised list transfers the prioritisation to the person least able to make it, who does not
+    know which gap costs the most. The re-measurement requirement exists because without it the
+    process cannot fail visibly: the same pattern is renamed each cycle and coached again, and
+    everyone involved believes progress is being made.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'ONBOARDING. A new seller has a curriculum rather than a focus, and sequencing several things is
+    correct there.'
+  - 'TWO BEHAVIOURS THAT ARE THE SAME SKILL. Isolating objections and asking what else are one habit
+    with two surfaces, and splitting them into separate cycles is artificial.'
+  - 'AN URGENT CORRECTION. Something actively damaging a live deal is addressed immediately regardless
+    of the cycle, and it is not a coaching focus.'
+  - 'A SELLER WHO ASKS FOR MORE. Where someone explicitly wants a second focus and is carrying the
+    first, imposing the limit is paternalistic.'
+  - 'NO PRIOR FOCUS TO RE-MEASURE. On the first cycle the closing requirement has nothing to apply
+    to.'
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.next_action
+- sales.obj.core.objection
+
+limits:
+- Coaching sessions and their focuses are not in the corpus substrate at all, so this rule cannot be
+  evaluated by the engine — advisory, and recorded so the singular-focus constraint is stated rather
+  than left to instinct.
+- Cannot verify that a stated focus came from observed behaviour rather than from a number.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new and advisory. The re-measurement half is the part that matters most and is
+    least intuitive — without it the process cannot fail visibly, so the same pattern is renamed and
+    re-coached while everyone believes it is improving.'

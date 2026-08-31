@@ -1,0 +1,95 @@
+identity:
+  id: customer_support.pb.resolution_delivery.resolve_in_the_customer_s_terms
+  name: Resolve in the customer's terms
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.diagnosis_and_resolution.resolution_delivery
+  subdomain: diagnosis_and_resolution
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A resolution is delivered when the customer can do the thing they originally could not —
+    stated plainly, with what was wrong, what changed, and what to do if it recurs. Internal fix-speak
+    is not delivery.
+
+when_to_use:
+  do_not_use_when:
+  - The fix is not yet live for this customer. Announcing a resolution that has not reached their environment produces a second failure with the customer already relieved.
+steps:
+- order: 1
+  name: Confirm it is live for THIS customer
+  description: >
+    Deployed and reached are different facts in staged rollouts, regional releases and versioned
+    products.
+  actor: system
+  objects_read: [customer_support.obj.core.customer_account, customer_support.obj.core.ticket]
+  done_when: The change is in the environment they use.
+- order: 2
+  name: Tell them, promptly
+  description: >
+    The gap between deployed and told is where the resentment lives, and it is invisible on both
+    sides of the engineering boundary.
+  actor: human
+  done_when: The customer knows without having asked.
+- order: 3
+  name: Say what was wrong, what changed, and in their terms
+  description: >
+    A commit reference and a version number is an answer written for a colleague. The customer
+    needs the shape of the fault and the shape of the fix.
+  actor: human
+  objects_read: [customer_support.obj.core.requester]
+  done_when: The explanation would make sense to somebody who does not work here.
+- order: 4
+  name: State what it does NOT fix
+  description: >
+    A partial fix described as complete converts one problem into a trust problem, and the customer
+    discovers the remainder themselves.
+  actor: human
+  done_when: Caveats are in the message rather than in the ticket notes.
+- order: 5
+  name: Give a recurrence instruction
+  description: >
+    What to do if it comes back, and where to reference this. Without it the next occurrence starts
+    a new ticket with none of the history.
+  actor: human
+  done_when: The customer knows what to do next time.
+- order: 6
+  name: Reach the person who was blocked
+  description: >
+    The reporter often relayed it. Resolving to them can leave the affected person still waiting
+    and unaware anything happened.
+  actor: human
+  done_when: The affected party knows, not just the reporter.
+objects_used: [customer_support.obj.core.ticket, customer_support.obj.core.resolution, customer_support.obj.core.requester,
+               customer_support.obj.core.customer_account, customer_support.obj.core.issue]
+limits:
+- 'It delivers a fix; whether the fix is right is verification''s question and it comes next.'
+- 'Step 1 needs release visibility support often does not have, which is why premature announcements happen.'
+failure_modes:
+- 'Step 4 omitted because the caveat weakens the good news, which is exactly why the customer needs it from us rather than by discovery.'
+- 'Step 2 treated as automatic on ticket status change, which sends a notification rather than a message.'
+variants:
+- applies_to: embedded_in_product
+  change: Step 1 is answerable precisely and step 2 can be in-product, which closes the lag almost entirely.
+  why: We know their version and can reach them where they work.
+- applies_to: enterprise_support
+  change: Step 6 is substantial — the reporter, the affected team and the sponsor are three audiences with different needs.
+  why: The relationship is wider than the ticket.
+references:
+- title: Resolution communication practice
+  kind: practitioner
+  note: Where resolution is defined as a customer-side event rather than a system state.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 6 is the one that surprises people. The reporter frequently relayed the problem, and a
+    resolution delivered to them alone leaves the person who was actually blocked still blocked
+    and unaware anything was done.

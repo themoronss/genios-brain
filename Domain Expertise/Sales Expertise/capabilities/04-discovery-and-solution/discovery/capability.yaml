@@ -3,26 +3,115 @@ identity:
   name: Discovery
   domain: sales
   subdomain: discovery_and_solution
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Structured questioning that surfaces the problem, its cost and its owner. Discovery fails
+  when it becomes qualification in disguise — asking about budget before understanding the problem
+  teaches the buyer this is about us.
 
-description: >
-  Structured questioning that surfaces the problem, its cost and its owner. Discovery fails
-  when it becomes qualification in disguise — asking about budget before understanding the
-  problem teaches the buyer we are here to sell, not to solve.
+  '
+question: What is actually going wrong for them, in their words?
 
-question: "What is actually going wrong for them, in their words?"
+outcomes:
+- 'The problem stated in the buyer''s own words, with their numbers attached. Not our category name
+  for it — theirs, because that is the sentence that survives being repeated inside their
+  organisation by someone who was not in the room.'
+- 'The cost of today quantified from what THEY said. Hours, rates, misses, a churn figure they
+  supplied. An industry benchmark is our number wearing their problem, and finance discounts it
+  immediately because they can tell the difference.'
+- 'The consequence of not solving it, asked explicitly. It is the question that separates a project
+  from a preference, and its answer is what decides whether this is bought this year or admired this
+  year.'
+- 'A playback the buyer corrected. The corrected version is the real problem statement, and the
+  correction is worth more than anything we produced — a buyer who fixes our summary has just told
+  us where our model was wrong, for free.'
+- 'A talk ratio that leaves the buyer doing most of the talking. This is the single cheapest
+  diagnostic in the capability: if the seller talked most of a discovery call, discovery did not
+  happen and a pitch used its calendar slot.'
+- 'A disqualification where the problem is not one we solve. The negative outcome: discovery that
+  never ends a deal is not discovery, it is qualification theatre, and the deals it keeps alive are
+  the ones that consume the most time and close least.'
 
+failure_modes:
+- 'QUALIFICATION IN DISGUISE. Budget, authority and timeline asked before the problem is understood.
+  The buyer learns immediately that this conversation is about our process, and they answer
+  accordingly — briefly.'
+- 'PITCH-SHAPED QUESTIONS. Questions whose purpose is to set up a feature. Experienced buyers
+  recognise them within two, and the honest answers stop.'
+- 'OUR VOCABULARY IMPOSED ON THEIR PROBLEM. Restating their situation in our category language feels
+  like clarity and destroys the sentence they would have repeated internally.'
+- 'NO NUMBERS. A problem without a cost cannot be prioritised by the buyer against everything else on
+  their list, and it will lose to whatever does have a number.'
+- 'THE CONSEQUENCE QUESTION SKIPPED. It is uncomfortable to ask and it is the one that determines
+  whether anything happens; without it a strong discovery produces a deal that never becomes urgent.'
+- 'DISCOVERY DONE ONCE. The problem changes as the buying committee widens, and a discovery from
+  week one is describing a situation that has since moved.'
+
+kpis:
+- name: buyer_talk_ratio
+  unit: percent
+  description: Share of a discovery conversation spoken by the buyer. The cheapest available
+    diagnostic, and the one to check before anything else about the call.
+  direction: higher_is_better
+- name: quantified_problem_share
+  unit: percent
+  description: Share of discoveries carrying a cost-of-today figure supplied by the buyer.
+  direction: higher_is_better
+- name: playback_correction_rate
+  unit: percent
+  description: Share of discoveries where the buyer corrected our summary. A zero rate means the
+    playback was not offered, or was too vague to correct.
+  direction: higher_is_better
+- name: consequence_question_rate
+  unit: percent
+  description: Share where the cost of inaction was explicitly asked.
+  direction: higher_is_better
+- name: post_discovery_disqualification_rate
+  unit: percent
+  description: Share of discoveries ending in a disqualification. Near zero means discovery is not
+    discovering anything.
+  direction: target_band
+
+handoffs:
+  upstream:
+  - sales.qualification.lead_qualification
+  - sales.prospecting_and_outreach.meeting_booking
+  downstream:
+  - sales.discovery_and_solution.need_analysis
+  - sales.discovery_and_solution.value_proposition
+  - sales.discovery_and_solution.demo
+  parallel:
+  - sales.qualification.stakeholder_mapping
+  - sales.qualification.champion_identification
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. It is the head of the discovery_and_solution chain — need
+    analysis, value proposition and the demo all consume what this produces, and each of them fails
+    in a characteristic way when it is fed a thin discovery.
+
+    Substrate position, stated plainly: this capability happens in CONVERSATION and the record holds
+    no call transcripts. Talk ratio, the playback, the consequence question — none of them are
+    observable. What IS available is `meeting.start_at` / `.end_at` / `.attended` and the
+    correspondence around a meeting, so the engine can see that a discovery meeting occurred and
+    nothing about whether discovery happened inside it. This is authored expertise for a human, and
+    saying so is better than pretending a signal exists.
+
+    No numbers: what talk ratio is right, and how much quantification is enough, are Layer 4''s
+    arithmetic.
+
+    '
+  reviewed_at: '2026-08-27'
+
+admission:
+  accepted_content_hash: 95edc4f21021c28fb6ce9be974e93d006b3aa7a1f4c95acd98e3728f241aaaa2

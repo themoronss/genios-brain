@@ -3,26 +3,106 @@ identity:
   name: Cold Email
   domain: sales
   subdomain: prospecting_and_outreach
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+  parent_capability: sales.prospecting_and_outreach.outreach
+description: 'A channel inside outreach, not a peer of it. Carries genuinely distinct expertise —
+  deliverability, domain reputation, compliance regimes and reply-rate mechanics — which is why it is
+  a capability rather than a technique.
 
-description: >
-  A channel inside outreach, not a peer of it. Carries genuinely distinct expertise —
-  deliverability, domain reputation, compliance regimes and reply-rate mechanics — which is
-  why it is a capability rather than a note.
+  '
+question: How do we write and send email that gets read and answered?
 
-question: "How do we write and send email that gets read and answered?"
+outcomes:
+- 'A first line that could only have been written to this person. Not a merge field — one sentence
+  resting on something specific and recent about them, which is also the only part of the message
+  most recipients read before deciding.'
+- 'Optimisation on REPLIES, never on opens. Opens measure subject lines and grow a list of people who
+  glanced; replies measure relevance and grow a pipeline, and the two frequently move in opposite
+  directions.'
+- 'An ask small enough to answer from a phone. A question answerable in one line converts; a request
+  for a meeting from a stranger asks for a calendar decision before any reason to make one exists.'
+- 'Domain reputation treated as an asset with a balance. It is spent by volume and by irrelevance,
+  it recovers slowly, and once it is gone every future message from the organisation is affected —
+  including the ones that had nothing to do with outbound.'
+- 'The compliance regime of the recipient''s jurisdiction respected as a constraint on the programme.
+  Consent rules differ by country and the exposure is legal rather than commercial.'
+- 'A decision to stop emailing a segment. The negative outcome: a list that does not reply is a list
+  being burned, and continuing costs reputation that the replying segments depend on.'
 
+failure_modes:
+- 'MERGE FIELDS AS PERSONALISATION. A first name and a company name is mail merge, and recipients
+  identify it instantly because they receive several a day.'
+- 'OPTIMISING OPENS. Grows a metric and not a pipeline, and it rewards subject lines that overstate
+  what the message contains — which then suppresses the reply rate that mattered.'
+- 'AN ASK TOO LARGE FOR A FIRST MESSAGE. A meeting request to a stranger asks for a decision they have
+  no basis to make.'
+- 'VOLUME AS THE RESPONSE TO A FALLING REPLY RATE. The spiral is well documented: send more, reply
+  rate falls, send more, and the domain pays for it on behalf of everyone in the company.'
+- 'SENDING FROM THE PRIMARY DOMAIN AT VOLUME. The reputation cost lands on invoices, support replies
+  and customer correspondence, none of which had a say.'
+- 'TREATING COMPLIANCE AS A FORMALITY. The regimes differ materially by jurisdiction and the
+  consequence is not a bounce.'
+
+kpis:
+- name: reply_rate_per_person
+  unit: percent
+  description: Replies over people contacted, never over messages sent. Counting per message rewards
+    the behaviour that destroys the channel.
+  direction: higher_is_better
+- name: positive_reply_share
+  unit: percent
+  description: Share of replies that are not refusals. Total reply rate rises with provocation; this
+    one does not.
+  direction: higher_is_better
+- name: deliverability_rate
+  unit: percent
+  description: Share of sent messages actually reaching an inbox. The asset the whole channel rests
+    on, and it degrades before anyone notices.
+  direction: higher_is_better
+- name: complaint_rate
+  unit: percent
+  description: Spam complaints per thousand sent. The leading indicator of domain damage, and it moves
+    long before deliverability does.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.prospecting_and_outreach.outreach
+  - sales.prospecting_and_outreach.account_research
+  downstream:
+  - sales.prospecting_and_outreach.follow_up
+  - sales.prospecting_and_outreach.meeting_booking
+  parallel:
+  - sales.prospecting_and_outreach.linkedin_outreach
+  - sales.prospecting_and_outreach.cold_calling
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. A channel under `outreach`, which owns
+    `sales.sit.outbound_prospect` on the live `relationship` type.
+
+    This is the one prospecting channel with real substrate: outbound and inbound correspondence are
+    both in the graph, so `thread.last_outbound`, `thread.last_inbound` and reply behaviour are
+    observable per person — which is exactly what the reply-rate outcome asks for. `email_noise:*`
+    classification also exists, and it is what separates a genuine reply from an autoresponder.
+    Deliverability and complaint rates are NOT in the graph; they live in the sending
+    infrastructure.
+
+    No numbers: volumes, reply-rate targets and reputation thresholds are Layer 4''s arithmetic.
+
+    '
+  reviewed_at: '2026-08-27'
+
+admission:
+  accepted_content_hash: 5618b3b4fc17e0a2cdc449914f163dc4856e5c6eaf849f9bbeab42489564e3b0

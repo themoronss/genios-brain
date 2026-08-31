@@ -24,6 +24,7 @@ def test_pipeline_derives_structured_fields_from_registry():
     raw = RawObject(source="hubspot", object_type="deal", source_object_id="deal_9912",
                     occurred_at=datetime(2026, 7, 28, tzinfo=timezone.utc),
                     actor_type="system",
+                    content_version="2026-07-28T09:00:00Z",
                     raw={"dealstage": "proposal", "amount": 800000})
     repo = InMemorySourceEventRepository()
     res = capture_event(raw, org_id="o", connection_id="c", repo=repo, is_structured=True)
@@ -39,4 +40,8 @@ def test_unknown_structured_parks():
     repo = InMemorySourceEventRepository()
     res = capture_event(raw, org_id="o", connection_id="c", repo=repo, is_structured=True)
     assert res.outcome == "parked"
-    assert res.trace.records[-1].reason_code == "mapping_missing"
+    # A source the registry does not know at all fails on PROVENANCE before it fails on the
+    # mapping: no family means no visibility rule means no nameable audience, and that is the
+    # more fundamental unknown. A REGISTERED source with a missing mapping (a client DB table,
+    # an unmapped gcal object) still parks as mapping_missing — its family names its audience.
+    assert res.trace.records[-1].reason_code == "visibility_unknown"

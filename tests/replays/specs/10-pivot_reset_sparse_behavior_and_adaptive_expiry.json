@@ -1,0 +1,168 @@
+{
+  "replay_id": "10",
+  "slug": "pivot_reset_sparse_behavior_and_adaptive_expiry",
+  "title": "Golden Replay 10 — Pivot Reset, Sparse Behavior, and Adaptive Expiry",
+  "failure_class": "A versioned go-to-market pivot is not provably fenced end-to-end (org-v7 may stay authoritative through dependent packages/decisions/executions/deliveries), while short-horizon Adaptive learning has no representable lifecycle — expires_at is Runtime-only, direct Adaptive evolution emits nothing, and recommendation learning can publish a durable Adaptive object with expiry omitted.",
+  "summary": "At t0 the organization's Organization Brain version org-v7 targets early-stage startups, Behavior Brain holds two old observations from a single founder and a single customer role (insufficient independent support for company-wide personalization), and the modelled Adaptive Brain holds one short-horizon \"follow up after three days\" entry with a mandatory TTL ending at t1. At t1 an authoritative founder declaration pivots the ICP to regulated enterprises, changes qualification constraints and supersedes the startup strategy, while one open startup opportunity is deliberately grandfathered. The replay tests whether the pivot produces org-v8 with effective time, scope, author/approval, policy version and a supersession edge to org-v7, whether every dependent open BSO/package/decision/execution/delivery is invalidated and replayed behind one version fence with history left immutable, and whether sparse Behavior stays visibly weak instead of becoming company truth. It also tests the Adaptive lifecycle: before the governed contract is repaired, every proposed short-horizon Adaptive object must fail closed as adaptive_ttl_unresolved with zero publish, compile or consumption — a disposition the pinned code at harsh/mvp@b739bd5 does not enforce.",
+  "passes_today": false,
+  "business_subject": "The organization's versioned go-to-market state and each exact relationship/opportunity whose meaning changes at the pivot — not the founder node and not an undifferentiated \"company preference\".",
+  "current_failure": "[CODE] contains deterministic brain resolution, versions/hashes, bounded reset machinery and governed learning primitives, but the audited reset is partial: Organization configuration is not proved to be fully superseded, and there is no end-to-end proof that a reset invalidates every dependent Layer 3 package or that a published learned version is consumed by the next compile. Adaptive cannot carry expiry: LearningObject exposes expires_at but validation allows it only for Runtime and raises when a caller explicitly supplies expiry for any other target; the shared _cohort_candidate(...) used by direct Behavior and Adaptive evolution returns [], so direct Adaptive evolution emits no candidate; and unit_recommendation_learning(...) can create a LearningTarget.ADAPTIVE object while omitting expiry, so the non-Runtime validation never triggers and the publisher may persist it as a durable Adaptive learned-brain entry. There is no automatic short-horizon/TTL guard that infers the intended horizon and blocks an Adaptive proposal or publication when expires_at was omitted. Consequently an apparently valid brain snapshot may still carry org-v7 or Behavior overconfidently inferred from one person, existing cards/executions may survive the pivot while the UI claims adaptivity, and conversely a blunt reset could delete useful history and remove a still-valid relationship exception. A model-generated explanation cannot establish which version is authoritative or manufacture a missing lifecycle contract.",
+  "expected_behavior": "The pivot creates org-v8 carrying effective time, scope, author/approval, policy version and a supersession edge to org-v7; history remains immutable; every open BSO/package/decision/execution/delivery materialization whose authority depends on the changed fields is invalidated and replayed behind one version fence. Before lifecycle repair, every proposed short-horizon Adaptive object fails closed as adaptive_ttl_unresolved and is not promoted, selected, compiled or described as active; the governed repair must pick one explicit contract — (a) allow mandatory Adaptive expiry/decay and enforce it through proposal, publish, selection, compiler consumption, supersession and rollback, or (b) prohibit Adaptive publication and represent genuinely temporary instructions as Runtime leases without relabelling them as learned Adaptive policy. Post-repair, pivot-affected Adaptive entries are expired/superseded and the t1 TTL independently prevents later influence. Sparse Behavior stays visible as low-support observation partitioned by actor role/domain/situation; its confidence may decay or fall through to Organization/Expert preference, but it is never erased and can never grant permission. An explicitly grandfathered startup opportunity retains only the narrowly approved exception. Customer surfaces show four-brain coverage honestly (new Organization version present, Expert coverage as actually authored, Behavior sparse/unproven, Adaptive absent/expired); decisions using uncovered expertise or insufficient context are Observation only or Defer; and a new compiler fingerprint plus consumption receipt prove that org-v8 — not prose about the pivot — changed only the intended packages.",
+  "why_now": "The Adaptive lifecycle contradiction is a concrete, inspectable defect in the pinned code at harsh/mvp@b739bd5, independent of the modelled pivot narrative: expires_at is validated as Runtime-only and raises for an explicit non-Runtime value, _cohort_candidate(...) returns [] so direct Adaptive evolution is dead, and unit_recommendation_learning(...) can mint a LearningTarget.ADAPTIVE object with expiry omitted that the publisher may persist durably. That asymmetry — explicit expiry rejected, omitted expiry silently made permanent — is testable today and makes any \"adaptive\" claim on customer surfaces unsupportable until the lifecycle contract is ratified.",
+  "open_loop": "The governed Adaptive lifecycle contract is undecided: the repair must explicitly choose (a) mandatory Adaptive expiry/decay enforced through proposal, publish, selection, compiler consumption, supersession and rollback, or (b) prohibition of Adaptive publication with genuinely temporary instructions represented as Runtime leases that are never relabelled as learned Adaptive policy. Until that contract version is ratified, short-horizon Adaptive must return adaptive_ttl_unresolved with zero publication or consumption — and the pinned code has no such guard, so this is a replay failure rather than a fail-closed pass. Also unresolved: end-to-end proof of the chain pivot evidence → Organization version → dependent invalidation → Layer 3 consumption → intended decision change; and Real Live / Outcome-proven claims still require tenant traces plus externally reconciled results.",
+  "prohibited_behaviors": [
+    "Do not keep org-v7 authoritative because its snapshot hash is valid or its confidence is high.",
+    "Do not delete old Organization, Behavior or Adaptive history in place.",
+    "Do not convert one founder/customer event into company-wide Behavior or a permanent preference.",
+    "Do not let expired Adaptive state influence compilation, ranking, cadence or delivery.",
+    "Do not claim current-code Adaptive TTL/decay support: expires_at is Runtime-only, direct Adaptive evolution is empty, and recommendation learning creates Adaptive without expiry.",
+    "Do not publish a short-horizon Adaptive proposal without a representable, enforced lifecycle, and do not silently call a Runtime lease \"Adaptive learning\".",
+    "Do not carry old-ICP cards, queued sends or agent executions forward without revalidation.",
+    "Do not invalidate a deliberately grandfathered opportunity unless the pivot scope actually covers it.",
+    "Do not call a stored learning row \"active\" without Layer 3 consumption and intended decision-change proof.",
+    "Do not use an LLM to select the brain target, confidence, TTL, permission, scope, promotion or rollback."
+  ],
+  "layer_obligations": [
+    {
+      "layer": "L1",
+      "required_output": "Capture the t0 strategy, the t1 pivot declaration, author/authority, effective time, scope, source version and any exception evidence without overwriting history; emit immutable declaration receipts carrying visibility/use, exact text/span, occurred-at, version/tombstone and source readiness.",
+      "fail_closed": "Park the declaration if authority, effective time or scope is ambiguous; never emit an inferred global policy."
+    },
+    {
+      "layer": "L2",
+      "required_output": "Version Organization facts, establish the temporal boundary, mark affected relationships and open situations, and preserve explicit grandfathered exceptions; emit a graph generation containing org-v7 → superseded_by → org-v8, the affected-object set, current BSO versions and missing/conflict codes.",
+      "fail_closed": "Quarantine mixed graph versions; return Review source when the pivot scope or the exception is unclear."
+    },
+    {
+      "layer": "L3",
+      "required_output": "Resolve current valid Organization/Expert permissions and Adaptive→Organization→Behavior→Expert preferences only among valid scoped entries; emit a new four-brain snapshot and ExpertisePackage fingerprint with honest sparse/expired coverage and explicit exclusion of org-v7 and expired Adaptive influence.",
+      "fail_closed": "Mark Observation only / unsupported where expertise is absent; never fake personalization and never fall back to legacy packages."
+    },
+    {
+      "layer": "L4",
+      "required_output": "Rebuild affected decisions under the new package, comparing proceed, wait, stop and the grandfathered exception, and state stakes and expiry; emit a new decision version with the old decision superseded, plus candidates/eliminations, confidence vector, completion and outcome window.",
+      "fail_closed": "Defer / No action when sparse evidence cannot justify personalization; never reuse the old winner."
+    },
+    {
+      "layer": "L5",
+      "required_output": "Revalidate every open execution against the new decision and brain authority and cancel, replan or reapprove affected actions; emit a versioned cancellation/replan/approval receipt that preserves old execution history and the exact dependency/owner state.",
+      "fail_closed": "Cancel or mark Blocked while the replay is incomplete; never execute under a stale snapshot."
+    },
+    {
+      "layer": "L6",
+      "required_output": "Fence queued materializations at send time against current decision, package, Organization and Adaptive versions; emit suppression/cancellation of stale cards and sends so only a current-version DeliveryResult may proceed.",
+      "fail_closed": "Suppress any old-ICP payload; never rebuild an expired card from unchanged stale semantics."
+    },
+    {
+      "layer": "L7",
+      "required_output": "Govern the Organization reset and sparse Behavior confidence and emit a reset blast-radius receipt, bounded Behavior observation, an explicit Adaptive lifecycle-contract version, a governed rejection or a representable expiry, the active version, the L3 fingerprint and an intended decision-change replay. [CODE] today: direct Adaptive emits [], recommendation learning can propose Adaptive without expiry, the publisher may persist it durably, and LearningObject permits expiry only for Runtime; [ATLAS][MODELLED] requires Adaptive TTL/decay/supersession.",
+      "fail_closed": "No promotion from sparse or mixed-role evidence; short-horizon Adaptive returns adaptive_ttl_unresolved until the contract is repaired. [CODE] has no automatic TTL guard and can publish durable Adaptive when expiry is omitted — that is a replay failure, not a fail-closed pass."
+    }
+  ],
+  "mutations": [
+    {
+      "mutation": "Behavior Brain has zero observations",
+      "expected_decision": "Expose absent Behavior coverage honestly and fall through to bounded Organization/Expert defaults.",
+      "prohibited": "Presenting the result as \"Personalized for how you work\".",
+      "pass_condition": "The ExpertisePackage coverage explicitly reports Behavior as absent, and decision authority is unchanged from the bounded Organization/Expert defaults.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L3 domain compiler is dark and unroutable (73/73 NoExpertiseRoute) so no ExpertisePackage coverage field is produced or consumed live; the Expert corpus has 140/152 stub capabilities and zero reviewed or accepted, so there is no authored coverage to fall through to. Only the negative copy check (\"Personalized for how you work\" must not appear) is assertable today."
+    },
+    {
+      "mutation": "One founder preference exists (a single observation from a single person)",
+      "expected_decision": "Retain it as a personal/role-scoped observation held below the promotion threshold.",
+      "prohibited": "Promoting it into a company-wide Behavior rule.",
+      "pass_condition": "No active company-wide Behavior version exists after the sweep; the observation persists only as low-support, person-scoped evidence.",
+      "implemented": "possible_today",
+      "blocked_on": ""
+    },
+    {
+      "mutation": "Ten independent role-consistent observations pass the support policy",
+      "expected_decision": "Produce a reviewable, scope-limited Behavior candidate that awaits governance; no automatic activation.",
+      "prohibited": "Emitting a global all-domain Behavior rule.",
+      "pass_condition": "The proposal lists population and support counts and sits awaiting governance approval rather than becoming active.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No counterparty/actor role model exists anywhere — every person node is interchangeable, so \"role-consistent\" observations and role/domain/situation-scoped partitioning cannot be expressed. The no-auto-activation half of the assertion depends on that scoping to be meaningful."
+    },
+    {
+      "mutation": "An Adaptive entry is requested with a TTL at t1, with no pivot occurring",
+      "expected_decision": "[ATLAS][MODELLED] required pre-repair disposition is adaptive_ttl_unresolved with zero publish and zero compile; after lifecycle repair the entry expires exactly at TTL and exerts no future influence. [CODE] today rejects only an explicitly supplied expires_at on the non-Runtime Adaptive target, while recommendation learning may instead omit expiry and publish a durable Adaptive object.",
+      "prohibited": "Persisting a non-expiring Adaptive entry, silently discarding the TTL, or presenting a Runtime lease as active Adaptive learning.",
+      "pass_condition": "[MODELLED] pass: zero pre-repair publication or compilation of the entry, and post-repair the compiler run after t1 excludes it while the audit trail still retains it. [CODE] current failure: explicit expiry is rejected while omitted expiry survives durably.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No abstention vocabulary exists — there is no adaptive_ttl_unresolved disposition and cards.level carries only prescriptive/predictive. LearningObject permits expires_at only for Runtime, _cohort_candidate(...) returns [] so direct Adaptive evolution emits nothing, and no automatic short-horizon/TTL publication guard exists."
+    },
+    {
+      "mutation": "The pivot is scoped to only one product/region",
+      "expected_decision": "Supersede only within the matching scope and preserve unrelated valid Organization state.",
+      "prohibited": "Performing a global reset across all scopes.",
+      "pass_condition": "Package diffs show changes confined to situations matching the declared product/region scope.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "Scoped Organization supersession is not proved end-to-end and package diffing requires L3 compilation/consumption, which is dark and unroutable (73/73 NoExpertiseRoute); the audited reset does not prove which dependent packages were invalidated."
+    },
+    {
+      "mutation": "One startup opportunity is explicitly grandfathered by approval",
+      "expected_decision": "Preserve the narrow exception together with its approval and expiry.",
+      "prohibited": "Treating the exception as evidence that the old ICP remains globally valid.",
+      "pass_condition": "The exception appears only inside that one opportunity's package and nowhere else.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "Per-BSO ExpertisePackages are not routable (73/73 NoExpertiseRoute), so a per-opportunity scoped exception cannot be represented or shown to be confined to one package."
+    },
+    {
+      "mutation": "The delivery queue contains old-ICP outreach approved before the pivot",
+      "expected_decision": "Cancel or suppress the queued item before the adapter call and rebuild from current state if the situation is still open.",
+      "prohibited": "Sending it because it was approved earlier.",
+      "pass_condition": "Zero adapter calls originate from the stale (org-v7) version.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "The L6 delivery control plane has never run — delivery_outbox is empty across all orgs — and L5 has never produced an execution row, so there is no send-time version fence to exercise."
+    },
+    {
+      "mutation": "A card expires after the pivot",
+      "expected_decision": "Revalidate the BSO and package and create a new semantic decision only if it is still justified.",
+      "prohibited": "Regenerating the same stale recommendation.",
+      "pass_condition": "Either a new object hash/version is produced, or no card is produced at all.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "Revalidation requires recompiling against the new package (L3 unroutable) and an Organization version fence that does not exist; L4 produces exactly one candidate per run and never eliminates, so \"only if justified\" cannot be decided."
+    },
+    {
+      "mutation": "The pivot and the weekly learning sweep race each other",
+      "expected_decision": "Enforce one version-fenced ordering; the losing run retries or rebases.",
+      "prohibited": "Producing a mixed brain snapshot or a double publish.",
+      "pass_condition": "Exactly one active Organization version exists afterwards, with exactly one consumption receipt.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "The single-publish half is exercisable via the L6 weekly DB-claim, but the required consumption receipt does not exist — L3 never emits a consumption fingerprint (compiler dark, 73/73 NoExpertiseRoute), so \"one consumption receipt\" is unassertable."
+    },
+    {
+      "mutation": "The founder rolls back the pivot",
+      "expected_decision": "Validate the predecessor against current policy and evidence, then publish a new superseding version.",
+      "prohibited": "Mutating org-v8 away, or reviving an expired Adaptive entry.",
+      "pass_condition": "An org-v9 records the rollback decision, and the old Adaptive TTL remains expired.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "Adaptive TTL is not representable at all (expires_at is Runtime-only), so \"the old TTL remains expired\" cannot be asserted; rollback also has to prove non-revival across the same missing lifecycle."
+    },
+    {
+      "mutation": "An identity correction removes one Behavior observation",
+      "expected_decision": "Retract every descendant derived from it and recalibrate the support counts.",
+      "prohibited": "Keeping the poisoned confidence in place.",
+      "pass_condition": "Any active proposal is suspended until the replay completes.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No descendant-retraction/replay lineage exists from a corrected identity through Behavior support and proposals; L7 has no human verdicts and calibration has never executed, so recalibration cannot be demonstrated."
+    },
+    {
+      "mutation": "New enterprise evidence is sparse",
+      "expected_decision": "Return Observation only or Defer, naming the exact missing support and missing expertise.",
+      "prohibited": "Emitting a confident enterprise play from the pivot declaration alone.",
+      "pass_condition": "No prescriptive action button is rendered.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "There is no abstention vocabulary — cards.level only ever carries prescriptive/predictive, there is no observation/review/wait/suppress state, and DEFER is mathematically unreachable because confidence_floor_bp defaults to 0 in every live manifest."
+    },
+    {
+      "mutation": "A temporary \"pause outreach seven days\" instruction is issued",
+      "expected_decision": "Create a Runtime/temporary directive carrying a TTL plus a scoped consumer receipt.",
+      "prohibited": "Recording it as a permanent Behavior or Organization rule.",
+      "pass_condition": "The directive exerts zero influence after its expiry.",
+      "implemented": "possible_today",
+      "blocked_on": "Runtime is the one target where LearningObject.expires_at validates, so the create-with-TTL and expiry-filtering path is exercisable now; only the scoped consumer receipt (which needs L3 consumption) has to be asserted at the reader level instead of at the compiler."
+    }
+  ]
+}

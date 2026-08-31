@@ -1,31 +1,20 @@
-# Knowledge manifest for admin.meeting_operations.action_item_tracking — REFERENCES ONLY, the sibling of objects.yaml.
-#
-# objects.yaml says which NOUNS to load. This says which EXPERTISE applies.
-#
-#   core   -> <kind>/core/             referenced by more than one capability
-#   scoped -> <kind>/action-item-tracking/    referenced by this capability alone
-#
-# The same scope rule as objects, enforced from the reference graph: MEDDICC referenced by
-# four capabilities must be core, or it becomes four copies that drift.
-
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
 capability: admin.meeting_operations.action_item_tracking
-
 playbooks:
   core: []
-  scoped: []
-
+  scoped:
+  - admin.pb.action_item_tracking.one_register_across_meetings
 heuristics:
   core: []
-  scoped: []
-
+  scoped:
+  - admin.heu.action_item_tracking.completion_rate_is_meeting_roi
 mental_models:
   core: []
   scoped: []
-
 rules:
   core: []
-  scoped: []
-
+  scoped:
+  - admin.rule.action_item_tracking.a_restated_action_is_the_same_action
 decision_frameworks:
   core: []
   scoped: []

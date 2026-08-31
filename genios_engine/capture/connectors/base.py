@@ -15,6 +15,8 @@ class RawObject:
     source_object_id: str
     occurred_at: datetime
     actor_email: str | None = None
+    #: The display name the source gave for the actor, when it gave one. See `Actor.name`.
+    actor_name: str | None = None
     actor_type: str = "external_contact"
     parent_object_id: str | None = None
     # For MUTABLE structured objects (CRM deal, calendar event, DB row) a connector sets a
@@ -27,7 +29,23 @@ class RawObject:
     # It promotes the event's family to `internal` and its facts to authority rank 4 —
     # so company canon outranks a third-party system of record. None for observed traffic.
     internal_kind: str | None = None
+    # The clock the incremental cursor advances on. For a message `occurred_at` (when it was
+    # sent) IS the right watermark. For a calendar event it is catastrophically wrong:
+    # `occurred_at` is when the MEETING STARTS, so one event booked for next month pushes the
+    # cursor into the future and every subsequent sync asks the provider for changes "since"
+    # a date that has not happened — the connector goes permanently silent while still
+    # reporting success. Mutable sources must set this to their own last-modified stamp.
+    synced_at: datetime | None = None
+    #: Everyone else the message was addressed to (To + Cc), lowercased. Connectors already parse
+    #: these — the Gmail path extracts them and drops them into an untyped dict — so this is a
+    #: contract, not new work: it makes the participant set survive past the payload TTL.
+    recipients: tuple[str, ...] = ()
     raw: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def watermark_at(self) -> datetime:
+        """The timestamp the cursor may advance to for this object."""
+        return self.synced_at or self.occurred_at
 
 
 @dataclass

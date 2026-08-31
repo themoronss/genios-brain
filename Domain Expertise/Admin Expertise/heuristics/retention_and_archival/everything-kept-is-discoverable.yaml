@@ -1,0 +1,66 @@
+identity:
+  id: admin.heu.retention_and_archival.everything_kept_is_discoverable
+  name: Everything kept is discoverable
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.retention_and_archival
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Records retained past requirement remain subpoenaable, breachable and searchable forever.
+    Retention discipline is risk management — the archive you did not keep cannot leak.
+  answers:
+  - What is the liability of keeping everything?
+
+heuristic:
+  statement: >
+    Everything kept is discoverable. Records retained past requirement stay subpoenaable, breachable
+    and searchable forever — the archive you did not keep cannot leak.
+  why: >
+    Storage is cheap, which makes keeping feel free, and the cost is entirely contingent: it arrives
+    as a discovery request, a breach notification or a regulator's question, and only then. Because
+    the cost is deferred and the saving is immediate, every organisation over-retains by default.
+    Naming retention as risk management rather than housekeeping is what makes destruction a
+    positive act instead of an omission.
+  confidence_bp: 8000
+  applies_when: Any record class whose obligation period has expired and where no hold applies.
+  breaks_down_when: >
+    The record has evidential value that outlives its statutory period — a signed agreement whose
+    obligations run for decades, a decision record that a future dispute will turn on. Destroying to
+    reduce exposure there removes the thing that would have defended you, and this heuristic is
+    routinely cited to do exactly that. It also breaks down where destruction is not actually
+    possible: deleting the repository copy while backups, exports and inboxes retain it produces the
+    paperwork of disposal with none of the risk reduction.
+  reads: [admin.obj.core.document, admin.obj.core.compliance_obligation]
+  contradicts: [admin.heu.audit_support.audit_pain_measures_record_debt]
+limits:
+- 'It argues against over-retention, not for minimal retention. The floor is the obligation, and the obligation is not negotiable.'
+- 'It says nothing about which class a record is in, which is where the actual judgement sits.'
+failure_modes:
+- 'Used to justify destroying evidence that would have helped, which is the expensive version of this mistake.'
+- 'Satisfied by deleting the primary copy while backups keep it, producing disposal theatre.'
+variants:
+- applies_to: regulated
+  change: Weaker on the destruction side and stronger on the schedule — the period is set for you and improvising downward is itself a finding.
+  why: Discretion has been removed by design.
+- applies_to: multi_entity
+  change: The applicable period varies by jurisdiction for the same record, so a single global rule is wrong in both directions.
+  why: One entity's minimum can exceed another's maximum.
+references:
+- title: ISO 15489 — records management
+  kind: standard
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    contradicts audit-pain-measures-record-debt on purpose: that heuristic pushes toward keeping
+    more evidence, this one toward keeping less. The resolution is per record class, and
+    pretending otherwise is how estates end up at seven years for everything.

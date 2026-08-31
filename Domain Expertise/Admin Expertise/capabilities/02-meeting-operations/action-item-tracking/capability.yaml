@@ -1,28 +1,119 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.meeting_operations.action_item_tracking
   name: Action Item Tracking
   domain: admin
   subdomain: meeting_operations
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Carrying meeting output forward until it closes. Actions are the highest-mortality artefact
+  in an organisation: they are created in front of witnesses and die in private. The discipline is a single
+  live list, an owner per line, a date per line, and visible ageing rather than a fresh list each week.
 
-description: >
-  Carrying meeting output forward until it closes. Actions are the highest-mortality artefact
-  in an organisation: they are created in front of witnesses and die in private. The
-  discipline is a single live list, an owner per line, a date per line, and visible ageing
-  rather than a fresh list each week.
+  '
+question: Which actions from which meetings are still open, and which are slipping?
 
-question: "Which actions from which meetings are still open, and which are slipping?"
+outcomes:
+- 'One register across all forums, not one list per meeting. The same person carrying three actions
+  from three meetings is one workload; three separate lists make that invisible, and it is the fact
+  that predicts which of the three will be missed.'
+- 'An owner who was in the room, or an explicit assignment that reached them. An action assigned to
+  someone absent is not owned until they have accepted it, and the gap between the minute and the
+  acceptance is where most actions are lost.'
+- 'Ageing that is visible rather than reset. A register rebuilt each meeting hides the fact that an
+  item has now been carried repeatedly, which is the single most useful thing to know about it — and
+  the one thing a fresh list per sitting systematically destroys.'
+- 'The distinction between an action that is BLOCKED and one that is NEGLECTED. Both look identical
+  in a register and need opposite responses: one needs the blocker cleared by someone else, the other
+  needs the owner. Reporting the second when it is the first is how a tracking function loses the
+  room.'
+- 'A closed item with evidence, not with a tick. The negative outcome the register exists to force: an
+  action marked done at the sitting where it was raised for the fourth time, with nobody able to say
+  what changed, is worse than an open one.'
+- 'Actions that should be dropped, dropped explicitly. A forum that never closes anything unfinished is
+  accumulating a permanent backlog and will eventually be judged on it.'
+
+failure_modes:
+- 'A FRESH LIST EVERY MEETING. The commonest failure and the most invisible: each sitting produces its
+  own actions, ageing restarts, and an item on its fifth appearance is indistinguishable from a new
+  one.'
+- 'REWORDING BETWEEN SITTINGS. The same action restated slightly differently becomes a new line, the
+  old one silently ages out, and the register reports progress it did not make.'
+- 'ASSIGNING TO A FUNCTION. "Ops to confirm" has no owner, and it is the phrasing that survives longest
+  in minutes because nobody objects to it in the room.'
+- 'CHASING ON THE MEETING''S CLOCK. Actions are chased the day before the next sitting, which means
+  every action gets exactly the same window regardless of its date and the short-dated ones are
+  already late when they are first mentioned.'
+- 'REPORTING STATUS RATHER THAN MOVEMENT. "In progress" repeated across four sittings is a null
+  report. What is worth asking for is what changed since the last one, and an item that cannot answer
+  it is the item worth examining.'
+- 'TREATING AN ACTION AS A COMMITMENT TO THE COUNTERPARTY. An internal action arising from a meeting
+  with an outside party is ours to manage; presenting it to them as a promise creates an obligation
+  nobody agreed to make.'
+
+kpis:
+- name: action_completion_rate
+  unit: percent
+  description: Share of actions closed by their date. The meeting culture's return, expressed as one
+    number, and the reason this capability is measurable at all.
+  direction: higher_is_better
+- name: carried_item_share
+  unit: percent
+  description: Share of open actions appearing at more than one consecutive sitting. Rising means the
+    forum is generating actions faster than it closes them.
+  direction: lower_is_better
+- name: named_owner_share
+  unit: percent
+  description: Share of actions owned by a person rather than a function.
+  direction: higher_is_better
+- name: undated_action_share
+  unit: percent
+  description: Share of actions with no date. Undated items age invisibly and are the ones that
+    disappear.
+  direction: lower_is_better
+- name: closed_without_evidence_rate
+  unit: percent
+  description: Share of actions closed with nothing recorded about what changed.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - admin.meeting_operations.minutes_and_documentation
+  - admin.meeting_operations.agenda_preparation
+  downstream:
+  - admin.meeting_operations.follow_up_coordination
+  - admin.executive_support.commitment_tracking
+  - admin.executive_support.delegation_and_task_routing
+  parallel:
+  - admin.admin_operations.service_level_management
+  - admin.executive_support.approval_coordination
+
+applies_to:
+  models: [in_house, shared_services, executive_office, enterprise_admin, multi_entity, regulated,
+           distributed, hybrid, startup_lean, outsourced, automated_first]
+  offerings: [coordinative, assurance]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
   confidence: experimental
+  notes: 'Promoted out of Phase-1 stub. `admin.obj.core.action_item` is in the live situation''s
+    optional load-set, so this is reached as soon as an administrative relationship produces a meeting
+    with output.
+
+    The blocked-versus-neglected distinction is authored against a pattern the object already carries
+    (`ai.item_blocked_not_neglected`, currently `needs_signal`), and it is stated as an outcome
+    deliberately: it is what the capability should produce once the signal exists, and marking it
+    aspirational in the capability while the pattern honestly says `needs_signal` keeps the two
+    statements consistent rather than pretending either way.
+
+    No numbers: how many carries makes an item chronic is Layer 4''s arithmetic.
+
+    '
+  reviewed_at: '2026-08-26'
+
+admission:
+  accepted_content_hash: 62eb0ec203db379f1bee485bb77c1604b3a3ac7e1342ab608d4b3edabb36ebc0

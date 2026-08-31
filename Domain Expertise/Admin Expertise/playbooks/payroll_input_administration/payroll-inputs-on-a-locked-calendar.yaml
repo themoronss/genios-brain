@@ -1,0 +1,91 @@
+identity:
+  id: admin.pb.payroll_input_administration.payroll_inputs_on_a_locked_calendar
+  name: Payroll inputs on a locked calendar
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.payroll_input_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every payroll cycle's inputs — new joiners, exits, changes, leave, reimbursements — are collected
+    against a cutoff, verified, and locked before processing, because payroll errors are trust incidents
+    paid monthly.
+
+when_to_use:
+  conditions: [{exists: commitment.due_at}]
+  do_not_use_when:
+  - The change is an off-cycle correction of a previous error. That has its own path and forcing it into the next cycle delays an apology that is already late.
+steps:
+- order: 1
+  name: Receive inputs from their source process, do not chase them
+  description: >
+    If payroll has to ask each month, the month it forgets to ask is the month somebody is not paid.
+    Starters, leavers and changes should arrive from onboarding, offboarding and records.
+  actor: system
+  objects_read: [admin.obj.core.employee_record]
+  done_when: Inputs arrive without a request.
+- order: 2
+  name: Publish the cut-off and hold it
+  description: >
+    Accepting one late change is kind and destroys the deadline permanently, because everybody
+    learns it is negotiable.
+  actor: human
+  objects_read: [admin.obj.core.deadline]
+  done_when: The lock held.
+- order: 3
+  name: Reconcile variable elements before the lock
+  description: >
+    Overtime, absence and expense elements are where the arithmetic is, and correcting them after
+    payment is an apology rather than a fix.
+  actor: human
+  done_when: Variables are agreed, not estimated.
+- order: 4
+  name: Run the difference check
+  description: >
+    Against last cycle: who is new, who has gone, whose pay moved and why. Most payroll errors are
+    obvious as a difference and invisible as a number.
+  actor: human
+  done_when: Every change from last month has a reason.
+- order: 5
+  name: Defer late inputs, and tell the person
+  description: >
+    Slipping it in quietly is how a locked run becomes unlocked. Deferring it openly keeps the
+    deadline and treats the person honestly.
+  actor: human
+  done_when: The late item is in next cycle and the individual knows.
+objects_used: [admin.obj.core.employee_record, admin.obj.core.deadline, admin.obj.core.expense, admin.obj.core.approval]
+limits:
+- 'It assembles inputs; it does not calculate or file. Errors originating in the payroll engine are outside it.'
+- 'Step 1 depends on upstream processes existing. Where they do not, chasing is the only available method.'
+failure_modes:
+- 'Step 4 skipped when the cycle is tight, which is exactly the cycle most likely to contain an error.'
+- 'Step 2 breached for a senior person, which is the version everyone hears about.'
+variants:
+- applies_to: outsourced
+  change: The cut-off is the provider's and is genuinely immovable; steps 3 and 4 must complete before their deadline, not ours.
+  why: There is no discretion on the other side of the boundary.
+- applies_to: multi_entity
+  change: Cut-offs and statutory elements differ per entity; one calendar is wrong somewhere.
+  why: Payroll is territorial.
+- applies_to: startup_lean
+  change: Steps 2 and 4. The founder knows every change and the risk is entirely arithmetic.
+  why: Input completeness is not the problem; nobody checking is.
+references:
+- title: Payroll control practice
+  kind: practitioner
+  note: Variance-against-prior-period is consistently the highest-yield pre-release check.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1 is the structural fix and step 4 is the cheap one. Chasing works until the month it
+    is forgotten, and the difference check catches most of what chasing would have missed
+    anyway.

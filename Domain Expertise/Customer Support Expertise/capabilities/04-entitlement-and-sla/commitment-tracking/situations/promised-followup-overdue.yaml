@@ -45,7 +45,8 @@ matches:
   # commitment.action. It fires on a promise extracted from conversational language, which is
   # precisely what a support commitment is — nobody ever writes "I hereby commit".
   l2_situation_types:
-    - commitment_overdue
+    - support_case
+    - support_contact
 
   scope: person
 

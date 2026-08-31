@@ -1,42 +1,125 @@
-# STUB — identity, purpose and load-set only. See ../sla-management/capability.yaml for shape.
-
 identity:
   id: customer_support.entitlement_and_sla.commitment_tracking
   name: Commitment Tracking
   domain: customer_support
   subdomain: entitlement_and_sla
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Holding the promises made inside a ticket that no contract ever created — the callback before
+  end of day, the update on Friday, the bug someone said they would file with engineering. These are the
+  promises customers remember most sharply, because a human said them directly and specifically, and they
+  are the ones no clock is watching. The working rule is that an unrecorded commitment is an unmade one,
+  and the discipline that matters most is closing the loop on the due date even when the answer is that
+  there is no news yet, because silence is read as being forgotten rather than as being unfinished.
 
-description: >
-  Holding the promises made inside a ticket that no contract ever created — the callback before
-  end of day, the update on Friday, the bug someone said they would file with engineering. These
-  are the promises customers remember most sharply, because a human said them directly and
-  specifically, and they are the ones no clock is watching. The working rule is that an
-  unrecorded commitment is an unmade one, and the discipline that matters most is closing the
-  loop on the due date even when the answer is that there is no news yet, because silence is
-  read as being forgotten rather than as being unfinished.
+  '
+question: What did we personally promise this customer, and is it still going to happen?
 
-question: "What did we personally promise this customer, and is it still going to happen?"
+outcomes:
+- 'Every promise made inside a ticket carries a date and an owner, or it is not a promise. An
+  unrecorded commitment is an unmade one from our side and a firm one from theirs, and that
+  asymmetry is the whole reason this capability exists.'
+- 'The loop closed ON the due date even when the answer is "no news". Silence on the promised day is
+  read as being forgotten, not as being unfinished, and the two are indistinguishable from outside.'
+- 'A verdict per promise — kept, renegotiated, or explicitly dropped. A commitment that quietly
+  stops being tracked is recorded as dropped, with a date, because a ledger that only grows is a
+  ledger nobody reads.'
+- 'Renegotiation offered BEFORE the date rather than an apology after it. Before the date the
+  promise is still ours to redefine; after it, it is theirs to be disappointed by.'
+- 'Direction named before anything else — whether the outstanding move is ours or theirs. A chase
+  sent while the ball is in our own court is the single most damaging message support sends.'
+- 'The negative outcome: a promise identified as one we cannot keep, surfaced while there is still
+  time to say so. Support''s hardest sentence is "I said Friday and it will not be Friday", and it
+  costs a fraction of what saying nothing costs.'
+
+failure_modes:
+- 'TRACKING ONLY WHAT THE SYSTEM CREATED. SLA clocks are tracked because a tool made them; the
+  callback someone promised in the third paragraph of a reply is not, and it is the one the
+  customer remembers because a human said it to them specifically.'
+- 'CHASING WITHOUT READING WHOSE TURN IT IS. The elapsed-time instrument is direction-blind, and
+  "follow up after N days" is the default rule in every tool. It reports our own backlog as the
+  customer''s silence.'
+- 'ANCHORING ON THE PROMISE TEXT RATHER THAN THE PROMISE. A ledger keyed on wording splits one
+  obligation into three entries when it is restated, and each restatement then ages independently.'
+- 'DATING FROM THE RECORD RATHER THAN THE AGREEMENT. A due date inferred from when a row was created
+  produces an overdue flag the customer would not recognise, and the first unrecognisable flag
+  teaches the reader to distrust every later one.'
+- 'ESCALATING AN INTENTION. "I''ll try to get to it today" is not a commitment until the other side
+  relied on it. Tracking unilateral intentions inflates the ledger until the real promises are
+  indistinguishable.'
+- 'TREATING THE REGISTER AS THE DELIVERABLE. A complete, current, beautifully maintained list that
+  produces no next move is diligence performed rather than work done.'
+
+kpis:
+- name: promise_capture_rate
+  unit: percent
+  description: Share of commitments visible in correspondence that reached the ledger at all.
+  direction: higher_is_better
+- name: closed_on_the_promised_day_rate
+  unit: percent
+  description: Share of commitments where SOMETHING was sent on the due date — including "no news
+    yet". The metric that separates tracking from reporting.
+  direction: higher_is_better
+- name: renegotiated_before_due_rate
+  unit: percent
+  description: Share of slipping promises renegotiated before the date rather than apologised for after.
+  direction: higher_is_better
+- name: silent_abandonment_rate
+  unit: percent
+  description: Share of commitments that left the ledger with no verdict. Every one is a promise the
+    customer may still be holding.
+  direction: lower_is_better
+- name: misdirected_chase_rate
+  unit: percent
+  description: Share of chases sent while the ball was in our own court. A low capture rate costs
+    opportunity; this costs standing.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - customer_support.customer_communication.expectation_setting
+  - customer_support.customer_communication.response_drafting
+  - customer_support.entitlement_and_sla.entitlement_verification
+  downstream:
+  - customer_support.customer_communication.proactive_status_updates
+  - customer_support.escalation_and_incident.escalation_management
+  - customer_support.support_management.account_relationship_management
+  parallel:
+  - customer_support.entitlement_and_sla.breach_prevention
+  - customer_support.entitlement_and_sla.sla_management
+
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support,
+           swarming_support, named_tam, follow_the_sun, premium_paid_support, outsourced_bpo,
+           proactive_support, field_service]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following ../sla-management/capability.yaml, and by
-    authoring situations/promised-followup-overdue.yaml
-    (customer_support.sit.promised_followup_overdue), which this capability owns and which is
-    one of the few support situations that binds to a REAL L2 type today — commitment_overdue,
-    over commitment.due_at and commitment.action. That makes this the most executable capability
-    in the subdomain despite being a stub, and it should probably be promoted before the others.
+    Promoted out of Phase-1 stub. Reachable from all three live Customer Support routes on the
+    design partner's org — relationship, support_case and support_contact — which makes it the
+    most-reached hollow capability in this domain.
 
-    The expertise to capture on promotion: extracting a commitment from conversational language
-    that never says "I commit"; the fact that a soft promise made to defuse a moment is
-    remembered as a hard one; renegotiating before the due time rather than apologising after;
-    and why a commitment owned by a team is owned by nobody.
+    This is the one Customer Support capability whose substrate genuinely exists.
+    commitment.due_at, commitment.action, commitment.text and commitment.status are all written
+    by the L2 pipeline, and thread.ball_in_court carries the direction that decides whether an
+    overdue promise means chase them or answer them. Everything here is written against those
+    facts rather than against a task system, because a promise made in the third paragraph of a
+    support reply has no ticket, no clock and no owner field.
+
+    Deliberately distinct from admin.executive_support.commitment_tracking. That one tracks an
+    organisation's obligations to a counterparty; this one tracks what a support agent
+    personally said to a customer inside a case. The failure modes differ: an administrative
+    promise goes missing because it was undated, a support promise goes missing because no tool
+    ever created it.
+
+admission:
+  accepted_content_hash: 78c1c27a34819049b968b69be054dfcd8e1d9a2d8df5f4cc4c92d908f8f38cc6

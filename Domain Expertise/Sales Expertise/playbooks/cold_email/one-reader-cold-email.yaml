@@ -1,0 +1,131 @@
+identity:
+  id: sales.pb.cold_email.one_reader_cold_email
+  name: The one-reader cold email
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.cold_email
+  subdomain: prospecting_and_outreach
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'A cold email earns a reply by proving in the first line that it could only have been
+    written to this one person, and by asking something answerable from a phone.'
+  answers:
+  - What does a cold email contain, in what order?
+  - What size of ask belongs in a first message?
+  not:
+  - Sequence design, which is the outreach capability's.
+  - Deliverability engineering, which is infrastructure rather than writing.
+
+when_to_use:
+  situations:
+  - sales.sit.outbound_prospect
+  conditions:
+  - {fn: edge_count, op: "<=", value: 1}
+  - {absent: thread.last_inbound}
+  signals:
+  - followup_sent
+  do_not_use_when:
+  - 'The counterparty already corresponds with the organisation. This is not a cold approach, and
+    sending one demonstrates that nobody looked.'
+  - 'The economics cannot support per-person research. Send something honestly generic rather than a
+    merge field pretending otherwise.'
+  - 'The sending domain is the primary business domain. Fix that before writing anything; the
+    reputation cost lands on invoices and support replies.'
+
+steps:
+- order: 1
+  name: Open with their fact, not our introduction
+  description: 'The first sentence names something true and recent about THEM. Test it by asking
+    whether it could appear in a message to anyone else on the list — if it could, it is a merge field
+    and the recipient will classify it as one within a second.'
+  actor: human
+  objects_read:
+  - sales.obj.core.lead
+  - sales.obj.core.persona
+  produces: An opening line specific to one person.
+  done_when: The line fails the could-this-go-to-anyone test.
+
+- order: 2
+  name: Bridge to one specific problem
+  description: 'Connect their fact to one problem seen at companies like theirs. One, not three — a
+    message listing several problems is describing a category and asking them to find themselves in
+    it.'
+  actor: human
+  objects_read:
+  - sales.obj.core.pain_point
+  produces: A single problem statement connected to their situation.
+  done_when: The message names one problem.
+
+- order: 3
+  name: Ask the phone-sized question
+  description: 'A question answerable in one line — is this on your radar this quarter. A meeting
+    request to a stranger asks for a calendar decision before any basis for making one exists, and the
+    silence that follows is read as disinterest when it was the size of the ask.'
+  actor: human
+  produces: One small, answerable question.
+  done_when: The ask could be answered from a phone in a lift.
+
+- order: 4
+  name: Send from a domain the business does not depend on
+  description: 'Reputation is spent by volume and by irrelevance and recovers slowly. Spent from the
+    primary domain, the cost lands on invoices, support replies and customer correspondence — none of
+    which had any part in the decision.'
+  actor: system
+  produces: Outbound isolated from business-critical mail.
+  done_when: No volume sending originates from the primary domain.
+
+- order: 5
+  name: Check the compliance regime for their jurisdiction
+  description: 'Consent rules differ materially by country and the exposure is legal rather than
+    commercial. This is a list-construction question and it is cheapest to answer before the list is
+    built.'
+  actor: human
+  produces: A list constructed within the applicable regime.
+  done_when: The regime for each segment is known rather than assumed.
+
+- order: 6
+  name: Judge every change on replies per person
+  description: 'Opens measure subject lines and can move opposite to replies — a subject line that
+    overstates the message raises one and suppresses the other. Count replies over people contacted,
+    never over messages sent, because per-message counting rewards exactly the volume behaviour that
+    destroys the channel.'
+  actor: system
+  produces: A reply-rate-per-person measurement per change.
+  done_when: No programme decision rests on open rate.
+
+- order: 7
+  name: Stop on a segment that does not reply
+  description: 'A list that does not reply is a list being burned, and the reputation it costs is
+    shared with the segments that do reply. Stopping is a decision the channel almost never produces
+    on its own.'
+  actor: human
+  objects_read:
+  - sales.obj.core.icp
+  produces: An explicit stop on non-replying segments.
+  done_when: Sending volume has been reduced somewhere on evidence.
+
+objects_used:
+- sales.obj.core.lead
+- sales.obj.core.persona
+- sales.obj.core.icp
+- sales.obj.core.pain_point
+
+limits:
+- The message body is not in the record, so steps 1 to 3 are unobservable; the OUTCOME is not —
+  `thread.last_outbound` against `thread.last_inbound` gives reply rate per person directly.
+- Deliverability and complaint rates live in the sending infrastructure and never reach the graph.
+- Says nothing about list building, which determines more of the result than the writing does.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a four-step sketch. Steps 4, 5, 6 and 7 are new. Step 4 is the one most often
+    missing entirely — outbound volume from the primary business domain is a decision that costs
+    invoices and support replies, taken by people who never see that bill.'

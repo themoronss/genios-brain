@@ -1,35 +1,20 @@
-# FULL capability for the Intake & Triage subdomain.
-#
-# Triage is the only decision in support that is made on deliberately incomplete information,
-# under a clock that started before anyone read the ticket, by a person who will not be the one
-# to pay for getting it wrong. Everything in this file follows from those three facts.
-#
-# No numbers. Severity bands, priority matrices, ageing thresholds and reassignment limits are
-# Layer 4 arithmetic and live in the pack manifest. What lives here is the judgement that tells
-# Layer 4 which arithmetic to run and when to distrust the answer.
-#
-# Playbooks, heuristics, mental models and decision frameworks moved OUT of this
-# file and into knowledge.yaml + the artifact folders. They are files now because a
-# Layer 6 suggestion needs an id and a version to point at, and because a framework
-# used by four capabilities cannot live inline in all four.
-
 identity:
   id: customer_support.intake_and_triage.ticket_triage
   name: Ticket Triage
   domain: customer_support
   subdomain: intake_and_triage
   version: 1.0.0
-  status: draft
+  status: stable
   stub: false
-description: 'Reading a newly arrived contact and deciding, fast and on partial evidence, what kind
-  of work it is, how badly it is hurting and whom, and which queue can actually finish it. Triage is
-  a routing decision, not an analysis: its job is to place the ticket where the next useful act can
-  happen, not to be right about the cause. Its defining property is that the cost of a wrong route is
-  paid three steps later by someone who cannot undo it — the clock has already run, the customer has
-  already been told who owns it, and the framing set at triage tends to survive every subsequent hand.
-  The discipline is therefore holding severity apart from priority, checking what the account is entitled
-  to before believing what the ticket says about itself, and making an unestablished severity fail toward
-  attention rather than away from it.
+description: 'Reading a newly arrived contact and deciding, fast and on partial evidence, what kind of
+  work it is, how badly it is hurting and whom, and which queue can actually finish it. Triage is a routing
+  decision, not an analysis: its job is to place the ticket where the next useful act can happen, not
+  to be right about the cause. Its defining property is that the cost of a wrong route is paid three steps
+  later by someone who cannot undo it — the clock has already run, the customer has already been told
+  who owns it, and the framing set at triage tends to survive every subsequent hand. The discipline is
+  therefore holding severity apart from priority, checking what the account is entitled to before believing
+  what the ticket says about itself, and making an unestablished severity fail toward attention rather
+  than away from it.
 
   '
 question: What is this, how bad is it, and whose queue can actually finish it?
@@ -40,10 +25,10 @@ outcomes:
   whether a customer-executable workaround exists.'
 - Priority is recorded as a separate decision about scarce attention, with the entitlement and account
   context that produced it visible to whoever inherits the ticket.
-- An owning queue is named, and it is the queue that can close the ticket rather than the queue that
-  will understand it first.
-- Where severity could not be established, the ticket carries an explicit unknown that routes toward
-  attention — never a silent default that routes it downward.
+- An owning queue is named, and it is the queue that can close the ticket rather than the queue that will
+  understand it first.
+- Where severity could not be established, the ticket carries an explicit unknown that routes toward attention
+  — never a silent default that routes it downward.
 - The triage note states what was assumed and what would change the verdict, so the next agent can disagree
   with the assumption instead of re-deriving it.
 - Where the same fault has already been reported, the relationship is recorded before the second ticket
@@ -53,36 +38,35 @@ failure_modes:
   nothing about the state of the fault, yet it is the most reliable predictor of how a queue actually
   sorts — which teaches customers that escalation language works and destroys the signal for everyone
   who did not use it.
-- Collapsing severity into priority. Once they are one field, the enterprise account with a cosmetic
-  defect and the trial user with data loss get the same verdict and both are wrong, and the organisation
-  loses the ability to even express the inversion.
+- Collapsing severity into priority. Once they are one field, the enterprise account with a cosmetic defect
+  and the trial user with data loss get the same verdict and both are wrong, and the organisation loses
+  the ability to even express the inversion.
 - Letting unknown severity fall to the bottom. Unknown is not low; it is unmeasured. The contacts that
   become incidents are disproportionately the ones nobody could classify in the first minute, because
   unusual shape is exactly what a taxonomy fails on.
 - Routing to the team that owns the surface rather than the team that owns the cause. Customers report
-  where they noticed the failure, and the page where it surfaced is frequently owned by a team with
-  no access to the system that broke.
+  where they noticed the failure, and the page where it surfaced is frequently owned by a team with no
+  access to the system that broke.
 - Triaging without opening the entitlement. What the account is owed is invisible in the ticket text,
   and it is the first thing a fast triager skips, because skipping it costs nothing today.
-- Re-triage churn. Every hop resets the perceived clock in the receiving agent's head while the real
-  clock keeps running, so a ticket bounced twice is often already late at the moment someone finally
-  owns it.
-- Silent downgrade. Moving a ticket to a slower queue without recording that a priority decision was
-  made converts a judgement into an accident, and nothing about it can be reviewed afterwards.
+- Re-triage churn. Every hop resets the perceived clock in the receiving agent's head while the real clock
+  keeps running, so a ticket bounced twice is often already late at the moment someone finally owns it.
+- Silent downgrade. Moving a ticket to a slower queue without recording that a priority decision was made
+  converts a judgement into an accident, and nothing about it can be reviewed afterwards.
 - Treating a duplicate as a fresh contact. Independent triage of the same fault destroys the only early
   evidence that blast radius is growing, and blast radius is the input that turns a ticket into an incident.
 - Batch triage at the start of a shift. It optimises the triager's context-switching and maximises the
   age of everything in the batch — the wrong variable to optimise when the clock starts at submission.
-- Triaging to a specialist queue for comprehension. It produces a chain of well-informed people who
-  each lack the permission, the access or the code to finish the work.
+- Triaging to a specialist queue for comprehension. It produces a chain of well-informed people who each
+  lack the permission, the access or the code to finish the work.
 - Perfect triage. Time spent resolving genuine ambiguity past the point of diminishing return is time
   the clock is spending, and a provisional route with a stated assumption beats a correct route arrived
   at late.
 kpis:
 - name: first_route_accuracy
   unit: percent
-  description: Share of tickets closed by the queue they were first routed to. Reads as a measure of
-    the triager and is mostly a measure of the taxonomy.
+  description: Share of tickets closed by the queue they were first routed to. Reads as a measure of the
+    triager and is mostly a measure of the taxonomy.
   direction: higher_is_better
 - name: reassignments_per_ticket
   unit: count
@@ -91,8 +75,8 @@ kpis:
   direction: lower_is_better
 - name: time_to_triage
   unit: minutes
-  description: Submission to first routing decision. Measured from submission, never from the moment
-    an agent opened the ticket — the second version hides the entire queueing problem.
+  description: Submission to first routing decision. Measured from submission, never from the moment an
+    agent opened the ticket — the second version hides the entire queueing problem.
   direction: lower_is_better
 - name: severity_revision_rate
   unit: percent
@@ -116,8 +100,8 @@ kpis:
   direction: higher_is_better
 - name: triage_reversal_by_review
   unit: percent
-  description: Share of triage verdicts a later quality review disagrees with. Measures whether the
-    written standard and the practised standard are the same standard.
+  description: Share of triage verdicts a later quality review disagrees with. Measures whether the written
+    standard and the practised standard are the same standard.
   direction: lower_is_better
 handoffs:
   upstream:
@@ -163,19 +147,21 @@ applies_to:
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ''
+  reviewed_by: harsh
   last_updated: '2026-08-08'
-  review_status: unreviewed
+  review_status: approved
   confidence: provisional
-  notes: 'Note what is deliberately absent: no severity bands, no ageing thresholds, no reassignment
-    limits, no weighting between entitlement and blast radius. All of that is Layer 4 arithmetic and
-    belongs in the pack manifest; a number appearing here would mean the Layer 3/4 boundary had leaked.
-    Note also what this capability cannot currently see — there is no ticket, SLA or escalation signal
-    in the substrate, so nothing in this file is executable today and the objects it loads carry the
-    gap as needs_signal patterns rather than pretending otherwise. Two claims here are the most likely
-    to be argued with on review and should be: that unknown severity must fail toward attention rather
-    than into a triage backlog, and that priority should be cheap to revise while severity is not. Both
-    are defensible in a queue with slack and become expensive in one without it, which is the review
-    question worth asking.
+  notes: 'Note what is deliberately absent: no severity bands, no ageing thresholds, no reassignment limits,
+    no weighting between entitlement and blast radius. All of that is Layer 4 arithmetic and belongs in
+    the pack manifest; a number appearing here would mean the Layer 3/4 boundary had leaked. Note also
+    what this capability cannot currently see — there is no ticket, SLA or escalation signal in the substrate,
+    so nothing in this file is executable today and the objects it loads carry the gap as needs_signal
+    patterns rather than pretending otherwise. Two claims here are the most likely to be argued with on
+    review and should be: that unknown severity must fail toward attention rather than into a triage backlog,
+    and that priority should be cheap to revise while severity is not. Both are defensible in a queue
+    with slack and become expensive in one without it, which is the review question worth asking.
 
     '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 7a93e9e24474448a919e36811250c5fd4c153bd83c44542fcded80eb8d8d0865

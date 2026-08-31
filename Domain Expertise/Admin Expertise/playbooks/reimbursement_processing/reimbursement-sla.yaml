@@ -1,0 +1,92 @@
+identity:
+  id: admin.pb.reimbursement_processing.reimbursement_sla
+  name: Reimbursement SLA
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.reimbursement_processing
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Employee reimbursements run on a published clock — submission to payment in days, status
+    visible, rejections explained kindly with a fix path — because this is the one finance process every
+    employee personally experiences.
+
+when_to_use:
+  do_not_use_when:
+  - The claim is still in policy review. Publishing a payment clock over an unresolved eligibility question sets an expectation the process cannot meet.
+steps:
+- order: 1
+  name: Publish the clock and measure from their action
+  description: >
+    Submission to payment, in days, stated. Measuring from our triage instead of their submission is
+    how a compliant service disappoints everyone using it.
+  actor: human
+  done_when: The claimant knows the number before they submit.
+- order: 2
+  name: Make status visible without asking
+  description: >
+    Invisible status generates the query volume that then justifies having no time to fix status.
+  actor: system
+  objects_read: [admin.obj.core.expense]
+  done_when: A claimant can see where their claim is.
+- order: 3
+  name: Say when the payroll cycle will hold it
+  description: >
+    Batching to payroll is fine. Batching silently means a claim submitted on the wrong day waits
+    five weeks and nobody said so.
+  actor: human
+  done_when: Cut-off effects are stated up front.
+- order: 4
+  name: Reject with a fix path, kindly
+  description: >
+    The claimant needs to know what would have worked. Without it they resubmit the same thing, or
+    stop claiming and quietly resent it.
+  actor: human
+  done_when: The rejection names the remedy.
+- order: 5
+  name: Confirm payment
+  description: >
+    Otherwise the claimant checks their bank hopefully for a week, which is the last impression the
+    process leaves.
+  actor: agent
+  done_when: The claimant was told it was paid and when.
+- order: 6
+  name: Work the tail, not the average
+  description: >
+    One claim stuck six weeks outweighs a better mean. The outlier is what gets discussed and it is
+    invisible in the headline number.
+  actor: human
+  done_when: The slowest claims have owners.
+objects_used: [admin.obj.core.expense, admin.obj.core.employee_record, admin.obj.core.approval, admin.obj.core.policy]
+limits:
+- 'It cannot outrun the approval step, which usually belongs to a manager outside this function.'
+- 'Payroll-cycle batching is often a constraint rather than a choice, and this playbook can only make it visible.'
+failure_modes:
+- 'Step 1 measured from triage because that is when the record exists, which is the same failure as an SLA clock started on recognition.'
+- 'Step 6 skipped because the average looks fine, which is exactly when the tail is doing the damage.'
+variants:
+- applies_to: distributed
+  change: Steps 3 and 5 matter more — different countries, banks and cut-offs, and no colleague to ask.
+  why: Local variation is invisible to a central process and very visible to the claimant.
+- applies_to: startup_lean
+  change: Steps 1 and 5 only. A stated clock and a confirmation outperform any tooling.
+  why: The founder is the approver and the delay is attention, not process.
+references:
+- title: Employee service design
+  kind: practitioner
+  note: Tail latency, not mean, is what determines perceived service quality in internal processes.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1's measurement point is the same error the Customer Support corpus records for SLA
+    clocks: measuring from our triage rather than from the claimant's action produces a
+    compliant process that disappoints everybody who uses it.

@@ -1,0 +1,65 @@
+identity:
+  id: admin.heu.invoice_processing.duplicate_invoices_arrive_confidently
+  name: Duplicate invoices arrive confidently
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.invoice_processing
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Resent invoices, forwarded copies, portal-plus-email doubles — duplicates are normal traffic,
+    not attacks. The number-and-amount duplicate check earns its keep monthly.
+  answers:
+  - How common is double-billing exposure?
+
+heuristic:
+  statement: >
+    Duplicates arrive confidently and are usually innocent — resent invoices, forwarded copies,
+    portal-plus-email doubles. Treat them as normal traffic with a mechanical check, not as attacks.
+  why: >
+    Suppliers resend when they have not been paid, buyers forward to accounts, and portals email a
+    copy of what they already delivered. All three produce a second identical document with no
+    intent behind it, at a volume far above deliberate double-billing. A control framed as fraud
+    detection therefore generates constant false suspicion, and the human cost of that is a team
+    that stops looking carefully — which is when the deliberate one goes through.
+  confidence_bp: 8500
+  applies_when: Ordinary trade payables with an established supplier.
+  breaks_down_when: >
+    The duplicate is not identical. A resubmitted invoice with a new number, a slightly different
+    amount, or a changed date is the shape deliberate double-billing takes precisely because the
+    number-and-amount check misses it. Trusting that check as sufficient is the failure it invites.
+    It also breaks down where the same underlying work is invoiced through two channels — a
+    subcontractor and a prime — where both invoices are genuine and only one is owed.
+  reads: [admin.obj.core.invoice, admin.obj.core.vendor]
+  contradicts: [admin.heu.purchase_order_management.the_match_defeats_the_confident_invoice]
+limits:
+- 'It catches exact duplicates. Near-duplicates are a different and harder problem.'
+- 'It says nothing about whether the original invoice was valid.'
+failure_modes:
+- 'Treated as complete duplicate protection, which leaves the near-duplicate case entirely uncovered.'
+- 'Duplicates cleared silently, so the supplier keeps resending and the check runs forever.'
+variants:
+- applies_to: enterprise_admin
+  change: Volume makes the mechanical check essential and the near-duplicate case detectable statistically.
+  why: Patterns are only visible above a certain throughput.
+- applies_to: startup_lean
+  change: The check is a memory. It works until it does not, and the failure is a paid duplicate nobody notices for a quarter.
+  why: There is no reconciliation cadence to catch it.
+references:
+- title: Accounts payable process design
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the one that matters: a resubmission with a new number and a
+    slightly different amount is the shape deliberate double-billing takes, precisely because
+    the number-and-amount check does not see it.

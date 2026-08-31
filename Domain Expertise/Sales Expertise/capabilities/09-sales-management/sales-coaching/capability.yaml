@@ -3,25 +3,101 @@ identity:
   name: Sales Coaching
   domain: sales
   subdomain: sales_management
-  version: 0.1.0
-  status: draft
-  stub: true
-
-description: >
-  Improving individual capability against observed behaviour rather than against outcomes.
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Improving individual capability against observed behaviour rather than against outcomes.
   Coaching to results tells a seller they lost; coaching to behaviour tells them why.
 
-question: "What specifically should this seller do differently?"
+  '
+question: What specifically should this seller do differently?
 
+outcomes:
+- 'A behaviour named from the record, not a result quoted back. Numbers say WHO needs help; only
+  observed behaviour says WHAT to change, and a conversation without the second is a pep talk with a
+  dashboard open.'
+- 'ONE skill per person per period. Coaching changes behaviour when it is singular; a list of five
+  improvements is a performance review wearing a coaching label, and none of the five moves.'
+- 'The focus drawn from real calls and threads. Reviewing two or three actual interactions produces a
+  specific pattern; reviewing a dashboard produces an adjective.'
+- 'Deliberate practice between sessions. A named skill discussed once and never rehearsed does not
+  transfer, and the rehearsal is the part that gets dropped because it is uncomfortable for both
+  people.'
+- 'Before-and-after evidence on the same lens. Next period, the same review question against new
+  interactions — coaching without that loop is advice, and nobody can tell whether it worked.'
+- 'A statement that the problem is not coachable. The negative outcome: some gaps are role fit,
+  territory or plan, and coaching them is a slow way to avoid a decision someone else has to make.'
+
+failure_modes:
+- 'COACHING FROM THE DASHBOARD. Produces encouragement and generalities, because a number contains no
+  behaviour to change.'
+- 'FIVE THINGS TO IMPROVE. Feels thorough, transfers nothing, and the seller reasonably prioritises
+  none of it.'
+- 'RESULTS QUOTED AS FEEDBACK. Telling someone they lost is information they already had, delivered
+  as though it were insight.'
+- 'NO PRACTICE. The rehearsal is awkward and gets skipped, which removes the only part of the process
+  where behaviour actually changes.'
+- 'NO CLOSING LOOP. The next session starts fresh, nobody knows whether the last one worked, and the
+  same pattern is renamed and re-coached.'
+- 'COACHING A NON-COACHABLE PROBLEM. Role fit, an unworkable territory or a broken plan dressed up as
+  a skill gap, which delays a decision and exhausts the person in the meantime.'
+
+kpis:
+- name: behaviour_named_rate
+  unit: percent
+  description: Share of coaching sessions producing a specific observed behaviour rather than a
+    result or an adjective.
+  direction: higher_is_better
+- name: single_focus_rate
+  unit: percent
+  description: Share of sessions ending with exactly one focus skill.
+  direction: higher_is_better
+- name: practice_completion_rate
+  unit: percent
+  description: Share of agreed focuses that were actually rehearsed between sessions.
+  direction: higher_is_better
+- name: pattern_movement_rate
+  unit: percent
+  description: Share of coached patterns that measurably changed on the same lens next period. The
+    only honest test of whether any of this works.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.sales_management.performance_management
+  - sales.sales_management.deal_review
+  downstream:
+  - sales.revenue_operations.sales_operations
+  parallel:
+  - sales.discovery_and_solution.discovery
+  - sales.proposal_and_commercials.objection_handling
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub, and it completes the sales_management subdomain.
+
+    The boundary with `performance_management` is the reason both exist: that one identifies WHO from
+    the numbers, this one establishes WHAT from the behaviour. Collapsing them produces the pep talk,
+    which is the single most common failure in both.
+
+    Substrate: threads are in the record and calls are not, so the reviewable material is half
+    present. `thread.last_inbound` / `.last_outbound` and the observation set make correspondence
+    patterns inspectable; call behaviour — talk ratio, questioning, objection handling in the moment —
+    is entirely outside it.
+
+    No numbers: session cadence and practice volume are Layer 4''s arithmetic.
+
+    '
+  reviewed_at: '2026-08-27'
+
+admission:
+  accepted_content_hash: 0cf41d55a4fc53c135ba5991a7971184e8c0290530ba81e10683d666480a2d63

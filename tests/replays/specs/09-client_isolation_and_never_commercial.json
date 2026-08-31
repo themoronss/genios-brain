@@ -1,0 +1,158 @@
+{
+  "replay_id": "09",
+  "slug": "client_isolation_and_never_commercial",
+  "title": "Client Isolation, Dual ACL, and Never-Commercial Evidence",
+  "failure_class": "Cross-client leakage inside a shared agency tenant: client-scoped evidence, identities, caches, credentials, cost and learning bleed across client contexts because only org-level scoping exists and `never_commercial` purpose is not terminal for commercial paths.",
+  "summary": "One agency organization holds two client contexts: `client_alpha` has a private Support ticket from alex@example.com, restricted to Alpha's assigned operators, stamped `use_class=never_commercial` with an exclusion for the evidence subject; `client_beta` has a legitimate Sales opportunity that happens to contain an `Alex` identity and similar company language. One operator is assigned to both clients, an Alpha Admin (bank-change) request arrives against a corpus where all 57 Admin files are stubs (zero non-stub, zero reviewed/accepted, zero executable routes), Beta has one approved draft/execution whose model and agent usage must be charged to Beta, and Alpha later requests erasure. The authoritative isolation key must be at least `(org_id, client_context_id, identity_or_relationship_key)`, narrowed further by source ACL and purpose; org membership alone never widens access. The replay passes only when Alpha's ticket stays inside its permitted Support/safety purpose and operators, Beta's Sales path is grounded exclusively in Beta-owned evidence and accepted expertise, the Admin case stays non-actionable, every model/agent attempt reconciles to exactly one client, and Alpha erasure retracts only Alpha-derived active influence.",
+  "business_subject": "One client's exact relationship/request inside an agency tenant — not the agency-wide person node, not the shared email address, not the model prompt, and not another client's account. Concretely: Alpha's private Support case for alex@example.com under Alpha's operators and purpose, held distinct from Beta's Sales relationship that shares an `Alex` identity and similar company language.",
+  "current_failure": "Code has a tenant graph, visibility/use contracts and native execution lineage, but the audit does not prove mandatory `client_context_id` propagation through every source, identity key, cache, graph edge, BSO, brain snapshot, decision, execution, delivery receipt, learning cohort and cost line. Layer 2 hardcodes organization visibility in the BSO/slice paths. Admin expertise has zero non-stub and zero reviewed/accepted capabilities, so it is not prescriptive expertise. Governed external-agent handoff is unavailable, and sensitive aggregation, client-scoped erasure and provider-cost attribution are incomplete. A structurally valid path can therefore deduplicate two clients' identities/content, expose Alpha Support evidence to Beta Sales, reuse a private prompt/cache response, choose the wrong credential/recipient, allocate retries to the wrong margin, or train an agency-global commercial rule. UI redaction is too late: prohibited evidence must be excluded before correlation, reasoning, delivery and learning.",
+  "expected_behavior": "The fixture fails closed at every missing boundary. Alpha's ticket stays usable only for its permitted Support/safety purpose by its declared operators, and contributes zero evidence to Beta, Sales, commercial rationale, embeddings, drafting, behavior/adaptive learning or agency-wide aggregation. The Admin request resolves to Observation only or `unsupported`, with no generic Sales/Admin action. Beta's Sales path proceeds only from Beta-owned evidence and accepted expertise. Every visible or executable object carries `org_id`, `client_context_id`, business subject, relationship/thread, visibility principals, unioned exclusions, use class, policy/version and lineage. Delivery uses Beta's recipient, credential and idempotency namespace. Each physical model/agent attempt — retries included — is attributed exactly once to Beta's execution and reconciles to the provider invoice and client-margin reporting. Alpha erasure invalidates and rebuilds Alpha descendants, preserving an allowed aggregate only if the declared independent-population and sensitivity floor still passes. Dual-ACL rule: source ∩ client principals with unioned exclusions; client ∩ active operator role/assignment/purpose/region-time policy; subject exclusion holds even when the subject has another product login; allowed purposes intersect and `never_commercial` is terminal for commercial paths; derived objects carry all parent policy versions and are invalidated when any parent narrows or revokes; aggregation requires a declared population, independent client/subject/source families and a sensitivity-specific floor. A model-disabled replay must produce identical isolation, routing, execution, delivery and learning dispositions.",
+  "why_now": "The document declares no business \"why now\" — it is explicitly [MODELLED], derived from the uploaded five-application reference, and is not a production incident, customer testimony or proof of demand. What makes the fixture actionable is structural: Alpha's Support ticket is an open, permitted Support/safety case for its assigned operators; Beta has an approved draft/execution ready to send whose cost must land on Beta; and Alpha's erasure request is a received, time-bound obligation. Everything else in the fixture (Alpha's Admin bank-change request, any Beta Sales use of Alpha evidence) is explicitly not actionable.",
+  "open_loop": "Alpha's private Support ticket from alex@example.com, awaiting resolution by Alpha's assigned operators under its original Support/safety purpose with `never_commercial` and a subject exclusion in force — kept separate from Beta's independently-grounded Sales opportunity and from Alpha's Admin bank-change request, which stays Unsupported/Blocked pending accepted Admin/security expertise and approvals.",
+  "passes_today": false,
+  "prohibited_behaviors": [
+    "Do not merge identities, evidence, context, embeddings, caches or open loops across clients because the agency or the operator is shared.",
+    "Do not widen `operator_only` evidence to all agency members, a default admin, another client's owner, or the evidence subject.",
+    "Do not use `never_commercial` Support evidence in Sales candidates, copy, rationale, ranking, delivery or learning.",
+    "Do not let an LLM summary, vector similarity, a common email/domain, or the same filename bypass client scope.",
+    "Do not use generic expertise when Admin or another required capability is Stub or uncovered.",
+    "Do not choose a different client's OAuth credential, channel, recipient or fallback when the scoped route is unavailable.",
+    "Do not count a retry twice, leave compute unallocated, or claim client margin from estimates that do not reconcile to execution/provider receipts.",
+    "Do not erase another client's independent evidence, and do not retain Alpha-derived active influence after Alpha erasure."
+  ],
+  "layer_obligations": [
+    {
+      "layer": "L1",
+      "required_output": "Stamp every provider object, raw/prepared content, vector/cache candidate and qualified signal with tenant, client context, source ACL, purpose/use, exclusions, version, retention and source readiness. Emit an immutable receipt containing `(org_id, client_context_id, source_id, object_id, version)`, the narrowest principals, unioned exclusions, the `never_commercial` use class, the transformation applied and cursor health.",
+      "fail_closed": "Park any input missing client context, suppress unauthorized publication, and never substitute an org-wide default client context."
+    },
+    {
+      "layer": "L2",
+      "required_output": "Resolve identity, dedup, correction and erasure strictly inside `(org, client, relationship/thread)`; intersect source ACL with client ACL; keep the Alpha Support projection and the Beta Sales projection separate. Emit a client-scoped BSO carrying the exact business subject, actors, membership, current state, visibility/use, missing/conflict codes and graph version.",
+      "fail_closed": "Return `suppressed_policy`, `split_required`, or route the source to Review; never perform a cross-client join and never invent synthetic authority."
+    },
+    {
+      "layer": "L3",
+      "required_output": "Compile only the client's permitted Organization/Expert/Behavior/Adaptive snapshot and the accepted-capability closure. Emit an ExpertisePackage with client config/brain/corpus hashes, coverage, exclusions and authoritative mode.",
+      "fail_closed": "Observation only when Admin (or any required capability) is Stub or uncovered — no generic fallback, and no Alpha evidence inside a Beta package."
+    },
+    {
+      "layer": "L4",
+      "required_output": "Generate candidates only within the client's objective, budget, permitted evidence and exact open loop, keeping confidence, priority and coverage as separate quantities. Emit a Decision carrying client ID, stakes, primary/Alternative/wait options, owner/approval, completion definition, outcome window and an exclusion trace.",
+      "fail_closed": "Block when client ownership, use permission, expertise or the cost owner is absent."
+    },
+    {
+      "layer": "L5",
+      "required_output": "Create exactly one client-scoped ExecutionObject; bind actor, approval, dependencies, agent lease/idempotency and every usage/cost event. Emit execution/action IDs carrying client context, provider attempt lineage, cost center and observable completion.",
+      "fail_closed": "Block when the agent or Admin path is unavailable; never fall back to a default operator, default client, or default cost allocation."
+    },
+    {
+      "layer": "L6",
+      "required_output": "Revalidate client audience, subject exclusions, current permission, scoped credential, route, content and authority immediately before the adapter call. Emit a canonical DeliveryResult carrying client/execution/action, credential and config version, recipient, provider/idempotency ID and a definite or explicitly-unknown result.",
+      "fail_closed": "Suppress or record no-route; never fall back across a client, credential, operator or evidence boundary."
+    },
+    {
+      "layer": "L7",
+      "required_output": "Join only client-scoped exposure/action/delivery/outcome records; enforce permitted use, source-family independence, a sensitivity-aware population floor, retention and erasure. Emit a client-bounded proposal/brain version or an explicit policy rejection, plus compiler-consumption and retraction receipts; keep costs separate from outcome value.",
+      "fail_closed": "No promotion from `never_commercial` evidence, sparse or cross-client data, or missing lineage; erasure quarantines all affected descendants."
+    }
+  ],
+  "mutations": [
+    {
+      "mutation": "The same email address appears in both Alpha's and Beta's context.",
+      "expected_decision": "Create two client-scoped identity/relationship records; a reviewed link may acknowledge that this is the same human without sharing any facts between contexts.",
+      "prohibited": "An agency-global person node supplying evidence to both contexts.",
+      "pass_condition": "Two BSOs exist with disjoint memberships and separate policy traces; no fact from one appears in the other.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No `client_context_id` exists anywhere in identity resolution — L2 hardcodes organization visibility in BSO/slice paths, so every person node is agency-global by construction."
+    },
+    {
+      "mutation": "The same PDF is uploaded independently by both clients.",
+      "expected_decision": "A content fingerprint may note duplicate bytes, but each source receipt, ACL and permitted use stays separate per client.",
+      "prohibited": "Reusing Alpha-extracted private facts to answer or enrich Beta.",
+      "pass_condition": "Cache and vector entries remain keyed by tenant + client + policy, so the Beta upload produces its own receipt and its own extraction.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "Cache/vector keys carry no client context or policy version; dedup by content fingerprint would collapse the two sources into one org-scoped record."
+    },
+    {
+      "mutation": "The Alpha-assigned operator is also a Beta-assigned operator.",
+      "expected_decision": "Access is evaluated independently per current assignment and purpose, once for each client context.",
+      "prohibited": "The shared operator role acting as a bridge that joins the two clients' graphs.",
+      "pass_condition": "The audit trail shows two distinct access decisions, each naming its client context and purpose.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "There is no counterparty or operator role model — no requester/owner/assignee distinction exists, so per-assignment access evaluation cannot be expressed or logged."
+    },
+    {
+      "mutation": "`client_context_id` is stripped from one inbound event.",
+      "expected_decision": "Park the event and alert naming the exact missing key.",
+      "prohibited": "Defaulting to the agency organization or inferring the \"most likely\" client.",
+      "pass_condition": "That event produces zero graph, BSO and ExpertisePackage descendants.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "The field does not exist, so its absence is unobservable; L1 has no park-on-missing-client-context path and the org default is the only behavior available."
+    },
+    {
+      "mutation": "An Alpha private Support fact is predictive of churn.",
+      "expected_decision": "Use it only for the permitted Support/safety handling; suppress it entirely from any commercial projection.",
+      "prohibited": "Feeding it into a Sales expansion/retention campaign or into commercial learning.",
+      "pass_condition": "Zero protected evidence IDs and zero derived features from that fact appear anywhere in the Sales trace.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "`never_commercial` is not enforced as terminal for commercial paths across L3/L4/L7; L7 learning has never executed (no human verdicts, calibration never ran), so the learning-suppression half is unobservable."
+    },
+    {
+      "mutation": "An Alpha Admin bank-change request arrives, against a 57-file Admin corpus that is 100% stubs (zero non-stub, zero reviewed or accepted, zero executable routes).",
+      "expected_decision": "Unsupported / Blocked pending accepted Admin and security expertise plus approvals.",
+      "prohibited": "Emitting a generic operational instruction from non-Admin or generic expertise.",
+      "pass_condition": "No ExecutionObject is created and no delivery occurs.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No abstention vocabulary: cards.level only carries prescriptive/predictive, there is no observation/unsupported/blocked state, and DEFER is unreachable (confidence_floor_bp = 0 in every live manifest). L3 is also dark and unroutable (73/73 NoExpertiseRoute)."
+    },
+    {
+      "mutation": "Beta's scoped route credential is missing at delivery time.",
+      "expected_decision": "Surface a visible no-route/Blocked disposition while preserving the execution for later recovery.",
+      "prohibited": "Borrowing Alpha's credential or falling back to a default Slack route.",
+      "pass_condition": "Zero adapter calls are made and a client-scoped recovery receipt is written.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "The L6 delivery control plane has never run — `delivery_outbox` is empty across all orgs — so there is no credential resolution, no no-route receipt and no adapter-call boundary to assert against."
+    },
+    {
+      "mutation": "The provider accepts a Beta send and then the connection times out (ambiguous outcome).",
+      "expected_decision": "Record one ambiguous attempt charged exactly once to Beta, and reconcile the outcome before any retry.",
+      "prohibited": "A duplicate send, or a duplicate cost/margin charge for the same physical attempt.",
+      "pass_condition": "Exactly one provider/idempotency identity exists and it maps to one canonical cost line on Beta.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L5 has never produced an execution row and card actions do not touch the execution subsystem, so there is no attempt lineage, no idempotency namespace and no per-client cost line to reconcile."
+    },
+    {
+      "mutation": "An external agent callback returns a result with the client context omitted.",
+      "expected_decision": "Quarantine or reject the result; the execution stays unresolved.",
+      "prohibited": "Attaching the result by actor name or to the most recent execution.",
+      "pass_condition": "The callback drives no completion and exerts no learning influence.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "Governed external-agent handoff is unavailable and the execution weld does not exist; there is no execution to leave unresolved and no quarantine path for an unattributable callback."
+    },
+    {
+      "mutation": "Alpha requests erasure.",
+      "expected_decision": "Remove/retract Alpha subject rows and all their descendants, then recompute affected aggregates.",
+      "prohibited": "Deleting Beta's independent evidence, or leaving Alpha-derived influence active in any brain.",
+      "pass_condition": "A retraction blast-radius receipt is produced and zero active Alpha descendants remain, while unrelated client state stays byte-identical.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "Client-scoped erasure is incomplete and there is no client-context lineage to traverse; derived objects (cache/vector/BSO/package/decision) do not carry parent policy versions, so transitive invalidation cannot be computed."
+    },
+    {
+      "mutation": "After Alpha erasure, a previously-approved learned aggregate falls below its sensitivity floor.",
+      "expected_decision": "Disable or supersede the learned aggregate.",
+      "prohibited": "Retaining it on the grounds that it was previously approved.",
+      "pass_condition": "The new active registry excludes that version; the historical version remains but is access-restricted.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L7 learning/calibration has never executed and there is no declared-population or sensitivity-floor machinery, so there is no active registry to supersede."
+    },
+    {
+      "mutation": "The model cache holds a prompt whose text is byte-identical across the two clients.",
+      "expected_decision": "Miss the cache across the client and policy boundary; execute independently for each client.",
+      "prohibited": "Serving a shared response or registering a cache hit across clients.",
+      "pass_condition": "The cache key demonstrably includes tenant + client + visibility + model/prompt/schema versions.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "The decision cache is keyed without client context, visibility or policy version, so identical prompt text across two clients is a hit by design."
+    }
+  ]
+}

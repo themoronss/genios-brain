@@ -1,0 +1,118 @@
+identity:
+  id: admin.pb.agenda_preparation.decision_first_agendas
+  name: Decision-first agendas
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.agenda_preparation
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: stable
+purpose:
+  statement: >
+    Build the agenda around the decisions to be made, with inputs pre-read, owners named and each item
+    timeboxed against importance. Meetings without a decision agenda default to status theatre, and
+    status is what documents are for.
+  answers:
+  - What must be decided here that cannot be decided elsewhere?
+  - What has to be in front of people before this starts?
+
+when_to_use:
+  conditions:
+  - {exists: meeting.start_at}
+  do_not_use_when:
+  - The meeting is genuinely for discussion or relationship-building. Forcing a decision agenda onto
+    a discovery conversation makes it worse, and the honest agenda there says so.
+
+steps:
+- order: 1
+  name: Name the decision for each item
+  description: >
+    An item with no decision and no genuine discussion is a distribution list with chairs. Applied
+    honestly this test removes about a third of most calendars without anyone objecting.
+  actor: human
+  produces: A decision per item, or a removed item.
+  done_when: Every surviving item states what will be decided.
+- order: 2
+  name: Collect the agenda from the attendees, not from the organiser
+  description: >
+    Items other people needed are otherwise missing, and they raise them under any other business —
+    which is where the important thing gets ten minutes at the end.
+  actor: human
+  produces: A jointly built agenda.
+  done_when: Each attendee has had the chance to add or been explicitly not asked.
+- order: 3
+  name: Attach the pre-read, and make it a pre-read
+  description: >
+    Not the deck. A forty-slide attachment is the meeting delivered early and nobody reads it either.
+    The pre-read is the minimum that makes the decision possible.
+  actor: human
+  objects_read: [admin.obj.core.document]
+  produces: Circulated material.
+  done_when: The material is short enough to be read and early enough to be read before.
+- order: 4
+  name: Name an owner against each item
+  description: >
+    Unowned items are discussed in the order they appear and concluded by whoever speaks last.
+  actor: human
+  done_when: Every item has a person responsible for bringing it and closing it.
+- order: 5
+  name: Timebox against importance and sequence deliberately
+  description: >
+    Decisions while people are fresh, contentious items early enough that running out of time is not
+    a way of avoiding them, status never. Agendas without timeboxes spend the hour on item one.
+  actor: human
+  produces: A sequenced, timeboxed agenda.
+  done_when: The hard item is not last.
+- order: 6
+  name: Circulate early enough to be argued with
+  description: >
+    An agenda that arrives with the meeting cannot be corrected, which removes the main benefit of
+    having written one.
+  actor: human
+  done_when: Attendees had time to object to the agenda itself.
+
+objects_used:
+- admin.obj.core.meeting
+- admin.obj.core.document
+- admin.obj.core.action_item
+- admin.obj.core.approval
+
+limits:
+- >
+  Agendas and pre-reads are documents and nothing in the substrate captures them. This playbook is
+  authored for a human and for rendering, not for a Layer 4 predicate.
+- Step 1 is unenforceable against a principal who wants a status meeting. The test only works where somebody is empowered to remove items.
+
+failure_modes:
+- The decision named so vaguely it cannot be failed — "discuss and agree direction" passes step 1 and changes nothing.
+- Step 5 done and never enforced in the room, which teaches attendees the agenda is decorative.
+
+variants:
+- applies_to: regulated
+  change: Step 4 and step 6 become evidential — who brought an item and when it was circulated are part of the record.
+  why: In a governed context the agenda is an artefact of the decision, not an aid to it.
+- applies_to: startup_lean
+  change: Steps 2 and 6 compress into a shared channel; step 1 stays, and it is the whole value.
+  why: The ceremony is unaffordable and the decision test is free.
+- applies_to: enterprise_admin
+  change: Step 3 needs a length limit enforced by someone, or it becomes the deck by default.
+  why: Volume of material scales with the number of contributors.
+
+references:
+- title: admin.obj.core.meeting
+  kind: internal
+  note: meeting.open_loop is the observable consequence of skipping step 1 — a meeting that ended with nothing resolved.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1 is the cheapest intervention in meeting operations and the one most often skipped, because
+    applying it means telling somebody their meeting is unnecessary. Everything else in this playbook
+    improves a meeting that survived it.

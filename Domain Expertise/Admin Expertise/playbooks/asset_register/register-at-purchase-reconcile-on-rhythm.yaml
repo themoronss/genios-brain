@@ -1,0 +1,86 @@
+identity:
+  id: admin.pb.asset_register.register_at_purchase_reconcile_on_rhythm
+  name: Register at purchase, reconcile on rhythm
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.asset_register
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every asset enters the register at purchase — tag, custodian, location, value — and the register
+    meets physical reality on a scheduled reconciliation, because an unreconciled register is a spreadsheet
+    of wishes.
+
+when_to_use:
+  do_not_use_when:
+  - The item is below the capitalisation and tracking threshold. Registering everything produces a register too large to reconcile, which is the same as having none.
+steps:
+- order: 1
+  name: Enter it at purchase
+  description: >
+    Tag, custodian, location, value. Entered at audit instead, every field is reconstructed from
+    memory and the register agrees only with itself.
+  actor: agent
+  objects_read: [admin.obj.core.asset, admin.obj.core.invoice]
+  done_when: The asset exists in the register before it is in use.
+- order: 2
+  name: Include digital assets
+  description: >
+    Domains, certificates, licences and cloud resources are owned, valuable and expire. Their
+    absence from the register is why they expire unnoticed.
+  actor: human
+  done_when: Non-physical assets are in the same list.
+- order: 3
+  name: Track lifecycle state
+  description: >
+    In use, in repair, in storage, awaiting disposal. Without it, an asset nobody can find is
+    indistinguishable from one in a cupboard.
+  actor: human
+  done_when: Every entry has a state that is not just present or absent.
+- order: 4
+  name: Reconcile against reality on a rhythm
+  description: >
+    A register that has never met the physical estate is a spreadsheet. The variance is the only
+    honest measure of how much it can be trusted.
+  actor: human
+  done_when: A count happened and the variance is known.
+- order: 5
+  name: Retire and remove
+  description: >
+    A register that only grows overstates the estate, and the overstatement surfaces during an
+    insurance claim or a disposal.
+  actor: human
+  done_when: Disposed assets have left the register with a record of why.
+objects_used: [admin.obj.core.asset, admin.obj.core.invoice, admin.obj.core.vendor, admin.obj.core.contract]
+limits:
+- 'Reconciliation is expensive and its frequency is a judgement this playbook cannot make for a given estate.'
+- 'Step 2 needs the digital estate to be knowable, and shadow SaaS is exactly what a register lacks.'
+failure_modes:
+- 'Step 4 skipped indefinitely because it is the only expensive step, which converts the whole register into a list.'
+- 'Step 3 collapsed to in-use or disposed, which hides everything in repair or storage.'
+variants:
+- applies_to: distributed
+  change: Step 4 cannot be a physical count; it becomes an attestation per custodian, which is weaker and must be labelled as such.
+  why: There is no estate to walk.
+- applies_to: regulated
+  change: Steps 4 and 5 are evidenced and disposal may require a certificate.
+  why: Disposal of certain assets is a controlled act.
+references:
+- title: Asset register and reconciliation practice
+  kind: practitioner
+  note: Where the register-versus-list distinction is defined by whether reconciliation has ever happened.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 4 is the only expensive step and it is the one that makes the register a register.
+    Skipping it indefinitely is the default, and the result is a document that agrees with
+    itself and with nothing physical.

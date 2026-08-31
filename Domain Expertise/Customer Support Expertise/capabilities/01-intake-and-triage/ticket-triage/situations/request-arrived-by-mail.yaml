@@ -1,0 +1,125 @@
+# The intake subdomain had six capabilities and no door. On a tenant with no helpdesk the ticket
+# is an email, and every triage decision — how bad, how urgent, who owns it — has to be made from
+# the message itself. That is harder than triaging a ticket and it is not impossible.
+
+identity:
+  id: customer_support.sit.request_arrived_by_mail
+  name: Request Arrived by Mail
+  domain: customer_support
+  owner_capability: customer_support.intake_and_triage.ticket_triage
+  version: 1.0.0
+  status: stable
+
+description: >
+  Someone has asked us for something and we have not answered. No ticket exists because no
+  helpdesk exists; the request is a message, and the triage questions are the same ones they
+  always were — what is being asked, how bad is it, and who should own it.
+
+  Triage from correspondence has one advantage over triage from a form and it is worth using: the
+  customer wrote in their own words, so intent is legible in a way a dropdown never makes it.
+  Severity and priority both have to be inferred rather than read, and holding those two apart is
+  the whole discipline — how broken it is, versus what we work on first. A minor bug for someone
+  renewing next month and a severe one for a free trial routinely invert.
+
+  The failure this file exists to prevent is treating every unanswered inbound as a support
+  request. Most inbound is not; a question about a contract, an introduction, an invoice and a
+  broken feature all arrive the same way, and answering them all as support tickets produces
+  advice that is wrong four times out of five. `relationship.nature` is what separates them, and
+  where it is absent the honest read is a general unanswered message, not a support case.
+
+matches:
+  l2_situation_types:
+    - support_case
+    - support_contact
+    - relationship
+  scope: person
+  when:
+    - path: thread.ball_in_court
+      op: "="
+      value: us
+    - path: relationship.nature
+      op: "="
+      value: customer
+
+also_serves:
+  # Reachable today, unlike the rest of its subdomain: the language and register a customer
+  # writes in are IN the message, so adapting to them needs no substrate we do not have.
+  - customer_support.customer_communication.tone_and_localization
+  - customer_support.intake_and_triage.intent_classification
+  - customer_support.intake_and_triage.priority_and_severity
+  - customer_support.intake_and_triage.routing_and_assignment
+  - customer_support.intake_and_triage.channel_intake
+
+objects:
+  load:
+    - customer_support.obj.core.ticket
+    - customer_support.obj.core.requester
+  optional:
+    - customer_support.obj.core.customer_account
+    - customer_support.obj.core.entitlement
+    - customer_support.obj.core.commitment
+    - customer_support.obj.core.customer_sentiment
+  never_load:
+    # Nothing here is post-resolution or portfolio-level. Loading them would resolve to `unknown`
+    # and read as "checked, and there is none" about a request nobody has answered yet.
+    - customer_support.obj.postmortem.postmortem
+    - customer_support.obj.core.knowledge_article
+    - customer_support.obj.macro_management.macro
+
+priority_bp: 7200
+typical_duration_days: 3
+
+signals_of_progress:
+  - positive_reply
+  - next_step_agreed
+  - question
+
+signals_of_decay:
+  - negative_reply
+  - timeline_slip
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    A customer has asked for something and nobody has answered. Never say "respond to the
+    customer" — that is the category. Say what they asked and what the answer depends on.
+
+    Headline: what they want, in their terms, and how long it has been.
+
+    Situation: what makes it urgent or not — what they are to us, what we have promised before,
+    and whether anything about this exchange has gone sour. Severity and urgency are different;
+    if they diverge here, say so, because that divergence is the decision.
+
+    Artifact: the reply. If we can answer, answer. If we cannot yet, the reply says what we are
+    doing, who is doing it and when they will hear next — never "we're looking into it" with no
+    date attached.
+  fallback:
+    headline: "{entity} — asked us something, still waiting"
+    # Was "... and nothing on record ...", which opens on the hole in our records rather
+    # than on the fact the reader acts from. Same evidence, and only one of the two is a
+    # finding. The sibling of this fault shipped 25 empty-reading cards to the design
+    # partner on 2026-08-30; this file is the same shape, caught before it routed.
+    situation: >-
+      {entity} is waiting on an answer from us and no reply has gone back.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Double-gated on `ball_in_court = us` AND `relationship.nature = customer`, deliberately. The
+    first alone would make every unanswered message a support request, which on a founder inbox is
+    overwhelmingly false. The cost of the second gate is coverage — a customer whose nature was
+    never extracted does not reach this situation — and that is the right trade: a missed support
+    case is a gap, a misread introduction is a wrong answer delivered confidently.
+
+    `duplicate_and_merge` is NOT served. Detecting that two requests are the same one needs a
+    corpus of open requests to compare against, and no fact expresses request identity. Left
+    orphaned rather than reached on a guess.
+
+admission:
+  accepted_content_hash: 08af653253443072bd88b26b37e5b18e02f711d8cae2e057020badefe62d4acc

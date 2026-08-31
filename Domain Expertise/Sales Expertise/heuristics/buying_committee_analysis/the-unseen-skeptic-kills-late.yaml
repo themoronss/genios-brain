@@ -1,0 +1,144 @@
+identity:
+  id: sales.heu.buying_committee_analysis.the_unseen_skeptic_kills_late
+  name: The unseen skeptic kills late
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.buying_committee_analysis
+  subdomain: qualification
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: Deals rarely die from the people in the room; they die from the person who was never in
+    the room reviewing the decision at the end. If nobody on the committee map is a named skeptic, the
+    map is incomplete, not the deal safe.
+  answers:
+  - Is this committee map finished?
+  - Why do well-run deals lose late and without warning?
+  not:
+  - A claim that every buyer has an enemy. The skeptic is usually doing their job well.
+  - A rule about who to contact. It says the map is wrong, not who to email.
+
+heuristic:
+  statement: 'Treat the absence of a skeptic on the map as evidence about the MAP rather than about
+    the deal. Every committee of any size contains someone whose function is to find the reason not to
+    proceed — security, finance, an incumbent owner, a peer with a competing initiative — and a
+    picture in which everyone is supportive is a picture assembled from people who talk to sellers.'
+  why: 'The seller''s view of a committee is built from a biased sample: it contains the people who
+    replied, and the people who replied are the ones already inclined to engage. The skeptic has no
+    reason to spend time with a vendor before the decision reaches them, so their silence is not
+    ambivalence — it is the normal shape of their role. That is also why the objection arrives late
+    and fully formed rather than early and negotiable: they are given the proposal at review, form a
+    view without us in the conversation, and there is no relationship through which to answer it.'
+  confidence_bp: 8100
+  applies_when: 'A multi-person purchase where the seller''s picture of the committee comes primarily
+    from correspondence and from one or two contacts.'
+  breaks_down_when: 'GENUINELY SINGLE-DECISION-MAKER PURCHASES. Founder-led buys and small
+    discretionary spend have no committee, and hunting for a skeptic manufactures a stakeholder — then
+    contacting them introduces exactly the review that did not exist.
+
+    A BUYER WITH A PUBLISHED PROCESS. Where the buyer states its evaluation structure and the seats in
+    it, the map is not an inference and its completeness can be checked directly.
+
+    RENEWALS AND EXPANSIONS INSIDE A HAPPY ACCOUNT. The skeptic role is often already discharged by
+    the original purchase, and treating the renewal as a fresh committee over-engineers it.
+
+    WHERE THE SKEPTIC IS ALREADY MAPPED AND SUPPORTIVE. A security reviewer who has already cleared
+    the product is a mapped ally; the heuristic asks for a named skeptic, not a permanent adversary.
+
+    WHEN IT BECOMES A REASON TO WIDEN INDISCRIMINATELY. Contacting more people to satisfy the rule
+    creates the multi-threaded appearance without the substance, and it irritates the champion whose
+    process is being routed around.'
+  reads:
+  - sales.obj.core.buying_committee
+  - sales.obj.core.stakeholder
+  - sales.obj.core.risk
+  contradicts:
+  - sales.heu.champion_identification.coach_vs_champion
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {fn: edge_count, op: "<=", value: 3}
+  signals:
+  - security_review_started
+  - legal_review
+  - objection
+  do_not_use_when:
+  - The purchase genuinely has one decision-maker; a manufactured skeptic creates a real review.
+  - The buyer publishes its evaluation structure, so the map is not an inference.
+  - The skeptic seat is already mapped and has cleared us.
+
+objects_used:
+- sales.obj.core.buying_committee
+- sales.obj.core.stakeholder
+- sales.obj.core.decision_maker
+- sales.obj.core.risk
+
+outcomes:
+- A committee map is not treated as complete until a skeptic seat is named.
+- Absence of dissent is read as a sampling artefact rather than as consensus.
+
+failure_modes:
+- 'HUNTING FOR AN ENEMY. The skeptic is usually a competent professional doing their job; framing
+  them adversarially produces exactly the relationship the heuristic exists to avoid.'
+- 'SATISFIED BY NAMING A ROLE. "Security will need to review" is not a named seat with a position; it
+  is an acknowledgement that a seat exists, which is where most maps stop.'
+- 'USED TO WIDEN CONTACT INDISCRIMINATELY. Produces breadth on the dashboard and irritation in the
+  account.'
+
+limits:
+- Says nothing about how to reach the skeptic once identified — that is the champion's route, and it
+  is the harder half.
+- 'Cannot detect the seat from the record: an unmapped person generates no correspondence, so their
+  absence is invisible by construction and this remains a human discipline.'
+- '`stakeholder_added` and `champion_change` have no rows on the design partner''s org, so even the
+  observable half of committee movement is currently unavailable.'
+
+variants:
+- applies_to: enterprise
+  change: Expect several skeptic seats — security, legal, procurement, and an internal build-versus-buy
+    advocate — and map them separately rather than as one role.
+  why: They object on different grounds and are cleared by different evidence.
+- applies_to: mid_market
+  change: Usually one skeptic, most often finance. Naming that seat early is most of the work.
+  why: The structure is simpler and the single seat carries the whole risk.
+- applies_to: channel
+  change: The skeptic may sit inside the PARTNER — a rep whose commission is threatened, or an
+    existing vendor relationship — rather than inside the end customer.
+  why: The route to the buyer contains its own committee.
+
+metrics:
+- name: named_skeptic_rate
+  unit: percent
+  description: Share of mapped committees containing a named skeptic.
+  direction: higher_is_better
+- name: late_stakeholder_surprise_rate
+  unit: percent
+  description: Share of deals where an unknown seat materially affected the outcome after proposal.
+  direction: lower_is_better
+
+references:
+- title: The Challenger Customer
+  kind: book
+  author: Adamson, Dixon, Spenner and Toman
+  note: On consensus-building inside the buying group and the mobiliser/blocker distinction, which is
+    the research this heuristic operationalises.
+- title: MEDDICC
+  kind: methodology
+  note: The decision-process dimension is where the seat list belongs; this adds the completeness test.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. `limits` records the structural blind spot
+    honestly: an unmapped person generates no correspondence, so the engine cannot detect the very
+    thing this heuristic is about — it can only observe narrow `edge_count` and prompt the question.'

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from datetime import datetime, timedelta, timezone
 
 from genios_engine.packs.general_v1 import GENERAL_V1
@@ -20,7 +22,7 @@ SC = SALES_V1["scoring_defaults"]
 # ---- pack conformance ------------------------------------------------------
 
 def test_sales_pack_is_wellformed():
-    assert SALES_V1["id"] == "sales" and SALES_V1["version"] == "1.10.0"
+    assert SALES_V1["id"] == "sales" and SALES_V1["version"] == "1.13.0"  # 1.13.0: relationship-lens guard on all deal rules
     assert {"weights", "c_weights", "gate", "budget_per_user_day", "impact",
             "bands", "execution"} <= SC.keys()
     assert SC["weights"]["u"] + SC["weights"]["i"] + SC["weights"]["r"] == 100
@@ -268,7 +270,11 @@ GC = GENERAL_V1["scoring_defaults"]
 
 
 def test_general_pack_is_wellformed():
-    assert GENERAL_V1["id"] == "general" and GENERAL_V1["version"] == "1.1.2"
+    # Assert the SHAPE, not a frozen version string. Pinning the number makes every legitimate
+    # pack change fail here first, which teaches people to bump the literal without reading why
+    # it moved — the assertion stops testing anything and starts costing something.
+    assert GENERAL_V1["id"] == "general"
+    assert re.fullmatch(r"\d+\.\d+\.\d+", GENERAL_V1["version"]), "semver, always"
     assert {"weights", "c_weights", "gate", "budget_per_user_day", "impact",
             "bands"} <= GC.keys()
     assert GC["weights"]["u"] + GC["weights"]["i"] + GC["weights"]["r"] == 100

@@ -1,0 +1,189 @@
+identity:
+  id: sales.pb.meeting_booking.frictionless_scheduling
+  name: Frictionless scheduling
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.meeting_booking
+  subdomain: prospecting_and_outreach
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'Every extra step between yes and a calendar invite loses a real fraction of yeses. The
+    moment intent is expressed, the seller does the work: propose concrete slots in the buyer''s
+    timezone, and send the invite the moment one is picked.'
+  answers:
+  - What happens between a positive reply and a held meeting?
+  - Where do agreed meetings actually get lost?
+  not:
+  - A qualification step. Whether this meeting should happen is decided before this playbook starts.
+  - A meeting-preparation method. This ends when the meeting is held.
+
+when_to_use:
+  situations:
+  - sales.sit.inbound_lead
+  conditions:
+  - {path: thread.ball_in_court, op: "=", value: us}
+  - {exists: thread.last_inbound}
+  signals:
+  - meeting_request
+  - positive_reply
+  do_not_use_when:
+  - 'The meeting is not the right next step. Fast scheduling of an unqualified conversation wastes an
+    hour on both sides and spends the interest that made it bookable.'
+  - 'The attendee list is not yet settled. Proposing slots that cannot be honoured is the one
+    scheduling error that costs more than delay.'
+  - 'The buyer schedules through a formal process. Seller-side speed neither accelerates it nor is
+    read as a signal.'
+
+steps:
+- order: 1
+  name: Answer while the thread is still ours
+  description: 'A scheduling thread waiting on the seller is the most time-sensitive item in the
+    pipeline: intent peaks at the moment it is expressed and decays with every exchange. Where a slot
+    cannot be offered yet, acknowledge with a stated time by which it will be — the speed signal is
+    preserved and no credibility is spent.'
+  actor: human
+  objects_read:
+  - sales.obj.core.next_action
+  produces: A reply inside the buyer's working day.
+  done_when: The scheduling ball has not sat with the seller overnight in the buyer's time.
+
+- order: 2
+  name: Offer named slots, with the link as a fallback
+  description: '"Tuesday 11:00 or Wednesday 16:00, your time?" respects the buyer more than homework
+    with a booking link. Include the link as an alternative, never as the whole reply — a link alone
+    transfers the work to the interested party at the moment they were willing to do the least.'
+  actor: human
+  produces: Two or three concrete options, expressed in the buyer's timezone.
+  done_when: The reply contains times, not only a link.
+
+- order: 3
+  name: Confirm in their timezone, with an agenda line
+  description: 'One line stating what will be decided. A meeting with a stated purpose survives
+    calendar triage; "intro call" is what gets cut when the buyer''s week goes wrong, because it is
+    the only entry whose value is unstated.'
+  actor: human
+  objects_read:
+  - sales.obj.core.timeline
+  produces: An invitation carrying a purpose and the correct timezone.
+  done_when: No invitation goes out without a line naming the outcome.
+
+- order: 4
+  name: Invite everyone the meeting actually needs
+  description: 'A meeting that will be re-run because the person who decides was not on it is worse
+    than one scheduled a week later with them present. Ask who else should be there — the buyer
+    usually knows and is rarely asked.'
+  actor: human
+  objects_read:
+  - sales.obj.core.decision_maker
+  - sales.obj.core.buying_committee
+  produces: An attendee list confirmed with the buyer.
+  done_when: Nobody essential is missing from the invitation.
+  optional: true
+
+- order: 5
+  name: Guard the no-show
+  description: 'A short reminder on the morning, carrying the same agenda line, materially reduces
+    no-shows. It is a courtesy and a last cheap opportunity for the buyer to move it rather than miss
+    it — which is a far better outcome than an unattended slot.'
+  actor: human
+  produces: A same-day reminder with the agenda restated.
+  done_when: Every external meeting carries a morning reminder.
+
+- order: 6
+  name: One graceful rebound, then hand back to follow-up
+  description: 'A missed meeting gets one easy, blame-free offer to rebook. A second unattended slot is
+    information rather than an accident, and continuing to offer times past it converts a scheduling
+    problem into a standing one.'
+  actor: human
+  objects_read:
+  - sales.obj.core.next_action
+  produces: Either a rebooked meeting or a thread returned to follow-up with the reason recorded.
+  done_when: No third slot is offered after two unattended ones.
+
+- order: 7
+  name: Record held, not accepted
+  description: 'Acceptance and attendance are different events. A capability measured on invitations
+    accepted optimises the wrong one, and the gaming is usually unconscious rather than deliberate.'
+  actor: system
+  objects_read:
+  - sales.obj.core.next_action
+  produces: An attendance verdict distinct from the invitation state.
+  done_when: The record distinguishes agreed from held.
+
+objects_used:
+- sales.obj.core.next_action
+- sales.obj.core.decision_maker
+- sales.obj.core.lead
+- sales.obj.core.timeline
+- sales.obj.core.buying_committee
+
+outcomes:
+- Agreement converts to a fixed slot in the fewest possible exchanges.
+- Meetings carry a stated purpose and the people who can act on it.
+- The record shows meetings held rather than meetings booked.
+
+failure_modes:
+- 'THE BOOKING LINK AS THE WHOLE REPLY. Reads as a status claim and loses the least-motivated half of
+  the people who had just said yes.'
+- 'SLOTS THAT CANNOT BE HONOURED. Speed spent and then withdrawn is a net loss against a slower reply.'
+- 'NO AGENDA LINE. The meeting becomes the first casualty of a bad week.'
+- 'CHASING THE SECOND NO-SHOW. Converts a scheduling problem into a relationship one.'
+- 'MEASURED ON BOOKED MEETINGS. The metric is gameable and the gaming is invisible from inside it.'
+
+limits:
+- Ends at the meeting being held; nothing here improves the meeting itself.
+- Cannot help where the attendee list is outside the buyer's control either.
+- Assumes calendar facts are captured; without them, held-versus-accepted is not measurable and step 7
+  becomes an assertion.
+
+variants:
+- applies_to: enterprise
+  change: Step 4 stops being optional. A discovery meeting without the economic buyer's delegate is
+    usually re-run, and the second meeting is harder to get than the first.
+  why: Committee availability is the binding constraint, not the seller's calendar.
+- applies_to: smb
+  change: Collapse steps 2 and 3 — propose and confirm in one exchange, because a second round-trip is
+    pure loss with a single decision-maker.
+  why: There is nobody to coordinate with.
+- applies_to: inside_sales
+  change: Step 1 becomes a queue service level with named coverage; at volume, slow replies concentrate
+    in the hours nobody owns rather than in individuals.
+  why: The failure is structural, so the remedy is a rota rather than a reminder.
+
+metrics:
+- name: agreed_to_held_rate
+  unit: percent
+  description: Share of agreed meetings actually attended.
+  direction: higher_is_better
+- name: scheduling_round_trips
+  unit: count
+  description: Exchanges between agreement and a fixed slot.
+  direction: lower_is_better
+- name: agenda_line_share
+  unit: percent
+  description: Share of invitations stating what will be decided.
+  direction: higher_is_better
+
+references:
+- title: Lead response time research
+  kind: research
+  note: The conversion cost of latency in inbound response, applied here to the post-agreement gap.
+- title: Practitioner scheduling operations
+  kind: practitioner
+  note: Agenda-line and morning-reminder effects on no-show rates are consistently reported and
+    consistently skipped.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 1, 4 and 7 are new. Step 7 exists because
+    `meeting.status`, `meeting.scheduled` and `meeting.attended` are three separate declared facts —
+    the distinction between agreed and held is authorable precisely because Layer 2 does not collapse
+    them, and a playbook that ignored that would be measuring the gameable number.'

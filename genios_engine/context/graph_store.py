@@ -104,6 +104,49 @@ class GraphStore:
                                event_id=event_id)
         return node_id
 
+    def name_company_node(self, conn, *, org_id: str, node_id: str,
+                          name: str | None) -> bool:
+        """Give a company node a human name, but only while it is still called after its anchor.
+
+        A company is anchored on an email domain, so it is created called "devdashlabs.com" and
+        the loop above never revisits that: it re-registers aliases on every later sighting and
+        leaves `display_name` exactly as the first event wrote it. So the name a card prints was
+        decided by the one fact that is guaranteed NOT to be a name. Measured on the design
+        partner's org: 19 of 47 live card headlines opened on a hostname — "errorcore.dev: no
+        problem documented yet", "rizvi.nu: no problem recorded yet" — while the extractor had
+        already pulled "DevDash Labs", "Crescere Labs", "Titan Capital" and "Z Fellows" out of
+        that same mailbox.
+
+        The caller has already resolved the name to THIS node by exact key equality against the
+        node's own anchor key, so nothing here is inferred from similarity.
+
+        Promotion happens only while the display name restates the anchor. A name from anywhere
+        else — a connector, a human, an earlier and better mention — outranks a prose mention and
+        must never be overwritten by one. Returns True when the node was renamed.
+        """
+        cleaned = str(name or "").strip()
+        if not cleaned:
+            return False
+        row = conn.execute(text(
+            "select canonical_key, display_name from graph_nodes "
+            "where org_id=:o and node_id=:n and valid_to is null"),
+            {"o": org_id, "n": node_id}).first()
+        if row is None:
+            return False
+        current = str(row.display_name or "").strip()
+        anchor = str(row.canonical_key or "").strip()
+        # Compare the rendered strings rather than carry a flag, so this is also true of every
+        # node created before the promotion existed — which is all of them.
+        if current and current.casefold() != anchor.casefold():
+            return False
+        if cleaned.casefold() == current.casefold():
+            return False
+        conn.execute(text(
+            "update graph_nodes set display_name=:dn "
+            "where org_id=:o and node_id=:n and valid_to is null"),
+            {"dn": cleaned, "o": org_id, "n": node_id})
+        return True
+
     def map_identity(self, conn, *, org_id: str, source: str, source_object_id: str,
                      node_id: str) -> None:
         conn.execute(text(
@@ -278,10 +321,25 @@ class GraphStore:
 
     def _write_ref(self, conn, *, org_id, event_id, evidence, source=None,
                    fact_version_id=None, observation_id=None, edge_version_id=None) -> None:
+        # `source_object_id` — the PROVIDER's id for the message this receipt came from.
+        #
+        # The column existed and nothing ever wrote it, so all 3,132 rows carried NULL and there
+        # was no path from a card back to the Gmail message that caused it. `evidence` held only
+        # derivation labels like {"derived": "email to/cc"}, which say what the engine concluded
+        # and not what it read.
+        #
+        # Filled by subquery rather than threaded through every writer: the value is already in
+        # `source_events`, keyed by the `event_id` this ref carries, so a correlated select gets
+        # it inside the same statement — no extra round trip, and no signature change across
+        # three public write methods and their dozens of call sites, each of which would be a
+        # chance to forget one and leave a silent NULL behind.
         conn.execute(text(
             "insert into graph_source_refs (source_ref_id, org_id, fact_version_id, "
-            "edge_version_id, observation_id, event_id, source, evidence, extractor_version) "
-            "values (:id, :o, :fv, :ev2, :obs, :e, :src, cast(:ex as jsonb), :xv)"),
+            "edge_version_id, observation_id, event_id, source, evidence, extractor_version, "
+            "source_object_id) "
+            "values (:id, :o, :fv, :ev2, :obs, :e, :src, cast(:ex as jsonb), :xv, "
+            "  (select se.source_object_id from source_events se "
+            "   where se.event_id = :e and se.org_id = :o))"),
             {"id": new_id("ref"), "o": org_id, "fv": fact_version_id, "ev2": edge_version_id,
              "obs": observation_id, "e": event_id, "src": source,
              "ex": json.dumps(evidence, default=str), "xv": "b3-haiku-1"})
@@ -324,13 +382,35 @@ class GraphStore:
                  "ot": output_tokens, "m": model})
 
     def record_cost(self, *, org_id, model, purpose, input_tokens, output_tokens,
-                    success=True, error=None, event_id=None) -> None:
+                    success=True, error=None, event_id=None,
+                    subject_ref=None, client_context_id=None) -> None:
         # Defaults so BOTH callers work: L2 passes all kwargs; L5 render passes only the core set.
         # (Was a bug: L5's call omitted success/error/event_id → TypeError swallowed → l5_render
         #  spend NEVER recorded, reproducing the old 'V2 LLM cost not tracked' gap.)
+        #
+        # `subject_ref` ("card:<id>" / "signal:<id>" / "event:<id>") is what makes "cost per
+        # useful accepted decision" computable at all: org+purpose was enough for a monthly bill
+        # and useless for margin — no way to say WHICH decision a call was spent on. Optional,
+        # because background work is genuinely unattributed and forcing a value would invent one.
         with self._engine.begin() as c:
             c.execute(text(
                 "insert into llm_costs (org_id, model, purpose, input_tokens, output_tokens, "
-                "success, error, event_id) values (:o, :m, :p, :it, :ot, :s, :e, :ev)"),
+                "success, error, event_id, subject_ref, client_context_id) "
+                "values (:o, :m, :p, :it, :ot, :s, :e, :ev, :sr, :cc)"),
                 {"o": org_id, "m": model, "p": purpose, "it": input_tokens, "ot": output_tokens,
-                 "s": success, "e": (error or None), "ev": event_id})
+                 "s": success, "e": (error or None), "ev": event_id,
+                 "sr": subject_ref, "cc": client_context_id})
+        # Every LLM call in the engine lands here, so this is the one place that can report spend
+        # to PostHog without a per-call-site instrumentation that later drifts. Priced with the same
+        # function the admin console uses, so both surfaces quote one dollar figure.
+        try:
+            from genios_engine.platform import analytics, metrics
+            analytics.capture(org_id, "llm_call", {
+                "model": model, "purpose": purpose,
+                "input_tokens": int(input_tokens or 0), "output_tokens": int(output_tokens or 0),
+                "tokens": int(input_tokens or 0) + int(output_tokens or 0),
+                "cost_usd": metrics.cost_usd(model, input_tokens or 0, output_tokens or 0),
+                "success": bool(success),
+            })
+        except Exception:      # noqa: BLE001 — accounting is recorded; telemetry is best-effort
+            pass

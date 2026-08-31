@@ -10,6 +10,7 @@ from genios_engine.contracts.domain_expertise import (
     BusinessSituationObject,
     SituationContextSlice,
 )
+from genios_engine.context.domain_spec import spec_for
 from genios_engine.contracts.visibility import Visibility
 from genios_engine.packs.compiler import (
     DomainCompiler,
@@ -45,7 +46,7 @@ identity: {id: sales, name: Sales, version: 1.0.0, status: stable}
     _write(domain / "registry/situation-capability-map.yaml", """
 domain: Sales Expertise
 map:
-  buying_signal:
+  opportunity:                      # a producible L2 situation type, not a pack reason_code
     situations: [sales.sit.inbound]
     capabilities: [sales.qualification.lead_qualification]
     objects:
@@ -87,7 +88,7 @@ identity:
   version: 1.0.0
   status: stable
 matches:
-  l2_situation_types: [buying_signal]
+  l2_situation_types: [opportunity]
   when: [{path: thread.ball_in_court, op: "=", value: us}]
 objects:
   load: [sales.obj.core.account]
@@ -155,7 +156,11 @@ def _situation(**metadata) -> BusinessSituationObject:
         visibility=Visibility(scope="org", derived_from="test:org"),
         id="situation_1",
         signal_ids=("signal_1",),
-        type="buying_signal",
+        # A value production can actually emit. `buying_signal` is a PACK signal reason_code and
+        # `context/situations.py` never produces it, so every fixture built on it tested a shape
+        # the compiler will never receive — which is how a 100% live route-miss stayed invisible
+        # to a green suite. Sourced from the registry so it cannot drift from L2 again.
+        type=spec_for("sales").type_for("company"),
         confidence_bp=8_200,
         importance_bp=7_600,
         evidence=({"signal_id": "signal_1", "source": "crm"},),
@@ -215,6 +220,7 @@ def test_contract_envelope_and_compiler_are_deterministic(tmp_path: Path):
     publisher = InMemoryExpertisePublisher()
     compiler = DomainCompiler(
         catalog=catalog,
+        require_admission=False,   # draft fixtures: measurement mode; admission has its own test
         runtime_brains=InMemoryRuntimeBrains(),
         publisher=publisher,
     )
@@ -261,6 +267,7 @@ def test_runtime_brains_are_relevant_tenant_scoped_and_visibility_safe(tmp_path:
     )
     compiler = DomainCompiler(
         catalog=ExpertBrainCatalog(_authoring_root(tmp_path)),
+        require_admission=False,   # draft fixtures: measurement mode; admission has its own test
         runtime_brains=InMemoryRuntimeBrains(entries),
     )
 
@@ -283,6 +290,7 @@ def test_behavior_or_adaptive_brain_cannot_define_permission_axis(tmp_path: Path
     )
     compiler = DomainCompiler(
         catalog=ExpertBrainCatalog(_authoring_root(tmp_path)),
+        require_admission=False,   # draft fixtures: measurement mode; admission has its own test
         runtime_brains=InMemoryRuntimeBrains((hostile,)),
     )
     with pytest.raises(BrainPolicyViolation, match="permission-axis"):
@@ -304,6 +312,7 @@ def test_explicit_preference_conflicts_use_atlas_precedence(tmp_path: Path):
     )
     compiler = DomainCompiler(
         catalog=ExpertBrainCatalog(_authoring_root(tmp_path)),
+        require_admission=False,   # draft fixtures: measurement mode; admission has its own test
         runtime_brains=InMemoryRuntimeBrains(entries),
     )
     package = compiler.compile(_situation())
@@ -328,6 +337,7 @@ def test_same_rank_conflict_fails_instead_of_using_an_arbitrary_tiebreak(tmp_pat
     )
     compiler = DomainCompiler(
         catalog=ExpertBrainCatalog(_authoring_root(tmp_path)),
+        require_admission=False,   # draft fixtures: measurement mode; admission has its own test
         runtime_brains=InMemoryRuntimeBrains(entries),
     )
     with pytest.raises(BrainPolicyViolation, match="ambiguous preference conflict"):
@@ -337,6 +347,7 @@ def test_same_rank_conflict_fails_instead_of_using_an_arbitrary_tiebreak(tmp_pat
 def test_missing_situation_context_does_not_guess_a_route(tmp_path: Path):
     compiler = DomainCompiler(
         catalog=ExpertBrainCatalog(_authoring_root(tmp_path)),
+        require_admission=False,   # draft fixtures: measurement mode; admission has its own test
         runtime_brains=InMemoryRuntimeBrains(),
     )
     with pytest.raises(SituationContextIncomplete, match="thread.ball_in_court"):
@@ -346,6 +357,7 @@ def test_missing_situation_context_does_not_guess_a_route(tmp_path: Path):
 def test_typed_context_slice_is_pinned_and_cannot_cross_tenant_or_visibility(tmp_path: Path):
     compiler = DomainCompiler(
         catalog=ExpertBrainCatalog(_authoring_root(tmp_path)),
+        require_admission=False,   # draft fixtures: measurement mode; admission has its own test
         runtime_brains=InMemoryRuntimeBrains(),
     )
     situation = _situation(facts={})
@@ -385,6 +397,7 @@ def test_missing_required_object_fails_closed(tmp_path: Path):
     compiler = DomainCompiler(
         catalog=ExpertBrainCatalog(_authoring_root(tmp_path, include_required=False)),
         runtime_brains=InMemoryRuntimeBrains(),
+        require_admission=False,   # draft fixtures: measurement mode; admission has its own test
     )
     with pytest.raises(RequiredKnowledgeMissing, match="sales.obj.core.account"):
         compiler.compile(_situation())
@@ -394,6 +407,7 @@ def test_missing_optional_object_is_visible_and_lowers_confidence(tmp_path: Path
     compiler = DomainCompiler(
         catalog=ExpertBrainCatalog(_authoring_root(tmp_path, include_optional=False)),
         runtime_brains=InMemoryRuntimeBrains(),
+        require_admission=False,   # draft fixtures: measurement mode; admission has its own test
     )
     package = compiler.compile(_situation())
     assert package.metadata["missing_optional_object_ids"] == ("sales.obj.core.champion",)
@@ -405,14 +419,19 @@ def test_current_three_domain_corpus_compiles_a_real_sales_slice():
     assert set(catalog.domains) == {"admin", "customer_support", "sales"}
     compiler = DomainCompiler(
         catalog=catalog,
+        require_admission=False,   # draft fixtures: measurement mode; admission has its own test
         runtime_brains=InMemoryRuntimeBrains(),
     )
     package = compiler.compile(_situation(model_ids=()))
     assert package.metadata["domain_ids"] == ("sales",)
     assert package.metadata["matched_situation_ids"] == (
         "sales.sit.inbound_fit_check", "sales.sit.inbound_lead")
-    assert len(package.capabilities) == 2
-    assert len(package.objects) == 10
+    # >= 2, not == 2: the corpus GREW — authoring 43 previously-empty sales capabilities means
+    # a real inbound-lead situation now legitimately routes to more than the two written
+    # exemplars this test was pinned against. The invariant is that the two exemplars are
+    # present, not that nothing else ever gets written.
+    assert len(package.capabilities) >= 2
+    assert len(package.objects) >= 10   # grew with the authored corpus, same reasoning as capabilities
     assert package.metadata["missing_artifact_ids"] == ()
 
 

@@ -1,0 +1,110 @@
+identity:
+  id: sales.pb.cold_calling.permission_based_opener
+  name: The permission-based opener
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.cold_calling
+  subdomain: prospecting_and_outreach
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'The first ten seconds of a cold call decide it, and honesty outperforms tricks: name
+    yourself, admit it is a cold call, ask for thirty seconds. The pattern break of candour earns more
+    time than any disguise.'
+  answers:
+  - How is a cold call opened?
+  - What happens when the answer is no?
+  not:
+  - A script for the whole call. It covers the opening and the exit.
+  - List building, which decides whether the call was worth making at all.
+
+when_to_use:
+  situations:
+  - sales.sit.outbound_prospect
+  conditions:
+  - {fn: edge_count, op: "<=", value: 1}
+  signals:
+  - followup_sent
+  do_not_use_when:
+  - 'The contact is inbound or triggered. Announcing it as a cold call to someone who just enquired is
+    confusing and wastes the advantage of speed.'
+  - 'The buyer type does not answer unknown numbers. The opening cannot fix a channel mismatch.'
+  - 'The list is long and unqualified. A good opener on a bad list produces a large number of polite
+    refusals and a damaged sender.'
+
+steps:
+- order: 1
+  name: Open honest, and ask permission
+  description: '"This is a cold call — can I take thirty seconds, and you decide if it is worth
+    continuing?" The candour is the pattern break. Disguises are detected fast and cost the
+    conversation and the reputation at the same time.'
+  actor: human
+  objects_read:
+  - sales.obj.core.lead
+  produces: An explicit yes or no to a short hearing.
+  done_when: Permission was asked for rather than assumed.
+
+- order: 2
+  name: Deliver the reason inside the window granted
+  description: 'One problem seen at companies like theirs, one sentence of evidence, one question.
+    Thirty seconds asked for and two minutes taken teaches them our word is approximate — which is a
+    poor first data point about working with us.'
+  actor: human
+  objects_read:
+  - sales.obj.core.pain_point
+  produces: A problem statement about them, inside the promised time.
+  done_when: The window granted was honoured.
+
+- order: 3
+  name: Ask one question and stop
+  description: 'The reason for the call ends in a question they can answer in a sentence. A monologue
+    that runs to its natural end has used the permission on transmission, which is the opposite of
+    what a live channel is for.'
+  actor: human
+  produces: A live exchange rather than a delivered pitch.
+  done_when: The buyer spoke before the call ended.
+
+- order: 4
+  name: Take the no gracefully, and log the reason
+  description: 'A no with a reason is research. Log what they said verbatim — three saying the same
+    thing is a targeting correction, and this is the cheapest market feedback any channel produces.
+    Arguing converts a neutral refusal into a memorable one, and phone refusals are remembered.'
+  actor: human
+  produces: A recorded refusal reason.
+  done_when: No refusal was argued with, and its reason was captured.
+
+- order: 5
+  name: Read the refusals as a set, on a cadence
+  description: 'Individually a no is nothing; in aggregate the reasons say whether the list, the
+    message or the channel is wrong. Almost nobody reads them, because each one felt like a
+    non-event when it happened.'
+  actor: human
+  objects_read:
+  - sales.obj.core.icp
+  produces: A periodic reading of refusal reasons.
+  done_when: Refusal reasons have changed something — the list, the opener, or the channel choice.
+
+objects_used:
+- sales.obj.core.lead
+- sales.obj.core.persona
+- sales.obj.core.pain_point
+- sales.obj.core.icp
+
+limits:
+- Nothing here reaches the record; calls leave no correspondence trace, so every measure in this
+  playbook is human-logged or absent.
+- Says nothing about the conversation after the opening succeeds.
+- Cannot compensate for a poor list — a good opener on a bad list produces polite refusals at scale.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 3 and 5 are new. Step 5 is the one that turns a
+    channel into a feedback loop — refusal reasons are the cheapest market research available and are
+    discarded by default, because a no feels like nothing happened.'

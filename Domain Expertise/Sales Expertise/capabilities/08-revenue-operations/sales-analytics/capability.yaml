@@ -3,26 +3,103 @@ identity:
   name: Sales Analytics
   domain: sales
   subdomain: revenue_operations
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Measuring conversion, velocity, cohort behaviour and attribution. Distinct from revenue
+  intelligence: analytics answers questions that were asked, intelligence surfaces ones that were not.
 
-description: >
-  Measuring conversion, velocity, cohort behaviour and attribution. Distinct from revenue
-  intelligence: analytics answers questions that were asked, intelligence surfaces ones that
-  were not.
+  '
+question: What do the numbers actually say?
 
-question: "What do the numbers actually say?"
+outcomes:
+- 'Conversion measured stage to stage, not as an aggregate win rate. The aggregate hides where deals
+  actually die, and the sharpest drop is the constraint — everything else is a distraction from it.'
+- 'Time-in-stage reported beside conversion. A stage that converts well and holds deals twice as long
+  as any other is a bottleneck that a conversion-only view reports as healthy.'
+- 'Every number sliced before it is concluded from. A healthy average routinely hides one segment
+  bleeding out, and source by segment is the minimum cut before any figure is acted on.'
+- 'Funnel metrics preferred over activity metrics wherever they disagree. Calls and emails are inputs
+  a team can inflate at will; stage conversion cannot be inflated without lying to the pipeline, which
+  is a different and more visible act.'
+- 'One constraint fixed per period. The biggest leak gets the process change, the enablement and the
+  review attention; spreading effort across every metric that looks poor moves none of them.'
+- 'A stated refusal to report a number that cannot support a decision. The negative outcome: a
+  dashboard that answers no question is a cost with an audience, and its main effect is to make the
+  numbers that matter harder to find.'
 
+failure_modes:
+- 'AGGREGATE WIN RATE AS THE HEADLINE. It moves for reasons nobody can locate and it is the number
+  most often reported.'
+- 'CONCLUDING BEFORE SLICING. A healthy average with one segment collapsing looks like a healthy
+  business until the segment is large enough to move the average, by which point it is late.'
+- 'ACTIVITY METRICS BECAUSE THEY ARE ABUNDANT. Precise, plentiful and nearly uninformative about
+  outcomes; their availability is why they dominate.'
+- 'MEASURING EVERYTHING, FIXING NOTHING. Effort spread across every weak metric produces no movement
+  in any of them, and the reporting keeps growing.'
+- 'ATTRIBUTION TREATED AS TRUTH. Every model is a set of assumptions about credit, and reporting one
+  without saying which assumptions are in it invites decisions the data does not support.'
+- 'TIME-IN-STAGE IGNORED. The slowest stage is frequently the healthiest-looking one, because deals
+  that sit there do eventually convert.'
+
+kpis:
+- name: stage_conversion
+  unit: percent
+  description: Conversion between each pair of stages. The core instrument; the aggregate is derived
+    and is far less useful.
+  direction: higher_is_better
+- name: time_in_stage
+  unit: days
+  description: Days held per stage. Read beside conversion, never instead of it.
+  direction: lower_is_better
+- name: segment_variance
+  unit: percent
+  description: Spread of conversion across segments. High variance means the average is describing
+    nobody.
+  direction: lower_is_better
+- name: reports_driving_a_decision
+  unit: percent
+  description: Share of produced reports that changed something. The measure of the analytics function
+    itself, and the one it least often applies to its own output.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.revenue_operations.pipeline_management
+  - sales.revenue_operations.sales_operations
+  downstream:
+  - sales.revenue_operations.forecasting
+  - sales.revenue_operations.quota_planning
+  - sales.sales_management.performance_management
+  parallel:
+  - sales.revenue_operations.revenue_intelligence
+  - sales.market_and_targeting.icp_definition
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. The boundary with `revenue_intelligence` is the reason both
+    exist and is worth stating: analytics answers a question somebody asked, intelligence surfaces one
+    nobody did. They share inputs and fail differently — analytics fails by reporting, intelligence
+    fails by alerting.
+
+    Substrate: `deal.status` and stage history are the minimum this needs, and stage transitions are
+    not currently recorded as such on the design partner''s org — `deal.status` holds a current value
+    rather than a history. Stage conversion is therefore derivable only where a tenant''s CRM history
+    reaches the record.
+
+    No numbers: what conversion is good, and what variance is tolerable, are Layer 4''s arithmetic.
+
+    '
+  reviewed_at: '2026-08-27'
+
+admission:
+  accepted_content_hash: c49c0fb767b0a2f9a9bbfcb9e0fd451e05028bd0901290ec6c4c52b46fdb0ae0

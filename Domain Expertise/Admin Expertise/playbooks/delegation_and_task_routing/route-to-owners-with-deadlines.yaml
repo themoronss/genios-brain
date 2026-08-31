@@ -1,0 +1,126 @@
+identity:
+  id: admin.pb.delegation_and_task_routing.route_to_owners_with_deadlines
+  name: Route to owners, with deadlines
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.delegation_and_task_routing
+  subdomain: executive_support
+  version: 1.0.0
+  status: stable
+purpose:
+  statement: >
+    Everything leaving the desk goes to a named person with a date and an agreed check-back, recorded
+    where somebody other than the delegator can see it. "Someone should" is where tasks go to die,
+    and delegation with no follow-up is abdication with better paperwork.
+  answers:
+  - Who should actually be doing this, and do they know they own it?
+  - When will we know whether it is happening?
+
+when_to_use:
+  conditions:
+  - {exists: commitment.action}
+  signals:
+  - next_step_agreed
+  - question
+  do_not_use_when:
+  - The work genuinely requires the principal. Routing it out and getting it back later, worse, costs more than keeping it.
+  - The request has not been understood yet. Routing the symptom transfers the ambiguity along with the work.
+
+steps:
+- order: 1
+  name: Establish what is actually being asked
+  description: >
+    Route the request, not the message. Handing on an unclarified ask transfers the ambiguity, and
+    the new owner spends their first day doing the clarification we skipped.
+  actor: human
+  objects_read: [admin.obj.core.request]
+  produces: A defined piece of work.
+  done_when: The deliverable can be stated in one sentence.
+- order: 2
+  name: Choose the owner on capacity AND authority
+  description: >
+    Availability correlates with having less to do, which correlates with not being the right person.
+    Someone who can start and cannot decide will return it half-finished.
+  actor: human
+  objects_read: [admin.obj.core.approver, admin.obj.core.employee_record]
+  produces: A named owner.
+  done_when: The owner can both do it and decide about it, or the authority gap is explicitly covered.
+- order: 3
+  name: Transfer the context with the task
+  description: >
+    Enough that the owner does not re-discover it. A handover that forces someone to read the whole
+    thread has moved the work and none of its cost.
+  actor: human
+  produces: A briefed owner.
+  done_when: The owner has not had to come back for background.
+- order: 4
+  name: Agree a date and a check-back in the same breath
+  description: >
+    Set at handover the check-back is part of the arrangement; set later it is a chase, and it reads
+    as distrust because it arrived as a surprise. The cadence follows the stakes, not the person.
+  actor: human
+  produces: A due date and a check-back point.
+  done_when: Both are agreed with the owner rather than announced.
+- order: 5
+  name: Record the handover centrally
+  description: >
+    An undocumented delegation reverts to the delegator the moment anything goes wrong, and both
+    parties will remember it differently.
+  actor: agent
+  objects_read: [admin.obj.core.commitment, admin.obj.core.action_item]
+  produces: A tracked item with an owner.
+  done_when: Somebody other than the delegator could see who owns it.
+- order: 6
+  name: Check back once, at the agreed point
+  description: >
+    Once, at the point agreed. Auditing every step is not delegation and never checking is not
+    management; the whole balance lives in the cadence set at step 4.
+  actor: human
+  done_when: The check happened, or the work landed first.
+
+objects_used:
+- admin.obj.core.request
+- admin.obj.core.commitment
+- admin.obj.core.action_item
+- admin.obj.core.approver
+- admin.obj.core.escalation
+
+limits:
+- >
+  Step 2 needs capacity data nothing writes. On a correspondence-only tenant the owner is chosen by
+  human judgement and this playbook only guarantees that the choice was deliberate.
+- It routes work, not accountability for outcomes. Who is answerable if it fails is a management question this cannot settle.
+
+failure_modes:
+- Step 4 deferred and then improvised, which converts every follow-up into a chase.
+- Step 5 skipped for small items, which is where most of the volume is and therefore where most of the loss is.
+
+variants:
+- applies_to: startup_lean
+  change: Steps 2 and 5 compress — there are few candidate owners and the record is a shared channel.
+  why: Below a certain size the routing problem is trivial and the recording problem is not.
+- applies_to: outsourced
+  change: Step 3 expands substantially and step 6 becomes contractual rather than social.
+  why: Context that is implicit in-house has to be written down across an organisational boundary.
+- applies_to: regulated
+  change: Step 5 is evidential. An undocumented delegation of a controlled task is a finding.
+  why: In a governed context the record is the control.
+
+references:
+- title: admin.obj.core.commitment
+  kind: internal
+  note: Steps 4 to 6 are the same promise lifecycle the commitment object models, applied to internal work.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 4 is the hinge. Both classic failures — auditing everything and checking nothing — are the
+    same omission: no cadence was agreed at handover, so the delegator improvises one later and the
+    owner experiences it as distrust or as absence.

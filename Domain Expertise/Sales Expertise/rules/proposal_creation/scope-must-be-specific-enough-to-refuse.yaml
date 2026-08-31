@@ -1,0 +1,129 @@
+identity:
+  id: sales.rule.proposal_creation.scope_must_be_specific_enough_to_refuse
+  name: Scope must be specific enough to refuse
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.proposal_creation
+  subdomain: proposal_and_commercials
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A scope nobody could object to is a scope nobody can approve. Vagueness buys agreement
+    at the proposal and pays for it in the first month of delivery, when the disagreement surfaces
+    between two people who both believed they had agreed.'
+  answers:
+  - Is this proposal specific enough to send?
+  - What has to be stated before commercial terms circulate?
+  not:
+  - A rule about how much detail. It is about whether exclusions exist, not about length.
+  - A drafting standard for contracts, which have their own precision requirements.
+
+rule:
+  statement: 'A proposal MUST state what is excluded as well as what is included, and MUST name the
+    date from which the scope applies. A proposal carrying inclusions with no exclusions MUST NOT be
+    recommended as ready to send, because it cannot be refused and therefore cannot be accepted in any
+    meaningful sense.'
+  spans:
+  - sales.obj.core.proposal
+  - sales.obj.core.contract
+  - sales.obj.core.timeline
+  when:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: proposal_sent}
+  - {absent: commitment.due_at}
+  then: 'Flag the proposal as carrying no dated boundary, and recommend stating exclusions and a start
+    date before the commercial conversation continues.'
+  severity: warning
+  why: 'The incentive at drafting time runs entirely one way. Every exclusion is a chance for the
+    buyer to object now, and every ambiguity is a way to avoid that — so the path of least resistance
+    produces a document that closes faster and disputes later. The cost is displaced in both time and
+    person: it lands months afterwards, on a delivery team that never saw the choice being made, in a
+    conversation where the customer is entirely sincere in believing the opposite of what we believed.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'A STANDARD PRODUCT WITH PUBLISHED BOUNDARIES. Where what is included is defined by a documented
+    offering the buyer can read, restating exclusions per proposal is ceremony — the boundary exists
+    and is referenced rather than repeated.'
+  - 'A DELIBERATE DISCOVERY ENGAGEMENT. A paid scoping exercise whose OUTPUT is the scope cannot state
+    it in advance; the boundary that must be specific is then the discovery itself, not the work it
+    will define.'
+  - 'A TENDER RESPONSE. The requirement document defines scope and the response answers it; imposing
+    our own exclusion section can score as non-compliance.'
+  - 'A RENEWAL AT UNCHANGED SCOPE. The boundary is the existing contract and re-litigating it invites
+    a renegotiation nobody asked for.'
+  - 'AN EXPLICITLY INDICATIVE DOCUMENT. A budgetary estimate, clearly labelled as not an offer, is a
+    legitimate instrument — provided the label is honest and the buyer is not being allowed to treat
+    it as a proposal.'
+
+objects_used:
+- sales.obj.core.proposal
+- sales.obj.core.contract
+- sales.obj.core.timeline
+- sales.obj.core.pricing
+- sales.obj.core.risk
+
+outcomes:
+- Proposals carry exclusions and a start date, not only inclusions.
+- Disagreements about scope happen before signature rather than after.
+
+failure_modes:
+- 'AN EXCLUSIONS SECTION NOBODY READS. A list of boilerplate negatives satisfies the rule and none of
+  its purpose; the exclusions that matter are the ones a buyer might reasonably have assumed.'
+- 'USED TO PAD DOCUMENTS. Length is not the objective, and a longer proposal is if anything less
+  likely to survive the forwarded read.'
+- 'APPLIED TO AN INDICATIVE ESTIMATE. Turns a budgetary number into a formal offer, which is a
+  different instrument with different consequences.'
+
+limits:
+- The document is not in the record, so this rule can only fire on the ABSENCE of a dated commitment
+  near a sent proposal — it cannot inspect scope at all and is a prompt rather than a check.
+- Cannot tell a meaningful exclusion from boilerplate, which is the whole quality question.
+
+variants:
+- applies_to: enterprise
+  change: Exclusions should name the adjacent systems and teams NOT covered; that is where enterprise
+    scope disputes actually originate.
+  why: The dispute is rarely about the product and usually about its edges.
+- applies_to: service
+  change: State the assumptions the estimate rests on — availability, access, data quality — because
+    in a service engagement those are the scope.
+  why: Effort-based work fails at its assumptions, not at its deliverables.
+- applies_to: smb
+  change: One line of exclusions is sufficient and more is off-putting at this deal size.
+  why: The document has to stay readable in a single sitting.
+
+metrics:
+- name: exclusion_present_rate
+  unit: percent
+  description: Share of proposals stating what is not included.
+  direction: higher_is_better
+- name: post_signature_scope_dispute_rate
+  unit: percent
+  description: Share of new accounts raising a scope disagreement in their first period. Where the
+    cost of vagueness actually lands.
+  direction: lower_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: Decision criteria — a scope the buyer cannot evaluate against their criteria has not been
+    proposed, only described.
+- title: Practitioner sales-to-delivery handover
+  kind: practitioner
+  note: First-period scope disputes trace overwhelmingly to unstated exclusions rather than to
+    disputed inclusions, which is why the rule is written around the negative half.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. `limits` is unusually important here — the engine cannot see the document,
+    so this rule fires on a proxy (a sent proposal with no dated commitment near it) and is a prompt
+    rather than a check. Recording that is better than a rule that appears to inspect scope and does
+    not.'

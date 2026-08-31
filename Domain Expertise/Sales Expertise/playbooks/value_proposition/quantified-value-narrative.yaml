@@ -1,0 +1,122 @@
+identity:
+  id: sales.pb.value_proposition.quantified_value_narrative
+  name: The quantified value narrative
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.value_proposition
+  subdomain: discovery_and_solution
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'A value proposition is an equation in the buyer''s units: what this costs them today,
+    what changes, what that is worth per year — built from THEIR discovery numbers and stated
+    conservatively enough to survive a finance review.'
+  answers:
+  - How is a value case constructed?
+  - Why does a conservative number outperform an ambitious one?
+  not:
+  - Pricing. What we charge is decided elsewhere; this establishes what it is worth.
+  - A proposal. This is the argument; the document carries it.
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - proposal_sent
+  - budget_approved
+  do_not_use_when:
+  - 'Discovery produced no numbers. A value case built from benchmarks is recognisable as vendor
+    arithmetic and discredits the parts that were real.'
+  - 'The purchase is small enough that the arithmetic costs more than the decision warrants.'
+  - 'The audience is technical and assessing capability; a commercial case reads as evading their
+    question.'
+
+steps:
+- order: 1
+  name: Build the cost of today from their numbers only
+  description: 'Hours, rates, misses, churn — from what they told us in discovery. An industry
+    benchmark is our number wearing their problem, and finance discounts it on sight because the
+    provenance is obvious.'
+  actor: human
+  objects_read:
+  - sales.obj.core.business_need
+  - sales.obj.core.pain_point
+  produces: A cost-of-today figure with buyer-supplied inputs.
+  done_when: Every input can be attributed to something they said.
+
+- order: 2
+  name: Name the real alternative — doing nothing
+  description: 'Most losses are to inaction. A case argued only against rival products has never
+    engaged the option the buyer will actually take, which is to carry on and revisit it next year.'
+  actor: human
+  objects_read:
+  - sales.obj.core.competitor
+  produces: A comparison against the status quo, explicitly.
+  done_when: The case answers why now as well as why us.
+
+- order: 3
+  name: State the delta conservatively, and say so
+  description: 'Claim less than best case and name it as conservative. A modest figure survives a
+    finance review; an aggressive one invites a challenge on the assumptions, and the meeting becomes
+    about our credibility rather than about their problem.'
+  actor: human
+  produces: A deliberately understated impact figure.
+  done_when: The conservatism is stated rather than left to be discovered.
+
+- order: 4
+  name: Translate into the audience's unit
+  description: 'Payback months for finance, hours and errors for operations, runway and growth for a
+    founder. The arithmetic is the same; what changes is whether the listener has to convert before
+    they can judge — and an unconverted number is read as not applicable.'
+  actor: human
+  objects_read:
+  - sales.obj.core.persona
+  - sales.obj.core.decision_maker
+  produces: The same case, expressed in their measure.
+  done_when: No listener has to perform a conversion to assess it.
+
+- order: 5
+  name: Write the one-line equation
+  description: 'Costs roughly this today; conservative impact this; investment this. If it does not
+    fit in a sentence the champion can repeat, it will not survive being carried into a room we are
+    not in — which is the only room it has to work in.'
+  actor: human
+  produces: A single repeatable sentence.
+  done_when: The champion can restate the case without notes.
+
+- order: 6
+  name: Say when the case is weak
+  description: 'Some accounts genuinely cannot justify the spend. Establishing that with them is
+    faster and cheaper than a slow no, and it is the outcome that makes the strong cases credible.'
+  actor: human
+  produces: An honest verdict where the arithmetic does not support the purchase.
+  done_when: No deal proceeds on a case that does not survive its own numbers.
+
+objects_used:
+- sales.obj.core.business_need
+- sales.obj.core.pain_point
+- sales.obj.core.persona
+- sales.obj.core.decision_maker
+- sales.obj.core.competitor
+
+limits:
+- Discovery numbers live in conversation and the record holds no transcripts, so nothing here is
+  observable by the engine.
+- Says nothing about whether the claimed impact is achievable, only about how it is argued.
+- A conservative figure still rests on assumptions; step 3 reduces the attack surface rather than
+  removing it.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 2, 4 and 6 are new. Step 2 is the substantive
+    addition — most value frameworks compare against alternatives that were considered, and the
+    alternative that wins most often was never considered at all because it required no decision.'

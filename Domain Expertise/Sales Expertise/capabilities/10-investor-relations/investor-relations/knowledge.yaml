@@ -1,0 +1,20 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: sales.investor_relations.investor_relations
+playbooks:
+  core: []
+  scoped:
+  - sales.pb.investor_relations.reopen_after_a_pass
+heuristics:
+  core: []
+  scoped:
+  - sales.heu.investor_relations.a_pass_is_a_date_not_a_verdict
+  - sales.heu.investor_relations.investors_do_not_chase
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

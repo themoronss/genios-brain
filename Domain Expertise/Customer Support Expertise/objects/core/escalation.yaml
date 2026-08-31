@@ -874,10 +874,15 @@ inference_patterns:
       note: A second reproduction request after a reassignment is the machine-visible fingerprint of context
         that did not travel — the characteristic failure of this object, and currently invisible.
     - kind: derived
-      name: derived.contact_frequency
+      name: derived.person_contact_rate
       owner_layer: L2
-      note: Needed to separate a genuine re-diagnosis from routine follow-up. Without it this pattern
+      note: 'Needed to separate a genuine re-diagnosis from routine follow-up. Without it this pattern
         flags every reassignment and gets muted within a week.
+
+        PER PERSON: a re-diagnosis is one customer writing repeatedly to re-explain what they already
+        explained, and a routine follow-up is that same customer writing once. The ask read
+        `derived.contact_frequency` until that name shipped as an ACCOUNT rate, which sums over
+        colleagues who were never asked anything and would rise on a reassignment nobody noticed.'
   - id: esc.it_bounced_back_down
     statement: The escalation was accepted and then returned to the original owner.
     status: needs_signal

@@ -1,27 +1,108 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.meeting_operations.agenda_preparation
   name: Agenda Preparation
   domain: admin
   subdomain: meeting_operations
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Converting a purpose into a sequenced agenda with pre-read attached, owners named against
+  each item, and a decision stated for each one. A meeting with no agenda is a meeting whose outcome cannot
+  be evaluated afterwards, which is why so many recur.
 
-description: >
-  Converting a purpose into a sequenced agenda with pre-read attached, owners named against
-  each item, and a decision stated for each one. A meeting with no agenda is a meeting whose
-  outcome cannot be evaluated afterwards, which is why so many recur.
+  '
+question: What is this meeting for, and what must be in front of people before it starts?
 
-question: "What is this meeting for, and what must be in front of people before it starts?"
+outcomes:
+- 'A decision named for every agenda item. An item with no decision and no genuine discussion is a
+  distribution list with chairs, and the test removes a third of most calendars harmlessly.'
+- 'Pre-read attached and circulated with enough lead time to be read. A pre-read sent an hour before
+  is read in the meeting, which is the thing it existed to prevent.'
+- 'An owner named against each item. Unowned items are discussed in the order they appear and
+  concluded by whoever speaks last.'
+- 'Timeboxes set against importance rather than against sequence. Agendas without them spend the
+  available time on item one, and item four — usually the difficult one — is deferred every week.'
+- 'The sequence chosen deliberately: decisions while people are fresh, status never, and the
+  contentious item early enough that running out of time is not a way of avoiding it.'
+- 'The negative outcome: an agenda that concludes the meeting is unnecessary, or that the wrong people
+  are invited. An agenda process that cannot cancel a meeting is a formatting exercise.'
+
+failure_modes:
+- 'STATUS THEATRE. Agendas that list topics rather than decisions default to serial reporting, and
+  status is what documents are for. It is the most common meeting failure and the agenda is where it
+  is decided.'
+- 'AGENDA WRITTEN BY THE ORGANISER ALONE. The items other attendees needed are missing, and they
+  raise them under any other business, which is where the important thing gets ten minutes.'
+- 'PRE-READ THAT IS THE DECK. A forty-slide attachment is not a pre-read; it is the meeting,
+  delivered early, and nobody reads it either.'
+- 'NO TIMEBOX, OR A TIMEBOX NOBODY ENFORCES. The second is worse — it teaches attendees the agenda is
+  decorative, after which the sequencing decisions stop mattering.'
+- 'PUTTING THE HARD ITEM LAST. It looks like building up to it and functions as a way to run out of
+  time, repeatedly, and everyone eventually notices it is not an accident.'
+- 'REUSING LAST WEEK''S AGENDA. Recurring meetings inherit their agenda and then their purpose
+  decays out from under it, which is why the recurring set is where dead meetings accumulate.'
+
+kpis:
+- name: decision_per_item_rate
+  unit: percent
+  description: Share of agenda items stating a decision to be made. The test this capability is built
+    around.
+  direction: higher_is_better
+- name: pre_read_lead_time
+  unit: hours
+  description: How long before the meeting the material was circulated.
+  direction: higher_is_better
+- name: agenda_completion_rate
+  unit: percent
+  description: Share of agendas whose items were all reached. Persistent shortfall points at
+    timeboxing or at sequencing, not at discipline.
+  direction: higher_is_better
+- name: meetings_cancelled_at_agenda_stage
+  unit: percent
+  description: A target band. Zero means the agenda test is never applied.
+  direction: target_band
+- name: any_other_business_share
+  unit: percent
+  description: Share of meeting time spent on items not on the agenda. Measures whether the agenda
+    was written with the attendees or at them.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - admin.meeting_operations.meeting_scheduling
+  - admin.executive_support.briefing_and_preparation
+  - admin.executive_support.calendar_management
+  downstream:
+  - admin.meeting_operations.minutes_and_documentation
+  - admin.meeting_operations.action_item_tracking
+  parallel:
+  - admin.meeting_operations.follow_up_coordination
+  - admin.compliance_and_governance.board_and_secretarial
+
+applies_to:
+  models: [executive_office, in_house, shared_services, startup_lean, distributed, hybrid,
+           enterprise_admin, multi_entity, regulated]
+  offerings: [coordinative, assurance]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route today.
+
+    Almost nothing here is observable from the substrate, and the gap is specific: agendas, pre-
+    reads and timeboxes are documents and none of them is captured. meeting.description exists
+    and is the closest thing, which is why the honest position is that this capability is
+    authored for a human reader and for Layer 5 rendering rather than for a Layer 4 predicate.
+
+    The decision-per-item test is the whole capability. It is the cheapest intervention
+    available in meeting operations and it removes about a third of a typical calendar without
+    anyone objecting, because the meetings it removes were already producing nothing.
+
+admission:
+  accepted_content_hash: 56c28191e7ebac4671a2d55aee048b2dc54aead0d32c2e7313b551245582a6df

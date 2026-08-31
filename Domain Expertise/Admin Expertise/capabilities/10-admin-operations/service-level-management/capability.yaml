@@ -1,27 +1,75 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.admin_operations.service_level_management
   name: Service Level Management
   domain: admin
   subdomain: admin_operations
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Defining and holding service levels for administrative work: response and resolution targets
+  by request class, measurement, breach handling and periodic review. Service levels are how an internal
+  function stops being judged by anecdote.
 
-description: >
-  Defining and holding service levels for administrative work: response and resolution targets
-  by request class, measurement, breach handling and periodic review. Service levels are how
-  an internal function stops being judged by anecdote.
+  '
+question: Are we meeting the response and resolution times we committed to?
 
-question: "Are we meeting the response and resolution times we committed to?"
+outcomes:
+- 'Published response and completion targets by request class, because "as soon as possible" is a promise nobody can keep and everybody resents.'
+- 'Targets set from what the function actually does, not from what would sound good. A target the queue misses weekly is worse than none.'
+- 'Breaches handled as events with an explanation, rather than absorbed silently into an average.'
+- 'Requester chasing reduced, since most chasing is uncertainty rather than urgency and a published target removes the uncertainty.'
+- 'The negative outcome: a request class declared OUT OF SCOPE or given a deliberately long target. A service catalogue where everything is fast is one where nothing is.'
+failure_modes:
+- 'TARGETS SET ASPIRATIONALLY, which converts the SLA from a promise into a monthly apology.'
+- 'ONE TARGET FOR EVERYTHING, so the trivial request and the complex one carry the same commitment and one of them is always wrong.'
+- 'MEASURING FROM TRIAGE RATHER THAN FROM THE REQUEST, which is compliant and disappoints every requester.'
+- 'BREACHES ABSORBED INTO AN AVERAGE, where the ninety-fifth percentile is the experience and the mean is the report.'
+- 'PUBLISHING TARGETS AND NOT REVIEWING THEM, so the catalogue describes a function that has since changed.'
+kpis:
+- name: target_attainment
+  unit: percent
+  description: Requests met within their class target, measured from the requester's submission.
+  direction: higher_is_better
+- name: p95_completion
+  unit: hours
+  description: The experience, as distinct from the mean, which is the report.
+  direction: lower_is_better
+- name: chase_rate
+  unit: percent
+  description: Requests where the requester asked for a status. The uncertainty measure and the truest sign the SLA is doing its job.
+  direction: lower_is_better
+- name: target_review_age
+  unit: days
+  description: Time since the targets were checked against actual capability.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.admin_operations.request_intake, admin.admin_operations.admin_analytics]
+  downstream: [admin.admin_operations.process_improvement, admin.contract_and_vendor.vendor_performance_management]
+  parallel: [admin.admin_operations.sop_management, admin.executive_support.delegation_and_task_routing]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, outsourced, hybrid, automated_first]
+  offerings: [coordinative, transactional]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. admin_sla_breach_imminent and
+    admin_request_aging are planned_substrate with no writer.
+
+    chase_rate is the KPI that captures what an SLA actually buys. Most chasing is uncertainty
+    rather than urgency, so a published target reduces inbound volume before it improves any
+    delivery number — which is the effect that pays for the whole exercise and the one nobody
+    measures.
+
+    p95 sits beside attainment because the mean is what gets reported and the tail is what gets
+    experienced. This is the same measurement error the Customer Support corpus records for
+    reimbursement and for support SLAs, and it appears independently in all three.
+
+admission:
+  accepted_content_hash: 178c788e5076b74d9019ce74760d1c4cb94df0a22b6f498d2d48e81c821bce25

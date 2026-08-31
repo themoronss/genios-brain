@@ -1,28 +1,74 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.records_and_documentation.version_control
   name: Version Control
   domain: admin
   subdomain: records_and_documentation
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Keeping a defensible history of a document: sequential versions, a visible change record,
+  superseded copies withdrawn rather than left in place, and the current version unambiguous. Most damaging
+  document errors are not lost files — they are the previous version, still circulating.
 
-description: >
-  Keeping a defensible history of a document: sequential versions, a visible change record,
-  superseded copies withdrawn rather than left in place, and the current version unambiguous.
-  Most damaging document errors are not lost files — they are the previous version, still
-  circulating.
+  '
+question: Which version is authoritative, and what changed between them?
 
-question: "Which version is authoritative, and what changed between them?"
+outcomes:
+- 'One canonical location per document, and it is knowable from the document rather than from memory.'
+- 'Drafts named as drafts. A draft that reads like a final version will be acted on as one, and nothing about the file says otherwise.'
+- 'Superseded versions MARKED rather than deleted — deletion leaves every downloaded copy authoritative and removes the trail.'
+- 'A change record that says what changed, not merely that something did. "v3" tells a reader to re-read the whole thing.'
+- 'The negative outcome: a convenience copy identified and killed. Every "let me just save a copy" is a potential parallel truth with a timestamp.'
+failure_modes:
+- 'TWO FILES BOTH BELIEVING THEY ARE FINAL. The commonest and most expensive document failure, and it produces contradicting commitments rather than an obvious error.'
+- 'VERSIONING THE FILENAME ONLY. final_v2_REALLY_final is a version scheme with no authority — nothing says which is current.'
+- 'DELETING SUPERSEDED VERSIONS. It looks tidy and destroys the only evidence of what was in force when.'
+- 'CHANGE LOGS THAT RECORD THE EDIT, NOT THE MEANING. "Updated section 4" is a diff a reader still has to perform.'
+- 'TREATING SHARED-DRIVE HISTORY AS THE RECORD. It is a feature of one system, and the copy that mattered was emailed.'
+kpis:
+- name: canonical_location_coverage
+  unit: percent
+  description: Binding documents with one stated authoritative location.
+  direction: higher_is_better
+- name: parallel_copy_incidents
+  unit: count
+  description: Occasions two versions were both treated as current. The outcome measure.
+  direction: lower_is_better
+- name: change_record_completeness
+  unit: percent
+  description: Version bumps carrying a what-changed line rather than a number.
+  direction: higher_is_better
+- name: superseded_marked_share
+  unit: percent
+  description: Old versions marked rather than deleted or left plain.
+  direction: higher_is_better
+handoffs:
+  upstream: [admin.records_and_documentation.document_control, admin.contract_and_vendor.contract_administration]
+  downstream: [admin.records_and_documentation.retention_and_archival, admin.compliance_and_governance.audit_support]
+  parallel: [admin.records_and_documentation.filing_and_retrieval, admin.compliance_and_governance.policy_administration]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, distributed]
+  offerings: [assurance, coordinative]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    document.version is in planned_substrate with no writer, so nothing here is executable
+    today.
+
+    The distinction from document_control is the one that makes both worth having: control asks
+    whether this is the approved artefact, version control asks which of several is the current
+    one. An organisation can have perfect control over a document set and still act on last
+    quarter's numbers, because the failure is not in the repository — it is in the copies that
+    left it.
+
+admission:
+  accepted_content_hash: 2410b84b675331dfa6c1a41a43db5ea2c243fc24d67f57dcbe832d963b11b5fd

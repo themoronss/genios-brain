@@ -10,9 +10,23 @@ from genios_engine.contracts.events import AGENT_ACTIONS, AGENT_API_SCOPES, HUMA
 from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org, hash_key,
                                          hash_password, invalidate_key_cache, jwt_encode,
                                          new_api_key, require_owner, verify_password)
+from genios_engine.platform.cache import get_cache
 from genios_engine.platform.config import get_settings
+from genios_engine.platform.crypto import decrypt, encrypt
 from genios_engine.platform.db import get_engine
 from genios_engine.platform.ids import new_id
+
+
+def _enc_key(raw: str) -> bytes | None:
+    """Encrypt a raw key at rest so the owner can reveal/copy it later (auth still uses the hash).
+    Best-effort: no crypto key configured → no reveal copy, never blocks minting."""
+    ck = get_settings().crypto_key
+    if not ck:
+        return None
+    try:
+        return encrypt(raw, ck)
+    except Exception:      # noqa: BLE001
+        return None
 
 # Auth routes — register/login (dashboard) + scoped API-key minting (agents/integrations). This
 # is the parity port of genios-brain/app/api/routes/auth.py, engine-native. org_id is issued
@@ -34,6 +48,7 @@ class Register(BaseModel):
     name: str
     email: str
     password: str
+    company: str | None = None      # workspace/company name from signup — was silently dropped before
 
 
 @router.post("/register")
@@ -46,28 +61,50 @@ def register(body: Register) -> dict:
                            {"e": body.email}).first()
         if exists:
             raise HTTPException(409, "email already registered")
-        # New tenants start on a 7-day trial with its credit allowance already granted —
+        # New tenants start on a 15-day trial with its credit allowance already granted —
         # otherwise the credits column defaults to 0 and a fresh trial reads as "out of credits".
         from datetime import datetime, timedelta, timezone
         from genios_engine.platform.billing import PLAN_CREDITS, TRIAL_DAYS
         now = datetime.now(timezone.utc)
-        c.execute(text("insert into orgs (id, name, email, pass_hash, api_key_hash, "
+        # orgs.name holds the person's full name (used for the sidebar/greeting); orgs.company holds
+        # the workspace/company name typed at signup. Both are now persisted — company was dropped
+        # before (frontend ignored it and this model had no field for it).
+        c.execute(text("insert into orgs (id, name, company, email, pass_hash, api_key_hash, "
                        "subscription_tier, plan_status, credits, plan_started_at, plan_expires_at, "
                        "credit_period_start, credit_period_end) "
-                       "values (:id,:n,:e,:p,:kh,'trial','trial',:cr,:now,:exp,:now,:exp)"),
-                  {"id": org_id, "n": body.name, "e": body.email,
-                   "p": hash_password(body.password), "kh": key_hash,
+                       "values (:id,:n,:co,:e,:p,:kh,'trial','trial',:cr,:now,:exp,:now,:exp)"),
+                  {"id": org_id, "n": body.name, "co": (body.company or "").strip()[:120] or None,
+                   "e": body.email, "p": hash_password(body.password), "kh": key_hash,
                    "cr": PLAN_CREDITS["trial"], "now": now,
                    "exp": now + timedelta(days=TRIAL_DAYS)})
+        # The org's first seat AND its durable pull surface, in the same transaction that creates
+        # the org. Without the seat L2 has nobody to exclude from counterparty correlation, L5 has
+        # no escalation ladder and L6 has no recipient for any card. Without the surface row
+        # `run_distribution` does not enumerate the org at all, so no digest, reminder or push
+        # ever leaves the building. None of those layers can tell "this tenant has none" apart
+        # from "this tenant has no people", so all of them fail quietly.
+        from genios_engine.platform.seats import provision_org
+        provision_org(c, org_id)
         c.execute(text("insert into credit_ledger (org_id,kind,amount,balance_after,reason,bucket,"
                        "idempotency_key) values (:o,'reset',:cr,:cr,'trial:signup','credits',:idem)"),
                   {"o": org_id, "cr": PLAN_CREDITS["trial"], "idem": f"trial:{org_id}"})
-        c.execute(text("insert into api_keys (id, org_id, key_hash, key_prefix, name, scopes) "
-                       "values (:id,:o,:kh,:pfx,'primary',:sc)"),
-                  {"id": new_id("key"), "o": org_id, "kh": key_hash, "pfx": prefix,
-                   "sc": sorted(GRANTABLE)})
+        c.execute(text("insert into api_keys (id, org_id, key_hash, key_enc, key_prefix, name, scopes) "
+                       "values (:id,:o,:kh,:ke,:pfx,'primary',:sc)"),
+                  {"id": new_id("key"), "o": org_id, "kh": key_hash, "ke": _enc_key(raw),
+                   "pfx": prefix, "sc": sorted(GRANTABLE)})
     token = jwt_encode({"org_id": org_id, "email": body.email, "exp": time.time() + JWT_TTL_SECONDS},
                        get_settings().jwt_secret)
+    # Signup is the first point of the growth funnel; login already audits, signup did not, so the
+    # admin console had no server-side record of *when* an account entered (orgs.created_at alone
+    # can't be joined against the activity timeline). Never fatal — record() swallows its errors.
+    from genios_engine.platform.audit import record
+    record(org_id, "user_signed_up", actor_type="user", actor_id=body.email,
+           metadata={"company": (body.company or "").strip()[:120] or None})
+    # Server-side signup event: the top of the funnel must be counted where the account is actually
+    # created, not where a browser says it was — the client event can be blocked or replayed.
+    from genios_engine.platform import analytics
+    analytics.capture_with_person(_engine(), org_id, "user_signed_up",
+                                  {"company": (body.company or "").strip()[:120] or None})
     return {"org_id": org_id, "token": token, "name": body.name, "email": body.email,
             "api_key": raw, "key_prefix": prefix, "note": "store api_key now — shown only once"}
 
@@ -77,12 +114,34 @@ class Login(BaseModel):
     password: str
 
 
+_LOGIN_ATTEMPTS = 10                     # per email, per window
+_LOGIN_WINDOW_SECONDS = 300
+
+
+def _login_throttle(email: str) -> None:
+    """Cap password attempts per email. Passwords are pbkdf2 at 200k iterations, so an online
+    guess is slow — but nothing stopped an attacker from running it indefinitely, and a customer's
+    whole workspace sits behind one password. Fails OPEN on a cache outage: locking every customer
+    out because Redis blinked is the worse failure."""
+    try:
+        n = get_cache().incr_window(f"login:{email.strip().lower()}", _LOGIN_WINDOW_SECONDS)
+    except Exception:                    # noqa: BLE001
+        return
+    if n > _LOGIN_ATTEMPTS:
+        raise HTTPException(429, {"code": "TOO_MANY_ATTEMPTS",
+                                  "message": "Too many sign-in attempts. Try again in a few minutes."})
+
+
 @router.post("/login")
 def login(body: Login) -> dict:
+    _login_throttle(body.email)
     with _engine().connect() as c:
         row = c.execute(text("select id, name, pass_hash, plan_status, subscription_tier "
                              "from orgs where lower(email)=lower(:e)"), {"e": body.email}).first()
     if row is None or not verify_password(body.password, row.pass_hash):
+        from genios_engine.platform.audit import record as _rec
+        if row is not None:              # only auditable against a real tenant
+            _rec(row.id, "login_failed", actor_type="user", actor_id=body.email)
         raise HTTPException(401, "invalid email or password")
     if row.plan_status == "suspended":
         raise HTTPException(403, {"error": "ACCOUNT_SUSPENDED"})
@@ -90,6 +149,10 @@ def login(body: Login) -> dict:
                        get_settings().jwt_secret)
     from genios_engine.platform.audit import record
     record(row.id, "user_logged_in", actor_type="user", actor_id=body.email)
+    # Login carries the person properties too: it is the most frequent moment we can cheaply
+    # refresh an account's plan / paying / internal flags in PostHog.
+    from genios_engine.platform import analytics
+    analytics.capture_with_person(_engine(), row.id, "user_logged_in")
     return {"org_id": row.id, "token": token, "name": row.name, "email": body.email,
             "plan": row.subscription_tier}
 
@@ -109,12 +172,13 @@ def mint_key(body: MintKey, ctx: AuthCtx = Depends(require_owner)) -> dict:
     if bad:
         raise HTTPException(422, f"unknown scopes: {bad}")
     raw, key_hash, prefix = new_api_key()
+    kid = new_id("key")
     with _engine().begin() as c:
-        c.execute(text("insert into api_keys (id, org_id, key_hash, key_prefix, name, agent_id, scopes) "
-                       "values (:id,:o,:kh,:pfx,:n,:aid,:sc)"),
-                  {"id": new_id("key"), "o": org_id, "kh": key_hash, "pfx": prefix,
+        c.execute(text("insert into api_keys (id, org_id, key_hash, key_enc, key_prefix, name, agent_id, scopes) "
+                       "values (:id,:o,:kh,:ke,:pfx,:n,:aid,:sc)"),
+                  {"id": kid, "o": org_id, "kh": key_hash, "ke": _enc_key(raw), "pfx": prefix,
                    "n": body.name, "aid": body.agent_id, "sc": body.scopes})
-    return {"api_key": raw, "key_prefix": prefix, "scopes": body.scopes,
+    return {"id": kid, "api_key": raw, "key_prefix": prefix, "scopes": body.scopes,
             "note": "store api_key now — shown only once"}
 
 
@@ -122,10 +186,37 @@ def mint_key(body: MintKey, ctx: AuthCtx = Depends(require_owner)) -> dict:
 def list_keys(ctx: AuthCtx = Depends(require_owner)) -> dict:
     org_id = ctx.org_id
     with _engine().connect() as c:
+        # ACTIVE keys only — a revoked key must disappear from the list, otherwise "revoke" looks
+        # like it did nothing (the row stayed). `revealable` tells the UI whether a Reveal will work
+        # (older keys minted before key_enc have no at-rest copy).
         rows = c.execute(text("select id, key_prefix, name, agent_id, scopes, is_active, "
-                              "created_at, last_used_at from api_keys where org_id=:o "
+                              "created_at, last_used_at, (key_enc is not null) as revealable "
+                              "from api_keys where org_id=:o and coalesce(is_active, true) "
                               "order by created_at desc"), {"o": org_id}).mappings().all()
     return {"keys": [dict(r) for r in rows]}      # never returns key_hash or the raw key
+
+
+@router.get("/keys/{key_id}/reveal")
+def reveal_key(key_id: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """Reveal a key's full secret so the owner can copy it again (not only once at creation).
+    Owner-gated; decrypts the at-rest copy. Keys minted before this feature have no copy → 409."""
+    org_id = ctx.org_id
+    with _engine().connect() as c:
+        row = c.execute(text("select key_enc, key_prefix from api_keys "
+                             "where id=:id and org_id=:o and coalesce(is_active, true)"),
+                        {"id": key_id, "o": org_id}).first()
+    if row is None:
+        raise HTTPException(404, "key not found")
+    if not row.key_enc:
+        raise HTTPException(409, {"error": "key_not_recoverable",
+                                  "message": "This key predates key reveal. Create a new key to get "
+                                             "a copyable one.", "key_prefix": row.key_prefix})
+    try:
+        raw = decrypt(bytes(row.key_enc), get_settings().crypto_key)
+    except Exception:      # noqa: BLE001
+        raise HTTPException(409, {"error": "key_not_recoverable",
+                                  "message": "Stored key could not be decrypted. Create a new key."})
+    return {"id": key_id, "api_key": raw, "key_prefix": row.key_prefix}
 
 
 @router.delete("/keys/{key_id}")

@@ -1,0 +1,123 @@
+identity:
+  id: sales.rule.renewal.a_renewal_date_is_an_obligation_not_a_reminder
+  name: A renewal date is an obligation, not a reminder
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.renewal
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A renewal has two dates and only one of them is the renewal. The notice window closes
+    first, and it closes silently — after which the commercial decision has been made by a calendar
+    on behalf of both parties.'
+  answers:
+  - What has to be tracked about a renewal, and from when?
+  - Why does a renewal date on its own not protect anybody?
+  not:
+  - A rule about how to run the renewal conversation.
+  - A contract-drafting standard.
+
+rule:
+  statement: 'A live contract MUST carry both its renewal date and its notice-window date as tracked
+    obligations with owners. A renewal date recorded without its notice window MUST be flagged as
+    incomplete, because the notice date is the one that removes the choice.'
+  spans:
+  - sales.obj.core.contract
+  - sales.obj.core.timeline
+  - sales.obj.core.account
+  when:
+  - {exists: commitment.due_at}
+  - {absent: commitment.status}
+  then: 'Flag the renewal record as carrying a date with no tracked state, and require the notice
+    window to be recorded alongside it before the obligation is treated as complete.'
+  severity: warning
+  why: 'The two dates behave completely differently and are routinely conflated. The renewal date is
+    a conversation; the notice date is a deadline whose expiry decides the outcome without anyone
+    choosing it, and it typically sits well before the renewal — so a team tracking only the renewal
+    is tracking the second event and will discover the first has passed. The failure is symmetrical,
+    which is what makes it easy to under-rate: a missed notice window commits our customer to a year
+    they did not choose, and the reputational cost of that lands on us even though the clause was
+    theirs to read too.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'NO NOTICE PROVISION EXISTS. Month-to-month and evergreen arrangements with immediate termination
+    have a renewal date and no window; requiring one invents an obligation.'
+  - 'A CONTRACT MANAGEMENT SYSTEM ALREADY TRACKING BOTH. Duplicating produces two registers that
+    disagree, and the disagreement always surfaces at the moment the dates matter.'
+  - 'THE NOTICE WINDOW HAS ALREADY PASSED. The rule should then say so plainly rather than requesting
+    a record of a date that is no longer actionable — the useful output is that the term has renewed.'
+  - 'A MULTI-YEAR TERM WHOSE NOTICE IS YEARS AWAY. Tracking it is correct and treating its absence as
+    an urgent gap is noise; the flag should be proportionate to proximity.'
+  - 'A CONTRACT WE CANNOT PARSE. Where the paper is the buyer''s and the notice provision is buried in
+    a bespoke document, the honest state is unknown rather than absent, and it should be recorded as a
+    review task rather than as a compliant record.'
+
+objects_used:
+- sales.obj.core.contract
+- sales.obj.core.timeline
+- sales.obj.core.account
+- sales.obj.core.risk
+
+outcomes:
+- Both dates exist as tracked obligations with owners.
+- A renewal cannot pass by expiry of a window nobody was watching.
+
+failure_modes:
+- 'THE NOTICE DATE RECORDED AND NOT OWNED. A date with no owner produces a notification that everyone
+  assumes someone else is acting on.'
+- 'FLAGGED URGENTLY YEARS IN ADVANCE. Produces noise that trains people to dismiss the flag, including
+  the time it matters.'
+- 'TREATED AS OUR RISK ONLY. The window binds both parties, and a customer trapped by it holds us
+  responsible regardless of who drafted the clause.'
+
+limits:
+- '`commitment.status` is being used as a proxy for the obligation having a tracked state, and it is
+  written on only 3 of 31 commitment nodes on the design partner''s org — so this rule fires far more
+  often than the real gap warrants, and says so rather than appearing precise.'
+- The contract is not in the record, so the notice provision itself cannot be read; the rule requires
+  it to have been extracted and cannot verify it was extracted correctly.
+
+variants:
+- applies_to: enterprise
+  change: The notice window is frequently long and the owner is not the account team; record who
+    outside sales must act.
+  why: A ninety-day window in a large organisation needs internal lead time of its own.
+- applies_to: smb
+  change: Usually no notice provision; the exception is the normal case.
+  why: Short, simple terms.
+- applies_to: regulated
+  change: The notice window is contractual and unforgiving, and missing it is a control failure as
+    well as a commercial one.
+  why: The regime treats an unintended auto-renewal as a governance gap.
+
+metrics:
+- name: notice_window_capture_rate
+  unit: percent
+  description: Share of live contracts with the notice date tracked, not only the renewal date.
+  direction: higher_is_better
+- name: missed_notice_window_count
+  unit: count
+  description: Windows that passed without a decision, in either direction.
+  direction: lower_is_better
+
+references:
+- title: Practitioner contract administration
+  kind: practitioner
+  note: The notice window rather than the renewal date is what determines whether a renewal was
+    chosen, and it is the field most often absent from sales-owned records.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new, and it pairs with `an_obligation_leaves_the_document` from batch 7 — that
+    rule gets the dates out of the contract, this one insists there are TWO of them. `limits` is blunt
+    about the proxy: `commitment.status` exists on 3 of 31 commitment nodes live, so this over-fires
+    today and that is stated rather than hidden.'

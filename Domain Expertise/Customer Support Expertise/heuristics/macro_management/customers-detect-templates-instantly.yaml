@@ -1,0 +1,67 @@
+identity:
+  id: customer_support.heu.macro_management.customers_detect_templates_instantly
+  name: Customers detect templates instantly
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.macro_management
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: One mismatched pronoun or an answer to a question they did not ask, and the customer stops
+    reading and starts escalating. The minutes a raw macro saves are repaid with interest in the reply
+    to the reply.
+  answers:
+  - What does an obviously-templated reply cost?
+
+heuristic:
+  statement: >
+    One mismatched pronoun or an answer to a question they did not ask, and the customer stops
+    reading and starts escalating. The minutes a raw macro saves are repaid with interest.
+  why: >
+    A template is detected not by its language but by its fit. Customers do not object to standard
+    wording — they object to evidence that nobody read their message, and a macro that is even
+    slightly off provides exactly that evidence. Once detected, it reframes everything else in the
+    thread: the earlier replies are re-read as canned, the empathy is discounted, and the customer
+    concludes that escalating is the only way to reach a person.
+  confidence_bp: 8000
+  applies_when: Any templated reply sent to a customer who wrote in their own words.
+  breaks_down_when: >
+    The customer wants the standard answer. For a routine transactional request — a password reset,
+    an invoice copy — a crisp templated reply is faster and better than a personalised one, and
+    adding warmth reads as padding. It also breaks down where the template is visibly a template by
+    design: a status page, a confirmation, an automated acknowledgement. Nobody objects to a
+    receipt sounding like a receipt.
+  reads: [customer_support.obj.core.ticket, customer_support.obj.core.requester, customer_support.obj.core.customer_sentiment]
+  contradicts: [customer_support.heu.tone_and_localization.empathy_is_specific_or_it_is_filler]
+limits:
+- 'It concerns detected templates, not templated content. Well-fitted standard wording passes unnoticed.'
+- 'Detection is invisible to us — the complaint rate massively understates how often it happens.'
+failure_modes:
+- 'Used to argue against macros entirely, which costs speed and produces inconsistent answers.'
+- 'Addressed by adding merge fields, which produces a personalised template that still reads as one.'
+variants:
+- applies_to: b2c
+  change: Tolerance is higher — customers expect scale — and the failure is the mismatched macro rather than the templated one.
+  why: The relationship was never personal.
+- applies_to: named_tam
+  change: Strongest. A template from somebody who is supposed to know the account is a visible failure of the thing being paid for.
+  why: The relationship is the product.
+references:
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The invisibility point is the operationally important one: template_detection_complaints is
+    rare because most customers notice silently and simply escalate, so the measured rate
+    understates the effect by a wide margin.

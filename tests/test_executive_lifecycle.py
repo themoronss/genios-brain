@@ -36,6 +36,7 @@ from genios_engine.executive.collect import (
 )
 from genios_engine.executive.communication import band_of, plan_communication, projected_score
 from genios_engine.executive.escalation import EscalationConfigError, build_ladder, due_rungs
+from genios_engine.executive.execution import build_from_decision
 from genios_engine.executive.execution_guard import (
     GuardAction,
     ValidationInput,
@@ -45,6 +46,8 @@ from genios_engine.executive.execution_guard import (
 from genios_engine.executive.lifecycle import LifecycleError, next_state, transition
 from genios_engine.executive.monitor import observe
 from genios_engine.executive.reminder import ReminderState, decide_reminder, elapsed_bp
+
+from genios_engine.platform.canonical import semantic_hash
 
 from tests.test_executive_execution import DIRECTORY, NOW, build, make_decision
 
@@ -173,10 +176,46 @@ def test_fatigue_hands_over_to_escalation_rather_than_tapering():
     assert not decision.should_remind and decision.reason_code == "fatigue_cap"
 
 
-def test_an_unrouted_commitment_is_tracked_but_never_nudged():
+def test_unowned_work_is_nudged_when_somebody_mans_the_queue():
+    """Nobody OWNS it and somebody still has to do something about it.
+
+    This is the case that describes every commitment in production. `deal.owner`,
+    `relationship.owner` and `commitment.actor` have no producer anywhere in the engine, so
+    ownership resolution falls to rule 3 for 100% of commitments, of every tenant, forever
+    (measured 2026-08-30: 203/203 rows, `routing_rule='rule3_admin_queue'`). While remindability
+    was derived from ownership that made the entire Reminder Unit unreachable: 170 commitments
+    sat `pending` for a week and `execution_events` held not one `execution.reminded` row.
+
+    The commitment is still UNOWNED — `assignee` stays None and the audience stays the admin
+    queue, so nothing pretends somebody promised this. It is simply also REACHABLE, because an
+    active admin is a real person, and that is what earns the right to nudge.
+    """
     execution = build(facts={}).require()
-    assert execution.remindable is False
+    assert execution.communication.audience is AudienceClass.ADMIN_QUEUE
+    assert execution.communication.assignee is None          # nobody owns it, and we say so
+    assert execution.communication.queue_seat == "seat_mgr"   # somebody can still be reached
+    assert execution.remindable and execution.escalation
+
     decision = decide_reminder(execution, state=ExecutionState.PENDING, history=ReminderState(),
+                               now=NOW + timedelta(days=5))
+    assert decision.should_remind and decision.reason_code != "not_remindable"
+
+
+def test_a_commitment_nobody_at_all_can_receive_is_tracked_but_never_nudged():
+    """The invariant the test above must not be allowed to erase.
+
+    An org with no active admin has genuinely nobody on the other end. The commitment is still
+    built, still stored, still counted and still expires with an outcome record — it is only
+    never spoken about, because a nudge with no recipient is a message sent into an empty room.
+    """
+    nobody = build_from_decision(
+        make_decision(), org_id="org_1", reasoning_run_id="run_1", config_snapshot_id="cfg_1",
+        decision_hash=semantic_hash({"fixture": "nobody"}), eval_time=NOW, directory=StaticSeatDirectory({}),
+        facts={}, available_channels={"slack", "in_app"}, subject_ref="deal_9").require()
+    assert nobody.communication.reason_code == "unrouted_rule3_unrouted"
+    assert nobody.remindable is False and nobody.escalation == ()
+
+    decision = decide_reminder(nobody, state=ExecutionState.PENDING, history=ReminderState(),
                                now=NOW + timedelta(days=5))
     assert not decision.should_remind and decision.reason_code == "not_remindable"
 
@@ -273,7 +312,13 @@ def test_ownership_rules_are_ordered_and_named():
                          directory=DIRECTORY).reason_code == "rule1_owner"
     assert resolve_owner(facts={"commitment.actor": {"value": "rep@acme.io"}}, attrs={},
                          directory=DIRECTORY).reason_code == "rule2_actor"
-    assert resolve_owner(facts={}, attrs={}, directory=DIRECTORY).reason_code == "rule3_unrouted"
+    # Nobody owns it, so it is not ROUTED — but an org with an active admin has somewhere to
+    # show it. The reason code distinguishes the two, because "no owner" and "no admin either"
+    # are different problems and merging them hid the second behind the first.
+    unowned = resolve_owner(facts={}, attrs={}, directory=DIRECTORY)
+    assert unowned.reason_code == "rule3_admin_queue"
+    assert unowned.routed is False and unowned.seat_id is None
+    assert unowned.recipient is not None
 
 
 def test_an_off_seat_owner_falls_through_rather_than_being_force_matched():

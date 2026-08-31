@@ -1,0 +1,162 @@
+{
+  "replay_id": "06",
+  "slug": "filled_closed_rejected_or_deferred_relationship",
+  "title": "Filled, Closed, Rejected, or Deferred Relationship",
+  "failure_class": "Terminal opportunity state (filled/won/lost/deferred) is not treated as a hard action gate separable from the continuing human relationship, so stale pursuit CTAs survive closure while blunt filtering would erase the relationship.",
+  "summary": "An opportunity has reached a terminal or waiting state — role filled, closed-won, rejected, or explicitly deferred — but the underlying human relationship continues. GeniOS must hold opportunity lifecycle and relationship lifecycle as two linked but independent objects: terminal opportunity state hard-eliminates pursuit, while relationship facts stay queryable and lawfully nurture-able. Later generic email or calendar activity updates relationship freshness only and can never reopen the old opportunity; reopening requires an explicit source-authoritative event mapped to that exact opportunity, which then creates a new versioned decision chain. The observed [SCREENSHOT] symptom is a card displaying stage `filled` while still saying \"Reply now\" and asking to confirm a proposed meeting; the rest of the replay is [MODELLED] acceptance probes.",
+  "business_subject": "The scoped opportunity plus its relationship role — not the person's entire inbox history. Base fixture: a Sales opportunity marked filled/closed, an old proposal/intro thread, and later generic relationship activity. Variant: an investor partner who says \"send meaningful updates and I may reconsider\" (conditional deferral, neither active deal nor permanent rejection).",
+  "current_failure": "A card whose displayed stage is `filled` simultaneously recommends \"Reply now\" and \"Confirm or decline the proposed meeting\" — stale proposal/meeting pursuit survives terminal opportunity state. The screenshot proves the rendered contradiction only; it does not establish whether stale CRM state, context reduction, legacy pack selection, reasoning or projection caused it, nor that every filled/closed case behaves identically.",
+  "expected_behavior": "Filled/closed-won: suppress pursuit and stale proposal/meeting work; create customer-success or handoff intelligence only if a separate verified obligation exists. Closed-lost/rejected: no Sales pursuit; preserve relationship state and an evidence-based reopen condition; No action/stop unless a permitted distinct nurture decision is supported. Deferred: wait until the explicit date, milestone, material-update or counterparty trigger — elapsed silence is neither rejection nor a reason to follow up. Relationship activity after closure attaches to the relationship and never reopens the old opportunity unless the event carries authoritative reopen semantics; a genuine reopen creates a new versioned decision/execution/delivery chain with fresh ids parented to the reopen event.",
+  "prohibited_behaviors": [
+    "Do not call `filled` unresolved simply because old tags remain on the record.",
+    "Do not ask to confirm a past or proposed meeting after the opportunity is terminal.",
+    "Do not turn a rejection into a 'last chance' urgency framing.",
+    "Do not turn an explicit deferral into a rejection.",
+    "Do not permanently erase or delete the relationship when an opportunity closes.",
+    "Do not let any new email or calendar event reopen the old opportunity.",
+    "Do not learn 'closed means keep following up' from clicks, sends or later unrelated replies.",
+    "Do not apply terminal state as a negative score feature instead of a hard action gate.",
+    "Do not treat relationship existence as commercial permission or as an active opportunity.",
+    "Do not emit low-priority action during a deferral window — pre-trigger time is No action.",
+    "Do not silently reuse the closed decision/execution/delivery object for new work.",
+    "Do not infer ROI from a card exposure, or count won/lost/deferred/nurture outcomes together."
+  ],
+  "layer_obligations": [
+    {
+      "layer": "L1",
+      "required_output": "Immutable source/version/thread receipts capturing authoritative stage/decision messages, CRM versions and tombstones, exact deferral language + date + condition, and later events stored separately; signal atoms distinguish closure, rejection, deferral, reconsideration condition and generic activity.",
+      "fail_closed": "Park or Review-source the record when CRM/message authority or freshness is unknown; never invent a stage."
+    },
+    {
+      "layer": "L2",
+      "required_output": "BusinessSituationObject carrying separate opportunity and relationship entities/edges, a single current terminal/waiting opportunity state with reason and effective time, relationship role, reopen condition, conflicts, and exact evidence membership; later events scoped by thread/role.",
+      "fail_closed": "Suppress terminal opportunity action; Review source on conflicting states; never apply a person-wide reopen."
+    },
+    {
+      "layer": "L3",
+      "required_output": "ExpertisePackage naming the accepted capability + version, its stop/nurture/reopen rules, coverage, and a four-brain snapshot; lifecycle-specific Sales/customer-success/relationship capability applied only when accepted and complete, with Company/permission constraints preserved.",
+      "fail_closed": "Observation-only or Defer for unsupported investing/fundraising domains or stub coverage; no generic legacy pack substituted."
+    },
+    {
+      "layer": "L4",
+      "required_output": "Decision that hard-eliminates pursuit on terminal state, lists rejected stale candidates, an Alternative, an explicit no-action trigger, separated confidence and priority, and current validity — comparing wait/stop, relationship-safe nurture, handoff or explicit reopen with trigger, stakes and Completion stated.",
+      "fail_closed": "NO_ACTION, Suppress, or Review source; never an age-based imperative."
+    },
+    {
+      "layer": "L5",
+      "required_output": "Versioned ExecutionObject linked to the new opportunity/relationship object (never the closed one), created only from a new authoritative decision with owner/approval and a success predicate; stale opportunity executions cancelled.",
+      "fail_closed": "No execution at all until both the reopen condition and the authority check pass."
+    },
+    {
+      "layer": "L6",
+      "required_output": "Revalidation of terminal state, target, consent/purpose and decision version immediately before send; a Suppression/DeliveryResult receipt for stale work, and a fresh idempotency key for any lawful new relationship touch.",
+      "fail_closed": "Suppress the old proposal/meeting CTA and any revoked nurture."
+    },
+    {
+      "layer": "L7",
+      "required_output": "Joined decision→action→external result with outcome class and counterfactual; terminal outcome recorded separately from relationship response; cadence/reopen efficacy learned only from repeated reconciled cases; clicks and sends are never success.",
+      "fail_closed": "No promotion from a single closure or reply; deferral and rejection remain distinct labels."
+    }
+  ],
+  "mutations": [
+    {
+      "mutation": "Role/position is filled",
+      "expected_decision": "Suppress all pursuit for that opportunity; the relationship may remain in a dormant state.",
+      "prohibited": "Asking the user to confirm the old proposed meeting.",
+      "pass_condition": "No active Sales execution and no active Sales card exist for that opportunity.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No abstention/suppression vocabulary — cards.level only carries prescriptive/predictive, there is no suppress/observation state, and DEFER is unreachable (confidence_floor_bp defaults to 0). There is also no opportunity object separate from the person, so 'that opportunity' cannot be scoped."
+    },
+    {
+      "mutation": "Deal closed-won and a distinct onboarding task exists",
+      "expected_decision": "Open a new customer-success situation scoped to the exact handoff task.",
+      "prohibited": "Continuing the prospect chase, or merging the onboarding work into the old Sales card.",
+      "pass_condition": "The handoff Completion is observed as a separate object from the closed Sales opportunity.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No opportunity/situation object model and no customer-success lifecycle; L5 has never produced an execution row, so a separately-parented handoff object cannot exist."
+    },
+    {
+      "mutation": "Explicit rejection with no reopen condition stated",
+      "expected_decision": "No action / stop, while retaining the historical relationship record.",
+      "prohibited": "Emitting a 'one final chance' style outreach.",
+      "pass_condition": "Zero outbound pursuit is produced and the opportunity state remains closed-lost.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No stop/No-action abstention level exists in cards.level, and there is no persisted opportunity state field that can hold or retain closed-lost."
+    },
+    {
+      "mutation": "Explicit deferral until Q4",
+      "expected_decision": "Wait until the Q4 trigger fires; only an observation schedule is permitted in the interim.",
+      "prohibited": "Following up weekly on the grounds that silence is growing.",
+      "pass_condition": "No delivery of any kind occurs before the stated trigger.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No deferral/trigger state and no wait vocabulary; DEFER is mathematically unreachable, and the L6 delivery control plane has never run (delivery_outbox empty across all orgs), so a pre-trigger no-delivery gate cannot be exercised."
+    },
+    {
+      "mutation": "Counterparty says 'send material updates; I may reconsider'",
+      "expected_decision": "Record a deferred conditional state; produce an update only when a verified material milestone exists and accepted expertise supports it.",
+      "prohibited": "Labelling it a fresh rejection, or treating it as an active opportunity.",
+      "pass_condition": "Either exactly one milestone-specific decision, or No action.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "Requires conditional-deferral state plus accepted L3 expertise; the L3 domain compiler is dark and unroutable (73/73 NoExpertiseRoute, 140/152 capabilities stubs, zero accepted), and no abstention vocabulary can express the conditional wait."
+    },
+    {
+      "mutation": "Generic 'great to hear from you' message arrives after rejection",
+      "expected_decision": "Attach the event as relationship activity only; update relationship freshness at most.",
+      "prohibited": "Reopening the deal automatically off the new event.",
+      "pass_condition": "The old opportunity remains closed after the event is ingested.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No opportunity object to remain closed and no thread-level state — extraction is one message at a time, so a relationship arc cannot be derived or held separate from a deal state."
+    },
+    {
+      "mutation": "Counterparty explicitly says 'let's reconsider'",
+      "expected_decision": "Create a new version / reopened opportunity with a receipt and re-reason from current evidence.",
+      "prohibited": "Mutating the old closed state in place without preserving history.",
+      "pass_condition": "A new opportunity or version exists, parented to the reopen event, with the closed original intact.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No opportunity versioning/parenting model; no counterparty role or direction in extraction (the LLM sees a body with no From/To and observations carry no actor), so 'the counterparty said it' cannot be established."
+    },
+    {
+      "mutation": "Same person joins a new company",
+      "expected_decision": "Open a new relationship/opportunity scope for the new company.",
+      "prohibited": "Transferring the old company's stage, permission or history forward as current.",
+      "pass_condition": "Separate company and opportunity identifiers exist for the old and new scopes.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "Person nodes are interchangeable with no role model and no opportunity scoping; graph works_at edges alone cannot carry stage/permission scoping or prevent history transfer."
+    },
+    {
+      "mutation": "CRM says closed while email implies active negotiation",
+      "expected_decision": "Raise Review source / conflict; do not silently choose one side.",
+      "prohibited": "Picking whichever event is newest regardless of source authority.",
+      "pass_condition": "A conflict receipt is emitted and resolution goes to a human or the authoritative source.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No review/abstention state exists to route into, and L7 has no human verdict path (no verdicts recorded, calibration has never executed), so 'human resolution' has no landing surface."
+    },
+    {
+      "mutation": "Nurture consent is revoked",
+      "expected_decision": "Suppress the relationship touch and cancel any queued execution.",
+      "prohibited": "Falling back on prior preference or prior cadence.",
+      "pass_condition": "The revocation is visible through the delivery gate.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L6 delivery control plane has never run (delivery_outbox empty), so there is no delivery gate to make revocation visible through; L5 has never produced an execution row to cancel."
+    },
+    {
+      "mutation": "An earlier rejection is later deleted or corrected by an authoritative source",
+      "expected_decision": "Supersede with a new version and rebuild downstream, preserving history.",
+      "prohibited": "Erasing the audit trail, or keeping the stale rejection authoritative.",
+      "pass_condition": "An exact supersession chain from the old state to the corrected one is present.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No opportunity state to supersede and no version/tombstone lineage for authoritative source corrections at L1/L2."
+    },
+    {
+      "mutation": "Two independent opportunities exist with the same company",
+      "expected_decision": "Close only the matching opportunity.",
+      "prohibited": "Applying company-wide closure or company-wide reopen.",
+      "pass_condition": "Each opportunity retains its own independent state.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No opportunity entity at all — state, where inferred, is person/company-shaped, so two opportunities under one company cannot be distinguished or closed independently."
+    }
+  ],
+  "passes_today": false,
+  "why_now": "A supplied product screenshot shows a live card rendering stage `filled` while recommending \"Reply now\" and \"Confirm or decline the proposed meeting\" — a real, captured contradiction on a real surface, not a hypothetical. It is directly customer-visible and directly undermines trust in the terminal-state handling of every closed deal, so the failure boundary (terminal state must be a hard action gate, relationship must survive independently) is worth pinning down as an executable acceptance probe now, even though most assertions must be xfailed until the opportunity/relationship object split, abstention vocabulary, and L5/L6 execution-delivery weld exist.",
+  "open_loop": "The screenshot proves only the rendered contradiction for that one captured card. It does not establish whether the underlying CRM state was authoritative or fresh, which internal branch produced the card (stale source state, context reduction, legacy pack selection, reasoning, or projection), whether any real opportunity should have reopened, or whether every filled/closed case behaves the same way. That causal attribution is unresolved and must not be assumed by the test."
+}

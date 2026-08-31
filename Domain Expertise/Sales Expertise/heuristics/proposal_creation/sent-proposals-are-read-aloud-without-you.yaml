@@ -1,0 +1,143 @@
+identity:
+  id: sales.heu.proposal_creation.sent_proposals_are_read_aloud_without_you
+  name: Sent proposals are read without you
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.proposal_and_commercials.proposal_creation
+  subdomain: proposal_and_commercials
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: Assume every proposal is skimmed in four minutes by someone sceptical who was never in a
+    meeting. That reader decides more deals than the champion — write for them.
+  answers:
+  - Who is a proposal actually written for?
+  - What standard should a draft be judged against before sending?
+  not:
+  - A formatting guide. It is about audience and structure, not typography.
+  - A claim that the champion does not matter. They matter, and they are not the reader.
+
+heuristic:
+  statement: 'Judge every draft against the forwarded read: a sceptical person, no context, four
+    minutes, no seller present. Almost every defect that matters becomes visible under that test —
+    an opening about us, a menu of options, a price with no mechanism, a scope that only makes sense
+    if someone explains it — and almost none of them are visible when the author reads their own
+    document.'
+  why: 'The proposal''s real job is to be a tool the champion uses on people we cannot reach. It
+    therefore does its work in a room we are not in, in front of a reader who owes us nothing, and it
+    has to carry its own context because nobody will supply it. The author is systematically the worst
+    judge of this — they have all the context, so every ambiguity resolves correctly in their head,
+    and the document reads as complete to precisely one person.'
+  confidence_bp: 8500
+  applies_when: 'Any proposal that will be circulated beyond the people who have met us — which in a
+    multi-person purchase is all of them.'
+  breaks_down_when: 'A DOCUMENT THAT GENUINELY WILL BE PRESENTED. Where the process guarantees a
+    walkthrough with everyone present, a document optimised for solo reading can be thinner than the
+    conversation deserves. Rarer than sellers believe, and worth checking rather than assuming.
+
+    A REQUIRED RESPONSE FORMAT. Tenders and RFPs prescribe structure, and rewriting for readability
+    can score badly against an evaluation rubric that awards points per section.
+
+    A TECHNICAL EVALUATION DOCUMENT. Where the audience is specialists assessing capability against
+    criteria, density is correct and the four-minute skim is not the relevant read.
+
+    A RENEWAL ON KNOWN TERMS. The reader has all the context already, and restating their problem to
+    someone who has lived with the solution for a year is condescending rather than clarifying.
+
+    WHEN IT BECOMES AN ARGUMENT FOR BREVITY ALONE. The test is about self-sufficiency, not length — a
+    short document that assumes context fails it exactly as badly as a long one.'
+  reads:
+  - sales.obj.core.proposal
+  - sales.obj.core.pricing
+  - sales.obj.core.business_need
+  contradicts:
+  - sales.heu.outreach.the_sequence_is_for_the_seller__the_buyer_sees_a_person
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  - sales.sit.out_of_profile_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - proposal_sent
+  - contract_requested
+  do_not_use_when:
+  - The document will genuinely be presented to everyone who matters.
+  - A tender or RFP prescribes the structure and scores against it.
+  - It is a renewal where the reader already has all the context.
+
+objects_used:
+- sales.obj.core.proposal
+- sales.obj.core.pricing
+- sales.obj.core.business_need
+- sales.obj.core.decision_maker
+- sales.obj.core.buying_committee
+
+outcomes:
+- Drafts are judged by someone other than their author, against the forwarded read.
+- Defects that only appear without context are caught before sending.
+
+failure_modes:
+- 'THE AUTHOR APPLIES THE TEST TO THEIR OWN DRAFT. They cannot un-know the context, so every ambiguity
+  resolves correctly and the document passes for the one person it was always going to work for.'
+- 'READ AS AN ARGUMENT FOR SHORTNESS. A brief document that assumes context fails the test as badly
+  as a long one; the property being tested is self-sufficiency.'
+- 'APPLIED TO A SCORED RESPONSE FORMAT. Readability rewritten over a rubric loses points for sections
+  the evaluator was required to find.'
+
+limits:
+- Says nothing about what the proposal should contain commercially.
+- Cannot be evaluated by the engine at all — the document is not in the record, and `proposal_sent`
+  marks only that one was sent.
+- The test is only as good as the person applying it, and the author is the worst available candidate.
+
+variants:
+- applies_to: enterprise
+  change: Assume several sceptical readers with different concerns — security, finance, an incumbent
+    owner — and check that each finds their own question answered without a walkthrough.
+  why: A committee forwards to specialists, and each reads only their section.
+- applies_to: smb
+  change: The reader is usually the buyer themselves, so the test is about self-sufficiency over time
+    rather than across people — will it still make sense next week.
+  why: There is no committee, but there is a delay.
+- applies_to: channel
+  change: The reader is the partner's customer, reached through the partner. Write it so the partner
+    can send it unedited, because editing is where the message degrades.
+  why: A document a partner has to rewrite usually just does not get sent.
+
+metrics:
+- name: forward_survival_rate
+  unit: percent
+  description: Share of proposals producing a response from someone not previously in the conversation.
+  direction: higher_is_better
+- name: proposal_to_response_days
+  unit: days
+  description: Days to a substantive reply. Documents needing interpretation show up here first.
+  direction: lower_is_better
+
+references:
+- title: The Challenger Customer
+  kind: book
+  author: Adamson, Dixon, Spenner and Toman
+  note: On the supplier-side document having to survive internal circulation without the seller, which
+    is the empirical basis for writing to the absent reader.
+- title: Practitioner proposal review
+  kind: practitioner
+  note: The cold-read review — handing a draft to a colleague with no deal context — is the cheapest
+    quality control available and is almost never done.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The first failure mode is the important one and
+    it is structural rather than a matter of discipline: the author cannot un-know the context, so the
+    test only works when someone else applies it — which is why the practitioner reference names the
+    cold read rather than a checklist.'

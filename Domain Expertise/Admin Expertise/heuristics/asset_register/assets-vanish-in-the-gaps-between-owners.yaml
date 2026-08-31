@@ -1,0 +1,66 @@
+identity:
+  id: admin.heu.asset_register.assets_vanish_in_the_gaps_between_owners
+  name: Assets vanish in the gaps between owners
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.asset_register
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Equipment is lost at transitions — exits, moves, repairs — precisely when custody is ambiguous.
+    The register's custody trail is what makes the gaps accountable.
+  answers:
+  - When do assets actually disappear?
+
+heuristic:
+  statement: >
+    Equipment is lost at transitions — exits, desk moves, repairs — precisely when custody is
+    ambiguous. The register's custody trail is what makes those gaps accountable.
+  why: >
+    During steady state everything has a holder who would notice its absence. At a transition the
+    item is briefly nobody's: handed to IT for repair, left on a desk during a move, put in a
+    drawer when somebody leaves. There is no moment at which a specific person is responsible for
+    noticing it has gone, so it goes, and the loss is discovered months later with no one to ask.
+    Loss is therefore not a security problem but a custody-continuity problem, and it is solved by
+    making every transition a recorded handover rather than a gap.
+  confidence_bp: 8000
+  applies_when: Any transfer of custody — departure, role change, office move, repair, loan.
+  breaks_down_when: >
+    The item was never really in custody. Shared equipment in a common area has no custodian by
+    design, and applying a custody-trail model to it produces a register full of people who happened
+    to sign for a projector. It also breaks down where the loss is theft rather than drift: a
+    custody trail records who last held it and does not prevent anything, and treating the register
+    as a deterrent misplaces where the control actually sits.
+  reads: [admin.obj.core.asset, admin.obj.core.employee_record]
+  contradicts: [admin.heu.asset_issuance_and_recovery.the_signature_is_for_both_parties]
+limits:
+- 'It explains where loss happens; it does not reduce it without a handover step at each transition.'
+- 'It assumes single custody, which does not describe shared or pooled equipment.'
+failure_modes:
+- 'Custody recorded at issue and never at transition, which is the state most registers are in and the reason this heuristic exists.'
+- 'Used to assign blame after a loss, which makes people avoid recording transitions at all.'
+variants:
+- applies_to: distributed
+  change: Every transition involves shipping, which is both a bigger gap and a documented one — the courier record is the custody trail.
+  why: The handover has a third party who logs it.
+- applies_to: enterprise_admin
+  change: Office moves are the dominant loss event and they are scheduled, which makes them the cheapest transition to control.
+  why: A known date allows a pre-move and post-move count.
+references:
+- title: Asset custody practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second failure mode is the one that quietly defeats this: using the custody trail to
+    assign blame after a loss teaches people not to record transitions, which removes the only
+    data the heuristic depends on.

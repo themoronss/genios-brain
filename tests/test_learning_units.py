@@ -11,6 +11,7 @@ from genios_engine.feedback.units import (
     run_all_units,
     unit_knowledge_evolution,
     unit_outcome_analysis,
+    unit_pattern_learning,
     unit_performance_optimization,
     unit_recommendation_learning,
     validate_learning,
@@ -92,6 +93,40 @@ def test_validation_gates_brains_but_passes_artifacts():
                                                       distinct_days=1, positive=1, negative=0,
                                                       confidence_bp=100))
     assert validate_learning(metric, POLICY)[0] is True       # a metric is not a claim to believe
+
+
+def _enterprise(*, entity_id, n=1, kind="deal_stalled", days_apart=0):
+    return [dict(object_type="deal", internal_kind=kind, source_ref_id=f"ref_{entity_id}_{i}",
+                independence_group=None, entity_id=entity_id,
+                occurred_at=NOW + timedelta(days=i * days_apart)) for i in range(n)]
+
+
+def test_pattern_learning_tracks_distinct_entities():
+    events = (_enterprise(entity_id="company_a", n=2, days_apart=1)
+              + _enterprise(entity_id="company_b", n=2, days_apart=1))
+    objs = unit_pattern_learning(_batch(enterprise=tuple(events)), POLICY, NOW)
+    assert len(objs) == 1
+    assert objs[0].evidence.distinct_entities == 2
+
+
+def test_pattern_learning_blocked_below_k_anonymity_floor():
+    # 4 observations, 2 distinct days — clears min_observations/min_distinct_days — but all from
+    # the SAME one company, which must not clear the k-anonymity floor (default min=3).
+    events = _enterprise(entity_id="company_a", n=4, days_apart=1)
+    objs = unit_pattern_learning(_batch(enterprise=tuple(events)), POLICY, NOW)
+    assert len(objs) == 1
+    assert objs[0].evidence.distinct_entities == 1
+    ok, reason = validate_learning(objs[0], POLICY)
+    assert ok is False and reason == "insufficient_distinct_entities"
+
+
+def test_pattern_learning_promotes_with_enough_distinct_entities():
+    events = (_enterprise(entity_id="company_a", n=2, days_apart=1)
+              + _enterprise(entity_id="company_b", n=2, days_apart=1)
+              + _enterprise(entity_id="company_c", n=2, days_apart=1))
+    objs = unit_pattern_learning(_batch(enterprise=tuple(events)), POLICY, NOW)
+    ok, reason = validate_learning(objs[0], POLICY)
+    assert ok is True and reason == "validated"
 
 
 def test_empty_batch_emits_nothing_from_every_unit():

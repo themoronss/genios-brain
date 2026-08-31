@@ -1,0 +1,157 @@
+identity:
+  id: sales.pb.follow_up.breakup_email
+  name: Breakup email
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.follow_up
+  subdomain: prospecting_and_outreach
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'The last message of a dead sequence, sent as a courtesy and a test: it names that you are
+    closing the file, which costs the silent prospect nothing to accept and almost nothing to reverse
+    — which is exactly why genuinely interested people reverse it.'
+  answers:
+  - How does a sequence end without burning the relationship?
+  - What is the cheapest test of whether a silent thread is dormant or dead?
+  not:
+  - A pressure tactic. The version that works removes pressure rather than adding it.
+  - A re-engagement campaign. This closes the file; re-entry later is a different, fresh contact.
+
+when_to_use:
+  situations:
+  - sales.sit.outbound_prospect
+  conditions:
+  - {path: thread.ball_in_court, op: "=", value: them}
+  - {no_obs: negative_reply}
+  signals:
+  - followup_sent
+  do_not_use_when:
+  - 'They already declined. The file is closed; announcing it again asks them to reject you twice.'
+  - 'A deferral with a date is on record. Breaking up before the date arrives discards a live thread
+    and reads as impatience.'
+  - 'The relationship has non-sales value — an investor, a partner, a referrer. Closing a commercial
+    file in a relationship that continues on other terms is a category error the recipient will feel.'
+  - 'You will not actually stop. An untrue breakup costs more than never sending one.'
+
+steps:
+- order: 1
+  name: Confirm the attempts were genuinely different
+  description: 'A breakup after four copies of the same message tests nothing — the prospect has not
+    yet been given a reason to reply. The test only means something if the silence survived a change
+    in what was offered.'
+  actor: human
+  objects_read:
+  - sales.obj.core.next_action
+  produces: A verdict on whether the sequence actually varied.
+  done_when: The thread shows genuinely distinct attempts, not repetitions.
+
+- order: 2
+  name: Declare the close, without guilt
+  description: 'State plainly that you are closing the loop because you have not heard back and their
+    silence probably means not now. No passive aggression, no assumed rejection, no "I take it you are
+    not interested" — the reader can smell it, and it is the sentence that converts a neutral silence
+    into a negative memory.'
+  actor: human
+  produces: A short message naming the close and attributing nothing to the recipient.
+  done_when: The draft contains no sentence asking the reader to feel anything.
+
+- order: 3
+  name: Leave one door, one word wide
+  description: 'One sentence saying what to reply if the timing changes. Re-opening should be a
+    one-word action, because the people most likely to reverse a breakup are those with a real problem
+    and no time.'
+  actor: human
+  produces: A single, trivially cheap re-entry instruction.
+  done_when: Reversing the close requires no more than a word from them.
+
+- order: 4
+  name: Actually stop
+  description: 'The breakup only works if it is true. A final email followed by more emails converts
+    credibility into spam, and it does so permanently — the next sender from the same domain inherits
+    it.'
+  actor: human
+  produces: A closed thread, removed from the live sequence.
+  done_when: No further message is sent on this thread without a new trigger.
+
+- order: 5
+  name: Record the close as a stop, not as a loss
+  description: 'A closed file is not a lost deal and should not be recorded as one; it is a thread that
+    ran out of honest attempts. Keeping the two apart is what allows a later re-entry to be read as a
+    fresh contact rather than as the fifth touch of a dead sequence.'
+  actor: system
+  objects_read:
+  - sales.obj.core.lead
+  produces: An explicit stop state with a date.
+  done_when: The thread leaves the live set with a recorded reason.
+
+objects_used:
+- sales.obj.core.lead
+- sales.obj.core.next_action
+- sales.obj.core.timeline
+
+outcomes:
+- Dead sequences end explicitly rather than decaying into a permanent queue.
+- The dormant-but-interested minority is given the cheapest possible way to surface.
+- A later re-entry starts from zero rather than from a sequence the buyer stopped reading.
+
+failure_modes:
+- 'GUILT DRESSED AS COURTESY. "Since I have not heard back I will assume you are not interested" is
+  the version buyers have seen fifty times, and it is read as a manipulation because it is one.'
+- 'SENT TOO EARLY. A breakup after two touches ends threads that had not yet been given a reason to
+  reply, and it is usually a symptom of a sequence with nothing to say.'
+- 'NOT ACTUALLY FINAL. The most expensive version, because the credibility lost attaches to the sender
+  and the domain rather than to the thread.'
+- 'USED AS A REVIVAL TRICK. Sending it for the reply rate rather than to close the file. It works once
+  per prospect and is transparent the second time.'
+
+limits:
+- Says nothing about when the sequence should have ended; it is the ending, not the stop rule.
+- The reply it generates is often a courtesy no, which is a real and useful outcome but is not a
+  revival and should not be counted as one.
+- On a relationship with non-commercial value, the whole device is the wrong instrument.
+
+variants:
+- applies_to: enterprise
+  change: Close the file with the individual, not with the account — a champion going quiet is not the
+    organisation declining, and a breakup addressed to the account forecloses a re-entry through
+    someone else.
+  why: In a committee the silent person is one of several doors.
+- applies_to: inside_sales
+  change: The stop is enforced by the sequence rather than by the seller, because at volume the
+    discipline of step 4 does not survive individual judgement.
+  why: The failure is systemic, so the control has to be too.
+- applies_to: partner
+  change: Do not use. Partner relationships continue outside any single opportunity, and closing a
+    file reads as withdrawing from the relationship.
+  why: The commercial thread is not the whole relationship here.
+
+metrics:
+- name: breakup_reversal_rate
+  unit: percent
+  description: Share of breakups answered with a request to continue. The direct measure of what the
+    device is for.
+  direction: higher_is_better
+- name: explicit_stop_rate
+  unit: percent
+  description: Share of exhausted threads closed explicitly rather than abandoned.
+  direction: higher_is_better
+
+references:
+- title: Practitioner sequence design
+  kind: practitioner
+  note: The breakup message is near-universal in outbound practice and near-universally written as a
+    guilt trip; the difference between the two versions is the whole content of step 2.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 1 and 5 are new: step 1 because a breakup after four
+    identical messages tests nothing, and step 5 because recording a stop as a loss is what makes a
+    later re-entry compile as the fifth touch of a dead sequence rather than as a fresh contact.'

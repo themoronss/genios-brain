@@ -1,0 +1,65 @@
+identity:
+  id: admin.heu.admin_analytics.invisible_work_gets_cut_first
+  name: Invisible work gets cut first
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.admin_analytics
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Admin done well disappears — which is exactly why it must be measured and narrated. The monthly
+    page is the function's existence proof at budget time.
+  answers:
+  - Why must smooth admin still report?
+
+heuristic:
+  statement: >
+    Admin done well disappears — which is exactly why it must be measured and narrated. The monthly
+    page is the function's existence proof at budget time.
+  why: >
+    Every other function has visible output: revenue, product, cases closed. Administration's output
+    is the absence of problems — the filing that was on time, the access that was revoked, the
+    invoice that did not get paid twice. Absence cannot be observed, so in the absence of
+    measurement the function is assessed on its cost alone, and a cost with no visible output is
+    the first thing cut. The narration is not self-promotion; it is the only mechanism by which
+    prevented problems enter a budget conversation.
+  confidence_bp: 8000
+  applies_when: Any support function whose success is the non-occurrence of problems.
+  breaks_down_when: >
+    The measurement becomes advocacy. Numbers assembled to justify headcount are detectable and
+    they discredit every subsequent figure the function produces, including the honest ones. It
+    also breaks down where the narration substitutes for the work: a function producing an excellent
+    monthly page and a poor service is protected by the page for exactly one cycle.
+  reads: [admin.obj.core.request, admin.obj.core.budget_line]
+  contradicts: [admin.heu.workplace_management.small_frictions_compound_into_culture]
+limits:
+- 'It argues for visibility, not for volume of reporting. One page is the recommendation and it is load-bearing.'
+- 'Prevented problems remain unmeasurable; the page can only show activity and its consequences.'
+failure_modes:
+- 'Reporting only growth, which is advocacy and reads as such.'
+- 'A page produced and never read, which costs the effort and buys nothing.'
+variants:
+- applies_to: shared_services
+  change: Strongest. The function is a cost centre with named customers and no revenue, and it is benchmarked against outsourcing.
+  why: The comparison is explicit and periodic.
+- applies_to: startup_lean
+  change: The narration is a conversation rather than a page, and it is with the person who already sees the work.
+  why: Visibility is not the problem at this size; capacity is.
+references:
+- title: Service function measurement practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the trap this heuristic sets for the function that adopts it:
+    numbers assembled to justify headcount are recognisable, and they discredit every honest
+    figure the function produces afterwards.

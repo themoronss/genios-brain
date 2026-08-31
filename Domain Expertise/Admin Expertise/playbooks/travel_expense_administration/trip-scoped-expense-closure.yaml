@@ -1,0 +1,86 @@
+identity:
+  id: admin.pb.travel_expense_administration.trip_scoped_expense_closure
+  name: Trip-scoped expense closure
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.travel_and_events.travel_expense_administration
+  subdomain: travel_and_events
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Each trip's expenses close as a unit — advances reconciled, receipts matched, report filed
+    within days of return — because trip expenses left open become month-end mysteries with fading receipts
+    and memories.
+
+when_to_use:
+  do_not_use_when:
+  - The trip is still in progress. Partial closure produces two claims for one trip and doubles the reconciliation.
+steps:
+- order: 1
+  name: Close the trip as one unit, within days of return
+  description: >
+    Memory and receipts both decay within a week. Everything this capability does gets harder in
+    proportion to how long the trip stays open.
+  actor: human
+  objects_read: [admin.obj.core.expense]
+  done_when: One claim covers the trip and it was filed on return.
+- order: 2
+  name: Reconcile the advance against actual spend
+  description: >
+    An unreconciled advance is a debt nobody has named, and it drifts toward a write-off and an
+    awkward conversation with somebody who has forgotten receiving it.
+  actor: human
+  done_when: Advance and spend are squared, with the balance settled either way.
+- order: 3
+  name: Match card transactions to the trip
+  description: >
+    Card spend without a trip context is a list of merchants. Matched, it is most of the claim
+    already evidenced.
+  actor: system
+  done_when: Card lines are attached rather than processed separately.
+- order: 4
+  name: Fix the currency rate once
+  description: >
+    Per-line arguments about exchange rates cost more administrative time than the variance in
+    dispute.
+  actor: human
+  done_when: One stated rate applies across the trip.
+- order: 5
+  name: Close short rather than leave open
+  description: >
+    One missing receipt keeps a trip on the books for a quarter. Telling the traveller which items
+    are not claimable closes it honestly.
+  actor: human
+  done_when: The claim is settled, including the parts that were refused.
+objects_used: [admin.obj.core.expense, admin.obj.core.employee_record, admin.obj.core.budget_line, admin.obj.core.policy]
+limits:
+- 'It cannot recover a receipt that was never kept; it can only stop that holding the whole trip open.'
+- 'Step 3 needs a card feed. Without one, the claim carries the whole burden.'
+failure_modes:
+- 'Step 1 slipping to month end, which is where every other failure in this list originates.'
+- 'Step 5 avoided because refusing an item is uncomfortable, so the trip ages instead.'
+variants:
+- applies_to: executive_office
+  change: The assistant reconciles rather than the traveller, which makes step 1 achievable and step 2 essential.
+  why: The principal will not file a claim and the advance is still outstanding.
+- applies_to: distributed
+  change: Step 4 is per-trip and per-country, and the rate source must be stated in policy rather than chosen per claim.
+  why: Otherwise every claim negotiates its own rate.
+references:
+- title: Travel and expense reconciliation practice
+  kind: practitioner
+  note: Days-after-return closure is the single variable most correlated with clean travel spend.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1 is the only step that matters causally. Everything else on this list gets harder in
+    direct proportion to how long the trip stays open, and slipping to month end is what
+    produces all four of the other failures.

@@ -1,0 +1,86 @@
+identity:
+  id: admin.pb.payables_administration.payables_on_terms_on_purpose
+  name: Payables on terms, on purpose
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.payables_administration
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Payables are scheduled to terms — not early by accident, not late by neglect — with cash
+    position visibility and early-payment discounts taken deliberately, because payables timing is working-capital
+    management done daily.
+
+when_to_use:
+  do_not_use_when:
+  - A payment is genuinely urgent and exceptional. Then it leaves the run and gets more scrutiny, not less — urgency is the pretext every payment fraud uses.
+steps:
+- order: 1
+  name: Schedule to terms, both directions
+  description: >
+    Not early because the invoice arrived, not late because nobody looked. Early payment is a
+    working-capital gift and it shows up on no dashboard as a problem.
+  actor: system
+  objects_read: [admin.obj.core.invoice, admin.obj.core.contract]
+  done_when: The payment date derives from the agreed terms.
+- order: 2
+  name: Verify every bank change out of band
+  description: >
+    A number obtained independently, to a person who did not send the change. No exception for
+    urgency, because urgency is the pretext.
+  actor: human
+  objects_read: [admin.obj.core.vendor]
+  done_when: Confirmation came through a channel we chose.
+- order: 3
+  name: Look at the cash position, not just the ageing
+  description: >
+    Ageing says what is due. It does not say what else has a claim on the balance this week.
+  actor: human
+  done_when: The run is affordable as scheduled.
+- order: 4
+  name: Review the run before release
+  description: >
+    Totals, new payees, outliers. This is the last moment anything is recoverable; afterwards it
+    depends on the receiving bank's goodwill.
+  actor: human
+  done_when: A second person has seen it and can name what is in it.
+- order: 5
+  name: Send the remittance
+  description: >
+    Not sending generates supplier chasing on money already paid, which costs more time than sending
+    it would have.
+  actor: agent
+  done_when: Suppliers know what was paid and against what.
+objects_used: [admin.obj.core.invoice, admin.obj.core.vendor, admin.obj.core.approval, admin.obj.core.contract]
+limits:
+- 'Step 3 needs a cash view this capability does not own. Without it, scheduling is correct and possibly unaffordable.'
+- 'It pays what was approved. Whether it should have been approved belongs upstream.'
+failure_modes:
+- 'Step 2 waived once for an urgent supplier, which is the entire attack.'
+- 'Step 4 performed by the person who prepared the run, which is a review in name.'
+variants:
+- applies_to: shared_services
+  change: Step 4's reviewer has no relationship with the suppliers, so outlier detection must be rule-based rather than intuitive.
+  why: Familiarity is doing unacknowledged work in smaller organisations.
+- applies_to: startup_lean
+  change: Steps 1, 2 and 4, with the founder as reviewer. Step 3 is the bank balance.
+  why: The risks are early payment and fraud; the sophistication is unnecessary.
+references:
+- title: Accounts payable fraud controls
+  kind: practitioner
+  note: Pre-run review and out-of-band verification are consistently the two highest-yield controls in the category.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 2 and step 4 are the two that must not be delegated to the same person or waived for
+    urgency. Both fail in exactly one way — an exception made for a supplier everybody trusts,
+    at a moment that felt pressing.

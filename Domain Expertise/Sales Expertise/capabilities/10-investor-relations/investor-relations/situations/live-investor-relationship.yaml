@@ -1,0 +1,103 @@
+identity:
+  id: sales.sit.live_investor_relationship
+  name: Live Investor Relationship
+  domain: sales
+  owner_capability: sales.investor_relations.investor_relations
+  version: 1.0.0
+  status: stable
+
+description: >
+  An ongoing relationship with a party that might fund us, read at the ACCOUNT level: the fund,
+  the accelerator, the syndicate — not the individual partner. Eleven of the design partner's
+  sixty active situations are this, and every one of them failed before reaching a route: Layer 2
+  types them `fundraising`, and the corpus had no domain by that name, so the resolver rejected
+  the domain hint and never looked at a situation file at all.
+
+  It is emphatically NOT an opportunity. There is no purchase, no value to prove, no close date
+  we control, and a "no" is usually a "not now" carrying a condition. Forcing it through
+  opportunity-shaped reasoning is what produces closed-lost language about an accelerator that
+  explicitly invited a re-application to the next cohort.
+
+matches:
+  l2_situation_types:
+    - investor_relationship
+  # ACCOUNT, not person. Layer 2 anchors these on the fund's company node; the individual
+  # partner arrives as a neighbour. `investor_contact` is the person-anchored sibling and is
+  # deliberately not claimed here — it is a different read with a different next move, and
+  # binding both to one situation would produce advice aimed at nobody.
+  scope: account
+  # No `when:` key, and not an empty one. An investor relationship is worth reading precisely
+  # when nothing is formally open: the deal-shaped predicates in the pack are all silent here by
+  # construction, and narrowing on them would reproduce the misreading this file exists to end.
+
+also_serves:
+  - sales.prospecting_and_outreach.account_research
+
+objects:
+  load:
+    - sales.obj.core.company
+    - sales.obj.investor_relations.investor_conversation
+  optional:
+    - sales.obj.core.contact
+    - sales.obj.core.next_action
+    - sales.obj.core.risk
+  never_load:
+    # Each of these resolves happily to `unknown` against an investor and is then read downstream
+    # as "assessed and absent" rather than "never applicable". There is no buying committee at a
+    # fund, no budget of ours to approve, no timeline we set, and no deal to value. A confident
+    # empty answer is worse than no answer.
+    - sales.obj.core.buying_committee
+    - sales.obj.core.budget
+    - sales.obj.core.timeline
+    - sales.obj.core.deal
+    - sales.obj.core.opportunity
+    - sales.obj.core.pricing
+    - sales.obj.core.proposal
+    - sales.obj.core.contract
+
+priority_bp: 5500
+typical_duration_days: 45
+
+signals_of_progress:
+  - introduction
+  - meeting_request
+  - next_step_agreed
+  - positive_reply
+
+signals_of_decay:
+  - negative_reply
+  - timeline_slip
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    A conversation with a party that might FUND us. Not a customer, not a deal. There is no
+    value to prove, no budget of ours to approve and no close date we control — never write
+    about pricing, contracts, buying committees or a deal stage, and never render a pass as a
+    loss. A pass is a date: it usually carries a condition and an implicit "come back when".
+
+    Headline: where this stands with the fund and what it turns on — the condition they named,
+    the round context, the next real moment. Name the fund.
+
+    Situation: what they actually said, in their terms. The condition, the timing, the person
+    who said it. A "no" that named a milestone is a different fact from silence, and the two
+    must never read alike.
+
+    Artifact: a reply that respects who is chasing whom. Investors do not chase — give them a
+    reason to re-engage (a concrete update against the condition they named), never a nudge.
+  fallback:
+    headline: "{entity} — investor conversation open"
+    situation: >-
+      An open fundraising conversation with {entity} with no agreed next step on the record.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  last_updated: '2026-08-25'
+  reviewed_by: harsh
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-25'
+
+admission:
+  accepted_content_hash: 39afb3ff7306529331d0579cfeaf59dfc084cdbfe3d24086719d8a8973b91429

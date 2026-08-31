@@ -1,0 +1,87 @@
+identity:
+  id: admin.pb.travel_booking.booking_within_policy_optimised_for_the_trip
+  name: Booking within policy, optimised for the trip
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.travel_and_events.travel_booking
+  subdomain: travel_and_events
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Travel is booked inside policy with the traveller's effectiveness in mind — sensible routings,
+    sane arrival times, refundable where uncertainty exists — because the cheapest ticket that lands a
+    pitch-day red-eye is expensive.
+
+when_to_use:
+  do_not_use_when:
+  - The trip has not been decided yet. Booking to hold a fare before the decision is how uncommitted travel becomes committed spend.
+steps:
+- order: 1
+  name: Approve before you book
+  description: >
+    A booked trip is a spent trip. Approval afterwards is a record of a decision somebody else
+    already made.
+  actor: human
+  objects_read: [admin.obj.core.approval, admin.obj.core.budget_line]
+  done_when: Authorisation exists before the commitment.
+- order: 2
+  name: Buy lead time before you negotiate fares
+  description: >
+    The fare difference is mostly time. A policy that tightens class rules while trips are booked
+    four days out is optimising the smaller term.
+  actor: human
+  done_when: The trip was booked as early as the decision allowed.
+- order: 3
+  name: Price uncertainty as an option
+  description: >
+    Where the trip may not happen, a refundable fare is an option with a premium, not an indulgence.
+    Banning them uniformly costs more in change fees than it saves.
+  actor: human
+  done_when: The fare type reflects how certain the trip is.
+- order: 4
+  name: Route for arriving able to work
+  description: >
+    Two connections and a 05:00 landing is cheaper and produces a worse meeting, which is the thing
+    the trip exists for.
+  actor: human
+  objects_read: [admin.obj.core.meeting]
+  done_when: The arrival leaves recovery before the first commitment.
+- order: 5
+  name: Ask whether the trip is needed
+  description: >
+    The cheapest trip is the one replaced by a call, and it is the option nobody in a booking
+    process is incentivised to raise.
+  actor: human
+  done_when: The alternative was considered.
+objects_used: [admin.obj.core.approval, admin.obj.core.budget_line, admin.obj.core.meeting, admin.obj.core.policy, admin.obj.core.vendor]
+limits:
+- 'It cannot create lead time that the decision did not allow. Late bookings are usually a planning failure upstream.'
+- 'Step 4 is a judgement about the traveller, and policies express it badly.'
+failure_modes:
+- 'Step 3 removed from policy because refundable fares look expensive in isolation.'
+- 'Step 5 owned by nobody, since the booking process starts after the trip is assumed.'
+variants:
+- applies_to: executive_office
+  change: Step 4 dominates. The principal''s effectiveness on arrival is the entire economics of the trip.
+  why: The cost of the ticket is small relative to what the meeting is for.
+- applies_to: startup_lean
+  change: Steps 2 and 5. Lead time and necessity are the only levers and both are free.
+  why: There is no policy to enforce and no negotiated rates to use.
+references:
+- title: Corporate travel policy design
+  kind: practitioner
+  note: Where advance purchase is identified as dominating fare outcomes over class and supplier rules.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 has no natural owner because the booking process begins after the trip has been
+    assumed, which is why the cheapest option in the whole capability is the one nobody is
+    positioned to raise.

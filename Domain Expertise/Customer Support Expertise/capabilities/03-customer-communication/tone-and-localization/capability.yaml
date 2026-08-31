@@ -1,42 +1,79 @@
-# STUB — identity, purpose and load-set only. See metadata.notes for how to promote it.
-#
-# Runs parallel to every other capability in this subdomain rather than after them: it is not a
-# post-processing pass over a finished draft, which is the assumption most tooling makes and the
-# reason localised support reads like translated support.
-
 identity:
   id: customer_support.customer_communication.tone_and_localization
   name: Tone & Localization
   domain: customer_support
   subdomain: customer_communication
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Meeting the customer in their language, register and norms — including the ones they never
+  state. Directness that reads as efficient in one market reads as dismissive in another, and machine
+  translation destroys precisely the hedges, honorifics and conditional forms that were carrying the apology.
+  Tone is also a function of the customer''s state and not only their locale: the register that suits
+  a routine how-do-I question is patronising to someone who has just lost a day of work, and the same
+  sentence can be warm from a peer and insulting from a vendor.
 
-description: >
-  Meeting the customer in their language, register and norms — including the ones they never state.
-  Directness that reads as efficient in one market reads as dismissive in another, and machine
-  translation destroys precisely the hedges, honorifics and conditional forms that were carrying
-  the apology. Tone is also a function of the customer's state and not only their locale: the
-  register that suits a routine how-do-I question is patronising to someone who has just lost a
-  day of work, and the same sentence can be warm from a peer and insulting from a vendor.
+  '
+question: Does this read the way we intend it to read, to this person, in their language?
 
-question: "Does this read the way we intend it to read, to this person, in their language?"
+outcomes:
+- 'The customer''s formality and language matched where possible, and never at clarity''s expense — a warm reply that is misunderstood is a failed reply with good manners.'
+- 'Empathy that names the actual situation. "We understand your frustration" understood nothing; "a week before your launch, this is the wrong time for an outage" did.'
+- 'Register read from what they wrote rather than from where they are, because national generalisations are wrong about individuals most of the time.'
+- 'Translation checked for meaning rather than for words, since a literal translation of an idiom is how a reassurance becomes an insult.'
+- 'The negative outcome: warmth REMOVED because the customer wants the answer and nothing else. Added empathy reads as padding and as delay to somebody who is measuring both.'
+failure_modes:
+- 'FORMULAIC EMPATHY. It is detectable in one line and it converts a genuine apology into a template the customer has seen before.'
+- 'MATCHING REGISTER PAST CLARITY. Mirroring an idiomatic, casual customer in a second language produces a message neither party is sure about.'
+- 'ASSUMING CULTURE FROM LOCATION, which is a stereotype applied at scale and wrong about the individual most of the time.'
+- 'TRANSLATING WORDS, NOT MEANING. "We will look into it" carries commitment in some languages and none in others.'
+- 'ADDING WARMTH FOR AN EXPERT WHO WANTS THE ANSWER, which they experience as padding and as a slower reply.'
+kpis:
+- name: specific_empathy_rate
+  unit: percent
+  description: Acknowledgements naming the actual situation rather than the emotion generically.
+  direction: higher_is_better
+- name: clarity_complaint_rate
+  unit: percent
+  description: Replies generating a "what do you mean" follow-up. Rises when register-matching overrides clarity.
+  direction: lower_is_better
+- name: language_match_rate
+  unit: percent
+  description: Replies in the customer's preferred language where we support it.
+  direction: higher_is_better
+- name: translation_meaning_review_share
+  unit: percent
+  description: Translated replies checked by somebody fluent, rather than machine-translated and sent.
+  direction: higher_is_better
+handoffs:
+  upstream: [customer_support.customer_communication.response_drafting, customer_support.customer_communication.de_escalation]
+  downstream: [customer_support.customer_communication.proactive_status_updates, customer_support.voice_of_customer.satisfaction_measurement]
+  parallel: [customer_support.knowledge_and_deflection.macro_management, customer_support.diagnosis_and_resolution.resolution_delivery]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, follow_the_sun, outsourced_bpo,
+           ai_first_support, community_support, named_tam]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following the shape of
-    capabilities/03-customer-communication/de-escalation/capability.yaml. Capture first: which
-    parts of a message must never be machine-translated (the apology, the commitment, and anything
-    legally binding), the difference between localising a template and localising a relationship,
-    and the failure mode where a friendly house style survives translation into something that
-    reads as flippant about a serious outage. Worth pairing with macro_management in the Knowledge
-    & Deflection subdomain, since most tone damage at scale is authored once into a macro rather
-    than typed by an agent.
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    specific_empathy_rate is the only KPI here that measures the thing that actually works, and
+    it is measurable in a way generic sentiment is not: an acknowledgement either names the
+    customer's situation or it does not. Every support team is trained to express empathy and
+    almost none is measured on whether the empathy referred to anything.
+
+    The last failure mode matters as much as the first. Warmth added for an expert who wants the
+    answer is experienced as padding and as delay, which means the same intervention that de-
+    escalates one customer irritates another — and the difference is legible from how they
+    wrote.
+
+admission:
+  accepted_content_hash: e872990e2baecac27dbf5cee42d73e4bb1d9b028b231141209da94ee37ee1a5c

@@ -1,0 +1,117 @@
+identity:
+  id: sales.pb.tam_sam_som.bottom_up_market_sizing
+  name: Bottom-up market sizing
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.market_and_targeting.tam_sam_som
+  subdomain: market_and_targeting
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'A market size built top-down from an analyst number is a slide; one built bottom-up from
+    countable buyers and a real price is a plan. Count the accounts that match the ICP, multiply by
+    evidence-based price, and size the beachhead before anything else.'
+  answers:
+  - How is a market sized so the number can be acted on?
+  - Which of the three figures should be produced first?
+  not:
+  - ICP definition, which supplies the criteria this counts against.
+  - Territory planning, which consumes the output.
+
+when_to_use:
+  conditions:
+  - {absent: thread.last_outbound}
+  signals:
+  - followup_sent
+  do_not_use_when:
+  - 'The ICP is not settled. The count would enumerate the wrong criteria, and a precise count of the
+    wrong thing is worse than an estimate.'
+  - 'The motion is long-tail or self-serve, where sizing is statistical rather than nominal.'
+  - 'The number is wanted for a slide rather than for a decision. Top-down is faster and it is honest
+    about what it is.'
+
+steps:
+- order: 1
+  name: Count matching accounts, do not estimate them
+  description: 'Build the actual list for the beachhead segment. If the list cannot be built, that is
+    the finding — a market whose members cannot be named cannot be divided into territories,
+    contacted, or summed into a quota.'
+  actor: human
+  objects_read:
+  - sales.obj.core.icp
+  - sales.obj.core.account
+  produces: A named account list, or a stated failure to produce one.
+  done_when: The segment exists as accounts rather than as a description.
+
+- order: 2
+  name: Price from evidence
+  description: 'Use closed deals or the nearest comparable, never aspiration. An invented price
+    multiplied by a real count produces arithmetic that looks derived and rests on a fiction, and the
+    fiction is invisible in the result.'
+  actor: human
+  objects_read:
+  - sales.obj.core.pricing
+  produces: A price input traceable to something that was actually paid.
+  done_when: The price can be sourced.
+
+- order: 3
+  name: Size the beachhead first — SOM, then SAM, then TAM
+  description: 'Obtainable before serviceable before total. The reverse order produces a large figure
+    that flatters everyone and guides nobody, and the small honest number is the one territory and
+    quota planning actually consume.'
+  actor: human
+  produces: Three figures, produced in increasing order of size.
+  done_when: The obtainable number was computed first and is the headline.
+
+- order: 4
+  name: State the assumptions with the number
+  description: 'A market size is a set of assumptions with arithmetic applied. Published without them,
+    it cannot be argued with, corrected as evidence arrives, or reused — so it persists unchanged long
+    after it stopped being true.'
+  actor: human
+  produces: The number and its assumptions together.
+  done_when: A reader can challenge any input.
+
+- order: 5
+  name: Reconcile against a top-down figure, openly
+  description: 'Where an analyst number exists, compare rather than ignore. A large gap is
+    informative in both directions, and the reconciliation is the part that makes a bottom-up number
+    credible to people who have only seen top-down ones.'
+  actor: human
+  produces: A stated difference and its explanation.
+  done_when: The gap is explained rather than avoided.
+  optional: true
+
+- order: 6
+  name: Say when the segment is too small
+  description: 'A sizing exercise that can only ever encourage is producing justification, not
+    analysis. Finding a segment too thin costs an afternoon here and a year of coverage later.'
+  actor: human
+  produces: An honest verdict where the arithmetic does not support the segment.
+  done_when: The exercise is capable of returning a negative answer.
+
+objects_used:
+- sales.obj.core.icp
+- sales.obj.core.account
+- sales.obj.core.pricing
+- sales.obj.core.lead
+
+limits:
+- The account enumeration is checkable against `graph_nodes` only for a tenant whose graph covers
+  their market; most graphs hold correspondence rather than a market.
+- Says nothing about whether the counted accounts will buy, which is the conversion assumption and
+  the largest source of error.
+- Pricing evidence requires closed deals, which a new motion does not have.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch, and it completes the Sales corpus. Steps 4, 5 and 6 are
+    new. Step 4 is the one that makes the number reusable — a size without its assumptions cannot be
+    corrected, so it survives unchanged long after the evidence has moved.'

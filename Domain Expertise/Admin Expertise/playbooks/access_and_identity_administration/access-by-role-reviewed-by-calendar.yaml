@@ -1,0 +1,86 @@
+identity:
+  id: admin.pb.access_and_identity_administration.access_by_role_reviewed_by_calendar
+  name: Access by role, reviewed by calendar
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.access_and_identity_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: System access follows role templates, changes with role changes, and gets recertified periodically
+    — because access accretes silently with tenure and the long-tenured employee's permission set becomes
+    an unaudited map of their career.
+
+when_to_use:
+  do_not_use_when:
+  - The access is genuinely one-off and time-boxed with an automatic expiry. Full role machinery there is overhead that produces standing grants instead.
+steps:
+- order: 1
+  name: Grant from a role template, never by copying a person
+  description: >
+    Copying a colleague is fast and inherits four years of accumulated exceptions along with the
+    job description.
+  actor: system
+  objects_read: [admin.obj.core.access_right, admin.obj.core.employee_record]
+  done_when: The grant maps to a role, not to a precedent.
+- order: 2
+  name: Treat a role change as a revoke-and-grant
+  description: >
+    Adding the new access and leaving the old is the default behaviour of every process that has no
+    forcing event, and it is where accumulation actually happens.
+  actor: human
+  done_when: The old role's access was removed, explicitly.
+- order: 3
+  name: Time-box every exception at the moment it is granted
+  description: >
+    An emergency grant with no expiry is permanent. The expiry has to be set while the urgency
+    justifies asking for one.
+  actor: human
+  done_when: Non-template access carries an end date.
+- order: 4
+  name: Recertify against what access DOES, not against the team list
+  description: >
+    A manager confirming their headcount has attested, not reviewed. The question is whether this
+    person still needs to be able to do this thing.
+  actor: human
+  done_when: The review names the entitlements and produced decisions.
+- order: 5
+  name: Revoke on departure from a list that includes the informal systems
+  description: >
+    The obvious systems are always covered. The SaaS tool somebody expensed and the shared account
+    nobody owns are where the residual access lives.
+  actor: agent
+  done_when: A departure sweep covered systems outside the identity provider.
+objects_used: [admin.obj.core.access_right, admin.obj.core.employee_record, admin.obj.core.approver, admin.obj.core.asset]
+limits:
+- 'Steps 4 and 5 need an inventory of systems. Shadow SaaS is invisible to identity tooling and is exactly where the risk concentrates.'
+- 'It administers access; it does not decide what a role should be able to do.'
+failure_modes:
+- 'Step 2 skipped because nothing forces it, which is the single largest source of over-provisioning in any organisation.'
+- 'Step 4 answered by the manager who requested the access originally, which is a self-review.'
+variants:
+- applies_to: regulated
+  change: Step 4 is mandated with a defined period and evidence; step 3's exceptions require named approval.
+  why: The recertification is a control and controls are evidenced.
+- applies_to: startup_lean
+  change: Steps 1, 3 and 5. Recertification is unnecessary when everyone knows what everyone does.
+  why: The exposure is a leaver with a live account, not accumulated entitlements.
+references:
+- title: Identity and access management practice
+  kind: practitioner
+  note: Joiner-mover-leaver is the standard framing, and the mover is the case that is consistently unimplemented.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 2 is the whole difference between an access process and a provisioning desk. Joiners
+    and leavers have forcing events; movers do not, which is why every organisation's long-
+    tenured staff hold the union of every role they have held.

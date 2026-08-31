@@ -54,6 +54,42 @@ class RoutePlan:
     never_object_ids: tuple[str, ...]
     unresolved_predicates: tuple[str, ...] = ()
     skipped_capability_ids: tuple[str, ...] = ()
+    #: True only when EVERY routed capability passed the admission gate (stable + approved by a
+    #: named reviewer + accepted hash matching the routed bytes). A shadow compile may carry
+    #: unadmitted content; this flag is what keeps that content forever non-prescriptive
+    #: downstream (deliver's abstention gate reads the package review_state).
+    admitted: bool = True
+    admission_gaps: tuple[str, ...] = ()
+    #: Routed capabilities that are admitted and say nothing — no outcomes, kpis, handoffs or
+    #: failure modes, only a name, a sentence and a question. Separate from `admission_gaps`
+    #: because thinness is not an authority failure: this must be countable without deciding
+    #: whether the package may instruct.
+    hollow_capability_ids: tuple[str, ...] = ()
+    #: The authored card copy for this route — `artifact_kind`, `render_hint` and the
+    #: deterministic `fallback` — lifted from the winning situation file.
+    #:
+    #: It travels on the PLAN rather than being looked up at delivery time because the copy is
+    #: part of the expertise: it is what the situation says a reader must be told, it is admitted
+    #: with the rest of the file, and hashing it into the manifest means changing the wording
+    #: mints a new capability version instead of silently altering what already-audited cards
+    #: claimed. `None` means the situation authored none, and the delivery layer falls back to
+    #: the tenant pack's template exactly as the legacy lane does.
+    render: Mapping[str, Any] | None = None
+    #: Which situation the copy came from — a package can match several, and "whose words are
+    #: these" must be answerable from the package alone.
+    render_situation_id: str | None = None
+    #: The authored `priority_bp` of the highest-priority situation on this route.
+    #:
+    #: It travels for the same reason `render` does — it is authored expertise, not a runtime
+    #: reading. Until it did, the corpus's 30 distinct priorities (3000–9600 across 48 situations)
+    #: were used to SORT the route and then discarded, so the Decision Maker saw no declared
+    #: priority, fell back to a neutral 5000, and every compiled signal scored
+    #: (5000 + 50) / 100 = 50. On the design partner's org that was 193 of 223 signals and 104 of
+    #: 115 cards at exactly the same score, in one urgency band — a ranked product that had never
+    #: ranked anything.
+    priority_bp: int | None = None
+    #: Which situation the priority came from, for the same reason `render_situation_id` exists.
+    priority_situation_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

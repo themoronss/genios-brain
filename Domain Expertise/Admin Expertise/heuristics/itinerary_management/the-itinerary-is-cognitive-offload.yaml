@@ -1,0 +1,64 @@
+identity:
+  id: admin.heu.itinerary_management.the_itinerary_is_cognitive_offload
+  name: The itinerary is cognitive offload
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.travel_and_events.itinerary_management
+  subdomain: travel_and_events
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A traveller checking six apps for the next step is spending meeting-preparation attention
+    on logistics. The single itinerary exists to buy that attention back.
+  answers:
+  - What is an itinerary actually for?
+
+heuristic:
+  statement: >
+    A traveller checking six apps for the next step is spending meeting-preparation attention on
+    logistics. The single itinerary exists to buy that attention back.
+  why: >
+    Attention on a travel day is a fixed and small budget, and logistics consume it in a way that
+    feels productive — checking the gate, confirming the car, recalculating the connection. Every
+    minute of that is a minute not spent on the thing the trip is for, and the trade is invisible
+    because both feel like work. Consolidating the logistics into one artefact does not save
+    minutes; it removes the recurring decision about whether to check, which is where the attention
+    actually goes.
+  confidence_bp: 7500
+  applies_when: Multi-leg travel where the traveller has substantive work on arrival.
+  breaks_down_when: >
+    The itinerary is stale. A single source the traveller has learned not to trust is worse than
+    six confirmations, because they now check the apps AND the sheet. It also breaks down for
+    frequent travellers with their own system: imposing a central itinerary on somebody who has
+    solved this for themselves adds a second source rather than replacing six.
+  reads: [admin.obj.core.meeting]
+  contradicts: [admin.heu.travel_booking.traveller_fatigue_is_a_cost_line]
+limits:
+- 'It concerns cognitive load, not the quality of the plan. A well-presented impossible schedule is still impossible.'
+- 'The benefit is unmeasurable and the effort is not, which is why this work is often cut first.'
+failure_modes:
+- 'Produced once and not maintained, which converts the asset into an extra thing to verify.'
+- 'Imposed on travellers who already have a working method.'
+variants:
+- applies_to: executive_office
+  change: Strongest. The principal''s attention on a travel day is the scarcest resource in the organisation that day.
+  why: The whole trip is an investment in what they do on arrival.
+- applies_to: distributed
+  change: The traveller is often alone with no colleague to ask, which raises the value of the single source.
+  why: There is no local support to substitute for the document.
+references:
+- title: Executive travel support practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the failure that matters: a single source the traveller has
+    learned not to trust is strictly worse than six confirmations, because now they check both.

@@ -1,37 +1,18 @@
-# FULL capability for subdomain 08 · Support Operations.
-#
-# The whole of this file is written around one claim that operators find counter-intuitive and
-# that every other belief here follows from: a queue is not a pile of work, it is a rate
-# mismatch. Size is a stock; the problem is always a flow. Everything below is an attempt to
-# stop a manager from reading the count and hiring, when the honest reading was that arrivals
-# rose because of a release last Tuesday.
-#
-# Note what is NOT here: no utilisation threshold, no age band, no "aim for under X hours".
-# The shape of the utilisation curve is Layer 3 knowledge; where the elbow sits for THIS team
-# is Layer 4 arithmetic and lives in the pack manifest. Describing the shape and withholding
-# the number is deliberate — the shape generalises across every support org that has ever
-# existed, and the number does not generalise across two queues in the same company.
-#
-# Playbooks, heuristics, mental models and decision frameworks moved OUT of this
-# file and into knowledge.yaml + the artifact folders. They are files now because a
-# Layer 6 suggestion needs an id and a version to point at, and because a framework
-# used by four capabilities cannot live inline in all four.
-
 identity:
   id: customer_support.support_operations.queue_management
   name: Queue Management
   domain: customer_support
   subdomain: support_operations
   version: 1.0.0
-  status: draft
+  status: stable
   stub: false
-description: 'Running the queue as a system with an arrival rate and a service rate, rather than as
-  a list that someone works down. The competence is in three decisions: what order work is selected
-  in, what is deliberately not being served while the queue is behind, and whether the gap between what
-  arrives and what closes is being managed at the arrival side or only at the service side. It also
-  owns the least popular thing in support operations — protecting the oldest end of the queue from a
-  work-selection policy that will otherwise abandon it, because every incentive an agent has points
-  at the newest, shortest, best-written ticket.
+description: 'Running the queue as a system with an arrival rate and a service rate, rather than as a
+  list that someone works down. The competence is in three decisions: what order work is selected in,
+  what is deliberately not being served while the queue is behind, and whether the gap between what arrives
+  and what closes is being managed at the arrival side or only at the service side. It also owns the least
+  popular thing in support operations — protecting the oldest end of the queue from a work-selection policy
+  that will otherwise abandon it, because every incentive an agent has points at the newest, shortest,
+  best-written ticket.
 
   '
 question: Is this queue absorbing what arrives, and who inside it is being forgotten?
@@ -51,27 +32,27 @@ failure_modes:
 - Cherry-picking. Agents select the quick, well-written, easily-closed tickets. Handle time falls, closes-per-agent
   rises, average age improves, and the customers who have waited longest keep waiting. The queue reports
   its best week in the exact period it is failing worst the people it is failing.
-- Measuring the backlog by count instead of by age. A shrinking pile of steadily older tickets reads
-  as progress and is the opposite of it.
-- Reading a queue near capacity as nearly fine. Wait time does not rise in proportion to utilisation
-  — it rises far faster as arrivals approach the service rate — so a team described as almost fully
-  busy is not a small adjustment away from comfortable, it is on the steep part of the curve where a
-  single bad morning stops being recoverable.
+- Measuring the backlog by count instead of by age. A shrinking pile of steadily older tickets reads as
+  progress and is the opposite of it.
+- Reading a queue near capacity as nearly fine. Wait time does not rise in proportion to utilisation —
+  it rises far faster as arrivals approach the service rate — so a team described as almost fully busy
+  is not a small adjustment away from comfortable, it is on the steep part of the curve where a single
+  bad morning stops being recoverable.
 - Staffing to the average. Support demand arrives in bursts; a team sized to the mean is drowning for
   part of every week and idle for the rest, and the drowning part is what the customer experiences.
 - Reassignment as work. Tickets that move between queues accumulate handling without accumulating progress,
   and every hop resets somebody's sense of ownership while the customer's clock keeps running.
-- Closing to clear. Bulk-closing aged tickets removes the symptom, keeps the demand, and returns as
-  reopens and repeat contacts within the fortnight — now with a customer who has learned that waiting
-  produces a closure notice.
+- Closing to clear. Bulk-closing aged tickets removes the symptom, keeps the demand, and returns as reopens
+  and repeat contacts within the fortnight — now with a customer who has learned that waiting produces
+  a closure notice.
 - Parking in waiting-on-customer to protect the numbers. The state exists to pause a clock, not to hide
   work; a queue that leans on it rediscovers everything it hid, colder and angrier.
 - One queue for work of wildly different service times. Short jobs wait behind long ones, no expectation
   can be set correctly for either, and the resulting average describes nobody.
 - Managing to the mean. The mean hides the tail, and the tail is where the escalations, the churn signals
   and the executive emails are generated.
-- Treating headcount as the only lever. Hiring moves the service side and moves it slowest; routing
-  accuracy, deflection and product fixes move the arrival side and move it this week.
+- Treating headcount as the only lever. Hiring moves the service side and moves it slowest; routing accuracy,
+  deflection and product fixes move the arrival side and move it this week.
 - Optimising a step that is not the constraint. Speeding up first-line when everything actually stops
   at a single specialist queue produces a faster route to the same wait.
 - Owning a queue collectively. A queue with no named owner is not a queue, it is a place work goes to
@@ -102,8 +83,8 @@ kpis:
   direction: lower_is_better
 - name: reopen_rate
   unit: percent
-  description: Read as queue pressure, not agent quality — it tends to track closure targets rather
-    than skill.
+  description: Read as queue pressure, not agent quality — it tends to track closure targets rather than
+    skill.
   direction: lower_is_better
 - name: touches_per_resolution
   unit: count
@@ -168,16 +149,19 @@ applies_to:
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ''
+  reviewed_by: harsh
   last_updated: '2026-08-08'
-  review_status: unreviewed
+  review_status: approved
   confidence: provisional
-  notes: 'No thresholds, no utilisation figures, no age bands. The utilisation curve is described by
-    its shape because the shape is true of every queue ever run; the point on it where a given team
-    starts drowning is arithmetic, differs between two queues in the same company, and belongs to Layer
-    4. A number in this file would mean the Layer 3/4 boundary had leaked. The load-set is honest about
-    a harder problem: queue and backlog are planned objects that nothing in the shipped substrate emits,
-    so almost nothing here can fire until a support pack ships derived.backlog_age and the ticket fact
-    paths. That is the point of the backlog, not a caveat on this file.
+  notes: 'No thresholds, no utilisation figures, no age bands. The utilisation curve is described by its
+    shape because the shape is true of every queue ever run; the point on it where a given team starts
+    drowning is arithmetic, differs between two queues in the same company, and belongs to Layer 4. A
+    number in this file would mean the Layer 3/4 boundary had leaked. The load-set is honest about a harder
+    problem: queue and backlog are planned objects that nothing in the shipped substrate emits, so almost
+    nothing here can fire until a support pack ships derived.backlog_age and the ticket fact paths. That
+    is the point of the backlog, not a caveat on this file.
 
     '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: e55d3409843ec54ad693518923a5b6e80920f83c1ad1e42562f855c0c1c1fc9e

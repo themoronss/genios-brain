@@ -1,0 +1,91 @@
+identity:
+  id: customer_support.pb.priority_and_severity.two_axis_triage
+  name: Two-axis triage
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.priority_and_severity
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Severity is the blast radius (how broken, for how many); priority is the response order (who
+    is entitled, what breaches when). Keeping the axes separate stops a chatty low-impact VIP from outranking
+    a silent outage.
+
+when_to_use:
+  do_not_use_when:
+  - An incident is already declared. Severity is then a property of the incident and per-ticket triage produces a hundred contradictory assessments of one event.
+steps:
+- order: 1
+  name: Establish severity from the fault
+  description: >
+    How broken, for how many, with what workaround. It is a property of the world and it does not
+    change with who reported it or how they wrote.
+  actor: human
+  objects_read: [customer_support.obj.core.ticket, customer_support.obj.core.issue]
+  done_when: Severity is stated in terms of impact, not of urgency.
+- order: 2
+  name: Establish priority separately
+  description: >
+    Entitlement, breach proximity, account stake and what else is in the queue. It is a decision
+    about order and it is allowed to disagree with severity.
+  actor: human
+  objects_read: [customer_support.obj.core.support_plan, customer_support.obj.core.customer_account]
+  done_when: Priority is derived from something other than the severity value.
+- order: 3
+  name: Ignore tone, read impact
+  description: >
+    Angry is a communication state. Triaging on it rewards shouting and buries the polite customer
+    with the production outage, which is the most expensive intake error there is.
+  actor: human
+  done_when: The assessment would be identical if the same facts arrived politely.
+- order: 4
+  name: Treat the reporter''s severity as evidence, not as the answer
+  description: >
+    They are describing their own blast radius accurately and they cannot see anybody else''s. Both
+    directions of correction are normal.
+  actor: human
+  done_when: Their assessment informed the decision without determining it.
+- order: 5
+  name: Record why
+  description: >
+    Triage is re-examined during escalations. An unexplained P3 is indefensible even when it was
+    right.
+  actor: agent
+  done_when: Both values carry a one-line reason.
+objects_used: [customer_support.obj.core.ticket, customer_support.obj.core.issue, customer_support.obj.core.customer_account,
+               customer_support.obj.core.support_plan, customer_support.obj.core.sla_target]
+limits:
+- 'Severity assessment needs product knowledge intake often lacks, which is why step 4 keeps the reporter in the loop rather than out of it.'
+- 'It orders work; it does not create the capacity to do it, and a correctly prioritised queue can still be entirely late.'
+failure_modes:
+- 'Step 2 skipped because severity already produced a number, which is the conflation this capability exists to prevent.'
+- 'Step 3 applied as a rule against empathy, which is a different thing — the tone should change the reply, never the ranking.'
+variants:
+- applies_to: enterprise_support
+  change: Step 2 carries contractual weight and step 5 becomes evidential, because the customer may dispute the triage.
+  why: Priority is a promise at this tier.
+- applies_to: b2c
+  change: Step 2 simplifies to breach proximity and volume; there is no account stake to weigh.
+  why: Entitlement is uniform.
+- applies_to: swarming_support
+  change: Step 1 improves markedly because product knowledge is available at triage.
+  why: The people who can assess severity are in the room.
+references:
+- title: ITIL 4 — incident prioritisation
+  kind: framework
+  note: The impact-and-urgency matrix is the formal version of the two-axis separation, and its common failure is being reduced to one field.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 3 is the one that gets misread as an instruction to ignore how a customer feels. Tone
+    should change the reply and never the ranking, and conflating those two is how a team
+    justifies triaging by volume of complaint.

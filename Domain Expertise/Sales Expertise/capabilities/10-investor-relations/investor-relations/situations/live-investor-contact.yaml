@@ -1,0 +1,136 @@
+# The fundraising domain's PERSON anchor. `live-investor-relationship.yaml` is its account-level
+# twin, and the split matters here more than it does elsewhere: a fund is not the counterparty,
+# a partner is. Money is committed by a person who has to carry the case internally, and the
+# thing that actually changes is that individual's conviction.
+#
+# It exists because `domain_spec` already produced `investor_contact` and nothing claimed it.
+# `index.py` reported it as the one type "emitted by Layer 2 and bound by no domain", and the
+# design partner carries six of them — every one compiling to nothing, silently. Same fault as
+# `admin_person` and `general_deal`: a described type with no door.
+
+identity:
+  id: sales.sit.live_investor_contact
+  name: Live Investor Contact
+  domain: sales
+  owner_capability: sales.investor_relations.investor_relations
+  version: 1.0.0
+  status: stable
+
+description: >
+  A named individual at an investor, accelerator or programme, read at the PERSON level: where
+  their conviction stands, what they last asked for, and whose move it is. The counterparty here
+  is not an organisation deciding — it is a partner, an associate or a programme manager who has
+  to take the case to a committee, and their engagement is the only reliable signal available
+  before a decision exists.
+
+  It is emphatically not a prospect relationship. Nobody is buying, there is no value to prove
+  and no close to drive toward; the currency is conviction and the sequence is theirs, not ours.
+  Reading it through a sales lens produces advice about advancing a pipeline stage that does not
+  exist, which is exactly what typing investors as opportunities used to do on this org.
+
+  The failure this file exists to prevent is treating an associate's silence as a signal about
+  the fund. Associates go quiet because they are gathering internal support, because the partner
+  meeting is in three weeks, or because the answer is no and nobody has said so — three readings
+  with three different next moves, and only the correspondence distinguishes them.
+
+matches:
+  l2_situation_types:
+    - investor_contact
+  # PERSON, not fund. `domain_spec` types a company-anchored fundraising situation
+  # `investor_relationship` and a person-anchored one `investor_contact`; the former is claimed
+  # by `sales.sit.live_investor_relationship` and is deliberately not claimed here.
+  scope: person
+  # No `when:` narrowing, and not an empty key. An investor conversation is worth reading
+  # precisely when no deal-shaped predicate is true — narrowing on `deal.status` would suppress
+  # the entire population this situation serves, which is the mistake that left it unrouted.
+
+also_serves:
+  - sales.prospecting_and_outreach.account_research
+
+objects:
+  load:
+    - sales.obj.core.contact
+    - sales.obj.investor_relations.investor_conversation
+  optional:
+    - sales.obj.core.company
+    - sales.obj.core.next_action
+    - sales.obj.core.risk
+    - sales.obj.core.stakeholder
+  never_load:
+    # The commercial machinery of a purchase. An investor is not buying, so each of these would
+    # resolve cleanly to `unknown` and then be read downstream as "assessed and absent" rather
+    # than "never applicable" — a confident empty answer, which is worse than none.
+    - sales.obj.core.pricing
+    - sales.obj.core.proposal
+    - sales.obj.core.budget
+    - sales.obj.core.competitor
+
+# Below the account-level twin (which reads the fund) because when both fire the fund-level read
+# carries the decision and the person-level one is the way into it.
+priority_bp: 4200
+typical_duration_days: 30
+
+signals_of_progress:
+  - next_step_agreed
+  - positive_reply
+  - meeting_request
+  - introduction
+
+signals_of_decay:
+  - negative_reply
+  - closed_lost_mention
+  - timeline_slip
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    A fundraising conversation with a named individual. Nothing is being sold — never write about
+    pipeline stage, close date, budget, pricing or "the opportunity", and never describe a pass
+    as a lost deal in commercial terms.
+
+    Headline: name the person and say whose move it is. In fundraising that single fact is
+    routinely unclear to the founder, because investor correspondence is deliberately
+    non-committal and silence is the default state.
+
+    Situation: what they last asked for or committed to, and what dates it. If nothing dates it,
+    say so — an undated "let's reconnect" is the specific shape a fundraising conversation dies
+    in, and naming it as undated is more useful than inventing urgency.
+
+    Artifact: the reply that moves their conviction or gets a decision — answer the diligence
+    question, send the thing they asked for, or ask directly where it stands. Never a status
+    chase, and never a follow-up when the ball is on us.
+  fallback:
+    headline: "{entity} — investor conversation, no next date set"
+    # Was "... and nothing on record says what happens next", which opens on the gap in our
+    # records rather than on the fact the reader acts from. The finding is that a live fundraising
+    # conversation carries no next date — which is exactly what the headline above already claims,
+    # and exactly how the sibling situation live_investor_relationship words it. One live card
+    # carried the old wording on 2026-08-30.
+    situation: >-
+      An open fundraising conversation with {entity} and no next date on the record.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Closes the last globally-unrouted L2 type. `index.py` reported `investor_contact` as emitted
+    by Layer 2 and bound by no domain, and the design partner carries six of them — each
+    compiling to nothing with no error anywhere.
+
+    Substrate is real for this read: `thread.ball_in_court`, `thread.last_inbound`,
+    `thread.last_outbound`, `party.role` and `relationship.nature` all have writers, and
+    `relationship.nature = investor` is what keeps the sales lens off it. What is missing is any
+    notion of a round, a committee or a decision date — `funding.round` and `application_status`
+    are named in the fundraising spec's expected_fields and nothing writes them.
+
+    Deliberately authored in the Sales corpus rather than a new one: `capability_resolver`
+    aliases `fundraising` and `investor` to the `sales` catalogue, so a fundraising situation
+    has to live here to be found at all.
+
+admission:
+  accepted_content_hash: 80790556813a3871101952f32d4c0493b21e04c2dda28f73d3cbccf1260ce911

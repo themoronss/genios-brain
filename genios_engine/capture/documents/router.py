@@ -28,7 +28,15 @@ def route_document(doc: DocumentInput, ocr: OcrEngine | None = None) -> Document
                               ocr_engine=r.engine, ocr_pages=r.pages,
                               avg_confidence=r.avg_confidence, status=status)
 
-    # can't parse (unsupported binary, or scanned with no OCR engine wired)
+    # Two very different failures, historically collapsed into one terminal-sounding label.
+    # `unsupported` reads as "this file cannot be read"; for 369 of this org's documents the
+    # truth was "we have pages and no engine wired", which Tesseract would have read. Keeping
+    # them distinct is what makes the fix visible from the data instead of a code review.
+    if doc.image_ref is not None:
+        return DocumentResult(text="", native_parse_used=False, ocr_used=False,
+                              ocr_engine=None, ocr_pages=0, avg_confidence=None,
+                              status="ocr_unavailable")
+
     return DocumentResult(text="", native_parse_used=False, ocr_used=False,
                           ocr_engine=None, ocr_pages=0, avg_confidence=None,
                           status="unsupported")

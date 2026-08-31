@@ -1,0 +1,76 @@
+identity:
+  id: admin.heu.briefing_and_preparation.the_brief_is_the_meeting_s_first_half
+  name: The brief is the meeting's first half
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.briefing_and_preparation
+  subdomain: executive_support
+  version: 1.0.0
+  status: stable
+purpose:
+  statement: >
+    Unprepared meetings spend their first half rediscovering context and their second half deciding
+    hastily. The one-pager moves the first half to the night before, at a fraction of the cost,
+    because it is one person's time instead of everyone's.
+  answers:
+  - Why is preparation the cheapest intervention available in meeting operations?
+  - What is actually being bought by a brief?
+
+heuristic:
+  statement: >
+    Context established in a meeting costs the attendee count. Context established in a brief costs
+    one. The meeting does not get shorter — it gets to start at the interesting part.
+  why: >
+    Rediscovery is the dominant cost in most external meetings and it is invisible because it feels
+    like the meeting. Six people spending twenty minutes re-establishing where things stand is two
+    hours of organisational time reproducing something one person could have written in fifteen
+    minutes. The asymmetry is large enough that even a mediocre brief pays, which is why the format's
+    constraint matters more than its polish.
+  confidence_bp: 8000
+  applies_when: An external meeting with more than two participants and any prior history.
+  breaks_down_when: >
+    The context genuinely is the meeting. Discovery calls, first conversations and negotiations where
+    the counterparty's position is the thing being learned cannot be briefed, and a brief that
+    pretends otherwise asserts things nobody has established. It also breaks down when the brief is
+    wrong — a confidently stated stale fact is worse than an unprepared executive, because it will be
+    acted on.
+  reads:
+  - admin.obj.core.meeting
+  - admin.obj.core.commitment
+  contradicts:
+  - admin.heu.agenda_preparation.no_decision_no_meeting
+
+limits:
+- It argues for preparation, not for length. The relationship between brief size and value turns negative quickly.
+- It says nothing about accuracy, which is the failure mode that makes briefing worse than nothing.
+
+failure_modes:
+- Used to justify briefing everything, which fills the assistant's evening and trains the principal to skim.
+- Cited for internal recurring meetings, where the context is shared and the brief is ceremony.
+
+variants:
+- applies_to: executive_office
+  change: Strongest form — the principal's meeting volume makes rediscovery the single largest recoverable cost in their week.
+  why: Volume is what turns a per-meeting saving into a structural one.
+- applies_to: regulated
+  change: The brief becomes partly evidential — what was known before the decision is itself a record.
+  why: In a governed context, preparation is auditable.
+
+references:
+- title: admin.obj.core.meeting
+  kind: internal
+  note: meeting.open_loop is the closest signal to the failure this heuristic prevents — a meeting that ended with something unresolved that a brief would have surfaced.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    contradicts the no-decision-no-meeting heuristic on purpose: that one argues the meeting should
+    not exist, this one argues it should be prepared. Applied together they are complementary;
+    applied by different people they produce an argument about whose job it was.

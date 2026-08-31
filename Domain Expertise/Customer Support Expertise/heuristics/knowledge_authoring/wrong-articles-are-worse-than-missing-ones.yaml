@@ -1,0 +1,66 @@
+identity:
+  id: customer_support.heu.knowledge_authoring.wrong_articles_are_worse_than_missing_ones
+  name: Wrong articles are worse than missing ones
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.knowledge_and_deflection.knowledge_authoring
+  subdomain: knowledge_and_deflection
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A missing article costs a ticket; a stale one costs a ticket PLUS the customer's time following
+    bad steps PLUS their trust in every other article. Deletion of the outdated is authoring too.
+  answers:
+  - Is an outdated article better than none?
+
+heuristic:
+  statement: >
+    A missing article costs a ticket. A stale one costs a ticket PLUS the customer's time following
+    bad steps PLUS their trust in every other article. Deleting the outdated is the higher-value act.
+  why: >
+    A customer who finds nothing searches again or contacts support — annoying, and self-correcting.
+    A customer who finds confident wrong instructions follows them, possibly changes something,
+    fails, and then contacts support having lost time and having learned that the knowledge base
+    cannot be trusted. That last effect is the expensive one because it is general: it applies to
+    every future article, including the accurate ones, and it does not decay.
+  confidence_bp: 8500
+  applies_when: Any knowledge base people are directed to before contacting support.
+  breaks_down_when: >
+    The article is partially right and the correct parts are load-bearing. Deleting a mostly-accurate
+    article about a complex procedure leaves nothing, and nothing is worse when the alternative is a
+    two-hour ticket. Correcting beats deleting whenever correction is possible, and this heuristic
+    is sometimes used to justify deletion as the cheaper option. It also breaks down for
+    historical or version-specific content that is correctly stale: an article about a prior release
+    is accurate for the people still on it.
+  reads: [customer_support.obj.core.knowledge_article, customer_support.obj.core.content_gap]
+  contradicts: [customer_support.heu.content_gap_analysis.gaps_are_measured_not_brainstormed]
+limits:
+- 'It argues for removal over hedging, not for a small library. Coverage still matters.'
+- 'Staleness is hard to detect without usage feedback, which is what makes the estate decay silently.'
+failure_modes:
+- 'Deletion used as the cheap alternative to correction, which loses the accurate half.'
+- 'Applied to version-specific content that is correct for its audience.'
+variants:
+- applies_to: plg_self_serve
+  change: Strongest. There is no human backstop, so a wrong article is the entire experience.
+  why: Nobody catches the error before the customer acts on it.
+- applies_to: enterprise_support
+  change: Weaker on trust and stronger on cost — a technical customer following wrong steps in production is a different order of consequence.
+  why: The actions are larger.
+references:
+- title: Knowledge-centred service
+  kind: methodology
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the one to watch: this heuristic is routinely cited to justify
+    deleting a mostly-accurate article because correction takes longer, which loses the load-
+    bearing half and leaves the reader with nothing.

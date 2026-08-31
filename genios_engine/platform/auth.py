@@ -100,6 +100,32 @@ class AuthCtx:
     def has_scope(self, scope: str) -> bool:
         return self.scopes is None or scope in self.scopes
 
+    @property
+    def sees_org_queue(self) -> bool:
+        """Does this credential read the ORG's card queue rather than one person's?
+
+        Two principals do. An owner session (``scopes is None``) always did. The one that did not,
+        and should have, is an API key with no personal identity: ``agent_id`` and ``actor_id`` are
+        both NULL on a key minted from the dashboard's "API key" button, because a key is issued to
+        an ORGANISATION, not to a human.
+
+        The queue filter asked "which person is this?" and got NULL, so it matched cards assigned
+        to nobody — and L5 assigns every card to a seat. The desktop app therefore authenticated
+        correctly, was authorised correctly, and received an empty list forever. Granting
+        ``cards.read`` to a credential that structurally cannot match any card is a scope that
+        means nothing.
+
+        A key carries the reach of whoever minted it, and only an owner can mint one. So an
+        identity-less key reads the org queue; a key bound to an AGENT still sees only its own lane.
+
+        Test ``agent_id``, never ``actor_id``: the API-key branch above synthesises
+        ``actor_id = row.agent_id or f"api_key:{hashed[:12]}"``, so actor_id is NEVER None on this
+        path and an ``actor_id is None`` check silently never fires. ``agent_id`` is the only field
+        that carries a real principal, because ``api_keys`` has no other identity column. A JWT
+        session needs no clause of its own — it always arrives with ``scopes is None``.
+        """
+        return self.scopes is None or (self.source == "api_key" and self.agent_id is None)
+
 
 def _engine():
     s = get_settings()
@@ -202,6 +228,11 @@ def get_auth_ctx(request: Request,
         raise HTTPException(401, "Missing bearer credential")
     ctx = verify_bearer(creds.credentials)
     request.state.auth = ctx
+    # The analytics middleware runs after the route and must not re-authenticate; it reads the org
+    # this dependency already resolved. Set explicitly (not derived from .auth) so the middleware
+    # stays independent of AuthCtx's shape.
+    request.state.org_id = ctx.org_id
+    request.state.agent_id = ctx.agent_id
     return ctx
 
 
@@ -264,6 +295,44 @@ def require_owner(ctx: AuthCtx = Depends(get_auth_ctx)) -> AuthCtx:
     if ctx.scopes is not None:
         raise HTTPException(403, "owner credential required")
     check_org_kill(ctx.org_id)
+    return ctx
+
+
+def superadmin_emails() -> set[str]:
+    raw = get_settings().superadmin_emails or ""
+    return {e.strip().lower() for e in raw.split(",") if e.strip()}
+
+
+def require_admin(ctx: AuthCtx = Depends(get_auth_ctx)) -> AuthCtx:
+    """GeniOS-staff boundary for the cross-org admin console.
+
+    Every other dependency here answers "which tenant is this?"; this one answers "is this us?".
+    The admin routes read *all* tenants' spend, revenue and activity, so the check is the narrowest
+    in the file — and it is answered from the DEPLOYMENT, not from tenant data:
+
+      • the credential must be an owner JWT (never a scoped API key: a leaked agent key must not
+        become a cross-org read), and
+      • the email it was issued to must appear in GENIOS_SUPERADMIN_EMAILS.
+
+    Being staff is a fact about us, so granting it must never mean writing to a customer's account
+    row. `orgs.is_internal` exists for a different job — excluding our own tenants from reported
+    numbers — and is accepted here only as a fallback so an existing internal tenant keeps working.
+    """
+    if ctx.scopes is not None:
+        raise HTTPException(403, "owner credential required")
+    allowed = superadmin_emails()
+    if allowed and (ctx.actor_id or "").strip().lower() in allowed:
+        return ctx
+    try:
+        with _engine().connect() as c:
+            row = c.execute(text("select is_internal from orgs where id=:o"),
+                            {"o": ctx.org_id}).first()
+    except Exception as exc:                             # noqa: BLE001
+        # Unlike check_org_kill this fails CLOSED: a database hiccup must never open a cross-org
+        # read to a customer tenant.
+        raise HTTPException(503, "admin authorization unavailable") from exc
+    if row is None or not row.is_internal:
+        raise HTTPException(403, "admin access required")
     return ctx
 
 

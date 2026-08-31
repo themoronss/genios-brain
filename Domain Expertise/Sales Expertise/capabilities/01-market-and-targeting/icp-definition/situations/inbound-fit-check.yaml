@@ -22,9 +22,8 @@ description: >
 
 matches:
   l2_situation_types:
-    - buying_signal
-    - demo_requested
-    - intro_followup
+    - opportunity
+    - prospect_relationship
   scope: account
   # No narrowing predicate. Deliberately: a fit check must fire before a deal record exists,
   # so any condition on deal.* would suppress the situation at exactly the moment it is
@@ -70,6 +69,36 @@ signals_of_decay:
   - budget_freeze
   - objection_price
   - closed_lost_mention
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    This card answers ONE question: is this account one we should want, before anyone spends a
+    discovery call on it. Say nothing about deal stage, budget, timeline, close date or "open
+    items" — none of those exist at a fit check, and asserting them is precisely the misread
+    this situation exists to prevent.
+
+    Headline: the account and the fit judgment, in the reader's terms — what about this account
+    matches or contradicts who we sell to. If the evidence does not support a fit read, put the
+    fit question itself in the headline; never narrate the shortfall ("fit unknown, no context
+    yet", "no facts to assess fit" both shipped to a real user and told him nothing he could act
+    on). Never a status line, never a generic phrase.
+
+    Situation: the one or two specifics from what they actually wrote that decide fit — what
+    they do, what they asked for, who they are. Evidence, not process vocabulary.
+
+    Artifact: a short reply that moves the fit question forward — ask the single thing that
+    would settle it, or engage directly when fit is already clear. Never a generic follow-up.
+  fallback:
+    headline: "{entity} — fit not assessed"
+    situation: >-
+      Interest arrived from {entity} and nobody has judged yet whether it fits who we sell to.
+    # "Nobody has judged yet" is the state of our own assessment, not of the account. 4 of the
+    # design partner's 47 live cards came from here on 2026-08-30 and 3 read as pure absence
+    # ("afore.vc — fit unknown, no context yet", "suvan.vc — no facts to assess fit"), all at
+    # level `prescriptive` — an order to do nothing nameable. The fit question is worth putting
+    # in front of a human; it is not worth putting in front of one as a command.
+    states_absence: true
 
 metadata:
   owner: Sales

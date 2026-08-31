@@ -3,36 +3,78 @@ identity:
   name: Duplicate & Merge
   domain: customer_support
   subdomain: intake_and_triage
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Recognising when several tickets are one problem, and deciding which of them is allowed
+  to survive. Merging is destructive in a way that is easy to underestimate: it collapses separate requesters,
+  clocks, entitlements and notification threads into one, so a merge performed for tidiness can quietly
+  break a promise made to whoever was not the survivor. The counter-risk is worse, though — unmerged duplicates
+  hide the fact that a fault is spreading, and contact volume against a single issue is usually the only
+  blast-radius evidence anyone has before engineering reproduces anything. The right instinct is to relate
+  aggressively and merge conservatively: linking is reversible and preserves every clock, merging is neither.
 
-description: >
-  Recognising when several tickets are one problem, and deciding which of them is allowed to
-  survive. Merging is destructive in a way that is easy to underestimate: it collapses separate
-  requesters, clocks, entitlements and notification threads into one, so a merge performed for
-  tidiness can quietly break a promise made to whoever was not the survivor. The counter-risk is
-  worse, though — unmerged duplicates hide the fact that a fault is spreading, and contact volume
-  against a single issue is usually the only blast-radius evidence anyone has before engineering
-  reproduces anything. The right instinct is to relate aggressively and merge conservatively:
-  linking is reversible and preserves every clock, merging is neither.
+  '
+question: Is this the same problem we already have, and what is lost if I merge them?
 
-question: "Is this the same problem we already have, and what is lost if I merge them?"
+outcomes:
+- 'One canonical ticket with every reporter kept on the notify list, so the merge saves agent effort without silencing anybody who reported separately.'
+- 'A merge that is reversible in practice, because merging is destructive in a way that is easy to underestimate — it collapses separate conversations into one.'
+- 'Each reporter still answered individually where their situation differs, since the same defect can have five different business impacts.'
+- 'A duplicate spike recognised as telemetry: five identical tickets in an hour is an outage announcement arriving by customer.'
+- 'The negative outcome: a merge REFUSED because the tickets only look alike. Two customers with the same symptom and different causes is the case merging handles worst.'
+failure_modes:
+- 'MERGING ON SYMPTOM. The same error message can have three causes, and merging them means two customers get an answer that does not apply.'
+- 'DROPPING REPORTERS FROM THE NOTIFY LIST, which is silent from our side and reads as being ignored from theirs.'
+- 'MERGING FOR QUEUE HYGIENE, which optimises a count and loses conversations.'
+- 'MISSING THE SPIKE. The merge queue is the earliest incident detector many teams have and it is usually treated as cleanup.'
+- 'IRREVERSIBLE MERGES, so a wrong one cannot be undone and the second customer''s history is gone.'
+kpis:
+- name: reporter_retention_on_merge
+  unit: percent
+  description: Merged reporters still receiving updates. The measure that separates a merge from a silencing.
+  direction: higher_is_better
+- name: incorrect_merge_rate
+  unit: percent
+  description: Merges later split. Symptom-based merging shows up here.
+  direction: lower_is_better
+- name: spike_detection_lead_time
+  unit: minutes
+  description: From the duplicate spike to an incident being declared. The merge queue as a detector.
+  direction: higher_is_better
+- name: merge_rate
+  unit: percent
+  description: A target band. Very low means duplicates are being worked repeatedly; very high means conversations are being collapsed for tidiness.
+  direction: target_band
+handoffs:
+  upstream: [customer_support.intake_and_triage.channel_intake, customer_support.intake_and_triage.intent_classification]
+  downstream: [customer_support.escalation_and_incident.incident_management, customer_support.diagnosis_and_resolution.diagnostics]
+  parallel: [customer_support.intake_and_triage.routing_and_assignment, customer_support.customer_communication.proactive_status_updates]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, swarming_support,
+           ai_first_support, outsourced_bpo, community_support, embedded_in_product]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Stub — identity, purpose and load-set only. Promote by writing the link-versus-merge
-    distinction as a decision_framework first, since everything else depends on it: same
-    requester and same symptom is a merge candidate, different requesters and the same symptom is
-    almost always a link to a shared Issue instead. failure_modes should include merging across
-    accounts (which discloses one customer to another in the wrong tooling), merging away the
-    reopened ticket rather than the newer one, and the opposite failure of leaving duplicates
-    apart so long that severity is discovered by engineering rather than by the queue. Needs the
-    Issue object authored before its heuristics have anything to point at, and cannot be
-    executable until a repeat_contact signal exists — today that type is planned substrate only.
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    spike_detection_lead_time is the KPI that reframes the whole capability. Merging is treated
+    everywhere as queue hygiene, and the duplicate queue is in fact the earliest incident
+    detector most support organisations have — five identical tickets in an hour is an outage
+    announcing itself through customers, arriving before monitoring in a surprising number of
+    cases.
+
+    merge_rate is a target band in both directions: too low and duplicates are being worked
+    repeatedly, too high and separate conversations are being collapsed because a lower ticket
+    count looks better.
+
+admission:
+  accepted_content_hash: 8b0a00ae58121cff0c73ee7dec53b6bc37f6b84c88d1aefedfd4ae70044d8569

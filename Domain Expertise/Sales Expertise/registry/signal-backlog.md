@@ -12,10 +12,10 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 
 ## Where the brain stands
 
-- **162** patterns executable against the pipeline today
-- **137** patterns blocked, waiting on **141** distinct signals
-- **0** situation binding(s) waiting on an L2 type no pack emits
-- Substrate today: **12** fact paths · **18** observation kinds · **1** baselines
+- **169** patterns executable against the pipeline today
+- **142** patterns blocked, waiting on **147** distinct signals
+- **1** situation binding(s) waiting on an L2 type no pack emits
+- Substrate today: **106** fact paths · **34** observation kinds · **2** baselines
 
 ## The backlog
 
@@ -38,130 +38,136 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 | 15 | `crm.contact.title_normalised` | fact_path | L1 | 2 | 8500 | Contact, Persona |
 | 16 | `pain_stated` | obs_kind | L2 | 2 | 8500 | Pain Point |
 | 17 | `account.prior_deal_outcomes` | fact_path | L2 | 2 | 8000 | Buying Committee, ICP |
-| 18 | `competing_initiative` | obs_kind | L2 | 2 | 7500 | Budget, Business Need |
-| 19 | `contract.executed_at` | fact_path | L1 | 1 | 10000 | Contract |
-| 20 | `email_bounced` | obs_kind | L1 | 1 | 10000 | Contact |
-| 21 | `icp.active_profile_version` | fact_path | L1 | 1 | 10000 | Fit Analysis |
-| 22 | `opportunity.status` | fact_path | L2 | 1 | 10000 | Opportunity |
-| 23 | `catalogue.list_price` | fact_path | L1 | 1 | 9800 | Pricing |
-| 24 | `contract.renewal_date` | fact_path | L1 | 1 | 9800 | Opportunity |
-| 25 | `contract.renewal_notice_days` | fact_path | L1 | 1 | 9800 | Contract |
-| 26 | `crm.deal.stage` | fact_path | L1 | 1 | 9800 | Deal |
-| 27 | `account.incumbent_contract_end` | fact_path | L1 | 1 | 9500 | Timeline |
-| 28 | `commitment.owner` | fact_path | L2 | 1 | 9500 | Next Action |
-| 29 | `company.parent_domain` | fact_path | L1 | 1 | 9500 | Company |
-| 30 | `contact_departed` | obs_kind | L2 | 1 | 9500 | Contact |
-| 31 | `crm.account.arr` | fact_path | L1 | 1 | 9500 | Account |
-| 32 | `crm.account.id` | fact_path | L1 | 1 | 9500 | Account |
-| 33 | `crm.deal.close_date_history` | fact_path | L1 | 1 | 9500 | Timeline |
-| 34 | `crm.deal.loss_reason` | fact_path | L1 | 1 | 9500 | Deal |
-| 35 | `crm.opportunity.stage` | fact_path | L1 | 1 | 9500 | Opportunity |
-| 36 | `crm.pricing.max_discount` | fact_path | L1 | 1 | 9500 | Pricing |
-| 37 | `derived.claim_key` | derived | L2 | 1 | 9500 | Market Finding |
-| 38 | `need.baseline_value` | fact_path | L2 | 1 | 9500 | Business Need |
-| 39 | `need.target_value` | fact_path | L2 | 1 | 9500 | Business Need |
-| 40 | `objection_resolved` | obs_kind | L2 | 1 | 9500 | Objection |
-| 41 | `outbound.sent_at` | fact_path | L1 | 1 | 9500 | Lead |
-| 42 | `proposal_revised` | obs_kind | L2 | 1 | 9500 | Proposal |
-| 43 | `risk.owner` | fact_path | L1 | 1 | 9500 | Risk |
-| 44 | `churn_event` | obs_kind | L2 | 1 | 9200 | Disqualifier |
-| 45 | `pain.annual_cost` | fact_path | L2 | 1 | 9200 | Pain Point |
-| 46 | `quantification_stated` | obs_kind | L2 | 1 | 9200 | Pain Point |
-| 47 | `accountability_stated` | obs_kind | L2 | 1 | 9000 | Pain Point |
-| 48 | `clause_conceded` | obs_kind | L2 | 1 | 9000 | Contract |
-| 49 | `commitment_completed` | obs_kind | L2 | 1 | 9000 | Next Action |
-| 50 | `compelling_event_stated` | obs_kind | L2 | 1 | 9000 | Timeline |
-| 51 | `competitor.name` | fact_path | L2 | 1 | 9000 | Competitor |
-| 52 | `contact.email_domain` | fact_path | L1 | 1 | 9000 | Company |
-| 53 | `contract.clause.nonstandard` | fact_path | L1 | 1 | 9000 | Contract |
-| 54 | `crm.contact.buying_role` | fact_path | L1 | 1 | 9000 | Stakeholder |
-| 55 | `crm.contact.manager_id` | fact_path | L1 | 1 | 9000 | Contact |
-| 56 | `crm.deal.budget` | fact_path | L1 | 1 | 9000 | Budget |
-| 57 | `deal.created_at` | fact_path | L1 | 1 | 9000 | Market Map |
-| 58 | `deal.outcome` | fact_path | L2 | 1 | 9000 | Persona |
-| 59 | `derived.contact_duplicate_cluster` | derived | L2 | 1 | 9000 | Lead |
-| 60 | `derived.cycle_days` | derived | L2 | 1 | 9000 | Market Map |
-| 61 | `derived.persona_win_rate` | derived | L2 | 1 | 9000 | Persona |
-| 62 | `funding_announced` | obs_kind | L2 | 1 | 9000 | Company |
-| 63 | `internal_advocacy_statement` | obs_kind | L2 | 1 | 9000 | Champion |
-| 64 | `metric_stated` | obs_kind | L2 | 1 | 9000 | Business Need |
-| 65 | `need.target_metric` | fact_path | L2 | 1 | 9000 | Business Need |
-| 66 | `proposal.valid_until` | fact_path | L1 | 1 | 9000 | Proposal |
-| 67 | `renewal_signed` | obs_kind | L2 | 1 | 9000 | Fit Analysis |
-| 68 | `research.interview.account_id` | fact_path | L1 | 1 | 9000 | Market Finding |
-| 69 | `contract.term_months` | fact_path | L1 | 1 | 8800 | Market Map |
-| 70 | `derived.document_viewer_identities` | derived | L2 | 1 | 8800 | Proposal |
-| 71 | `forwarded_internally` | obs_kind | L2 | 1 | 8800 | Buying Signal |
-| 72 | `account.incumbent_vendor` | fact_path | L1 | 1 | 8500 | Competitor |
-| 73 | `budget_period_stated` | obs_kind | L2 | 1 | 8500 | Budget |
-| 74 | `company.employee_count` | fact_path | L1 | 1 | 8500 | Company |
-| 75 | `company.industry` | fact_path | L1 | 1 | 8500 | Company |
-| 76 | `company.revenue_annual` | fact_path | L1 | 1 | 8500 | Company |
-| 77 | `contact_role_change` | obs_kind | L1 | 1 | 8500 | Lead |
-| 78 | `derived.account_open_deal_count` | derived | L2 | 1 | 8500 | Account |
-| 79 | `derived.document_unique_viewers` | derived | L2 | 1 | 8500 | Proposal |
-| 80 | `derived.objection_repeat_count` | derived | L2 | 1 | 8500 | Objection |
-| 81 | `derived.usage_delta_vs_baseline` | derived | L2 | 1 | 8500 | Buying Signal |
-| 82 | `discount_granted` | obs_kind | L2 | 1 | 8500 | Pricing |
-| 83 | `form_submitted` | obs_kind | L1 | 1 | 8500 | Lead |
-| 84 | `incumbent_named` | obs_kind | L2 | 1 | 8500 | ICP |
-| 85 | `loss_reason` | obs_kind | L2 | 1 | 8500 | Disqualifier |
-| 86 | `pain.statement_span` | fact_path | L2 | 1 | 8500 | Pain Point |
-| 87 | `person.department` | fact_path | L1 | 1 | 8500 | Market Map |
-| 88 | `person.reports_to` | fact_path | L1 | 1 | 8500 | Stakeholder |
-| 89 | `product.active_users_7d` | fact_path | L1 | 1 | 8500 | Buying Signal |
-| 90 | `product.usage_ratio` | fact_path | L1 | 1 | 8500 | Opportunity |
-| 91 | `proposal_viewed` | obs_kind | L2 | 1 | 8500 | Proposal |
-| 92 | `research.source.account_origin` | fact_path | L1 | 1 | 8500 | Market Finding |
-| 93 | `security_questionnaire_received` | obs_kind | L2 | 1 | 8500 | Company |
-| 94 | `success_criteria_shared` | obs_kind | L2 | 1 | 8500 | Business Need |
-| 95 | `derived.close_date_slip_count` | derived | L2 | 1 | 8200 | Deal |
-| 96 | `derived.meeting_attendance_rate` | derived | L2 | 1 | 8200 | Decision Maker |
-| 97 | `derived.thread_participant_delta` | derived | L2 | 1 | 8200 | Buying Signal |
-| 98 | `derived.timeline_slip_count` | derived | L2 | 1 | 8200 | Risk |
-| 99 | `pricing_meeting` | obs_kind | L2 | 1 | 8200 | Decision Maker |
-| 100 | `account.health_score` | fact_path | L2 | 1 | 8000 | ICP |
-| 101 | `commitment.mitigates_risk` | fact_path | L2 | 1 | 8000 | Risk |
-| 102 | `company.tech_stack` | fact_path | L1 | 1 | 8000 | Company |
-| 103 | `comparison_requested` | obs_kind | L2 | 1 | 8000 | Competitor |
-| 104 | `competitor.list_price` | fact_path | L1 | 1 | 8000 | Market Map |
-| 105 | `contract.uplift_cap` | fact_path | L1 | 1 | 8000 | Pricing |
-| 106 | `derived.cohort_similarity` | derived | L2 | 1 | 8000 | Fit Analysis |
-| 107 | `derived.committee_persona_coverage` | derived | L2 | 1 | 8000 | Persona |
-| 108 | `derived.deal_contact_count` | derived | L2 | 1 | 8000 | Deal |
-| 109 | `derived.open_commitment_count` | derived | L2 | 1 | 8000 | Next Action |
-| 110 | `derived.pain_topic_cluster` | derived | L2 | 1 | 8000 | Pain Point |
-| 111 | `derived.sentiment_by_person` | derived | L2 | 1 | 8000 | Buying Committee |
-| 112 | `internal_forward` | obs_kind | L2 | 1 | 8000 | Champion |
-| 113 | `objection_category` | obs_kind | L2 | 1 | 8000 | Objection |
-| 114 | `page_view` | obs_kind | L1 | 1 | 8000 | Buying Signal |
-| 115 | `person.current_employer` | fact_path | L1 | 1 | 8000 | Opportunity |
-| 116 | `procurement_engaged` | obs_kind | L2 | 1 | 8000 | Stakeholder |
-| 117 | `reference_agreed` | obs_kind | L2 | 1 | 8000 | Account |
-| 118 | `web.page_path` | fact_path | L1 | 1 | 8000 | Buying Signal |
-| 119 | `objection_relayed` | obs_kind | L2 | 1 | 7800 | Objection |
-| 120 | `calendar.attendees` | fact_path | L1 | 1 | 7500 | Stakeholder |
-| 121 | `calendar.days_to_quarter_end` | fact_path | L1 | 1 | 7500 | Pricing |
-| 122 | `derived.commitment_specificity` | derived | L2 | 1 | 7500 | Next Action |
-| 123 | `derived.competitor_win_rate` | derived | L2 | 1 | 7500 | Competitor |
-| 124 | `derived.reply_ratio` | derived | L2 | 1 | 7500 | Stakeholder |
-| 125 | `hiring_surge` | obs_kind | L2 | 1 | 7500 | Company |
-| 126 | `migration_concern` | obs_kind | L2 | 1 | 7500 | Market Map |
-| 127 | `account.tech_stack` | fact_path | L1 | 1 | 7000 | Fit Analysis |
-| 128 | `account_trigger` | obs_kind | L2 | 1 | 7000 | Opportunity |
-| 129 | `committee.member_ids` | fact_path | L2 | 1 | 7000 | Pain Point |
-| 130 | `crm.deal.close_date` | fact_path | L1 | 1 | 7000 | Timeline |
-| 131 | `derived.account_engagement_no_deal` | derived | L2 | 1 | 7000 | Buying Signal |
-| 132 | `derived.objection_intensity` | derived | L2 | 1 | 7000 | Objection |
-| 133 | `derived.persona_outcome_variance` | derived | L2 | 1 | 7000 | Persona |
-| 134 | `derived.reply_hour_histogram` | derived | L2 | 1 | 7000 | Contact |
-| 135 | `derived.reply_term_frequency` | derived | L2 | 1 | 7000 | Persona |
-| 136 | `derived.thread_seniority_delta` | derived | L2 | 1 | 7000 | Business Need |
-| 137 | `page_view_pricing` | obs_kind | L1 | 1 | 7000 | Lead |
-| 138 | `person_mentioned` | obs_kind | L2 | 1 | 7000 | Stakeholder |
-| 139 | `risk.last_reviewed_at` | fact_path | L1 | 1 | 7000 | Risk |
-| 140 | `account.icp_segment` | fact_path | L2 | 1 | 6000 | Persona |
-| 141 | `intent.topic_surge` | fact_path | L1 | 1 | 4500 | Buying Signal |
+| 18 | `party.role` | fact_path | L2 | 2 | 8000 | Investor Conversation |
+| 19 | `competing_initiative` | obs_kind | L2 | 2 | 7500 | Budget, Business Need |
+| 20 | `contract.executed_at` | fact_path | L1 | 1 | 10000 | Contract |
+| 21 | `email_bounced` | obs_kind | L1 | 1 | 10000 | Contact |
+| 22 | `icp.active_profile_version` | fact_path | L1 | 1 | 10000 | Fit Analysis |
+| 23 | `market_period_review` | l2_situation_type | L2 | 1 | 10000 | [situation] Touch Outside Mail |
+| 24 | `opportunity.status` | fact_path | L2 | 1 | 10000 | Opportunity |
+| 25 | `catalogue.list_price` | fact_path | L1 | 1 | 9800 | Pricing |
+| 26 | `contract.renewal_date` | fact_path | L1 | 1 | 9800 | Opportunity |
+| 27 | `contract.renewal_notice_days` | fact_path | L1 | 1 | 9800 | Contract |
+| 28 | `crm.deal.stage` | fact_path | L1 | 1 | 9800 | Deal |
+| 29 | `account.incumbent_contract_end` | fact_path | L1 | 1 | 9500 | Timeline |
+| 30 | `commitment.owner` | fact_path | L2 | 1 | 9500 | Next Action |
+| 31 | `company.parent_domain` | fact_path | L1 | 1 | 9500 | Company |
+| 32 | `contact_departed` | obs_kind | L2 | 1 | 9500 | Contact |
+| 33 | `crm.account.arr` | fact_path | L1 | 1 | 9500 | Account |
+| 34 | `crm.account.id` | fact_path | L1 | 1 | 9500 | Account |
+| 35 | `crm.deal.close_date_history` | fact_path | L1 | 1 | 9500 | Timeline |
+| 36 | `crm.deal.loss_reason` | fact_path | L1 | 1 | 9500 | Deal |
+| 37 | `crm.opportunity.stage` | fact_path | L1 | 1 | 9500 | Opportunity |
+| 38 | `crm.pricing.max_discount` | fact_path | L1 | 1 | 9500 | Pricing |
+| 39 | `derived.claim_key` | derived | L2 | 1 | 9500 | Market Finding |
+| 40 | `need.baseline_value` | fact_path | L2 | 1 | 9500 | Business Need |
+| 41 | `need.target_value` | fact_path | L2 | 1 | 9500 | Business Need |
+| 42 | `objection_resolved` | obs_kind | L2 | 1 | 9500 | Objection |
+| 43 | `outbound.sent_at` | fact_path | L1 | 1 | 9500 | Lead |
+| 44 | `proposal_revised` | obs_kind | L2 | 1 | 9500 | Proposal |
+| 45 | `risk.owner` | fact_path | L1 | 1 | 9500 | Risk |
+| 46 | `churn_event` | obs_kind | L2 | 1 | 9200 | Disqualifier |
+| 47 | `pain.annual_cost` | fact_path | L2 | 1 | 9200 | Pain Point |
+| 48 | `quantification_stated` | obs_kind | L2 | 1 | 9200 | Pain Point |
+| 49 | `accountability_stated` | obs_kind | L2 | 1 | 9000 | Pain Point |
+| 50 | `clause_conceded` | obs_kind | L2 | 1 | 9000 | Contract |
+| 51 | `commitment_completed` | obs_kind | L2 | 1 | 9000 | Next Action |
+| 52 | `compelling_event_stated` | obs_kind | L2 | 1 | 9000 | Timeline |
+| 53 | `competitor.name` | fact_path | L2 | 1 | 9000 | Competitor |
+| 54 | `contact.email_domain` | fact_path | L1 | 1 | 9000 | Company |
+| 55 | `contract.clause.nonstandard` | fact_path | L1 | 1 | 9000 | Contract |
+| 56 | `crm.contact.buying_role` | fact_path | L1 | 1 | 9000 | Stakeholder |
+| 57 | `crm.contact.manager_id` | fact_path | L1 | 1 | 9000 | Contact |
+| 58 | `crm.deal.budget` | fact_path | L1 | 1 | 9000 | Budget |
+| 59 | `deal.created_at` | fact_path | L1 | 1 | 9000 | Market Map |
+| 60 | `deal.outcome` | fact_path | L2 | 1 | 9000 | Persona |
+| 61 | `derived.contact_duplicate_cluster` | derived | L2 | 1 | 9000 | Lead |
+| 62 | `derived.cycle_days` | derived | L2 | 1 | 9000 | Market Map |
+| 63 | `derived.persona_win_rate` | derived | L2 | 1 | 9000 | Persona |
+| 64 | `funding_announced` | obs_kind | L2 | 1 | 9000 | Company |
+| 65 | `internal_advocacy_statement` | obs_kind | L2 | 1 | 9000 | Champion |
+| 66 | `metric_stated` | obs_kind | L2 | 1 | 9000 | Business Need |
+| 67 | `need.target_metric` | fact_path | L2 | 1 | 9000 | Business Need |
+| 68 | `proposal.valid_until` | fact_path | L1 | 1 | 9000 | Proposal |
+| 69 | `renewal_signed` | obs_kind | L2 | 1 | 9000 | Fit Analysis |
+| 70 | `research.interview.account_id` | fact_path | L1 | 1 | 9000 | Market Finding |
+| 71 | `contract.term_months` | fact_path | L1 | 1 | 8800 | Market Map |
+| 72 | `derived.document_viewer_identities` | derived | L2 | 1 | 8800 | Proposal |
+| 73 | `forwarded_internally` | obs_kind | L2 | 1 | 8800 | Buying Signal |
+| 74 | `account.incumbent_vendor` | fact_path | L1 | 1 | 8500 | Competitor |
+| 75 | `budget_period_stated` | obs_kind | L2 | 1 | 8500 | Budget |
+| 76 | `company.employee_count` | fact_path | L1 | 1 | 8500 | Company |
+| 77 | `company.industry` | fact_path | L1 | 1 | 8500 | Company |
+| 78 | `company.revenue_annual` | fact_path | L1 | 1 | 8500 | Company |
+| 79 | `contact_role_change` | obs_kind | L1 | 1 | 8500 | Lead |
+| 80 | `derived.account_open_deal_count` | derived | L2 | 1 | 8500 | Account |
+| 81 | `derived.document_unique_viewers` | derived | L2 | 1 | 8500 | Proposal |
+| 82 | `derived.objection_repeat_count` | derived | L2 | 1 | 8500 | Objection |
+| 83 | `derived.usage_delta_vs_baseline` | derived | L2 | 1 | 8500 | Buying Signal |
+| 84 | `discount_granted` | obs_kind | L2 | 1 | 8500 | Pricing |
+| 85 | `form_submitted` | obs_kind | L1 | 1 | 8500 | Lead |
+| 86 | `incumbent_named` | obs_kind | L2 | 1 | 8500 | ICP |
+| 87 | `loss_reason` | obs_kind | L2 | 1 | 8500 | Disqualifier |
+| 88 | `pain.statement_span` | fact_path | L2 | 1 | 8500 | Pain Point |
+| 89 | `person.department` | fact_path | L1 | 1 | 8500 | Market Map |
+| 90 | `person.reports_to` | fact_path | L1 | 1 | 8500 | Stakeholder |
+| 91 | `product.active_users_7d` | fact_path | L1 | 1 | 8500 | Buying Signal |
+| 92 | `product.usage_ratio` | fact_path | L1 | 1 | 8500 | Opportunity |
+| 93 | `proposal_viewed` | obs_kind | L2 | 1 | 8500 | Proposal |
+| 94 | `research.source.account_origin` | fact_path | L1 | 1 | 8500 | Market Finding |
+| 95 | `security_questionnaire_received` | obs_kind | L2 | 1 | 8500 | Company |
+| 96 | `success_criteria_shared` | obs_kind | L2 | 1 | 8500 | Business Need |
+| 97 | `derived.close_date_slip_count` | derived | L2 | 1 | 8200 | Deal |
+| 98 | `derived.meeting_attendance_rate` | derived | L2 | 1 | 8200 | Decision Maker |
+| 99 | `derived.thread_participant_delta` | derived | L2 | 1 | 8200 | Buying Signal |
+| 100 | `derived.timeline_slip_count` | derived | L2 | 1 | 8200 | Risk |
+| 101 | `pricing_meeting` | obs_kind | L2 | 1 | 8200 | Decision Maker |
+| 102 | `account.health_score` | fact_path | L2 | 1 | 8000 | ICP |
+| 103 | `commitment.mitigates_risk` | fact_path | L2 | 1 | 8000 | Risk |
+| 104 | `company.tech_stack` | fact_path | L1 | 1 | 8000 | Company |
+| 105 | `comparison_requested` | obs_kind | L2 | 1 | 8000 | Competitor |
+| 106 | `competitor.list_price` | fact_path | L1 | 1 | 8000 | Market Map |
+| 107 | `contract.uplift_cap` | fact_path | L1 | 1 | 8000 | Pricing |
+| 108 | `derived.cohort_similarity` | derived | L2 | 1 | 8000 | Fit Analysis |
+| 109 | `derived.committee_persona_coverage` | derived | L2 | 1 | 8000 | Persona |
+| 110 | `derived.deal_contact_count` | derived | L2 | 1 | 8000 | Deal |
+| 111 | `derived.open_commitment_count` | derived | L2 | 1 | 8000 | Next Action |
+| 112 | `derived.pain_topic_cluster` | derived | L2 | 1 | 8000 | Pain Point |
+| 113 | `derived.sentiment_by_person` | derived | L2 | 1 | 8000 | Buying Committee |
+| 114 | `internal_forward` | obs_kind | L2 | 1 | 8000 | Champion |
+| 115 | `objection_category` | obs_kind | L2 | 1 | 8000 | Objection |
+| 116 | `page_view` | obs_kind | L1 | 1 | 8000 | Buying Signal |
+| 117 | `person.current_employer` | fact_path | L1 | 1 | 8000 | Opportunity |
+| 118 | `procurement_engaged` | obs_kind | L2 | 1 | 8000 | Stakeholder |
+| 119 | `reference_agreed` | obs_kind | L2 | 1 | 8000 | Account |
+| 120 | `web.page_path` | fact_path | L1 | 1 | 8000 | Buying Signal |
+| 121 | `objection_relayed` | obs_kind | L2 | 1 | 7800 | Objection |
+| 122 | `calendar.attendees` | fact_path | L1 | 1 | 7500 | Stakeholder |
+| 123 | `calendar.days_to_quarter_end` | fact_path | L1 | 1 | 7500 | Pricing |
+| 124 | `derived.commitment_specificity` | derived | L2 | 1 | 7500 | Next Action |
+| 125 | `derived.competitor_win_rate` | derived | L2 | 1 | 7500 | Competitor |
+| 126 | `derived.reply_ratio` | derived | L2 | 1 | 7500 | Stakeholder |
+| 127 | `hiring_surge` | obs_kind | L2 | 1 | 7500 | Company |
+| 128 | `migration_concern` | obs_kind | L2 | 1 | 7500 | Market Map |
+| 129 | `reopen_condition` | obs_kind | L1 | 1 | 7500 | Investor Conversation |
+| 130 | `account.tech_stack` | fact_path | L1 | 1 | 7000 | Fit Analysis |
+| 131 | `account_trigger` | obs_kind | L2 | 1 | 7000 | Opportunity |
+| 132 | `committee.member_ids` | fact_path | L2 | 1 | 7000 | Pain Point |
+| 133 | `crm.deal.close_date` | fact_path | L1 | 1 | 7000 | Timeline |
+| 134 | `derived.account_engagement_no_deal` | derived | L2 | 1 | 7000 | Buying Signal |
+| 135 | `derived.objection_intensity` | derived | L2 | 1 | 7000 | Objection |
+| 136 | `derived.persona_outcome_variance` | derived | L2 | 1 | 7000 | Persona |
+| 137 | `derived.reply_hour_histogram` | derived | L2 | 1 | 7000 | Contact |
+| 138 | `derived.reply_term_frequency` | derived | L2 | 1 | 7000 | Persona |
+| 139 | `derived.thread_seniority_delta` | derived | L2 | 1 | 7000 | Business Need |
+| 140 | `page_view_pricing` | obs_kind | L1 | 1 | 7000 | Lead |
+| 141 | `person_mentioned` | obs_kind | L2 | 1 | 7000 | Stakeholder |
+| 142 | `risk.last_reviewed_at` | fact_path | L1 | 1 | 7000 | Risk |
+| 143 | `account.icp_segment` | fact_path | L2 | 1 | 6000 | Persona |
+| 144 | `application_status` | fact_path | L2 | 1 | 6000 | Investor Conversation |
+| 145 | `programme_deadline` | obs_kind | L1 | 1 | 6000 | Investor Conversation |
+| 146 | `funding.round` | fact_path | L2 | 1 | 5000 | Investor Conversation |
+| 147 | `intent.topic_surge` | fact_path | L1 | 1 | 4500 | Buying Signal |
 
 ## Why each one matters
 
@@ -296,6 +302,13 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - blocks **Buying Committee** / `bc.decision_style_from_history` (would yield 7500 bp)
 - blocks **ICP** / `icp.churn_predictor_present` (would yield 8000 bp)
 
+### `party.role` · fact_path
+
+- blocks **Investor Conversation** / `ic.own_domain_false_party` (would yield 8000 bp)
+- blocks **Investor Conversation** / `ic.partner_reached` (would yield 7000 bp)
+- Investor Conversation: Also declared expected for `investor_contact` and also unwritten. Seniority is present in signature blocks Layer 1 already reads and is discarded before it reaches the graph.
+- Investor Conversation: The design partner's own domain appears in this set today. A self-filter needs a role, and the org-seats path that would have supplied one is empty.
+
 ### `competing_initiative` · obs_kind
 
 - blocks **Budget** / `bg.competing_priority_detected` (would yield 7000 bp)
@@ -316,6 +329,16 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 
 - blocks **Fit Analysis** / `fa.profile_version_superseded` (would yield 10000 bp)
 - Fit Analysis: Requires the OrganizationBrain's active profile version to be projected as a fact. Without it, staleness can only be approximated by wall-clock age, which is wrong in both directions — a profile can go a year without changing, or change twice in a month.
+
+### `market_period_review` · l2_situation_type
+
+- blocks **[situation] Touch Outside Mail** / `sales.sit.touch_outside_mail` (would yield 10000 bp)
+- Touch Outside Mail: WHAT THE TYPE MUST MEAN. A market rather than an account — segment size, reachable share, and where the current customer base actually sits within it. Its anchor is a SEGMENT and a window.
+WHAT WOULD EMIT IT. The same tenant-anchored periodic mechanism named in `sales.sit.pipeline_period_review`, plus external market data the graph has no source for.
+WHAT GOES WRONG TODAY. Nothing fires for tam_sam_som.
+WHY BINDING TO opportunity WOULD BE WRONG, specifically. A market size asserted on one account is not a market size. `icp_definition` and `market_research` — the two neighbours that ARE routed — read a single account against a profile, which is a genuinely different and genuinely per-account question; sizing is not.
+
+- Touch Outside Mail: closest type emitted today is `opportunity` — close enough to be tempting, not close enough to be true
 
 ### `opportunity.status` · fact_path
 
@@ -835,6 +858,11 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - blocks **Market Map** / `mm.switching_cost_from_migration_talk` (would yield 7500 bp)
 - Market Map: The generic `objection` kindswallows this. Migration anxiety is a market-structure fact — it predicts every displacement cycle in the segment — and it is indistinguishable from a feature complaint today.
 
+### `reopen_condition` · obs_kind
+
+- blocks **Investor Conversation** / `ic.reopen_condition_stated` (would yield 7500 bp)
+- Investor Conversation: Almost always present verbatim in the passing email — 'come back at', 'apply to the next cohort', 'once you have a lead'. Cheap to extract, and its absence is why a pass currently destroys its own follow-up.
+
 ### `account.tech_stack` · fact_path
 
 - blocks **Fit Analysis** / `fa.category_naive_buyer` (would yield 7000 bp)
@@ -907,7 +935,23 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 - blocks **Persona** / `persona.inherited_from_the_account_segment` (would yield 6000 bp)
 - Persona: Segment is decided in theICP capability and never lands as a typed fact on the account node, so the persona roster cannot be narrowed before outreach starts.
 
+### `application_status` · fact_path
+
+- blocks **Investor Conversation** / `ic.party_kind_from_correspondence` (would yield 6000 bp)
+- Investor Conversation: The fundraising DomainSpec already declares this as an expected field for `investor_relationship`, and nothing writes it. Declared expectation without a writer is how `derived.*` came to be read by every deep rule and produced by none.
+
+### `programme_deadline` · obs_kind
+
+- blocks **Investor Conversation** / `ic.party_kind_from_correspondence` (would yield 6000 bp)
+- Investor Conversation: Cohort dates arrive as dates in body text and are the one genuinely non-negotiable clock in this object.
+
+### `funding.round` · fact_path
+
+- blocks **Investor Conversation** / `ic.round_context` (would yield 5000 bp)
+- Investor Conversation: Declared expected by the fundraising DomainSpec; no writer exists.
+
 ### `intent.topic_surge` · fact_path
 
 - blocks **Buying Signal** / `bs.third_party_intent_surge` (would yield 4500 bp)
 - Buying Signal: Deliberately low confidence.Account-level and never person-level, so it is useful for ranking a territory and useless for writing a message. Authored mainly so the routing rule that forbids quoting it has something to attach to.
+

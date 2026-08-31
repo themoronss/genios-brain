@@ -1,0 +1,86 @@
+identity:
+  id: admin.pb.filing_and_retrieval.file_for_the_finder
+  name: File for the finder
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.filing_and_retrieval
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Documents are filed under predictable names in predictable places — a published convention,
+    applied at creation — because filing exists for retrieval, and retrieval is by someone else, later,
+    under time pressure.
+
+when_to_use:
+  do_not_use_when:
+  - The document is ephemeral. Conventions applied to working scratch cost more than the retrieval they enable.
+steps:
+- order: 1
+  name: Name it for the person who will search for it
+  description: >
+    Counterparty, date, kind — the facts a retriever knows before they open anything. A name that
+    requires opening the file to interpret has moved the work rather than removed it.
+  actor: human
+  produces: A conventional name.
+  done_when: Someone who has never seen the file could guess the name from what they are looking for.
+- order: 2
+  name: Put it where the taxonomy already says it goes
+  description: >
+    Not where it feels related. A predictable wrong-ish folder beats a thoughtful unique one,
+    because retrieval is a guess and consistency is what makes the guess work.
+  actor: human
+  objects_read: [admin.obj.core.document]
+  done_when: No new folder was created for a single document.
+- order: 3
+  name: Apply the convention at creation, not in a cleanup
+  description: >
+    Cleanups never catch up, and the documents that escape are the ones in active use.
+  actor: human
+  done_when: The naming happened before the file was shared.
+- order: 4
+  name: Keep the structural path alive alongside search
+  description: >
+    Search answers questions you can phrase. Walking the vendor folder answers "what have we signed
+    with these people", which nobody can phrase because they do not know what is in it.
+  actor: human
+  done_when: A browse path exists that a person could walk without a query.
+- order: 5
+  name: Retire structure nobody uses
+  description: >
+    Dead folders are what make a taxonomy unnavigable, and they accumulate because deleting a folder
+    feels riskier than leaving it.
+  actor: human
+  done_when: The unused branch is gone or explicitly kept with a reason.
+objects_used: [admin.obj.core.document, admin.obj.core.contract, admin.obj.core.vendor]
+limits:
+- 'It assumes one repository. Where documents live in three systems, the convention is a convention per system and retrieval is still a search across them.'
+- 'It cannot measure its own success without asking a retriever, which is why the headline KPI is a question rather than a query.'
+failure_modes:
+- 'Step 2 violated with good intentions — a bespoke folder for an important document is the single commonest source of an unfindable file.'
+- 'Step 5 never run, so the taxonomy grows monotonically and browsing stops being viable.'
+variants:
+- applies_to: regulated
+  change: Step 1 gains a record-class marker, because retention and audit both key on it.
+  why: The retrieval question later is "all records of class X in period Y", which a name must support.
+- applies_to: distributed
+  change: Step 4 matters more — there is no colleague to ask across time zones, so the browse path is the fallback.
+  why: Asking someone is a real retrieval strategy in an office and not one at 3am.
+references:
+- title: ISO 15489 — records management
+  kind: standard
+  note: Where classification-at-creation is stated as a requirement rather than an aspiration.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 2 is the counter-intuitive one and the one that carries the value: a predictable near-
+    miss folder beats a thoughtful unique one, because retrieval is a guess and consistency is
+    what makes guessing work.

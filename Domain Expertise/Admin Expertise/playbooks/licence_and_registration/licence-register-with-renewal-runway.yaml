@@ -1,0 +1,87 @@
+identity:
+  id: admin.pb.licence_and_registration.licence_register_with_renewal_runway
+  name: Licence register with renewal runway
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.compliance_and_governance.licence_and_registration
+  subdomain: compliance_and_governance
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every licence, registration and certificate lives in a register with expiry dates and renewal
+    lead-times — alerted well before, renewed without drama — because operating on a lapsed licence converts
+    routine paperwork into legal exposure.
+
+when_to_use:
+  do_not_use_when:
+  - The permission is a commercial subscription rather than a regulatory one. That is contract administration and its failure mode is spend, not exposure.
+steps:
+- order: 1
+  name: Enumerate what you actually rely on
+  description: >
+    Start from the activities, not from the certificates on file. The dangerous entries are the
+    permissions nobody has a certificate for.
+  actor: human
+  objects_read: [admin.obj.core.compliance_obligation]
+  done_when: Every regulated activity maps to a permission or to a stated gap.
+- order: 2
+  name: Record jurisdiction and conditions, not just the date
+  description: >
+    Most licences carry ongoing obligations. Breaching one voids the permission while the expiry
+    date is still comfortably in the future.
+  actor: human
+  done_when: Conditions are written down where the renewal reminder will surface them.
+- order: 3
+  name: Size the runway to the authority, not to us
+  description: >
+    Renewal lead time is the regulator's queue plus our preparation. A thirty-day reminder against a
+    ninety-day approval is a lapse that arrives on schedule.
+  actor: human
+  objects_read: [admin.obj.core.deadline]
+  done_when: Each reminder is derived from a stated processing time.
+- order: 4
+  name: Re-check coverage whenever the business changes
+  description: >
+    New jurisdiction, new activity, new entity. Lapses are far more often expansions nobody
+    re-checked than renewals nobody filed.
+  actor: human
+  done_when: A change trigger exists and has been used.
+- order: 5
+  name: Route the authority's correspondence
+  description: >
+    Conditions change between cycles and the change arrives in a letter to a generic address.
+    Unrouted regulator post is how a compliant organisation becomes non-compliant.
+  actor: human
+  done_when: There is a named owner for inbound from each authority.
+objects_used: [admin.obj.core.compliance_obligation, admin.obj.core.deadline, admin.obj.core.document, admin.obj.core.contract]
+limits:
+- 'Step 1 has no reliable source. The register can only be as complete as somebody''s knowledge of what the business does.'
+- 'It cannot assess whether a permission is the right one, which is a legal question this capability administers rather than answers.'
+failure_modes:
+- 'Step 3 set to a round number because the authority publishes none, which is a guess presented as a control.'
+- 'Step 4 absent, so the register is accurate about last year''s business.'
+variants:
+- applies_to: multi_entity
+  change: Steps 1 and 2 multiply per entity and per jurisdiction, and a merged register hides the specific gap that matters.
+  why: The same activity requires different permissions in different places.
+- applies_to: startup_lean
+  change: Steps 1 and 4 dominate. The register is short and the business changes monthly.
+  why: The failure here is expansion into an unpermitted activity, not a missed renewal.
+references:
+- title: Licence conditions and continuing obligations
+  kind: practitioner
+  note: The condition-versus-expiry distinction is where practitioners say most avoidable exposure sits.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 4 is the one that catches the real failure. Renewals are diarised and mostly happen;
+    the lapse that hurts is an expansion into a jurisdiction or activity nobody re-checked
+    coverage for.

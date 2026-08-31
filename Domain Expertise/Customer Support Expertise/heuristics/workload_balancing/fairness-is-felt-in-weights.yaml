@@ -1,0 +1,65 @@
+identity:
+  id: customer_support.heu.workload_balancing.fairness_is_felt_in_weights
+  name: Fairness is felt in weights
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_operations.workload_balancing
+  subdomain: support_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Agents know exactly whose queue is heavy regardless of what the count dashboard says. Count-based
+    'fairness' that ignores weight corrodes morale precisely because everyone can see it is false.
+  answers:
+  - Why do equal ticket counts still feel unfair?
+
+heuristic:
+  statement: >
+    Agents know exactly whose queue is heavy, regardless of what the count dashboard says.
+    Count-based fairness that ignores weight corrodes morale precisely because everybody can see it.
+  why: >
+    People experience their own load and observe their colleagues' directly — who is staying late,
+    who is picking up the escalations, who has the easy queue. A dashboard asserting that the
+    distribution is even contradicts something they know first-hand, which does not change their
+    belief about the load; it changes their belief about the dashboard, and by extension about
+    whether management is measuring anything real. The claim is more damaging than the imbalance.
+  confidence_bp: 8000
+  applies_when: Any team where work is assigned and load is reported.
+  breaks_down_when: >
+    Perceived unfairness is real and unfixable. Some agents genuinely handle the hard work because
+    they are the only ones qualified, and the honest answer is to name that and pay for it rather
+    than to rebalance work nobody else can do. It also breaks down where perception is
+    miscalibrated: an agent who is slower experiences the same load as heavier, and treating
+    perception as ground truth rewards that.
+  reads: [customer_support.obj.core.support_agent, customer_support.obj.core.ticket, customer_support.obj.core.backlog]
+  contradicts: [customer_support.heu.incident_management.coordination_is_the_scarce_resource]
+limits:
+- 'It concerns the claim of fairness, not the distribution itself. Silence about an imbalance is less damaging than asserting there is none.'
+- 'Perception is a check on the metric, not a substitute for it.'
+failure_modes:
+- 'Perception treated as ground truth, which rewards slower work.'
+- 'Used to avoid measuring load at all, which removes the only tool for fixing it.'
+variants:
+- applies_to: outsourced_bpo
+  change: The count dashboard is contractual, so the corrosion is structural and the fix is in the agreement.
+  why: What is paid for is what is reported.
+- applies_to: swarming_support
+  change: Load is self-selected, and the imbalance is visible to everybody in real time — which makes both the perception and the corrosion faster.
+  why: There is no assignment layer to blame.
+references:
+- title: Workload distribution in service teams
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The claim is the damaging part, not the imbalance. Asserting an even distribution that the
+    team can see is false changes their belief about the dashboard rather than about the load,
+    and that generalises to every other number management reports.

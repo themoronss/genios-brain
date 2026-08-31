@@ -95,6 +95,19 @@ subdomains:
     capabilities: [forecasting, revenue_intelligence, pipeline_management, territory_planning,
                    quota_planning, sales_operations, sales_analytics]
 
+  - id: investor_relations
+    dir: "10-investor-relations"
+    name: Investor Relations
+    question: "Where does each investor conversation stand, and what does silence cost us?"
+    capabilities: [investor_relations]
+    note: >
+      The one subdomain here that is NOT a revenue motion. It lives in the Sales corpus because
+      Layer 2 hands us company-anchored `investor_relationship` situations and a compiled signal
+      can only carry authority in a pack lane the tenant holds — not because fundraising is
+      selling. Everything downstream of that placement is written to REFUSE the deal reading:
+      there is no close date, no value, no stage to slip, and a pass is routinely reversible.
+      If a fundraising pack ever ships, this subdomain moves out whole.
+
   - id: sales_management
     dir: "09-sales-management"
     name: Sales Management

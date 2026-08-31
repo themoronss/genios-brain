@@ -1,39 +1,80 @@
-# STUB — identity, description, question and metadata only. Promotion instructions in metadata.
-
 identity:
   id: customer_support.diagnosis_and_resolution.resolution_delivery
   name: Resolution Delivery
   domain: customer_support
   subdomain: diagnosis_and_resolution
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Turning whatever actually made the problem stop into something the customer receives, understands,
+  and can act on — the change, the steps, the caveats, and what to do if it comes back. The characteristic
+  failure is delivering the engineering truth instead of the customer''s answer: a merged change is not
+  a resolution until the version carrying it is running in their environment, and "fixed in the next release"
+  delivered to someone who controls their own upgrade schedule is a task disguised as good news. Delivery
+  also decides what gets reused, because the explanation written here is the first draft of the article
+  that stops the next contact, and it is written while the reasoning is still in someone''s head.
 
-description: >
-  Turning whatever actually made the problem stop into something the customer receives,
-  understands, and can act on — the change, the steps, the caveats, and what to do if it comes
-  back. The characteristic failure is delivering the engineering truth instead of the customer's
-  answer: a merged change is not a resolution until the version carrying it is running in their
-  environment, and "fixed in the next release" delivered to someone who controls their own
-  upgrade schedule is a task disguised as good news. Delivery also decides what gets reused,
-  because the explanation written here is the first draft of the article that stops the next
-  contact, and it is written while the reasoning is still in someone's head.
+  '
+question: Has the fix actually reached this customer, in a form they can use and repeat?
 
-question: "Has the fix actually reached this customer, in a form they can use and repeat?"
+outcomes:
+- 'The customer able to do the thing they originally could not — which is the definition of resolved, and it is a customer-side event rather than a deploy.'
+- 'What was wrong, what changed, and what to do if it recurs, stated in their terms rather than in ours.'
+- 'The gap between deployed and told closed deliberately, because that gap is where "you fixed it and never said" resentment grows.'
+- 'Caveats delivered with the fix rather than discovered by the customer — a partial fix described as complete is a second incident.'
+- 'The negative outcome: a fix delivered with what it does NOT solve stated plainly, rather than allowing the customer to assume everything is now fine.'
+failure_modes:
+- 'CLOSING ON DEPLOY. Resolution is customer-side: they know, they can proceed, and they confirmed. A deploy satisfies none of those.'
+- 'DELIVERING IN INTERNAL LANGUAGE. A commit reference and a version number is an answer to a colleague.'
+- 'OMITTING THE RECURRENCE INSTRUCTION, so the customer who hits it again starts a new ticket with no history.'
+- 'PARTIAL FIXES DESCRIBED AS COMPLETE, which converts one problem into a trust problem.'
+- 'ASSUMING THE ORIGINAL REPORTER IS THE AFFECTED PARTY. Frequently they relayed it, and the person who was blocked never hears.'
+kpis:
+- name: deploy_to_told_lag
+  unit: hours
+  description: Fix live to customer informed. The gap resentment grows in, and it is invisible in every engineering metric.
+  direction: lower_is_better
+- name: customer_confirmed_resolution_rate
+  unit: percent
+  description: Resolutions the customer said worked.
+  direction: higher_is_better
+- name: recurrence_instruction_share
+  unit: percent
+  description: Resolutions telling the customer what to do if it happens again.
+  direction: higher_is_better
+- name: post_resolution_clarification_rate
+  unit: percent
+  description: Resolutions that generated a follow-up question. Measures whether it was delivered in their terms.
+  direction: lower_is_better
+handoffs:
+  upstream: [customer_support.diagnosis_and_resolution.root_cause_analysis, customer_support.diagnosis_and_resolution.workaround_management,
+             customer_support.escalation_and_incident.engineering_handoff]
+  downstream: [customer_support.diagnosis_and_resolution.verification_and_closure, customer_support.knowledge_and_deflection.knowledge_authoring]
+  parallel: [customer_support.customer_communication.response_drafting, customer_support.customer_communication.proactive_status_updates]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, swarming_support,
+           named_tam, premium_paid_support, embedded_in_product, outsourced_bpo]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, kpis and
-    handoffs, following the sibling root-cause-analysis/capability.yaml. Write the resolution
-    taxonomy first — code change, configuration change, data repair, workaround, documentation,
-    refund or credit, and "working as designed" — because they differ in who must act next and
-    in whether the issue closes with the ticket, and a system that records them as one thing
-    cannot report either. Keep the boundary with verification_and_closure sharp: delivery ends
-    when the answer has been sent, not when it has been confirmed, and a promoted file that
-    claims the confirmation has swallowed the capability that exists to prevent reopens.
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    deploy_to_told_lag is the number this capability exists to move and it appears in no
+    engineering dashboard and no support dashboard, because it spans both. The fix is live, the
+    ticket is technically resolved, and the customer finds out days later or not at all — which
+    produces a specific and durable resentment about having been fixed without being told.
+
+    The last failure mode is the one most often missed: the original reporter frequently relayed
+    the problem on somebody else's behalf, and delivering the resolution to them leaves the
+    person who was actually blocked still blocked.
+
+admission:
+  accepted_content_hash: dca6f807ebf1cee24238cb64aa66051e8a1934d44b35d1b00aa5fd68ec7c44a1

@@ -1,0 +1,125 @@
+identity:
+  id: admin.rule.inbox_and_correspondence.a_draft_may_not_commit_the_principal
+  name: A draft may not commit the principal
+  kind: rule
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.inbox_and_correspondence
+  subdomain: executive_support
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'Correspondence drafted on someone else''s behalf may answer, acknowledge and arrange —
+    it may not create an obligation in their name. The moment a reply names a date, a number, an
+    introduction or an agreement, it stops being administration and becomes a promise the principal
+    will be held to.'
+  answers:
+  - How far may a drafted reply go without the principal seeing it?
+  - Which replies must be approved rather than merely sent well?
+  not:
+  - A rule about tone or voice. Who appears to be writing is a separate question.
+  - A restriction on delegation. It bounds what delegation may produce, not whether it exists.
+
+rule:
+  statement: 'A reply drafted for the principal MUST NOT be sent unapproved when it would create a
+    commitment attributable to them — a date, a sum, an introduction, or an acceptance. Such a draft
+    is held for explicit approval, and once sent the obligation it creates is entered in the
+    commitment register in the same act.'
+  spans:
+  - admin.obj.core.request
+  - admin.obj.core.commitment
+  - admin.obj.core.approval
+  when:
+  - {exists: thread.last_inbound}
+  - {path: thread.ball_in_court, op: "=", value: us}
+  - {exists: commitment.action}
+  then: 'Route the draft for approval rather than for sending, and on send, open the commitment with
+    its due date so the promise exists somewhere other than in the sent folder.'
+  severity: blocking
+  why: 'The asymmetry is the point: a badly worded reply costs a correction, and an unauthorised
+    promise costs either the principal''s word or a public retraction. Correspondence is also where
+    obligations are created most cheaply and tracked least — the promise lives in a sent message
+    nobody reads again, so the register never learns about it and the counterparty is the only party
+    still holding it.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'A COMMITMENT THE PRINCIPAL ALREADY MADE. Restating a date they set, in a reply that only conveys
+    it, creates nothing. The test is whether the obligation exists before the message, not whether
+    the message contains a date — and this is the exception that keeps the rule from blocking most
+    ordinary correspondence.'
+  - 'A STANDING MANDATE WITH BOUNDS. Where the principal has delegated a class of decision within
+    stated limits — scheduling inside agreed hours, routine acceptances below a named threshold — a
+    draft inside those bounds is already approved. Requires the mandate on record; an assumed one is
+    exactly the failure this rule prevents.'
+  - 'A DEADLINE THAT WILL PASS BEFORE APPROVAL IS POSSIBLE. Where the principal is unreachable and the
+    obligation expires unanswered, the loss from silence can exceed the loss from acting. The
+    exception is real, is rare, and requires the act to be reported in the same cycle rather than
+    discovered later.'
+  - 'DECLINING. A reply that refuses, withdraws or closes creates no obligation for the principal and
+    is not gated by this rule, though it may be gated by relationship judgement elsewhere. Treating a
+    decline as a commitment is the commonest over-application, and it makes the queue slower with no
+    corresponding protection.'
+  - 'AN INTERNAL COLLEAGUE. Between colleagues the arrangement is revisable at no reputational cost,
+    so the gate is disproportionate — the same draft to an outside party is not.'
+
+objects_used:
+- admin.obj.core.request
+- admin.obj.core.commitment
+- admin.obj.core.approval
+- admin.obj.core.approver
+
+outcomes:
+- No obligation exists in the principal's name that they did not see.
+- Every promise made by correspondence appears in the register on the day it is made.
+
+failure_modes:
+- 'APPLIED TO EVERY REPLY CONTAINING A DATE. Confirming a meeting the principal already accepted is
+  not a new commitment; gating it makes the process slow enough that people route around it.'
+- 'SATISFIED BY APPROVAL AND NOT BY REGISTRATION. Approving the promise and then leaving it only in
+  the sent folder solves the authority half and none of the tracking half.'
+
+limits:
+- Rests on recognising an obligation inside prose, which is exactly what extraction is weakest at;
+  a missed promise is not gated by a rule that never sees it.
+- Says nothing about obligations created in meetings or calls, where the same asymmetry applies.
+
+variants:
+- applies_to: outsourced
+  change: The bound is contractual rather than personal — the provider may commit only what the
+    service definition already permits.
+  why: Authority here comes from a document, not from a relationship.
+- applies_to: regulated
+  change: Certain acceptances cannot be delegated at all, regardless of mandate, and the exception
+    for an expiring deadline does not apply to them.
+  why: The regime attaches the authority to a named role, not to an arrangement between two people.
+
+metrics:
+- name: unapproved_commitment_rate
+  unit: percent
+  description: Share of sent drafts that created an obligation without explicit approval.
+  direction: lower_is_better
+- name: commitment_registration_lag
+  unit: hours
+  description: Time between a promise being sent and appearing in the register. Anything but near-zero
+    means the second half of the rule is not being enforced.
+  direction: lower_is_better
+
+references:
+- title: Delegation of authority in administrative practice
+  kind: practitioner
+  note: The standard distinction between acting for someone and binding them, which most inbox
+    tooling does not represent at all.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. The `when` block is deliberately evaluable on live facts —
+    `thread.last_inbound`, `thread.ball_in_court` and `commitment.action` are all present on the
+    design partner''s org — but the rule''s real dependency is extraction recognising a promise in
+    prose, which is stated in `limits` rather than assumed away.'

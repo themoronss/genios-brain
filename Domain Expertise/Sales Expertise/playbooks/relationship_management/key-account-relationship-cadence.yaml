@@ -1,0 +1,124 @@
+identity:
+  id: sales.pb.relationship_management.key_account_relationship_cadence
+  name: Key-account relationship cadence
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.sales_management.relationship_management
+  subdomain: sales_management
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'Strategic relationships decay silently under transactional contact. The cadence is a
+    value-touch on a regular interval that asks for nothing — an insight, an introduction, a relevant
+    note — scheduled like pipeline work because otherwise it does not happen.'
+  answers:
+  - How is a relationship maintained when there is no deal?
+  - Which relationships get this treatment?
+  not:
+  - Account management on a live deal, where the transaction carries the contact.
+  - A nurture campaign. This is individual and it is not automated.
+
+when_to_use:
+  situations:
+  - sales.sit.live_account_relationship
+  conditions:
+  - {exists: thread.last_outbound}
+  signals:
+  - introduction
+  - positive_reply
+  do_not_use_when:
+  - 'The counterparty wants a vendor rather than a relationship. Value-touches then read as overhead
+    and the correct response is to respect that.'
+  - 'There is nothing genuine to give. A manufactured touch registers as noise and makes the balance
+    worse, not better.'
+  - 'The tier cannot be serviced. A cadence that exists on paper and not in the calendar is worse than
+    admitting which relationships are not being maintained.'
+
+steps:
+- order: 1
+  name: Tier by strategic value, explicitly
+  description: 'Not all relationships get the cadence — the top tier does, and it is named. Pretending
+    everyone gets it produces a schedule nobody can sustain, which collapses back to transactional
+    contact with guilt attached.'
+  actor: human
+  objects_read:
+  - sales.obj.core.account
+  - sales.obj.core.stakeholder
+  produces: A named, bounded top tier.
+  done_when: The tier is small enough to actually service.
+
+- order: 2
+  name: Schedule the give-touches
+  description: 'Calendared like pipeline work: what will we GIVE this relationship this period. A
+    touch that asks for nothing has no deadline of its own, so it loses to everything that does unless
+    it is scheduled.'
+  actor: human
+  produces: Dated value-touches per tiered relationship.
+  done_when: Every top-tier relationship has a next give in the calendar.
+
+- order: 3
+  name: Read the balance before any ask
+  description: 'Every request draws down and every give deposits. Our sense of the balance is
+    systematically flattering — we remember what we gave, they remember what we asked — so it is worth
+    checking rather than feeling.'
+  actor: human
+  produces: A give-to-ask reading per relationship.
+  done_when: No significant request was made without checking.
+
+- order: 4
+  name: Multi-thread above and beside the champion
+  description: 'Executive-to-executive and peer-to-peer lines, built in peacetime. They are cheap to
+    create when nothing is wrong and close to impossible when something is, which is exactly when they
+    are needed.'
+  actor: human
+  objects_read:
+  - sales.obj.core.champion
+  - sales.obj.core.decision_maker
+  produces: More than one senior line into each key account.
+  done_when: No key account rests on a single senior relationship.
+
+- order: 5
+  name: Follow champions when they leave
+  description: 'A past champion inside a new company is the warmest opening available anywhere, and it
+    is lost by default because the relationship was filed against an account rather than against a
+    person. The move is knowable and the follow costs one message.'
+  actor: human
+  objects_read:
+  - sales.obj.core.champion
+  produces: Departed champions tracked to their new organisation.
+  done_when: A champion leaving triggers a contact rather than a deletion.
+
+- order: 6
+  name: Let the untenable ones lapse, on purpose
+  description: 'A tier nobody can service is a list. Naming which relationships are not being
+    maintained is more useful than a cadence that exists only on paper, because it lets someone
+    decide rather than discover.'
+  actor: human
+  produces: An explicit lapse decision where capacity does not stretch.
+  done_when: The maintained set matches what is actually being done.
+
+objects_used:
+- sales.obj.core.stakeholder
+- sales.obj.core.champion
+- sales.obj.core.account
+- sales.obj.core.decision_maker
+
+limits:
+- The record shows contact cadence and cannot distinguish a give from an ask, which is the quantity
+  step 3 needs; that judgement stays human.
+- Senior relationship activity happens largely in person and is invisible here.
+- Says nothing about what constitutes a valuable give for a specific person, which is the hard part.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch, with the specific interval removed — a cadence in weeks
+    is a Layer 4 threshold. Steps 3, 5 and 6 are new. Step 5 is the highest-value one and the most
+    consistently skipped: a departed champion is the warmest opening that exists and is deleted by
+    default because the record files people against companies.'

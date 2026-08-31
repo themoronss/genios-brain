@@ -1,0 +1,88 @@
+identity:
+  id: customer_support.pb.duplicate_and_merge.merge_with_a_paper_trail
+  name: Merge with a paper trail
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.duplicate_and_merge
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Duplicates are merged into one canonical ticket with every reporter kept on the notify list
+    — the merge saves agent effort without ever silencing a customer who reported separately.
+
+when_to_use:
+  do_not_use_when:
+  - The symptom matches and the environment does not. Same error, different cause is the case merging handles worst and it produces two wrong answers from one investigation.
+steps:
+- order: 1
+  name: Confirm it is the same PROBLEM, not the same symptom
+  description: >
+    The same error message routinely has several causes. Merging on the message means two customers
+    receive an answer that does not apply to them.
+  actor: human
+  objects_read: [customer_support.obj.core.issue, customer_support.obj.core.ticket]
+  done_when: The underlying fault is the same, not just the presentation.
+- order: 2
+  name: Keep every reporter on the notify list
+  description: >
+    A merge that removes somebody from the conversation is silent from our side and reads as being
+    ignored from theirs, which is precisely what they will describe.
+  actor: system
+  objects_read: [customer_support.obj.core.requester]
+  done_when: All original reporters still receive updates.
+- order: 3
+  name: Answer differing impacts individually
+  description: >
+    One defect, five business impacts. A shared update covers the fault and not what it means for
+    each of them.
+  actor: human
+  objects_read: [customer_support.obj.core.customer_account]
+  done_when: Materially different situations got their own reply.
+- order: 4
+  name: Read the spike as telemetry
+  description: >
+    Five identical tickets in an hour is an outage announcement arriving by customer, and the merge
+    queue often sees it before monitoring does.
+  actor: human
+  done_when: Duplicate rate is being watched, not just processed.
+- order: 5
+  name: Keep it reversible
+  description: >
+    A wrong merge that cannot be undone loses the second customer's history, which is the part that
+    was expensive to gather.
+  actor: system
+  done_when: The merge can be split with both histories intact.
+objects_used: [customer_support.obj.core.ticket, customer_support.obj.core.issue, customer_support.obj.core.requester,
+               customer_support.obj.core.customer_account, customer_support.obj.core.incident]
+limits:
+- 'Step 1 needs diagnostic depth that intake often does not have, which is why premature merging is common.'
+- 'Reversibility is a property of the tooling, and many systems do not offer it.'
+failure_modes:
+- 'Step 2 skipped because the tooling makes it awkward, which converts a merge into a silencing.'
+- 'Step 4 unowned, so the earliest incident signal available is processed as cleanup.'
+variants:
+- applies_to: b2c
+  change: Step 4 dominates. Volume makes the spike unmistakable and the individual conversations less differentiated.
+  why: Impacts are similar and the aggregate is the signal.
+- applies_to: enterprise_support
+  change: Step 3 dominates. The same defect has genuinely different consequences per account and a shared update is insufficient for all of them.
+  why: Each customer is entitled to their own impact assessment.
+references:
+- title: Incident detection from support signals
+  kind: practitioner
+  note: Where duplicate rate is treated as a leading indicator rather than as queue noise.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 4 is the reframe. Every other step protects the customers; this one is the reason the
+    capability is worth attention at all, because the merge queue is frequently the first place
+    an outage becomes visible.

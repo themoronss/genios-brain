@@ -24,8 +24,15 @@ HOW A SITUATION IS ANCHORED
     (counterparty entity, domain)
 
 Company beats person, because people change companies and a company outlives them.
-Domain comes from L1's deterministic keyword hints — never an LLM — so the same email
-correlates identically on every replay.
+
+Domain comes from ranked hints: a source prior first (a fact about the connector), then the
+model's own reading of the message, then a keyword match. It used to be keyword-only, and
+"never an LLM" sounded like determinism but bought none — the model's judgment was extracted,
+written into an observation, and discarded, while a substring test with no idea where in the
+document it landed made the call. A regex matching "error" four times inside a confidentiality
+footer typed this org's most important fundraising thread as `support`.
+
+Replay determinism is preserved by the extraction cache, not by refusing to read the answer.
 
 THREAD IS A CONTINUITY CARRIER, NOT AN ANCHOR
 An email thread id is a HARD join: an event sharing a thread with already-correlated
@@ -49,6 +56,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from sqlalchemy import text
+
+from genios_engine.context.domain_spec import canonical_domain, spec_for
 
 from genios_engine.platform.canonical import stable_id
 
@@ -105,22 +114,58 @@ class Anchor:
         return stable_id("corr", {"node": self.node_id, "domain": self.domain})
 
 
+#: How much a hint's ORIGIN is worth, highest first.
+#:
+#: A source prior is a fact about the connector — mail arriving from a support desk IS support —
+#: so nothing outranks it. The model comes next: it read the entire message and answered, and
+#: its answer is a judgment about meaning. A keyword match is last because it is a substring
+#: test with no idea where in the document it landed.
+#:
+#: That ordering is the whole fix. Taking the first hint made a keyword outrank the model, and a
+#: regex matching "error" four times inside a confidentiality footer typed this org's most
+#: important fundraising thread as `support` — while the model's own reading of the same message,
+#: ["venture_capital", "startup_funding"], was written into an observation and discarded.
+#: `scope` is what `capture/domain/hints.py` actually emits for a source prior. Guessing the
+#: token would have silently demoted every prior below a keyword — the exact inversion this
+#: ranking exists to prevent, reintroduced by a typo nobody could see in a passing test.
+_HINT_RANK = {"scope": 0, "source": 0, "prior": 0, "model": 1, "keyword": 2}
+#: An unrecognised origin sits between the model and a keyword: it came from somewhere
+#: deliberate enough to be labelled, so it should not rank below a substring match — but it has
+#: not earned a prior's authority either.
+_UNRANKED = 2
+
+
 def resolve_domain(domain_hints: list | None) -> str:
-    """L1's deterministic hints → the one domain this event correlates under.
+    """Hints → the one domain this event correlates under, strongest ORIGIN first.
 
-    Hints arrive ordered by strength (a source prior like HubSpot→sales before a keyword
-    match), so the first is the most trustworthy. Two keywords firing at once means the
-    text is genuinely ambiguous; taking the first keeps the choice deterministic instead
-    of alphabetical or dict-ordered.
+    Ties inside a rank keep their arrival order, so two keywords firing at once still resolves
+    deterministically rather than alphabetically.
     """
-    for hint in domain_hints or []:
-        domain = hint.get("domain") if isinstance(hint, dict) else getattr(hint, "domain", None)
+    ranked: list[tuple[int, int, str]] = []
+    for i, hint in enumerate(domain_hints or []):
+        if isinstance(hint, dict):
+            domain, origin = hint.get("domain"), hint.get("source")
+        else:
+            domain, origin = getattr(hint, "domain", None), getattr(hint, "source", None)
         if domain:
-            return str(domain)
-    return DEFAULT_DOMAIN
+            ranked.append((_HINT_RANK.get(str(origin or ""), _UNRANKED), i, str(domain)))
+    if not ranked:
+        return DEFAULT_DOMAIN
+    ranked.sort()
+    # CANONICALISE HERE, at the one point where a hint becomes THE domain. This value is the
+    # correlation key, the stored `context_situations.domain` and the hint Layer 3 resolves a
+    # corpus folder from, so an alias applied anywhere later would leave those three disagreeing.
+    return canonical_domain(ranked[0][2])
 
 
-def choose_anchors(node_types: dict[str, str], domain: str) -> list[Anchor]:
+#: Roles that make a party INFRASTRUCTURE for a conversation rather than a party to it.
+#: An introduction bot appears in every introduction it brokers; a scheduling service appears in
+#: every meeting it books. They are present, they are not what the conversation is about.
+NON_ANCHORING_ROLES: frozenset[str] = frozenset({"introducer", "machine", "observer"})
+
+
+def choose_anchors(node_types: dict[str, str], domain: str,
+                   node_roles: dict[str, str] | None = None) -> list[Anchor]:
     """The nodes an event is ABOUT → the situations it belongs to.
 
     Only the strongest available tier anchors. An email to a person at a company yields
@@ -129,12 +174,27 @@ def choose_anchors(node_types: dict[str, str], domain: str) -> list[Anchor]:
 
     Several nodes at the SAME tier all anchor: an introduction email naming two companies
     genuinely belongs to two situations, and dropping one loses a real relationship.
+
+    A CONNECTOR NEVER ANCHORS. An introduction bot is named in every introduction it brokers, so
+    anchoring on it fuses every one of those conversations into a single situation: the design
+    partner's graph has 68 unrelated members under one `boardy.ai` correlation, from 254 distinct
+    threads. Nothing downstream can recover a business subject from that — and it is why a card
+    could tell him to reply to the introducer rather than to the investor he was introduced to.
+    Excluding them is not a filter on relevance; the connector's own mail is still captured. It
+    is a statement that infrastructure is not a subject.
     """
+    roles = node_roles or {}
     for node_type in ANCHOR_PRIORITY:
         at_tier = sorted(nid for nid, ntype in node_types.items() if ntype == node_type)
-        if at_tier:
+        subjects = [nid for nid in at_tier
+                    if roles.get(nid, "") not in NON_ANCHORING_ROLES]
+        # Fall back to the full tier when EVERY node at it is a connector: a message genuinely
+        # only about infrastructure still deserves a situation, and silently anchoring nothing
+        # would drop it.
+        chosen = subjects or at_tier
+        if chosen:
             return [Anchor(node_id=nid, node_type=node_type, domain=domain)
-                    for nid in at_tier]
+                    for nid in chosen]
     return []          # nothing anchored — the event stands alone, which is a real answer
 
 
@@ -185,7 +245,8 @@ class CorrelationPlan:
 
 
 def plan_correlation(*, thread_correlation_ids: list[str] | None,
-                     node_types: dict[str, str], domain_hints: list | None) -> CorrelationPlan:
+                     node_types: dict[str, str], domain_hints: list | None,
+                     node_roles: dict[str, str] | None = None) -> CorrelationPlan:
     """The whole decision, as a pure function.
 
     Order matters and is the heart of the engine:
@@ -205,7 +266,7 @@ def plan_correlation(*, thread_correlation_ids: list[str] | None,
                                inherited_correlation_ids=tuple(dict.fromkeys(
                                    thread_correlation_ids)))
     domain = resolve_domain(domain_hints)
-    return CorrelationPlan(anchors=tuple(choose_anchors(node_types, domain)),
+    return CorrelationPlan(anchors=tuple(choose_anchors(node_types, domain, node_roles)),
                            via=JOINED_VIA_ANCHOR)
 
 
@@ -332,9 +393,78 @@ def lift_people_to_their_companies(conn, *, org_id: str,
     return lifted
 
 
+def lift_companies_to_their_deals(conn, *, org_id: str, domain: str,
+                                  node_types: dict[str, str]) -> dict[str, str]:
+    """Add each account's deal to the anchor pool. The direct analogue of the lift above.
+
+    Correspondence about an account with a live deal is correspondence about the DEAL, and
+    `ANCHOR_PRIORITY` already says so by ranking deal above company. But only the one event that
+    happened to create the deal node touches it, so without this every OTHER message in the same
+    conversation anchors on the company and the deal situation is a group of one.
+
+    Worse, `plan_correlation` is thread-first by design — a reply carries the conversation's
+    identity. So a thread that anchored on the company before the deal existed keeps pulling new
+    events back to the company anchor no matter how many are re-correlated, and the deal lane
+    stays empty for a reason that never appears in any count. Lifting removes the ordering
+    problem entirely: whichever message arrives first, the account's deal is in the pool.
+
+    SCOPED TO DOMAINS THAT HAVE A DEAL, and that guard is the whole difference between a fix and
+    a regression. A `deal.status` fact is extracted from investor and recruiting mail too, so on
+    a real founder's inbox most accounts acquire a deal node. Lifting unconditionally would take
+    every `investor_relationship` situation — the ones the investor-relations capability is built
+    on — and retype them `fundraising_deal`, which no capability claims. One empty lane traded for
+    another. `domain_spec` already states, per domain, whether a deal is a thing there; asking it
+    keeps that judgement in the one place that owns it.
+
+    Read-only and never creates: if the account has no deal, the company stays the anchor.
+    """
+    if "deal" not in spec_for(domain).situation_types:
+        return node_types
+    companies = [nid for nid, ntype in node_types.items() if ntype == "company"]
+    if not companies:
+        return node_types
+    rows = conn.execute(text(
+        "select e.to_node_id from graph_edges e "
+        "join graph_nodes d on d.org_id = e.org_id and d.node_id = e.to_node_id "
+        "  and d.node_type = 'deal' and d.valid_to is null "
+        "where e.org_id = :o and e.edge_type = 'owns' and e.valid_to is null "
+        "  and e.from_node_id = any(:ids)"), {"o": org_id, "ids": companies}).fetchall()
+    if not rows:
+        return node_types
+    lifted = dict(node_types)
+    for row in rows:
+        lifted[row.to_node_id] = "deal"
+    return lifted
+
+
+def _lift_roles(conn, *, org_id: str, node_roles: dict[str, str]) -> dict[str, str]:
+    """Carry each person's role onto the company they work at.
+
+    `lift_people_to_their_companies` promotes a person node to their employer before anchoring,
+    so a role attached to the person would be dropped exactly where it matters — the anchor is
+    the company. An introduction bot's company is the introduction service.
+    """
+    if not node_roles:
+        return {}
+    lifted = dict(node_roles)
+    try:
+        rows = conn.execute(text(
+            "select from_node_id, to_node_id from graph_edges "
+            "where org_id=:o and edge_type='works_at' and valid_to is null"),
+            {"o": org_id}).fetchall()
+    except Exception:      # noqa: BLE001 — a role hint is an enrichment, never a hard failure
+        return lifted
+    for r in rows:
+        role = node_roles.get(r.from_node_id)
+        if role and r.to_node_id not in lifted:
+            lifted[r.to_node_id] = role
+    return lifted
+
+
 def correlate_event(conn, *, org_id: str, event_id: str, occurred_at: datetime | None,
                     thread_id: str | None, node_types: dict[str, str],
-                    domain_hints: list | None) -> list[str]:
+                    domain_hints: list | None,
+                    node_roles: dict[str, str] | None = None) -> list[str]:
     """Place ONE event into the situations it belongs to. Returns their ids.
 
     An empty list is a normal, frequent outcome: an event that anchors nothing and
@@ -344,8 +474,17 @@ def correlate_event(conn, *, org_id: str, event_id: str, occurred_at: datetime |
     plan = plan_correlation(
         thread_correlation_ids=thread_correlations(
             conn, org_id=org_id, thread_id=thread_id, exclude_event_id=event_id),
-        node_types=lift_people_to_their_companies(conn, org_id=org_id,
-                                                  node_types=node_types),
+        # People → their company → that account's deal. Order matters: a person is lifted to the
+        # company first, so a message naming only a contact still reaches the deal. The domain is
+        # resolved here as well as inside `plan_correlation`; `resolve_domain` is pure and cheap,
+        # and threading it out would put a second source of truth next to the first.
+        node_types=lift_companies_to_their_deals(
+            conn, org_id=org_id, domain=resolve_domain(domain_hints),
+            node_types=lift_people_to_their_companies(conn, org_id=org_id,
+                                                      node_types=node_types)),
+        # A person's role carries to the company they were lifted to: an introduction bot's
+        # company is the introduction service, and it must not anchor either.
+        node_roles=_lift_roles(conn, org_id=org_id, node_roles=node_roles or {}),
         domain_hints=domain_hints)
     if plan.is_empty:
         return []

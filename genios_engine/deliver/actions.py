@@ -5,11 +5,21 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
+from genios_engine.contracts.execution import ExecutionState
+from genios_engine.executive.execution_store import (
+    apply_transition as _apply_execution_transition,
+)
+from genios_engine.executive.execution_store import link_card as _link_execution_card
+from genios_engine.executive.lifecycle import transition as _execution_transition
 from genios_engine.platform.ids import new_id
 from genios_engine.reason.authority import (
     AUTHORITATIVE_SIGNAL_JOINS,
     AUTHORITATIVE_SIGNAL_PREDICATE,
 )
+
+#: Buttons that mean a human started doing the work, as opposed to `wrong` (this was never a
+#: real signal) or `snooze`/`requeue` (deferral, not engagement).
+_CLAIMING_ACTIONS = frozenset({"run_play", "do_it_myself"})
 
 # E8 · Action Ingester (§5.12) — the round trip both L1 and L6 depend on. Four buttons + requeue,
 # each landing as an L1 human event AND a card lifecycle transition, all timestamped. A Wrong
@@ -107,6 +117,37 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             {"id": new_id("cev"), "card": card_id, "o": org_id,
              "kind": "ui.requeued" if action == "requeue" else "human.card_action",
              "cause": action, "actor": actor, "detail": json.dumps(detail, default=str)})
+
+        # The card surface and the execution subsystem used to be two disconnected state
+        # machines: this function never touched `executions`, so a card the founder marked
+        # acted left its linked commitment sitting at `created`/`pending` with the clock still
+        # running — the founder's only real signal reached nowhere, L7 learned nothing from it,
+        # and the divergence was invisible until L5 delivery went live and someone compared the
+        # two surfaces by hand.
+        #
+        # A card action means "claimed", never "done" — no scoped success evidence has arrived
+        # yet, only intent — so this moves PENDING/RUNNING toward RUNNING, not toward COMPLETED.
+        # Same transaction as the card write, so the two surfaces can never observe a state where
+        # one moved and the other did not; a lost race (already RUNNING, or not yet PENDING)
+        # is a no-op here exactly as it is everywhere else `apply_transition` is called — another
+        # worker's move is the one that counts, not a reason to fail the button press.
+        if action in _CLAIMING_ACTIONS:
+            execution = c.execute(text(
+                "select execution_id, state, card_id from executions "
+                "where org_id=:o and signal_id=:signal "
+                "order by created_at desc limit 1 for update"),
+                {"o": org_id, "signal": card["signal_id"]}).mappings().first()
+            if execution is not None:
+                if execution["card_id"] is None:
+                    _link_execution_card(c, org_id=org_id,
+                                         execution_id=execution["execution_id"], card_id=card_id)
+                if execution["state"] == ExecutionState.PENDING.value:
+                    move = _execution_transition(
+                        ExecutionState.PENDING, ExecutionState.RUNNING,
+                        reason_code="human_claimed", actor=actor, at=eval_time,
+                        detail=f"card_action:{action}")
+                    _apply_execution_transition(
+                        c, org_id=org_id, execution_id=execution["execution_id"], move=move)
 
     if action == "snooze":
         return {"ok": True, "state": state, "snooze_until": snooze_at.isoformat()}

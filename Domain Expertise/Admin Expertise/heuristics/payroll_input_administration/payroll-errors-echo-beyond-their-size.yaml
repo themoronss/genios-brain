@@ -1,0 +1,66 @@
+identity:
+  id: admin.heu.payroll_input_administration.payroll_errors_echo_beyond_their_size
+  name: Payroll errors echo beyond their size
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.payroll_input_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A ₹500 payroll mistake generates distrust disproportionate to amount — it is the one number
+    every employee checks. Payroll accuracy is the cheapest trust programme a company runs.
+  answers:
+  - Why does payroll precision matter so much?
+
+heuristic:
+  statement: >
+    A small payroll mistake generates distrust wildly out of proportion to its amount. It is the one
+    number every employee checks, and accuracy here is the cheapest trust programme a company runs.
+  why: >
+    Pay is the transaction the employment relationship is actually about, and it is verified
+    personally by every single person every month. An error is therefore discovered by the affected
+    party rather than by the organisation, which inverts the normal dynamic: the employee knows
+    something is wrong before anybody in the company does, and their first question is whether it
+    was carelessness or something worse. The amount is irrelevant to that question, which is why
+    severity is the wrong lens.
+  confidence_bp: 8500
+  applies_when: Any error visible on a payslip, at any value.
+  breaks_down_when: >
+    The error is in the employee's favour and unnoticed. Recovering a small overpayment months later
+    costs more goodwill than the original error would have, and the arithmetic of this heuristic
+    reverses — correctness stops being the trust-maximising move. It also breaks down where the
+    error originates outside payroll: a manager who submitted the wrong overtime is the cause, and
+    a payroll function that absorbs the blame silently keeps the cause in place.
+  reads: [admin.obj.core.employee_record]
+  contradicts: [admin.heu.attendance_and_leave.untaken_leave_is_a_liability_twice]
+limits:
+- 'It concerns visible errors. A correctly paid but wrongly coded item has no trust cost and a real accounting one.'
+- 'It argues for accuracy, not for speed of correction, which is a separate and equally load-bearing thing.'
+failure_modes:
+- 'Used to justify absorbing an upstream error silently, which protects the cycle and preserves the cause.'
+- 'Applied to overpayments, where mechanical correctness costs more than it returns.'
+variants:
+- applies_to: startup_lean
+  change: Strongest. A single error affects a visible fraction of the company and is discussed the same day.
+  why: There is no anonymity in the population.
+- applies_to: outsourced
+  change: The employee attributes the error to the employer regardless of who processed it, which is worth knowing before the contract is signed.
+  why: Accountability does not transfer with the processing.
+references:
+- title: Payroll control practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is genuinely counter-intuitive: recovering a small overpayment
+    months later costs more goodwill than the original error, so mechanical correctness stops
+    being the trust-maximising move.

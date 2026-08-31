@@ -1,39 +1,80 @@
-# Stub. Identity, purpose and load-set only — see quality-assurance in this subdomain for the
-# shape a promoted capability takes.
-
 identity:
   id: customer_support.support_management.performance_management
   name: Performance Management
   domain: customer_support
   subdomain: support_management
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Judging whether an agent is meeting the standard, with consequences attached. It is the
+  only capability in this subdomain where the answer goes on a record, and that fact governs how every
+  input to it must be treated: any measure used here will be optimised, so the measure has to be one that
+  is harmless when gamed. Throughput and handle time fail that test immediately — both improve when an
+  agent closes tickets that were not finished. The defensible version compares an agent against the queue
+  they actually worked rather than against the team, because queue mix explains more variance in every
+  support metric than individual skill does.
 
-description: >
-  Judging whether an agent is meeting the standard, with consequences attached. It is the only
-  capability in this subdomain where the answer goes on a record, and that fact governs how every
-  input to it must be treated: any measure used here will be optimised, so the measure has to be
-  one that is harmless when gamed. Throughput and handle time fail that test immediately — both
-  improve when an agent closes tickets that were not finished. The defensible version compares an
-  agent against the queue they actually worked rather than against the team, because queue mix
-  explains more variance in every support metric than individual skill does.
+  '
+question: Is this agent meeting the standard, measured against the work they were actually given?
 
-question: "Is this agent meeting the standard, measured against the work they were actually given?"
+outcomes:
+- 'Quality, efficiency and customer outcome read TOGETHER, because any one of them alone is trivially gameable and the gaming is invisible in the metric being gamed.'
+- 'Judgement made against the work the agent was actually given, since an agent holding escalations and one holding password resets are not comparable on any of the three.'
+- 'A record somebody could defend. This is the only capability in the subdomain where the answer goes on a file, and that governs how much evidence it needs.'
+- 'Efficiency metrics carrying quality metrics as load-bearing counterweights, since pushing handle time alone produces early thin closures.'
+- 'The negative outcome: an underperformance finding STATED, with evidence and a path. Avoiding it is not kindness; it removes the person''s chance to change before the decision is made for them.'
+failure_modes:
+- 'SINGLE-METRIC WORSHIP. Whichever number is emphasised is the one that improves, by whatever means are available.'
+- 'COMPARING AGENTS ON DIFFERENT WORK, which measures queue assignment and calls it performance.'
+- 'SPEED PRESSURE WITHOUT A QUALITY COUNTERWEIGHT, which reappears as reopens plus angrier second tickets.'
+- 'CSAT ON SMALL SAMPLES, which is statistically indefensible and personally consequential.'
+- 'AVOIDING THE CONVERSATION, which lets somebody continue failing until the only remaining option is exit.'
+kpis:
+- name: balanced_read_rate
+  unit: percent
+  description: Assessments using all three axes rather than one headline number.
+  direction: higher_is_better
+- name: like_for_like_comparison_share
+  unit: percent
+  description: Judgements normalised for the mix of work assigned.
+  direction: higher_is_better
+- name: reopen_to_handle_time_correlation
+  unit: ratio
+  description: The gaming detector. When handle time falls and reopens rise together, the efficiency gain is fictional.
+  direction: lower_is_better
+- name: evidence_backed_findings
+  unit: percent
+  description: Performance conclusions citing specific tickets rather than aggregates.
+  direction: higher_is_better
+handoffs:
+  upstream: [customer_support.support_management.ticket_review, customer_support.support_management.quality_assurance,
+             customer_support.support_operations.support_analytics]
+  downstream: [customer_support.support_management.agent_coaching, customer_support.support_management.team_health]
+  parallel: [customer_support.support_operations.workload_balancing, customer_support.voice_of_customer.satisfaction_measurement]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, outsourced_bpo,
+           follow_the_sun, named_tam]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following quality-assurance in this subdomain. The
-    hardest thing to get right, and the thing worth writing down first, is the relationship with
-    quality_assurance: QA scores exist to teach, and the moment they are admissible as evidence
-    here, honest self-reporting stops and the sample stops describing the work. Some organisations
-    accept that trade deliberately; the file should say which trade is being made rather than
-    leave it implicit. Second is the volume-versus-quality trap — every metric that rewards
-    closing tickets rewards closing them prematurely, and reopen rate is the only cheap correction.
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    reopen_to_handle_time_correlation is the gaming detector and it is the only KPI here that
+    catches the failure while it is happening. When handle time falls and reopens rise together,
+    the efficiency improvement is fictional — the time was not saved, it was moved into a second
+    ticket with a worse tone.
+
+    like_for_like_comparison_share is the one that keeps this fair. Comparing an agent holding
+    escalations with one holding password resets measures queue assignment and files the result
+    under performance, which is both wrong and consequential because it goes on a record.
+
+admission:
+  accepted_content_hash: be86476625827fb97e6c1e1c866b42cf28605cf0ee1b9513e7bd5b3e58ca8d04

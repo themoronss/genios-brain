@@ -1,0 +1,148 @@
+identity:
+  id: sales.heu.upsell.an_unfelt_limit_cannot_be_sold
+  name: An unfelt limit cannot be sold
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.upsell
+  subdomain: post_sale_and_growth
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: Upselling capacity a customer has never approached is selling insurance against a risk
+    they have not experienced — it produces polite deferral. Wait for the bump, or create the
+    experience of the limit.
+  answers:
+  - When is an upsell conversation worth having?
+  not:
+  - A claim that customers must always ask first. Timing can be created; the experience cannot be faked.
+  - A pricing rule. What the increment costs is decided elsewhere.
+
+heuristic:
+  statement: 'Trigger on the EXPERIENCE of a constraint, not on its approach. A customer at ninety per
+    cent of a limit has a number; a customer whose colleague could not be added on Tuesday has a
+    problem — and only the second one is buying anything. The window is also short, because a customer
+    who hits a limit and gets no offer builds a workaround, and the workaround removes the pain that
+    would have justified the conversation.'
+  why: 'People do not buy against forecast risk; they buy against experienced friction. That is why
+    utilisation dashboards produce upsell pipelines that never close — the seller is looking at a
+    metric and the customer is looking at nothing at all, because nothing has happened to them yet.
+    The asymmetry runs the other way too: once the friction is felt, the sale is nearly automatic and
+    requires no persuasion, which is why this capability is mechanical when it is timed right and
+    impossible when it is not.'
+  confidence_bp: 8500
+  applies_when: 'An account with a tiered or metered product where a limit exists and can be
+    approached.'
+  breaks_down_when: 'A PLANNED EXPANSION THE CUSTOMER IS DRIVING. A team doubling next quarter is
+    buying against a plan rather than against friction, and waiting for the bump makes us the
+    bottleneck in their rollout.
+
+    HARD LIMITS WITH REAL CONSEQUENCES. Where hitting the cap causes data loss, service interruption
+    or a compliance breach, letting the customer experience it to create urgency is indefensible —
+    the correct act is to warn early, and this is the regime where the heuristic is actively wrong.
+
+    PROCUREMENT-CYCLE BUYERS. Where any increase must go through an annual budget, the conversation
+    has to happen when the budget is set rather than when the limit is felt, and a felt limit outside
+    that window produces frustration with no route to resolution.
+
+    SEASONAL PEAKS. A limit hit predictably every quarter-end is a known pattern rather than a growth
+    signal, and selling permanent capacity against a temporary spike is a bad trade the customer will
+    notice at renewal.
+
+    WHEN THE LIMIT IS ARTIFICIAL AND THEY KNOW IT. Customers distinguish a genuine capacity constraint
+    from a commercial fence, and applying this heuristic to the second reads as extortion rather than
+    as service.'
+  reads:
+  - sales.obj.core.opportunity
+  - sales.obj.core.account
+  - derived.engagement
+  contradicts:
+  - sales.heu.cross_sell.cross_sell_borrows_trust___repay_it
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.live_account_relationship
+  conditions:
+  - {path: derived.engagement, op: ">=", value: 1}
+  - {exists: thread.last_inbound}
+  signals:
+  - question
+  - next_step_agreed
+  do_not_use_when:
+  - The customer is driving a planned expansion; waiting makes us their bottleneck.
+  - The limit has real consequences — data loss, interruption, a compliance breach.
+  - The peak is seasonal and permanent capacity is the wrong sale.
+
+objects_used:
+- sales.obj.core.opportunity
+- sales.obj.core.account
+- sales.obj.core.pricing
+- sales.obj.core.timeline
+
+outcomes:
+- Upsell conversations follow experienced friction rather than utilisation thresholds.
+- The conversation happens before a workaround removes the pain.
+
+failure_modes:
+- 'ENGINEERING THE PAIN. Letting a customer hit a consequential limit to create urgency is the version
+  of this heuristic that destroys the relationship, and the second breakdown regime exists to forbid
+  it explicitly.'
+- 'WAITING WHERE THE CUSTOMER IS PLANNING. Makes us the obstacle in their own expansion.'
+- 'TRIGGERED BY A DASHBOARD. Utilisation is our number and it is not their experience; pipelines built
+  on it do not close.'
+
+limits:
+- 'There is NO usage telemetry in the record — limit events, seat counts and volume caps are exactly
+  what the engine cannot see. On a correspondence-only tenant the only available trigger is the
+  customer mentioning the constraint, which is real and late.'
+- Says nothing about what the increment should cost.
+- Cannot distinguish a felt limit from an approaching one, which is the entire distinction it rests on.
+
+variants:
+- applies_to: enterprise
+  change: The felt limit is usually reported by an administrator rather than by the sponsor, and the
+    purchase still needs the sponsor — so the trigger and the buyer are different people.
+  why: Whoever experiences the constraint rarely holds the budget.
+- applies_to: smb
+  change: The person who hits the limit is the buyer, and the conversation can close in the same
+    exchange.
+  why: No separation between the experience and the authority.
+- applies_to: inside_sales
+  change: Instrument the trigger and route it automatically; at volume nobody will notice a limit
+    event by hand.
+  why: The motion is mechanical and its failure is that nobody owns it.
+
+metrics:
+- name: limit_event_to_offer_days
+  unit: days
+  description: Days from the constraint being hit to the conversation.
+  direction: lower_is_better
+- name: felt_limit_share
+  unit: percent
+  description: Share of upsell conversations triggered by experienced friction.
+  direction: higher_is_better
+
+references:
+- title: SPIN Selling
+  kind: methodology
+  author: Neil Rackham
+  note: Implied need becoming explicit need — the mechanism by which an approaching limit becomes a
+    problem someone is willing to spend on.
+- title: Practitioner expansion operations
+  kind: practitioner
+  note: Usage-triggered expansion converts at a materially higher rate than calendar-triggered, and
+    the interval before a workaround appears is short.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The original said "or manufacture the
+    experience" — that phrasing is deliberately removed and replaced by a breakdown regime forbidding
+    it, because engineering a consequential limit to create urgency is not a timing tactic, it is a
+    harm.'

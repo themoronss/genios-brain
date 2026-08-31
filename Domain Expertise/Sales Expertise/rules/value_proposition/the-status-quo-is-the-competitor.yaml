@@ -1,0 +1,76 @@
+identity:
+  id: sales.rule.value_proposition.the_status_quo_is_the_competitor
+  name: The status quo is the competitor
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.value_proposition
+  subdomain: discovery_and_solution
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A value case that argues only against rival products has not engaged the option the
+    buyer is most likely to take. Doing nothing requires no budget, no approval and no risk, and it
+    wins more deals than any vendor does.'
+  answers:
+  - What must a value case argue against?
+  not:
+  - A rule about competitive positioning against rivals, which is also necessary.
+
+rule:
+  statement: 'A value case MUST include a comparison against the buyer continuing as they are — the
+    cost of today and the cost of another year of it. A case that names only competing products MUST
+    be flagged as incomplete regardless of how strong the competitive argument is.'
+  spans:
+  - sales.obj.core.business_need
+  - sales.obj.core.competitor
+  - sales.obj.core.pain_point
+  when:
+  - {path: deal.status, op: "=", value: open}
+  - {no_obs: competitor}
+  then: 'Require the cost-of-inaction comparison before the case is treated as complete, and surface
+    it as the missing argument rather than assuming a rival is the alternative.'
+  severity: warning
+  why: 'The status quo has structural advantages no vendor can match: it needs no budget cycle, no
+    approval, no implementation and no defence if it turns out badly, because nobody chose it. That
+    asymmetry means it wins by default whenever the case for change is merely as good as the case for
+    the product — and it is invisible in win-loss analysis, which records no-decision as a separate
+    category from a loss and therefore under-reports the single largest competitor in the market.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'A MANDATED CHANGE. Where a regulation, a contract expiry or an end-of-life forces a decision,
+    doing nothing is not available and the comparison is genuinely between vendors.'
+  - 'AN ACTIVE COMPETITIVE EVALUATION. Where the buyer has already decided to buy something and is
+    choosing between options, the status quo has been eliminated by them rather than by us.'
+  - 'A REPLACEMENT WITH A HARD DEADLINE. A system being switched off has its own clock, and arguing
+    against inaction is arguing against a fact.'
+  - 'AN EXPANSION INSIDE AN EXISTING RELATIONSHIP. The status quo already includes us, so the
+    comparison is between two versions of change rather than between change and stasis.'
+  - 'A CASE WHERE THE COST OF TODAY IS GENUINELY UNKNOWN. Where the buyer cannot quantify it, an
+    invented figure is worse than the gap; the honest record is a qualitative statement of the
+    consequence.'
+
+objects_used:
+- sales.obj.core.business_need
+- sales.obj.core.competitor
+- sales.obj.core.pain_point
+- sales.obj.core.risk
+
+limits:
+- The value case is not in the record, so this rule fires on the absence of a `competitor`
+  observation, which is a weak proxy for a case that ignores the status quo — on the design partner's
+  org `competitor` has 2 rows, so the condition is true almost everywhere.
+- Cannot assess whether an included status-quo comparison is any good.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. The point worth keeping is why this competitor stays invisible: win-loss
+    analysis records no-decision as its own category rather than as a loss, so the largest competitor
+    in most markets never appears in the competitive analysis at all.'

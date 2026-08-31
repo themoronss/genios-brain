@@ -31,10 +31,8 @@ description: >
 
 matches:
   l2_situation_types:
-    - competitor_in_live_deal
-    - pricing_objection
-    - discount_pressure
-    - closed_lost_risk
+    - deal
+    - opportunity
   scope: deal
   when:
     # Only from live deals. A post-mortem on a closed deal is win/loss work and belongs to

@@ -1,0 +1,66 @@
+identity:
+  id: customer_support.heu.performance_management.speed_pressure_surfaces_as_reopens
+  name: Speed pressure surfaces as reopens
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.performance_management
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Push handle-time hard and closures come early and thin — the time saved reappears as reopens
+    plus angrier second tickets. Efficiency metrics need quality metrics as load-bearing counterweights.
+  answers:
+  - What happens when handle time is the headline metric?
+
+heuristic:
+  statement: >
+    Push handle time hard and closures come early and thin — the time saved reappears as reopens
+    plus angrier second tickets. Efficiency metrics need quality metrics as load-bearing
+    counterweights.
+  why: >
+    Handle time is entirely under the agent's control and quality is not, so pressure applied to
+    the first produces movement immediately and pressure on the second does not. The fastest way to
+    reduce handle time is to stop before the work is finished, which is invisible in the metric and
+    obvious to the customer. The saving is therefore real in the report and fictional in the
+    system: it has been moved from the first ticket into the second one.
+  confidence_bp: 8500
+  applies_when: Any queue where handle time or throughput is targeted or reported to agents.
+  breaks_down_when: >
+    Handle time is genuinely inflated by process rather than by care. Where agents wait on tooling,
+    hunt for information or re-enter data, the time is not producing quality and reducing it costs
+    nothing — and treating every efficiency push as a quality threat protects waste. It also
+    breaks down where reopens are structurally rare: for informational tickets there is nothing to
+    reopen, so the counterweight is silent and a different one is needed.
+  reads: [customer_support.obj.core.ticket, customer_support.obj.core.support_agent, customer_support.obj.core.quality_scorecard]
+  contradicts: [customer_support.heu.verification_and_closure.fast_closure_is_a_vanity_metric]
+limits:
+- 'It argues for pairing, not against efficiency. An unmeasured queue is not better.'
+- 'The lag between the pressure and the reopens is weeks, which makes the causation easy to deny.'
+failure_modes:
+- 'Used to resist any efficiency measurement, which protects process waste.'
+- 'Applied where reopens cannot occur, leaving the efficiency metric effectively uncountered.'
+variants:
+- applies_to: outsourced_bpo
+  change: Strongest and structural — handle time is usually the billed metric and quality usually is not.
+  why: The contract encodes the imbalance.
+- applies_to: enterprise_support
+  change: Weaker, because ticket complexity varies so much that handle time is a poor target in the first place.
+  why: There is no comparable unit of work.
+references:
+- title: Balanced scorecards in service operations
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The lag is what makes this deniable: the pressure is applied this month and the reopens
+    arrive next, which is long enough for the efficiency gain to have been reported and
+    celebrated first.

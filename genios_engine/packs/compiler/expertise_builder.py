@@ -82,6 +82,16 @@ class ExpertiseBuilder:
             "missing_artifact_ids": expert.missing_artifacts,
             "unresolved_route_predicates": plan.unresolved_predicates,
             "skipped_capability_ids": plan.skipped_capability_ids,
+            # What the abstention gate downstream reads. `accepted` ONLY when every routed
+            # capability cleared admission (stable + approved by a named reviewer + accepted
+            # hash matching the routed bytes); a measurement compile over drafts says `draft`
+            # here and everything built from it stays non-prescriptive at the card layer.
+            "review_state": "accepted" if plan.admitted else "draft",
+            "admission_gaps": plan.admission_gaps,
+            # How much of this answer came from placeholders. Deliberately NOT folded into
+            # `review_state`: a thin capability is a content gap, an unadmitted one is an
+            # authority gap, and one number cannot mean both.
+            "hollow_capability_ids": plan.hollow_capability_ids,
             "excluded_runtime_entry_ids": runtime.excluded_entry_ids,
             "shadowed_runtime_entry_ids": runtime.shadowed_entry_ids,
             "runtime_conflict_resolutions": runtime.conflict_resolutions,
@@ -94,6 +104,17 @@ class ExpertiseBuilder:
             "context_slice_hash": context.semantic_hash if context is not None else None,
             "context_graph_version": context.graph_version if context is not None else None,
             "context_selector_version": context.selector_version if context is not None else None,
+            # The authored card copy, and which situation it came from. Carried on the package so
+            # it is hashed into the manifest with the rest of the knowledge: rewording a headline
+            # mints a new capability version rather than silently changing what an already-audited
+            # card claimed.
+            "render": plan.render,
+            "render_situation_id": plan.render_situation_id,
+            # The authored priority, carried for the same reason and hashed the same way. It is a
+            # property of the SITUATION, not of this evaluation, so it is stable across compiles
+            # and does not churn the content address the way `trace_id` did.
+            "authored_priority_bp": plan.priority_bp,
+            "priority_situation_id": plan.priority_situation_id,
         }
         body = {
             "org_id": situation.org_id,

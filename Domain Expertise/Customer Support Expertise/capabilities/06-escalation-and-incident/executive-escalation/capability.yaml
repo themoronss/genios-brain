@@ -3,36 +3,79 @@ identity:
   name: Executive Escalation
   domain: customer_support
   subdomain: escalation_and_incident
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'The point where an escalation leaves the support hierarchy and becomes a conversation between
+  senior people about whether the relationship survives. By the time an executive is in the room the technical
+  issue is rarely the subject — the subject is whether the customer still believes we are competent —
+  so sending an executive in with a status update rather than a decision makes it measurably worse. Their
+  entire value is the ability to commit resource, money or roadmap on the spot; an executive who has to
+  go away and check spends the last credibility the account had. Executive escalations that arrive through
+  the account team instead of through support are a finding about the support process being too slow or
+  too invisible, not about the ticket.
 
-description: >
-  The point where an escalation leaves the support hierarchy and becomes a conversation between
-  senior people about whether the relationship survives. By the time an executive is in the room
-  the technical issue is rarely the subject — the subject is whether the customer still believes
-  we are competent — so sending an executive in with a status update rather than a decision makes
-  it measurably worse. Their entire value is the ability to commit resource, money or roadmap on
-  the spot; an executive who has to go away and check spends the last credibility the account had.
-  Executive escalations that arrive through the account team instead of through support are a
-  finding about the support process being too slow or too invisible, not about the ticket.
+  '
+question: What can only a senior sponsor decide or promise here, and are we sending them in able to do
+  it?
 
-question: "What can only a senior sponsor decide or promise here, and are we sending them in able to do it?"
+outcomes:
+- 'A named senior owner claiming it within the hour, with a direct line and a plan. At this altitude the product problem has already become a trust problem.'
+- 'The senior person sent in ABLE to decide — with the authority to make a commitment, not just to listen sympathetically.'
+- 'What only they can decide or promise identified in advance, since an executive who arrives with nothing to offer confirms the customer''s worst reading.'
+- 'Each escalation treated as a free audit of where the ordinary path lost them, because by the time a founder emails a founder the normal route failed visibly enough to justify the social cost.'
+- 'The negative outcome: the underlying request REFUSED at executive level, clearly. An escalation that produces an unkeepable promise has converted a service failure into a broken commitment.'
+failure_modes:
+- 'SENDING AN EXECUTIVE WITH NO AUTHORITY, which confirms that nobody is empowered and makes the next escalation go higher.'
+- 'TREATING THE ESCALATION AS A CUSTOMER PROBLEM. It indicts the path, not the person who used it — they escalated because the ordinary route visibly failed.'
+- 'PROMISING TO END THE CALL, which converts a trust problem into a broken commitment with a date on it.'
+- 'NO AUDIT AFTERWARDS, so the same path fails for the next customer and the executive is called again.'
+- 'CLAIMED SLOWLY. The hour after an executive escalation is when the customer decides what kind of company we are.'
+kpis:
+- name: senior_claim_lag
+  unit: minutes
+  description: Escalation received to a named senior owner responding. The window in which the reading is formed.
+  direction: lower_is_better
+- name: authority_at_first_contact
+  unit: percent
+  description: Escalations where the responder could actually commit to something.
+  direction: higher_is_better
+- name: path_audit_completion
+  unit: percent
+  description: Executive escalations that produced a documented finding about the ordinary path.
+  direction: higher_is_better
+- name: repeat_executive_escalation_rate
+  unit: percent
+  description: Accounts escalating to executive level more than once. The measure of whether the audit changed anything.
+  direction: lower_is_better
+handoffs:
+  upstream: [customer_support.escalation_and_incident.escalation_management, customer_support.support_management.account_relationship_management]
+  downstream: [customer_support.escalation_and_incident.postmortem, customer_support.voice_of_customer.churn_signal_detection,
+               customer_support.entitlement_and_sla.commitment_tracking]
+  parallel: [customer_support.customer_communication.de_escalation, customer_support.escalation_and_incident.major_incident_communication]
+applies_to:
+  models: [b2b, b2b2c, enterprise_support, mid_market_support, named_tam, premium_paid_support, tiered_support]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Stub — identity, judgement and load-set only. Promote by adding outcomes, failure_modes (the
-    executive sent to listen rather than decide, the concession granted without the operational
-    change that prevents a repeat, the sponsor who becomes the permanent support channel for that
-    account, and the internal escalation that never reached support's own path first), playbooks,
-    heuristics with a why on each, mental_models, decision_frameworks, kpis and handoffs,
-    following escalation-management/capability.yaml in this folder. The distinction to hold at
-    promotion: escalation_management transfers ownership to someone who can FINISH the work;
-    this capability transfers it to someone who can DECIDE. Collapsing the two produces the most
-    common form of this failure, which is escalating to seniority when capability was needed.
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    path_audit_completion is the KPI that turns an expensive event into a useful one. By the
+    time a founder emails a founder, the ordinary path failed visibly enough that the customer
+    accepted the social cost of going around it — which makes every executive escalation a free,
+    precise audit of where the normal route loses people.
+
+    authority_at_first_contact is the one that decides the outcome. A senior person who arrives
+    able only to listen confirms that nobody is empowered, and the next escalation goes higher
+    rather than stopping.
+
+admission:
+  accepted_content_hash: 5557216545c58ef84fd7c48c96545f459b4fde2b62441196fdcf187466dc19ca

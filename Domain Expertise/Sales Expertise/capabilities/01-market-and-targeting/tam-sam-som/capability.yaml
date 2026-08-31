@@ -1,28 +1,104 @@
 identity:
   id: sales.market_and_targeting.tam_sam_som
-  name: TAM / SAM / SOM
+  name: TAM, SAM, SOM
   domain: sales
   subdomain: market_and_targeting
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Sizing total, serviceable and obtainable market against the ICP rather than against the
+  whole industry. The number that matters is obtainable, and it is the one most commonly skipped.
 
-description: >
-  Sizing total, serviceable and obtainable market against the ICP rather than against the
-  whole industry. The number that matters is obtainable, and it is the one most commonly
-  replaced by total in a board deck.
+  '
+question: How much of this market can we actually reach and win?
 
-question: "How much of this market can we actually reach and win?"
+outcomes:
+- 'A countable list rather than an estimate. A market whose members cannot be enumerated is a phrase;
+  a few hundred nameable accounts with the pain and the budget is a plan, and the difference decides
+  whether anything downstream can be executed.'
+- 'The obtainable number sized first. SOM before SAM before TAM — the reverse order produces a large
+  figure that flatters everyone and guides nobody, and the small honest one is what territory and
+  quota planning actually consume.'
+- 'Price taken from closed deals or the nearest comparable, never from aspiration. An invented price
+  multiplied by a real count produces a number that looks derived and is not.'
+- 'The beachhead sized before the expansion. Investors and roadmaps forgive a small honest starting
+  market; neither forgives a large one that cannot be worked.'
+- 'The assumptions stated with the number. A market size is a set of assumptions with arithmetic
+  applied, and one presented without them cannot be argued with, corrected or reused.'
+- 'A finding that the market is too small. The negative outcome: sizing that can only ever produce
+  encouragement is not analysis, and discovering a segment is too thin is far cheaper here than in a
+  year of territory coverage.'
 
+failure_modes:
+- 'TOP-DOWN FROM AN ANALYST FIGURE. A slide rather than a plan; the number is real for an industry and
+  says nothing about who we can reach.'
+- 'TAM AS THE HEADLINE. The largest and least actionable of the three, and the one most often
+  presented — it flatters the reader and guides no decision.'
+- 'A MARKET THAT CANNOT BE LISTED. If the accounts cannot be named, nothing downstream — territory,
+  quota, coverage — can be built from the number.'
+- 'ASPIRATIONAL PRICING. Multiplying a real count by a price nobody has paid produces confident
+  arithmetic on a fictional input.'
+- 'ASSUMPTIONS OMITTED. The number then cannot be corrected as evidence arrives, so it persists
+  unchanged long after it stopped being true.'
+- 'SIZING THAT ALWAYS ENCOURAGES. If the exercise has never concluded that a segment is too small, it
+  is producing justification rather than analysis.'
+
+kpis:
+- name: enumerable_share
+  unit: percent
+  description: Share of the claimed market that exists as a nameable account list. The test that
+    separates a plan from a phrase.
+  direction: higher_is_better
+- name: price_evidence_basis
+  unit: percent
+  description: Share of the price input supported by closed deals rather than by aspiration.
+  direction: higher_is_better
+- name: som_to_pipeline_ratio
+  unit: ratio
+  description: Obtainable market against pipeline actually created from it. A large gap means the
+    sizing was optimistic or the coverage is not happening.
+  direction: target_band
+- name: assumption_count_stated
+  unit: count
+  description: Assumptions published with the number. Zero means the figure cannot be argued with,
+    which is a defect rather than a strength.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.market_and_targeting.icp_definition
+  - sales.market_and_targeting.market_research
+  downstream:
+  - sales.revenue_operations.territory_planning
+  - sales.revenue_operations.quota_planning
+  - sales.prospecting_and_outreach.lead_generation
+  parallel:
+  - sales.revenue_operations.sales_analytics
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub, and it completes the market_and_targeting subdomain — and with
+    it the entire Sales corpus.
+
+    A planning capability with no live route. Its one connection to the substrate is real though
+    indirect: the enumeration test in the first outcome is exactly what `graph_nodes` supports for a
+    tenant whose graph covers their market, so a claimed segment can in principle be checked against
+    the accounts that actually exist in it.
+
+    No numbers: market sizes and conversion assumptions are Layer 4''s arithmetic and the tenant''s
+    own.
+
+    '
+  reviewed_at: '2026-08-27'
+
+admission:
+  accepted_content_hash: 8b47b3eb52018f10e8e3a756a184f979a378a2c0663bf85cb12c732cf7212e6f

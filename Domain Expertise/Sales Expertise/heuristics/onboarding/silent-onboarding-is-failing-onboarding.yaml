@@ -1,0 +1,146 @@
+identity:
+  id: sales.heu.onboarding.silent_onboarding_is_failing_onboarding
+  name: Silent onboarding is failing onboarding
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.onboarding
+  subdomain: post_sale_and_growth
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: A customer who goes quiet during onboarding is not busy — they are stalling on something
+    unstated. Engagement gaps in the first month predict churn better than any later health metric.
+  answers:
+  - What does early silence from a new customer mean?
+  - Which onboarding signal is worth acting on immediately?
+  not:
+  - A claim that constant contact is good. It is about unexplained gaps, not about volume.
+  - A rule for what to do about it, which depends on the cause.
+
+heuristic:
+  statement: 'Invert the usual reading of a quiet new customer. Later in a relationship silence is
+    ambiguous and often benign; in the first weeks it is not, because a customer who has just spent
+    money is motivated to get value from it — so a gap means something is blocking them and they have
+    not said what.'
+  why: 'Motivation is at its peak immediately after purchase. The internal case has just been made,
+    the sponsor has just spent credibility, and the people involved have every reason to move. A gap
+    against that background is not competing priorities, it is an obstacle — a missing access, an
+    unexpected effort, an internal objection that surfaced after signature, or a quiet realisation
+    that this will take more work than was understood. All four are recoverable and none of them will
+    be volunteered, because saying so requires admitting something.'
+  confidence_bp: 8400
+  applies_when: 'A newly signed account in its first period, where correspondence during the sale
+    provides a comparison for what engagement looked like.'
+  breaks_down_when: 'A DELIBERATE LATER START. Where the customer bought ahead of a planned date — a
+    new team, a season, a system migration — the quiet is scheduled and chasing it is chasing our
+    calendar rather than theirs.
+
+    A DIFFERENT SET OF PEOPLE. Onboarding frequently moves to implementers who were not in the sale,
+    and silence from the buying contacts is normal while the delivery contacts are perfectly engaged.
+    The measure has to follow the account, not the thread.
+
+    ACTIVITY THAT MOVED CHANNELS. A customer working in the product, a shared workspace or a project
+    tool looks silent in correspondence and is not silent at all — the commonest false positive on a
+    partially-connected tenant.
+
+    A SHORT, SELF-SERVE ONBOARDING. Where the product needs no assistance, quiet is success, and a
+    check-in reads as a company that does not know its own product is working.
+
+    WHERE THE SALE OVERSOLD THE EFFORT REQUIRED. The silence is then real and the cause is ours, and
+    treating it as a customer-side obstacle produces a chase that irritates rather than helps.'
+  reads:
+  - sales.obj.core.account
+  - thread.last_inbound
+  - thread.last_outbound
+  - derived.engagement
+  contradicts:
+  - sales.heu.follow_up.silence_is_an_answer_about_timing__not_value
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.live_account_relationship
+  conditions:
+  - {exists: thread.last_outbound}
+  - {path: derived.engagement, op: "<", value: 1}
+  signals:
+  - next_step_agreed
+  - going_dark
+  do_not_use_when:
+  - The customer bought ahead of a planned start date and the quiet is scheduled.
+  - Delivery contacts are engaged and only the buying contacts have gone quiet.
+  - The onboarding is self-serve and silence is what success looks like.
+
+objects_used:
+- sales.obj.core.account
+- sales.obj.core.risk
+- sales.obj.core.champion
+- sales.obj.core.next_action
+
+outcomes:
+- Early silence is chased immediately rather than attributed to busyness.
+- The obstacle behind the silence is asked for rather than guessed.
+
+failure_modes:
+- 'CHASED WITHOUT ASKING WHY. A reminder to a customer who is blocked adds pressure to a problem they
+  already have and were not going to mention.'
+- 'MEASURED ON ONE THREAD. Onboarding moves to different people; a per-thread reading reports silence
+  from an account that has simply changed contacts.'
+- 'APPLIED AFTER THE FIRST PERIOD. Later silence is genuinely ambiguous, and importing the early
+  reading produces a permanent state of alarm.'
+
+limits:
+- Cannot see product usage at all, so a customer active in the product and quiet in email is
+  indistinguishable from one who has stalled.
+- Needs a sale-period baseline to compare against, which is available in correspondence but is a
+  different population of people from the onboarding contacts.
+- Says nothing about the cause, which is the part that determines the response.
+
+variants:
+- applies_to: enterprise
+  change: Track engagement per function — the sponsor, the implementer, the technical owner — because
+    the one that goes quiet tells you which part has stalled.
+  why: A single account-level reading hides which workstream is blocked.
+- applies_to: smb
+  change: The buying contact and the implementer are the same person, so the reading is clean and the
+    window is short.
+  why: No handover, no ambiguity about whose silence it is.
+- applies_to: channel
+  change: The partner delivers, so their silence about the account is the signal we can see, and the
+    end customer's is not visible to us at all.
+  why: We are one relationship removed from the onboarding.
+
+metrics:
+- name: onboarding_engagement_gap
+  unit: days
+  description: Longest silence in the first period.
+  direction: lower_is_better
+- name: early_gap_to_churn_correlation
+  unit: ratio
+  description: How strongly a first-period gap predicts first-year churn. The claim this heuristic
+    rests on, stated so it can be tested rather than assumed.
+  direction: higher_is_better
+
+references:
+- title: Practitioner customer-success operations
+  kind: practitioner
+  note: First-period engagement is consistently the earliest and strongest retention predictor, and it
+    is available before any product-usage instrumentation exists.
+- title: Time to first value
+  kind: practitioner
+  note: The surrounding discipline this heuristic protects — the silence matters because it is time
+    added to the clock that predicts retention.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The mechanism is the addition — motivation peaks
+    right after purchase, so a gap against THAT background is an obstacle rather than a priority
+    conflict, and none of the four likely obstacles will be volunteered because each requires admitting
+    something.'

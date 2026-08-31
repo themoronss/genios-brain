@@ -1,0 +1,151 @@
+identity:
+  id: admin.heu.inbox_and_correspondence.response_speed_is_reputation
+  name: Response speed is reputation
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.inbox_and_correspondence
+  subdomain: executive_support
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: Externally, the executive's reply latency IS the company's perceived responsiveness. A
+    managed inbox exists to keep that latency low without spending the executive's attention on it.
+  answers:
+  - Why does inbox management matter beyond tidiness?
+  - What is the cost of a slow reply to an outside party?
+  not:
+  - A claim that fast replies are good replies. Speed is measured on the threads we owe, not on all.
+  - An argument for answering everything. Deciding not to answer is a legitimate, faster outcome.
+
+heuristic:
+  statement: 'Reply latency is judged against the CORRESPONDENT''S own rhythm, not against a clock. A
+    day''s delay to someone who writes hourly reads as a brush-off; a fortnight''s delay to someone who
+    writes quarterly reads as normal. Measure the gap in units of their cadence, and spend speed only
+    on the threads where the next move is genuinely ours.'
+  why: 'People do not hold a stopwatch, they hold an expectation formed by the exchange so far. That
+    expectation is the only benchmark they have, and it is why an absolute service level applied
+    across a mixed correspondence set simultaneously over-serves the patient and under-serves the
+    frequent. The engine already learns this per correspondent as `reply_cadence`, which is what makes
+    the relative reading available rather than merely correct.'
+  confidence_bp: 8000
+  applies_when: 'An inbound thread exists with a learned cadence for the correspondent, and the next
+    move is ours. `thread.last_inbound` against `thread.last_outbound` gives the gap;
+    `thread.ball_in_court` gives the direction.'
+  breaks_down_when: 'FIRST CONTACT — there is no cadence to be relative to, and the first reply sets
+    the expectation every later one is measured against. Answer these on absolute speed.
+
+    ADMINISTRATIVE COUNTERPARTIES WITH A PROCESS — a registrar, a grant committee, a compliance desk
+    or a finance department replies on its own cycle and reads a fast chase as pressure rather than
+    diligence. Their silence carries no sentiment and speed buys nothing.
+
+    THE THREAD THAT NEEDS A DECISION WE DO NOT HAVE — a fast holding reply that promises an answer
+    converts one obligation into two. Where the decision is genuinely pending, saying WHEN is worth
+    more than replying now.
+
+    A CORRESPONDENT WHOSE CADENCE IS AN ARTEFACT — automated senders, notification systems and
+    newsletters all produce a tight measured cadence and are owed nothing. The cadence is real and the
+    obligation is not, and `email_noise` classification is what separates the two.
+
+    HIGH-STAKES OR ADVERSARIAL CORRESPONDENCE — legal, disciplinary or dispute threads, where a
+    considered slow answer is worth more than a fast one and speed reads as carelessness.'
+  reads:
+  - admin.obj.core.request
+  - admin.obj.core.commitment
+  - thread.last_inbound
+  - thread.last_outbound
+  - thread.ball_in_court
+  contradicts:
+  - admin.heu.commitment_tracking.forgotten_beats_broken_for_damage
+  pattern_ref:
+  - req.no_acknowledgement_against_our_own_cadence
+  - req.requester_is_chasing
+  - req.acknowledgement_probably_sent
+
+when_to_use:
+  situations:
+  - admin.sit.live_account_admin
+  conditions:
+  - {exists: thread.last_inbound}
+  - {path: thread.ball_in_court, op: "=", value: us}
+  signals:
+  - question
+  - meeting_request
+  - negative_reply
+  do_not_use_when:
+  - First contact — there is no cadence yet, and the reply is setting one rather than meeting one.
+  - The correspondent is an automated or bulk sender; the measured cadence is an artefact.
+  - The thread is legal, disciplinary or adversarial, where considered beats quick.
+
+objects_used:
+- admin.obj.core.request
+- admin.obj.core.commitment
+- admin.obj.core.escalation
+
+outcomes:
+- Speed is spent on the threads we owe, measured against the correspondent's own rhythm.
+- A quiet thread is classified as debt, wait, or anomaly rather than counted as unanswered.
+
+failure_modes:
+- 'MEASURED ACROSS ALL INBOUND. Averaging latency over threads we do not owe hides the ones we do, and
+  the resulting number improves fastest by answering the easy messages.'
+- 'CONVERTED INTO A BLANKET SERVICE LEVEL. An absolute target applied to a mixed correspondence set
+  over-serves the patient and under-serves the frequent, which is the failure the heuristic names.'
+- 'USED TO JUSTIFY HOLDING REPLIES. "Fast" satisfied by an acknowledgement that promises a later
+  answer. Latency falls, obligations double.'
+
+limits:
+- Needs a learned cadence per correspondent; on a new relationship it has nothing to say.
+- Silent on reply QUALITY, which is the other half of how correspondence is judged.
+- Cannot tell a thread that went quiet because it was resolved elsewhere from one that was dropped.
+
+variants:
+- applies_to: executive_office
+  change: Latency is measured on the principal's behalf, not the assistant's — an answer sent quickly
+    by someone the correspondent did not write to is a different act, and on relationship threads it
+    is a worse one.
+  why: The correspondent's expectation attaches to the person they wrote to.
+- applies_to: outsourced
+  change: The contractual response standard replaces the learned cadence, because that is the promise
+    the client actually bought.
+  why: A written standard outranks an inferred rhythm when one exists.
+- applies_to: regulated
+  change: Statutory correspondence has prescribed windows; relative cadence is irrelevant and the
+    window governs.
+  why: The regime's clock is the only clock that carries consequence.
+
+metrics:
+- name: owed_reply_latency_vs_cadence
+  unit: ratio
+  description: Reply gap divided by the correspondent's learned cadence. The relative reading this
+    heuristic argues for, expressed as one number.
+  direction: lower_is_better
+- name: first_contact_reply_latency
+  unit: hours
+  description: Absolute latency on threads with no prior cadence — the regime where the heuristic
+    does not apply and speed is judged flat.
+  direction: lower_is_better
+
+references:
+- title: Never Check E-Mail In the Morning
+  kind: book
+  author: Julie Morgenstern
+  note: The argument for working correspondence in blocks against outcomes rather than continuously
+    against arrival order.
+- title: Executive assistant practice — correspondent cadence
+  kind: practitioner
+  note: Well-run offices learn each correspondent's rhythm implicitly; the contribution here is
+    naming the regimes where the rhythm should be ignored.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The relative-cadence reading is authored against
+    a baseline the engine genuinely learns (`reply_cadence`), and the automated-sender regime is not
+    hypothetical: `email_noise:automated` is the second most common observation on the design
+    partner''s org, so a cadence-only reading would chase robots.'

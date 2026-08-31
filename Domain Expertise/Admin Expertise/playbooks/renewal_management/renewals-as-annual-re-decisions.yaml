@@ -1,0 +1,86 @@
+identity:
+  id: admin.pb.renewal_management.renewals_as_annual_re_decisions
+  name: Renewals as annual re-decisions
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.contract_and_vendor.renewal_management
+  subdomain: contract_and_vendor
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every renewal window opens with a usage-and-value check — used? needed? renegotiable? — before
+    the notice deadline, because renewal-by-inertia is how tool sprawl and zombie subscriptions eat budgets.
+
+when_to_use:
+  do_not_use_when:
+  - The notice window has closed. Then this is next year's review, and pretending otherwise wastes the preparation.
+steps:
+- order: 1
+  name: Start at the notice date, working backwards
+  description: >
+    The review needs enough runway to gather usage, get a decision and serve notice. Starting when
+    the renewal alert fires is usually already too late.
+  actor: agent
+  objects_read: [admin.obj.core.contract, admin.obj.core.deadline]
+  done_when: The review begins with the notice window fully open.
+- order: 2
+  name: Get usage evidence, not an opinion
+  description: >
+    Active users, last login, actual consumption. Asking the requester whether they still need it
+    produces a yes and no information.
+  actor: system
+  done_when: The answer rests on something measured.
+- order: 3
+  name: Decide the tier before you discuss the price
+  description: >
+    Seats provisioned and seats used diverge steadily. Renegotiating the rate on a count nobody
+    challenged is negotiating the wrong number.
+  actor: human
+  done_when: The quantity is settled independently of the price.
+- order: 4
+  name: Use the one moment of leverage
+  description: >
+    A renewal is the only point in the year the vendor has to listen. Not asking is a decision to
+    pay list, and it is made by default.
+  actor: human
+  objects_read: [admin.obj.core.vendor]
+  done_when: Terms were tested, or the reason for not testing them is stated.
+- order: 5
+  name: Plan the exit before cancelling
+  description: >
+    A cancellation with no migration produces an emergency re-purchase at a worse price, which is
+    the outcome that teaches an organisation never to cancel anything.
+  actor: human
+  done_when: Data export, replacement and cutover are answered before notice is served.
+objects_used: [admin.obj.core.contract, admin.obj.core.vendor, admin.obj.core.budget_line, admin.obj.core.deadline]
+limits:
+- 'Step 2 needs usage telemetry from the vendor or from identity tooling. Without it the review falls back to opinion, which is the failure mode.'
+- 'It cannot renegotiate a contract with no alternative. Leverage requires a credible option.'
+failure_modes:
+- 'Step 3 skipped, so a rate is negotiated on a seat count nobody examined — the discount is real and the spend is unchanged.'
+- 'Step 5 omitted once, after which the organisation renews everything forever.'
+variants:
+- applies_to: startup_lean
+  change: Steps 2 and 5 dominate. Tool sprawl at this size is a meaningful share of the cost base and nobody owns the review.
+  why: Everyone can buy, nobody cancels.
+- applies_to: enterprise_admin
+  change: Step 4 becomes a procurement-led negotiation with real alternatives priced, not an email.
+  why: The amounts justify the preparation and the vendor expects it.
+references:
+- title: Software asset management practice
+  kind: practitioner
+  note: Where provisioned-versus-active licensing is treated as the primary source of recoverable spend.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 3 before step 4 is the ordering that matters. Negotiating a rate on an unexamined seat
+    count produces a genuine discount and unchanged spend, which is how a renewal review reports
+    success and saves nothing.

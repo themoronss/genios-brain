@@ -185,6 +185,101 @@ def _bulk_load_obs(store, org_id) -> dict:
     return out
 
 
+
+
+
+#: Rules whose imperative is "respond to their request" — the ones the open-loop ledger governs.
+#: Everything else (an overdue commitment, a cooling deal) regenerates on new evidence alone.
+_LOOP_GATED_REASON_CODES = frozenset({"unanswered_email", "intro_followup"})
+
+
+def _bulk_last_signal_at(store, org_id: str, pack_id: str, pack_version: str) -> dict:
+    """Newest eval_time per (rule_id, subject_node_id), open or expired. ONE query."""
+    from sqlalchemy import text
+    with store.engine.connect() as c:
+        return {(r.rule_id, r.subject_node_id): r.last_at for r in c.execute(text(
+            "select rule_id, subject_node_id, max(eval_time) as last_at from signals "
+            "where org_id=:o and pack_id=:p and pack_version=:v "
+            "group by rule_id, subject_node_id"),
+            {"o": org_id, "p": pack_id, "v": pack_version})}
+
+
+def _newest_evidence_at(ctx) -> "datetime | None":
+    """When this subject last produced ANY evidence — the newest fact or observation on it.
+
+    This is the clock a re-emission has to beat. A rule that fired, whose card expired, and whose
+    subject has produced nothing since, is about to say the identical thing about the identical
+    unchanged facts.
+    """
+    stamps = []
+    for f in (ctx.facts or {}).values():
+        v = f.get("occurred_at") if isinstance(f, dict) else None
+        if isinstance(v, datetime):
+            stamps.append(v if v.tzinfo else v.replace(tzinfo=timezone.utc))
+    for o in (ctx.obs or []):
+        v = o.get("occurred_at")
+        if isinstance(v, datetime):
+            stamps.append(v if v.tzinfo else v.replace(tzinfo=timezone.utc))
+    return max(stamps) if stamps else None
+
+
+def _meeting_facts(node_id, nbr_adj, nbr_node_types, nbr_fact_idx, self_keys,
+                   obs, eval_time) -> dict:
+    """Split `meeting.status` into the five independent facts it was aliasing.
+
+    Attendees come from the `attended` edges the gcal structured mapping already writes, so this
+    needs no new capture for meetings already in the graph.
+    """
+    from genios_engine.context.meeting_lifecycle import reduce_meeting
+    facts = (nbr_fact_idx or {}).get(node_id, {}) if nbr_fact_idx else {}
+    own = {}
+    for field in ("meeting.status", "meeting.start_at", "meeting.end_at"):
+        v = facts.get(field)
+        own[field] = v.get("value") if isinstance(v, dict) else v
+
+    attendees, organizer = [], None
+    for neighbour in (nbr_adj or {}).get(node_id, set()):
+        if (nbr_node_types or {}).get(neighbour) != "person":
+            continue
+        pf = (nbr_fact_idx or {}).get(neighbour, {})
+        email = pf.get("person.email") or pf.get("email")
+        email = email.get("value") if isinstance(email, dict) else email
+        if email:
+            attendees.append(str(email))
+
+    reduced = reduce_meeting(
+        status=own.get("meeting.status"), start_at=own.get("meeting.start_at"),
+        end_at=own.get("meeting.end_at"), attendees=attendees, organizer=organizer,
+        internal=self_keys, now=eval_time,
+        followed_up=any(o.get("kind") == "followup_sent" for o in (obs or [])))
+    # Same envelope every derived fact uses, so the rule engine reads them identically to
+    # captured ones and nothing downstream needs a special case.
+    return {k: {"value": v, "confidence": 1, "authority_rank": 2,
+                "independence_group": "graph:meeting_lifecycle", "src_count": 1}
+            for k, v in reduced.items() if v is not None}
+
+
+def _bulk_load_situations(store, org_id: str) -> dict[str, dict]:
+    """Every node's Layer 2 situation, in ONE query.
+
+    L2's whole substrate — correlation groups, dormancy, coverage, the confidence vector — was
+    computed, persisted, and read by nothing on the live path. This is the join that ends that.
+
+    Highest-confidence situation wins when a node anchors several. Averaging would let a thin
+    situation drag down a dimension it has no bearing on, and taking the newest would make the
+    decision depend on write order.
+    """
+    from sqlalchemy import text
+    rows = store.engine.connect().execute(text(
+        "select distinct on (anchor_node_id) anchor_node_id, situation_id, situation_type, "
+        "domain, status, confidence_overall, confidence_evidence, confidence_freshness, "
+        "confidence_consistency, confidence_identity, coverage, missing, last_seen_at "
+        "from context_situations where org_id = :o "
+        "order by anchor_node_id, confidence_overall desc nulls last, situation_id"),
+        {"o": org_id}).mappings().all()
+    return {r["anchor_node_id"]: dict(r) for r in rows}
+
+
 def _bulk_load_metrics(store, org_id) -> dict:
     """Every node's baseline metrics in ONE org-wide query → {node_id: (baselines, derived)}. Same
     key parsing + shape as baselines.load_node_metrics per node (keys are 'metric:node_id'), so
@@ -202,7 +297,9 @@ def _bulk_load_metrics(store, org_id) -> dict:
         v = float(r.value)
         if metric == "reply_cadence":
             baselines["reply_cadence"] = v
-        elif metric in ("momentum", "engagement"):
+        elif metric == "contact_rate_per_account":
+            baselines["contact_rate_per_account"] = v
+        elif metric in ("momentum", "engagement", "contact_frequency"):
             derived[f"derived.{metric}"] = {"value": v, "confidence": 0.85,
                                             "authority_rank": 2, "occurred_at": None, "src_count": 1}
     return out
@@ -310,6 +407,38 @@ def _neighborhood(node_id, adj, obs_idx, fact_idx):
     return len(nbrs), neighbor_obs, neighbor_facts
 
 
+def _bulk_recent_signals(store, org_id, eval_time, pack_id, pack_version,
+                         max_cooldown_hours: int) -> set[tuple[str, str]]:
+    """Every (rule_id, subject) already claimed inside the widest cooldown, in ONE query.
+
+    `_recent_signal` asked per rule per subject: 25 rules over 110 subjects is 2,750 round trips
+    in a single sweep, each a full network turn against a pooled remote Postgres. That was ~25
+    seconds per node and the dominant reason a live re-run could not finish — the query itself
+    returns in milliseconds.
+
+    The widest cooldown in the pack bounds the window, and the per-rule window is applied in
+    memory afterwards, so no rule sees a signal older than its own cooldown allows.
+    """
+    since = eval_time - timedelta(hours=max(1, int(max_cooldown_hours)))
+    with store.engine.connect() as c:
+        rows = c.execute(text(
+            "select s.rule_id, s.subject_node_id, s.created_at from signals s "
+            + AUTHORITATIVE_SIGNAL_JOINS +
+            " where s.org_id=:o and s.pack_id=:p and s.pack_version=:pv "
+            "and s.status in ('open', 'acted', 'resolved') "
+            "and s.created_at > :since and " + AUTHORITATIVE_SIGNAL_PREDICATE),
+            {"o": org_id, "p": pack_id, "pv": pack_version,
+             "since": since, "authority_time": eval_time}).fetchall()
+    return {(r.rule_id, r.subject_node_id, r.created_at) for r in rows}
+
+
+def _recent_in(index, rule_id, node_id, cooldown_hours, eval_time) -> bool:
+    """Was this exact claim already made inside THIS rule's own cooldown?"""
+    cutoff = eval_time - timedelta(hours=max(1, int(cooldown_hours or 1)))
+    return any(r == rule_id and n == node_id and ts is not None and ts > cutoff
+               for r, n, ts in index)
+
+
 def _recent_signal(store, org_id, rule_id, node_id, cooldown_hours, eval_time,
                    config_snapshot_id, pack_id, pack_version) -> bool:
     with store.engine.connect() as c:
@@ -317,11 +446,19 @@ def _recent_signal(store, org_id, rule_id, node_id, cooldown_hours, eval_time,
             "select 1 from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
             " where s.org_id=:o and s.rule_id=:r and s.subject_node_id=:n "
             "and s.pack_id=:p and s.pack_version=:pv "
-            "and s.status='open' and s.config_snapshot_id=:cfg "
+            # Any signal raised inside the window counts as "we already said this", whatever
+            # became of it. Requiring status='open' meant a HUMAN VERDICT erased the cooldown:
+            # pressing "wrong" or "done" moves the signal to 'acted', it stops matching, and the
+            # next sweep raises the identical claim again with a fresh id. The one action that
+            # most clearly means "stop telling me this" was the one that guaranteed a repeat.
+            "and s.status in ('open', 'acted', 'resolved') "
+            # config_snapshot_id is deliberately NOT part of the key. A pack promotion or a
+            # scoring tweak is not evidence the user wants to hear the same thing again, and
+            # binding it here re-fired an org's entire book on every config change.
             "and s.created_at > :since and " + AUTHORITATIVE_SIGNAL_PREDICATE + " limit 1"),
             {"o": org_id, "r": rule_id, "n": node_id,
              "p": pack_id, "pv": pack_version,
-             "cfg": config_snapshot_id, "authority_time": eval_time,
+             "authority_time": eval_time,
              "since": eval_time - timedelta(hours=cooldown_hours)}).first() is not None
 
 
@@ -444,7 +581,7 @@ def _flush_suppress_batch(store) -> None:
 def _emit(store, org_id, rule, node_id, S, inputs, evidence, eval_time, snapshot_id,
           reasoning_run_id, reasoning_candidate_id, reasoning_decision_hash,
           authority_expires_at, selected_play_id, authority_pack_revision,
-          pack_id, pack_version) -> str | None:
+          pack_id, pack_version, decision_payload: dict | None = None) -> str | None:
     """Emit signal.v1. ON CONFLICT DO NOTHING against the partial-unique index (one OPEN signal
     per org/rule/node) → a concurrent run that already emitted this signal makes us a no-op
     instead of a duplicate. Returns the id, or None if a concurrent run beat us to it."""
@@ -467,10 +604,13 @@ def _emit(store, org_id, rule, node_id, S, inputs, evidence, eval_time, snapshot
             "subject_node_id, score, score_inputs, reason_code, evidence, play, eval_time, "
             "config_snapshot_id, reasoning_run_id, reasoning_candidate_id, "
             "reasoning_decision_hash, authority_expires_at, authority_pack_revision, "
-            "authority_binding_version) "
+            "authority_binding_version, "
+            "do_nothing_consequence, uncertainty, outcome_window_days, "
+            "rejected_candidates, candidate_steps) "
             "values (:id,:o,:pack,:packv,:r,:v,:lv,:n,:s,cast(:si as jsonb),:rc,"
             "cast(:ev as jsonb),:play,:et,"
-            ":cs,:rr,:candidate,:decision_hash,:expires,:pack_revision,1) "
+            ":cs,:rr,:candidate,:decision_hash,:expires,:pack_revision,1,"
+            ":dnc,cast(:unc as jsonb),:owd,cast(:rej as jsonb),cast(:steps as jsonb)) "
             "on conflict (org_id,pack_id,pack_version,rule_id,subject_node_id) "
             "where status='open' do nothing "
             "returning signal_id"),
@@ -481,7 +621,13 @@ def _emit(store, org_id, rule, node_id, S, inputs, evidence, eval_time, snapshot
              "play": selected_play_id, "et": eval_time, "cs": snapshot_id,
              "rr": reasoning_run_id, "candidate": reasoning_candidate_id,
              "decision_hash": reasoning_decision_hash, "expires": authority_expires_at,
-             "pack_revision": authority_pack_revision}).first()
+             "pack_revision": authority_pack_revision,
+             "dnc": (decision_payload or {}).get("do_nothing_consequence"),
+             "unc": json.dumps((decision_payload or {}).get("uncertainty") or []),
+             "owd": (decision_payload or {}).get("outcome_window_days"),
+             "rej": json.dumps((decision_payload or {}).get("rejected_candidates") or []),
+             "steps": json.dumps((decision_payload or {}).get("candidate_steps") or []),
+             }).first()
     return row.signal_id if row else None
 
 
@@ -522,16 +668,6 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         registry: PackRegistry | None = None, pack_id: str = DEFAULT_PACK_ID) -> dict:
     eval_time = eval_time or datetime.now(timezone.utc)
 
-    # Layer 3 Domain Expertise compiler — shadow pass (flag off by default). Decoupled from the
-    # node sweep below and from every return path: it compiles active L2 situations into
-    # ExpertisePackages to MEASURE route/coverage, persists nothing and changes no decision.
-    if get_settings().use_domain_compiler:
-        try:
-            from genios_engine.reason.domain_shadow import shadow_compile
-            shadow_compile(store=store, org_id=org_id, eval_time=eval_time)
-        except Exception:
-            logger.exception("domain-compiler shadow pass failed org=%s", org_id)
-
     # L4 — resolve the tenant's effective config (rules + scoring + gate + budget + snapshot id).
     registry = registry or make_registry()
     ensure_default(registry, org_id)                       # design-partner default: sales.v1
@@ -556,6 +692,24 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         if capability.domain == effective["pack_id"]
     )
 
+    # A pack with no rules and no native capability has nothing to evaluate PER NODE, so the whole
+    # sweep below — the graph read, the P90 overlay, the baseline rebuild, the neighbour index and
+    # one pass over every node in the org — would run to produce an empty Counter.
+    #
+    # This is not hypothetical tidiness. `admin` and `customer_support` are rule-free by design
+    # (their lane is the compiled Layer 3 brain, see packs/admin_v1.py), and `run_all` calls this
+    # function once per tenant pack. Without this return, adding those two packs would have
+    # doubled the cost of every reasoning sweep on every org to compute nothing twice — on top of
+    # the L3 reasoning cost the perf work is already trying to bring down.
+    #
+    # Scoped deliberately to "nothing to evaluate", not to "no rules": a pack that HAD rules and
+    # lost them still owns open signals that the sweep resolves, and it will have native
+    # capabilities or rules to carry it there.
+    if not effective["rules"] and not native_capabilities:
+        return {"nodes": 0, "outcomes": {}, "eval_time": eval_time.isoformat(),
+                "pack": {"pack_id": effective["pack_id"], "version": effective["version"],
+                         "snapshot_id": snapshot_id}}
+
     scoring_cfg = effective["scoring"]
     # Capture BEFORE the first graph-derived runtime overlay. Previously the capture happened
     # after P90 + baselines, allowing a mixed P90 snapshot to be stamped as if it belonged to the
@@ -573,6 +727,30 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         effective = {**effective, "scoring": scoring_cfg}
         snapshot_id = registry.persist_effective_snapshot(
             org_id, pack_id, effective, cause="runtime_tenant_p90")
+
+    # ── the learned brains reach the LIVE decision path ─────────────────────────────────────
+    #
+    # Two severed ends used to face each other: L7 could not write a brain row (the review
+    # endpoint renamed the object and stopped) and this path could not read one (the only reader
+    # sat behind `use_domain_compiler=False`). `feedback/consumer.py` names "reasoning" in its
+    # allowlist and nothing ever called it outside its own tests.
+    #
+    # The learned state is merged into the EFFECTIVE CONFIG, and any change to it re-snapshots —
+    # so every signal's config_snapshot_id says exactly which learned values it decided under,
+    # the same auditability rule the P90 overlay above already follows. Read once per sweep, not
+    # per node. Failure is an EMPTY state, never a blocked sweep: learned values enrich
+    # decisions, and a learning-store blip must not stop the org's reasoning.
+    try:
+        from genios_engine.contracts.learned_state import snapshot_all
+        with store.engine.connect() as _lc:
+            _learned = snapshot_all(_lc, org_id=org_id, consumer="reasoning", now=eval_time)
+    except Exception:      # noqa: BLE001
+        logger.exception("learned-state read failed org=%s; reasoning without it", org_id)
+        _learned = {}
+    if _learned:
+        effective = {**effective, "learned": _learned}
+        snapshot_id = registry.persist_effective_snapshot(
+            org_id, pack_id, effective, cause="learned_brain_state")
     budget_per_day = int(scoring_cfg.get("budget_per_user_day", 7))
     all_rules = [rule_from_dict(r) for r in effective["rules"]]
     # Capability compilation depends on pack/config, not entity context. Compile once per rule per
@@ -615,9 +793,19 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         # for them too. GeniOS assists the owner about OTHERS — it must never treat the owner as a
         # deal/contact to pursue ("save the <owner> deal" is nonsense). Exclude the owner's own
         # identity (org email) from reasoning subjects.
+        # Every address that is US, not just `orgs.email`. A single-address check leaves the
+        # owner's other identities — a second seat, the connected mailbox, an alias — reasoned
+        # about as though they were counterparties, which produces cards telling the founder to
+        # chase himself. Same source of truth L2 uses, so the two layers cannot disagree about
+        # who the tenant is.
         self_keys = {
             (k or "").strip().lower()
-            for (k,) in c.execute(text("select lower(email) from orgs where id=:o"), {"o": org_id})
+            for (k,) in c.execute(text(
+                "select lower(email) from orgs where id=:o and email is not null "
+                "union select lower(email) from org_seats "
+                "where org_id=:o and active and email is not null "
+                "union select lower(external_account_id) from connections "
+                "where org_id=:o and external_account_id like '%@%'"), {"o": org_id})
             if k
         }
     # Pre-load the whole org's facts + observations in TWO org-wide queries instead of two per
@@ -626,6 +814,20 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
     facts_by_node = _bulk_load_facts(store, org_id)
     obs_by_node = _bulk_load_obs(store, org_id)
     metrics_by_node = _bulk_load_metrics(store, org_id)
+    situations_by_node = _bulk_load_situations(store, org_id)
+    # The cooldown index, once. Asking per rule per subject was 25 x 110 = 2,750 round trips.
+    _max_cd = max([int(getattr(r, "cooldown_hours", 0) or 0) for r in all_rules] + [24])
+    recent_index = _bulk_recent_signals(store, org_id, eval_time,
+                                        effective["pack_id"], effective["version"], _max_cd)
+    # When each (rule, subject) last had ANYTHING to say. Used to refuse a re-emission that
+    # would repeat itself about facts that have not moved since.
+    last_signal_at = _bulk_last_signal_at(store, org_id,
+                                          effective["pack_id"], effective["version"])
+    # Which subjects still have a genuinely unresolved request (L2's open-loop ledger). ONE
+    # query; consumed by the regeneration gate below.
+    from genios_engine.context.open_loops import open_loop_counts
+    with store.engine.connect() as _olc:
+        open_loops_by_subject = open_loop_counts(_olc, org_id)
     _supp_batch.rows = []            # buffer suppressions for this sweep; one bulk INSERT at the end
     for nd in nodes:
         if (nd.canonical_key or "").strip().lower() in self_keys:
@@ -642,8 +844,34 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         ctx.baselines = baselines
         ctx.facts.update(derived)                          # derived.momentum / derived.engagement
         ctx.facts.update(sentiment_facts(ctx.obs, eval_time))  # derived.sentiment (90d window)
+        ctx.situation = situations_by_node.get(nd.node_id)
+        if ctx.situation:
+            # The situation as FACTS, not only as an attached dict. `ctx.situation` made L2's
+            # judgment available to the two hardcoded consumers (the dormancy suppress, the
+            # confidence pass-through); exposing it through the same fact envelope every rule
+            # already reads makes it available to the PACK — an author can now write
+            # `{"path": "situation.status", ...}` in rule data without any engine change,
+            # which is the "flip the consumer" the substrate was waiting for. Deterministic,
+            # rank 2 (grounded computation over stored events, not a model's guess).
+            for _field, _value in (("situation.status", ctx.situation.get("status")),
+                                   ("situation.type", ctx.situation.get("situation_type")),
+                                   ("situation.confidence",
+                                    ctx.situation.get("confidence_overall")),
+                                   ("situation.coverage", ctx.situation.get("coverage"))):
+                if _value is not None:
+                    ctx.facts.setdefault(_field, {
+                        "value": _value, "confidence": 1, "authority_rank": 2,
+                        "independence_group": "l2:situation", "src_count": 1})
         if nd.node_type == "deal":                         # F1: deal.status/value from deal.stage/amount
             ctx.facts.update(deal_facts(ctx.facts))
+        if nd.node_type == "meeting":
+            # `meeting.status` was answering five separate questions and every rule read it as
+            # though it answered all of them. `confirmed` is an INVITATION state — Google sets it
+            # the moment the event exists — so a rule asking "did this meeting happen and is
+            # somebody waiting on me" got "the event was not cancelled" and shipped a recap card
+            # for a twenty-person cohort workshop.
+            ctx.facts.update(_meeting_facts(nd.node_id, nbr_adj, nbr_node_types, nbr_fact_idx,
+                                            self_keys, ctx.obs, eval_time))
         if need_neighbors:
             ctx.edge_count, ctx.neighbor_obs, ctx.neighbor_facts = \
                 _neighborhood(nd.node_id, nbr_adj, nbr_obs_idx, nbr_fact_idx)
@@ -834,6 +1062,35 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                 continue
             out["detected"] += 1
             S, inputs = reasoned.score, reasoned.score_inputs
+
+            # ── Layer 2's judgment finally reaches a decision ────────────────────────────────
+            #
+            # L2 correlates events into situations, scores each on five dimensions, and marks one
+            # DORMANT when the thread family has gone quiet. All of that was written to
+            # `context_situations` and read by nothing on this path, so a dormant situation still
+            # produced a confident "reply now" and a 33%-confidence situation was indistinguishable
+            # from a 95% one by the time it reached a card.
+            #
+            # Two consequences, both conservative:
+            #   * a DORMANT situation cannot carry a prescriptive imperative. L2 already concluded
+            #     the loop went quiet; overriding that from a rule that only knows one person row
+            #     is how "follow up" arrives on a thread that ended months ago.
+            #   * L2's confidence and coverage travel WITH the signal, so a card can report what
+            #     was actually measured instead of the API inventing a number at projection time.
+            sit = ctx.situation
+            if sit:
+                inputs = {**inputs,
+                          "situation_id": sit.get("situation_id"),
+                          "situation_status": sit.get("status"),
+                          "situation_confidence": sit.get("confidence_overall"),
+                          "situation_coverage": sit.get("coverage")}
+                if sit.get("status") == "dormant" and rule.level == "prescriptive":
+                    _suppress(store, org_id, rule.id, nd.node_id, "situation_dormant", eval_time,
+                              {"situation_id": sit.get("situation_id"),
+                               "last_seen_at": str(sit.get("last_seen_at") or ""),
+                               "reasoning_run_id": reasoning_run_id})
+                    out["situation_dormant"] += 1
+                    continue
             if not reasoned.execution.authorizes_delivery:
                 _suppress(store, org_id, rule.id, nd.node_id, "shadow", eval_time,
                           {"reasoning_run_id": reasoning_run_id,
@@ -842,6 +1099,41 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                                reasoned.execution.request.capability.live_delivery_enabled})
                 out["shadow"] += 1
                 continue
+            # ── the loop is open, or the card merely expired ─────────────────────────────
+            #
+            # Card expiry is a DISPLAY lifecycle. It says the surface stopped showing something;
+            # it says nothing about whether the underlying request was ever answered. Treating
+            # the two as the same is why the same subject holds `unanswered_email` twice
+            # (expired + open) and `commitment_overdue` three times, and why the founder kept
+            # seeing threads he had already dealt with — eleven subjects show the identical
+            # expired/reopened pairing.
+            #
+            # Completion detection is L2-16's real subject and is not solved here. What IS
+            # decidable now, cheaply and without guessing: whether anything has HAPPENED since we
+            # last said this. If the subject has produced no new fact and no new observation
+            # since the previous signal, re-emitting states the same conclusion about the same
+            # unchanged evidence — which is not a fresh judgment, it is a repeat.
+            prior_at = last_signal_at.get((rule.id, nd.node_id))
+            if prior_at is not None:
+                prior_at = prior_at if prior_at.tzinfo else prior_at.replace(tzinfo=timezone.utc)
+                newest = _newest_evidence_at(ctx)
+                # Regeneration is gated on "the loop is still genuinely open", not on "the card
+                # expired". For an ask-class rule, a subject with an OPEN loop and no new
+                # evidence is exactly the case that SHOULD re-surface — they asked, we never
+                # answered, and silence is not resolution. The ledger (not this gate) goes
+                # quiet the moment our reply closes the loop, so the same fix that lets a real
+                # unanswered ask return is what stops an answered one from returning.
+                loop_still_open = (rule.reason_code in _LOOP_GATED_REASON_CODES
+                                   and open_loops_by_subject.get(nd.node_id, 0) > 0)
+                if (newest is None or newest <= prior_at) and not loop_still_open:
+                    _suppress(store, org_id, rule.id, nd.node_id, "no_new_evidence", eval_time,
+                              {"prior_signal_at": prior_at.isoformat(),
+                               "newest_evidence_at": newest.isoformat() if newest else None,
+                               "open_loops": open_loops_by_subject.get(nd.node_id, 0),
+                               "reasoning_run_id": reasoning_run_id})
+                    out["no_new_evidence"] += 1
+                    continue
+
             selected = reasoned.execution.selected_candidate
             if selected is None:
                 indeterminate.add((rule.id, nd.node_id))
@@ -851,19 +1143,39 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             # A shadow or non-deliverable run must not keep a prior live signal alive.  Only a
             # currently authorized match participates in lifecycle preservation.
             fired.add((rule.id, nd.node_id))
-            if _recent_signal(store, org_id, rule.id, nd.node_id, rule.cooldown_hours,
-                              eval_time, snapshot_id, effective["pack_id"], effective["version"]):
+            if _recent_in(recent_index, rule.id, nd.node_id, rule.cooldown_hours, eval_time):
                 _suppress(store, org_id, rule.id, nd.node_id, "cooldown", eval_time,
                           {"reasoning_run_id": reasoning_run_id})
                 out["cooldown"] += 1
                 continue
             evidence = [{"field": f, "value": (ctx.facts.get(f) or {}).get("value")}
                         for f in rule.evidence_fields]
+            # The DecisionObject's own content, captured HERE — the last point it exists in
+            # memory. `signals` used to carry only score/reason_code/evidence/play, so the card
+            # layer rebuilt its recommendation from the reason_code STRING through an API
+            # if/elif chain: a parallel generator sharing nothing with this decision but a label.
+            _decision = reasoned.execution.decision
+            decision_payload = {
+                "do_nothing_consequence": _decision.do_nothing_consequence or None,
+                "uncertainty": list(_decision.uncertainty or ()),
+                "outcome_window_days": _decision.outcome_window_days,
+                # The candidates that LOST, with disposition and utility — the receipt that a
+                # choice happened. Before the wait-play landed this was structurally empty
+                # (one candidate per run, nothing ever eliminated); now it is the trace of the
+                # comparison every card claims to be the outcome of.
+                "rejected_candidates": [
+                    {"play_id": cand.play_id, "disposition": cand.disposition.value,
+                     "utility_bp": cand.utility_bp}
+                    for cand in _decision.candidates
+                    if cand.play_id != selected.play_id],
+                "candidate_steps": list((selected.parameters or {}).get("steps") or ()),
+            }
             candidates.append((
                 S, inputs, rule, nd.node_id, evidence, reasoning_run_id,
                 audit_bundle["output"]["selected_candidate_id"],
                 audit_bundle["output"]["decision_hash"],
                 reasoned.execution.decision.expires_at, selected.play_id,
+                decision_payload,
             ))
         if graph_drifted:
             break
@@ -899,7 +1211,8 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                             - _budget_used(store, org_id, eval_time))
             for i, (S, inputs, rule, node_id, evidence, reasoning_run_id,
                     reasoning_candidate_id, reasoning_decision_hash,
-                    authority_expires_at, selected_play_id) in enumerate(candidates):
+                    authority_expires_at, selected_play_id,
+                    decision_payload) in enumerate(candidates):
                 if i >= remaining:
                     _suppress(store, org_id, rule.id, node_id, "budget", eval_time,
                               {"S": S, "rank": i, "reasoning_run_id": reasoning_run_id})
@@ -921,7 +1234,8 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                     store, org_id, rule, node_id, S, inputs, evidence, eval_time,
                     snapshot_id, reasoning_run_id, reasoning_candidate_id,
                     reasoning_decision_hash, authority_expires_at, selected_play_id,
-                    pack_authority_revision, effective["pack_id"], effective["version"])
+                    pack_authority_revision, effective["pack_id"], effective["version"],
+                    decision_payload=decision_payload)
                 out["emitted" if sid else "duplicate_race"] += 1
 
             # Native capabilities publish after the legacy rules and out of the same daily
@@ -1039,6 +1353,30 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
     eval_time = eval_time or datetime.now(timezone.utc)
     registry = registry or make_registry()
     ensure_defaults(registry, org_id)
+
+    # Layer 3 Domain Expertise compiler — the CUTOVER pass (flag off by default). It compiles the
+    # active L2 situations into ExpertisePackages, reasons over them, and emits the decisions as
+    # signals the legacy lane cannot collide with (their rule ids are capability ids, not pack
+    # rule ids).
+    #
+    # ONCE PER SWEEP, not once per pack. This used to sit at the top of `run()`, which is called
+    # once for every pack the tenant holds — so the whole corpus compiled, reasoned and emitted
+    # twice on every sweep, and would compile FOUR times now that `admin` and `customer_support`
+    # are default packs. The compile is org-scoped and pack-agnostic (it resolves its own pack per
+    # capability domain inside `shadow_compile`), so repeating it per pack bought nothing and paid
+    # the full L4 cost each time. Every production caller enters through `run_all`.
+    #
+    # `live=True`, deliberately. The flag used to run a measurement-only pass, so turning it on
+    # produced packages, decisions and no cards — the switch read as a cutover and behaved as a
+    # dry run. Measurement remains available to any caller as `shadow_compile(live=False)`, which
+    # is what the tests use; the ENV VAR is the cutover, because that is what flipping it means.
+    if get_settings().use_domain_compiler:
+        try:
+            from genios_engine.reason.domain_shadow import shadow_compile
+            shadow_compile(store=store, org_id=org_id, eval_time=eval_time, live=True)
+        except Exception:
+            logger.exception("domain-compiler live pass failed org=%s", org_id)
+
     with store.engine.connect() as c:
         pack_ids = [r[0] for r in c.execute(text(
             "select pack_id from tenant_packs where org_id=:o "

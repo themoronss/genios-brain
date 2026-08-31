@@ -1,28 +1,74 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.compliance_and_governance.data_protection_administration
   name: Data Protection Administration
   domain: admin
   subdomain: compliance_and_governance
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'The administrative half of data protection: processing records, retention alignment, access
+  reviews, processor agreements, subject request handling and breach logging. It is administration rather
+  than law — the obligation is drafted elsewhere and lives or dies on whether someone maintains the register
+  behind it.
 
-description: >
-  The administrative half of data protection: processing records, retention alignment, access
-  reviews, processor agreements, subject request handling and breach logging. It is
-  administration rather than law — the obligation is drafted elsewhere and lives or dies on
-  whether someone maintains the register behind it.
+  '
+question: What personal data do we hold, on what basis, and who can reach it?
 
-question: "What personal data do we hold, on what basis, and who can reach it?"
+outcomes:
+- 'A processing register that is current, because most data-protection scrutiny reduces to "show me your records".'
+- 'Retention aligned to the register rather than to storage convenience — the two drift apart silently and only the register is defensible.'
+- 'Access reviews that actually remove access. A review producing no revocations reviewed nothing.'
+- 'Subject requests handled on a clock that starts when they asked, not when we recognised it as a request.'
+- 'The negative outcome: a processing activity STOPPED, or a dataset deleted, because no basis for it survived the review.'
+failure_modes:
+- 'ANNUAL PANIC. The register is reconstructed once a year, which produces a document that is accurate on one day and decorative on the other 364.'
+- 'BASIS ASSIGNED BY CONVENIENCE. Consent recorded where legitimate interest was meant, or the reverse, and neither is defensible when tested.'
+- 'DSR CLOCK STARTED ON RECOGNITION. It starts when the person asked, in whatever words they used, through whatever channel.'
+- 'ACCESS REVIEWS AS ATTESTATIONS. A manager confirming their team list is not a review of who can reach the data.'
+- 'BREACH LOG KEPT ONLY FOR REPORTABLE BREACHES. The judgement about reportability is made from the log, so a log that only contains the answer is circular.'
+kpis:
+- name: register_currency_lag
+  unit: days
+  description: New processing activity to register entry.
+  direction: lower_is_better
+- name: dsr_within_deadline
+  unit: percent
+  direction: higher_is_better
+  description: Subject requests answered inside the statutory window, measured from their ask.
+- name: access_revocation_rate
+  unit: percent
+  description: Reviews producing at least one removal. A review with none is an attestation.
+  direction: target_band
+- name: orphaned_dataset_count
+  unit: count
+  description: Datasets with no owner or no stated basis.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.records_and_documentation.retention_and_archival, admin.people_administration.access_and_identity_administration]
+  downstream: [admin.compliance_and_governance.audit_support, admin.compliance_and_governance.policy_administration]
+  parallel: [admin.contract_and_vendor.vendor_onboarding, admin.records_and_documentation.document_control]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, distributed, outsourced]
+  offerings: [assurance]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    No substrate. This is the administrative half of data protection — the obligation is drafted
+    elsewhere and lives or dies on whether somebody maintains the register behind it — and none
+    of the register, consent, DSR or breach fields has a writer.
+
+    The framing matters more than the fields: data-protection failures are administrative
+    failures long before they are legal ones, which is why this sits in Admin rather than being
+    treated as a legal capability with an admin tail.
+
+admission:
+  accepted_content_hash: 7b685a9de4e251f558a2f08070203922edd4452992e7f6b6172d156cbea67929

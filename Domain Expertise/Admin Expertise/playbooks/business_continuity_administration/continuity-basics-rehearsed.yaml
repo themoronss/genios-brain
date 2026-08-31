@@ -1,0 +1,96 @@
+identity:
+  id: admin.pb.business_continuity_administration.continuity_basics_rehearsed
+  name: Continuity basics rehearsed
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.business_continuity_administration
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The continuity file — contacts, systems, dependencies, recovery steps for the plausible disruptions
+    — exists, is current, and gets a lightweight annual walkthrough, because the plan you have never rehearsed
+    is a document, not a capability.
+
+when_to_use:
+  do_not_use_when:
+  - A disruption is live. Then this is incident response, and reading a plan is the first step of it rather than an occasion to write one.
+steps:
+- order: 1
+  name: Map dependencies, not just processes
+  description: >
+    The thing that stops you is usually two steps away from the thing that failed — the supplier's
+    supplier, the system the system needs.
+  actor: human
+  objects_read: [admin.obj.core.sop, admin.obj.core.vendor]
+  done_when: Critical processes name what they depend on, transitively.
+- order: 2
+  name: Keep the plan reachable without the systems it protects
+  description: >
+    A continuity plan stored in the platform that is down is discovered to be unavailable at
+    precisely the wrong moment.
+  actor: human
+  done_when: The plan can be reached offline.
+- order: 3
+  name: Maintain the contact tree
+  description: >
+    People leave and numbers change. The tree decays continuously and is tested only when it is
+    needed, which is the worst possible discovery point.
+  actor: agent
+  objects_read: [admin.obj.core.employee_record]
+  done_when: Contacts were verified within the review period.
+- order: 4
+  name: Try the alternative at least once
+  description: >
+    "We would use the other supplier" is a sentence. An arrangement that has been exercised once is
+    a capability, and the difference is only visible under load.
+  actor: human
+  done_when: Each stated alternative has been used or tested.
+- order: 5
+  name: Treat every small disruption as a free drill
+  description: >
+    An outage or a storm week audits the plan at no cost. Harvesting the lessons is what makes
+    continuity continuous rather than annual.
+  actor: human
+  done_when: Real disruptions produce plan updates.
+- order: 6
+  name: Say where there is no alternative
+  description: >
+    A gap stated is a risk somebody can decide about. A gap filled with an aspiration is a failure
+    scheduled for the day it is needed.
+  actor: human
+  done_when: Unmitigated dependencies are named as such.
+objects_used: [admin.obj.core.sop, admin.obj.core.vendor, admin.obj.core.employee_record, admin.obj.core.asset, admin.obj.core.compliance_obligation]
+limits:
+- 'It documents and rehearses; it does not fund the redundancy that would remove the risk.'
+- 'Step 1 is unbounded in principle — dependency chains do not terminate — so the depth is a judgement.'
+failure_modes:
+- 'Step 4 skipped because testing the alternative costs money, which leaves the plan asserting a capability nobody has.'
+- 'Step 5 unowned, so every free rehearsal passes unharvested and the plan is only ever exercised deliberately.'
+variants:
+- applies_to: regulated
+  change: Testing frequency and scope are mandated, and step 6 becomes a declared risk rather than an internal note.
+  why: Unmitigated dependencies are reportable.
+- applies_to: distributed
+  change: Step 3 is the whole plan for many disruptions, because reachability is the failure and the recovery.
+  why: There is no building to gather in.
+- applies_to: startup_lean
+  change: Steps 3 and 6. Knowing who to call and what has no backup is most of the value at this size.
+  why: Everything else assumes redundancy that does not exist.
+references:
+- title: Business continuity practice
+  kind: practitioner
+  note: Where exercising the plan, rather than writing it, is treated as the point at which it becomes real.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is what makes this affordable. Deliberate exercises are expensive and rare; the
+    outage last month was free and audited the plan honestly, and almost nobody harvests it.

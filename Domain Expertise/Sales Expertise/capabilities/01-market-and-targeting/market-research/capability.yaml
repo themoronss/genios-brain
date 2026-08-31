@@ -4,18 +4,18 @@ identity:
   domain: sales
   subdomain: market_and_targeting
   version: 1.0.0
-  status: draft
+  status: stable
   stub: false
 description: 'Establishing the shape of a market before committing a motion to it: which buying populations
   exist inside it, who already holds the budget they would spend with us, what those buyers currently
   pay and on what terms, how they buy, and how much of the category they already understand. The unit
   of analysis is a buying behaviour shared by many companies — never a single account, and never a database
   query result. It is NOT ICP definition, which narrows an already-chosen market to the accounts that
-  win AND retain with us, and which needs our own outcome history to say anything at all. It is NOT
-  TAM/SAM/SOM, which sizes a market that this capability has already shaped — a size computed before
-  a map is arithmetic performed on a guess. It is NOT account research, which studies one named company
-  the week before someone contacts it. And it is not competitive intelligence: knowing what a rival
-  ships is a fraction of knowing why a segment moved budget to them.
+  win AND retain with us, and which needs our own outcome history to say anything at all. It is NOT TAM/SAM/SOM,
+  which sizes a market that this capability has already shaped — a size computed before a map is arithmetic
+  performed on a guess. It is NOT account research, which studies one named company the week before someone
+  contacts it. And it is not competitive intelligence: knowing what a rival ships is a fraction of knowing
+  why a segment moved budget to them.
 
   '
 question: What market exists here, who already serves it, and on what terms does it buy?
@@ -25,33 +25,32 @@ outcomes:
 - The incumbent set mapped, with the do-nothing option named as an incumbent rather than left off the
   board. Where the budget goes today is the only competitor question that changes a plan.
 - 'Prevailing commercial terms established: what the segment already pays for this job, what it is charged
-  BY, and what contract shape it expects. Our own commercial design is constrained by these, not by
-  our cost base.'
+  BY, and what contract shape it expects. Our own commercial design is constrained by these, not by our
+  cost base.'
 - Category maturity established — whether buyers are unaware, problem-aware, solution-aware or comparing
   vendors — because that, not deal size, decides which motion is affordable.
 - 'An explicit entry verdict per segment: enter, pilot, defer, or decline. The negative verdict is the
   outcome that pays for the capability; a research function that has never recommended against a market
   is describing markets, not choosing between them.'
-- Every load-bearing claim dated, sourced, and carrying the specific observation that would overturn
-  it, so the map can be checked later instead of believed later.
+- Every load-bearing claim dated, sourced, and carrying the specific observation that would overturn it,
+  so the map can be checked later instead of believed later.
 failure_modes:
-- Confusing a market with a list. A filter query returns companies; a market is a shared job bought
-  in a shared way, and the query captures neither. The list looks like progress because it is countable.
-- Sizing before segmenting. An industry total multiplied by an assumed penetration rate, then quoted
-  in a board deck as evidence. The arithmetic is sound and every input is a belief.
-- Sampling our own funnel. Interviewing the people who already replied to us and calling the result
-  a market view. It is a view of the motion we already run, which is precisely the thing the research
-  was supposed to test. The accounts that chose the incumbent and the ones that did nothing hold the
-  information.
+- Confusing a market with a list. A filter query returns companies; a market is a shared job bought in
+  a shared way, and the query captures neither. The list looks like progress because it is countable.
+- Sizing before segmenting. An industry total multiplied by an assumed penetration rate, then quoted in
+  a board deck as evidence. The arithmetic is sound and every input is a belief.
+- Sampling our own funnel. Interviewing the people who already replied to us and calling the result a
+  market view. It is a view of the motion we already run, which is precisely the thing the research was
+  supposed to test. The accounts that chose the incumbent and the ones that did nothing hold the information.
 - Reading an empty category as an open one. No competitors far more often means a population that does
   not buy this at all than a population nobody has found; the cost of teaching a market that a category
   exists lands entirely on whoever goes first.
-- Interviewing for opinion instead of behaviour. 'Would you buy this?' reliably produces a courteous
-  yes. 'What did you do the last time this happened, who signed it, and what did it cost you?' produces
-  facts, because it asks about a transaction that already occurred.
-- Research with no expiry. Incumbent pricing, packaging and buyer priorities move within quarters; a
-  map assembled once is still being cited as fact long after every load-bearing claim in it stopped
-  being true, and nothing in the artefact says so.
+- Interviewing for opinion instead of behaviour. 'Would you buy this?' reliably produces a courteous yes.
+  'What did you do the last time this happened, who signed it, and what did it cost you?' produces facts,
+  because it asks about a transaction that already occurred.
+- Research with no expiry. Incumbent pricing, packaging and buyer priorities move within quarters; a map
+  assembled once is still being cited as fact long after every load-bearing claim in it stopped being
+  true, and nothing in the artefact says so.
 kpis:
 - name: segment_win_rate_spread
   unit: percent
@@ -66,13 +65,13 @@ kpis:
 - name: cycle_length_forecast_error
   unit: percent
   direction: lower_is_better
-  description: Researched cycle length against observed. The single best test of whether a segment's
-    buying process was actually understood rather than assumed.
+  description: Researched cycle length against observed. The single best test of whether a segment's buying
+    process was actually understood rather than assumed.
 - name: finding_falsification_rate
   unit: percent
   direction: target_band
-  description: Share of load-bearing findings later contradicted in the field. Zero means nobody is
-    checking, not that the research was right; very high means the sampling is broken.
+  description: Share of load-bearing findings later contradicted in the field. Zero means nobody is checking,
+    not that the research was right; very high means the sampling is broken.
 - name: map_staleness
   unit: days
   direction: lower_is_better
@@ -80,8 +79,8 @@ kpis:
 - name: research_to_first_pipeline
   unit: days
   direction: lower_is_better
-  description: Elapsed time from entry verdict to first qualified pipeline in that segment. Measures
-    whether the map was actionable or merely interesting.
+  description: Elapsed time from entry verdict to first qualified pipeline in that segment. Measures whether
+    the map was actionable or merely interesting.
 handoffs:
   upstream:
   - sales.revenue_operations.sales_analytics
@@ -117,17 +116,20 @@ applies_to:
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ''
+  reviewed_by: harsh
   last_updated: '2026-08-08'
-  review_status: unreviewed
+  review_status: approved
   confidence: provisional
-  notes: 'Two scoped objects carry this capability''s inference: market_map and market_finding, with
-    twenty-three patterns between them of which eleven are executable and twelve are blocked. The single
-    highest-value signal gap is cross-account aggregation — a segment key on the account plus a derived
-    aggregate over it. Every predicate in the grammar is evaluated against one node and its one-hop
-    neighbours, so a capability whose subject is a population is currently forced to infer that population
-    from one deal at a time. That one addition would unblock most of the blocked half here and in tam_sam_som
-    and icp_definition too. Note also that only field-feedback situations bind: nothing Layer 2 emits
-    fires before a deal exists, which is where most of this capability actually lives.
+  notes: 'Two scoped objects carry this capability''s inference: market_map and market_finding, with twenty-three
+    patterns between them of which eleven are executable and twelve are blocked. The single highest-value
+    signal gap is cross-account aggregation — a segment key on the account plus a derived aggregate over
+    it. Every predicate in the grammar is evaluated against one node and its one-hop neighbours, so a
+    capability whose subject is a population is currently forced to infer that population from one deal
+    at a time. That one addition would unblock most of the blocked half here and in tam_sam_som and icp_definition
+    too. Note also that only field-feedback situations bind: nothing Layer 2 emits fires before a deal
+    exists, which is where most of this capability actually lives.
 
     '
+  reviewed_at: '2026-08-24'
+admission:
+  accepted_content_hash: 68878e75d0ec78145dba655d71e0b64da8a6565a53eaff672bb7780bdcf6e023

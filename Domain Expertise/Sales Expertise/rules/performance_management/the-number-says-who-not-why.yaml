@@ -1,0 +1,76 @@
+identity:
+  id: sales.rule.performance_management.the_number_says_who_not_why
+  name: The number says who, not why
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.sales_management.performance_management
+  subdomain: sales_management
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'Attainment identifies who needs attention and contains no information about what to do.
+    An intervention chosen from the number alone is therefore generic by construction, and it is
+    applied identically to sellers whose problems are opposites.'
+  answers:
+  - May an intervention be chosen from this number?
+  not:
+  - A rule about what interventions exist, which is coaching's territory.
+
+rule:
+  statement: 'A performance intervention MUST NOT be recommended from an attainment or activity figure
+    alone. A recorded diagnosis — pipeline volume, conversion, deal quality, ramp, or a plan-level
+    cause — is required first, and where most of a team is missing the diagnosis MUST address the plan
+    before any individual.'
+  spans:
+  - sales.obj.core.deal
+  - sales.obj.core.opportunity
+  - sales.obj.core.next_action
+  when:
+  - {path: deal.status, op: "=", value: open}
+  then: 'Require a recorded cause before an intervention is surfaced, and check the team distribution
+    before attributing a shortfall to a person.'
+  severity: advisory
+  why: 'The number is a scalar and the causes are a set. Two sellers missing by identical amounts — one
+    with no pipeline, one with pipeline that will not convert — receive the same intervention from any
+    process that reads only the shortfall, and at most one of them is helped. The distribution check
+    matters for a related reason: a shortfall shared by most of the team has one thing in common, and
+    it is not the people, so individual diagnosis there is both wrong and expensive in trust that will
+    be needed to fix the actual cause.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'A CLEAR, ALREADY-KNOWN CAUSE. Where the diagnosis is obvious and recorded elsewhere — a long
+    absence, a territory change — requiring it again is ceremony.'
+  - 'A RAMPING SELLER. The cause is arithmetic and the intervention is time; treating it as a
+    performance question is the error rather than the exception.'
+  - 'AN IMMEDIATE CONDUCT ISSUE. Some interventions are not about performance at all and do not wait
+    for a funnel diagnosis.'
+  - 'A DIAGNOSIS THAT NEEDS THE CONVERSATION TO PRODUCE IT. Sometimes the cause only emerges by
+    talking to the person, and requiring it beforehand blocks the very act that would supply it — the
+    rule asks that the intervention not be CHOSEN from the number, not that no conversation happen.'
+  - 'A TEAM TOO SMALL FOR A DISTRIBUTION. With a handful of sellers the plan-versus-people check has
+    no statistical content and should not be treated as though it does.'
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.opportunity
+- sales.obj.core.next_action
+
+limits:
+- Attainment and quota are not in the corpus substrate, so this rule cannot be evaluated by the engine
+  — advisory, and recorded so a compiled answer about a shortfall does not reach for a generic
+  intervention by default.
+- Cannot verify that a recorded diagnosis is a real one rather than a field filled in to pass a check.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new and advisory. The fourth exception matters — some causes only emerge in the
+    conversation, and a rule read as blocking the conversation would prevent the diagnosis it demands.
+    What it forbids is choosing the INTERVENTION from the number.'

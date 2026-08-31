@@ -1,28 +1,124 @@
 identity:
   id: sales.prospecting_and_outreach.follow_up
-  name: Follow Up
+  name: Follow-up
   domain: sales
   subdomain: prospecting_and_outreach
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+  parent_capability: sales.prospecting_and_outreach.outreach
+description: 'Cadence, value-add and stop rules. Applies across the whole lifecycle, not only prospecting
+  — an unanswered proposal and an unanswered first touch need different content and the same discipline.
 
-description: >
-  Cadence, value-add and stop rules. Applies across the whole lifecycle, not only prospecting
-  — an unanswered proposal and an unanswered first touch need different content and the same
-  discipline.
+  '
+question: When and how do we come back to someone who has not replied?
 
-question: "When and how do we come back to someone who has not replied?"
+outcomes:
+- 'A read on WHICH silence this is. A first touch that got no reply, a warm thread that went quiet
+  after a good call, and a proposal nobody answered are three different events with three different
+  correct moves, and the only thing they share is the absence of a message. A follow-up capability
+  that cannot tell them apart sends the same nudge to all three.'
+- 'The gap measured against this relationship''s own rhythm rather than against a calendar. Two days
+  of silence from someone who replies within the hour is a real event; three weeks from a quarterly
+  correspondent is not. `reply_cadence` is the only learned baseline the engine has, and this is what
+  it is for.'
+- 'Every distinct ask they made either answered, owned or dated. Replying to one of three questions
+  closes one loop and leaves the person waiting — which reads to them as being ignored on the two
+  that mattered.'
+- 'A follow-up that carries something the previous one did not. The test is whether the message would
+  be worth sending if there had been no silence at all; if not, it is a reminder that we are waiting,
+  which is information about us rather than about them.'
+- 'A stop, stated. The negative outcome and the one most sequences never produce: a thread that has
+  had its honest attempts should be closed with a message that makes returning easy, not left to
+  decay into an indefinite queue item.'
+- 'Direction respected. Where `thread.ball_in_court` reads `us`, there is no follow-up to send — the
+  outstanding move is ours, and a nudge in that state tells the counterparty we have not read our own
+  thread.'
 
+failure_modes:
+- 'FOLLOWING UP ON THE CALENDAR RATHER THAN ON THE RELATIONSHIP. A uniform interval is simultaneously
+  too fast for the patient correspondent and too slow for the fast one, and it is the single most
+  common way a competent seller becomes annoying.'
+- 'REPEATING THE LAST MESSAGE MORE LOUDLY. Silence is rarely a comprehension problem. A follow-up that
+  restates the pitch confirms the buyer''s decision to deprioritise it, because it demonstrates there
+  was nothing new to say.'
+- 'READING SILENCE AS REJECTION. Most quiet prospects deprioritised rather than declined, and treating
+  a not-now as a no discards the majority of the pipeline''s eventual conversions.'
+- 'READING SILENCE AS ENCOURAGEMENT. The mirror failure, and the one that damages the relationship:
+  a thread that has gone quiet three times has answered, and continuing past that point converts a
+  soft deprioritisation into a hard block.'
+- 'FOLLOWING UP WHEN THE BALL IS OURS. A nudge sent while they are waiting on our answer is the one
+  message that costs standing rather than merely attention.'
+- 'A BREAK-UP MESSAGE THAT IS A GUILT TRIP. "Since I have not heard back I will assume you are not
+  interested" is a manipulation the buyer has seen fifty times. The version that works closes the loop
+  and leaves the door open without asking them to feel anything.'
+
+kpis:
+- name: reply_rate_by_touch_number
+  unit: percent
+  description: Reply rate at each successive touch. The curve, not the average — it is where the honest
+    stop point is visible, and it is different per segment.
+  direction: higher_is_better
+- name: follow_up_gap_vs_cadence
+  unit: ratio
+  description: Gap since last contact divided by this correspondent's learned reply cadence. The
+    relative reading that makes timing defensible.
+  direction: target_band
+- name: unanswered_ask_share
+  unit: percent
+  description: Share of distinct asks made by the counterparty that carry no answer, owner or date.
+    The loop-level measure, and the one a thread-level view cannot see.
+  direction: lower_is_better
+- name: new_information_share
+  unit: percent
+  description: Share of follow-ups carrying something that would have been worth sending anyway.
+  direction: higher_is_better
+- name: explicit_stop_rate
+  unit: percent
+  description: Share of exhausted threads closed with a stated stop rather than abandoned. Near zero
+    means the sequence has no end and the queue is accumulating permanently.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - sales.prospecting_and_outreach.outreach
+  - sales.prospecting_and_outreach.account_research
+  - sales.proposal_and_commercials.proposal_creation
+  downstream:
+  - sales.prospecting_and_outreach.meeting_booking
+  - sales.qualification.lead_qualification
+  parallel:
+  - sales.post_sale_and_growth.customer_success
+  - sales.sales_management.relationship_management
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. This is the hollow capability closest to live traffic: it sits
+    in the route set of THREE situation types (`opportunity`, `prospect_relationship`, `relationship`),
+    two of which are live on the design partner''s org with 18 and 23 situations. It is reached
+    through `sales.sit.inbound_lead` (`thread.ball_in_court = us`) and `sales.sit.outbound_prospect`
+    (`ball_in_court = them` and `edge_count <= 1`), so a single predicate separates it from delivering.
+
+    Authored against the facts that actually carry the judgement — `thread.ball_in_court` (244 rows /
+    123 nodes), `thread.last_inbound` (127), `thread.last_outbound` (118) and the `reply_cadence`
+    baseline. The direction outcome is deliberately first: the shallow reading of this capability is
+    "no reply, so follow up", and that reading sends nudges into threads where the outstanding move is
+    ours.
+
+    No numbers: how many days, how many touches, and where the stop point sits are Layer 4''s
+    arithmetic and live in the pack manifest.
+
+    '
+  reviewed_at: '2026-08-26'
+
+admission:
+  accepted_content_hash: b0bef90c38ee31eac2ac4851782922d5635b5b17edc2f6c9a3e42bf254d2aa5f

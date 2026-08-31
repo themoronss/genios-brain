@@ -1,0 +1,67 @@
+identity:
+  id: admin.heu.expense_management.slow_reimbursement_is_a_loan_from_staff
+  name: Slow reimbursement is a loan from staff
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.expense_management
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every reimbursement delay makes employees involuntary creditors of the company — resented
+    quietly and remembered at review time. Reimbursement speed is a morale line-item.
+  answers:
+  - What does slow expense repayment actually cost?
+
+heuristic:
+  statement: >
+    Every reimbursement delay makes employees involuntary creditors of the company — resented
+    quietly and remembered at review time. Reimbursement speed is a morale line-item.
+  why: >
+    An expense claim is the one financial transaction where an employee lends the organisation money
+    from their own account, usually without having chosen to. The amounts are small enough that
+    nobody escalates and large enough to matter personally, which produces the worst combination:
+    real resentment with no complaint attached. And because it is invisible to finance — the process
+    completed, just slowly — it accumulates for years without appearing in any measure the function
+    watches.
+  confidence_bp: 8000
+  applies_when: Employee-funded spend of any size with a reimbursement cycle.
+  breaks_down_when: >
+    A company card or a direct-billing arrangement removes the loan entirely, and there the delay is
+    an administrative annoyance rather than a personal cost. It also breaks down at senior levels
+    where the amounts are immaterial to the claimant — optimising the cycle for people who do not
+    notice it spends effort that the junior population, for whom a week's delay is genuinely
+    inconvenient, needed.
+  reads: [admin.obj.core.expense, admin.obj.core.employee_record]
+  contradicts: [admin.heu.budget_tracking.small_overruns_rehearse_big_ones]
+limits:
+- 'It is about speed, not about approval standards. Fast payment of claims that should have been refused is a different failure.'
+- 'The resentment is unmeasured by design — the process shows as completed, which is why nothing surfaces it.'
+failure_modes:
+- 'Used to justify weakening checks in order to hit a cycle time.'
+- 'Averaged across the population, which hides that the delay lands hardest on the people least able to absorb it.'
+variants:
+- applies_to: startup_lean
+  change: Strongest. Small salaries, personal cards, and the founder is often the approver and the bottleneck.
+  why: The lender and the approver are in the same room and it is still slow.
+- applies_to: enterprise_admin
+  change: The cycle is a published service level and the failure is variance rather than mean — one claim stuck for six weeks does the damage.
+  why: People compare, and the outlier is what gets discussed.
+references:
+- title: Expense policy design practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The measurement point is the honest part: the process shows as completed, so nothing in the
+    finance function's own metrics ever surfaces the resentment. It is only visible if you
+    measure submission-to-payment from the claimant's side and look at the tail rather than the
+    mean.

@@ -1,0 +1,127 @@
+identity:
+  id: sales.rule.decision_maker_identification.a_proposal_needs_a_named_approver
+  name: A proposal needs a named approver
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.qualification.decision_maker_identification
+  subdomain: qualification
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A proposal sent into a deal whose approver is unknown is a document with no destination.
+    It will be circulated by whoever received it, to whoever they think should see it, and the deal
+    then proceeds on their model of the organisation rather than on ours.'
+  answers:
+  - Is this deal ready for a proposal?
+  - What must be known about authority before commercial terms go out?
+  not:
+  - A rule about when to send a proposal generally. Timing has other inputs.
+  - A requirement to have MET the approver. Named and evidenced is the bar; contact is better.
+
+rule:
+  statement: 'A proposal or commercial offer MUST NOT be recommended while the deal carries no named
+    approver established by evidence rather than by title or self-description. Where authority is
+    unverified, the recommended action is the authority-discovery step, and the deal MUST NOT be
+    placed in a committed forecast category.'
+  spans:
+  - sales.obj.core.decision_maker
+  - sales.obj.core.proposal
+  - sales.obj.core.buying_committee
+  when:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: proposal_sent}
+  - {no_obs: budget_approved}
+  then: 'Raise unverified authority as the deal''s first item, and recommend the process question
+    rather than a follow-up on the proposal. Hold the forecast category.'
+  severity: warning
+  why: 'The cost of the omission is paid entirely at the end. A proposal in circulation looks like
+    progress on every dashboard, activity continues, and the deal accumulates the appearance of
+    momentum while the one fact that determines whether it can close has never been checked. Late
+    discovery of the approver is the most reliable predictor of a slipped close date there is, and it
+    is reliable precisely because the discovery does not change anything about the deal — it only
+    reveals what was already true.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'A DELIBERATE PROPOSAL AS A DISCOVERY INSTRUMENT. In some motions the document is what triggers
+    the organisation to reveal its process — nobody will discuss approval until there is a number to
+    approve. That is a legitimate tactic, and it is distinguished from the failure by being recorded
+    as one BEFORE the proposal goes out rather than explained afterwards.'
+  - 'A FOUNDER-LED OR OWNER-MANAGED BUYER. Authority is obvious and requiring it to be evidenced
+    against a precedent is a formality with no informational content.'
+  - 'A RENEWAL AT UNCHANGED TERMS. The approver is evidenced by the existing contract; treating a
+    renewal as an unproven deal ignores the strongest available evidence.'
+  - 'A PROPOSAL REQUESTED BY THE BUYER''S OWN PROCESS. Where a formal response is required to enter an
+    evaluation — a tender, an RFP — the document is a precondition of learning anything, and
+    withholding it forfeits the deal to observe a rule about sequence.'
+  - 'AUTHORITY KNOWN OFF-RECORD. The approver may be well established through conversation with none
+    of it in the graph. The fix is to record it, not to hold the deal; absence of evidence in the
+    record is not absence of evidence.'
+
+objects_used:
+- sales.obj.core.decision_maker
+- sales.obj.core.proposal
+- sales.obj.core.buying_committee
+- sales.obj.core.budget
+
+outcomes:
+- Commercial terms do not go out into an unmapped authority structure by default.
+- Unverified authority is the first item in the review rather than a footnote.
+
+failure_modes:
+- 'BLOCKING A DISCOVERY PROPOSAL. The first exception is real and common in some motions; a rule
+  applied without it delays exactly the act that would have produced the answer.'
+- 'SATISFIED BY A NAME. A name typed into a field is not evidence, and a rule that accepts one has
+  reintroduced the problem in a form that passes the check.'
+- 'HELD AGAINST THE SELLER. The gap is usually the buyer''s opacity rather than the seller''s
+  negligence, and treating it as a performance failure produces fabricated approver names.'
+
+limits:
+- '`budget_approved` has zero rows on the design partner''s org, so the `when` clause here fires on
+  proposal-without-budget-evidence — which on that tenant is every proposal. The rule is honest about
+  being a prompt rather than a discriminator until that observation exists.'
+- Nothing in the record can establish authority positively; the rule can detect its absence from the
+  deal record and cannot confirm its presence.
+
+variants:
+- applies_to: enterprise
+  change: Require the signer, the budget holder and the decider to be named, not one approver, before
+    commercial terms circulate.
+  why: A proposal that reaches only the recommender is re-sent by them, framed by them, months later.
+- applies_to: smb
+  change: Do not apply. The second exception is the normal case.
+  why: The contact is the approver.
+- applies_to: channel
+  change: Both the partner's and the end customer's approvers must be named; a partner who cannot
+    approve their own margin stalls a deal the customer has agreed.
+  why: Two approval structures, one proposal.
+
+metrics:
+- name: unverified_approver_share
+  unit: percent
+  description: Share of proposals sent with an assumed approver. What the rule makes visible.
+  direction: lower_is_better
+- name: authority_discovery_lead_time
+  unit: days
+  description: Days from deal creation to an evidenced approver.
+  direction: lower_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: The economic-buyer gate; this rule attaches it to the specific act — sending commercial terms
+    — where its absence starts to cost money.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new. Warning rather than blocking, and `limits` says why: with `budget_approved`
+    at zero rows the condition currently matches every proposal on the design partner''s org, so it is
+    a prompt rather than a discriminator. Stating that is better than a blocking rule that appears
+    decisive and separates nothing.'

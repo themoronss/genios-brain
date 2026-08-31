@@ -1,0 +1,96 @@
+identity:
+  id: customer_support.pb.sentiment_analysis.track_the_trajectory_not_the_snapshot
+  name: Track the trajectory, not the snapshot
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.sentiment_analysis
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Account sentiment is a moving line — each interaction scored small, trends watched — because
+    a single angry ticket means little while a three-month slide from warm to terse means everything.
+
+when_to_use:
+  conditions: [{exists: derived.sentiment}]
+  do_not_use_when:
+  - A major incident is running. Every account's tone is about the incident, and carrying those readings into the baseline poisons it for months.
+steps:
+- order: 1
+  name: Score small and often, not large and occasionally
+  description: >
+    Each interaction contributes a little. A single strong reading dominates a sparse series and
+    produces a trend that is really one bad day.
+  actor: system
+  objects_read: [customer_support.obj.core.customer_sentiment, customer_support.obj.core.ticket]
+  done_when: The series has enough points to have a shape.
+- order: 2
+  name: Build a baseline per account
+  description: >
+    Register varies by person, culture and channel far more than by satisfaction. Cross-account
+    comparison measures personality.
+  actor: system
+  objects_read: [customer_support.obj.core.customer_account]
+  done_when: Deviation is computed against the account's own history.
+- order: 3
+  name: Read trajectory, not level
+  description: >
+    A blunt customer who has always been blunt is not unhappy. A warm one who has become correct
+    and brief is the signal.
+  actor: system
+  done_when: The reported value is a direction.
+- order: 4
+  name: Cross-check tone against engagement
+  description: >
+    Rising politeness with falling engagement is a disengaging account, and tone alone reads it as
+    an improvement.
+  actor: system
+  done_when: Both series are read together.
+- order: 5
+  name: Exclude incident periods
+  description: >
+    Sentiment during an outage is about the outage. Carrying it into the baseline distorts every
+    subsequent reading.
+  actor: system
+  objects_read: [customer_support.obj.core.incident]
+  done_when: Incident windows are marked and excluded.
+- order: 6
+  name: Say when there is not enough to say
+  description: >
+    A three-interaction account has no trend. Reporting one anyway is confidence manufactured from
+    nothing.
+  actor: human
+  done_when: Thin accounts are reported as thin.
+objects_used: [customer_support.obj.core.customer_sentiment, customer_support.obj.core.customer_account, customer_support.obj.core.ticket,
+               customer_support.obj.core.churn_risk, customer_support.obj.core.incident]
+limits:
+- 'It reads the conversation, not the relationship. A content customer with a failing business will churn regardless of tone.'
+- 'derived.sentiment is computed from observation balance, which captures polarity and not register or formality.'
+failure_modes:
+- 'Step 2 skipped because a global score is easier to compute, which produces a ranking of communication styles.'
+- 'Step 6 abandoned because a dashboard cell must contain something.'
+variants:
+- applies_to: named_tam
+  change: The TAM's own read is a stronger instrument than any score, and the score's role is to challenge it rather than replace it.
+  why: A person who talks to them weekly has more signal than the text does.
+- applies_to: b2c
+  change: Per-account baselines are impossible; the aggregate trend is the only available reading.
+  why: Interaction counts per customer are too low.
+references:
+- title: Customer sentiment measurement practice
+  kind: practitioner
+  note: Where per-entity baselining is identified as the precondition for tone data meaning anything.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 4 is the one that catches the account nobody is worried about. Tone alone reads rising
+    politeness as improvement, and it takes the engagement series alongside it to see what is
+    actually happening.

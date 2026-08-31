@@ -1,27 +1,71 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.contract_and_vendor.purchase_order_management
   name: Purchase Order Management
   domain: admin
   subdomain: contract_and_vendor
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Issuing and maintaining purchase orders: raising against the right budget line, tracking
+  consumption, matching to receipt and invoice, and closing or amending when scope moves. A three-way
+  match failure is almost never fraud; it is a PO nobody updated.
 
-description: >
-  Issuing and maintaining purchase orders: raising against the right budget line, tracking
-  consumption, matching to receipt and invoice, and closing or amending when scope moves. A
-  three-way match failure is almost never fraud; it is a PO nobody updated.
+  '
+question: Is there a valid, funded, unexhausted order behind this commitment to spend?
 
-question: "Is there a valid, funded, unexhausted order behind this commitment to spend?"
+outcomes:
+- 'A valid, funded, unexhausted order behind every commitment to spend — established before the commitment, not reconciled after it.'
+- 'The PO raised against the right budget line, because a correct total on the wrong line is a budget that reports healthy and is not.'
+- 'Consumption tracked, so an exhausted PO is known before the next invoice arrives against it.'
+- 'Amendments raised when scope moves. A three-way match failure is almost never fraud; it is a PO nobody updated.'
+- 'The negative outcome: a PO CLOSED with residual value released back to the budget. Orders left open forever are the reason committed spend stops meaning anything.'
+failure_modes:
+- 'RAISING THE PO AFTER THE INVOICE. It converts the control into data entry and the exception into the process.'
+- 'TREATING MATCH FAILURES AS SUSPICION. They are overwhelmingly stale POs, and investigating them as anomalies burns the goodwill needed for the real ones.'
+- 'ORDERS LEFT OPEN INDEFINITELY, so committed spend accumulates and the budget position is fiction.'
+- 'ONE PO FOR A YEAR OF UNSPECIFIED WORK, which is a budget line wearing a control''s clothing.'
+- 'AMENDING BY RAISING A SECOND PO, which splits the history and makes consumption unknowable.'
+kpis:
+- name: po_before_commitment_rate
+  unit: percent
+  description: Orders raised before the spend was agreed. The control operating rather than recording.
+  direction: higher_is_better
+- name: three_way_match_first_pass
+  unit: percent
+  direction: higher_is_better
+  description: Invoices matching order and receipt without intervention.
+- name: stale_open_po_value
+  unit: money
+  description: Value tied up in orders that will never be consumed. What makes committed spend meaningless.
+  direction: lower_is_better
+- name: amendment_rate
+  unit: percent
+  description: A target band. Zero means scope never moves, which is false and means amendments are becoming second POs.
+  direction: target_band
+handoffs:
+  upstream: [admin.contract_and_vendor.procurement_administration, admin.finance_administration.budget_tracking]
+  downstream: [admin.finance_administration.invoice_processing, admin.finance_administration.payables_administration]
+  parallel: [admin.contract_and_vendor.contract_administration, admin.contract_and_vendor.vendor_performance_management]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, outsourced, hybrid]
+  offerings: [transactional]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. po_raised, po_exhausted, goods_receipted
+    and budget.committed are all planned_substrate with no writer.
+
+    The observation the description already makes is the one worth building the whole capability
+    around: a three-way match failure is almost never fraud, it is a PO nobody updated. A
+    finance function that treats match exceptions as anomalies spends its investigative capacity
+    on stale records and has none left for the rare real one.
+
+admission:
+  accepted_content_hash: e6170cc86881cbce5c7e9140b7ac1722d11ef2b7ce97f6ed2dc7bf10e9ee2c59

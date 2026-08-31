@@ -1,28 +1,72 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.finance_administration.invoice_processing
   name: Invoice Processing
   domain: admin
   subdomain: finance_administration
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Taking an inbound invoice from receipt to payment-ready: validation against the purchase
+  order and receipt, coding to the correct budget line, exception handling and approval routing. The discipline
+  is refusal — an invoice that does not match is a query, not a payment, and paying it to keep the peace
+  is how duplicate and phantom invoices survive.
 
-description: >
-  Taking an inbound invoice from receipt to payment-ready: validation against the purchase
-  order and receipt, coding to the correct budget line, exception handling and approval
-  routing. The discipline is refusal — an invoice that does not match is a query, not a
-  payment, and paying it to keep the peace is how duplicate and phantom invoices survive.
+  '
+question: Is this invoice valid, matched, coded and approved for payment?
 
-question: "Is this invoice valid, matched, coded and approved for payment?"
+outcomes:
+- 'An invoice refused when it does not match. The discipline of this capability is refusal — an invoice that cannot be matched is not a problem to be worked around at the payment stage.'
+- 'Every invoice in a stage with an age, so nothing sits in an inbox. Lost invoices become late fees, damaged vendor relations and month-end mysteries.'
+- 'Coding to the budget line at validation, not at payment, so the committed position stays true.'
+- 'Duplicates caught by number and amount as routine traffic rather than treated as anomalies — resent invoices and portal-plus-email doubles are normal.'
+- 'The negative outcome: an invoice returned to the supplier with what is wrong with it. Fixing it ourselves teaches them to keep sending it wrong.'
+failure_modes:
+- 'INVOICES LIVING IN AN INBOX. There is no stage, no age and no owner, and the first signal is a supplier chasing.'
+- 'PAYING TO CLEAR AN EXCEPTION. The exception queue is uncomfortable and paying makes it go away, which is precisely the behaviour the control existed to prevent.'
+- 'CORRECTING THE SUPPLIER''S ERRORS INTERNALLY, which is invisible work that recurs monthly forever.'
+- 'TREATING DUPLICATES AS SUSPICIOUS. They are ordinary — a resend, a forward, a portal copy — and investigating each one as an anomaly wastes the attention the real one needs.'
+- 'APPROVAL ROUTING BY AMOUNT ALONE, which sends an unusual invoice to whoever the threshold names rather than to whoever knows whether it is right.'
+kpis:
+- name: touchless_rate
+  unit: percent
+  description: Invoices matched, coded and approved with no manual intervention.
+  direction: higher_is_better
+- name: exception_ageing
+  unit: days
+  description: How long unmatched invoices sit. The queue that produces pay-to-clear behaviour.
+  direction: lower_is_better
+- name: duplicate_catch_rate
+  unit: percent
+  description: Duplicates caught before payment rather than recovered after.
+  direction: higher_is_better
+- name: returned_to_supplier_rate
+  unit: percent
+  description: A target band. Zero means we are absorbing their errors permanently.
+  direction: target_band
+handoffs:
+  upstream: [admin.contract_and_vendor.purchase_order_management, admin.contract_and_vendor.vendor_onboarding]
+  downstream: [admin.finance_administration.payables_administration, admin.finance_administration.budget_tracking]
+  parallel: [admin.contract_and_vendor.contract_administration, admin.compliance_and_governance.audit_support]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, outsourced, hybrid, automated_first]
+  offerings: [transactional]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. invoice.due_at, .amount, .po_ref, .state
+    and invoice_mismatch / duplicate_invoice_suspected are all planned_substrate with no writer.
+
+    returned_to_supplier_rate is a target band rather than something to minimise, which is the
+    non-obvious call. A rate of zero means we are silently correcting supplier errors internally
+    — invisible work that recurs every month and never gets fixed at source, because the
+    supplier has never been told.
+
+admission:
+  accepted_content_hash: 43267b9e3eb1816f3c908e27dffd0b251d7fc31490a16fe338b92bac6d05443b

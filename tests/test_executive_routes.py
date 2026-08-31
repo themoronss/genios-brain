@@ -23,6 +23,7 @@ from fastapi.testclient import TestClient
 
 from genios_engine.api import executive_routes as routes
 from genios_engine.contracts.execution import ExecutionState
+from genios_engine.executive import execution_store as store
 from genios_engine.platform import auth
 from genios_engine.platform.auth import AuthCtx, get_auth_ctx
 
@@ -186,6 +187,27 @@ def test_reassignment_updates_in_place_and_never_splits_the_commitment(api):
     assert db.executions[0]["assignee"] == "seat_mgr"
     assert db.executions[0]["routing_rule"] == "manual_reassign"
     assert len(db.executions) == 1 and len(db.execution_escalations) == rungs
+
+
+def test_reassignment_moves_the_payload_so_the_next_sweep_can_actually_see_it(api):
+    """The escape hatch has to reach the unit that decides whether to speak.
+
+    ``store.load`` rehydrates the ``ExecutionObject`` — and therefore ``remindable`` and the
+    owner the guard checks — from ``payload`` alone. Reassignment used to update three COLUMNS
+    and stop there, so the endpoint returned 200, the dashboard changed, and ``decide_reminder``
+    went on reading whatever the plan said at build time. On production that meant the only
+    manual escape from a silent queue was a no-op that reported success.
+    """
+    client, db, execution = api
+    client.post(f"/v1/executive/commitments/{execution.execution_id}/reassign",
+                json={"seat_id": "mgr@acme.io"})
+    with FakeEngine(db).begin() as conn:
+        reloaded, _ = store.load(conn, "org_1", execution.execution_id)
+    assert reloaded.communication.assignee == "seat_mgr"
+    assert reloaded.remindable, "a claimed commitment must be nudgeable"
+    # The frozen half is still frozen: reassignment is not a re-plan.
+    assert reloaded.escalation == execution.escalation
+    assert reloaded.plan_hash == execution.plan_hash
 
 
 def test_reassigning_to_a_seat_that_does_not_exist_is_refused(api):

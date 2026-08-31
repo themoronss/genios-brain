@@ -1,0 +1,82 @@
+identity:
+  id: sales.heu.sales_operations.process_serves_selling__or_it_is_theatre
+  name: Process serves selling, or it is theatre
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.sales_operations
+  subdomain: revenue_operations
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: Every mandated field, stage and report must answer 'what decision does this feed?'. No
+    answer means theatre, and theatre in the sales process is paid for in selling hours.
+  answers:
+  - Should this requirement exist?
+  not:
+  - An argument against process. It is a test each piece of process must pass.
+
+heuristic:
+  statement: 'Require every mandated artefact to name a specific decision and the person who makes it.
+    An artefact that cannot is not merely useless — it is a recurring charge on the scarcest resource
+    the organisation has, levied by someone who does not pay it.'
+  why: 'The cost and the benefit sit with different people. A field is added by someone who wants
+    visibility and filled in by someone who wants to sell, so the person deciding never experiences the
+    price and has no feedback telling them it was too high. That asymmetry means process accumulates by
+    default, each addition locally justified, until the total is indefensible and nobody is responsible
+    for it — which is why the test has to be applied per item at the moment of adding.'
+  confidence_bp: 8600
+  applies_when: 'Any mandated field, stage, report or ritual in the selling process.'
+  breaks_down_when: 'AUDIT AND COMPLIANCE REQUIREMENTS. Some records exist because a regime demands
+    them, and the decision they feed is external. The test still applies; the answer is just not a
+    commercial one.
+
+    DATA COLLECTED FOR A FUTURE DECISION. Some fields are populated now to make an analysis possible
+    later, which is legitimate — and is also the standard justification for keeping everything, so it
+    needs a stated date and a named analysis.
+
+    A DECISION MADE RARELY BUT AT HIGH STAKES. A field feeding one decision a year can still be worth
+    its cost; frequency is not the test.
+
+    WHEN APPLIED TO REMOVE ACCOUNTABILITY. Recording an outcome so somebody can be held to it is a
+    decision the record feeds, and treating it as theatre is how measurement gets dismantled.
+
+    NEW PROCESS WITH NO HISTORY. Something introduced this quarter has no evidence either way, and
+    demanding proof of use before it has been used prevents anything ever being tried.'
+  reads:
+  - sales.obj.core.deal
+  - sales.obj.core.next_action
+  contradicts:
+  - sales.heu.sales_analytics.activity_metrics_measure_effort__funnel_metrics_measure_trut
+  pattern_ref: []
+
+when_to_use:
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  signals:
+  - followup_sent
+  do_not_use_when:
+  - The requirement exists for audit or regulatory reasons.
+  - The process was introduced this period and has no usage evidence yet.
+  - The record exists to hold someone accountable; that is a decision it feeds.
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.next_action
+
+limits:
+- Nothing about process design reaches the corpus substrate; this is a human review test.
+- Cannot tell a field nobody reads from one read rarely and importantly.
+- Says nothing about how much process is the right amount in total, only about each piece.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The asymmetry is the addition — the person
+    adding a requirement never pays its cost and gets no feedback about it, which is why process
+    accumulates by default rather than through anyone deciding it should.'

@@ -1,28 +1,76 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.contract_and_vendor.renewal_management
   name: Renewal Management
   domain: admin
   subdomain: contract_and_vendor
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Managing the end of the contract term before it manages us. Every agreement has a decision
+  date that precedes its expiry by the length of the notice period, and that earlier date is the real
+  one. Auto-renewal is the default that costs the most money precisely because it requires nobody to do
+  anything.
 
-description: >
-  Managing the end of the contract term before it manages us. Every agreement has a decision
-  date that precedes its expiry by the length of the notice period, and that earlier date is
-  the real one. Auto-renewal is the default that costs the most money precisely because it
-  requires nobody to do anything.
+  '
+question: Which agreements auto-renew, when does the notice window open, and do we still want them?
 
-question: "Which agreements auto-renew, when does the notice window open, and do we still want them?"
+outcomes:
+- 'Every renewal window opened with a usage-and-value check BEFORE the notice deadline, so the answer is a decision rather than an expiry.'
+- 'Usage evidence, not opinion. "We use it" from the person who requested it is the weakest input available and the one usually relied on.'
+- 'A renegotiation attempted where the leverage exists — a renewal is the only moment in the year the vendor has to listen.'
+- 'Zombie subscriptions identified and cancelled. Tool sprawl is not a procurement failure; it is a renewal failure, one inertia at a time.'
+- 'The negative outcome: a renewal DECLINED, or downgraded to a smaller tier. A renewal function whose answer is always yes is a payments schedule.'
+failure_modes:
+- 'REVIEWING AFTER THE NOTICE DATE, which makes the review a briefing about a decision already taken.'
+- 'ASKING THE OWNER WHETHER THEY STILL NEED IT. They requested it, they will say yes, and the question has told you nothing.'
+- 'RENEWING AT LIST BECAUSE THE INCREASE IS SMALL. Small increases compound and each one resets the base for the next.'
+- 'TREATING SEAT COUNT AS USAGE. Provisioned seats and active users diverge steadily and only one of them is being paid for.'
+- 'CANCELLING WITHOUT A MIGRATION PLAN, which produces an emergency re-purchase at a worse price.'
+kpis:
+- name: review_before_notice_rate
+  unit: percent
+  description: Renewals reviewed while the decision was still open.
+  direction: higher_is_better
+- name: renegotiated_share
+  unit: percent
+  description: Renewals where terms or price moved. A target band — zero means nobody is asking.
+  direction: target_band
+- name: seat_utilisation
+  unit: percent
+  description: Active users against seats paid for. The evidence that replaces opinion.
+  direction: higher_is_better
+- name: zombie_spend
+  unit: money
+  description: Annual value of subscriptions with negligible use still renewing.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.contract_and_vendor.contract_administration, admin.finance_administration.budget_tracking]
+  downstream: [admin.contract_and_vendor.procurement_administration, admin.finance_administration.payables_administration]
+  parallel: [admin.contract_and_vendor.vendor_performance_management, admin.people_administration.access_and_identity_administration]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, hybrid, startup_lean, distributed, automated_first]
+  offerings: [transactional, coordinative]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. renewal_window_open and
+    auto_renewal_imminent are planned_substrate with no writer.
+
+    Deliberately distinct from contract_administration, which surfaces the notice window. This
+    capability is what happens inside it — the usage evidence, the renegotiation, the decision.
+    Merging them produces an alert with no process behind it, which is the common state and the
+    reason alerts get dismissed.
+
+    seat_utilisation is the KPI that carries the capability, because the alternative input —
+    asking the owner whether they still need it — is the weakest evidence available and the one
+    every renewal review actually uses.
+
+admission:
+  accepted_content_hash: cb6094fc331e8530b867421bb1892f0861f43093a42e18905fc5cc475dda231b

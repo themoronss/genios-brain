@@ -155,11 +155,20 @@ def test_the_gaps_are_named_in_plain_language() -> None:
     assert missing == ["expected close date"]
 
 
-def test_a_type_with_no_expectations_is_fully_covered() -> None:
-    """Not "0% known" — we expect nothing, so nothing is missing. Reporting zero would
-    invent a gap that does not exist."""
+def test_a_type_with_no_expectations_is_neither_covered_nor_empty() -> None:
+    """Two wrong answers, so the honest one is a third state.
+
+    Scoring 0 invents a gap that does not exist and makes every situation in a new domain look
+    broken the day it is added. Scoring 100 is what let 34 of one org's 73 situations report
+    `missing=[]` on the strength of knowing who sent the last email, handing a gate reading "no
+    actionable output when required context is unknown" a green light earned by ignorance.
+    """
+    from genios_engine.context.situations import COVERAGE_UNKNOWN, coverage_is_known
+
     score, missing = coverage_score(present_fields=set(), expected={})
-    assert (score, missing) == (100, [])
+    assert score == COVERAGE_UNKNOWN
+    assert not coverage_is_known(score)
+    assert missing, "an unknown coverage must say so, not report an empty missing list"
 
 
 def test_the_score_explains_itself() -> None:

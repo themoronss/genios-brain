@@ -3,25 +3,109 @@ identity:
   name: Need Analysis
   domain: sales
   subdomain: discovery_and_solution
-  version: 0.1.0
-  status: draft
-  stub: true
-
-description: >
-  Mapping stated pains onto capability, honestly, including where we do not fit. A need
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Mapping stated pains onto capability, honestly, including where we do not fit. A need
   analysis that never finds a gap is a pitch.
 
-question: "Which of their problems does our thing genuinely solve, and how well?"
+  '
+question: Which of their problems does our thing genuinely solve, and how well?
 
+outcomes:
+- 'A stated want separated from the underlying need. "We need an export button" usually means someone
+  upstream demands a report — solve the report and the button becomes one of several options, one of
+  which we may already have.'
+- 'Needs ranked by consequence, by THEM. Which of these problems, left unsolved for a year, hurts
+  most — their ranking rather than ours, because ours reliably tracks what we are good at.'
+- 'The need written in outcome language, not in feature language. A sentence describing a changed
+  state survives committee scrutiny and comparison with a rival; a sentence describing a mechanism
+  does not, because a rival with a different mechanism reaching the same outcome then looks equal.'
+- 'The gaps named explicitly, including the ones we cannot close. A need analysis that never finds a
+  gap has not analysed anything, and the gap found by us early is worth far more than the same gap
+  found by their evaluator late.'
+- 'A feature request treated as evidence of a pain and a guess at its solution. Honouring the pain and
+  staying neutral on the guess is what keeps the conversation open; agreeing to build the guess
+  commits us to someone else''s design.'
+- 'A recommendation not to proceed where the needs we serve are not the ones that hurt. The negative
+  outcome, and the one that distinguishes this capability from qualification: we may fit the stated
+  problem and not the important one.'
+
+failure_modes:
+- 'MAPPING EVERY PAIN TO A FEATURE. Produces a match on paper and a solution the buyer will not
+  recognise, because the interesting pains are the ones with no clean feature answer.'
+- 'ACCEPTING THE FEATURE REQUEST AS THE NEED. Commits us to a design the buyer guessed at, and it is
+  usually the design their previous vendor implied.'
+- 'RANKING NEEDS OURSELVES. Our ranking follows our strengths without anyone intending it, and the
+  buyer notices before we do.'
+- 'HIDING THE GAP. It surfaces later in front of an evaluator, at which point it is both a gap and a
+  credibility problem, and only one of those was inevitable.'
+- 'NEED WRITTEN AS A MECHANISM. "Automated export" invites a comparison of mechanisms; "reporting
+  time cut to under an hour" invites a comparison of outcomes, and only one of those is a comparison
+  we chose.'
+- 'ANALYSIS WITH NO REFUSAL. If every analysis concludes we fit, the capability is a pitch with a
+  spreadsheet attached.'
+
+kpis:
+- name: want_to_need_conversion_rate
+  unit: percent
+  description: Share of stated feature requests traced to an underlying outcome before being answered.
+  direction: higher_is_better
+- name: buyer_ranked_needs_share
+  unit: percent
+  description: Share of analyses where the buyer ranked the needs by consequence.
+  direction: higher_is_better
+- name: outcome_language_share
+  unit: percent
+  description: Share of recorded needs expressed as a changed state rather than as a mechanism.
+  direction: higher_is_better
+- name: named_gap_rate
+  unit: percent
+  description: Share of analyses that named at least one thing we do not solve. Near zero means the
+    analysis is not analysing.
+  direction: higher_is_better
+- name: late_gap_discovery_rate
+  unit: percent
+  description: Share of deals where a capability gap surfaced after the proposal. Each one was
+    available earlier and cost more later.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - sales.discovery_and_solution.discovery
+  downstream:
+  - sales.discovery_and_solution.value_proposition
+  - sales.discovery_and_solution.demo
+  - sales.proposal_and_commercials.proposal_creation
+  parallel:
+  - sales.market_and_targeting.icp_definition
+  - sales.proposal_and_commercials.objection_handling
+
+applies_to:
+  models: [b2b, b2b2c, enterprise, mid_market, smb, inside_sales, channel, partner]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. Directly downstream of `discovery` and it inherits that
+    capability''s substrate problem — the analysis happens in conversation and the record holds no
+    transcripts.
+
+    What makes this capability worth authoring carefully despite that is the direction of its failure.
+    Every other capability in the subdomain fails by omission; this one fails by producing a
+    confident, complete, entirely wrong mapping — a spreadsheet in which every pain has a feature
+    against it. That artefact is persuasive internally and is exactly what a late-stage evaluator
+    dismantles, which is why the fourth outcome insists a gap be named.
+
+    No numbers: how large a gap is disqualifying is Layer 4''s arithmetic.
+
+    '
+  reviewed_at: '2026-08-27'
+
+admission:
+  accepted_content_hash: 53183da4f978c6a4d8e63e01a82210e5191a256e97d308c3a5186b1c9e72047d

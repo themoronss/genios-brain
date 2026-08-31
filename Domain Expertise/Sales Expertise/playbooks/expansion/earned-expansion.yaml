@@ -1,0 +1,89 @@
+identity:
+  id: sales.pb.expansion.earned_expansion
+  name: Earned expansion
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.expansion
+  subdomain: post_sale_and_growth
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: 'Expansion is proposed on the back of delivered value, into adjacent pain the current footprint
+    has made visible. The evidence: an account that hits its bought outcome, plus a named next problem
+    — pitched to a sponsor who already trusts the first result.'
+
+when_to_use:
+  conditions: [{path: relationship.nature, op: "=", value: customer}]
+  signals: [positive_reply, next_step_agreed]
+  do_not_use_when:
+  - The first outcome has not landed. Expansion before proof reads as upselling and it costs the credibility that would have made the same pitch work later.
+steps:
+- order: 1
+  name: Confirm the bought outcome was delivered
+  description: >
+    Not that the product is being used. That the thing they purchased actually happened, measured
+    in the terms they set.
+  actor: human
+  objects_read: [sales.obj.core.business_need, sales.obj.core.account]
+  done_when: There is a delivered result somebody on their side would state.
+- order: 2
+  name: Qualify it like a new deal
+  description: >
+    New team, new budget line, sometimes a new buyer. The trust carries over; the diligence does
+    not, and skipping it is how expansions stall after the verbal yes.
+  actor: human
+  objects_read: [sales.obj.core.buying_committee]
+  done_when: Budget, authority and need are established for the new scope.
+- order: 3
+  name: Lead with the delivered number
+  description: >
+    "The first scope returned X, and here is where the same approach reaches Y." Expansion sells on
+    the customer's own realised proof rather than on the original pitch.
+  actor: human
+  done_when: The opening is their result, not our capability.
+- order: 4
+  name: Name the adjacent problem
+  description: >
+    Expansion goes into pain the current footprint made visible. A pitch into an unrelated area is
+    a new sale wearing an expansion label.
+  actor: human
+  done_when: The next problem is one they have already articulated.
+- order: 5
+  name: Time it to their planning cycle
+  description: >
+    An ask landed outside their budgeting window becomes next year by default, regardless of how
+    good it is.
+  actor: human
+  done_when: The proposal lands inside a window where money can move.
+objects_used: [sales.obj.core.account, sales.obj.core.business_need, sales.obj.core.champion, sales.obj.core.buying_committee]
+limits:
+- 'It sequences the expansion; it cannot create a result that did not happen.'
+- 'Step 5 needs knowledge of their budget cycle, which is a question most sellers never ask.'
+failure_modes:
+- 'Step 2 skipped because the relationship feels warm, which is exactly the condition under which qualification is forgotten.'
+- 'Step 4 stretched to reach a bigger number, which converts a credible expansion into an unrelated pitch.'
+variants:
+- applies_to: enterprise
+  change: Step 2 is a full committee exercise — the adjacent team has its own buyer and its own criteria.
+  why: The existing sponsor's authority does not extend sideways.
+- applies_to: plg
+  change: Expansion is usage-led and step 3 comes from the product rather than from a conversation.
+  why: The proof is already visible to both sides.
+references:
+- title: sales.obj.core.business_need
+  kind: internal
+  note: Step 1 reads it; without a stated bought outcome there is nothing to confirm delivery against.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Promoted out of Phase-1 skeleton. Step 2 is the one warmth removes: the relationship carries
+    the trust across and it does not carry the budget, the authority or the need, and skipping
+    the diligence is why expansions stall after a verbal yes.

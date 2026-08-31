@@ -58,8 +58,60 @@ def _bp(numerator: int, denominator: int) -> int:
 
 def unit_feedback_learning(batch: LearningBatch, policy: LearningPolicy,
                            now: datetime) -> list[LearningObject]:
-    """Positive/negative/timing/neutral from terminal verdicts. Empty until the verdict ledger lands."""
-    return []  # batch.feedback is empty until the canonical verdict ledger is wired
+    """Per rule: what humans actually said about its cards — the only direct quality signal.
+
+    The seam is wired (store.py reads `card_feedback_verdicts`, the real ledger from 0034) but
+    this unit still returned `[]` without looking, so the FIRST verdict a human ever gives would
+    have been read, loaded into the batch, and discarded here — the second of L7-03's two
+    stoppers, and the one a migration could never fix.
+
+    Grouped by rule_id, because the verdict vocabulary is about the RULE's judgment:
+    `run_play`/`do_it_myself` say the card was worth acting on; `wrong` says it was not, and its
+    mandatory reason says how — `not_relevant` and `wrong_facts` are quality failures,
+    `bad_timing` is a scheduling failure on a correct card and must not count against the rule's
+    accuracy. Target is METRICS: this unit reports evidence; changing thresholds from it is
+    calibration's job, behind its own governance.
+    """
+    cohorts: dict[str, dict] = defaultdict(
+        lambda: {"n": 0, "acted": 0, "wrong": 0, "bad_timing": 0,
+                 "reasons": defaultdict(int), "first": None, "last": None})
+    for v in batch.feedback:
+        rule = str(v.get("rule_id") or "unknown")
+        c = cohorts[rule]
+        c["n"] += 1
+        cause = str(v.get("cause") or "")
+        if cause in ("run_play", "do_it_myself"):
+            c["acted"] += 1
+        elif cause == "wrong":
+            reason = str(v.get("reason") or "unstated")
+            c["reasons"][reason] += 1
+            if reason == "bad_timing":
+                c["bad_timing"] += 1
+            else:
+                c["wrong"] += 1
+        at = v.get("occurred_at") or v.get("created_at")
+        if at:
+            c["first"] = min(c["first"], at) if c["first"] else at
+            c["last"] = max(c["last"], at) if c["last"] else at
+
+    out: list[LearningObject] = []
+    for rule, c in cohorts.items():
+        judged = c["acted"] + c["wrong"]                 # bad_timing does not grade accuracy
+        out.append(LearningObject(
+            org_id=batch.org_id, unit="feedback_learning", target=LearningTarget.METRICS,
+            subject=_subject("rule", rule),
+            proposed_value={"verdicts": c["n"], "acted": c["acted"], "wrong": c["wrong"],
+                            "bad_timing": c["bad_timing"],
+                            "wrong_reasons": dict(c["reasons"]),
+                            "acted_rate_bp": _bp(c["acted"], judged)},
+            evidence=LearningEvidence(
+                observations=c["n"], independent_refs=c["n"], distinct_days=1,
+                positive=c["acted"], negative=c["wrong"],
+                confidence_bp=_bp(judged, c["n"]),
+                business_value_bp=_bp(c["acted"], c["n"])),
+            visibility=_org_visibility(), first_seen_at=c["first"] or now,
+            last_seen_at=c["last"] or now, policy_key=policy.policy_key))
+    return out
 
 
 def unit_preference_learning(batch: LearningBatch, policy: LearningPolicy,
@@ -123,14 +175,23 @@ def unit_outcome_analysis(batch: LearningBatch, policy: LearningPolicy,
 
 def unit_pattern_learning(batch: LearningBatch, policy: LearningPolicy,
                           now: datetime) -> list[LearningObject]:
-    """Repeated (object_type, internal_kind) over independent sources and distinct days."""
+    """Repeated (object_type, internal_kind) over independent sources and distinct days.
+
+    A generalized ORGANIZATION-brain pattern is a claim about the tenant's world, not about one
+    entity in it — so it also tracks how many DISTINCT entities (companies/people, via each ref's
+    ``entity_id``) contributed. ``min_observations`` alone can't catch "10 emails from the same
+    one account" masquerading as a pattern; ``validate_learning`` gates on entity count too.
+    """
     groups: dict[tuple[str, str], dict] = defaultdict(
-        lambda: {"n": 0, "sources": set(), "days": set()})
+        lambda: {"n": 0, "sources": set(), "days": set(), "entities": set()})
     for e in batch.enterprise:
         key = (e.get("object_type") or "?", e.get("internal_kind") or "?")
         g = groups[key]
         g["n"] += 1
         g["sources"].add(e.get("independence_group") or e.get("source_ref_id"))
+        entity_id = e.get("entity_id")
+        if entity_id:
+            g["entities"].add(entity_id)
         at = e.get("occurred_at")
         if at:
             g["days"].add(at.date())
@@ -146,7 +207,8 @@ def unit_pattern_learning(batch: LearningBatch, policy: LearningPolicy,
             evidence=LearningEvidence(
                 observations=g["n"], independent_refs=len(g["sources"]),
                 distinct_days=len(g["days"]), positive=g["n"], negative=0,
-                confidence_bp=_bp(len(g["sources"]), g["n"])),
+                confidence_bp=_bp(len(g["sources"]), g["n"]),
+                distinct_entities=len(g["entities"])),
             visibility=_org_visibility(), first_seen_at=now, last_seen_at=now,
             policy_key=policy.policy_key))
     return out
@@ -295,6 +357,10 @@ def validate_learning(obj: LearningObject, policy: LearningPolicy) -> tuple[bool
         return (False, "insufficient_observations")
     if e.distinct_days < policy.min_distinct_days:
         return (False, "insufficient_distinct_days")
+    # k-anonymity: a generalized ORGANIZATION pattern derived from too few distinct entities
+    # effectively identifies them. Other targets don't generalize across entities this way.
+    if obj.target is LearningTarget.ORGANIZATION and e.distinct_entities < policy.min_distinct_entities:
+        return (False, "insufficient_distinct_entities")
     if e.confidence_bp < policy.min_confidence_bp:
         return (False, "below_confidence_floor")
     if e.noise_bp > policy.max_noise_bp:

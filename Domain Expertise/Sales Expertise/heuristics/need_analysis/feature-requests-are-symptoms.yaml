@@ -1,0 +1,144 @@
+identity:
+  id: sales.heu.need_analysis.feature_requests_are_symptoms
+  name: Feature requests are symptoms
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.need_analysis
+  subdomain: discovery_and_solution
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: A specific feature request is evidence of a real pain and a guessed solution. Honour the
+    pain, stay neutral on the guess — the buyer's solution guess is one hypothesis among several.
+  answers:
+  - How should a specific feature request be treated?
+  not:
+  - A claim that buyers do not know what they want. They know the pain precisely.
+  - Licence to ignore the request. Dismissing it loses the pain along with the guess.
+
+heuristic:
+  statement: 'Separate the two claims inside every feature request. The PAIN is first-hand evidence
+    and should be taken at face value; the SOLUTION is a hypothesis formed with incomplete knowledge
+    of what is possible, and treating it as a requirement commits us to a design the buyer guessed at
+    — frequently one their previous vendor implied.'
+  why: 'The buyer is an expert on their problem and an amateur on our solution space, and a feature
+    request compresses both into one sentence. Accepting it whole means adopting their design; rejecting
+    it whole means discarding their evidence. The distinction also protects the deal in a way that is
+    not obvious — a request answered literally by a competitor who happens to have that exact feature
+    beats us on a comparison nobody should have been making, whereas a request traced to its outcome
+    is a comparison on the outcome, which is the ground we chose.'
+  confidence_bp: 8300
+  applies_when: 'A buyer has asked for a specific capability by name, particularly early, and
+    particularly with confidence.'
+  breaks_down_when: 'A HARD INTEROPERABILITY OR COMPLIANCE REQUIREMENT. A named standard, a mandated
+    integration, a regulatory control — these are requirements rather than hypotheses, and treating
+    them as symptoms reads as evasion by a vendor who cannot meet them.
+
+    A SOPHISTICATED BUYER WHO HAS DONE THE ANALYSIS. Some buyers have already traced their own
+    outcome and arrived at a well-reasoned specification. Asking what it is for insults the work and
+    signals we were not listening.
+
+    A TENDER OR SCORED EVALUATION. The requirement is the requirement; re-framing it loses points
+    against a rubric that awards them per line.
+
+    WHEN IT BECOMES A WAY TO AVOID SAYING NO. Tracing a request to an outcome we happen to serve is
+    legitimate; doing it in order to never concede a gap is the same move used dishonestly, and buyers
+    recognise it quickly because it always lands on something we have.
+
+    A REQUEST THAT IS ALREADY THE OUTCOME. "We need to cut reporting time" is a need, not a symptom,
+    and applying the why-ladder to it produces an interrogation with nowhere to go.'
+  reads:
+  - sales.obj.core.business_need
+  - sales.obj.core.pain_point
+  - sales.obj.core.competitor
+  contradicts:
+  - sales.heu.discovery.talk_time_is_a_diagnostic
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.inbound_lead
+  conditions:
+  - {exists: thread.last_inbound}
+  signals:
+  - question
+  - objection
+  do_not_use_when:
+  - The requirement is a standard, an integration or a regulatory control.
+  - The buyer has already done the analysis and arrived at a reasoned specification.
+  - The request is already stated as an outcome rather than as a mechanism.
+
+objects_used:
+- sales.obj.core.business_need
+- sales.obj.core.pain_point
+- sales.obj.core.competitor
+- sales.obj.core.objection
+
+outcomes:
+- The pain behind a request is captured; the guess is held as one option.
+- Comparisons happen on outcomes rather than on mechanisms.
+
+failure_modes:
+- 'USED TO DEFLECT. Tracing every request until it lands on something we have is transparent, and it
+  costs more credibility than admitting the gap would have.'
+- 'THE PAIN DISCARDED WITH THE GUESS. Rejecting the request whole loses the first-hand evidence inside
+  it, which was the valuable half.'
+- 'APPLIED TO A HARD REQUIREMENT. Reads as a vendor evading a specification they cannot meet, which is
+  usually exactly what is happening.'
+
+limits:
+- Not observable in the record; feature requests arrive in conversation and in prose, and `question`
+  marks only that an ask occurred.
+- Says nothing about which of the alternative solutions is better — it opens the option set and does
+  not choose within it.
+- Cannot tell a guessed specification from a researched one without asking, which is the second
+  breakdown regime.
+
+variants:
+- applies_to: enterprise
+  change: Requests frequently arrive as a consolidated list from several functions; trace each to its
+    owner before its outcome, because two requests that look alike often serve different problems.
+  why: A merged list hides whose need is whose.
+- applies_to: smb
+  change: The requester is the user and the pain is immediate; one why is usually enough.
+  why: Short distance between the pain and the person describing it.
+- applies_to: service
+  change: The request is often a method rather than a feature — a particular approach or deliverable —
+    and the same separation applies with more sensitivity, because method preferences carry
+    professional identity.
+  why: Challenging a method reads as challenging their judgement.
+
+metrics:
+- name: want_to_need_conversion_rate
+  unit: percent
+  description: Share of feature requests traced to an outcome before being answered.
+  direction: higher_is_better
+- name: named_gap_rate
+  unit: percent
+  description: Share of analyses naming something we do not solve. The counterweight to using this
+    heuristic as a deflection.
+  direction: higher_is_better
+
+references:
+- title: SPIN Selling
+  kind: methodology
+  author: Neil Rackham
+  note: Explicit needs stated as solutions, and the discipline of returning to the implied need
+    underneath them.
+- title: Practitioner product-discovery interviewing
+  kind: practitioner
+  note: The distinction between what a user asks for and the job they are trying to do; the same
+    separation, arrived at independently in a different discipline.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The fourth breakdown regime is the one that
+    keeps this heuristic honest — tracing a request until it lands on something we have is the same
+    technique used dishonestly, and buyers spot it immediately because the answer is always yes.'

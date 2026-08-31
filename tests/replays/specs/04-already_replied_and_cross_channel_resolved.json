@@ -1,0 +1,159 @@
+{
+  "replay_id": "04",
+  "slug": "already_replied_and_cross_channel_resolved",
+  "title": "Already Replied and Cross-Channel Resolved",
+  "failure_class": "Request-scoped current-state failure in both directions: a stale request survives after the user already answered or completed it elsewhere (false-open, duplicate outreach), and a single person-level reply closes multiple unrelated parallel asks (false-close, wrong-close) — both caused by substituting \"person had activity\" for exact request-scoped completion evidence.",
+  "summary": "A request/ask directed at the user gets answered or completed somewhere other than where GeniOS is looking — in the original email thread, in Slack/chat, via a calendar booking, via a delivered asset, or by an authorized agent replying on the user's behalf. GeniOS must hold a stable scoped request/action identity with an ordered current-state reducer, match the new event against thread, target, relationship, opportunity, content/object and completion-predicate evidence, and on an exact match mark that one request satisfied, suppress its card, cancel its queued execution and record why. Ambiguous cross-channel evidence (a bare \"done\", a same-name person, an incomplete provider window) must trigger Review source — never a guess, never a duplicate send, and never a person-wide close that sweeps up parallel asks. Cross-channel matching closes the exact request only, never every loop involving that person.",
+  "business_subject": "Exact person/company plus the scoped relationship and the specific request/commitment/opportunity — not the person alone. Person-only scope or an ambiguous relationship must degrade to Review source.",
+  "open_loop": "A stable request/action identity: the exact ask, its requester, its target and its owner, its created state, and its authoritative ordered transitions. If no request identity exists, or transitions conflict, the system must fall back to Observation only / Review source rather than asserting an open loop.",
+  "current_failure": "A stale request can survive after the user has already answered or completed it elsewhere, producing duplicate outreach (\"Reply now\" on an ask already handled, overdue actions driven by old \"last heard\" dates) and destroying trust. The inverse failure is equally dangerous: a person-level reply can close multiple parallel asks even though only one was actually resolved. Both errors arise when \"person had activity\" substitutes for request-scoped current reality. Concrete code exposure: Layer 2 has graph/lifecycle machinery but no proven authoritative request/action identity reducer spanning channels; operational state is person-global, creating wrong-close risk; the BSO boundary can reconstruct membership while omitting missing-state truth; card acceptance and native execution are separate subsystems; the Layer 6 reminder bridge may rely on shallow open/expiry checks.",
+  "expected_behavior": "GeniOS maintains a stable scoped request/action identity. New events are matched using strong thread, target, relationship, opportunity, content/object and completion-predicate evidence — never semantic similarity, display name or person-wide ball_in_court alone. An exact resolution marks that one request satisfied, suppresses the card, cancels queued work and records the matching and suppression reason auditably. Parallel asks against the same person retain distinct IDs and independent lifecycle states. Ambiguous cross-channel evidence triggers Review source: it neither sends again nor silently closes unrelated work. Action, delivery, Completion and Outcome remain four separate states; closing a loop is never automatically business value.",
+  "why_now": "Derived from the scenario contract (the file has no explicit \"why now\" section): the replay is actionable at the moment a candidate completion event arrives — a same-thread reply, an other-channel response, a calendar change, a delivered asset or an external event — that can be mapped to the exact completion predicate of a request whose current state is still Active, with source readiness satisfied and inside the version fence. Conversely, an active request only remains legitimately actionable while its completion predicate is unsatisfied AND the required provider/channel window is complete; an incomplete window removes action authority rather than justifying a fresh overdue push.",
+  "passes_today": false,
+  "prohibited_behaviors": [
+    "Must not resurface a satisfied, superseded, expired, revoked or duplicate request as new intelligence.",
+    "Must not close multiple asks because the same person replied somewhere; closure requires matching the exact relationship, request and completion predicate.",
+    "Must not treat semantic similarity, display name, or person-wide `ball_in_court` as sufficient completion authority.",
+    "Must not infer \"still waiting\" (negative inference) while a required provider/channel window is incomplete.",
+    "Must not let a stale card score, cached decision, generic pack or LLM prose override a newer completion mutation.",
+    "Must not label claim, sent, delivered, opened, suppressed or closed as a business Outcome without the declared external result and a counterfactual.",
+    "A closed request must expose no action button, and must expose an auditable suppression reason to authorized reviewers.",
+    "An active card must still carry Business subject, exact `what remains`, evidence/readiness/conflicts, accepted expertise, action AND Alternative, owner/approval, Completion and Outcome window.",
+    "Hard gates: zero stale-loop resurfacing, zero wrong closes, zero person-wide contamination, 100% ambiguity abstention, 100% version-fenced retraction, and at most one external impression per action."
+  ],
+  "layer_obligations": [
+    {
+      "layer": "L1",
+      "required_output": "Immutable receipts from email/chat/CRM/calendar/provider events that preserve channel-specific identity (message IDs, thread/channel IDs, direction, actors, timestamps, versions, visibility/use), plus edits/deletions and ordering. No semantic completion inference at this layer. Acceptance evidence: provider/event/version, parent/thread, actors, transformation and readiness receipts.",
+      "fail_closed": "Park the event or mark the source incomplete whenever the cursor window, version, direction or permission is missing — do not emit a receipt that implies completeness it does not have."
+    },
+    {
+      "layer": "L2",
+      "required_output": "From qualified receipts plus stable request/commitment/action keys and identity/relationship and graph/policy versions: an ordered current-state reducer, an exact completion matcher, a recorded lifecycle transition with its matching reason, and independent state for each parallel ask. Acceptance evidence: BSO/request ID, evidence membership, completion event ID, match features, lifecycle state and version fence.",
+      "fail_closed": "Review source on any ambiguous match. Suppress only the exact satisfied/superseded item — never a person-wide close, and never a mutation on unanchored identity."
+    },
+    {
+      "layer": "L3",
+      "required_output": "Given the current-state BSO and the four-brain snapshot: emit no package or play against a satisfied or superseded request; emit accepted domain capability only for a genuinely active remainder. Acceptance evidence: package/coverage/snapshot plus the current request lifecycle receipt.",
+      "fail_closed": "Fall to Observation only / unsupported when state or capability dependencies are incomplete."
+    },
+    {
+      "layer": "L4",
+      "required_output": "Given an active or closed BSO plus authoritative expertise/unsupported status: suppress the candidate for a closed request; choose Review source under ambiguity; create a new specific decision for a genuinely new reopened ask. Acceptance evidence: decision/suppression reason, candidate eliminations, the exact Completion definition and its validity window.",
+      "fail_closed": "Never preserve an imperative merely because an old score or age value is high; a stale score must not outrank a newer completion mutation."
+    },
+    {
+      "layer": "L5",
+      "required_output": "Given the current decision/execution plus the new completion/supersession mutation and authority versions: atomically cancel or satisfy ONLY the matching pending execution, preserve the audit trail, and create a new execution only for a new request version. Acceptance evidence: request→decision→execution/action IDs plus the cancellation/completion mutation receipt.",
+      "fail_closed": "Block the send during an ambiguous race; an internal \"I'll do it\" commitment never competes with or overrides an external completion event."
+    },
+    {
+      "layer": "L6",
+      "required_output": "Given a materialized action plus an immediate current-state/authority check at send time: suppress the queued send if the request is closed; reconcile the provider attempt if a close/send race occurs. Acceptance evidence: canonical DeliveryResult carrying either the suppression or the attempt/idempotency/provider state.",
+      "fail_closed": "No delivery on a stale version. An ambiguous accepted-then-timeout must be reconciled against provider state, never resent."
+    },
+    {
+      "layer": "L7",
+      "required_output": "Given decision, suppression, actual completion, outcome, correction and counterfactual: learn the correction and duplicate-prevention lesson separately, and assign no negative outcome to an action that was safely suppressed. Acceptance evidence: scoped request/outcome lineage, the matching correction, support/use gates and future consumption record.",
+      "fail_closed": "Learn nothing from person-wide correlation, a card click, a send event, or an unverified match."
+    }
+  ],
+  "mutations": [
+    {
+      "mutation": "User replies in the original email thread and that reply satisfies the ask.",
+      "expected_decision": "The exact request transitions to satisfied; the pending card and any pending execution are suppressed/cancelled.",
+      "prohibited": "Continuing to present a \"Reply now\" imperative for that request.",
+      "pass_condition": "A matching completion event ID is recorded and a suppression/cancellation receipt is present on the exact request.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No stable request/action identity and no thread-level state: extraction is one message at a time with no direction and no actor, so a same-thread reply cannot be attributed to the user nor matched to a request lifecycle. There is also no suppression state (cards.level carries only prescriptive/predictive) and L5 has never produced an execution row to cancel."
+    },
+    {
+      "mutation": "User answers the exact ask in Slack/chat with an explicit reference to the request or the asset.",
+      "expected_decision": "The cross-channel matcher closes only that one request, using the explicit request/asset reference as completion evidence.",
+      "prohibited": "Ignoring strong completion evidence because it arrived in another channel, OR closing every ask associated with that person.",
+      "pass_condition": "Exactly one request closes; the wrong-close rate and the stale-loop rate are both zero for the replay.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No cross-channel request/action identity reducer exists in Layer 2; operational state is person-global, which is precisely the wrong-close surface. No completion matcher and no per-request lifecycle to close."
+    },
+    {
+      "mutation": "The same person has two parallel asks outstanding; a Slack reply resolves exactly one of them.",
+      "expected_decision": "One request becomes satisfied; the other remains independently active with its own state.",
+      "prohibited": "Applying a person-wide ball_in_court flip or person-wide close that resolves both asks.",
+      "pass_condition": "Two distinct request IDs survive the mutation with distinct lifecycle states (one satisfied, one active).",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "Person-global operational state with no per-request scoping; there is no request ID to hold two independent lifecycles against, and ball_in_court is person-level by construction."
+    },
+    {
+      "mutation": "A cross-channel message is vague — \"done\" with no object, thread or relationship evidence tying it to a specific request.",
+      "expected_decision": "Review source: the request is neither closed nor re-pushed while the evidence is ambiguous.",
+      "prohibited": "Guessing the completion, OR leaving the original imperative actionable and sending a duplicate.",
+      "pass_condition": "An exact review question is surfaced with its candidate requests listed, and NO action button is rendered.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No abstention vocabulary — cards.level only ever carries prescriptive/predictive; there is no observation/review/wait/suppress state, and DEFER is mathematically unreachable because confidence_floor_bp defaults to 0 in every live manifest. L4 also produces exactly one candidate and never eliminates, so no candidate set can be presented for review."
+    },
+    {
+      "mutation": "A calendar booking resolves the scheduling half of the ask, but a separately promised deck remains outstanding.",
+      "expected_decision": "Close the scheduling request only; retain the deck request as active.",
+      "prohibited": "Closing both requests on the calendar event, OR keeping the scheduling request flagged overdue after it was booked.",
+      "pass_condition": "Predicate-specific matching is demonstrated: the calendar event satisfies the scheduling completion predicate only, and two independent request states persist afterward.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No completion-predicate model and no multi-request decomposition of a single relationship; without request identity there is nothing to match a calendar event against predicate-by-predicate."
+    },
+    {
+      "mutation": "The asset was sent, but the declared Completion requires the counterparty's acceptance.",
+      "expected_decision": "Record the action as executed/delivered while keeping Completion pending until acceptance or the declared rule fires.",
+      "prohibited": "Calling the send itself Completion or success.",
+      "pass_condition": "Action, delivery, Completion and Outcome remain four separately recorded states, none collapsed into another.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "L5 has never produced an execution row and card actions do not touch the execution subsystem; the L6 delivery control plane has never run (delivery_outbox empty across all orgs); L7 has no human verdicts and calibration has never executed — so three of the four states have no storage in practice."
+    },
+    {
+      "mutation": "Source sync is partial during the window in which the reply would have arrived.",
+      "expected_decision": "Mark the source incomplete; make no inference of silence and no inference of resolution over the missing interval.",
+      "prohibited": "Producing a fresh overdue/no-reply decision computed from an interval the connector never covered.",
+      "pass_condition": "A readiness code is attached that blocks negative inference and removes action authority for that window.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "There is no readiness gate that can withhold action authority: with no abstention state, a low-evidence path still emits a prescriptive card rather than parking it, and L1 receipts carry no enforced cursor-window/readiness fence that downstream layers honor."
+    },
+    {
+      "mutation": "The completion event is later corrected, deleted or revoked at the provider.",
+      "expected_decision": "Rebuild the request lifecycle from the new authoritative version and re-evaluate safely from the rebuilt state.",
+      "prohibited": "Keeping the now-invalid card in its stale state — whether stale-closed or stale-open.",
+      "pass_condition": "A version-fenced retraction is recorded together with a dependent-rebuild receipt showing what was re-derived.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No ordered current-state reducer and no version fence over request state; extraction is per-message and immutable-forward, so there is no lifecycle to rebuild and no dependency graph to re-evaluate on retraction."
+    },
+    {
+      "mutation": "An authorized agent replies on the user's behalf, carrying the origin execution ID of the GeniOS-generated action.",
+      "expected_decision": "Map the reply to the exact originating execution/request exactly once, and mark the actor as the agent rather than the human.",
+      "prohibited": "Treating the agent's reply as independent human corroboration, or letting it trigger a new decision loop.",
+      "pass_condition": "The idempotent origin ID prevents any duplicate decision and any duplicate learning record.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No execution rows exist to carry an origin ID (L5 has never produced one, card actions bypass the execution subsystem), and observations carry no actor — so an agent-authored message is indistinguishable from a human one."
+    },
+    {
+      "mutation": "The contact replies with a new, materially distinct ask after the original request was closed.",
+      "expected_decision": "The original request stays closed; a new request ID/version is created with its own decision.",
+      "prohibited": "Blindly reopening the old request, or suppressing the new ask because the thread is marked closed.",
+      "pass_condition": "The new request has its own evidence membership and its own exact `what remains`, kept separate from the closed one.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No request identity or versioning layer; nothing distinguishes \"same loop continuing\" from \"new loop opened\" because thread-level state does not exist and a relationship arc cannot be derived."
+    },
+    {
+      "mutation": "A queued outbound message races with a newly observed completion of the same request.",
+      "expected_decision": "Revalidate current state immediately before send: suppress if still unsent; if already attempted, reconcile the attempt and do not retry.",
+      "prohibited": "Duplicate outreach to the counterparty.",
+      "pass_condition": "At most one external impression occurs, and the race outcome is auditable in the DeliveryResult.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "The L6 delivery control plane has never run (delivery_outbox is empty across all orgs), so there is no queued-send path, no pre-send revalidation hook and no canonical DeliveryResult to record the race."
+    },
+    {
+      "mutation": "Similar text arrives from a different person who shares the same display name as the counterparty.",
+      "expected_decision": "Flag identity ambiguity and route to review; do not match the message to the request.",
+      "prohibited": "Letting the first claimant close the request on name similarity.",
+      "pass_condition": "No lifecycle mutation occurs until the identity is anchored or reviewed.",
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "No review/abstention state to route to, and no counterparty role model — every person node is interchangeable, so there is no requester/target anchor to check a same-name claimant against."
+    }
+  ]
+}

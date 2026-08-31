@@ -29,11 +29,36 @@ def _days(n: int) -> datetime:
 # ── domain resolution ────────────────────────────────────────────────────────────
 
 def test_the_strongest_hint_wins() -> None:
-    """L1 emits a source prior (HubSpot → sales) before keyword matches, so first is
-    most trustworthy. Taking the first also keeps this deterministic — an email hitting
-    two keywords must correlate the same way on every replay."""
+    """Ranked by ORIGIN, not by arrival order.
+
+    A source prior is a fact about the connector — mail from a support desk IS support — so
+    nothing outranks it. Position used to decide, which worked only because L1 happened to
+    append priors first.
+    """
     assert resolve_domain([{"domain": "sales", "source": "scope"},
                            {"domain": "support", "source": "keyword"}]) == "sales"
+    # …and still wins when it arrives second, which position could never guarantee
+    assert resolve_domain([{"domain": "support", "source": "keyword"},
+                           {"domain": "sales", "source": "scope"}]) == "sales"
+
+
+def test_the_model_outranks_a_keyword() -> None:
+    """The model read the whole message; a keyword is a substring test with no idea where it hit.
+
+    A regex matching "error" four times inside a confidentiality footer typed the design
+    partner's most important fundraising thread as `support`, while the model's own reading of
+    that same message — ["venture_capital", "startup_funding"] — was written into an observation
+    and then discarded.
+    """
+    assert resolve_domain([{"domain": "support", "source": "keyword"},
+                           {"domain": "venture_capital", "source": "model"}]) == "venture_capital"
+
+
+def test_two_keywords_still_resolve_deterministically() -> None:
+    """Ties inside a rank keep arrival order — never alphabetical, never dict-ordered."""
+    hints = [{"domain": "sales", "source": "keyword"}, {"domain": "admin", "source": "keyword"}]
+    assert resolve_domain(hints) == "sales"
+    assert resolve_domain(hints) == "sales"
 
 
 def test_no_hint_is_a_bucket_not_an_error() -> None:

@@ -1,0 +1,111 @@
+# The finance-administration subdomain had six capabilities and no door. Its administrative half —
+# processing, chasing, evidencing — is reachable from correspondence, because on most
+# organisations an invoice IS an email until somebody files it.
+
+identity:
+  id: admin.sit.money_owed_either_way
+  name: Money Owed Either Way
+  domain: admin
+  owner_capability: admin.finance_administration.receivables_follow_up
+  version: 1.0.0
+  status: stable
+
+description: >
+  A payment obligation exists in the correspondence with this counterparty — something we owe them
+  or they owe us — and it has a date. The read is about whether that date is going to be met and
+  what the record shows about it.
+
+  Money moves late for administrative reasons far more often than for financial ones. The invoice
+  went to a person who has left; it was never approved because nobody was asked; it was disputed
+  in a reply that nobody routed to finance. Each of those is visible in the thread and in none of
+  the systems, and each has a different fix.
+
+  The failure this file exists to prevent is chasing a payment that is not late. A supplier's
+  thirty-day terms are not a delay on day twelve, and a card that says otherwise trains its reader
+  to distrust every card about money. Where the terms are not on record, the correct output says
+  the terms are not on record — not a guess at what is normal.
+
+matches:
+  l2_situation_types:
+    - admin_contact
+    - account_admin
+    - relationship
+  scope: person
+  when:
+    - exists: commitment.due_at
+
+also_serves:
+  - admin.finance_administration.invoice_processing
+  - admin.finance_administration.payables_administration
+  - admin.finance_administration.expense_management
+  - admin.finance_administration.reimbursement_processing
+
+objects:
+  load:
+    - admin.obj.core.invoice
+    - admin.obj.core.deadline
+  optional:
+    - admin.obj.core.commitment
+    - admin.obj.core.expense
+    - admin.obj.core.approval
+    - admin.obj.core.budget_line
+    - admin.obj.core.vendor
+  never_load:
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+    - admin.obj.core.access_right
+    - admin.obj.core.meeting
+
+priority_bp: 6200
+typical_duration_days: 30
+
+signals_of_progress:
+  - positive_reply
+  - next_step_agreed
+
+signals_of_decay:
+  - timeline_slip
+  - negative_reply
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Money has a date attached on this thread. Never say "chase the payment" without saying which
+    payment, for how much if the record says, and against what date.
+
+    Headline: what is due, to or from whom, and when. If the direction is not on record, say the
+    direction is unclear rather than assuming we are owed.
+
+    Situation: what the correspondence shows about the obligation and its state — sent, approved,
+    disputed, silent. Name the last movement and its date.
+
+    Artifact: the message that moves it — the approval request, the re-send to the right person,
+    or the reply to the dispute. Never a generic reminder, and never a chase before the date.
+  fallback:
+    headline: "{entity} — a dated payment obligation is open"
+    situation: >-
+      The correspondence with {entity} carries a payment obligation with a date and no recorded
+      settlement.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    `commitment.due_at` is the gate, and it is doing double duty: it is the only dated obligation
+    the substrate carries, and it is not specific to money. The consequence is stated rather than
+    hidden — this situation will also fire on non-financial dated commitments, and the render hint
+    handles that by requiring the output to name WHAT is due before saying anything about payment.
+
+    `invoice.amount`, `invoice.due_at` and `payment.status` would make this a genuinely financial
+    read and none has a writer. Not declared and not predicated on.
+
+    `budget_tracking` is not served: it is a periodic analytical read over a portfolio, not a read
+    of one counterparty, and no anchor in this system corresponds to a budget.
+
+admission:
+  accepted_content_hash: f7a71e53e1b0f1d4e0c28df136b8bf0deaeed81291d4ec892eae5203b30224c0

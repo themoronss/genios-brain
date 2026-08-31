@@ -1,28 +1,72 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.finance_administration.budget_tracking
   name: Budget Tracking
   domain: admin
   subdomain: finance_administration
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Maintaining the administrative view of budget: allocation, committed spend, actuals, forecast
+  and variance. The number that matters is not what has been spent but what has been committed and not
+  yet invoiced, because that is the amount that surprises people at period end.
 
-description: >
-  Maintaining the administrative view of budget: allocation, committed spend, actuals,
-  forecast and variance. The number that matters is not what has been spent but what has been
-  committed and not yet invoiced, because that is the amount that surprises people at period
-  end.
+  '
+question: How much of this budget is genuinely left once commitments are counted?
 
-question: "How much of this budget is genuinely left once commitments are counted?"
+outcomes:
+- 'Committed spend visible alongside actuals, because the number that matters is what has been committed and not yet invoiced — and it is the number no accounting system shows by default.'
+- 'Variance explained in one line by the owner, monthly. Variance found at quarter end is history; the same number found in month two is steering.'
+- 'A named owner per budget line who sees their own position without asking.'
+- 'Forecast revised when reality moves, not defended until year end. A forecast nobody has changed since January is an aspiration with a date on it.'
+- 'The negative outcome: spend STOPPED or re-planned because the line is exhausted once commitments are counted.'
+failure_modes:
+- 'TRACKING ACTUALS ONLY. The line looks healthy and three purchase orders are open against it, which is how a budget is overspent by people acting reasonably.'
+- 'MONTHLY REPORTING WITH NO OWNER ATTACHED. A variance report circulated to everybody is owned by nobody.'
+- 'EXPLANATIONS THAT RESTATE THE NUMBER. "Higher than budget due to increased spend" is the most common variance commentary written.'
+- 'REBASELINING TO HIDE VARIANCE. Moving the budget to match the spend produces a clean report and destroys the instrument.'
+- 'ANNUAL BUDGETS TRACKED ANNUALLY, so the first real signal arrives with three months left to act.'
+kpis:
+- name: committed_visibility
+  unit: percent
+  description: Budget lines showing commitments as well as actuals. The whole capability in one number.
+  direction: higher_is_better
+- name: variance_explained_rate
+  unit: percent
+  direction: higher_is_better
+  description: Material variances with a one-line owner explanation inside the period.
+- name: forecast_revision_frequency
+  unit: count
+  description: A target band. Never revised is denial; revised constantly is no forecast at all.
+  direction: target_band
+- name: overspend_incidents
+  unit: count
+  description: Lines exceeded without a prior decision. The outcome measure.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.contract_and_vendor.purchase_order_management, admin.finance_administration.invoice_processing]
+  downstream: [admin.contract_and_vendor.procurement_administration, admin.compliance_and_governance.statutory_filing]
+  parallel: [admin.finance_administration.payables_administration, admin.admin_operations.admin_analytics]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, startup_lean, outsourced]
+  offerings: [transactional, assurance]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. budget.committed, .allocated and
+    .consumed are planned_substrate with no writer.
+
+    The capability rests on a distinction the description already makes and most budget
+    reporting does not: committed spend is the number that decides whether there is money left,
+    and it is invisible in every actuals-based report. A line can show sixty percent consumed
+    with three open orders against it that take it past a hundred, and everybody involved
+    behaved reasonably.
+
+admission:
+  accepted_content_hash: 1e1732f1affcba391925f4d827a92892e8c1f5f9c2f475cfd6f3bde3b7b389d5

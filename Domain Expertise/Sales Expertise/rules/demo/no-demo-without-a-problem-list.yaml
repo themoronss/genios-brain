@@ -1,0 +1,78 @@
+identity:
+  id: sales.rule.demo.no_demo_without_a_problem_list
+  name: No demo without a problem list
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.demo
+  subdomain: discovery_and_solution
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A demonstration with no established problems has only one available structure — the
+    product menu. It becomes a feature tour by construction rather than by choice, and it teaches the
+    buyer to evaluate us on breadth, which is the comparison we least want.'
+  answers:
+  - Is this deal ready for a demonstration?
+  not:
+  - A rule about demo content, which the playbook covers.
+
+rule:
+  statement: 'A demonstration MUST NOT be recommended for a deal with no recorded, buyer-attributable
+    problem statement. Where a demo is requested before discovery, the recommended action is a short
+    discovery conversation first, or an explicitly-labelled overview that is not presented as a
+    tailored demonstration.'
+  spans:
+  - sales.obj.core.pain_point
+  - sales.obj.core.business_need
+  - sales.obj.core.next_action
+  when:
+  - {has_obs: demo_requested}
+  - {absent: commitment.action}
+  then: 'Recommend establishing the problem list before the demonstration, or labelling the session as
+    an overview rather than a tailored demo.'
+  severity: warning
+  why: 'The structure of a demo is decided by what it is built from, and with no problem list the only
+    ordering available is the product''s own. That produces a feature tour, which does two things at
+    once: it leaves the buyer to perform the mapping from capability to their situation — the work
+    they were relying on us for — and it establishes breadth as the evaluation criterion, which
+    favours whichever vendor has the longest list rather than the best fit.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'AN EXPLICITLY LABELLED OVERVIEW. A generic walkthrough is a legitimate instrument early in a
+    process, provided it is called that and nobody is presenting it as tailored.'
+  - 'A BUYER WHO INSISTS ON SEEING THE PRODUCT FIRST. Some will not engage in discovery before they
+    know the product is plausible, and refusing reads as a process being imposed. Run a short
+    overview and do discovery inside it.'
+  - 'A SELF-SERVE OR PRODUCT-LED MOTION. The product is the demonstration and the sequence does not
+    apply.'
+  - 'A RENEWAL OR EXPANSION DEMO. The problems are known from the existing relationship and
+    re-establishing them treats a customer as a stranger.'
+  - 'A SCORED TECHNICAL EVALUATION. The requirement list is the problem list, supplied by the buyer in
+    their own form.'
+
+objects_used:
+- sales.obj.core.pain_point
+- sales.obj.core.business_need
+- sales.obj.core.next_action
+
+limits:
+- The problem list is not a field in the record; `commitment.action` is being used as a proxy for
+  something specific having been agreed, which is weak and says nothing about whether it is a problem
+  statement.
+- '`demo_requested` has 9 rows on the design partner''s org, so the trigger exists there while the
+  precondition it checks does not.'
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new, and it completes the rule coverage for discovery_and_solution. The second
+    exception is the practical one — refusing a buyer who wants to see the product is a process being
+    imposed, and the workable answer is an honestly-labelled overview with discovery conducted inside
+    it.'

@@ -3,37 +3,80 @@ identity:
   name: Priority & Severity
   domain: customer_support
   subdomain: intake_and_triage
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Holding apart how broken something is from what we work on first, under exactly the conditions
+  that make people collapse them. Severity is a property of the fault, established from blast radius and
+  whether a workaround exists; priority is an allocation of scarce attention, established from severity
+  crossed with what the account is entitled to and what else is currently in the queue. The two routinely
+  invert — the worst fault on a free trial against a middling one on an account renewing next month —
+  and an organisation whose data model cannot express that inversion will work the wrong one first and
+  be able to prove it followed the rules. This is one capability rather than two because all of the expertise
+  lives in the tension between them, and splitting it loses precisely the knowledge that matters.
 
-description: >
-  Holding apart how broken something is from what we work on first, under exactly the conditions
-  that make people collapse them. Severity is a property of the fault, established from blast
-  radius and whether a workaround exists; priority is an allocation of scarce attention,
-  established from severity crossed with what the account is entitled to and what else is currently
-  in the queue. The two routinely invert — the worst fault on a free trial against a middling one
-  on an account renewing next month — and an organisation whose data model cannot express that
-  inversion will work the wrong one first and be able to prove it followed the rules. This is one
-  capability rather than two because all of the expertise lives in the tension between them, and
-  splitting it loses precisely the knowledge that matters.
+  '
+question: How broken is this, and — separately — what do we work on first?
 
-question: "How broken is this, and — separately — what do we work on first?"
+outcomes:
+- 'Severity established from the fault — how broken, for how many — independently of who reported it or how they sound.'
+- 'Priority established separately, from entitlement, breach proximity and account stake. Two axes, deliberately kept apart under exactly the conditions that collapse them.'
+- 'A low-severity ticket allowed to be high-priority, and the reverse, without anybody feeling the system is inconsistent.'
+- 'Both values recorded with a reason, because triage decisions are re-examined during escalations and an unexplained P1 cannot be defended.'
+- 'The negative outcome: severity DOWNGRADED against a customer''s stated view, with the reasoning. A triage function that never disagrees with the reporter is a transcription service.'
+failure_modes:
+- 'COLLAPSING THE TWO AXES INTO ONE FIELD, which is what every ticketing system encourages and what makes both numbers meaningless.'
+- 'TRIAGING ON TONE. Angry is a communication state, not an impact measure, and rewarding it buries the polite customer with the real outage.'
+- 'ACCEPTING THE REPORTER''S SEVERITY. They are describing their own blast radius honestly and they cannot see anybody else''s.'
+- 'PRIORITY SET FROM ACCOUNT VALUE ALONE, which is defensible commercially and produces a queue where a small customer''s outage never surfaces.'
+- 'NO RECORDED REASON, so the triage decision cannot be defended when the escalation arrives asking why it was a P3.'
+kpis:
+- name: axis_separation_rate
+  unit: percent
+  description: Tickets carrying both a severity and a distinct priority rather than one conflated value.
+  direction: higher_is_better
+- name: tone_priority_correlation
+  unit: ratio
+  description: How strongly priority tracks the emotional register of the report. Should be near zero.
+  direction: lower_is_better
+- name: triage_reversal_rate
+  unit: percent
+  description: Severity changed after triage. A target band — zero means nobody is judging, high means triage is guessing.
+  direction: target_band
+- name: reasoned_triage_share
+  unit: percent
+  description: Triage decisions with a recorded rationale.
+  direction: higher_is_better
+handoffs:
+  upstream: [customer_support.intake_and_triage.channel_intake, customer_support.intake_and_triage.intent_classification,
+             customer_support.entitlement_and_sla.entitlement_verification]
+  downstream: [customer_support.intake_and_triage.routing_and_assignment, customer_support.entitlement_and_sla.breach_prevention,
+               customer_support.escalation_and_incident.escalation_management]
+  parallel: [customer_support.customer_communication.expectation_setting, customer_support.diagnosis_and_resolution.diagnostics]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, swarming_support,
+           follow_the_sun, named_tam, premium_paid_support, outsourced_bpo, field_service, embedded_in_product]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Stub — identity, purpose and load-set only. Promote by adding decision_frameworks first
-    (impact times urgency, the workaround ladder, the blast-radius ladder), then the heuristics
-    that govern revision: who may change severity and on what evidence, who may change priority
-    and on whose authority, and why those two answers should differ. failure_modes should cover
-    severity inflation by escalation, the single-field collapse, and the quieter one where
-    severity is set correctly and priority is never revisited as the queue changes around it.
-    Keep all band definitions out of this file — they are Layer 4 arithmetic and belong in the
-    pack manifest. Cannot become executable until an SLA and severity signal exists; today
-    ticket.severity and sla.clock_state are planned substrate only.
+    Promoted out of Phase-1 stub. Not on a live route. ticket.severity and ticket.priority are
+    both planned_substrate with no writer, which is why neither axis can be computed today — and
+    why the corpus can still state that they are two axes.
+
+    tone_priority_correlation is the number that would expose the most expensive mistake an
+    intake function makes, and derived.sentiment is the one field in the substrate that could
+    partly compute it. Stated as a needed signal rather than as a claim.
+
+    triage_reversal_rate is a target band because zero means triage is transcribing the
+    reporter's own assessment, which is the failure this capability exists to prevent.
+
+admission:
+  accepted_content_hash: 2b363cfdf325b1d87542319a193368d1e2c18282779c2b389ec7ada1c00867df

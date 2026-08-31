@@ -1,0 +1,78 @@
+identity:
+  id: admin.heu.gatekeeping.the_gatekeeper_is_the_brand_s_first_draft
+  name: The gatekeeper is the principal's first draft
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.gatekeeping
+  subdomain: executive_support
+  version: 1.0.0
+  status: stable
+purpose:
+  statement: >
+    For most people the assistant IS the executive's personality at first contact. Every refusal,
+    delay and redirection is attributed upward, which makes the register of a no a decision about the
+    principal's reputation rather than about the assistant's efficiency.
+  answers:
+  - Why does the tone of a routine decline matter more than its speed?
+  - Who is actually being judged when a request is refused?
+
+heuristic:
+  statement: >
+    Nobody remembers being filtered. They remember how it felt, and they attribute it to the person
+    behind the gate.
+  why: >
+    The requester has no visibility into the criteria, the volume, or the assistant's instructions.
+    The only data they have is the message they received, so it is the only thing they can form a
+    judgement from — and the judgement they form is about the principal, because that is who the
+    exchange was about. This is why a warm, specific refusal preserves a relationship the principal
+    did not know they had, and a curt one damages it without anybody reporting the damage.
+  confidence_bp: 8000
+  applies_when: Any refusal, deferral or redirection sent on the principal's behalf.
+  breaks_down_when: >
+    The sender is acting in bad faith — a persistent vendor, a hostile counterparty, somebody who has
+    already been told no three times. Warmth there reads as an opening and extends the exchange,
+    which is the opposite of what the gate is for. It also breaks down where speed genuinely
+    dominates: during a live incident a curt accurate answer beats a gracious slow one, and everybody
+    involved knows it.
+  reads:
+  - admin.obj.core.request
+  - admin.obj.core.escalation
+  contradicts:
+  - admin.heu.calendar_management.an_open_calendar_is_a_priorities_leak
+
+limits:
+- It is about register, not about the decision. A gracious refusal of something that should have been let through is still a miss.
+- It has no substrate representation. Nothing in Layer 2 measures tone of an outbound refusal, so this is authored for a human and for rendering.
+
+failure_modes:
+- Read as a licence to soften every no into ambiguity. A warm refusal that does not clearly refuse produces a second request and a worse second refusal.
+- Used to justify slow replies. Grace is a property of the words, not of the delay before them.
+
+variants:
+- applies_to: executive_office
+  change: Strongest form. The principal is externally visible and the gate is a large share of their external contact surface.
+  why: The volume of people whose only interaction is the gate is highest here.
+- applies_to: startup_lean
+  change: Weaker — the principal is usually reachable anyway, so the gate is advisory and the attribution is diluted.
+  why: When everyone can reach the founder, the assistant is not the only impression.
+
+references:
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+  note: Its advocacy-language finding — that framing changes outcomes independently of content — is the mechanism here, in an administrative rather than a support context.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    contradicts names the calendar heuristic because they pull apart in practice: that one says the
+    default answer must be the principal's priorities, this one says every no is a reputational act.
+    An assistant holding both is doing the job; an assistant holding only one is either a
+    doormat or an obstacle.

@@ -1,41 +1,122 @@
-# STUB — identity, purpose and load-set only. See metadata.notes for how to promote it.
-#
-# Sits immediately upstream of de-escalation, and most of de-escalation's workload is created
-# here. An expectation set badly today is an escalation with a date on it.
-
 identity:
   id: customer_support.customer_communication.expectation_setting
   name: Expectation Setting
   domain: customer_support
   subdomain: customer_communication
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Deciding what to promise, knowing that every promise becomes a clock somebody has to answer
+  to. The expensive mistake is optimism offered to end an uncomfortable exchange: an under-promise that
+  lands early costs nothing, while an over-promise turns a solvable ticket into a broken one and hands
+  the next agent a trust problem stacked on top of the original fault. Expectations are set against what
+  the queue actually does, not against what the entitlement document says it does — and a promise made
+  without saying what happens if it slips is only half a promise.
 
-description: >
-  Deciding what to promise, knowing that every promise becomes a clock somebody has to answer to.
-  The expensive mistake is optimism offered to end an uncomfortable exchange: an under-promise
-  that lands early costs nothing, while an over-promise turns a solvable ticket into a broken one
-  and hands the next agent a trust problem stacked on top of the original fault. Expectations are
-  set against what the queue actually does, not against what the entitlement document says it does
-  — and a promise made without saying what happens if it slips is only half a promise.
+  '
+question: What can we honestly commit to here, and what happens when it slips?
 
-question: "What can we honestly commit to here, and what happens when it slips?"
+outcomes:
+- 'A commitment the queue can actually meet, set against what it does rather than what the
+  entitlement document says it does. An entitlement target is a ceiling; today''s backlog is the
+  constraint, and promising the ceiling on a bad week is how a solvable ticket becomes a broken one.'
+- 'Every promise paired with what happens if it slips. A promise with no stated fallback is half a
+  promise, and the missing half is the one that gets tested.'
+- 'The PROCESS promised where the outcome cannot be. "I will have an answer by Thursday" is
+  keepable; "it will be fixed by Thursday" is a bet on a diagnosis nobody has finished.'
+- 'An under-promise that lands early rather than an over-promise that lands late. The asymmetry is
+  not close: early costs nothing and buys credibility, late costs the original fault plus the trust
+  problem stacked on top of it.'
+- 'The uncomfortable version said in the first exchange. The expensive mistake in this capability is
+  optimism offered to end an awkward conversation, and it is always cheaper to have the awkward
+  conversation now.'
+- 'The negative outcome: a request we will NOT meet, said plainly, with what we will do instead.
+  Declining clearly is a service; declining by going quiet is the thing customers describe to each
+  other.'
+
+failure_modes:
+- 'PROMISING TO END THE CONVERSATION. The commonest failure and the hardest to see, because it feels
+  like good service in the moment and only the next agent pays for it.'
+- 'QUOTING THE SLA AS THE PROMISE. The target is what we owe contractually; the estimate is what
+  will actually happen. Reading the first as the second is how a queue that is three days behind
+  keeps promising four hours.'
+- 'PROMISING AN OUTCOME BEFORE DIAGNOSIS. A fix date given before the cause is known is a guess with
+  a customer''s planning built on top of it.'
+- 'SETTING THE EXPECTATION AND NOT RECORDING IT. The customer remembers it exactly; the next person
+  on the ticket has no idea it was made, and the contradiction is what turns a delay into a
+  complaint.'
+- 'RESETTING THE CLOCK SILENTLY ON A HANDOVER. A new owner starting their own estimate erases a
+  promise the customer is still holding, and nobody told them.'
+- 'CONFUSING PRECISION WITH HONESTY. "Between two and ten days" is accurate and useless. A range
+  wide enough to be safe is a refusal to commit wearing the costume of transparency.'
+
+kpis:
+- name: promise_kept_rate
+  unit: percent
+  description: Share of stated expectations met by their stated moment. The headline number, and the
+    one a queue improves fastest by promising less.
+  direction: higher_is_better
+- name: expectation_recorded_rate
+  unit: percent
+  description: Share of promises captured where the next agent can see them. Uncaptured promises are
+    the mechanism by which a handover creates a complaint.
+  direction: higher_is_better
+- name: slip_communicated_before_due_rate
+  unit: percent
+  description: Share of missed expectations where we said so before the date rather than after.
+  direction: higher_is_better
+- name: over_promise_rate
+  unit: percent
+  description: Share of commitments made beyond what the queue's own recent behaviour supported.
+  direction: lower_is_better
+- name: reopen_after_promise_miss
+  unit: percent
+  description: Share of tickets reopened or escalated within a short window of a missed promise. The
+    cost side — it measures what an over-promise actually buys.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - customer_support.entitlement_and_sla.entitlement_verification
+  - customer_support.intake_and_triage.priority_and_severity
+  - customer_support.diagnosis_and_resolution.diagnostics
+  downstream:
+  - customer_support.entitlement_and_sla.commitment_tracking
+  - customer_support.customer_communication.proactive_status_updates
+  - customer_support.customer_communication.response_drafting
+  parallel:
+  - customer_support.customer_communication.de_escalation
+  - customer_support.entitlement_and_sla.breach_prevention
+
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support,
+           swarming_support, named_tam, follow_the_sun, premium_paid_support, outsourced_bpo,
+           ai_first_support, proactive_support, community_support, field_service]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following the shape of
-    capabilities/03-customer-communication/de-escalation/capability.yaml. The expertise worth
-    capturing first: why a range beats a point estimate and why a next-contact time beats both;
-    the rule that we commit to when we will speak rather than to when it will be fixed, because
-    only one of those is inside our control; and the failure mode where the entitlement target is
-    quoted back as a prediction when it is a floor. Pairs with commitment_tracking in the
-    Entitlement & SLA subdomain — anything promised here must become a tracked Commitment, or it
-    is not a promise, it is a hope with a timestamp.
+    Promoted out of Phase-1 stub. Reachable from the live relationship and support_contact
+    routes.
+
+    The substrate supports the tracking half and not the forecasting half. commitment.due_at and
+    thread.ball_in_court say what was promised and whose move it is; nothing says what the queue
+    is currently capable of, because derived.backlog_age, ticket.status and a first-response
+    baseline are all unwritten. So a capability that should set expectations against real queue
+    behaviour can, on this tenant, only set them against what was said — which is why 'promise
+    the process, not the outcome' is the playbook rather than an estimation model.
+
+    Written to sit upstream of commitment_tracking and downstream of entitlement_verification:
+    entitlement bounds what may be promised, this decides what IS promised, and commitment
+    tracking holds us to it. Collapsing the three is how a queue ends up quoting its SLA as an
+    estimate.
+
+admission:
+  accepted_content_hash: a36bca564afa14ea30f157dbc8b42764c17c868259bc4b2d3608c8830c9bd714

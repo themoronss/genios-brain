@@ -1,28 +1,73 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.people_administration.onboarding_administration
   name: Onboarding Administration
   domain: admin
   subdomain: people_administration
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Everything that must exist before a start date: contract and right-to-work documentation,
+  payroll setup, system accounts, equipment, seating, induction and mandatory policy acknowledgement.
+  Onboarding is a deadline-driven sequence with a hard external date, and the parts that fail are always
+  the ones owned by nobody in particular.
 
-description: >
-  Everything that must exist before a start date: contract and right-to-work documentation,
-  payroll setup, system accounts, equipment, seating, induction and mandatory policy
-  acknowledgement. Onboarding is a deadline-driven sequence with a hard external date, and the
-  parts that fail are always the ones owned by nobody in particular.
+  '
+question: Will this person be able to work on day one, legally and practically?
 
-question: "Will this person be able to work on day one, legally and practically?"
+outcomes:
+- 'Everything ready BEFORE day one — accounts, equipment, access, paperwork — from a standing checklist per role, because the start date is a deadline that does not move.'
+- 'Right-to-work and contract evidence complete before the person starts, not chased in week two when the leverage has gone.'
+- 'Mandatory policy acknowledgement captured at induction, when attention is highest and the population is defined.'
+- 'A named person expecting them. The logistics can be perfect and the first day still lands badly if nobody was told.'
+- 'The negative outcome: a start date MOVED because something legally required is not in place. Starting someone without right-to-work evidence is not a paperwork gap.'
+failure_modes:
+- 'STARTING THE CHECKLIST AT THE START DATE. Every item has a lead time and most of them are longer than anyone assumes.'
+- 'ONE CHECKLIST FOR EVERY ROLE, which under-provisions the specialised joiner and over-provisions everyone else.'
+- 'PAPERWORK CHASED AFTER ARRIVAL, when the person is already working and refusing to proceed is no longer available.'
+- 'EQUIPMENT ORDERED AND NOT CONFIGURED, which is a laptop in a box and a day lost.'
+- 'INDUCTION AS A DOCUMENT DUMP. Acknowledgement is captured and nothing is understood, which is the compliance record without the compliance.'
+kpis:
+- name: day_one_ready_rate
+  unit: percent
+  description: Joiners able to work on day one, legally and practically. The whole capability.
+  direction: higher_is_better
+- name: pre_start_documentation_complete
+  unit: percent
+  direction: higher_is_better
+  description: Right-to-work and contract evidence held before the start date.
+- name: time_to_productive_access
+  unit: days
+  description: Start date to all systems working. The number the joiner experiences.
+  direction: lower_is_better
+- name: start_date_slips
+  unit: count
+  description: A target band. Zero can mean nothing is ever blocked, including things that should have been.
+  direction: target_band
+handoffs:
+  upstream: [admin.people_administration.employee_records_administration, admin.admin_operations.request_intake]
+  downstream: [admin.people_administration.access_and_identity_administration, admin.facilities_and_assets.asset_issuance_and_recovery,
+               admin.people_administration.payroll_input_administration]
+  parallel: [admin.compliance_and_governance.policy_administration, admin.facilities_and_assets.workplace_management]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, hybrid, distributed, startup_lean]
+  offerings: [coordinative, transactional]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. employee.start_at,
+    onboarding_task_overdue and start_date_approaching are all planned_substrate with no writer.
+
+    start_date_slips is a target band rather than a minimum, which is the uncomfortable call.
+    Zero slips can mean nothing is ever blocked — including a start without right-to-work
+    evidence, which is not a paperwork gap but an offence. A function that has never moved a
+    start date has never exercised the one refusal it exists to be able to make.
+
+admission:
+  accepted_content_hash: 60db02874e93c4409f64917c665e25e46ba669f8a8a40bcc6a2405b08d9de89d

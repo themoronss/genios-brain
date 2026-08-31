@@ -1,0 +1,86 @@
+identity:
+  id: admin.pb.employee_records_administration.one_file_per_person_current_and_confidential
+  name: One file per person, current and confidential
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.people_administration.employee_records_administration
+  subdomain: people_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Each employee has one complete record — contract, amendments, statutory docs, role changes
+    — current within days of any change and access-controlled, because employment records are legal evidence
+    stored as HR convenience.
+
+when_to_use:
+  do_not_use_when:
+  - The document belongs to a live grievance or investigation with its own handling and access rules. Filing it into the general record breaches both.
+steps:
+- order: 1
+  name: Paper the change when it is agreed
+  description: >
+    A verbally agreed variation that was never signed leaves the employer arguing against its own
+    record. The window between agreement and paperwork is where memory diverges.
+  actor: human
+  objects_read: [admin.obj.core.employee_record, admin.obj.core.document]
+  done_when: The signed variation is held.
+- order: 2
+  name: Keep one file, not one per system
+  description: >
+    Spread across systems, completeness is unknowable and each system believes it is the record.
+  actor: human
+  done_when: There is a single answer to where the record is.
+- order: 3
+  name: Restrict access to who needs it
+  description: >
+    This is the most sensitive personal data most organisations hold, and broad access is granted
+    for the lowest-value reasons.
+  actor: system
+  objects_read: [admin.obj.core.access_right]
+  done_when: The reader list is short and justified.
+- order: 4
+  name: Retain by record class, not by file
+  description: >
+    A contract and a disciplinary note have different lawful lives. One period for the file destroys
+    one or over-keeps the other.
+  actor: human
+  objects_read: [admin.obj.core.compliance_obligation]
+  done_when: Categories carry their own periods.
+- order: 5
+  name: Check completeness before anyone needs it
+  description: >
+    The gap is otherwise found by the dispute, which is the one moment it cannot be closed.
+  actor: human
+  done_when: Missing items are known and being chased, or accepted as unrecoverable.
+objects_used: [admin.obj.core.employee_record, admin.obj.core.document, admin.obj.core.contract, admin.obj.core.access_right, admin.obj.core.compliance_obligation]
+limits:
+- 'It holds the record; it does not make the underlying employment decision defensible.'
+- 'Step 4 depends on jurisdiction-specific rules that vary for the same document type.'
+failure_modes:
+- 'Step 1 deferred because the change is amicable, which is precisely the change that is later disputed.'
+- 'Step 3 widened during a busy period and never narrowed again.'
+variants:
+- applies_to: multi_entity
+  change: Steps 1 and 4 vary by employing entity; a group-wide template is wrong in at least one jurisdiction.
+  why: Employment law is territorial and the file is not.
+- applies_to: startup_lean
+  change: Steps 1 and 5. The exposure is the unsigned variation and the missing contract, not access breadth.
+  why: Few people, few files, and the gaps are specific and known.
+references:
+- title: Employment records and evidential standards
+  kind: practitioner
+  note: Where documentation completeness is treated as the determinative factor in employment disputes.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 1 is the one that fails on amicable changes. A variation agreed warmly and never signed
+    is exactly the one that later gets disputed, because nothing about it felt like it needed
+    paper at the time.

@@ -1,0 +1,78 @@
+identity:
+  id: sales.rule.cold_email.replies_are_counted_per_person
+  name: Replies are counted per person
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.cold_email
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'Reply rate measured per message improves when more messages are sent to the same people.
+    It is therefore a metric that rewards the single behaviour most damaging to the channel, and it
+    does so while appearing to measure quality.'
+  answers:
+  - What is the denominator for a cold-email reply rate?
+  not:
+  - A rule about how many touches a sequence should have.
+
+rule:
+  statement: 'Cold-email reply rate MUST be computed over PEOPLE contacted, not over messages sent, and
+    a reply rate published with a per-message denominator MUST be labelled as such. Automated replies
+    MUST be excluded from the numerator.'
+  spans:
+  - sales.obj.core.lead
+  - sales.obj.core.icp
+  when:
+  - {exists: thread.last_outbound}
+  - {absent: thread.last_inbound}
+  then: 'Count this person as contacted-without-reply in the denominator, and exclude any
+    automated-classification inbound from being counted as a reply.'
+  severity: warning
+  why: 'The denominator determines what the metric rewards. Per message, adding a fifth touch to a
+    sequence raises the reported rate by adding sends that will not be replied to but also adding the
+    replies that arrive from earlier touches — so the number improves as the programme gets more
+    intrusive. Per person it does the opposite: more messages to the same unresponsive people leave
+    the denominator unchanged and the numerator flat, which is exactly the honest reading. The
+    automated-reply exclusion matters for the same reason — out-of-office responses inflate a number
+    that is supposed to measure interest.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'A GENUINELY SINGLE-TOUCH PROGRAMME. Where every person receives exactly one message the two
+    denominators are identical and the distinction has no content.'
+  - 'DIAGNOSING WHICH TOUCH WORKS. Per-message reply data is the right instrument for asking which
+    step in a sequence earns its place; it is the wrong one for judging the programme.'
+  - 'DELIVERABILITY ANALYSIS. Per-message figures are appropriate when the question is about sending
+    infrastructure rather than about relevance.'
+  - 'A REPLY THAT ARRIVED THROUGH ANOTHER CHANNEL. Someone who answers a cold email by calling has
+    replied; counting only inbound mail understates the channel.'
+  - 'AN AUTOMATED REPLY CARRYING REAL INFORMATION. An out-of-office naming a successor or a departure
+    is genuinely useful and should be captured as intelligence even though it is excluded from the
+    reply numerator.'
+
+objects_used:
+- sales.obj.core.lead
+- sales.obj.core.icp
+- sales.obj.core.persona
+
+limits:
+- This rule is computable today. `thread.last_outbound` and `thread.last_inbound` are both dense on
+  the design partner's org (118 and 127 rows), and `email_noise:automated` — the second most common
+  observation there — is what separates a real reply from an autoresponder.
+- Cannot see replies that arrived by another channel, which is the fourth exception.
+- Says nothing about what a good reply rate is.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new, and one of the few rules in this corpus whose condition is fully evaluable
+    on live data — outbound, inbound and the automated-noise classification all exist in the graph.
+    The denominator argument is the whole content: per message, a more intrusive programme reports a
+    better number.'

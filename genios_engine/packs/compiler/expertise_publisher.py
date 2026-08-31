@@ -76,8 +76,45 @@ class PostgresExpertisePublisher:
         return package
 
 
+def purge_superseded_expertise_packages(engine, *, keep: int = 3) -> int:
+    """Keep the newest `keep` packages per (org, situation); delete the rest. Returns rows removed.
+
+    Content-addressing stops a package being rewritten when NOTHING changed — that fix is in
+    `contracts/domain_expertise.py` and it is the larger half. It cannot bound this table on its
+    own, and the reason is worth stating plainly rather than discovering later:
+    `SituationContextSlice.graph_version` is ORG-GLOBAL (`max(graph_version) from graph_versions`),
+    so any write anywhere in the tenant advances the version carried by EVERY situation's slice,
+    including anchors whose own facts did not move. A package therefore legitimately mints a new
+    id on each sync that touched anything, and at ~238 kB a package with 73 live situations that
+    is ~17 MB per sync for one tenant. Unbounded growth of the slow kind instead of the fast kind.
+
+    Removing `graph_version` from the content address would bound it harder, and was deliberately
+    NOT done: the version is what binds a compiled package to the exact graph it observed, it is
+    the same value the reasoning snapshot's integrity guard compares, and quietly making two
+    packages built from different graphs identical is a worse property to own than a table that
+    needs sweeping. Superseding is honest — the old package really is superseded — and it is the
+    same shape as `purge_expired_context_payloads` next door.
+
+    `keep > 1` on purpose: the newest package is what the current card cites, and the ones behind
+    it are what an audit of a card issued yesterday needs in order to replay. Three is a working
+    window, not a guarantee — a replay of something older is expected to fail closed rather than
+    read a package that was quietly swapped underneath it.
+    """
+    with engine.begin() as conn:
+        result = conn.execute(text(
+            "delete from expertise_packages p using ("
+            "  select org_id, expertise_id, row_number() over ("
+            "    partition by org_id, situation_id order by created_at desc, expertise_id desc"
+            "  ) rn from expertise_packages"
+            ") ranked "
+            "where ranked.rn > :keep and p.org_id = ranked.org_id "
+            "  and p.expertise_id = ranked.expertise_id"), {"keep": keep})
+    return int(result.rowcount or 0)
+
+
 __all__ = [
     "ExpertisePublisher",
     "InMemoryExpertisePublisher",
     "PostgresExpertisePublisher",
+    "purge_superseded_expertise_packages",
 ]

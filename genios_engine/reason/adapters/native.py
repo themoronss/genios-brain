@@ -24,7 +24,8 @@ _DEFAULT_ORCHESTRATOR = ReasoningOrchestrator(default_registry())
 
 
 def _selected_fields(capability: CapabilityManifest) -> tuple[tuple[str, ...], tuple[str, ...]]:
-    root = set(capability.required_fields)
+    # Gate set UNION selection set: pull everything available, gate on the core.
+    root = set(capability.required_fields) | set(capability.selection_fields)
     neighbor: set[str] = set()
     for reasoner in capability.reasoners:
         for field in reasoner.required_fields:
@@ -110,20 +111,47 @@ def native_context_snapshot(*, org_id: str, context: NodeContext,
                             graph_version: int) -> ContextSnapshot:
     """Select exactly the fields declared by one capability from the mutable graph view."""
     root_fields, neighbor_fields = _selected_fields(capability)
-    facts = {field: semantic_legacy_value(context.facts[field])
-             for field in root_fields if field in context.facts}
+    # A root field absent on the anchor but present in its 1-hop neighbourhood RESOLVES from there.
+    #
+    # This is not a convenience. An aggregate anchor — a company — owns no facts directly; the
+    # relationship it names lives on the people and threads beneath it, which is exactly where L2
+    # writes thread.ball_in_court, deal.status and commitment.due_at. Requiring those on the
+    # company node itself asks for a fact the model has no reason to place there, so every compiled
+    # capability returned INSUFFICIENT_CONTEXT against a graph that already held its answer.
+    #
+    # Provenance is preserved, not blurred: the evidence for a borrowed field is emitted with
+    # context_scope="neighbor", so a reader can always tell whether the anchor asserted something
+    # itself or inherited it. An explicit `neighbor:` declaration still resolves only from the
+    # neighbourhood — this widens where a root field MAY be found, never what counts as evidence.
+    _borrowed = {field for field in root_fields
+                 if field not in context.facts and field in context.neighbor_facts}
+    facts = {field: semantic_legacy_value(
+                 context.facts[field] if field in context.facts
+                 else context.neighbor_facts[field])
+             for field in root_fields
+             if field in context.facts or field in _borrowed}
+    # A borrowed field appears in BOTH partitions, and both placements are load-bearing: `facts`
+    # is where the capability looks for a root field, and `neighbor_facts` is the partition its
+    # neighbour-scoped evidence must be resolvable against (ContextSnapshot enforces that an
+    # evidence ref's field exists in the scope it names). Listing it only in `facts` made the
+    # snapshot self-inconsistent and every reasoning call raised instead of deciding.
     neighbor_facts = {field: semantic_legacy_value(context.neighbor_facts[field])
-                      for field in neighbor_fields if field in context.neighbor_facts}
+                      for field in set(neighbor_fields) | _borrowed
+                      if field in context.neighbor_facts}
     evidence = tuple(
         [_evidence(org_id=org_id, node_id=context.node_id, field=field,
-                   record=context.facts[field], neighbor=False)
-         for field in root_fields if field in context.facts]
+                   record=(context.facts[field] if field in context.facts
+                           else context.neighbor_facts[field]),
+                   neighbor=field in _borrowed)
+         for field in root_fields
+         if field in context.facts or field in _borrowed]
         + [_evidence(org_id=org_id, node_id=context.node_id, field=field,
                      record=context.neighbor_facts[field], neighbor=True)
            for field in neighbor_fields if field in context.neighbor_facts]
     )
     missing = tuple(sorted(
-        [field for field in root_fields if field not in context.facts]
+        [field for field in root_fields
+         if field not in context.facts and field not in _borrowed]
         + [f"neighbor:{field}" for field in neighbor_fields
            if field not in context.neighbor_facts]
     ))

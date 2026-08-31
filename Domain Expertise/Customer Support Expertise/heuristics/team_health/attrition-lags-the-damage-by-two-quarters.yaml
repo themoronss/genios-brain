@@ -1,0 +1,65 @@
+identity:
+  id: customer_support.heu.team_health.attrition_lags_the_damage_by_two_quarters
+  name: Attrition lags the damage by two quarters
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.support_management.team_health
+  subdomain: support_management
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The team that burned out in March resigns in September. When exits cluster, the cause is
+    upstream in the load curve — and the fix must aim there, not at the exit interviews.
+  answers:
+  - Why do retention fixes at resignation time fail?
+
+heuristic:
+  statement: >
+    The team that burned out in March resigns in September. When exits cluster, the cause is
+    upstream in the load curve, and the fix must aim there rather than at the exit interviews.
+  why: >
+    Leaving is expensive and slow: people tolerate a bad period, decide privately, look for
+    something else, and go months later. So resignations are a lagging record of conditions that
+    have already changed — sometimes improved — by the time they arrive. An organisation reading
+    exit interviews is reading a report on the previous half-year, and any remedy it designs is
+    aimed at a state of the world that no longer exists.
+  confidence_bp: 8000
+  applies_when: A cluster of departures from a team with a known load history.
+  breaks_down_when: >
+    The exits are unrelated — a competitor hiring, a relocation, a life event. Reading coincidence
+    as a load signal produces interventions nobody needed and a manager convinced of a problem
+    their team does not have. It also breaks down where conditions genuinely improved: people who
+    decided to leave during a bad quarter still leave after a good one, and the recent period will
+    be blamed for damage it did not cause.
+  reads: [customer_support.obj.core.support_agent, customer_support.obj.core.backlog]
+  contradicts: [customer_support.heu.agent_coaching.averages_hide_the_coachable_moment]
+limits:
+- 'It explains timing, not cause. The load curve says when; why still requires asking people.'
+- 'Attribution over a two-quarter lag is weak evidence, which is why leading indicators exist.'
+failure_modes:
+- 'Every cluster attributed to burnout, which is unfalsifiable and eventually ignored.'
+- 'The recent quarter blamed for damage done earlier, which produces the wrong remedy confidently.'
+variants:
+- applies_to: outsourced_bpo
+  change: Attrition is high by design and the signal is drowned; the leading indicators are the only usable instrument.
+  why: The baseline turnover masks the cluster.
+- applies_to: enterprise_support
+  change: Small teams make a cluster statistically meaningless and individually devastating.
+  why: Two departures from six is both noise and a crisis.
+references:
+- title: Burnout in high-emotional-labour roles
+  kind: research
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the trap: people who decided to leave during a bad quarter
+    still leave after a good one, so the recent period gets blamed for damage it did not cause
+    and the remedy is aimed at the wrong months.

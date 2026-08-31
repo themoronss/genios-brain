@@ -1,0 +1,152 @@
+identity:
+  id: admin.heu.request_intake.untracked_requests_punish_the_polite
+  name: Untracked requests punish the polite
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.request_intake
+  subdomain: admin_operations
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: Without a queue, the loud get served and the patient get forgotten — inverting fairness.
+    The intake channel is an equity instrument as much as an efficiency one.
+  answers:
+  - Who loses when requests are untracked?
+  - Why is a front door worth its overhead even for a small function?
+  not:
+  - An argument for a ticketing tool. A shared list with owners and dates satisfies this entirely.
+  - A claim that all requests deserve equal priority. It argues for a defensible ordering, not a flat one.
+
+heuristic:
+  statement: 'In an untracked function, service order is set by the requester''s persistence and
+    proximity rather than by consequence — and the population that suffers is invisible, because the
+    people who gave up are the ones who stopped generating evidence. A rising untracked volume looks
+    like a busy function and is often a function serving the wrong half of its demand.'
+  why: 'Memory is a queue with a bias. Without a record, the item most recently mentioned is the item
+    most likely to be worked, so the requester who follows up three times receives service three times
+    faster than the one who asked once and waited — and neither of them knows this is happening. The
+    second effect is worse than the unfairness: the patient requester eventually stops asking, so the
+    function''s own demand data quietly loses exactly the requests that were never a problem to
+    anybody, and capacity decisions are then made on the noisy half.'
+  confidence_bp: 8300
+  applies_when: 'A function receives requests from several requesters through more than one channel,
+    and there is any discretion about what to work next.'
+  breaks_down_when: 'GENUINE EMERGENCIES. Consequence-ordered service IS correct, and the loud request
+    is sometimes loud because it matters. The heuristic argues against persistence as a proxy for
+    urgency, not against urgency.
+
+    A SINGLE-REQUESTER FUNCTION. An executive assistant serving one principal has no fairness problem
+    to solve; the queue''s value there is memory, not equity, and the argument for it is different.
+
+    VERY SMALL VOLUMES. Where everything asked is done the same day, the queue costs more than it
+    returns and its overhead is the only visible effect.
+
+    WHERE THE QUEUE IS THE BOTTLENECK. If intake adds a day before anything starts, requesters will
+    route around it and the untracked channel reappears with the queue''s overhead added on top —
+    which is a strictly worse outcome than having no queue at all.
+
+    RELATIONSHIP WORK MISCLASSIFIED AS REQUESTS. Not everything asked of an administrative function is
+    a ticket; some of it is a conversation, and queueing it makes the function feel like a machine to
+    the people it most needs to be trusted by.'
+  reads:
+  - admin.obj.core.request
+  - admin.obj.core.sop
+  - thread.ball_in_court
+  - thread.last_inbound
+  contradicts:
+  - admin.heu.inbox_and_correspondence.response_speed_is_reputation
+  pattern_ref:
+  - req.requester_is_chasing
+  - req.no_acknowledgement_against_our_own_cadence
+  - req.arrived_off_queue
+  - req.repeat_ask_means_a_broken_answer
+
+when_to_use:
+  conditions:
+  - {exists: thread.last_inbound}
+  - {path: thread.ball_in_court, op: "=", value: us}
+  signals:
+  - question
+  - meeting_request
+  do_not_use_when:
+  - The function serves a single requester; the queue's value there is memory, not fairness.
+  - Volumes are small enough that everything is done the same day.
+  - The intake step would itself be slower than the work, guaranteeing that people route around it.
+
+objects_used:
+- admin.obj.core.request
+- admin.obj.core.sop
+- admin.obj.core.commitment
+- admin.obj.core.escalation
+
+outcomes:
+- Service order is defensible from consequence rather than from persistence.
+- The requests that never generate a chase remain visible in the demand data.
+
+failure_modes:
+- 'THE QUEUE BECOMES THE PRIORITY MECHANISM. First-in-first-out is as arbitrary as loudest-first; a
+  queue that does not order by consequence has replaced one bias with another.'
+- 'MEASURED ON QUEUE VOLUME. The heuristic is about what NEVER reached the queue, and queue-based
+  reporting is structurally blind to it. The number that matters has to be gathered differently.'
+- 'USED TO REFUSE VERBAL REQUESTS. "Raise a ticket" as an answer to a person standing in front of you
+  converts a fairness argument into a bureaucratic one, and it is the fastest way to have the front
+  door abandoned.'
+
+limits:
+- Says nothing about how to prioritise once requests ARE tracked.
+- The evidence it depends on — off-queue arrivals — is by definition not in the queue, and is not in
+  the correspondence graph either unless the ask happened to be written down.
+- Cannot distinguish a patient requester from one whose need went away.
+
+variants:
+- applies_to: shared_services
+  change: The equity argument is the primary one, because the requesting functions compare their
+    treatment with each other and will notice an ordering they cannot explain.
+  why: Cross-function fairness is the model's whole promise.
+- applies_to: executive_office
+  change: Reduces to memory rather than fairness; the register exists so nothing is lost, not so
+    requesters are treated evenly.
+  why: There is one requester, so there is no ordering to defend.
+- applies_to: outsourced
+  change: Off-queue requests are also a contractual problem — work done outside the channel is unbilled
+    and unmeasured, so the incentive to close the side door is stronger.
+  why: The queue is the commercial record, not only the operational one.
+- applies_to: regulated
+  change: Off-queue work is an evidence gap; a request served without a record cannot be shown to have
+    followed the procedure.
+  why: In a regime, unrecorded service is indistinguishable from no service.
+
+metrics:
+- name: off_queue_arrival_rate
+  unit: percent
+  description: Share of work arriving outside the intake channel.
+  direction: lower_is_better
+- name: chase_to_service_correlation
+  unit: ratio
+  description: How strongly the number of follow-ups predicts how fast a request was served. The
+    unfairness this heuristic names, expressed as one number.
+  direction: lower_is_better
+
+references:
+- title: ITIL service request management
+  kind: framework
+  note: The single-front-door principle, stated there as an operational control and here for its
+    distributional effect.
+- title: Administrative practice — the side door
+  kind: practitioner
+  note: Every function has one; the useful question is what share of work goes through it, which
+    almost nobody measures.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The fourth breakdown regime is the one worth
+    keeping: an intake step slower than the work reproduces the untracked channel WITH the queue''s
+    overhead, which is strictly worse than having no queue, and it is the commonest way a front door
+    fails after being introduced.'

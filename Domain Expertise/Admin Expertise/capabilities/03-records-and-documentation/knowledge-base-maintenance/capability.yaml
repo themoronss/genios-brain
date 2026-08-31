@@ -1,27 +1,74 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.records_and_documentation.knowledge_base_maintenance
   name: Knowledge Base Maintenance
   domain: admin
   subdomain: records_and_documentation
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Keeping internal documentation alive: ownership per article, review cadence, de-duplication,
+  and retirement of guidance that has quietly become wrong. A knowledge base nobody prunes is more dangerous
+  than none, because it is trusted.
 
-description: >
-  Keeping internal documentation alive: ownership per article, review cadence, de-duplication,
-  and retirement of guidance that has quietly become wrong. A knowledge base nobody prunes is
-  more dangerous than none, because it is trusted.
+  '
+question: Is the written answer to this question still correct?
 
-question: "Is the written answer to this question still correct?"
+outcomes:
+- 'An owner per article. Unowned pages are the ones that go stale, because nobody is responsible for noticing that they have.'
+- 'Guidance that has become wrong RETIRED, not left with a caveat. A caveated wrong page is still read as an answer by the person in a hurry.'
+- 'Duplicates merged to one. Two pages answering the same question diverge, and the reader finds whichever ranks higher.'
+- 'Review driven by usage, not by uniform cadence — the page read weekly is worth more attention than the page read twice a year.'
+- 'The negative outcome: pages DELETED. A knowledge base nobody prunes is more dangerous than none, because it is trusted.'
+failure_modes:
+- 'GROWING ONLY. Additions are rewarded and deletions feel destructive, so the base converges on confidently wrong.'
+- 'UNIFORM REVIEW CADENCE. It spends the same attention on a page nobody opens as on the one everybody follows, and the calendar becomes unworkable.'
+- 'CAVEATING INSTEAD OF FIXING. "This may be out of date" transfers the problem to a reader with less context than the author had.'
+- 'MEASURING ARTICLE COUNT. It is the one metric that improves as the base gets worse.'
+- 'IGNORING THE SEARCHES THAT FAILED. The most valuable input is the question people asked and did not find, and it is the one nobody instruments.'
+kpis:
+- name: article_ownership_coverage
+  unit: percent
+  description: Share of pages with a named owner.
+  direction: higher_is_better
+- name: stale_page_share
+  unit: percent
+  description: Pages past review with material change since. The trust metric.
+  direction: lower_is_better
+- name: retirement_rate
+  unit: percent
+  description: Pages retired per period. A target band — zero means nothing is being pruned.
+  direction: target_band
+- name: failed_search_rate
+  unit: percent
+  description: Searches ending without a page opened. The content gap, measured rather than guessed.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.records_and_documentation.document_control, admin.admin_operations.sop_management]
+  downstream: [admin.admin_operations.request_intake, admin.admin_operations.process_improvement]
+  parallel: [admin.records_and_documentation.filing_and_retrieval, admin.people_administration.onboarding_administration]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, distributed, hybrid, startup_lean, outsourced, automated_first]
+  offerings: [coordinative]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    No substrate: a knowledge base is a repository and the graph holds correspondence. The one
+    signal that would drive this capability — the search that found nothing — is the highest-
+    value unwritten field in the whole Admin planned_substrate, because it names the gap rather
+    than describing the estate.
+
+    The KPI set is deliberately built against the growth bias. article_count is the metric that
+    improves as the base gets worse, so it is absent, and retirement_rate is a target band
+    rather than something to minimise.
+
+admission:
+  accepted_content_hash: 0a13b06b3029c2bf3e196e39b430b7cfb9e885f71c49224cb819fc1073496fcd

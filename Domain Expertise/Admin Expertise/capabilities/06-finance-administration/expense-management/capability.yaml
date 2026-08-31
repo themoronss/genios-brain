@@ -1,28 +1,74 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.finance_administration.expense_management
   name: Expense Management
   domain: admin
   subdomain: finance_administration
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Administering the expense policy across claims: eligibility, limits, receipts, approvals
+  and coding. Most expense friction comes from a policy that is ambiguous rather than from people trying
+  to cheat, and the administrative fix is usually clarification rather than enforcement.
 
-description: >
-  Administering the expense policy across claims: eligibility, limits, receipts, approvals and
-  coding. Most expense friction comes from a policy that is ambiguous rather than from people
-  trying to cheat, and the administrative fix is usually clarification rather than
-  enforcement.
+  '
+question: Is this expense within policy, evidenced, and coded to the right place?
 
-question: "Is this expense within policy, evidenced, and coded to the right place?"
+outcomes:
+- 'A policy unambiguous enough that a claimant knows the answer before submitting. Most expense friction is ambiguity, not dishonesty.'
+- 'Receipt capture in the flow, at the moment of spend, because reconstructing a month of receipts is the part everybody hates and does badly.'
+- 'Fast reimbursement, treated as part of the control rather than as a downstream consequence. Slow repayment is what makes people stop submitting and start avoiding.'
+- 'Coding correct at submission, so the budget line is right without a finance correction nobody sees.'
+- 'The negative outcome: a claim REFUSED with the reason and the policy line, kindly. A refusal with no explanation produces the next ambiguous claim.'
+failure_modes:
+- 'BUILDING FOR THE CHEAT. Expense abuse is rare and expense friction is universal; a system designed against the rare case taxes everybody continuously.'
+- 'AMBIGUOUS LIMITS. "Reasonable" is not a limit, and every claimant resolves it differently and defensibly.'
+- 'RECEIPTS DEMANDED LATE. A month-end reconstruction is the least accurate and most resented moment to ask.'
+- 'REFUSING WITHOUT THE REASON, which guarantees the same claim next month and a worse relationship.'
+- 'CODING FIXED SILENTLY BY FINANCE, so the claimant never learns and the correction repeats forever.'
+kpis:
+- name: policy_query_rate
+  unit: percent
+  description: Claims preceded by a question about whether something is claimable. The ambiguity measure.
+  direction: lower_is_better
+- name: submission_to_payment_days
+  unit: days
+  direction: lower_is_better
+  description: The number employees actually experience.
+- name: receipt_at_capture_rate
+  unit: percent
+  description: Receipts attached at the moment of spend rather than reconstructed.
+  direction: higher_is_better
+- name: recoding_rate
+  unit: percent
+  description: Claims finance had to recode. Each one is a claimant who was never told.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.admin_operations.request_intake, admin.compliance_and_governance.policy_administration]
+  downstream: [admin.finance_administration.reimbursement_processing, admin.finance_administration.budget_tracking]
+  parallel: [admin.travel_and_events.travel_expense_administration, admin.finance_administration.payables_administration]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, hybrid, distributed, startup_lean, outsourced]
+  offerings: [transactional]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. expense_claim_unsubmitted is
+    planned_substrate with no writer.
+
+    The design principle stated in the description is the whole capability and it is the one
+    most expense systems invert: abuse is rare, friction is universal, so the system should be
+    built for the honest majority and catch the rare case by exception rather than by taxing
+    everybody.
+
+    policy_query_rate is the KPI that makes ambiguity visible. Every question asked before a
+    claim is a place the policy failed to answer, and it is the only measure of that.
+
+admission:
+  accepted_content_hash: 6bdfd1c01e555a1ce4fb20dc7390c9d926e84f466485b194455eaf2015b9aba8

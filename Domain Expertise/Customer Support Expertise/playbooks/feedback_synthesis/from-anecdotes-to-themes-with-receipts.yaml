@@ -1,0 +1,94 @@
+identity:
+  id: customer_support.pb.feedback_synthesis.from_anecdotes_to_themes_with_receipts
+  name: From anecdotes to themes with receipts
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.feedback_synthesis
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Feedback synthesis clusters raw customer statements into few themes, each carrying its verbatim
+    quotes, counts and revenue-weight — so product hears patterns with evidence instead of the loudest
+    recent anecdote.
+
+when_to_use:
+  do_not_use_when:
+  - The period contains a major incident. Its volume swamps every other theme and the synthesis describes one event rather than a pattern.
+steps:
+- order: 1
+  name: Cluster from raw statements, not from categories
+  description: >
+    Ticket categories were assigned for routing. Clustering on them reproduces the taxonomy rather
+    than discovering what customers said.
+  actor: human
+  objects_read: [customer_support.obj.core.ticket, customer_support.obj.core.intent]
+  done_when: Themes emerged from the language rather than from the labels.
+- order: 2
+  name: Count customers as well as tickets
+  description: >
+    One account filing forty tickets and forty accounts filing one are different findings, and only
+    the second is a pattern.
+  actor: system
+  objects_read: [customer_support.obj.core.customer_account]
+  done_when: Both counts are attached to each theme.
+- order: 3
+  name: Attach verbatims
+  description: >
+    Product correctly discounts a theme it cannot audit. The quotes are what make the clustering
+    arguable rather than asserted.
+  actor: human
+  done_when: Each theme carries the customer's own words.
+- order: 4
+  name: Reduce to few themes
+  description: >
+    Fifteen is a list nobody acts on. Four is an argument, and getting from one to the other is the
+    work this capability actually does.
+  actor: human
+  done_when: The set is small enough to be read in one sitting.
+- order: 5
+  name: Check the tally against the memory
+  description: >
+    The theme everybody remembers is usually recent rather than frequent. Where the count and the
+    impression disagree, the count wins.
+  actor: human
+  done_when: The ranking survives comparison with what the team expected.
+- order: 6
+  name: Say which themes are not product problems
+  description: >
+    Synthesis that only ever produces product asks is advocacy, and it is discounted accordingly.
+  actor: human
+  done_when: Support-owned and product-owned themes are separated.
+objects_used: [customer_support.obj.core.ticket, customer_support.obj.core.customer_account, customer_support.obj.core.intent,
+               customer_support.obj.core.product_area, customer_support.obj.core.customer_sentiment]
+limits:
+- 'It describes what customers said, which is a report of their experience rather than of the product''s actual defects.'
+- 'Silent customers are absent by construction, and they are frequently the ones who left.'
+failure_modes:
+- 'Step 5 skipped, so the synthesis confirms what the team already believed and adds a number to it.'
+- 'Step 4 avoided because reducing means choosing, and every dropped theme has an advocate.'
+variants:
+- applies_to: enterprise_support
+  change: Step 2 inverts — a handful of accounts is the whole population, so revenue weight matters more than count.
+  why: Frequency is meaningless at that sample size.
+- applies_to: community_support
+  change: Votes and views are a native tally, which makes step 2 free and step 3 automatic.
+  why: The forum instruments the synthesis for you.
+references:
+- title: Voice of customer practice
+  kind: practitioner
+  note: Where verbatim-backed themes are contrasted with anecdote-driven product influence.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is the check the whole capability exists to run. Without it the synthesis produces a
+    numbered version of what the team already believed, which is more persuasive and no more
+    true.

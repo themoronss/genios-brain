@@ -1,0 +1,148 @@
+identity:
+  id: sales.heu.cross_sell.cross_sell_borrows_trust___repay_it
+  name: Cross-sell borrows trust — repay it
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.cross_sell
+  subdomain: post_sale_and_growth
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: A failed cross-sell does not stay contained — it spends the first product's credibility.
+    Cross-sell only what genuinely fits, because the downside is not a lost add-on but a weakened core
+    renewal.
+  answers:
+  - What is actually at stake in a cross-sell?
+  - Why is the bar higher than for a new-logo sale?
+  not:
+  - An argument against cross-selling. It argues for a higher fit bar, not for fewer attempts.
+  - A rule about which products pair. That is a portfolio question.
+
+heuristic:
+  statement: 'Price the downside, not just the upside. A cross-sell that fails costs more than the
+    revenue it did not win, because the customer''s conclusion is not that the second product was
+    wrong for them — it is that we recommend things that are wrong for them, which is a statement
+    about the first product too.'
+  why: 'Trust is transferred, not duplicated. The reason a cross-sell has a warm start at all is that
+    the customer is extending their judgement of product one to product two, and that extension runs
+    in both directions: when product two disappoints, the inference travels back. A new-logo prospect
+    who declines costs an opportunity; an existing customer who was sold something unsuitable has
+    acquired evidence about our recommendations, and they will apply it at the renewal of the thing
+    that was working.'
+  confidence_bp: 8200
+  applies_when: 'An existing account with a live relationship on one product and a possible fit for
+    another.'
+  breaks_down_when: 'A GENUINELY MODULAR PORTFOLIO. Where products are independent and the customer
+    treats them as separate purchases from a familiar supplier, the trust transfer is weaker in both
+    directions and the downside is correspondingly smaller.
+
+    THE CUSTOMER ASKED. A cross-sell they initiated carries their own judgement rather than our
+    recommendation, and a poor outcome is attributed differently.
+
+    A PILOT WITH A CLEAN EXIT. Where the second product can be tried and abandoned at no cost and with
+    no disruption, the downside is bounded and the fit bar can be lower — which is the whole argument
+    for piloting rather than selling.
+
+    WHEN IT BECOMES A REASON NEVER TO CROSS-SELL. The heuristic raises the fit bar; used as a general
+    caution it produces an organisation that leaves obvious adjacent value unsold, and the customer
+    finds the second product elsewhere.
+
+    WHERE THE FIRST PRODUCT IS ALREADY IN TROUBLE. The credibility being borrowed is not there, and
+    the correct move is to fix the first relationship rather than to reason about the second.'
+  reads:
+  - sales.obj.core.opportunity
+  - sales.obj.core.account
+  - sales.obj.core.champion
+  - derived.engagement
+  contradicts:
+  - sales.heu.upsell.an_unfelt_limit_cannot_be_sold
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.live_account_relationship
+  conditions:
+  - {path: derived.engagement, op: ">=", value: 1}
+  - {fn: edge_count, op: ">", value: 1}
+  signals:
+  - introduction
+  - next_step_agreed
+  do_not_use_when:
+  - The customer initiated it; their judgement is carrying the risk, not our recommendation.
+  - A genuinely clean pilot exit exists, which bounds the downside.
+  - The first product is already in trouble; fix that instead.
+
+objects_used:
+- sales.obj.core.opportunity
+- sales.obj.core.account
+- sales.obj.core.champion
+- sales.obj.core.risk
+
+outcomes:
+- The fit bar for an existing account is higher than for a new prospect, deliberately.
+- The core renewal is treated as the thing at stake.
+
+failure_modes:
+- 'USED AS BLANKET CAUTION. Produces an organisation that never cross-sells, and the customer buys the
+  adjacent product from someone else — who then has a relationship.'
+- 'THE DOWNSIDE PRICED ONLY IN REVENUE. The cost is credibility, and it is paid at a renewal that was
+  not otherwise at risk.'
+- 'APPLIED AFTER THE ATTEMPT. The heuristic governs whether to attempt; once a poor-fit product is
+  sold, this has nothing to offer.'
+
+limits:
+- Cannot assess fit from the record at all — there is no product-usage or requirement data, so the
+  judgement is entirely human.
+- '`derived.engagement` shows the first relationship is healthy and says nothing about whether the
+  second product suits them.'
+- Says nothing about how to establish fit, which is discovery run properly on a new problem.
+
+variants:
+- applies_to: enterprise
+  change: The credibility is spent inside a specific function, and a failure in one may not travel to
+    another — but it always travels to the sponsor who approved both.
+  why: The blast radius follows the approval chain rather than the org chart.
+- applies_to: smb
+  change: One person holds the whole relationship, so the trust transfer is total in both directions
+    and the fit bar is at its highest.
+  why: No compartments for a failure to be contained in.
+- applies_to: channel
+  change: The credibility being borrowed is the PARTNER's, not ours, and they will be considerably
+    less forgiving of a poor fit than an end customer would be.
+  why: We are spending someone else's relationship capital.
+
+metrics:
+- name: core_renewal_after_failed_cross_sell
+  unit: percent
+  description: Renewal rate of the first product after an unsuccessful cross-sell. The downside this
+    heuristic is about, and the number an attach-rate target cannot see.
+  direction: higher_is_better
+- name: pilot_conversion_rate
+  unit: percent
+  description: Share of scoped pilots that became purchases. High conversion suggests the fit bar is
+    being applied before the pilot rather than by it.
+  direction: higher_is_better
+
+references:
+- title: Practitioner expansion operations
+  kind: practitioner
+  note: Multi-product accounts retain better on average, which is the case FOR cross-selling — and the
+    average conceals that poor-fit second products damage the first relationship, which is the case
+    for the fit bar.
+- title: The Challenger Customer
+  kind: book
+  author: Adamson, Dixon, Spenner and Toman
+  note: On the second product needing its own consensus rather than inheriting the first product's.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The mechanism is the addition — trust is
+    TRANSFERRED rather than duplicated, so the inference runs backwards when product two disappoints,
+    and the customer''s conclusion is about our recommendations rather than about the product.'

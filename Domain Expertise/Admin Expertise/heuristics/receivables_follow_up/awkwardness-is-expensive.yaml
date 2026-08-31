@@ -1,0 +1,69 @@
+identity:
+  id: admin.heu.receivables_follow_up.awkwardness_is_expensive
+  name: Awkwardness is expensive
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.finance_administration.receivables_follow_up
+  subdomain: finance_administration
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Founders under-chase receivables to protect relationships — but professional, systematic
+    follow-up is respected while cash gaps kill companies. The system removes the personal awkwardness
+    that causes the gap.
+  answers:
+  - Why do startups under-collect?
+
+heuristic:
+  statement: >
+    Founders under-chase receivables to protect the relationship. Professional, systematic follow-up
+    is respected; cash gaps close companies. The system exists to remove the personal awkwardness
+    that causes the gap.
+  why: >
+    Asking for money feels like a favour being withdrawn, so the person with the relationship delays,
+    softens, and eventually stops. But the customer is not evaluating the relationship when they pay
+    — they are working a payables queue, and unasked-for money goes to the bottom of it. The
+    awkwardness is entirely on our side of the exchange and it produces a real financial cost for a
+    social risk that mostly does not exist. Making the sequence systematic removes the decision from
+    the person who finds it uncomfortable.
+  confidence_bp: 8000
+  applies_when: Ordinary trade receivables from a customer with no dispute and no known distress.
+  breaks_down_when: >
+    The customer is genuinely in difficulty and the relationship is worth more than the invoice.
+    Mechanical escalation there converts a recoverable situation into a lost customer and a debt
+    still unpaid, and the right move is a conversation about terms rather than the next step in a
+    ladder. It also breaks down where the non-payment is our fault — a wrong PO, a missing reference,
+    an invoice sent to somebody who left — where every chase makes us look less competent, not more
+    professional.
+  reads: [admin.obj.core.invoice, admin.obj.core.commitment, admin.obj.core.escalation]
+  contradicts: [admin.heu.payables_administration.payment_reliability_is_credit]
+limits:
+- 'It addresses the reluctance, not the reason. If the customer cannot pay, systematising the ask does not create money.'
+- 'It assumes the invoice is correct, which is the second most common cause of non-payment.'
+failure_modes:
+- 'Applied mechanically to a customer in genuine distress, where the ladder costs the relationship and recovers nothing.'
+- 'Used to escalate before checking whether our own invoice was wrong.'
+variants:
+- applies_to: startup_lean
+  change: Strongest form. The founder holds both the relationship and the cash position and resolves the tension in favour of the relationship every time.
+  why: The two roles are in one person and only one of them feels the discomfort.
+- applies_to: enterprise_admin
+  change: The awkwardness is already removed by separation of duties, so the heuristic mostly stops applying.
+  why: The collections owner has no relationship to protect.
+references:
+- title: Credit control practice
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the one that damages credibility: where non-payment is caused
+    by our own wrong PO or an invoice sent to somebody who left, every escalation makes us look
+    less competent rather than more professional.

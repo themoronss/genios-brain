@@ -1,29 +1,110 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.executive_support.calendar_management
   name: Calendar Management
   domain: admin
   subdomain: executive_support
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Owning the diary as a scarce budget rather than a booking queue: protecting deep work, sequencing
+  meetings so preparation is possible, resolving collisions by business consequence, and defending the
+  gaps that make the rest of the week survivable. Distinct from Meeting Scheduling, which arranges one
+  meeting well; this decides which meetings may exist at all.
 
-description: >
-  Owning the diary as a scarce budget rather than a booking queue: protecting deep work,
-  sequencing meetings so preparation is possible, resolving collisions by business
-  consequence, and defending the gaps that make the rest of the week survivable. Distinct from
-  Meeting Scheduling, which arranges one meeting well; this decides which meetings may exist
-  at all.
+  '
+question: Is the principal's time going to what actually matters this week?
 
-question: "Is the principal's time going to what actually matters this week?"
+outcomes:
+- 'Priorities blocked before requests arrive. Whoever books first owns the week, so the calendar''s
+  default answer has to already be the principal''s priorities rather than first-come-first-served.'
+- 'Every accepted meeting screened against worthiness — does it need THEM, live, this week. The three
+  questions are separable and a no to any one of them has a cheaper alternative.'
+- 'Collisions resolved by business consequence, with the reasoning recorded. Resolving by seniority is
+  fast, defensible and wrong often enough to matter.'
+- 'Preparation time scheduled as part of the meeting, not as an aspiration around it. A back-to-back
+  week does not fail at the meetings, it fails at everything the meetings needed.'
+- 'Recovery gaps defended as first-class calendar items. They are the first thing sacrificed and the
+  reason the last two days of the week are worse than the first two.'
+- 'The negative outcome: meetings DECLINED or shortened, with a stated alternative. A calendar
+  discipline that has never removed anything is a booking queue with opinions.'
+
+failure_modes:
+- 'ACCEPTING BY DEFAULT AND PROTECTING BY EXCEPTION. The whole failure in one sentence — it inverts
+  the burden of proof and the calendar fills with whatever was asked for first.'
+- 'BOOKING BACK TO BACK BECAUSE THE SLOTS ARE FREE. Free is not available. A schedule with no
+  transitions is a plan for being late to everything after the first overrun.'
+- 'TREATING RECURRING MEETINGS AS FIXED. They are the largest single consumer of executive time and
+  the least reviewed; most calendars carry at least one that nobody would create today.'
+- 'RESOLVING COLLISIONS BY WHO ASKED LOUDEST. Urgency is asserted by the requester and consequence is
+  assessed by us; conflating them hands the diary to whoever is most insistent.'
+- 'PROTECTING TIME WITHOUT PROTECTING ATTENTION. A deep-work block adjacent to a difficult meeting is
+  nominally free and practically useless, and the calendar cannot see the difference.'
+- 'OPTIMISING THE PRINCIPAL''S DIARY AT EVERYONE ELSE''S EXPENSE. Moving one person''s meeting three
+  times to protect a block costs the other attendees more than it saves, and they remember.'
+
+kpis:
+- name: protected_time_held
+  unit: percent
+  description: Share of blocked priority time that survived the week intact. The measure of whether
+    the calendar has a default at all.
+  direction: higher_is_better
+- name: meetings_declined_or_shortened
+  unit: percent
+  description: Share of requests not accepted as asked. A target band — zero means no screening is
+    happening, very high means the principal is unreachable.
+  direction: target_band
+- name: prep_time_scheduled_rate
+  unit: percent
+  description: Share of significant meetings with preparation time on the calendar rather than assumed.
+  direction: higher_is_better
+- name: back_to_back_share
+  unit: percent
+  description: Share of meetings with no transition gap before them.
+  direction: lower_is_better
+- name: recurring_meeting_review_age
+  unit: days
+  description: Time since the recurring set was last questioned. The largest consumer of time and the
+    least examined.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - admin.executive_support.gatekeeping
+  - admin.meeting_operations.meeting_scheduling
+  downstream:
+  - admin.executive_support.briefing_and_preparation
+  - admin.meeting_operations.agenda_preparation
+  - admin.travel_and_events.itinerary_management
+  parallel:
+  - admin.executive_support.delegation_and_task_routing
+  - admin.executive_support.commitment_tracking
+
+applies_to:
+  models: [executive_office, in_house, shared_services, startup_lean, distributed, hybrid,
+           enterprise_admin]
+  offerings: [coordinative]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route today.
+
+    Better served by the substrate than most of this domain, and worth noting because the Admin
+    corpus is otherwise starved: meeting.start_at, meeting.end_at, meeting.scheduled,
+    meeting.occurred, meeting.attended, meeting.external_counterparty and meeting.open_loop all
+    have real writers. That is enough to see a back-to-back week, a meeting nobody attended, and
+    a recurring series still running. What is missing is the principal's stated priorities,
+    which no connector carries and which the whole capability is measured against.
+
+    The distinction from meeting_scheduling is load-bearing and is stated in the description
+    rather than assumed: scheduling arranges one meeting well, this decides which meetings may
+    exist. Collapsing them produces a booking function with opinions and no authority.
+
+admission:
+  accepted_content_hash: 094de8e699825a36987aefe4a4cab54520946a282bdd6cf0e06fa95cc37df1d6

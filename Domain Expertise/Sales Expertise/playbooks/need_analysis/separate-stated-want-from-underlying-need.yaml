@@ -1,0 +1,175 @@
+identity:
+  id: sales.pb.need_analysis.separate_stated_want_from_underlying_need
+  name: Separate the stated want from the underlying need
+  kind: playbook
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.need_analysis
+  subdomain: discovery_and_solution
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'Buyers arrive asking for a feature; the sale lives in the outcome behind it. "We need an
+    export button" means someone upstream demands a report — solve the report and the button becomes
+    one option among several.'
+  answers:
+  - How is a feature request turned into something we can honestly answer?
+  - How are competing needs ranked without ranking them ourselves?
+  not:
+  - Discovery. This starts from stated needs and maps them; discovery produces them.
+  - A product decision. It opens the option set; what gets built is decided elsewhere.
+
+when_to_use:
+  situations:
+  - sales.sit.inbound_lead
+  conditions:
+  - {exists: thread.last_inbound}
+  signals:
+  - question
+  - objection
+  do_not_use_when:
+  - 'The request is a hard requirement — a standard, an integration, a regulatory control. Tracing it
+    reads as a vendor evading a specification, which is usually what is happening.'
+  - 'The buyer has already done the analysis. Asking what their reasoned specification is for insults
+    the work.'
+  - 'It is a scored tender. The requirement is the requirement, and re-framing loses points.'
+
+steps:
+- order: 1
+  name: Ask what the want is for
+  description: '"What would you do with that?" — twice if needed. Each answer moves from mechanism
+    towards outcome. Stop when the answer is a changed state rather than a thing, because further
+    laddering from there becomes an interrogation with nowhere to go.'
+  actor: human
+  objects_read:
+  - sales.obj.core.pain_point
+  produces: The outcome behind the request.
+  done_when: The stated want has an outcome attached, or is confirmed to be one already.
+
+- order: 2
+  name: Keep the request on record beside the need
+  description: 'The guess is not the need and it is not worthless either — it says what the buyer
+    believes is possible and often what a previous vendor implied. Discarding it loses that, and it
+    also loses the ability to answer them literally later if that turns out to be right.'
+  actor: system
+  produces: Both the request and its underlying need, recorded separately.
+  done_when: Neither has been collapsed into the other.
+
+- order: 3
+  name: Rank needs by consequence, with them
+  description: 'Ask which of the named problems, left unsolved for a year, hurts most. Their ranking,
+    not ours — ours follows our strengths without anyone intending it, and the buyer notices the
+    coincidence before we do.'
+  actor: human
+  objects_read:
+  - sales.obj.core.business_need
+  produces: A buyer-ordered list of needs.
+  done_when: The ranking came from them.
+
+- order: 4
+  name: Write the need in outcome language
+  description: '"Reduce weekly reporting from six hours to under one" survives committee scrutiny and
+    a comparison with a rival. "Automated export" invites a comparison of mechanisms, in which a
+    competitor with a different mechanism reaching the same outcome looks equal.'
+  actor: human
+  produces: Needs stated as changed states with figures.
+  done_when: No recorded need names a mechanism.
+
+- order: 5
+  name: Map honestly, and name the gaps
+  description: 'Mark each ranked need as solved, partly solved or not solved. An analysis in which
+    every pain has a feature against it is a pitch with a spreadsheet attached, and it is exactly the
+    artefact a late-stage evaluator dismantles.'
+  actor: human
+  objects_read:
+  - sales.obj.core.competitor
+  produces: A mapping including at least one honest gap.
+  done_when: The gaps are written down rather than managed in conversation.
+
+- order: 6
+  name: Say so when the gap sits on their top-ranked need
+  description: 'Fitting the third-most-important problem and missing the first is a specific and
+    common shape, and it is not a fit. Naming it costs one conversation and saves a quarter, and the
+    buyer will find it anyway — later, and with a worse impression of us.'
+  actor: human
+  produces: A recommendation not to proceed, where that is the truth.
+  done_when: No deal continues on a mapping that misses their first-ranked need.
+
+objects_used:
+- sales.obj.core.business_need
+- sales.obj.core.pain_point
+- sales.obj.core.competitor
+- sales.obj.core.objection
+- sales.obj.core.risk
+
+outcomes:
+- Requests are traced to outcomes with the original request retained.
+- Needs are ranked by the buyer and written as changed states.
+- Gaps are named, including the disqualifying ones.
+
+failure_modes:
+- 'LADDERING PAST THE OUTCOME. Two whys reach a changed state; five reach shareholder value, which is
+  true of everything and useful for nothing.'
+- 'THE REQUEST DISCARDED. Loses what the buyer believes is possible, and the option to answer them
+  literally if the guess was right.'
+- 'RANKING DONE BY US. Follows our strengths, and the coincidence is visible.'
+- 'A MAPPING WITH NO GAPS. Persuasive internally, dismantled externally.'
+- 'THE TOP-RANKED GAP MANAGED RATHER THAN NAMED. It is found later regardless, with a worse
+  impression attached.'
+
+limits:
+- Nothing here is observable in the record — requests arrive in conversation and prose, and the
+  mapping is a human artefact.
+- Says nothing about whether an alternative solution to their outcome is a good one.
+- Assumes the person stating the needs owns them; a request relayed second-hand carries the guess and
+  not the pain.
+
+variants:
+- applies_to: enterprise
+  change: Rank per function first and then across functions, because a consolidated list hides that
+    two similar requests serve different problems with different owners.
+  why: Merged requirement lists are the norm and they conceal ownership.
+- applies_to: smb
+  change: Steps 1 and 5 carry most of the value; one why is usually enough and the ranking is obvious.
+  why: The requester is the user and the pain is immediate.
+- applies_to: service
+  change: The request is often a method rather than a feature, and step 1 has to be asked with more
+    care because method preferences carry professional identity.
+  why: Challenging a method reads as challenging their judgement.
+
+metrics:
+- name: want_to_need_conversion_rate
+  unit: percent
+  description: Share of requests traced to an outcome before being answered.
+  direction: higher_is_better
+- name: named_gap_rate
+  unit: percent
+  description: Share of analyses naming something we do not solve.
+  direction: higher_is_better
+- name: late_gap_discovery_rate
+  unit: percent
+  description: Share of deals where a gap surfaced after the proposal.
+  direction: lower_is_better
+
+references:
+- title: SPIN Selling
+  kind: methodology
+  author: Neil Rackham
+  note: Implied needs stated as solutions, and the return to the need underneath.
+- title: MEDDICC
+  kind: methodology
+  note: Decision criteria — needs written as outcomes are criteria a buyer can evaluate; needs written
+    as mechanisms are a shortlist someone else drew up.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Steps 2, 5 and 6 are new. Step 2 is the quiet one that
+    matters — the original discarded the feature request once the need was found, and the request
+    itself carries information about what the buyer believes is possible and what a previous vendor
+    told them.'

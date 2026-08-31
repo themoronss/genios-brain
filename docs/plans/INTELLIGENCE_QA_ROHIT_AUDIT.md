@@ -1,4 +1,4 @@
-> **Created:** 2026-08-12 · **Status:** Active
+> **Created:** 2026-08-12 · **Status:** 🔵 Reference — historical audit, **largely remediated**. Read it for the root-cause reasoning, not as a fix list. Re-verified 2026-08-30.
 > **Purpose:** Consolidated, code+data-grounded QA audit of the reasoning engine run against the design-partner's real org (Rohit Swerashi, `org_325a6e36e6bb4651a2a1e403`), covering the 8 analysis dimensions + 5 key checks. Root-cause grouped, severity-ranked, with a trial fix-priority. Every finding is traced to real rows and `file:line`.
 
 # Intelligence QA — Rohit Org Audit (4-agent, grounded)
@@ -86,3 +86,17 @@ The three that read as "this is wrong" on first glance — fix before any demo:
 
 ## Invariants respected
 Read-only audit. No packs promoted, no rules changed, no user credits touched (only `/v1/intelligence/query` charges). All findings honor the engine's layer topology (capture→…→feedback) and the "L2 = scorer not filter" / "store-don't-delete" rules — several findings (RC3a, RC4) are about restoring guards that are silently no-op'ing, not adding drop-gates.
+
+## Re-verification — 2026-08-30
+
+The five root causes, against code today:
+
+| RC | Then | Now |
+|---|---|---|
+| **RC1** L1/L2 extraction thin → ~15/21 sales rules structurally dead (`deal.status`=0, `ball_in_court=us` 4.6%) | The deal lane was unreachable | **LARGELY CLOSED.** The `deal` node is minted (`context/pipeline.py:863`) with both edges (`:871-873`); `deal.status` normalisation and a backfill exist (`context/backfill.py:162`, `:299`). Sales routing is 43 of 47. The extraction prompt now carries envelope, direction and roles (`context/extract/prompt.py:14,17,34`). |
+| **RC2** Impact constant → 42-56 score compression → L5 proactive tier dormant | `I` was a constant | **CLOSED.** `reason/scoring.py:72 impact()` is a real function of `(value, p90, linked_deal)`. |
+| **RC3** self-filter dead (`org_seats` empty) + investors-as-lost-deals + self ×5 nodes | `org_seats` had one manual writer | **ADDRESSED.** `platform/seats.py` writes seats and backfills orgs that have none; `platform/receipts.py:66` asserts the table is non-empty as a release check; `context/runner.py:65`, `context/extract/envelope.py:40` and `context/support_situations.py:515,1246` all stop trusting `org_seats` alone and fall back for self-serve tenants. `bd25b31` records that both live orgs now hold an active admin seat. |
+| **RC4** hollow commitments / dupes / staleness / meeting↔person split | | **PARTIAL.** The meeting lane opened (`1881133`), commitment reachability was fixed (`bd25b31` — 203 of 203 commitments had been unremindable because nobody owned them), and the overloaded contact-signal name was split (`0eaf94e`). **Still open:** there is no commitment backfill — `commitment` does not appear in `context/backfill.py`, so the historical rows this audit counted are unrepaired. Tracked as L2-3 in `L2_L3_GAP_ANALYSIS.md`. |
+| **RC5** perf — ~1000 per-node reads, 823 audit writes per 29 cards | | **PARTIAL.** P1 bulk reads, P2 no-op audit skip, P4 L2 parallel extraction and P5 L1 paging all shipped. **P2b (batch the audit writes) and P3 (skip nodes that cannot fire) are still open** — see `PERFORMANCE_HARDENING.md` in the workspace, which was re-verified the same day. |
+
+Marked Reference rather than Active because the two things that genuinely survive from it — the commitment backfill and the reasoning-write batching — are each owned by a live plan of their own. Every number in the body is a 2026-08-12 measurement against `org_325a6e36e6bb4651a2a1e403` and has not been re-taken.

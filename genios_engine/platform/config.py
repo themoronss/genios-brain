@@ -36,8 +36,45 @@ class Settings(BaseSettings):
     redis_url: str = ""                          # rediss://… (Upstash) or redis://localhost
     jwt_secret: str = "genios-dev-secret-change-in-prod"   # dashboard-session JWT signing
     internal_token: str = ""                     # cron/internal endpoints (sweep, ingest-all)
+    # GeniOS staff logins allowed into the cross-org admin console, comma-separated emails.
+    # Deliberately env-only: superadmin is a property of US, not of a tenant row, so granting it
+    # never means writing to a customer's account. Empty (the default) = nobody, which is what a
+    # customer deployment should always be.
+    superadmin_emails: str = ""
+
+    # PostHog (server-side product analytics). Empty key = emitter off, which is the correct
+    # default for dev and for any self-hosted deployment. Host is the INGEST host
+    # (eu.i.posthog.com), not the app/query host.
+    posthog_api_key: str = ""
+    posthog_host: str = "https://eu.i.posthog.com"
+
+    # Platform-wide daily LLM spend ceiling in USD. The per-org caps bound each tenant; this bounds
+    # their sum, which is the only guard against many accounts abusing us at once. 0 = disabled.
+    daily_llm_usd_cap: float = 25.0
+    # OUR OWN domains — the product's transactional mail, not anybody's counterparty.
+    #
+    # A customer's inbox contains our onboarding, invite and billing mail. Without this the
+    # engine models the vendor as a business relationship inside the customer's own graph: the
+    # design partner's feed carried "Book invite@thegenios.com's demo now" from a message whose
+    # entire body was "Dear Rohit, The life is going to be changed for forever now.", plus two
+    # "reply to them" cards on the same address. The tenant's self-filter cannot catch this —
+    # we are genuinely not the tenant — so it needs its own boundary.
+    #
+    # Config rather than a constant, because a self-hosted or white-labelled deployment sends
+    # from a different domain, and a hardcoded string would silently stop protecting it.
+    platform_domains: str = "thegenios.com"
+    # Founder-facing ops alerts (sync totally broken, platform LLM cap hit) — a Slack incoming
+    # webhook URL pointed at the founder's OWN workspace. Empty = alerts just log, no push.
+    ops_alert_webhook: str = ""
     composio_webhook_secret: str = ""            # HMAC-SHA256 secret for inbound Composio webhooks
     cors_origins: str = "*"                       # comma-separated dashboard origins ('*' = dev)
+    # Public base URL of the client dashboard, e.g. https://brain.thegenios.com. Used ONLY to
+    # build the "Open the card →" deep link on outbound proactive messages. Empty = no link,
+    # which is why every message the distribution sweep has ever built had none: the sweep's
+    # `base_url` defaulted to "" and its one caller never passed anything, so `channels/slack.py`
+    # dropped the link line on all three production payloads. Kept empty by default because a
+    # guessed hostname produces a broken link, which is worse than no link.
+    dashboard_url: str = ""
 
     # LLM (L2 extraction) — Anthropic. The single combined relevance+extraction call.
     anthropic_api_key: str = ""
@@ -64,10 +101,12 @@ class Settings(BaseSettings):
     # OCR (Tesseract) fallback for scanned/image docs. Native text always works; OCR
     # needs the tesseract binary, so default off — turn on where the binary is present.
     enable_ocr: bool = False
-    # Layer 3 Domain Expertise compiler, shadow pass. When on, each sweep also compiles the
-    # active L2 situations into ExpertisePackages (route/coverage measured, nothing persisted,
-    # NO decision impact) so route/package parity can be observed before any live cutover.
-    # Default off — this is the design's mandated shadow-first activation step.
+    # Layer 3 Domain Expertise compiler — the CUTOVER switch. When on, each sweep compiles the
+    # active L2 situations into ExpertisePackages, reasons over them, and emits the decisions as
+    # signals delivery can build cards from, tagged with the capability that authored them.
+    # Off by default and per tenant by environment: the compiled brain runs ALONGSIDE the legacy
+    # pack rules (separate rule ids, separate signals), so the two can be compared on live traffic
+    # rather than swapped blind.
     use_domain_compiler: bool = False
 
     @property

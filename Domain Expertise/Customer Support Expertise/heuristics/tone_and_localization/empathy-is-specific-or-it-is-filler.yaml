@@ -1,0 +1,68 @@
+identity:
+  id: customer_support.heu.tone_and_localization.empathy_is_specific_or_it_is_filler
+  name: Empathy is specific or it is filler
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.customer_communication.tone_and_localization
+  subdomain: customer_communication
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: '''We understand your frustration'' understood nothing. Empathy that works names the actual
+    situation — ''a week before your launch, this is the wrong time for an outage'' — and can only be
+    written by someone who read the ticket.'
+  answers:
+  - What separates real empathy from template empathy?
+
+heuristic:
+  statement: >
+    "We understand your frustration" understood nothing. Empathy that works names the actual
+    situation — "a week before your launch, this is the wrong time for an outage" — and costs the
+    same number of words.
+  why: >
+    Generic empathy is a category statement: it says we recognise that a customer of your type is
+    experiencing an emotion. Specific empathy is evidence that somebody read what was written and
+    understood the consequences, which is the only thing the customer actually wanted to establish.
+    The cost is identical — one sentence either way — and the difference is entirely whether the
+    sentence contains a fact from their message.
+  confidence_bp: 8000
+  applies_when: Any reply acknowledging a customer's difficulty.
+  breaks_down_when: >
+    The specifics are wrong. Naming the launch date incorrectly, or referring to a consequence they
+    never mentioned, is worse than the generic version because it demonstrates confident
+    misreading. It also breaks down for a customer who wants no acknowledgement at all: for a
+    technical contact reporting a defect dispassionately, empathy of any register reads as an
+    unnecessary preamble before the answer.
+  reads: [customer_support.obj.core.requester, customer_support.obj.core.customer_sentiment, customer_support.obj.core.ticket]
+  contradicts: [customer_support.heu.macro_management.customers_detect_templates_instantly]
+limits:
+- 'It concerns the acknowledgement, not the resolution. Perfectly specific empathy attached to no progress is still no progress.'
+- 'Specificity requires having read the message, which is exactly what a queue under load stops doing.'
+failure_modes:
+- 'Templated specificity — a macro with a merge field for the situation — which reads worse than the generic version.'
+- 'Applied to a reader who wants only the answer.'
+variants:
+- applies_to: b2c
+  change: Volume makes specificity expensive and generic empathy near-universal, which is why a specific line stands out disproportionately.
+  why: The baseline is low.
+- applies_to: named_tam
+  change: Generic empathy from somebody who knows the account is a visible failure of attention.
+  why: They are supposed to already know the situation.
+references:
+- title: The Effortless Experience
+  kind: book
+  author: Dixon, Toman, DeLisi
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the one that makes specificity risky: naming the launch date
+    wrongly is worse than the generic version, because it demonstrates confident misreading
+    rather than absent attention.

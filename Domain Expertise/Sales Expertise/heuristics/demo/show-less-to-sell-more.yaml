@@ -1,0 +1,86 @@
+identity:
+  id: sales.heu.demo.show_less_to_sell_more
+  name: Show less to sell more
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.discovery_and_solution.demo
+  subdomain: discovery_and_solution
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: Every feature shown beyond the buyer's needs adds surface for confusion and price anxiety,
+    not desire. The demo that closes is remembered as doing exactly what they need.
+  answers:
+  - How much of the product should be demonstrated?
+  not:
+  - An argument for hiding capability. Breadth can be mentioned; it should not be demonstrated.
+
+heuristic:
+  statement: 'Demonstrate only what a stated problem requires, and mention the rest at most in a
+    sentence. Additional capability does not accumulate as value in the buyer''s mind — it accumulates
+    as scope, as complexity and as an expectation of price, all of which work against the decision.'
+  why: 'A buyer evaluating a demonstration is estimating effort and risk as well as benefit, and every
+    unexplained feature adds to the first two while adding nothing to the third — because a capability
+    they did not ask for solves no problem they have. There is also a specific pricing effect: breadth
+    shown is breadth assumed to be paid for, so the same price feels higher after a longer demo, which
+    is the opposite of what the extra effort intended.'
+  confidence_bp: 8300
+  applies_when: 'A demonstration to a buyer whose problems have been established in discovery.'
+  breaks_down_when: 'A PLATFORM PURCHASE. Where the buyer is explicitly evaluating breadth — a
+    consolidation decision, a standardisation project — showing the range IS answering their question.
+
+    A TECHNICAL EVALUATION AGAINST A FEATURE LIST. Scored assessments require coverage to be
+    demonstrated, and restraint loses points against a rubric.
+
+    AN AUDIENCE WHO ASKED. If they ask to see something, showing it is answering a question rather
+    than padding.
+
+    A LATER-STAGE VALIDATION DEMO. Once the decision is largely made, depth on adjacent capability
+    supports the expansion conversation rather than diluting the core one.
+
+    WHEN IT PRODUCES AN UNDERSOLD PRODUCT. Restraint taken far enough leaves the buyer believing the
+    product is narrower than it is, which costs the renewal expansion later — the discipline is about
+    the demo, not about what they are ever told.'
+  reads:
+  - sales.obj.core.pain_point
+  - sales.obj.core.business_need
+  contradicts:
+  - sales.heu.value_proposition.value_in_their_unit_of_account
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {has_obs: demo_requested}
+  signals:
+  - demo_requested
+  - meeting_request
+  do_not_use_when:
+  - The buyer is explicitly evaluating breadth, as in a consolidation decision.
+  - A scored technical evaluation requires coverage to be demonstrated.
+  - They asked to see it; showing it is answering a question.
+
+objects_used:
+- sales.obj.core.pain_point
+- sales.obj.core.business_need
+- sales.obj.core.pricing
+
+limits:
+- What was shown in a demonstration is not in the record; `demo_requested` marks that one was asked
+  for and nothing about its content.
+- Says nothing about how to show the things that are in scope.
+- Cannot distinguish restraint from a thin product, which is the fifth breakdown regime.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The pricing effect is the addition — breadth
+    shown is breadth assumed to be paid for, so a longer demo makes the same price feel higher, which
+    is precisely the reverse of what the extra effort was intended to achieve.'

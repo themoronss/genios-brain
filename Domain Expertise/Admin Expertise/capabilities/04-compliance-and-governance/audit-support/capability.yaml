@@ -1,27 +1,74 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs, following capabilities/01-executive-support/commitment-tracking/.
-
 identity:
   id: admin.compliance_and_governance.audit_support
   name: Audit Support
   domain: admin
   subdomain: compliance_and_governance
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Preparing for and running audits: mapping requests to evidence, assembling samples, maintaining
+  the audit trail between cycles, and tracking findings to closure. Most audit pain is retrieval pain
+  — the control was operating, and nobody kept the proof.
 
-description: >
-  Preparing for and running audits: mapping requests to evidence, assembling samples,
-  maintaining the audit trail between cycles, and tracking findings to closure. Most audit
-  pain is retrieval pain — the control was operating, and nobody kept the proof.
+  '
+question: Can we produce the evidence for this control, on request, without a scramble?
 
-question: "Can we produce the evidence for this control, on request, without a scramble?"
+outcomes:
+- 'A request mapped to evidence in hours, not weeks. Most audit pain is retrieval pain — the control was operating and nobody kept the proof.'
+- 'The audit trail maintained BETWEEN cycles. Evidence assembled during an audit is reconstruction, and reconstruction is what auditors are trained to distrust.'
+- 'Samples produced from a stated population, so the sample means something. A sample drawn from what was easy to find is not a sample.'
+- 'Findings tracked to closure with an owner and a date, not to acknowledgement.'
+- 'The negative outcome: a control identified as NOT evidenced, before the auditor identifies it. Self-reported gaps cost a fraction of found ones.'
+failure_modes:
+- 'TREATING AUDIT AS AN EVENT. It is a standing evidence discipline; the month of scramble is the invoice for the other eleven.'
+- 'EVIDENCING THE CONTROL DESIGN RATHER THAN ITS OPERATION. A written policy proves intent; the auditor asked whether it happened.'
+- 'PRODUCING WHAT IS EASY. A convenience sample answers a different question and answers it confidently.'
+- 'CLOSING FINDINGS BY RESPONDING TO THEM. A management response is not a remediation, and the next cycle will ask.'
+- 'LETTING THE AUDITOR DEFINE THE POPULATION. If we cannot state what the population was, we cannot argue about the sample.'
+kpis:
+- name: evidence_retrieval_time
+  unit: hours
+  description: Median time from request to evidence produced. The number that separates retrieval from archaeology.
+  direction: lower_is_better
+- name: reconstruction_share
+  unit: percent
+  description: Evidence assembled during the audit rather than held. The record-debt measure.
+  direction: lower_is_better
+- name: self_identified_gap_share
+  unit: percent
+  description: Control gaps we named before the auditor did.
+  direction: higher_is_better
+- name: finding_closure_lag
+  unit: days
+  description: Time from finding to remediated, not to responded.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.records_and_documentation.document_control, admin.records_and_documentation.retention_and_archival,
+             admin.compliance_and_governance.policy_administration]
+  downstream: [admin.compliance_and_governance.statutory_filing, admin.admin_operations.process_improvement]
+  parallel: [admin.compliance_and_governance.data_protection_administration, admin.compliance_and_governance.board_and_secretarial]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, regulated, outsourced, hybrid]
+  offerings: [assurance]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    No substrate. Audit evidence is a records property and the graph holds correspondence;
+    admin.obj.core.audit_evidence is itself still a planned object.
+
+    The KPI that carries the whole capability is reconstruction_share, and it is the one no
+    audit function measures. A team that reconstructs 80% of its evidence during the audit and
+    still passes reports a clean audit and has a serious records problem, invisible until the
+    year it does not pass.
+
+admission:
+  accepted_content_hash: ce933d1207286f3999587c1c64b8c87ecf3a95dd7162c5eda65739e5c587f9c3

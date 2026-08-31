@@ -24,6 +24,18 @@ class NodeContext:
     edge_count: int = 0                                    # number of current edges on this node
     neighbor_obs: set = field(default_factory=set)         # union of neighbours' observation kinds
     neighbor_facts: dict = field(default_factory=dict)     # field -> latest value across neighbours
+    #: The Layer 2 situation anchored on this node, if L2 correlated one.
+    #:
+    #: L2 computes a whole substrate — thread families, dormancy, coverage, a five-dimension
+    #: confidence vector — writes it to `context_situations`, and until now NOTHING on the live
+    #: decision path read a single row of it. Cards were built from one person row's facts, so
+    #: everything L2 knew (that 68 Boardy events are one thread family, that a situation went
+    #: dormant, that coverage is 50%, that confidence_overall is 33) had zero effect on what the
+    #: founder saw.
+    #:
+    #: `None` means L2 correlated no situation for this node, which is itself information and
+    #: must stay distinguishable from "a situation with nothing in it".
+    situation: dict | None = None
 
 
 def _resolve_value(ctx: NodeContext, value):
@@ -91,6 +103,14 @@ def _eval_condition(ctx: NodeContext, cond: dict, eval_time: datetime) -> bool:
         return cond["exists"] in ctx.facts
     if "absent" in cond:
         return cond["absent"] not in ctx.facts
+    if "present" in cond:
+        # "we have actually captured this fact" — the counterpart to `absent`, and the guard a
+        # rule needs when its imperative presumes a RELATIONSHIP exists. `missing_ok` makes an
+        # absent fact PASS a negative check, which is right for narrowing a population and wrong
+        # as the only gate on a rule: closed_lost_risk fired on newsletter senders because
+        # `ball_in_court != them, missing_ok` passes for people we have never exchanged a word
+        # with, and "save the deal now" needs a deal before it needs saving.
+        return cond["present"] in ctx.facts
     if "has_obs" in cond:
         return any(o.get("kind") == cond["has_obs"] for o in ctx.obs)
     if "no_obs" in cond:

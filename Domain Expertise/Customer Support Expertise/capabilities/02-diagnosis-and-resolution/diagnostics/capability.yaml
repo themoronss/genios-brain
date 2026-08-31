@@ -1,40 +1,119 @@
-# STUB — identity, description, question and metadata only. Promotion instructions in metadata.
-
 identity:
   id: customer_support.diagnosis_and_resolution.diagnostics
   name: Diagnostics
   domain: customer_support
   subdomain: diagnosis_and_resolution
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Getting what the system already knows about the failure — logs, traces, versions, configuration,
+  the account''s own data, the screenshot nobody asked for — and getting it in one pass rather than in
+  a chain of round trips. The expertise is mostly in restraint: every additional request spends customer
+  patience on evidence that is frequently retrievable from our own side, and a customer who has been asked
+  three times for the same thing stops believing anyone is reading their replies. Diagnostics collected
+  after a hypothesis has formed are collected to confirm it, which is why what to gather is decided before
+  anyone has a theory, and why the log everyone wants is the one that rotated away yesterday.
 
-description: >
-  Getting what the system already knows about the failure — logs, traces, versions,
-  configuration, the account's own data, the screenshot nobody asked for — and getting it in one
-  pass rather than in a chain of round trips. The expertise is mostly in restraint: every
-  additional request spends customer patience on evidence that is frequently retrievable from
-  our own side, and a customer who has been asked three times for the same thing stops believing
-  anyone is reading their replies. Diagnostics collected after a hypothesis has formed are
-  collected to confirm it, which is why what to gather is decided before anyone has a theory,
-  and why the log everyone wants is the one that rotated away yesterday.
+  '
+question: What does the evidence actually say, and what do we still need before we can say anything?
 
-question: "What does the evidence actually say, and what do we still need before we can say anything?"
+outcomes:
+- 'One evidence request, not three. Every additional round trip spends customer patience on data
+  that is frequently retrievable from our own side, and a customer asked three times for the same
+  thing stops believing anyone is reading their replies.'
+- 'What to gather decided BEFORE a hypothesis forms. Evidence collected after a theory exists is
+  collected to confirm it, and the confirming evidence is always available.'
+- 'The volatile evidence captured first. The log everyone wants is the one that rotated away
+  yesterday; ordering the request by what expires soonest costs nothing and is almost never done.'
+- 'A stated verdict on what the evidence supports — including the honest "this does not tell us
+  enough". Reporting an inconclusive result is a finding; presenting it as progress is how a case
+  runs for a fortnight on nothing.'
+- 'The negative outcome: hypotheses RULED OUT, recorded as ruled out. Without them the next person
+  on the case repeats the same three checks, and the customer is asked for the same three files.'
+- 'Evidence we could have collected ourselves, collected ourselves. Asking the customer for what is
+  in our own telemetry is the cheapest avoidable insult in support.'
+
+failure_modes:
+- 'HYPOTHESIS FIRST, EVIDENCE SECOND. The dominant failure and the hardest to notice, because the
+  evidence that confirms a theory is always findable and the case closes with the wrong cause.'
+- 'THE ROUND-TRIP CHAIN. Asking for one artefact, waiting a day, asking for the next. Each request
+  is individually reasonable and the sequence is what makes a two-hour diagnosis take a week.'
+- 'ASKING FOR WHAT WE ALREADY HAVE. Requesting a version number we could read from their account
+  is the specific thing that convinces a technical customer that nobody on our side is looking.'
+- 'TREATING THE SCREENSHOT AS THE EVIDENCE. A picture of an error message says what was displayed,
+  not what happened. It is a pointer to evidence and is routinely filed as the evidence itself.'
+- 'ACCEPTING "IT DOES NOT WORK" AND WORKING FROM IT. The reproduction question — what did you do,
+  what did you expect, what happened — is skipped most often on the tickets where it matters most,
+  because they arrive urgent.'
+- 'IGNORING WHAT CHANGED. Systems that worked and stopped almost always had something change, and
+  the customer usually knows what it was. Not asking is the single largest unforced error here.'
+
+kpis:
+- name: evidence_requests_per_case
+  unit: count
+  description: Round trips spent gathering. The number this capability exists to reduce, and the one
+    a customer experiences most directly.
+  direction: lower_is_better
+- name: self_served_evidence_share
+  unit: percent
+  description: Share of diagnostic data obtained from our own side rather than requested.
+  direction: higher_is_better
+- name: volatile_evidence_capture_rate
+  unit: percent
+  description: Share of cases where expiring data was captured before it rotated.
+  direction: higher_is_better
+- name: hypothesis_reversal_rate
+  unit: percent
+  description: Share of cases where the first stated cause turned out to be wrong. High values point
+    at hypothesis-first working rather than at hard problems.
+  direction: lower_is_better
+- name: reproduction_established_rate
+  unit: percent
+  description: Share of cases with a stated reproduction before resolution was attempted.
+  direction: higher_is_better
+
+handoffs:
+  upstream:
+  - customer_support.intake_and_triage.intent_classification
+  - customer_support.intake_and_triage.priority_and_severity
+  - customer_support.entitlement_and_sla.entitlement_verification
+  downstream:
+  - customer_support.diagnosis_and_resolution.issue_reproduction
+  - customer_support.diagnosis_and_resolution.root_cause_analysis
+  - customer_support.diagnosis_and_resolution.workaround_management
+  parallel:
+  - customer_support.customer_communication.expectation_setting
+  - customer_support.escalation_and_incident.engineering_handoff
+
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support,
+           swarming_support, named_tam, follow_the_sun, premium_paid_support, outsourced_bpo,
+           embedded_in_product, field_service, ai_first_support]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models, kpis and
-    handoffs, following the sibling root-cause-analysis/capability.yaml. Two bodies of knowledge
-    belong here and neither is written yet: the standard evidence bundle per product_area, which
-    is what turns a round trip into a single ask, and the etiquette of asking a customer for
-    access to their environment, which is where trust is most often spent badly. Watch the
-    boundary with root_cause_analysis when promoting — diagnostics gathers and reads evidence,
-    RCA explains it, and a promoted file that starts asserting causes has absorbed its
-    neighbour. Nothing here can route today: derived.contact_frequency and the ticket fact paths
-    this capability would key on are planned substrate.
+    Promoted out of Phase-1 stub. Reachable from the live relationship and support_contact
+    routes.
+
+    Its substrate is the thinnest of the batch and the gap is specific rather than general: what
+    this capability needs is ticket.created_at, ticket.channel, reproduction_confirmed and
+    reproduction_failed, all of which sit in planned_substrate with no writer. What it can see
+    is the observation stream — question, next_step_agreed, followup_sent — and whose turn it
+    is. That is enough to notice a case going round in circles and not enough to know what was
+    ruled out.
+
+    Authored anyway, and deliberately: the round-trip chain is the most expensive failure in
+    support and it is a discipline rather than a signal. A system that cannot detect it can
+    still be told, through a render hint, never to ask for a second artefact without saying why
+    the first was not enough.
+
+admission:
+  accepted_content_hash: 8e93729e086e22246bf83babbcd72c69f0baf5bfae61db20a89351e36ce29e4c

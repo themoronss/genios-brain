@@ -5,101 +5,211 @@
   "description": "A unit of professional competence, authored as a FOLDER:\n\n  capabilities/<NN-subdomain>/<capability>/\n    capability.yaml     <- this file: identity, question, outcomes, failure modes, KPIs, handoffs\n    objects.yaml        <- WHICH NOUNS to load. References only.\n    knowledge.yaml      <- WHICH EXPERTISE applies: playbooks, heuristics, mental models,\n                           rules, decision frameworks. References only.\n    situations/*.yaml   <- the situations this capability owns\n\nA capability holds NO knowledge inline. It declares two manifests and owns some situations, and that is the whole of it.\n\nThat is a change from the first cut, where playbooks and heuristics were string lists on this file. Three things broke: Layer 6 could not raise a versioned suggestion against a bullet point, MEDDICC existed four times and drifted, and a rule spanning two objects had nowhere to live where it could see both sides of its own condition. The Atlas puts playbooks/, heuristics/, mental_models/, rules/ and decision_frameworks/ beside objects/ for exactly these reasons.\n\nNo numbers. Thresholds, weights and scores are Layer 4's arithmetic and belong in the pack manifest. The moment a threshold appears in a capability file, the Layer 3/4 boundary has leaked.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["identity", "description", "question", "metadata"],
-
+  "required": [
+    "identity",
+    "description",
+    "question",
+    "metadata"
+  ],
   "properties": {
-
     "identity": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "domain", "subdomain", "version", "status"],
+      "required": [
+        "id",
+        "name",
+        "domain",
+        "subdomain",
+        "version",
+        "status"
+      ],
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+\\.[a-z0-9_]+$", "description": "<domain>.<subdomain>.<capability>" },
-        "name": { "type": "string" },
-        "domain": { "type": "string", "pattern": "^[a-z0-9_]+$" },
-        "subdomain": { "type": "string", "pattern": "^[a-z0-9_]+$" },
-        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
-        "status": { "enum": ["draft", "review", "stable", "deprecated"] },
-        "stub": { "type": "boolean", "default": false },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+\\.[a-z0-9_]+$",
+          "description": "<domain>.<subdomain>.<capability>"
+        },
+        "name": {
+          "type": "string"
+        },
+        "domain": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "subdomain": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "review",
+            "stable",
+            "deprecated"
+          ]
+        },
+        "stub": {
+          "type": "boolean",
+          "default": false
+        },
         "parent_capability": {
           "type": "string",
-          "description": "Set when this capability is a channel or sub-discipline of another — cold_email under outreach, upsell under expansion. Advisory grouping; it does not affect resolution."
+          "description": "Set when this capability is a channel or sub-discipline of another \u2014 cold_email under outreach, upsell under expansion. Advisory grouping; it does not affect resolution."
         }
       }
     },
-
-    "description": { "type": "string", "minLength": 20 },
-
+    "description": {
+      "type": "string",
+      "minLength": 20
+    },
     "question": {
       "type": "string",
       "minLength": 10,
       "description": "The one question this capability answers, phrased as an operator would ask it. If it needs two sentences it is two capabilities."
     },
-
     "outcomes": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "description": "What done looks like. Feeds Layer 5's success_events."
     },
-
     "failure_modes": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "description": "How this capability is characteristically done badly. Often more useful than the outcomes, because it is what an expert actually watches for."
     },
-
     "kpis": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "properties": {
-          "name": { "type": "string" },
-          "unit": { "type": "string" },
-          "description": { "type": "string" },
-          "direction": { "enum": ["higher_is_better", "lower_is_better", "target_band"] }
+          "name": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "direction": {
+            "enum": [
+              "higher_is_better",
+              "lower_is_better",
+              "target_band"
+            ]
+          }
         }
       }
     },
-
     "handoffs": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "upstream":   { "type": "array", "items": { "type": "string" } },
-        "downstream": { "type": "array", "items": { "type": "string" } },
-        "parallel":   { "type": "array", "items": { "type": "string" }, "description": "Capabilities that commonly run at the same time and read the same objects." }
+        "upstream": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "downstream": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "parallel": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Capabilities that commonly run at the same time and read the same objects."
+        }
       }
     },
-
     "applies_to": {
       "type": "object",
       "additionalProperties": false,
       "description": "Advisory hint only. Authoritative activation lives in the model tree under models/.",
       "properties": {
-        "models":    { "type": "array", "items": { "type": "string" } },
-        "offerings": { "type": "array", "items": { "type": "string" } }
+        "models": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "offerings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
-
-    "metadata": { "$ref": "#/$defs/metadata" }
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    },
+    "admission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accepted_content_hash"
+      ],
+      "description": "The production-admission record. A named reviewer accepted the exact BYTES below it: the hash is over the document MINUS this block, so an edit after review silently un-accepts and the capability stops carrying authority. Without this block in the schema the ceremony existed in 153 files and in the resolver and in no contract, which is how it went unvalidated.",
+      "properties": {
+        "accepted_content_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "semantic_hash of the document with `admission` removed. Stamp it with _tools/admit.py, never by hand \u2014 a hand-typed hash accepts nothing."
+        }
+      }
+    }
   },
-
   "$defs": {
     "knowledge_item": {
       "oneOf": [
-        { "type": "string" },
+        {
+          "type": "string"
+        },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["statement"],
+          "required": [
+            "statement"
+          ],
           "properties": {
-            "id":        { "type": "string", "pattern": "^[a-z0-9_.]+$" },
-            "statement": { "type": "string" },
-            "why":       { "type": "string", "description": "Why an expert believes it. A heuristic without a why cannot be argued with, and therefore cannot be improved." },
-            "applies_when": { "type": "string" },
-            "reads":     { "type": "array", "items": { "type": "string" }, "description": "Object ids or property names this draws on." }
+            "id": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.]+$"
+            },
+            "statement": {
+              "type": "string"
+            },
+            "why": {
+              "type": "string",
+              "description": "Why an expert believes it. A heuristic without a why cannot be argued with, and therefore cannot be improved."
+            },
+            "applies_when": {
+              "type": "string"
+            },
+            "reads": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Object ids or property names this draws on."
+            }
           }
         }
       ]
@@ -107,15 +217,51 @@
     "metadata": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["owner", "last_updated", "review_status"],
+      "required": [
+        "owner",
+        "last_updated",
+        "review_status"
+      ],
       "properties": {
-        "owner": { "type": "string" },
-        "created_by": { "enum": ["human", "ai", "ai_human_reviewed"] },
-        "reviewed_by": { "type": "string" },
-        "last_updated": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-        "review_status": { "enum": ["unreviewed", "in_review", "approved"] },
-        "confidence": { "enum": ["experimental", "provisional", "stable"] },
-        "notes": { "type": "string" }
+        "owner": {
+          "type": "string"
+        },
+        "created_by": {
+          "enum": [
+            "human",
+            "ai",
+            "ai_human_reviewed"
+          ]
+        },
+        "reviewed_by": {
+          "type": "string"
+        },
+        "last_updated": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "review_status": {
+          "enum": [
+            "unreviewed",
+            "in_review",
+            "approved"
+          ]
+        },
+        "confidence": {
+          "enum": [
+            "experimental",
+            "provisional",
+            "stable"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "reviewed_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "The date the named reviewer accepted this content. Distinct from last_updated, which moves whenever anyone edits."
+        }
       }
     }
   }

@@ -28,6 +28,14 @@ from genios_engine.platform.wiring import (make_agent_event_store,
                                            make_relevance_classifier, make_repo,
                                            make_trace_repo)
 
+# ONE top-level import, deliberately: this module had none and used per-function local imports,
+# and FOUR call sites (mailbox-owner lookup, heartbeat timezone block, kill switch, backfill
+# event cap) used `text` with no local import — each a NameError waiting for its first runtime
+# execution, invisible to every import check and to any test that did not walk that exact line.
+from sqlalchemy import text
+
+from genios_engine.reason import actionability as _decisive
+
 router = APIRouter()
 
 # Real (DB-backed) stores when DATABASE_URL is set, else in-memory — decided in wiring.
@@ -51,9 +59,70 @@ _demo_repo = InMemorySourceEventRepository()          # /dev/ingest-sample only 
 
 
 # ── health / config ──────────────────────────────────────────────────────────────
+def _bind_gate_costs(gate, org_id: str) -> None:
+    """Point a shared relevance gate's cost recording at the tenant currently being synced.
+    Cross-org sweeps reuse one classifier; without this every gate call would be billed to the
+    first org in the loop."""
+    if gate is not None and _graph is not None and hasattr(gate, "bind_costs"):
+        gate.bind_costs(_graph.record_cost, org_id)
+
+
 @router.get("/health")
-def health() -> dict:
+def health(request: Request) -> dict:
+    """Liveness — and, when the process is alive but the database will not take writes, that too.
+
+    This used to answer a flat "ok" whichever way the database was pointing, which is how a
+    four-hour write outage passed every check that was watching. The process really was up; the
+    product was not. A degraded boot is reported here because it is the only signal that reaches
+    an uptime monitor, and a silent partial outage is the failure mode that costs the most.
+    """
+    degraded = getattr(request.app.state, "degraded_read_only", None)
+    if degraded:
+        return {"status": "degraded", "layer": "L1 capture", "writes": "unavailable",
+                "reason": degraded}
     return {"status": "ok", "layer": "L1 capture"}
+
+
+@router.get("/health/readiness")
+def health_readiness(org_id: str = Depends(get_current_org)) -> dict:
+    """Semantic readiness, not liveness — is THIS tenant in the state the code implies?
+
+    `/health` answers "is the process up"; these receipts answer the question health metrics
+    never asked: an empty sweep looked healthy, a skip read as a pass, and "Present / Wired /
+    Tested" was communicated as active intelligence. One read-only SELECT per structural claim
+    (platform/receipts.py — the same list the release-gate CLI runs, so the operator surface and
+    the release gate cannot drift apart about what "ready" means). Auth-scoped to the caller's
+    own org: receipts name row counts and internal claims, which is operator material, not
+    public liveness.
+    """
+    if _graph is None:
+        raise HTTPException(400, "graph store not configured")
+    from genios_engine.platform.receipts import evaluate
+    rows = evaluate(_graph.engine, org_id)
+    failed = [r for r in rows if r["status"] != "PASS"]
+    return {"org_id": org_id, "ready": not failed,
+            "passing": len(rows) - len(failed), "total": len(rows),
+            "receipts": rows, "concurrency": _resolved_concurrency()}
+
+
+def _resolved_concurrency() -> dict:
+    """What the pipeline ACTUALLY resolved to in this process.
+
+    These numbers derive themselves from the pooler port, so the deployed value depends on an
+    environment variable no code path can see. Tuning them turned into an argument from throughput
+    arithmetic — "~14 events/min at a 5.2s LLM call implies about three workers, not eight" — which
+    is inference, not a reading, and inference is what has been wrong here repeatedly. A number
+    this load-bearing has to be observable from outside the process.
+
+    Behind the same tenant auth as the receipts: it describes deployment shape, not liveness.
+    """
+    from genios_engine.capture.acquire.sync_runner import _CAPTURE_WORKERS
+    from genios_engine.capture.connectors.composio import _FETCH_WORKERS
+    from genios_engine.context.runner import _BATCH, _MAX_WORKERS
+    url = (getattr(get_settings(), "database_url", "") or "")
+    return {"l1_capture_workers": _CAPTURE_WORKERS, "l1_fetch_workers": _FETCH_WORKERS,
+            "l2_workers": _MAX_WORKERS, "l2_batch": _BATCH,
+            "pooler": "transaction" if ":6543/" in url else "session"}
 
 
 @router.get("/config")
@@ -119,21 +188,42 @@ def _sender_resolver_for(org_id: str):
     return _known
 
 
-def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summary) -> None:
-    """l1_sync_runs writer — the per-run ingestion ledger run_sync used to log-and-drop."""
+def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summary=None,
+                error: str | None = None) -> None:
+    """l1_sync_runs writer — the per-run ingestion ledger run_sync used to log-and-drop.
+
+    `summary` is None and `error` is set when the caller is reporting a TOTAL sync failure (the
+    connector never returned a batch, so no SyncSummary exists) — previously this case produced no
+    row at all, so a fully-broken connection was invisible anywhere but the server log. Never raises:
+    a ledger hiccup must not break the caller, whether that's the sync loop or a failure handler."""
     if _graph is None:
         return
     from sqlalchemy import text
 
     from genios_engine.platform.ids import new_id
-    with _graph.engine.begin() as c:
-        c.execute(text(
-            "insert into l1_sync_runs (run_id, org_id, connection_id, source, mode, "
-            "scanned, emitted, dropped, parked, duplicate, quarantined) "
-            "values (:r,:o,:c,:s,:m,:sc,:em,:dr,:pa,:du,:qu)"),
-            {"r": new_id("run"), "o": org_id, "c": connection_id, "s": source, "m": mode,
-             "sc": summary.scanned, "em": summary.emitted, "dr": summary.dropped,
-             "pa": summary.parked, "du": summary.duplicate, "qu": summary.quarantined})
+    try:
+        with _graph.engine.begin() as c:
+            c.execute(text(
+                "insert into l1_sync_runs (run_id, org_id, connection_id, source, mode, "
+                "scanned, emitted, dropped, parked, duplicate, quarantined, error) "
+                "values (:r,:o,:c,:s,:m,:sc,:em,:dr,:pa,:du,:qu,:err)"),
+                {"r": new_id("run"), "o": org_id, "c": connection_id, "s": source, "m": mode,
+                 "sc": getattr(summary, "scanned", 0), "em": getattr(summary, "emitted", 0),
+                 "dr": getattr(summary, "dropped", 0), "pa": getattr(summary, "parked", 0),
+                 "du": getattr(summary, "duplicate", 0), "qu": getattr(summary, "quarantined", 0),
+                 "err": error})
+    except Exception:      # noqa: BLE001 — a ledger hiccup must not break the caller
+        _log.exception("l1_sync_runs write failed org=%s conn=%s", org_id, connection_id)
+
+
+def _notify_sync_failure(*, org_id: str, source: str, error: str) -> None:
+    from genios_engine.platform import ops_alert
+    ops_alert.notify("sync_failed", org_id=org_id, source=source, error=error[:300])
+    try:
+        from genios_engine.platform import analytics
+        analytics.capture(org_id, "sync_failed", {"source": source, "error": error[:200]})
+    except Exception:      # noqa: BLE001
+        pass
 
 
 def _run_l2(org_id: str) -> None:
@@ -143,7 +233,9 @@ def _run_l2(org_id: str) -> None:
         return
     try:
         from genios_engine.context.runner import process_pending
-        process_pending(org_id=org_id, store=_graph, llm=_llm, crypto_key=get_settings().crypto_key)
+        process_pending(org_id=org_id, store=_graph, llm=_llm,
+                        registry=_registry,
+                        crypto_key=get_settings().crypto_key)
         from genios_engine.reason.runner import run_all as run_l3    # L3 after the graph updates
         run_l3(org_id=org_id, store=_graph, registry=_registry)
         if _card_store is not None:                              # L5: new gated signals → cards
@@ -154,6 +246,24 @@ def _run_l2(org_id: str) -> None:
         _log.exception("L2/L3/L5 background pass failed for org_id=%s", org_id)
 
 
+def _mailbox_owner_for(org_id: str) -> str | None:
+    """The connected account's own address, for the visibility participants set.
+
+    `connections.external_account_id` is NULL on every live row (Composio does not report it),
+    so the org's signup email is the honest stand-in: the founder connected their own mailbox.
+    Same source of truth L2's `_internal_emails` treats as "us", so the two cannot disagree
+    about who the tenant is. None when the org has no email — the participants set is then
+    sender + recipients, which is still valid, just missing the owner."""
+    if _graph is None:
+        return None
+    try:
+        with _graph.engine.connect() as c:
+            return c.execute(text("select lower(email) from orgs where id=:o and email is not null"),
+                             {"o": org_id}).scalar()
+    except Exception:      # noqa: BLE001 — visibility enrichment never blocks a sync
+        return None
+
+
 def _sync_connection(connection, mode: str, limit: int) -> None:
     """ONE connection's full pass (L1 sync + L2) — background, per-org independent. A sync failure
     is LOGGED with org/connection context (was a bare `except: pass` — the exact 'stuck tenant' an
@@ -161,17 +271,46 @@ def _sync_connection(connection, mode: str, limit: int) -> None:
     try:
         run_sync(make_connector_for(connection), org_id=connection.org_id,
                  connection_id=connection.connection_id, repo=_repo, mode=mode, limit=limit,
-                 parked_store=_parked, relevance=make_relevance_classifier(),
+                 parked_store=_parked, relevance=make_relevance_classifier(connection.org_id),
                  trace_repo=_trace_repo, payload_store=_payload_store,
                  prepared_store=_prepared_store,
+                 mailbox_owner=_mailbox_owner_for(connection.org_id),
                  sender_resolver=_sender_resolver_for(connection.org_id),
                  cursor_store=_cursors,
                  document_job_store=_documents, source=connection.source_type, max_pages=20,
                  run_ledger=_run_ledger)
-    except Exception:
+    except Exception as e:
         _log.exception("L1 sync failed for org_id=%s connection_id=%s",
                        connection.org_id, connection.connection_id)
+        # A total failure (bad auth, provider outage) never reaches run_ledger inside run_sync — write
+        # the row here so it's visible in the admin console instead of only in the server log.
+        _run_ledger(org_id=connection.org_id, connection_id=connection.connection_id,
+                    source=connection.source_type, mode=mode, error=str(e)[:500])
+        _notify_sync_failure(org_id=connection.org_id, source=connection.source_type, error=str(e))
     _run_l2(connection.org_id)
+
+
+def _org_paused(org_id: str) -> bool:
+    """Is this tenant's 'stop everything' switch off?
+
+    `check_org_kill` enforces the same flag, but it is a FastAPI dependency — it only ever runs on
+    an inbound request. The scheduler sweep is a background thread that never passes through one,
+    so a paused org kept being swept: a wipe would delete every row and the next tick refilled the
+    graph from Gmail, which reads exactly like the delete silently failed. A switch labelled "stop
+    everything" has to stop the largest writer in the system too.
+
+    Fails OPEN like the request-path check: an infra hiccup must not silently halt ingestion.
+    """
+    if _graph is None:
+        return False
+    try:
+        from sqlalchemy import text
+        with _graph.engine.connect() as c:
+            row = c.execute(text("select enabled from feature_flags where key=:k"),
+                            {"k": f"kill_switch:{org_id}"}).first()
+        return row is not None and not bool(row.enabled)
+    except Exception:                                # noqa: BLE001 — never block ingestion on this
+        return False
 
 
 def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
@@ -184,27 +323,53 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
     limit = get_settings().sync_batch_limit if limit is None else limit
     conns = _connections.list_active()
     rc = make_relevance_classifier()
-    l1_ok = l1_err = 0
+    l1_ok = l1_err = l1_paused = 0
+    paused: dict[str, bool] = {}
+    # Per-org budget decisions are made ONCE per sweep, not per connection: an org with gmail +
+    # gcal + drive would otherwise pay for three checks to reach the same answer.
+    over_budget: dict[str, bool] = {}
+    l1_skipped = 0
     for conn in conns:                            # L1: pull each connection (one bad source ≠ others)
+        # This background sweep is the largest LLM spender in the system (the S2 gate runs on
+        # every unknown sender) and it was the one path the daily cap did not gate — the breaker
+        # guarded the onboarding sync only. A runaway here spends unattended, every tick.
+        if conn.org_id not in paused:
+            paused[conn.org_id] = _org_paused(conn.org_id)
+        if paused[conn.org_id]:
+            l1_paused += 1
+            continue
+        if conn.org_id not in over_budget:
+            over_budget[conn.org_id] = _llm_over_daily_cap(conn.org_id)
+        if over_budget[conn.org_id]:
+            l1_skipped += 1
+            continue
+        _bind_gate_costs(rc, conn.org_id)
         try:
             run_sync(make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
                      repo=_repo, mode=mode, limit=limit, parked_store=_parked, relevance=rc,
                      trace_repo=_trace_repo, payload_store=_payload_store,
                      prepared_store=_prepared_store,
+                     mailbox_owner=_mailbox_owner_for(conn.org_id),
                      sender_resolver=_sender_resolver_for(conn.org_id),
                      cursor_store=_cursors,
                      document_job_store=_documents, source=conn.source_type, max_pages=20,
                      run_ledger=_run_ledger)
             l1_ok += 1
-        except Exception:
+        except Exception as e:
             l1_err += 1
             _log.exception("auto-sync L1 failed org=%s conn=%s", conn.org_id, conn.connection_id)
-    orgs = {c.org_id for c in conns}
+            _run_ledger(org_id=conn.org_id, connection_id=conn.connection_id,
+                        source=conn.source_type, mode=mode, error=str(e)[:500])
+            _notify_sync_failure(org_id=conn.org_id, source=conn.source_type, error=str(e))
+    orgs = {c.org_id for c in conns if not paused.get(c.org_id)}
     for org in orgs:                              # L2/L3/L5: once per org, after all its sources pulled
         _run_l2(org)
-    _log.info("auto-sync sweep complete: %d/%d connection(s) pulled, %d org(s) reasoned",
-              l1_ok, len(conns), len(orgs))
-    return {"connections": len(conns), "l1_ok": l1_ok, "l1_err": l1_err, "orgs": len(orgs)}
+    _log.info("auto-sync sweep complete: %d/%d connection(s) pulled, %d skipped on budget, "
+              "%d skipped as paused, %d org(s) reasoned",
+              l1_ok, len(conns), l1_skipped, l1_paused, len(orgs))
+    return {"connections": len(conns), "l1_ok": l1_ok, "l1_err": l1_err,
+            "l1_skipped_over_budget": l1_skipped, "l1_skipped_paused": l1_paused,
+            "orgs": len(orgs)}
 
 
 # Retained as a compatibility diagnostic only. Calibration authority is the durable
@@ -244,6 +409,60 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the heartbeat
             _log.exception("retention purge failed for reasoning_context_payloads")
             retention["reasoning_context_payloads"] = "error"
+        # expertise_packages, and this one is not theoretical: it reached 995 MB — 67% of the whole
+        # database — and took the project over its disk quota into read-only, which stops every
+        # write the product makes. Content-addressing (see contracts/domain_expertise.py) stops the
+        # rewrite-when-nothing-changed half; a package still legitimately mints a new id whenever
+        # the org-global graph version advances, so the table needs a sweep as well as a fix.
+        try:
+            from genios_engine.packs.compiler.expertise_publisher import (
+                purge_superseded_expertise_packages,
+            )
+            retention["expertise_packages"] = purge_superseded_expertise_packages(_graph.engine)
+        except Exception:                                    # noqa: BLE001 — never kill the heartbeat
+            _log.exception("retention purge failed for expertise_packages")
+            retention["expertise_packages"] = "error"
+    # L1 PARKED DRAIN: a park is "look at this again", so something has to look. Riding the
+    # existing heartbeat on purpose — a new Celery periodic task would spend the quota-limited
+    # Upstash broker on a pass that is cheap and idempotent here.
+    parked_drain = None
+    if _graph is not None:
+        try:
+            from genios_engine.capture.parked.drain import drain_parked
+            parked_drain = drain_parked(_graph.engine, now=now)
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("parked drain failed")
+            parked_drain = {"error": True}
+    # PROVISIONING: every org must have a seat and the durable pull surface before ANY layer can
+    # route for it, and neither existed for any tenant. `org_seats` had
+    # zero rows for every tenant, and it is the join L2 (self-exclusion), L4 (owner), L5
+    # (escalation ladder) and L6 (card recipient) all reach for. Its emptiness was never a
+    # configuration anyone chose; signup simply never created the row.
+    seats = None
+    if _graph is not None:
+        try:
+            from genios_engine.platform.seats import backfill_provisioning
+            with _graph.engine.begin() as c:
+                seats = backfill_provisioning(c)
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("owner seat backfill failed")
+            seats = {"error": True}
+    # L6 TIMEZONE: fill `orgs.timezone` for any org that has never been asked, from the org's own
+    # outbound send hours. Quiet hours are defined in LOCAL time, and with the column empty every
+    # tenant's window was evaluated in UTC — 21:00-08:00 UTC is 02:30-13:30 in Kolkata, so the
+    # politeness window covered the working morning and left the evening open. Never overwrites a
+    # set value: a human who typed a zone outranks a histogram.
+    timezones = None
+    if _graph is not None:
+        try:
+            from genios_engine.deliver.timezone_infer import infer_and_store
+            with _graph.engine.begin() as c:
+                pending = [r[0] for r in c.execute(text(
+                    "select id from orgs where timezone is null"))]
+                timezones = [infer_and_store(c, o) for o in pending]
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("timezone inference failed")
+            timezones = {"error": True}
     # L5 EXECUTIVE: turn authoritative decisions into tracked commitments, then advance every
     # commitment that has come due — validate, transition, remind, escalate, close.
     #
@@ -257,7 +476,13 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             # Enumeration is inside the guard too: it is a database round trip like any other,
             # and a heartbeat that dies because one query failed stops card expiry, retention
             # and delivery along with it.
-            orgs = _executive_orgs()
+            try:
+                orgs = _executive_orgs()
+            except Exception as exc:                 # noqa: BLE001 — enumeration ≠ the whole pass
+                # A bare {"error": True} hid a NameError here for 15 days: the pass reported a
+                # generic failure every tick and nobody could tell enumeration from execution.
+                _log.exception("executive org enumeration failed")
+                raise RuntimeError(f"org enumeration: {type(exc).__name__}: {exc}") from exc
             planned = advanced = 0
             for org in orgs:
                 try:
@@ -273,9 +498,11 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             if planned:
                 _log.info("executive sweep: %d new commitment(s) across %d org(s)",
                           planned, len(orgs))
-        except Exception:                                    # noqa: BLE001 — never kill the beat
+        except Exception as exc:                             # noqa: BLE001 — never kill the beat
+            # Surface the type and message: an opaque {"error": True} is why L5-01 went
+            # undiagnosed through 60+ heartbeat ticks of production logs.
             _log.exception("executive sweep pass failed")
-            executive = {"error": True}
+            executive = {"error": True, "reason": f"{type(exc).__name__}: {exc}"}
     # L6 distribution: enqueue new high/critical cards + the daily digest per org with an
     # active channel, then drain the outbox (retried, deduped, audited). Decoupled from
     # card creation on purpose — a slow Slack endpoint can never block the reasoning sweep.
@@ -289,6 +516,7 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             distribution = {"error": True}
     calibration = None
     if _graph is not None:
+        from sqlalchemy import text                   # same missing-import defect as L5-01
         from genios_engine.feedback.calibrate import run_calibration
         orgs = {c.org_id for c in _connections.list_active()}
         runs = 0
@@ -352,6 +580,9 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             _log.warning("graph health below threshold for %d org(s): %s",
                          len(unhealthy), unhealthy)
     return {"sync": sync, "lifecycle": lifecycle, "retention": retention,
+            "parked_drain": parked_drain,
+            "timezones": timezones,
+            "seats": seats,
             "executive": executive, "distribution": distribution,
             "calibration": calibration, "learning": learning,
             "graph_maintenance": graph_maintenance}
@@ -365,6 +596,7 @@ def _executive_orgs() -> list[str]:
     Layer 5 to commit to, and sweeping them every tick is pure cost. An active pack is the
     narrowest set that can possibly yield a decision.
     """
+    from sqlalchemy import text                     # module has no top-level sqlalchemy import
     if _graph is None:
         return []
     with _graph.engine.connect() as c:
@@ -384,12 +616,14 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
     totals = {"scanned": 0, "emitted": 0, "dropped": 0, "parked": 0, "duplicate": 0}
     per = []
     for conn in conns:
+        _bind_gate_costs(rc, conn.org_id)
         try:
             summary = run_sync(make_connector_for(conn), org_id=conn.org_id,
                                connection_id=conn.connection_id, repo=_repo, mode=mode,
                                limit=limit, parked_store=_parked, relevance=rc,
                                trace_repo=_trace_repo, payload_store=_payload_store,
                                prepared_store=_prepared_store,
+                               mailbox_owner=_mailbox_owner_for(conn.org_id),
                                sender_resolver=_sender_resolver_for(conn.org_id),
                                cursor_store=_cursors, document_job_store=_documents,
                                source=conn.source_type, max_pages=20,
@@ -449,7 +683,7 @@ def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
             summary = backfill_drain(
                 make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
                 repo=_repo, source=conn.source_type, limit=limit,
-                relevance=make_relevance_classifier(), parked_store=_parked,
+                relevance=make_relevance_classifier(conn.org_id), parked_store=_parked,
                 sender_resolver=_sender_resolver_for(conn.org_id), trace_repo=_trace_repo,
                 payload_store=_payload_store, prepared_store=_prepared_store,
                 document_job_store=_documents, run_ledger=_run_ledger)
@@ -465,9 +699,12 @@ def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
             "note": "full-history backfill draining in the background (older tail incremental skips)"}
 
 
-@router.post("/dev/ingest-sample")
-def ingest_sample() -> dict:
-    """No-config demo: fake Gmail event through the FULL L1 pipeline, returns trace."""
+@router.post("/dev/ingest-sample", include_in_schema=False)
+def ingest_sample(_internal: None = Depends(require_internal)) -> dict:
+    """No-config demo: fake Gmail event through the FULL L1 pipeline, returns trace.
+
+    Gated behind the internal token: it is a developer aid, and an unauthenticated POST that runs
+    the capture pipeline has no business being reachable on a customer deployment."""
     conn = FakeGmailConnector()
     out = []
     for o in conn.incremental_changes().objects:
@@ -484,6 +721,19 @@ def ingest_sample() -> dict:
 @router.get("/parked")
 def list_parked(reason_code: str | None = None, org_id: str = Depends(get_current_org)) -> dict:
     return {"parked": [p.model_dump(mode="json") for p in _parked.list(org_id, reason_code)]}
+
+
+@router.get("/parked/aging")
+def parked_aging_report(org_id: str = Depends(get_current_org)) -> dict:
+    """Backlog per reason, with its oldest entry and whether the drain can ever clear it.
+
+    ``status='pending'`` alone says nothing about whether the queue moves; 347 events sat that
+    way from the day they landed and every dashboard read it as healthy.
+    """
+    if _graph is None:
+        return {"aging": []}
+    from genios_engine.capture.parked.drain import parked_aging
+    return {"aging": parked_aging(_graph.engine, org_id=org_id)}
 
 
 @router.post("/parked/{event_id}/recover")
@@ -679,6 +929,29 @@ def _norm_source(tool: str) -> str:
     return _SLUG_TO_SOURCE.get(slug, tool.lower())
 
 
+def _mirror_connection(org_id: str, source_type: str, *, status: str = "connected") -> None:
+    """Upsert a `connections` row once Composio confirms a source is really ACTIVE.
+
+    This is the ONLY thing that lets the 6-hourly scheduler (run_sync_sweep → list_active()) ever
+    pick an org+source up again after the first onboarding sync. Composio's live API is correctly
+    the source of truth for STATUS (the connect endpoint deliberately doesn't write here — a click
+    isn't a completed OAuth), but the scheduler can't call Composio for every org on every tick just
+    to know what to sync — it needs a local index. Nothing in the real onboarding→sync flow ever
+    wrote one, so `connections` had zero rows for every org that had ever onboarded, and recurring
+    auto-sync was silently, permanently dead for 100% of clients past their first backfill.
+    Deterministic connection_id (not the random default) so repeat calls upsert the same row
+    instead of piling up duplicates that list_active() would then sync twice."""
+    if _connections is None:
+        return
+    from genios_engine.contracts.connection import Connection
+    try:
+        _connections.add(Connection(connection_id=f"con_{org_id}_{source_type}", org_id=org_id,
+                                    source_type=source_type, composio_user_id=org_id,
+                                    status=status))
+    except Exception:      # noqa: BLE001 — mirroring must never block the sync itself
+        _log.exception("connection mirror failed org=%s source=%s", org_id, source_type)
+
+
 def _composio_connected(org_id: str) -> list[dict]:
     """The org's Composio accounts (the source of truth for what's connected). ACTIVE = usable."""
     from composio import Composio
@@ -727,6 +1000,7 @@ def integration_disconnect(tool: str, wipe_data: bool = False,
                               {"o": org_id, "s": _norm_source(tool)}).rowcount
             c.execute(text("delete from source_events where org_id=:o and source=:s"),
                       {"o": org_id, "s": _norm_source(tool)})
+    _mirror_connection(org_id, _norm_source(tool), status="disconnected")
     from genios_engine.platform.audit import record
     record(org_id, "source_disconnected", actor_type="user", target_type="source",
            target_id=_norm_source(tool),
@@ -747,6 +1021,10 @@ def integrations_status(org_id: str = Depends(get_current_org)) -> dict:
     except Exception as e:      # noqa: BLE001
         _log.warning("composio status failed for %s: %s", org_id, e)
         return {}
+    # A sync now runs as a DURABLE JOB (not the old in-memory BackgroundTask flag), so "running" must
+    # come from the job/progress state — otherwise the Sync button never shows "Syncing…" while a job
+    # is actually running. Read it ONCE for the org (all its tools sync together).
+    job_running = _sync_active(org_id)
     out: dict = {}
     for a in accounts:
         active = a["status"] == "ACTIVE"
@@ -754,7 +1032,8 @@ def integrations_status(org_id: str = Depends(get_current_org)) -> dict:
         if cur is None or active:      # prefer an ACTIVE account if the tool has several
             out[a["source_type"]] = {"connected": active,
                                      "syncStatus": ("running"
-                                                    if _sync_is_running(org_id, a["source_type"])
+                                                    if (job_running
+                                                        or _sync_is_running(org_id, a["source_type"]))
                                                     else "idle"),
                                      "freshness": "error" if not active else "stale",
                                      "syncIntervalHours": 6,   # trial cadence; drives the card copy
@@ -807,20 +1086,24 @@ def integrations_status(org_id: str = Depends(get_current_org)) -> dict:
 def _sync_source(org_id: str, source_type: str, limit: int):
     from genios_engine.contracts.connection import Connection
     conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=source_type, config={})
-    return run_sync(make_connector_for(conn), org_id=org_id, connection_id=conn.connection_id,
+    rel = make_relevance_classifier(org_id)    # ONE classifier: connector gates on snippet + fetches
+    return run_sync(make_connector_for(conn, relevance=rel),   # only keepers; pipeline reuses its cache
+                    org_id=org_id, connection_id=conn.connection_id,
                     repo=_repo, mode="incremental", limit=limit, parked_store=_parked,
-                    relevance=make_relevance_classifier(), trace_repo=_trace_repo,
+                    relevance=rel, trace_repo=_trace_repo,
                     payload_store=_payload_store, prepared_store=_prepared_store,
                     sender_resolver=_sender_resolver_for(org_id), cursor_store=_cursors,
                     document_job_store=_documents, source=source_type, max_pages=3,
+                    mailbox_owner=_mailbox_owner_for(org_id),
                     run_ledger=_run_ledger)
 
 
-_BACKFILL_MAX_ROUNDS = 24       # 24 × 25 = up to 600 messages on first connect — see below
+# Onboarding backfill is WINDOW-bounded (60d email / 120d calendar), not count-bounded — the user
+# gets "2 months of everything". These are SAFETY ceilings only, high enough that a normal inbox is
+# fully covered but a pathological 20k-inbox can't run away on time/LLM. Hit → logged, never silent.
+_BACKFILL_MAX_ROUNDS = 200      # 200 × 25 = ~5000 messages ceiling per source (was 24 ≈ 600)
 _BACKFILL_L2_EVERY = 6          # drain L2 every N rounds so facts appear DURING the backfill
-# Hard first-connect event cap per source (in addition to the round cap). Calendar: never pull more
-# than 150 events on a first connect. Sources not listed here fall back to the round cap only.
-_SOURCE_EVENT_CAP: dict[str, int] = {"gcal": 150}
+_SOURCE_EVENT_CAP: dict[str, int] = {"gcal": 2000}     # calendar safety ceiling (was 150)
 
 # Which (org, source) syncs are ACTIVE right now. Lives on the SERVER for the whole L1+backfill+L2
 # lifetime, so /integrations/status can report "running" and the Sync button stays "Syncing…" from
@@ -865,7 +1148,7 @@ def _backfill_full(org_id: str, source_type: str, limit: int = 25,
             summary = run_sync(
                 connector, org_id=org_id, connection_id=conn.connection_id, repo=_repo,
                 mode="backfill", cursor=cursor, limit=limit, source=source_type,
-                cursor_store=None, max_pages=1, relevance=make_relevance_classifier(),
+                cursor_store=None, max_pages=1, relevance=make_relevance_classifier(org_id),
                 parked_store=_parked, sender_resolver=_sender_resolver_for(org_id),
                 trace_repo=_trace_repo, payload_store=_payload_store,
                 prepared_store=_prepared_store, document_job_store=_documents,
@@ -906,47 +1189,286 @@ def _backfill_full(org_id: str, source_type: str, limit: int = 25,
                        org_id, source_type, scanned)
 
 
+def _source_count(org_id: str, source: str) -> int:
+    if _graph is None:
+        return 0
+    from sqlalchemy import text
+    with _graph.engine.connect() as c:
+        return int(c.execute(text("select count(*) from source_events where org_id=:o and source=:s"),
+                             {"o": org_id, "s": source}).scalar() or 0)
+
+
+def _pending_count(org_id: str) -> int:
+    """How many captured events still await L2 — mirrors runner._pull's filter, for a progress total."""
+    if _graph is None:
+        return 0
+    from sqlalchemy import text
+    with _graph.engine.connect() as c:
+        return int(c.execute(text(
+            "select count(*) from source_events se where se.org_id=:o and se.outcome='emitted' "
+            "and se.event_id not in (select event_id from l2_extraction_results where org_id=:o) "
+            "and se.event_id not in (select event_id from l2_processing_runs "
+            "                        where org_id=:o and status in ('done','parked'))"),
+            {"o": org_id}).scalar() or 0)
+
+
+def _backfill_one_source(org_id: str, source_type: str, limit: int = 25,
+                         max_rounds: int = _BACKFILL_MAX_ROUNDS, on_round=None) -> tuple[int, int, bool]:
+    """Window-bounded backfill of ONE source (no interleaved L2 — L2 runs as its own phase after).
+    Pages backward through the 2-month window; `on_round(count)` fires each round so the progress
+    bar can move live. Returns (scanned, emitted, capped-at-ceiling)."""
+    from genios_engine.contracts.connection import Connection
+    conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=source_type, config={})
+    rel = make_relevance_classifier(org_id)    # ONE classifier for the whole backfill: the connector
+    connector = make_connector_for(conn, relevance=rel)   # gates on snippet + fetches only keepers;
+    event_cap = _SOURCE_EVENT_CAP.get(source_type)        # the pipeline reuses its primed verdicts.
+    cursor: str | None = None
+    scanned = emitted = 0
+    for _rnd in range(max_rounds):
+        summary = run_sync(
+            connector, org_id=org_id, connection_id=conn.connection_id, repo=_repo,
+            mode="backfill", cursor=cursor, limit=limit, source=source_type,
+            cursor_store=None, max_pages=1, relevance=rel,
+            parked_store=_parked, sender_resolver=_sender_resolver_for(org_id),
+            trace_repo=_trace_repo, payload_store=_payload_store,
+            prepared_store=_prepared_store, document_job_store=_documents, run_ledger=_run_ledger)
+        scanned += summary.scanned
+        emitted += summary.emitted
+        cursor = summary.next_cursor
+        if on_round is not None:
+            try:
+                on_round(_source_count(org_id, source_type))
+            except Exception:      # noqa: BLE001 — progress is best-effort
+                pass
+        if event_cap is not None and _source_count(org_id, source_type) >= event_cap:
+            break
+        if not cursor:
+            break                             # window exhausted
+    capped = cursor is not None
+    _log.info("onboarding backfill %s org=%s src=%s scanned=%s emitted=%s%s",
+              "CAPPED" if capped else "done", org_id, source_type, scanned, emitted,
+              " — safety ceiling hit, older tail remains (manual /backfill)" if capped else "")
+    return scanned, emitted, capped
+
+
+def _process_and_reason_tracked(org_id: str, heartbeat=None) -> None:
+    """L2 (chunked, so progress moves) → graph → L3/L5, each surfaced as a plain-language phase.
+    L3 runs ONCE at the very end (not mid-backfill) so the graph is stable when signals emit."""
+    from genios_engine.context.runner import process_pending
+    from genios_engine.platform import progress as P
+    hb = heartbeat if callable(heartbeat) else (lambda *a, **k: None)
+    eng = _graph.engine
+    total = _pending_count(org_id)
+    P.set_phase(eng, org_id, "processing", state="running", total=total, done=0,
+                detail="Reading your messages…")
+    processed = 0
+    while True:                                # drain in chunks → live progress, still bounded/idempotent
+        out = process_pending(org_id=org_id, store=_graph, llm=_llm,
+                              registry=_registry,
+                              crypto_key=get_settings().crypto_key, max_total=500)
+        n = int(out.get("processed", 0))
+        processed += n
+        P.set_phase(eng, org_id, "processing",
+                    done=min(processed, total or processed), detail=f"{processed} processed")
+        hb()                                   # liveness beat per L2 chunk
+        if n == 0:
+            break
+    P.set_phase(eng, org_id, "processing", state="done",
+                total=total or processed, done=total or processed)
+
+    P.set_phase(eng, org_id, "graph", state="running", detail="Linking people & companies…")
+    P.set_phase(eng, org_id, "graph", state="done")     # read models are built during L2 above
+
+    P.set_phase(eng, org_id, "intelligence", state="running", detail="Analyzing your relationships…")
+    try:
+        from genios_engine.reason.runner import run_all as run_l3
+        run_l3(org_id=org_id, store=_graph, registry=_registry)
+        if _card_store is not None:
+            from genios_engine.deliver.pipeline import build_cards_for_org
+            build_cards_for_org(graph=_graph, card_store=_card_store, org_id=org_id,
+                                llm=_llm, registry=_registry)
+        P.set_phase(eng, org_id, "intelligence", state="done", detail="Ready")
+    except Exception:      # noqa: BLE001
+        _log.exception("intelligence phase failed org=%s", org_id)
+        P.set_phase(eng, org_id, "intelligence", state="error")
+
+
+import os as _os
+
+# Bill circuit-breaker: a per-org DAILY LLM-call ceiling. Cost is already bounded by idempotency +
+# dedup + the ~5000 backfill ceiling, so this only ever trips on a genuine runaway (a bug/abuse
+# re-processing many times over). Default is set FAR above a normal full sync (~a few hundred to a
+# few thousand calls) so a real user never hits it. Fail-safe: it only refuses to START a new sync —
+# it NEVER interrupts a run in progress.
+_LLM_DAILY_CAP = int(_os.environ.get("GENIOS_LLM_DAILY_CAP", "20000"))
+
+
+def _llm_over_daily_cap(org_id: str) -> bool:
+    """True when this org has exhausted either daily LLM budget: calls OR dollars.
+
+    The call ceiling and ``settings.daily_llm_usd_cap`` were two caps that bound nothing in
+    common — the count breaker guarded one entry point and the USD cap was read only by the
+    intelligence route, so the background capture sweep answered to neither. A cap that the
+    largest spender in the system does not consult is documentation, not a control.
+    """
+    if _graph is None:
+        return False
+    try:
+        from sqlalchemy import text
+
+        from genios_engine.platform.metrics import cost_usd_sql
+        usd_cap = float(getattr(get_settings(), "daily_llm_usd_cap", 0) or 0)
+        with _graph.engine.connect() as c:
+            # cost_usd_sql() already returns the sum(...) aggregate — never wrap it again.
+            row = c.execute(text(
+                f"select count(*) as n, coalesce({cost_usd_sql()}, 0) as usd "
+                "from llm_costs where org_id=:o "
+                "and created_at >= date_trunc('day', now())"), {"o": org_id}).first()
+        n, usd = int(row.n or 0), float(row.usd or 0.0)
+        if _LLM_DAILY_CAP > 0 and n >= _LLM_DAILY_CAP:
+            _log.warning("org=%s hit the daily LLM CALL cap: %d >= %d", org_id, n, _LLM_DAILY_CAP)
+            return True
+        if usd_cap > 0 and usd >= usd_cap:
+            _log.warning("org=%s hit the daily LLM USD cap: $%.2f >= $%.2f", org_id, usd, usd_cap)
+            return True
+        return False
+    except Exception:      # noqa: BLE001 — a broken cost check must never block a sync
+        _log.exception("daily LLM cap check failed org=%s — allowing the sync", org_id)
+        return False
+
+
+def _sync_active(org_id: str) -> bool:
+    """Is a sync run currently in progress for this org? Reads the DB progress state so a duplicate
+    Sync click (or a second endpoint) doesn't reset the bar / spawn a competing run."""
+    if _graph is None:
+        return False
+    try:
+        from genios_engine.platform import progress as P
+        return P.read(_graph.engine, org_id).get("state") == "running"
+    except Exception:      # noqa: BLE001 — never let the guard block a sync
+        return False
+
+
+def _onboarding_sync_bg(org_id: str, sources: list[str], limit: int = 25, heartbeat=None) -> None:
+    """THE single Sync action: for every connected tool, pull the full 2-month window, then process
+    → graph → intelligence. Runs inside the durable worker; `heartbeat(checkpoint=None)` is called
+    as it works so a crash leaves a stale beat and the job is re-claimed + resumed (idempotent —
+    dedup + l2_processing_runs make a re-run safe). Re-raises on an unrecoverable failure so the
+    worker can mark the job for retry."""
+    from genios_engine.platform import progress as P
+    eng = _graph.engine if _graph is not None else None
+    hb = heartbeat if callable(heartbeat) else (lambda *a, **k: None)
+    # Bill circuit-breaker (pre-flight only): refuse to START a new sync if this org has already made
+    # a runaway number of LLM calls today. Never interrupts a run already in progress.
+    if _llm_over_daily_cap(org_id):
+        _log.warning("sync skipped: org=%s hit the daily LLM cap (%s) — cost circuit breaker",
+                     org_id, _LLM_DAILY_CAP)
+        if eng is not None:
+            try:
+                P.start(eng, org_id, sources)
+                P.finish(eng, org_id, error=True,
+                         detail="Paused for today — daily processing limit reached. Resumes tomorrow.")
+            except Exception:      # noqa: BLE001
+                pass
+        return
+    # gmail first, then calendar, then anything else — a sensible phase order for the UI.
+    order = ([s for s in ("gmail", "gcal") if s in sources]
+             + [s for s in sources if s not in ("gmail", "gcal")])
+    try:
+        if eng is not None:
+            P.start(eng, org_id, order)
+            P.set_phase(eng, org_id, "connecting", state="done")     # OAuth already completed
+        for st in order:
+            phase = "emails" if st == "gmail" else "calendar" if st == "gcal" else "processing"
+            tracked = phase in ("emails", "calendar")
+            if eng is not None and tracked:
+                P.set_phase(eng, org_id, phase, state="running", detail="Fetching…")
+
+            def _round(cnt, p=phase, _tracked=tracked):
+                if eng is not None and _tracked:
+                    P.set_phase(eng, org_id, p, done=cnt, detail=f"{cnt} synced")
+                hb()                                    # liveness beat every backfill round
+            try:
+                _backfill_one_source(org_id, st, limit, on_round=_round)
+            except Exception:      # noqa: BLE001 — one source failing never stops the rest
+                _log.exception("onboarding backfill failed org=%s src=%s", org_id, st)
+                if eng is not None and tracked:
+                    P.set_phase(eng, org_id, phase, state="error")
+            else:
+                if eng is not None and tracked:
+                    cnt = _source_count(org_id, st)
+                    P.set_phase(eng, org_id, phase, state="done", done=cnt, total=cnt,
+                                detail=f"{cnt} synced")
+        if _graph is not None:
+            _process_and_reason_tracked(org_id, heartbeat=hb)
+        if eng is not None:
+            P.finish(eng, org_id)
+    except Exception as e:      # noqa: BLE001
+        _log.exception("onboarding sync failed org=%s", org_id)
+        if eng is not None:
+            P.finish(eng, org_id, error=True, detail=f"{type(e).__name__}: {str(e)[:160]}")
+        raise                                           # let the worker retry (resume) this job
+    finally:
+        for st in sources:
+            _set_sync_running(org_id, st, False)
+
+
+def run_one_sync_job(worker_id: str) -> bool:
+    """Worker entry: claim ONE sync job and run it to completion. Returns True if a job ran (so the
+    worker loops immediately to drain the queue), False if the queue was empty. A heartbeat ticker
+    beats every 30s for the WHOLE run so a long step (e.g. L3) never looks stale; on failure the job
+    goes back to 'queued' and a worker resumes it from the durable state."""
+    if _graph is None:
+        return False
+    from genios_engine.platform import sync_jobs as J
+    eng = _graph.engine
+    job = J.claim_next(eng, worker_id)
+    if job is None:
+        return False
+    jid, org, sources = job["id"], job["org_id"], job["sources"]
+    stop_beat = threading.Event()
+
+    def _beat() -> None:
+        while not stop_beat.wait(30):
+            try:
+                J.heartbeat(eng, jid)
+            except Exception:      # noqa: BLE001 — a missed beat is not fatal
+                pass
+    ticker = threading.Thread(target=_beat, daemon=True, name=f"job-beat-{jid}")
+    ticker.start()
+    try:
+        _onboarding_sync_bg(org, sources, heartbeat=lambda *a, **k: J.heartbeat(eng, jid))
+        J.complete(eng, jid)
+    except Exception:      # noqa: BLE001 — orchestrator re-raises on failure → mark for resume/retry
+        _log.exception("sync job failed org=%s job=%s", org, jid)
+        try:
+            J.fail(eng, jid, "run failed")
+        except Exception:      # noqa: BLE001
+            pass
+    finally:
+        stop_beat.set()
+    return True
+
+
 @router.post("/integrations/{tool}/sync")
 def integration_sync(tool: str, background_tasks: BackgroundTasks, limit: int = 25,
                      org_id: str = Depends(get_current_org)) -> dict:
-    """Sync one tool for the authed tenant. Runs L1 SYNCHRONOUSLY (bounded) for an immediate item
-    count, then L2→L3→L5 in the background. Requires an ACTIVE Composio account for the tool.
-
-    On the FIRST sync of a connection (no watermark yet) it ALSO kicks a full-history backfill in
-    the background, so a large inbox's older tail is ingested once instead of only its newest page.
-    Later syncs are pure incremental (the backfill only fires when there is no prior watermark)."""
+    """ENQUEUE a durable sync job for one tool, then return immediately. A server-side worker claims
+    and runs it (L1 backfill → L2 → graph → intelligence), heart-beating + checkpointing, so it
+    survives a process restart and the user closing the tab. The client only reads progress."""
     norm = _norm_source(tool)
     active = {a["source_type"] for a in _composio_connected(org_id) if a["status"] == "ACTIVE"}
     if norm not in active:
         raise HTTPException(404, f"{tool} is not connected (or the OAuth wasn't completed). "
                             f"Click Connect and finish the authorization first.")
-    # First sync = no stored watermark for this connection yet → also backfill the full window once.
-    _conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=norm, config={})
-    first_sync = _cursors is not None and _cursors.get(org_id, _conn.connection_id, norm) is None
-    # Mark ACTIVE up front so /integrations/status reports "running" (button stays "Syncing…" across
-    # navigation) for the entire L1 + background L2/backfill lifetime, not just this HTTP call.
-    _set_sync_running(org_id, norm, True)
-    try:
-        s = _sync_source(org_id, norm, limit)
-    except Exception as e:      # noqa: BLE001
-        _set_sync_running(org_id, norm, False)              # clear on failure — not stuck "Syncing…"
-        _log.exception("L1 sync failed for org=%s tool=%s", org_id, tool)
-        raise HTTPException(502, f"sync failed for {tool}: {str(e)[:200]}")
-    # AUDIT — one legible ledger row per sync (Data extraction, or Meeting for calendar), counts only.
+    _mirror_connection(org_id, norm)
+    from genios_engine.platform import sync_jobs as J
     from genios_engine.platform.audit import record
+    queued = J.enqueue(_graph.engine, org_id, [norm]) if _graph is not None else False
     record(org_id, "data_synced", actor_type="user", target_type="source", target_id=norm,
            metadata={"audit_category": "meeting" if norm == "gcal" else "data_extraction",
-                     "tool": tool, "scanned": s.scanned, "emitted": s.emitted,
-                     "dropped": s.dropped, "parked": s.parked})
-    if _graph is not None:
-        background_tasks.add_task(_run_l2, org_id)          # extract the incremental page first
-    if first_sync:
-        background_tasks.add_task(_backfill_full, org_id, norm)   # then fill the older tail once
-    # Runs LAST (background tasks are sequential) → clears "running" only after L2 + backfill finish.
-    background_tasks.add_task(_set_sync_running, org_id, norm, False)
-    return {"started": True, "tool": tool, "scanned": s.scanned, "emitted": s.emitted,
-            "dropped": s.dropped, "parked": s.parked, "duplicate": getattr(s, "duplicate", 0),
-            "backfilling": first_sync}
+                     "tool": tool, "mode": "onboarding_backfill"})
+    return {"started": True, "tool": tool, "queued": queued, "already_running": not queued}
 
 
 def _sync_all_bg(org_id: str, sources: list[str], limit: int) -> None:
@@ -976,8 +1498,14 @@ def integrations_sync_all(background_tasks: BackgroundTasks, limit: int = 25,
     if not active:
         return {"started": False, "reason": "no connected tools", "tools": []}
     sources = [a["source_type"] for a in active]
-    background_tasks.add_task(_sync_all_bg, org_id, sources, limit)
-    return {"started": True, "queued": True, "tools": sources}
+    for st in sources:
+        _mirror_connection(org_id, st)
+    # ENQUEUE a durable job (full 2-month backfill → process → graph → intelligence for every
+    # connected tool). A server-side worker runs it and resumes on any restart; the client just
+    # reads progress. The unique partial index means a duplicate click doesn't spawn a second job.
+    from genios_engine.platform import sync_jobs as J
+    queued = J.enqueue(_graph.engine, org_id, sources) if _graph is not None else False
+    return {"started": True, "queued": queued, "already_running": not queued, "tools": sources}
 
 
 # ── real-time webhook (Composio trigger push → L1, no poll) ───────────────────────
@@ -1034,8 +1562,11 @@ def context_process(limit: int = 50, ctx: AuthCtx = Depends(require_owner)) -> d
     org_id = ctx.org_id
     limit = max(1, min(int(limit), 200))
     from genios_engine.context.runner import process_pending
+    # NOTE: process_pending's cap arg is max_total (there is no `limit=` param — passing one raised
+    # TypeError and 500'd this endpoint). Clamp the manual drain to `limit`.
     return process_pending(org_id=org_id, store=_graph, llm=_llm,
-                           crypto_key=get_settings().crypto_key, limit=limit)
+                           registry=_registry,
+                           crypto_key=get_settings().crypto_key, max_total=limit)
 
 
 @router.post("/context/reason")
@@ -1046,6 +1577,35 @@ def context_reason(ctx: AuthCtx = Depends(require_owner)) -> dict:
     org_id = ctx.org_id
     from genios_engine.reason.runner import run_all as run_l3
     return run_l3(org_id=org_id, store=_graph, registry=_registry)
+
+
+@router.post("/organization/reset")
+def organization_reset(reason: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """The pivot primitive: declares that the org's business shape changed. Expires stale
+    RUNTIME memory leases and forces an immediate L3 re-evaluation so open situations don't keep
+    confidently reasoning against the old shape. Manual and explicit — GeniOS never guesses a
+    pivot on its own.
+
+    It does NOT reset the Adaptive brain, despite what this endpoint used to say and return.
+    `learned_brain_entries` is untouched, and whether an Adaptive entry can even carry a TTL is
+    unratified (ADR-10) — the contract refuses an expiry on non-Runtime targets while the
+    consumer reads Adaptive with no expiry predicate at all. The response says
+    `adaptive_ttl_unresolved` rather than implying a decision nobody has made."""
+    if _graph is None:
+        raise HTTPException(400, "graph store not configured")
+    from datetime import datetime, timezone
+
+    from genios_engine.feedback.reset import apply_organization_reset, mark_situations_rerun
+    from genios_engine.reason.runner import run_all as run_l3
+    org_id = ctx.org_id
+    at = datetime.now(timezone.utc)
+    with _graph.engine.begin() as c:
+        result = apply_organization_reset(c, org_id=org_id, reason=reason, at=at,
+                                          actor=ctx.actor_id)
+    rerun = run_l3(org_id=org_id, store=_graph, registry=_registry)
+    with _graph.engine.begin() as c:
+        mark_situations_rerun(c, reset_id=result["reset_id"])
+    return {**result, "situations_rerun": rerun}
 
 
 @router.post("/context/sweep")
@@ -1305,8 +1865,16 @@ def activity_feed(limit: int = 20, org_id: str = Depends(get_current_org)) -> di
     events: list[dict] = []
     with _graph.engine.connect() as c:
         for r in c.execute(text(
+                # LIVE cards only. Every other card surface applies the authority gate; this one
+                # selected the whole table, so a dead card and the live one that replaced it
+                # appeared side by side in the same feed, each asserting a different elapsed time
+                # for the same unchanged fact ("3d since they wrote" above "7d since they wrote").
+                # The lifecycle already marks a lapsed card `expired` — the reader simply never
+                # asked.
                 "select headline, situation, urgency_band, created_at from cards "
-                "where org_id=:o order by created_at desc limit :l"), {"o": org_id, "l": limit}):
+                "where org_id=:o and state not in ('expired', 'resolved') "
+                "and expires_at > now() "
+                "order by created_at desc limit :l"), {"o": org_id, "l": limit}):
             events.append({
                 "event_type": "insight_generated",
                 "event_data": {"title": r.headline, "detail": r.situation, "badge_label": r.urgency_band},
@@ -1328,16 +1896,9 @@ def activity_feed(limit: int = 20, org_id: str = Depends(get_current_org)) -> di
     return {"events": events[:limit]}
 
 
-# USD per token (input, output) — approximate Anthropic list prices, keyed by model family.
-_LLM_PRICE = {"opus": (15.0e-6, 75.0e-6), "sonnet": (3.0e-6, 15.0e-6), "haiku": (0.80e-6, 4.0e-6)}
-
-
-def _llm_price(model: str) -> tuple[float, float]:
-    m = (model or "").lower()
-    for k, p in _LLM_PRICE.items():
-        if k in m:
-            return p
-    return _LLM_PRICE["haiku"]
+# Pricing lives in platform.metrics so the tenant-facing usage endpoints below and the cross-org
+# admin console quote the SAME dollar figure for the same tokens (ANALYTICS_V3_PLAN §1).
+from genios_engine.platform.metrics import llm_price as _llm_price          # noqa: E402
 
 
 @router.get("/v1/usage/llm/summary")
@@ -1662,33 +2223,360 @@ _CONTEXT_FACT_SKIP = frozenset({"thread.ball_in_court", "thread.last_inbound", "
                                 "meeting.end_at", "end_at", "meeting.title", "title"})
 
 
-def _subject_context(org_id: str, signal_id: str | None) -> dict:
-    """The subject's captured context — the profile facts + relationship signals GeniOS already
-    extracted (role, company, proposed slot, questions, next step, …), so the card shows WHO this is
-    and WHAT is going on rather than only the trigger metadata. Read-only, deterministic, no LLM.
+# Observation kinds that ground WHAT the counterparty is asking for — the "expectation" half of the
+# clarity gate. If none of these are on record for an unanswered thread, we know they wrote but not
+# what response they need, so the card must fail closed.
+_ASK_SIGNALS = frozenset({"question", "meeting_request", "proposal_sent", "demo_requested",
+                          "contract_requested", "objection", "next_step_agreed"})
 
-    The subject node lives on the signal (the cards table has no subject_node_id column), so resolve
-    it via signal_id first."""
+
+def _actionability(reason_code: str | None, obs_kinds: set, fact_fields: set,
+                   *, capability_id: str | None = None) -> dict:
+    """Update 1 — the universal zero-clarity gate. A card may carry a confident action imperative
+    ('reply now', 'deliver the commitment') ONLY when the decisive context for its type is grounded.
+    When the action-critical fact is missing, fail closed: switch to a context-recovery outcome so
+    the card says 'review the source' instead of inventing confidence. Deterministic, no LLM.
+
+    The requirements are pack data now, not an if/elif chain here — see reason/actionability.py.
+    This handled three reason codes and returned `actionable` for everything else, which left the
+    sales-critical signals (closed_lost_risk, objection_open, demo_requested, timeline_slip)
+    entirely ungated and gave every future rule the same free pass by default.
+    """
+    return _decisive.evaluate(reason_code, obs_kinds, fact_fields,
+                              capability_id=capability_id)
+
+
+# Per-ask-signal step text — the concrete next move the recommendation should propose.
+_ASK_STEP: dict[str, str] = {
+    "question": "Answer their open question",
+    "meeting_request": "Confirm or decline the proposed meeting",
+    "proposal_sent": "Respond to their proposal",
+    "demo_requested": "Book the demo they asked for",
+    "contract_requested": "Send the contract they requested",
+    "objection": "Address the objection they raised",
+    "next_step_agreed": "Deliver the agreed next step",
+}
+# Every CTA carries ONE documented server-side effect (Update 1 §9.5). Opening/handling never
+# completes the loop; completion is an explicit, evidence-backed transition.
+_ACTION_EFFECT: dict[str, str] = {
+    "run_play": "draft_only",       # opens grounded steps / a draft; does not send or execute
+    "do_it_myself": "claim_only",   # claims ownership; does NOT mark the work complete
+    "snooze": "defer_surface",      # defers delivery to a chosen time; decision unchanged
+    "wrong": "feedback",            # records structured feedback, suppresses per policy
+    "open_source": "none",          # read-only navigation
+}
+
+
+def _annotate_effects(actions):
+    """Attach the documented server-side effect to each CTA so the surface can label transitions
+    honestly ('I'll handle this' = claim only, never complete)."""
+    out = []
+    for a in actions or []:
+        a = dict(a)
+        a["effect"] = _ACTION_EFFECT.get(a.get("type"), "none")
+        out.append(a)
+    return out
+
+
+def _confidence_block(facts: dict, score_block: dict, actionable: bool,
+                      situation: dict | None = None) -> dict:
+    """Separate confidence meanings (Update 1): evidence vs identity vs situation vs recommendation.
+    These are DIFFERENT quantities and must never collapse into one number.
+
+    Three of the four used to be invented right here: `identity` was `85 if 'company' in facts
+    else 30`, `situation` an 80/50 ternary, and `recommendation` the evidence number re-emitted
+    under a second name. The API layer owns none of those quantities. Layer 2 does — it computes a
+    real five-dimension vector per situation (`context_situations.confidence_*`) from event counts,
+    source counts, open discrepancies and open merge proposals.
+
+    So each dimension is now either sourced from L2 or reported ABSENT. `null` is the honest answer
+    for a card whose subject has no correlated situation, and it is the answer for 46 of 47 live
+    cards — L2 anchors situations on a population that barely intersects the nodes L4 fires rules
+    on. Four plausible numbers hid that completely; four fields where three are null makes it the
+    first thing anyone reading the payload asks about.
+    """
+    evidence = int((score_block or {}).get("C") or 0)
+    if situation:
+        # L2 scores 0-100 on the same scale, so these pass through unchanged.
+        identity = situation.get("confidence_identity")
+        consistency = situation.get("confidence_consistency")
+        overall = situation.get("confidence_overall")
+    else:
+        identity = consistency = overall = None
+    return {
+        "evidence": evidence,
+        "identity": identity,
+        "situation": overall,
+        "consistency": consistency,
+        # The recommendation is only as good as the weakest input it rests on, and it is not a
+        # separate measurement — re-emitting `evidence` under a second name made the vector look
+        # twice as substantiated as it was.
+        "recommendation": (min(x for x in (evidence, overall) if x is not None)
+                           if actionable else 10),
+        # Which dimensions have no basis, named rather than inferred from nulls by every consumer
+        # independently.
+        "absent": [k for k, v in (("identity", identity), ("situation", overall),
+                                  ("consistency", consistency)) if v is None],
+        "source": "context_situations" if situation else "unavailable",
+    }
+
+
+def _decision_projection(reason_code, card, facts, obs_kinds, actionability,
+                         situation: dict | None = None) -> dict:
+    """card.v2 decision projection — the typed, grounding-aware read model. Deterministic, no LLM,
+    no new reasoning: it only shapes what Layers 1-5 already produced. Fields we cannot ground
+    (request text, promised outcome, cost-of-inaction, completion criteria) stay `missing` rather
+    than being invented — that gap closes when source bodies are captured (Level 2).
+
+    The recommendation's STEPS come from the signal's own decision columns when the row carries
+    them (0070) — the reason_code chain below survives only as the fallback for pre-0070 rows.
+    The chain was never lossy compression; it was a parallel independent generator sharing
+    nothing with Layer 4 except one string, which is why cards read as activity reminders
+    whatever the engine actually decided.
+    """
+    actionable = actionability.get("state") == "actionable"
+    decided_steps = [str(step) for step in (card.get("candidate_steps") or []) if step]
+    if not actionable:
+        rec = {"verdict": "review_source",
+               "objective": "Verify what's actually needed before acting",
+               "steps": [actionability.get("recommended") or "Open the source and review the request"],
+               "avoid": "Don't reply, deliver, or mark done until the request is verified"}
+    elif decided_steps:
+        rec = {"verdict": card.get("play") or reason_code or "act",
+               "objective": (card.get("why_now") or card.get("situation") or "").strip()
+               or f"Resolve the {str(reason_code or 'open').replace('_', ' ')} situation",
+               "steps": decided_steps[:4],
+               "avoid": "Don't mark done until the success signal is observed"}
+    elif reason_code == "unanswered_email":
+        steps = [_ASK_STEP[k] for k in _ASK_STEP if k in obs_kinds][:3]
+        rec = {"verdict": "reply", "objective": "Reply to what they actually asked",
+               "steps": steps or ["Reply in the thread"],
+               "avoid": "Don't send a generic acknowledgement"}
+    elif reason_code == "commitment_overdue":
+        act = facts.get("commitment.action")
+        rec = {"verdict": "deliver",
+               "objective": f"Close this loop — “{act}”" if act else "Deliver the commitment",
+               "steps": ["Reply in the thread to resolve it"] if act else ["Confirm completion in the thread"],
+               "avoid": "Don't mark done until it's actually resolved"}
+    elif reason_code == "meeting_no_followup":
+        rec = {"verdict": "follow_up", "objective": "Send a recap of the meeting",
+               "steps": ["Recap the key points discussed", "State the next step and who owns it"],
+               "avoid": "Don't recap to yourself or a group with no external counterparty"}
+    else:
+        rec = {"verdict": reason_code or "review", "objective": (card.get("situation") or "").strip(),
+               "steps": [], "avoid": None}
+
+    def gs(cond):
+        return "grounded" if cond else "missing"
+
+    grounding = {
+        "situation": "grounded",
+        "request": gs(reason_code == "unanswered_email" and bool(obs_kinds & _ASK_SIGNALS)),
+        "obligation": gs(reason_code == "commitment_overdue" and "commitment.action" in facts),
+        # Read from the card, not asserted here. These were hardcoded to "missing" — not absent
+        # by accident but written that way — so a card that DID carry its stakes and completion
+        # criteria still reported it did not, and no amount of upstream work could ever move the
+        # number. They now have columns (migration 0065) and card_builder is their only producer.
+        "stakes": gs(bool(card.get("do_nothing_consequence"))),
+        "completion": gs(bool(card.get("success_signal"))),
+    }
+    return {"card_version": "card.v2", "recommendation": rec,
+            # The choice's own receipt: which alternatives LOST (with disposition and utility)
+            # and what the engine was unsure about. Empty lists on pre-0070 rows — absent, not
+            # invented.
+            "alternatives_rejected": card.get("rejected_candidates") or [],
+            "uncertainty": card.get("decision_uncertainty") or [],
+            "confidence": _confidence_block(facts, card.get("score_block") or {}, actionable,
+                                            situation),
+            "grounding": grounding}
+
+
+# Known networking-connector bots — the transport sender is never the business subject (Update 4).
+_BOT_DOMAINS = frozenset({"boardy.ai"})
+
+
+def _is_connector(canonical_key: str | None, obs_counts: dict) -> bool:
+    """Update 4 — detect an introduction connector / bot that many separate threads collapse onto, so
+    the card never treats the intermediary as the person to reply to. Two signals: a known bot domain,
+    or an automated sender that has accumulated many introductions/meeting-requests across threads
+    (§20's 'connector node with many intro/meeting observations but no person-specific loop' detector)."""
+    key = (canonical_key or "").lower()
+    domain = key.rsplit("@", 1)[-1] if "@" in key else ""
+    if domain in _BOT_DOMAINS:
+        return True
+    if obs_counts.get("email_noise:automated", 0) >= 1 and (
+            obs_counts.get("introduction", 0) >= 3 or obs_counts.get("meeting_request", 0) >= 5):
+        return True
+    return False
+
+
+def _connector_gate(canonical_key: str | None) -> dict:
+    """Fail-closed actionability for a connector subject: point the user at the real contacts instead
+    of confidently telling them to reply to the bot."""
+    who = canonical_key or "This sender"
+    return {"state": "context_incomplete", "connector": True,
+            "missing": ["the actual person to reply to"],
+            "message": f"{who} is an introduction connector — many separate intros are collapsed "
+                       "here, so this is not one person to reply to.",
+            "recommended": "Open Gmail and reply to each introduced contact in their own thread; "
+                           "don't reply to the connector."}
+
+
+def _meeting_lifecycle(status, start_raw, now) -> tuple[str, str]:
+    """Reconcile a meeting's honest lifecycle state (Update 3 §4/§9.6). A past scheduled event proves
+    it was SCHEDULED, not HELD — 'held' needs attendance/transcript/follow-up evidence we don't have,
+    so we say 'occurrence unverified' rather than inventing that it happened."""
+    from datetime import datetime, timezone
+    if status == "cancelled":
+        return "cancelled", "Cancelled"
+    start = None
+    if isinstance(start_raw, str):
+        try:
+            start = datetime.fromisoformat(start_raw)
+        except ValueError:
+            start = None
+    if start is not None and start.tzinfo is None:
+        start = start.replace(tzinfo=timezone.utc)
+    if start is None or start > now:
+        return "scheduled", "Scheduled"
+    return "past_scheduled", "Past scheduled · occurrence unverified"
+
+
+def _commitment_neighbors(c, org_id: str, node_id: str) -> list[dict]:
+    """One-hop traversal to the person's connected commitment nodes. The promised text is extracted
+    and stored on the commitment node (e.g. 'Let's speak coming Monday 11am-1pm?'), but the card was
+    node-local and only saw the person's due-date — so it said 'context incomplete'. Reading the
+    commitment node recovers the actual promise, no re-capture needed."""
+    from sqlalchemy import text
+    rows = c.execute(text(
+        "select distinct m.node_id from graph_edges e "
+        "join graph_nodes m on m.org_id=e.org_id and m.node_id = "
+        "  case when e.from_node_id=:n then e.to_node_id else e.from_node_id end "
+        "where e.org_id=:o and (e.from_node_id=:n or e.to_node_id=:n) "
+        "and m.node_type='commitment' and e.valid_to is null"), {"o": org_id, "n": node_id}).all()
+    out = []
+    for r in rows:
+        cf = {x.field: x.value for x in c.execute(text(
+            "select field, value from graph_facts where org_id=:o and subject_node_id=:m "
+            "and status='active' and field like 'commitment.%'"), {"o": org_id, "m": r.node_id})}
+        txt = cf.get("commitment.text")
+        if txt:
+            out.append({"text": txt, "due_at": cf.get("commitment.due_at"),
+                        "status": cf.get("commitment.status")})
+    out.sort(key=lambda m: m.get("due_at") or "", reverse=True)
+    return out[:3]
+
+
+def _meeting_neighbors(c, org_id: str, node_id: str) -> list[dict]:
+    """One-hop traversal to the person's connected Calendar meetings — the cross-tool bridge the card
+    used to ignore (Update 3 §6.9). Node-local projection hid these; now a person's card can show the
+    meeting that a Gmail thread led to, with its reconciled lifecycle state."""
+    from datetime import datetime, timezone
+    from sqlalchemy import text
+    rows = c.execute(text(
+        "select distinct m.node_id, m.display_name from graph_edges e "
+        "join graph_nodes m on m.org_id=e.org_id and m.node_id = "
+        "  case when e.from_node_id=:n then e.to_node_id else e.from_node_id end "
+        "where e.org_id=:o and (e.from_node_id=:n or e.to_node_id=:n) "
+        "and m.node_type='meeting' and e.valid_to is null"), {"o": org_id, "n": node_id}).all()
+    now = datetime.now(timezone.utc)
+    out = []
+    for r in rows:
+        mf = {x.field: x.value for x in c.execute(text(
+            "select field, value from graph_facts where org_id=:o and subject_node_id=:m "
+            "and status='active' and field like 'meeting.%'"), {"o": org_id, "m": r.node_id})}
+        start = mf.get("meeting.start_at")
+        state, label = _meeting_lifecycle(mf.get("meeting.status"), start, now)
+        out.append({"title": r.display_name or mf.get("meeting.title"),
+                    "start_at": start, "status": mf.get("meeting.status"),
+                    "state": state, "state_label": label, "source": "gcal"})
+    out.sort(key=lambda m: m.get("start_at") or "", reverse=True)
+    return out[:4]
+
+
+def _card_intelligence(org_id: str, card: dict) -> tuple[dict, dict, dict]:
+    """Return (context, actionability, decision) for a card — the subject's captured profile facts +
+    relationship signals, the Update-1 clarity gate, and the card.v2 decision projection. One DB read,
+    deterministic, no LLM. The subject node + reason_code live on the signal (the cards table has
+    neither column), so resolve them via signal_id first."""
+    signal_id = card.get("signal_id")
     if _graph is None or not signal_id:
-        return {}
+        return {}, {"state": "actionable"}, {}
     from sqlalchemy import text
     with _graph.engine.connect() as c:
-        node_id = c.execute(text(
-            "select subject_node_id from signals where signal_id=:s and org_id=:o"),
-            {"s": signal_id, "o": org_id}).scalar()
-        if not node_id:
-            return {}
-        facts = {r.field: r.value for r in c.execute(text(
-            "select field, value from graph_facts where org_id=:o and subject_node_id=:n "
-            "and valid_to is null and status='active'"), {"o": org_id, "n": node_id})}
+        row = c.execute(text(
+            "select s.subject_node_id, s.reason_code, n.canonical_key "
+            "from signals s join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=s.org_id "
+            "where s.signal_id=:s and s.org_id=:o"),
+            {"s": signal_id, "o": org_id}).first()
+        if not row or not row.subject_node_id:
+            return {}, {"state": "actionable"}, {}
+        node_id, reason_code, canonical_key = row.subject_node_id, row.reason_code, row.canonical_key
+        fact_rows = c.execute(text(
+            "select field, value, created_at from graph_facts where org_id=:o and subject_node_id=:n "
+            "and valid_to is null and status='active'"), {"o": org_id, "n": node_id}).all()
+        facts = {r.field: r.value for r in fact_rows}
         obs = c.execute(text(
             "select kind, count(*) n from graph_observations where org_id=:o "
             "and subject_node_id=:n group by kind"), {"o": org_id, "n": node_id}).all()
+        interactions = _meeting_neighbors(c, org_id, node_id)
+        commitments = _commitment_neighbors(c, org_id, node_id)
+        # Layer 2's real confidence vector for this subject, if it correlated one. Highest-
+        # confidence active situation wins when a node anchors several — an anchor holding both a
+        # well-evidenced and a thin situation is not "averagely" known, and averaging would let a
+        # thin one drag down a dimension it has no bearing on. Today this resolves for 1 card in
+        # 47, which is the point: the other 46 now report the three dimensions ABSENT instead of
+        # showing invented values that made the L2↔L4 severance invisible from the API.
+        sit = c.execute(text(
+            "select confidence_overall, confidence_identity, confidence_consistency "
+            "from context_situations where org_id=:o and anchor_node_id=:n and status='active' "
+            "order by confidence_overall desc nulls last limit 1"),
+            {"o": org_id, "n": node_id}).mappings().first()
+        situation = dict(sit) if sit else None
+    obs_kinds = {r.kind for r in obs}
+    obs_counts = {r.kind: int(r.n) for r in obs}
     profile = [{"field": k, "value": v} for k, v in facts.items()
                if k not in _CONTEXT_FACT_SKIP and not k.startswith("thread.")]
     signals = [{"kind": r.kind, "label": _CONTEXT_OBS[r.kind], "count": int(r.n)}
                for r in obs if r.kind in _CONTEXT_OBS]
-    return {"profile": profile, "signals": signals}
+    # The promised/said text lives on the connected commitment node (already extracted). Use it to
+    # GROUND the commitment gate — so the card recovers the real thread topic instead of saying
+    # 'context incomplete' — but keep it as neutral 'what was said' context, not a mis-attributed
+    # 'you promised', since extraction can capture the counterparty's reschedule ask (Update 4 nuance).
+    said = facts.get("commitment.action") or (commitments[0]["text"] if commitments else None)
+    gate_facts = set(facts) | ({"commitment.action"} if said else set())
+    dec_facts = {**facts, "commitment.action": said} if said else facts
+    # A connector/bot subject fails closed to 'reply to the real contacts', never to the intermediary.
+    if _is_connector(canonical_key, obs_counts):
+        actionability = _connector_gate(canonical_key)
+    else:
+        actionability = _actionability(reason_code, obs_kinds, gate_facts,
+                                       capability_id=card.get("capability_key"))
+    decision = _decision_projection(reason_code, card, dec_facts, obs_kinds, actionability,
+                                    situation)
+    context = {"profile": profile, "signals": signals, "interactions": interactions,
+               "commitments": commitments, "freshness": _freshness(fact_rows)}
+    return context, actionability, decision
+
+
+def _freshness(fact_rows) -> dict | None:
+    """Update 2 §10/§16 — the card must be honest that it reads a synced Context Graph, never
+    'real-time'. Report when the newest fact was captured, and label the freshness against the trial
+    sync cadence (~6h). Deterministic."""
+    from datetime import datetime, timezone
+    times = [r.created_at for r in fact_rows if getattr(r, "created_at", None)]
+    if not times:
+        return None
+    newest = max(times)
+    if newest.tzinfo is None:
+        newest = newest.replace(tzinfo=timezone.utc)
+    age_h = (datetime.now(timezone.utc) - newest).total_seconds() / 3600
+    # Only genuinely old context (>7d) is worth flagging — 1–7 day-old business context is normal and
+    # should not carry an alarming 'not live' note on every card.
+    label = "fresh" if age_h <= 48 else "aging" if age_h <= 24 * 7 else "stale"
+    ago = "just now" if age_h < 1 else f"~{round(age_h)}h ago" if age_h < 48 else f"~{round(age_h / 24)}d ago"
+    return {"as_of": newest.isoformat(), "age_hours": round(age_h, 1), "label": label,
+            "note": f"Latest info here is {ago} — open the source for anything newer"}
 
 
 def _owns_authoritative_card(card_id: str, org_id: str) -> dict:
@@ -1750,7 +2638,7 @@ def list_cards(assignee: str | None = None,
     """Dashboard queue read. org from credential; admin (all queues) only for an owner session
     (JWT / full-scope key), never a caller-supplied flag."""
     _require_l5()
-    admin = ctx.scopes is None                       # owner/dashboard session sees all queues
+    admin = ctx.sees_org_queue                       # owner session OR an org-level API key
     effective_assignee = assignee if admin else (ctx.actor_id or ctx.agent_id)
     return {"cards": _card_store.queue(
         ctx.org_id, assignee=effective_assignee, admin=admin)}
@@ -1762,12 +2650,15 @@ def get_card(card_id: str, ctx: AuthCtx = Depends(require_scope("cards.read"))) 
     _require_l5()
     card = _owns_authoritative_card(card_id, ctx.org_id)
     actor_id = ctx.actor_id or ctx.agent_id
-    if (ctx.scopes is not None and card.get("assignee") is not None
+    if (not ctx.sees_org_queue and card.get("assignee") is not None
             and card.get("assignee") not in {actor_id, ctx.agent_id}):
         raise HTTPException(403, "card is assigned to a different seat")
-    # Enrich the detail with the subject's captured context (profile + relationship signals) so the
-    # card reads as real intelligence, not just the trigger metadata. Deterministic, no extra LLM.
-    card["context"] = _subject_context(ctx.org_id, card.get("signal_id"))
+    # Enrich the detail with the Update-1 decision context: captured profile + relationship signals,
+    # the clarity gate (actionable vs context_incomplete), and the card.v2 decision projection
+    # (recommendation verdict/steps, separate confidences, per-section grounding). Plus a documented
+    # server-side effect on each CTA. All deterministic, no extra LLM.
+    card["context"], card["actionability"], card["decision"] = _card_intelligence(ctx.org_id, card)
+    card["actions"] = _annotate_effects(card.get("actions"))
     return card
 
 
@@ -1792,7 +2683,7 @@ def card_action(card_id: str, body: CardAction,
                         card_id=card_id, actor=actor_id, action=body.action,
                         reason=body.reason, snooze_option=body.snooze_option,
                         custom_until=body.custom_until,
-                        allow_any_assignee=ctx.scopes is None)
+                        allow_any_assignee=ctx.sees_org_queue)
     if not out.get("ok"):
         status = 403 if out.get("error") == "assigned_to_different_seat" else 422
         raise HTTPException(status, out)
@@ -1813,7 +2704,7 @@ def context_match(body: ContextMatch,
     actor_id = ctx.actor_id or ctx.agent_id or "authenticated_principal"
     result = _card_store.surface_context_match(
         ctx.org_id, body.card_id, body.matched_tag, actor_id=actor_id,
-        allow_any_assignee=ctx.scopes is None)
+        allow_any_assignee=ctx.sees_org_queue)
     if not result.get("ok"):
         status = 403 if result.get("error") == "assigned_to_different_seat" else 422
         raise HTTPException(status, result)
@@ -1826,7 +2717,7 @@ def digest(assignee: str | None = None,
     """The 08:30 morning summary (§5.15), scoped to the authenticated tenant."""
     _require_l5()
     from genios_engine.deliver.digest import build_digest
-    admin = ctx.scopes is None
+    admin = ctx.sees_org_queue           # same rule as /cards — the digest IS the queue, summarised
     effective_assignee = assignee if admin else (ctx.actor_id or ctx.agent_id)
     return build_digest(
         _card_store, ctx.org_id, assignee=effective_assignee, admin=admin)

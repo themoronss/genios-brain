@@ -15,9 +15,8 @@ description: >
 
 matches:
   l2_situation_types:
-    - unanswered_email
-    - champion_quiet
-    - meeting_no_followup
+    - prospect_relationship
+    - relationship
   scope: person
   when:
     # Outbound means we are waiting on them and there is no live deal behind the contact.

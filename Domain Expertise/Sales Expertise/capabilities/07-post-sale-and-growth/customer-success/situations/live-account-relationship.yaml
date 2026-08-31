@@ -1,0 +1,110 @@
+identity:
+  id: sales.sit.live_account_relationship
+  name: Live Account Relationship
+  domain: sales
+  owner_capability: sales.post_sale_and_growth.customer_success
+  version: 1.0.0
+  status: stable
+
+description: >
+  An ongoing relationship with a company we are already talking to, read at the ACCOUNT level
+  rather than per person. This is the largest bucket L2 produces and, until this file existed,
+  the one nothing claimed: `relationship` was declared only by outbound-prospect, whose scope is
+  `person`, so twenty-five company-anchored situations on the design partner's org found no route
+  at all. They were not judged and rejected — they were never looked at, which is the failure this
+  situation exists to end.
+
+  It is deliberately NOT a deal. A relationship can be healthy, dormant or souring without any
+  opportunity attached, and forcing it through opportunity-shaped reasoning is what produces
+  "several open items blocking commitment" on a company that has no commitment in play.
+
+matches:
+  l2_situation_types:
+    - relationship
+  # ACCOUNT, not person. The anchor L2 hands the compiler for these is a company node; a
+  # person-scoped claim cannot match one however well its conditions read.
+  scope: account
+  # No `when:` key at all — deliberately, and NOT an empty one. A relationship is worth reading
+  # precisely when nothing is formally open: that is when decay is cheapest to reverse and when
+  # every deal-shaped rule in the pack is silent. `when:` with nothing under it parses as null,
+  # which the schema rejects (it wants an array) — an absent narrowing has to be an absent key.
+
+also_serves:
+  - sales.post_sale_and_growth.expansion
+  - sales.prospecting_and_outreach.account_research
+  # Added 2026-08-27. A measured gap rather than a judgement call: 47 Sales capabilities were
+  # authored and only 15 sat in any live type's route set, because eight situation files name
+  # every capability the corpus can reach and most were simply never named. Six of the unnamed
+  # ones are ABOUT precisely this situation — a live account relationship — and were unreachable
+  # for want of a binding, not for want of content.
+  #
+  # Each earns its place on its own question, and each is honest in its own file about what it
+  # cannot see: churn prevention reads `derived.engagement` (dense on live data), renewal reads
+  # `commitment.due_at`, and the growth pair state plainly that no usage telemetry exists.
+  - sales.post_sale_and_growth.churn_prevention
+  - sales.post_sale_and_growth.renewal
+  - sales.post_sale_and_growth.onboarding
+  - sales.post_sale_and_growth.upsell
+  - sales.post_sale_and_growth.cross_sell
+  - sales.sales_management.relationship_management
+
+objects:
+  load:
+    - sales.obj.core.account
+    - sales.obj.core.company
+  optional:
+    - sales.obj.core.persona
+    - sales.obj.core.decision_maker
+  never_load:
+    # A relationship with no opportunity attached has no committee, budget or timeline to read.
+    # Each of these resolves happily to `unknown` and is then read downstream as "assessed and
+    # absent" rather than "never applicable" — a confident empty answer, which is worse than none.
+    - sales.obj.core.buying_committee
+    - sales.obj.core.budget
+    - sales.obj.core.timeline
+
+priority_bp: 5000
+typical_duration_days: 14
+
+signals_of_progress:
+  - positive_reply
+  - meeting_request
+  - introduction
+  - next_step_agreed
+
+signals_of_decay:
+  - timeline_slip
+  - negative_reply
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    A live relationship with no deal attached. There is no pipeline, no commitment and no close
+    date here, so never write "open items blocking commitment", a stage, or anything implying a
+    purchase is in motion — that sentence on a company with nothing in play is the exact failure
+    this situation was written to end.
+
+    Headline: where the relationship actually stands and what it needs — warming, dormant,
+    souring, or an opening worth taking. Name the account.
+
+    Situation: the last real exchange and what it revealed. What they said, what changed, what
+    is unresolved between the two sides — not elapsed time on its own.
+
+    Artifact: a reply that continues the relationship on its own terms — respond to what they
+    last raised, or offer something specific and useful. Never a check-in for its own sake.
+  fallback:
+    headline: "{entity} — relationship open, nothing moving"
+    situation: >-
+      An active relationship with {entity} with nothing currently in play and no agreed next step.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  last_updated: '2026-08-25'
+  reviewed_by: harsh
+  review_status: approved
+  confidence: provisional
+  reviewed_at: '2026-08-25'
+
+admission:
+  accepted_content_hash: 421ca4cd320d0e140eca2fd0a15a6c17c793037c4d30a7fd32a8b4c2b4e8251d

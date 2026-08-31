@@ -1,0 +1,94 @@
+identity:
+  id: customer_support.pb.postmortem.blameless_actioned_verified
+  name: Blameless, actioned, verified
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.postmortem
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A postmortem asks what made the failure possible and easy — never who — and produces few,
+    owned, dated actions whose completion someone actually verifies. Everything else is theatre with a
+    template.
+
+when_to_use:
+  do_not_use_when:
+  - The incident is still running. Reviewing during the response competes with resolving it and produces worse notes than waiting a day.
+steps:
+- order: 1
+  name: Establish blamelessness before establishing facts
+  description: >
+    Not as kindness. The moment fault attaches to a person, memories develop gaps and the next
+    incident's facts arrive already laundered — which is a permanent loss.
+  actor: human
+  done_when: The room believes the outcome is a system change rather than a finding about somebody.
+- order: 2
+  name: Ask what made it POSSIBLE
+  description: >
+    The conditions that allowed the failure — the missing guard, the unvalidated input, the
+    permission that was broader than needed.
+  actor: human
+  objects_read: [customer_support.obj.core.incident, customer_support.obj.core.root_cause]
+  done_when: The enabling conditions are named, not just the trigger.
+- order: 3
+  name: Ask separately what made it LAST
+  description: >
+    Detection time, escalation path, access, decision latency. It is the other half of the incident
+    and usually the half with cheaper fixes.
+  actor: human
+  done_when: The duration has its own explanation.
+- order: 4
+  name: Produce few actions, owned and dated
+  description: >
+    Twenty actions is a list nobody works, and the two that mattered are lost inside it.
+  actor: human
+  objects_read: [customer_support.obj.postmortem.postmortem]
+  done_when: Each action has a name and a date, and there are few of them.
+- order: 5
+  name: Decline the actions not worth doing
+  description: >
+    A fix costing more than the incident class is worth should be refused explicitly, not added to
+    a backlog as a gesture.
+  actor: human
+  done_when: Rejected actions are recorded as rejected.
+- order: 6
+  name: Verify completion, by somebody else
+  description: >
+    Self-reported completion is how a postmortem practice becomes a documentation practice without
+    anyone deciding it should.
+  actor: human
+  done_when: Somebody other than the owner confirmed each action landed.
+objects_used: [customer_support.obj.core.incident, customer_support.obj.postmortem.postmortem, customer_support.obj.core.root_cause,
+               customer_support.obj.core.issue, customer_support.obj.core.escalation_owner]
+limits:
+- 'It changes systems it has authority over. Actions landing on other teams need their agreement, which this process cannot compel.'
+- 'Step 3 requires an accurate incident timeline, which is only available if somebody kept one during the response.'
+failure_modes:
+- 'Step 1 nominally observed while everybody knows whose change it was, which produces the blame effects with none of the honesty.'
+- 'Step 6 skipped, which is the difference between a practice and a ritual and is invisible for about two quarters.'
+variants:
+- applies_to: swarming_support
+  change: Step 1 is easier — no single owner to blame — and step 4 harder, because collective ownership produces collective inaction.
+  why: Shared responsibility diffuses both fault and follow-through.
+- applies_to: outsourced_bpo
+  change: Actions frequently cross the boundary and step 6 must be contractual rather than social.
+  why: Verification cannot rely on a relationship that ends with the contract.
+references:
+- title: Blameless postmortem practice
+  kind: practitioner
+  note: Where blamelessness is argued on evidence-quality grounds rather than on cultural ones.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 3 is the half that gets skipped and the half with the cheaper answers. Preventing the
+    cause is usually engineering work; shortening the duration is usually a permission, an alert
+    or a decision somebody was not empowered to make.

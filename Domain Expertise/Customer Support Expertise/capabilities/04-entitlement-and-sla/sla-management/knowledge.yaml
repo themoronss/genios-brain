@@ -1,31 +1,50 @@
-# Knowledge manifest for customer_support.entitlement_and_sla.sla_management — REFERENCES ONLY, the sibling of objects.yaml.
-#
-# objects.yaml says which NOUNS to load. This says which EXPERTISE applies.
-#
-#   core   -> <kind>/core/             referenced by more than one capability
-#   scoped -> <kind>/sla-management/    referenced by this capability alone
-#
-# The same scope rule as objects, enforced from the reference graph: MEDDICC referenced by
-# four capabilities must be core, or it becomes four copies that drift.
-
+# Knowledge manifest — references the definition pages whose identity.owner_capability
+# names this capability. Auto-linked from the pages' own declarations: the pages were
+# written and the index never was, so the engine opened an empty list above a full shelf.
 capability: customer_support.entitlement_and_sla.sla_management
-
 playbooks:
   core: []
-  scoped: []
-
+  scoped:
+  - customer_support.pb.sla_management.breach_before_the_deadline
+  - customer_support.pb.sla_management.clock_ledger_on_dispute
+  - customer_support.pb.sla_management.coverage_arithmetic
+  - customer_support.pb.sla_management.deliberate_pause
+  - customer_support.pb.sla_management.incident_clock_consolidation
+  - customer_support.pb.sla_management.met_but_unhappy_review
+  - customer_support.pb.sla_management.name_the_clock_first
+  - customer_support.pb.sla_management.pause_audit
 heuristics:
   core: []
-  scoped: []
-
+  scoped:
+  - customer_support.heu.sla_management.answered_question_invalidates_pause
+  - customer_support.heu.sla_management.clock_start_pause_deadline
+  - customer_support.heu.sla_management.entitlement_change_does_not_rewrite_open_clocks
+  - customer_support.heu.sla_management.first_response_means_a_human_read_it
+  - customer_support.heu.sla_management.internal_waiting_does_not_pause
+  - customer_support.heu.sla_management.met_and_unhappy_is_measurement_failure
+  - customer_support.heu.sla_management.one_ticket_many_clocks
+  - customer_support.heu.sla_management.severity_disputes_wear_deadline_clothes
+  - customer_support.heu.sla_management.spoken_deadline_wins
+  - customer_support.heu.sla_management.status_changes_are_clock_events
+  - customer_support.heu.sla_management.waiting_on_customer_is_correct_and_abused
+  - customer_support.heu.sla_management.zero_breaches_is_a_smell
 mental_models:
   core: []
-  scoped: []
-
+  scoped:
+  - customer_support.mm.sla_management.attainment_is_a_ratio_of_two_choices
+  - customer_support.mm.sla_management.clock_is_shared_but_only_we_see_it
+  - customer_support.mm.sla_management.promise_versus_instance
+  - customer_support.mm.sla_management.sla_is_a_floor
+  - customer_support.mm.sla_management.two_ledgers
 rules:
   core: []
   scoped: []
-
 decision_frameworks:
   core: []
-  scoped: []
+  scoped:
+  - customer_support.df.sla_management.clock_ledger
+  - customer_support.df.sla_management.coverage_window_arithmetic
+  - customer_support.df.sla_management.pause_validity_test
+  - customer_support.df.sla_management.promise_hierarchy
+  - customer_support.df.sla_management.severity_to_clock_mapping
+  - customer_support.df.sla_management.start_pause_stop

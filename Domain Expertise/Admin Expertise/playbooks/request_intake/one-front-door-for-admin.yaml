@@ -1,0 +1,196 @@
+identity:
+  id: admin.pb.request_intake.one_front_door_for_admin
+  name: One front door for admin
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.request_intake
+  subdomain: admin_operations
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'All admin requests enter one channel with category, priority and expected turnaround
+    visible — because requests scattered across direct messages, corridors and memory get served by
+    loudness and lost by default.'
+  answers:
+  - How does an administrative function make its demand visible and its ordering defensible?
+  - What has to happen between someone asking and someone owning?
+  not:
+  - A tool selection. A shared list with owners and dates satisfies every step here.
+  - A prioritisation scheme. This makes ordering possible; what the order should be is set upstream.
+
+when_to_use:
+  conditions:
+  - {exists: thread.last_inbound}
+  signals:
+  - question
+  - meeting_request
+  do_not_use_when:
+  - 'The function serves one principal. There is no fairness problem to solve and the ceremony costs
+    more than the memory it buys.'
+  - 'Intake would take longer than the work. A front door slower than the side door guarantees the
+    side door survives, with the queue''s overhead added on top.'
+  - 'The interaction is a conversation rather than a request. Queueing relationship work makes the
+    function feel like a machine to precisely the people whose trust it needs.'
+
+steps:
+- order: 1
+  name: Take the request where it lands, then log it
+  description: 'The corridor ask is captured BY the person who received it, not refused. "Raise a
+    ticket" said to someone standing in front of you converts a fairness mechanism into a
+    bureaucratic one and is the fastest way to have the front door abandoned. Capture first, route
+    second — the queue''s truthfulness is worth more than its purity.'
+  actor: human
+  objects_read:
+  - admin.obj.core.request
+  produces: Every ask, whatever channel it arrived on, present in one place.
+  done_when: Off-queue arrivals are being logged rather than served silently.
+
+- order: 2
+  name: Acknowledge by restating the ask
+  description: 'An acknowledgement that says what was understood — not that something was received.
+    This is the last moment a misunderstanding is free to fix, and a receipt spends the moment without
+    using it. Pair it with when to expect an answer: uncertainty, not slowness, is what drives chasing.'
+  actor: human
+  objects_read:
+  - admin.obj.core.commitment
+  produces: An acknowledgement stating the understood ask and an expected turnaround.
+  done_when: No request is acknowledged without a restatement and a date.
+
+- order: 3
+  name: Classify to the work, not to the person who usually does it
+  description: 'Routing by "Priya always handles visas" entrenches single-person dependency and hides
+    it from every capacity view. Classify by the work; assign by availability against that class.'
+  actor: human
+  objects_read:
+  - admin.obj.core.sop
+  produces: A category per request, independent of who will do it.
+  done_when: No category is defined by an individual's name.
+
+- order: 4
+  name: Decline or redirect on day one
+  description: 'Some requests are not this function''s work. Saying so immediately is worth more to
+    the requester than a polite acceptance that starves for a fortnight — and a function with no
+    refusal path accepts everything and delivers by attrition, which is the slowest possible no.'
+  actor: human
+  produces: An early decline or redirect, with the correct destination named.
+  done_when: Out-of-scope requests leave the queue on the day they arrive.
+
+- order: 5
+  name: Name an owner at acceptance
+  description: 'A request in a shared queue with no owner is one every reader assumes belongs to
+    someone else. It then ages while appearing to be in progress, which is the worst of both states.'
+  actor: human
+  produces: A named owner per accepted request.
+  done_when: No accepted request sits without a person against it.
+
+- order: 6
+  name: Read the repeat ask as a signal about the answer
+  description: 'The same requester asking the same thing again usually means the previous answer did
+    not work — a broken process, an unfindable document, an SOP that does not match practice.
+    Re-serving is cheaper than fixing, which is exactly why the repeat keeps arriving.'
+  actor: human
+  objects_read:
+  - admin.obj.core.sop
+  - admin.obj.core.document
+  produces: A fix candidate, not merely a second service event.
+  done_when: Repeat asks are counted separately from new demand.
+
+- order: 7
+  name: Publish queue health, including what never reached it
+  description: 'Open, ageing, closed this period — visible, because a transparent queue defuses the
+    black-hole reputation that untracked functions acquire. Publish the off-queue arrival count beside
+    it: it is the one number queue reporting is structurally blind to, and the one that says whether
+    the front door is real.'
+  actor: human
+  produces: A periodic queue-health view including off-queue arrivals.
+  done_when: The function can say what share of its work bypassed intake.
+  typical_duration_days: 7
+
+objects_used:
+- admin.obj.core.request
+- admin.obj.core.sop
+- admin.obj.core.commitment
+- admin.obj.core.escalation
+- admin.obj.core.approver
+- admin.obj.core.policy
+
+outcomes:
+- Demand is visible, including the part that arrives off-channel.
+- Ordering is defensible from consequence rather than from persistence.
+- Out-of-scope work is refused quickly rather than starved slowly.
+
+failure_modes:
+- 'THE CHANNEL IS ENFORCED RATHER THAN OFFERED. Refusing to hear an ask outside the queue drives it
+  underground; the queue then looks healthy and describes a shrinking fraction of the work.'
+- 'ACKNOWLEDGEMENT WITHOUT RESTATEMENT. Satisfies the metric, wastes the only cheap correction point,
+  and produces the rework this step exists to prevent.'
+- 'NO DECLINE PATH. Everything is accepted, and no is delivered by attrition.'
+- 'QUEUE HEALTH PUBLISHED WITHOUT OFF-QUEUE VOLUME. The reported picture improves as more work
+  bypasses the queue, which is precisely backwards.'
+- 'REPEATS COUNTED AS DEMAND. Produces a request for more capacity when the correct answer was to fix
+  one broken answer.'
+
+limits:
+- Cannot measure what was never logged; step 1 is what makes the rest approximately true rather than
+  exactly true.
+- Says nothing about how to size capacity against the demand it reveals.
+- Assumes requests are distinguishable from conversations, which at the boundary they are not.
+
+variants:
+- applies_to: shared_services
+  change: Categories and turnarounds are published per requesting function, and the queue-health view
+    is a service report rather than an internal one.
+  why: Cross-function fairness is the model's promise, and it has to be visible to be believed.
+- applies_to: outsourced
+  change: Off-queue work is unbilled as well as unmeasured, so step 1's capture is a commercial control
+    and step 7's off-queue count belongs in the client report.
+  why: The queue is the commercial record here, not only the operational one.
+- applies_to: startup_lean
+  change: Steps 3, 5 and 7 collapse — there is one owner. What survives is capture and acknowledgement,
+    which is where the value is at this size anyway.
+  why: With no ordering to defend, the queue's whole contribution is memory.
+- applies_to: automated_first
+  change: Capture, classification and acknowledgement are system-executed; the human steps are the
+    decline decision and the repeat-ask reading.
+  why: Those two are judgements about scope and about causes, which routing cannot make.
+- applies_to: regulated
+  change: A declined request is recorded with its reason and retained; an unrecorded refusal is an
+    evidence gap even when it was the right call.
+  why: The regime asks what was decided and on what basis, not only what was done.
+
+metrics:
+- name: off_queue_arrival_rate
+  unit: percent
+  description: Share of work arriving outside the channel.
+  direction: lower_is_better
+- name: time_to_named_owner
+  unit: hours
+  description: Arrival to a named person owning it.
+  direction: lower_is_better
+- name: repeat_ask_share
+  unit: percent
+  description: Share of requests repeating an earlier one from the same requester.
+  direction: lower_is_better
+
+references:
+- title: ITIL service request management
+  kind: framework
+  note: Single front door, categorisation and acknowledgement, adapted here for a function with no
+    service desk — which is the common case.
+- title: Administrative practice — capture first, route second
+  kind: practitioner
+  note: The rule that keeps a queue honest, and the one most implementations reverse.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from a three-step sketch. Step 1 was inverted deliberately: the original said
+    corridor asks get "log it and it is queued", which is the enforcement posture that drives requests
+    underground. Capture-then-route keeps the queue true, which is the only property the other six
+    steps depend on. Steps 4 and 6 are new.'

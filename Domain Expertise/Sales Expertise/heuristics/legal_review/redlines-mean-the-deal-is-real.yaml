@@ -1,0 +1,147 @@
+identity:
+  id: sales.heu.legal_review.redlines_mean_the_deal_is_real
+  name: Redlines mean the deal is real
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.legal_review
+  subdomain: closing
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: Legal does not review contracts for products the business rejected. Redlines are cost,
+    not threat — the decision has been made; what remains is price-of-risk housekeeping.
+  answers:
+  - Is the arrival of redlines good news or bad?
+  - How should a seller feel about a heavily marked-up contract?
+  not:
+  - A claim that redlines are trivial. Some are genuinely deal-breaking.
+  - A prediction of the close date. It says the decision was made, not when signature lands.
+
+heuristic:
+  statement: 'Read the ARRIVAL of legal review as a strong positive commercial signal and the CONTENT
+    of the redlines as a separate, unrelated question. The two are routinely conflated: a heavily
+    marked-up document feels like resistance and is usually evidence of a company that has decided to
+    proceed and is now doing what it always does before signing.'
+  why: 'Legal review is expensive and internally rationed. Counsel time is not spent on a vendor the
+    business is not buying from, so the mere existence of a review is a decision that has already been
+    taken elsewhere and is being executed. The volume of markup then reflects the buyer''s own risk
+    posture and standard playbook — how regulated they are, what their insurers require, what their
+    last incident taught them — and carries almost no information about their enthusiasm. Sellers read
+    it as sentiment because it is the first document in the whole process that says no to anything.'
+  confidence_bp: 8000
+  applies_when: 'The buyer''s legal function has engaged with a contract we sent. `legal_review` is the
+    observation; `contract_requested` frequently precedes it.'
+  breaks_down_when: 'A COMPARATIVE REVIEW. Some buyers put two vendors'' papers through legal in
+    parallel precisely to inform the choice. The signal is then about being shortlisted, not about
+    being selected, and the tell is usually that procurement rather than the business owner initiated
+    it.
+
+    A COMPLIANCE-DRIVEN REVIEW WITH NO COMMERCIAL DECISION BEHIND IT. Regulated buyers sometimes review
+    early as a gating step before any commitment exists. Real, and less common than sellers hope.
+
+    A REVIEW THAT STOPS. Redlines arriving and then silence is a different event entirely — it usually
+    means the commercial decision was revisited after the paper went out, and it is the one pattern in
+    this stage that genuinely is bad news.
+
+    WHEN THE REDLINES ARE STRUCTURAL RATHER THAN STANDARD. Objections to the core commercial model —
+    liability that exceeds the contract value, a demand to own the output, refusal of the pricing
+    mechanism — are not housekeeping. They indicate the deal was agreed on terms one side did not
+    understand.
+
+    IN SMALL OR TRANSACTIONAL PURCHASES. Where a buyer signs standard terms unmodified, the absence of
+    redlines carries no negative signal and this heuristic has nothing to read.'
+  reads:
+  - sales.obj.core.contract
+  - sales.obj.core.risk
+  - sales.obj.core.timeline
+  contradicts:
+  - sales.heu.revenue_intelligence.latency_is_the_earliest_honest_signal
+  pattern_ref:
+  - doc.in_legal_review_is_not_approved
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: legal_review}
+  signals:
+  - legal_review
+  - contract_requested
+  do_not_use_when:
+  - The review is comparative and two vendors are in it.
+  - The redlines stopped and went silent — that is the pattern that is genuinely bad news.
+  - The objections are to the commercial model rather than to standard risk terms.
+
+objects_used:
+- sales.obj.core.contract
+- sales.obj.core.risk
+- sales.obj.core.timeline
+- sales.obj.core.buying_committee
+
+outcomes:
+- Legal engagement is recorded as a positive commercial signal.
+- Markup volume is not treated as sentiment.
+
+failure_modes:
+- 'USED TO DISMISS REAL OBJECTIONS. The fourth breakdown regime exists because structural redlines are
+  not housekeeping, and a seller reassured by this heuristic can miss the one that matters.'
+- 'TREATED AS A CLOSE-DATE PREDICTION. The decision having been made says nothing about how long the
+  buyer''s process takes, and forecasting on it produces confident slips.'
+- 'APPLIED TO A COMPARATIVE REVIEW. Converts a shortlist into a win in the seller''s mind, and the
+  forecast follows.'
+
+limits:
+- Says nothing about which redlines to accept, which is where the actual work is.
+- '`legal_review` and `contract_requested` both have zero rows on the design partner''s org, so this
+  heuristic has no live trigger there; it is authored for tenants whose correspondence reaches
+  contract stage.'
+- Cannot distinguish a review initiated by the business from one initiated by procurement, which is
+  the tell for the first breakdown regime.
+
+variants:
+- applies_to: enterprise
+  change: Expect heavy standard markup with no sentiment content at all, and read the INITIATOR rather
+    than the volume — business-initiated review is the signal, procurement-initiated is not.
+  why: Large buyers have playbooks, and a playbook applied says nothing about preference.
+- applies_to: mid_market
+  change: Redlines are usually fewer and more genuinely negotiated, so content carries more
+    information than in enterprise.
+  why: There is no standard playbook to apply.
+- applies_to: smb
+  change: Standard terms signed unmodified is normal; absence of redlines is not absence of intent.
+  why: There is often no legal function to engage.
+
+metrics:
+- name: legal_engagement_to_close_rate
+  unit: percent
+  description: Share of deals reaching legal review that closed. The direct test of the heuristic, and
+    typically far above the base rate.
+  direction: higher_is_better
+- name: redline_cycle_time
+  unit: days
+  description: Days from first redline to execution.
+  direction: lower_is_better
+
+references:
+- title: Practitioner closing-stage observation
+  kind: practitioner
+  note: The conversion rate from legal engagement to close is consistently among the highest of any
+    stage transition, which is the empirical basis for reading it as a signal rather than a threat.
+- title: MEDDICC
+  kind: methodology
+  note: The paper-process dimension, which exists because this stage is routinely discovered late.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The third breakdown regime is the addition that
+    matters: redlines arriving and then STOPPING is the one pattern at this stage that is genuinely
+    bad news, and a heuristic that only says "redlines are good" would read that silence as continued
+    good news.'

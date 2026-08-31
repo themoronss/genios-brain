@@ -20,6 +20,7 @@ from sqlalchemy import text
 from genios_engine.contracts.delivery import DeliveryLifecycle, DeliveryObject
 from genios_engine.platform.canonical import canonical_dumps
 from genios_engine.platform.ids import new_id
+from .scheduler import rank_sql
 
 
 def logical_dedupe_key(org_id: str, execution_id: str, event_kind: str) -> str:
@@ -113,10 +114,17 @@ def claim_due(conn, *, org_id: str, worker_id: str, at: datetime, limit: int = 2
     rows = conn.execute(text(
         "with due as ("
         "  select id from delivery_outbox "
+        # The mirror of the legacy drain's `dedupe_key is null`: this claimer must not be able to
+        # pick up a row the legacy path wrote, or the two workers can send the same card twice.
         "  where org_id = :o and status = 'queued' and legacy_reconcile = false "
+        "    and dedupe_key is not null "
         "    and (next_attempt_at is null or next_attempt_at <= :at) "
         "    and (claimed_by is null or claim_expires_at < :at) "
-        "  order by priority, created_at "
+        # NOT `order by priority` — that column is text, so Postgres sorted it alphabetically
+        # (background < critical < high < low < medium) and claimed critical work after
+        # background work. The rank is generated from contracts.delivery._PRIORITY_RANK and
+        # carries the same 4-hour starvation aging as the in-process scheduler.
+        "  order by " + rank_sql("priority", "created_at", ":at") + " desc, created_at "
         "  for update skip locked limit :lim) "
         "update delivery_outbox d set claimed_by = :w, claim_expires_at = :exp, fence_token = :f "
         "from due where d.id = due.id "

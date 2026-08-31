@@ -1060,32 +1060,34 @@ inference_patterns:
 
     - id: cs.churn.contact_rate_below_this_accounts_own_norm
       statement: This account is contacting us materially less often than it historically does.
-      status: needs_signal
+      status: executable
+      when:
+        - path: derived.contact_frequency
+          op: '<'
+          value: {baseline: contact_rate_per_account, mult: 0.5, floor: 0}
       yields:
         confidence_bp: 8000
         attribute: contact_volume_trend
-      requires_signals:
-        - kind: derived
-          name: derived.contact_frequency
-          owner_layer: L2
-          note: >
-            The account-level counterpart to derived.engagement. Every executable going-quiet
-            pattern in this file reads a THREAD and infers an ACCOUNT, which is the central
-            approximation this object is currently making and the one most likely to mislead: an
-            account can be silent on one thread and busy on four others.
-        - kind: baseline
-          name: contact_rate_per_account
-          owner_layer: L2
-          note: >
-            Absence needs a baseline or it is not evidence. A hundred-seat account opening four
-            tickets a week is normal; a two-seat account doing the same is a churn signal, and a
-            heavy integrator that drops from nine contacts a month to one has said more than any
-            survey ever will.
+      evidence_fields: [derived.contact_frequency, thread.last_inbound]
+      false_positive: >
+        A planned quiet period — a completed migration, a seasonal shutdown, or an account that
+        has simply finished the work it needed help with. The rate says the volume fell; it does
+        not say the relationship did, which is why this yields a trend attribute rather than a
+        verdict.
       note: >
-        The strongest churn predictor available to a support function, and it is not computable
-        today. `reply_cadence` is being borrowed below as the nearest available baseline, but it
-        measures how FAST they reply, not how OFTEN they write — a real proxy, used carefully,
-        and not the thing.
+        Both inputs shipped together in `reason/baselines.py`: the 14-day account rate as
+        `derived.contact_frequency`, and this account's own 56-day norm as the
+        `contact_rate_per_account` baseline. Account level, deliberately — every other going-quiet
+        pattern in this file reads a THREAD and infers an ACCOUNT, and an account can be silent on
+        one thread and busy on four others.
+
+        `floor: 0` is load-bearing and is not a placeholder. `_resolve_value` computes
+        max(floor, mult · baseline), so any positive floor sets a MINIMUM rate below which every
+        account trips — which would fire permanently on accounts that were always quiet, the exact
+        population where a low rate carries no information. At zero, the threshold is purely
+        relative: an account that has always written twice a month is compared against twice a
+        month. It also makes a cold-start account (baseline 0) untriggerable, since no rate is
+        less than zero — the right behaviour when there is not yet a norm to fall below.
 
     - id: cs.churn.the_same_unresolved_thing_asked_again
       statement: This account has come back repeatedly about one thing that is still not fixed.

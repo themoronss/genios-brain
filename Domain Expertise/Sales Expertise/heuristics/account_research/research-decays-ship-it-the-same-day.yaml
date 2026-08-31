@@ -1,0 +1,68 @@
+identity:
+  id: sales.heu.account_research.research_decays__ship_it_the_same_day
+  name: Research decays; ship it the same day
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.account_research
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: An account brief is fresh produce. The event that makes outreach timely is timely for everyone
+    who saw it, and the brief's value halves with every day between research and send.
+  answers:
+  - When should researched outreach go out?
+
+heuristic:
+  statement: >
+    An account brief is fresh produce. The event that makes outreach timely is timely for everyone
+    who saw it, and the brief's value halves with every day between research and send.
+  why: >
+    A trigger event — a funding round, a hire, a launch — is public, and every competent seller
+    watching that market saw it on the same day. The window in which referencing it reads as
+    attentive rather than as late is short, and it closes without any signal. Meanwhile the
+    research itself does not improve while it sits; only its relevance decays. So the value of a
+    brief is almost entirely a function of how quickly it becomes a message.
+  confidence_bp: 8000
+  applies_when: Outreach prompted by a public trigger event.
+  breaks_down_when: >
+    The trigger is not public. Research built on a private signal — a conversation, a referral, an
+    internal change somebody mentioned — has no competing sellers racing it, and rushing there costs
+    quality for no timing benefit. It also breaks down for accounts with long, deliberate buying
+    cycles where arriving first is worth less than arriving well, and a same-day message that is
+    thin will be read as thin.
+  reads: [sales.obj.core.account, sales.obj.core.buying_signal]
+  contradicts: [sales.heu.lead_generation.a_referral_outranks_ten_cold_leads]
+limits:
+- 'It concerns timing, not quality. A same-day message with nothing specific in it is fast and worthless.'
+- 'Decay rates differ by trigger type — a funding round ages in days, a strategic shift in months.'
+failure_modes:
+- 'Used to justify sending something thin, which spends the trigger rather than using it.'
+- 'Applied to private signals, where speed buys nothing and costs preparation.'
+variants:
+- applies_to: enterprise
+  change: Weaker. Long cycles and committee buying mean arriving well outperforms arriving first.
+  why: Nobody is deciding this week.
+- applies_to: smb
+  change: Strongest — short cycles, many competitors watching the same signals, and the first credible message often wins the conversation.
+  why: The decision is one person's and it is made quickly.
+references:
+- title: sales.obj.core.buying_signal
+  kind: internal
+  note: Which triggers decay fastest, and which are worth researching at all.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Promoted out of Phase-1 skeleton — it had a purpose and no heuristic block, which is the
+    field that makes it improvable rather than merely repeatable.
+
+    The first breakdown case is the one that matters: research built on a private signal has no
+    competing sellers racing it, so speed buys nothing and costs preparation.

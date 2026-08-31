@@ -1,0 +1,89 @@
+identity:
+  id: admin.pb.health_and_safety_administration.safety_basics_always_current
+  name: Safety basics, always current
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.facilities_and_assets.health_and_safety_administration
+  subdomain: facilities_and_assets
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The safety baseline — assessments current, incidents logged and investigated, drills done,
+    records kept — is maintained as routine, because safety administration is invisible until the day
+    it is the only thing that matters.
+
+when_to_use:
+  do_not_use_when:
+  - There is a live incident. Then this is incident response with statutory reporting duties, not routine administration, and it has its own clock.
+steps:
+- order: 1
+  name: Assess what this workplace actually does
+  description: >
+    A template describes an office in general. Injuries happen in the specific thing this office
+    does differently, which is precisely what a generic assessment omits.
+  actor: human
+  objects_read: [admin.obj.core.compliance_obligation]
+  done_when: The assessment names activities somebody here recognises.
+- order: 2
+  name: Schedule the tests forward, not backwards from the certificate
+  description: >
+    Holding the last certificate proves the previous test. It says nothing about the next one, and
+    the next one is the obligation.
+  actor: agent
+  objects_read: [admin.obj.core.deadline, admin.obj.core.asset]
+  done_when: Every statutory test has a future date and an owner.
+- order: 3
+  name: Record training per person and per hazard
+  description: >
+    A trained workforce with no record is untrained to a regulator, and the record is the only part
+    that survives staff turnover.
+  actor: agent
+  objects_read: [admin.obj.core.employee_record]
+  done_when: Who was trained on what, and when, is answerable.
+- order: 4
+  name: Log near misses and make reporting safe
+  description: >
+    Every accident was preceded by near misses nobody recorded. They are free to collect and only
+    get collected where reporting one is not held against anybody.
+  actor: human
+  done_when: Near misses are being reported at a non-trivial rate.
+- order: 5
+  name: Follow up, or the log is a collection
+  description: >
+    An unactioned near-miss log teaches people that reporting achieves nothing, and reporting stops
+    within a quarter.
+  actor: human
+  objects_read: [admin.obj.core.action_item]
+  done_when: Reports have actions and the reporter can see them.
+objects_used: [admin.obj.core.compliance_obligation, admin.obj.core.deadline, admin.obj.core.asset, admin.obj.core.employee_record, admin.obj.core.action_item]
+limits:
+- 'It administers the obligation; it is not a substitute for competent safety advice on the hazards themselves.'
+- 'Step 4 depends on a reporting culture this function influences and does not control.'
+failure_modes:
+- 'Step 5 skipped, which converts step 4 from an instrument into a liability — a documented list of known risks with no action against them.'
+- 'Step 1 satisfied with a template, which is the state most small-organisation assessments are in.'
+variants:
+- applies_to: distributed
+  change: The workplace is domestic and largely unassessable; the obligation becomes guidance, equipment and a display-screen assessment people complete themselves.
+  why: There is no site to inspect and the duty does not disappear.
+- applies_to: regulated
+  change: Steps 2 and 3 are externally specified with defined intervals, and the evidence is inspected rather than merely held.
+  why: The schedule is not ours to design.
+references:
+- title: Health and safety statutory duties
+  kind: standard
+  note: Where the duty is stated as personal and non-delegable, which is what makes the evidence rather than the intention the discharge.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is what converts step 4 from an instrument into a liability if it is skipped: a
+    documented list of known risks with no action against them is worse evidentially than never
+    having collected it.

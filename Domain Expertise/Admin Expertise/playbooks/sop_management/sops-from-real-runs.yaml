@@ -1,0 +1,88 @@
+identity:
+  id: admin.pb.sop_management.sops_from_real_runs
+  name: SOPs from real runs
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.sop_management
+  subdomain: admin_operations
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: SOPs are written from actual executions — screenshots, edge cases, the real order — owned,
+    dated, and tested by someone who was not the author, because an SOP that only its author can follow
+    is a memoir, not a procedure.
+
+when_to_use:
+  do_not_use_when:
+  - The process is done once. An SOP for a one-off is documentation of history, and it ages into a description of something nobody does.
+steps:
+- order: 1
+  name: Write it from a real run
+  description: >
+    Screenshots, edge cases, the actual order. Written from memory the author omits everything they
+    have automated in their own head, which is the part a reader needs.
+  actor: human
+  objects_read: [admin.obj.core.sop]
+  done_when: The document describes an execution that happened.
+- order: 2
+  name: Give it an owner and a date
+  description: >
+    An unowned procedure decays silently and nobody is responsible for noticing.
+  actor: human
+  done_when: A named person owns it.
+- order: 3
+  name: Have somebody else run it
+  description: >
+    The only real test. An SOP only its author can follow is a note, and the gaps are invisible
+    until the author is on leave.
+  actor: human
+  done_when: A second person completed the process from the document.
+- order: 4
+  name: Trigger review on change, not on a calendar
+  description: >
+    A date-driven review of an unchanged process is a signature, and a queue of those teaches people
+    to close reviews unread.
+  actor: human
+  done_when: The review trigger is the process changing.
+- order: 5
+  name: Keep them small and retire the dead ones
+  description: >
+    One document per function is never read and never updated. A library covering work nobody does
+    is why people stop consulting the library.
+  actor: human
+  done_when: Obsolete procedures have been removed.
+objects_used: [admin.obj.core.sop, admin.obj.core.document, admin.obj.core.employee_record, admin.obj.core.deadline]
+limits:
+- 'It documents the process; it does not make a bad process good, and a well-documented bad process is more durable.'
+- 'Step 3 costs real time from a second person, which is why it is the step that gets skipped.'
+failure_modes:
+- 'Step 3 replaced by a review read-through, which catches typos and none of the gaps.'
+- 'Step 1 written after the fact, which reproduces the author''s memory rather than the process.'
+variants:
+- applies_to: regulated
+  change: SOPs are controlled documents and step 4 gains a mandated periodic review regardless of change.
+  why: The review is itself the control.
+- applies_to: outsourced
+  change: Step 3 must be run by the receiving party, and it is the acceptance test for the transition.
+  why: The gaps only matter across the boundary and only they can find them.
+- applies_to: startup_lean
+  change: Steps 1 and 3, for the three processes that would stop if one person were away.
+  why: Coverage of everything is unaffordable and unnecessary; coverage of the single points is not.
+references:
+- title: Standard operating procedure practice
+  kind: practitioner
+  note: Second-reader execution is the standard acceptance test and the one most consistently omitted.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 3 is the only step that verifies anything and it is the one that costs somebody else's
+    time, which is why it is replaced by a read-through — a substitution that catches typos and
+    none of the gaps.

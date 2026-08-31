@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from genios_engine.capture.connectors.base import RawObject
 from genios_engine.capture.internal_knowledge import normalize_kind
 from genios_engine.capture.source_families import family_of
+from genios_engine.capture.visibility_rules import derive_visibility
 from genios_engine.contracts.source_event import (Actor, SourceEvent, SyncMode,
                                                   compute_dedup_key)
 from genios_engine.platform.ids import new_id
@@ -17,6 +18,7 @@ def to_source_event(
     connection_id: str,
     sync_mode: SyncMode = SyncMode.incremental,
     payload_ref: str | None = None,
+    mailbox_owner: str | None = None,
 ) -> SourceEvent:
     """Deterministic raw → immutable SourceEvent. dedup_key is stable per source
     object; only event_id/captured_at are non-deterministic (assigned at ingest)."""
@@ -39,9 +41,19 @@ def to_source_event(
         parent_object_id=raw.parent_object_id,
         dedup_key=compute_dedup_key(raw.source, raw.object_type, raw.source_object_id,
                                     raw.content_version),
-        actor=Actor(type=raw.actor_type, email=raw.actor_email),
+        actor=Actor(type=raw.actor_type, email=raw.actor_email, name=raw.actor_name),
+        # Carried through the seam instead of dying in the payload blob. One sender per event was
+        # never enough to say who a conversation is WITH — it is the root of targeting an
+        # introducer as though they were the counterparty.
+        recipients=tuple(raw.recipients or ()),
         occurred_at=raw.occurred_at,
         captured_at=datetime.now(timezone.utc),
         sync_mode=sync_mode,
         payload_ref=payload_ref,
+        # The source's own ACL, stamped once at the only seam that still knows it. By Layer 2
+        # the email is a fact and the recipient list is gone.
+        visibility=derive_visibility(
+            source=raw.source, actor_email=raw.actor_email,
+            recipients=raw.recipients, internal_kind=kind,
+            mailbox_owner=mailbox_owner),
     )

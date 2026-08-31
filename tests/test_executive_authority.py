@@ -70,7 +70,12 @@ def _assert_current_authority(sql: str) -> None:
     assert "rr.status='completed' and rr.mode='live'" in lowered
     assert "rcap.manifest->'live_delivery_enabled' = 'true'::jsonb" in lowered
     assert "authority_pack.state='active'" in lowered
-    assert "authority_ctx.graph_version = (select coalesce(max(gv.graph_version),0)" in lowered
+    # Freshness is the signal's own lifecycle + expiry, NOT "the graph has not moved since".
+    # This assertion used to require `authority_ctx.graph_version = max(graph_version)`, which
+    # reason/authority.py:238-244 removed as a bug fix: it emptied the queue the instant any
+    # write bumped the graph version (every 6-hourly sync did), while the cards were still open
+    # and valid. Asserting its ABSENCE keeps the regression from being reintroduced.
+    assert "graph_version = (select coalesce(max(gv.graph_version),0)" not in lowered
     assert "s.authority_expires_at > :authority_time" in lowered
 
 

@@ -1,31 +1,19 @@
-# Knowledge manifest for customer_support.support_operations.workload_balancing — REFERENCES ONLY, the sibling of objects.yaml.
-#
-# objects.yaml says which NOUNS to load. This says which EXPERTISE applies.
-#
-#   core   -> <kind>/core/             referenced by more than one capability
-#   scoped -> <kind>/workload-balancing/    referenced by this capability alone
-#
-# The same scope rule as objects, enforced from the reference graph: MEDDICC referenced by
-# four capabilities must be core, or it becomes four copies that drift.
-
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
 capability: customer_support.support_operations.workload_balancing
-
 playbooks:
   core: []
-  scoped: []
-
+  scoped:
+  - customer_support.pb.workload_balancing.balance_by_weight_not_by_count
 heuristics:
   core: []
-  scoped: []
-
+  scoped:
+  - customer_support.heu.workload_balancing.fairness_is_felt_in_weights
 mental_models:
   core: []
   scoped: []
-
 rules:
   core: []
   scoped: []
-
 decision_frameworks:
   core: []
   scoped: []

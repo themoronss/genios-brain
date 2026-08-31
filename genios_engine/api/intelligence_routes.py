@@ -15,6 +15,7 @@ from sqlalchemy import text
 
 from genios_engine.platform.auth import AuthCtx, get_current_org, require_scope
 from genios_engine.platform.cache import get_cache
+from genios_engine.platform.config import get_settings
 from genios_engine.platform.canonical import stable_id
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.logging import get_logger
@@ -131,12 +132,113 @@ def _persist_decision_envelope(*, org_id: str, module_id: str, question: str,
         raise HTTPException(503, "decision could not be recorded safely; please retry") from exc
 
 
-# L7 spend guard — the ONE credit-billable surface. Monthly credit allowance + a per-minute burst
-# cap, checked BEFORE the LLM call (cached queries never reach it → always free). Both fail-open on
-# infra errors so a Redis/DB blip never blocks a legitimate query. (Was the gap: spend was recorded
-# after the fact, incr_window was defined-but-never-called → unbounded LLM spend / retry loops.)
-_CREDIT_LIMIT = {"trial": 100, "startup": 2000, "growth": 10000, "scale": 50000}
+# L7 spend guard — the ONE credit-billable surface. Every limit here is checked BEFORE the LLM call
+# (a cached answer never reaches it → always free), and every one fails OPEN on an infra error: a
+# Redis or Postgres blip must not block a paying customer.
+#
+# Four independent ceilings, because each stops a different way the bill runs away:
+#   1. input size   — one huge question is the cheapest attack there is. 1 MB of text is ~250k
+#                     input tokens; at 20 requests/minute that is hundreds of dollars an hour from
+#                     a single trial account. Capped first, before anything else is spent.
+#   2. burst (rpm)  — stops a loop or a stuck retry hammering the endpoint.
+#   3. daily/org    — the credit pool alone is not a spend ceiling: a trial holds 10,000 credits, so
+#                     "balance >= 1" allowed 10,000 LLM calls. This caps calls per day per plan.
+#   4. daily/global — the backstop the per-org caps cannot give us: ten abusive trials at their
+#                     individual limits still add up. One dollar figure for the whole platform.
 _RPM_LIMIT = 20                        # billable intelligence queries / org / minute (burst guard)
+_MAX_QUESTION_CHARS = 2_000            # a real question; anything longer is not one
+_MAX_FACTS_BYTES = 20_000              # caller-supplied extra_facts, serialized
+_DAILY_QUERIES = {"trial": 200, "early": 1_000, "startup": 5_000,
+                  "growth": 20_000, "scale": 50_000}
+_DAILY_QUERIES_DEFAULT = 200
+
+
+def _enforce_input_limits(question: str, facts: dict | None) -> None:
+    """Reject oversized input before a single token is spent. 422, not 429 — the request is
+    malformed for this product, not merely too frequent."""
+    if len(question) > _MAX_QUESTION_CHARS:
+        raise HTTPException(422, {
+            "code": "QUESTION_TOO_LONG",
+            "message": f"Question is {len(question)} characters; the limit is "
+                       f"{_MAX_QUESTION_CHARS}. Ask a shorter, more specific question."})
+    if facts:
+        size = len(json.dumps(facts, default=str))
+        if size > _MAX_FACTS_BYTES:
+            raise HTTPException(422, {
+                "code": "FACTS_TOO_LARGE",
+                "message": f"Attached facts are {size} bytes; the limit is {_MAX_FACTS_BYTES}."})
+
+
+def _daily_query_ceiling(org_id: str) -> None:
+    """Cap billable queries per org per day by plan. Counted from llm_costs, which is the same
+    ledger the invoice is built from, so the ceiling cannot drift from what we actually paid for."""
+    try:
+        with _graph.engine.connect() as c:
+            row = c.execute(text(
+                "select o.subscription_tier tier, "
+                "(select count(*) from llm_costs lc where lc.org_id = o.id "
+                " and lc.purpose = 'intelligence_query' "
+                " and lc.created_at >= date_trunc('day', now())) used "
+                "from orgs o where o.id = :o"), {"o": org_id}).first()
+    except Exception:                      # noqa: BLE001 — never block on a DB blip
+        return
+    if row is None:
+        return
+    limit = _DAILY_QUERIES.get((row.tier or "").lower(), _DAILY_QUERIES_DEFAULT)
+    if int(row.used or 0) >= limit:
+        raise HTTPException(429, {
+            "code": "DAILY_LIMIT_REACHED",
+            "message": f"This workspace has used its {limit} questions for today. "
+                       f"The limit resets at midnight UTC."})
+
+
+def _platform_spend_ceiling() -> None:
+    """Platform-wide daily USD backstop. Per-org caps bound each tenant; this bounds the sum of all
+    of them, which is the only thing standing between a coordinated abuse and an unbounded invoice.
+    Tunable via GENIOS_DAILY_LLM_USD_CAP (0 disables)."""
+    cap = float(getattr(get_settings(), "daily_llm_usd_cap", 0) or 0)
+    if cap <= 0:
+        return
+    from genios_engine.platform.metrics import cost_usd_sql
+    try:
+        with _graph.engine.connect() as c:
+            spent = float(c.execute(text(
+                f"select coalesce({cost_usd_sql('lc')}, 0) from llm_costs lc "
+                "where lc.created_at >= date_trunc('day', now())")).scalar() or 0.0)
+    except Exception:                      # noqa: BLE001
+        return
+    if spent >= cap:
+        _log.error("platform daily LLM cap hit: $%.2f >= $%.2f — refusing new queries", spent, cap)
+        from genios_engine.platform import ops_alert
+        ops_alert.notify("platform_llm_cap_hit", spent_usd=round(spent, 2), cap_usd=cap)
+        raise HTTPException(503, {
+            "code": "PLATFORM_BUSY",
+            "message": "GeniOS is briefly at capacity. Please try again shortly."})
+
+
+def _refuse_if_unbillable(org_id: str) -> None:
+    """Refuse a billable query the database could not record, BEFORE paying for it.
+
+    This is the one surface that spends real money per request. On a read-only database the old
+    order spent it anyway: `run_query` called Anthropic, the cost log failed, the credit deduct
+    failed, `_persist_decision_envelope` raised, and the caller got a 500. Both swallows are
+    deliberate — "never let billing break the answer" — but on a read-only server they stop being
+    a courtesy and become a leak, because there is no answer left to protect: every query billed
+    us, billed the tenant nothing, and returned an error. Production sat in exactly that state for
+    four hours on 2026-08-29.
+
+    Checking first costs one `show` on a connection the budget gate has already warmed, and turns
+    an expensive 500 into an immediate, honest 503.
+    """
+    from genios_engine.platform.migrate import _is_read_only
+    if _graph is None:
+        return                      # in-memory dev: no server to be read-only
+    if _is_read_only(_graph.engine):
+        from genios_engine.platform import ops_alert
+        ops_alert.notify("intelligence_query_refused_read_only", org_id=org_id)
+        raise HTTPException(
+            503, "intelligence is temporarily unavailable — the datastore is not accepting "
+                 "writes, so a result cannot be recorded. No credits were charged.")
 
 
 def _enforce_query_budget(org_id: str) -> None:
@@ -149,21 +251,38 @@ def _enforce_query_budget(org_id: str) -> None:
         raise
     except Exception:                                       # noqa: BLE001 — cache blip never blocks
         pass
-    try:                                                    # monthly credit allowance
-        now = datetime.now(timezone.utc)
-        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    try:                                                    # credit balance gate — the pool must cover it
+        from genios_engine.platform import billing as B
         with _graph.engine.connect() as c:
-            tier = (c.execute(text("select subscription_tier from orgs where id=:o"),
-                              {"o": org_id}).scalar() or "trial").lower()
-            used = c.execute(text("select count(*) from decisions where org_id=:o and created_at>=:s"),
-                             {"o": org_id, "s": month_start}).scalar() or 0
-        limit = _CREDIT_LIMIT.get(tier, 100)
-        if int(used) >= limit:
-            raise HTTPException(402, f"monthly credit limit reached ({limit}) — upgrade or wait for reset")
+            bal = B.balance(c, org_id)["balance"]
+        if bal < 1:
+            raise HTTPException(402, "out of credits — top up or upgrade to keep asking")
     except HTTPException:
         raise
     except Exception:                                       # noqa: BLE001 — DB blip never blocks
         pass
+    _daily_query_ceiling(org_id)                            # per-org, per-day call ceiling
+    _platform_spend_ceiling()                               # platform-wide daily $ backstop
+
+
+def _stamp_activation(org_id: str) -> None:
+    """Mark the moment this account first asked the product a question — the activation event the
+    growth funnel and signup cohorts are measured against (ANALYTICS_V3_PLAN §1). Written once:
+    the guard makes every later query a zero-row update. A cached answer counts too — the user
+    still used the product. Never raises; analytics must not break an answer.
+
+    Returns True only on the transition, so the caller can emit `org_activated` AFTER the query
+    event it belongs to. Emitting it here put activation *before* the question that caused it, and
+    a funnel ordered signup → question → activated then converted 0% of the accounts that had in
+    fact activated."""
+    try:
+        with _graph.engine.begin() as c:
+            res = c.execute(text("update orgs set activated_at=now() "
+                                 "where id=:o and activated_at is null"), {"o": org_id})
+        return bool(res.rowcount)
+    except Exception:                      # noqa: BLE001
+        _log.warning("activation stamp failed for %s", org_id)
+        return False
 
 
 @router.post("/v1/intelligence/query")
@@ -173,6 +292,8 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
     question = str((body.query or {}).get("question") or "").strip()
     if not question:
         raise HTTPException(422, "query.question is required")
+    _enforce_input_limits(question, body.facts)             # size caps BEFORE any spend
+    activated_now = _stamp_activation(org_id)
     module_id = body.module_id or "sales"
     evaluation_time = datetime.now(timezone.utc)
     gv = current_graph_version(_graph, org_id)
@@ -193,9 +314,17 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
             authority_epoch=authority_epoch, config_snapshot_id=config_snapshot_id)
         env = hit.envelope if isinstance(hit.envelope, dict) else json.loads(hit.envelope)
         env["cached"] = True
+        # A cached answer is still the customer using the product — counted, but flagged, so the
+        # "cost per question" tile can tell free answers from ones that spent tokens.
+        from genios_engine.platform import analytics
+        analytics.capture(org_id, "intelligence_query",
+                          {"module_id": module_id, "cached": True, "route": env.get("route")})
+        if activated_now:
+            analytics.capture_with_person(_graph.engine, org_id, "org_activated")
         return env
 
     _enforce_query_budget(org_id)          # L7: RPM + monthly credit guard before any LLM spend
+    _refuse_if_unbillable(org_id)          # ...and the guard that budget check cannot make
     env, res = run_query(org_id=org_id, module_id=module_id, question=question,
                          extra_facts=body.facts or {}, store=_graph, llm=_llm,
                          registry=_registry, graph_version=gv, eval_time=evaluation_time)
@@ -208,6 +337,15 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
                                success=res.ok, error=getattr(res, "error", None))
         except Exception:      # noqa: BLE001 — never let cost logging break the answer
             _log.warning("intelligence cost log failed for %s", org_id)
+        # charge 1 credit for the LLM synthesis (idempotent on the cache key → a retry never
+        # double-charges; a cache hit never reaches here so it stays free).
+        if res.ok:
+            try:
+                from genios_engine.platform import billing as B
+                with _graph.engine.begin() as c:
+                    B.deduct(c, org_id, 1, reason="intelligence_query", idem=f"q:{ckey}", bucket="query")
+            except Exception:  # noqa: BLE001 — never let billing break the answer
+                _log.warning("credit deduct failed (query) for %s", org_id)
 
     _require_stable_query_inputs(
         org_id=org_id, module_id=module_id, graph_version=gv,
@@ -225,6 +363,15 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
            metadata={"audit_category": "intelligence", "module_id": module_id,
                      "route": env.get("route"), "action": rec.get("action"),
                      "question": question[:120]})
+
+    # The billable moment. No question text ever leaves the engine — only what was asked *about*.
+    from genios_engine.platform import analytics
+    analytics.capture(org_id, "intelligence_query", {
+        "module_id": module_id, "cached": False, "route": env.get("route"),
+        "confidence": env.get("confidence"), "action": rec.get("action"),
+    })
+    if activated_now:
+        analytics.capture_with_person(_graph.engine, org_id, "org_activated")
 
     return env
 
@@ -357,7 +504,8 @@ def list_insights(limit: int = 50, state: str = "open",
             rows = c.execute(text(
                 "select k.card_id, k.headline, k.situation, " + AUTHORITATIVE_SCORE_SQL +
                 " as score, k.domain, k.urgency_band, k.context_tags, k.created_at, k.actions, "
-                "n.display_name as entity, " + AUTHORITATIVE_REASON_CODE_SQL + " as reason_code "
+                "n.display_name as entity, ro.confidence_bp, "
+                "selected_rc.final_utility_bp, " + AUTHORITATIVE_REASON_CODE_SQL + " as reason_code "
                 "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id " +
                 AUTHORITATIVE_SIGNAL_JOINS +
                 "left join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=k.org_id "
@@ -384,6 +532,13 @@ def list_insights(limit: int = 50, state: str = "open",
         head, sit = (r.headline or "Recommendation"), (r.situation or "")
         sc = float(r.score) if r.score is not None else 50.0
         sc01 = round(sc / 100, 3) if sc > 1 else round(sc, 3)   # card score is 0-100 → normalize 0-1
+        # PRIORITY and CONFIDENCE are different quantities and this surface published the first
+        # under the name of the second: a card scored 60 because its rule matched strongly was
+        # shown to the user as "60% confident". Meanwhile L4's real calibrated confidence
+        # (reasoning_run_outputs.confidence_bp, 5000-9800 across 27 distinct values) reached no
+        # surface at all, and the dashboard's own /cards path was already reporting it correctly —
+        # so the two APIs stated different confidences for the same card.
+        conf01 = round(int(r.confidence_bp) / 10000, 3) if r.confidence_bp is not None else None
         priority = "high" if r.urgency_band in ("high", "critical") else "medium"
         apps, domains = _provenance(r.context_tags)
         actions = r.actions if isinstance(r.actions, list) else json.loads(r.actions or "[]")
@@ -395,10 +550,12 @@ def list_insights(limit: int = 50, state: str = "open",
             "genios_view": (f"{head} — {sit}" if sit else head),
             "detail": sit, "memory_view": head,
             "action_label": _action_label(actions),   # manager mode: the specific move (e.g. "Reply now")
-            "confidence_score": sc01,
+            "confidence_score": conf01,          # L4's calibrated confidence, or null — never the score
+            "priority_score": sc01,              # how this card ranks against the others; NOT confidence
             # category from the fired RULE (reason_code), not r.domain (the pack_id, always
             # "sales" — one pack exists — which mislabeled every card regardless of content).
-            "scores": {"confidence": _band_label(sc01), "category": _category(r.reason_code)},
+            "scores": {"confidence": _band_label(conf01) if conf01 is not None else "unknown",
+                       "priority": _band_label(sc01), "category": _category(r.reason_code)},
             "draft_needed": _wants_draft(r.entity, head, sit),   # reply-shaped → show the Draft hero
             "source_tools": apps,                # real provenance (Gmail/HubSpot/Calendar)
             "sources": domains,                  # company domains from context_tags
@@ -414,13 +571,35 @@ def insight_stats(days: int = 7, org_id: str = Depends(get_current_org)) -> dict
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     with _graph.engine.connect() as c:
-        fired = int(c.execute(text("select count(*) from cards where org_id=:o"),
-                              {"o": org_id}).scalar() or 0)
+        # LIVE cards, not every row ever written. Counting the whole table reported dead and
+        # superseded cards as current output — 41 "fired" for 20 real situations, 15 of them
+        # already expired.
+        fired = int(c.execute(text(
+            "select count(*) from cards where org_id=:o "
+            "and state not in ('expired', 'resolved') and expires_at > now()"),
+            {"o": org_id}).scalar() or 0)
+        # The action verbs live in `cause`, not `kind`. This matched `kind in ('run_play', …)`
+        # while every writer puts those values in `cause` under `kind='human.card_action'`
+        # (deliver/actions.py) — so the counter could never be non-zero no matter how much a
+        # user acted. It would have read as "the learning loop still is not working" long after
+        # it was, and been debugged in the wrong layer entirely.
+        # Predicate mirrors reason/authority.py, which had it right.
         acted = int(c.execute(text(
-            "select count(*) from card_events where org_id=:o and kind in "
-            "('run_play','do_it_myself','card.acted','card.done')"), {"o": org_id}).scalar() or 0)
-    return {"insights_fired": fired, "actions_taken": acted, "outcomes_recorded": 0,
-            "value_recovered_inr": 0, "intervention_rate": None,
+            "select count(*) from card_events where org_id=:o "
+            "and kind = 'human.card_action' "
+            "and cause in ('run_play', 'do_it_myself', 'done', 'wrong')"),
+            {"o": org_id}).scalar() or 0)
+        outcomes = int(c.execute(text(
+            "select count(*) from execution_outcomes where org_id=:o"),
+            {"o": org_id}).scalar() or 0)
+
+    # `0` and "we have no way to know yet" are different claims, and returning 0 for both is how
+    # an absent measurement becomes a reported result. Value attribution needs the counterfactual
+    # ledger (L7-12), which does not exist — so this says so rather than inventing a number.
+    return {"insights_fired": fired, "actions_taken": acted, "outcomes_recorded": outcomes,
+            "value_recovered_inr": None,
+            "value_state": "unavailable_no_counterfactual_ledger",
+            "intervention_rate": (round(acted / fired, 3) if fired else None),
             "headline": (f"{fired} insight(s) surfaced" if fired else "No insights yet")}
 
 
@@ -959,6 +1138,15 @@ def draft_reply(contact: str, instruction: str = "", org_id: str = Depends(get_c
         raise HTTPException(404, "contact not found in context")
     if _llm is None:
         raise HTTPException(503, "LLM not configured")
+    try:                                                    # credit gate before the on-demand LLM
+        from genios_engine.platform import billing as B
+        with _graph.engine.connect() as c:
+            if B.balance(c, org_id)["balance"] < 1:
+                raise HTTPException(402, "out of credits — top up to draft replies")
+    except HTTPException:
+        raise
+    except Exception:                                       # noqa: BLE001 — DB blip never blocks
+        pass
     prompt = (
         f"Write a short, warm, professional reply to {node.display_name}. Ground it ONLY in these "
         f"known facts; do not invent specifics.\nFACTS: {json.dumps(facts, default=str)[:1500]}\n"
@@ -975,4 +1163,12 @@ def draft_reply(contact: str, instruction: str = "", org_id: str = Depends(get_c
     draft = (res.parsed or {}).get("draft") if res.ok else None
     if not draft:
         raise HTTPException(502, "draft generation failed")
+    if res.ok:                                              # charge 1 credit for the draft LLM call
+        try:
+            from genios_engine.platform import billing as B
+            idem = f"draft:{org_id}:{contact}:{datetime.now(timezone.utc):%Y%m%d%H%M}"
+            with _graph.engine.begin() as c:
+                B.deduct(c, org_id, 1, reason="intelligence_draft", idem=idem, bucket="draft")
+        except Exception:  # noqa: BLE001
+            _log.warning("credit deduct failed (draft) for %s", org_id)
     return {"draft": draft, "contact": node.display_name}

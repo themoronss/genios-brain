@@ -4,24 +4,79 @@ identity:
   domain: sales
   subdomain: post_sale_and_growth
   version: 0.1.0
-  status: draft
-  stub: true
+  status: stable
+  stub: false
+description: 'Ongoing management of realised value, adoption and relationship health. Distinct from support:
+  support answers questions, success ensures the original business case is met.
 
-description: >
-  Ongoing management of realised value, adoption and relationship health. Distinct from
-  support: support answers questions, success ensures the original business case is met.
-
-question: "Is the customer getting the outcome they bought?"
-
-
+  '
+question: Is the customer getting the outcome they bought?
+outcomes:
+- Relationship state established above `unknown` — active, dormant, or at risk — from observed
+  contact rather than from the last CRM edit.
+- 'The current open loop named: what we owe them, or what we are waiting on, or neither.'
+- Adoption of the thing they actually bought assessed, separately from how warm the last email felt.
+  A friendly thread on an unused product is a churn signal, not a health signal.
+- 'An explicit verdict: nurture, intervene, or leave alone. `Stay in touch` is not an outcome — it
+  is what gets written when nobody decided.'
+- Where the relationship carries no opportunity, that is recorded as a fact and not treated as a
+  stalled deal. Reading a healthy non-buying relationship as a lost one is this capability''s
+  most expensive failure and the reason it exists apart from the deal capabilities.
+kpis:
+- name: relationship_coverage
+  unit: percent
+  description: Share of active accounts with a relationship state newer than their last inbound.
+- name: dormancy_detection_lead_time
+  unit: days
+  description: Days between engagement decaying and the decay being surfaced. The whole value of
+    the capability is in this number being smaller than the renewal notice period.
+- name: intervention_rate
+  unit: percent
+  description: Share of assessments producing an action. Near zero means the capability describes
+    and never decides.
+- name: silent_churn_rate
+  unit: percent
+  description: Accounts lost with no prior at-risk verdict. Calibrates whether the decay signals
+    are the right ones.
+handoffs:
+  upstream:
+  - sales.post_sale_and_growth.onboarding
+  - sales.prospecting_and_outreach.account_research
+  downstream:
+  - sales.post_sale_and_growth.churn_prevention
+  - sales.post_sale_and_growth.renewal
+  - sales.post_sale_and_growth.expansion
+applies_to:
+  models:
+  - b2b
+  - b2b2c
+  - enterprise
+  - mid_market
+  - smb
+  - inside_sales
+  - channel
+  - partner
+  offerings:
+  - product
+  - service
+  - hybrid
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-08'
+  review_status: approved
   confidence: experimental
-  notes: >
-    Phase 1 stub — identity, purpose and object load-set only. Promote by adding outcomes,
-    playbooks, heuristics, mental_models, kpis, handoffs and situations, following
-    capabilities/03-qualification/lead-qualification.yaml.
+  notes: 'Promoted out of Phase-1 stub. It owns the largest bucket L2 produces — 25 of 60 active
+    situations on the design partner''s org are plain `relationship`, and until this capability left
+    stub state no route could form for any of them, so they were never reasoned about at all.
+
+    Note what is NOT here: no thresholds, no scores, no rules. Those are Layer 4''s arithmetic and
+    live in the pack manifest. A number appearing in a capability file means the Layer 3/4 boundary
+    has leaked.
+
+    '
+  reviewed_at: '2026-08-24'
+
+admission:
+  accepted_content_hash: 09411ca2834019a0982afca36f5d1d3b71be24acab75757a45074543f4748c14

@@ -3,34 +3,77 @@ identity:
   name: Sentiment Analysis
   domain: customer_support
   subdomain: voice_of_customer
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Reading the emotional state of a conversation, and holding it apart from the state of the
+  relationship. Polite is not satisfied and blunt is not hostile — the customer who writes short, factual,
+  unfailingly civil messages after a long ordeal has usually already decided, while the one shouting is
+  still bargaining. Sentiment is most useful as a change detector against how this particular person normally
+  writes, and least useful as an absolute label, which is exactly the way most tooling reports it.
 
-description: >
-  Reading the emotional state of a conversation, and holding it apart from the state of the
-  relationship. Polite is not satisfied and blunt is not hostile — the customer who writes
-  short, factual, unfailingly civil messages after a long ordeal has usually already decided,
-  while the one shouting is still bargaining. Sentiment is most useful as a change detector
-  against how this particular person normally writes, and least useful as an absolute label,
-  which is exactly the way most tooling reports it.
+  '
+question: What is the tone of this conversation telling us, and how much of it should we believe?
 
-question: "What is the tone of this conversation telling us, and how much of it should we believe?"
+outcomes:
+- 'Account sentiment as a moving line — each interaction scored small, the trend watched — because a single angry ticket means little and a three-month slide from warm to terse means a great deal.'
+- 'The emotional state of a conversation held apart from the state of the relationship. Polite is not satisfied and blunt is not hostile.'
+- 'Baselines per account, since the customer who writes short and factual has always written short and factual.'
+- 'Rising politeness with falling engagement read as what it usually is: a quiet-quitting account, not a happy one.'
+- 'The negative outcome: a sentiment reading DISCARDED as unreliable — too few interactions, or an incident distorting everything — rather than reported with false confidence.'
+failure_modes:
+- 'SCORING THE SNAPSHOT. One ticket''s tone is noise; the trajectory is the signal, and dashboards default to the former.'
+- 'CROSS-ACCOUNT COMPARISON. Register varies by person, culture and channel far more than by satisfaction.'
+- 'READING POLITENESS AS HEALTH. Some customers get nicer as they disengage — short, courteous, no feature asks, no complaints.'
+- 'SCORING DURING AN INCIDENT and carrying it forward, which poisons the baseline for months.'
+- 'CONFLATING SENTIMENT WITH SATISFACTION, which are measured differently and diverge exactly where it matters.'
+kpis:
+- name: trajectory_over_snapshot_share
+  unit: percent
+  description: Sentiment reported as a trend against a baseline rather than as a current value.
+  direction: higher_is_better
+- name: baseline_coverage
+  unit: percent
+  description: Accounts with enough history for a personal baseline. Without one, deviation is uncomputable.
+  direction: higher_is_better
+- name: politeness_engagement_divergence
+  unit: count
+  description: Accounts where courtesy rose while engagement fell. The quiet-quitting signal, and it is invisible to tone scoring alone.
+  direction: lower_is_better
+- name: incident_excluded_share
+  unit: percent
+  description: Sentiment readings taken during an incident and excluded from the baseline.
+  direction: higher_is_better
+handoffs:
+  upstream: [customer_support.customer_communication.de_escalation, customer_support.voice_of_customer.satisfaction_measurement]
+  downstream: [customer_support.voice_of_customer.churn_signal_detection, customer_support.support_management.account_relationship_management,
+               customer_support.voice_of_customer.feedback_synthesis]
+  parallel: [customer_support.intake_and_triage.priority_and_severity, customer_support.customer_communication.tone_and_localization]
+applies_to:
+  models: [b2b, b2b2c, enterprise_support, mid_market_support, named_tam, tiered_support, premium_paid_support, smb_support]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Stub — identity, description, question and load-set only. Promote by adding the heuristics
-    that separate tone from risk (the going-polite signal, per-writer baselining, the flattening
-    effect of an incident on everyone's tone at once, and the cultural and language differences
-    that make absolute sentiment labels unusable across regions), then the failure modes around
-    routing on sentiment alone, KPIs, and handoffs into de_escalation and churn_signal_detection.
-    Executability is limited: derived.sentiment exists in the substrate, but it is computed from
-    an observation balance built for a sales motion and has no support-native inputs, so any
-    pattern that means support tone should be marked needs_signal against angry_language and
-    cancellation_threat rather than bound to it.
+    Promoted out of Phase-1 stub. Not on a live route — and the closest of this subdomain to
+    being executable. derived.sentiment has a real writer, computed from the observation balance
+    rather than from a model reading tone, which is why it cannot be talked up by a politely-
+    worded complaint.
+
+    politeness_engagement_divergence is the KPI that carries the capability's least obvious
+    finding: some accounts get NICER as they disengage. Tone scoring alone reads that as
+    improvement, and the combination with falling engagement is what identifies it — which
+    requires two instruments rather than one.
+
+    The negative outcome — discarding a reading as unreliable — is the discipline that stops a
+    three-interaction account being assigned a confident sentiment trend.
+
+admission:
+  accepted_content_hash: a7bd1f7ea43d503e813219a5f55b1c80a179f2f966875fae19df7c4404735780

@@ -338,6 +338,20 @@ class FakeDB:
         if row is None or row["closed_at"] is not None:
             return Result(rowcount=0)
         row["assignee"], row["audience"], row["routing_rule"] = p["a"], p["au"], p["r"]
+        # The two `jsonb_set` calls, modelled. Without them the fake would report a successful
+        # reassignment while `load` kept rehydrating the OLD plan out of `payload` — which is
+        # precisely the production defect these tests exist to catch, so a fake that skipped it
+        # would have let the bug through in green.
+        if "channel_id=:ch" in sql:
+            row["channel_id"], row["channel_class"] = p["ch"], p["chc"]
+            row["interrupt"] = p["int"]
+        if "payload = jsonb_set" in sql:
+            # Stored as the canonical JSON string the real column holds, so the round trip
+            # through `store.load` is the same one production performs.
+            payload = json.loads(row["payload"])
+            payload["communication"] = json.loads(p["comms"])
+            payload["remindable"] = json.loads(p["remindable"])
+            row["payload"] = json.dumps(payload)
         return Result(rowcount=1)
 
     def _supersede(self, sql, p) -> Result:

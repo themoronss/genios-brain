@@ -1,0 +1,75 @@
+identity:
+  id: sales.rule.linkedin_outreach.a_mutual_connection_is_asked_not_cited
+  name: A mutual connection is asked, not cited
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.prospecting_and_outreach.linkedin_outreach
+  subdomain: prospecting_and_outreach
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'Naming a shared connection to a stranger borrows that person''s credibility without
+    telling them. It is discovered the moment the recipient asks them about it, and what they discover
+    is about us rather than about the introduction.'
+  answers:
+  - May a mutual connection be mentioned in an approach?
+  not:
+  - A rule about introductions, which are the encouraged alternative.
+
+rule:
+  statement: 'A shared connection MUST NOT be named in an outbound approach without that person''s
+    knowledge. Where a warm path exists, the approach is an introduction REQUEST to the connection;
+    where they decline or do not respond, the approach to the target proceeds as cold.'
+  spans:
+  - sales.obj.core.lead
+  - sales.obj.core.persona
+  - sales.obj.core.champion
+  when:
+  - {fn: edge_count, op: "<=", value: 1}
+  - {no_obs: introduction}
+  then: 'Recommend requesting the introduction from the connection rather than citing them in a direct
+    approach.'
+  severity: advisory
+  why: 'The citation is an attempt to borrow trust while avoiding the one act that would legitimately
+    transfer it — asking. It also fails in a specific and asymmetric way: the recipient checks, the
+    connection has no idea, and both of them now hold the same piece of information about how we use
+    relationships. The introduction we could have had is gone as well, because the person we would
+    have asked has just learned we did not.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'A PUBLIC AFFILIATION. Naming a shared employer, alumni group or event we both attended is not
+    borrowing an individual''s credibility; it is context anyone can verify.'
+  - 'THE CONNECTION ALREADY OFFERED. Where they have said we may use their name, the citation is the
+    introduction in a lighter form.'
+  - 'A CUSTOMER REFERENCE WITH CONSENT. A named customer who has agreed to be referenced is a
+    different instrument entirely and is governed by that agreement.'
+  - 'THE CONNECTION IS UNREACHABLE. Where the mutual contact has left, is inactive or cannot be asked,
+    an honest phrasing that names the shared history without implying an endorsement is reasonable —
+    the failure is the implied endorsement, not the mention.'
+  - 'AN INTERNAL COLLEAGUE. Citing a colleague who is already working the account is coordination
+    rather than borrowing, provided they know.'
+
+objects_used:
+- sales.obj.core.lead
+- sales.obj.core.persona
+- sales.obj.core.champion
+
+limits:
+- No social-platform connector exists and `introduction` records that an introduction was mentioned
+  anywhere rather than on any particular channel, so this rule cannot be evaluated by the engine — it
+  is `advisory` and exists so the distinction is stated rather than assumed.
+- Cannot tell a cited connection from a requested one; both look identical after the fact.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new and `advisory` for want of any observable signal. Worth recording because
+    the failure is doubly costly and rarely thought through — the recipient learns something about us,
+    and the introduction we could have asked for is destroyed in the same moment.'

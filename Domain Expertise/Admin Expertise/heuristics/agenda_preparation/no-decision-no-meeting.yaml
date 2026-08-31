@@ -1,0 +1,75 @@
+identity:
+  id: admin.heu.agenda_preparation.no_decision_no_meeting
+  name: No decision, no meeting
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.meeting_operations.agenda_preparation
+  subdomain: meeting_operations
+  version: 1.0.0
+  status: stable
+purpose:
+  statement: >
+    A meeting whose agenda contains no decision and no genuine discussion is a distribution list with
+    chairs. The test removes about a third of most calendars and almost nobody misses what it removes.
+  answers:
+  - Which meetings should not exist?
+  - What is the cheapest thing an administrator can do for an organisation's time?
+
+heuristic:
+  statement: >
+    If the agenda can be satisfied by reading a document, it should be a document.
+  why: >
+    Meetings are the most expensive coordination mechanism available — synchronous, multiplied by the
+    attendee count, and impossible to skim. They are justified only where the interaction itself
+    produces something: a decision that needs several people present, or a discussion where positions
+    change. Status transfer does neither, and it is the single largest category of recurring meeting
+    in most organisations precisely because nobody has to justify a meeting that already exists.
+  confidence_bp: 8500
+  applies_when: Any recurring meeting, and any new meeting request with a topic rather than a decision.
+  breaks_down_when: >
+    The meeting's real purpose is not on its agenda. Relationship maintenance, giving a quiet person a
+    forum, letting a team see each other, or creating the ambient context that makes later decisions
+    fast — all of these are legitimate and none survives an agenda test, which is why applying the
+    test mechanically to a healthy organisation removes the connective tissue and leaves only
+    transactions. It also breaks down where the document would not be read: a decision distributed as
+    a memo to people who will not open it has not been communicated.
+  reads:
+  - admin.obj.core.meeting
+  - admin.obj.core.document
+  contradicts:
+  - admin.heu.briefing_and_preparation.the_brief_is_the_meeting_s_first_half
+
+limits:
+- It judges the agenda, not the meeting. A meeting with a bad agenda and a real purpose fails this test and should survive it.
+- It has no substrate support. Nothing captures an agenda, so this can only ever be applied by a person.
+
+failure_modes:
+- Applied by someone with no visibility of the meeting's social function, which is how a new operations hire deletes the thing holding a team together.
+- Satisfied with a fake decision. "Review and align" passes the letter of the test and none of its intent.
+
+variants:
+- applies_to: distributed
+  change: Weaker. Ambient context has no other channel, so meetings carry a load they do not carry in an office.
+  why: What co-located teams absorb passively, distributed teams have to schedule.
+- applies_to: regulated
+  change: Stronger, and partly mandatory — certain meetings must exist and must decide, and the ones that neither decide nor are required are pure cost.
+  why: The required set is defined externally, which makes the discretionary set easier to judge.
+
+references:
+- title: admin.obj.core.meeting
+  kind: internal
+  note: The object whose open_loop attribute is the closest observable trace of a meeting that decided nothing.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the important one and it is why this is a heuristic rather than a
+    rule. Meetings with no decision on the agenda and a real social purpose are common, valuable, and
+    exactly what a newly arrived efficiency exercise deletes first.

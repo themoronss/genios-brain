@@ -1,0 +1,73 @@
+identity:
+  id: sales.rule.sales_analytics.slice_before_concluding
+  name: Slice before concluding
+  kind: rule
+  domain: sales
+  scope: capability
+  owner_capability: sales.revenue_operations.sales_analytics
+  subdomain: revenue_operations
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'An aggregate is a claim about a population that may not exist. A healthy average with one
+    segment collapsing describes nobody, and it stays reassuring until the failing segment is large
+    enough to move the mean — by which point the window to act on it has closed.'
+  answers:
+  - May a decision be made on this figure?
+  not:
+  - A rule about which slices matter, which varies by motion.
+
+rule:
+  statement: 'A funnel or conversion figure MUST NOT be used to justify a change without at least one
+    segmentation applied. An aggregate published without its variance across segments MUST be labelled
+    as unsliced.'
+  spans:
+  - sales.obj.core.deal
+  - sales.obj.core.icp
+  - sales.obj.core.opportunity
+  when:
+  - {path: deal.status, op: "=", value: open}
+  then: 'Require a source or segment cut before the figure supports a decision, and carry the
+    across-segment variance with any published aggregate.'
+  severity: advisory
+  why: 'Averages fail in one direction that matters. Two populations behaving very differently produce
+    a mean that describes neither, and the mean is stable — so the aggregate looks trustworthy exactly
+    while it is least informative. The asymmetry is that a bad average prompts investigation and a
+    good one prompts nothing, which is why the segment that is failing inside a healthy average is the
+    one that goes unexamined longest.'
+  enforced_by: L5_validation
+  exceptions:
+  - 'A GENUINELY HOMOGENEOUS POPULATION. Where one segment, one source and one motion produce all the
+    deals, there is nothing to slice and the aggregate is the whole picture.'
+  - 'SAMPLES TOO SMALL TO SLICE. Cutting a handful of deals into segments produces rates that swing on
+    single outcomes; the honest output is that neither figure is informative yet.'
+  - 'A DELIBERATE COMPANY-LEVEL COMPARISON. Some questions are about the whole business over time, and
+    the aggregate is the correct instrument for them.'
+  - 'THE SLICE HAS ALREADY BEEN CHECKED AND IS FLAT. Where variance was measured and found low, the
+    aggregate is a fair summary and re-slicing every report is ceremony.'
+  - 'AN EXPLORATORY FIRST LOOK. The aggregate is a reasonable place to start; the rule bites when it
+    becomes the basis for a change, not when it is being read.'
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.icp
+- sales.obj.core.opportunity
+
+limits:
+- Stage and conversion history are not in the corpus substrate, so this rule cannot be evaluated by
+  the engine — `advisory` for that reason, and recorded so a compiled answer about a funnel figure
+  states the requirement rather than assuming it was met.
+- Cannot know which segmentation is the informative one for a given motion.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Authored net-new and advisory. The asymmetry in `why` is the point worth keeping — a poor
+    average gets investigated and a healthy one does not, so a segment failing inside a healthy
+    aggregate is structurally the last thing anybody looks at.'

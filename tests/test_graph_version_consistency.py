@@ -178,8 +178,16 @@ def test_runner_captures_graph_version_before_tenant_p90_and_retries_on_drift(mo
 
     class _Registry:
         def effective(self, _org_id, _pack_id):
+            # One rule, and it has to be here: `run()` returns early for a pack with no rules
+            # and no native capability, because there is nothing to evaluate per node and the
+            # whole sweep below would run to build an empty Counter (packs/admin_v1.py ships two
+            # such packs). This test is about the ORDER of the graph-version capture, so it needs
+            # a pack that reaches the sweep at all.
             return ({"pack_id": "test", "version": "1", "state": "active",
-                     "scoring": {}, "rules": [], "plays": {}}, "cfg_1")
+                     "scoring": {}, "plays": {},
+                     "rules": [{"id": "r1", "level": "prescriptive", "scope": "person",
+                                "when": [{"exists": "thread.last_inbound"}],
+                                "reason_code": "r1", "play": "reply"}]}, "cfg_1")
 
     def version(*_args):
         events.append("version")

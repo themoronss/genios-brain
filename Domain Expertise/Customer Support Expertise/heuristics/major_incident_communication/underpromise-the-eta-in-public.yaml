@@ -1,0 +1,66 @@
+identity:
+  id: customer_support.heu.major_incident_communication.underpromise_the_eta_in_public
+  name: Underpromise the ETA in public
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.major_incident_communication
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A public restore time that slips once is noted; twice is a credibility incident of its own.
+    State ranges, update honestly, and let early beats late do the delighting.
+  answers:
+  - How should restore ETAs be communicated publicly?
+
+heuristic:
+  statement: >
+    A public restore time that slips once is noted; twice is a credibility incident of its own.
+    State ranges, update honestly, and let early beats late do the delighting.
+  why: >
+    An ETA in public is a commitment made to an audience that will remember it and cannot see your
+    reasoning. The first slip is forgivable because outages are uncertain. The second establishes a
+    pattern, and from then on every statement is discounted — including the eventual all-clear,
+    which customers verify themselves rather than believe. The asymmetry is severe: beating an
+    estimate costs nothing and buys goodwill, missing one costs the credibility of every future
+    message during this incident and the next.
+  confidence_bp: 8500
+  applies_when: Any externally-stated restore or resolution time during a live incident.
+  breaks_down_when: >
+    The customer needs a number to make a decision, and a wide range is useless to them. A retailer
+    deciding whether to fail over, or a team deciding whether to cancel a launch, is better served
+    by an honest best estimate with its uncertainty stated than by a range so broad it carries no
+    information. It also breaks down where sandbagging is obvious: a deliberately pessimistic
+    estimate that is beaten by hours reads as manipulation the second time it happens.
+  reads: [customer_support.obj.core.incident, customer_support.obj.core.customer_account]
+  contradicts: [customer_support.heu.expectation_setting.silence_is_the_promise_breaker]
+limits:
+- 'It concerns public statements. Internally, precise estimates are needed for coordination and the same caution would be paralysing.'
+- 'It says nothing about how to estimate, which is the hard part.'
+failure_modes:
+- 'Ranges so wide they convey nothing, which customers correctly read as refusing to answer.'
+- 'Habitual sandbagging, which is detected within two incidents and costs the same credibility by another route.'
+variants:
+- applies_to: b2c
+  change: The audience is public and permanent, so a slipped ETA lives on in screenshots.
+  why: The statement outlives the incident.
+- applies_to: enterprise_support
+  change: Named customers will ask directly for a number to plan around, and the honest-uncertainty version has to be said person to person.
+  why: A range on a status page does not answer a customer with a decision to make.
+references:
+- title: Incident communication practice
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the real tension: a customer deciding whether to fail over needs
+    a number, and a range wide enough to be safe carries no information for them. The honest
+    best estimate with its uncertainty stated is sometimes the better service.

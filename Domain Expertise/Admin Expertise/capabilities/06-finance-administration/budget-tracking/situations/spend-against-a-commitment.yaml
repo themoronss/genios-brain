@@ -1,0 +1,100 @@
+# THIS SITUATION ROUTES NOTHING. Four capabilities left over once the money that appears in
+# correspondence was routed by `admin.sit.money_owed_either_way`. What is left is the money that
+# does NOT appear in correspondence: a purchase order raised in a finance system, a budget line
+# consumed over a quarter, an expense claim submitted to a portal, a visa application lodged with
+# a consulate. Each is a real administrative obligation and none of them is an email.
+
+identity:
+  id: admin.sit.spend_against_a_commitment
+  name: Spend Against a Commitment
+  domain: admin
+  owner_capability: admin.finance_administration.budget_tracking
+  version: 1.0.0
+  status: draft
+
+description: >
+  Money or an entitlement has been committed against something with a limit — a budget line, a
+  purchase order, an expense policy, a travel authorisation — and the question is whether the
+  commitment and the limit still agree.
+
+  The administrative failure here is not overspend; it is that the commitment and the record of it
+  live in different systems and are reconciled quarterly, by which point the decision that caused
+  the variance was made three months ago. A purchase order that nobody matched to an invoice, a
+  budget consumed by commitments that were never booked against it, an expense approved verbally
+  and submitted late — all of them are visible the moment the two records are compared and
+  invisible until then.
+
+matches:
+  l2_situation_types: []
+  pending_l2_situation_types:
+    - type: spend_against_a_commitment
+      owner_layer: L1
+      nearest_today: commitment.due_at
+      note: >
+        WHAT THE TYPE MUST MEAN. A committed amount or entitlement, the limit it is committed
+        against, the amount consumed so far, and the state of the paperwork that authorises it.
+        Both sides are required — a commitment with no limit is just a payment, and a limit with
+        no commitments is just a number. The comparison IS the situation.
+
+        WHAT WOULD EMIT IT. `purchase_order.id`, `purchase_order.matched_state`,
+        `budget_line.limit`, `budget_line.consumed`, `expense.state` and
+        `authorisation.reference`, from a finance system, an expense tool or a travel desk. No
+        writer exists and none is an inbox: the authoritative record of a purchase order is in
+        the system that raised it, and the email about it is a copy at best.
+
+        WHAT GOES WRONG TODAY. Nothing fires for budget_tracking, purchase_order_management,
+        travel_expense_administration or visa_and_documentation.
+
+        WHY BINDING TO commitment.due_at WOULD BE WRONG, specifically. (1) A `commitment` is a
+        promise a person made in a message; it carries no amount and no limit, so the comparison
+        that defines this situation cannot be made. (2) It would fire on every dated promise —
+        `admin.sit.money_owed_either_way` already reads those correctly, and a second door onto
+        the same fact would spend the signal budget twice to say less. (3) Three-way match —
+        order, receipt, invoice — is the core of purchase_order_management and needs three records
+        the substrate has one of. (4) A visa application has a lodgement date and a decision date
+        set by a consulate, which is an external clock of the same kind as a statutory obligation
+        and must not be modelled as something we promised.
+  # No `scope`. The natural scope is a BUDGET LINE or an ORDER; the enum offers neither.
+
+also_serves:
+  - admin.contract_and_vendor.purchase_order_management
+  - admin.travel_and_events.travel_expense_administration
+  - admin.travel_and_events.visa_and_documentation
+
+objects:
+  load:
+    - admin.obj.core.budget_line
+  optional:
+    - admin.obj.core.expense
+    - admin.obj.core.invoice
+    - admin.obj.core.approval
+    - admin.obj.travel_booking.trip
+
+priority_bp: 4600
+typical_duration_days: 90
+signals_of_progress: [next_step_agreed]
+signals_of_decay: [timeline_slip]
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    Unreachable today. When the type exists: always state the committed amount against the limit.
+    One without the other is a number with no meaning, and reporting it invites a decision the
+    reader is not equipped to make.
+  fallback:
+    headline: "Spend against limit — unmeasured"
+    situation: >-
+      No record links committed spend to the limit it was committed against.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-29'
+  notes: >
+    Deliberately separate from `admin.sit.money_owed_either_way`, which is routed and reads the
+    money that DOES appear in correspondence. The split is the honest one: one situation for what
+    the mailbox can see, one named gap for what only a finance system can.

@@ -1,0 +1,65 @@
+identity:
+  id: customer_support.heu.routing_and_assignment.ownership_beats_ping_pong
+  name: Ownership beats ping-pong
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.intake_and_triage.routing_and_assignment
+  subdomain: intake_and_triage
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: A ticket that changes hands three times has told the customer nobody owns them. Route once
+    with care rather than fast with churn — handoffs, not queues, are where satisfaction dies.
+  answers:
+  - What does a multiply-reassigned ticket signal?
+
+heuristic:
+  statement: >
+    A ticket that changes hands three times has told the customer nobody owns them. Route once with
+    care rather than fast with churn — handoffs, not queues, are where satisfaction is lost.
+  why: >
+    Each handoff costs the customer a re-explanation and costs the organisation the context that was
+    in the previous agent's head. But the deeper cost is inferential: the customer concludes, quite
+    reasonably, that nobody is accountable for their problem, and that conclusion survives the
+    eventual resolution. This is why reassignment count predicts dissatisfaction better than
+    resolution time does, and why a slower first assignment that sticks beats a fast one that moves.
+  confidence_bp: 8000
+  applies_when: Any ticket that could plausibly be routed to more than one place.
+  breaks_down_when: >
+    The first assignment was wrong and holding it is loyalty to a decision rather than to the
+    customer. An agent keeping a ticket they cannot resolve, to avoid a handoff, is a worse
+    experience than a clean transfer with context — and this heuristic is the reason they do it. It
+    also breaks down in swarming models, where work moving between people is the design and the
+    customer sees one thread throughout.
+  reads: [customer_support.obj.core.ticket, customer_support.obj.core.support_agent, customer_support.obj.core.customer_sentiment]
+  contradicts: [customer_support.heu.workload_balancing.fairness_is_felt_in_weights]
+limits:
+- 'It concerns visible handoffs. Internal consultation that the customer never sees costs nothing by this measure.'
+- 'It cannot distinguish a necessary transfer from an avoidable one, which is the judgement it depends on.'
+failure_modes:
+- 'Agents holding tickets beyond their competence to protect a metric.'
+- 'Applied to swarming, where the premise does not hold.'
+variants:
+- applies_to: tiered_support
+  change: Handoffs are structural, so the mitigation is context transfer and a retained owner rather than fewer transfers.
+  why: The tiers exist and the customer should not feel them.
+- applies_to: named_tam
+  change: Strongest — the relationship is the product, and a handoff contradicts what was sold.
+  why: The customer bought a person.
+references:
+- title: Support routing practice
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The first breakdown case is the perverse incentive this heuristic creates: an agent holding
+    a ticket they cannot resolve, to avoid a handoff, produces a worse experience than a clean
+    transfer with context.

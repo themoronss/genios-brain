@@ -27,7 +27,7 @@ _graph = make_graph_store()
 # seat allowance by plan (Settings shows "used / limit"). Trial is deliberately small.
 _SEAT_LIMIT = {"trial": 2, "startup": 5, "growth": 15, "scale": 50}
 # monthly credit allowance by plan — period_used counts billable /v1/intelligence/query decisions.
-_CREDIT_LIMIT = {"trial": 100, "startup": 2000, "growth": 10000, "scale": 50000}
+_CREDIT_LIMIT = {"trial": 10_000, "startup": 2000, "growth": 10000, "scale": 50000}
 
 
 def _org(org_id: str, org: str = Depends(get_current_org)) -> str:
@@ -50,13 +50,18 @@ def _org_row(c, org_id: str):
 def get_profile(org_id: str, org: str = Depends(_org)) -> dict:
     with _graph.engine.connect() as c:
         r = _org_row(c, org)
-    return {"first_name": r.first_name or "", "last_name": r.last_name or "",
-            "email": r.email or "", "company": r.company or r.name or "", "role": r.role or ""}
+    # Single full-name model: orgs.name is the person's full name; orgs.company is the workspace.
+    # Company no longer falls back to the person's name (that was showing the user's name as the
+    # "Company"). first_name/last_name kept in the response (derived) only for older callers.
+    full_name = r.name or " ".join(x for x in (r.first_name, r.last_name) if x) or ""
+    parts = full_name.split(" ", 1)
+    return {"full_name": full_name,
+            "first_name": parts[0] if parts else "", "last_name": parts[1] if len(parts) > 1 else "",
+            "email": r.email or "", "company": r.company or "", "role": r.role or ""}
 
 
 class ProfileUpdate(BaseModel):
-    first_name: str | None = None
-    last_name: str | None = None
+    full_name: str | None = None
     company: str | None = None
     role: str | None = None
 
@@ -64,11 +69,13 @@ class ProfileUpdate(BaseModel):
 @router.patch("/api/org/{org_id}/profile")
 def update_profile(org_id: str, body: ProfileUpdate, org: str = Depends(_org)) -> dict:
     fields, params = [], {"o": org}
-    for k in ("first_name", "last_name", "company", "role"):
-        v = getattr(body, k)
+    # full_name is the person's name → orgs.name (what the sidebar/greeting reads).
+    col_map = {"full_name": "name", "company": "company", "role": "role"}
+    for attr, col in col_map.items():
+        v = getattr(body, attr)
         if v is not None:
-            fields.append(f"{k}=:{k}")
-            params[k] = v.strip()[:120]
+            fields.append(f"{col}=:{col}")
+            params[col] = v.strip()[:120]
     if not fields:
         return {"updated": False}
     with _graph.engine.begin() as c:
@@ -167,6 +174,63 @@ def set_notif_prefs(org_id: str, prefs: dict, org: str = Depends(_org)) -> dict:
     return {"saved": True}
 
 
+# ── source / integration preferences (Sources modal: Gmail, Calendar, …) ──────
+# The Sources "preferences" modal PUTs the per-tool connector settings + toggles here. Persisted
+# per (org, canonical tool) so a reconnect/restart keeps them; the same normalization as
+# connect/sync/disconnect keeps every path agreeing on the tool key.
+def _canonical_tool(tool: str) -> str:
+    from genios_engine.api.routes import _norm_source   # lazy — avoid an import cycle at module load
+    try:
+        return _norm_source(tool)
+    except Exception:      # noqa: BLE001 — a bad label must never 500 the config save
+        return (tool or "").strip().lower()
+
+
+@router.get("/api/org/{org_id}/integrations/{tool}/config")
+def get_integration_config(org_id: str, tool: str, org: str = Depends(_org)) -> dict:
+    t = _canonical_tool(tool)
+    with _graph.engine.connect() as c:
+        r = c.execute(text("select sync_settings, preferences, domains, updated_at "
+                           "from integration_preferences where org_id=:o and tool=:t"),
+                      {"o": org, "t": t}).first()
+    if r is None:
+        return {"tool": t, "sync_settings": {}, "preferences": {}, "domains": [],
+                "configured": False}
+    return {"tool": t, "sync_settings": r.sync_settings or {},
+            "preferences": r.preferences or {}, "domains": r.domains or [],
+            "updated_at": r.updated_at.isoformat() if r.updated_at else None, "configured": True}
+
+
+@router.put("/api/org/{org_id}/integrations/{tool}/config")
+def set_integration_config(org_id: str, tool: str, body: dict, org: str = Depends(_org)) -> dict:
+    t = _canonical_tool(tool)
+    if not t:
+        raise HTTPException(422, "tool is required")
+    sync_settings = body.get("syncSettings") or body.get("sync_settings") or {}
+    preferences = body.get("preferences") or {}
+    domains = body.get("domains") or []
+    if not isinstance(sync_settings, dict) or not isinstance(preferences, dict):
+        raise HTTPException(422, "syncSettings and preferences must be JSON objects")
+    if not isinstance(domains, list):
+        raise HTTPException(422, "domains must be a JSON array")
+    try:
+        s, p, d = (json.dumps(x, default=str, allow_nan=False)
+                   for x in (sync_settings, preferences, domains))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(422, "config must be finite JSON") from exc
+    if sum(len(x.encode("utf-8")) for x in (s, p, d)) > 64_000:   # durable config, not a data dump
+        raise HTTPException(413, "integration config is too large")
+    with _graph.engine.begin() as c:
+        c.execute(text(
+            "insert into integration_preferences (org_id, tool, sync_settings, preferences, domains) "
+            "values (:o, :t, cast(:s as jsonb), cast(:p as jsonb), cast(:d as jsonb)) "
+            "on conflict (org_id, tool) do update set sync_settings=excluded.sync_settings, "
+            "preferences=excluded.preferences, domains=excluded.domains, "
+            "updated_at=clock_timestamp()"),
+            {"o": org, "t": t, "s": s, "p": p, "d": d})
+    return {"saved": True, "tool": t}
+
+
 # ── team members / invites ───────────────────────────────────────────────────
 @router.get("/api/org/{org_id}/members")
 def list_members(org_id: str, org: str = Depends(_org)) -> dict:
@@ -262,6 +326,8 @@ _ORG_SCOPED_TABLES = [
     "l2_extraction_results", "l2_processing_runs", "event_trace", "parked_events",
     "source_coverage", "sync_cursors", "l1_sync_runs", "source_events",
     "agent_events", "human_events",
+    "onboarding_progress", "sync_jobs",          # sync progress + durable job queue (org-scoped)
+    "integration_preferences",                    # per-tool source settings (Sources modal)
 ]
 
 _UPLOAD_ROOT = (Path(__file__).resolve().parents[2] / "uploads").resolve()
@@ -342,6 +408,15 @@ def delete_account(org_id: str, org: str = Depends(_org)) -> dict:
             {"o": org})]
         removed_files = _remove_upload_files(upload_paths)
         _wipe(c, org)
+        # Retained financials (llm_costs / credit_ledger / subscriptions — deliberately absent from
+        # _ORG_SCOPED_TABLES and un-cascaded in 0058) would be orphaned rows with an unresolvable
+        # org_id once the tenant row goes. Keep identity-only fields so our own accounting stays
+        # attributable; no graph, content or message data is carried over.
+        c.execute(text(
+            "insert into orgs_archive (org_id, name, company, email, subscription_tier, "
+            "is_internal, created_at) select id, name, company, email, subscription_tier, "
+            "is_internal, created_at from orgs where id=:o "
+            "on conflict (org_id) do nothing"), {"o": org})
         deleted = c.execute(text("delete from orgs where id=:o"), {"o": org})
         if deleted.rowcount != 1:
             raise RuntimeError("account erasure did not delete exactly one organization")

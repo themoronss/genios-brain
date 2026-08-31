@@ -1,39 +1,81 @@
-# Stub. Identity, purpose and load-set only — see quality-assurance in this subdomain for the
-# shape a promoted capability takes.
-
 identity:
   id: customer_support.support_management.agent_coaching
   name: Agent Coaching
   domain: customer_support
   subdomain: support_management
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Turning what a review found into something an agent can actually do differently on their
+  next ticket. Coaching is a separate discipline from measurement and mostly fails for a structural reason
+  rather than a pedagogical one: the same person usually owns both, so the agent cannot tell whether a
+  conversation is help or evidence, and answers accordingly. The useful unit is a single named behaviour
+  tied to one reviewable interaction — feedback that describes a trend gives nobody anything to hold on
+  Monday morning. Most persistent individual weakness turns out on inspection to be a missing article,
+  an unclear macro or a queue nobody can serve well.
 
-description: >
-  Turning what a review found into something an agent can actually do differently on their next
-  ticket. Coaching is a separate discipline from measurement and mostly fails for a structural
-  reason rather than a pedagogical one: the same person usually owns both, so the agent cannot
-  tell whether a conversation is help or evidence, and answers accordingly. The useful unit is a
-  single named behaviour tied to one reviewable interaction — feedback that describes a trend
-  gives nobody anything to hold on Monday morning. Most persistent individual weakness turns out
-  on inspection to be a missing article, an unclear macro or a queue nobody can serve well.
+  '
+question: What is the one thing this agent should do differently, and is it actually theirs to fix?
 
-question: "What is the one thing this agent should do differently, and is it actually theirs to fix?"
+outcomes:
+- 'One named skill per agent per cycle, evidenced from their own tickets, practised deliberately and re-measured next cycle.'
+- 'The coachable moment found in the bottom decile rather than in the average, because a mean can be fine while one recurring behaviour costs the worst ten per cent of their tickets.'
+- 'A distinction held between what is theirs to fix and what is the system''s. Coaching somebody about a bad macro or an ambiguous policy is asking them to compensate for it forever.'
+- 'Practice, not advice. Telling somebody to be clearer changes nothing; rewriting three of their replies together does.'
+- 'The negative outcome: coaching DECLINED because the finding is a process problem. It is the commonest reason coaching fails and it is a structural error rather than a skill gap.'
+failure_modes:
+- 'COACHING THE AVERAGE. The mean hides the recurring behaviour, which lives in the tail and is the only thing worth changing.'
+- 'MULTIPLE SKILLS AT ONCE, which produces no change on any of them and a demoralised agent.'
+- 'ADVICE WITHOUT PRACTICE. "Be more concise" is an observation; a session rewriting their replies is coaching.'
+- 'COACHING A SYSTEM PROBLEM, which asks an individual to compensate permanently for something nobody fixed.'
+- 'NO RE-MEASUREMENT, so coaching is a conversation rather than an intervention and nobody knows whether it worked.'
+kpis:
+- name: single_skill_focus_rate
+  unit: percent
+  description: Cycles addressing one named skill rather than several observations.
+  direction: higher_is_better
+- name: bottom_decile_improvement
+  unit: percent
+  description: Movement in the agent's worst tickets, which is where the coachable behaviour lives.
+  direction: higher_is_better
+- name: system_attributed_findings
+  unit: percent
+  description: Review findings routed to process rather than coached. Usually understated, and each one is an agent asked to compensate.
+  direction: higher_is_better
+- name: re_measured_rate
+  unit: percent
+  description: Coaching cycles where the skill was checked again. Without it, coaching is advice.
+  direction: higher_is_better
+handoffs:
+  upstream: [customer_support.support_management.ticket_review, customer_support.voice_of_customer.satisfaction_measurement,
+             customer_support.support_management.quality_assurance]
+  downstream: [customer_support.support_management.performance_management, customer_support.knowledge_and_deflection.macro_management]
+  parallel: [customer_support.support_management.team_health, customer_support.customer_communication.response_drafting]
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support, swarming_support,
+           outsourced_bpo, named_tam]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following quality-assurance in this subdomain. The
-    expertise worth encoding first is the separation from performance_management — coaching that
-    can be cited in a review stops being coaching, and everything else about the capability
-    follows from protecting that boundary. Second is the diagnosis step that almost never
-    happens: before coaching a behaviour, establish whether the agent could have done better with
-    the tools, the knowledge and the queue they had. Coaching an individual for a systems problem
-    is the most common way support teams burn goodwill while their metrics stay flat.
+    Promoted out of Phase-1 stub. Not on a live route.
+
+    system_attributed_findings is the KPI that names the structural failure the description
+    identifies: coaching mostly fails because the finding was not the agent's to fix. A bad
+    macro, an ambiguous policy or a missing article produces the same observable behaviour as a
+    skill gap, and coaching it asks one person to compensate permanently for something nobody
+    repaired.
+
+    bottom_decile_improvement rather than mean movement, because an agent's average can be
+    entirely healthy while one recurring behaviour ruins their worst ten per cent of tickets —
+    which is where the escalations and the reopens come from.
+
+admission:
+  accepted_content_hash: b38967af3b512f70087528506e48dc8cb934e59a28aeff1c879ae75977ce5b93

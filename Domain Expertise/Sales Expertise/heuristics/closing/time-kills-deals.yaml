@@ -1,0 +1,149 @@
+identity:
+  id: sales.heu.closing.time_kills_deals
+  name: Time kills deals
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.closing.closing
+  subdomain: closing
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: 'Momentum is a real deal asset: every idle week invites reorgs, budget freezes, rival
+    vendors and cold feet. Between commitment and signature, the seller''s job is to remove every day
+    that does not need to exist.'
+  answers:
+  - How urgent is the gap between verbal yes and signature?
+  - Which delays are worth spending relationship capital to remove?
+  not:
+  - An argument for rushing the buyer. It is about removing OUR delays and the queue's, not theirs.
+  - A claim that fast deals are better deals. It is about the specific post-agreement window.
+
+heuristic:
+  statement: 'Treat the window between agreement and signature as exposure to events that have nothing
+    to do with the deal, and shorten it by removing steps rather than by applying pressure. The risks
+    in that window — a reorganisation, a budget freeze, a sponsor leaving, a competitor''s late
+    approach — are uncorrelated with how good the deal is, so no amount of deal quality reduces them
+    and only elapsed time does.'
+  why: 'A decided deal is not a stable state, it is a race between execution and the organisation
+    changing its mind for reasons that have nothing to do with us. The hazard is roughly constant per
+    unit time, so the expected loss is a function of duration alone — which is why the lever is
+    removing days rather than increasing enthusiasm. It also explains why the effective interventions
+    are unglamorous: a template ready in advance, a pre-answered security questionnaire, and a named
+    owner for the next step each remove more days than any closing technique.'
+  confidence_bp: 8200
+  applies_when: 'A deal has agreement in principle and no executed contract, and the remaining steps
+    are administrative rather than persuasive.'
+  breaks_down_when: 'THE BUYER HAS A FIXED CALENDAR. Board approval cycles, budget windows and
+    procurement committee dates cannot be compressed, and pushing against them spends credibility on
+    a constraint the counterparty does not control either.
+
+    THE DEAL WAS NEVER QUALIFIED. Where the approver is unverified or the budget unconfirmed, the
+    delay is not administrative and speed is the wrong instrument entirely — compressing the timeline
+    just reaches the no faster while looking desperate.
+
+    URGENCY THAT IS VISIBLY OURS. Any acceleration the buyer can trace to our period end is read as a
+    reason to wait for a better price, so the intervention produces the opposite of its intent.
+
+    A BUYER WHO NEEDS TIME TO BUILD CONSENSUS. Some delays are the champion doing exactly the internal
+    work we need. Compressing those removes the very activity that makes the deal survive.
+
+    REGULATED OR PUBLIC-SECTOR PURCHASING. The process duration is prescribed, the steps are not
+    optional, and treating them as removable is a category error that also reads as naivety.'
+  reads:
+  - sales.obj.core.deal
+  - sales.obj.core.contract
+  - sales.obj.core.timeline
+  - derived.momentum
+  contradicts:
+  - sales.heu.follow_up.silence_is_an_answer_about_timing__not_value
+  pattern_ref:
+  - dl.verbal_yes_without_paper
+  - dl.momentum_collapse_after_proposal
+
+when_to_use:
+  situations:
+  - sales.sit.enterprise_deal
+  conditions:
+  - {path: deal.status, op: "=", value: open}
+  - {has_obs: proposal_sent}
+  signals:
+  - verbal_yes
+  - timeline_slip
+  - contract_requested
+  do_not_use_when:
+  - The buyer's calendar is fixed by a board, budget or committee cycle.
+  - The deal was never qualified; speed reaches a no faster and looks desperate doing it.
+  - The delay is the champion building internal consensus we need.
+
+objects_used:
+- sales.obj.core.deal
+- sales.obj.core.contract
+- sales.obj.core.timeline
+- sales.obj.core.next_action
+
+outcomes:
+- The post-agreement window is measured and treated as exposure.
+- Days are removed by preparation rather than by pressure.
+
+failure_modes:
+- 'READ AS PERMISSION TO PUSH. The heuristic is about our own latency and the queue''s; applied to the
+  buyer it produces exactly the pressure that makes them slow down.'
+- 'USED TO JUSTIFY DISCOUNTING FOR SPEED. Trading margin to compress a window teaches the buyer that
+  waiting is profitable, which lengthens every subsequent window.'
+- 'APPLIED TO AN UNQUALIFIED DEAL. Compressing the timeline on a deal with no approver simply reaches
+  the refusal sooner, and spends the relationship on the way.'
+
+limits:
+- Says nothing about which steps can actually be removed, which is where the work is.
+- '`verbal_yes` and `contract_requested` have zero rows on the design partner''s org, so the start of
+  the window is not currently detectable there; `proposal_sent` is the nearest available marker and it
+  is earlier and less precise.'
+- Cannot distinguish a buyer-side queue from buyer-side reluctance, which need opposite responses.
+
+variants:
+- applies_to: enterprise
+  change: Most of the window is queue time in functions the sponsor does not control; the lever is
+    running steps in parallel rather than compressing any one of them.
+  why: Serial execution of independent steps is where enterprise deals lose their weeks.
+- applies_to: smb
+  change: The window should be hours, and the whole heuristic reduces to having the paper ready before
+    the conversation that needs it.
+  why: There is no queue, so all the latency is ours.
+- applies_to: regulated
+  change: Advisory only. The duration is prescribed and the useful act is planning to it rather than
+    against it.
+  why: The steps are not optional and cannot be reordered.
+
+metrics:
+- name: verbal_to_signature_days
+  unit: days
+  description: Agreement to execution.
+  direction: lower_is_better
+- name: seller_side_latency_share
+  unit: percent
+  description: Share of the window spent waiting on us rather than on the buyer. The part this
+    heuristic can actually act on, separated from the part it cannot.
+  direction: lower_is_better
+
+references:
+- title: MEDDICC
+  kind: methodology
+  note: The paper-process dimension, which exists because the post-agreement window is routinely
+    unplanned and therefore longer than it needs to be.
+- title: Practitioner closing-stage observation
+  kind: practitioner
+  note: Loss causes in the post-agreement window are overwhelmingly organisational rather than
+    competitive, which is the empirical basis for treating duration as the risk.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The addition worth keeping is the separation of
+    OUR latency from the buyer''s: the heuristic is frequently read as licence to push, and the second
+    metric exists so that the part a seller can actually act on is the part being measured.'

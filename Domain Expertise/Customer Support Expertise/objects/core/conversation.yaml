@@ -1,0 +1,452 @@
+identity:
+  id: customer_support.obj.core.conversation
+  name: Conversation
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.customer_communication.response_drafting
+  subdomain: customer_communication
+  version: 1.0.0
+  status: stable
+  aliases:
+  - thread
+  - exchange
+  - correspondence
+purpose:
+  statement: 'The continuous exchange with a human — every message in both directions, in the order
+    they happened, with whose turn it is at the end of it. It is the unit the customer experiences:
+    they do not have a ticket, they have a conversation that is either being answered or is not.
+
+    '
+  discriminator: 'The conversation is the EXCHANGE; the ticket is the promised WORK. One conversation
+    can carry three requests and one request can be discussed across a thread, a call and a follow-up
+    mail. Collapsing them loses the second question — the one asked halfway down a message about something
+    else, which is the single most commonly dropped item in support.
+
+    '
+  answers:
+  - Whose turn is it, right now?
+  - What was actually asked, including anything asked in passing?
+  - How does this exchange compare with how this relationship normally runs?
+  - Has anyone new been brought in, and when?
+attributes:
+- name: turn_block
+  purpose: Everything that establishes who owes whom a message. The only reading of a conversation that
+    is unambiguous.
+  type: composite
+  contains:
+  - ball_in_court
+  - last_inbound_at
+  - last_outbound_at
+- name: ball_in_court
+  purpose: 'Which side owes the next message. The most load-bearing single fact in this domain: it is
+    what separates a service failure from a customer who has not come back yet, and the two need opposite
+    actions.
+
+    '
+  type: value
+  data_type: string
+  required: true
+  source_paths:
+  - thread.ball_in_court
+  constraints: 'Only `us` or `them`. An exchange that has genuinely ended holds neither, and treating
+    a closed conversation as owing a reply is how a system produces advice to follow up on "thanks,
+    that''s sorted".
+
+    '
+- name: last_inbound_at
+  purpose: When the human last wrote. The clock every response expectation is measured from.
+  type: value
+  data_type: timestamp
+  required: false
+  source_paths:
+  - thread.last_inbound
+- name: last_outbound_at
+  purpose: 'When we last wrote. Held separately from the inbound rather than derived as a gap, because
+    the gap is meaningless without knowing which came last.
+
+    '
+  type: value
+  data_type: timestamp
+  required: false
+  source_paths:
+  - thread.last_outbound
+- name: rhythm_block
+  purpose: How this exchange normally runs, so a change can be recognised as a change.
+  type: composite
+  contains:
+  - engagement_level
+  - momentum
+  - tone_trend
+- name: engagement_level
+  purpose: 'How active this exchange is against its own history. Engine-computed from message rhythm,
+    never extracted, which makes it the rare fact in this object with exactly one writer.
+
+    '
+  type: value
+  data_type: number
+  required: false
+  source_paths:
+  - derived.engagement
+- name: momentum
+  purpose: Whether the exchange is accelerating or decaying. A direction, not a level.
+  type: value
+  data_type: number
+  required: false
+  source_paths:
+  - derived.momentum
+- name: tone_trend
+  purpose: 'The direction of tone across the exchange. Deliberately a TREND and not a score: a single
+    curt message is not a signal, and reporting one as sentiment is both unconvincing and slightly insulting
+    to act on.
+
+    '
+  type: value
+  data_type: number
+  required: false
+  source_paths:
+  - derived.sentiment
+- name: participants
+  purpose: 'Who is on the exchange. A list rather than a pair, because somebody being added is one of
+    the strongest escalation signals available and it is invisible unless the set is tracked.
+
+    '
+  type: value
+  data_type: list
+  required: false
+  source_paths:
+  - attendees
+- name: obligations
+  purpose: What either side has promised inside this exchange, with dates where dates were given.
+  type: value
+  data_type: list
+  required: false
+  source_paths:
+  - commitment.action
+  - commitment.due_at
+- name: channel
+  purpose: 'Where the exchange is happening. Present as an attribute because the expertise differs by
+    channel and absent as a fact for every channel but mail.
+
+    '
+  type: value
+  data_type: string
+  required: false
+states:
+  initial: awaiting_us
+  values:
+  - name: awaiting_us
+    description: The human wrote last and we have not answered.
+    implies: 'The only state in this object that is unambiguously our problem. Every service metric
+      worth having is a measurement of time spent here.
+
+      '
+  - name: awaiting_them
+    description: We wrote last and nothing has come back.
+    implies: 'NOT a failure state and routinely misread as one. A customer who has been given what they
+      asked for has no reason to reply, and chasing them for one is the most common way an automated
+      support system becomes noise.
+
+      '
+  - name: dormant
+    description: Neither side has written for materially longer than this exchange's own cadence.
+    implies: 'Dormancy is measured against the exchange''s OWN rhythm. A quarterly relationship is not
+      dormant at six weeks and a daily one is dormant at four days.
+
+      '
+relationships:
+- target: customer_support.obj.core.requester
+  type: involves
+  direction: outbound
+  cardinality: many
+  weight_bp: 9500
+  confidence_bp: 9000
+  evidence:
+  - email
+  priority: 1
+  description: 'The humans on the exchange. Weighted highest because a conversation with no identified
+    human cannot be answered, and every other edge is reached through a person.
+
+    '
+- target: customer_support.obj.core.customer_account
+  type: belongs_to
+  direction: outbound
+  cardinality: zero_or_one
+  weight_bp: 8000
+  confidence_bp: 7000
+  evidence:
+  - email
+  - crm
+  priority: 2
+  description: 'The organisation the exchange is with, where one is identified. Zero-or-one deliberately:
+    a personal address with no resolvable account is still a real conversation.
+
+    '
+- target: customer_support.obj.core.ticket
+  type: spawns
+  direction: outbound
+  cardinality: zero_or_many
+  weight_bp: 7000
+  confidence_bp: 5000
+  evidence:
+  - email
+  priority: 3
+  description: 'The promised work this exchange produced. Zero-or-many in both senses — most conversations
+    produce none, and the ones that produce two are where the second request gets lost.
+
+    '
+- target: customer_support.obj.core.commitment
+  type: contains
+  direction: outbound
+  cardinality: zero_or_many
+  weight_bp: 8500
+  confidence_bp: 8000
+  evidence:
+  - email
+  priority: 2
+  description: What was promised inside the exchange, by either side.
+inference_patterns:
+  deterministic:
+  - id: conversation.we_owe_a_reply
+    statement: 'The human wrote last and nothing has gone back. This is the only reading of silence
+      in this object that is unambiguously a service failure rather than a customer state.
+
+      '
+    status: executable
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: us
+    yields:
+      confidence_bp: 9000
+      attribute: ball_in_court
+      value: us
+    evidence_fields:
+    - thread.ball_in_court
+    - thread.last_inbound
+    false_positive: 'A closing acknowledgement. "Thanks, that''s sorted" leaves the ball nominally with
+      us and nothing is owed; answering it produces a message the customer did not want.
+
+      '
+  - id: conversation.they_owe_a_reply
+    statement: 'We wrote last. The exchange is waiting on them, which is a neutral state and not a problem
+      to be solved.
+
+      '
+    status: executable
+    when:
+    - path: thread.ball_in_court
+      op: '='
+      value: them
+    yields:
+      confidence_bp: 9000
+      attribute: ball_in_court
+      value: them
+    evidence_fields:
+    - thread.ball_in_court
+    - thread.last_outbound
+    false_positive: 'A message that asked nothing. If our last outbound was informational, they are
+      not withholding a reply — there is nothing to reply to.
+
+      '
+  - id: conversation.rhythm_has_changed
+    statement: 'The exchange''s engagement has moved against its own baseline. A change, not a level.
+
+      '
+    status: executable
+    when:
+    - exists: derived.engagement
+    - exists: derived.momentum
+    yields:
+      confidence_bp: 6500
+      attribute: momentum
+      corroborates:
+      - conversation.tone_has_turned
+    evidence_fields:
+    - derived.engagement
+    - derived.momentum
+    false_positive: 'A short history. Two messages establish no baseline, so any "change" against them
+      is an artefact of the sample and must not be reported as one.
+
+      '
+  - id: conversation.tone_has_turned
+    statement: 'The direction of tone across the exchange has moved. Read only alongside the rhythm
+      — tone and cadence moving together is a signal; either alone is noise.
+
+      '
+    status: executable
+    when:
+    - exists: derived.sentiment
+    yields:
+      confidence_bp: 5500
+      attribute: tone_trend
+    evidence_fields:
+    - derived.sentiment
+    false_positive: 'Terseness under time pressure. People write shortly when they are busy, and reading
+      that as displeasure produces advice that is wrong and faintly presumptuous.
+
+      '
+  - id: conversation.someone_new_is_on_it
+    statement: 'The participant set has grown. Somebody being added mid-exchange is among the strongest
+      escalation signals available and it appears in no other object.
+
+      '
+    status: needs_signal
+    yields:
+      confidence_bp: 0
+      attribute: participants
+    false_positive: 'A shared mailbox or an alias resolving to several addresses. Coverage of `attendees`
+      is thin on mail and the pattern should abstain rather than infer escalation from an alias.
+
+      '
+    requires_signals:
+    - kind: fact_path
+      name: conversation.participants
+      owner_layer: L1
+  - id: conversation.second_request_was_dropped
+    statement: 'A message contained more than one ask and only one was answered. The specific failure
+      this object exists to make expressible.
+
+      '
+    status: needs_signal
+    note: 'Requires per-message intent segmentation — several asks inside one body, tracked independently.
+      No writer exists and it cannot be approximated from thread-level facts, because at thread level
+      both asks are one message.
+
+      '
+    requires_signals:
+    - kind: fact_path
+      name: conversation.request_count
+      owner_layer: L2
+    - kind: fact_path
+      name: conversation.answered_count
+      owner_layer: L2
+    yields:
+      confidence_bp: 0
+      attribute: second_request_was_dropped
+  - id: conversation.spans_channels
+    statement: 'This exchange continued somewhere other than mail.
+
+      '
+    status: needs_signal
+    note: 'Needs a non-mail connector. Named here because a conversation that continued on a call and
+      looks abandoned in the mailbox is a false "we owe a reply", and this system currently has no way
+      to know.
+
+      '
+    requires_signals:
+    - kind: fact_path
+      name: conversation.channel
+      owner_layer: L1
+    - kind: fact_path
+      name: conversation.external_ref
+      owner_layer: L1
+    yields:
+      confidence_bp: 0
+      attribute: spans_channels
+evidence:
+- source: email
+  strength_bp: 9000
+  independent_of:
+  - derived
+  - crm
+  decays: true
+  description: 'The exchange itself, in both parties'' own words. Authoritative for what was said and
+    for whose turn it is; decays because a two-month-old thread describes a state that may have moved.
+
+    '
+- source: derived
+  strength_bp: 6500
+  independent_of:
+  - crm
+  decays: true
+  description: 'Engine-computed rhythm and tone. NOT independent of email — it is a function of it —
+    so it may corroborate a CRM reading and must never be counted as a second witness to an email one.
+
+    '
+- source: crm
+  strength_bp: 5000
+  independent_of:
+  - email
+  - derived
+  decays: true
+  description: 'Structurally reliable and routinely stale. Useful for who a participant is, never for
+    what the state of the exchange is.
+
+    '
+constraints:
+- id: conversation.never_treat_awaiting_them_as_a
+  statement: Never treat `awaiting_them` as a failure. It is the normal resting state of a healthy exchange.
+  hard: true
+- id: conversation.never_report_tone_as_a_score
+  statement: Never report tone as a score to a user. The trend is the finding; the number is not evidence
+    anyone can act on.
+  hard: true
+- id: conversation.a_conversation_with_fewer_than_three
+  statement: A conversation with fewer than three messages has no baseline. Report the absence rather
+    than a comparison.
+  hard: true
+exceptions:
+- id: conversation.the_customer_replies_no_rush
+  statement: The customer replies "no rush".
+  why: 'The ball is with us and the clock is not. An explicit deferral from the person waiting is the
+    one thing that overrides an overdue reading, and ignoring it produces advice that contradicts what
+    the customer literally asked for.
+
+    '
+- id: conversation.an_out_of_office_auto_reply
+  statement: An out-of-office auto-reply arrives.
+  why: 'This flips `ball_in_court` to us on a message no human wrote. Treat it as evidence about availability,
+    never as an inbound that owes an answer.
+
+    '
+- id: conversation.the_exchange_is_with_a_distribution
+  statement: The exchange is with a distribution list or a shared mailbox.
+  why: 'Participant-set growth means nothing here and the escalation reading must be suppressed. A list
+    gains and loses members for reasons unrelated to this conversation.
+
+    '
+- id: conversation.a_single_thread_carries_two_unrelated
+  statement: A single thread carries two unrelated subjects.
+  why: 'Thread-level `ball_in_court` answers for whichever subject was last discussed, so the other
+    can be silently overdue while the conversation reads as answered. This is the known limit of a thread-shaped
+    object and is why `conversation.second_request_was_dropped` is named as a gap rather than approximated.
+
+    '
+anti_patterns:
+- id: conversation.chasing_a_customer_who_owes_nothing
+  statement: Chasing a customer who owes nothing
+  cost: '`awaiting_them` read as neglect. The customer has what they asked for; a follow-up teaches
+    them that our messages do not require reading.
+
+    '
+- id: conversation.a_global_response_time_target
+  statement: A global response-time target
+  cost: 'Applying one threshold across every relationship makes a weekly-cadence account permanently
+    compliant and a same-day one permanently breaching, and neither reading is about service.
+
+    '
+- id: conversation.reporting_sentiment_as_a_number
+  statement: Reporting sentiment as a number
+  cost: 'It implies a precision the derivation does not have and gives the reader nothing to do. The
+    observable change — shorter replies, a new name copied in — is both truer and actionable.
+
+    '
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-29'
+  review_status: approved
+  confidence: experimental
+  notes: 'Authored because eighteen capabilities declare it required and its absence was killing whole
+    situations rather than degrading them — a missing required object fails a route closed. It was the
+    first of the three remaining blockers found by the live route probe after the intake and voice-of-customer
+    capabilities were wired.
+
+    Every executable pattern here rests on a fact with a real writer: `thread.ball_in_court`, `thread.last_inbound`,
+    `thread.last_outbound`, `derived.*` and `commitment.*`. The two genuinely absent capabilities —
+    per-message intent segmentation and cross-channel identity — are recorded as `needs_signal` rather
+    than approximated, because both approximations produce confident wrong answers rather than missing
+    ones.
+
+    '

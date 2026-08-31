@@ -1,38 +1,122 @@
-# STUB — identity, purpose and load-set only. See metadata.notes for how to promote it.
-#
-# This capability owns customer-awaiting-reply.yaml, the one situation in this subdomain that
-# binds to a real Layer 2 type (unanswered_email) and therefore actually routes today.
-
 identity:
   id: customer_support.customer_communication.response_drafting
   name: Response Drafting
   domain: customer_support
   subdomain: customer_communication
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Turning what we currently know into a message the customer can act on without writing back
+  to ask what it meant. The craft is subtractive: most weak support replies fail by including the internal
+  reasoning, the hedges and the answer to a question nobody asked, so the one sentence that mattered arrives
+  fourth and is read last. A draft is finished when it states what is true, what happens next and who
+  owns it — and contains nothing that only makes sense to us.
 
-description: >
-  Turning what we currently know into a message the customer can act on without writing back to
-  ask what it meant. The craft is subtractive: most weak support replies fail by including the
-  internal reasoning, the hedges and the answer to a question nobody asked, so the one sentence
-  that mattered arrives fourth and is read last. A draft is finished when it states what is true,
-  what happens next and who owns it — and contains nothing that only makes sense to us.
+  '
+question: What is the shortest message that leaves this customer able to act?
 
-question: "What is the shortest message that leaves this customer able to act?"
+outcomes:
+- 'A reply that needs no reply. The measure of a good draft is not that it was polite, it is that
+  the customer did not have to write back to ask what it meant — every clarifying question we
+  provoke is a round trip we chose to spend.'
+- 'The answer in the first sentence. Most weak support replies bury it fourth, behind the greeting,
+  the internal reasoning and the hedge, and the customer stops reading at the second.'
+- 'What is true, what happens next, and who owns it — three things, present in every draft. A
+  message missing the third is where a case goes quiet, because both sides believe the other is
+  moving.'
+- 'Internal reasoning removed. The path we took to the answer is our business; including it is not
+  transparency, it is asking the customer to audit our work.'
+- 'The negative outcome, said plainly: what we will NOT do, when that is the answer. A clear
+  decline is a service; a decline delivered as an unanswered thread is what customers describe to
+  each other.'
+- 'Register matched to the reader — an expert given first-line steps reads it as not being
+  listened to, and a non-technical contact given a stack trace reads it as being dismissed. Both
+  are the same failure to notice who is on the other end.'
+
+failure_modes:
+- 'ANSWERING THE QUESTION THAT WAS ASKED RATHER THAN THE ONE BEHIND IT. "How do I export this?"
+  frequently means "I have a board meeting at four". Answering only the literal question is
+  technically correct and leaves the person exactly as blocked.'
+- 'HEDGING TO AVOID BEING WRONG. "It may be possible that in some cases" protects the writer and
+  transfers the uncertainty to somebody with less information than we have. If we do not know, the
+  useful sentence is that we do not know yet and when we will.'
+- 'INCLUDING THE INVESTIGATION. A paragraph on what we ruled out reads as thoroughness internally
+  and as evasion externally, because none of it is the answer.'
+- 'APOLOGISING INSTEAD OF ACTING. An apology in place of a next step is the single most common
+  filler in support writing, and its length is inversely proportional to how much has actually been
+  done.'
+- 'TEMPLATE LANGUAGE ON A NON-TEMPLATE SITUATION. A macro answering a question adjacent to the one
+  asked tells the customer, precisely and unmistakably, that nobody read their message.'
+- 'WRITING TO THE TICKET RATHER THAN TO THE PERSON. The reply that reads as a status field update
+  is one nobody feels addressed by, and it produces the "is anyone actually there" follow-up.'
+
+kpis:
+- name: clarification_round_trips
+  unit: count
+  description: Replies per case where the customer had to ask what we meant. The truest measure of
+    draft quality and the one nobody instruments.
+  direction: lower_is_better
+- name: answer_in_first_sentence_rate
+  unit: percent
+  description: Share of replies whose opening line carries the substance.
+  direction: higher_is_better
+- name: next_step_owner_named_rate
+  unit: percent
+  description: Share of replies stating who moves next. The field whose absence produces a silently
+    stalled case.
+  direction: higher_is_better
+- name: macro_on_novel_issue_rate
+  unit: percent
+  description: Share of replies where a template was sent against a materially different question.
+  direction: lower_is_better
+- name: reply_length_vs_resolution
+  unit: ratio
+  description: Words per reply against cases resolved. A target band, not a minimum — the craft
+    here is subtractive, and both a wall of text and a curt one-liner fail the same reader.
+  direction: target_band
+
+handoffs:
+  upstream:
+  - customer_support.diagnosis_and_resolution.diagnostics
+  - customer_support.customer_communication.expectation_setting
+  - customer_support.knowledge_and_deflection.macro_management
+  downstream:
+  - customer_support.customer_communication.tone_and_localization
+  - customer_support.diagnosis_and_resolution.resolution_delivery
+  - customer_support.entitlement_and_sla.commitment_tracking
+  parallel:
+  - customer_support.customer_communication.de_escalation
+  - customer_support.customer_communication.proactive_status_updates
+
+applies_to:
+  models: [b2b, b2c, b2b2c, enterprise_support, mid_market_support, smb_support, tiered_support,
+           swarming_support, named_tam, follow_the_sun, premium_paid_support, outsourced_bpo,
+           ai_first_support, community_support, embedded_in_product, plg_self_serve]
+  offerings: [product, service, hybrid]
 
 metadata:
   owner: Customer Support
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
   notes: >
-    Promote by adding outcomes, failure_modes, playbooks, heuristics, mental_models,
-    decision_frameworks, kpis and handoffs, following the shape of
-    capabilities/03-customer-communication/de-escalation/capability.yaml. The specific expertise
-    to capture first is the ordering rule (answer, then evidence, then next step, never the
-    reverse), the one-question-per-message discipline, and the failure mode where an agent
-    forwards engineering's language untranslated. Also author the customer-awaiting-reply
-    situation here — it is the only one in this subdomain with a real Layer 2 binding.
+    Promoted out of Phase-1 stub. Reachable from the live support_case and support_contact
+    routes.
+
+    The one capability in this batch whose quality is almost entirely unobservable from the
+    substrate. Layer 2 records that a message was sent and whose turn it now is; nothing
+    measures whether it was readable, whether the answer came first, or whether the next owner
+    was named. The KPI that matters most here — clarification round trips — needs per-thread
+    message counts that nothing currently aggregates. So this capability's expertise is authored
+    for a human reader and for Layer 5's rendering, not for a Layer 4 predicate, and saying so
+    is more useful than inventing a proxy.
+
+    The render hints on the Customer Support situations are where this capability actually
+    reaches a card: 'answer first, then everything else' is the instruction, and it is enforced
+    by copy rather than by a rule.
+
+admission:
+  accepted_content_hash: bd65c8044600bd24deecdbcf8eed634e6a65b46d76c5928e53ccea55dee9e0e6

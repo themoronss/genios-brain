@@ -24,16 +24,21 @@ BANDS = SALES_V1["scoring_defaults"]["bands"]
 # ---- E2 band assigner ------------------------------------------------------
 
 def test_bands_cut_from_pack():
-    assert band(54, BANDS) == "standard"
-    assert band(69, BANDS) == "standard"
-    assert band(70, BANDS) == "high"
-    assert band(84, BANDS) == "high"
-    assert band(85, BANDS) == "critical"
+    # 1.11.0 calibrated the cuts to the LIVE score distribution (min 42 / median 45.5 / max 56):
+    # the old 70/85 sat ABOVE the maximum reachable score, so `high` was arithmetically
+    # unreachable and the push layer ran on an empty input for months while reading as healthy.
+    assert band(45, BANDS) == "standard"
+    assert band(51, BANDS) == "standard"
+    assert band(52, BANDS) == "high"
+    assert band(59, BANDS) == "high"
+    assert band(60, BANDS) == "critical"
 
 
-def test_small_deal_supremum_never_reaches_critical():
-    # spec §5.11: small-deal S maxes at 83 → critical (85) is unreachable, by construction
-    assert band(83, BANDS) == "high"
+def test_the_push_band_is_reachable_by_the_live_score_range():
+    """The invariant the old fixture values silently violated: a band nothing can reach is not a
+    threshold, it is a disabled feature wearing one's clothes. Live open signals span 42-56."""
+    assert BANDS["high"] <= 56, "high must be reachable by the live maximum"
+    assert BANDS["critical"] > BANDS["high"]
 
 
 # ---- V-01 length caps ------------------------------------------------------
@@ -120,7 +125,10 @@ def test_no_llm_means_deterministic_fallback():
 def test_slots_compute_days_and_money():
     facts = {"deal.last_inbound": {"value": (NOW - timedelta(days=9)).isoformat()},
              "deal.value": {"value": 200000}, "deal.status": {"value": "proposal"}}
-    s = compute_slots("stalled_deal", "Acme", facts, NOW)
+    # The clock is the RULE's declared `urgency.path`, passed by the caller. It used to come from
+    # a 6-entry map that covered 6 of 25 rules; the other 19 looked up the fact named "" and
+    # printed the sentinel word into a `{days}d` slot.
+    s = compute_slots("stalled_deal", "Acme", facts, NOW, "deal.last_inbound")
     assert s["days"] == 9 and s["money"] == "$200k" and s["stage"] == "proposal"
 
 
@@ -234,3 +242,151 @@ def test_worker_without_card_build_lease_never_invokes_renderer(monkeypatch):
 
     assert result["build_in_progress"] == 1
     assert rendered == []
+
+
+# ── the invention guard must catch inventions, not English ───────────────────────────────────
+def _guard_corpus():
+    from genios_engine.deliver.render import _corpus
+    return _corpus(
+        {"company": {"value": "Unstuck"},
+         "role": {"value": "Partner & Co-founder"},
+         "thread.last_inbound": {"value": "2026-07-22T10:00"}},
+        {"entity": "maria@alystventures.com"},
+        ("Rohit Swerashi", "mrrohitswerashi@gmail.com"))
+
+
+def test_a_fluent_grounded_draft_is_not_rejected_for_saying_thanks():
+    """The guard exists to catch an invented ENTITY, not ordinary capitalised English.
+
+    It flagged every capitalised token and checked it against the same five-field fact record the
+    model had been given, so any readable sentence failed: 25 of one org's 41 cards were rejected
+    on words like "Thanks", "Best" and the founder's own name, and shipped as empty template
+    stubs. The model was called, produced correct copy, and the copy was discarded.
+    """
+    from genios_engine.deliver.render import invention_ok
+
+    ct, cn = _guard_corpus()
+    ok, why = invention_ok(
+        "Hi Maria,\n\nThanks for reaching out. Happy to walk you through Unstuck.\n\nBest,\nRohit",
+        ct, cn)
+    assert ok, f"a grounded, fluent draft was rejected on {why!r}"
+
+
+def test_the_senders_own_name_is_not_an_invented_person():
+    """Signing a draft is the sender naming himself, not a claim the facts must support."""
+    from genios_engine.deliver.render import invention_ok
+
+    ct, cn = _guard_corpus()
+    ok, why = invention_ok("Best regards, Rohit", ct, cn)
+    assert ok, f"the account holder's own name was rejected as invention: {why!r}"
+
+
+def test_an_actually_invented_company_is_still_caught():
+    """Narrowing the guard must not disarm it — this is the case it exists for."""
+    from genios_engine.deliver.render import invention_ok
+
+    ct, cn = _guard_corpus()
+    ok, why = invention_ok("Our friends at Initech will handle it", ct, cn)
+    assert not ok and why == "name:Initech"
+
+
+def test_a_date_the_evidence_does_not_support_is_still_invention():
+    """Calendar words are deliberately NOT exempt.
+
+    A weekday or month is not an entity, but it IS a factual claim, and a draft proposing a date
+    the facts do not support is inventing it — in mail the user is about to send. Exempting them
+    as "grammar" would have quietly licensed made-up dates.
+    """
+    from genios_engine.deliver.render import invention_ok
+
+    ct, cn = _guard_corpus()
+    assert invention_ok("No inbound since July 22", ct, cn)[0], "the real fact date must pass"
+    ok, why = invention_ok("No inbound since March 22", ct, cn)
+    assert not ok and why == "name:March"
+
+
+def test_an_invented_name_cannot_escape_by_starting_a_sentence():
+    """Position must not be an exemption — only the word can decide.
+
+    Exempting a sentence's first word looks safe: "Reach out to them" opens with a capital that
+    is pure grammar. But it equally exempts "Initech will vouch for us", so an invented company
+    escapes by the accident of where it sits. A stop-list covers both jobs — the imperative
+    openers a positional rule was protecting, and the greetings and sign-offs it never reached in
+    a multi-paragraph draft.
+    """
+    from genios_engine.deliver.render import _proper_nouns
+
+    # the case position silently allowed through
+    assert _proper_nouns("Initech will vouch for us") == ["Initech"]
+    # the case position existed to protect
+    assert _proper_nouns("Reach out to Zephyr about the deal") == ["Zephyr"]
+    # greetings and sign-offs anywhere in the draft
+    assert _proper_nouns("Hi there,\nThanks for the note") == []
+    assert _proper_nouns("They have gone quiet.") == []
+
+
+def test_every_rule_gets_a_real_day_count_not_a_word():
+    """The clock comes from the rule, so all 25 rules can state a duration — or none at all.
+
+    `objection_open` was absent from the hand-written map, so its card read "Raised severald ago
+    — still unanswered". That is worse than saying nothing: it looks like a number the system
+    measured.
+    """
+    from genios_engine.packs.general_v1 import GENERAL_V1
+
+    facts = {"thread.last_inbound": {"value": (NOW - timedelta(days=8)).isoformat()}}
+    assert compute_slots("objection_open", "x", facts, NOW, "thread.last_inbound")["days"] == 8
+
+    # every rule in both packs declares one, so none can fall through to the sentinel
+    for pack in (SALES_V1, GENERAL_V1):
+        for rule in pack["rules"]:
+            assert (rule.get("urgency") or {}).get("path"), (
+                f"{rule['id']} declares no urgency path — its card cannot state a duration")
+
+
+def test_a_duration_we_cannot_compute_is_omitted_not_worded():
+    """Saying nothing is honest; "severald" is neither a number nor a sentence."""
+    from genios_engine.deliver.render import _fallback
+
+    template = {"fallback": {"headline": "Handle {entity}'s objection now",
+                             "situation": "Raised {days}d ago — still unanswered"}}
+    unknown = _fallback(template, {"entity": "x@y.com", "days": "several"})
+    assert "several" not in unknown["situation"]
+    assert unknown["situation"] == "still unanswered", "the rest of the sentence must survive"
+
+    known = _fallback(template, {"entity": "x@y.com", "days": 8})
+    assert known["situation"] == "Raised 8d ago — still unanswered"
+
+
+# ── the clarity gate must be written, not annotated ──────────────────────────────────────────
+def test_a_card_with_no_known_ask_is_written_as_an_observation():
+    """The gate existed, was correct, and changed nothing anyone saw.
+
+    `_actionability` ran inside a read projection on `GET /cards/{card_id}` and ADDED a sibling
+    field — it never rewrote the headline, lowered the level, or removed the button. `GET /cards`,
+    the list view a user actually scans, applied no gate at all. So "Reply to boardy@boardy.ai
+    now" was shown as a confident instruction while the detail view of the same card knew the ask
+    was unknown.
+    """
+    from genios_engine.deliver.card_builder import clarity_verdict
+
+    grounded, missing, recommended = clarity_verdict("unanswered_email", {"introduction"}, set())
+    assert not grounded
+    assert missing == "what response they need"
+    assert recommended, "an abstention must say what a human should do instead"
+
+
+def test_a_card_whose_ask_is_known_keeps_its_imperative():
+    """The gate must not disarm the product — a grounded card still instructs."""
+    from genios_engine.deliver.card_builder import clarity_verdict
+
+    assert clarity_verdict("unanswered_email", {"question"}, set())[0]
+    assert clarity_verdict("commitment_overdue", set(), {"commitment.action"})[0]
+
+
+def test_a_rule_with_no_clarity_requirement_is_untouched():
+    """Only the reason codes whose imperative depends on a specific fact are gated."""
+    from genios_engine.deliver.card_builder import clarity_verdict
+
+    assert clarity_verdict("closed_lost_risk", set(), set())[0]
+    assert clarity_verdict(None, set(), set())[0]

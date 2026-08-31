@@ -1,0 +1,86 @@
+identity:
+  id: admin.pb.version_control.one_canonical_everything_else_labelled
+  name: One canonical, everything else labelled
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.records_and_documentation.version_control
+  subdomain: records_and_documentation
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Every important document has ONE canonical location and version; drafts are named as drafts;
+    superseded versions are marked, not deleted — because two files both believing they are final is how
+    contradicting commitments happen.
+
+when_to_use:
+  do_not_use_when:
+  - The document is a personal working file with one reader. Version discipline there is overhead with no parallel-truth risk.
+steps:
+- order: 1
+  name: Declare the canonical location on the document
+  description: >
+    Not in a wiki page about the document. A reader holding the file must be able to tell whether
+    they are holding the authority or a copy of it.
+  actor: human
+  objects_read: [admin.obj.core.document]
+  done_when: The file itself names where the current version lives.
+- order: 2
+  name: Name drafts as drafts, visibly
+  description: >
+    In the filename and on the first page. A draft that reads like a policy will be followed like
+    one by somebody who never saw the covering email.
+  actor: human
+  done_when: Draft status survives being forwarded without context.
+- order: 3
+  name: Record what changed, not that it changed
+  description: >
+    "v3" asks the reader to diff. One line of meaning — the notice period moved from 30 days to 90 —
+    is what makes the history usable.
+  actor: human
+  done_when: A reader can tell from the log whether the change affects them.
+- order: 4
+  name: Mark superseded versions in place
+  description: >
+    Deleting removes the trail and leaves every downloaded copy authoritative. Marking leaves a
+    signal where people already look.
+  actor: human
+  done_when: The old version says it is old.
+- order: 5
+  name: Hunt the convenience copies
+  description: >
+    Every saved copy of a canonical document is a future dispute with a timestamp, and they are
+    created for good reasons by people trying to be careful.
+  actor: human
+  done_when: Known copies are removed or relabelled as copies.
+objects_used: [admin.obj.core.document, admin.obj.core.contract, admin.obj.core.policy]
+limits:
+- 'It cannot reach copies outside the estate — the attachment in an external email is beyond every step here.'
+- 'Step 3 depends on the author knowing what mattered, which is exactly what they are worst placed to judge immediately after editing.'
+failure_modes:
+- 'Step 4 performed as deletion, which is the single largest source of a superseded version being acted on.'
+- 'Step 2 applied only in the filename, so it is lost the moment the document is printed or pasted.'
+variants:
+- applies_to: regulated
+  change: Step 4 is mandatory and the superseded copy must remain retrievable, because the question later is what was in force on a date.
+  why: Governance reads the record backwards.
+- applies_to: distributed
+  change: Step 1 matters most — there is no colleague to ask which copy is current.
+  why: Asking is a real strategy in an office and unavailable across time zones.
+references:
+- title: ISO 9001 — control of documented information
+  kind: standard
+  note: Where preventing unintended use of obsolete documents is stated as the requirement, which is step 4.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 5 is the one nobody schedules and the one that actually prevents the failure. Steps 1
+    to 4 make the estate correct; step 5 addresses the copies that left it, which is where
+    parallel truths are born.

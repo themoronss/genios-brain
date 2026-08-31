@@ -1,28 +1,123 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.meeting_operations.follow_up_coordination
   name: Follow-up Coordination
   domain: admin
   subdomain: meeting_operations
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'Closing the loop after a meeting, an introduction or a conversation: the recap, the promised
+  document, the connection made, the next step proposed. Follow-up is cheap on the day and irrecoverable
+  a fortnight later, which is why it is the most valuable thing an administrative function can be relied
+  on for.
 
-description: >
-  Closing the loop after a meeting, an introduction or a conversation: the recap, the promised
-  document, the connection made, the next step proposed. Follow-up is cheap on the day and
-  irrecoverable a fortnight later, which is why it is the most valuable thing an
-  administrative function can be relied on for.
+  '
+question: What is owed to whom after this interaction, and has it gone out?
 
-question: "What is owed to whom after this interaction, and has it gone out?"
+outcomes:
+- 'A named debt per interaction, or an explicit nothing-is-owed. A meeting that ended with no
+  obligation is a valid and common result, and recording it is what stops the same meeting being
+  re-examined every sweep. `meeting.open_loop` carries exactly this distinction and is the reason it
+  can be answered rather than guessed.'
+- 'The recap sent while the participants still remember the conversation. Its value is not the record
+  — it is that a recap is the last moment at which a misunderstanding is cheap to correct, and every
+  day after it the two sides'' versions harden separately.'
+- 'An introduction closed on both sides. The highest-mortality follow-up there is: the introducer
+  disappears the moment the mail is sent, neither party wants to seem eager, and the connection dies
+  politely. `introduction` is one of the densest observations Layer 2 emits, and almost none of them
+  have a second act.'
+- 'A distinction between a follow-up that is LATE and one that has EXPIRED. Late is recoverable and
+  worth sending; expired should be closed and, if the relationship matters, reopened as a fresh
+  contact rather than as an apology for a fortnight-old silence.'
+- 'The affected-but-absent told before they hear it elsewhere. People discover decisions about their
+  own work from the follow-up or from the grapevine, and which one it is sets what they think of the
+  decision.'
+- 'A closed loop that stops generating prompts. The negative outcome: once the debt is discharged, the
+  interaction leaves the live set — otherwise every past meeting stays permanently open and the queue
+  becomes a history rather than a to-do.'
+
+failure_modes:
+- 'SENDING A RECAP THAT RECORDS INSTEAD OF DECIDING. A summary listing what was discussed, with no
+  owner and no date, produces agreement that nothing was agreed. The recap''s job is to state the
+  decisions and give people a cheap chance to object.'
+- 'FOLLOWING UP ON THE MEETING RATHER THAN THE OBLIGATION. Meetings are the trigger, not the unit. A
+  promise made in a meeting and restated in mail is one debt; treating each surface separately produces
+  duplicate chases to the same person.'
+- 'TREATING AN INTRODUCTION AS DISCHARGED WHEN THE MAIL WAS SENT. The introducer''s obligation ends
+  when the two sides are actually talking, not when the addresses are in one thread.'
+- 'CHASING A DECISION THE OTHER SIDE NEVER AGREED TO. A next step proposed in a recap and never
+  acknowledged is a proposal, not a commitment, and chasing it as though it were one is how a
+  well-meant follow-up becomes pressure.'
+- 'RUNNING FOLLOW-UP ON A FIXED CLOCK. A universal follow-up interval sends reminders into
+  conversations that are already moving and lets slow ones sit exactly as long. The interval that
+  matters is this relationship''s own rhythm.'
+- 'RE-OPENING AN EXPIRED LOOP AS AN APOLOGY. A fortnight-late follow-up written as a chase forces the
+  recipient to remember a thing they had dropped; the same contact framed as new costs nothing.'
+
+kpis:
+- name: same_day_recap_rate
+  unit: percent
+  description: Share of external meetings whose recap went out before the participants' memory of it
+    diverged. The one follow-up metric that predicts everything downstream.
+  direction: higher_is_better
+- name: open_loop_closure_rate
+  unit: percent
+  description: Share of meetings flagged as ending with something unresolved that reached an explicit
+    close — discharged, renegotiated or abandoned.
+  direction: higher_is_better
+- name: introduction_second_contact_rate
+  unit: percent
+  description: Share of introductions where the two parties actually corresponded afterwards. The
+    honest measure of whether the introduction happened at all.
+  direction: higher_is_better
+- name: expired_loop_share
+  unit: percent
+  description: Share of open loops old enough that sending the follow-up now would cost more than it
+    returns. Rising share means the capability is running behind its own clock.
+  direction: lower_is_better
+- name: duplicate_chase_rate
+  unit: percent
+  description: Share of follow-ups sent for an obligation already chased on another surface.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - admin.meeting_operations.minutes_and_documentation
+  - admin.meeting_operations.action_item_tracking
+  - admin.executive_support.inbox_and_correspondence
+  downstream:
+  - admin.executive_support.commitment_tracking
+  - admin.admin_operations.request_intake
+  parallel:
+  - admin.executive_support.delegation_and_task_routing
+  - admin.meeting_operations.meeting_scheduling
+
+applies_to:
+  models: [executive_office, in_house, shared_services, startup_lean, distributed, hybrid,
+           outsourced, automated_first, multi_entity, regulated, enterprise_admin]
+  offerings: [coordinative, transactional]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-26'
+  review_status: approved
   confidence: experimental
+  notes: 'Promoted out of Phase-1 stub. Reached on the live route through `admin.sit.live_account_admin`
+    `also_serves`.
+
+    Authored against facts Layer 2 holds rather than against a meeting-tool ontology:
+    `meeting.status`, `meeting.start_at`, `meeting.end_at`, `meeting.open_loop` and
+    `meeting.external_counterparty` all exist, and `introduction` is among the densest observations on
+    the design partner''s org — which is what makes the introduction outcome measurable rather than
+    aspirational. The late-versus-expired distinction is the part a generic follow-up rule misses, and
+    it is the difference between a message worth sending and one that costs standing.
+
+    No numbers: how many days makes a loop expired is Layer 4''s arithmetic and belongs in the pack.
+
+    '
+  reviewed_at: '2026-08-26'
+
+admission:
+  accepted_content_hash: e1923104f2d68da761442b10ed38f139fcb5569297fa8c70285d59073534aba6

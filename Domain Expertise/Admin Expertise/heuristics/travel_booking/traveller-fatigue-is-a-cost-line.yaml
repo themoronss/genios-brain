@@ -1,0 +1,65 @@
+identity:
+  id: admin.heu.travel_booking.traveller_fatigue_is_a_cost_line
+  name: Traveller fatigue is a cost line
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.travel_and_events.travel_booking
+  subdomain: travel_and_events
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: Savings that exhaust the traveller before the meeting spend more than they save — the trip
+    exists for the meeting. Policy should price performance, not just tickets.
+  answers:
+  - What does the cheapest flight sometimes cost?
+
+heuristic:
+  statement: >
+    Savings that exhaust the traveller before the meeting spend more than they save. The trip exists
+    for the meeting, and policy should price performance rather than tickets.
+  why: >
+    Travel cost is measurable and travel effectiveness is not, so any policy that optimises on
+    measurable terms will systematically trade the second for the first without anyone deciding to.
+    A connection saved a few hundred and cost the person their preparation time and their sleep;
+    the saving appears in a report and the degraded meeting appears nowhere. The asymmetry is
+    structural, which is why it needs stating rather than assuming somebody will weigh it.
+  confidence_bp: 7500
+  applies_when: Travel undertaken for a specific meeting or event with a performance requirement on arrival.
+  breaks_down_when: >
+    The trip has no performance moment — a relocation, a site visit with a flexible start, travel
+    with a recovery day already built in. There the fatigue argument becomes a comfort argument, and
+    dressing it as effectiveness is how travel policy loses credibility with finance. It also breaks
+    down when applied by the traveller to their own booking, where the incentive is obvious and the
+    judgement is not independent.
+  reads: [admin.obj.core.meeting, admin.obj.core.employee_record, admin.obj.core.budget_line]
+  contradicts: [admin.heu.visa_and_documentation.document_failures_are_binary]
+limits:
+- 'It argues about routing and timing, not about class. Those are different arguments and conflating them is what makes this one dismissible.'
+- 'The cost it names cannot be measured, which is why it needs a proxy like same-day-arrival share to enter a budget conversation.'
+failure_modes:
+- 'Used to justify comfort on trips with no performance moment, which discredits the argument where it is real.'
+- 'Invoked by the traveller for their own booking, where it reads exactly as it looks.'
+variants:
+- applies_to: executive_office
+  change: Strongest and least contested — nobody argues that the principal should arrive exhausted.
+  why: The value of the meeting is obvious and the ticket is a rounding error against it.
+- applies_to: startup_lean
+  change: Weakest. Cash constrains genuinely and founders routinely accept the fatigue as the cost of the trip existing at all.
+  why: The alternative is not a better routing, it is no trip.
+references:
+- title: Corporate travel policy design
+  kind: practitioner
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is why this argument is often dismissed: made by the traveller
+    about their own booking it is indistinguishable from a comfort request, which is why it
+    belongs in policy rather than in a case-by-case appeal.

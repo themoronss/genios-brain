@@ -1,28 +1,73 @@
-# Phase 1 stub — identity, purpose and load-set only. Promote by adding outcomes,
-# failure_modes, playbooks, heuristics, mental_models, decision_frameworks, kpis
-# and handoffs.
-
 identity:
   id: admin.facilities_and_assets.asset_issuance_and_recovery
   name: Asset Issuance & Recovery
   domain: admin
   subdomain: facilities_and_assets
-  version: 0.1.0
-  status: draft
-  stub: true
+  version: 0.2.0
+  status: stable
+  stub: false
+description: 'The custody chain: issuing equipment against a signed acknowledgement, tracking transfers,
+  and recovering it at the end of the relationship. Recovery is the half that fails, and it fails silently
+  because nobody is inconvenienced by an asset that is not returned except the balance sheet.
 
-description: >
-  The custody chain: issuing equipment against a signed acknowledgement, tracking transfers,
-  and recovering it at the end of the relationship. Recovery is the half that fails, and it
-  fails silently because nobody is inconvenienced by an asset that is not returned except the
-  balance sheet.
+  '
+question: Was this issued to a named person, acknowledged, and has it come back?
 
-question: "Was this issued to a named person, acknowledged, and has it come back?"
+outcomes:
+- 'Issue against a signed acknowledgement, because unsigned issuance makes recovery a negotiation and a dispute a coin toss.'
+- 'Condition recorded in both directions. Recorded only on issue, every return is an argument about wear.'
+- 'Transfers captured, since equipment moves between people far more often than it is issued or returned and that is where custody is lost.'
+- 'Recovery treated as an event with an owner. It is the half that fails, and it fails silently because nobody is waiting for the item.'
+- 'The negative outcome: an item WRITTEN OFF deliberately, with a reason. Perpetually outstanding items are how a register stops being believed.'
+failure_modes:
+- 'ISSUING ON TRUST. It works nearly always and the exceptions are the ones that become uncomfortable conversations with no record behind them.'
+- 'CONDITION NOTED ONE WAY, which converts every return into a dispute about who caused the damage.'
+- 'TRANSFERS UNRECORDED, so the register names somebody who has not held the item for two years.'
+- 'RECOVERY WITH NO OWNER AND NO DATE. Nobody is inconvenienced by a missing laptop except the balance sheet.'
+- 'FRAMING THE SIGNATURE AS DISTRUST, which produces resistance to the one artefact that protects the employee.'
+kpis:
+- name: signed_issuance_rate
+  unit: percent
+  description: Items issued against an acknowledgement.
+  direction: higher_is_better
+- name: recovery_rate
+  unit: percent
+  direction: higher_is_better
+  description: Issued items returned or written off deliberately at the end of custody.
+- name: custody_accuracy
+  unit: percent
+  description: Register custodian matching physical reality at reconciliation.
+  direction: higher_is_better
+- name: outstanding_item_age
+  unit: days
+  description: Oldest unrecovered item with no disposition. What makes a register lose credibility.
+  direction: lower_is_better
+handoffs:
+  upstream: [admin.people_administration.onboarding_administration, admin.facilities_and_assets.asset_register]
+  downstream: [admin.people_administration.offboarding_administration, admin.finance_administration.budget_tracking]
+  parallel: [admin.people_administration.access_and_identity_administration, admin.facilities_and_assets.maintenance_coordination]
+applies_to:
+  models: [in_house, shared_services, enterprise_admin, multi_entity, hybrid, distributed, outsourced, startup_lean]
+  offerings: [transactional, assurance]
 
 metadata:
   owner: Admin
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
   confidence: experimental
+  reviewed_at: '2026-08-27'
+  notes: >
+    Promoted out of Phase-1 stub. Not on a live route. asset.custodian, .issued_at, .due_back_at
+    and asset_unreturned / asset_custody_unknown are planned_substrate with no writer.
+
+    The asymmetry the description names is the capability: issuance has a forcing event and
+    recovery does not. Nobody is inconvenienced by an unreturned laptop except the balance
+    sheet, so recovery fails silently and continuously while issuance works.
+
+    outstanding_item_age rather than a count, because one perpetually open item does more damage
+    to a register's credibility than ten recent ones.
+
+admission:
+  accepted_content_hash: 270f013e0e1054824af54c041eaad2f8328225134ae4f65975cbd8773cd8d10e

@@ -1,0 +1,147 @@
+identity:
+  id: sales.heu.churn_prevention.the_save_window_opens_before_the_cancel_email
+  name: The save window opens before the cancel email
+  kind: heuristic
+  domain: sales
+  scope: capability
+  owner_capability: sales.post_sale_and_growth.churn_prevention
+  subdomain: post_sale_and_growth
+  version: 1.1.0
+  status: stable
+purpose:
+  statement: By the time cancellation is stated, the internal decision is weeks old and mostly
+    socialised. The real save window is at the leading signals — sponsor exit, usage cliff, unanswered
+    reviews.
+  answers:
+  - When is an account still saveable?
+  - Which signals are worth acting on, and which are already too late?
+  not:
+  - A claim that stated cancellations are never reversed. Some are; most are not.
+  - A detection method. It says when to act, not how to see it.
+
+heuristic:
+  statement: 'Act on the behavioural signal, not on the statement, because the statement is the last
+    event in the sequence rather than the first. A cancellation has already been discussed internally,
+    justified to somebody, and usually socialised to a replacement plan — so a save attempt at that
+    point is asking several people to reverse a position they have publicly taken.'
+  why: 'Leaving a supplier is a decision with a social cost inside the customer''s organisation. The
+    person raising it has to make a case, which means by the time it reaches us it has been rehearsed
+    and defended, and reversing it now requires them to be wrong in front of colleagues. At the
+    leading-signal stage none of that has happened: engagement has dropped, a sponsor has moved, a
+    review went unanswered, and nobody has yet committed to a position. The window is defined by
+    social commitment, not by contract dates.'
+  confidence_bp: 8300
+  applies_when: 'A live account relationship with enough correspondence history for engagement and
+    momentum to be meaningful.'
+  breaks_down_when: 'A SUDDEN EXOGENOUS EVENT. An acquisition, a funding failure or a mandated
+    consolidation produces a cancellation with no leading signals at all, because the decision was not
+    made about us. Reading its absence of warning as a detection failure is the wrong lesson.
+
+    A SEASONAL OR PROJECT-SHAPED USAGE PATTERN. Accounts whose usage legitimately falls between cycles
+    look identical to decaying ones on every engagement measure, and a save motion aimed at them is
+    both wasted and slightly insulting.
+
+    A NEWLY ONBOARDED ACCOUNT. Early quiet is often normal ramp rather than decay, and the baseline
+    the signals need does not exist yet.
+
+    WHEN THE STATED CANCELLATION IS A NEGOTIATING POSITION. In some accounts a cancellation notice IS
+    the opening of a renewal negotiation, particularly where procurement runs the relationship — and
+    treating it as a genuine ending concedes before the conversation starts.
+
+    WHERE THE RELATIONSHIP MOVED OFF THE CAPTURED CHANNELS. A healthy account working in a portal or
+    in person shows every decay signal we can measure, and none of the health we cannot.'
+  reads:
+  - sales.obj.core.account
+  - sales.obj.core.risk
+  - derived.engagement
+  - derived.momentum
+  - derived.sentiment
+  contradicts:
+  - sales.heu.follow_up.silence_is_an_answer_about_timing__not_value
+  pattern_ref: []
+
+when_to_use:
+  situations:
+  - sales.sit.live_account_relationship
+  conditions:
+  - {path: derived.engagement, op: "<", value: 1}
+  - {exists: thread.last_inbound}
+  signals:
+  - going_dark
+  - negative_reply
+  - champion_change
+  do_not_use_when:
+  - Usage is seasonal or project-shaped and the dip is the cycle rather than decay.
+  - The account is newly onboarded and has no baseline to deviate from.
+  - The stated cancellation is a procurement negotiating position rather than an ending.
+
+objects_used:
+- sales.obj.core.account
+- sales.obj.core.risk
+- sales.obj.core.champion
+- sales.obj.core.stakeholder
+
+outcomes:
+- Save attempts are made at the behavioural signal rather than at the statement.
+- A stated cancellation is treated as a late event, not as the trigger.
+
+failure_modes:
+- 'ACTED ON AS AN ALERT WITHOUT A CONVERSATION. The signal says something changed and never says what;
+  a save built on the signal alone guesses the driver, and the guess is usually price.'
+- 'APPLIED TO EVERY QUIET ACCOUNT. Most quiet accounts are not leaving, and a save motion aimed at
+  them spends the credibility the real cases need.'
+- 'USED TO EXPLAIN AWAY A SURPRISE LOSS. The first breakdown regime is real — some cancellations have
+  no warning — but it is also the most comfortable explanation for one that did.'
+
+limits:
+- Says nothing about what the save should be; that depends entirely on the driver.
+- '`churn_risk`, `champion_change` and `stakeholder_left` all have zero rows on the design partner''s
+  org, so the events that would NAME the cause are unavailable — `derived.*` can see that something
+  changed and cannot say what.'
+- Cannot distinguish decay from a relationship that moved to channels we do not capture.
+
+variants:
+- applies_to: enterprise
+  change: The leading signal is usually a sponsor change rather than usage, and it arrives as a new
+    name on a thread rather than as an alert.
+  why: Large accounts have inertia in usage and none in personnel.
+- applies_to: smb
+  change: Usage decay is the dominant signal and it moves fast; the window is weeks rather than
+    months.
+  why: The buyer is the user, so disengagement and decision are the same event.
+- applies_to: channel
+  change: The end customer's decay is invisible to us and visible to the partner; the leading signal
+    we can actually see is the partner going quiet about that account.
+  why: We are one relationship removed from the behaviour that matters.
+
+metrics:
+- name: leading_signal_lead_time
+  unit: days
+  description: Days from first behavioural signal to a stated intention to leave.
+  direction: higher_is_better
+- name: save_rate_by_driver
+  unit: percent
+  description: Save rate split by cause rather than blended.
+  direction: higher_is_better
+
+references:
+- title: Practitioner customer-success operations
+  kind: practitioner
+  note: Engagement decay consistently precedes stated churn by a substantial margin, and the interval
+    is what the whole discipline of health scoring exists to exploit.
+- title: Commitment and consistency
+  kind: research
+  note: The mechanism behind the window closing — once a position has been stated to colleagues,
+    reversing it carries a social cost that has nothing to do with the merits.
+
+metadata:
+  owner: Sales
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: 'Promoted from an identity-and-purpose page. The addition is WHY the window closes — social
+    commitment rather than contract timing — which also explains the fourth breakdown regime, where a
+    cancellation carries no social commitment at all because procurement issues them routinely.'

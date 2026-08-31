@@ -1,0 +1,88 @@
+identity:
+  id: customer_support.pb.satisfaction_measurement.measure_less_read_verbatims_more
+  name: Measure less, read verbatims more
+  kind: playbook
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.voice_of_customer.satisfaction_measurement
+  subdomain: voice_of_customer
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: CSAT works when it is short, in-moment, and its comments are actually read weekly — the number
+    trends the dashboard, but the verbatims contain every improvement the number is hinting at.
+
+when_to_use:
+  do_not_use_when:
+  - The interaction was an incident notification rather than a service interaction. Surveying somebody about an outage measures the outage.
+steps:
+- order: 1
+  name: Ask once, briefly, in the moment
+  description: >
+    Long surveys and repeated ones both lower response rate, which biases the remaining sample
+    further toward the emotionally aroused.
+  actor: system
+  objects_read: [customer_support.obj.core.ticket, customer_support.obj.core.satisfaction_score]
+  done_when: The survey is short and tied to a specific interaction.
+- order: 2
+  name: Quote the denominator every time
+  description: >
+    A score without a response rate is not evidence. Making the denominator mandatory is the only
+    reliable way it gets said.
+  actor: system
+  done_when: No score is reported alone.
+- order: 3
+  name: Read the verbatims weekly
+  description: >
+    The number says something moved. Only the comments say what, and they are where every actual
+    improvement comes from.
+  actor: human
+  done_when: Somebody who can act has read them.
+- order: 4
+  name: Trend rather than level
+  description: >
+    The absolute value is an artefact of who answers. The movement, with a stable instrument, is
+    the part that carries information.
+  actor: system
+  done_when: Reporting shows change over time rather than a headline figure.
+- order: 5
+  name: Refuse decisions the sample cannot carry
+  description: >
+    Agent ranking on a handful of responses is indefensible and consequential. The number's
+    existence is not evidence that it can bear the weight.
+  actor: human
+  done_when: Decisions are matched to sample size.
+objects_used: [customer_support.obj.core.satisfaction_score, customer_support.obj.core.ticket, customer_support.obj.core.requester,
+               customer_support.obj.core.customer_sentiment, customer_support.obj.core.support_agent]
+limits:
+- 'It measures a sample of the vocal. Silent customers, including the ones leaving, are structurally absent.'
+- 'It reports satisfaction with an interaction, which correlates loosely with satisfaction with the product or the relationship.'
+failure_modes:
+- 'Step 5 abandoned because a number exists and somebody wants a ranking.'
+- 'Step 3 skipped once volume rises, which is exactly when the comments become most valuable.'
+variants:
+- applies_to: enterprise_support
+  change: Sample sizes are too small for meaningful scoring; the verbatims and the relationship are the measurement.
+  why: Twenty responses a quarter cannot support a trend.
+- applies_to: b2c
+  change: Volume makes trends reliable and verbatims unreadable in full, so sampling the comments becomes its own discipline.
+  why: The denominator is large and the reading capacity is not.
+- applies_to: outsourced_bpo
+  change: CSAT is usually contractual, which makes step 5 a negotiation rather than a judgement.
+  why: The score has money attached and therefore pressure behind it.
+references:
+- title: Survey response bias in service measurement
+  kind: research
+  note: The bimodal response distribution — delighted and furious — is the reason level is uninformative and trend is not.
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Step 3 is where the value actually is and it is the first thing dropped when volume rises,
+    which is exactly when the comments start containing patterns rather than anecdotes.

@@ -1,31 +1,20 @@
-# Knowledge manifest for sales.post_sale_and_growth.churn_prevention — REFERENCES ONLY, the sibling of objects.yaml.
-#
-# objects.yaml says which NOUNS to load. This says which EXPERTISE applies.
-#
-#   core   -> <kind>/core/             referenced by more than one capability
-#   scoped -> <kind>/churn-prevention/    referenced by this capability alone
-#
-# The same scope rule as objects, enforced from the reference graph: MEDDICC referenced by
-# four capabilities must be core, or it becomes four copies that drift.
-
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
 capability: sales.post_sale_and_growth.churn_prevention
-
 playbooks:
   core: []
-  scoped: []
-
+  scoped:
+  - sales.pb.churn_prevention.save_play_with_dignity
 heuristics:
   core: []
-  scoped: []
-
+  scoped:
+  - sales.heu.churn_prevention.the_save_window_opens_before_the_cancel_email
 mental_models:
   core: []
   scoped: []
-
 rules:
   core: []
-  scoped: []
-
+  scoped:
+  - sales.rule.churn_prevention.diagnose_before_offering
 decision_frameworks:
   core: []
   scoped: []

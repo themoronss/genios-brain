@@ -1,0 +1,68 @@
+identity:
+  id: customer_support.heu.postmortem.blame_ends_learning_instantly
+  name: Blame ends learning instantly
+  kind: heuristic
+  domain: customer_support
+  scope: capability
+  owner_capability: customer_support.escalation_and_incident.postmortem
+  subdomain: escalation_and_incident
+  version: 1.0.0
+  status: draft
+purpose:
+  statement: The moment fault attaches to a person, everyone's memory develops gaps and the next incident's
+    facts arrive pre-laundered. Psychological safety is not kindness here — it is the price of accurate
+    timelines.
+  answers:
+  - Why must postmortems be blameless to work?
+
+heuristic:
+  statement: >
+    The moment fault attaches to a person, everyone's memory develops gaps and the next incident's
+    facts arrive pre-laundered. Psychological safety here is not kindness — it is the precondition
+    for having accurate data at all.
+  why: >
+    People are not lying when a review turns adversarial; they are recalling selectively, framing
+    charitably and omitting what could be read against them, all of which is normal and mostly
+    unconscious. The effect compounds across incidents: once a team has watched one review assign
+    fault, the account of the next one is shaped before it is given. So blamelessness is not a
+    concession to feelings — it is the only condition under which the organisation gets to know what
+    actually happened.
+  confidence_bp: 8500
+  applies_when: Any review of a failure where individual actions contributed.
+  breaks_down_when: >
+    The behaviour was genuinely negligent or deliberate. Blamelessness applied there protects
+    something that should not be protected and the team knows it, which costs the practice its
+    credibility faster than blame would. It also breaks down when blamelessness is performed rather
+    than held: a review that says no blame while everybody knows whose change it was produces every
+    effect of blame with the additional cost of pretending otherwise.
+  reads: [customer_support.obj.core.incident, customer_support.obj.core.postmortem]
+  contradicts: [customer_support.heu.performance_management.speed_pressure_surfaces_as_reopens]
+limits:
+- 'It concerns the review, not accountability generally. Performance management exists and is a different process with different rules.'
+- 'It cannot be declared into existence; it is established by what happened in the last three reviews.'
+failure_modes:
+- 'Performed blamelessness, which is worse than either alternative.'
+- 'Extended to negligence, which discredits the practice for the cases it was built for.'
+variants:
+- applies_to: enterprise_support
+  change: Customer-facing postmortems complicate this — the customer may want somebody held responsible, and the internal review must stay separate from the external account.
+  why: Two audiences with incompatible needs.
+- applies_to: outsourced_bpo
+  change: Hardest. Blame across a contractual boundary is commercially loaded and the incentive to launder facts is structural.
+  why: Fault has money attached to it.
+references:
+- title: Blameless postmortem practice
+  kind: practitioner
+
+metadata:
+  owner: Customer Support
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-27'
+  review_status: approved
+  confidence: experimental
+  completeness: complete
+  notes: >
+    The second breakdown case is the common one: a review that declares no blame while everybody
+    in the room knows whose change it was produces every effect of blame plus the cost of
+    pretending otherwise.
