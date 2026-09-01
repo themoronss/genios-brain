@@ -19,6 +19,8 @@ from genios_engine.contracts.abstention import downgrade_to_observation, is_acti
 from .card_builder import BUILDER_VERSION, build_draft, load_evidence_quotes
 from .render import render_copy
 from .router import budget_full
+from genios_engine.contracts.abstention import is_actionable
+
 from .store import CardStore
 
 # L5 pipeline — turn gated signals into delivered cards. Runs after L3 (in-process background, no
@@ -181,6 +183,11 @@ _COHORT_REASON = "cohort_outreach_gap"
 _MEMBER_REASON = "awaiting_response"
 
 
+#: How many cards of ONE reason code may be surfaced in a single build pass.
+#: Three is enough to show a pattern is real and few enough that it cannot own the queue.
+_MAX_SURFACED_PER_REASON = 3
+
+
 def _cohort_absorbed(graph, org_id: str, signals: list[dict]) -> set[str]:
     """Signal ids whose per-person card the cohort card in this same pass already covers.
 
@@ -245,8 +252,13 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
            "llm": 0, "raw_slot": 0, "unrouted": 0,
            "absorbed_by_cohort": 0,
            "over_budget_no_push": 0,
+           "not_pushed_abstained": 0, "not_pushed_reason_saturated": 0,
            "pushed": 0, "agent_pushed": 0}
     from .bands import band
+    # How many of one situation type may interrupt in a single pass. Counted per pass rather than
+    # per day: the point is that a finding which fires across ten accounts is one thing to tell
+    # somebody, and the tenth copy carries no information the first did not.
+    surfaced_by_reason: dict[str, int] = {}
     identities = _tenant_identities(graph, org_id)   # once per org, not per card
     signals = _open_signals_without_cards(graph, org_id, eval_time)
     absorbed = _cohort_absorbed(graph, org_id, signals)
@@ -348,12 +360,38 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                 pass
             if draft["assignee"] is None:
                 out["unrouted"] += 1
-            if (band(int(sig["score"]), bands_cfg) in ("high", "critical")
+            # WHAT MAY INTERRUPT SOMEBODY. Three conditions, and only the first was ever checked.
+            #
+            # 1. A CARD THAT DECLINED TO ADVISE MUST NOT PUSH. `contracts/abstention.is_actionable`
+            #    has existed all along and this decision never consulted it, so a `review` card —
+            #    one whose own body says "there is no instruction to give, a human must look" —
+            #    was pushed on exactly the same terms as a recommendation. On the design partner's
+            #    org that was 18 of the 24 surfaced cards, while 28 PRESCRIPTIVE ones sat queued
+            #    behind them. The queue was full of the system saying it could not help.
+            #
+            #    Abstaining cards are not suppressed; they stay queued and are read when the user
+            #    opens the app. The distinction is interruption, not visibility.
+            #
+            # 2. ONE SITUATION MAY NOT FLOOD THE SURFACE. `deal_without_a_stated_problem` fired on
+            #    ten accounts, scored every one 75/critical, and took ten of the surfaced slots.
+            #    Ten identical scores are one finding about a pattern, not ten urgencies, and the
+            #    eleventh through twentieth tell the reader nothing the first did not. The rest
+            #    stay queued and are still there when the user looks.
+            #
+            # 3. The band and budget checks, unchanged.
+            reason_code = str(sig.get("reason_code") or "")
+            floods = surfaced_by_reason.get(reason_code, 0) >= _MAX_SURFACED_PER_REASON
+            if not is_actionable(draft.get("level")):
+                out["not_pushed_abstained"] += 1
+            elif floods:
+                out["not_pushed_reason_saturated"] += 1
+            elif (band(int(sig["score"]), bands_cfg) in ("high", "critical")
                     and draft["assignee"] and not over_budget
                     and card_store.transition(
                         card_id, org_id, "surfaced", "card.surfaced", cause="push",
                         allowed_from=("queued",))):
                 out["pushed"] += 1
+                surfaced_by_reason[reason_code] = surfaced_by_reason.get(reason_code, 0) + 1
         finally:
             card_store.release_build(org_id, sig["signal_id"], claim_token)
     return out
