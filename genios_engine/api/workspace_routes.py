@@ -19,12 +19,16 @@ Routes (mounted at the same base as the dashboard expects):
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
 from genios_engine.platform.auth import get_current_org
+from genios_engine.reason.authority import (AUTHORITATIVE_SCORE_SQL,
+                                            AUTHORITATIVE_SIGNAL_JOINS,
+                                            AUTHORITATIVE_SIGNAL_PREDICATE)
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.crypto import decrypt, encrypt
 from genios_engine.platform.ids import new_id
@@ -232,18 +236,74 @@ def update_task(org_id: str, task_id: str, req: TaskUpdate, org: str = Depends(_
 
 @router.get("/api/org/{org_id}/morning-brief")
 def morning_brief(org_id: str, org: str = Depends(_org)) -> dict:
-    """The manager's daily brief. NAGS are the user's own overdue tasks — real and non-intelligence.
-    Priorities + headline are intelligence-loop output (decision synthesis + ranking); they stay
-    empty until the first /v1/intelligence/query runs, so the card shows an honest 'activates' state
-    rather than a fabricated 'all clear'."""
+    """The manager's daily brief, read from the decisions that already exist.
+
+    This endpoint used to `return {"headline": None, "considered": 0, "priorities": []}` — a
+    literal, on every request, for every tenant. The docstring called it an honest "activates
+    after the first query" state, and it was not: the cards it should have been reading were
+    already in the table, already ranked, already carrying their own why-now. The brief was the
+    single loudest instance of the product showing facts where it holds decisions.
+
+    AUTHORITY IS RE-CHECKED HERE, not assumed from the card row. A card is a rendering of a Layer
+    4 decision, and a decision stops being authoritative when the graph moves, the pack changes or
+    the signal closes — so this joins the same `AUTHORITATIVE_SIGNAL_PREDICATE` the extension feed
+    and the delivery gate use. A brief is the one surface a person acts on without opening
+    anything else; it may not be the surface that shows a superseded conclusion.
+
+    NAGS stay what they were — the user's own overdue tasks, real and non-intelligence — and are
+    kept separate from `priorities` for that reason: one is a to-do list the user wrote, the other
+    is a judgment the system made, and merging them would let the second hide inside the first.
+    """
     g = _store()
+    now = datetime.now(timezone.utc)
     with g.engine.connect() as c:
         overdue = c.execute(text(
             "select id, text from user_tasks where org_id=:o and status='open' "
             "and due_at is not null and due_at < now() order by due_at asc limit 5"),
             {"o": org}).fetchall()
+        rows = c.execute(text(
+            "select k.card_id, k.headline, k.situation, k.why_now, k.level, k.urgency_band, "
+            "k.business_subject, k.unresolved_item, k.do_nothing_consequence, "
+            "k.abstained_because, k.outcome_window_days, " + AUTHORITATIVE_SCORE_SQL + " as score, "
+            "n.display_name as entity "
+            "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id " +
+            AUTHORITATIVE_SIGNAL_JOINS +
+            "left join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=k.org_id "
+            "and n.valid_to is null "
+            "where k.org_id=:o and k.state in ('queued','surfaced') and s.status='open' "
+            "and k.expires_at > :now and " + AUTHORITATIVE_SIGNAL_PREDICATE + " "
+            "order by selected_rc.final_utility_bp desc, k.created_at desc, k.card_id"),
+            {"o": org, "authority_time": now, "now": now}).fetchall()
+
     nags = [{"id": r.id, "nag": f"{r.text} — still open"} for r in overdue]
-    return {"headline": None, "considered": 0, "priorities": [], "nags": nags}
+    priorities = [{
+        "card_id": r.card_id,
+        "headline": r.headline,
+        "situation": r.situation,
+        # WHY TODAY, not just what. A brief without it is a list, and a list is what the user
+        # already has in their inbox.
+        "why_now": r.why_now,
+        "subject": r.business_subject or r.entity,
+        "unresolved": r.unresolved_item,
+        "cost_of_ignoring": r.do_nothing_consequence,
+        "outcome_window_days": r.outcome_window_days,
+        "urgency": r.urgency_band,
+        # A card that declined to instruct is shown AS declining. Silently ranking an abstention
+        # beside real instructions is how a "we cannot tell you yet" becomes advice.
+        "level": r.level,
+        "abstained_because": r.abstained_because,
+        "score": int(r.score) if r.score is not None else None,
+    } for r in rows[:5]]
+
+    # The headline names the top decision rather than counting the queue. "3 things need you"
+    # tells a person nothing they can act on before opening something else.
+    headline = None
+    if priorities:
+        top = priorities[0]
+        headline = top["headline"] or (f"{top['subject']} needs a decision"
+                                       if top["subject"] else None)
+    return {"headline": headline, "considered": len(rows),
+            "priorities": priorities, "nags": nags}
 
 
 # ── manual context / "Correct" (human-in-the-loop from the Context page) ──────────
@@ -333,6 +393,38 @@ def context_bundle(org_id: str, req: ContextLookup, org: str = Depends(_org)) ->
             "select o.display_name other from graph_edges e join graph_nodes o "
             "on o.node_id=e.from_node_id and o.org_id=e.org_id where e.org_id=:o and e.valid_to is null "
             "and e.to_node_id=:n limit 25"), {"o": org, "n": node.node_id}).fetchall()
+        # THE DECISIONS ABOUT THIS ENTITY, not re-derived from the facts above.
+        #
+        # This panel answered "what do we know" and then wrote its own recommendation from a
+        # commitment COUNT — "N open commitment(s) to follow up" — while Layer 4's actual
+        # conclusion about the same person sat in `cards`, unread by this endpoint. That is the
+        # literal shape of the complaint that a fact is being handed back as intelligence.
+        #
+        # Same authority join as the brief and the extension feed: a superseded decision must not
+        # appear on a panel somebody acts from. Cards stay a SEPARATE block rather than being
+        # folded into `facts` — the Context page's job is what is known, and a decision is not a
+        # fact about the counterparty, it is a judgment about what to do.
+        cards = c.execute(text(
+            "select k.card_id, k.headline, k.situation, k.why_now, k.level, k.urgency_band, "
+            "k.unresolved_item, k.do_nothing_consequence, k.abstained_because, "
+            "k.outcome_window_days, " + AUTHORITATIVE_SCORE_SQL + " as score "
+            "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id " +
+            AUTHORITATIVE_SIGNAL_JOINS +
+            # THE ANCHOR COUNTS AS THE PERSON. A compiled card's signal is anchored on the
+            # synthetic `outreach` / `commitment` node the state readings mint, which `concerns`
+            # the counterparty one edge away — so a panel matching only on `subject_node_id`
+            # showed no decisions for the very person the decision is about. Matching the
+            # `concerns` edge is the same hop `build_context_slice` and the neighbourhood walk
+            # already take; it invents no relationship.
+            "where k.org_id=:o and s.status='open' and (s.subject_node_id=:n or exists ("
+            "  select 1 from graph_edges ge where ge.org_id=k.org_id "
+            "  and ge.edge_type='concerns' and ge.from_node_id=s.subject_node_id "
+            "  and ge.to_node_id=:n and ge.valid_to is null)) "
+            "and k.state in ('queued','surfaced','snoozed','claimed') "
+            "and k.expires_at > :authority_time and " + AUTHORITATIVE_SIGNAL_PREDICATE + " "
+            "order by selected_rc.final_utility_bp desc, k.card_id limit 10"),
+            {"o": org, "n": node.node_id,
+             "authority_time": datetime.now(timezone.utc)}).fetchall()
 
     fact_rows = [f for f in facts if f.field != "commitment.due_at"]
     commit_rows = [f for f in facts if f.field == "commitment.due_at"]
@@ -345,6 +437,15 @@ def context_bundle(org_id: str, req: ContextLookup, org: str = Depends(_org)) ->
     commitments = [{"description": f"Due {_clean(f.value)}", "due_date": _clean(f.value),
                     "status": "open"} for f in commit_rows]
     connections = sorted({r.other for r in (list(out_e) + list(in_e)) if r.other})
+    decisions = [{
+        "card_id": r.card_id, "headline": r.headline, "situation": r.situation,
+        "why_now": r.why_now, "unresolved": r.unresolved_item,
+        "cost_of_ignoring": r.do_nothing_consequence,
+        "outcome_window_days": r.outcome_window_days,
+        "urgency": r.urgency_band, "level": r.level,
+        "abstained_because": r.abstained_because,
+        "score": int(r.score) if r.score is not None else None,
+    } for r in cards]
     return {
         "entity": {"name": node.display_name, "company": None, "relationship_stage": "active",
                    "confidence": avg_conf, "topics_of_interest": connections[:8],
@@ -357,8 +458,13 @@ def context_bundle(org_id: str, req: ContextLookup, org: str = Depends(_org)) ->
         "context_for_agent": (f"{node.display_name} ({node.node_type}) — {len(fact_list)} fact(s), "
                               f"avg confidence {round(avg_conf * 100)}%."
                               + (f" Connected to: {', '.join(connections[:5])}." if connections else "")),
-        "action_recommendation": ("No urgent action" if not commitments
-                                  else f"{len(commitments)} open commitment(s) to follow up."),
+        # The DECISION's own words when one exists. The old value was a sentence this endpoint
+        # wrote from a row count, which read as a recommendation and was not one — "No urgent
+        # action" in particular is a judgment, and counting zero commitments is not evidence for
+        # it. With no live decision the honest answer is that there is none, not a reassurance.
+        "action_recommendation": (decisions[0]["headline"] if decisions
+                                  else "No decision has been made about this contact yet."),
+        "decisions": decisions,
         "lifecycle_state": "active", "recent_interactions": [],
     }
 
