@@ -422,7 +422,19 @@ def test_current_three_domain_corpus_compiles_a_real_sales_slice():
         require_admission=False,   # draft fixtures: measurement mode; admission has its own test
         runtime_brains=InMemoryRuntimeBrains(),
     )
-    package = compiler.compile(_situation(model_ids=()))
+    # A REAL inbound lead, which is what this test's name claims to compile. The fixture used to
+    # carry `thread.ball_in_court = us` alone, and `inbound_lead` matched on that single bit —
+    # which is true the instant their mail lands. The situation now also asks how long they have
+    # waited and whether they are new to us, so a slice with no inbound timestamp and no degree
+    # legitimately no longer matches it. Enriching the fixture keeps the test testing what it
+    # says it tests, rather than pinning the assertion to a thinner reality.
+    package = compiler.compile(_situation(
+        model_ids=(),
+        facts={"thread.ball_in_court": {"value": "us"},
+               "thread.last_inbound": {"value": "2026-08-29T09:00:00+00:00"}},
+        evaluation_time="2026-09-01T09:00:00+00:00",
+        edge_count=1,
+    ))
     assert package.metadata["domain_ids"] == ("sales",)
     assert package.metadata["matched_situation_ids"] == (
         "sales.sit.inbound_fit_check", "sales.sit.inbound_lead")

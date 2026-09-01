@@ -4,7 +4,7 @@ identity:
   domain: sales
   owner_capability: sales.qualification.buying_committee_analysis
   version: 1.0.0
-  status: draft
+  status: stable
 
 description: >
   A live, multi-stakeholder purchase with a formal review process. Everything expensive loads
@@ -19,6 +19,16 @@ matches:
   scope: deal
   when:
     - {path: deal.status, op: "=", value: open}
+    # THREE OR MORE CONTACTS — the file's own definition above, made checkable. Without it this
+    # fired on every open deal and loaded the most expensive object set in the corpus (committee,
+    # decision maker, champion, budget, timeline) for a one-person purchase.
+    #
+    # The definition's OTHER half — "and a review function involved" — is deliberately not in the
+    # gate. The predicate grammar is AND-only, so requiring one review signal (`legal_review`,
+    # `security_review_started`) would exclude deals that run the other, and there is no way to
+    # write "either". Contacts is the half that is countable without guessing; the review
+    # function is left to the reader, which is what the render hint says.
+    - {fn: edge_count, op: ">=", value: 3}
 
 also_serves:
   - sales.qualification.stakeholder_mapping
@@ -57,12 +67,38 @@ signals_of_decay:
   - discount_pressure
   - closed_lost_mention
 
+render:
+  artifact_kind: brief
+  render_hint: >
+    A deal with several people on it. The value is naming WHO, not saying that a committee
+    exists — the reader already knows that.
+
+    Headline: the account and that more than one person is now involved.
+
+    Situation: how many people are on this deal and what stage it is at. Name the people the
+    evidence actually carries.
+
+    Artifact: the shortest path to the missing answer — who signs, who blocks, and which of
+    them we have never spoken to. Frame it as questions to ask the champion, not as a
+    conclusion about their org chart.
+
+    THE COMMITTEE IS INFERRED FROM WHO IS ON THE THREAD, and nothing more. There is no committee
+    record, no org chart and no authority field anywhere in this system, so never state who the
+    decision maker IS, never call anyone a blocker, and never say a review function is or is not
+    running. Say what is visible and ask for the rest.
+  fallback:
+    headline: "{entity} — {stage} deal, several people involved"
+    situation: >-
+      Three or more people are now on the {entity} deal. Who signs is not visible from the
+      thread.
+
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
+  reviewed_by: harsh
   last_updated: "2026-08-08"
-  review_status: unreviewed
+  review_status: approved
+  reviewed_at: '2026-09-01'
   confidence: provisional
   notes: >
     All five authored objects load here — this is the situation that justifies the load-set
@@ -70,3 +106,12 @@ metadata:
     Nine of the twenty-six L2 situation types bind to this file. The remaining types are
     counted by _tools/index.py as unrouted; an unrouted type is a real gap, since Layer 2
     emits it and no capability will ever be compiled for it.
+
+    Promoted from draft on 2026-09-01. It had no `render` block and one condition, so it fired
+    on every open deal, loaded the corpus's most expensive object set for one-person purchases,
+    and then rendered against an empty template. `edge_count >= 3` is this file's own stated
+    definition made checkable; the "review function" half of that definition stays out of the
+    gate because the predicate grammar cannot express "either signal".
+
+admission:
+  accepted_content_hash: 5dc19614350f1034acb56a8dd0df6474c0fda97b8013e16bdd5563dceab2c1aa

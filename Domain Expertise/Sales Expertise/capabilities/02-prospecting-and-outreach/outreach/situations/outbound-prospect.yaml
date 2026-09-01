@@ -64,3 +64,14 @@ metadata:
     Note the deliberate overlap with inbound-lead: both bind Layer 2 types that describe
     silence, and the `when` narrowing on ball_in_court is what separates them. Two situations
     may bind the same L2 type — the registry resolves to a set, not to one winner.
+
+    HELD AT DRAFT ON PURPOSE, 2026-09-01 — and this one should probably be RETIRED.
+
+    Its gate is `thread.ball_in_court = them` + `edge_count <= 1`, which is
+    `sales.sit.first_touch_unanswered` minus that file's two extra conditions. Same L2 types,
+    same scope, strictly wider. Promoting it would put a second card on every first touch that
+    already has one, and the wider gate would fire the moment we press send.
+
+    `first_touch_unanswered` is the admitted version of this reading and now carries the waiting
+    clock. If a distinct outbound-sequence situation is wanted later it needs its own gate —
+    sequence position, not first-touch — rather than this file's.

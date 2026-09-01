@@ -90,3 +90,10 @@ metadata:
     what Layer 2 emits. The gap that would improve this situation most is a loss REASON on
     closed_lost_mention — without it every reading taken here dies with the deal instead of
     grouping into the loss cohort that would evidence a disqualifier.
+
+    HELD AT DRAFT ON PURPOSE, 2026-09-01 — same reason as `inbound_fit_check`, and worse.
+
+    "Out of profile" is a comparison against a profile, and no profile exists in this system.
+    The only gate this file carries is `deal.status = open`, so promoting it would label every
+    open deal out-of-profile against a standard nobody has written down. That is not a thin
+    card; it is a wrong one.

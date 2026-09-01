@@ -96,6 +96,11 @@ _CLOCK = {
     "awaiting_response": "thread.last_outbound",
     "commitment_overdue": "commitment.due_at",
     "meeting_follow_through": "meeting.start_at",
+    # The two Sales situations promoted out of draft. Their reason_code is their L2 situation
+    # type, and each names the timestamp its own finding is measured from — when THEY wrote, and
+    # when the deal last moved. Without an entry `{days}` renders the sentinel word.
+    "inbound_lead": "thread.last_inbound",
+    "enterprise_deal": "deal.last_inbound",
 }
 
 

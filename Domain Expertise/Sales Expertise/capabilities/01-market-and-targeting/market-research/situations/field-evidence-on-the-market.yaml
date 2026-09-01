@@ -97,3 +97,14 @@ metadata:
     would change this is not another situation type but an account-level one: a segment key
     plus a trigger-event feed would let a situation fire on a market rather than only on a
     deal inside it.
+
+    HELD AT DRAFT ON PURPOSE, 2026-09-01.
+
+    This reads deal conversations for market intelligence — competitors, pricing pressure, what
+    buyers are saying. The observation kinds it would need (`competitor`, `price_pushback`) do
+    exist, but its gate is `deal.status = open` alone, so today it fires on every open deal and
+    has no card copy at all.
+
+    It is promotable, and the work is real authoring rather than a data gap: a gate on the
+    evidence kinds it actually reads, and copy that reports what was heard without turning one
+    remark into a market conclusion. Left for that pass rather than promoted thin.

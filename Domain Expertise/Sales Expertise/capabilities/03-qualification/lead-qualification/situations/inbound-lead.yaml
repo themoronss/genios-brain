@@ -4,7 +4,7 @@ identity:
   domain: sales
   owner_capability: sales.qualification.lead_qualification
   version: 1.0.0
-  status: draft
+  status: stable
 
 description: >
   Someone came to us. They raised their hand — requested a demo, replied to a campaign, or
@@ -26,6 +26,14 @@ matches:
     # Inbound means the ball arrived with us. Without this narrowing the situation also
     # catches outbound sequences that happened to produce one reply.
     - {path: thread.ball_in_court, op: "=", value: us}
+    # HOW LONG THEY HAVE WAITED ON US. `ball_in_court = us` is true the instant their mail
+    # lands, and a lead is not unqualified because nobody answered it in the same hour. This is
+    # the same correction `first_touch_unanswered` needed for the mirror-image case.
+    - {fn: days_since, path: thread.last_inbound, op: ">=", value: 1}
+    # AND NEW TO US. A long-standing customer writing in is not a lead — qualification is a
+    # question asked once, about somebody we do not yet know. `edge_count` is the only newness
+    # reading this layer has.
+    - {fn: edge_count, op: "<=", value: 2}
 
 also_serves:
   - sales.prospecting_and_outreach.follow_up
@@ -56,13 +64,50 @@ signals_of_progress:
 signals_of_decay:
   - closed_lost_mention
 
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Somebody we do not know has written and we have not answered. The value is not "reply" —
+    they know that. It is what to ASK.
+
+    Headline: who wrote, and how long they have been waiting on us.
+
+    Situation: what they asked for, in their own words where the evidence carries them, and how
+    long it has been. If we cannot see what they asked, say so plainly — an unread enquiry
+    answered with a generic greeting is worse than one answered late.
+
+    Artifact: the reply that qualifies without interrogating. Acknowledge the specific thing
+    they raised, then ask the ONE question that decides whether this is worth a call. One
+    question, not a form.
+
+    Never state or imply whether they fit who we sell to. Nothing in this system holds a
+    customer profile — `sales.obj.core.icp` loads as an object but no fact writer fills it — so
+    fit is a judgment for the reader and never a claim for the card.
+  fallback:
+    headline: "{entity} — new enquiry, {days}d with us"
+    situation: >-
+      {entity} wrote {days} days ago and the reply is still on our side. No prior relationship
+      on the record.
+
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
-  last_updated: "2026-08-08"
-  review_status: unreviewed
-  confidence: provisional
+  reviewed_by: harsh
+  last_updated: '2026-09-01'
+  review_status: approved
+  reviewed_at: '2026-09-01'
+  confidence: experimental
   notes: >
     Three objects loaded instead of the twenty the qualification subdomain will eventually
     own. That reduction is the entire reason this file exists.
+
+    Promoted from draft on 2026-09-01, with a gate and card copy it did not have. It had
+    neither a `render` block nor a second condition, so it would have fired on every inbound
+    message the moment it arrived and then rendered against an empty template.
+
+    `sales.obj.core.icp` stays in the load-set and no predicate touches it: the object gives the
+    reasoner somewhere to put a profile if one ever exists, and gating on it today would make
+    the situation unroutable, because nothing writes it.
+
+admission:
+  accepted_content_hash: eaa20f7cdd60d8a5a043f7759d6e92db15a7dd12b5f17272e2edaa34e76d3a5d

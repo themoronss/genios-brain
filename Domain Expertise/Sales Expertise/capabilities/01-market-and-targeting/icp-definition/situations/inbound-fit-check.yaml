@@ -115,3 +115,14 @@ metadata:
     account.industry, account.employee_count or account.geography reaching the engine, the
     disqualifier list cannot fire and the fit reading is limited to what the first reply
     reveals, which arrives after the effort this situation exists to save.
+
+    HELD AT DRAFT ON PURPOSE, 2026-09-01 — this is a recorded decision, not an unfinished file.
+
+    Every reading here turns on whether an enquiry fits who we sell to, and NOTHING IN THIS
+    SYSTEM HOLDS A CUSTOMER PROFILE. `sales.obj.core.icp` is an object with no fact writer
+    anywhere in Layer 2. Promoting this would ship a card that asks the reader to judge fit
+    against a definition the product cannot see, on every account, with no gate at all.
+
+    It becomes real the day an ICP is stored — a tenant-stated profile, not an inferred one.
+    Until then the honest state is draft, where the abstention gate keeps anything built from it
+    non-prescriptive.
