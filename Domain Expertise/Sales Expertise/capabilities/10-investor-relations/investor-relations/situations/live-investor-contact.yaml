@@ -43,6 +43,19 @@ matches:
   # No `when:` narrowing, and not an empty key. An investor conversation is worth reading
   # precisely when no deal-shaped predicate is true — narrowing on `deal.status` would suppress
   # the entire population this situation serves, which is the mistake that left it unrouted.
+  # ONE NARROWING, AND ONLY OVER A CLAIM THE COPY ALREADY MAKES.
+  #
+  # The note above is right that a deal-shaped predicate would suppress the entire population
+  # this file serves, and that is not what this adds. The card says there is no agreed next step
+  # — a statement about a fact, asserted on every row including ones where a next step was agreed
+  # yesterday. `absent:` checks exactly that and nothing else.
+  #
+  # Deliberately NOT gated on `derived.momentum` for "nothing moving", tempting as that reads: a
+  # node with no observations in the window carries no momentum row, the predicate returns
+  # UNKNOWN, and the situation stops routing — losing precisely the dormant relationships this
+  # exists for.
+  when:
+    - absent: commitment.due_at
 
 also_serves:
   - sales.prospecting_and_outreach.account_research
@@ -107,7 +120,8 @@ render:
     # and exactly how the sibling situation live_investor_relationship words it. One live card
     # carried the old wording on 2026-08-30.
     situation: >-
-      An open fundraising conversation with {entity} and no next date on the record.
+      An open fundraising conversation with {entity} and no next date on the record —
+      last heard {last_heard_days} days ago.
 
 metadata:
   owner: Sales
@@ -133,4 +147,4 @@ metadata:
     has to live here to be found at all.
 
 admission:
-  accepted_content_hash: 80790556813a3871101952f32d4c0493b21e04c2dda28f73d3cbccf1260ce911
+  accepted_content_hash: 576a18248df7752c58bd52c7d00235e9e18bf65257eac0b018504361a4ef6e65

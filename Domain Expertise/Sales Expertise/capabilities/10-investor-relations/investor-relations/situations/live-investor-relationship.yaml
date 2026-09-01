@@ -29,6 +29,19 @@ matches:
   # No `when:` key, and not an empty one. An investor relationship is worth reading precisely
   # when nothing is formally open: the deal-shaped predicates in the pack are all silent here by
   # construction, and narrowing on them would reproduce the misreading this file exists to end.
+  # ONE NARROWING, AND ONLY OVER A CLAIM THE COPY ALREADY MAKES.
+  #
+  # The note above is right that a deal-shaped predicate would suppress the entire population
+  # this file serves, and that is not what this adds. The card says there is no agreed next step
+  # — a statement about a fact, asserted on every row including ones where a next step was agreed
+  # yesterday. `absent:` checks exactly that and nothing else.
+  #
+  # Deliberately NOT gated on `derived.momentum` for "nothing moving", tempting as that reads: a
+  # node with no observations in the window carries no momentum row, the predicate returns
+  # UNKNOWN, and the situation stops routing — losing precisely the dormant relationships this
+  # exists for.
+  when:
+    - absent: commitment.due_at
 
 also_serves:
   - sales.prospecting_and_outreach.account_research
@@ -86,9 +99,9 @@ render:
     Artifact: a reply that respects who is chasing whom. Investors do not chase — give them a
     reason to re-engage (a concrete update against the condition they named), never a nudge.
   fallback:
-    headline: "{entity} — investor conversation open"
+    headline: "{entity} — investor conversation, nothing scheduled"
     situation: >-
-      An open fundraising conversation with {entity} with no agreed next step on the record.
+      An open fundraising conversation with {entity} and no agreed next step on the record.
 
 metadata:
   owner: Sales
@@ -100,4 +113,4 @@ metadata:
   reviewed_at: '2026-08-25'
 
 admission:
-  accepted_content_hash: 39afb3ff7306529331d0579cfeaf59dfc084cdbfe3d24086719d8a8973b91429
+  accepted_content_hash: ec889680aff0f9c617eaa8c8f77db9518763fcef632da147031e3d920ac632c0

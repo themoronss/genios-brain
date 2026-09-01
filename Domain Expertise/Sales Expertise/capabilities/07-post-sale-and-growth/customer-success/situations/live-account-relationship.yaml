@@ -28,6 +28,19 @@ matches:
   # precisely when nothing is formally open: that is when decay is cheapest to reverse and when
   # every deal-shaped rule in the pack is silent. `when:` with nothing under it parses as null,
   # which the schema rejects (it wants an array) — an absent narrowing has to be an absent key.
+  # ONE NARROWING, AND ONLY OVER A CLAIM THE COPY ALREADY MAKES.
+  #
+  # The note above is right that a deal-shaped predicate would suppress the entire population
+  # this file serves, and that is not what this adds. The card says "no agreed next step" — that
+  # is a statement about a fact, and it was asserted on every row including ones where a next
+  # step was agreed yesterday. `absent:` checks exactly that and nothing else.
+  #
+  # Deliberately NOT gated on `derived.momentum` for "nothing moving", tempting as it reads: a
+  # node with no observations in the window carries no momentum row at all, the predicate returns
+  # UNKNOWN, and the situation stops routing — losing precisely the dormant accounts this exists
+  # for. The copy stops claiming it instead.
+  when:
+    - absent: commitment.due_at
 
 also_serves:
   - sales.post_sale_and_growth.expansion
@@ -93,9 +106,9 @@ render:
     Artifact: a reply that continues the relationship on its own terms — respond to what they
     last raised, or offer something specific and useful. Never a check-in for its own sake.
   fallback:
-    headline: "{entity} — relationship open, nothing moving"
+    headline: "{entity} — open relationship, nothing scheduled"
     situation: >-
-      An active relationship with {entity} with nothing currently in play and no agreed next step.
+      An active relationship with {entity} and no agreed next step on the record.
 
 metadata:
   owner: Sales
@@ -107,4 +120,4 @@ metadata:
   reviewed_at: '2026-08-25'
 
 admission:
-  accepted_content_hash: 421ca4cd320d0e140eca2fd0a15a6c17c793037c4d30a7fd32a8b4c2b4e8251d
+  accepted_content_hash: 1acc1cb8cceacfe64dc2e167256d342daba8361a07de3d57294cdf655072a1d1
