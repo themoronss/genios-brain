@@ -10,7 +10,8 @@ Deliberately honest about the seam's gaps (see the design doc's Layer 3 gaps):
   * L2 carries NO importance -> a neutral default until Layer 6 supplies one;
   * signal ids / evidence are reconstructed from the correlation, not stored on the situation;
   * missing_fields uses field-path keys, never the plain-language ``missing`` labels (those have
-    spaces and are not identifiers).
+    spaces and are not identifiers) — so it is derived here from the domain spec's expected
+    fields rather than copied off the situation row.
 These are marked in metadata so a shadow package is never mistaken for a fully-sourced one.
 """
 
@@ -23,6 +24,7 @@ from typing import Any
 
 from sqlalchemy import text
 
+from genios_engine.context.domain_spec import spec_for
 from genios_engine.context.situations import SCORE_MAX
 from genios_engine.contracts.domain_expertise import (
     BusinessSituationObject,
@@ -253,6 +255,33 @@ def build_business_situation(
     )
 
 
+
+def _missing_paths(situation: Mapping[str, Any], facts: Mapping[str, Any],
+                   neighbor_facts: Mapping[str, Any]) -> tuple[str, ...]:
+    """Which of this situation type's expected fields the graph does not hold, as FIELD PATHS.
+
+    This used to be a hardcoded empty tuple, and an empty `missing_fields` is not a neutral
+    default — it is a claim. `packs/compiler/context_adapter.evaluate` consults exactly this set
+    to decide whether a predicate is UNKNOWN, so with it empty an `exists:` test on a field
+    nothing ever wrote returned a confident FALSE. The situation was then silently not routed,
+    indistinguishable from a situation correctly judged not to apply, and every downstream reader
+    was told the context was complete.
+
+    Derived from `domain_spec.expected_fields` — the same declaration `situations.coverage_score`
+    already scores against — so the two can never disagree about what a situation type is supposed
+    to know. The neighbourhood counts as held: `reason/adapters/native.py` borrows a missing root
+    field from the 1-hop neighbours, so a field present there is one the reasoner can actually
+    read, and calling it missing here would abstain over evidence we have.
+
+    An unregistered domain declares no expected fields and therefore reports nothing missing —
+    unchanged behaviour, and correct: we cannot name a gap in a domain nobody has described.
+    """
+    expected = spec_for(situation.get("domain")).fields_for(str(situation["situation_type"]))
+    if not expected:
+        return ()
+    held = set(facts or ()) | set(neighbor_facts or ())
+    return tuple(sorted(path for path in expected if path not in held))
+
 def build_context_slice(
     *, org_id: str, situation: Mapping[str, Any], facts: Mapping[str, Any],
     observations: list[Mapping[str, Any]], neighbor: tuple[int, set, Mapping[str, Any]],
@@ -275,7 +304,7 @@ def build_context_slice(
         neighbor_facts=_no_floats(dict(neighbor_facts)),
         neighbor_observations=tuple(sorted({str(k) for k in neighbor_obs})),
         edge_count=int(edge_count),
-        missing_fields=(),
+        missing_fields=_missing_paths(situation, facts, neighbor_facts),
         metadata={"shadow": True},
     )
 

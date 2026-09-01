@@ -32,30 +32,56 @@ class CardStore:
             return c.execute(text("select 1 from cards where signal_id=:s"),
                              {"s": signal_id}).first() is not None
 
+    #: A card is REFRESHABLE only from a state the user has not touched.
+    #:
+    #: `snoozed`, `claimed`, `acted` and `resolved` all record a human decision about this exact
+    #: card, and rewriting the words underneath one of those is not an improvement — it is
+    #: changing what somebody already answered. A card still sitting in the queue has been
+    #: decided about by nobody, so replacing weak copy with better copy costs nothing.
+    REFRESHABLE_STATES = ("built", "queued", "surfaced")
+
+    #: The staleness test, shared by the claim and the upsert so the two can never disagree about
+    #: which cards may be rewritten. `is distinct from` rather than `<>` because the column is
+    #: NULL on every card built before it existed, and those are exactly the stale ones.
+    _STALE = ("k.builder_version is distinct from :builder "
+              "and k.state = any(:refreshable) and k.resolved_at is null")
+
     def claim_build(self, org_id: str, signal_id: str, *, eval_time=None,
-                    lease_minutes: int = 15) -> str | None:
-        """Claim the expensive render step without holding a database lock across the LLM call."""
+                    lease_minutes: int = 15, builder_version: str | None = None) -> str | None:
+        """Claim the expensive render step without holding a database lock across the LLM call.
+
+        Claims a signal with NO card, or one whose card was composed by an older builder and is
+        still untouched. Without the second case every upstream improvement — a wider slot
+        vocabulary, better authored copy, a fixed prompt — was invisible on every card that
+        already existed, which is every card a real tenant has.
+        """
         if isinstance(lease_minutes, bool) or not isinstance(lease_minutes, int) \
                 or not 1 <= lease_minutes <= 60:
             raise ValueError("lease_minutes must be between 1 and 60")
         now = authority_time(eval_time)
         token = new_id("cbuild")
+        # `not exists (no card)` OR `exists (a stale, untouched card)` — spelled as one NOT EXISTS
+        # over the cards that BLOCK a claim, so the two branches cannot drift apart.
+        blocked = ("not exists (select 1 from cards k where k.signal_id=%s "
+                   "and not (" + self._STALE + "))")
         with self._engine.begin() as c:
             row = c.execute(text(
                 "insert into card_build_claims "
                 "(signal_id,org_id,claim_token,claimed_at,expires_at) "
                 "select s.signal_id,s.org_id,:token,:now,:expires from signals s "
                 "where s.signal_id=:signal and s.org_id=:o "
-                "and not exists (select 1 from cards k where k.signal_id=s.signal_id) "
+                "and " + (blocked % "s.signal_id") + " "
                 "on conflict (signal_id) do update set "
                 "claim_token=excluded.claim_token,claimed_at=excluded.claimed_at,"
                 "expires_at=excluded.expires_at "
                 "where card_build_claims.org_id=excluded.org_id "
                 "and card_build_claims.expires_at<=:now "
-                "and not exists (select 1 from cards k where k.signal_id=excluded.signal_id) "
+                "and " + (blocked % "excluded.signal_id") + " "
                 "returning claim_token"),
                 {"token": token, "now": now, "expires": now + timedelta(minutes=lease_minutes),
-                 "signal": signal_id, "o": org_id}).first()
+                 "signal": signal_id, "o": org_id,
+                 "builder": builder_version,
+                 "refreshable": list(self.REFRESHABLE_STATES)}).first()
         return token if row is not None and row.claim_token == token else None
 
     def release_build(self, org_id: str, signal_id: str, claim_token: str) -> bool:
@@ -79,10 +105,16 @@ class CardStore:
                 c.execute(sql, row)
 
     def insert_card(self, card: dict, copy: dict, *,
-                    build_claim_token: str) -> tuple[str | None, bool]:
+                    build_claim_token: str) -> tuple[str | None, bool, bool]:
         """Persist a built+rendered card at state 'queued' (validators already green) + its
-        card.created event, atomically. Returns ``(card_id, created)``. Idempotent and race-safe
-        on signal_id; only the transaction that inserted the row may render/push it as new."""
+        card.created event, atomically. Returns ``(card_id, created, refreshed)``.
+
+        Idempotent and race-safe on signal_id; only the transaction that INSERTED the row may
+        render/push it as new. A card that already exists and is stale (older builder, untouched
+        by the user) is rewritten IN PLACE — same `card_id`, same queue state, same snooze and
+        feedback history — and reported as ``refreshed`` rather than ``created``, because
+        improving the words on a card the user has already been shown is not a new notification
+        and must never be pushed as one."""
         card_id = new_id("card")
         with self._engine.begin() as c:
             as_of = authority_time(card.get("_authority_time"))
@@ -92,7 +124,7 @@ class CardStore:
                 {"o": card["org_id"], "signal": card["signal_id"],
                  "token": build_claim_token, "authority_time": as_of}).first()
             if lease is None:
-                return None, False
+                return None, False, False
             authority = card.get("_authority") or {}
             if authority:
                 c.execute(text(
@@ -113,7 +145,7 @@ class CardStore:
                      "cfg": authority.get("config_snapshot_id"),
                      "authority_time": as_of}).first()
                 if held is None:
-                    return None, False
+                    return None, False, False
             inserted = c.execute(text(
                 "insert into cards (card_id, signal_id, org_id, assignee, domain, level, "
                 "urgency_band, headline, situation, score, score_block, actions, why, "
@@ -123,13 +155,42 @@ class CardStore:
                 "business_subject, relationship_role, unresolved_item, why_now, "
                 "capability_key, capability_version, capability_review_state, "
                 "outcome_window_days, success_signal, do_nothing_consequence, "
-                "confidence_vector, surfaces, "
+                "confidence_vector, surfaces, builder_version, "
                 "state, expires_at) values (:id,:sig,:o,:asg,:dom,:lvl,:band,:head,:sit,:score,"
                 "cast(:sb as jsonb),cast(:act as jsonb),cast(:why as jsonb),:tags,"
                 "cast(:art as jsonb),:rm,:cs,:tv,:rjc,:rjd,:abst,"
                 ":bsub,:brole,:bitem,:bwhy,:ckey,:cver,:crev,:owin,:osig,:odnc,"
-                "cast(:cvec as jsonb),:surf,'queued',:exp) "
-                "on conflict (signal_id) do nothing returning card_id"),
+                "cast(:cvec as jsonb),:surf,:bver,'queued',:exp) "
+                # PRESENTATION ONLY. `state`, `created_at`, `snooze_until`, `resolved_at` and
+                # `expires_at` are the user's side of the row and are never touched here: a
+                # refresh improves what the card SAYS, never where it sits or what was decided
+                # about it. The guard repeats `_STALE` against the held row so a concurrent
+                # writer that already refreshed it cannot be overwritten by a slower one.
+                "on conflict (signal_id) do update set "
+                "assignee=excluded.assignee, domain=excluded.domain, level=excluded.level, "
+                "urgency_band=excluded.urgency_band, headline=excluded.headline, "
+                "situation=excluded.situation, score=excluded.score, "
+                "score_block=excluded.score_block, actions=excluded.actions, "
+                "why=excluded.why, context_tags=excluded.context_tags, "
+                "artifact=excluded.artifact, render_mode=excluded.render_mode, "
+                "config_snapshot_id=excluded.config_snapshot_id, "
+                "template_version=excluded.template_version, reject_code=excluded.reject_code, "
+                "reject_detail=excluded.reject_detail, "
+                "abstained_because=excluded.abstained_because, "
+                "business_subject=excluded.business_subject, "
+                "relationship_role=excluded.relationship_role, "
+                "unresolved_item=excluded.unresolved_item, why_now=excluded.why_now, "
+                "capability_key=excluded.capability_key, "
+                "capability_version=excluded.capability_version, "
+                "capability_review_state=excluded.capability_review_state, "
+                "outcome_window_days=excluded.outcome_window_days, "
+                "success_signal=excluded.success_signal, "
+                "do_nothing_consequence=excluded.do_nothing_consequence, "
+                "confidence_vector=excluded.confidence_vector, surfaces=excluded.surfaces, "
+                "builder_version=excluded.builder_version "
+                "where cards.builder_version is distinct from excluded.builder_version "
+                "and cards.state = any(:refreshable) and cards.resolved_at is null "
+                "returning card_id, (xmax = 0) as inserted"),
                 {"id": card_id, "sig": card["signal_id"], "o": card["org_id"],
                  "asg": card["assignee"], "dom": card["domain"], "lvl": card["level"],
                  "band": card["urgency_band"], "head": copy["headline"], "sit": copy["situation"],
@@ -156,20 +217,33 @@ class CardStore:
                  "surf": card.get("surfaces") or ["app", "agent", "ask", "api"],
                  # why this card declines to instruct, or NULL when it does
                  "abst": card.get("abstained_because"),
+                 "bver": card.get("builder_version"),
+                 "refreshable": list(self.REFRESHABLE_STATES),
                  "exp": card["expires_at"]}).first()
             if inserted is None:
+                # The DO UPDATE's WHERE refused: a card exists and is NOT stale — either the
+                # user has acted on it, or another writer already refreshed it to this builder.
                 winner = c.execute(text(
                     "select card_id from cards where signal_id=:s and org_id=:o"),
                     {"s": card["signal_id"], "o": card["org_id"]}).first()
-                return (winner.card_id if winner is not None else None), False
+                return (winner.card_id if winner is not None else None), False, False
+            detail = {"band": card["urgency_band"], "render_mode": copy["render_mode"],
+                      "reject_code": copy.get("reject_code"),
+                      # the offending token was computed and discarded; a 90% fallback rate is
+                      # not diagnosable without it
+                      "reject_detail": copy.get("reject_detail")}
+            if not inserted.inserted:
+                # The row already existed and carried an older builder. Its identity is the HELD
+                # card_id, not the one minted above — returning the fresh id would name a row
+                # that was never written.
+                self.log_event(inserted.card_id, card["org_id"], "card.rebuilt",
+                               cause=card.get("resolved_rule"),
+                               detail={**detail, "builder_version": card.get("builder_version")},
+                               conn=c)
+                return inserted.card_id, False, True
             self.log_event(card_id, card["org_id"], "card.created",
-                           cause=card.get("resolved_rule"),
-                           detail={"band": card["urgency_band"], "render_mode": copy["render_mode"],
-                                   "reject_code": copy.get("reject_code"),
-                                   # the offending token was computed and discarded; a 90%
-                                   # fallback rate is not diagnosable without it
-                                   "reject_detail": copy.get("reject_detail")}, conn=c)
-        return card_id, True
+                           cause=card.get("resolved_rule"), detail=detail, conn=c)
+        return card_id, True, False
 
     def transition(self, card_id, org_id, to_state, kind, *, cause=None, actor="system",
                    detail=None, snooze_until=None, resolved=False, allowed_from=None) -> bool:

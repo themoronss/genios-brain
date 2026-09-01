@@ -278,6 +278,13 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             # aggregate and whichever neighbour was written last, and between a row existing for
             # every non-reasoner reader and not. See `compute_account_view` for the measurement.
             derived_rows += compute_account_view(store, org_id)
+            # WAITING state — the only facts in this layer derived from what did NOT happen.
+            # Runs behind the person and account passes because it reads the same thread state
+            # they commit, and ahead of the situation refresh below so a situation's coverage can
+            # see them. Everything above records an event; nothing records silence, which is the
+            # shape of most of what a user actually wants told to them.
+            from genios_engine.context.waiting import compute_waiting
+            derived_rows += compute_waiting(store, org_id)
             # PERIOD aggregates and their situations, in the same pass and for the same reason:
             # they are computed from facts that now exist, they are cheap, and a period read that
             # is only refreshed by a separate schedule is a period read that is always stale.
@@ -297,6 +304,14 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             # the calendar facts this drain just committed.
             from genios_engine.context.meeting_touch import refresh_channel_touch_situations
             derived_rows += refresh_channel_touch_situations(store, org_id)
+            # THE STATE READINGS, last of the derived passes because they read what every pass
+            # above just wrote — the waiting arithmetic in particular. These are the only
+            # situations in the system named after what is HAPPENING rather than who it is
+            # about, which is what gives an authored "we wrote and nobody answered" capability
+            # something to route on. Same self-correcting contract as the support readings: a
+            # finding that stops being true is resolved by fact on the next sweep.
+            from genios_engine.context.outreach_situations import refresh_state_situations
+            derived_rows += refresh_state_situations(store, org_id)
             # The records reading, in the same pass and for the same reason: a document's control
             # gaps are computed from the file metadata THIS drain just projected, and the copy
             # clustering has to re-run whenever a file lands or a second copy of one appears. It

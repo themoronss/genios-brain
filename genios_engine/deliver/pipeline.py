@@ -16,7 +16,7 @@ from genios_engine.reason.authority import (
 )
 
 from genios_engine.contracts.abstention import downgrade_to_observation, is_actionable
-from .card_builder import build_draft, load_evidence_quotes
+from .card_builder import BUILDER_VERSION, build_draft, load_evidence_quotes
 from .render import render_copy
 from .router import budget_full
 from .store import CardStore
@@ -73,12 +73,23 @@ def _open_signals_without_cards(graph, org_id: str,
             # were stuck invisible forever even though the underlying signal was still open and
             # valid. A non-expired card (queued/surfaced/snoozed/claimed/resolved) still counts as
             # "already has a card" — only 'expired' reopens the door for a rebuild.
+            # A STALE card no longer blocks either. The join already excluded expired cards for
+            # the same reason this excludes out-of-date ones: a card that is not going to be
+            # looked at, or that was composed by a builder we have since improved, is not a
+            # reason to withhold a better one. Untouched states only — a card the user snoozed,
+            # claimed, acted on or resolved is their answer, and re-deriving it is not a fix.
+            # `CardStore.claim_build` re-checks the same condition transactionally; this join is
+            # what stops the signal being filtered out before the claim is ever attempted.
             " left join cards k on k.signal_id=s.signal_id and k.org_id=s.org_id "
             "and k.state != 'expired' "
+            "and not (k.builder_version is distinct from :builder "
+            "         and k.state = any(:refreshable) and k.resolved_at is null) "
             "where s.org_id=:o and s.status='open' and k.card_id is null and " +
             AUTHORITATIVE_SIGNAL_PREDICATE +
             " order by selected_rc.final_utility_bp desc, s.signal_id asc"),
-            {"o": org_id, "authority_time": as_of}).mappings().all()
+            {"o": org_id, "authority_time": as_of,
+             "builder": BUILDER_VERSION,
+             "refreshable": list(CardStore.REFRESHABLE_STATES)}).mappings().all()
     out = []
     for r in rows:
         d = dict(r)
@@ -151,21 +162,104 @@ def _tenant_identities(graph, org_id: str) -> tuple[str, ...]:
     return tuple(str(p).strip() for p in parts if p and str(p).strip())
 
 
+#: The cohort card already carries a line for these people, so a card each says nothing new.
+#:
+#: A campaign of five silent contacts produced five per-person cards AND one cohort card, and six
+#: cards about one campaign is not six pieces of intelligence. But suppressing all five would be
+#: wrong in the other direction: the per-person judgment DIFFERS once somebody has been chased —
+#: "chased twice with no reply, another reminder is unlikely to be what changes this" is an
+#: instruction about that relationship, and the cohort's aggregate cannot make it.
+#:
+#: So only the never-chased are absorbed. The cohort states them as a group ("never chased: 3")
+#: and names them in its own artifact, which is exactly as much as an individual card for one of
+#: them would have said. Everyone the cohort can only count keeps their own card.
+#:
+#: THIS IS A DELIVERY POLICY AND IT LIVES HERE DELIBERATELY. Layer 2 mints both situations because
+#: both are true; deciding that one presentation makes the other redundant is a judgment about
+#: what a person should be shown, which is this layer's job and not the context graph's.
+_COHORT_REASON = "cohort_outreach_gap"
+_MEMBER_REASON = "awaiting_response"
+
+
+def _cohort_absorbed(graph, org_id: str, signals: list[dict]) -> set[str]:
+    """Signal ids whose per-person card the cohort card in this same pass already covers.
+
+    Computed over the WHOLE signal list before any card is built, so the outcome does not depend
+    on which card happened to be built first — the same pass must produce the same queue however
+    the rows were ordered.
+    """
+    objectives = {str(s.get("reason_code") or ""): None for s in signals}
+    if _COHORT_REASON not in objectives or _MEMBER_REASON not in objectives:
+        return set()
+    subjects = [str(s["subject_node_id"]) for s in signals if s.get("subject_node_id")]
+    if not subjects:
+        return set()
+    with graph.engine.connect() as c:
+        rows = c.execute(text(
+            "select subject_node_id, field, value from graph_facts "
+            "where org_id=:o and subject_node_id = any(:n) and valid_to is null "
+            "and status='active' and field in "
+            "('cohort.objective','outreach.objective','outreach.follow_up_count')"),
+            {"o": org_id, "n": subjects}).fetchall()
+    held: dict[str, dict] = {}
+    for row in rows:
+        value = row.value
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except (TypeError, ValueError):
+                pass
+        held.setdefault(str(row.subject_node_id), {})[str(row.field)] = value
+
+    covered = {str(held.get(str(s["subject_node_id"]), {}).get("cohort.objective") or "")
+               for s in signals if s.get("reason_code") == _COHORT_REASON}
+    covered.discard("")
+    if not covered:
+        return set()
+
+    absorbed: set[str] = set()
+    for sig in signals:
+        if sig.get("reason_code") != _MEMBER_REASON:
+            continue
+        facts = held.get(str(sig.get("subject_node_id") or ""), {})
+        if str(facts.get("outreach.objective") or "") not in covered:
+            continue
+        chased = facts.get("outreach.follow_up_count")
+        # Absent is NOT zero. A member whose chase count could not be computed keeps its card:
+        # the cohort's "never chased: N" line does not include them, so absorbing them would
+        # remove the only place they appear.
+        if isinstance(chased, bool) or not isinstance(chased, (int, float)):
+            continue
+        if int(chased) == 0:
+            absorbed.add(str(sig["signal_id"]))
+    return absorbed
+
+
 def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                         registry=None, eval_time: datetime | None = None) -> dict:
     """E0→E1→E3→persist for every open, un-carded signal. Returns delivery counts."""
     eval_time = eval_time or datetime.now(timezone.utc)
     registry = registry or make_registry()
     ensure_default(registry, org_id)
-    out = {"built": 0, "already_built": 0, "build_in_progress": 0,
+    out = {"built": 0, "refreshed": 0, "already_built": 0, "build_in_progress": 0,
            "llm": 0, "raw_slot": 0, "unrouted": 0,
+           "absorbed_by_cohort": 0,
            "over_budget_no_push": 0,
            "pushed": 0, "agent_pushed": 0}
     from .bands import band
     identities = _tenant_identities(graph, org_id)   # once per org, not per card
-    for sig in _open_signals_without_cards(graph, org_id, eval_time):
+    signals = _open_signals_without_cards(graph, org_id, eval_time)
+    absorbed = _cohort_absorbed(graph, org_id, signals)
+    for sig in signals:
+        if sig["signal_id"] in absorbed:
+            # Counted, never silent. A suppressed card is a decision this layer made about what
+            # the user sees, and a suppression nobody can see the size of is indistinguishable
+            # from a bug that lost cards.
+            out["absorbed_by_cohort"] += 1
+            continue
         claim_token = card_store.claim_build(
-            org_id, sig["signal_id"], eval_time=eval_time)
+            org_id, sig["signal_id"], eval_time=eval_time,
+            builder_version=BUILDER_VERSION)
         if claim_token is None:
             out["build_in_progress"] += 1
             continue
@@ -227,10 +321,17 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             over_budget = budget_full(card_store, org_id, draft["assignee"], eval_time, budget)
             if over_budget:
                 out["over_budget_no_push"] += 1
-            card_id, created = card_store.insert_card(
+            card_id, created, refreshed = card_store.insert_card(
                 draft, copy, build_claim_token=claim_token)
             if card_id is None or not created:
-                if card_id is not None:
+                if refreshed:
+                    # The words on an existing card improved. Counted apart from `already_built`
+                    # because they mean opposite things — one is work done, the other is work
+                    # correctly skipped — and deliberately NOT pushed: the user has already been
+                    # shown this card, and a rewrite is not a new event to interrupt them with.
+                    out["refreshed"] += 1
+                    out["llm" if copy["render_mode"] == "llm" else "raw_slot"] += 1
+                elif card_id is not None:
                     out["already_built"] += 1
                 continue
             out["built"] += 1
