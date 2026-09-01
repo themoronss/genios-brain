@@ -36,13 +36,23 @@ Memory belongs to Layer 2.
 """
 from __future__ import annotations
 
-# The twelve things a company can assert about itself. Declared, never derived —
+# The thirteen things a company can assert about itself. Declared, never derived —
 # `capture.source_registry` publishes these as the `internal` source's object types.
 INTERNAL_KINDS: frozenset[str] = frozenset({
     "policy",            # rules the company binds itself to (refunds, leave, security)
     "sop",               # how a process is run, step by step
     "product",           # what we sell and what it does
     "pricing",           # list price, tiers, discount rules
+    # WHO WE SELL TO. The thirteenth, and it belongs here for exactly the reason the others do:
+    # it is a statement a company makes about itself, not a thing that can be inferred from its
+    # mail. Two authored Sales situations — `inbound_fit_check` and `out_of_profile_deal` — are
+    # about fit against this profile, and until it had somewhere to live they were asking the
+    # reader to judge against a definition the product could not see.
+    #
+    # Deliberately DECLARED and not derived from closed-won accounts. A profile inferred from
+    # who happened to buy is a description of past luck, and using it to reject new accounts is
+    # how a pipeline narrows onto its own history.
+    "icp",               # who we sell to: segment, size, geography, what disqualifies
     "goal",              # a target the company has set itself
     "kpi",               # a metric the company measures itself by
     "org_structure",     # teams, reporting lines, ownership

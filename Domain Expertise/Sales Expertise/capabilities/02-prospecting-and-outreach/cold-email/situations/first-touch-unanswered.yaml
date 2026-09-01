@@ -44,6 +44,12 @@ matches:
     - path: thread.days_waiting
       op: ">="
       value: 3
+    # NOBODY HAS CHASED YET. The disjoint half of `outbound_prospect`, which owns the case where
+    # a sequence has already run. Without this split the two files were the same reading at two
+    # widths and would have put two cards on one silence.
+    - path: thread.follow_up_count
+      op: "="
+      value: 0
     - fn: edge_count
       op: "<="
       value: 1
@@ -126,4 +132,4 @@ metadata:
     advice, and it belongs to `outbound_prospect` and the relationship situations, not here.
 
 admission:
-  accepted_content_hash: e277f7be532233635e541c5242c5705ed9f324a3b1c96d3fc83405e5ae28876b
+  accepted_content_hash: 4aac0238b026466f0b8f891a167380a5744a2c92caba3e07be6aa2ac0c75091f

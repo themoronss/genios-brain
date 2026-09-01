@@ -17,7 +17,7 @@ identity:
   domain: sales
   owner_capability: sales.market_and_targeting.market_research
   version: 1.0.0
-  status: draft
+  status: stable
 
 description: >
   A live deal has produced evidence about the market rather than about itself: an unmapped
@@ -38,6 +38,12 @@ matches:
     # Only from live deals. A post-mortem on a closed deal is win/loss work and belongs to
     # revenue_intelligence, which feeds this capability rather than being triggered by it.
     - {path: deal.status, op: "=", value: open}
+    # A NAMED COMPETITOR is the datum. This file lists four kinds of market evidence — an
+    # unmapped competitor, contested price, discount pressure, a loss with no rival — and the
+    # predicate grammar is AND-only, so one has to be chosen rather than any-of. `competitor` is
+    # the one that is unambiguously about the MARKET rather than about this deal: price pressure
+    # and discounting are equally readable as objections, which its neighbours already own.
+    - {has_obs: competitor}
 
 also_serves:
   - sales.market_and_targeting.icp_definition
@@ -82,12 +88,36 @@ signals_of_decay:
   - timeline_slip
   - champion_change
 
+render:
+  artifact_kind: brief
+  render_hint: >
+    The subject is the MAP, not the deal. Objection Handling owns "how do we answer this on this
+    deal" and Competitive Positioning owns "which battlecard" — neither is this. The question
+    here is which recorded claim about the market just moved.
+
+    Headline: the competitor named, and where.
+
+    Situation: who was named, on which account, and what was said — quote it where the evidence
+    carries the words. If this competitor has been named on other deals recently, that is the
+    finding; if it is the first time, say so.
+
+    Artifact: one datum recorded for the map, not a response. What the sighting suggests about
+    the segment, and the single question worth asking the next similar prospect.
+
+    ONE SIGHTING IS NOT A TREND. Never conclude that a market has shifted from a single mention
+    — say what was observed and how much it is worth relying on.
+  fallback:
+    headline: "{entity} — a competitor was named on this deal"
+    situation: >-
+      A competitor came up on the {entity} deal. Worth recording against the market map.
+
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
+  reviewed_by: harsh
   last_updated: "2026-08-08"
-  review_status: unreviewed
+  review_status: approved
+  reviewed_at: '2026-09-01'
   confidence: provisional
   notes: >
     One situation, four of the twenty-six Layer 2 types, and all four are field-feedback types.
@@ -108,3 +138,6 @@ metadata:
     It is promotable, and the work is real authoring rather than a data gap: a gate on the
     evidence kinds it actually reads, and copy that reports what was heard without turning one
     remark into a market conclusion. Left for that pass rather than promoted thin.
+
+admission:
+  accepted_content_hash: df23bfcec1a68abaf9fd9f7c528dd023068d02bc056127254200a73774033e76

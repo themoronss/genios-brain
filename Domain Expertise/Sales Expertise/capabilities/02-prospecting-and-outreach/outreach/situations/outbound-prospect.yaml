@@ -4,7 +4,7 @@ identity:
   domain: sales
   owner_capability: sales.prospecting_and_outreach.outreach
   version: 1.0.0
-  status: draft
+  status: stable
 
 description: >
   We went to them. No intent exists yet and the entire job is to earn a first conversation,
@@ -22,6 +22,17 @@ matches:
     # Outbound means we are waiting on them and there is no live deal behind the contact.
     - {path: thread.ball_in_court, op: "=", value: them}
     - {fn: edge_count, op: "<=", value: 1}
+    # A SEQUENCE HAS ALREADY RUN. This is the whole difference from
+    # `sales.sit.first_touch_unanswered`, which owns the case where nobody has chased yet.
+    # Without the split these two files were the same reading at two widths and would have put
+    # two cards on one silence — and this one, being the wider, would have fired the moment we
+    # pressed send.
+    #
+    # The two decisions are genuinely different: an unchased first approach needs a follow-up,
+    # while a sequence that has produced nothing needs a different approach or a stop. That is
+    # why this is worth its own file rather than a threshold on the other.
+    - {path: thread.follow_up_count, op: ">=", value: 1}
+    - {path: thread.days_waiting, op: ">=", value: 3}
 
 also_serves:
   - sales.prospecting_and_outreach.follow_up
@@ -51,12 +62,34 @@ signals_of_progress:
 signals_of_decay:
   - closed_lost_mention
 
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    A sequence has run and produced nothing. Do NOT draft another reminder — that is the one
+    thing already shown not to work here.
+
+    Headline: who, and how many approaches have gone unanswered.
+
+    Situation: how many times we have written, over how long, and what if anything they have
+    ever done. If `their_cadence` is known, say whether this silence is unusual for them; if it
+    is not, say we have no history to judge it against rather than implying the silence is loud.
+
+    Artifact: the change of approach. One of — a different person at the same account, a warm
+    route in, a genuinely new reason to write (something that happened since), or an explicit
+    close-out that leaves the door open. Name which one and why. A close-out is a legitimate
+    recommendation here and is often the right one.
+  fallback:
+    headline: "{entity} — {follow_ups} approaches, no reply"
+    situation: >-
+      {follow_ups} approaches to {entity} over {waited_days} days and nothing has come back.
+
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
+  reviewed_by: harsh
   last_updated: "2026-08-08"
-  review_status: unreviewed
+  review_status: approved
+  reviewed_at: '2026-09-01'
   confidence: provisional
   notes: >
     One object loaded. The `never_load` list is doing more work here than the `load` list,
@@ -75,3 +108,6 @@ metadata:
     `first_touch_unanswered` is the admitted version of this reading and now carries the waiting
     clock. If a distinct outbound-sequence situation is wanted later it needs its own gate —
     sequence position, not first-touch — rather than this file's.
+
+admission:
+  accepted_content_hash: 2906a7817e2db9b7cf4844110e6ce1caf9d0375fe37feb5f650126bcf388a54b

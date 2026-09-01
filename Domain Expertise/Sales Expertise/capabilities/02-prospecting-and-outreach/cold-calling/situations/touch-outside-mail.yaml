@@ -9,7 +9,7 @@ identity:
   domain: sales
   owner_capability: sales.prospecting_and_outreach.cold_calling
   version: 1.0.0
-  status: draft
+  status: stable
 
 description: >
   A meaningful interaction happened somewhere the system cannot see — a phone call, a social
@@ -58,6 +58,17 @@ matches:
         and genuinely per-account question; sizing is not.
   # No `scope`. A call has no anchor the enum offers, and a market is not a subject at all.
 
+  # A MEETING THAT ACTUALLY HAPPENED, WITH SOMEBODY OUTSIDE.
+  #
+  # There was no `when` at all, so this fired on every `channel_touch` row — including cancelled
+  # meetings and internal ones. The finding is that a HIGH-INTENT touch happened somewhere mail
+  # cannot see, and that is only true of a real external meeting. Both facts are written by
+  # `context/meeting_touch.py` straight from the calendar, so this narrows on recorded evidence
+  # rather than on an inference about a channel we cannot observe — which is the objection this
+  # file's own header raises and is careful not to commit.
+  when:
+    - {path: meeting.status, op: "!=", value: cancelled}
+    - {exists: meeting.external_counterparty}
 also_serves:
   - sales.prospecting_and_outreach.linkedin_outreach
   - sales.discovery_and_solution.demo
@@ -92,6 +103,7 @@ metadata:
   reviewed_by: harsh
   last_updated: '2026-08-29'
   review_status: approved
+  reviewed_at: '2026-09-01'
   confidence: experimental
   reviewed_at: '2026-08-29'
   notes: >
@@ -110,3 +122,6 @@ metadata:
 
     The right home for it is a coverage notice on the account surface, once per tenant — not a
     card in the queue. Left at draft until that surface exists.
+
+admission:
+  accepted_content_hash: b9c00c1cdfe5ae1e10d93416ec9d21d0e860beecf44adf3ac55be872c36e0b5c

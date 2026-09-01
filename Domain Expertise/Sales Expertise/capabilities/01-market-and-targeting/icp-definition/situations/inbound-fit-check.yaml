@@ -8,7 +8,7 @@ identity:
   domain: sales
   owner_capability: sales.market_and_targeting.icp_definition
   version: 1.0.0
-  status: draft
+  status: stable
 
 description: >
   Interest has arrived from an account nobody has assessed, and the question before any other
@@ -25,9 +25,17 @@ matches:
     - opportunity
     - prospect_relationship
   scope: account
-  # No narrowing predicate. Deliberately: a fit check must fire before a deal record exists,
-  # so any condition on deal.* would suppress the situation at exactly the moment it is
-  # cheapest to act on.
+  # No condition on `deal.*`, for the reason below — and two that are not about a deal at all.
+  # The note is right that a deal-shaped predicate would suppress this at exactly the moment it
+  # is cheapest to act on. It does not follow that NOTHING should narrow it: with no `when` at
+  # all this fired on every account in the org, including customers of three years, and asked
+  # the reader to assess whether they belong in the pipeline.
+  #
+  # `ball_in_court = us` is the "interest has arrived" half of this file's own description, and
+  # the degree bound is the "account nobody has assessed" half.
+  when:
+    - {path: thread.ball_in_court, op: "=", value: us}
+    - {fn: edge_count, op: "<=", value: 3}
 
 also_serves:
   - sales.qualification.lead_qualification
@@ -103,9 +111,10 @@ render:
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
+  reviewed_by: harsh
   last_updated: "2026-08-08"
-  review_status: unreviewed
+  review_status: approved
+  reviewed_at: '2026-09-01'
   confidence: provisional
   notes: >
     Bound to three of the twenty-six Layer 2 types, and all three are inbound-interest types
@@ -126,3 +135,17 @@ metadata:
     It becomes real the day an ICP is stored — a tenant-stated profile, not an inferred one.
     Until then the honest state is draft, where the abstention gate keeps anything built from it
     non-prescriptive.
+
+    Promoted from draft on 2026-09-01, once `icp` became one of the things a company can state
+    about itself (`capture/internal_knowledge.INTERNAL_KINDS`). Before that this file asked the
+    reader to judge fit against a definition the product had nowhere to hold — the card could
+    pose the question but never show what to answer it against.
+
+    `sales.obj.core.icp` stays in the load-set and no predicate touches it: where a tenant has
+    stated a profile the card can show it, and where none exists the honest output is the
+    question plus a prompt to state one. Gating on the object would make the situation
+    unroutable for every tenant that has not written their profile down yet, which is most of
+    them on day one.
+
+admission:
+  accepted_content_hash: 6ac3b142e63d7366273cbc3fdc5b9d6307de0963c2d6aa3373779655126046c9

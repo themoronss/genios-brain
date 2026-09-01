@@ -8,7 +8,7 @@ identity:
   domain: sales
   owner_capability: sales.market_and_targeting.icp_definition
   version: 1.0.0
-  status: draft
+  status: stable
 
 description: >
   A live deal decaying in the way accounts outside the profile characteristically decay:
@@ -30,6 +30,15 @@ matches:
     # Only on live deals. Once the deal closes the reading becomes calibration, which is a
     # different job with a different confidence and no urgency attached to it.
     - {path: deal.status, op: "=", value: open}
+    # "INTEREST WITHOUT ECONOMICS" — this file's own first symptom, and the one of the three
+    # that is checkable without inventing anything. `deal.value` absent on a live deal means
+    # effort is going into something whose economics nobody has recorded, which is exactly the
+    # reading this situation exists to force.
+    #
+    # The other two symptoms it names — "engagement without a funded buyer", "effort scaling
+    # faster than the contract value" — need a funded-buyer fact and an effort measure, neither
+    # of which exists. Left to the render hint as questions rather than asserted as findings.
+    - {absent: deal.value}
 
 also_serves:
   - sales.sales_management.deal_review
@@ -74,12 +83,40 @@ signals_of_decay:
   - competitor
   - closed_lost_mention
 
+render:
+  artifact_kind: brief
+  render_hint: >
+    This asks whether the deal should have been in pipeline at all — NOT how to un-stall it. Its
+    neighbours own the rescue reading and they lead the opposite way, so never write a save plan
+    here.
+
+    Headline: the account and that a live deal carries no recorded value.
+
+    Situation: how long the deal has been open and that nothing on record says what it is worth.
+    Where the tenant has stated an ICP, name the one or two criteria this account can be checked
+    against. Where they have not, say the profile has never been written down — that is the
+    finding, and it is the cheaper thing to fix.
+
+    Artifact: the two questions that settle it — what is this worth, and does this account match
+    who we sell to. Offer closing it out as a legitimate answer; a deal ending is the only moment
+    the profile receives evidence, and a stall closed without a fit reading is a lesson thrown
+    away.
+
+    Never assert that the account is out of profile. Nothing here compares firmographics, and
+    calling an account unfit on the absence of a value field would be a finding this system
+    invented about somebody's customer.
+  fallback:
+    headline: "{entity} — open deal, no recorded value"
+    situation: >-
+      The {entity} deal has been open {days} days and nothing on file says what it is worth.
+
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
+  reviewed_by: harsh
   last_updated: "2026-08-08"
-  review_status: unreviewed
+  review_status: approved
+  reviewed_at: '2026-09-01'
   confidence: provisional
   notes: >
     Bound to three deal-decay types, all shared with capabilities that will read them
@@ -97,3 +134,6 @@ metadata:
     The only gate this file carries is `deal.status = open`, so promoting it would label every
     open deal out-of-profile against a standard nobody has written down. That is not a thin
     card; it is a wrong one.
+
+admission:
+  accepted_content_hash: 4a94b1b7e1e13c8cba172dbbb4da9026deb3a3bcc04d8f96bcd4208c507df5c0
