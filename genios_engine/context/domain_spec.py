@@ -358,9 +358,34 @@ register(DomainSpec(
     # refusal twice: `choose_anchors` returns only the strongest tier present, so a document
     # reachable from correspondence would take an email that merely mentions "Security Policy"
     # and anchor it on the policy instead of on the customer who wrote it.
+    #
+    # THE THREE STATE ANCHORS, and why they are declared HERE and only here.
+    #
+    # `outreach`, `commitment` and `meeting` are not subjects — they are things that are
+    # happening. Every other anchor in this file answers WHO a situation is about, which is why
+    # a capability written for "we wrote and nobody answered" had nothing to route on and the
+    # corpus's gates collapsed onto `thread.ball_in_court`, the one predicate a person-shaped
+    # situation can offer. `context/outreach_situations.py` mints the first two;
+    # `context/meeting_touch.py` already minted the third and only Sales had claimed it.
+    #
+    # Declared on ADMIN ALONE, deliberately. `domains_declaring` returns every domain holding the
+    # anchor and the readers mint one situation PER claiming domain, so declaring `outreach` on
+    # sales as well would produce two situations, two compiles and two cards for one silence.
+    # Admin is also where these belong: chasing an unanswered message, keeping a promise and
+    # following through after a meeting are follow-through work whoever the counterparty is —
+    # an investor, a customer or a vendor — and Sales keeps its deal-shaped lanes for the
+    # pipeline readings that genuinely differ.
     situation_types={"company": "account_admin", "person": "admin_contact",
                      "tenant": "admin_period_review",
-                     "document": "document_under_control"},
+                     "document": "document_under_control",
+                     "outreach": "awaiting_response",
+                     "commitment": "commitment_overdue",
+                     "meeting": "meeting_follow_through",
+                     # The first situation type whose subject is a GROUP. Everything else in this
+                     # file is about one thing — a person, a promise, a meeting, a file — so
+                     # "of everyone I contacted about the raise, who has gone quiet?" could only
+                     # be answered by reading N cards and doing the arithmetic by hand.
+                     "cohort": "cohort_outreach_gap"},
     expected_fields={
         "account_admin": {"subscription.current_period_end": "renewal date"},
         # An administrative counterparty is read through what we owe them and whose turn it is,
@@ -382,6 +407,57 @@ register(DomainSpec(
             "document.version": "which revision the file store is on",
             "document.approved_at": "approval state",
             "document.retention_until": "when it must be destroyed",
+        },
+        # WHAT SILENCE IS MADE OF. Four of the five have real writers in `context/waiting.py`;
+        # `outreach.objective` has none and is not meant to get one yet — nothing in this system
+        # knows what an outbound message was FOR, and that is the difference between a follow-up
+        # and a reminder. Declaring it is what keeps `missing` truthful on every row instead of
+        # emptying out the moment the arithmetic lands, and what stops a card claiming it knows
+        # why we wrote.
+        "awaiting_response": {
+            "outreach.days_waiting": "how long we have been waiting",
+            "outreach.follow_up_count": "how many times we have already chased",
+            "outreach.counterparty_role": "what they are to us",
+            "outreach.their_normal_reply_days": "what is normal for this person",
+            "outreach.objective": "what the outreach was for",
+        },
+        # `commitment.delivered_at` has no writer and cannot have one: no source system reports
+        # that a promise was kept. A promise can be seen to be OPEN and never seen to be DONE, so
+        # the strongest honest card here is "this is still showing as open", never "you failed to
+        # send it".
+        "commitment_overdue": {
+            "commitment.days_overdue": "how far past the date it is",
+            "commitment.action": "what was promised",
+            "commitment.owed_to": "who it is owed to",
+            "commitment.delivered_at": "whether it was actually delivered",
+        },
+        # A CAMPAIGN'S STATE. Eight of the nine have writers in
+        # `context/outreach_situations.read_outreach_cohorts`; `cohort.target` does not and is
+        # not meant to yet.
+        #
+        # A reply rate without a denominator of INTENT is not a campaign measure. "5 of 18
+        # replied" reads as a result and is not one until somebody says how many they meant to
+        # reach — 18 contacted against a target of 20 is a campaign nearly run, against a target
+        # of 200 it has barely started, and the same numbers mean opposite things. Nothing in
+        # this system holds a target, so it stays in `missing` on every row and no card here may
+        # call a rate good or bad.
+        "cohort_outreach_gap": {
+            "cohort.objective": "what this campaign is for",
+            "cohort.contacted": "how many people are in it",
+            "cohort.awaiting": "how many have not replied",
+            "cohort.awaiting_beyond_normal": "how many are past their own usual reply time",
+            "cohort.never_chased": "how many have never been followed up",
+            "cohort.target": "how many we intended to reach",
+        },
+        # The admin reading of a meeting: not the channel-coverage question Sales asks of the
+        # same anchor, but whether the follow-through happened. `meeting.recap_sent` has no
+        # writer — an outbound after a meeting is not necessarily a recap of it — so a card can
+        # say the follow-up is not visible and never that it was not sent.
+        "meeting_follow_through": {
+            "meeting.external_counterparty": "who from outside was there",
+            "meeting.start_at": "when it happened",
+            "meeting.status": "whether it still stands",
+            "meeting.recap_sent": "whether we followed up afterwards",
         },
     }))
 

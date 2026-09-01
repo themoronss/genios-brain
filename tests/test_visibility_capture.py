@@ -138,9 +138,18 @@ def test_the_expertise_adapter_reports_what_it_refused_to_convert():
     def _rule(i, steps):
         return {"id": f"rule_{i:02d}", "definition": {"name": f"r{i}", "steps": steps}}
 
-    class _Package:      # only the field _plays reads; the full contract needs 15 args
-        expert_rules = tuple([_rule(i, ["do a thing"]) for i in range(6)]
+    # Sized OFF the cap, not off a literal. It was `range(6)` against a cap of 4; raising the cap
+    # to 16 made the same input fit entirely, so the test passed a truncation assertion by never
+    # truncating. A guard whose subject disappears when a constant moves is not a guard.
+    overflow = MAX_PLAYS + 2
+
+    class _Package:      # only the fields _plays reads; the full contract needs 15 args
+        expert_rules = tuple([_rule(i, ["do a thing"]) for i in range(overflow)]
                              + [{"id": "heuristic_1", "definition": {"name": "h"}}])
+        # Read since the adaptive brain reached the ranking: a play the tenant has measured
+        # carries its own `success_probability_bp` instead of the 5,000bp default. Empty here —
+        # this test is about the conversion receipt, not about learning.
+        adaptive_preferences = ()
 
     plays, receipt = _plays(_Package())
     assert len(plays) == MAX_PLAYS
@@ -149,7 +158,10 @@ def test_the_expertise_adapter_reports_what_it_refused_to_convert():
     assert receipt["truncation_reason"] is not None
     assert receipt["generic_fallback_used"] is False
     # deterministic: the surviving plays are the FIRST by rule id, not corpus order
-    assert [p.play_id for p in plays] == ["rule_00", "rule_01", "rule_02", "rule_03"]
+    assert [p.play_id for p in plays] == [f"rule_{i:02d}" for i in range(MAX_PLAYS)]
+    # and the ones that did not survive are NAMED, which is the whole point of the receipt
+    assert sorted(k for k in receipt["skipped_rule_ids"] if k.startswith("rule_")) == [
+        f"rule_{i:02d}" for i in range(MAX_PLAYS, overflow)]
 
 
 def test_the_generic_fallback_is_tagged_non_prescriptive():
@@ -159,6 +171,7 @@ def test_the_generic_fallback_is_tagged_non_prescriptive():
 
     class _Empty:
         expert_rules = ()
+        adaptive_preferences = ()
 
     plays, receipt = _plays(_Empty())
     assert receipt["generic_fallback_used"] is True

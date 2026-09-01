@@ -224,7 +224,52 @@ _OBS_CANON = {
     "followup_sent": "followup_sent", "follow_up_sent": "followup_sent", "recap_sent": "followup_sent",
     "meeting_request": "meeting_request", "meeting_requested": "meeting_request",
     "book_a_meeting": "meeting_request", "schedule_call": "meeting_request",
+    # admin / fundraising. Same job as the sales synonyms above: the model reaches for the
+    # natural word ("approval_needed", "sign_off_requested") and an unmapped kind is stored,
+    # never read, and indistinguishable from having extracted nothing.
+    "approval_requested": "approval_requested", "approval_needed": "approval_requested",
+    "sign_off_requested": "approval_requested", "signoff_requested": "approval_requested",
+    "approval_granted": "approval_granted", "approved": "approval_granted",
+    "sign_off_received": "approval_granted",
+    "approval_blocked": "approval_blocked", "approval_rejected": "approval_blocked",
+    "information_requested": "information_requested", "info_requested": "information_requested",
+    "documents_requested": "information_requested", "data_requested": "information_requested",
+    "decision_deferred": "decision_deferred", "deferred": "decision_deferred",
+    "revisit_later": "decision_deferred",
+    "invoice_sent": "invoice_sent", "invoice_issued": "invoice_sent",
+    "payment_confirmed": "payment_confirmed", "payment_received": "payment_confirmed",
+    "payment_overdue": "payment_overdue", "payment_late": "payment_overdue",
+    "document_sent": "document_sent", "deck_sent": "document_sent",
+    "attachment_sent": "document_sent", "file_shared": "document_sent",
+    "deadline_stated": "deadline_stated", "due_date_stated": "deadline_stated",
+    "intro_requested": "intro_requested", "introduction_requested": "intro_requested",
+    "asked_for_intro": "intro_requested",
+    "intro_made": "intro_made", "introduction_made": "intro_made",
+    "investor_update_sent": "investor_update_sent", "update_sent": "investor_update_sent",
+    "diligence_started": "diligence_started", "due_diligence_started": "diligence_started",
+    "pass_received": "pass_received", "passed": "pass_received",
+    "investor_pass": "pass_received", "declined": "pass_received",
+    "meeting_scheduled": "meeting_scheduled", "meeting_booked": "meeting_scheduled",
+    "meeting_cancelled": "meeting_cancelled", "meeting_canceled": "meeting_cancelled",
 }
+
+
+def objective_of(extraction) -> str | None:
+    """The exchange's objective, or None when the model could not place it.
+
+    `unknown` returns None on purpose. `relationship.nature` already distinguishes an investor
+    from a vendor; this distinguishes an investor we are RAISING FROM (`fundraising`) from one we
+    merely OWE A REPORT (`investor_update`) — same person, same nature, opposite follow-ups. A
+    label that carries neither of those readings is not worth storing, and storing it would empty
+    `outreach.objective` out of the situation's `missing` list while telling a card nothing.
+    """
+    block = getattr(extraction, "objective", None)
+    if not isinstance(block, dict):
+        return None
+    value = str(block.get("type") or "").strip().lower()
+    if value not in _OUTREACH_OBJECTIVES or value == "unknown":
+        return None
+    return value
 
 
 def norm_obs_kind(kind) -> str:
@@ -262,6 +307,23 @@ _OBLIGATION = re.compile(
 #: model invent a lens nothing downstream knows how to apply.
 _RELATIONSHIP_NATURES = frozenset({
     "investor", "customer", "prospect", "vendor", "candidate", "partner", "community", "unknown"})
+
+#: WHAT THIS EXCHANGE IS FOR. Closed for the same reason the natures are: an open set lets the
+#: model invent a word no situation can gate on, which is the fact-field failure in a new costume.
+#:
+#: `unknown` is in the vocabulary and is deliberately NEVER WRITTEN (see `_objective` below). It
+#: exists so the model has somewhere honest to put a message it cannot place, rather than reaching
+#: for the nearest plausible label — and an unwritten fact is what keeps `outreach.objective` in
+#: the situation's `missing` list instead of satisfying it with a word that means nothing.
+#: PURPOSES, never department names. `sales`, `support` and `admin` are DOMAIN ids, and
+#: `tests/test_projections.py` holds the rule this set broke: a Layer 2 file may not name a
+#: domain, because a new domain must never require editing Layer 2. The collision was also a
+#: category error worth fixing on its own — "sales" answers which team, `selling` answers what
+#: this thread is trying to do, and only the second is an objective.
+_OUTREACH_OBJECTIVES = frozenset({
+    "fundraising", "investor_update", "selling", "procurement", "hiring", "partnership",
+    "intro_request", "scheduling", "approval", "billing", "customer_issue", "operations",
+    "unknown"})
 #: Which way money and evaluation flow — what separates raising from selling.
 _RELATIONSHIP_DIRECTIONS = frozenset({"they_evaluate_us", "we_evaluate_them", "peer"})
 
@@ -702,6 +764,19 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                      occurred_at=occurred_at, event_id=event_id,
                                      evidence={"derived": "outbound event"}, source=source,
                                      authority_rank=2)
+                    # WHAT WE WROTE FOR. Written on the outbound leg specifically: the objective
+                    # is ours, and an inbound reply describes their answer to it rather than
+                    # restating it. Skipped when the model returned `unknown` — see
+                    # `objective_of`.
+                    if (_objective := objective_of(ex)) is not None:
+                        store.write_fact(conn, org_id=org_id, subject_node_id=rnode,
+                                         field="thread.objective", value=_objective,
+                                         value_type="enum", confidence=FACT_CONF_BY_RANK[2],
+                                         relevance=ex.relevance, occurred_at=occurred_at,
+                                         event_id=event_id,
+                                         evidence={"text": (ex.objective or {}).get(
+                                             "evidence_text")},
+                                         source=source, authority_rank=2)
                     store.write_fact(conn, org_id=org_id, subject_node_id=rnode,
                                      field="thread.ball_in_court", value="them", value_type="enum",
                                      confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,

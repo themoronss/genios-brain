@@ -33,12 +33,28 @@ _SENTIMENT_WEIGHTS: dict[str, float] = {
     "question": 0.1,
     "objection": -0.6, "negative_reply": -0.8, "timeline_slip": -0.7,
     "closed_lost_mention": -1.0,
+    # Admin / fundraising, weighted on the same scale and for the same reason: a kind absent from
+    # this table contributes to the volume counts and nothing to sentiment, so an inbox whose
+    # moments are approvals and investor threads would read as permanently neutral.
+    #
+    # `pass_received` is -0.9, not the -1.0 that `closed_lost_mention` carries. A fund passing is
+    # often reversible; a deal recorded as lost is not, and the two should not score identically.
+    "approval_granted": 0.6, "intro_made": 0.5, "diligence_started": 0.8,
+    "payment_confirmed": 0.4, "investor_update_sent": 0.2, "document_sent": 0.2,
+    "approval_blocked": -0.6, "decision_deferred": -0.4, "payment_overdue": -0.5,
+    "pass_received": -0.9,
 }
 
 #: Kinds that mean the relationship MOVED, as opposed to merely made noise. Momentum asks whether
 #: anything advanced recently, which is a different question from whether the tone was warm.
 _PROGRESS_KINDS = frozenset({
     "next_step_agreed", "demo_requested", "proposal_sent", "meeting_request", "followup_sent",
+    # Momentum asks whether anything ADVANCED. On an admin or fundraising thread the things that
+    # advance are an approval landing, an introduction being made, diligence opening and a
+    # promised document actually going out — none of which is a sales motion, and all of which
+    # left momentum reading zero on the inboxes that have them.
+    "approval_granted", "intro_made", "diligence_started", "document_sent",
+    "investor_update_sent", "meeting_scheduled",
 })
 
 _RECENT_DAYS = 14          # "lately"

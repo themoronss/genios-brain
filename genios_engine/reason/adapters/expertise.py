@@ -91,7 +91,8 @@ def _universal_required_fields(package: ExpertisePackage) -> tuple[str, ...]:
 
 
 def _default_dag(required_fields: tuple[str, ...],
-                 authored_priority_bp: int | None = None) -> tuple[ReasonerSpec, ...]:
+                 authored_priority_bp: int | None = None,
+                 blocked_play_ids: tuple[str, ...] = ()) -> tuple[ReasonerSpec, ...]:
     """A conservative, situation-agnostic reasoning DAG that always terminates in a decision.
 
     understand (context) -> evaluate (risk) -> the mandatory REQUIRED constraint -> rank/score
@@ -108,11 +109,21 @@ def _default_dag(required_fields: tuple[str, ...],
         dependencies=("core.context",),
         failure_policy=_REQUIRED,
     )
+    # THE ORGANISATION BRAIN'S ONE HARD LEVER. `core.constraint` already reads
+    # `blocked_play_ids` off its own config and eliminates those plays with a
+    # `tenant_policy_block` row that `reason/store.py` and `reason/authority.py` both re-prove —
+    # a seam built for exactly this and never wired to the brain that should drive it. An
+    # organisation rule now removes an option BEFORE ranking, which is the difference between a
+    # policy and a preference.
+    constraint_config: dict[str, object] = {}
+    if blocked_play_ids:
+        constraint_config["blocked_play_ids"] = list(blocked_play_ids)
     constraint = ReasonerSpec(
         "core.constraint", "1.0.0",
         dependencies=("core.context",),
         input_kind="candidate_plays",
         output_kind="candidate_checks",
+        config=constraint_config,
         failure_policy=_REQUIRED,
     )
     # `core.risk` measures pressure; it does not RULE on priority, so the declared-override path
@@ -147,7 +158,82 @@ def _default_dag(required_fields: tuple[str, ...],
 
 #: How many plays a manifest carries. A cap is legitimate (the Decision Maker ranks a small
 #: candidate set, not a corpus); a SILENT cap is not — see `_plays`' receipt fields.
-MAX_PLAYS = 4
+#: How many authored strategies may reach Layer 4 as candidates.
+#:
+#: Raised from 4. A play is a CANDIDATE, not a card — the Decision Maker picks one — so the cap
+#: was never limiting output, it was limiting choice, and it did so by dropping whatever sorted
+#: last alphabetically. `account_admin` routes thirteen capabilities and therefore thirteen
+#: playbooks: nine authored strategies were cut by rule id, which is file-naming, not judgment.
+#:
+#: Still bounded, and deliberately. An unbounded list would let one wide route dominate the
+#: reasoning budget, and `play_receipt` records anything still cut — a silent truncation is the
+#: failure this number is meant to make visible, not the number itself.
+MAX_PLAYS = 16
+
+
+def _learned_play_efficacy(package: ExpertisePackage) -> dict[str, tuple[int, str]]:
+    """This tenant's OWN measured success rate per play — {play_id: (success_bp, entry_id)}.
+
+    THE CONVENTION IS L6's, NOT INVENTED HERE. `feedback/units.unit_recommendation_learning`
+    already publishes into the ADAPTIVE brain, one entry per play, carrying
+    ``{"play": <id>, "success_rate_bp": ..., "attention_per_outcome_bp": ..., "efficacy_bp": ...}``
+    — real outcomes, labelled, over a minimum observation count the learning policy enforces. It
+    has been writing that shape into `learned_brain_entries` and nothing has ever read it.
+
+    `success_rate_bp` rather than `efficacy_bp` deliberately. Efficacy discounts success by the
+    attention the play cost, which is a judgment about whether a play is WORTH it — and that
+    judgment belongs to the ranking model, which already penalises `effort_bp` on its own terms.
+    Feeding efficacy here would apply the attention penalty twice.
+    """
+    learned: dict[str, tuple[int, str]] = {}
+    for entry in package.adaptive_preferences or ():
+        if not isinstance(entry, Mapping):
+            continue
+        value = entry.get("value")
+        if not isinstance(value, Mapping):
+            continue
+        play_id = str(value.get("play") or "").strip()
+        rate = value.get("success_rate_bp")
+        if not play_id or isinstance(rate, bool) or not isinstance(rate, int):
+            continue
+        learned[play_id] = (max(0, min(10_000, rate)), str(entry.get("entry_id") or ""))
+    return learned
+
+
+def _blocked_play_ids(package: ExpertisePackage) -> tuple[str, ...]:
+    """Plays this ORGANISATION has forbidden, for `core.constraint`'s tenant block list.
+
+    The constraint unit already owns this seam and documents it as "a hard, id-level retirement
+    that a tenant can apply without touching authored expertise" — it emits a `tenant_policy_block`
+    ELIMINATE row, which `reason/store.py` and `reason/authority.py` both re-prove. So an
+    organisation rule reaches the decision through a path that was BUILT for it and that two
+    independent verifiers already understand; no new check row, no frozen-shape change, no replay
+    break. It was simply never connected to the organisation brain.
+
+    Only permission-axis entries may block. `packs/compiler/runtime_brains._PERMISSION_CATEGORIES`
+    is the same list the compiler uses to decide which entries carry permission authority at all,
+    read from there rather than restated, so the two cannot drift into disagreeing about what
+    counts as a policy.
+    """
+    from genios_engine.packs.compiler.runtime_brains import _PERMISSION_CATEGORIES
+
+    blocked: set[str] = set()
+    for entry in package.organization_rules or ():
+        if not isinstance(entry, Mapping):
+            continue
+        value = entry.get("value")
+        if not isinstance(value, Mapping):
+            continue
+        category = str(value.get("category") or value.get("kind") or "").lower()
+        if category not in _PERMISSION_CATEGORIES:
+            continue
+        named = value.get("blocked_play_ids") or value.get("blocks_plays")
+        if isinstance(named, str):
+            named = [named]
+        for item in list(named or ()) + [value.get("blocks_play")]:
+            if isinstance(item, str) and item.strip():
+                blocked.add(item.strip())
+    return tuple(sorted(blocked))
 
 
 def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]:
@@ -170,6 +256,7 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]
     candidates: list[tuple[str, PlayDefinition]] = []
     skipped: dict[str, str] = {}
     seen: set[str] = set()
+    efficacy = _learned_play_efficacy(package)
     for position, rule in enumerate(package.expert_rules):
         if not isinstance(rule, Mapping):
             skipped[f"unmapped_{position}"] = "not_a_mapping"
@@ -198,12 +285,23 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]
             skipped[rule_id] = "duplicate_play_id"
             continue
         seen.add(play_id)
+        # THE ORG'S OWN MEASURED SUCCESS RATE, where it has one. `success_probability_bp` is a
+        # weighted term in `decision_maker._weighted_utility`, and every compiled play carried the
+        # 5,000bp default — so the same expertise ranked its options identically for a tenant
+        # where a play works and one where it does not. This is the whole of "it learns how we
+        # operate", and it is not a new mechanism: the field already means exactly this, the
+        # learning already measured it, and the two had simply never been joined.
+        learned = efficacy.get(play_id)
         candidates.append((play_id, PlayDefinition(
             play_id, "1.0.0", str(definition.get("name") or play_id)[:200],
             steps=steps,
             read_only=True,
+            success_probability_bp=learned[0] if learned else 5_000,
             tags=("human_approval", "playbook"),
-            metadata={"source": "expert_playbook", "external_recipient_required": False},
+            metadata={"source": "expert_playbook", "external_recipient_required": False,
+                      # Provenance on the play itself, so an auditor reading a candidate can see
+                      # WHICH learned entry moved it rather than inferring it from a score.
+                      **({"learned_success_from": learned[1]} if learned else {})},
         )))
 
     candidates.sort(key=lambda pair: pair[0])
@@ -215,6 +313,11 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]
     receipt = {
         "authored_rules": len(package.expert_rules),
         "plays_emitted": len(plays),
+        # Which plays this tenant's own outcomes re-scored, and which kept the 5,000bp default.
+        # A number, not a boolean: "the adaptive brain influenced this decision" is only a real
+        # claim if you can say how many of the options it touched.
+        "plays_rescored_by_learning": sorted(
+            play.play_id for play in plays if play.metadata.get("learned_success_from")),
         "skipped_rule_ids": dict(sorted(skipped.items())),
         "truncation_reason": (f"deterministic cap at {MAX_PLAYS} plays, ordered by rule id"
                               if truncated else None),
@@ -274,6 +377,7 @@ def expertise_capability_manifest(
     """
     situation_type = str(package.metadata.get("situation_type") or "situation")
     plays, play_receipt = _plays(package)
+    blocked_plays = _blocked_play_ids(package)
     domain_ids = package.metadata.get("domain_ids") or ()
     domain = str(domain_ids[0]) if domain_ids else "general"
     required_fields = _executable_required_fields(package)
@@ -302,7 +406,8 @@ def expertise_capability_manifest(
         domain=domain,
         root_entity_type=str(root_entity_type or "entity"),
         goal=_goal(package, situation_type),
-        reasoners=_default_dag(gate_fields, package.metadata.get("authored_priority_bp")),
+        reasoners=_default_dag(gate_fields, package.metadata.get("authored_priority_bp"),
+                               blocked_play_ids=blocked_plays),
         plays=plays,
         required_fields=gate_fields,
         selection_fields=required_fields,
@@ -353,6 +458,18 @@ def expertise_capability_manifest(
                 "hash_only": not any((package.organization_rules,
                                       package.behavior_patterns,
                                       package.adaptive_preferences)),
+                # WHAT THE BRAINS ACTUALLY DID, which is a different question from how many
+                # entries came along. Carrying only the counts was how "the brains reached the
+                # decision" stayed true-sounding and unfalsifiable for as long as it did: a
+                # tenant could hold forty entries, every one of them about a play this capability
+                # does not declare, and the count would say forty.
+                "plays_blocked_by_organization": list(blocked_plays),
+                "plays_rescored_by_adaptive": play_receipt["plays_rescored_by_learning"],
+                # Behavior has no consumer yet and says so. The three brains are not equivalent —
+                # organization states policy, adaptive measures outcomes, and behavior describes
+                # how the org works — and the third has no seam in this DAG that would not be an
+                # invented one. Named as absent rather than implied to be working.
+                "behavior_consumed": False,
             },
         },
     )

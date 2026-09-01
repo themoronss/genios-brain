@@ -6,7 +6,7 @@ from genios_engine.context.llm.client import LLMClient
 
 from .envelope import Envelope
 from .prompt import B3_PROMPT
-from .vocab import field_vocabulary, vocabulary_note
+from .vocab import field_vocabulary, signal_kinds_block, vocabulary_note
 
 # B3 — the single combined call: relevance judgment + typed extraction with evidence.
 # The ONLY LLM in L2. temp-0, one repair retry. Output is CANDIDATES (not graph rows) —
@@ -33,6 +33,12 @@ class Extraction:
     # time is agreed, and conflating the two minted commitment nodes with invented due dates
     # from sentences like "Can we do next week?".
     scheduling_proposals: list = field(default_factory=list)
+    #: WHAT THIS EXCHANGE IS FOR. `relationships` carries the lens — what the two sides are to
+    #: each other — and that turned out not to be enough to write a follow-up: an investor owed a
+    #: quarterly update and an investor sitting on a fundraising ask share a `nature` and need
+    #: opposite messages. Every `awaiting_response` situation declared this missing on every row
+    #: until it had a writer, which is the difference between a follow-up and a reminder.
+    objective: dict = field(default_factory=dict)
     input_tokens: int = 0
     output_tokens: int = 0
     ok: bool = True
@@ -58,6 +64,7 @@ def build_prompt(source: str, content: str, *,
         source=source,
         content=(content or "")[:8000],
         vocab_note=vocabulary_note(effective),
+        signal_kinds=signal_kinds_block(effective),
         field_names="  " + " · ".join(field_vocabulary(effective)),
         **env)
 
@@ -94,5 +101,6 @@ def extract(llm: LLMClient, *, source: str, content: str,
         roles=_lst(p, "roles"),
         relationships=_lst(p, "relationships"),
         scheduling_proposals=_lst(p, "scheduling_proposals"),
+        objective=p.get("objective") if isinstance(p.get("objective"), dict) else {},
         input_tokens=res.input_tokens, output_tokens=res.output_tokens,
         ok=True, raw=res.raw)

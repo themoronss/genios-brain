@@ -1,0 +1,155 @@
+# THE FIRST SITUATION IN THIS CORPUS THAT IS ABOUT AN ABSENCE.
+#
+# Every other file here binds to an L2 type that names a SUBJECT — a person, a company, a deal, a
+# window. This one binds to `awaiting_response`, which names a STATE: we wrote, the last word is
+# ours, and enough time has passed to be worth saying so. The distinction is the whole reason this
+# file can carry a gate with five conditions where a person-shaped situation could only ever offer
+# `thread.ball_in_court`.
+
+identity:
+  id: admin.sit.outbound_awaiting_reply
+  name: Outbound Awaiting Reply
+  domain: admin
+  owner_capability: admin.executive_support.inbox_and_correspondence
+  version: 1.0.0
+  status: stable
+
+description: >
+  We sent something and nothing came back. The counterparty holds the next move, we have been
+  waiting longer than a couple of days, and the record shows whether we have already chased and
+  how long this particular person usually takes.
+
+  The judgment this file exists to make possible is PENDING versus LATE, and it is not a fixed
+  number of days. A fund that answers in three weeks is not slow at day ten; a colleague who
+  answers within hours is late by lunchtime. `outreach.their_normal_reply_days` is that person's
+  own measured history and it is the only honest basis for the call — where it is absent, because
+  they have replied fewer than twice, the correct output says the wait cannot be judged rather
+  than picking a threshold and calling it a policy.
+
+  The second judgment is CHASE versus SOMETHING ELSE. `outreach.follow_up_count` is what makes it
+  answerable: nobody has been chased when it is zero, and a third bare reminder to somebody who
+  has ignored two is not persistence, it is the thing that ends a relationship. The count is on
+  the row precisely so a card can stop recommending a reminder at the point one stops working.
+
+  `outreach.objective` is the third judgment and the one that changes the WORDS. An investor we
+  are raising from and an investor who is merely owed a quarterly update are the same person with
+  the same `relationship.nature`, and they need opposite messages. It is written only where the
+  extractor could place the thread, so it is present on some rows and absent on others — and where
+  it is absent no output here may guess it, because a follow-up written on an assumed purpose
+  sends the wrong message with full confidence.
+
+matches:
+  l2_situation_types:
+    - awaiting_response
+  scope: person
+  when:
+    # Five conditions, not one. A person-anchored situation could gate only on whose turn it was,
+    # which is why every waiting relationship in an org reached the same lane; these separate
+    # "waiting" from "waiting on an answer we asked for and have not yet chased".
+    - path: outreach.days_waiting
+      op: ">="
+      value: 3
+    - path: outreach.response_expected
+      op: "="
+      value: true
+    # Not a hard stop on chasing — a fourth follow-up is sometimes right — but past this the
+    # remedy is a different route (the introducer, a different person, or stopping), and that is
+    # a different situation from the one this file describes.
+    - path: outreach.follow_up_count
+      op: "<="
+      value: 3
+
+also_serves:
+  - admin.executive_support.commitment_tracking
+  - admin.executive_support.delegation_and_task_routing
+  - admin.admin_operations.request_intake
+
+objects:
+  load:
+    - admin.obj.core.request
+    - admin.obj.core.commitment
+  optional:
+    - admin.obj.core.approval
+    - admin.obj.core.deadline
+  never_load:
+    # None of this is about money, people records or property. Loading them would resolve them to
+    # `unknown` and read downstream as "checked, and there are none".
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+    - admin.obj.core.access_right
+
+priority_bp: 6200
+typical_duration_days: 10
+
+signals_of_progress:
+  - positive_reply
+  - next_step_agreed
+  - meeting_scheduled
+  - approval_granted
+  - intro_made
+
+signals_of_decay:
+  - going_dark
+  - decision_deferred
+  - pass_received
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Never write "follow up". Say what is waiting, with whom, since when, and whether that is
+    unusual FOR THEM — those four are the entire value, and three of the four are on the row.
+
+    Headline: who is holding this and how long it has been.
+
+    Situation: how long we have waited, how many times we have already chased, and how that
+    compares with their own normal reply time. If `outreach.their_normal_reply_days` is absent,
+    say we do not have enough history with this person to know whether the wait is unusual —
+    never imply it is.
+
+    Artifact: the message that makes replying easy. Restate the one thing we need in a line,
+    offer a default we will proceed with if nothing comes back, and give a date. If we have
+    already chased twice, do not draft a third reminder — say that a bare reminder has stopped
+    working and name the alternative (a different route in, or a decision to proceed without
+    them).
+
+    If `outreach.objective` is present, let it choose the WORDS — a fundraising ask is chased with
+    a short progress update and one concrete question, an investor update is owed rather than
+    requested, a signature is chased with the document attached. If it is absent, write the
+    follow-up on the timing alone and say nothing about purpose: an assumed objective sends a
+    confident message about the wrong thing.
+  fallback:
+    # EVERY UNCERTAIN SLOT GETS ITS OWN CLAUSE, and the certain ones share the first.
+    # `render._interpolate` drops the whole clause carrying a slot that holds its sentinel, so a
+    # slot placed in the same clause as the subject takes the subject down with it — "about
+    # {objective}" beside "{entity}" cut the sentence to "6 days, 1 follow-ups so far" on any
+    # thread the extractor could not place. Objective, follow-up count and cadence each stand
+    # alone; the wait and the counterparty, which this situation cannot fire without, lead.
+    #
+    # "follow-ups so far: 1" rather than "1 follow-ups" — a template cannot pluralise, and a
+    # visible grammar error costs more trust than the stiffer phrasing saves.
+    headline: "{entity} — waiting {waited_days}d on a reply"
+    situation: >-
+      {waited_days} days since we wrote to {entity} — about {objective} — follow-ups so far:
+      {follow_ups} — they normally reply in about {their_cadence} days.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-31'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-31'
+  notes: >
+    Every predicate here has a real writer in `context/waiting.py`, and the fallback names only
+    slots `deliver/slots.py` computes — `waited_days`, `follow_ups`, `their_cadence`. That pairing
+    is deliberate and is the thing that was broken before: a render hint that asks for facts the
+    card cannot state falls through to its stub on every row, which is how "a decision is sitting
+    with them" became the whole of what eighteen live cards said.
+
+    `outreach.objective` is the one declared gap and it is load-bearing, not cosmetic. Without it
+    an investor waiting on a fundraising ask and a vendor waiting on a signature are the same row.
+
+admission:
+  accepted_content_hash: e0a900f328a3a142a07fee649c11514febd06bd4487f26e32d2bf9448f2c671c
