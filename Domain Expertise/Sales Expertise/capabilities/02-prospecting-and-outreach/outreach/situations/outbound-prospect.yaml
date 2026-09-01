@@ -33,6 +33,17 @@ matches:
     # why this is worth its own file rather than a threshold on the other.
     - {path: thread.follow_up_count, op: ">=", value: 1}
     - {path: thread.days_waiting, op: ">=", value: 3}
+    # THEY ALREADY SAID NO. Without these the situation chases a decision that has been made:
+    # on the design partner's org it sat on `no-reply@antler.co` ("we have made a hard decision
+    # to not proceed further with your startup") and on a programme that had written "we regret
+    # to inform you that your startup was not shortlisted". Telling somebody to follow up on a
+    # rejection is worse than saying nothing — it is the product not having read the reply.
+    #
+    # `pass_received` is separate from `closed_lost_mention` on purpose: a fund's pass is often
+    # reversible and a lost deal is not, but neither is something to chase THIS week.
+    - no_obs: pass_received
+    - no_obs: closed_lost_mention
+    - no_obs: negative_reply
 
 also_serves:
   - sales.prospecting_and_outreach.follow_up
@@ -110,4 +121,4 @@ metadata:
     sequence position, not first-touch — rather than this file's.
 
 admission:
-  accepted_content_hash: 2906a7817e2db9b7cf4844110e6ce1caf9d0375fe37feb5f650126bcf388a54b
+  accepted_content_hash: c18e7942e94fbc86dc66f2e80bc67ee384583775525cc43048256bf4b9fb74b0

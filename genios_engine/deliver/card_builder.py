@@ -75,6 +75,21 @@ _CLARITY_REQUIREMENT: dict[str, tuple[str, str, str]] = {
 }
 
 
+#: Situations whose finding is that the counterparty said nothing, so OUR OWN last message is
+#: what grounds the card. Keyed on reason code rather than inferred, for the same reason
+#: `states_absence` is declared rather than sniffed from the prose: a card's authority must not
+#: depend on how a sentence happened to come out.
+#:
+#: `states_absence` is deliberately NOT reused here — it means "a gap in OUR RECORDS", and a
+#: 34-day silence is not a gap in our records. It is a fact about the world that we know exactly.
+_GROUNDED_BY_OUR_OWN_WORDS: frozenset[str] = frozenset({
+    "awaiting_response",        # admin, the compiled lane
+    "first_touch_unanswered",   # sales, a first approach nobody answered
+    "outbound_prospect",        # sales, a whole sequence that produced nothing
+    "cohort_outreach_gap",      # the campaign reading over the same silence
+})
+
+
 def clarity_verdict(reason_code: str | None, obs_kinds: set[str],
                     fact_fields: set[str]) -> tuple[bool, str, str]:
     """Is this card's imperative grounded? Returns (ok, what_is_missing, what_to_do_instead).
@@ -260,6 +275,18 @@ def quotable(quotes: list[dict]) -> list[dict]:
 #:   company → observations of the people who `works_at` it. Broader by nature, and honest at that
 #:             width: the card names the company, and these are its people.
 #:   person  → its own, which is what already worked for 7 of 55.
+#:   outreach/     → the counterparty they `concerns`. These anchors are MINTED by
+#:   commitment/     `context/outreach_situations.py` — they are not people, they are readings
+#:   cohort          about a person — so they carry no observations of their own and this query
+#:                   returned zero rows for every one of them. On the design partner's org that
+#:                   was 43 outreach anchors, and it is why 19 live cards abstained with
+#:                   "nothing this account said is on record": the words existed, one edge away,
+#:                   on the person the reading is about.
+#:
+#:                   Scoped through `concerns` specifically, which is the edge those readings
+#:                   write and the same hop `build_context_slice` and the neighbourhood walk
+#:                   already take. It widens nothing: a reading about one person quotes that one
+#:                   person.
 _QUOTES_SQL = """
 with subject as (
     select node_id, node_type, canonical_key
@@ -283,6 +310,13 @@ with subject as (
       join subject s on s.node_type = 'company' and e.to_node_id = s.node_id
      where o.org_id = :o and e.org_id = :o
        and e.valid_to is null and e.edge_type = 'works_at'
+    union
+    select o.observation_id
+      from graph_observations o
+      join graph_edges e on e.to_node_id = o.subject_node_id
+      join subject s on e.from_node_id = s.node_id
+     where o.org_id = :o and e.org_id = :o
+       and e.valid_to is null and e.edge_type = 'concerns'
 )
 select o.kind, o.occurred_at, sr.evidence, se.actor ->> 'email' as author
   from graph_observations o
@@ -617,7 +651,28 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     # rejects the case where there is no finding to be terse about. `quotable` sets the bar, and
     # only two things fail it: our own outgoing words (which cannot evidence what THEY asked) and
     # a bare extracted name (which is not something anybody said).
-    has_quote = bool(quotable(quotes))
+    # WHOSE WORDS GROUND *THIS* CARD.
+    #
+    # The gate below asks for one sentence from the COUNTERPARTY, and for a reply-shaped card
+    # that is exactly right: you cannot draft an answer to a message whose contents are not in
+    # the process, and quoting our own outgoing words back as "what they asked" is the
+    # misattribution `quotable` exists to prevent.
+    #
+    # It is the wrong question for a card whose entire finding is that they said NOTHING. An
+    # unanswered approach is grounded by OUR OWN last message — that is the thing being followed
+    # up, and knowing what we asked is what separates "send a reminder" from a follow-up worth
+    # reading. Requiring their words there is requiring the silence to speak, and it abstained 19
+    # live cards on the design partner's org for the crime of being about a silence.
+    #
+    # Attribution stays safe without the filter: `render._prompt` labels every quote with its
+    # speaker and instructs the model never to present something the account holder wrote as
+    # something the other side asked. The gate is what changes, not the honesty rule.
+    grounding = quotable(quotes)
+    if not grounding and reason_code in _GROUNDED_BY_OUR_OWN_WORDS:
+        grounding = [q for q in (quotes or ())
+                     if str(q.get("kind") or "") not in _NAMING_ONLY_KINDS
+                     and str(q.get("quote") or "").strip()]
+    has_quote = bool(grounding)
     if not has_quote:
         level = str(_ABSTENTION.REVIEW)
         abstained = abstained or (

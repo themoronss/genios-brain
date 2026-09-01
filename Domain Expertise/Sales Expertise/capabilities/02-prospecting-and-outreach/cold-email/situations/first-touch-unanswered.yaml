@@ -50,6 +50,17 @@ matches:
     - path: thread.follow_up_count
       op: "="
       value: 0
+    # THEY ALREADY SAID NO. Without these the situation chases a decision that has been made:
+    # on the design partner's org it sat on `no-reply@antler.co` ("we have made a hard decision
+    # to not proceed further with your startup") and on a programme that had written "we regret
+    # to inform you that your startup was not shortlisted". Telling somebody to follow up on a
+    # rejection is worse than saying nothing — it is the product not having read the reply.
+    #
+    # `pass_received` is separate from `closed_lost_mention` on purpose: a fund's pass is often
+    # reversible and a lost deal is not, but neither is something to chase THIS week.
+    - no_obs: pass_received
+    - no_obs: closed_lost_mention
+    - no_obs: negative_reply
     - fn: edge_count
       op: "<="
       value: 1
@@ -132,4 +143,4 @@ metadata:
     advice, and it belongs to `outbound_prospect` and the relationship situations, not here.
 
 admission:
-  accepted_content_hash: 4aac0238b026466f0b8f891a167380a5744a2c92caba3e07be6aa2ac0c75091f
+  accepted_content_hash: e4ae23fdd81b41eeb1bdebc02027b58d902e7ba592179a1e2ed3090b53bb9e52
