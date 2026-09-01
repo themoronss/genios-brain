@@ -328,7 +328,13 @@ def test_a_thread_we_replied_on_is_aging_and_not_a_first_response_miss():
 #: The situation types whose anchor is one node for the WHOLE ORG. There is exactly one card of
 #: each per tenant, so a body with no subject slot cannot collide with a sibling. Derived from
 #: `domain_spec` rather than listed, so a new org-wide reading does not need this test edited.
-_ORG_WIDE_ANCHORS = {"tenant", "mailbox"}
+#: `cohort` joins them: one node per stated OBJECTIVE per tenant, describing everyone contacted
+#: about it. `{entity}` on a group card would name one person and then say something about
+#: eighteen, which is worse than the gap the rule exists to close — so the requirement it does
+#: have to meet is the same one in different words, and `campaign-going-quiet.yaml` meets it by
+#: stating the split (`{contacted}`, `{awaiting}`, `{past_normal}`, `{never_chased}`) rather than
+#: describing the category.
+_ORG_WIDE_ANCHORS = {"tenant", "mailbox", "cohort"}
 
 #: `customer_support.sit.queue_overloaded` declares TWO l2 types — `queue_overloaded` (one
 #: mailbox, org-wide) and `ticket_aging` (one backlog_item per unmet ask, 41 of them on the live
