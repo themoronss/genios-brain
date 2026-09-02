@@ -104,6 +104,8 @@ signals_of_decay:
 render:
   artifact_kind: draft_reply
   render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
     A first approach went unanswered. Never write "follow up" as the advice, and never send the
     same message again with a nudge on the front.
 
@@ -118,7 +120,7 @@ render:
     person in particular, a piece of evidence, or a genuinely easier ask. If there is nothing new
     to offer, say that instead of inventing it.
   fallback:
-    headline: "{entity} — first approach, {waited_days}d with no reply"
+    headline: "Follow up with {entity} today — never chased"
     situation: >-
       {waited_days} days since our first approach to {entity} — follow-ups so far:
       {follow_ups} — and nothing has come back. No prior relationship on the record.
@@ -143,4 +145,4 @@ metadata:
     advice, and it belongs to `outbound_prospect` and the relationship situations, not here.
 
 admission:
-  accepted_content_hash: e4ae23fdd81b41eeb1bdebc02027b58d902e7ba592179a1e2ed3090b53bb9e52
+  accepted_content_hash: af70342fcd14b4a02edb69f74c07813d4814e0c1dfba8172137eddf9c23b4855

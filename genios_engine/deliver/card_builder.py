@@ -27,7 +27,7 @@ from .slots import _fval, compute_slots
 #:
 #: The value is a NAME, not a hash of this file: a comment edit must not invalidate every card in
 #: production, and deciding that a change is user-visible is a judgment the author makes.
-BUILDER_VERSION = "card-builder.v2-waiting"
+BUILDER_VERSION = "card-builder.v3-manager"
 
 EXPIRY_DAYS = 3650      # effectively "never" — a card only leaves the queue via user action
                         # (do_it_myself/snooze/dismiss) or a genuine decision_expires_at deadline,

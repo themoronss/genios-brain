@@ -90,10 +90,12 @@ signals_of_decay: [negative_reply]
 render:
   artifact_kind: brief
   render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
     Unreachable today. When the channels exist: never describe a call from its metadata alone —
     connected and dialled are different events, and only one of them is worth advising on.
   fallback:
-    headline: "{entity} — activity outside mail is not visible"
+    headline: "Capture what happened with {entity} off email"
     situation: >-
       Interactions with {entity} on channels other than mail are not captured.
 
@@ -124,4 +126,4 @@ metadata:
     card in the queue. Left at draft until that surface exists.
 
 admission:
-  accepted_content_hash: b9c00c1cdfe5ae1e10d93416ec9d21d0e860beecf44adf3ac55be872c36e0b5c
+  accepted_content_hash: 8d0e9c0944dcdbc432f69a26439342d0b870892be5dff19aad92b41312ac43b1

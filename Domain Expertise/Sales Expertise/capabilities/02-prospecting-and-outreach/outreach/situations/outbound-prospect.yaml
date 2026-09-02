@@ -76,6 +76,8 @@ signals_of_decay:
 render:
   artifact_kind: draft_reply
   render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
     A sequence has run and produced nothing. Do NOT draft another reminder — that is the one
     thing already shown not to work here.
 
@@ -90,7 +92,7 @@ render:
     close-out that leaves the door open. Name which one and why. A close-out is a legitimate
     recommendation here and is often the right one.
   fallback:
-    headline: "{entity} — {follow_ups} approaches, no reply"
+    headline: "Change your approach with {entity} — {follow_ups} tries"
     situation: >-
       {follow_ups} approaches to {entity} over {waited_days} days and nothing has come back.
 
@@ -121,4 +123,4 @@ metadata:
     sequence position, not first-touch — rather than this file's.
 
 admission:
-  accepted_content_hash: c18e7942e94fbc86dc66f2e80bc67ee384583775525cc43048256bf4b9fb74b0
+  accepted_content_hash: 8aaae3828e2fe5f1ff8cb55417a13f86fb3883402ff9396babdf4cea8b6f851a

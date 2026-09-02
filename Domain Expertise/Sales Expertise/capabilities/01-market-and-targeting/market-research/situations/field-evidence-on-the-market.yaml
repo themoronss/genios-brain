@@ -91,6 +91,8 @@ signals_of_decay:
 render:
   artifact_kind: brief
   render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
     The subject is the MAP, not the deal. Objection Handling owns "how do we answer this on this
     deal" and Competitive Positioning owns "which battlecard" — neither is this. The question
     here is which recorded claim about the market just moved.
@@ -107,7 +109,7 @@ render:
     ONE SIGHTING IS NOT A TREND. Never conclude that a market has shifted from a single mention
     — say what was observed and how much it is worth relying on.
   fallback:
-    headline: "{entity} — a competitor was named on this deal"
+    headline: "Log what {entity} said about the competition"
     situation: >-
       A competitor came up on the {entity} deal. Worth recording against the market map.
 
@@ -140,4 +142,4 @@ metadata:
     remark into a market conclusion. Left for that pass rather than promoted thin.
 
 admission:
-  accepted_content_hash: df23bfcec1a68abaf9fd9f7c528dd023068d02bc056127254200a73774033e76
+  accepted_content_hash: a4f18c48f495ffe3da08f71cd51c1c352ef31f9f009e05f50569fd5741b81bfe

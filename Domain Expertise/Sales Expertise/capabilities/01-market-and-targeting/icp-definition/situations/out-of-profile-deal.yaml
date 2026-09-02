@@ -86,6 +86,8 @@ signals_of_decay:
 render:
   artifact_kind: brief
   render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
     This asks whether the deal should have been in pipeline at all — NOT how to un-stall it. Its
     neighbours own the rescue reading and they lead the opposite way, so never write a save plan
     here.
@@ -106,7 +108,7 @@ render:
     calling an account unfit on the absence of a value field would be a finding this system
     invented about somebody's customer.
   fallback:
-    headline: "{entity} — open deal, no recorded value"
+    headline: "Price the {entity} deal or close it out"
     situation: >-
       The {entity} deal has been open {days} days and nothing on file says what it is worth.
 
@@ -136,4 +138,4 @@ metadata:
     card; it is a wrong one.
 
 admission:
-  accepted_content_hash: 4a94b1b7e1e13c8cba172dbbb4da9026deb3a3bcc04d8f96bcd4208c507df5c0
+  accepted_content_hash: 1895308f368e647b9d7130086c1f0e9462810df9fc6061741ccf034ac15084a5

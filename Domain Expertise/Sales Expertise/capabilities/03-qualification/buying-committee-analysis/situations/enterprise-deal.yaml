@@ -70,6 +70,8 @@ signals_of_decay:
 render:
   artifact_kind: brief
   render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
     A deal with several people on it. The value is naming WHO, not saying that a committee
     exists — the reader already knows that.
 
@@ -87,7 +89,7 @@ render:
     decision maker IS, never call anyone a blocker, and never say a review function is or is not
     running. Say what is visible and ask for the rest.
   fallback:
-    headline: "{entity} — {stage} deal, several people involved"
+    headline: "Map who signs at {entity}"
     situation: >-
       Three or more people are now on the {entity} deal. Who signs is not visible from the
       thread.
@@ -114,4 +116,4 @@ metadata:
     gate because the predicate grammar cannot express "either signal".
 
 admission:
-  accepted_content_hash: 5dc19614350f1034acb56a8dd0df6474c0fda97b8013e16bdd5563dceab2c1aa
+  accepted_content_hash: 4ef6762382f4c19f4c7fa2cbfa8dfda71117133596f6a4c42caca60c7e547a73

@@ -84,6 +84,8 @@ signals_of_decay:
 render:
   artifact_kind: draft_reply
   render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
     A conversation with a party that might FUND us. Not a customer, not a deal. There is no
     value to prove, no budget of ours to approve and no close date we control — never write
     about pricing, contracts, buying committees or a deal stage, and never render a pass as a
@@ -99,7 +101,7 @@ render:
     Artifact: a reply that respects who is chasing whom. Investors do not chase — give them a
     reason to re-engage (a concrete update against the condition they named), never a nudge.
   fallback:
-    headline: "{entity} — investor conversation, nothing scheduled"
+    headline: "Agree a next step with {entity}"
     situation: >-
       An open fundraising conversation with {entity} and no agreed next step on the record.
 
@@ -113,4 +115,4 @@ metadata:
   reviewed_at: '2026-08-25'
 
 admission:
-  accepted_content_hash: ec889680aff0f9c617eaa8c8f77db9518763fcef632da147031e3d920ac632c0
+  accepted_content_hash: 8ffd5068ceb89d4cf6499581669f4dafb289494ac525e30a3390057d5495bdd0

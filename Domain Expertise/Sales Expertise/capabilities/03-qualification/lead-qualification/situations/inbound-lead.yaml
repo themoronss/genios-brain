@@ -67,6 +67,8 @@ signals_of_decay:
 render:
   artifact_kind: draft_reply
   render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
     Somebody we do not know has written and we have not answered. The value is not "reply" —
     they know that. It is what to ASK.
 
@@ -84,7 +86,7 @@ render:
     customer profile — `sales.obj.core.icp` loads as an object but no fact writer fills it — so
     fit is a judgment for the reader and never a claim for the card.
   fallback:
-    headline: "{entity} — new enquiry, {days}d with us"
+    headline: "Reply to {entity} today — {days}d waiting"
     situation: >-
       {entity} wrote {days} days ago and the reply is still on our side. No prior relationship
       on the record.
@@ -110,4 +112,4 @@ metadata:
     the situation unroutable, because nothing writes it.
 
 admission:
-  accepted_content_hash: eaa20f7cdd60d8a5a043f7759d6e92db15a7dd12b5f17272e2edaa34e76d3a5d
+  accepted_content_hash: 75baf60800dd9cc71de29be9604e9ae2fb0c420dcd48eaf3b789e6676d209dc6

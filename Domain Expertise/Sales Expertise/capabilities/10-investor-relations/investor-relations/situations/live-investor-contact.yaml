@@ -97,6 +97,8 @@ signals_of_decay:
 render:
   artifact_kind: draft_reply
   render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
     A fundraising conversation with a named individual. Nothing is being sold — never write about
     pipeline stage, close date, budget, pricing or "the opportunity", and never describe a pass
     as a lost deal in commercial terms.
@@ -113,7 +115,7 @@ render:
     question, send the thing they asked for, or ask directly where it stands. Never a status
     chase, and never a follow-up when the ball is on us.
   fallback:
-    headline: "{entity} — investor conversation, no next date set"
+    headline: "Set a next date with {entity}"
     # Was "... and nothing on record says what happens next", which opens on the gap in our
     # records rather than on the fact the reader acts from. The finding is that a live fundraising
     # conversation carries no next date — which is exactly what the headline above already claims,
@@ -147,4 +149,4 @@ metadata:
     has to live here to be found at all.
 
 admission:
-  accepted_content_hash: 576a18248df7752c58bd52c7d00235e9e18bf65257eac0b018504361a4ef6e65
+  accepted_content_hash: d7aef99ecd780a25d6bd55ebb3bc37798c9717d09ee5a2381c7d5436fec0598c

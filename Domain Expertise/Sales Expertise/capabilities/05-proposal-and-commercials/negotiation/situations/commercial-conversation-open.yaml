@@ -72,6 +72,8 @@ signals_of_decay:
 render:
   artifact_kind: draft_reply
   render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
     Terms are in play on an open deal. Never advise a discount, and never describe the state as
     "negotiating" without saying what specifically is unresolved.
 
@@ -85,7 +87,7 @@ render:
     alternative, or a direct question about what would make it acceptable. Price is the last
     lever, not the first.
   fallback:
-    headline: "{entity} — an objection is still open"
+    headline: "Answer {entity}'s objection now"
     situation: >-
       Terms are under discussion on the {entity} deal and something asked has not been answered.
 
@@ -109,4 +111,4 @@ metadata:
     twice to say one thing.
 
 admission:
-  accepted_content_hash: 6267e385cd731356b1773c0973c86227bb3e66685c591a53d2db61454162eee4
+  accepted_content_hash: 1a31f293b2161d9738beaa7b65387606feee8082c6ef7c16ac6421b5de44ae5f

@@ -92,6 +92,8 @@ signals_of_decay:
 render:
   artifact_kind: draft_reply
   render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
     A live relationship with no deal attached. There is no pipeline, no commitment and no close
     date here, so never write "open items blocking commitment", a stage, or anything implying a
     purchase is in motion — that sentence on a company with nothing in play is the exact failure
@@ -106,7 +108,7 @@ render:
     Artifact: a reply that continues the relationship on its own terms — respond to what they
     last raised, or offer something specific and useful. Never a check-in for its own sake.
   fallback:
-    headline: "{entity} — open relationship, nothing scheduled"
+    headline: "Book a next step with {entity}"
     situation: >-
       An active relationship with {entity} and no agreed next step on the record.
 
@@ -120,4 +122,4 @@ metadata:
   reviewed_at: '2026-08-25'
 
 admission:
-  accepted_content_hash: 1acc1cb8cceacfe64dc2e167256d342daba8361a07de3d57294cdf655072a1d1
+  accepted_content_hash: 394a45c3aa0a8dfdf65d4715b0ca5f4b03cfed9eda85cb480657898787f1da8c

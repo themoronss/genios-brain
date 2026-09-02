@@ -468,6 +468,31 @@ def _prompt(reason_code: str, template: dict, facts: dict, slots: dict,
     # "several open items blocking commitment ... in open stage for several days ... No value
     # set" about accounts with no deal in play. A slot we could not compute is not a fact about
     # the account, and the model must never see it.
+    # MANAGER MODE, AND THE ONE LINE THAT DECIDED EVERY HEADLINE IN THE PRODUCT.
+    #
+    # This asked for "Entity + what is true". The model complied, and 69 of the design partner's
+    # 78 cards are LLM-rendered — so the whole queue read as a clock: "willow@myzyner.com: 34
+    # days, no reply", "hv@errorcore.dev: 43 days". Each one states a measurement and leaves the
+    # move buried in the artifact, which is the last field a reader reaches.
+    #
+    # `packs/general_v1.py` has carried the right rule since it was written — "headline is a
+    # direct order (verb first, name who), never a passive fact" — and it is why the only cards in
+    # the live queue that read like advice ("Reply to Sehan Sanjula now") are the ones that pack
+    # authored. The compiled corpus never inherited it because that rule lived in a pack template
+    # rather than here.
+    #
+    # A CARD THAT DECLINES TO ADVISE MUST NOT BE ORDERED TO GIVE AN ORDER. Where the situation
+    # author declared `states_absence`, the finding IS the gap and an imperative would be the
+    # model asserting a move the card has no basis for — so that case keeps the descriptive rule.
+    # Read off the template rather than passed in, so it cannot drift from what the author wrote.
+    absence = bool(((template or {}).get("fallback") or {}).get("states_absence"))
+    headline_rule = (
+        "what is missing and who must look — this card declines to instruct, so do NOT write a "
+        "command" if absence else
+        "A DIRECT ORDER: verb first, name who. 'Reply to X today', 'Send X the deck now', "
+        "'Change your approach with X'. Never a status line, never a day count on its own — the "
+        "reader already knows time passed. The move, then who"
+    )
     known = grounded_slots(slots)
     known_line = (f"Known values: {json.dumps(known, default=str)}\n" if known else "")
     # A field the system could not compute is stated as unknown rather than omitted: "we do not
@@ -489,7 +514,7 @@ def _prompt(reason_code: str, template: dict, facts: dict, slots: dict,
         "phrase.\n\n"
         "Return STRICT JSON only:\n"
         f'{{"headline": "HARD LIMIT {HEADLINE_CAP} characters — aim for {HEADLINE_CAP - 12}. '
-        'Entity + what is true, concrete not clever",\n'
+        + headline_rule + '",\n'
         f' "situation": "HARD LIMIT {SITUATION_CAP} characters — aim for {SITUATION_CAP - 25}. '
         'The facts that decide this, nothing else. Count the characters before answering",\n'
         f' "artifact": "the {kind} — the actual draft text, ready to use"}}'
