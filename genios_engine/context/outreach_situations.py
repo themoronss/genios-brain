@@ -83,6 +83,20 @@ _WAITING_ROWS = (
     "from graph_facts f "
     "join graph_nodes n on n.org_id = f.org_id and n.node_id = f.subject_node_id "
     "     and n.valid_to is null "
+    # A READING MAY NEVER CONSUME ITS OWN OUTPUT.
+    #
+    # `read_overdue_commitments` writes `commitment.action` and `commitment.due_at` onto the
+    # anchor it mints. Without this exclusion the next sweep read those facts back, saw a node
+    # carrying an overdue commitment, and minted an anchor FOR THE ANCHOR — keyed
+    # `commitment:<the previous anchor>`. Every sweep multiplied the set: one real promise on the
+    # design partner's org became fifteen identical cards, all "reply to confirm receipt", all
+    # 39 days overdue, all with the same due date, and it would have kept doubling.
+    #
+    # Filtered on node TYPE rather than on the fact names, because the same trap is waiting for
+    # any future reading that projects a fact onto its own anchor — and because a reading is
+    # about real subjects by definition. `outreach` escaped only by accident: it happens to
+    # project `outreach.*` rather than the `thread.*` names it reads.
+    "and n.node_type not in ('outreach', 'commitment', 'cohort') "
     "where f.org_id = :o and f.valid_to is null and f.status = 'active' "
     "and f.field in ('thread.days_waiting', 'thread.follow_up_count', 'thread.last_heard_days', "
     "                'thread.response_expected', 'party.reply_cadence_days', "
