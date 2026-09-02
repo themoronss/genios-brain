@@ -489,9 +489,14 @@ def _prompt(reason_code: str, template: dict, facts: dict, slots: dict,
     headline_rule = (
         "what is missing and who must look — this card declines to instruct, so do NOT write a "
         "command" if absence else
-        "A DIRECT ORDER: verb first, name who. 'Reply to X today', 'Send X the deck now', "
-        "'Change your approach with X'. Never a status line, never a day count on its own — the "
-        "reader already knows time passed. The move, then who"
+        "A DIRECT ORDER, AND IT MUST NAME THE THING. Verb + who + WHAT. "
+        "'Send Titan Capital your traction metrics', 'Answer Divyanshu's pricing question', "
+        "'Get Leslie's calendar availability'. "
+        "A bare 'Reply to X today' is REJECTED — it names who and not what, which the reader's "
+        "own inbox already tells them. The specific is in the quotes and the draft below; if you "
+        "can write the draft you can name the thing in the headline. "
+        "Only when nothing on the record says what they want may you fall back to the bare "
+        "instruction. Never a status line, never a day count on its own"
     )
     known = grounded_slots(slots)
     known_line = (f"Known values: {json.dumps(known, default=str)}\n" if known else "")
