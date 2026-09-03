@@ -127,7 +127,30 @@ L4 decision     ──> one mute sentence   ──> Reasoning Bundle -> the card
 
 ---
 
-## 7. Document index
+## 7. Globe's 34 components — where each lands in this plan (crosscheck P-1)
+
+| Globe component | Plan home | Disposition |
+|---|---|---|
+| L4.1 Unit Selector | 01 U1/U2 | **turn on** (dormant today) |
+| L4.1 Execution Planner | 01 / 07 inv. #2 | preserve hard (`plan.py`) |
+| L4.1 Dependency Resolver | 01 / 07 inv. #2 | preserve hard (topological) |
+| L4.1 Parallel Scheduler | 07 inv. #3 | **deliberate deviation kept**: described-not-performed, determinism argument recorded |
+| L4.1 LLM Decision Policy | 03 R-1/R-5 | reconciled: case 2 = R-1; case 1 = DEFER-first + gated R-5; case 3 = R-2 (extended) |
+| L4.1 Confidence Policy | 02 E3 | floor made operational on the compiled lane |
+| L4.1 Fallback Strategy | 01 (stated decision) | reserve machinery stays dormant; 3 live degradation mechanisms named |
+| L4.2 — all 17 units | 01 U1 (incl. **core.policy**, P-2 fix) | woken via selector; U3 vocab purge; U4 cost axis; U5 urgency |
+| L4.3 Evidence Schema | 04 S1 | `Finding` canonized + `value_bp` |
+| L4.3 Evidence Builder | 04 S1 | one `build_evidence_ref()`, one seed |
+| L4.3 Evidence Store | 07 inv. #5 | preserve hard + TTL digest |
+| L4.4 Evidence Aggregator | 02 (unchanged) | preserve |
+| L4.4 Decision Synthesizer | 04 S4 | + ExternalCandidate (evaluation only) |
+| L4.4 Decision Evaluator | 04 S3 | + compiled_constraints consumer |
+| L4.4 Decision Ranker | 02 E1 | importance term; override → 30% prior |
+| L4.4 Confidence Calculator | 02 E2 | last-writer scan → Rule 11 composition |
+| L4.4 Decision Builder | 02 E4 | computed do_nothing + bundle attach |
+| L4.4 Reasoning Trace | 07 inv. | preserve; bundle extends it |
+
+## 8. Document index
 
 | Doc | Contents |
 |---|---|

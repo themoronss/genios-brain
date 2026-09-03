@@ -30,10 +30,19 @@ structure, staged:
 
 ```
 stage 1: core.context, core.timeline, core.dependency
-stage 2: core.constraint, core.risk, core.opportunity, core.impact, core.cost
+stage 2: core.constraint, core.policy, core.risk, core.opportunity, core.impact, core.cost
 stage 3: core.tradeoff, core.alternative, core.priority, core.confidence
 stage 4: core.validation, core.recommendation, core.planning
 (resource, scheduling: scheduled when the manifest declares their inputs)
+
+CORRECTION (plan crosscheck P-2): core.policy was MISSING from this plan's first draft —
+the unit that answers "which organisational rules bind, who is the approver". It is the
+sole L4 consumer of the L2.1.4 Authority view (authority_rules): without it, "contracts
+> $50K require founder approval" exists as data and binds nothing, and Globe's named
+failure ("Policy unit reads a stale threshold -> wrong approver named") cannot even
+occur because the unit never runs. Scheduled stage 2; OPTIONAL with declared field
+authority.rules_present; its published approver/threshold findings feed core.constraint
+candidate checks and the Reasoning Bundle's recommendation_rationale.
 ```
 
 **WHY** — Every downstream fix depends on units actually producing evidence:
@@ -51,6 +60,13 @@ deterministic, exactly Globe's "run Risk and Priority, not Pricing."
 declared budgets, not stopwatches; tune per-unit budgets) · required-unit failures on
 thin situations (only context/constraint/priority/confidence stay REQUIRED; everything
 else optional-with-cap, preserving the degraded-confidence rule).
+
+**Fallback Strategy (Globe L4.1.7) — the stated decision (crosscheck P-4):** the unused
+reserve-unit machinery **stays dormant** — no work planned, recorded deliberately.
+Degradation is served by three live mechanisms: optional-unit skip with the degraded
+confidence cap (unit level), the confidence-floor DEFER (decision level, doc 02 E3), and
+the L6 authority-based abstention (delivery level). A fourth mechanism would add surface
+without adding safety.
 
 **ACCEPTANCE**
 ```

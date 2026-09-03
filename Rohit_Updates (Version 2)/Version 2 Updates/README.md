@@ -86,6 +86,7 @@ Plus:
 - `04-Gap-Audit-L2-Spec-vs-Code.md` — the 43-component Layer 2 audit
 - `05-Gap-Audit-L3-Spec-vs-Code.md` — the 13-component Layer 3 audit (**the unlock layer**)
 - `06-Gap-Audit-L4-Spec-vs-Code.md` — the 34-component Layer 4 audit (**dormant, deaf, mute**)
+- `07-Plan-Crosscheck-L4.md` — the L4 plan audited against Globe + the Theory-chat MD (caught **P-2: core.policy missing from the DAG** before a line of code)
 
 ## Layer 2 plan — document index
 

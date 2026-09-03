@@ -116,6 +116,17 @@ No new scores are invented — it re-weighs existing ones with portfolio context
 **ACCEPTANCE** — the same decision set produces a stable, explainable top-3; a
 thrice-ignored card decays; three same-account cards yield one carrier.
 
+# S6 · `run_query` — the scope decision, stated (crosscheck P-3)
+
+The day-1 finding stands at HEAD: `/v1/intelligence/query` retrieves and re-phrases
+already-fired signals; it cannot generate judgment for an arbitrary question.
+**L4 v2 deliberately does NOT build a free-text Q&A reasoning mode.** The product law
+(Globe and the Theory chat, verbatim): *"You don't have to ask"* / *"not an AI assistant
+you ask questions."* The E1 surface is the **critique endpoint** (S4) — evaluate a
+proposed action — not open Q&A. `run_query` gains the Reasoning Bundle on its fixed
+recommendation (R-2 runs there too) and nothing more. If a queryable-assistant surface
+is ever wanted, it is a product decision for its own plan, not a seam to slip in here.
+
 ---
 
 ## Group acceptance gate
