@@ -176,3 +176,38 @@ confidence with Rule 11 composition — and give the engine a **voice**: the typ
 Reasoning Bundle that turns a fixed decision into the scenario → why → root cause →
 recommendation → expected-effect detail the customer is actually paying for.
 Plan: `04-Layer-4-Plan/`.
+
+
+---
+
+## Addendum — finding D4: **the units that run, run half-blind**
+
+Found while enumerating the registry for the re-arranged plan (doc `04-Layer-4-Plan/02`),
+and verified at source.
+
+`_default_dag` (`reason/adapters/expertise.py:93-123`) schedules `core.risk` — but **not**
+`core.temporal` or `core.relationship`, which are the prior sources two of its three
+plugins read:
+
+| `core.risk` plugin | Reads | Compiled lane |
+|---|---|---|
+| MomentumDecayPlugin | `core.temporal` → `drop_bp` | prior absent → **silent** |
+| RelationshipHealthPlugin | `core.relationship` → `coverage_bp` | prior absent → **silent** |
+| PlayMitigationPlugin | the capability's plays | ✅ runs |
+
+The same starvation hits `core.cost` (delay cost reads `core.temporal`),
+`core.opportunity` (StalledButOpen), `core.alternative` (momentum) and `core.impact`
+(`core.relationship`).
+
+**The source records the consequence itself** (`expertise.py:118-122`):
+> *"`core.risk` measures pressure; it does not RULE on priority, so the declared-override
+> path found nothing and every compiled candidate fell back to a neutral 5000 utility —
+> which is why every compiled card scored exactly 50."*
+
+**Why the audit missed it first time:** the reachability sweep counted *scheduled units*,
+and `core.risk` is scheduled. Half-blindness only shows when you check each unit's
+**declared priors** against the DAG. The registry also holds four shims Globe never names
+(`core.temporal`, `core.relationship`, `core.signal_composition`, `core.planning`) — so a
+roster built strictly from the spec's 17 would still have left `core.risk` blind.
+
+**Verdict update:** dormant + **half-blind** + deaf + mute. Fixed by doc 02 U1/U2.

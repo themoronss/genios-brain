@@ -33,21 +33,21 @@ LLM sites in reason/**. Today's L4 is *more* deterministic than the founder aske
 and mute because of it.
 
 **Verdict: L4 today = NOT properly working.** Machinery quality high, product behavior
-absent — dormant, deaf, mute (full evidence: `06-Gap-Audit-L4-Spec-vs-Code.md`).
+absent — dormant, **half-blind**, deaf, mute (full evidence: `06-Gap-Audit-L4-Spec-vs-Code.md`).
 
 ---
 
-## PART 2 — Does the PLAN deliver Globe + the Theory chat? Yes, after 5 corrections.
+## PART 2 — Does the PLAN deliver Globe + the Theory chat? Yes, after 7 corrections.
 
 Mechanical check run over the plan docs (grep for every Globe component name + all 17
 unit names). Findings:
 
 | # | Severity | Finding | Correction |
 |---|---|---|---|
-| **P-2** | 🔴 **HIGH** | **`core.policy` was missing from the plan's staged DAG** — the one unit that consumes the L2.1.4 Authority view. "Contracts > $50K need founder approval" would have stayed data that binds nothing; Globe's named failure mode could never even occur. | Scheduled stage 2 in doc 01 U1; consumer role stated; correction recorded in-place |
-| P-1 | medium | No component-by-component Globe mapping — 12 of 18 non-unit component names appeared nowhere; substance covered, verification impossible for the CTO | 34-component mapping table added: doc 00 §7 |
-| P-3 | medium | `run_query` Q&A gap left **silent** — day-1 finding said it can't reason over an arbitrary question; plan neither fixed nor declined it | Stated decision added (doc 04 S6): no free-text Q&A mode in L4 v2 — product law "you don't have to ask"; critique (S4) is the E1 surface; run_query gains the bundle only |
-| P-4 | low | Fallback Strategy (Globe L4.1.7): reserve-unit machinery left dormant with no stated decision | Decision stated (doc 01): stays dormant; the 3 live degradation mechanisms named |
+| **P-2** | 🔴 **HIGH** | **`core.policy` was missing from the plan's staged DAG** — the one unit that consumes the L2.1.4 Authority view. "Contracts > $50K need founder approval" would have stayed data that binds nothing; Globe's named failure mode could never even occur. | scheduled stage 2 in **doc 02 U1**; consumer role and publishes contract stated |
+| P-1 | medium | No component-by-component Globe mapping — 12 of 18 non-unit component names appeared nowhere; substance covered, verification impossible for the CTO | the full component-by-component alignment table is now **doc 00 §2**, and the plan is re-organised group-by-group (L4.1–L4.5) to match Globe |
+| P-3 | medium | `run_query` Q&A gap left **silent** — day-1 finding said it can't reason over an arbitrary question; plan neither fixed nor declined it | stated decision added (**doc 06 OUT-3**): no free-text Q&A mode in L4 v2 — product law "you don't have to ask"; critique (S4) is the E1 surface; run_query gains the bundle only |
+| P-4 | low | Fallback Strategy (Globe L4.1.7): reserve-unit machinery left dormant with no stated decision | decision stated (**doc 01 C7**): stays dormant; the 3 live degradation mechanisms named |
 | P-5 | low | Theory-chat items deliberately not adopted, now recorded: Z3/Clingo solvers (predicate-tree eliminations suffice), ML confidence calibration (L6/L7's `calibrate.py`), multiplicative Impact×Urgency×Confidence (weighted integer blend keeps the same principle, auditable in bp) | this row is the record |
 
 **Theory-chat conformance (the file the founder gave):**
@@ -63,10 +63,43 @@ unit names). Findings:
 | "Agent X is about to send this — change it this way" | S4 critique endpoint, advisory locked |
 | "Verify outcome 50–100 times" / learning | L6/L7 scope — correctly not in this plan |
 
-**Verdict: plan = conformant.** One real defect (P-2) caught and fixed before any code
-was written — which is what a crosscheck is for.
+**Verdict: plan = conformant.** Two real defects (P-2 here, P-7 in Part 3) caught and
+fixed before any code was written — which is what a crosscheck is for.
 
 ## Correction log
 - P-2 was my omission in the first draft of doc 01, found by this crosscheck's
   mechanical unit-name sweep (`policy ✗`). The lesson repeats L1's: **enumerate the
   spec's list and check every name; never trust coverage by feel.**
+
+---
+
+## PART 3 — the re-arrangement (after this crosscheck)
+
+The plan was re-organised so that **every Globe group has exactly one document**, the way
+L1 and L2 are organised. It also grew from 1,118 to 1,845 lines, with the added detail
+concentrated where it was thinnest: the unit roster.
+
+| Before | After |
+|---|---|
+| L4.1 and L4.2 collapsed into one doc | `01` (orchestrator, 7 components) + `02` (the roster, 21 units) |
+| L4.3 had no group doc | `03-Group-L4.3-Evidence-Layer.md` |
+| the bundle was a loose doc | `05-Group-L4.5-Reasoning-Bundle.md` — declared as a **new group**, since Globe has no customer-facing narrative component |
+| seams mixed into the evidence doc | `06-Seams-In-and-Out.md` |
+| no cost model (L2 has one) | `11-Cost-Model-and-Budget-Guards.md` |
+| 7 waves | 8 waves, **one per group**, gates renamed to match |
+
+### Two findings that only the re-arrangement surfaced
+
+**P-6 — the roster is 21, not 17, and 4 of the extras are load-bearing.** Enumerating the
+registry (rather than trusting Globe's list) found `core.temporal`, `core.relationship`,
+`core.signal_composition` and `core.planning` — thin shims Globe does not name. Two of
+them are prior sources for **five** Globe units. A roster built strictly from the spec
+would have left `core.risk` blind. Recorded as a **gap in Globe**, not a code defect.
+
+**P-7 — 🔴 the units that run, run half-blind.** `core.risk` is scheduled on the compiled
+lane; `core.temporal` and `core.relationship` are not; so two of its three plugins read
+priors that never ran and stay silent by design. The same starvation hits cost,
+opportunity, alternative and impact. This is a *fourth* diagnosis beyond dormant/deaf/mute,
+and it explains the line the source itself records — *"every compiled candidate fell back
+to a neutral 5000 utility, which is why every compiled card scored exactly 50."*
+Fixed by doc 02 U2.

@@ -157,33 +157,37 @@ artifacts unlocked** · 5 offline LLM sites · **0 compile-time LLM** · 6 waves
 > Behavior). Who decides a brain update was never the gap — L6's promotion pipeline with
 > deterministic floors already exists. The gap was that nothing ever proposed.
 
-## Layer 4 plan — document index
+## Layer 4 plan — document index (group-by-group, matching Globe)
 
-| Doc | Contents |
+| Doc | Group / contents |
 |---|---|
-| `00-Overview-and-Doctrine.md` | 5 laws · the R-sites · four flows this plan opens |
-| `01-Group-L4.1-4.2-Orchestrator-and-Units.md` | **wake the roster** — 10 unreachable units go live via the dormant selector |
-| `02-Group-L4.4-Decision-Maker.md` | **the ears** — importance term, override demoted, Rule 11, operational silence, computed do-nothing |
-| `03-Reasoning-Bundle-and-R-Sites.md` | **the voice — the centerpiece**: WHY / ROOT CAUSE / RECOMMENDATION / EXPECTED EFFECT, evidence-bound, numbers templated |
-| `04-Evidence-and-Seams.md` | evidence shape fix · BSO projection · compiled_constraints consumer · **agent critique (E1)** · **book-level brief (E3)** |
-| `05-Edge-Cases-Loops-Scenarios.md` | 15 R-site cases · 6 loops · the two Theory-chat traces completed |
-| `06-Contracts.md` | ReasoningBundle · ExternalCandidate/CritiqueVerdict (advisory locked) · BriefRanking |
-| `07-Build-Order-and-Acceptance.md` | waves Z0–Z6, gates K0–K6 — **K1 closes the G7→H5→K1 ranking chain** |
-| `08-CTO-Handoff-Note.md` | copy-paste brief |
+| `00-Overview-and-Doctrine.md` | doctrine + **the component-by-component alignment table** (expected vs code vs plan) |
+| `01-Group-L4.1-Reasoning-Orchestrator.md` | 7 components — selector, planner, resolver, scheduler, **LLM policy gate**, confidence policy, fallback |
+| `02-Group-L4.2-Reasoning-Units.md` | **the roster** — 21 registered units, what each publishes, who reads it, what changes |
+| `03-Group-L4.3-Evidence-Layer.md` | schema · builder · store |
+| `04-Group-L4.4-Decision-Maker.md` | **the ears** — importance term, override demoted, Rule 11, floors, computed do-nothing |
+| `05-Group-L4.5-Reasoning-Bundle.md` | **the voice** — WHY / ROOT CAUSE / RECOMMENDATION / EXPECTED EFFECT, the V-gauntlet |
+| `06-Seams-In-and-Out.md` | L2 BSO projection · L3 constraints → eliminations · **agent critique** · **book-level brief** |
+| `07-Contracts.md` | ReasoningBundle · ExternalCandidate · BriefRanking · `l4_activation` |
+| `08-Build-Order-and-Acceptance.md` | waves Z0–Z7 (one per group), gates K0–K7, preserve-hard list |
+| `09-Edge-Cases-and-Loops.md` | 23 edge cases · 6 loops · convergence signals |
+| `10-Worked-Examples.md` | the two Theory-chat traces, end to end |
+| `11-Cost-Model-and-Budget-Guards.md` | ~$0.012/decision · ~$17.50/tenant/month · 8 guards |
+| `12-CTO-Handoff-Note.md` | copy-paste brief |
 
-**Layer 4 v2 totals:** 34 Globe components audited (10/17 units unreachable today) ·
-**5 R-sites** · 11 algorithms (DLG) · 7 waves · the two flagship gates: **K1** (the
-formula finally decides) and **K4** (the founder-bar card).
+**Layer 4 v2 totals:** 34 Globe components aligned one by one · **21 units enumerated**
+(Globe names 17) · 5 R-sites · 11 algorithms (DLG) · 8 waves · 23 edge cases ·
+the two flagship gates: **K1** (the formula finally decides) and **K4** (the founder-bar card).
 
 ### The Layer 4 line
 
 > **The LLM may INTERPRET evidence and NARRATE reasoning. It may never CHOOSE, SCORE,
 > or PERMIT.** The decision is fixed first; the Reasoning Bundle describes it and cannot
-> amend it (constructor-enforced); every number in the prose is a placeholder
-> substituted from computed values. L4 today is dormant (10/17 units never run), deaf
-> (importance_bp has zero readers in reason/), and mute (one validated sentence, no
-> directives, no numbers). The plan wakes it, gives it ears, and gives it the voice the
-> customer is actually paying for.
+> amend it (constructor-enforced); every number in the prose is substituted from a
+> computed value. L4 today is dormant (10/17 units never run), **half-blind** (the units
+> that do run are starved of their prior sources), deaf (`importance_bp` has zero readers
+> in `reason/`), and mute (one validated sentence, no directives, no numbers). The plan
+> wakes it, feeds it, gives it ears, and gives it the voice the customer is paying for.
 
 **Layer 1 v2 totals:** 7 groups · **65 components** · **23 algorithms** · 5 LLM sites ·
 0 embeddings · 10 build waves · 13 reverse prompts.
