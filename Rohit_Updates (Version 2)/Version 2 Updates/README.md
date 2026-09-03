@@ -40,7 +40,7 @@ precisely what a language model is for.
 | **L1** | **HEAVY** — semantic extraction is the core |
 | L2 | **JUDGMENT, not extraction** — 9 gated sites. The *measurement* (trend/percentile/anomaly) stays deterministic for comparability |
 | L3 | **ZERO at compile-time** (reproducibility: same situation + snapshot = byte-identical package) · **5 offline sites** N-1..N-5 — authoring, review-assist, org discovery, behavior distillation, gap drafting — all human/floor-gated |
-| L4 | ambiguity only |
+| L4 | **INTERPRET + NARRATE, never choose/score/permit** — 5 R-sites: ambiguity-as-evidence, the Reasoning Bundle narrative, alternatives, expected-effect, gated consult |
 | L5 / L5.2 | prose only |
 | L6 | feedback parsing only |
 
@@ -56,7 +56,7 @@ ranking, and ranking must be byte-identical across machines and replays.
 | **L1 Knowledge** | `01-Layer-1-Plan/` | ✅ **complete — 11 documents** |
 | **L2 Context** | `02-Layer-2-Plan/` | ✅ **complete — 10 documents** |
 | **L3 Domain Expertise** | `03-Layer-3-Plan/` | ✅ **complete — 8 documents** |
-| L4 Reasoning | `04-Layer-4-Plan/` | not started |
+| **L4 Reasoning** | `04-Layer-4-Plan/` | ✅ **complete — 9 documents** |
 | L5 Executive | `05-Layer-5-Plan/` | not started |
 | L5.2 Delivery | `06-Layer-5.2-Plan/` | not started |
 | L6 Learning | `07-Layer-6-Plan/` | not started |
@@ -85,6 +85,7 @@ Plus:
   bar, our design conversation and itself. **9 findings, 2 critical, all fixed before commit.**
 - `04-Gap-Audit-L2-Spec-vs-Code.md` — the 43-component Layer 2 audit
 - `05-Gap-Audit-L3-Spec-vs-Code.md` — the 13-component Layer 3 audit (**the unlock layer**)
+- `06-Gap-Audit-L4-Spec-vs-Code.md` — the 34-component Layer 4 audit (**dormant, deaf, mute**)
 
 ## Layer 2 plan — document index
 
@@ -154,6 +155,34 @@ artifacts unlocked** · 5 offline LLM sites · **0 compile-time LLM** · 6 waves
 > extracts (policy docs → Organization) and what L2.4 measures (behavior patterns →
 > Behavior). Who decides a brain update was never the gap — L6's promotion pipeline with
 > deterministic floors already exists. The gap was that nothing ever proposed.
+
+## Layer 4 plan — document index
+
+| Doc | Contents |
+|---|---|
+| `00-Overview-and-Doctrine.md` | 5 laws · the R-sites · four flows this plan opens |
+| `01-Group-L4.1-4.2-Orchestrator-and-Units.md` | **wake the roster** — 10 unreachable units go live via the dormant selector |
+| `02-Group-L4.4-Decision-Maker.md` | **the ears** — importance term, override demoted, Rule 11, operational silence, computed do-nothing |
+| `03-Reasoning-Bundle-and-R-Sites.md` | **the voice — the centerpiece**: WHY / ROOT CAUSE / RECOMMENDATION / EXPECTED EFFECT, evidence-bound, numbers templated |
+| `04-Evidence-and-Seams.md` | evidence shape fix · BSO projection · compiled_constraints consumer · **agent critique (E1)** · **book-level brief (E3)** |
+| `05-Edge-Cases-Loops-Scenarios.md` | 15 R-site cases · 6 loops · the two Theory-chat traces completed |
+| `06-Contracts.md` | ReasoningBundle · ExternalCandidate/CritiqueVerdict (advisory locked) · BriefRanking |
+| `07-Build-Order-and-Acceptance.md` | waves Z0–Z6, gates K0–K6 — **K1 closes the G7→H5→K1 ranking chain** |
+| `08-CTO-Handoff-Note.md` | copy-paste brief |
+
+**Layer 4 v2 totals:** 34 Globe components audited (10/17 units unreachable today) ·
+**5 R-sites** · 11 algorithms (DLG) · 7 waves · the two flagship gates: **K1** (the
+formula finally decides) and **K4** (the founder-bar card).
+
+### The Layer 4 line
+
+> **The LLM may INTERPRET evidence and NARRATE reasoning. It may never CHOOSE, SCORE,
+> or PERMIT.** The decision is fixed first; the Reasoning Bundle describes it and cannot
+> amend it (constructor-enforced); every number in the prose is a placeholder
+> substituted from computed values. L4 today is dormant (10/17 units never run), deaf
+> (importance_bp has zero readers in reason/), and mute (one validated sentence, no
+> directives, no numbers). The plan wakes it, gives it ears, and gives it the voice the
+> customer is actually paying for.
 
 **Layer 1 v2 totals:** 7 groups · **65 components** · **23 algorithms** · 5 LLM sites ·
 0 embeddings · 10 build waves · 13 reverse prompts.
