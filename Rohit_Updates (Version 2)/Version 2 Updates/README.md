@@ -38,7 +38,7 @@ precisely what a language model is for.
 | Layer | Usage |
 |---|---|
 | **L1** | **HEAVY** — semantic extraction is the core |
-| L2 | LIGHT — graph resolution only |
+| L2 | **ZERO required** — one optional cosmetic naming call. Comparison is arithmetic |
 | L3 | ZERO at runtime — deterministic compiler |
 | L4 | ambiguity only |
 | L5 / L5.2 | prose only |
@@ -54,7 +54,7 @@ ranking, and ranking must be byte-identical across machines and replays.
 | Layer | Plan | Status |
 |---|---|---|
 | **L1 Knowledge** | `01-Layer-1-Plan/` | ✅ **complete — 11 documents** |
-| L2 Context | `02-Layer-2-Plan/` | not started |
+| **L2 Context** | `02-Layer-2-Plan/` | ✅ **complete — 10 documents** |
 | L3 Domain Expertise | `03-Layer-3-Plan/` | not started |
 | L4 Reasoning | `04-Layer-4-Plan/` | not started |
 | L5 Executive | `05-Layer-5-Plan/` | not started |
@@ -81,8 +81,37 @@ ranking, and ranking must be byte-identical across machines and replays.
 
 Plus:
 - `02-Gap-Audit-L1-Spec-vs-Code.md` — the 48-component audit that produced this plan
-- `03-Plan-Crosscheck-and-Corrections.md` — the plan audited against Globe, the customer
+- `03-Plan-Crosscheck-and-Corrections.md` — the L1 plan audited against Globe, the customer
   bar, our design conversation and itself. **9 findings, 2 critical, all fixed before commit.**
+- `04-Gap-Audit-L2-Spec-vs-Code.md` — the 43-component Layer 2 audit
+
+## Layer 2 plan — document index
+
+| Doc | Contents |
+|---|---|
+| `00-Overview-and-Doctrine.md` | 4 laws + the four maps. **L2 v2 has ZERO required LLM sites** |
+| `01-Group-L2.1-Enterprise-Context-Graph.md` | 8 views, incl. the **missing Authority view** |
+| `02-Group-L2.2-Graph-Engines.md` | 8 components, incl. **point-in-time graph read** |
+| `03-Group-L2.3-Cross-Correlation.md` | 8 correlators, incl. the **3 missing** |
+| `04-Group-L2.4-Analytic-Stratum.md` | **8 components — ENTIRELY NEW, the core of L2 v2** |
+| `05-Group-L2.5-Context-Quality.md` | 8 components, incl. **typed absence** |
+| `06-Group-L2.6-Situation-Candidate-Generator.md` | subgraph **pattern registry** |
+| `07-Group-L2.7-Business-Situation-Engine.md` | **the importance fix — the L4 unlock** |
+| `08-Contracts-BusinessSituationObject.md` | 9 typed objects; 8 law-carrying validators |
+| `09-Build-Order-and-Acceptance.md` | 8 waves X0–X8, gates H0–H8 |
+| `10-CTO-Handoff-Note.md` | copy-paste brief for the coding agent |
+
+**Layer 2 v2 totals:** 7 groups · **51 components** · **19 algorithms** · **0 required LLM
+sites** · 0 embeddings · 8 waves.
+
+### The Layer 2 claim worth arguing about
+
+> **L2 v2 discovers patterns without a language model.** *"This account's engagement is in
+> the bottom decile of its cohort and has declined three months running"* is a discovered
+> pattern — nobody wrote a rule naming that account — computed deterministically, with
+> every input citable. Globe's *"if the output is a number, the LLM never produces it"* is
+> not the obstacle to discovery it appears to be. It only becomes one when the comparative
+> substrate is missing, which is the situation today.
 
 **Layer 1 v2 totals:** 7 groups · **65 components** · **23 algorithms** · 5 LLM sites ·
 0 embeddings · 10 build waves · 13 reverse prompts.
