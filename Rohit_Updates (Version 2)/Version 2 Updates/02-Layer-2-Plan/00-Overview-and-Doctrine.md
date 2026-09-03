@@ -40,12 +40,13 @@ This is the substrate every pattern the customer expects is made of. Without it,
 
 | Change | Effect |
 |---|---|
-| Semantic extraction moves to L1 | **L2's only LLM site disappears.** `context/extract/` relocates |
+| Semantic extraction moves to L1 | `context/extract/` relocates. L2 loses the **extraction** call — and gains eight **judgment** calls (MAP A) |
 | Input is now a typed `QualifiedEnterpriseSignal` | `signal_type`, `importance_bp`, verified evidence spans and conflicts all arrive pre-computed |
 | `l2_extraction_results` → `l1_extraction_results` | the cache moves with the extractor |
 
-**L2 v2 gets lighter and smarter simultaneously.** Freed of extraction, it spends its
-budget on the one thing only it can do: computing **across** entities and time.
+**L2 v2 changes shape rather than getting lighter.** It stops doing high-volume extraction
+(every message) and starts doing low-volume judgment (per situation) — see doc 11 for why
+that inverts the cost profile.
 
 ---
 
@@ -59,37 +60,85 @@ budget on the one thing only it can do: computing **across** entities and time.
 | **L2.4** | **Analytic Stratum** | **8** | 🆕 **ENTIRELY NEW — the core of v2** |
 | L2.5 | Context Quality Engine | 8 | 4 built · **Missing Context Detection missing** |
 | L2.6 | Situation Candidate Generator | 3 | anchor-based; **no pattern registry** |
-| L2.7 | Business Situation Engine | 8 | 7 built · **prioritization hardcoded to 5000** |
+| L2.7 | Business Situation Engine | 8 | **2 defects**: prioritization hardcoded to 5000, and **no stated-resolution path** |
 | | **TOTAL** | **51** | |
 
 ---
 
 ## 4. MAP A — Where the LLM is used
 
-**Layer 2 v2 has ZERO required LLM sites, and one optional cosmetic one.**
+> **An earlier draft of this document claimed L2 v2 had "zero required LLM sites."
+> That was wrong, and the correction matters.** Deterministic code can only **check what
+> is or is not there**. It cannot **construct** meaning. Half of Layer 2's job is
+> construction.
 
-| ID | Site | Mode | Purpose |
-|---|---|---|---|
-| ~~B3 extraction~~ | — | **RELOCATED TO L1** | was L2's only LLM call |
-| **LLM-6** | Situation naming | **optional, cosmetic** | a human-readable title. **May not alter a single number** |
+### The line — drawn on output type, not on layer
 
-That is the whole map. Everything else in L2 — correlation, cohorting, trend computation,
-comparison, confidence, situation detection, prioritization — is **deterministic
-arithmetic over the graph**.
+> ## In L2 the LLM may judge a **RELATIONSHIP**, a **STATE**, or **frame a narrative**.
+> ## It may never produce a **NUMBER**.
 
-### Why this matters more than it looks
+| Kind of work | LLM? | Why |
+|---|---|---|
+| *"Is this situation over?"* | ✅ | a rule can check `stage == closedwon`; it cannot read *"we signed, all done"* |
+| *"Are these two things the same?"* | ✅ | judgment, in the ambiguous remainder only |
+| *"What is this situation about?"* | ✅ | synthesis — a pattern match yields 5 conditions, not a story |
+| *"What does this condition mean?"* | ✅ | *"come back when you have traction"* → a checkable predicate |
+| Trend · percentile · cohort evaluation · anomaly · importance | ❌ **never** | see below |
 
-**L2 v2 discovers patterns without a language model.**
+### Why the analytic stratum stays deterministic — comparability, not purity
 
-*"This account's engagement is in the bottom decile of its cohort and has declined for
-three consecutive months"* is a **discovered pattern**. Nobody wrote a rule naming that
-account. It is computed — deterministically, reproducibly, with every input citable.
+If a trend is computed by a model in March and again in September and the two disagree,
+**you cannot tell whether the business changed or the model did.** A percentile produced
+by judgment cannot be compared with last quarter's. Comparison requires a **stable
+measuring instrument**; that is a structural requirement, not a doctrine.
 
-This is the important architectural claim of Version 2: **pattern discovery does not
-require synthesis by a model. It requires a substrate that makes patterns computable.**
-Globe's doctrine ("if the output is a number, the LLM never produces it") is not the
-obstacle to discovery that it first appears to be — it only becomes one when the
-comparative substrate is missing, which is exactly the situation today.
+**But the work *around* the arithmetic can be LLM-assisted:**
+
+| Task | Owner |
+|---|---|
+| Which metrics are worth trending in this domain? | **LLM proposes** → human confirms |
+| Write a cohort predicate from *"customers like Acme who churned"* | **LLM writes the predicate** → human approves → **deterministic engine evaluates it** |
+| What does this trend *mean*? | ❌ not L2 — that is L3/L4 |
+
+Cohort authoring by LLM **preserves** Law 3 (*declared, never clustered*): a human still
+approves the predicate, and the predicate — not a model — decides membership.
+
+### The nine sites
+
+| ID | Site | Group | Deterministic gate first | Tier | Est. fires/day |
+|---|---|---|---|---|---|
+| **M-1** | Ambiguous entity linking | L2.2.4 | alias + domain cascade | T1 | 1–5 |
+| **M-2** | Ambiguous edge typing | L2.2.1 | rule table | T1 | 2–10 |
+| **M-3** | Cross-conversation matching | L2.3.2 | subject / participant / time | T1 | 3–15 |
+| **M-4** | 🔴 **Resolution detection** | L2.7.7 | `terminal_by_fact` first | T2 | **10–30** |
+| **M-5** | Condition parsing | L2.3.4 | date / count patterns | T2 | 1–5 |
+| **M-6** | **Situation framing** | L2.7.2 | pattern conditions | T2 | **10–40** |
+| **M-7** | **Timeline narrative** | L2.7.2 | chronological sort | T2 | 5–20 |
+| **M-8** | **Clustering judgment** | L2.7.3 | shared-entity merge | T1 | 2–8 |
+| **M-9** | **Cohort predicate authoring** | L2.4.4 | — | T3 | **on demand only** |
+
+Situation naming folds into M-6. Volumes are estimates for an active small-team org and
+must be measured — see doc 11.
+
+### The discipline at every site
+
+1. **Deterministic first.** The LLM sees only the ambiguous remainder.
+2. **Typed output.** Never a `_bp` field. Never a visibility decision.
+3. **Cached** on `hash(subject : member_set : prompt_v : schema_v : model)`.
+4. **Budget-guarded**, and on exhaustion it **fails to the deterministic answer** — never
+   silently skips.
+5. **Span-constrained** where it makes claims: M-6 may only use facts already present in
+   the situation's members.
+
+### What survives from the earlier claim
+
+**L2 still discovers patterns deterministically.** *"This account is in the bottom decile
+of its cohort and has declined three months running"* needs no model — it is arithmetic
+over the analytic stratum, reproducible and citable. The correction is that **describing,
+resolving and framing** that finding does need one.
+
+Both halves are true: the **measurement** is deterministic, the **meaning-construction**
+is not.
 
 ---
 
@@ -209,3 +258,7 @@ A metric with no coverage is `unknown`, never `0`.
 | `08-Contracts-BusinessSituationObject.md` | typed objects at the L2 seam |
 | `09-Build-Order-and-Acceptance.md` | waves and gates |
 | `10-CTO-Handoff-Note.md` | copy-paste brief for the coding agent |
+| `11-Cost-Model-and-Budget-Guards.md` | **cost drivers, per-site budgets, fail-closed fallbacks** |
+| `12-LLM-Edge-Cases.md` | **28 named failure cases across the 9 sites, with mitigations** |
+| `13-Loops-and-Convergence.md` | **5 loops, bounded fixpoint, `coverage_epoch`, holiday-vs-broken-coverage** |
+| `14-Worked-Example-End-to-End.md` | **one situation through every group, showing where the LLM fires** |

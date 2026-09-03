@@ -38,7 +38,7 @@ precisely what a language model is for.
 | Layer | Usage |
 |---|---|
 | **L1** | **HEAVY** — semantic extraction is the core |
-| L2 | **ZERO required** — one optional cosmetic naming call. Comparison is arithmetic |
+| L2 | **JUDGMENT, not extraction** — 9 gated sites. The *measurement* (trend/percentile/anomaly) stays deterministic for comparability |
 | L3 | ZERO at runtime — deterministic compiler |
 | L4 | ambiguity only |
 | L5 / L5.2 | prose only |
@@ -100,18 +100,34 @@ Plus:
 | `08-Contracts-BusinessSituationObject.md` | 9 typed objects; 8 law-carrying validators |
 | `09-Build-Order-and-Acceptance.md` | 8 waves X0–X8, gates H0–H8 |
 | `10-CTO-Handoff-Note.md` | copy-paste brief for the coding agent |
+| `11-Cost-Model-and-Budget-Guards.md` | **cost drivers, per-site budgets, fail-closed fallbacks** |
+| `12-LLM-Edge-Cases.md` | **28 named failure cases across the 9 sites** |
+| `13-Loops-and-Convergence.md` | **5 loops, bounded fixpoint, `coverage_epoch`, holiday-vs-broken-coverage** |
+| `14-Worked-Example-End-to-End.md` | **one situation through every group** |
 
-**Layer 2 v2 totals:** 7 groups · **51 components** · **19 algorithms** · **0 required LLM
-sites** · 0 embeddings · 8 waves.
+**Layer 2 v2 totals:** 7 groups · **51 components** · **19 algorithms** · **9 gated LLM
+sites** · 0 embeddings · 8 waves · 28 named edge cases.
 
-### The Layer 2 claim worth arguing about
+### The Layer 2 line
 
-> **L2 v2 discovers patterns without a language model.** *"This account's engagement is in
-> the bottom decile of its cohort and has declined three months running"* is a discovered
-> pattern — nobody wrote a rule naming that account — computed deterministically, with
-> every input citable. Globe's *"if the output is a number, the LLM never produces it"* is
-> not the obstacle to discovery it appears to be. It only becomes one when the comparative
-> substrate is missing, which is the situation today.
+Deterministic code can only **check what is or is not there**. It cannot **construct**
+meaning — and half of Layer 2's job is construction. So the line is drawn on output type,
+not on layer:
+
+> **In L2 the LLM may judge a RELATIONSHIP, a STATE, or frame a NARRATIVE.
+> It may never produce a NUMBER.**
+
+Both halves matter. *"This account is in the bottom decile of its cohort and has declined
+three months running"* is a **discovered pattern computed by arithmetic** — no model, fully
+reproducible, every input citable. But deciding that the situation is **over** because
+someone wrote *"all sorted, we signed yesterday"* is **construction**, and no rule will
+ever do it. Today L2 has only two resolution paths — one CRM field and a human click — so a
+stated resolution makes a situation look *more* active. That is a nagging machine, and it
+is what LLM site **M-4** exists to fix.
+
+**Why the measurement stays deterministic:** if a trend were judged by a model in March and
+again in September, a disagreement could not be attributed to the business or to the model.
+Comparison needs a stable measuring instrument. That is structural, not doctrinal.
 
 **Layer 1 v2 totals:** 7 groups · **65 components** · **23 algorithms** · 5 LLM sites ·
 0 embeddings · 10 build waves · 13 reverse prompts.

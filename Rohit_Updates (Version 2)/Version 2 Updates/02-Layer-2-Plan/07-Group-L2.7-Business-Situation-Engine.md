@@ -7,25 +7,27 @@ renew AWS."*
 
 **Package:** `genios_engine/context/situations.py`, `situation_bso.py`
 **Output:** `BusinessSituationObject` — Layer 2's only output
-**LLM sites:** LLM-6 only — situation naming, cosmetic, may not alter a number.
+**LLM sites:** **M-4 (resolution), M-6 (framing), M-7 (timeline), M-8 (clustering).**
+Four sites — this is the most LLM-dependent group in Layer 2, because framing a situation
+is *construction*, not checking.
 
 ---
 
 ## Component map
 
-| # | Component | BLG | Wave | Status |
+| # | Component | BLG / LLM | Wave | Status |
 |---|---|---|---|---|
 | L2.7.1 | Situation Detection | — | — | ✅ exists |
-| L2.7.2 | Situation Builder | — | — | ✅ exists |
-| L2.7.3 | Situation Clustering | BLG-17 | — | ✅ exists |
+| L2.7.2 | **Situation Builder + Framing** | **M-6, M-7** | **X6** | ⚠️ **assembles; does not FRAME** |
+| L2.7.3 | Situation Clustering | BLG-17, **M-8** | X6 | ✅ deterministic exists |
 | L2.7.4 | **Situation Prioritization** | **BLG-18** | **X5** | 🔴 **BROKEN — hardcoded 5000** |
 | L2.7.5 | Situation Confidence | — | — | ✅ **strong** |
 | L2.7.6 | Situation State | — | — | ✅ exists |
-| L2.7.7 | Situation Lifecycle | BLG-19 | — | ✅ exists |
+| L2.7.7 | **Situation Lifecycle** | BLG-19, **M-4** | **X6** | 🔴 **cannot detect a STATED resolution** |
 | L2.7.8 | Situation Publisher | — | X5 | ⚠️ update for QES input |
 
-**Seven of eight are built and correct.** One is a constant, and that constant flattens
-ranking across the entire product.
+**Two defects, not one.** The hardcoded importance flattens ranking. The lifecycle gap
+turns the product into a nagging machine.
 
 ---
 
@@ -235,6 +237,232 @@ ACCEPTANCE list.
 ALSO write scripts/situation_importance_distribution.py reporting distinct values, p50,
 p90 and the share still at exactly 5000.
 ```
+
+---
+
+# 🔴 L2.7.7 · Situation Lifecycle + Resolution Detection (M-4)
+
+> **The second defect, and the one the customer feels first.** A situation that resolved
+> but stays open is a nagging machine, and Globe names the consequence exactly:
+> *"It told me about a contract I cancelled last week"* — instant credibility loss.
+
+### The defect
+
+`situations.py:278 decide_lifecycle` is genuinely good code — the fact/human distinction
+is correct and thoughtfully documented. But there are **only two ways a situation ends:**
+
+| Path | Trigger | Reversible? |
+|---|---|---|
+| `RESOLVED_BY_FACT` | `terminal_by_fact` | ✅ recomputed each pass |
+| `RESOLVED_BY_HUMAN` | someone clicks | reopens on new evidence |
+
+And `terminal_by_fact` is **only** `normalize_stage(deal.stage) in {closedwon, closedlost}`
+(`situations.py:80`, `:417`). **One field. One source. Two values.**
+
+**There is no third path: resolved because somebody SAID so.**
+
+| What happens | Today |
+|---|---|
+| HubSpot stage → closed-won | ✅ resolves |
+| Someone clicks "handled" | ✅ resolves |
+| *"All sorted, we signed yesterday"* | ❌ **bumps `last_seen_at` → looks MORE active** |
+| A commitment fulfilled in an email | ❌ never detected |
+| A decision made in a thread | ❌ never detected |
+
+**A stated resolution makes the situation look more alive, not less.** That is the exact
+inversion of what the founder experiences.
+
+### Why deterministic cannot close this
+
+A rule can check `stage == closedwon`. It cannot read a paragraph and decide the thing is
+over. That is **construction of meaning**, not checking — and it is why M-4 exists.
+
+### L2.7.7-U1 · Resolution detection (M-4)
+
+**WHAT** — Judges whether a message landing on an open situation states that it is resolved.
+
+**WHERE** — `genios_engine/context/lifecycle/resolution.py`
+**WHEN** — X6. Requires L1 v2 QES input (evidence spans).
+
+**HOW — deterministic gate first, then the model:**
+
+```
+1. GATE (deterministic — no LLM yet)
+   fires ONLY when:
+     situation.status == ACTIVE
+     AND a new signal landed on it this drain
+     AND terminal_by_fact is False        <- a fact beats a statement, always
+   Otherwise: no call. This is the volume control.
+
+2. CANDIDATE (deterministic)
+   the signal's extraction already carries decision_states[] and commitments[]
+   from L1. If a DecisionState says state == "made" for this subject -> strong prior.
+
+3. M-4 CALL (T2)
+   input:  the situation's subject, its open obligations, and the new message text
+   asks:   does this message state that this specific thing is complete?
+   returns: {verdict, scope, speaker_role, quote, offsets, confidence_bp}
+   verdict in {RESOLVED, PARTIALLY_RESOLVED, NOT_RESOLVED, CONTRADICTED}
+
+4. VALIDATE (deterministic)
+   span must verify against source (reuse L1's ALG-08)
+   speaker authority check (below)
+   confidence floor
+
+5. APPLY
+   RESOLVED_BY_STATEMENT   -> a NEW resolution path, reversible like RESOLVED_BY_FACT
+   PARTIALLY_RESOLVED      -> a NEW state, not a full close
+   below floor             -> human review queue, NOT a card
+```
+
+### The two new states
+
+```python
+RESOLVED_BY_STATEMENT = "statement"      # joins fact | human
+STATUS_PARTIALLY_RESOLVED = "partial"    # 3 of 5 obligations done
+```
+
+`RESOLVED_BY_STATEMENT` behaves like `RESOLVED_BY_FACT`, **deliberately**: re-derived each
+pass, and it **un-resolves itself** when new evidence contradicts it. Following the
+existing docstring's own reasoning — *"the system should not need a human to undo a
+conclusion it drew from data that has since changed."*
+
+### Speaker authority — who says it matters
+
+| Speaker | Effect |
+|---|---|
+| the obligation's **owner** | full weight |
+| org-internal, not the owner | 0.8 weight |
+| **external counterparty** | 0.6 weight — *"we're done"* from a vendor is a claim, not a fact |
+| automated / service account | **ignored entirely** |
+
+**FAILURE MODES — this is the most dangerous LLM site in Layer 2**
+
+| # | Case | Consequence | Mitigation |
+|---|---|---|---|
+| 1 | *"we should wrap this up"* read as resolved | **premature close — the founder loses the thread** | verdict requires a completion statement, not an intent; confidence floor |
+| 2 | 3 of 5 commitments done | whole situation closes | `PARTIALLY_RESOLVED` is a distinct state |
+| 3 | Vendor says "done", org disagrees | wrong close | speaker-authority weighting |
+| 4 | *"well that's sorted then 🙄"* | sarcasm read literally | low confidence -> review queue; never auto-close on a single short message |
+| 5 | Thread says "done" then "actually not yet" | stale close | **latest statement wins**; `CONTRADICTED` reopens |
+| 6 | **Hinglish**: *"ho gaya"*, *"kal kar denge"* | missed or mis-read | the codebase is already multilingual — `triage.py` carries `jaldi\|turant\|kal\|parso`. The prompt must handle mixed-script input, and the golden set must include it |
+| 7 | Budget exhausted | silent miss | **fail to `terminal_by_fact`** — we may miss a resolution; we never invent one |
+
+**Failure direction is asymmetric and the design must respect it:** missing a resolution
+costs one unnecessary nudge. Inventing one **loses the thread entirely** and the founder
+never learns it happened. Every threshold leans toward *not closing*.
+
+**ACCEPTANCE**
+```
+pytest tests/context/lifecycle/test_resolution.py -q
+```
+Required: *"all sorted, we signed yesterday"* on an open renewal → `RESOLVED_BY_STATEMENT`
+with a verifying span; *"we should wrap this up"* → `NOT_RESOLVED`; 3-of-5 →
+`PARTIALLY_RESOLVED`; a vendor-stated close → reduced weight, below floor without
+corroboration; `"done"` then `"actually not yet"` → open; a Hinglish *"ho gaya"* fixture
+→ detected; `terminal_by_fact=True` → **no LLM call at all**; budget exhausted → falls to
+fact-only and logs.
+
+**REVERSE PROMPT**
+```
+TASK: Add resolution detection. Today L2 cannot tell when something ENDED.
+
+THE DEFECT: situations.py:278 decide_lifecycle has exactly two resolution paths —
+terminal_by_fact and RESOLVED_BY_HUMAN. And terminal_by_fact is ONLY
+normalize_stage(deal.stage) in {closedwon, closedlost} (situations.py:80, :417). One
+field, one source, two values.
+
+So when someone writes "all sorted, we signed yesterday", that message bumps last_seen_at
+and the situation looks MORE ACTIVE. The product nags the founder about work that is done.
+Globe names the consequence: "It told me about a contract I cancelled last week."
+
+FILES: genios_engine/context/lifecycle/resolution.py (new)
+       genios_engine/context/situations.py (extend decide_lifecycle)
+
+IMPLEMENT the 5 ordered steps in doc 07 section L2.7.7-U1.
+
+ADD two states:
+  RESOLVED_BY_STATEMENT = "statement"     # joins fact | human
+  STATUS_PARTIALLY_RESOLVED = "partial"
+
+RESOLVED_BY_STATEMENT must behave like RESOLVED_BY_FACT: re-derived every pass, and it
+un-resolves itself when contradicted. Follow the reasoning already in decide_lifecycle's
+docstring — the system should not need a human to undo a conclusion drawn from data that
+has since changed.
+
+HARD RULES:
+1. DETERMINISTIC GATE FIRST. No LLM call unless status==ACTIVE and a new signal landed
+   and terminal_by_fact is False. A FACT ALWAYS BEATS A STATEMENT.
+2. The model returns a verdict + scope + speaker_role + quote + offsets + confidence.
+   It NEVER returns a _bp score that feeds ranking, and it never sets the status directly.
+3. Span must verify against source using L1's ALG-08 validator. Reuse it; do not write
+   a second one. An unverified span -> no resolution.
+4. SPEAKER AUTHORITY weighting per doc 07's table. A service account is ignored entirely.
+5. LATEST STATEMENT WINS within a thread. A CONTRADICTED verdict reopens.
+6. ASYMMETRIC THRESHOLDS. Missing a resolution costs one nudge; inventing one loses the
+   thread. Lean toward NOT closing. Below the confidence floor goes to a human review
+   queue, never to a card.
+7. BUDGET EXHAUSTED -> fall back to terminal_by_fact and LOG. Never silently skip.
+8. MULTILINGUAL. This codebase already handles Hinglish (triage.py: jaldi|turant|kal|
+   parso). The prompt must handle mixed-script input and the golden set must include
+   Hinglish resolution statements.
+
+DO NOT change the existing fact/human paths. This is additive.
+
+TEST tests/context/lifecycle/test_resolution.py — every row in doc 07's ACCEPTANCE list.
+```
+
+---
+
+# ⚠️ L2.7.2 · Situation Builder + Framing (M-6, M-7)
+
+**WHAT EXISTS** — `situation_bso.py` assembles entities, relationships, timeline and
+dependencies into a valid object. That assembly is correct.
+
+**WHAT IS MISSING** — it does not **frame**. A pattern match yields *"these five
+conditions held"*. Turning that into *"the AWS renewal decision is unowned with 12 days
+left on the cancellation window"* is **synthesis**, and no amount of assembly produces it.
+
+Likewise the timeline: a chronological sort is not a **narrative**. Which events matter,
+in what order, and what the shape of the story is — that is construction.
+
+### L2.7.2-U1 · Situation framing (M-6)
+
+**HOW — span-constrained, exactly like L1's extractor:**
+```
+input:  the situation's member facts, matched pattern conditions, entities, dates, amounts
+asks:   frame this in one sentence, using ONLY the supplied facts
+returns: {headline, subject_label, why_it_matters, evidence_span_refs}
+
+CONSTRAINT: every noun and every number in the output must trace to a supplied fact.
+            Numbers are TEMPLATED IN, never generated by the model.
+```
+
+**Numbers come from the template, not the model.** The model chooses the sentence; the
+`$84,000` and the `12 days` are substituted deterministically. This is the same rule that
+makes L1's render safe, applied here.
+
+**FAILURE MODES**
+
+| # | Case | Mitigation |
+|---|---|---|
+| 7 | Model invents a fact not in the members | span-constrained; any unsupported noun fails validation and falls back to a deterministic template headline |
+| 8 | Framing contradicts the matched conditions | **pattern conditions are authoritative**; framing describes them and cannot override |
+| 9 | A number drifts in the prose | numbers are templated, never generated |
+
+**Fallback is a real path, not a theoretical one:** if framing fails validation or the
+budget is out, the situation publishes with a **deterministic template headline**. A
+plainer card is always better than a wrong one.
+
+### L2.7.2-U2 · Timeline narrative (M-7)
+Selects and orders the events that matter and states the shape (*"promised in April,
+silent since June, deadline in twelve days"*). Same span constraint. Chronology stays
+deterministic; **selection and shape** are the model's contribution.
+
+### L2.7.3-U2 · Clustering judgment (M-8)
+Deterministic shared-entity clustering runs first and handles the clear cases. M-8 sees
+only the ambiguous pairs: *are these two situations one reality?* Without it the product
+becomes, in Globe's words, *"noise on day two"* — three cards about one thing.
 
 ---
 

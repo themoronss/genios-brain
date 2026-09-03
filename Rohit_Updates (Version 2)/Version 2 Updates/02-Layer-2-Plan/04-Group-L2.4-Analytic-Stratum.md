@@ -13,7 +13,10 @@ cohort is a number nobody can check.*
 **Package:** `genios_engine/context/analytic/`
 **Input:** the graph + `metric_history`
 **Output:** comparative facts written back as `derived.*` facts and cohort memberships
-**LLM sites:** **zero.**
+**LLM sites:** **M-9 only** — cohort predicate authoring, on demand, human-approved.
+The *measurement* itself (trend, percentile, anomaly) is 100% deterministic, because a
+comparison needs a stable measuring instrument: if a trend were judged by a model in March
+and again in September, a disagreement could not be attributed to the business or the model.
 
 ---
 
@@ -46,7 +49,7 @@ deterministically, reproducibly, with every input citable.
 | L2.4.1 | **Metric History Store** | — | 2 | X1 | 🆕 NEW |
 | L2.4.2 | **Metric Sampler** | BLG-07 | 3 | X1 | 🆕 NEW |
 | L2.4.3 | **Trend Computer** | BLG-08 | 3 | X2 | 🆕 NEW |
-| L2.4.4 | **Cohort Builder** | BLG-09 | 3 | X2 | 🆕 NEW |
+| L2.4.4 | **Cohort Builder** (+ M-9 authoring) | BLG-09 | 4 | X2 | 🆕 NEW |
 | L2.4.5 | **Population Comparator** | BLG-10 | 2 | X3 | 🆕 NEW |
 | L2.4.6 | **Peer Baseline** | BLG-11 | 2 | X3 | 🆕 NEW |
 | L2.4.7 | **Metric Correlator** | BLG-12 | 2 | X4 | 🆕 NEW |
@@ -455,6 +458,58 @@ authors anything.
 
 TEST tests/context/analytic/test_cohort.py — every row in the ACCEPTANCE list.
 ```
+
+### L2.4.4-U4 · Cohort predicate authoring (M-9) — the one LLM site in this group
+
+**WHAT** — A founder says *"customers like Acme who churned"*. The model **writes the
+predicate**; a human approves it; the deterministic engine evaluates it.
+
+**WHY this does NOT break Law 3.** *Declared, never clustered* means membership is decided
+by a predicate a human can read and correct — not that a human must hand-write the JSON.
+The model is a **drafting aid**, and the artifact it produces is exactly the same
+reviewable predicate tree a human would have written.
+
+```
+founder types:  "customers like Acme who churned last year"
+      |
+   M-9 (T3, on demand only — never in a sweep)
+      |
+      v
+proposed predicate + POPULATION PREVIEW
+  {"all": [{"fact":"account.arr_minor_units","op":"between","value":[800000,3000000]},
+           {"fact":"account.industry","op":"eq","value":"logistics"},
+           {"fact":"account.churned_at","op":"within_days","value":365}]}
+  -> matches 11 accounts.  Acme IS among them.
+      |
+   HUMAN APPROVES  (or edits, or rejects)
+      |
+      v
+stored in cohort_definitions, created_by = the human
+```
+
+**Three guards that make this safe:**
+
+1. **Population preview before approval.** A predicate matching 2000 accounts is visibly
+   wrong before it is ever stored.
+2. **Reference-node check.** If the founder named Acme, Acme must be in the result. If it
+   is not, the predicate misunderstood the ask — surface that, do not store it.
+3. **Fact-name validation at definition time.** An unregistered fact name raises when the
+   predicate is written, not silently at evaluation.
+
+`created_by` records the **human**, never the model. The model drafted; the person owns it.
+
+**FAILURE MODES**
+
+| # | Case | Mitigation |
+|---|---|---|
+| 12 | Predicate matches 2000 accounts | population preview before approval |
+| 13 | References an unregistered fact | raises at definition time |
+| 14 | Predicate excludes the named reference account | flagged as a misunderstanding, not stored |
+| 15 | Founder approves without reading | preview shows count **and** five sample members by name |
+
+**ACCEPTANCE** — a natural-language ask produces a valid predicate tree, a population
+count and five named samples; a predicate excluding the named reference is refused; an
+unregistered fact raises; `created_by` is the human; **M-9 never fires inside a sweep.**
 
 ### L2.4.4-U2 · Quartile cohort generator
 **WHAT** — Auto-generates quartile cohorts for registered numeric facts (ARR, deal size,

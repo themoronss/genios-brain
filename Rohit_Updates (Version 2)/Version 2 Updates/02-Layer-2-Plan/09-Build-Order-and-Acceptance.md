@@ -32,7 +32,7 @@ work available in Version 2 and it should start immediately.
 | **X3** | **Comparator + peer baseline** (L2.4.5, L2.4.6) | X2 | H3 |
 | **X4** | **Correlator + anomaly** (L2.4.7, L2.4.8) | X3 | H4 |
 | **X5** | **Situation importance** (L2.7.4) | X4 **+ L1 W7** | **H5** |
-| **X6** | Pattern registry (L2.6), typed absence (L2.5.5) | X4 | H6 |
+| **X6** | Pattern registry (L2.6), typed absence (L2.5.5), **M-4 resolution**, **M-6/M-7 framing**, **loop guards** | X4 | H6 |
 | **X7** | Authority view, point-in-time read, dependency chains, cross-timeline | X0 | H7 |
 | **X8** | Pilot activation + BSO publishing on QES input | all + L1 W10 | H8 |
 
@@ -109,13 +109,31 @@ If more than 90% of incoming signals still carry exactly 5000, this gate **fails
 design**: the guard logs `L1_IMPORTANCE_NOT_ACTIVE` and refuses to synthesize a spread. A
 fake distribution is worse than a flat one, because it looks like it works.
 
-### H6 — Patterns and typed absence
+### H6 — Patterns, typed absence, resolution and loop safety
 ```
 pytest tests/context/patterns tests/context/quality -q
 python scripts/pattern_fire_report.py --org <pilot> --since 30d
 ```
 >= 6 patterns registered; **0** patterns activated while exceeding their expected fire
 rate 10x; **0** negative inferences drawn from `UNKNOWABLE` facts.
+
+**Plus the resolution and loop gates (doc 12, doc 13):**
+```
+pytest tests/context/lifecycle/test_resolution.py -q
+pytest tests/context/test_convergence.py tests/context/test_coverage_epoch.py \
+       tests/context/analytic/test_gap_reason.py -q
+python scripts/derivation_dag_check.py
+```
+
+| Metric | Gate |
+|---|---|
+| M-4 false-positive rate on the 40-fixture golden set | **< 2%** — the strictest in the plan, because a false positive closes a live thread |
+| Hinglish resolution fixtures in the golden set | **>= 8** |
+| M-6 fabricated facts | **0 — hard fail** |
+| M-6 visibility leaks | **0 — hard fail** |
+| derivation graph acyclic | passes, CI-enforced |
+| drains exceeding `MAX_PASSES` | **0** over 7 days |
+| `DECLINING` trends across an org-wide silence window | **0** ← the false-churn test |
 
 ### H7 — Graph completeness
 ```

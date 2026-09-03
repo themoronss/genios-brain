@@ -122,7 +122,37 @@ population*, and the layer that owns cross-entity work has no primitive for it.
 makes deadlines more than a calendar."* Without it, Deadline Intelligence degrades to a
 reminder app, which Globe itself names as the failure mode.
 
-### 🟡 4. Three quality components missing, one of them the important one
+### 🔴 4. L2 cannot tell when something ENDED
+
+`situations.py:278 decide_lifecycle` is good code — the fact/human distinction is correct
+and well documented. But a situation has **only two ways to end**, and one of them is a
+single field:
+
+| Path | Trigger |
+|---|---|
+| `RESOLVED_BY_FACT` | **only** `normalize_stage(deal.stage) in {closedwon, closedlost}` (`situations.py:80`, `:417`) |
+| `RESOLVED_BY_HUMAN` | someone clicks |
+
+**One field. One source. Two values. There is no path for "somebody SAID it is done."**
+
+| What happens | Today |
+|---|---|
+| HubSpot stage → closed-won | ✅ resolves |
+| Someone clicks "handled" | ✅ resolves |
+| *"All sorted, we signed yesterday"* | ❌ **bumps `last_seen_at` → looks MORE active** |
+| A commitment fulfilled in an email | ❌ never detected |
+| A decision made in a thread | ❌ never detected |
+
+**A stated resolution makes the situation look more alive, not less.** That is a nagging
+machine, and Globe names the consequence exactly: *"It told me about a contract I cancelled
+last week"* — instant credibility loss.
+
+**Why deterministic cannot close this.** A rule can check `stage == closedwon`. It cannot
+read a paragraph and decide the thing is over. That is **construction of meaning**, not
+checking — which is why the plan adds LLM site **M-4** here, gated behind
+`terminal_by_fact` so a fact always beats a statement.
+
+### 🟡 5. Three quality components missing, one of them the important one
 
 | Globe component | Status |
 |---|---|
@@ -215,6 +245,15 @@ must absorb:
 
 **L2 v2 gets lighter and smarter at the same time.** Freed of extraction, it can spend
 its budget on the thing only it can do: **computing across entities and across time.**
+
+---
+
+## Correction log
+
+| Date | Claim | Correction |
+|---|---|---|
+| 2026-09-03 | *"Layer 2 v2 has zero required LLM sites"* | **Wrong.** Deterministic code can only check what is or is not there; it cannot construct meaning. Resolution detection, situation framing, timeline narrative, clustering judgment, conversation matching and condition parsing are all construction. The plan now carries **9 LLM sites**. The *measurement* in the analytic stratum stays deterministic — for comparability, not purity. |
+| 2026-09-03 | the audit listed 4 findings | **A fifth was missing:** the lifecycle gap above. It is arguably the one a customer notices first. |
 
 ---
 

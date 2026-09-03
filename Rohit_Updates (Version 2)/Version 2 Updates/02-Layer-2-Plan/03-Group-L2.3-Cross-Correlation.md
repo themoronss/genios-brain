@@ -3,10 +3,18 @@
 **Group responsibility:** connect what no single tool can connect.
 
 **Group law:** *Correlation answers one question — do these belong to the same thing?
-It does not prioritise, score risk, or recommend.* **LLM forbidden.**
+It does not prioritise, score risk, or recommend.*
+
+**On the LLM:** the *decision* stays out of the model's hands for every case a rule can
+settle. But "do these belong together" is a **judgment** in the ambiguous middle, and a
+rule cannot make it. So: **deterministic joins decide; the model is consulted only where
+they are inconclusive, and it may never produce a score.**
 
 **Package:** `genios_engine/context/correlation.py`
 **Status:** **2 of 8 built.** The three missing ones are each load-bearing.
+**LLM sites:** **M-3** (ambiguous conversation matching) and **M-5** (condition parsing).
+Deterministic joins handle the clear cases; today the **ambiguous middle is silently
+dropped rather than escalated**, and that gray band is where the cross-tool value lives.
 
 ---
 
@@ -15,9 +23,9 @@ It does not prioritise, score risk, or recommend.* **LLM forbidden.**
 | # | Correlator | BLG | Status | Evidence |
 |---|---|---|---|---|
 | L2.3.1 | Cross Tool | BLG-01 | ✅ | `correlate_event`, `choose_anchors` |
-| L2.3.2 | Cross Conversation | — | ✅ | `thread_correlations` |
+| L2.3.2 | Cross Conversation (+ **M-3**) | — | ⚠️ | `thread_correlations` — clear cases only; gray band dropped |
 | L2.3.3 | Cross User | — | ⚠️ | `lift_people_to_their_companies` — a lift, not role synthesis |
-| **L2.3.4** | **Cross Timeline** | **BLG-06** | ❌ | **MISSING** |
+| **L2.3.4** | **Cross Timeline** (+ **M-5**) | **BLG-06** | ❌ | **MISSING** |
 | L2.3.5 | Cross Resource | — | ⚠️ | `lift_companies_to_their_deals`; no contract↔spend |
 | L2.3.6 | Cross Domain | — | ⚠️ | `resolve_domain`; degraded-carry unverified |
 | **L2.3.7** | **Cross Organization** | — | ❌ | **MISSING** |
@@ -136,11 +144,17 @@ It is also, of Globe's fifteen Admin surfaces, **the closest to the founder's ow
 register** — forward-looking, revenue-adjacent, and genuinely non-obvious because the two
 events are months apart and no human is holding both in mind.
 
+**M-5 is the unlock here.** *"Come back when you have two enterprise references"* has to
+become a checkable predicate, and that translation is semantic — a regex cannot do it.
+Deterministic patterns cover dates and simple counts; M-5 handles the rest, and anything
+it cannot parse is stored for human review rather than guessed at.
+
 **HOW** (BLG-06)
 ```
 1. STORE      a Commitment with is_conditional=true and condition_text
               (L1 v2 already extracts both) becomes a DORMANT CONDITION node
-2. INDEX      parse the condition into a checkable predicate where possible:
+2. INDEX      parse the condition into a checkable predicate:
+              deterministic first (dates, simple counts), then M-5 (T2) for the rest:
                  "two enterprise references"  -> count(account.segment=enterprise) >= 2
                  "after funding closes"       -> exists(event: funding_closed)
                  unparseable                  -> stored, checked by human review only
