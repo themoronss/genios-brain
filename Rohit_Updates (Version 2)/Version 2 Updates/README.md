@@ -39,7 +39,7 @@ precisely what a language model is for.
 |---|---|
 | **L1** | **HEAVY** — semantic extraction is the core |
 | L2 | **JUDGMENT, not extraction** — 9 gated sites. The *measurement* (trend/percentile/anomaly) stays deterministic for comparability |
-| L3 | ZERO at runtime — deterministic compiler |
+| L3 | **ZERO at compile-time** (reproducibility: same situation + snapshot = byte-identical package) · **5 offline sites** N-1..N-5 — authoring, review-assist, org discovery, behavior distillation, gap drafting — all human/floor-gated |
 | L4 | ambiguity only |
 | L5 / L5.2 | prose only |
 | L6 | feedback parsing only |
@@ -55,7 +55,7 @@ ranking, and ranking must be byte-identical across machines and replays.
 |---|---|---|
 | **L1 Knowledge** | `01-Layer-1-Plan/` | ✅ **complete — 11 documents** |
 | **L2 Context** | `02-Layer-2-Plan/` | ✅ **complete — 10 documents** |
-| L3 Domain Expertise | `03-Layer-3-Plan/` | not started |
+| **L3 Domain Expertise** | `03-Layer-3-Plan/` | ✅ **complete — 8 documents** |
 | L4 Reasoning | `04-Layer-4-Plan/` | not started |
 | L5 Executive | `05-Layer-5-Plan/` | not started |
 | L5.2 Delivery | `06-Layer-5.2-Plan/` | not started |
@@ -84,6 +84,7 @@ Plus:
 - `03-Plan-Crosscheck-and-Corrections.md` — the L1 plan audited against Globe, the customer
   bar, our design conversation and itself. **9 findings, 2 critical, all fixed before commit.**
 - `04-Gap-Audit-L2-Spec-vs-Code.md` — the 43-component Layer 2 audit
+- `05-Gap-Audit-L3-Spec-vs-Code.md` — the 13-component Layer 3 audit (**the unlock layer**)
 
 ## Layer 2 plan — document index
 
@@ -128,6 +129,31 @@ is what LLM site **M-4** exists to fix.
 **Why the measurement stays deterministic:** if a trend were judged by a model in March and
 again in September, a disagreement could not be attributed to the business or to the model.
 Comparison needs a stable measuring instrument. That is structural, not doctrinal.
+
+## Layer 3 plan — document index
+
+| Doc | Contents |
+|---|---|
+| `00-Overview-and-Doctrine.md` | 5 laws · **an UNLOCK plan, not a rebuild** · LLM: 0 compile-time, 5 offline sites |
+| `01-Group-L3.1-Domain-Compiler.md` | 9/9 built — preserve-hard list + analytic predicates + pattern_id routing |
+| `02-Group-L3.2-Four-Brains.md` | **storage DDL, write governance, update triggers, N-3/N-4 content pipelines** |
+| `03-Group-L3.3-Typed-Consumers.md` | **the weld fix — 446 unconsumable artifacts get consumers** (CLG-06/07/08) |
+| `04-Group-L3.4-Admin-Corpus-V1.md` | route the 21 unrouted · author Globe #13/#14 · defer facilities/travel |
+| `05-Contracts-ExpertisePackage.md` | additive package extensions · `l3_activation` |
+| `06-Build-Order-and-Acceptance.md` | waves Y0–Y5, gates J0–J5 |
+| `07-CTO-Handoff-Note.md` | copy-paste brief for the coding agent |
+
+**Layer 3 v2 totals:** 4 work groups · 13 Globe components (9/9 compiler built) · **446
+artifacts unlocked** · 5 offline LLM sites · **0 compile-time LLM** · 6 waves.
+
+### The Layer 3 line
+
+> **The compiler is built, the corpus is good, the governance is better than the spec —
+> and the switch is off.** L3's plan is an unlock: typed consumers first (or activation
+> fakes success), then per-tenant flip, then feed the three empty brains from what L1
+> extracts (policy docs → Organization) and what L2.4 measures (behavior patterns →
+> Behavior). Who decides a brain update was never the gap — L6's promotion pipeline with
+> deterministic floors already exists. The gap was that nothing ever proposed.
 
 **Layer 1 v2 totals:** 7 groups · **65 components** · **23 algorithms** · 5 LLM sites ·
 0 embeddings · 10 build waves · 13 reverse prompts.
