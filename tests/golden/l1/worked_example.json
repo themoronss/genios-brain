@@ -1,0 +1,182 @@
+{
+  "fixture_id": "worked_example",
+  "worked_example": true,
+  "provenance": "doc 04 (04-Group-L1.4-Semantic-Extraction-Engine.md), L1.4.3-U2 \u2014 the acceptance fixture, quoted verbatim. Every row of that table is labelled below.",
+  "profile_id": "email",
+  "tier": "T2",
+  "source": "gmail",
+  "locale": "en_US",
+  "timezone": "UTC",
+  "eval_time": "2026-01-14T09:00:00+00:00",
+  "envelope": {
+    "direction": "inbound",
+    "sender": "Priya Raman <priya@acme.example>",
+    "recipients": [
+      "Rohit Shah <rohit@vendor.example>"
+    ],
+    "thread_position": 2,
+    "thread_depth": 3,
+    "subject": "Annual contract"
+  },
+  "content": "Hey Rohit, we can probably move forward with the $84K annual contract, but I still need Finance to confirm whether we can absorb the increase. Also, our renewal is coming up pretty soon.",
+  "expected": {
+    "intent": "commit",
+    "stance": "cautious",
+    "topics": [
+      "contract_renewal",
+      "budget"
+    ],
+    "entity_mentions": [
+      [
+        "Finance",
+        "organization"
+      ],
+      [
+        "Rohit",
+        "person"
+      ]
+    ],
+    "amounts": [
+      "$84K"
+    ],
+    "commitments": [
+      {
+        "actor": "Finance",
+        "action_contains": "confirm",
+        "is_conditional": true
+      }
+    ],
+    "decision_states": [
+      {
+        "subject_contains": "annual contract",
+        "state": "pending"
+      }
+    ],
+    "dependencies": [
+      {
+        "blocker": "Finance",
+        "blocked": "Rohit",
+        "dependency_type": "approval"
+      }
+    ],
+    "dates": [
+      {
+        "as_written": "pretty soon",
+        "certainty": "relative"
+      }
+    ],
+    "implied_actions": [
+      "Finance needs to confirm"
+    ]
+  },
+  "recorded_model_output": {
+    "intent": "commit",
+    "stance": "cautious",
+    "topics": [
+      "contract_renewal",
+      "budget"
+    ],
+    "entity_mentions": [
+      {
+        "surface_form": "Rohit",
+        "entity_type": "person",
+        "evidence": [
+          {
+            "quote": "Rohit",
+            "start_offset": 4,
+            "end_offset": 9
+          }
+        ],
+        "confidence_bp": 9000
+      },
+      {
+        "surface_form": "Finance",
+        "entity_type": "organization",
+        "evidence": [
+          {
+            "quote": "Finance to confirm",
+            "start_offset": 88,
+            "end_offset": 106
+          }
+        ],
+        "confidence_bp": 8800
+      }
+    ],
+    "amounts": [
+      {
+        "minor_units": 8400000,
+        "currency": "USD",
+        "as_written": "$84K"
+      }
+    ],
+    "dates_mentioned": [
+      {
+        "as_written": "pretty soon",
+        "certainty": "relative",
+        "evidence": [
+          {
+            "quote": "pretty soon",
+            "start_offset": 174,
+            "end_offset": 185
+          }
+        ]
+      }
+    ],
+    "commitments": [
+      {
+        "actor": "Finance",
+        "action": "confirm absorption of increase",
+        "beneficiary": null,
+        "is_conditional": true,
+        "condition_text": "we can probably move forward",
+        "evidence": [
+          {
+            "quote": "I still need Finance to confirm whether we can absorb the increase",
+            "start_offset": 75,
+            "end_offset": 141
+          }
+        ],
+        "confidence_bp": 8200
+      }
+    ],
+    "decision_states": [
+      {
+        "subject": "annual contract",
+        "state": "pending",
+        "blocked_on": "Finance confirmation",
+        "owner": "Finance",
+        "evidence": [
+          {
+            "quote": "we can probably move forward with the $84K annual contract",
+            "start_offset": 11,
+            "end_offset": 69
+          }
+        ],
+        "confidence_bp": 8000
+      }
+    ],
+    "dependencies": [
+      {
+        "blocker": "Finance",
+        "blocked": "Rohit",
+        "dependency_type": "approval",
+        "evidence": [
+          {
+            "quote": "I still need Finance",
+            "start_offset": 75,
+            "end_offset": 95
+          }
+        ],
+        "confidence_bp": 7900
+      }
+    ],
+    "implied_actions": [
+      "Finance needs to confirm"
+    ],
+    "questions": [],
+    "field_confidence": {
+      "commitments": 8200,
+      "decision_states": 8000
+    }
+  }
+}

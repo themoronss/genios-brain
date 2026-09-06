@@ -135,7 +135,11 @@ render:
     # zacharygoldman@makeportals.com"), and the longer phrasing went 1 to 4 over on 3 of the 23
     # live cards and was trimmed to "... is waiting on a", which reads as a broken card. Checked
     # against every subject this situation currently carries; none exceeds the cap.
-    headline: "{who} is owed a reply"
+    # MANAGER MODE. "{who} is owed a reply" states a condition and leaves the reader to work out
+    # the move; every other fallback in this corpus now leads with a verb. Kept short for the
+    # same 60-character reason the note above records — "Reply to" is two characters shorter than
+    # "Thread with", so every subject that fitted before still fits.
+    headline: "Reply to {who} — waiting on us"
     # THE BODY NAMED NOBODY. "They wrote {days} days ago..." opens on a pronoun with no antecedent
     # and mentions no subject at all — every other situation in this corpus interpolates {entity}
     # into its fallback, and this file was the only one that did not. Combined with `{days}`

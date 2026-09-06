@@ -1,0 +1,101 @@
+# The mirror of support's `ticket_aging`, and the opposite owner. That reading is one unmet ask of
+# THEIRS; this is one promise of OURS whose own stated date has passed. Confusing them produces a
+# card telling the user to chase somebody for something the user themselves owes.
+
+identity:
+  id: admin.sit.promise_past_its_date
+  name: Promise Past Its Date
+  domain: admin
+  owner_capability: admin.executive_support.commitment_tracking
+  version: 1.0.0
+  status: stable
+
+description: >
+  We said we would do something by a date, and the date has gone. The date is the user's own,
+  extracted from their own sentence, so nothing here invented a deadline — which is what makes
+  this the least deniable finding the system produces.
+
+  The honest limit is that a promise can be seen to be OPEN and can never be seen to be KEPT.
+  `commitment.delivered_at` has no writer and cannot get one: no source system reports delivery,
+  and an outbound message after the due date is not evidence the promised thing was in it. So the
+  strongest true statement available is "this is still showing as open", and any output that says
+  or implies "you did not send it" is a finding this system invented.
+
+  The failure this file prevents is a nag. An overdue promise is worth surfacing once with the
+  words that let the user close it — what was promised, to whom, how far past — and not worth
+  repeating daily in language that assumes neglect.
+
+matches:
+  l2_situation_types:
+    - commitment_overdue
+  scope: person
+  when:
+    - path: commitment.days_overdue
+      op: ">"
+      value: 0
+    # A promise whose text was never extracted cannot be acted on from a card: "you owe them
+    # something" is not an instruction. It routes only when we can name the thing.
+    - exists: commitment.action
+
+also_serves:
+  - admin.meeting_operations.action_item_tracking
+  - admin.executive_support.delegation_and_task_routing
+
+objects:
+  load:
+    - admin.obj.core.commitment
+    - admin.obj.core.deadline
+  optional:
+    - admin.obj.core.action_item
+    - admin.obj.core.request
+  never_load:
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+
+priority_bp: 7000
+typical_duration_days: 7
+
+signals_of_progress:
+  - document_sent
+  - followup_sent
+  - next_step_agreed
+
+signals_of_decay:
+  - decision_deferred
+  - going_dark
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: what was promised and how far past its date it is.
+
+    Situation: what we said we would do, who it is owed to, and the date that has passed. State
+    it as still showing as open. Never write that it was not delivered or not sent — nothing in
+    this system can see delivery, and asserting it would be an invented finding about the user's
+    own conduct.
+
+    Artifact: the message that closes it. If the thing is ready, a line sending it. If it is not,
+    a line giving a new date — a moved date the counterparty knows about is a kept relationship,
+    a silent one is not.
+  fallback:
+    headline: "{action} — {days}d past its date"
+    situation: >-
+      We told {entity} we would {action}, and that date has passed. Still showing as open.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-31'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-31'
+  notes: >
+    `commitment.days_overdue` and `commitment.owed_to` are written by
+    `context/outreach_situations.py`; `commitment.action` and `commitment.due_at` come from the
+    extractor and are the user's own words. `commitment.delivered_at` is declared in
+    `expected_fields` with no writer on purpose, so `missing` says on every row that completion is
+    unknown — the difference between "still open" and "you failed to send it".
+
+admission:
+  accepted_content_hash: ad4d636162552ea98699f0a5e836cdd2951390a162c27f31707a16ec0f8e8dc7

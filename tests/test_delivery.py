@@ -211,13 +211,13 @@ def test_card_insert_is_fenced_by_the_current_build_lease():
 
     store = CardStore.__new__(CardStore)
     store._engine = _Engine()
-    card_id, created = store.insert_card(
+    card_id, created, refreshed = store.insert_card(
         {"org_id": "org_1", "signal_id": "sig_1", "_authority_time": NOW},
         {},
         build_claim_token="stale_or_foreign_token",
     )
 
-    assert (card_id, created) == (None, False)
+    assert (card_id, created, refreshed) == (None, False, False)
     assert len(calls) == 1
     lease_sql, lease_params = calls[0]
     assert "claim_token=:token" in lease_sql.lower()

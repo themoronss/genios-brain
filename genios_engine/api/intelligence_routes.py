@@ -457,6 +457,30 @@ _PLAY_LABEL = {
 }
 
 
+def _col(row, name):
+    """A column that may be absent on one of the two queries, never a crash.
+
+    The resolved-state query and the open-state query select different sets, and this feed builds
+    one response shape from both. Reading a missing attribute would turn "this tab has no decision
+    columns" into a 500 on the tab a user opens to review what they already acted on.
+    """
+    return getattr(row, name, None)
+
+
+def _jsonish(value):
+    """A jsonb column that psycopg may hand back as text. Returns [] rather than a raw string:
+    a client rendering `alternatives_rejected` must never be handed a JSON blob to parse."""
+    if value is None:
+        return []
+    if isinstance(value, (list, dict)):
+        return value
+    try:
+        parsed = json.loads(value)
+    except (TypeError, ValueError):
+        return []
+    return parsed if isinstance(parsed, (list, dict)) else []
+
+
 def _action_label(actions) -> str | None:
     if not isinstance(actions, list):
         return None
@@ -489,7 +513,11 @@ def list_insights(limit: int = 50, state: str = "open",
             # survive decision expiry and later graph/config changes.
             rows = c.execute(text(
                 "select k.card_id, k.headline, k.situation, k.score, k.domain, k.urgency_band, "
-                "k.context_tags, k.created_at, k.actions, n.display_name as entity, s.reason_code "
+                "k.context_tags, k.created_at, k.actions, n.display_name as entity, "
+                "k.why_now, k.level, k.unresolved_item, k.do_nothing_consequence, "
+                "k.abstained_because, k.outcome_window_days, k.success_signal, "
+                "k.capability_review_state, s.uncertainty, s.rejected_candidates, "
+                "s.candidate_steps, s.reason_code "
                 "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
                 "left join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=k.org_id "
                 "and n.valid_to is null where k.org_id=:o and k.state = any(:states) " +
@@ -505,6 +533,15 @@ def list_insights(limit: int = 50, state: str = "open",
                 "select k.card_id, k.headline, k.situation, " + AUTHORITATIVE_SCORE_SQL +
                 " as score, k.domain, k.urgency_band, k.context_tags, k.created_at, k.actions, "
                 "n.display_name as entity, ro.confidence_bp, "
+                # THE DECISION'S OWN CONTENT. Every one of these columns was already populated by
+                # `card_builder` and none of them reached this feed, so the richest surface the
+                # product has published a headline, a one-line situation and a number — and the
+                # why-now, the alternatives that were rejected, the stated uncertainty and the
+                # outcome contract were computed, stored, and thrown away at the last join.
+                "k.why_now, k.level, k.unresolved_item, k.do_nothing_consequence, "
+                "k.abstained_because, k.outcome_window_days, k.success_signal, "
+                "k.capability_review_state, s.uncertainty, s.rejected_candidates, "
+                "s.candidate_steps, "
                 "selected_rc.final_utility_bp, " + AUTHORITATIVE_REASON_CODE_SQL + " as reason_code "
                 "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id " +
                 AUTHORITATIVE_SIGNAL_JOINS +
@@ -560,6 +597,27 @@ def list_insights(limit: int = 50, state: str = "open",
             "source_tools": apps,                # real provenance (Gmail/HubSpot/Calendar)
             "sources": domains,                  # company domains from context_tags
             "generated_at": r.created_at.isoformat() if r.created_at else "",
+            # ADDITIVE, in its own block. Every key above keeps its name and meaning so the
+            # shipped extension is untouched; `decision` is where a client that wants to show the
+            # reasoning finds it, instead of the feed deciding on the client's behalf that a
+            # headline is all anyone needs.
+            #
+            # `level` and `abstained_because` travel together and are the load-bearing pair: a
+            # card that declined to instruct must be renderable AS a refusal, and a surface that
+            # cannot see the refusal will draw it as advice.
+            "decision": {
+                "why_now": _col(r, "why_now"),
+                "level": _col(r, "level"),
+                "unresolved": _col(r, "unresolved_item"),
+                "cost_of_ignoring": _col(r, "do_nothing_consequence"),
+                "abstained_because": _col(r, "abstained_because"),
+                "outcome_window_days": _col(r, "outcome_window_days"),
+                "success_signal": _col(r, "success_signal"),
+                "expertise_review_state": _col(r, "capability_review_state"),
+                "uncertainty": _jsonish(_col(r, "uncertainty")),
+                "alternatives_rejected": _jsonish(_col(r, "rejected_candidates")),
+                "steps": _jsonish(_col(r, "candidate_steps")),
+            },
         })
     return {"insights": insights, "count": len(insights)}
 

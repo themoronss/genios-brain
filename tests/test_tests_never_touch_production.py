@@ -43,3 +43,43 @@ def test_the_shared_resolver_has_no_production_fallback():
     code = body[body.index('"""', body.index('"""') + 3) + 3:]   # past the docstring
     assert "get_settings" not in code, (
         "live_test_database_url must not fall back to the configured database_url; it did:\n" + code)
+
+
+def test_no_test_process_holds_a_real_model_key():
+    """The same rule for the MODEL, which is the half this file did not cover.
+
+    Pinning the database made the suite unable to WRITE to a paying tenant. It left the suite
+    perfectly able to SPEND on one: `Settings.use_real_llm` is `bool(anthropic_api_key)`, `.env`
+    sets that key on every developer machine, `l1_llm_gate` defaults to True, and
+    `platform/wiring.make_relevance_classifier` therefore returns a real
+    `LLMRelevanceClassifier(LLMClient(api_key=...))`. Every `pg`-marked test that drives
+    `api/routes._sync_connection` — the acceptance gates, the ALG-17 wiring tests — then made one
+    billed Anthropic call per ambiguous event, on every run, and the only visible symptom was
+    that the suite was slow.
+
+    `tests/capture/conftest.py`'s socket guard cannot catch this: `pg` and `llm` are exactly the
+    two markers it stands down for, which is correct — a pg test needs a socket — and is why the
+    key has to be absent rather than the socket blocked.
+    """
+    from genios_engine.platform.config import get_settings
+    from genios_engine.platform.wiring import make_relevance_classifier
+
+    settings = get_settings()
+    assert not settings.use_real_llm, (
+        "the test process holds a real Anthropic key; tests/conftest.py must clear "
+        "GENIOS_ANTHROPIC_API_KEY at import, before the lru_cached get_settings() materialises")
+    assert make_relevance_classifier("org_any") is None, (
+        "the production wiring built a live relevance classifier inside the test process")
+
+
+def test_the_key_is_cleared_before_settings_can_be_materialised():
+    """The guard above passes for the wrong reason if the clearing ever moves into a fixture:
+    `get_settings` is `lru_cache`d and application code constructs its own `Settings`, so a
+    fixture-time monkeypatch is already too late for anything imported at collection. Asserted
+    against conftest's CODE, on the same terms as the resolver check above."""
+    source = (TESTS / "conftest.py").read_text()
+    assign = 'os.environ["GENIOS_ANTHROPIC_API_KEY"] = ""'
+    assert assign in source, "conftest.py no longer clears the Anthropic key"
+    assert source.index(assign) < source.index("@pytest.fixture"), (
+        "the key is cleared after the first fixture — it must happen at IMPORT, before any "
+        "module-level get_settings() call in application code can materialise the cache")

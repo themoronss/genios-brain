@@ -1,0 +1,154 @@
+{
+  "fixture_id": "email_polite_commitment",
+  "provenance": "doc 04 L1.4.2's email role: \"Email carries the commitments and the decisions of a company, wrapped in politeness: 'I'll get that over to you' is a commitment.\" The recorded answer omits the offsets on one citation, so the binder's relocation path is exercised.",
+  "profile_id": "email",
+  "tier": "T2",
+  "source": "gmail",
+  "locale": "en_US",
+  "timezone": "UTC",
+  "eval_time": "2026-01-14T09:00:00+00:00",
+  "envelope": {
+    "direction": "outbound",
+    "sender": "Rohit Shah <rohit@vendor.example>",
+    "recipients": [
+      "Priya Raman <priya@acme.example>"
+    ],
+    "thread_position": 3,
+    "thread_depth": 3,
+    "subject": "Order form"
+  },
+  "content": "Thanks for the nudge. I'll get the signed order form over to you by Friday, and I'll loop in Meera from our legal team so she can review the indemnity clause. One thing: the security questionnaire your team sent is going to slip a week because our CISO is out.",
+  "expected": {
+    "intent": "commit",
+    "stance": "positive",
+    "entity_mentions": [
+      [
+        "Meera",
+        "person"
+      ]
+    ],
+    "commitments": [
+      {
+        "actor": "Rohit",
+        "action_contains": "order form",
+        "is_conditional": false
+      },
+      {
+        "actor": "Rohit",
+        "action_contains": "legal",
+        "is_conditional": false
+      }
+    ],
+    "dates": [
+      {
+        "as_written": "by Friday",
+        "certainty": "exact"
+      }
+    ]
+  },
+  "recorded_model_output": {
+    "intent": "commit",
+    "stance": "positive",
+    "topics": [
+      "contracting",
+      "security_review"
+    ],
+    "entity_mentions": [
+      {
+        "surface_form": "Meera",
+        "entity_type": "person",
+        "evidence": [
+          {
+            "quote": "Meera",
+            "start_offset": 93,
+            "end_offset": 98
+          }
+        ],
+        "confidence_bp": 9100
+      }
+    ],
+    "amounts": [],
+    "dates_mentioned": [
+      {
+        "as_written": "by Friday",
+        "evidence": [
+          {
+            "quote": "by Friday",
+            "start_offset": 65,
+            "end_offset": 74
+          }
+        ]
+      }
+    ],
+    "commitments": [
+      {
+        "actor": "Rohit",
+        "action": "send the signed order form",
+        "beneficiary": "Priya",
+        "is_conditional": false,
+        "due": {
+          "as_written": "by Friday",
+          "evidence": [
+            {
+              "quote": "by Friday",
+              "start_offset": 65,
+              "end_offset": 74
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "quote": "I'll get the signed order form over to you by Friday",
+            "start_offset": 22,
+            "end_offset": 74
+          }
+        ],
+        "confidence_bp": 8900
+      },
+      {
+        "actor": "Rohit",
+        "action": "loop in Meera from our legal team",
+        "is_conditional": false,
+        "evidence": [],
+        "confidence_bp": 8400
+      }
+    ],
+    "decision_states": [],
+    "dependencies": [
+      {
+        "blocker": "CISO",
+        "blocked": "security questionnaire",
+        "dependency_type": "delivery",
+        "evidence": [
+          {
+            "quote": "because our CISO is out",
+            "start_offset": 236,
+            "end_offset": 259
+          }
+        ],
+        "confidence_bp": 7600
+      }
+    ],
+    "implied_actions": [
+      "chase the security questionnaire next week"
+    ],
+    "questions": [],
+    "unclassified_observations": [
+      {
+        "proposed_kind": "timeline_slip",
+        "description": "the security questionnaire is expected to slip by a week",
+        "evidence": [
+          {
+            "quote": "is going to slip a week",
+            "start_offset": 212,
+            "end_offset": 235
+          }
+        ],
+        "confidence_bp": 8000
+      }
+    ],
+    "field_confidence": {
+      "commitments": 8600
+    }
+  }
+}

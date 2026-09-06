@@ -121,6 +121,41 @@ def test_producible_vocabulary_is_small_and_closed():
         # retention date — cannot be read from a file store at all, so they stay in `missing` on
         # every row and are never inferred from a modification history.
         "document_under_control",    # admin, anchored on one file (`document`)
+        # A FIFTH SHAPE, and the first that names what is HAPPENING rather than what it is about.
+        # Everything above answers WHO or WHICH WINDOW; a capability written for "we wrote and
+        # nobody answered" had nothing to bind to, so it fell to a person-shaped lane whose only
+        # available predicate was `thread.ball_in_court` — which is why every waiting relationship
+        # in an org reached the same route and produced the same card.
+        #
+        # All three are minted from evidence that already existed. `context/waiting.py` derives
+        # the durations, the follow-up count and the counterparty's own reply cadence — the first
+        # facts in this system computed from what did NOT happen, since no source system emits
+        # "they have not replied". `context/outreach_situations.py` gives two of them a name;
+        # `meeting_follow_through` is a second reading of the `meeting` anchor sales already reads
+        # as `channel_touch`, which `type_for` allows because it maps an anchor PER DOMAIN.
+        #
+        # If this set grows again the check is the same one the seven support readings answer to:
+        # every new type must declare in `expected_fields` the thing it cannot see, so `missing`
+        # stays truthful on every row. All three do — `outreach.objective` (nothing knows what an
+        # outbound was FOR), `commitment.delivered_at` (nothing reports a promise was kept), and
+        # `meeting.recap_sent` (an outbound after a meeting is not evidence it recapped it).
+        "awaiting_response",         # admin, anchored on the `outreach` node
+        "commitment_overdue",        # admin, anchored on the `commitment` node
+        "meeting_follow_through",    # admin, a second reading of the `meeting` anchor
+        # A SIXTH SHAPE, and the first whose subject is a GROUP rather than a thing. Every value
+        # above names one person, one promise, one meeting, one file or one window; this names
+        # everyone contacted with the same stated OBJECTIVE, which is the only shape that can
+        # answer "of everyone I wrote to about the raise, who has gone quiet?".
+        #
+        # Keyed on the objective and NOT the organisation, deliberately: two partners at two
+        # firms are one raise, while a fundraising thread and a vendor thread with the same firm
+        # are two things needing opposite answers. It could not have existed before
+        # `thread.objective` had a writer.
+        #
+        # Same check as the readings above — it declares what it cannot see. `cohort.target` (how
+        # many we MEANT to reach) has no writer and probably never will, so the reply rate is
+        # reported and never graded.
+        "cohort_outreach_gap",       # admin, anchored on the `cohort` node
     }, "the L2 situation vocabulary changed — re-check every corpus route against it"
 
 

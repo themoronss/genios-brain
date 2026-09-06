@@ -1,3 +1,14 @@
+"""The shipped projections a structured object takes into L2 — values, and edges.
+
+Both go through `targets.sift_mapping_targets` first, and that is the whole of W2's residual
+sink-hole fix. `commit_structured` writes what these two functions return straight into the
+graph — ``write_fact(field=<target>)`` and ``write_edge(edge_type=<edge_type>)`` — so a name that
+gets past here is a name that is stored, and `FieldMap.target` is a string a customer types into
+`GENIOS_STRUCTURED_MAPPINGS`. Sifting HERE rather than at each call site is what closes both
+production paths at once: `capture/pipeline.py`'s structured route and `context/runner.py`'s L2
+drain call these two functions and nothing else.
+"""
+
 from __future__ import annotations
 
 from typing import Any
@@ -5,6 +16,7 @@ from typing import Any
 from genios_engine.platform.identity import norm_email
 
 from .registry import StructuredMapping
+from .targets import sift_mapping_targets
 
 # personal mailbox domains — an attendee here is a person, never evidence of a company
 _PERSONAL_DOMAINS = {"gmail.com", "googlemail.com", "outlook.com", "hotmail.com",
@@ -13,12 +25,17 @@ _PERSONAL_DOMAINS = {"gmail.com", "googlemail.com", "outlook.com", "hotmail.com"
 
 def apply_mapping(mapping: StructuredMapping, raw_fields: dict[str, Any]) -> dict[str, Any]:
     """Map a structured source object's fields to target fields per the mapping.
-    Deterministic, no LLM. Unknown source fields are ignored (never guessed)."""
-    out: dict[str, Any] = {}
-    for fm in mapping.fields:
-        if fm.source_field in raw_fields:
-            out[fm.target] = raw_fields[fm.source_field]
-    return out
+
+    Deterministic, no LLM. Unknown source fields are ignored (never guessed), and a target name
+    the graph cannot be queried by is REFUSED — `sift_mapping_targets` decides which, and hands
+    the refused name to the open lane instead of to `write_fact`.
+
+    A dict, still, because `commit_structured` and `GatedEvent.structured_fields` take one; what
+    changed is that every key in it is now a name a rule can address. `sift_mapping_targets` is
+    pure and idempotent, so putting it on this path costs one pass over the mapping's declared
+    fields and nothing else.
+    """
+    return dict(sift_mapping_targets(mapping, raw_fields).fields)
 
 
 def _emails_from(value: Any) -> list[tuple[str, str | None]]:
@@ -42,10 +59,14 @@ def _emails_from(value: Any) -> list[tuple[str, str | None]]:
 def apply_relations(mapping: StructuredMapping, raw_fields: dict[str, Any]) -> list[dict[str, Any]]:
     """Resolve a structured object's declared relations into edge specs the commit layer can
     write: {node_type, canonical_key, display_name, edge_type, direction}. Deterministic, no LLM.
-    Person identity is the lowercased email so attendee-persons MERGE with pipeline-created persons."""
+    Person identity is the lowercased email so attendee-persons MERGE with pipeline-created
+    persons."""
     out: list[dict[str, Any]] = []
     seen: set[tuple[str, str]] = set()
-    for rel in mapping.relations:
+    # The SIFTED relations: `edge_type` and `related_node_type` are written into the graph as an
+    # edge kind and a node kind, so a relation naming either in a form no query uses is refused
+    # into the open lane exactly as a bad field target is.
+    for rel in sift_mapping_targets(mapping, raw_fields).mapping.relations:
         raw_val = raw_fields.get(rel.source_field)
         if raw_val in (None, "", []):
             continue

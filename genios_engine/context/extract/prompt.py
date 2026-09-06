@@ -49,6 +49,19 @@ Return EXACTLY this shape:
       "direction": "<one of: they_evaluate_us | we_evaluate_them | peer>",
       "evidence_text": "exact substring that shows what kind of relationship this is"}}
   ],
+  "objective": {{                 // WHAT THIS EXCHANGE IS FOR — one per message, not per party.
+                                  // `relationships.nature` says what the two sides ARE; this says
+                                  // what we WANT from this thread, and the right follow-up turns
+                                  // on the second. An investor sitting on a fundraising ask and an
+                                  // investor merely owed a quarterly update are the same `nature`
+                                  // and need opposite messages. Omit the whole object rather than
+                                  // guess: "unknown" is a real answer and a wrong objective sends
+                                  // the wrong follow-up with confidence.
+    "type": "<one of: fundraising | investor_update | selling | procurement | hiring |
+     partnership | intro_request | scheduling | approval | billing | customer_issue |
+     operations | unknown>",
+    "evidence_text": "exact substring that shows what this exchange is for"
+  }},
   "fact_candidates": [
     {{"subject": "person or company name", "field": "<see FIELD NAMES below>",
       "value": "...", "evidence_text": "exact substring proving this fact"}}
@@ -74,14 +87,10 @@ Return EXACTLY this shape:
 
 SIGNAL KINDS — for observations.kind use these EXACT strings (emit only when the message clearly
 states it; omit if unsure — a wrong signal is worse than none). {vocab_note}
-  Buying:    budget_approved · verbal_yes · next_step_agreed · contract_requested · demo_requested ·
-             security_review_started · stakeholder_added · pricing_discussed · proposal_sent
-  Risk:      competitor · discount_pressure · budget_freeze · champion_change · legal_review ·
-             timeline_slip · going_dark · closed_lost_mention
-  Objection: objection · objection_price · objection_timing · objection_security ·
-             objection_authority · objection_integration
-  Sentiment: positive_reply · negative_reply · price_pushback
-  General:   meeting_request · followup_sent · introduction · question · positive_reply
+{signal_kinds}
+Not every message is a sale. An approval waiting on a person, an invoice, a promised document and
+an investor who has gone quiet are business moments in their own right — read the message for what
+it IS, and never reach for the nearest buying word because it is the nearest.
 
 COMMITMENTS — a commitment is a PROMISE TO ACT, with an owner. Test it: can you name who owes
 what? If not, it is not a commitment.
@@ -105,6 +114,19 @@ inbox and fail for the next, and this layer exists to read each company's own wo
 - `unknown` when the message genuinely does not say. Guessing is worse than admitting.
 The direction is the money/evaluation flow, and it is what stops a fundraising conversation
 from being read as a sales pipeline.
+
+OBJECTIVE — what WE are trying to achieve in this thread, judged from the ask, not the sender.
+- `fundraising` we are raising and they might invest · `investor_update` they already back us and
+  are owed reporting. Same person, opposite messages — this is the distinction that matters most.
+- `selling` we are selling to them · `procurement` we are buying from them.
+- `intro_request` somebody is being connected to somebody · `partnership` joint work.
+- `hiring` a candidate or a hire · `approval` a sign-off is being sought · `billing` an invoice or
+  a payment · `customer_issue` we are helping a customer · `scheduling` arranging a time and
+  nothing else.
+- `operations` internal running of the business, none of the above. `unknown` when the message
+  genuinely does not say —
+  and prefer it: a follow-up written on a guessed objective is worse than one that admits it does
+  not know why we wrote.
 
 DIRECTION — read it from the envelope, never guess it from tone.
 - On an OUTBOUND message the sender is US. Anything we offer, promise or send is OURS, and an

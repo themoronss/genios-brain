@@ -72,6 +72,8 @@ signals_of_decay:
 render:
   artifact_kind: draft_reply
   render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
     Someone has agreed and nothing is signed. Never write anything that reads as chasing — this is
     the moment a relationship is easiest to damage and the delay is almost never reluctance.
 
@@ -84,7 +86,7 @@ render:
     Artifact: the message that names the remaining steps and asks who owns each — offered as help
     with their process, never as a request for their signature.
   fallback:
-    headline: "{entity} — agreed, not signed"
+    headline: "Get {entity} to sign — agreed, unsigned"
     # Was "... and nothing on record ...", which opens on the hole in our records rather
     # than on the fact the reader acts from. Same evidence, and only one of the two is a
     # finding. The sibling of this fault shipped 25 empty-reading cards to the design
@@ -110,4 +112,4 @@ metadata:
     inbox. It is gated correctly and it will be quiet.
 
 admission:
-  accepted_content_hash: c8d7c732ad715a845136ad20cffc64780a55c5df8d55c0b53a5ea03e8e2b1d51
+  accepted_content_hash: fb6712638d11da459cb98b7d103c8cec6ae25e8ed840566513fe82b82b0ca583

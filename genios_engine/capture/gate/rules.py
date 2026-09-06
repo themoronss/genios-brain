@@ -31,8 +31,20 @@ _AUTOMATED_SENDER = re.compile(
 _JUNK_LABELS = frozenset({"SPAM", "TRASH", "CATEGORY_PROMOTIONS", "CATEGORY_SOCIAL"})
 
 
-def _automated_sender(email: str) -> bool:
+def is_automated_sender(email: str | None) -> bool:
+    """True for a machine local-part / mail-blaster subdomain — the ONE machine-sender table.
+
+    Public because L1.6.4 (`capture/esqe/source_analyzer.py`) ranks actor authority off the
+    same question and a second regex would drift into a second answer about `notify@stripe.com`
+    — the gate dropping it as a robot while the scorer weighs it as a counterparty. Kept
+    conservative for exactly the reason the table's own comment gives: `support@`/`hello@` are
+    a real small business, and over-matching here costs a genuine sender 80% of its authority.
+    """
     return bool(email) and bool(_AUTOMATED_SENDER.search(email))
+
+
+#: The pre-existing private name, kept so the gate's own call sites read unchanged.
+_automated_sender = is_automated_sender
 
 
 def light_junk(labels, sender_email: str, has_attachment: bool) -> str | None:
@@ -67,6 +79,13 @@ REASON_LABELS = {
     # "we chose not to read this" vs "we could not read this" must be distinguishable, or the
     # fix (wire an OCR engine) is invisible from the data.
     "DOC-06": "doc_ocr_unavailable",
+    # An engine WAS wired and the read still produced nothing — a missing binary, a corrupt
+    # scan, a page that rasterized to noise. Distinct from DOC-06 because the fix is different:
+    # DOC-06 is a config line, DOC-07 is an engine or a source document to go and look at.
+    "DOC-07": "doc_ocr_failed",
+    # Audio arrived and no speech-to-text engine exists (L1.3.4-U3: source P5 is unbuilt).
+    "DOC-08": "doc_transcription_unavailable",
+    "DOC-09": "doc_transcription_failed",
     # A changing object arrived with no version to change WITH — undedupable, so it would
     # freeze at first-seen state rather than update.
     "MUT-01": "versionless_mutable",
@@ -112,6 +131,16 @@ def content_integrity_rule(ctx: GateContext) -> tuple[str, str] | None:
         return ("DOC-06", "park")                # readable in principle, no engine wired
     if doc.get("status") == "ocr_review_required":
         return ("DOC-04", "park")
+    # Every status below is an EMPTY document that knows why it is empty (L1.3.4-U2/U3). Each
+    # needs its own park code or it falls off the end of this function and is emitted with an
+    # empty body — which is the silent loss G2 counts, arriving through the gate instead of
+    # through the router.
+    if doc.get("status") == "ocr_failed":
+        return ("DOC-07", "park")                # engine ran, read nothing → reviewable
+    if doc.get("status") == "transcription_unavailable":
+        return ("DOC-08", "park")                # no speech engine wired anywhere yet
+    if doc.get("status") == "transcription_failed":
+        return ("DOC-09", "park")
     if doc.get("status") == "fetch_failed":
         return ("DOC-05", "park")                # attachment download failed → retryable, never silent
 

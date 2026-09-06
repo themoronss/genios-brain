@@ -18,8 +18,8 @@ from sqlalchemy import text
 from genios_engine.capture.internal_knowledge import INTERNAL_KINDS, normalize_kind
 from genios_engine.platform.auth import get_current_org
 from genios_engine.platform.logging import get_logger
-from genios_engine.platform.wiring import (make_graph_store, make_payload_store,
-                                           make_prepared_store, make_repo,
+from genios_engine.platform.wiring import (make_coverage_fn, make_graph_store,
+                                           make_payload_store, make_prepared_store, make_repo,
                                            make_trace_repo)
 
 router = APIRouter()
@@ -72,7 +72,10 @@ def write_knowledge(org_id: str, body: KnowledgeIn, org: str = Depends(_org)) ->
     result = ingest_internal_knowledge(
         org_id=org, kind=kind, title=body.title, body=body.body, key=body.key,
         author_email=author, repo=_repo, payload_store=_payloads,
-        prepared_store=_prepared, trace_repo=_trace_repo)
+        prepared_store=_prepared, trace_repo=_trace_repo,
+        # Company canon is a capture entry like any other: without this the written-knowledge
+        # door produced the same `coverage_ready=None` population the sweep was fixed for.
+        coverage_fn=make_coverage_fn(org))
 
     from genios_engine.platform.audit import record
     record(org, "data_written", actor_type="user", actor_id=author or org,

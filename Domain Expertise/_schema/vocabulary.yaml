@@ -129,6 +129,65 @@ substrate:
   # Those exist only for a tenant who has connected that source, so a pattern resting on one is
   # true for some tenants and silently dead for the rest — which is what `needs_signal` is for.
   fact_paths:
+    # ── the WAITING substrate, written by `context/waiting.py` ────────────────
+    #
+    # The only facts in the system derived from what did NOT happen. Every other family here
+    # records an event; a source system never emits "they have not replied", so these are
+    # arithmetic against a clock over the message timeline `graph_source_refs` reconstructs.
+    # Without them a situation about silence could state nothing about the silence.
+    - thread.days_waiting          # days since our last message, while the last word is ours
+    - thread.follow_up_count       # how many times we have chased since they last wrote
+    - thread.last_heard_days       # days since anything inbound
+    - thread.response_expected     # true when we actually put a question to them
+    - party.reply_cadence_days     # THEIR median reply latency — needs >= 2 replies to exist
+    # The same five, projected onto the `outreach` anchor `context/outreach_situations.py`
+    # mints, so a situation about waiting carries them on its own subject rather than one hop
+    # away. `outreach.objective` is deliberately NOT here — see planned_substrate.
+    - outreach.days_waiting
+    - outreach.follow_up_count
+    - outreach.days_since_last_heard
+    - outreach.their_normal_reply_days
+    - outreach.response_expected
+    - outreach.counterparty
+    - outreach.counterparty_role
+    # WHY WE WROTE — moved here from planned_substrate the day `pipeline.objective_of` gave it a
+    # writer. `relationship.nature` distinguishes an investor from a vendor; this distinguishes an
+    # investor we are RAISING FROM (`fundraising`) from one we merely OWE A REPORT
+    # (`investor_update`) — same person, same nature, opposite follow-ups.
+    #
+    # Written ONLY on the outbound leg (the objective is ours) and ONLY when the extractor could
+    # place the message: `unknown` is never stored, so an unplaced thread keeps the field in the
+    # situation's `missing` list rather than satisfying it with a word that means nothing.
+    - thread.objective
+    - outreach.objective
+    # The `commitment` anchor's own fields. `commitment.delivered_at` is NOT here and cannot be:
+    # nothing reports that a promise was kept.
+    - commitment.days_overdue
+    - commitment.owed_to
+    # ── the CAMPAIGN, on the `cohort` anchor ─────────────────────────────────
+    #
+    # The first family here describing a GROUP. Everything above is about one thing, so "of
+    # everyone I contacted about the raise, who has gone quiet?" could only be answered by
+    # reading N rows and doing the arithmetic by hand.
+    #
+    # `awaiting_beyond_normal` is a COMPARATIVE count — measured against each person's own reply
+    # cadence, falling back to the cohort's median where an individual has too little history,
+    # never against a fixed number of days. `cohort.target` is absent and belongs in
+    # planned_substrate: a reply rate has no meaning without a denominator of intent.
+    - cohort.objective
+    - cohort.contacted
+    - cohort.replied
+    - cohort.awaiting
+    - cohort.awaiting_beyond_normal
+    - cohort.never_chased
+    - cohort.chased_twice_plus
+    - cohort.reply_rate_bp
+    - cohort.chaseable
+    - cohort.cadence_known
+    - cohort.median_reply_days
+    - cohort.waiting_longest
+    - cohort.organizations
+    - cohort.organization_count
     # Period aggregates, written onto the tenant node by `context/periodic.py`. Computed, never
     # extracted — they are not in any pack's `schema.fields` for the same reason `derived.*` is
     # stripped from the extraction prompt.
@@ -360,6 +419,29 @@ substrate:
     - meeting_request
     - proposal_sent
     - question
+    # ── admin / fundraising ───────────────────────────────────────────────────
+    # Added with the extraction prompt that asks for them. Until they existed the whole kind
+    # vocabulary was a sales pipeline, so an approval, an invoice and a fund passing were read
+    # through buying words or not read at all — and `pass_received` in particular had to be its
+    # own kind, because filing a reversible investor pass as `closed_lost_mention` is what
+    # produced "Save the deal now" on a fundraising rejection.
+    - approval_blocked
+    - approval_granted
+    - approval_requested
+    - deadline_stated
+    - decision_deferred
+    - diligence_started
+    - document_sent
+    - information_requested
+    - intro_made
+    - intro_requested
+    - investor_update_sent
+    - invoice_sent
+    - meeting_cancelled
+    - meeting_scheduled
+    - pass_received
+    - payment_confirmed
+    - payment_overdue
 
   # Learned per-entity baselines available to {baseline: ...} thresholds.
   baselines:
@@ -403,6 +485,29 @@ substrate:
     - pipeline_period_review    # sales, anchored on the tenant, one window
     - admin_period_review       # admin, anchored on the tenant, one window
     - support_period_review     # support, anchored on the tenant, one window
+    # The three STATE readings — the first situation types in this list named after what is
+    # HAPPENING rather than who it is about. Every type above answers WHO (a person, a company, a
+    # deal, a window), which is why a capability written for "we wrote and nobody answered" had
+    # nothing to bind to and every waiting relationship in an org reached the same person-shaped
+    # lane and produced the same card.
+    #
+    # All three are declared on ADMIN alone in `domain_spec.py`: the readers mint one situation
+    # per claiming domain, so a second claimant would mean two situations, two compiles and two
+    # cards for one silence.
+    - cohort_outreach_gap       # admin, anchored on the `cohort` node — one per stated
+                                #   OBJECTIVE, not per organisation: two partners at two firms
+                                #   are one raise, while a fundraising thread and a vendor
+                                #   thread with the same firm are two different things.
+    - awaiting_response         # admin, anchored on the `outreach` node
+                                #   `context/outreach_situations.py` mints per waiting
+                                #   counterparty
+    - commitment_overdue        # admin, anchored on the `commitment` node — a promise of OURS
+                                #   whose own stated date has passed. The mirror of support's
+                                #   `ticket_aging`, which is an unmet ask of THEIRS.
+    - meeting_follow_through    # admin, anchored on the same `meeting` node sales reads as
+                                #   `channel_touch`. Same evidence, different question: sales
+                                #   asks what channel this was, admin asks whether the
+                                #   follow-through happened.
     # The seven CORRESPONDENCE readings, minted by `context/support_situations.py`. They are
     # substrate rather than planned because nothing new had to be connected: a mailbox already
     # carries the shape of a service desk — a request arrives, somebody replies or does not, the
@@ -602,6 +707,29 @@ planned_substrate:
 
   # Would be shipped by a support_v1 pack's schema.fields.
   fact_paths:
+    # ── the two names the STATE readings need and cannot have ────────────────
+    #
+    # Each is the most load-bearing remaining gap in its own situation, and each is listed here
+    # rather than quietly omitted so the gap is a tracked ask instead of a felt absence.
+    #
+    # `outreach.objective` LEFT this list on 2026-09-01 — it now has a writer and sits in
+    # `substrate.fact_paths`. It is still absent on any thread the extractor could not place,
+    # which is a different and honest state from having no producer at all.
+    #
+    # `cohort.target` — how many people we MEANT to reach. "5 of 18 replied" reads as a result
+    # and is not one: 18 contacted against a target of 20 is a campaign nearly run, against 200 it
+    # has barely started, and the same two numbers mean opposite things. Nothing holds a target,
+    # so it stays in `missing` on every cohort row and no card may call a rate good or bad.
+    - cohort.target
+    # `commitment.delivered_at` — whether a promise was actually kept. No source system reports
+    # it and none can be inferred: an outbound after a due date is not evidence the promised
+    # thing was in it. So a card may say a promise is still showing as open and may never say it
+    # was not delivered.
+    - commitment.delivered_at
+    # `meeting.recap_sent` — whether the follow-up after a meeting was a follow-up TO it. An
+    # outbound within a day of a meeting is not a recap, and treating it as one would let the
+    # system mark its own strongest finding resolved on unrelated mail.
+    - meeting.recap_sent
     - ticket.status
     - ticket.priority
     - ticket.severity

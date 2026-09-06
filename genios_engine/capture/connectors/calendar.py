@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from typing import Any
+from datetime import datetime, timezone
+from typing import Any, Mapping
 
+from .backfill import DEFAULT_BACKFILL_DAYS, BackfillWindow
 from .base import RawObject, SourceBatch
 from .composio_base import ComposioExec
 
@@ -10,10 +11,10 @@ from .composio_base import ComposioExec
 # mapping, so the gate short-circuits them (no LLM extraction needed). Field paths are
 # defensive and finalized against the real response on first live run (as with Gmail).
 
-# First-connect backfill window: how far BACK to pull on a fresh sync (all FUTURE events are
-# always pulled — no timeMax). Kept to the last 2 months to match the Gmail backfill window, so
-# email + calendar cover the same recent period without dragging in stale calendar noise.
-_BACKFILL_DAYS = 60
+# L1.2.4-U1 — the first-connect backfill window (how far BACK a fresh sync reaches; all FUTURE
+# events are always pulled, there is no timeMax) is a per-connection setting now, not the
+# `_BACKFILL_DAYS = 60` constant that used to live here. It still matches Gmail's window, because
+# both are resolved from the SAME connection setting — see connectors/backfill.py.
 
 
 def _parse_start(ev: dict) -> datetime:
@@ -47,9 +48,12 @@ def _parse_updated(ev: dict) -> datetime | None:
 class ComposioCalendarConnector:
     source = "gcal"
 
-    def __init__(self, *, api_key: str, user_id: str, calendar_id: str = "primary") -> None:
+    def __init__(self, *, api_key: str, user_id: str, calendar_id: str = "primary",
+                 backfill_days: int = DEFAULT_BACKFILL_DAYS) -> None:
         self._x = ComposioExec(api_key=api_key, user_id=user_id)
         self._cal = calendar_id
+        # Per-connection first-sync depth (L1.2.4-U1), validated at construction.
+        self.backfill_window = BackfillWindow(days=backfill_days)
 
     def _fetch(self, *, max_results: int, since: datetime | None, page_token: str | None):
         # TWO DIFFERENT CLOCKS, and mixing them froze the connector a second way.
@@ -79,7 +83,7 @@ class ComposioCalendarConnector:
             args["updatedMin"] = min(since, now).astimezone(timezone.utc).isoformat()
             args["orderBy"] = "updated"
         else:
-            args["timeMin"] = (now - timedelta(days=_BACKFILL_DAYS)).astimezone(
+            args["timeMin"] = self.backfill_window.since(now).astimezone(
                 timezone.utc).isoformat()
             args["orderBy"] = "startTime"
         if page_token:
@@ -90,6 +94,15 @@ class ComposioCalendarConnector:
         items = data.get("items") or data.get("events") or []
         objs = [self._to_raw(e) for e in items if isinstance(e, dict)]
         return SourceBatch(objects=[o for o in objs if o], next_cursor=data.get("nextPageToken"))
+
+    def webhook_objects(self, payload: Mapping[str, Any]) -> tuple[RawObject, ...]:
+        """L1.2.5-U1 — one pushed calendar trigger → the row a poll of that event produces.
+        Same `_to_raw`, so `synced_at`, `content_version` and the attendee tuple match exactly."""
+        event = payload.get("event") or payload.get("calendar_event") or payload
+        if not isinstance(event, Mapping):
+            return ()
+        obj = self._to_raw(dict(event))
+        return (obj,) if obj is not None else ()
 
     def _to_raw(self, ev: dict) -> RawObject | None:
         eid = ev.get("id")

@@ -16,6 +16,19 @@ from .slots import _fval, compute_slots
 # Law 2), on-device context_tags, the four actions, and +7d expiry. Returns a draft the renderer
 # fills and the store persists.
 
+#: The composition identity of a built card. BUMP THIS whenever what a card can SAY changes —
+#: the slot vocabulary, the render prompt, the evidence or clarity gates, the authored copy path.
+#:
+#: `cards_one_per_signal` means the first card built for a signal was, until now, the last. Every
+#: improvement upstream of delivery landed on an empty set: the cards a tenant actually looks at
+#: already existed and were never recomposed. Stamping the builder lets `CardStore.claim_build`
+#: reclaim a stale-but-untouched card and rewrite it in place, so a fix is visible on the queue a
+#: user is already looking at rather than only on signals nobody has seen yet.
+#:
+#: The value is a NAME, not a hash of this file: a comment edit must not invalidate every card in
+#: production, and deciding that a change is user-visible is a judgment the author makes.
+BUILDER_VERSION = "card-builder.v4-names-the-thing"
+
 EXPIRY_DAYS = 3650      # effectively "never" — a card only leaves the queue via user action
                         # (do_it_myself/snooze/dismiss) or a genuine decision_expires_at deadline,
                         # never a fixed housekeeping timer
@@ -62,6 +75,21 @@ _CLARITY_REQUIREMENT: dict[str, tuple[str, str, str]] = {
 }
 
 
+#: Situations whose finding is that the counterparty said nothing, so OUR OWN last message is
+#: what grounds the card. Keyed on reason code rather than inferred, for the same reason
+#: `states_absence` is declared rather than sniffed from the prose: a card's authority must not
+#: depend on how a sentence happened to come out.
+#:
+#: `states_absence` is deliberately NOT reused here — it means "a gap in OUR RECORDS", and a
+#: 34-day silence is not a gap in our records. It is a fact about the world that we know exactly.
+_GROUNDED_BY_OUR_OWN_WORDS: frozenset[str] = frozenset({
+    "awaiting_response",        # admin, the compiled lane
+    "first_touch_unanswered",   # sales, a first approach nobody answered
+    "outbound_prospect",        # sales, a whole sequence that produced nothing
+    "cohort_outreach_gap",      # the campaign reading over the same silence
+})
+
+
 def clarity_verdict(reason_code: str | None, obs_kinds: set[str],
                     fact_fields: set[str]) -> tuple[bool, str, str]:
     """Is this card's imperative grounded? Returns (ok, what_is_missing, what_to_do_instead).
@@ -84,6 +112,18 @@ def clarity_verdict(reason_code: str | None, obs_kinds: set[str],
     return grounded, ("" if grounded else missing), ("" if grounded else recommended)
 
 
+def _int_fact(facts: dict, field: str) -> int | None:
+    """A count off the graph as a whole number, or None. `graph_facts` stores numbers as JSON, so
+    the same count arrives as `3`, `3.0` or `"3"` depending on which writer produced it."""
+    value = _fval(facts, field)
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        return int(round(float(value)))
+    except (TypeError, ValueError):
+        return None
+
+
 def _why_now(reason_code: str | None, facts: dict, slots: dict, eval_time) -> str | None:
     """What CHANGED to make this actionable — never elapsed time on its own.
 
@@ -103,6 +143,39 @@ def _why_now(reason_code: str | None, facts: dict, slots: dict, eval_time) -> st
         # downgraded the card, and inventing a reason here would undo that.
         return ("They are waiting on a reply"
                 if isinstance(days, int) else None)
+    # THE STATE READINGS. Their reason_code is their situation type, and each has a genuine event
+    # behind it — a chase that has already been tried and not worked, a date that passed, a
+    # meeting that ended. Without an entry here the richest cards in the system carried a NULL
+    # why_now while the weakest legacy ones carried a sentence.
+    if reason_code == "awaiting_response":
+        # The count is the event, not the wait: a thread nobody has chased and a thread chased
+        # twice are the same elapsed time and opposite instructions. Silent on the count we could
+        # not compute, rather than reaching for the duration as a stand-in.
+        chased = slots.get("follow_ups")
+        if not isinstance(chased, int):
+            return None
+        if chased == 0:
+            return "They have not been chased once since we wrote"
+        return (f"Already chased {chased} time{'s' if chased != 1 else ''} with no reply — "
+                "another reminder is unlikely to be what changes this")
+    if reason_code == "commitment_overdue":
+        return None      # handled above; kept explicit so the two never diverge silently
+    if reason_code == "cohort_outreach_gap":
+        # THE UNTOUCHED GROUP IS THE EVENT. Not the size of the campaign and not how long it has
+        # run — those are measurements, and this function exists to refuse measurements dressed as
+        # reasons. People nobody has followed up is a thing that is true and can be changed today.
+        never = _int_fact(facts, "cohort.never_chased")
+        if never:
+            return (f"{never} in this campaign have never been followed up")
+        chased = _int_fact(facts, "cohort.chased_twice_plus")
+        if chased:
+            return (f"{chased} have been chased twice or more with no reply — "
+                    "reminders have stopped working here")
+        return None
+    if reason_code == "meeting_follow_through":
+        title = _fval(facts, "meeting.title")
+        return (f"A meeting ended and no follow-through is visible"
+                f"{f': {title}' if title else ''}")
     return None
 
 
@@ -202,6 +275,18 @@ def quotable(quotes: list[dict]) -> list[dict]:
 #:   company → observations of the people who `works_at` it. Broader by nature, and honest at that
 #:             width: the card names the company, and these are its people.
 #:   person  → its own, which is what already worked for 7 of 55.
+#:   outreach/     → the counterparty they `concerns`. These anchors are MINTED by
+#:   commitment/     `context/outreach_situations.py` — they are not people, they are readings
+#:   cohort          about a person — so they carry no observations of their own and this query
+#:                   returned zero rows for every one of them. On the design partner's org that
+#:                   was 43 outreach anchors, and it is why 19 live cards abstained with
+#:                   "nothing this account said is on record": the words existed, one edge away,
+#:                   on the person the reading is about.
+#:
+#:                   Scoped through `concerns` specifically, which is the edge those readings
+#:                   write and the same hop `build_context_slice` and the neighbourhood walk
+#:                   already take. It widens nothing: a reading about one person quotes that one
+#:                   person.
 _QUOTES_SQL = """
 with subject as (
     select node_id, node_type, canonical_key
@@ -225,6 +310,13 @@ with subject as (
       join subject s on s.node_type = 'company' and e.to_node_id = s.node_id
      where o.org_id = :o and e.org_id = :o
        and e.valid_to is null and e.edge_type = 'works_at'
+    union
+    select o.observation_id
+      from graph_observations o
+      join graph_edges e on e.to_node_id = o.subject_node_id
+      join subject s on e.from_node_id = s.node_id
+     where o.org_id = :o and e.org_id = :o
+       and e.valid_to is null and e.edge_type = 'concerns'
 )
 select o.kind, o.occurred_at, sr.evidence, se.actor ->> 'email' as author
   from graph_observations o
@@ -432,6 +524,16 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     """E0 output — a complete card.v1 minus the rendered copy (E1) and persisted state."""
     node_id = signal["subject_node_id"]
     name, node_type, attrs, facts = load_node(store, org_id, node_id)
+    # A SYNTHETIC ANCHOR'S DISPLAY NAME IS NOT THE CARD'S SUBJECT.
+    #
+    # `context/outreach_situations.py` names its nodes "Investor A — awaiting reply" so a person
+    # reading the graph can tell an outreach anchor from the person it concerns. A card writes its
+    # own framing, so using that as `{entity}` produced "Investor A — awaiting reply — waiting 4d
+    # on a reply": the situation said twice, once in the node's name and once in the copy.
+    #
+    # The plain counterparty travels as a FACT on the anchor for exactly this reason, so the card
+    # reads the name from the data rather than from a label meant for a different reader.
+    name = _fval(facts, "outreach.counterparty") or _fval(facts, "commitment.owed_to") or name
     sources = _real_sources(store, org_id, node_id)
     reason_code = signal["reason_code"]
 
@@ -549,7 +651,28 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     # rejects the case where there is no finding to be terse about. `quotable` sets the bar, and
     # only two things fail it: our own outgoing words (which cannot evidence what THEY asked) and
     # a bare extracted name (which is not something anybody said).
-    has_quote = bool(quotable(quotes))
+    # WHOSE WORDS GROUND *THIS* CARD.
+    #
+    # The gate below asks for one sentence from the COUNTERPARTY, and for a reply-shaped card
+    # that is exactly right: you cannot draft an answer to a message whose contents are not in
+    # the process, and quoting our own outgoing words back as "what they asked" is the
+    # misattribution `quotable` exists to prevent.
+    #
+    # It is the wrong question for a card whose entire finding is that they said NOTHING. An
+    # unanswered approach is grounded by OUR OWN last message — that is the thing being followed
+    # up, and knowing what we asked is what separates "send a reminder" from a follow-up worth
+    # reading. Requiring their words there is requiring the silence to speak, and it abstained 19
+    # live cards on the design partner's org for the crime of being about a silence.
+    #
+    # Attribution stays safe without the filter: `render._prompt` labels every quote with its
+    # speaker and instructs the model never to present something the account holder wrote as
+    # something the other side asked. The gate is what changes, not the honesty rule.
+    grounding = quotable(quotes)
+    if not grounding and reason_code in _GROUNDED_BY_OUR_OWN_WORDS:
+        grounding = [q for q in (quotes or ())
+                     if str(q.get("kind") or "") not in _NAMING_ONLY_KINDS
+                     and str(q.get("quote") or "").strip()]
+    has_quote = bool(grounding)
     if not has_quote:
         level = str(_ABSTENTION.REVIEW)
         abstained = abstained or (
@@ -595,7 +718,14 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         # measurement the scorecard needs.
         "business_subject": name,                      # the counterparty, not the GeniOS seat
         "relationship_role": _fval(facts, "party.role"),
-        "unresolved_item": _fval(facts, "commitment.action") or slots.get("action") or None,
+        # NEVER the slot, and never the objective. `compute_slots` fills an absent
+        # `commitment.action` with the sentinel "the commitment", so this contract field — which
+        # is supposed to say what is actually OPEN — reported the words "the commitment" on every
+        # card that had no commitment. The objective is not a substitute either: "fundraising" is
+        # what the thread is FOR, not what is outstanding in it, and putting it here would answer
+        # a different question in the field's own name. A NULL is the measurement the intelligence
+        # contract asks for.
+        "unresolved_item": _fval(facts, "commitment.action"),
         "why_now": _why_now(reason_code, facts, slots, eval_time),
         "capability_key": signal.get("capability_id"),
         "capability_version": signal.get("capability_version"),
@@ -625,6 +755,7 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         "context_tags": _context_tags(node_type, attrs, facts, sources),
         "config_snapshot_id": signal.get("config_snapshot_id"),
         "template_version": (effective.get("templates", {}) or {}).get("_version"),
+        "builder_version": BUILDER_VERSION,
         "expires_at": card_expires_at,
         # carried forward to E1 (not persisted as-is)
         "_reason_code": reason_code, "_template": template, "_facts": facts, "_slots": slots,

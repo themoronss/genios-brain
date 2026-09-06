@@ -58,10 +58,12 @@ signals_of_decay: [timeline_slip]
 render:
   artifact_kind: brief
   render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
     never state a forecast number without the coverage
     ratio and the movement behind it — a number alone invites the confidence it has not earned.
   fallback:
-    headline: "Pipeline — period unmeasured"
+    headline: "Review your pipeline for this period"
     situation: >-
       No period aggregate exists, so coverage against target cannot be stated.
 
@@ -83,4 +85,4 @@ metadata:
     single build is visible from any of them.
 
 admission:
-  accepted_content_hash: 181d0889c30c2d83bdd0535d8fc5fb246ccc106e545d0356610b119735e4425b
+  accepted_content_hash: 5fe5fa8b5c66c1448273c3d738693fe4612e6dce2f261187ce2e59b75403de85

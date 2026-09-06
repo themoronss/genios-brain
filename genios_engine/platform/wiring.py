@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import math
+import os
+from datetime import datetime, timezone
+
+from genios_engine.capture.connectors.backfill import backfill_window_for
 from genios_engine.capture.connectors.base import SourceConnector
 from genios_engine.capture.source_registry import BUILDABLE_SOURCES
 from genios_engine.capture.landing.repository import (InMemorySourceEventRepository,
@@ -75,21 +80,25 @@ def make_connector_for(connection, relevance=None) -> SourceConnector:
         return FakeGmailConnector(org_id=connection.org_id,
                                   connection_id=connection.connection_id)
     key, uid = s.composio_api_key, connection.composio_user_id
+    # L1.2.4-U1 — how far back a FIRST sync reaches is this connection's setting, not a constant
+    # inside the connector. Resolved once, here, so both time-windowed sources (mail and calendar)
+    # cover the same period for the same tenant.
+    window = backfill_window_for(connection)
     if st == "gmail":
         from genios_engine.capture.connectors.composio import ComposioGmailConnector
-        ocr = make_ocr()                        # scanned-PDF attachments need OCR (native-only if off)
+        ocr = make_ocr(connection.org_id)       # per-tenant; None → native-text only
         return ComposioGmailConnector(api_key=key, user_id=uid,
                                       connected_account_id=s.composio_gmail_account or None, ocr=ocr,
-                                      relevance=relevance)
+                                      relevance=relevance, backfill_days=window.days)
     if st in ("gcal", "calendar", "google_calendar"):
         from genios_engine.capture.connectors.calendar import ComposioCalendarConnector
-        return ComposioCalendarConnector(api_key=key, user_id=uid)
+        return ComposioCalendarConnector(api_key=key, user_id=uid, backfill_days=window.days)
     if st == "notion":
         from genios_engine.capture.connectors.notion import ComposioNotionConnector
         return ComposioNotionConnector(api_key=key, user_id=uid)
     if st in ("gdrive", "drive", "google_drive"):
         from genios_engine.capture.connectors.drive import ComposioDriveConnector
-        ocr = make_ocr()
+        ocr = make_ocr(connection.org_id)
         return ComposioDriveConnector(api_key=key, user_id=uid, ocr=ocr)
     if st == "hubspot":
         from genios_engine.capture.connectors.hubspot import ComposioHubspotConnector
@@ -101,19 +110,32 @@ def make_connector_for(connection, relevance=None) -> SourceConnector:
 make_gmail_connector_for = make_connector_for
 
 
-def make_ocr():
-    """The OCR engine (Tesseract) when enabled in settings, else None (native-text-only). Shared by
-    the Gmail/Drive attachment path AND dashboard uploads, so a scanned file reads the same way no
-    matter which door it arrives through."""
+def make_ocr(org_id: str | None = None):
+    """The OCR engine for one org, or None with a logged reason. Shared by the Gmail/Drive
+    attachment path AND dashboard uploads, so a scanned file reads the same way no matter which
+    door it arrives through.
+
+    Three inputs decide, not one (`capture/documents/enablement.py` holds the rule): the fleet
+    default, this org's place on the allow/deny lists, and whether the Tesseract binary actually
+    exists on this host. That last one is why `enable_ocr=true` is no longer enough — doc-03
+    states the binary is absent from the deploy image, and wiring an engine that raises on its
+    first call converts empty documents into failed syncs. Deliberately-off is a legitimate
+    state; a silent None was not, so the reason is logged in the words that fix it.
+    """
     s = get_settings()
-    if getattr(s, "enable_ocr", False):
-        from genios_engine.capture.documents.tesseract import TesseractOcr
+    from genios_engine.capture.documents.enablement import (parse_org_allowlist,
+                                                            resolve_ocr_availability)
+    from genios_engine.capture.documents.tesseract import TesseractOcr, tesseract_available
+    decision = resolve_ocr_availability(
+        org_id=org_id,
+        global_enabled=bool(getattr(s, "enable_ocr", False)),
+        allowlist=parse_org_allowlist(getattr(s, "ocr_enabled_orgs", "")),
+        denylist=parse_org_allowlist(getattr(s, "ocr_disabled_orgs", "")),
+        engine_present=tesseract_available())
+    if decision.enabled:
         return TesseractOcr()
-    # Deliberately-off is a legitimate state, but a silent None is how 369 documents came to be
-    # labelled `unsupported` — a terminal-sounding verdict for files the router never tried to
-    # read. `route_document` now returns `ocr_unavailable` for those; log once so the operator
-    # side of that story is visible too.
-    _log.info("OCR disabled (enable_ocr=false): scanned documents will park as ocr_unavailable")
+    _log.info("OCR not wired (org=%s, %s): %s", org_id or "-", decision.availability,
+              decision.detail)
     return None
 
 
@@ -206,6 +228,30 @@ def make_prepared_store():
     return InMemoryPreparedContentStore()
 
 
+def make_open_lane_store():
+    """L1.4.5's open lane — the observations the closed vocabulary had no field for.
+    Postgres if DATABASE_URL is set, else in-memory. Read by the weekly discovery report and by
+    nothing else: no rule, no pack, no reasoner."""
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.semantic.open_lane import PostgresOpenLaneStore
+        return PostgresOpenLaneStore(s.database_url)
+    from genios_engine.capture.semantic.open_lane import InMemoryOpenLaneStore
+    return InMemoryOpenLaneStore()
+
+
+def make_source_waitlist_store():
+    """L1.1-U2's waitlist — the sources a tenant asked for and cannot connect yet.
+    Postgres if DATABASE_URL is set, else in-memory. Nothing in the capture pipeline reads it:
+    it is demand, recorded at the point of refusal, for the product to answer."""
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.source_waitlist import PostgresSourceWaitlist
+        return PostgresSourceWaitlist(s.database_url)
+    from genios_engine.capture.source_waitlist import InMemorySourceWaitlist
+    return InMemorySourceWaitlist()
+
+
 def make_trace_repo():
     """Decision-trace persistence. Postgres/Supabase if DATABASE_URL is set, else
     in-memory. Every event's per-stage path lands in event_trace for debugging."""
@@ -277,3 +323,400 @@ def make_relevance_classifier(org_id: str | None = None):
         from genios_engine.capture.gate.relevance import DeterministicRelevanceClassifier
         return DeterministicRelevanceClassifier()
     return None
+
+
+# ── coverage (L1.1-U1 / L1.7.5) ──────────────────────────────────────────────────
+def make_conflict_store():
+    """`signal_conflicts` (migration 0087) — L1.5.5's conflict record.
+
+    Built on the same terms as `make_coverage_store` below: a real store when there is a real
+    database, an in-memory one otherwise. A dev run keeps its conflicts for the life of the
+    process, which is strictly more than the zero rows they had before the table existed.
+    """
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.validate.conflict_store import PostgresConflictStore
+        return PostgresConflictStore(s.database_url)
+    from genios_engine.capture.validate.conflict_store import InMemoryConflictStore
+    return InMemoryConflictStore()
+
+
+def make_floor_store():
+    """`org_qualification_floors` (migration 0088) — L1.6.8's per-tenant qualification floor.
+
+    Built on `make_conflict_store`'s terms. The in-memory fallback is deliberately EMPTY rather
+    than pre-seeded: a dev run with no configured floor gets `DEFAULT_FLOOR_BP`, which is the
+    same answer production gives an untuned tenant, so the two do not disagree about a number
+    that decides what a founder sees.
+    """
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.esqe.qualification import PostgresFloorStore
+        return PostgresFloorStore(s.database_url)
+    from genios_engine.capture.esqe.qualification import InMemoryFloorStore
+    return InMemoryFloorStore()
+
+
+def make_drop_ledger():
+    """`qualification_drops` (migration 0088) — the row a refused signal leaves behind.
+
+    Without a real database this is a dict that lives for the process, which is strictly more
+    than the zero rows a drop left before the table existed — and it keeps the seam exercised on
+    every dev sweep instead of only under Postgres.
+    """
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.esqe.qualification import PostgresDropLedger
+        return PostgresDropLedger(s.database_url)
+    from genios_engine.capture.esqe.qualification import InMemoryDropLedger
+    return InMemoryDropLedger()
+
+
+def make_rejection_ledger():
+    """`publication_rejections` (migration 0092) — the row a signal the GATE refused leaves.
+
+    Built on `make_drop_ledger`'s terms, and the pair matters: the floor's refusals and the
+    publication gate's refusals answer one tenant question between them ("this email produced
+    nothing; why?"), so a build where one of them falls back to a dict and the other does not
+    would answer half of it on a dev run.
+    """
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.esqe.publisher import PostgresRejectionLedger
+        return PostgresRejectionLedger(s.database_url)
+    from genios_engine.capture.esqe.publisher import InMemoryRejectionLedger
+    return InMemoryRejectionLedger()
+
+
+def make_lifecycle_store():
+    """`signal_lifecycle` (migration 0093) — L1.6.9's ALG-19 state machine's rows.
+
+    Built on `make_drop_ledger`'s terms. Without a real database this is a dict that lives for
+    the process, which keeps the seam exercised on every dev sweep: a lifecycle that only runs
+    under Postgres is a lifecycle nobody sees fail until production.
+    """
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.esqe.lifecycle import PostgresLifecycleStore
+        return PostgresLifecycleStore(s.database_url)
+    from genios_engine.capture.esqe.lifecycle import InMemoryLifecycleStore
+    return InMemoryLifecycleStore()
+
+
+def make_signal_store():
+    """`qualified_signals` (migration 0089) — L1.7.4's store, the L1 -> L2 boundary made durable.
+
+    Built on `make_drop_ledger`'s terms. The in-memory fallback matters more here than anywhere
+    else in this family: without it a dev run with no database would exercise the publication
+    gate and then throw its conclusion away, so the one seam that decides what Layer 2 ever sees
+    would be the seam nobody ran outside Postgres.
+    """
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.esqe.signal_store import PostgresSignalStore
+        return PostgresSignalStore(s.database_url)
+    from genios_engine.capture.esqe.signal_store import InMemorySignalStore
+    return InMemorySignalStore()
+
+
+def make_coverage_store():
+    """`source_coverage` — the table migration 0002 created and nothing ever wrote."""
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.coverage.store import PostgresCoverageStore
+        return PostgresCoverageStore(s.database_url)
+    from genios_engine.capture.coverage.store import InMemoryCoverageStore
+    return InMemoryCoverageStore()
+
+
+#: "the caller did not say", which is NOT the same as "the caller said none". `engine=None` had
+#: to mean the latter: a test that passes it is stating there is no database, and resolving that
+#: to `make_graph_store()` would open a real connection from a hermetic test — the exact accident
+#: `tests/conftest.py` exists to prevent.
+_UNSET = object()
+
+
+def make_coverage_fn(org_id: str, *, connections=None, store=_UNSET, engine=_UNSET,
+                     now: datetime | None = None):
+    """ONE coverage declaration for this org, as the `domain -> verdict` callable capture takes.
+
+    This is the factory the four capture entries share, and sharing it is the point. `coverage_fn`
+    used to be a parameter that only `capture/pipeline.py` mentioned: the sweep, the Composio
+    webhook, the manual-intake door and `/dev/ingest-sample` all called `capture_event` without
+    it, so every event any of them produced carried `coverage_ready=None` — and each of the four
+    was a separate, silent omission. One factory means a fifth entry has one obvious thing to
+    pass, and `tests/capture/coverage/test_coverage_wiring.py` fails by file and line if it
+    forgets.
+
+    Computed EAGERLY, once, here — not lazily per event. The inputs are one `connections` read
+    and one `count(distinct source_object_id)`; paying them per message would put two queries on
+    the ingestion path of every email, and paying them per sweep puts them where a fact about the
+    tenant's SOURCES belongs. The returned callable is a dict lookup.
+
+    Persisting is best-effort by construction (`PostgresCoverageStore.save` logs and returns 0 on
+    a database error): a sweep must not die because a dashboard row could not be filed.
+    """
+    from genios_engine.capture.coverage.declaration import (company_knowledge_count,
+                                                            declare_coverage)
+    if connections is None:
+        connections = make_connection_store().list_active()
+    if engine is _UNSET:
+        graph = make_graph_store()
+        engine = getattr(graph, "engine", None)
+    declaration = declare_coverage(
+        org_id=org_id, connections=connections,
+        company_knowledge_count=company_knowledge_count(engine, org_id),
+        computed_at=now or datetime.now(timezone.utc))
+    if store is _UNSET:
+        store = make_coverage_store()
+    if store is not None:
+        try:
+            store.save(declaration)
+        except Exception:      # noqa: BLE001 — a coverage row is a hint; a sweep is the product
+            _log.exception("could not persist coverage declaration for org=%s", org_id)
+    return declaration.for_domain
+
+
+def make_esqe_stage(org_id: str, *, engine=_UNSET, now: datetime | None = None):
+    """ONE ESQE bundle for this org's whole sweep — today, the org's L1.6.7 baseline.
+
+    The sibling of `make_coverage_fn` above, and it exists for the same reason that one does.
+    `EsqeStage.org_baseline` was a parameter only `capture/pipeline.py` mentioned: no capture
+    entry ever supplied it, so `run_esqe_stage` fell through to `OrgBaseline.cold_start(...)` on
+    every event of every sweep, `compute_org_baseline` had no production caller at all, and 50%
+    of ALG-17's formula (the money term and the entity term) was pinned to two constants for
+    every tenant. A factory rather than a keyword at seven call sites, because seven call sites
+    is seven places to forget — which is the history `make_coverage_fn` already records.
+
+    Computed EAGERLY, once, here. The read is one windowed scan of `l1_extraction_results`; a
+    p50 over a year does not move inside one sweep, and paying for it per message would put a
+    table scan on the ingestion path of every email.
+
+    Never raises: `load_org_baseline` answers a broken or absent database with a cold start,
+    which is exactly the state every tenant is in today, so wiring this in cannot make a sweep
+    worse than not wiring it in.
+    """
+    from genios_engine.capture.esqe.baseline_reader import load_org_baseline
+    from genios_engine.capture.pipeline import EsqeStage
+    if engine is _UNSET:
+        graph = make_graph_store()
+        engine = getattr(graph, "engine", None)
+    return EsqeStage(org_baseline=load_org_baseline(
+        engine, org_id, eval_time=now or datetime.now(timezone.utc)))
+
+
+# ── S2 semantic lane (L1.4), per-tenant ──────────────────────────────────────────
+def make_extraction_cache():
+    """L1.4.9's permanent, content-addressed extraction cache — `l1_extraction_results`.
+
+    Permanent and hash-keyed is what makes heavy L1 extraction affordable: the model runs once per
+    content version, ever, and a replay of a March decision reads the March row instead of asking
+    a model that has since changed. In-memory without a database, which pays for every call and is
+    slow rather than wrong.
+    """
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.semantic.cache import PostgresExtractionCache
+        return PostgresExtractionCache(s.database_url)
+    from genios_engine.capture.semantic.cache import InMemoryExtractionCache
+    return InMemoryExtractionCache()
+
+
+def make_open_lane_store():
+    """L1.4.5's discovery lane — `unclassified_observations`.
+
+    Every name the model used that the closed key vocabulary has no field for lands here, span-
+    graded like any other claim, so the vocabulary grows from evidence ("this has been noticed 40
+    times across 6 orgs, here are the sentences") instead of from a guess. No rule may read it:
+    the rows are unreviewed labels the model chose its own words for, and the fence is asserted
+    in `tests/capture/semantic/test_import_graph.py`.
+
+    In-memory without a database, which loses the rows at process exit — that is a lost REPORT,
+    never a lost extraction, because the sift that closes the lanes runs either way.
+    """
+    s = get_settings()
+    if s.use_real_db:
+        from genios_engine.capture.semantic.open_lane import PostgresOpenLaneStore
+        return PostgresOpenLaneStore(s.database_url)
+    from genios_engine.capture.semantic.open_lane import InMemoryOpenLaneStore
+    return InMemoryOpenLaneStore()
+
+
+#: A whole US dollar in minor units. The governor is integer cents end to end — a float budget
+#: re-rounds differently on every worker, and `Budget` refuses one at construction.
+_MINOR_PER_USD = 100
+
+#: Basis-point ceiling above the daily budget at which the RUNAWAY breaker trips, distinct from
+#: "today is spent". `batch.Budget` defaults to the same 1.5x the original `CostGuard` used; it
+#: is named here because the wiring is where an operator would change it.
+_BREAKER_BP = 15000
+
+
+def _spent_today_minor(engine, org_id: str) -> int:
+    """This org's LLM spend so far today, in cents, from the SAME ledger the deployed pre-flight
+    breaker reads.
+
+    `api/routes._llm_over_daily_cap` sums `llm_costs` since `date_trunc('day', now())` and
+    compares it against `settings.daily_llm_usd_cap`. If the governor opened its day from
+    anywhere else the two would disagree about how much has been spent, and which answer applied
+    would depend on which door the work came through — the exact failure `batch.breaker`'s
+    docstring refuses to introduce.
+
+    Rounded UP, because a governor that under-counts the opening balance authorises a little
+    more than the number a human approved, once per process, forever.
+
+    Fails OPEN — an unreadable ledger returns 0 rather than pretending the day is spent. Blocking
+    every tenant on a broken query is worse than one uncapped day, which is the judgement the
+    deployed check already makes.
+    """
+    if engine is None:
+        return 0
+    try:
+        from sqlalchemy import text
+
+        from genios_engine.platform.metrics import cost_usd_sql
+        with engine.connect() as c:
+            # cost_usd_sql() already returns the sum(...) aggregate — never wrap it again.
+            usd = c.execute(text(
+                f"select coalesce({cost_usd_sql()}, 0) from llm_costs where org_id=:o "
+                "and created_at >= date_trunc('day', now())"), {"o": org_id}).scalar()
+        return math.ceil(float(usd or 0.0) * _MINOR_PER_USD)
+    except Exception:      # noqa: BLE001 — a broken cost read must never block extraction
+        _log.exception("daily spend read failed for org=%s — opening the governor at zero", org_id)
+        return 0
+
+
+def make_cost_governor(org_id: str, *, engine=None):
+    """L1.4.8's cost governor for ONE org, or `None` when no ceiling is configured.
+
+    The three numbers all come from controls that already exist, so this adds an enforcement
+    POINT and not a second budget:
+
+    * `daily_minor` — `settings.daily_llm_usd_cap`, in cents. The same ceiling
+      `_llm_over_daily_cap` refuses to start a sync at. Zero means "disabled" there, so zero
+      means "no governor" here; anything else would turn a documented off-switch into a total
+      block;
+    * `daily_call_cap` — `GENIOS_LLM_DAILY_CAP`, the call ceiling from commit `7e17a6d`, read
+      through the same env var and with the same "0 = no ceiling" meaning;
+    * `t3_daily_minor` — `settings.daily_t3_llm_usd_cap` when set. Unset it equals the daily
+      ceiling, which makes the T3 sub-budget non-binding rather than guessed: `llm_costs` does
+      not record a tier, so this process cannot know what today has already spent at T3, and a
+      sub-ceiling opened at an invented balance would demote frontier work for a reason nobody
+      could check.
+
+    The opening ledger is READ HERE, once per lane, and advanced in-process from then on. That
+    is what makes the ceiling bind within a sweep instead of only between sweeps.
+    """
+    s = get_settings()
+    cap_usd = float(getattr(s, "daily_llm_usd_cap", 0) or 0)
+    if cap_usd <= 0:
+        return None
+    from genios_engine.capture.semantic.batch import Budget, CostGovernor, Ledger
+    daily_minor = int(cap_usd * _MINOR_PER_USD)
+    t3_usd = float(getattr(s, "daily_t3_llm_usd_cap", 0) or 0)
+    t3_minor = min(int(t3_usd * _MINOR_PER_USD), daily_minor) if t3_usd > 0 else daily_minor
+    call_cap = int(os.environ.get("GENIOS_LLM_DAILY_CAP", "20000") or 0)
+    spent = _spent_today_minor(engine, org_id)
+    return CostGovernor(
+        Budget(daily_minor=daily_minor, t3_daily_minor=t3_minor,
+               daily_call_cap=max(0, call_cap), breaker_bp=_BREAKER_BP),
+        Ledger(spent_minor=spent, t3_spent_minor=0, calls=0))
+
+
+def make_structured_lane(org_id: str, *, engine=_UNSET):
+    """L1.3.9-U5's bundle for ONE org — the typed-record route's zone and discovery store.
+
+    UNCONDITIONAL, unlike `make_semantic_lane` below, and that is the whole point: the structured
+    bypass calls no model, so there is nothing to key off a model being configured and nothing an
+    activation row could sensibly gate. A HubSpot deal that lands for an unactivated tenant is
+    still a typed record with a close date, and it is resolved in the ORG's zone rather than in
+    UTC because that is what decides which calendar day it falls on.
+    """
+    from genios_engine.capture.pipeline import StructuredLane
+    if engine is _UNSET:
+        graph = make_graph_store()
+        engine = getattr(graph, "engine", None)
+    return StructuredLane(timezone=_org_timezone(engine, org_id),
+                          open_lane=make_open_lane_store())
+
+
+def make_semantic_lane(org_id: str, *, now: datetime | None = None, engine=_UNSET, llm=_UNSET,
+                       activated: frozenset[str] | None = None):
+    """The S2 lane for ONE org, or `None` when it must not run — the strangler fig's gate.
+
+    THREE conditions, all required, and the order is cheapest-first:
+
+    1. a real model is configured. Without an Anthropic key there is nothing to call, and a lane
+       around a `None` client would fail every event of every sweep;
+    2. this TENANT is activated (`platform/activation.py`). Not a config flag — doc 04 forbids one
+       here by name, because a global boolean is either never exercised or switched on for
+       everybody at once;
+    3. the tenant is reachable in a database that can answer 2. No database answers "not
+       activated", which is the state every tenant is in today.
+
+    `None` is the ordinary answer and it costs nothing: `capture_event` with `semantic=None`
+    behaves exactly as it did before the lane existed.
+
+    `activated` lets a cross-org sweep read the activation set ONCE and hand it to every
+    connection, instead of one query per tenant per tick.
+    """
+    s = get_settings()
+    # The key check gates the CONSTRUCTION of a client, not the use of one that was handed in.
+    # In production `llm` is always `_UNSET`, so this is the same cheapest-first order the
+    # docstring describes; with a client injected the question "is a model configured" is already
+    # answered, and refusing anyway made this factory the one seam a caller holding its own
+    # transport could not go through — so every such caller built the bundle by hand instead,
+    # which is how a lane in a test ends up without the cache and the discovery store the
+    # production bundle carries.
+    if llm is _UNSET and not s.use_real_llm:
+        return None
+    if engine is _UNSET:
+        graph = make_graph_store()
+        engine = getattr(graph, "engine", None)
+    if activated is None:
+        from genios_engine.platform.activation import is_semantic_activated
+        if not is_semantic_activated(engine, org_id):
+            return None
+    elif org_id not in activated:
+        return None
+    if llm is _UNSET:
+        llm = make_llm_client()
+    if llm is None:
+        return None
+    from genios_engine.capture.esqe.relevance import RelevancePage
+    from genios_engine.capture.pipeline import SemanticLane
+    # ONE governor object, shared by S2's extractor and S4's relevance page. Two would be two
+    # ledgers for one day's money — the exact "second budget nobody reconciles" this factory's
+    # own comment below warns about.
+    governor = make_cost_governor(org_id, engine=engine)
+    return SemanticLane(llm=llm, eval_time=now or datetime.now(timezone.utc),
+                        cache=make_extraction_cache(),
+                        # D6a: without this the guard runs with no store and the discovery lane
+                        # never receives a row — a failure that raises nothing and shows up only
+                        # as a report that stays empty.
+                        open_lane=make_open_lane_store(),
+                        # W9 defect #9: the cost governor was built, tested and never consulted,
+                        # so a budget could not stop or demote a single call. This is the seam.
+                        governor=governor,
+                        # D6: L1.6.5's page seam. One batcher per lane, so the ambiguous
+                        # remainder of a connector page is bought in whole prompts and read per
+                        # event instead of being bought per event. It shares the governor above,
+                        # and it is the reason "the model sees under 5%" is a rate this process
+                        # can actually report (`RelevancePage.stats.llm_share_bp`).
+                        relevance_page=RelevancePage(llm=llm, governor=governor),
+                        timezone=_org_timezone(engine, org_id))
+
+
+def _org_timezone(engine, org_id: str) -> str:
+    """The org's IANA zone, or UTC. ALG-09 resolves "Friday" in it and stores UTC, so a wrong zone
+    moves a deadline by hours — but a MISSING one is not a reason to fail a capture, and UTC is the
+    same answer the rest of the engine already falls back to."""
+    if engine is None:
+        return "UTC"
+    from sqlalchemy import text
+    try:
+        with engine.connect() as conn:
+            return str(conn.execute(text("select timezone from orgs where id=:o"),
+                                    {"o": org_id}).scalar() or "UTC")
+    except Exception:      # noqa: BLE001 — a missing zone is UTC, never a failed sweep
+        return "UTC"

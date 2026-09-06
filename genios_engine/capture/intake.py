@@ -26,9 +26,15 @@ def ingest_manual(*, org_id: str, source: str, object_type: str, source_object_i
                   raw_extra: dict | None = None, internal_kind: str | None = None,
                   content_version: str | None = None,
                   repo, payload_store=None, prepared_store=None, trace_repo=None,
+                  coverage_fn=None, semantic=None,
                   connection_id: str = "manual") -> CaptureResult:
     """One deliberately-provided object → the full L1 pipeline. Idempotent via the
-    same dedup ledger as everything else (same object id → duplicate, not a re-land)."""
+    same dedup ledger as everything else (same object id → duplicate, not a re-land).
+
+    `coverage_fn` is threaded from every caller rather than defaulted here. The manual door is a
+    real capture entry — an upload becomes a `source_events` row and reaches L2 exactly like a
+    swept email — so an event that arrives through it with `coverage_ready=None` is the same
+    hole in the same population, just entered by a different door."""
     raw = RawObject(
         source=source, object_type=object_type, source_object_id=source_object_id,
         occurred_at=occurred_at or datetime.now(timezone.utc),
@@ -38,14 +44,15 @@ def ingest_manual(*, org_id: str, source: str, object_type: str, source_object_i
     )
     return capture_event(raw, org_id=org_id, connection_id=connection_id, repo=repo,
                          payload_store=payload_store, prepared_store=prepared_store,
-                         trace_repo=trace_repo)
+                         trace_repo=trace_repo, coverage_fn=coverage_fn, semantic=semantic)
 
 
 def ingest_internal_knowledge(*, org_id: str, kind: str, title: str, body: str,
                               key: str | None = None, author_email: str | None = None,
                               occurred_at: datetime | None = None,
                               repo, payload_store=None, prepared_store=None,
-                              trace_repo=None) -> CaptureResult:
+                              trace_repo=None, coverage_fn=None,
+                              semantic=None) -> CaptureResult:
     """The company writing down something about ITSELF → the one door, at canon authority.
 
     `kind` must be one of internal_knowledge.INTERNAL_KINDS; anything else is refused
@@ -81,7 +88,8 @@ def ingest_internal_knowledge(*, org_id: str, kind: str, title: str, body: str,
         occurred_at=occurred_at, internal_kind=canonical,
         raw_extra={"internal_kind": canonical, "title": subject, "knowledge_key": slug},
         repo=repo, payload_store=payload_store, prepared_store=prepared_store,
-        trace_repo=trace_repo, connection_id="knowledge")
+        trace_repo=trace_repo, coverage_fn=coverage_fn, semantic=semantic,
+        connection_id="knowledge")
 
 
 def _slug(text: str) -> str:
@@ -99,7 +107,8 @@ def _dict_text(d: dict) -> str:
 
 
 def ingest_human_event(ev: HumanEvent, *, repo, payload_store=None,
-                       prepared_store=None, trace_repo=None) -> CaptureResult:
+                       prepared_store=None, trace_repo=None, coverage_fn=None,
+                       semantic=None) -> CaptureResult:
     """A human event (note, correction, manual context) enters the graph's world.
     source='human' → family human_input → W-05 (never noise-dropped)."""
     note = ev.detail.get("text") or ev.detail.get("note") or ""
@@ -112,11 +121,13 @@ def ingest_human_event(ev: HumanEvent, *, repo, payload_store=None,
         occurred_at=ev.occurred_at,
         raw_extra={"human_event": ev.model_dump(mode="json")},
         repo=repo, payload_store=payload_store, prepared_store=prepared_store,
-        trace_repo=trace_repo, connection_id="human")
+        trace_repo=trace_repo, coverage_fn=coverage_fn, semantic=semantic,
+        connection_id="human")
 
 
 def ingest_agent_event(ev: AgentEvent, *, repo, payload_store=None,
-                       prepared_store=None, trace_repo=None) -> CaptureResult:
+                       prepared_store=None, trace_repo=None, coverage_fn=None,
+                       semantic=None) -> CaptureResult:
     """An agent's completed action enters the graph's world — so GeniOS never
     recommends what an agent already did, and outcomes become learnable.
     Dedup key rides the agent's own idempotency key."""
@@ -130,4 +141,5 @@ def ingest_agent_event(ev: AgentEvent, *, repo, payload_store=None,
         occurred_at=ev.occurred_at,
         raw_extra={"agent_event": ev.model_dump(mode="json")},
         repo=repo, payload_store=payload_store, prepared_store=prepared_store,
-        trace_repo=trace_repo, connection_id=ev.agent_id)
+        trace_repo=trace_repo, coverage_fn=coverage_fn, semantic=semantic,
+        connection_id=ev.agent_id)

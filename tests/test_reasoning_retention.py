@@ -72,6 +72,10 @@ def test_scheduled_maintenance_purges_expired_reasoning_context_payloads(monkeyp
         sweep_lifecycle=lambda: {"expired": 0}))
     monkeypatch.setattr(routes, "_payload_store", _ExpiringStore(1))
     monkeypatch.setattr(routes, "_prepared_store", _ExpiringStore(2))
+    # L1.4.5's open lane rides the same heartbeat: 180 days for an unpromoted observation, and no
+    # new Celery beat for it (the broker is a quota-limited Upstash Redis). Stubbed like the two
+    # above so this stays an assertion that the sweep RUNS the pass, not that a key appeared.
+    monkeypatch.setattr(routes, "_open_lane_store", _ExpiringStore(5))
     monkeypatch.setattr(routes, "_graph", SimpleNamespace(engine=engine))
     monkeypatch.setattr(routes, "_last_calibration_at", datetime.now(timezone.utc))
 
@@ -92,6 +96,7 @@ def test_scheduled_maintenance_purges_expired_reasoning_context_payloads(monkeyp
     assert result["retention"] == {
         "raw_payloads": 1,
         "prepared_content": 2,
+        "unclassified_observations": 5,
         "reasoning_context_payloads": 3,
         "expertise_packages": 4,
     }

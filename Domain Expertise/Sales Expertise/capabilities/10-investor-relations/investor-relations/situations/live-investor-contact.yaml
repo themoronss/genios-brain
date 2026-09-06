@@ -43,6 +43,19 @@ matches:
   # No `when:` narrowing, and not an empty key. An investor conversation is worth reading
   # precisely when no deal-shaped predicate is true — narrowing on `deal.status` would suppress
   # the entire population this situation serves, which is the mistake that left it unrouted.
+  # ONE NARROWING, AND ONLY OVER A CLAIM THE COPY ALREADY MAKES.
+  #
+  # The note above is right that a deal-shaped predicate would suppress the entire population
+  # this file serves, and that is not what this adds. The card says there is no agreed next step
+  # — a statement about a fact, asserted on every row including ones where a next step was agreed
+  # yesterday. `absent:` checks exactly that and nothing else.
+  #
+  # Deliberately NOT gated on `derived.momentum` for "nothing moving", tempting as that reads: a
+  # node with no observations in the window carries no momentum row, the predicate returns
+  # UNKNOWN, and the situation stops routing — losing precisely the dormant relationships this
+  # exists for.
+  when:
+    - absent: commitment.due_at
 
 also_serves:
   - sales.prospecting_and_outreach.account_research
@@ -84,6 +97,8 @@ signals_of_decay:
 render:
   artifact_kind: draft_reply
   render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
     A fundraising conversation with a named individual. Nothing is being sold — never write about
     pipeline stage, close date, budget, pricing or "the opportunity", and never describe a pass
     as a lost deal in commercial terms.
@@ -100,14 +115,15 @@ render:
     question, send the thing they asked for, or ask directly where it stands. Never a status
     chase, and never a follow-up when the ball is on us.
   fallback:
-    headline: "{entity} — investor conversation, no next date set"
+    headline: "Set a next date with {entity}"
     # Was "... and nothing on record says what happens next", which opens on the gap in our
     # records rather than on the fact the reader acts from. The finding is that a live fundraising
     # conversation carries no next date — which is exactly what the headline above already claims,
     # and exactly how the sibling situation live_investor_relationship words it. One live card
     # carried the old wording on 2026-08-30.
     situation: >-
-      An open fundraising conversation with {entity} and no next date on the record.
+      An open fundraising conversation with {entity} and no next date on the record —
+      last heard {last_heard_days} days ago.
 
 metadata:
   owner: Sales
@@ -133,4 +149,4 @@ metadata:
     has to live here to be found at all.
 
 admission:
-  accepted_content_hash: 80790556813a3871101952f32d4c0493b21e04c2dda28f73d3cbccf1260ce911
+  accepted_content_hash: d7aef99ecd780a25d6bd55ebb3bc37798c9717d09ee5a2381c7d5436fec0598c

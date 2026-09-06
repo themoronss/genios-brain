@@ -3,7 +3,9 @@
 This is the design's mandated first activation step: compile the real, already-qualified L2
 situations into ``ExpertisePackage``s on live traffic and MEASURE route hits, coverage and misses
 — WITHOUT persisting anything and WITHOUT feeding Layer 4. It never changes a decision, so it is
-safe to run behind ``get_settings().use_domain_compiler`` in the normal sweep. Driving L4 from the
+safe to run in the normal sweep for any tenant switched on in ``l1_semantic_activation`` — the
+per-tenant row ``reason/runner.run_all`` now enters this pass through (``l1_seam_enabled``), rather
+than the global ``use_domain_compiler`` that gated it while it was set in no environment. Driving L4 from the
 package (which needs an ExpertisePackage->CapabilityManifest adapter and per-tenant cutover) is a
 separate, later step gated on the parity this pass produces.
 
@@ -29,6 +31,7 @@ from genios_engine.context.situation_bso import (
     build_business_situation,
     build_context_slice,
     gather_evidence_and_signals,
+    gather_l1_signals,
     gather_members,
     gather_visibility,
 )
@@ -353,11 +356,17 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     conn, org_id, row["correlation_id"], str(row["situation_id"]))
                 members = gather_members(conn, org_id, row["correlation_id"])
                 situation_visibility = gather_visibility(conn, org_id, row["correlation_id"])
+                # WHAT LAYER 1 PUBLISHED about these same events. Read on the same connection as
+                # every other gather, and handed to the builder rather than re-derived: the score,
+                # the receipts and the conflict pointers are Layer 1's decisions, and this pass
+                # used to stamp a constant over all three. `None` here (a tenant with no qualified
+                # signals yet) is the pre-activation path, unchanged.
+                l1 = gather_l1_signals(conn, org_id, row["correlation_id"])
                 trace_id = new_id("trace")
                 bso = build_business_situation(
                     org_id=org_id, situation=row,
                     signal_ids=signal_ids, evidence=evidence, trace_id=trace_id,
-                    members=members, visibility=situation_visibility)
+                    members=members, visibility=situation_visibility, l1=l1)
                 context_slice = build_context_slice(
                     visibility=situation_visibility,
                     org_id=org_id, situation=row, facts=node_ctx.facts,

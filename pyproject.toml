@@ -30,3 +30,36 @@ include = ["genios_engine*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+# --strict-markers turns a typo'd marker into a collection ERROR instead of a silent
+# no-op. Without it `@pytest.mark.pg` on a test that in fact opens a real connection is
+# indistinguishable from `@pytest.mark.pgg`, and the lane selectors below (`-m "not pg"`)
+# would quietly run against a database the caller thought they had excluded. The markers
+# are what keep the hermetic suite hermetic, so an unregistered one must not be possible.
+addopts = "--strict-markers"
+
+markers = [
+  # The default lane: no network, no database, no clock, no model. Everything under
+  # tests/capture/ is this unless it says otherwise — tests/capture/conftest.py refuses
+  # socket connections for exactly the tests that do NOT carry `pg` or `llm`.
+  "unit: hermetic — no network, no DB, no LLM, no wall clock",
+  # A named acceptance gate from the Layer 1 v2 build order (docs G0..G10). A `gate` test
+  # is the thing a wave is judged by, so it may be slower and more end-to-end than a unit
+  # test; what it may NOT be is skipped. "A skip is not a pass" is the plan's own rule,
+  # and `-m gate` plus a zero-skip check is how that rule becomes a command.
+  "gate: an acceptance gate for a build wave — must pass, never skip",
+  # Needs a REAL PostgreSQL, supplied via GENIOS_TEST_DATABASE_URL. Never production:
+  # tests/conftest.py pins GENIOS_DATABASE_URL to that scratch URL (or to "") before any
+  # settings cache is materialized. These tests share one scratch org and are NOT safe to
+  # run under pytest-xdist — see tests/README.md for the decision and the way out.
+  "pg: requires a real PostgreSQL (GENIOS_TEST_DATABASE_URL); serial, never parallel",
+  # Calls a real model with real money. Excluded from CI and from every default run; the
+  # hermetic equivalent is the FakeLLM in tests/capture/conftest.py, which is what the
+  # extractor tests use. Present so that a live smoke test has somewhere to live without
+  # anyone being able to run it by accident.
+  "llm: calls a real LLM — costs money, excluded from CI",
+  # Minutes, not seconds: the 30-message golden corpus replay, distribution checks over a
+  # month of a tenant's events. Split out so the inner loop stays fast enough to be run on
+  # every save, because a suite nobody runs is a suite that protects nothing.
+  "slow: minutes, not seconds — golden corpus and distribution replays",
+]

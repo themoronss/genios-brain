@@ -1,0 +1,95 @@
+{
+  "fixture_id": "email_fabricated_amount_control",
+  "provenance": "NEGATIVE CONTROL for the zero-fabrication threshold. The recorded answer invents \"$120,000\", which appears nowhere in the content. The extractor deliberately does NOT filter it \u2014 ALG-08 does, one unit later \u2014 so this fixture proves the DETECTOR fires. A control that goes unnoticed fails the run as loudly as an undeclared fabrication.",
+  "profile_id": "email",
+  "tier": "T2",
+  "source": "gmail",
+  "locale": "en_US",
+  "timezone": "UTC",
+  "eval_time": "2026-01-14T09:00:00+00:00",
+  "envelope": {
+    "direction": "inbound",
+    "sender": "Priya Raman <priya@acme.example>",
+    "recipients": [
+      "Rohit Shah <rohit@vendor.example>"
+    ],
+    "thread_position": 1,
+    "thread_depth": 2,
+    "subject": "Call recap"
+  },
+  "content": "Quick recap of the call: we agreed on the $84,000 annual figure, with payment net 45. Legal is still reviewing the DPA.",
+  "expected": {
+    "intent": "inform",
+    "amounts": [
+      "$84,000"
+    ],
+    "fabricated_amounts": [
+      "$120,000"
+    ],
+    "decision_states": [
+      {
+        "subject_contains": "DPA",
+        "state": "pending"
+      }
+    ],
+    "commitments": []
+  },
+  "recorded_model_output": {
+    "intent": "inform",
+    "stance": "neutral",
+    "topics": [
+      "pricing",
+      "contracting"
+    ],
+    "entity_mentions": [
+      {
+        "surface_form": "Legal",
+        "entity_type": "organization",
+        "evidence": [
+          {
+            "quote": "Legal",
+            "start_offset": 86,
+            "end_offset": 91
+          }
+        ],
+        "confidence_bp": 8200
+      }
+    ],
+    "amounts": [
+      {
+        "minor_units": 8400000,
+        "currency": "USD",
+        "as_written": "$84,000"
+      },
+      {
+        "minor_units": 12000000,
+        "currency": "USD",
+        "as_written": "$120,000"
+      }
+    ],
+    "dates_mentioned": [],
+    "commitments": [],
+    "decision_states": [
+      {
+        "subject": "DPA review",
+        "state": "pending",
+        "blocked_on": "Legal",
+        "owner": "Legal",
+        "evidence": [
+          {
+            "quote": "Legal is still reviewing the DPA",
+            "start_offset": 86,
+            "end_offset": 118
+          }
+        ],
+        "confidence_bp": 8300
+      }
+    ],
+    "dependencies": [],
+    "implied_actions": [],
+    "questions": [],
+    "field_confidence": {
+      "amounts": 7000
+    }
+  }
+}

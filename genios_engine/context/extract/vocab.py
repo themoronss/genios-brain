@@ -17,7 +17,7 @@ behaves exactly as before rather than losing its vocabulary entirely.
 """
 from __future__ import annotations
 
-from genios_engine.context.vocabulary import CANONICAL_OBS_KINDS
+from genios_engine.context.vocabulary import CANONICAL_OBS_KINDS, OBS_GROUPS
 
 #: Fields the engine itself derives or requires regardless of domain. A pack may add to these;
 #: it may not remove them, because the engine's own rules and lifecycle read them.
@@ -61,6 +61,29 @@ def observation_vocabulary(effective: dict | None) -> tuple[str, ...]:
     # them because today's corpus is thin would make the corpus permanently thin.
     ordered = list(dict.fromkeys(kinds)) + sorted(CANONICAL_OBS_KINDS - set(kinds))
     return tuple(ordered)
+
+
+def signal_kinds_block(effective: dict | None) -> str:
+    """The SIGNAL KINDS section of the extraction prompt, rendered from the vocabulary itself.
+
+    This function is the fix to a two-vocabulary split that made every addition to
+    `CANONICAL_OBS_KINDS` inert. `observation_vocabulary` above computed the tenant-aware union
+    and NOTHING called it; the prompt carried a hand-typed list instead. So the canonical set
+    could gain a kind, a rule could gate on it, and the model was never told the word existed —
+    which is `verbal_yes`'s exact history, and would have been the history of every admin and
+    fundraising kind the moment they were added.
+
+    Rendering from `OBS_GROUPS` makes the prompt a VIEW of the vocabulary rather than a copy of
+    it. A kind the tenant's own rules consult but the groups omit is appended under `Tenant` — a
+    pack may name a kind this module has never heard of, and silently not asking for it is the
+    failure this whole function exists to end.
+    """
+    declared = set(observation_vocabulary(effective))
+    lines = [f"  {label + ':':<24}" + " · ".join(kinds) for label, kinds in OBS_GROUPS]
+    extra = sorted(declared - {k for _, kinds in OBS_GROUPS for k in kinds})
+    if extra:
+        lines.append(f"  {'Tenant:':<24}" + " · ".join(extra))
+    return "\n".join(lines)
 
 
 #: Fields a pack may DECLARE but the model must never be asked to find, because the engine

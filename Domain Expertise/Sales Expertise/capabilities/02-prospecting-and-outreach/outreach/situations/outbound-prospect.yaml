@@ -4,7 +4,7 @@ identity:
   domain: sales
   owner_capability: sales.prospecting_and_outreach.outreach
   version: 1.0.0
-  status: draft
+  status: stable
 
 description: >
   We went to them. No intent exists yet and the entire job is to earn a first conversation,
@@ -22,6 +22,28 @@ matches:
     # Outbound means we are waiting on them and there is no live deal behind the contact.
     - {path: thread.ball_in_court, op: "=", value: them}
     - {fn: edge_count, op: "<=", value: 1}
+    # A SEQUENCE HAS ALREADY RUN. This is the whole difference from
+    # `sales.sit.first_touch_unanswered`, which owns the case where nobody has chased yet.
+    # Without the split these two files were the same reading at two widths and would have put
+    # two cards on one silence — and this one, being the wider, would have fired the moment we
+    # pressed send.
+    #
+    # The two decisions are genuinely different: an unchased first approach needs a follow-up,
+    # while a sequence that has produced nothing needs a different approach or a stop. That is
+    # why this is worth its own file rather than a threshold on the other.
+    - {path: thread.follow_up_count, op: ">=", value: 1}
+    - {path: thread.days_waiting, op: ">=", value: 3}
+    # THEY ALREADY SAID NO. Without these the situation chases a decision that has been made:
+    # on the design partner's org it sat on `no-reply@antler.co` ("we have made a hard decision
+    # to not proceed further with your startup") and on a programme that had written "we regret
+    # to inform you that your startup was not shortlisted". Telling somebody to follow up on a
+    # rejection is worse than saying nothing — it is the product not having read the reply.
+    #
+    # `pass_received` is separate from `closed_lost_mention` on purpose: a fund's pass is often
+    # reversible and a lost deal is not, but neither is something to chase THIS week.
+    - no_obs: pass_received
+    - no_obs: closed_lost_mention
+    - no_obs: negative_reply
 
 also_serves:
   - sales.prospecting_and_outreach.follow_up
@@ -51,12 +73,36 @@ signals_of_progress:
 signals_of_decay:
   - closed_lost_mention
 
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
+    A sequence has run and produced nothing. Do NOT draft another reminder — that is the one
+    thing already shown not to work here.
+
+    Headline: who, and how many approaches have gone unanswered.
+
+    Situation: how many times we have written, over how long, and what if anything they have
+    ever done. If `their_cadence` is known, say whether this silence is unusual for them; if it
+    is not, say we have no history to judge it against rather than implying the silence is loud.
+
+    Artifact: the change of approach. One of — a different person at the same account, a warm
+    route in, a genuinely new reason to write (something that happened since), or an explicit
+    close-out that leaves the door open. Name which one and why. A close-out is a legitimate
+    recommendation here and is often the right one.
+  fallback:
+    headline: "Change your approach with {entity} — {follow_ups} tries"
+    situation: >-
+      {follow_ups} approaches to {entity} over {waited_days} days and nothing has come back.
+
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: ""
+  reviewed_by: harsh
   last_updated: "2026-08-08"
-  review_status: unreviewed
+  review_status: approved
+  reviewed_at: '2026-09-01'
   confidence: provisional
   notes: >
     One object loaded. The `never_load` list is doing more work here than the `load` list,
@@ -64,3 +110,17 @@ metadata:
     Note the deliberate overlap with inbound-lead: both bind Layer 2 types that describe
     silence, and the `when` narrowing on ball_in_court is what separates them. Two situations
     may bind the same L2 type — the registry resolves to a set, not to one winner.
+
+    HELD AT DRAFT ON PURPOSE, 2026-09-01 — and this one should probably be RETIRED.
+
+    Its gate is `thread.ball_in_court = them` + `edge_count <= 1`, which is
+    `sales.sit.first_touch_unanswered` minus that file's two extra conditions. Same L2 types,
+    same scope, strictly wider. Promoting it would put a second card on every first touch that
+    already has one, and the wider gate would fire the moment we press send.
+
+    `first_touch_unanswered` is the admitted version of this reading and now carries the waiting
+    clock. If a distinct outbound-sequence situation is wanted later it needs its own gate —
+    sequence position, not first-touch — rather than this file's.
+
+admission:
+  accepted_content_hash: 8aaae3828e2fe5f1ff8cb55417a13f86fb3883402ff9396babdf4cea8b6f851a

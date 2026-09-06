@@ -1,0 +1,155 @@
+{
+  "fixture_id": "crm_note_blocked_deal",
+  "provenance": "doc 04 L1.4.2's crm_note role: shorthand is normal (\"waiting on legal\", \"champion left\"); read it literally and let the open lane carry what the fields cannot hold.",
+  "profile_id": "crm_note",
+  "tier": "T1",
+  "source": "hubspot",
+  "locale": "en_US",
+  "timezone": "UTC",
+  "eval_time": "2026-01-14T09:00:00+00:00",
+  "envelope": {
+    "direction": "internal",
+    "sender": "ae@vendor.example",
+    "recipients": [],
+    "thread_position": 1,
+    "thread_depth": 1,
+    "subject": "Acme \u2014 call notes"
+  },
+  "content": "Call with Acme. Champion (Priya) moved to a new team, new sponsor is Dev. Waiting on legal for the redlines before we can send paper. Budget confirmed at 40 seats.",
+  "expected": {
+    "intent": "inform",
+    "stance": "cautious",
+    "entity_mentions": [
+      [
+        "Acme",
+        "organization"
+      ],
+      [
+        "Priya",
+        "person"
+      ],
+      [
+        "Dev",
+        "person"
+      ]
+    ],
+    "decision_states": [
+      {
+        "subject_contains": "paper",
+        "state": "blocked"
+      }
+    ],
+    "dependencies": [
+      {
+        "blocker": "legal",
+        "blocked": "paper",
+        "dependency_type": "approval"
+      }
+    ],
+    "unclassified_kinds": [
+      "champion_change"
+    ],
+    "commitments": []
+  },
+  "recorded_model_output": {
+    "intent": "inform",
+    "stance": "cautious",
+    "topics": [
+      "deal_progress",
+      "legal_review"
+    ],
+    "entity_mentions": [
+      {
+        "surface_form": "Acme",
+        "entity_type": "organization",
+        "evidence": [
+          {
+            "quote": "Acme",
+            "start_offset": 10,
+            "end_offset": 14
+          }
+        ],
+        "confidence_bp": 9000
+      },
+      {
+        "surface_form": "Priya",
+        "entity_type": "person",
+        "evidence": [
+          {
+            "quote": "Priya",
+            "start_offset": 26,
+            "end_offset": 31
+          }
+        ],
+        "confidence_bp": 8800
+      },
+      {
+        "surface_form": "Dev",
+        "entity_type": "person",
+        "evidence": [
+          {
+            "quote": "new sponsor is Dev",
+            "start_offset": 54,
+            "end_offset": 72
+          }
+        ],
+        "confidence_bp": 8600
+      }
+    ],
+    "amounts": [],
+    "dates_mentioned": [],
+    "commitments": [],
+    "decision_states": [
+      {
+        "subject": "sending paper",
+        "state": "blocked",
+        "blocked_on": "legal redlines",
+        "owner": "legal",
+        "evidence": [
+          {
+            "quote": "Waiting on legal for the redlines before we can send paper",
+            "start_offset": 74,
+            "end_offset": 132
+          }
+        ],
+        "confidence_bp": 8700
+      }
+    ],
+    "dependencies": [
+      {
+        "blocker": "legal",
+        "blocked": "paper",
+        "dependency_type": "approval",
+        "evidence": [
+          {
+            "quote": "Waiting on legal for the redlines",
+            "start_offset": 74,
+            "end_offset": 107
+          }
+        ],
+        "confidence_bp": 8500
+      }
+    ],
+    "implied_actions": [
+      "chase legal for the redlines"
+    ],
+    "questions": [],
+    "unclassified_observations": [
+      {
+        "proposed_kind": "champion_change",
+        "description": "the economic champion moved teams and a new sponsor took over",
+        "evidence": [
+          {
+            "quote": "Champion (Priya) moved to a new team",
+            "start_offset": 16,
+            "end_offset": 52
+          }
+        ],
+        "confidence_bp": 9100
+      }
+    ],
+    "field_confidence": {
+      "decision_states": 8700
+    }
+  }
+}

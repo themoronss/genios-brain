@@ -51,6 +51,13 @@ class Settings(BaseSettings):
     # Platform-wide daily LLM spend ceiling in USD. The per-org caps bound each tenant; this bounds
     # their sum, which is the only guard against many accounts abusing us at once. 0 = disabled.
     daily_llm_usd_cap: float = 25.0
+    # Sub-ceiling on the FRONTIER tier of L1 extraction, in USD/day. T3 is five times T1 and is
+    # where a runaway becomes expensive fastest, so it can be capped separately: the day's
+    # frontier budget runs out while ordinary extraction continues at T2. 0 = no separate
+    # sub-ceiling (the T3 budget equals the daily one), which is the honest default because
+    # `llm_costs` records no tier and a sub-ledger opened at a guessed balance would demote
+    # frontier work for a reason nobody could check.
+    daily_t3_llm_usd_cap: float = 0.0
     # OUR OWN domains — the product's transactional mail, not anybody's counterparty.
     #
     # A customer's inbox contains our onboarding, invite and billing mail. Without this the
@@ -85,7 +92,13 @@ class Settings(BaseSettings):
     # fresh without a button click. Set scheduler_enabled=false (or interval<=0) to disable — e.g. if
     # an external cron hits /ingest/all instead, or to avoid double-runs on a multi-instance deploy.
     scheduler_enabled: bool = True
-    sync_interval_hours: float = 6.0             # cadence of the auto-sync sweep (0 = off)
+    sync_interval_hours: float = 6.0             # how often the sweep TICKS (0 = off), and the
+                                                 # fallback cadence for a source nobody has tuned
+    # Per-source poll cadences, overlaid on the shipped table (L1.2.6-U1). One global interval
+    # polled a mailbox and a quarterly-edited Notion page at the same rate — wrong in both
+    # directions at once — so cadence is a property of the SOURCE and is configuration rather
+    # than a constant. e.g. "gmail=5m,notion=1d,default=2h". Empty = the shipped table.
+    sync_cadences: str = ""
     sync_initial_delay_seconds: int = 45         # wait after startup before the first sweep
     sync_batch_limit: int = 25                   # records pulled per connection per sweep
 
@@ -101,12 +114,24 @@ class Settings(BaseSettings):
     # OCR (Tesseract) fallback for scanned/image docs. Native text always works; OCR
     # needs the tesseract binary, so default off — turn on where the binary is present.
     enable_ocr: bool = False
-    # Layer 3 Domain Expertise compiler — the CUTOVER switch. When on, each sweep compiles the
-    # active L2 situations into ExpertisePackages, reasons over them, and emits the decisions as
-    # signals delivery can build cards from, tagged with the capability that authored them.
-    # Off by default and per tenant by environment: the compiled brain runs ALONGSIDE the legacy
-    # pack rules (separate rule ids, separate signals), so the two can be compared on live traffic
-    # rather than swapped blind.
+    # Per-tenant OCR rollout (L1.3.4-U2 — "enable per-tenant, not globally"). Comma-separated
+    # org ids. The allowlist turns OCR ON for an org while the fleet default stays off; the
+    # denylist turns it OFF for an org while the fleet default is on, and wins over both.
+    # Env-only rather than a settings column because OCR is a cost/latency property of a
+    # deployment, and turning it on for one design partner must not need a schema change.
+    ocr_enabled_orgs: str = ""
+    ocr_disabled_orgs: str = ""
+    # Layer 3 Domain Expertise compiler — the AUTHORITY half of its cutover: when on, the L2 -> L3
+    # pass publishes `expertise_packages`, requires admission, reasons in LIVE mode and emits
+    # signals delivery can build cards from. That is Layer 3's own decision and Layer 3's own
+    # wave: the L3 plan replaces this flag with `l3_activation(org_id, domain)` and says of it
+    # "use_domain_compiler is being retired, not extended". It is left exactly as it was.
+    #
+    # WHAT IT IS NOT, since it was read as both for months: it does NOT decide which TENANTS' Layer
+    # 3 reads what Layer 1 published. That question is `l1_seam_enabled` below — a row in
+    # `l1_semantic_activation`, per tenant — because the L1 -> L2 seam is Layer 1's activation
+    # decision and a global boolean answering it has exactly two states, both wrong (off: no tenant
+    # ever reads `qualified_signals`; on: every tenant's Layer 3 changes on one deploy).
     use_domain_compiler: bool = False
 
     @property
@@ -125,3 +150,31 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def l1_seam_enabled(engine, org_id: str) -> bool:
+    """Does THIS tenant's Layer 3 read what Layer 1 published — the L1 -> L2 seam, per tenant.
+
+    The seam's only production reader is `context/situation_bso.gather_l1_signals`, called from
+    the L2 -> L3 pass. That pass used to be entered only behind `use_domain_compiler`, a global
+    boolean set in no environment — so Layer 1 scored, qualified and stored every signal and
+    nothing on any live path ever read one. The build order's rule is the fix and it is not a
+    style preference: *"NO GLOBAL BOOLEAN FLAGS. Activation is a table."*
+
+    The table already exists and already means this: `l1_semantic_activation` is the row that says
+    a tenant's Layer 1 v2 lane is live. A tenant whose Layer 1 publishes qualified signals that its
+    own Layer 2 then ignores is precisely the dark state being fixed, so the seam follows the same
+    row rather than growing a second switch beside it (`test_there_is_no_second_activation_table`).
+
+    This function does not consult `use_domain_compiler` and must not learn to: the moment a
+    global boolean can answer "does this tenant read Layer 1", one deploy moves every tenant, which
+    is the failure being removed. The flag keeps its own separate job at the pass's entry — whether
+    the compiled brain's decisions carry AUTHORITY (published packages, admission, LIVE execution,
+    emitted signals) — and a deployment that has set it behaves exactly as it did before. Retiring
+    it belongs to Layer 3's wave and Layer 3's own `l3_activation(org_id, domain)` table.
+
+    Fail closed, on `platform/activation`'s own contract: no engine, an unreadable table, a query
+    that errors — all of them are OFF, and OFF is the path the tenant is already on.
+    """
+    from genios_engine.platform.activation import is_semantic_activated
+    return is_semantic_activated(engine, org_id)

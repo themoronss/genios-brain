@@ -9,7 +9,7 @@ identity:
   domain: sales
   owner_capability: sales.prospecting_and_outreach.cold_calling
   version: 1.0.0
-  status: draft
+  status: stable
 
 description: >
   A meaningful interaction happened somewhere the system cannot see — a phone call, a social
@@ -58,6 +58,17 @@ matches:
         and genuinely per-account question; sizing is not.
   # No `scope`. A call has no anchor the enum offers, and a market is not a subject at all.
 
+  # A MEETING THAT ACTUALLY HAPPENED, WITH SOMEBODY OUTSIDE.
+  #
+  # There was no `when` at all, so this fired on every `channel_touch` row — including cancelled
+  # meetings and internal ones. The finding is that a HIGH-INTENT touch happened somewhere mail
+  # cannot see, and that is only true of a real external meeting. Both facts are written by
+  # `context/meeting_touch.py` straight from the calendar, so this narrows on recorded evidence
+  # rather than on an inference about a channel we cannot observe — which is the objection this
+  # file's own header raises and is careful not to commit.
+  when:
+    - {path: meeting.status, op: "!=", value: cancelled}
+    - {exists: meeting.external_counterparty}
 also_serves:
   - sales.prospecting_and_outreach.linkedin_outreach
   - sales.discovery_and_solution.demo
@@ -79,10 +90,12 @@ signals_of_decay: [negative_reply]
 render:
   artifact_kind: brief
   render_hint: >
+    Headline: A DIRECT ORDER — verb first, name who. Never a status line and never a day count on its own; the reader already knows time passed.
+
     Unreachable today. When the channels exist: never describe a call from its metadata alone —
     connected and dialled are different events, and only one of them is worth advising on.
   fallback:
-    headline: "{entity} — activity outside mail is not visible"
+    headline: "Capture what happened with {entity} off email"
     situation: >-
       Interactions with {entity} on channels other than mail are not captured.
 
@@ -92,6 +105,7 @@ metadata:
   reviewed_by: harsh
   last_updated: '2026-08-29'
   review_status: approved
+  reviewed_at: '2026-09-01'
   confidence: experimental
   reviewed_at: '2026-08-29'
   notes: >
@@ -99,3 +113,17 @@ metadata:
     CAPTURE gap (three channels, Layer 1) and an AGGREGATION gap (market sizing, the same periodic
     mechanism three other files name). Merging them into one type would hide that they are two
     different builds with two different owners.
+
+    HELD AT DRAFT ON PURPOSE, 2026-09-01.
+
+    Its finding is honest and its copy is already written: activity on calls and LinkedIn is not
+    captured, so what the product shows is mail-shaped. But the gate is empty, so promoting it
+    puts "we cannot see your calls" on every meeting in the org, forever, with no action
+    attached. A true statement repeated on every row is noise, and this one cannot be resolved by
+    anything the reader does.
+
+    The right home for it is a coverage notice on the account surface, once per tenant — not a
+    card in the queue. Left at draft until that surface exists.
+
+admission:
+  accepted_content_hash: 8d0e9c0944dcdbc432f69a26439342d0b870892be5dff19aad92b41312ac43b1

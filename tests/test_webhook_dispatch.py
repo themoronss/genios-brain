@@ -35,10 +35,16 @@ def test_notion_trigger_uses_the_connector_factory_for_creds():
     seen = {}
 
     class _FakeNotion:
-        def _to_raw(self, page):
+        # L1.2.5-U1 moved the webhook seam from `_to_raw` (which dispatch used to duck-type and
+        # unwrap payloads for) onto `webhook_objects`, owned by the connector — that is what makes
+        # the webhook and poll paths share ONE parser instead of two that agree by promise. The
+        # assertion below is unchanged: the tenant's connector is what parses a Notion push.
+        def webhook_objects(self, payload):
+            page = payload.get("page") or payload
             seen["id"] = page.get("id")
-            return RawObject(source="notion", object_type="page", source_object_id=page["id"],
-                             occurred_at=datetime(2026, 8, 1, tzinfo=timezone.utc), raw={"body": "x"})
+            return (RawObject(source="notion", object_type="page", source_object_id=page["id"],
+                              occurred_at=datetime(2026, 8, 1, tzinfo=timezone.utc),
+                              raw={"body": "x"}),)
 
     raw = webhook_to_raw("notion", {"page": {"id": "p1"}}, connector_factory=lambda: _FakeNotion())
     assert raw is not None and raw.source == "notion" and seen["id"] == "p1"

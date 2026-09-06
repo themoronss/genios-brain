@@ -1,0 +1,148 @@
+# THE FIRST SITUATION IN THIS CORPUS WHOSE SUBJECT IS A GROUP.
+#
+# Every other file here is about one thing — a person, a promise, a meeting, a file. That shape
+# cannot answer the question a founder actually asks in the middle of a raise: "of everyone I
+# contacted about this, who has gone quiet?" It could only ever be answered by reading N separate
+# cards and doing the arithmetic by hand, which is precisely the work the product exists to remove.
+
+identity:
+  id: admin.sit.campaign_going_quiet
+  name: Campaign Going Quiet
+  domain: admin
+  owner_capability: admin.executive_support.inbox_and_correspondence
+  version: 1.0.0
+  status: stable
+
+description: >
+  A run of outreach with one stated objective — a raise, a hiring push, a procurement round — has
+  people in it who have not come back. This reads the campaign, not the thread: how many were
+  contacted, how many ever engaged, how many are past their own usual reply time, and how many
+  have never been chased once.
+
+  THE GROUPING IS THE OBJECTIVE, NOT THE FIRM. Two partners at two different funds are one raise;
+  a fundraising thread and a vendor thread with the same firm are two different things needing
+  opposite answers. Organisations travel as a facet — "which firms are in this" is a real
+  question — but they are not what makes these people one group.
+
+  The judgment that makes this worth a card is TRIAGE, and it is a different judgment from the
+  per-person one. On a single thread the question is whether to chase. Across a campaign it is
+  where the remaining effort goes: `cohort.never_chased` is the cheapest available lift and
+  usually the largest, while `cohort.chased_twice_plus` is the group where another reminder has
+  already been shown not to work and the honest options are a different route in or stopping.
+
+  `cohort.awaiting_beyond_normal` is the sharpest of the three and the least often available: it
+  needs two prior replies from a person before their cadence can be measured, which early in a
+  campaign almost nobody has. That is why the gate reads `cohort.chaseable` — never-chased plus
+  past-normal — rather than past-normal alone.
+
+  What this file may NOT do is grade the campaign. `cohort.target` — how many we meant to reach —
+  has no writer, so a reply rate here has no denominator of intent. Eighteen contacted against a
+  target of twenty is a campaign nearly run; against two hundred it has barely started. The same
+  numbers, opposite meanings, so the rate is reported and never judged.
+
+matches:
+  l2_situation_types:
+    - cohort_outreach_gap
+  scope: person
+  when:
+    # Enough people that the aggregate says something the individual rows do not.
+    - path: cohort.contacted
+      op: ">="
+      value: 3
+    - path: cohort.awaiting
+      op: ">="
+      value: 2
+    # And at least one person where a NEXT STEP EXISTS — never chased, or past their own usual
+    # reply time. Gating on "past normal" alone read well and was nearly unfireable: that count
+    # needs two prior replies from a person before their cadence is known, and early in a raise
+    # almost nobody has replied twice, so the card that answers "who has gone quiet across all of
+    # this" would have been silent on exactly the campaigns that most need it.
+    - path: cohort.chaseable
+      op: ">="
+      value: 1
+
+also_serves:
+  - admin.executive_support.commitment_tracking
+  - admin.admin_operations.admin_analytics
+
+objects:
+  load:
+    - admin.obj.core.request
+  optional:
+    - admin.obj.core.commitment
+    - admin.obj.core.deadline
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+    - admin.obj.core.access_right
+
+priority_bp: 6800
+typical_duration_days: 21
+
+signals_of_progress:
+  - positive_reply
+  - meeting_scheduled
+  - intro_made
+  - diligence_started
+
+signals_of_decay:
+  - going_dark
+  - pass_received
+  - decision_deferred
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    This card is about a CAMPAIGN. Do not write it as though it were about one person, and do not
+    tell the reader to "follow up" — they know. The value is the split.
+
+    Headline: the objective and how many of it are unanswered.
+
+    Situation: contacted, replied, still waiting, and how many of those are past their own usual
+    reply time. Name the people waiting longest if `cohort.waiting_longest` is present. If
+    `cohort.organizations` is present, say which firms are in it.
+
+    Artifact: the triage, in three groups and in this order — the never-chased (cheapest lift,
+    usually the largest), the past-normal-but-chased-once (worth one more, with something new to
+    say), and the chased-twice-or-more (another reminder has already been shown not to work; the
+    honest options are a different route in or stopping). Say which group each named person is in.
+
+    Never grade the campaign. `cohort.target` is unknown, so a reply rate has no denominator of
+    intent — report the rate, never call it good, bad, healthy or poor.
+  fallback:
+    # STATES THE SPLIT. The first draft of this said "this outreach has people in it who have not
+    # come back", which is true of every campaign that ever fires and would have shipped one
+    # identical sentence over all of them — the same failure the eleven identical cards were.
+    #
+    # Each quantity sits in its own clause, for the reason the sibling file records: a slot
+    # holding its sentinel takes its whole clause down with it, so anything sharing a clause with
+    # it disappears too. The counts lead because they are what the reader cannot get anywhere else.
+    headline: "{objective} — {awaiting} of {contacted} have gone quiet"
+    situation: >-
+      {contacted} contacted about {objective}, {awaiting} still waiting — {past_normal} past
+      their own usual reply time — never chased: {never_chased}.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-09-01'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-09-01'
+  notes: >
+    Grouped on `thread.objective`, which only got a writer on 2026-09-01 — before that every
+    counterparty was an island and this file could not have existed.
+
+    `cohort.awaiting_beyond_normal` is measured against each person's OWN cadence, falling back to
+    the cohort median, never against a fixed number of days — and it is ABSENT rather than zero
+    when nobody's cadence was knowable. Those are different facts and the fallback printed the
+    second as the first: "0 past their own usual reply time" on a campaign where not one person
+    had replied twice reads as "we checked and nobody is late", which we had not and could not.
+
+    `cohort.target` is declared in `expected_fields` with no writer, deliberately and probably
+    permanently — a target is an intention somebody has to state, and no mailbox contains one.
+
+admission:
+  accepted_content_hash: 2246ff43ad921b3759dea7aad33a6efc63ec0c690181978db6d524090a1450b5

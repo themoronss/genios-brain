@@ -1,0 +1,124 @@
+# Sales reads the same `meeting` anchor as `channel_touch` and asks WHAT CHANNEL this was. Admin
+# asks a different question of the same evidence: did the follow-through happen? Two readings of
+# one anchor, which `domain_spec.type_for` supports because it maps an anchor to a name PER
+# DOMAIN — so neither has to be bent into the other's shape.
+
+identity:
+  id: admin.sit.meeting_without_follow_through
+  name: Meeting Without Follow-Through
+  domain: admin
+  owner_capability: admin.meeting_operations.follow_up_coordination
+  version: 1.0.0
+  status: stable
+
+description: >
+  A meeting with somebody outside the company happened, and nothing visible has gone back to them
+  since. This is the most common administrative failure in a founder's week and the one they are
+  least able to see: the meeting is behind them, it is off the calendar, and the thing that should
+  have followed it is not in front of anybody.
+
+  The evidence is the calendar's, not a model's — `context/meeting_touch.py` captures a real event
+  with a time, a title and external participants. What the system does NOT have is whether
+  anything sent afterwards was actually a recap of THIS meeting. `meeting.recap_sent` has no
+  writer, and inferring one from any outbound within a day would let unrelated mail mark this
+  resolved. So the reading is "no follow-through is visible", never "you sent nothing".
+
+  The output that earns its place names what was discussed and proposes the specific next step. A
+  card that says "follow up on your meeting" tells the user something they already know and costs
+  them the time it took to read.
+
+matches:
+  l2_situation_types:
+    - meeting_follow_through
+  scope: meeting
+  when:
+    # It has to have HAPPENED — a cancelled meeting needs a re-book, not a recap, and they are
+    # opposite instructions.
+    - path: meeting.status
+      op: "!="
+      value: cancelled
+    # With somebody outside the company. An internal stand-up needs no recap to a counterparty.
+    - exists: meeting.external_counterparty
+    # Long enough that a same-day recap would already have gone, short enough that the meeting is
+    # still live in everyone's memory. Past this window the honest move is a fresh reason to
+    # write, not a late recap, and that is a different situation.
+    - fn: hours_since
+      path: meeting.start_at
+      op: ">="
+      value: 20
+    - fn: hours_since
+      path: meeting.start_at
+      op: "<="
+      value: 240
+
+also_serves:
+  - admin.meeting_operations.action_item_tracking
+  - admin.meeting_operations.minutes_and_documentation
+  - admin.executive_support.commitment_tracking
+
+objects:
+  load:
+    - admin.obj.core.action_item
+    - admin.obj.core.commitment
+  optional:
+    - admin.obj.core.deadline
+    - admin.obj.core.request
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+
+priority_bp: 6600
+typical_duration_days: 5
+
+signals_of_progress:
+  - followup_sent
+  - document_sent
+  - meeting_scheduled
+  - next_step_agreed
+
+signals_of_decay:
+  - going_dark
+  - decision_deferred
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: who the meeting was with and how long ago.
+
+    Situation: that the meeting happened, with whom, when — and that no follow-through is VISIBLE.
+    Say visible. The system cannot see whether a recap went out, and claiming it was never sent
+    would be an invented finding about the user's own conduct.
+
+    Artifact: the recap that is worth receiving — what was discussed in a line, anything either
+    side took on, and one specific next step with a date. Never a bare "great to meet you".
+
+    If the meeting title is all we hold about content, write the next step and say the summary is
+    the user's to fill — an invented account of a conversation nobody recorded is worse than a
+    short honest one.
+  fallback:
+    # States the FINDING, not the emptiness. "nothing back yet" reads as an absence at full
+    # prescriptive authority, and the evidence here is stronger than that: a meeting with a named
+    # outside party happened on a known date. `not visible` rather than `not sent` for the reason
+    # the description gives — nothing in this system can see a recap.
+    headline: "{entity} — met {days}d ago, follow-up not visible"
+    situation: >-
+      The meeting with {entity} happened {days} days ago. No follow-through to them is visible
+      since.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-08-31'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-08-31'
+  notes: >
+    The window (20-240 hours) is a LIVENESS bound, not a policy about when to follow up: outside
+    it the right move is different in kind, so it is a different situation rather than the same one
+    with a worse threshold. `meeting.recap_sent` is declared in `expected_fields` with no writer,
+    which is what keeps every card here saying "not visible" instead of "not sent".
+
+admission:
+  accepted_content_hash: 06b875cf08c52e5687542bafe49dd6bc43516b205d9bfd07eb9289e45ef80e3f

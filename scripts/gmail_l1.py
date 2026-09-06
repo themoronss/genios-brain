@@ -17,7 +17,7 @@ eng = make_graph_store().engine
 # clear existing gmail capture so the 30-day window re-fetches cleanly (dedup would block it otherwise)
 for sql in [
     "delete from l2_processing_runs where org_id=:o and event_id in (select event_id from source_events where org_id=:o and source='gmail')",
-    "delete from l2_extraction_results where org_id=:o and event_id in (select event_id from source_events where org_id=:o and source='gmail')",
+    "delete from l1_extraction_results where org_id=:o and event_id in (select event_id from source_events where org_id=:o and source='gmail')",
     "delete from raw_payloads where event_id in (select event_id from source_events where org_id=:o and source='gmail')",
     "delete from event_trace where event_id in (select event_id from source_events where org_id=:o and source='gmail')",
     "delete from source_events where org_id=:o and source='gmail'",
@@ -37,7 +37,11 @@ summary = run_sync(
     repo=R._repo, mode="backfill", limit=100, parked_store=R._parked,
     relevance=make_relevance_classifier(), trace_repo=R._trace_repo,
     payload_store=R._payload_store, cursor_store=R._cursors,
-    document_job_store=R._documents, source="gmail", max_pages=20)
+    document_job_store=R._documents, source="gmail", max_pages=20,
+    # Every event this script lands is a real `source_events` row that L2 will read. Omitting the
+    # declaration reproduced the `coverage_ready=None` population W9 exists to end — in a script
+    # the AST ratchet over `genios_engine/` cannot see.
+    coverage_fn=R._coverage_fn_for(org))
 print("L1 (30d) summary:", summary)
 with eng.connect() as c:
     print("gmail events now:",

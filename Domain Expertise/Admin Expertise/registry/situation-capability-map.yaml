@@ -205,6 +205,102 @@ map:
         - admin.obj.core.invoice
         - admin.obj.core.vendor
 
+  cohort_outreach_gap:
+    situations:
+      - admin.sit.campaign_going_quiet
+    capabilities:
+      - admin.admin_operations.admin_analytics
+      - admin.executive_support.commitment_tracking
+      - admin.executive_support.inbox_and_correspondence
+    objects:
+      load:
+        - admin.obj.core.commitment
+        - admin.obj.core.deadline
+        - admin.obj.core.request
+      optional:
+        - admin.obj.core.action_item
+        - admin.obj.core.approval
+        - admin.obj.core.document
+        - admin.obj.core.escalation
+      never_load:
+        - admin.obj.core.access_right
+        - admin.obj.core.asset
+        - admin.obj.core.employee_record
+        - admin.obj.core.invoice
+
+  awaiting_response:
+    situations:
+      - admin.sit.outbound_awaiting_reply
+    capabilities:
+      - admin.admin_operations.request_intake
+      - admin.executive_support.commitment_tracking
+      - admin.executive_support.delegation_and_task_routing
+      - admin.executive_support.inbox_and_correspondence
+    objects:
+      load:
+        - admin.obj.core.action_item
+        - admin.obj.core.commitment
+        - admin.obj.core.deadline
+        - admin.obj.core.request
+        - admin.obj.core.sop
+      optional:
+        - admin.obj.core.approval
+        - admin.obj.core.approver
+        - admin.obj.core.document
+        - admin.obj.core.escalation
+        - admin.obj.core.policy
+      never_load:
+        - admin.obj.core.access_right
+        - admin.obj.core.asset
+        - admin.obj.core.employee_record
+        - admin.obj.core.invoice
+
+  commitment_overdue:
+    situations:
+      - admin.sit.promise_past_its_date
+    capabilities:
+      - admin.executive_support.commitment_tracking
+      - admin.executive_support.delegation_and_task_routing
+      - admin.meeting_operations.action_item_tracking
+    objects:
+      load:
+        - admin.obj.core.action_item
+        - admin.obj.core.commitment
+        - admin.obj.core.deadline
+        - admin.obj.core.request
+      optional:
+        - admin.obj.core.approval
+        - admin.obj.core.escalation
+        - admin.obj.core.meeting
+      never_load:
+        - admin.obj.core.asset
+        - admin.obj.core.employee_record
+
+  meeting_follow_through:
+    situations:
+      - admin.sit.meeting_without_follow_through
+    capabilities:
+      - admin.executive_support.commitment_tracking
+      - admin.meeting_operations.action_item_tracking
+      - admin.meeting_operations.follow_up_coordination
+      - admin.meeting_operations.minutes_and_documentation
+    objects:
+      load:
+        - admin.obj.core.action_item
+        - admin.obj.core.commitment
+        - admin.obj.core.deadline
+        - admin.obj.core.document
+        - admin.obj.core.meeting
+      optional:
+        - admin.obj.core.approval
+        - admin.obj.core.escalation
+        - admin.obj.core.policy
+        - admin.obj.core.request
+      never_load:
+        - admin.obj.core.asset
+        - admin.obj.core.employee_record
+        - admin.obj.core.invoice
+
   document_under_control:
     situations:
       - admin.sit.document_under_control
@@ -250,7 +346,11 @@ routed_l2_types:
   - account_admin
   - admin_contact
   - admin_period_review
+  - awaiting_response
+  - cohort_outreach_gap
+  - commitment_overdue
   - document_under_control
+  - meeting_follow_through
   - relationship
 
 # Layer 2 emits these and NO situation in ANY domain binds them. Each is a signal
@@ -285,11 +385,11 @@ orphan_capabilities:
 unreachable_objects: []
 
 stats:
-  l2_types_total: 22
-  l2_types_routed_here: 5
+  l2_types_total: 26
+  l2_types_routed_here: 9
   l2_types_unrouted_globally: 0
   l2_types_pending: 4
-  situations: 14
+  situations: 18
   capabilities: 57
   capabilities_stub: 0
   capabilities_complete: 57
