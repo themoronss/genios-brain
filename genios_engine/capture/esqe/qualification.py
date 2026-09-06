@@ -711,7 +711,8 @@ class ImportanceScorer(Protocol):
     `extraction` argument and a `(bp, components)` tuple; `importance.py` takes the whole
     `NormalizedSignal` instead — L1.6.2 has already read the extraction into `primary_amount`,
     `primary_date` and `attribution` — and returns a typed `ImportanceScore`. The landed API is
-    what this depends on; the doc's prompt is noted in `spec_gaps` rather than shimmed.
+    what this depends on; the doc's prompt is noted in `docs/plans/L2_MISSING_UNIT_SPECS.md`
+    §3 **A-12** rather than shimmed.
     """
 
     def __call__(self, signal: NormalizedSignal, baseline: OrgBaseline, *,

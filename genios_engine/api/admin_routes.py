@@ -823,3 +823,152 @@ def deactivate_pilot(target_org: str, ctx: AuthCtx = Depends(require_admin)) -> 
     record = get_semantic_activation(engine, target_org)
     return {"org_id": target_org, "switched_off": switched_off,
             "activation": _activation_row(record) if record else None}
+
+
+# =================================================================================================
+# X8 / H8 · THE LAYER 2 v2 PILOT SWITCH — the write side, on a request path
+# =================================================================================================
+#
+# THE SAME DEFECT, ONE LAYER UP. `l1_semantic_activation` shipped with a read on the sweep path and
+# no writer outside its unit test, so the only way to start a pilot was an operator typing INSERT
+# against the production tenant database — and doc 09's activation rule exists because a switch
+# nothing can flip is a switch that is always off. `l2_v2_activation` (migration 0106) must not
+# repeat it, so its two switches get their routes in the same wave the table lands.
+#
+# WHY ADMIN AND NOT TENANT. Same boundary as L1's, for a sharper reason: `patterns` turns on a
+# graph read per sweep that nobody has budgeted for this tenant, and `analytic` declares a customer
+# to be a pilot. Neither is a tenant preference. `require_admin` is the only boundary in the engine
+# that means "is this us?".
+#
+# WHY THE RESPONSE CARRIES `effect`. The two switches are NOT symmetric — `patterns` gates a real
+# pass, `analytic` gates nothing because the analytic stratum is already unconditional for every
+# tenant. An operator who can see that a switch is live and cannot see what it turned on will
+# assume it turned on everything, so `platform/l2_activation.EFFECTS` travels in every response.
+class L2PilotActivation(BaseModel):
+    """The body of a switch-on.
+
+    `switch` is required and has no default: the two switches change different amounts of
+    behaviour, and a default would let an operator turn on the one they were not thinking about.
+    `"both"` is accepted because turning a tenant on for the pilot usually means both, and making
+    that two requests invites a half-activated tenant nobody notices.
+    """
+
+    switch: str
+    notes: str | None = None
+
+
+def _l2_switches(switch: str) -> tuple[str, ...]:
+    """`"both"` -> every switch; anything else is validated by the module that owns the names.
+
+    Validation here rather than in a pydantic enum so the refusal is a 400 naming the legal
+    values, not a 422 whose body an operator has to decode.
+    """
+    from genios_engine.platform.l2_activation import SWITCHES, require_switch
+    if switch == "both":
+        return SWITCHES
+    try:
+        return (require_switch(switch),)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@router.get("/l2-activation")
+def list_l2_pilot_activation(include_disabled: bool = Query(False),
+                             _ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """Who is on the Layer 2 v2 pilot, which switches, since when, and WHAT EACH ONE TURNED ON.
+
+    `include_disabled=true` adds the tenants whose switches were stamped off, which is the read
+    `scripts/l2_shadow_diff.py` is interpreted against: a seven-day window over a tenant whose
+    pattern pass stopped on day four is a window in which the two paths ran side by side for four
+    days and not seven.
+    """
+    from genios_engine.platform.l2_activation import list_l2_activations
+    rows = list_l2_activations(_engine(), include_disabled=bool(include_disabled))
+    return {"activations": [r.as_record() for r in rows],
+            "analytic_live": sum(1 for r in rows if r.analytic_live),
+            "patterns_live": sum(1 for r in rows if r.patterns_live),
+            "total": len(rows)}
+
+
+@router.get("/l2-activation/{target_org}")
+def get_l2_pilot_activation(target_org: str, _ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """ONE tenant's pilot state — the "is this org activated, and what did that turn on" read.
+
+    Distinct from the list for the reason `get_semantic_activation` is distinct from its own set
+    read: this answers a question about a tenant somebody named, including a tenant who was
+    switched back off, and `activated: false` with a record beside it is a different fact from
+    `activated: false` with none.
+    """
+    from genios_engine.platform.l2_activation import EFFECTS, get_l2_activation
+    record = get_l2_activation(_engine(), target_org)
+    if record is None:
+        return {"org_id": target_org, "in_pilot": False, "activation": None, "effects": EFFECTS}
+    return {"org_id": target_org,
+            "in_pilot": record.analytic_live or record.patterns_live,
+            "activation": record.as_record(), "effects": EFFECTS}
+
+
+@router.post("/l2-activation/{target_org}")
+def activate_l2_pilot(target_org: str, body: L2PilotActivation,
+                      ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """Put ONE tenant on the Layer 2 v2 pilot. Idempotent, audited, reversible.
+
+    IDEMPOTENT IN THE SENSE THAT MATTERS: activating twice does not re-date the pilot and does not
+    start a second backfill. `platform/l2_activation.activate` keeps a live switch's original
+    `enabled_at`, and nothing in the activation path launches work at all —
+    `sampler.backfill_history_for_drain` owns the once-per-tenant 18-month reconstruction and
+    guards it on history existence, so a second activation costs the same index probe every drain
+    already pays.
+
+    The tenant must exist: without the check the org FK raises a 500 on a typo'd id, and an
+    operator who mistypes a pilot tenant should be told which word was wrong.
+    """
+    switches = _l2_switches(body.switch)
+    engine = _engine()
+    with engine.connect() as c:
+        if c.execute(text("select 1 from orgs where id=:o"), {"o": target_org}).first() is None:
+            raise HTTPException(404, "account not found")
+    from genios_engine.platform.l2_activation import EFFECTS, activate
+    record = None
+    for switch in switches:
+        record = activate(engine, target_org, switch=switch, by=ctx.actor_id or ctx.org_id,
+                          notes=body.notes)
+    from genios_engine.platform.audit import record as audit
+    audit(ctx.org_id, "config_changed", actor_type="user", actor_id=ctx.actor_id or ctx.org_id,
+          target_type="org", target_id=target_org,
+          metadata={"audit_category": "admin", "field": "l2_v2_activation",
+                    "switches": list(switches), "value": True, "notes": body.notes})
+    _log.info("L2 v2 pilot ACTIVATED for org=%s switches=%s by=%s",
+              target_org, ",".join(switches), ctx.actor_id)
+    return {"org_id": target_org, "switched_on": list(switches),
+            "activation": record.as_record() if record else None,
+            "effects": {s: EFFECTS[s] for s in switches}}
+
+
+@router.delete("/l2-activation/{target_org}")
+def deactivate_l2_pilot(target_org: str, switch: str = Query("both"),
+                        ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """Take ONE tenant back off. The rollback half, and it is not optional — a cutover you cannot
+    reverse is a cutover with extra steps.
+
+    Returns `switched_off: []` for a tenant that was already off rather than 404: the caller's
+    intent ("this tenant must not be running the L2 v2 pilot") is satisfied either way, and a 404
+    would make a retry after a dropped connection look like a failure.
+    """
+    switches = _l2_switches(switch)
+    engine = _engine()
+    from genios_engine.platform.l2_activation import deactivate, get_l2_activation
+    switched_off = [s for s in switches
+                    if deactivate(engine, target_org, switch=s,
+                                  by=ctx.actor_id or ctx.org_id)]
+    if switched_off:
+        from genios_engine.platform.audit import record as audit
+        audit(ctx.org_id, "config_changed", actor_type="user",
+              actor_id=ctx.actor_id or ctx.org_id, target_type="org", target_id=target_org,
+              metadata={"audit_category": "admin", "field": "l2_v2_activation",
+                        "switches": switched_off, "value": False})
+        _log.info("L2 v2 pilot DEACTIVATED for org=%s switches=%s by=%s",
+                  target_org, ",".join(switched_off), ctx.actor_id)
+    record = get_l2_activation(engine, target_org)
+    return {"org_id": target_org, "switched_off": switched_off,
+            "activation": record.as_record() if record else None}

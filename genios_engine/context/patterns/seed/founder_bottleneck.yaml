@@ -1,0 +1,29 @@
+# One person is the only approver for three or more classes of decision, and at least one of them
+# has no delegate.
+#
+# THE TWO FACTS COME FROM THE AUTHORITY VIEW (L2.1.4-U2), resolved at eval_time and injected into
+# the slice with the rule ids as their receipt — they are not rows anybody typed into
+# `graph_facts`. That is deliberate: authority is historical, a rule in force last quarter is not
+# a rule in force now, and a stored count would be a number that quietly stops being true.
+#
+# ENFORCEABLE RULES ONLY, upstream in `authority_view.bottleneck`: an INFERRED rule saying somebody
+# approves everything would manufacture a bottleneck out of the fact that they answer their email.
+pattern_id: founder_bottleneck
+version: 1
+domain: [admin, finance]
+anchor: {node_type: person}
+conditions:
+  - {kind: fact, field: authority.sole_approver_subject_count, op: gte, value: 3}
+  - {kind: fact, field: authority.undelegated_subject_count,   op: gte, value: 1}
+optional_signals:
+  # Somebody is actually waiting on them right now. The bottleneck is structural either way; this
+  # is what makes it today's problem.
+  - {kind: observation, kind_name: approval_requested, within_days: 30, weight_bp: 2000}
+  - {kind: observation, kind_name: approval_blocked,   within_days: 30, weight_bp: 1500}
+emits:
+  situation_type: founder_bottleneck
+expected_fire_rate: {per_100_anchors_per_30d: 2}
+owner: harsh@thegenios.com
+first_evidence:
+  positive: "tests/context/patterns/test_seed_patterns.py::test_founder_bottleneck_fires"
+  negative: "tests/context/patterns/test_seed_patterns.py::test_founder_bottleneck_ignores_a_delegated_approver"

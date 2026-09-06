@@ -474,7 +474,34 @@ def make_coverage_fn(org_id: str, *, connections=None, store=_UNSET, engine=_UNS
             store.save(declaration)
         except Exception:      # noqa: BLE001 — a coverage row is a hint; a sweep is the product
             _log.exception("could not persist coverage declaration for org=%s", org_id)
+        _advance_coverage_epochs(declaration, engine=engine)
     return declaration.for_domain
+
+
+def _advance_coverage_epochs(declaration, *, engine) -> None:
+    """L-5 · open a new coverage EPOCH for any domain whose source set just changed.
+
+    Here, and not inside `CoverageStore.save`, for two reasons. The store is a Protocol with an
+    in-memory implementation whose whole purpose is to need no database, and an epoch is a
+    windowed history that only Postgres can hold; and this factory is the ONE place all four
+    capture doors share, so an epoch that advances here advances on the sweep, the Composio
+    webhook, the manual door and the dev sample alike — which is precisely the four-way omission
+    `coverage_ready=None on 100% of events` was, one field along.
+
+    Best-effort by the same argument `save` makes: a sweep must not die because a history row
+    could not be opened. It is idempotent on the fingerprint, so a sweep every ten minutes over an
+    unchanged source set writes nothing at all.
+    """
+    if engine is None:
+        return
+    try:
+        from genios_engine.capture.coverage.store import rows_for
+        from genios_engine.context.quality.epoch import advance_epochs
+        with engine.begin() as conn:
+            advance_epochs(conn, declaration.org_id, rows_for(declaration),
+                           at=declaration.computed_at)
+    except Exception:      # noqa: BLE001 — coverage history is a hint; a sweep is the product
+        _log.exception("could not advance coverage epochs for org=%s", declaration.org_id)
 
 
 def make_esqe_stage(org_id: str, *, engine=_UNSET, now: datetime | None = None):

@@ -1,0 +1,39 @@
+# Globe's worked example, and the reason anchor-based detection cannot express this layer's
+# product: FIVE conditions that must co-occur — a live subscription, a window closing inside 30
+# days, a value above THIS COMPANY'S approval threshold, no owner edge, and no scheduled decision.
+#
+# ANCHOR IS `subscription` AND NOT `contract`. Doc 06's example writes `node_type: contract`; the
+# node type a real tenant has is `subscription` — `capture/structured/registry.py` mints it from
+# the billing source and `correlation.ANCHOR_PRIORITY` already ranks it as a system-of-record
+# business object. A pattern anchored on a node type nothing creates is a pattern that can never
+# fire, which is the failure this whole registry is built to make visible; naming the real type is
+# the same pattern, spelled in the vocabulary the graph actually uses. Recorded as assumption A-15.
+#
+# `@authority_threshold` resolves against the org's OWN Authority view at eval_time. Two tenants
+# with different approval thresholds match differently on the same amount, and where no rule is in
+# force the condition FAILS rather than defaulting to zero — a zero threshold would make "high
+# value" mean "any value" and fire this pattern on every subscription in the org.
+#
+# The MISSING OWNER edge is a negative inference and is licensed only where the org's edge coverage
+# says an `owns` edge could have been seen. An unconnected CRM otherwise reports every vendor in
+# the company as unowned.
+pattern_id: vendor_renewal_unowned
+version: 1
+domain: [admin, finance]
+anchor: {node_type: subscription}
+conditions:
+  - {kind: fact,     field: subscription.status,              op: eq,          value: active}
+  - {kind: temporal, field: subscription.current_period_end,  op: within_days, value: 30}
+  - {kind: fact,     field: contract.value,                   op: gte,         value: "@authority_threshold"}
+  - {kind: edge,     type: owns, from: "@anchor",             op: missing}
+  - {kind: absence,  field: decision.scheduled,               type: GENUINELY_ABSENT}
+optional_signals:
+  - {kind: trend, metric: engagement.touch_count_28d, direction: declining, weight_bp: 1000}
+  - {kind: observation, kind_name: decision_deferred, within_days: 90, weight_bp: 1500}
+emits:
+  situation_type: vendor_renewal_decision
+expected_fire_rate: {per_100_anchors_per_30d: 3}
+owner: harsh@thegenios.com
+first_evidence:
+  positive: "tests/context/patterns/test_seed_patterns.py::test_vendor_renewal_unowned_fires_on_all_five"
+  negative: "tests/context/patterns/test_seed_patterns.py::test_vendor_renewal_unowned_needs_every_condition"

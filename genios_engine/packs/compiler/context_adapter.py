@@ -14,6 +14,11 @@ from decimal import Decimal, DecimalException
 from enum import Enum
 from typing import Any
 
+from genios_engine.context.quality.inference import (ABSENT_FIELDS_KEY,
+                                                      OBSERVATION_LICENCE_KEY,
+                                                      UNKNOWABLE_FIELDS_KEY,
+                                                      may_infer_absent, read_licence,
+                                                      read_string_set)
 from genios_engine.contracts.domain_expertise import (
     BusinessSituationObject,
     SituationContextSlice,
@@ -93,6 +98,15 @@ class ContextAdapter:
             *(context.missing_fields if context is not None else ()),
             *(str(value) for value in situation.metadata.get("missing_fields") or ()),
         })
+        # L2.5.5 · TYPED ABSENCE, as this layer sees it. `missing_fields` says a field is not
+        # held; these two say which KIND of not-held it is, and the difference decides whether
+        # `{absent: ...}` is a finding or a fabrication. Read through `context.quality.inference`
+        # so the keys have one spelling shared with the producer, and ABSENT keys mean unchanged
+        # behaviour — a slice with no absence data evaluates exactly as it did before this landed.
+        sources = (context.metadata if context is not None else None, situation.metadata)
+        self.unknowable_fields = read_string_set(*sources, key=UNKNOWABLE_FIELDS_KEY)
+        self.absent_fields = read_string_set(*sources, key=ABSENT_FIELDS_KEY)
+        self.observation_absence_licensed = read_licence(*sources, key=OBSERVATION_LICENCE_KEY)
 
     @staticmethod
     def _combine(primary: Any, inline: Any, label: str) -> Mapping[str, Any]:
@@ -173,12 +187,35 @@ class ContextAdapter:
     def evaluate(self, condition: Mapping[str, Any]) -> PredicateVerdict:
         if "exists" in condition:
             path = str(condition["exists"])
-            if path in self.missing_fields:
+            # An UNKNOWABLE field is not held and is not evidence that it does not exist, so
+            # `exists:` over one is UNKNOWN exactly as over a declared gap. Checked before
+            # `missing_fields` because a fact nobody DECLARED can still be unknowable — the
+            # expectation map and the coverage map are different declarations.
+            if path in self.unknowable_fields or path in self.missing_fields:
                 return PredicateVerdict(PredicateState.UNKNOWN, (path,))
             return PredicateVerdict(PredicateState.TRUE if self._fact(path)[0]
                                     else PredicateState.FALSE)
         if "absent" in condition:
             path = str(condition["absent"])
+            # THE NEGATIVE INFERENCE. `{absent: thread.last_inbound}` says "they never replied";
+            # `{absent: contract.amendment}` says "there is no amendment". Both were TRUE here
+            # whenever the fact was simply not in the slice, with no reference of any kind to
+            # whether a source that could have carried it was connected — so an org with no
+            # mailbox satisfied "they never replied" on every situation it had.
+            # ASKED, not re-derived. `quality/inference.may_infer_absent` is documented as
+            # "one function rather than an `in` at each of the call sites, so 'which absences
+            # license an inference' has one answer a reader can see" — and this was the call site
+            # that spelled the `in` out again, leaving the licence with a definition nobody
+            # consulted and a copy that decided. Two copies of one rule is how the next consumer
+            # gets a third.
+            if not may_infer_absent(path, unknowable=self.unknowable_fields):
+                return PredicateVerdict(PredicateState.UNKNOWN, (path,))
+            # Typed GENUINELY_ABSENT under a coverage epoch that still stands: a source could
+            # have carried it, everything we can see was checked, and none did. THIS is the
+            # finding, and it is the one case where the answer is TRUE rather than an abstention
+            # — the whole point of typing an absence is that some absences are the intelligence.
+            if path in self.absent_fields and not self._fact(path)[0]:
+                return PredicateVerdict(PredicateState.TRUE)
             if path in self.missing_fields:
                 return PredicateVerdict(PredicateState.UNKNOWN, (path,))
             return PredicateVerdict(PredicateState.FALSE if self._fact(path)[0]
@@ -187,16 +224,25 @@ class ContextAdapter:
             return PredicateVerdict(PredicateState.TRUE if str(condition["has_obs"])
                                     in self.observations else PredicateState.FALSE)
         if "no_obs" in condition:
-            return PredicateVerdict(PredicateState.FALSE if str(condition["no_obs"])
-                                    in self.observations else PredicateState.TRUE)
+            kind = str(condition["no_obs"])
+            if kind in self.observations:
+                return PredicateVerdict(PredicateState.FALSE)
+            # An observation that never arrived is only a finding when a source that would have
+            # carried it was connected and flowing. This is the licence
+            # `capture.coverage.model._READINESS` has computed as `can_evaluate_no_reply` since
+            # the day it was written and which nothing has ever read.
+            return PredicateVerdict(PredicateState.TRUE) if self.observation_absence_licensed \
+                else PredicateVerdict(PredicateState.UNKNOWN, (f"no_obs:{kind}",))
         if "neighbor_has_obs" in condition:
             return PredicateVerdict(
                 PredicateState.TRUE if str(condition["neighbor_has_obs"])
                 in self.neighbor_observations else PredicateState.FALSE)
         if "neighbor_no_obs" in condition:
-            return PredicateVerdict(
-                PredicateState.FALSE if str(condition["neighbor_no_obs"])
-                in self.neighbor_observations else PredicateState.TRUE)
+            kind = str(condition["neighbor_no_obs"])
+            if kind in self.neighbor_observations:
+                return PredicateVerdict(PredicateState.FALSE)
+            return PredicateVerdict(PredicateState.TRUE) if self.observation_absence_licensed \
+                else PredicateVerdict(PredicateState.UNKNOWN, (f"neighbor_no_obs:{kind}",))
         if condition.get("fn") == "edge_count":
             actual = self.context.edge_count if self.context is not None \
                 else self.situation.metadata.get("edge_count")

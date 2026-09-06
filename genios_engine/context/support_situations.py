@@ -403,17 +403,56 @@ def workaround_cost(head: str) -> str | None:
 # ── small numeric helpers ────────────────────────────────────────────────────────────────────
 
 def percentile_bp(population: list[float], value: float) -> int:
-    """Where `value` sits in `population`, in basis points.
+    """Where `value` sits in `population`, in basis points — MID-RANK, ties counted as half.
 
     Python rather than `percentile_cont`, which is Postgres-only — the same constraint
-    `open_loops.py` records when it uses CASE instead of `greatest()`. Ties count as half so a
-    population of identical ages reports the middle rather than everyone at the top.
+    `open_loops.py` records when it uses CASE instead of `greatest()`.
+
+    **This is not `context/analytic/cohort.percentile_bp`, and the difference is the question.**
+    That one is NEAREST-RANK (`rank = count(v <= value)`), which is what a cohort position needs:
+    it is a statement about a VALUE, so two accounts holding 22% must be told the same number, and
+    doc 04's own acceptance figure — the lowest of ten sits at 1000 bp — is that statistic's. This
+    one asks *"is this backlog item unusually old for this desk"*, where the same rule would put
+    every member of a uniformly aged backlog at exactly 10000 and open an aging finding on all of
+    them: with ties at the top the `pctl < AGING_PERCENTILE_BP` guard stops holding, and a desk
+    whose five open loops were all raised this morning would report five aging items. Counting a
+    tie as half is what keeps a flat population at the middle, which is where a flat population is.
+
+    Doc 04 asks for one percentile and it is right that there must not be two of the SAME one; the
+    reconciliation it names is recorded as a GAP FLAG in `context/analytic/comparator.py` and
+    pinned by `tests/context/analytic/test_h34_gate_probes.py`, which asserts both statistics on
+    the same population so neither can drift onto the other's answer unnoticed.
+
+    INTEGER THROUGHOUT. `ties / 2.0` and `round()` were a float in a measure path: the numerator
+    is doubled instead, so the same population and the same value produce the same basis points on
+    every machine rather than landing on 4999 or 5001 by binary expansion.
+
+    THE ONE BEHAVIOUR THAT CHANGED, OWNED RATHER THAN INHERITED. `int(round(x))` was
+    round-half-EVEN and `//` is FLOOR, so on a population whose exact answer lands on a half basis
+    point this returns one bp LOWER than the float form did. That is kept, for three reasons and
+    not because it was cheaper:
+
+    * The direction is safe. Floor is never above round, and `read_backlog_items` skips an item on
+      `age < band and pctl < AGING_PERCENTILE_BP` — so a lower `pctl` can only ever SUPPRESS an
+      aging finding, never mint one. The failure this module fears is a card that reads like a
+      record; a one-bp shift cannot invent one.
+    * The suppression case is not reachable at any real desk. Flipping the `< 9000` guard needs the
+      exact answer to be 8999.5, i.e. `(2*below+ties) * 10000 == 17999 * n`, and `17999 = 41 * 439`
+      shares no factor with 10000 — so `n` must be a multiple of 10000. Ten thousand open loops on
+      one desk is not a backlog, it is a different product.
+    * Round-half-even over a float is the very non-determinism the doctrine bans: the half case is
+      only ever REACHED when the division is exact, and whether the division is exact depends on
+      binary expansion. A rule that only applies when the float happens to be clean is not a rule.
+
+    `tests/test_support_situations.py` pins all three — the floor value on a population whose exact
+    answer is a half bp, floor <= the old statistic across a sweep, and the strictness of the
+    `< AGING_PERCENTILE_BP` guard itself.
     """
     if not population:
         return 0
     below = sum(1 for v in population if v < value)
     ties = sum(1 for v in population if v == value)
-    return int(round(10000 * (below + ties / 2.0) / len(population)))
+    return (2 * below + ties) * 10000 // (2 * len(population))
 
 
 def _pct(population: list[float], q: float) -> float:

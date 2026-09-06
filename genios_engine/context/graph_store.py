@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from sqlalchemy import text
@@ -53,6 +55,194 @@ def fact_write_action(*, held_value_json: str | None, held_rank: int | None,
     if held_rank is not None and new_rank < held_rank:
         return "discrepancy"                      # lower authority disagrees → flag, keep held
     return "supersede"
+
+
+# =================================================================================================
+# L2.2.7-U1 · THE POINT-IN-TIME READ — *what did GeniOS know when it made that decision?*
+# =================================================================================================
+#
+# `bump_version` above increments a counter, and doc 02 is blunt about what that leaves: "there is
+# no `as_of` query anywhere", so the Version Manager's stated purpose — the question every
+# enterprise security review asks — is not answerable. Three obligations converge on it. REPLAY:
+# L1 v2 makes extraction replayable, and a decision replay also needs the graph that produced it
+# or the replay is half-exact. AUDIT: the security-review question. EXPLANATION: "you recommended
+# X in March" is only defensible against March's graph.
+#
+# THE VERSIONING ALREADY EXISTS AND THIS DOES NOT ADD A SECOND ONE. `graph_nodes`, `graph_facts`
+# and `graph_edges` each carry `valid_from` / `valid_to`, every writer above sets them, and
+# `merge.py` closes edges and nodes by stamping `valid_to` rather than deleting rows. So a
+# point-in-time read is one predicate applied consistently to the three tables:
+#
+#     as at T   ->  valid_from <= T and (valid_to is null or valid_to > T)
+#     live      ->  valid_to is null
+#
+# HALF-OPEN, `[valid_from, valid_to)`, exactly as `contracts/authority.AuthorityRule.applies_at`.
+# A row closed at noon and its successor opened at noon must not both match noon, or the read
+# returns two contradictory versions of one thing and the replay has no single answer. It also
+# makes the out-of-order fact write disappear from history for free: `write_fact` stores a
+# `historical` row with `valid_from = valid_to = now()`, an empty window, so a backfilled 2024
+# value can never appear in an as-of read of 2024 — it was not known then.
+#
+# WHY NO `graph_snapshots` TABLE (doc 02 proposes snapshot + delta). The delta path above is
+# EXACT on its own, because all three tables are already fully versioned; a snapshot would be a
+# materialised cache in front of it. Building one now would add a table, an object-storage
+# dependency and a weekly cadence whose only caller would be a read that is already correct
+# without it — which is precisely the "unit that nothing calls" this wave exists to stop. When a
+# real org makes the delta walk too slow, the snapshot goes in behind this same signature and no
+# caller changes. Recorded as a deliberate gap, not an oversight.
+#
+# HARD RULE, and it is the one that keeps all of this true: SOFT DELETE ONLY. An edge, fact or
+# node is closed by setting `valid_to`; a hard `DELETE` makes every earlier read silently change
+# its answer and there is no way to recover it. `tests/context/test_point_in_time.py` scans
+# `context/` for `delete from graph_*` and fails on one.
+
+
+def _confidence_bp(value: Any) -> int:
+    """`numeric(4,3)` as integer basis points. Deterministic, and never a float.
+
+    The column comes back as a `Decimal`; `float(...)` on it is how a 0.85 confidence becomes
+    0.8500000000000001 in one row and 0.85 in another, and two reads of the same graph then
+    compare unequal — which would make the live/as-of equivalence property untestable.
+    """
+    if value is None:
+        return 0
+    return int((Decimal(str(value)) * 10000).to_integral_value(rounding=ROUND_HALF_UP))
+
+
+@dataclass(frozen=True, slots=True)
+class NodeAt:
+    """One node VERSION. `graph_nodes` is keyed `(node_id, version)`, so a node that was amended
+    has several rows and exactly one of them contains any given instant."""
+
+    node_id: str
+    version: int
+    node_type: str
+    canonical_key: str | None
+    display_name: str | None
+    identity_strength: str
+    valid_from: datetime
+    valid_to: datetime | None
+
+    def as_record(self) -> dict:
+        return {"node_id": self.node_id, "version": self.version, "node_type": self.node_type,
+                "canonical_key": self.canonical_key, "display_name": self.display_name,
+                "identity_strength": self.identity_strength}
+
+
+@dataclass(frozen=True, slots=True)
+class FactAt:
+    """One fact version. `status` is carried rather than filtered on, because "superseded" and
+    "historical" are facts ABOUT the row and a caller replaying a decision may want to see that
+    the value it used was later contested."""
+
+    fact_version_id: str
+    subject_node_id: str
+    field: str
+    value: Any
+    value_type: str
+    status: str
+    authority_rank: int
+    occurred_at: datetime | None
+    valid_from: datetime
+    valid_to: datetime | None
+
+    def as_record(self) -> dict:
+        return {"fact_version_id": self.fact_version_id, "subject_node_id": self.subject_node_id,
+                "field": self.field, "value": self.value, "value_type": self.value_type,
+                "status": self.status, "authority_rank": self.authority_rank,
+                "occurred_at": self.occurred_at.isoformat() if self.occurred_at else None}
+
+
+@dataclass(frozen=True, slots=True)
+class EdgeAt:
+    """One edge version. `confidence_bp` rather than the raw `numeric` for the reason
+    `_confidence_bp` gives — an integer compares equal to itself."""
+
+    edge_version_id: str
+    edge_type: str
+    from_node_id: str
+    to_node_id: str
+    confidence_bp: int
+    interaction_count: int
+    valid_from: datetime
+    valid_to: datetime | None
+
+    def as_record(self) -> dict:
+        return {"edge_version_id": self.edge_version_id, "edge_type": self.edge_type,
+                "from_node_id": self.from_node_id, "to_node_id": self.to_node_id,
+                "confidence_bp": self.confidence_bp,
+                "interaction_count": self.interaction_count}
+
+
+@dataclass(frozen=True, slots=True)
+class GraphView:
+    """The graph as it stood — an IMMUTABLE view, per doc 02's `read_graph` contract.
+
+    `as_of is None` means this is the live read. `content` is what the equivalence property
+    compares: `read_graph(as_of=now).content == live_graph().content`, with the instant and the
+    version left out because those legitimately differ between the two reads.
+    """
+
+    org_id: str
+    as_of: datetime | None
+    graph_version: int | None
+    nodes: tuple[NodeAt, ...]
+    facts: tuple[FactAt, ...]
+    edges: tuple[EdgeAt, ...]
+
+    @property
+    def content(self) -> tuple[tuple[NodeAt, ...], tuple[FactAt, ...], tuple[EdgeAt, ...]]:
+        """The graph itself, without the read's own metadata."""
+        return (self.nodes, self.facts, self.edges)
+
+    @property
+    def is_empty(self) -> bool:
+        """True for an instant before anything existed. A read from before the graph began is an
+        EMPTY graph, never an error — doc 02 says so explicitly, and a caller replaying an old
+        decision needs "we knew nothing" to be a representable answer."""
+        return not (self.nodes or self.facts or self.edges)
+
+    def node(self, node_id: str) -> NodeAt | None:
+        for node in self.nodes:
+            if node.node_id == node_id:
+                return node
+        return None
+
+    def facts_for(self, node_id: str) -> tuple[FactAt, ...]:
+        return tuple(f for f in self.facts if f.subject_node_id == node_id)
+
+    def fact(self, node_id: str, field: str) -> FactAt | None:
+        for f in self.facts:
+            if f.subject_node_id == node_id and f.field == field:
+                return f
+        return None
+
+    def edges_touching(self, node_id: str) -> tuple[EdgeAt, ...]:
+        return tuple(e for e in self.edges
+                     if e.from_node_id == node_id or e.to_node_id == node_id)
+
+    def as_record(self) -> dict:
+        return {"org_id": self.org_id,
+                "as_of": self.as_of.isoformat() if self.as_of else None,
+                "graph_version": self.graph_version,
+                "counts": {"nodes": len(self.nodes), "facts": len(self.facts),
+                           "edges": len(self.edges)},
+                "nodes": [n.as_record() for n in self.nodes],
+                "facts": [f.as_record() for f in self.facts],
+                "edges": [e.as_record() for e in self.edges]}
+
+
+#: The window predicate, written once. Both reads below interpolate one of these two so the
+#: live read and the as-of read cannot drift apart in one table and not the others.
+_WINDOW_AT = "valid_from <= :t and (valid_to is null or valid_to > :t)"
+_WINDOW_OPEN = "valid_to is null"
+
+_NODE_COLS = ("node_id, version, node_type, canonical_key, display_name, identity_strength, "
+              "valid_from, valid_to")
+_FACT_COLS = ("fact_version_id, subject_node_id, field, value, value_type, status, "
+              "authority_rank, occurred_at, valid_from, valid_to")
+_EDGE_COLS = ("edge_version_id, edge_type, from_node_id, to_node_id, confidence, "
+              "interaction_count, valid_from, valid_to")
 
 
 class GraphStore:
@@ -414,3 +604,99 @@ class GraphStore:
             })
         except Exception:      # noqa: BLE001 — accounting is recorded; telemetry is best-effort
             pass
+
+    # ── L2.2.7-U1 · point-in-time reads ───────────────────────────────────────
+    #
+    # Three methods and one predicate. `read_graph` is doc 02's signature; `live_graph` is the
+    # same read with the open-row predicate, and it exists so the equivalence property
+    # ("read_graph(as_of=now) matches the live graph exactly") is a comparison of two code paths
+    # rather than a test transcribing SQL that would then drift from the reader it checks.
+
+    def _rows(self, conn, sql: str, params: dict):
+        from sqlalchemy import text
+        return conn.execute(text(sql), params).fetchall()
+
+    def _view(self, conn, org_id: str, *, as_of: datetime | None) -> GraphView:
+        """One connection, three selects, one immutable view. Shared by both reads so the two
+        can only ever differ in the window predicate they are given."""
+        where = _WINDOW_OPEN if as_of is None else _WINDOW_AT
+        params: dict[str, Any] = {"o": org_id}
+        if as_of is not None:
+            params["t"] = as_of
+        nodes = self._rows(conn, f"select {_NODE_COLS} from graph_nodes where org_id=:o "
+                                 f"and {where} order by node_id, version", params)
+        facts = self._rows(conn, f"select {_FACT_COLS} from graph_facts where org_id=:o "
+                                 f"and {where} order by subject_node_id, field, "
+                                 f"fact_version_id", params)
+        edges = self._rows(conn, f"select {_EDGE_COLS} from graph_edges where org_id=:o "
+                                 f"and {where} order by edge_version_id", params)
+        return GraphView(
+            org_id=org_id, as_of=as_of,
+            graph_version=self.graph_version_at(org_id, as_of=as_of, conn=conn),
+            nodes=tuple(NodeAt(node_id=r.node_id, version=int(r.version), node_type=r.node_type,
+                               canonical_key=r.canonical_key, display_name=r.display_name,
+                               identity_strength=r.identity_strength, valid_from=r.valid_from,
+                               valid_to=r.valid_to) for r in nodes),
+            facts=tuple(FactAt(fact_version_id=r.fact_version_id,
+                               subject_node_id=r.subject_node_id, field=r.field, value=r.value,
+                               value_type=r.value_type, status=r.status,
+                               authority_rank=int(r.authority_rank), occurred_at=r.occurred_at,
+                               valid_from=r.valid_from, valid_to=r.valid_to) for r in facts),
+            edges=tuple(EdgeAt(edge_version_id=r.edge_version_id, edge_type=r.edge_type,
+                               from_node_id=r.from_node_id, to_node_id=r.to_node_id,
+                               confidence_bp=_confidence_bp(r.confidence),
+                               interaction_count=int(r.interaction_count or 0),
+                               valid_from=r.valid_from, valid_to=r.valid_to) for r in edges))
+
+    def read_graph(self, org_id: str, *, as_of: datetime, conn=None) -> GraphView:
+        """The graph as it stood at `as_of` — doc 02's `read_graph(org, as_of)`.
+
+        `as_of` is a PARAMETER and this method reads no clock, so replaying a March decision in
+        September returns March's graph rather than March-filtered-by-today. An instant before
+        the org's first write returns an EMPTY view, not an error.
+
+        `conn` lets a caller read inside a transaction it already owns — a replay that also
+        writes an audit row must see one consistent snapshot, and a second connection would not
+        see the caller's uncommitted state.
+        """
+        if not isinstance(as_of, datetime):
+            raise TypeError(
+                f"read_graph requires a datetime as_of, got {type(as_of).__name__} — the instant "
+                "is a parameter, never a clock, and a string parsed here would make "
+                "'2026-03-01' silently mean midnight UTC in whatever the caller assumed")
+        at = _ts(as_of)
+        if conn is not None:
+            return self._view(conn, org_id, as_of=at)
+        with self._engine.connect() as c:
+            return self._view(c, org_id, as_of=at)
+
+    def live_graph(self, org_id: str, *, conn=None) -> GraphView:
+        """The graph as it stands now: every row whose window is still open (`valid_to is null`),
+        which is the predicate every existing reader in this engine already uses."""
+        if conn is not None:
+            return self._view(conn, org_id, as_of=None)
+        with self._engine.connect() as c:
+            return self._view(c, org_id, as_of=None)
+
+    def graph_version_at(self, org_id: str, *, as_of: datetime | None, conn=None) -> int | None:
+        """The `graph_version` the org had reached at `as_of` — the number an audit answer has
+        to quote, since read models and reasoning runs are stamped with it.
+
+        Read from `graph_change_outbox`, which records a version WITH the instant it was reached;
+        `graph_versions` holds only the current counter and cannot answer for the past. `None`
+        when nothing was recorded before that instant (an org with no committed change yet, or
+        one whose outbox rows have aged out) — a null is honest here, and a 0 would read as a
+        real version.
+        """
+        from sqlalchemy import text
+        sql = ("select max(graph_version) as v from graph_change_outbox where org_id=:o"
+               + ("" if as_of is None else " and created_at <= :t"))
+        params: dict[str, Any] = {"o": org_id}
+        if as_of is not None:
+            params["t"] = as_of
+        if conn is not None:
+            value = conn.execute(text(sql), params).scalar()
+        else:
+            with self._engine.connect() as c:
+                value = c.execute(text(sql), params).scalar()
+        return None if value is None else int(value)

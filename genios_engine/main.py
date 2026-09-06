@@ -9,6 +9,7 @@ from genios_engine.api.account_routes import router as account_router
 from genios_engine.api.agent_mgmt_routes import router as agent_mgmt_router
 from genios_engine.api.approval_routes import router as approval_router
 from genios_engine.api.audit_routes import router as audit_router
+from genios_engine.api.authority_routes import router as authority_router
 from genios_engine.api.auth_routes import router as auth_router
 from genios_engine.api.channel_routes import router as channel_router
 from genios_engine.api.delivery_routes import router as delivery_router
@@ -28,7 +29,12 @@ from genios_engine.api.mapping_routes import router as mapping_router
 from genios_engine.api.merge_routes import router as merge_router
 from genios_engine.api.segments_routes import router as segments_router
 from genios_engine.api.admin_routes import router as admin_router
+from genios_engine.api.cohort_routes import router as cohort_router
+from genios_engine.api.quality_routes import router as quality_router
+from genios_engine.api.correlation_routes import router as correlation_router
+from genios_engine.api.pattern_routes import router as pattern_router
 from genios_engine.api.situation_routes import router as situation_router
+from genios_engine.api.lifecycle_routes import router as lifecycle_router
 from genios_engine.api.upload_routes import router as upload_router
 from genios_engine.api.usermodel_routes import router as usermodel_router
 from genios_engine.api.workspace_routes import router as workspace_router
@@ -132,10 +138,12 @@ app.include_router(learning_router)
 app.include_router(brain_router)
 app.include_router(identity_router)
 app.include_router(situation_router)
+app.include_router(lifecycle_router)  # L2.7.7 M-4's review queue: stated resolutions below the close floor
 app.include_router(policy_router)
 app.include_router(approval_router)
 app.include_router(usermodel_router)
 app.include_router(audit_router)
+app.include_router(authority_router)  # L2.1.4 authority view + founder bottleneck
 app.include_router(segments_router)
 app.include_router(merge_router)
 app.include_router(benchmarks_router)
@@ -143,6 +151,10 @@ app.include_router(home_router)
 app.include_router(mapping_router)
 app.include_router(billing_router)
 app.include_router(admin_router)     # cross-org admin console (is_internal-gated)
+app.include_router(cohort_router)    # L2.4.4 cohorts + M-9 authoring (on demand only)
+app.include_router(quality_router)   # L2.5.5 typed absence + L-5 coverage epochs, read-only
+app.include_router(correlation_router)  # L2.4.7 declared metric pairs, read on demand
+app.include_router(pattern_router)    # L2.6 pattern registry — shadow evaluation + activation guard
 
 
 @app.get("/")

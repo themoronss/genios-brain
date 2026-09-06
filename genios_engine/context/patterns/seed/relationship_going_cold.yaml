@@ -1,0 +1,29 @@
+# An account whose contact is falling away AND is in the bottom quartile of its own cohort.
+#
+# THE TWO ANALYTIC CONDITIONS ARE THE POINT. Either alone is a false-churn generator: a declining
+# touch count over an org-wide silence window (a holiday, a founder on a plane) is not a customer
+# going cold, and a bottom-quartile account that has always been bottom-quartile is a small
+# customer rather than a leaving one. Together they say something neither says alone, and both
+# carry their own floors — trend confidence >= 5000, population >= 5 — which live with the
+# condition KIND so no pattern can lower them to make itself fire.
+#
+# `account.status = active` is not decoration: without it this fires on every account that ever
+# churned, forever, and the card would be about a customer who left last year.
+pattern_id: relationship_going_cold
+version: 1
+domain: [sales, customer_support]
+anchor: {node_type: company}
+conditions:
+  - {kind: fact,   field: account.status,               op: eq,              value: active}
+  - {kind: trend,  metric: engagement.touch_count_28d,  direction: declining}
+  - {kind: cohort, metric: engagement.touch_count_28d,  op: percentile_lte,  value: 2500}
+optional_signals:
+  - {kind: observation, kind_name: going_dark,      within_days: 60, weight_bp: 2000}
+  - {kind: observation, kind_name: champion_change, within_days: 90, weight_bp: 1000}
+emits:
+  situation_type: relationship_going_cold
+expected_fire_rate: {per_100_anchors_per_30d: 5}
+owner: harsh@thegenios.com
+first_evidence:
+  positive: "tests/context/patterns/test_seed_patterns.py::test_relationship_going_cold_fires"
+  negative: "tests/context/patterns/test_seed_patterns.py::test_relationship_going_cold_refuses_a_thin_cohort"

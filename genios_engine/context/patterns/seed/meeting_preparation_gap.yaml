@@ -1,0 +1,28 @@
+# A confirmed meeting inside two days with no agenda recorded.
+#
+# WHY `within_days` AND NOT A WINDOW AROUND THE DATE. `within_days` is future-only by construction
+# (see `TemporalOp.WITHIN_DAYS`): a meeting that already happened cannot have a preparation gap,
+# and a symmetric window would put "you have two days to prepare" on a card about last Tuesday.
+#
+# The agenda absence must be GENUINELY_ABSENT. A calendar we can read and an agenda field we
+# cannot are the same empty string, and only the typed answer tells them apart.
+pattern_id: meeting_preparation_gap
+version: 1
+domain: [sales, admin]
+anchor: {node_type: meeting}
+conditions:
+  - {kind: fact,     field: meeting.status,   op: ne,           value: cancelled}
+  - {kind: temporal, field: meeting.start_at, op: within_days,  value: 2}
+  - {kind: absence,  field: meeting.agenda,   type: GENUINELY_ABSENT}
+optional_signals:
+  # An external counterparty raises the cost of walking in unprepared. Internal stand-ups do not
+  # need an agenda and must not produce a card that says they do — hence a signal, not a gate.
+  - {kind: fact, field: meeting.external_counterparty, op: exists, weight_bp: 1500}
+  - {kind: observation, kind_name: proposal_sent, within_days: 30, weight_bp: 1000}
+emits:
+  situation_type: meeting_preparation_gap
+expected_fire_rate: {per_100_anchors_per_30d: 8}
+owner: harsh@thegenios.com
+first_evidence:
+  positive: "tests/context/patterns/test_seed_patterns.py::test_meeting_preparation_gap_fires"
+  negative: "tests/context/patterns/test_seed_patterns.py::test_meeting_preparation_gap_ignores_a_meeting_already_held"

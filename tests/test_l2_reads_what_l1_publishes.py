@@ -379,8 +379,17 @@ def test_the_situation_carries_layer_1s_importance_not_a_constant(url, pg_store,
     assert {r.signal_id for r in published} >= set(top.signal_ids)
     assert any(e.get("source") == "l1_qualified_signal" for e in top.evidence), (
         "the situation carries none of Layer 1's verified receipts")
-    assert top.metadata["importance_version"] == "alg17-v1"
+    # A VERSION FIELD DESCRIBES THE NUMBER STORED BESIDE IT. Before BLG-18 steps 2..6 the number
+    # on the BSO was Layer 1's, so this key was ALG-17's version; it is now the COMPOSED number,
+    # so it is the composer's, and ALG-17's version travels on the base it actually describes.
+    # Both halves are asserted rather than one being swapped for the other — a replay that read
+    # the composer's weights as ALG-17's, or vice versa, would re-derive a different score and
+    # look right doing it.
+    from genios_engine.context.importance import IMPORTANCE_VERSION
+    assert top.metadata["importance_version"] == IMPORTANCE_VERSION
     assert top.metadata["importance_components"], "the score arrived with no explanation"
+    assert top.metadata["importance_components"]["base_version"] == "alg17-v1"
+    assert top.metadata["importance_components"]["base_bp"] == expected
     assert top.metadata["l1_scored_count"] >= 1
 
     # THE FALLBACK, on the same real run: the period-review situations this drain also builds

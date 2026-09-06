@@ -10,6 +10,15 @@ This reads both halves and subtracts. It reports, per layer and per group: compo
 declared, units promised by the map, unit specs actually written, and the arithmetic gap
 with the specific missing unit IDs named — `L1.4.3-U3`, not "two missing".
 
+**The blind spot this had, and how it is closed.** A component map with no `Units` column
+promises nothing, so it can never be under-delivered against. Six of Layer 2's seven group docs
+have no such column — only L2.4 wrote one — so the ledger read Layer 2's promise as 20 and its gap
+as 2 while six groups sat between 25% and 60% specified. A group that never states its promise
+reads greener than one that does, which is exactly backwards. Where a plan states its promise
+somewhere else, that file is registered in `PROMISE_SUPPLEMENTS`: its promise ledger fills in the
+missing `Units` column (never overriding a doc that wrote its own) and the unit specs written in it
+count as written. Layer 2's supplement is `docs/plans/L2_MISSING_UNIT_SPECS.md`.
+
 `--check` makes it a ratchet. The gap is frozen into `scripts/unit_ledger.baseline.json` and
 the check fails when a layer's gap grows or a missing unit ID appears that the baseline did
 not already carry. The gap can shrink freely; it can never widen unnoticed.
@@ -52,8 +61,20 @@ BLOCK_BOUNDARY = re.compile(r"^#+\s+.*\b(group acceptance gate|reverse prompt)\b
 #: so the ledger cannot tie them to a component map. Detected and reported, never counted.
 NON_CANONICAL_SPEC = re.compile(r"^#+\s+\**[A-Z]{1,2}\d+\**\s+·")
 
-DEFAULT_PLAN_ROOT = Path(__file__).resolve().parent.parent / "Rohit_Updates (Version 2)" / "Version 2 Updates"
+#: A `## Promise ledger` heading in a supplement, whose first following table states the `Units`
+#: each component owes. Same grammar as a Component map — deliberately, so one parser reads both.
+PROMISE_LEDGER_HEADING = re.compile(r"^#+\s*(?:\d+[.)]\s*)?promise ledger\b", re.IGNORECASE)
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_PLAN_ROOT = REPO_ROOT / "Rohit_Updates (Version 2)" / "Version 2 Updates"
 DEFAULT_BASELINE = Path(__file__).resolve().parent / "unit_ledger.baseline.json"
+
+#: Layer number -> the file that states a promise its group docs never wrote. A supplement may
+#: only FILL IN an unstated promise; a component whose own map declared a `Units` count keeps it,
+#: so L2.4 — the one Layer 2 group that stated its own — is untouched by this.
+PROMISE_SUPPLEMENTS: dict[int, Path] = {
+    2: REPO_ROOT / "docs" / "plans" / "L2_MISSING_UNIT_SPECS.md",
+}
 
 
 def strip_md(cell: str) -> str:
@@ -79,9 +100,16 @@ class Component:
     promised: int | None = None
     written: set[int] = field(default_factory=set)
     accepted: set[int] = field(default_factory=set)
+    #: The subset of `written` whose spec lives in a supplement rather than in the group doc.
+    #: Reported so "specified" is never mistaken for "specified where the builder will look".
+    supplement_written: set[int] = field(default_factory=set)
     #: True when the component only ever appeared as a `## L1.3.4 ·` heading and never as a
     #: row in the map — the reverse drift, spec without a promise.
     heading_only: bool = False
+    #: `"map"` when the group doc's own Component map stated the count, `"supplement"` when it
+    #: was filled in from `PROMISE_SUPPLEMENTS`, `None` when nobody has stated it. A promise
+    #: stated outside the plan is still a promise, but a reader must be able to see that it is.
+    promise_source: str | None = None
 
     @property
     def gap(self) -> int:
@@ -113,6 +141,15 @@ class Group:
     group_units: dict[int, bool] = field(default_factory=dict)
     has_component_map: bool = False
     non_canonical_specs: int = 0
+
+    @property
+    def promised_from_supplement(self) -> int:
+        return sum(c.promised or 0 for c in self.components.values()
+                   if c.promise_source == "supplement")
+
+    @property
+    def written_in_supplement(self) -> int:
+        return sum(len(c.supplement_written) for c in self.components.values())
 
     @property
     def declared(self) -> int:
@@ -254,7 +291,8 @@ def read_component_map(lines: list[str], group: Group) -> None:
             raw = strip_md(row[ucol])
             if raw.isdigit():
                 promised = int(raw)
-        group.components[cid] = Component(cid=cid, promised=promised)
+        group.components[cid] = Component(
+            cid=cid, promised=promised, promise_source=None if promised is None else "map")
 
 
 def read_specs(lines: list[str], group: Group) -> None:
@@ -310,7 +348,83 @@ def read_specs(lines: list[str], group: Group) -> None:
             group.group_units[n] = has_acceptance
 
 
-def scan(plan_root: Path) -> dict[int, Layer]:
+def read_promise_ledger(lines: list[str]) -> dict[str, int]:
+    """A supplement's `## Promise ledger` table -> {component id: units promised}.
+
+    Deliberately the same shape as a Component map: a `Units` column and component ids in the
+    first cell. A supplement that states a promise for a component the plan never declared is
+    reported by `scan` as an anomaly rather than silently inventing a component.
+    """
+    start = next((i for i, ln in enumerate(lines) if PROMISE_LEDGER_HEADING.match(ln)), None)
+    if start is None:
+        return {}
+    table = next((rows for line, rows in parse_tables(lines) if line > start), None)
+    if not table or len(table) < 2:
+        return {}
+    ucol = units_column(table[0])
+    if ucol is None:
+        return {}
+    out: dict[str, int] = {}
+    for row in table[1:]:
+        if not row or set("".join(row)) <= set("-: "):
+            continue
+        cid = strip_md(row[0])
+        if not COMPONENT_ID_CELL.match(cid) or ucol >= len(row):
+            continue
+        raw = strip_md(row[ucol])
+        if raw.isdigit():
+            out[cid] = int(raw)
+    return out
+
+
+def apply_supplement(layer: Layer, path: Path) -> list[str]:
+    """Fill in the promise a layer's group docs never stated, and count the specs written here.
+
+    Two rules keep this honest. A supplement may only fill a promise that is `None` — a component
+    whose own map wrote a `Units` count keeps it, so a supplement can never quietly lower a stated
+    promise. And a supplement's unit specs count as WRITTEN, because they are: a spec is a spec
+    wherever it lives. Both facts are surfaced separately in the report so neither is invisible.
+
+    Returns the anomalies found, which are reported rather than raised.
+    """
+    if not path.exists():
+        return [f"{layer.lid}: promise supplement not found at {path}"]
+    lines = path.read_text(encoding="utf-8").splitlines()
+    anomalies: list[str] = []
+
+    for cid, promised in read_promise_ledger(lines).items():
+        group = layer.groups.get(cid.rsplit(".", 1)[0])
+        if group is None:
+            anomalies.append(f"{layer.lid}: {path.name} promises {cid}, a group the plan has no doc for")
+            continue
+        comp = group.components.get(cid)
+        if comp is None:
+            anomalies.append(f"{layer.lid}: {path.name} promises {cid}, absent from its Component map")
+            comp = group.components.setdefault(cid, Component(cid=cid, heading_only=True))
+        if comp.promised is None:
+            comp.promised, comp.promise_source = promised, "supplement"
+        elif comp.promised != promised:
+            anomalies.append(
+                f"{layer.lid}: {cid} promises {comp.promised} in its Component map and "
+                f"{promised} in {path.name} — the map wins")
+
+    scratch = Group(gid="supplement", path=path)
+    read_specs(lines, scratch)
+    for cid, found in scratch.components.items():
+        if not found.written:
+            continue
+        group = layer.groups.get(cid.rsplit(".", 1)[0])
+        if group is None:
+            anomalies.append(f"{layer.lid}: {path.name} specs {cid}, a group the plan has no doc for")
+            continue
+        comp = group.components.setdefault(cid, Component(cid=cid, heading_only=True))
+        comp.written |= found.written
+        comp.accepted |= found.accepted
+        comp.supplement_written |= found.written
+    return anomalies
+
+
+def scan(plan_root: Path, *, supplements: dict[int, Path] | None = None) -> tuple[dict[int, Layer], list[str]]:
     layers: dict[int, Layer] = {}
     for layer_dir in sorted(plan_root.iterdir()):
         lm = LAYER_DIR.match(layer_dir.name)
@@ -327,11 +441,17 @@ def scan(plan_root: Path) -> dict[int, Layer]:
             lines = doc.read_text(encoding="utf-8").splitlines()
             read_component_map(lines, group)
             read_specs(lines, group)
-    return layers
+    anomalies: list[str] = []
+    for n, path in (supplements or {}).items():
+        if n in layers:
+            anomalies.extend(apply_supplement(layers[n], path))
+        else:
+            anomalies.append(f"L{n}: a promise supplement is registered but the layer has no plan dir")
+    return layers, anomalies
 
 
-def to_report(layers: dict[int, Layer]) -> dict:
-    out: dict = {"layers": {}, "totals": {}}
+def to_report(layers: dict[int, Layer], scan_anomalies: list[str] | None = None) -> dict:
+    out: dict = {"layers": {}, "totals": {}, "scan_anomalies": list(scan_anomalies or [])}
     for n in sorted(layers):
         layer = layers[n]
         groups: dict[str, dict] = {}
@@ -345,6 +465,8 @@ def to_report(layers: dict[int, Layer]) -> dict:
                 "units_written": g.written,
                 "units_written_in_mapped_components": g.written_in_mapped,
                 "units_written_at_group_level": len(g.group_units),
+                "units_promised_by_supplement": g.promised_from_supplement,
+                "units_written_in_supplement": g.written_in_supplement,
                 "acceptance_blocks": g.accepted,
                 "gap": g.gap,
                 "missing_unit_ids": g.missing_ids,
@@ -356,6 +478,8 @@ def to_report(layers: dict[int, Layer]) -> dict:
                         "gap": c.gap,
                         "over_delivered": c.over_delivered,
                         "in_component_map": not c.heading_only,
+                        "promise_source": c.promise_source,
+                        "written_in_supplement": sorted(c.supplement_written),
                     }
                     for c in sorted(g.components.values(), key=lambda c: sort_key(c.cid))
                 },
@@ -375,16 +499,31 @@ def to_report(layers: dict[int, Layer]) -> dict:
         "units_written": sum(l.written for l in layers.values()),
         "acceptance_blocks": sum(l.accepted for l in layers.values()),
         "gap": sum(l.gap for l in layers.values()),
+        "units_promised_by_supplement": sum(
+            g.promised_from_supplement for l in layers.values() for g in l.groups.values()),
+        "units_written_in_supplement": sum(
+            g.written_in_supplement for l in layers.values() for g in l.groups.values()),
     }
     return out
 
 
 def baseline_of(report: dict) -> dict:
-    """The frozen part of the report — gaps and the named missing IDs, nothing volatile."""
+    """The frozen part of the report — gaps, promises and the named missing IDs.
+
+    The PROMISE is frozen as well as the gap, and that is not redundant. A gap is
+    `promised - written`, so deleting the promise closes the gap: drop a supplement file, or
+    remove a row from its promise ledger, and a group that owed five unwritten specs reports a
+    perfect zero. Freezing the promise makes that show up as what it is — the promise moved —
+    instead of as success.
+    """
     return {
         "gap_by_layer": {lid: l["gap"] for lid, l in report["layers"].items()},
         "gap_by_group": {
             gid: g["gap"] for l in report["layers"].values() for gid, g in l["groups"].items()
+        },
+        "promised_by_group": {
+            gid: g["units_promised"]
+            for l in report["layers"].values() for gid, g in l["groups"].items()
         },
         "missing_unit_ids": sorted(
             {uid for l in report["layers"].values() for uid in l["missing_unit_ids"]},
@@ -400,10 +539,11 @@ def pct(num: int, den: int) -> str:
 
 def render(report: dict, show_missing: bool) -> str:
     lines: list[str] = []
-    w = (6, 7, 10, 10, 10, 8, 9)
+    w = (6, 7, 10, 10, 10, 8, 9, 8)
     head = (
         f"{'LAYER':<{w[0]}}{'GROUP':<{w[1]}}{'COMPNTS':>{w[2]}}"
         f"{'PROMISD':>{w[3]}}{'WRITTEN':>{w[4]}}{'GAP':>{w[5]}}{'ACCEPT':>{w[6]}}"
+        f"{'SUPP':>{w[7]}}"
     )
     lines.append(head)
     lines.append("-" * len(head))
@@ -412,26 +552,40 @@ def render(report: dict, show_missing: bool) -> str:
         for gid, g in layer["groups"].items():
             promised = str(g["units_promised"]) if g["units_promised"] else "—"
             flag = "  !" if g["gap"] else ""
+            supp = (f"{g['units_promised_by_supplement']}/{g['units_written_in_supplement']}"
+                    if g["units_promised_by_supplement"] or g["units_written_in_supplement"]
+                    else "—")
             lines.append(
                 f"{'':<{w[0]}}{gid:<{w[1]}}{g['components_declared']:>{w[2]}}"
                 f"{promised:>{w[3]}}{g['units_written']:>{w[4]}}"
-                f"{g['gap'] or '—':>{w[5]}}{g['acceptance_blocks']:>{w[6]}}{flag}"
+                f"{g['gap'] or '—':>{w[5]}}{g['acceptance_blocks']:>{w[6]}}"
+                f"{supp:>{w[7]}}{flag}"
             )
         lines.append("-" * len(head))
+        lsupp = sum(g["units_promised_by_supplement"] for g in layer["groups"].values())
+        lwritten = sum(g["units_written_in_supplement"] for g in layer["groups"].values())
+        lsupp_cell = f"{lsupp}/{lwritten}" if lsupp or lwritten else "—"
         lines.append(
             f"{lid:<{w[0]}}{'TOTAL':<{w[1]}}{layer['components_declared']:>{w[2]}}"
             f"{layer['units_promised'] or '—':>{w[3]}}{layer['units_written']:>{w[4]}}"
             f"{layer['gap'] or '—':>{w[5]}}{layer['acceptance_blocks']:>{w[6]}}"
+            f"{lsupp_cell:>{w[7]}}"
         )
         lines.append("=" * len(head))
 
     t = report["totals"]
+    tsupp = f"{t['units_promised_by_supplement']}/{t['units_written_in_supplement']}"
     lines.append(
         f"{'ALL':<{w[0]}}{'':<{w[1]}}{t['components_declared']:>{w[2]}}"
         f"{t['units_promised']:>{w[3]}}{t['units_written']:>{w[4]}}"
-        f"{t['gap']:>{w[5]}}{t['acceptance_blocks']:>{w[6]}}"
+        f"{t['gap']:>{w[5]}}{t['acceptance_blocks']:>{w[6]}}{tsupp:>{w[7]}}"
     )
     lines.append("")
+    lines.append(
+        "SUPP = units promised by a registered promise supplement / unit specs written in it. "
+        "A group doc with no `Units` column promises nothing and so can never be under-delivered "
+        "against — the supplement is what makes its promise countable."
+    )
     lines.append(
         f"acceptance coverage: {t['acceptance_blocks']}/{t['units_written']} written units "
         f"carry an **ACCEPTANCE** block ({pct(t['acceptance_blocks'], t['units_written'])})"
@@ -448,7 +602,7 @@ def render(report: dict, show_missing: bool) -> str:
                     continue
                 lines.append(f"  {gid}: " + ", ".join(g["missing_unit_ids"]))
 
-    anomalies: list[str] = []
+    anomalies: list[str] = list(report.get("scan_anomalies", []))
     for lid, layer in report["layers"].items():
         no_map = [gid for gid, g in layer["groups"].items() if not g["has_component_map"]]
         nc = sum(g["non_canonical_specs"] for g in layer["groups"].values())
@@ -460,6 +614,24 @@ def render(report: dict, show_missing: bool) -> str:
             )
         if no_map:
             anomalies.append(f"{lid}: no Component map in {', '.join(no_map)} — promise unstated.")
+        unstated = [
+            gid for gid, g in layer["groups"].items()
+            if any(c["promised"] is None for c in g["components"].values())
+        ]
+        if unstated:
+            anomalies.append(
+                f"{lid}: components with NO stated unit promise in {', '.join(unstated)} — "
+                f"they cannot be under-delivered against; register a promise supplement or add a "
+                f"`Units` column."
+            )
+        supplemented = [
+            gid for gid, g in layer["groups"].items() if g["units_promised_by_supplement"]
+        ]
+        if supplemented:
+            anomalies.append(
+                f"{lid}: promise stated OUTSIDE the plan for {', '.join(supplemented)} "
+                f"(see PROMISE_SUPPLEMENTS) — the group docs still state no `Units` column."
+            )
         unmapped = [
             f"{cid}"
             for g in layer["groups"].values()
@@ -505,6 +677,12 @@ def check(report: dict, baseline_path: Path) -> int:
             failures.append(f"{gid} is not in the baseline (new group) — gap {gap}")
         elif gap > was:
             failures.append(f"{gid} gap grew {was} -> {gap}")
+    for gid, promised in now["promised_by_group"].items():
+        was = base.get("promised_by_group", {}).get(gid)
+        if was is not None and promised < was:
+            failures.append(
+                f"{gid} promise shrank {was} -> {promised} — a gap closed by deleting the "
+                f"promise, not by writing the spec")
     appeared = sorted(set(now["missing_unit_ids"]) - set(base["missing_unit_ids"]), key=sort_key)
     if appeared:
         failures.append("newly missing unit specs: " + ", ".join(appeared))
@@ -531,13 +709,17 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--check", action="store_true", help="fail if the gap grew since baseline")
     ap.add_argument("--write-baseline", action="store_true", help="freeze today's gap")
     ap.add_argument("--no-missing", action="store_true", help="omit the missing-ID listing")
+    ap.add_argument("--no-supplement", action="store_true",
+                    help="ignore PROMISE_SUPPLEMENTS and report only what the plan docs state")
     args = ap.parse_args(argv)
 
     if not args.root.is_dir():
         print(f"plan root not found: {args.root}", file=sys.stderr)
         return 2
 
-    report = to_report(scan(args.root))
+    layers, scan_anomalies = scan(
+        args.root, supplements=None if args.no_supplement else PROMISE_SUPPLEMENTS)
+    report = to_report(layers, scan_anomalies)
 
     if args.write_baseline:
         args.baseline.write_text(

@@ -38,6 +38,7 @@ from genios_engine.reason.domain_shadow import (
     gather_evidence_and_signals,
     gather_members,
     gather_visibility,
+    stored_importance,
 )
 from genios_engine.platform.ids import new_id
 
@@ -84,9 +85,14 @@ def main() -> int:
                 members = gather_members(conn, org_id, row["correlation_id"])
                 vis = gather_visibility(conn, org_id, row["correlation_id"])
                 trace_id = new_id("trace")
+                # `composed=` is not optional on a publish path, even a probe's: a route
+                # measured against a BSO carrying the pre-BLG-18 base is measuring a different
+                # object to the one production compiles. `stored_importance` reads the row the
+                # sweep already wrote — it composes nothing and costs no query.
                 bso = build_business_situation(org_id=org_id, situation=row, signal_ids=signal_ids,
                                                evidence=evidence, trace_id=trace_id, members=members,
-                                               visibility=vis)
+                                               visibility=vis,
+                                               composed=stored_importance(row))
                 slice_ = build_context_slice(visibility=vis, org_id=org_id, situation=row,
                                              facts=node_ctx.facts, observations=node_ctx.obs,
                                              neighbor=neighbor, graph_version=graph_version,

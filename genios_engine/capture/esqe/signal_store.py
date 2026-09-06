@@ -25,7 +25,7 @@ score made under last month's.
 
 `envelope` is the round-trip half — `source`, `object_type`, `triage_lane`, `recipients`,
 `versions`, `schema_version` — see migration 0089 for why it is an addition to the DDL doc 06
-prints, and `spec_gaps` for the fact that it is one.
+prints, and `docs/plans/L2_MISSING_UNIT_SPECS.md` §3 **A-13** for the fact that it is one.
 
 PURITY. No clock: `occurred_at` is world time off the signal and `created_at` is the database's
 own default, which is a write timestamp rather than a judgement. No float: every number here is

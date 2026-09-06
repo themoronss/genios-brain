@@ -321,6 +321,56 @@ _ORG_SCOPED_TABLES = [
     "context_attention", "context_read_models", "graph_change_outbox",
     "discrepancies", "merge_history", "merge_proposals",
     "graph_source_refs", "graph_facts", "graph_edges", "graph_observations",
+    # L2.4.1's metric history (migration 0094). `graph_facts` holds what is true now and this
+    # holds what was true THEN — one row per subject per metric per period, keyed on a graph node
+    # of the tenant's own. It is a behavioural record of their counterparties (how often they were
+    # touched, how long a deal sat in a stage), so a deletion that skipped it would leave a
+    # deleted customer's engagement history in the one table built to be read across time. The
+    # org FK cascades on account deletion; this entry is what makes /reset erase it too — and the
+    # loop below runs with no try/except by design, so a name missing here leaks silently.
+    "metric_history",
+    # L-4's convergence ledger (migration 0105). One row per org holding the semantic fingerprint
+    # of that tenant's situations, memberships and lifecycle states, plus — when a tenant breaches
+    # `MAX_PASSES` — the ids of the situations still moving. Both are statements about the
+    # tenant's own graph, so the hash of a deleted account's situation set has no business
+    # outliving it. The org FK cascades on account deletion; this entry is what makes /reset erase
+    # it too — and the loop below runs with no try/except by design, so a name missing here leaks
+    # silently.
+    "l2_convergence",
+    # L2.4.4's cohorts (migration 0096). `cohort_membership` says which of the tenant's accounts,
+    # deals and people sit in which peer group — a statement ABOUT their counterparties (who is in
+    # the bottom ARR quartile, who dropped out of the healthy-engagement cohort), keyed on their
+    # graph nodes. `cohort_definitions` carries the predicate a human wrote and the human who
+    # wrote it. Membership is deleted BEFORE its definition because it also cascades from
+    # `cohort_definitions`, and a list that relied on the cascade would be one refactor away from
+    # leaving rows behind. Both org FKs cascade on account deletion; these entries are what make
+    # /reset erase them too — and the loop below runs with no try/except by design, so a name
+    # missing here leaks silently.
+    # L2.4.6's peer baselines (migration 0098). Five order statistics per (cohort, metric)
+    # per week — an aggregate over the tenant's own counterparties, never over anyone
+    # else's (the cross-org baseline is deferred by decision, and the module refuses it).
+    # It is still a statement about THIS tenant's population and it outlives the points it
+    # was cut from by nothing, so it is erased with them. Deleted BEFORE the cohorts it
+    # names, so a ladder never outlives the population it describes. The org FK cascades on
+    # account deletion; this entry is what makes /reset erase it too — and the loop below
+    # runs with no try/except by design, so a name missing here leaks silently.
+    "peer_baselines",
+    # L2.7.7's resolution claims (migration 0101). One row per (situation, message) M-4 judged —
+    # the verbatim sentence somebody wrote, who wrote it, and what we concluded. It quotes the
+    # tenant's own mail, so a deletion that skipped it would leave sentences from a deleted
+    # customer's inbox behind in the one table built to keep them. Deleted BEFORE the situations
+    # it names, so a claim never outlives the situation it was about. The org FK cascades on
+    # account deletion; this entry is what makes /reset erase it too — and the loop below runs
+    # with no try/except by design, so a name missing here leaks silently.
+    "situation_resolution_claims",
+    "cohort_membership", "cohort_definitions",
+    # L2.1.4's authority view (migration 0097). `authority_rules` names the tenant's own people
+    # as approvers by graph node id, quotes the policy document a rule was read from, and states
+    # what each of them may sign for — a governance record about their staff, so a deletion that
+    # skipped it would leave a deleted customer's approval hierarchy in the database. The org FK
+    # cascades on account deletion; this entry is what makes /reset erase it too, and the loop
+    # below runs with no try/except by design, so a name missing here leaks silently.
+    "authority_rules",
     "source_identity_map", "graph_nodes", "graph_versions", "baselines",
     "raw_payloads", "prepared_content", "document_jobs", "resource_uploads",
     "l1_extraction_results", "l2_processing_runs", "event_trace", "parked_events",
@@ -375,7 +425,29 @@ _ORG_SCOPED_TABLES = [
     # again, which is the same default every tenant that never joined the pilot has. The org FK
     # cascades on account deletion; this entry is what makes /reset erase it too.
     "l1_semantic_activation",
-    "source_coverage", "sync_cursors", "l1_sync_runs", "source_events",
+    # L2.6's fire log (migration 0100), added by the wave that WIRED it. Until X8 put
+    # `patterns.store.evaluate_org` on the drain these three tables were empty on every tenant, so
+    # their absence from this list cost nothing; they now accumulate one row per matched anchor per
+    # sweep. `pattern_fires.evidence` is the per-condition receipt — the tenant's own facts, quoted
+    # — and `pattern_activation` names the person who cleared a pattern for them. Fires are deleted
+    # BEFORE the activation row so a fire never outlives the switch that licensed it. All three org
+    # FKs cascade on account deletion; these entries are what make /reset erase them too — and the
+    # loop below runs with no try/except by design, so a name missing here leaks silently.
+    "pattern_fires", "pattern_runs", "pattern_activation",
+    # X8/H8's Layer 2 pilot switch (migration 0106). Same argument as the row above it, and the
+    # same behavioural direction: it names a person (`enabled_by`) and carries free text about the
+    # tenant (`notes`), and removing it returns the tenant to the state every org that never
+    # joined the pilot is in — the pattern shadow pass off, which is off for everyone. A tenant
+    # whose graph was just wiped has no fire evidence left to accumulate against anyway. The org
+    # FK cascades on account deletion; this entry is what makes /reset erase it too.
+    "l2_v2_activation",
+    "source_coverage",
+    # L2.5.5 / L-5 (migration 0104). `situation_absences` is a derived view of situations that
+    # are about to be wiped, so leaving it would keep a finding about a deleted customer; and
+    # `coverage_epochs` is the tenant's own connection history, which is theirs to have erased.
+    # Both cascade on account deletion; these entries are what make /reset erase them too.
+    "situation_absences", "coverage_epochs",
+    "sync_cursors", "l1_sync_runs", "source_events",
     "agent_events", "human_events",
     "onboarding_progress", "sync_jobs",          # sync progress + durable job queue (org-scoped)
     "integration_preferences",                    # per-tool source settings (Sources modal)
