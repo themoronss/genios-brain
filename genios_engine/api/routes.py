@@ -2,12 +2,17 @@ from __future__ import annotations
 
 import threading
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request
+from fastapi import (APIRouter, BackgroundTasks, Body, Depends, Header, HTTPException,
+                     Request)
 from pydantic import BaseModel
 
-from genios_engine.capture.acquire.sync_runner import run_sync
+from genios_engine.capture.acquire.scheduler import (ConnectionSchedule, schedules_for,
+                                                    select_due)
+from genios_engine.capture.acquire.sync_runner import (run_sync, sweep_cadence_policy,
+                                                      sweep_tick_seconds)
 from genios_engine.capture.connectors.fake import FakeGmailConnector
-from genios_engine.capture.coverage.model import capability_of, compute_coverage
+from genios_engine.capture.connectors.push_ingest import (PushIngestWiring,
+                                                         ingest_pushed_objects)
 from genios_engine.capture.landing.repository import InMemorySourceEventRepository
 from genios_engine.capture.pipeline import capture_event
 from genios_engine.contracts.connection import Connection
@@ -17,13 +22,27 @@ from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org,
                                           require_internal, require_owner, require_scope)
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.logging import get_logger
+from genios_engine.capture.esqe.lifecycle import outcome_digest, sweep_lifecycle
+from genios_engine.capture.esqe.publisher import publish_sweep
+from genios_engine.capture.esqe.qualification import qualify_sweep
+from genios_engine.capture.validate.conflict_store import persist_sweep_conflicts
 from genios_engine.platform.wiring import (make_agent_event_store,
                                            make_agent_registry_store, make_card_store,
-                                           make_connection_store,
+                                           make_conflict_store,
+                                           make_drop_ledger, make_floor_store,
+                                           make_rejection_ledger,
+                                           make_signal_store,
+                                           make_lifecycle_store,
+                                           make_connection_store, make_coverage_fn,
+                                           make_esqe_stage,
+                                           make_coverage_store,
+                                           make_semantic_lane,
+                                           make_structured_lane,
                                            make_connector_for, make_cursor_store,
                                            make_document_job_store, make_graph_store,
                                            make_human_event_store, make_llm_client,
-                                           make_pack_registry, make_parked_store,
+                                           make_open_lane_store, make_pack_registry,
+                                           make_parked_store,
                                            make_payload_store, make_prepared_store,
                                            make_relevance_classifier, make_repo,
                                            make_trace_repo)
@@ -44,6 +63,7 @@ _repo = make_repo()
 _trace_repo = make_trace_repo()
 _payload_store = make_payload_store()
 _prepared_store = make_prepared_store()
+_open_lane_store = make_open_lane_store()
 _connections = make_connection_store()
 _parked = make_parked_store()
 _cursors = make_cursor_store()
@@ -51,6 +71,31 @@ _documents = make_document_job_store()
 _human_events = make_human_event_store()
 _agent_events = make_agent_event_store()
 _agent_registry = make_agent_registry_store()
+_coverage_store = make_coverage_store()               # `source_coverage` — filed each sweep
+# `signal_conflicts` — L1.5.5's conflict record. ALG-12 has been detecting conflicts on every
+# sweep and returning them on a summary that every caller dropped; this is the store that keeps
+# them (see `_run_ledger` for where a sweep's conflicts are actually filed).
+_conflict_store = make_conflict_store()
+# L1.6.8 (ALG-18) — the qualification floor and the ledger a refusal leaves behind. The floor is
+# a PER-TENANT row, so it is read here rather than compiled in: `org_qualification_floors` with
+# no row for this org means DEFAULT_FLOOR_BP, never a shared constant somebody edits in a deploy.
+_floor_store = make_floor_store()
+_drop_ledger = make_drop_ledger()
+# L1.6.10 / L1.7.4 — `qualified_signals`, the L1 -> L2 boundary made durable. Resolved here beside
+# the floor and its ledger because the three are one decision seen from three sides: what crossed,
+# what did not, and against which threshold.
+_signal_store = make_signal_store()
+# L1.6.10 — `publication_rejections`, the row the OTHER five blocking rules never left. V-1 parks
+# and the floor drops; V-2, V-3, V-4, V-6 and V-7 refused a signal and wrote nothing anywhere, so
+# "why did I never see X?" had an answer for two of the seven rules. Resolved here beside the
+# store for the same reason the drop ledger sits beside the floor: what crossed and what was
+# refused are one decision seen from two sides, and reading them from two different builds of the
+# same wiring is how the two sides stop agreeing.
+_rejection_ledger = make_rejection_ledger()
+# L1.6.9 (ALG-19) — the lifecycle rows a sweep ages and supersedes. A per-tenant table for the
+# same reason the floor is: what already stands for a subject is this org's own history, and a
+# signal that stood live for ever is the ghost L2 correlates.
+_lifecycle_store = make_lifecycle_store()
 _llm = make_llm_client()                              # L2 Anthropic client (None if no key)
 _graph = make_graph_store()                           # L2 context graph (None without DB)
 _registry = make_pack_registry()                      # L4 pack registry (None without DB)
@@ -196,6 +241,96 @@ def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summ
     connector never returned a batch, so no SyncSummary exists) — previously this case produced no
     row at all, so a fully-broken connection was invisible anywhere but the server log. Never raises:
     a ledger hiccup must not break the caller, whether that's the sync loop or a failure handler."""
+    # D8 · file the sweep's CONFLICTS FIRST, and unconditionally.
+    #
+    # This used to sit at the BOTTOM of the function, below the `_graph is None` return two
+    # lines down — so an engine with a conflict store but no L2 graph store filed nothing at
+    # all, silently and with no log line, because that early return is about the sync LEDGER
+    # and knows nothing about ALG-12. Two unrelated subsystems sharing one off-switch is how a
+    # record that is supposed to be permanent becomes conditional on something it has no
+    # relationship with. `persist_sweep_conflicts` never raises, so nothing below it can be
+    # made worse by running it first.
+    persist_sweep_conflicts(summary, org_id=org_id, store=_conflict_store)
+    # L1.6.8 · qualify the sweep's signals against THIS tenant's floor, and file every refusal.
+    #
+    # Filed from the same hook and for the same reason the conflicts above are: this is the one
+    # place every `run_sync` caller in the HTTP layer already reaches, so "the floor ran" does
+    # not depend on which of the six sync call sites remembered to ask for it. It sits ABOVE the
+    # `_graph is None` return two lines down for the same reason as well — the early return is
+    # about the sync LEDGER, and a tenant with no L2 graph store must still be able to answer
+    # "why did I never see X?".
+    #
+    # `qualify_sweep` never raises and never drops mail: it reads the summary's own frozen
+    # instant, scores through L1.6.7, and writes `qualification_drops` rows for what the floor
+    # refused. A signal it could not score TRAVELS.
+    qualification = qualify_sweep(summary, org_id=org_id, floor_store=_floor_store,
+                                  ledger=_drop_ledger)
+    # L1.6.9 (ALG-19) · age this tenant's signals: expire the clocks that ran out, and let the
+    # sweep's newer signals supersede what they replace.
+    #
+    # Filed from this hook on the same argument as the two above, and it matters more here than
+    # for either of them: a lifecycle that ran on five of the six sync call sites would leave the
+    # sixth tenant's signals standing live for ever, and "live for ever" is invisible — nothing
+    # errors, a founder is simply nudged about a contract that was cancelled last week.
+    #
+    # ABOVE the `_graph is None` return for the third time and the same reason: that return is
+    # about the sync LEDGER. `sweep_lifecycle` never raises and never drops mail — it reads the
+    # sweep's own frozen instant, never a clock, so the same sweep replays to the same states.
+    lifecycle = sweep_lifecycle(summary, org_id=org_id, store=_lifecycle_store)
+    if lifecycle.transitions:
+        # ALG-19's REPLAY CHECK, on the path that produces the states. `outcome_digest` is a
+        # stable fingerprint of what a sweep decided, and it is the thing an operator compares
+        # instead of eyeballing a list of records — "the same sweep at the same `eval_time`
+        # produces byte-identical lifecycles" is the property the whole no-clock discipline in
+        # `lifecycle.py` exists to buy, and until this line nothing outside its own unit test
+        # had ever computed it. Logged rather than stored: it is a check on a decision the
+        # `signal_lifecycle` rows already hold, not a second copy of them.
+        _log.info("lifecycle swept org=%s transitions=%d records=%d digest=%s",
+                  org_id, len(lifecycle.transitions), len(lifecycle.records),
+                  outcome_digest(lifecycle))
+    # ALG-19's verdict, carried onto the table LAYER 2 ACTUALLY READS.
+    #
+    # `sweep_lifecycle` above writes what it decided to `signal_lifecycle`.
+    # `context/situation_bso.gather_l1_signals` — the one production reader of Layer 1's output —
+    # filters a situation's LIVE set on `qualified_signals.state`, and the signals ALG-19
+    # supersedes or expires are by definition the ones an EARLIER sweep published, which the
+    # `publish_sweep` below never revisits (it writes this sweep's signals and nothing else). So
+    # the two tables disagreed permanently: `signal_lifecycle` said `superseded` while
+    # `qualified_signals` said `active`, and a founder kept being nudged about a renewal that a
+    # later email had already replaced — which is the first thing migration 0093 says it closes.
+    #
+    # Update-only, terminal states only, and it never raises: see `apply_lifecycle`. `hasattr`
+    # because a dev store older than this method must not take the sweep down.
+    if lifecycle.records and hasattr(_signal_store, "apply_lifecycle"):
+        retired = _signal_store.apply_lifecycle(lifecycle.records)
+        if retired:
+            _log.info("lifecycle retired %d stored signal(s) org=%s", retired, org_id)
+    # L1.6.10 · THE L1 -> L2 BOUNDARY, and the last thing Layer 1 does on this path.
+    #
+    # `publish_sweep` runs `contracts/publication.validate_publication` (V-1..V-7) over the
+    # signals the floor QUALIFIED — the dropped half already has its ledger row and stops there —
+    # and writes what survives to `qualified_signals`. Before this call the engine detected,
+    # scored, qualified and aged signals on every sync and then dropped every one of them on the
+    # floor: L2 had no durable set to read, re-read or replay against, so "what does the engine
+    # believe about this tenant" could only be answered by re-running capture over mail we had
+    # already paid to read.
+    #
+    # AFTER the lifecycle pass, and that order is the design rather than an accident of where the
+    # line was added. ALG-19 has just decided which of these signals supersedes something the
+    # tenant already holds and whether any of them arrived already expired; its outcome is handed
+    # straight in, so the stored row carries the state the lifecycle pass decided instead of a
+    # publisher's guess of `active`. A row saying live about a signal the same sweep superseded is
+    # exactly the kind of disagreement a store that feeds every downstream surface must not have.
+    #
+    # ABOVE the `_graph is None` return for the fourth time and the same reason: that return is
+    # about the sync LEDGER, and a tenant with no L2 graph store must still have its signals
+    # stored — otherwise the table built to feed Layer 2 is switched off by an unrelated
+    # subsystem's off-switch, which is the defect D8 already had to fix once for conflicts.
+    #
+    # `publish_sweep` never raises and never drops mail: a signal it cannot publish leaves a park
+    # row (V-1) or a logged refusal, never an exception into the ingestion path.
+    publish_sweep(summary, qualification, org_id=org_id, store=_signal_store,
+                  parked_store=_parked, rejections=_rejection_ledger, lifecycle=lifecycle)
     if _graph is None:
         return
     from sqlalchemy import text
@@ -214,6 +349,38 @@ def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summ
                  "err": error})
     except Exception:      # noqa: BLE001 — a ledger hiccup must not break the caller
         _log.exception("l1_sync_runs write failed org=%s conn=%s", org_id, connection_id)
+    # (The conflict filing this hook is also responsible for happens at the TOP of the function
+    # — this is the one hook that already receives every sweep's summary, and `run_sync` hands
+    # that summary to six different callers, all of which read the counts and dropped the
+    # object. Filing it here rather than at those six call sites is the same argument
+    # `push_ingest` makes about its own wiring: a record that depends on which caller
+    # remembered is a record that is missing somewhere.)
+
+
+def _connection_still_valid(connector) -> bool | None:
+    """`SourceConnector.validate_connection()` — asked, at last, on a real path.
+
+    EVERY connector in this build implements this method and NOTHING in the engine called it.
+    The consequence is not cosmetic: when a sync fails, revoked credentials and a provider hiccup
+    produce the same `l1_err`, the same `sync_failed` alert and the same next tick that fails
+    again. A tenant whose Google grant was withdrawn got an identical, unactionable notification
+    every six hours, for ever, and the one method that could have said "reconnect" was never
+    consulted.
+
+    Three-valued on purpose. `True` = the credential still works, so the failure was transient
+    and the connection stays connected. `False` = the provider itself refused the credential.
+    `None` = we could not ask (the check raised, the connector has no such method), which is NOT
+    evidence of revocation — degrading a working connection because a health probe timed out
+    would take a tenant's ingestion down over the probe.
+    """
+    check = getattr(connector, "validate_connection", None)
+    if not callable(check):
+        return None
+    try:
+        return bool(check())
+    except Exception:      # noqa: BLE001 — a health probe must never widen the original failure
+        _log.debug("validate_connection raised during failure triage", exc_info=True)
+        return None
 
 
 def _notify_sync_failure(*, org_id: str, source: str, error: str) -> None:
@@ -278,7 +445,11 @@ def _sync_connection(connection, mode: str, limit: int) -> None:
                  sender_resolver=_sender_resolver_for(connection.org_id),
                  cursor_store=_cursors,
                  document_job_store=_documents, source=connection.source_type, max_pages=20,
-                 run_ledger=_run_ledger)
+                 run_ledger=_run_ledger,
+                 coverage_fn=_coverage_fn_for(connection.org_id),
+                 esqe=_esqe_stage_for(connection.org_id),
+                 semantic=_semantic_lane_for(connection.org_id),
+                 structured=_structured_lane_for(connection.org_id))
     except Exception as e:
         _log.exception("L1 sync failed for org_id=%s connection_id=%s",
                        connection.org_id, connection.connection_id)
@@ -322,14 +493,57 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
     double-writes."""
     limit = get_settings().sync_batch_limit if limit is None else limit
     conns = _connections.list_active()
+    # Which tenants are on the L1 semantic lane, read ONCE for the whole cross-org sweep rather
+    # than once per connection — the same reason the budget and pause checks are hoisted below.
+    activated = _semantic_activated_orgs()
+    # L1.2.6 · WHOSE TURN IT IS, ASKED ONCE FOR THE WHOLE SWEEP.
+    #
+    # `run_sync` has always made this decision per connection, INSIDE itself, and it stays the
+    # authority. What no caller ever did was ask it for the BATCH — so `schedules_for`,
+    # `schedule_for` and `select_due` (L1.2.6's batch half) had no call site anywhere in the
+    # engine, and this sweep paid for both of the things they exist to prevent:
+    #
+    # * ORDER. The sweep ran `list_active()` in store order. `select_due`'s own docstring names
+    #   the consequence — "a sweep with a wall-clock budget that runs its list in store order
+    #   starves whatever sorts last" — and this sweep has exactly such a budget: the per-org
+    #   daily LLM cap below. Oldest-due first is fairness, and the connection that has waited
+    #   longest is the one closest to needing a catch-up.
+    # * A ROUND TRIP PER CONNECTION. `run_sync` falls back to `_configured_override_seconds`,
+    #   which OPENS A NEW `PostgresConnectionStore` and re-reads the row for every connection on
+    #   every tick — to recover a field the `Connection` object in this very loop already holds.
+    #   `schedule_for` reads it off that object, and it is forwarded into `run_sync` below.
+    #
+    # This ORDERS the sweep; it does not gate it. `run_sync` remains the single authority on
+    # whether a connection polls, and every connection still reaches it — a connection whose
+    # turn it is not is skipped INSIDE `run_sync`, against a cursor it reads itself at poll
+    # time, and reported there. A second gate out here, deciding from a snapshot taken a few
+    # seconds earlier, would be two answers to one question, and the stale one would win.
+    #
+    # Incremental only: backfill and recovery are deliberate, cadence-free requests, and
+    # `run_sync` does not gate those either.
+    from datetime import datetime as _dt, timezone as _tz
+    schedule_by_id: dict[str, ConnectionSchedule] = {}
+    l1_due = 0
+    if mode == "incremental":
+        schedules = schedules_for(conns, _cursors)
+        schedule_by_id = {s.connection_id: s for s in schedules}
+        rank = {d.connection_id: i for i, d in enumerate(select_due(
+            schedules, now=_dt.now(_tz.utc), policy=sweep_cadence_policy(),
+            base_page_budget=20, sweep_tick_seconds=sweep_tick_seconds()))}
+        l1_due = len(rank)
+        # Due first, oldest-due first; everything else keeps store order behind them. A tick
+        # that runs out of budget now runs out of it on the connections that have waited least.
+        conns_to_poll = sorted(conns, key=lambda c: (rank.get(c.connection_id, len(rank)),))
+    else:
+        conns_to_poll = list(conns)
     rc = make_relevance_classifier()
-    l1_ok = l1_err = l1_paused = 0
+    l1_ok = l1_err = l1_paused = l1_revoked = 0
     paused: dict[str, bool] = {}
     # Per-org budget decisions are made ONCE per sweep, not per connection: an org with gmail +
     # gcal + drive would otherwise pay for three checks to reach the same answer.
     over_budget: dict[str, bool] = {}
     l1_skipped = 0
-    for conn in conns:                            # L1: pull each connection (one bad source ≠ others)
+    for conn in conns_to_poll:                    # L1: pull each connection (one bad source ≠ others)
         # This background sweep is the largest LLM spender in the system (the S2 gate runs on
         # every unknown sender) and it was the one path the daily cap did not gate — the breaker
         # guarded the onboarding sync only. A runaway here spends unattended, every tick.
@@ -353,22 +567,55 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
                      sender_resolver=_sender_resolver_for(conn.org_id),
                      cursor_store=_cursors,
                      document_job_store=_documents, source=conn.source_type, max_pages=20,
-                     run_ledger=_run_ledger)
+                     run_ledger=_run_ledger,
+                     coverage_fn=_coverage_fn_for(conn.org_id, connections=conns),
+                     esqe=_esqe_stage_for(conn.org_id),
+                     semantic=_semantic_lane_for(conn.org_id, activated=activated),
+                     # The tenant's own `cadence_minutes`, off the row this loop already holds,
+                     # so `run_sync` does not reopen a connection store per connection per tick
+                     # to re-read it. `None` outside an incremental sweep, where it is unused.
+                     cadence_override_seconds=(
+                         schedule_by_id[conn.connection_id].override_seconds
+                         if conn.connection_id in schedule_by_id else None),
+                     structured=_structured_lane_for(conn.org_id))
             l1_ok += 1
         except Exception as e:
             l1_err += 1
             _log.exception("auto-sync L1 failed org=%s conn=%s", conn.org_id, conn.connection_id)
+            # WHY it failed, asked of the provider rather than guessed from the message. A
+            # revoked grant needs the tenant to reconnect and will fail identically on every
+            # future tick; a transient error needs nothing but the next tick. Only an explicit
+            # `False` — the provider refusing the credential — marks the connection, so a probe
+            # that could not run leaves a working connection alone.
+            reason = "sync_error"
+            if _connection_still_valid(make_connector_for(conn)) is False:
+                l1_revoked += 1
+                reason = "credentials_revoked"
+                _connections.set_status(conn.connection_id, "disconnected")
+                _log.warning("connection credential refused by provider org=%s conn=%s source=%s"
+                             " — marked disconnected", conn.org_id, conn.connection_id,
+                             conn.source_type)
             _run_ledger(org_id=conn.org_id, connection_id=conn.connection_id,
-                        source=conn.source_type, mode=mode, error=str(e)[:500])
-            _notify_sync_failure(org_id=conn.org_id, source=conn.source_type, error=str(e))
+                        source=conn.source_type, mode=mode,
+                        error=f"{reason}: {str(e)[:480]}")
+            _notify_sync_failure(org_id=conn.org_id, source=conn.source_type,
+                                 error=f"{reason}: {e}")
     orgs = {c.org_id for c in conns if not paused.get(c.org_id)}
     for org in orgs:                              # L2/L3/L5: once per org, after all its sources pulled
         _run_l2(org)
-    _log.info("auto-sync sweep complete: %d/%d connection(s) pulled, %d skipped on budget, "
-              "%d skipped as paused, %d org(s) reasoned",
-              l1_ok, len(conns), l1_skipped, l1_paused, len(orgs))
+    _log.info("auto-sync sweep complete: %d/%d connection(s) pulled, %d due this tick, %d "
+              "skipped on budget, %d skipped as paused, %d org(s) reasoned",
+              l1_ok, len(conns), l1_due, l1_skipped, l1_paused, len(orgs))
     return {"connections": len(conns), "l1_ok": l1_ok, "l1_err": l1_err,
+            # Reported rather than silent: "why did this connection not sync" is the question
+            # L1.2.6 is always asked, and a sweep that left no number behind could not answer
+            # it. `l1_due` is the scheduler's own count for this tick — how many of the active
+            # connections it said were due, in the order it put them in.
+            "l1_due": l1_due,
             "l1_skipped_over_budget": l1_skipped, "l1_skipped_paused": l1_paused,
+            # Connections the PROVIDER refused this tick. Separated from `l1_err` because the
+            # two need different responses: this one is the tenant's to fix.
+            "l1_credentials_revoked": l1_revoked,
             "orgs": len(orgs)}
 
 
@@ -394,7 +641,11 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
     # retention clocks, ENFORCED: raw payloads (30d), prepared text (180d), and bounded Layer 4
     # context payloads. Hash/provenance rows remain after the L4 payload expires, but replay closes.
     retention = {}
-    for name, store in (("raw_payloads", _payload_store), ("prepared_content", _prepared_store)):
+    # `unclassified_observations` (L1.4.5) rides the same clock: 180 days for an unpromoted
+    # observation, forever for a promoted one, and NO new Celery beat — the broker is a
+    # quota-limited Upstash Redis, so the lane's retention is one more purge on this heartbeat.
+    for name, store in (("raw_payloads", _payload_store), ("prepared_content", _prepared_store),
+                        ("unclassified_observations", _open_lane_store)):
         try:
             if hasattr(store, "purge_expired"):
                 retention[name] = store.purge_expired()
@@ -433,6 +684,33 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the beat
             _log.exception("parked drain failed")
             parked_drain = {"error": True}
+    # L1.3.8-U1 ATTACHMENT REFETCH: the half `drain_parked` deliberately cannot do. Its
+    # NEEDS_REFETCH class (DOC-02/04/05/06) holds attachment STUBS whose bytes never existed
+    # locally, so re-running the pipeline over them re-parks them and reports progress that did
+    # not happen. This asks the tenant connector for the bytes again, bounded by a five-rung
+    # ladder with a dead letter at the end. Same heartbeat, same reason: it is cheap, idempotent
+    # and claims with `skip locked`, so it costs nothing when the queue is empty and cannot
+    # collide with an operator running it by hand.
+    attachment_refetch = None
+    if _graph is not None:
+        try:
+            attachment_refetch = _drain_attachment_refetch(now)
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("attachment refetch failed")
+            attachment_refetch = {"error": True}
+    # L1.3.8-U3 RECAPTURE DRAIN: the THIRD class, and the one nothing owned. `visibility_unknown`
+    # and `MUT-01` are parks about an event's AUDIENCE and its IDENTITY, so neither re-emitting
+    # the stored row (`drain_parked`) nor asking for bytes (`refetch_parked_attachments`) can
+    # settle them — they were in no drain set at all, which meant `parked_aging` reported them
+    # as "terminal" and the G2 report could not see them. Same heartbeat, same argument: one
+    # bounded, idempotent pass that costs nothing when the queue is empty.
+    recapture_drain = None
+    if _graph is not None:
+        try:
+            recapture_drain = _drain_recapture(now)
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("recapture drain failed")
+            recapture_drain = {"error": True}
     # PROVISIONING: every org must have a seat and the durable pull surface before ANY layer can
     # route for it, and neither existed for any tenant. `org_seats` had
     # zero rows for every tenant, and it is the join L2 (self-exclusion), L4 (owner), L5
@@ -516,7 +794,14 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             distribution = {"error": True}
     calibration = None
     if _graph is not None:
-        from sqlalchemy import text                   # same missing-import defect as L5-01
+        # NO `from sqlalchemy import text` HERE. `text` is imported at module scope (line 54),
+        # and a function-local import of the same name makes `text` a LOCAL for the WHOLE
+        # function body — including the L6 TIMEZONE block ~60 lines above, which reads it
+        # before this line executes. That block therefore raised `UnboundLocalError` on every
+        # single tick and was swallowed by its own `except Exception`, so `orgs.timezone` was
+        # never inferred for any tenant that had not typed one: quiet hours were evaluated in
+        # UTC, and `platform/wiring._org_timezone` — the zone the STRUCTURED lane resolves a
+        # typed close date in — answered UTC for every org. Built, scheduled, and dead.
         from genios_engine.feedback.calibrate import run_calibration
         orgs = {c.org_id for c in _connections.list_active()}
         runs = 0
@@ -581,6 +866,8 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
                          len(unhealthy), unhealthy)
     return {"sync": sync, "lifecycle": lifecycle, "retention": retention,
             "parked_drain": parked_drain,
+            "attachment_refetch": attachment_refetch,
+            "recapture_drain": recapture_drain,
             "timezones": timezones,
             "seats": seats,
             "executive": executive, "distribution": distribution,
@@ -613,6 +900,7 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
     s = get_settings()
     rc = make_relevance_classifier()
     conns = _connections.list_active()          # every source type, every org
+    activated = _semantic_activated_orgs()      # once for the whole cross-org run
     totals = {"scanned": 0, "emitted": 0, "dropped": 0, "parked": 0, "duplicate": 0}
     per = []
     for conn in conns:
@@ -627,7 +915,11 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
                                sender_resolver=_sender_resolver_for(conn.org_id),
                                cursor_store=_cursors, document_job_store=_documents,
                                source=conn.source_type, max_pages=20,
-                               run_ledger=_run_ledger)
+                               run_ledger=_run_ledger,
+                               coverage_fn=_coverage_fn_for(conn.org_id, connections=conns),
+                               esqe=_esqe_stage_for(conn.org_id),
+                               semantic=_semantic_lane_for(conn.org_id, activated=activated),
+                               structured=_structured_lane_for(conn.org_id))
         except Exception as e:                   # one bad source never kills the rest
             per.append({"org_id": conn.org_id, "source": conn.source_type, "error": str(e)[:120]})
             continue
@@ -644,13 +936,66 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
             "l2_background": auto_l2 and _graph is not None}
 
 
-def _connected_capabilities(org_id: str) -> dict[str, str]:
-    """Derive coverage from THIS org's DB connections — no in-memory state, survives restart."""
-    out: dict[str, str] = {}
-    for c in _connections.list_active():
-        if c.org_id == org_id and (cap := capability_of(c.source_type)):
-            out[cap] = "fresh"
-    return out
+def _semantic_activated_orgs() -> frozenset[str]:
+    """The tenants switched on in `l1_semantic_activation`, for a cross-org sweep to read once."""
+    from genios_engine.platform.activation import semantic_activated_orgs
+    return semantic_activated_orgs(getattr(_graph, "engine", None))
+
+
+def _semantic_lane_for(org_id: str, activated=None):
+    """The S2 lane for one org, or None when this tenant is not on it.
+
+    A separate helper from `_coverage_fn_for` because the two answer different questions and only
+    one of them costs money: coverage is always computed, extraction runs only for a tenant
+    somebody deliberately switched on in `l1_semantic_activation`. Ships with that table empty, so
+    every sweep behaves exactly as it does today until a person adds a row.
+    """
+    return make_semantic_lane(org_id, engine=getattr(_graph, "engine", None), activated=activated)
+
+
+def _structured_lane_for(org_id: str):
+    """L1.3.9-U5's bundle for one org. UNCONDITIONAL, unlike `_semantic_lane_for` above.
+
+    The typed route calls no model, so there is nothing here for an activation row to gate: a
+    CRM object that lands for a tenant nobody switched on is still a typed record, and its close
+    date is still resolved in that org's own zone rather than in UTC. This exists so that answer
+    is the same at every door — the sweep, the backfill, the webhook — instead of UTC at
+    whichever ones were forgotten.
+    """
+    return make_structured_lane(org_id, engine=getattr(_graph, "engine", None))
+
+
+def _coverage_fn_for(org_id: str, connections=None):
+    """The org's coverage declaration, computed once, as `domain -> verdict`.
+
+    Every capture entry reachable from this module goes through here — the sweep, the Composio
+    webhook, the manual door and the dev sample — so that "which capture paths declare coverage"
+    has exactly one answer instead of four independent omissions. The declaration is filed to
+    `source_coverage` as a side effect, which is the only writer that table has ever had.
+    """
+    return make_coverage_fn(org_id,
+                            connections=(_connections.list_active() if connections is None
+                                         else connections),
+                            engine=getattr(_graph, "engine", None),
+                            store=_coverage_store)
+
+
+def _esqe_stage_for(org_id: str):
+    """The org's S4 bundle, computed ONCE per sweep — today, its L1.6.7 baseline.
+
+    The sibling of `_coverage_fn_for` above, and it is here for the identical reason. ALG-17's
+    money term and entity term are 50% of the importance formula and both are relative to the
+    ORG: an $84K renewal is a quarter for a startup and noise for a bank, and a counterparty in
+    the top decile of one book is a stranger in another. `EsqeStage.org_baseline` was the
+    parameter that carried that, no capture entry ever supplied it, and every event of every
+    sweep therefore scored against `OrgBaseline.cold_start` — the absolute ladder and
+    `first_seen` for everybody. `compute_org_baseline` had no production caller at all.
+
+    Computed here rather than inside `run_sync` because this is where the tenant's database
+    handle lives, and once per sweep rather than per event because a p50 over a year does not
+    move inside one run.
+    """
+    return make_esqe_stage(org_id, engine=getattr(_graph, "engine", None))
 
 
 @router.post("/sync/{connection_id}")
@@ -686,7 +1031,16 @@ def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
                 relevance=make_relevance_classifier(conn.org_id), parked_store=_parked,
                 sender_resolver=_sender_resolver_for(conn.org_id), trace_repo=_trace_repo,
                 payload_store=_payload_store, prepared_store=_prepared_store,
-                document_job_store=_documents, run_ledger=_run_ledger)
+                document_job_store=_documents, run_ledger=_run_ledger,
+                # L1.2.5-U1 · the SAME owner every other ingest door supplies. Without it the
+                # drain's rows carry a participants set missing the account that owns the
+                # mailbox, so a message's ACL depended on which door it came through — and this
+                # is the door that lands a tenant's whole history.
+                mailbox_owner=_mailbox_owner_for(conn.org_id),
+                coverage_fn=_coverage_fn_for(conn.org_id),
+                esqe=_esqe_stage_for(conn.org_id),
+                semantic=_semantic_lane_for(conn.org_id),
+                structured=_structured_lane_for(conn.org_id))
             _log.info("backfill drain done org=%s conn=%s scanned=%s emitted=%s",
                       conn.org_id, connection_id, summary.scanned, summary.emitted)
             if _graph is not None:
@@ -708,13 +1062,368 @@ def ingest_sample(_internal: None = Depends(require_internal)) -> dict:
     conn = FakeGmailConnector()
     out = []
     for o in conn.incremental_changes().objects:
+        # The dev sample writes REAL source_events rows, so leaving it undeclared reproduces the
+        # same hole in the same table — a developer aid is still a capture entry.
         res = capture_event(o, org_id=conn.org_id, connection_id=conn.connection_id,
-                            repo=_demo_repo)
+                            repo=_demo_repo, coverage_fn=_coverage_fn_for(conn.org_id))
         out.append({"outcome": res.outcome,
                     "trace": [{"stage": r.stage, "action": r.action.value,
                                "reason": r.reason_code} for r in res.trace.records],
                     "gated_event": res.gated.model_dump(mode="json") if res.gated else None})
     return {"store_size": _demo_repo.count(), "results": out}
+
+
+# ── L1.6.8 · the qualification floor and its ledger ───────────────────────────────
+#
+# THE READ SIDE OF ALG-18, AND THE ONLY WAY ITS TABLES CAN EVER BE WRITTEN BY A HUMAN.
+#
+# Migration 0088 created three tables and `qualify_sweep` wrote to exactly one of them. The
+# floor was therefore a per-tenant setting no tenant could set: `PostgresFloorStore.set` and
+# `.history` had no caller anywhere but a test, so `qualification_floor_changes` could not
+# receive a row in production and every org ran on `genios-default` 2500 — the global constant
+# doc 06 forbids, wearing a table. `PostgresDropLedger.list`/`.get` had no caller either, which
+# made "why did I never see X?" — the entire justification for keeping a refused signal's
+# components and payload ref — unanswerable from outside the database.
+#
+# Five routes, no new logic: they resolve the same `_floor_store` / `_drop_ledger` the sweep
+# hook at `_run_ledger` already uses, so what an operator reads here is what the sweep decided
+# on, not a second opinion assembled from the same rows.
+class FloorUpdate(BaseModel):
+    """A floor move, with the attribution the changelog requires. `reason` is not decoration —
+    "the floor was raised and misses started" is only diagnosable if the raise left one."""
+
+    floor_bp: int
+    reason: str = ""
+    note: str = ""
+
+
+def _floor_json(floor) -> dict:
+    return {"org_id": floor.org_id, "floor_bp": floor.floor_bp, "owner": floor.owner,
+            "note": floor.note, "origin": floor.origin,
+            "updated_at": floor.updated_at.isoformat() if floor.updated_at else None}
+
+
+def _drop_json(row) -> dict:
+    """One refused signal as the ledger holds it — components and payload ref included, because
+    a drop a tenant cannot reconstruct is regrettable rather than auditable."""
+    return {"drop_id": row.drop_id, "signal_id": row.signal_id, "event_id": row.event_id,
+            # `getattr`, not `.value`: `drop_rows` stores `verdict.signal_type.value` and
+            # `_to_drop_row` decodes a text column, so EVERY row the ledger actually produces
+            # carries a `str` here. `.value` alone was an AttributeError — a 500 on every real
+            # drop — and it passed because the only test that reached this line hand-built a
+            # `DropRow` holding the enum. Both spellings are accepted rather than one coerced at
+            # the boundary, because the row type is documented as crossing the database in both
+            # directions without re-validation.
+            "signal_type": getattr(row.signal_type, "value", row.signal_type),
+            "predicate": row.predicate,
+            "subject_key": row.subject_key, "importance_bp": row.importance_bp,
+            "importance_version": row.importance_version, "floor_bp": row.floor_bp,
+            "components": dict(row.components), "payload_ref": row.payload_ref,
+            "evaluated_at": row.evaluated_at.isoformat(),
+            "retain_until": row.retain_until.isoformat()}
+
+
+@router.get("/qualification/floor")
+def get_qualification_floor(org_id: str = Depends(get_current_org)) -> dict:
+    """This tenant's cut-off and WHO answers for it. `origin` separates "somebody chose 6000"
+    from "nobody ever set anything" — opposite remedies for the same 92% drop rate."""
+    from genios_engine.capture.esqe.qualification import resolve_floor
+    return _floor_json(resolve_floor(org_id, _floor_store))
+
+
+@router.put("/qualification/floor")
+def set_qualification_floor(body: FloorUpdate,
+                            ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """Move the floor. Owner-only: this number decides what the tenant is shown at all, and a
+    scoped key that could halve a tenant's signal volume is a wider grant than any read."""
+    from datetime import datetime, timezone
+
+    from genios_engine.capture.esqe.qualification import QualificationFloor
+    if not 0 <= body.floor_bp <= 10000:
+        raise HTTPException(400, "floor_bp must be between 0 and 10000")
+    if _floor_store is None:
+        raise HTTPException(503, "no qualification floor store configured")
+    actor = ctx.actor_id or ctx.org_id
+    try:
+        floor = _floor_store.set(ctx.org_id, body.floor_bp, owner=actor, changed_by=actor,
+                                 at=datetime.now(timezone.utc), reason=body.reason,
+                                 note=body.note)
+    except ValueError as exc:                     # QualificationFloor's own range/owner checks
+        raise HTTPException(400, str(exc)) from exc
+    assert isinstance(floor, QualificationFloor)
+    return _floor_json(floor)
+
+
+@router.get("/qualification/floor/history")
+def qualification_floor_history(org_id: str = Depends(get_current_org)) -> dict:
+    """The changelog. Append-only, newest first — the answer to "who moved it, and why"."""
+    if _floor_store is None:
+        return {"changes": []}
+    return {"changes": [{"change_id": c.change_id, "from_bp": c.from_bp, "to_bp": c.to_bp,
+                         "changed_by": c.changed_by, "reason": c.reason,
+                         "changed_at": c.changed_at.isoformat()}
+                        for c in _floor_store.history(org_id)]}
+
+
+# ── L1.6.7 term 4 rung 1 · the mission-critical tag, and the only way it is ever written ──
+#
+# `EntityStanding.MISSION_CRITICAL` is the top rung of a term worth 2000 of ALG-17's 10000 basis
+# points, and until migration 0091 it was unreachable: `baseline_reader.load_org_baseline` took
+# `mission_critical` as a parameter with an empty default and nothing in the build passed one.
+# The consequence was silent — a tenant's payroll provider could rank no higher than its largest
+# customer, because money was the only evidence the reader could reach — and it is exactly what
+# put doc 06's own headline acceptance row 400 bp below its stated band on the production path.
+#
+# Three routes, no new logic. The table is read once per sweep by the SAME factory
+# (`_esqe_stage_for` -> `make_esqe_stage` -> `load_org_baseline`) that reads the priced history,
+# so what an operator sets here is what the next sweep scores against.
+class MissionCriticalEntity(BaseModel):
+    """One vendor, customer or partner the tenant declares mission-critical.
+
+    `note` is not decoration, on migration 0088's argument about the floor: this tag outranks the
+    org's largest contract, and the next operator to see a small vendor above a big customer
+    needs the reason ("single-source payroll") rather than only the fact.
+    """
+
+    name: str
+    note: str = ""
+
+
+def _mission_critical_rows(org_id: str) -> list[dict]:
+    if _graph is None:
+        return []
+    from sqlalchemy import text
+    with _graph.engine.connect() as conn:
+        return [{"name": r.display_name, "entity_key": r.entity_key, "owner": r.owner,
+                 "note": r.note, "added_at": r.added_at.isoformat()}
+                for r in conn.execute(text(
+                    "select entity_key, display_name, owner, note, added_at "
+                    "from org_mission_critical_entities where org_id = :o "
+                    "order by display_name"), {"o": org_id})]
+
+
+@router.get("/qualification/mission-critical")
+def list_mission_critical(org_id: str = Depends(get_current_org)) -> dict:
+    """Which entities this tenant has declared mission-critical, and who declared each one."""
+    return {"entities": _mission_critical_rows(org_id)}
+
+
+@router.put("/qualification/mission-critical")
+def tag_mission_critical(body: MissionCriticalEntity,
+                         ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """Declare one entity mission-critical. Owner-only, for the reason the floor route is:
+    this changes what the tenant is shown first, and it does it by a judgement rather than by
+    a measurement.
+
+    The key is L1.5.4's CANONICAL entity key (`importance.fold_entity_key`), computed here once.
+    Not a `casefold()`: ALG-11 has already dropped the legal-form token by the time a name
+    reaches term 4, so a signal about "Northwind Ltd" is looked up as `northwind`, and a tag
+    stored as `northwind ltd` would never compare equal to it — a mission-critical vendor
+    scoring `first_seen`, silently, which is the exact fault `fold_entity_key`'s own docstring
+    records for the baseline's sets. It also makes "Northwind" and "Northwind Ltd" one row
+    instead of two tags for one vendor.
+    """
+    from datetime import datetime, timezone
+
+    from sqlalchemy import text
+
+    from genios_engine.capture.esqe.importance import fold_entity_key
+    name = (body.name or "").strip()
+    if not name:
+        raise HTTPException(400, "name is required")
+    key = fold_entity_key(name)
+    if not key:
+        raise HTTPException(400, "name is required")
+    if _graph is None:
+        raise HTTPException(503, "no database configured")
+    actor = ctx.actor_id or ctx.org_id
+    with _graph.engine.begin() as conn:
+        conn.execute(text(
+            "insert into org_mission_critical_entities "
+            "(org_id, entity_key, display_name, owner, note, added_at) "
+            "values (:o, :k, :d, :w, :n, :at) on conflict (org_id, entity_key) do update set "
+            "display_name = excluded.display_name, owner = excluded.owner, note = excluded.note"),
+            {"o": ctx.org_id, "k": key, "d": name, "w": actor, "n": body.note,
+             "at": datetime.now(timezone.utc)})
+    return {"entities": _mission_critical_rows(ctx.org_id)}
+
+
+@router.delete("/qualification/mission-critical/{name}")
+def untag_mission_critical(name: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """Remove a tag. The OFF path is a route for the same reason the ON path is: a judgement
+    that can only be added is a ranking that drifts upward for ever."""
+    from sqlalchemy import text
+
+    from genios_engine.capture.esqe.importance import fold_entity_key
+    if _graph is None:
+        raise HTTPException(503, "no database configured")
+    with _graph.engine.begin() as conn:
+        removed = conn.execute(text(
+            "delete from org_mission_critical_entities where org_id = :o and entity_key = :k"),
+            {"o": ctx.org_id, "k": fold_entity_key(name) or ""}).rowcount
+    return {"removed": int(removed), "entities": _mission_critical_rows(ctx.org_id)}
+
+
+@router.get("/qualification/drops")
+def list_qualification_drops(event_id: str | None = None,
+                             org_id: str = Depends(get_current_org)) -> dict:
+    """What this tenant never saw. `event_id` narrows it to the support question a founder can
+    actually ask — "this email produced nothing; why?"."""
+    if _drop_ledger is None:
+        return {"drops": []}
+    return {"drops": [_drop_json(r) for r in _drop_ledger.list(org_id, event_id)]}
+
+
+@router.get("/qualification/drops/{drop_id}")
+def get_qualification_drop(drop_id: str, org_id: str = Depends(get_current_org)) -> dict:
+    """One refusal, with the sentence that explains it.
+
+    L1.6.7-U3 rendered from the row rather than from a live score: the components were stored
+    precisely so a weight change next month cannot silently re-explain a drop made under the
+    old ones, and re-scoring here to produce the sentence would throw that guarantee away.
+    """
+    from genios_engine.capture.esqe.qualification import explain_drop
+    if _drop_ledger is None:
+        raise HTTPException(404, "no drop ledger configured")
+    row = _drop_ledger.get(org_id, drop_id)
+    if row is None:
+        raise HTTPException(404, "no such drop")
+    return {**_drop_json(row), "explanation": explain_drop(row)}
+
+
+# ── conflicts ────────────────────────────────────────────────────────────────────
+def _card_json(card) -> dict:
+    """L1.5.5-U3's card as JSON. `verdict` is carried as an explicit null rather than omitted:
+    "authority did not settle this" is the fact doc 05 is strictest about, and a consumer that
+    had to infer it from a missing key would eventually infer it wrong."""
+    return {
+        "headline": card.headline,
+        "verdict": card.verdict,
+        "lines": [{"authority": line.authority_label, "authority_rank": line.authority_rank,
+                   "value": line.value_text, "quote": line.quote,
+                   "source_ref": line.source_ref, "text": line.render()}
+                  for line in card.lines],
+        "text": card.render(),
+    }
+
+
+@router.get("/conflicts")
+def list_conflicts(signal_id: str | None = None, limit: int = 50,
+                   org_id: str = Depends(get_current_org)) -> dict:
+    """Open disagreements, RENDERED — the first surface that turns `signal_conflicts` into
+    something a human can read.
+
+    ALG-12 has detected conflicts on every sweep and `persist_sweep_conflicts` has filed them
+    since the store landed, but `render_conflict_card` (L1.5.5-U3, the card contract itself) had
+    no caller anywhere in the engine: the rows existed and nothing could make a sentence out of
+    them. A conflict nobody can see is the same product as no conflict detection at all — worse,
+    because the founder is being told nothing while the disagreement is on record.
+
+    `unrenderable` is reported rather than hidden. A row written under an older contract comes
+    back from `render_stored_conflict` as None, and a page that silently dropped it would show a
+    shorter list with no indication that a disagreement was left out.
+    """
+    from genios_engine.capture.validate.conflict import render_stored_conflict
+    if _conflict_store is None:
+        raise HTTPException(404, "no conflict store configured")
+    limit = max(1, min(int(limit), 200))
+    rendered: list[dict] = []
+    unrenderable = 0
+    for row in _conflict_store.list(org_id, signal_id)[:limit]:
+        card = render_stored_conflict(row)
+        if card is None:
+            unrenderable += 1
+            continue
+        rendered.append({
+            "conflict_id": row.conflict_id, "signal_id": row.signal_id,
+            "subject_key": row.subject_key, "field": row.field,
+            "resolution": row.resolution, "event_ids": list(row.event_ids),
+            "detected_at": row.detected_at.isoformat() if row.detected_at else None,
+            "card": _card_json(card)})
+    return {"conflicts": rendered, "unrenderable": unrenderable}
+
+
+# ── L1.6.10 · the rejection ledger and the signal store, given the doors they had none of ──
+#
+# `publication_rejections` (migration 0092) exists so that the five BLOCKING rules that reject a
+# signal — V-2, V-3, V-4, V-6, V-7 — stop answering nobody. These two routes are what make the
+# rows reachable: filed from `_run_ledger`'s hook, read here, off the SAME `_rejection_ledger`
+# the sweep writes through, so what an operator reads is what the gate decided rather than a
+# second opinion assembled from the same rows.
+def _rejection_json(row) -> dict:
+    """One refused signal as the ledger holds it — every broken rule, the sentence, and the
+    payload ref, because a refusal a tenant cannot reconstruct is regrettable rather than
+    auditable."""
+    return {"rejection_id": row.rejection_id, "signal_id": row.signal_id,
+            "event_id": row.event_id,
+            "signal_type": getattr(row.signal_type, "value", row.signal_type),
+            "outcome": row.outcome, "rules": list(row.rules), "reason": row.reason,
+            "payload_ref": row.payload_ref,
+            "evaluated_at": row.evaluated_at.isoformat(),
+            "retain_until": row.retain_until.isoformat()}
+
+
+@router.get("/qualification/rejections")
+def list_publication_rejections(event_id: str | None = None,
+                                org_id: str = Depends(get_current_org)) -> dict:
+    """What the publication gate refused. `event_id` narrows it to the support question a founder
+    can actually ask — "this email produced nothing; why?" — which for five of the seven rules
+    had no answer at all before this ledger existed."""
+    if _rejection_ledger is None:
+        return {"rejections": []}
+    return {"rejections": [_rejection_json(r)
+                           for r in _rejection_ledger.list(org_id, event_id)]}
+
+
+@router.get("/qualification/rejections/{rejection_id}")
+def get_publication_rejection(rejection_id: str,
+                              org_id: str = Depends(get_current_org)) -> dict:
+    """One refusal, whole. Tenant-scoped by the ledger's own `(org, id)` read rather than by a
+    filter applied after the fetch, so a guessed id from another tenant is a 404 and not a row."""
+    if _rejection_ledger is None:
+        raise HTTPException(404, "no rejection ledger configured")
+    row = _rejection_ledger.get(org_id, rejection_id)
+    if row is None:
+        raise HTTPException(404, "no such rejection")
+    return _rejection_json(row)
+
+
+@router.get("/qualification/signals")
+def list_qualified_signals(event_id: str | None = None, state: str | None = "active",
+                           limit: int = 100,
+                           org_id: str = Depends(get_current_org)) -> dict:
+    """What Layer 1 currently BELIEVES about this tenant — `qualified_signals`, read.
+
+    The table had no reader on any request path: the store built to be read by every downstream
+    surface could be written and never queried, so "what does the engine believe about this
+    tenant right now" could only be answered by re-running capture over mail already paid for.
+
+    THIS IS ALSO WHERE CONFIDENCE AGES. `confidence_bp` on the row is what ALG-13 composed on the
+    day of the sweep, and freshness is the one axis of that vector which keeps moving after the
+    write — so a June read of an April signal must not be served April's certainty. Both numbers
+    are returned: `confidence_bp` is what was composed (what a provenance panel quotes) and
+    `aged_confidence_bp` is what it is worth now (what a ranking uses). The CLOCK is read here,
+    at the edge, and handed to `age_signals` as `eval_time`; nothing under `capture/` reads one.
+    """
+    from datetime import datetime, timezone
+
+    from genios_engine.capture.esqe.signal_store import age_signals
+    if _signal_store is None:
+        return {"signals": []}
+    rows = _signal_store.list(org_id, state=state, event_id=event_id,
+                              limit=max(1, min(int(limit), 500)))
+    aged = age_signals(rows, eval_time=datetime.now(timezone.utc))
+    return {"signals": [{
+        "signal_id": a.row.signal_id, "event_id": a.row.event_id,
+        "signal_type": a.row.signal_type, "state": a.row.state,
+        "importance_bp": a.row.importance_bp,
+        "importance_version": a.row.importance_version,
+        "confidence_bp": a.row.confidence_bp,
+        "aged_confidence_bp": a.confidence_bp, "decayed_bp": a.decayed_bp,
+        "days_old": a.days_old, "authority_rank": a.row.authority_rank,
+        "occurred_at": a.row.occurred_at.isoformat(),
+        "expires_at": a.row.expires_at.isoformat() if a.row.expires_at else None,
+    } for a in aged]}
 
 
 # ── parked / coverage ────────────────────────────────────────────────────────────
@@ -734,6 +1443,126 @@ def parked_aging_report(org_id: str = Depends(get_current_org)) -> dict:
         return {"aging": []}
     from genios_engine.capture.parked.drain import parked_aging
     return {"aging": parked_aging(_graph.engine, org_id=org_id)}
+
+
+def _attachment_refetch_queue():
+    """The L1.3.8 queue, or None when this deployment has no real database (dev/in-memory)."""
+    s = get_settings()
+    if not s.use_real_db:
+        return None
+    from genios_engine.capture.parked.refetch import PostgresRefetchQueue
+    return PostgresRefetchQueue(s.database_url, s.crypto_key)
+
+
+def _attachment_connector_for(candidate):
+    """Resolve the tenant connector that can hand back one parked attachment's bytes.
+
+    Returns None — never raises, and never a connector of the wrong shape — for a connection that
+    has been removed or for a source with no attachment fetch. The drain treats None as a
+    transient miss, so a tenant who reconnects tomorrow gets their backlog drained tomorrow
+    instead of finding it dead-lettered.
+    """
+    conn = _connections.get(candidate.connection_id)
+    if conn is None or conn.org_id != candidate.org_id:
+        return None
+    connector = make_connector_for(conn)
+    return connector if hasattr(connector, "fetch_attachment") else None
+
+
+def _drain_attachment_refetch(now) -> dict:
+    queue = _attachment_refetch_queue()
+    if queue is None:
+        return {"skipped": "no database"}
+    from genios_engine.capture.parked.refetch import refetch_parked_attachments
+    report = refetch_parked_attachments(queue, connector_for=_attachment_connector_for,
+                                        eval_time=now)
+    return {"claimed": report.claimed, "recovered": report.recovered,
+            "dead_lettered": report.dead_lettered, "retry_scheduled": report.retry_scheduled,
+            "text_chars_recovered": report.text_chars_recovered,
+            "failures_by_kind": dict(report.failures_by_kind)}
+
+
+def _drain_recapture(now) -> dict:
+    """One recapture cycle for every tenant, with each org's mailbox owner supplied.
+
+    The owner resolver is INJECTED rather than looked up inside the drain because it is the one
+    input that can widen an audience: `derive_visibility` adds the connected account to a
+    participants set. Passing it here means a re-derived audience is exactly the audience the
+    original capture would have produced, and omitting it (a tenant with no resolvable owner)
+    narrows rather than widens — the only safe direction.
+    """
+    if _graph is None:
+        return {"skipped": "no database"}
+    from genios_engine.capture.parked.recapture import drain_recapture
+    report = drain_recapture(_graph.engine, eval_time=now,
+                             mailbox_owner_for=_mailbox_owner_for)
+    return {"examined": report.examined, "rederived": report.rederived,
+            "superseded": report.superseded, "still_blocked": report.still_blocked,
+            "stale": report.stale,
+            "blocked_by_reason": dict(report.blocked_by_reason)}
+
+
+@router.get("/parked/recapture")
+def recapture_status(org_id: str = Depends(get_current_org)) -> dict:
+    """What is still held for a reason only new CODE or a new CAPTURE can clear.
+
+    The read-only twin of the heartbeat drain, and the surface an operator needs to answer "why
+    is this tenant's Notion silent" — the answer is a `visibility_unknown` backlog with an age,
+    which used to be invisible on every surface in the system.
+    """
+    if _graph is None:
+        raise HTTPException(400, "graph store not configured (needs DATABASE_URL)")
+    from genios_engine.capture.parked.drain import parked_aging
+    from genios_engine.capture.parked.recapture import NEEDS_RECAPTURE
+    rows = [row for row in parked_aging(_graph.engine, org_id=org_id)
+            if row["reason_code"] in NEEDS_RECAPTURE]
+    return {"org_id": org_id, "codes": sorted(NEEDS_RECAPTURE), "rows": rows,
+            "pending": sum(r["count"] for r in rows if r["status"] == "pending")}
+
+
+@router.get("/parked/refetch")
+def attachment_refetch_status(org_id: str = Depends(get_current_org)) -> dict:
+    """The admin-console surface L1.3.8 asks for: what is still waiting on a refetch, how old the
+    oldest of it is, and what we have STOPPED trying to recover — with the reason we stopped.
+
+    A dead letter that is not listed anywhere is indistinguishable from an attachment that
+    vanished, which is the failure this whole component exists to remove."""
+    queue = _attachment_refetch_queue()
+    if queue is None:
+        return {"aging": [], "dead_letters": [], "available": False}
+    from datetime import datetime as _dt, timezone as _tz
+    from genios_engine.capture.parked.refetch import DEFAULT_POLICY
+    aging = queue.aging(eval_time=_dt.now(_tz.utc), policy=DEFAULT_POLICY, org_id=org_id)
+    dead = queue.dead_letters(org_id=org_id)
+    return {
+        "available": True,
+        "stuck_after_seconds": aging.stuck_after_seconds,
+        "pending": aging.pending, "stuck": aging.stuck,
+        "stuck_attachments": aging.stuck_attachments,
+        "aging": [{"reason_code": r.reason_code, "object_type": r.object_type,
+                   "pending": r.pending, "stuck": r.stuck,
+                   "oldest_age_seconds": r.oldest_age_seconds} for r in aging.rows],
+        "dead_letters": [{"event_id": d.event_id, "reason_code": d.reason_code,
+                          "source_object_id": d.source_object_id, "attempts": d.attempts,
+                          "last_error": d.last_error,
+                          "last_attempt_at": d.last_attempt_at.isoformat()
+                          if d.last_attempt_at else None,
+                          "parked_at": d.parked_at.isoformat()} for d in dead],
+    }
+
+
+@router.post("/parked/refetch/requeue")
+def requeue_attachment_dead_letters(org_id: str = Depends(get_current_org)) -> dict:
+    """Put this org's dead-lettered attachments back on the ladder.
+
+    The action that makes a CAPABILITY dead letter honest: `ocr_unavailable` means "we could not
+    read it yet", and the day an engine is wired somebody has to be able to say so to the whole
+    backlog at once rather than to 369 event ids by hand."""
+    queue = _attachment_refetch_queue()
+    if queue is None:
+        raise HTTPException(503, "attachment refetch requires a database")
+    from datetime import datetime as _dt, timezone as _tz
+    return {"requeued": queue.requeue_dead_letters(eval_time=_dt.now(_tz.utc), org_id=org_id)}
 
 
 @router.post("/parked/{event_id}/recover")
@@ -759,26 +1588,112 @@ def recover_parked(event_id: str, org_id: str = Depends(get_current_org)) -> dic
     return {"event_id": event_id, "status": "recovered", "reinjected": reinjected}
 
 
-def _company_knowledge_count(org_id: str) -> int:
-    """Distinct company-knowledge assertions this org has WRITTEN (non-app evidence: policies,
-    pricing, SOPs — source='internal'). Surfaced in coverage so written canon is visible evidence,
-    not an ignored 'not connected'. Returns 0 (never an error) when there is no graph/DB."""
-    if _graph is None:
-        return 0
-    from sqlalchemy import text
-    with _graph.engine.connect() as c:
-        return int(c.execute(text(
-            "select count(distinct source_object_id) from source_events "
-            "where org_id=:o and source='internal'"), {"o": org_id}).scalar() or 0)
-
-
 @router.get("/coverage")
 def coverage(domain: str = "sales", org_id: str = Depends(get_current_org)) -> dict:
-    return compute_coverage(domain, _connected_capabilities(org_id),
-                            company_knowledge_count=_company_knowledge_count(org_id))
+    """The same declaration the capture path is injected with — one computation, two readers.
+
+    `_connected_capabilities` and `_company_knowledge_count` used to live here as private
+    helpers of the HTTP layer, which meant a coverage answer could only be obtained by making a
+    web request. A sweep cannot make a web request to itself, which is precisely why the capture
+    path never had one. They now live in `capture/coverage/declaration.py` and this endpoint is
+    a reader of the same unit rather than the owner of a second copy of it.
+    """
+    return dict(_coverage_fn_for(org_id)(domain))
+
+
+@router.get("/coverage/declared")
+def coverage_declared(org_id: str = Depends(get_current_org)) -> dict:
+    """What we BELIEVED we could see, as last filed to `source_coverage` — read, not recomputed.
+
+    The reader half of L1.7.5, and a different question from `GET /coverage`. That endpoint
+    recomputes the declaration, which costs a connection read plus a canon count and always
+    answers "now"; this one reads the row a sweep filed, so a caller can ask *what did we believe
+    we could see when we decided this*, and can see `computed_at` — the only thing that makes doc
+    07's retention line ("recomputed each sweep") checkable. A domain whose row is missing has
+    never been declared for this tenant, which is itself the answer.
+    """
+    rows = _coverage_store.list(org_id)
+    return {"declared": [{"domain": r.domain, "coverage_ready": r.coverage_ready,
+                          "required": list(r.required), "connected": list(r.connected),
+                          "freshness": dict(r.freshness),
+                          "computed_at": r.computed_at.isoformat() if r.computed_at else None}
+                         for r in rows]}
 
 
 # ── connection lifecycle ─────────────────────────────────────────────────────────
+@router.patch("/connections/{connection_id}/backfill-window")
+def set_backfill_window(connection_id: str, days: int = Body(..., embed=True),
+                        org_id: str = Depends(get_current_org)) -> dict:
+    """L1.2.4-U1 · how far back this connection's FIRST sync reaches — the WRITE side.
+
+    `backfill_window_for` (the read) is wired into `make_connector_for` and decides the window
+    every Gmail and Calendar sync uses. `with_backfill_days` — the write it was built against,
+    and the whole reason migration 0082 added the column — had no caller anywhere, so the
+    setting was readable, per-connection, persisted, and unchangeable: every tenant was pinned
+    to `DEFAULT_BACKFILL_DAYS` for ever, and a tenant who wanted three years of history or only
+    ninety days had no way to say so.
+
+    Validation happens INSIDE `with_backfill_days` (it constructs a `BackfillWindow` before it
+    copies), so an out-of-range value is refused here, at the edit, rather than at the next sync
+    — which is the difference between a 422 the caller sees and a sync that quietly clamps.
+
+    Declared BEFORE `/connections/{connection_id}/{action}`: that route matches any single
+    segment, so a later declaration would be shadowed by it and this would arrive as an
+    `action` of "backfill-window" and 422 on the action check.
+    """
+    conn = _connections.get(connection_id)
+    if conn is None or conn.org_id != org_id:
+        raise HTTPException(404, "connection not found")
+    from genios_engine.capture.connectors.backfill import (backfill_window_for,
+                                                           with_backfill_days)
+    try:
+        updated = with_backfill_days(conn, days)
+    except (ValueError, TypeError) as exc:          # BackfillWindow's own range rule
+        raise HTTPException(422, str(exc))
+    _connections.add(updated)                       # upserts `capture_scope`
+    return {"connection_id": connection_id, "source": conn.source_type,
+            "backfill_days": backfill_window_for(updated).days}
+
+
+@router.get("/structured/mapping-coverage")
+def structured_mapping_coverage(org_id: str = Depends(get_current_org)) -> dict:
+    """L1.3.9-U2 · which of this tenant's connected structured sources have NO mapping.
+
+    An unmapped structured source is not a quiet degradation: its rows carry no prose body, so
+    the unstructured lane cannot read them and the structured lane has nothing to map them with
+    — the object is parked as `mapping_missing` and the tenant sees nothing from a tool they
+    connected. `mapping_coverage` is the unit that answers which sources are in that state and
+    it had no caller, so the answer existed only inside its own test while the condition it
+    describes was invisible in production.
+
+    Reads the tenant's OWN connections and the live registry (`all_mappings`), never a list
+    written down here — a mapping added to the registry changes this answer with no edit.
+    """
+    from genios_engine.capture.structured.coverage import ConnectedObject, mapping_coverage
+    from genios_engine.capture.structured.registry import all_mappings
+    conns = [c for c in _connections.list_active() if c.org_id == org_id]
+    coverage = mapping_coverage(ConnectedObject(source=c.source_type) for c in conns)
+    return {
+        "org_id": org_id,
+        "connected_sources": sorted({c.source_type for c in conns}),
+        "rows": [{"source": r.source, "object_type": r.object_type,
+                  "mapping_id": r.mapping_id, "structured": r.structured,
+                  "mapped": r.mapped, "actionable": r.actionable} for r in coverage.rows],
+        "mapped": len(coverage.mapped),
+        # The ACTIONABLE gap — connected, structured, named, carried by no mapping. Unenumerated
+        # rows (a client database whose tables are the tenant's to name) are deliberately in
+        # neither half: they are not a success and not a failure, and counting them would make
+        # connecting a database read as a coverage regression.
+        "unmapped": len(coverage.unmapped),
+        "unmapped_structured": coverage.unmapped_structured,
+        "unenumerated": len(coverage.unenumerated),
+        "coverage_bp": coverage.coverage_bp,
+        # The whole registry, so a tenant reading "hubspot.deal is unmapped for you" can see
+        # that the mapping exists and the connection is what is missing.
+        "registered_mappings": sorted(m.mapping_id for m in all_mappings()),
+    }
+
+
 @router.post("/connections/{connection_id}/{action}")
 def connection_lifecycle(connection_id: str, action: str,
                          org_id: str = Depends(get_current_org)) -> dict:
@@ -814,6 +1729,86 @@ def workspace_kill(action: str, ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
     except Exception:      # noqa: BLE001
         pass
     return {"org_id": org_id, "paused": not enabled}
+
+
+# ── L1.1-U2 · registry honesty: the catalog the UI must render from ─────────────
+#
+# Both connect endpoints below refuse any source outside BUILDABLE_SOURCES, and until now no
+# endpoint exposed that set — so the dashboard hardcoded its own list of nine clickable tiles
+# and four of them (slack, jira, gsheets, gdocs) are refused by the endpoint the tile calls.
+# The UI must read THIS instead: `connectable` is the tile's enabled-state, `status` is the
+# copy, and a "waitlist" source posts to /sources/waitlist rather than to /connect.
+def _waitlisted_sources(org_id: str) -> tuple[set[str], list]:
+    """This org's standing waitlist, or an empty one if the store cannot answer.
+
+    The catalog must render even when the waitlist store is unavailable: which sources are
+    connectable is a fact about the BUILD, and degrading it because a tenant's demand rows
+    could not be read would break the connect page for a reason unrelated to connecting."""
+    from genios_engine.platform.wiring import make_source_waitlist_store
+    try:
+        entries = list(make_source_waitlist_store().entries_for(org_id))
+    except Exception:                                   # noqa: BLE001
+        _log.warning("waitlist_read_failed", extra={"org_id": org_id})
+        return set(), []
+    return {e.source for e in entries}, entries
+
+
+def _entry_json(entry) -> dict:
+    return {"source": entry.source, "family": entry.family, "capability": entry.capability,
+            "registered": entry.registered, "requests": entry.requests,
+            "first_requested_at": entry.first_requested_at.isoformat(),
+            "last_requested_at": entry.last_requested_at.isoformat(),
+            "note": entry.latest_note, "requested_by": entry.latest_requested_by}
+
+
+@router.get("/sources/catalog")
+def sources_catalog(org_id: str = Depends(get_current_org)) -> dict:
+    """Every source the product may show, and the ONE honest answer about each.
+
+    Derived from capture/source_registry.py — the same descriptors both connect guards read —
+    so a tile can no longer promise what /connect refuses."""
+    from genios_engine.capture.source_registry import catalog
+    waitlisted, _ = _waitlisted_sources(org_id)
+    offers = catalog()
+    return {
+        "sources": [{"source": o.source, "family": o.family, "status": o.status,
+                     "connectable": o.connectable, "capability": o.capability,
+                     "aliases": list(o.aliases), "object_types": list(o.object_types),
+                     "waitlisted": o.source in waitlisted} for o in offers],
+        # The exact set the connect endpoints accept, so a client can check one membership
+        # instead of filtering a list it might filter differently.
+        "connectable": [o.source for o in offers if o.connectable],
+    }
+
+
+class WaitlistSourceRequest(BaseModel):
+    source: str
+    note: str | None = None
+
+
+@router.post("/sources/waitlist")
+def waitlist_source(body: WaitlistSourceRequest, org_id: str = Depends(get_current_org),
+                    ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
+    """Record that this tenant wants a source it cannot connect — the action behind
+    "coming soon". Refuses a source that IS connectable (the caller is reading a stale
+    catalog) and one that has no connector by design (upload/internal/human/agent)."""
+    from genios_engine.capture.source_waitlist import WaitlistRefused, request_source
+    from genios_engine.platform.wiring import make_source_waitlist_store
+    from datetime import datetime as _dt, timezone as _tz
+    try:
+        entry = request_source(make_source_waitlist_store(), org_id=org_id,
+                               source=body.source, requested_by=ctx.actor_id, note=body.note,
+                               eval_time=_dt.now(_tz.utc))
+    except WaitlistRefused as exc:
+        raise HTTPException(400, str(exc))
+    return _entry_json(entry)
+
+
+@router.get("/sources/waitlist")
+def waitlist_entries(org_id: str = Depends(get_current_org)) -> dict:
+    """What this tenant has asked for, strongest demand first."""
+    _, entries = _waitlisted_sources(org_id)
+    return {"entries": [_entry_json(e) for e in entries]}
 
 
 # ── self-serve connect (frontend initiates Composio OAuth) ───────────────────────
@@ -1095,7 +2090,10 @@ def _sync_source(org_id: str, source_type: str, limit: int):
                     sender_resolver=_sender_resolver_for(org_id), cursor_store=_cursors,
                     document_job_store=_documents, source=source_type, max_pages=3,
                     mailbox_owner=_mailbox_owner_for(org_id),
-                    run_ledger=_run_ledger)
+                    run_ledger=_run_ledger, coverage_fn=_coverage_fn_for(org_id),
+                    esqe=_esqe_stage_for(org_id),
+                    semantic=_semantic_lane_for(org_id),
+                    structured=_structured_lane_for(org_id))
 
 
 # Onboarding backfill is WINDOW-bounded (60d email / 120d calendar), not count-bounded — the user
@@ -1143,6 +2141,16 @@ def _backfill_full(org_id: str, source_type: str, limit: int = 25,
     event_cap = _SOURCE_EVENT_CAP.get(source_type)     # e.g. calendar → 150 events max
     cursor: str | None = None
     scanned = emitted = 0
+    # ONE declaration for the whole backfill, hoisted out of the round loop: coverage is a fact
+    # about the org's SOURCES, and re-reading the connection table once per page of history would
+    # pay for the same answer a hundred times.
+    coverage_fn = _coverage_fn_for(org_id)
+    # L1.6.7-U2 · the org baseline, once for the whole backfill. Same discipline as the
+    # coverage declaration above: a per-ORG quantity read once, not once per round.
+    esqe = _esqe_stage_for(org_id)
+    semantic = _semantic_lane_for(org_id)
+    structured = _structured_lane_for(org_id)
+    mailbox_owner = _mailbox_owner_for(org_id)      # one lookup for the whole backfill
     try:
         for rnd in range(max_rounds):
             summary = run_sync(
@@ -1152,7 +2160,9 @@ def _backfill_full(org_id: str, source_type: str, limit: int = 25,
                 parked_store=_parked, sender_resolver=_sender_resolver_for(org_id),
                 trace_repo=_trace_repo, payload_store=_payload_store,
                 prepared_store=_prepared_store, document_job_store=_documents,
-                run_ledger=_run_ledger)
+                run_ledger=_run_ledger, mailbox_owner=mailbox_owner,
+                coverage_fn=coverage_fn, esqe=esqe, semantic=semantic,
+                structured=structured)
             scanned += summary.scanned
             emitted += summary.emitted
             cursor = summary.next_cursor
@@ -1199,14 +2209,23 @@ def _source_count(org_id: str, source: str) -> int:
 
 
 def _pending_count(org_id: str) -> int:
-    """How many captured events still await L2 — mirrors runner._pull's filter, for a progress total."""
+    """How many captured events still await L2 — the drain's own filter, for a progress total.
+
+    IMPORTS the drain's exclusion instead of restating it. This function used to carry its own
+    copy of "and not in l1_extraction_results", which was correct while Layer 2 was that table's
+    only writer and became a lie the moment Layer 1 v2 started filing extractions there: the
+    progress bar would report zero pending for a tenant whose drain had a full queue. Two
+    spellings of one filter is how a mirror stops mirroring, so there is now one spelling.
+    """
     if _graph is None:
         return 0
     from sqlalchemy import text
+
+    from genios_engine.context.runner import _L2_OWN_EXTRACTIONS
     with _graph.engine.connect() as c:
         return int(c.execute(text(
             "select count(*) from source_events se where se.org_id=:o and se.outcome='emitted' "
-            "and se.event_id not in (select event_id from l2_extraction_results where org_id=:o) "
+            f"and se.event_id not in ({_L2_OWN_EXTRACTIONS}) "
             "and se.event_id not in (select event_id from l2_processing_runs "
             "                        where org_id=:o and status in ('done','parked'))"),
             {"o": org_id}).scalar() or 0)
@@ -1224,6 +2243,11 @@ def _backfill_one_source(org_id: str, source_type: str, limit: int = 25,
     event_cap = _SOURCE_EVENT_CAP.get(source_type)        # the pipeline reuses its primed verdicts.
     cursor: str | None = None
     scanned = emitted = 0
+    coverage_fn = _coverage_fn_for(org_id)          # once per backfill, not once per round
+    esqe = _esqe_stage_for(org_id)                  # L1.6.7-U2's baseline, likewise
+    semantic = _semantic_lane_for(org_id)
+    structured = _structured_lane_for(org_id)
+    mailbox_owner = _mailbox_owner_for(org_id)
     for _rnd in range(max_rounds):
         summary = run_sync(
             connector, org_id=org_id, connection_id=conn.connection_id, repo=_repo,
@@ -1231,7 +2255,10 @@ def _backfill_one_source(org_id: str, source_type: str, limit: int = 25,
             cursor_store=None, max_pages=1, relevance=rel,
             parked_store=_parked, sender_resolver=_sender_resolver_for(org_id),
             trace_repo=_trace_repo, payload_store=_payload_store,
-            prepared_store=_prepared_store, document_job_store=_documents, run_ledger=_run_ledger)
+            prepared_store=_prepared_store, document_job_store=_documents,
+            run_ledger=_run_ledger, mailbox_owner=mailbox_owner,
+            coverage_fn=coverage_fn, esqe=esqe, semantic=semantic,
+            structured=structured)
         scanned += summary.scanned
         emitted += summary.emitted
         cursor = summary.next_cursor
@@ -1537,19 +2564,59 @@ async def composio_webhook(request: Request,
     conn = next((c for c in _connections.list_active() if c.composio_user_id == user_id), None)
     if conn is None:
         raise HTTPException(404, "no active connection for this user_id")
-    from genios_engine.capture.connectors.dispatch import webhook_to_raw
+    from genios_engine.capture.connectors.dispatch import can_dispatch, webhook_to_raw_objects
+    if not can_dispatch(conn.source_type):
+        # TWO DIFFERENT FAILURES, TWO DIFFERENT ANSWERS. "This source has no real-time lane at
+        # all" and "this source has one and today's payload did not parse" were both reported as
+        # `unmapped payload`, so a source whose parser was never written (the hole HubSpot sat in
+        # for the whole of L1.2.5) is indistinguishable from a one-off bad body — which is how a
+        # dead lane stays dead: every push looks like a payload problem. `can_dispatch` is the
+        # predicate that separates them and it had no caller anywhere in the engine.
+        _log.warning("webhook: no real-time lane for source=%s org=%s",
+                     conn.source_type, conn.org_id)
+        return {"ingested": False, "reason": "no realtime lane", "source": conn.source_type}
     try:
-        raw_obj = webhook_to_raw(conn.source_type, data,
-                                 connector_factory=lambda: make_connector_for(conn))
+        # PLURAL. This used to take `webhook_to_raw`, which returns objects[0] — so a pushed
+        # message with a PDF landed the mail and silently dropped the document, while the same
+        # message polled a minute later landed both.
+        raw_objs = webhook_to_raw_objects(conn.source_type, data,
+                                          connector_factory=lambda: make_connector_for(conn))
     except Exception:                                    # a foreign/bad payload must never 500 the webhook
         _log.exception("webhook parse failed org=%s source=%s", conn.org_id, conn.source_type)
-        raw_obj = None
-    if raw_obj is None:
+        raw_objs = ()
+    if not raw_objs:
         return {"ingested": False, "reason": "unmapped payload", "source": conn.source_type}
-    res = capture_event(raw_obj, org_id=conn.org_id, connection_id=conn.connection_id,
-                        repo=_repo, trace_repo=_trace_repo, payload_store=_payload_store,
-                        document_job_store=_documents)
-    return {"ingested": True, "outcome": res.outcome, "event_id": res.event.event_id}
+    # THE SAME WIRING THE SWEEP USES (`_sync_source`). A pushed message and a polled message must
+    # reach L2 as the same object, so the always-on lane cannot be the least-guarded one: the
+    # relevance gate, the prepared clean text S2 extracts from, the mailbox owner the ACL is built
+    # from, the known-sender whitelist and the park ledger all belong to both doors or to neither.
+    outcome = ingest_pushed_objects(
+        raw_objs, org_id=conn.org_id, connection_id=conn.connection_id,
+        wiring=PushIngestWiring(
+            repo=_repo, trace_repo=_trace_repo, payload_store=_payload_store,
+            prepared_store=_prepared_store, document_job_store=_documents,
+            parked_store=_parked, relevance=make_relevance_classifier(conn.org_id),
+            sender_resolver=_sender_resolver_for(conn.org_id),
+            mailbox_owner=_mailbox_owner_for(conn.org_id),
+            coverage_fn=_coverage_fn_for(conn.org_id),
+            esqe=_esqe_stage_for(conn.org_id),
+            # L1.6.8 · the push door files its refusals the way the sweep door does. Without
+            # these two a tenant served by a webhook-driven source had NO answer to "why did I
+            # never see this?", while the same tenant's polled sources had one — and the floor
+            # that discards ~92% of traffic ran on one door and not the other.
+            floor_store=_floor_store, drop_ledger=_drop_ledger,
+            semantic=_semantic_lane_for(conn.org_id),
+            structured=_structured_lane_for(conn.org_id)))
+    primary = outcome.primary
+    if primary is None:                                  # every object poisoned → quarantined, not lost
+        return {"ingested": False, "reason": "capture failed", "source": conn.source_type,
+                "quarantined": list(outcome.quarantined)}
+    return {"ingested": True, "outcome": primary.outcome, "event_id": primary.event.event_id,
+            # A push is one payload but not one row: the attachments landed too, and a caller
+            # that only ever saw the message could not tell whether they had.
+            "objects": [{"object_type": r.event.object_type, "event_id": r.event.event_id,
+                         "outcome": r.outcome} for r in outcome.results],
+            "quarantined": list(outcome.quarantined)}
 
 
 # ── L2 context graph ─────────────────────────────────────────────────────────────
@@ -2141,9 +3208,13 @@ def human_event(ev: HumanEvent, ctx: AuthCtx = Depends(require_owner)) -> dict:
     _human_events.add(ev)               # the correction ledger (kept — audit/undo reads it)
     # ONE DOOR: the event also enters the graph's world as a SourceEvent, so L2 actually
     # learns what the human said (before: side table only, the twin never saw it).
+    # A correction is a capture entry like any other: it becomes a `source_events` row L2 reads,
+    # so it belongs to the same population the coverage metric is computed over. Undeclared, every
+    # correction a founder ever made carried `coverage_ready=None`.
     from genios_engine.capture.intake import ingest_human_event
     res = ingest_human_event(ev, repo=_repo, payload_store=_payload_store,
-                             prepared_store=_prepared_store, trace_repo=_trace_repo)
+                             prepared_store=_prepared_store, trace_repo=_trace_repo,
+                             coverage_fn=_coverage_fn_for(org_id))
     return {"accepted": True, "type": ev.type, "event_id": res.event.event_id,
             "outcome": res.outcome}
 
@@ -2176,9 +3247,12 @@ def agent_event(ev: AgentEvent, x_agent_key: str = Header(...)) -> dict:
     is_new = _agent_events.add(ev)      # the outcome ledger (kept — idempotency reads it)
     # ONE DOOR: the agent's completed action becomes a SourceEvent too, so GeniOS never
     # recommends what an agent already did. Dedup rides the agent's idempotency key.
+    # `ev.org_id` is safe to declare against here: `_agent_registry.verify` above already proved
+    # the key belongs to that org, so this is the agent's OWN tenant, not a caller-asserted one.
     from genios_engine.capture.intake import ingest_agent_event
     res = ingest_agent_event(ev, repo=_repo, payload_store=_payload_store,
-                             prepared_store=_prepared_store, trace_repo=_trace_repo)
+                             prepared_store=_prepared_store, trace_repo=_trace_repo,
+                             coverage_fn=_coverage_fn_for(ev.org_id))
     return {"accepted": True, "duplicate": not is_new, "action": ev.action_taken,
             "event_id": res.event.event_id, "outcome": res.outcome}
 

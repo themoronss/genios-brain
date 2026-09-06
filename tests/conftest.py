@@ -38,6 +38,22 @@ os.environ.setdefault("GENIOS_CRYPTO_KEY", _TEST_FERNET_KEY)
 # fixture has run. Pointing them at an empty scratch database only trades "wrote packs into
 # production" for "relation pack_registry does not exist". Migrations are idempotent, so paying for
 # them once at import costs a second and removes the ordering question entirely.
+# THE TEST PROCESS MUST NOT BE ABLE TO REACH A REAL MODEL EITHER, AND FOR THE SAME REASON.
+#
+# The block above pins the DATABASE. It does not pin the MODEL, and `Settings.use_real_llm` is
+# `bool(anthropic_api_key)` — which `.env` sets on every developer machine. `l1_llm_gate`
+# defaults to True, so `platform/wiring.make_relevance_classifier` builds a real
+# `LLMRelevanceClassifier(LLMClient(api_key=...))`, and EVERY `pg`-marked test that drives
+# `api/routes._sync_connection` therefore made billed Anthropic calls — one per ambiguous event,
+# on a 96-message corpus, on every run. The capture tree's `_hermetic_by_default` socket guard
+# cannot catch it: `pg` and `llm` are exactly the markers it stands down for.
+#
+# Cleared here rather than monkeypatched in a fixture, for the reason the database block gives:
+# application code constructs its own `Settings` in places a fixture cannot see, and
+# pydantic-settings reads the environment at construction. A test that genuinely wants a model
+# sets the key itself and carries the `llm` marker.
+os.environ["GENIOS_ANTHROPIC_API_KEY"] = ""
+
 if os.environ.get("GENIOS_TEST_DATABASE_URL"):
     os.environ["GENIOS_DATABASE_URL"] = os.environ["GENIOS_TEST_DATABASE_URL"]
     from genios_engine.platform.migrate import apply_migrations as _apply
@@ -145,3 +161,52 @@ def _seed_scratch_org(url: str) -> None:
                                    else "scratch")
         conn.execute(text(f"insert into orgs ({', '.join(cols)}) values ({', '.join(ph)}) "
                           "on conflict (id) do nothing"), vals)
+
+
+# THE SCRATCH ORG IS SEEDED AT IMPORT, BESIDE THE MIGRATIONS — not by a fixture.
+#
+# `_seed_scratch_org` used to run only inside `live_test_database_url()`, so the row existed only
+# once some test had asked for the `live_db_url` fixture. Six real-Postgres tests
+# (`tests/capture/coverage/*`, `tests/capture/test_semantic_activation.py`) read
+# GENIOS_TEST_DATABASE_URL straight out of the environment and name `org_scratch_tests` in a
+# comment that says "seeded by tests/conftest.py" — they depend on no fixture at all. In file
+# order they run BEFORE anything that pulls `live_db_url`, so on a fresh scratch database the org
+# did not exist yet and every one of them died on a foreign key:
+#
+#     ForeignKeyViolation: insert or update on table "l1_semantic_activation" violates foreign
+#     key constraint "l1_semantic_activation_org_cascade_fk"
+#     DETAIL: Key (org_id)=(org_scratch_tests) is not present in table "orgs".
+#
+# The row is part of the SCHEMA these tests were written against, exactly as the migrations are,
+# so it is created in the same place and on the same terms. Idempotent (`on conflict do nothing`),
+# and it does nothing at all without GENIOS_TEST_DATABASE_URL.
+if os.environ.get("GENIOS_TEST_DATABASE_URL"):
+    _seed_scratch_org(os.environ["GENIOS_TEST_DATABASE_URL"])
+    _PREPARED_URLS.add(os.environ["GENIOS_TEST_DATABASE_URL"])
+
+
+@pytest.fixture
+def l1_pending():
+    """Declares a Layer 1 v2 acceptance gate that cannot be built yet, and SKIPS it by naming
+    the wave that will.
+
+    The gates in `01-Layer-1-Plan/09-Build-Order-and-Acceptance.md` are commands, not
+    aspirations: `pytest tests/capture/validate -q`, `pytest tests/capture/esqe -q`. Half of
+    those paths did not exist, so every one of them failed with pytest's usage error — "file or
+    directory not found" — which is the same red as a genuinely broken gate and tells the reader
+    nothing about which of the two it is. The tree exists from day one so that a gate command
+    always RUNS, and what it reports is the honest state: skipped, because W5 has not landed.
+
+    The reason string carries the wave, the gate id and the modules that fill it, because a
+    bare "not implemented" in a suite of 180 files is indistinguishable from a test somebody
+    disabled to make CI green. A skip is not a pass — the plan says so in those words — so these
+    are counted, not ignored: `pytest tests/capture -q` printing 14 skipped IS the build's
+    progress bar, and the wave that lands the code deletes the placeholder and writes the gate.
+
+    Lives here rather than in `tests/capture/conftest.py` because tests/contracts and
+    tests/golden/l1 need it too, and `tests/` is the only conftest all three inherit from.
+    """
+    def _pending(wave: str, gate: str, builds: str) -> None:
+        pytest.skip(f"{gate} pending — {wave} has not landed ({builds}). The wave that builds "
+                    f"it replaces this placeholder with the real gate.")
+    return _pending

@@ -3,12 +3,61 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 
+#: The declared shape of a typed field. Two of these five are DIMENSIONED — a money field
+#: carries an amount that is meaningless without its currency, a timestamp carries an instant
+#: that is meaningless without a calendar — and L1.3.9's mapper routes exactly those two through
+#: ALG-10 (`capture/validate/money.py`) and ALG-09 (`capture/validate/dates.py`). The other three
+#: are carried as written. Kept as data so `mapping_from_dict` accepts the same words a built-in
+#: mapping uses and a tenant cannot invent a sixth by typo.
+VALUE_TYPES: frozenset[str] = frozenset({"string", "enum", "number", "timestamp", "money"})
+
+
 @dataclass(frozen=True)
 class FieldMap:
     source_field: str
     target: str
-    value_type: str = "string"                 # string | enum | number | timestamp
+    value_type: str = "string"                 # one of VALUE_TYPES
     authority: str = "source_of_record"        # per-field (not every source is SoR for every field)
+    #: The RAW field holding this amount's ISO 4217 code — HubSpot's `deal_currency_code`,
+    #: a `currency` column beside an `amount` column. Preferred over `currency` because a
+    #: multi-currency pipeline states the code per row and a fixed code would silently convert
+    #: every euro deal into a dollar one.
+    currency_field: str | None = None
+    #: The fixed ISO 4217 code, for a source that is single-currency by construction (a Stripe
+    #: account on one settlement currency, a billing table with no currency column).
+    currency: str | None = None
+
+    def __post_init__(self) -> None:
+        """A money field must SAY what currency it is in. There is no default and there will
+        not be one.
+
+        Doc 03's own failure table names this: "Money in a typed field with no currency column
+        -> wrong currency -> the mapping must declare the currency field or a fixed currency;
+        no default". A default would make an unlabelled `amount` column silently dollars, which
+        is a 100%-confidence wrong number on the single field the whole lane exists to protect
+        — and it would carry `field_confidence=10000` while it was wrong.
+
+        Declaring BOTH is refused too. Two sources of truth for one currency is a mapping that
+        cannot be read: whichever one the code happens to consult first is the answer, and the
+        other is a comment that looks like configuration.
+        """
+        if self.value_type not in VALUE_TYPES:
+            raise ValueError(
+                f"{self.source_field} -> {self.target}: unknown value_type {self.value_type!r}; "
+                f"one of {sorted(VALUE_TYPES)}")
+        declared = (self.currency_field is not None) + (self.currency is not None)
+        if self.value_type == "money":
+            if declared != 1:
+                raise ValueError(
+                    f"{self.source_field} -> {self.target}: a money field must declare exactly "
+                    "one of currency_field or currency — an amount with no stated currency is "
+                    "a number nobody can compare, and guessing one is how a euro deal becomes "
+                    "a dollar deal at full confidence")
+        elif declared:
+            raise ValueError(
+                f"{self.source_field} -> {self.target}: value_type {self.value_type!r} declares "
+                "a currency; only a money field carries one, and a currency on a non-money "
+                "field is configuration nothing reads")
 
 
 @dataclass(frozen=True)
@@ -35,6 +84,22 @@ class StructuredMapping:
     relations: list[RelationMap] = field(default_factory=list)   # source object → graph edges
     tags: list[str] = field(default_factory=list)
     emit_on_change: list[str] = field(default_factory=list)
+    #: The first segment every one of this mapping's targets carries — `deal` for `deal.amount`,
+    #: `product_usage` for `product_usage.event`. Declared only when it differs from `node_type`,
+    #: which is the case for exactly one shipping mapping: L1.3.9-U3 files its facts under
+    #: `product_usage.*` on a node typed `product_usage_event`, because the node is one EVENT and
+    #: the facts describe the usage it records.
+    #:
+    #: It exists so `capture/structured/targets.py` can ask "is this target one of MINE?" — a
+    #: mapping for a deal that writes `subscription.status` has been pasted together out of two
+    #: mappings, and the fact it produces is filed against a node it does not describe. Read
+    #: through `namespace`, never directly, so the default is stated in one place.
+    target_namespace: str | None = None
+
+    @property
+    def namespace(self) -> str:
+        """The namespace every target of this mapping must carry. `node_type` unless declared."""
+        return self.target_namespace or self.node_type
 
 
 _REGISTRY: dict[tuple[str, str], StructuredMapping] = {}
@@ -63,7 +128,11 @@ register(StructuredMapping(
     identity_field="id", node_type="deal",
     fields=[FieldMap("dealname", "deal.title", "string"),
             FieldMap("dealstage", "deal.stage", "enum"),
-            FieldMap("amount", "deal.amount", "number"),
+            # MONEY, not "number": an amount is dimensioned, and doc 03 L1.3.9 step 3 sends it
+            # through the SAME ALG-10 normalizer the prose path uses. HubSpot states the code
+            # per deal in `deal_currency_code`, so the mapping names that column rather than
+            # pinning one currency for every tenant.
+            FieldMap("amount", "deal.amount", "money", currency_field="deal_currency_code"),
             FieldMap("closedate", "deal.close_date", "timestamp")],
     intent="pipeline_update", name_field="deal.title", tags=["stage_change"],
     # THE CROSS-TOOL BRIDGE. Without these, a CRM deal was an ISLAND — zero edges to
@@ -124,7 +193,11 @@ def mapping_from_dict(d: dict) -> StructuredMapping:
         name_field=d.get("name_field"),
         relations=[RelationMap(**r) for r in d.get("relations", [])],
         tags=list(d.get("tags", [])),
-        emit_on_change=list(d.get("emit_on_change", [])))
+        emit_on_change=list(d.get("emit_on_change", [])),
+        # Optional, and absent from every config written before it existed: a mapping whose
+        # targets are namespaced by its own node type says nothing here and gets the right
+        # answer from `namespace`.
+        target_namespace=d.get("target_namespace"))
 
 
 def load_mappings_from_config(path: str) -> int:

@@ -1,0 +1,159 @@
+{
+  "fixture_id": "transcript_renewal_call",
+  "gate": false,
+  "provenance": "doc 04: the transcript profile has no live source (audio is L1.3.4-U3, not built), so this is a synthetic fixture that exercises the code path and is excluded from the W4 gate.",
+  "profile_id": "transcript",
+  "tier": "T3",
+  "source": "meeting",
+  "locale": "en_US",
+  "timezone": "UTC",
+  "eval_time": "2026-01-14T09:00:00+00:00",
+  "envelope": {
+    "direction": "internal",
+    "sender": "Priya Raman",
+    "recipients": [
+      "Dev Kapoor"
+    ],
+    "thread_position": 1,
+    "thread_depth": 1,
+    "subject": "Renewal call"
+  },
+  "content": "PRIYA: So where are we on the renewal. DEV: We are ready on our side, I just need sign off from procurement before the end of the month. PRIYA: Understood, I will send the updated quote today so you have something to take to them.",
+  "expected": {
+    "intent": "commit",
+    "commitments": [
+      {
+        "actor": "Priya",
+        "action_contains": "quote",
+        "is_conditional": false
+      }
+    ],
+    "dependencies": [
+      {
+        "blocker": "procurement",
+        "blocked": "Dev",
+        "dependency_type": "approval"
+      }
+    ]
+  },
+  "recorded_model_output": {
+    "intent": "commit",
+    "stance": "positive",
+    "topics": [
+      "contract_renewal"
+    ],
+    "entity_mentions": [
+      {
+        "surface_form": "procurement",
+        "entity_type": "organization",
+        "evidence": [
+          {
+            "quote": "procurement",
+            "start_offset": 96,
+            "end_offset": 107
+          }
+        ],
+        "confidence_bp": 8400
+      }
+    ],
+    "amounts": [],
+    "dates_mentioned": [
+      {
+        "as_written": "before the end of the month",
+        "evidence": [
+          {
+            "quote": "before the end of the month",
+            "start_offset": 108,
+            "end_offset": 135
+          }
+        ]
+      }
+    ],
+    "commitments": [
+      {
+        "actor": "Priya",
+        "action": "send the updated quote",
+        "beneficiary": "Dev",
+        "is_conditional": false,
+        "due": {
+          "as_written": "today",
+          "evidence": [
+            {
+              "quote": "updated quote today",
+              "start_offset": 172,
+              "end_offset": 191
+            }
+          ]
+        },
+        "evidence": [
+          {
+            "quote": "I will send the updated quote today",
+            "start_offset": 156,
+            "end_offset": 191
+          }
+        ],
+        "confidence_bp": 9000
+      },
+      {
+        "actor": "Dev",
+        "action": "get sign off from procurement",
+        "beneficiary": "Priya",
+        "is_conditional": true,
+        "condition_text": "before the end of the month",
+        "evidence": [
+          {
+            "quote": "I just need sign off from procurement",
+            "start_offset": 70,
+            "end_offset": 107
+          }
+        ],
+        "confidence_bp": 8700
+      }
+    ],
+    "decision_states": [
+      {
+        "subject": "renewal",
+        "state": "pending",
+        "blocked_on": "procurement sign off",
+        "evidence": [
+          {
+            "quote": "We are ready on our side",
+            "start_offset": 44,
+            "end_offset": 68
+          }
+        ],
+        "confidence_bp": 8200
+      }
+    ],
+    "dependencies": [
+      {
+        "blocker": "procurement",
+        "blocked": "Dev",
+        "dependency_type": "approval",
+        "evidence": [
+          {
+            "quote": "sign off from procurement",
+            "start_offset": 82,
+            "end_offset": 107
+          }
+        ],
+        "confidence_bp": 8600
+      }
+    ],
+    "implied_actions": [
+      "send the updated quote so Dev can take it to procurement"
+    ],
+    "questions": [
+      "So where are we on the renewal"
+    ],
+    "roles": [
+      {
+        "party": "Dev",
+        "role": "economic_buyer_proxy"
+      }
+    ],
+    "field_confidence": {
+      "commitments": 8800
+    }
+  }
+}

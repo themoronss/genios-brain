@@ -10,7 +10,7 @@ SAFETY (built in):
   * --apply first copies every graph_* row for the org into  <table>_bak_<ts>  (reversible), THEN
     wipes + replays. Backups are left in place; restore = insert back from the _bak_<ts> tables.
   * Refuses to wipe if uncached unstructured events would force live LLM calls, unless --allow-llm.
-  * KEEPS l2_extraction_results (the cache), source_events and raw_payloads — only the projection
+  * KEEPS l1_extraction_results (the cache), source_events and raw_payloads — only the projection
     tables are rebuilt.
 
 Usage:  python -m scripts.rebuild_graph --org org_xxx [--apply] [--allow-llm]
@@ -45,7 +45,7 @@ def _bounded_engine(database_url: str, pool: int):
     return create_engine(url, pool_pre_ping=True, pool_size=pool, max_overflow=0,
                          pool_recycle=1800, pool_timeout=30)
 
-# Projection tables (org-scoped) rebuilt from the ledger + cache. NOT touched: l2_extraction_results
+# Projection tables (org-scoped) rebuilt from the ledger + cache. NOT touched: l1_extraction_results
 # (cache), source_events, raw_payloads, connections, signals*, cards*, llm_costs, user_tasks…
 _GRAPH_TABLES = ["graph_source_refs", "graph_facts", "graph_observations", "graph_edges",
                  "discrepancies", "graph_change_outbox", "graph_nodes", "graph_versions"]
@@ -112,7 +112,7 @@ def main() -> None:
         before = _probe(c, org)
         rows = _pull_all(c, org)
         structured, unstructured, _ = _coverage(rows)
-        cached_ev = c.execute(text("select count(distinct event_id) from l2_extraction_results "
+        cached_ev = c.execute(text("select count(distinct event_id) from l1_extraction_results "
                                    "where org_id=:o"), {"o": org}).scalar() or 0
     print(f"== ORG {org} ==")
     _print_probe("BEFORE", before)

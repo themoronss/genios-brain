@@ -1,0 +1,13 @@
+-- L1.7.5 · `source_coverage` gets the one column that makes its retention line checkable.
+--
+-- Doc 07's storage map says the table is "recomputed each sweep". The table has existed since
+-- migration 0002 with no writer at all, so the claim was untestable in the strongest sense:
+-- there were no rows. Now that a sweep files one declaration per org, a row that stopped being
+-- refreshed is the failure worth catching — a coverage verdict from six weeks ago licenses
+-- negative inferences ("they never replied") against a connection set that may since have been
+-- disconnected. A row nobody can date cannot be told apart from a fresh one.
+--
+-- Nullable with a default rather than NOT NULL: the table may hold rows written before this
+-- migration on a database that has been around, and back-dating them to now() would assert a
+-- freshness nobody measured.
+alter table source_coverage add column if not exists computed_at timestamptz default now();

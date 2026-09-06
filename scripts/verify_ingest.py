@@ -29,7 +29,7 @@ from genios_engine.platform.wiring import make_connection_store, make_graph_stor
 _FRESH_TABLES = [
     "source_refs", "graph_facts", "graph_observations", "graph_edges", "graph_changes",
     "discrepancies", "source_identity_map", "graph_nodes", "context_read_models",
-    "l2_extraction_results", "l2_processing_runs", "processing_cache",
+    "l1_extraction_results", "l2_processing_runs", "processing_cache",
     "parked_events", "sync_cursors", "source_events",
 ]
 # tables with NO org_id column (keyed by event_id) — must be deleted via a source_events join,

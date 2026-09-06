@@ -40,7 +40,7 @@ def _wipe(store):
                 c.execute(text(f"delete from {t} where org_id=:o"), {"o": ORG})
             except Exception:      # noqa: BLE001 — table may not exist in this schema
                 pass
-        c.execute(text("delete from l2_extraction_results where org_id=:o"), {"o": ORG})
+        c.execute(text("delete from l1_extraction_results where org_id=:o"), {"o": ORG})
 
 
 def _check(label, ok, detail=""):

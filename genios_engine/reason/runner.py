@@ -16,7 +16,7 @@ from genios_engine.packs.capabilities import BUILTIN_CAPABILITIES
 from genios_engine.packs.registry import PackRegistry
 from genios_engine.packs.wiring import (DEFAULT_PACK_ID, ensure_default, ensure_defaults,
                                         make_registry)
-from genios_engine.platform.config import get_settings
+from genios_engine.platform.config import get_settings, l1_seam_enabled
 from genios_engine.platform.ids import new_id
 
 from .baselines import build_baselines, load_node_metrics
@@ -1366,16 +1366,42 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
     # capability domain inside `shadow_compile`), so repeating it per pack bought nothing and paid
     # the full L4 cost each time. Every production caller enters through `run_all`.
     #
-    # `live=True`, deliberately. The flag used to run a measurement-only pass, so turning it on
-    # produced packages, decisions and no cards — the switch read as a cutover and behaved as a
-    # dry run. Measurement remains available to any caller as `shadow_compile(live=False)`, which
-    # is what the tests use; the ENV VAR is the cutover, because that is what flipping it means.
-    if get_settings().use_domain_compiler:
+    # WHO ENTERS THE PASS IS A ROW, NOT A FLAG. This used to read `use_domain_compiler` alone — a
+    # global boolean set in no environment — and that boolean is the ONLY thing that ever entered
+    # this pass. So the L1 -> L2 seam inside it (`gather_l1_signals`, the one production reader of
+    # `qualified_signals`) never ran for anybody: Layer 1 scored, qualified and stored every signal
+    # and Layer 3 read none of them, on every tenant, since the day the table shipped.
+    #
+    # The two decisions tangled in that one boolean are separated here:
+    #
+    #   * WHICH TENANTS' Layer 3 reads what Layer 1 published -> `l1_seam_enabled`, a row in
+    #     `l1_semantic_activation`. One pilot org is switched on by a person who knows which org
+    #     they mean, watched, and switched off again — and nobody else moves. This is the build
+    #     order's activation rule ("no global boolean flags; activation is a table") applied to the
+    #     seam that the rule's own example — `use_domain_compiler` — was left dark by.
+    #   * WHETHER the compiled brain's decisions carry AUTHORITY (packages published, admission
+    #     required, LIVE execution, signals delivery can build cards from) -> `use_domain_compiler`,
+    #     untouched. That is Layer 3's cutover, it belongs to Layer 3's wave and its own
+    #     `l3_activation(org_id, domain)` table, and the L3 plan is explicit that this flag is
+    #     "being retired, not extended". An activated tenant with the flag off therefore gets the
+    #     seam and a SHADOW pass: Layer 1's score, receipts and conflict pointers reach the
+    #     reasoning, and no card changes until Layer 3 is separately cut over.
+    #
+    # Not `or`-ed into one condition: an `or` would keep a global bypass that moves every tenant at
+    # once, which is exactly what the activation rule forbids. The flag still runs the pass for a
+    # deployment that has already set it — its behaviour is unchanged — it just no longer decides
+    # who reads Layer 1.
+    live_compile = get_settings().use_domain_compiler
+    # `getattr`, because a store without an engine is a store that cannot answer the
+    # question — and `l1_seam_enabled(None, ...)` is False, which is the same OFF every
+    # other failure of this lookup returns. A missing engine must not raise here: this is
+    # a gate in front of an optional pass, not the sweep's own storage.
+    if live_compile or l1_seam_enabled(getattr(store, "engine", None), org_id):
         try:
             from genios_engine.reason.domain_shadow import shadow_compile
-            shadow_compile(store=store, org_id=org_id, eval_time=eval_time, live=True)
+            shadow_compile(store=store, org_id=org_id, eval_time=eval_time, live=live_compile)
         except Exception:
-            logger.exception("domain-compiler live pass failed org=%s", org_id)
+            logger.exception("domain-compiler pass failed org=%s live=%s", org_id, live_compile)
 
     with store.engine.connect() as c:
         pack_ids = [r[0] for r in c.execute(text(

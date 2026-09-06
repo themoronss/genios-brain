@@ -25,9 +25,9 @@ from genios_engine.capture.internal_knowledge import (authority_rank_for, is_can
 from genios_engine.platform.auth import get_current_org
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.logging import get_logger
-from genios_engine.platform.wiring import (make_graph_store, make_llm_client, make_ocr,
-                                           make_payload_store, make_prepared_store,
-                                           make_repo, make_trace_repo)
+from genios_engine.platform.wiring import (make_coverage_fn, make_graph_store,
+                                           make_llm_client, make_ocr, make_payload_store,
+                                           make_prepared_store, make_repo, make_trace_repo)
 
 router = APIRouter()
 _log = get_logger("genios.uploads")
@@ -37,7 +37,6 @@ _payloads = make_payload_store()
 _repo = make_repo()
 _prepared = make_prepared_store()
 _trace_repo = make_trace_repo()
-_ocr = make_ocr()                                              # scanned PDFs/images → same OCR as email/Drive
 
 UPLOAD_DIR = Path(__file__).resolve().parents[2] / "uploads"   # genios-engine/uploads/
 MAX_BYTES = 10 * 1024 * 1024                                    # 10 MiB
@@ -58,12 +57,14 @@ def _ext(name: str) -> str:
     return (name.rsplit(".", 1)[-1] if "." in name else "").lower()
 
 
-def _extract_text(name: str, data: bytes, content_type: str = "") -> str:
+def _extract_text(name: str, data: bytes, content_type: str = "",
+                  org_id: str | None = None) -> str:
     """Native extraction + OCR fallback — the SAME document path email/Drive attachments use, so a
     scanned PDF/image uploaded here reads exactly like one that arrived by email. (The upload door
     was pypdf-only before, so a scanned file returned "" even with OCR enabled.) Plain-text formats
     still decode to utf-8; a binary that yields nothing returns "" → honest 'no extractable text'."""
-    return extract_text_best_effort(mime=content_type or "", data=data, filename=name, ocr=_ocr)
+    return extract_text_best_effort(mime=content_type or "", data=data, filename=name,
+                                    ocr=make_ocr(org_id))
 
 
 def _chunk(text_content: str) -> list[str]:
@@ -74,7 +75,8 @@ def _chunk(text_content: str) -> list[str]:
 
 
 def _emit_chunk(org_id: str, file_id: str, idx: int, subject: str, body: str,
-                uploader_email: str, internal_kind: str | None = None) -> None:
+                uploader_email: str, internal_kind: str | None = None,
+                coverage_fn=None) -> None:
     """One upload chunk → THE ONE DOOR (capture_event via intake): deduped, traced,
     W-05-whitelisted, payload + prepared text persisted — identical to a connector sync.
     (Was a hand-rolled SQL insert that skipped the gate, the trace and the seam.)
@@ -85,7 +87,13 @@ def _emit_chunk(org_id: str, file_id: str, idx: int, subject: str, body: str,
     in the `internal` family at authority rank 4, so an uploaded price list outranks what
     a billing system inferred. An unrecognised tag stays an ordinary label and the chunk
     keeps observed authority — the id shape is untouched either way, so `_ingest`'s
-    reconciliation prefix still matches."""
+    reconciliation prefix still matches.
+
+    `coverage_fn` is a PARAMETER, computed once per file by the caller, because it is one
+    connections read plus one count query and a 30-chunk PDF would otherwise pay for both
+    thirty times. Omitting it is what made every uploaded chunk land with
+    `coverage_ready=None` — the same 100%-None population the sweep was fixed for, entered by
+    a different door."""
     from genios_engine.capture.intake import ingest_manual
     ingest_manual(org_id=org_id, source="upload", object_type="document_chunk",
                   source_object_id=f"{file_id}:chunk_{idx}", body=body, subject=subject,
@@ -97,7 +105,7 @@ def _emit_chunk(org_id: str, file_id: str, idx: int, subject: str, body: str,
                   raw_extra=({"knowledge_key": file_id, "title": subject}
                              if internal_kind else None),
                   repo=_repo, payload_store=_payloads, prepared_store=_prepared,
-                  trace_repo=_trace_repo, connection_id="upload")
+                  trace_repo=_trace_repo, coverage_fn=coverage_fn, connection_id="upload")
 
 
 def _ingest(org_id: str, file_id: str, prefix: str, truncated: int = 0) -> None:
@@ -196,7 +204,7 @@ async def upload_resource(org_id: str, background_tasks: BackgroundTasks,
         return {"file_id": file_id, "status": existing.status,
                 "chunks": int(existing.chunks or 0), "duplicate": True}
 
-    all_chunks = _chunk(_extract_text(name, data, file.content_type or ""))
+    all_chunks = _chunk(_extract_text(name, data, file.content_type or "", org_id=org_id))
     chunks = all_chunks[:MAX_CHUNKS]
     truncated = len(all_chunks) - len(chunks)          # >0 → reported in _ingest, never silent
     status = "extracting" if chunks else "failed"
@@ -237,8 +245,13 @@ async def upload_resource(org_id: str, background_tasks: BackgroundTasks,
         raise
 
     kind = normalize_kind(tag)          # a canon tag promotes the whole file to rank 4
+    # ONE declaration for the whole file, not one per chunk: the inputs are a connections read
+    # and a count(distinct source_object_id), and they are facts about the TENANT's sources, not
+    # about a paragraph of a PDF.
+    coverage_fn = make_coverage_fn(org)
     for i, ch in enumerate(chunks):
-        _emit_chunk(org, file_id, i, name, ch, uploader, internal_kind=kind)
+        _emit_chunk(org, file_id, i, name, ch, uploader, internal_kind=kind,
+                    coverage_fn=coverage_fn)
     if chunks:
         background_tasks.add_task(_ingest, org, file_id, prefix, truncated)
 

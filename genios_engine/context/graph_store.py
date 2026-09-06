@@ -362,7 +362,7 @@ class GraphStore:
             raise ValueError("cache_get requires a non-empty org_id (tenant isolation)")
         with self._engine.connect() as c:
             r = c.execute(text(
-                "select output from l2_extraction_results "
+                "select output from l1_extraction_results "
                 "where processing_key=:k and org_id=:o"),
                 {"k": processing_key, "o": org_id}).first()
         if not r:
@@ -373,7 +373,7 @@ class GraphStore:
                   output_tokens, model) -> None:
         with self._engine.begin() as c:
             c.execute(text(
-                "insert into l2_extraction_results (processing_key, org_id, event_id, output, "
+                "insert into l1_extraction_results (processing_key, org_id, event_id, output, "
                 "input_tokens, output_tokens, model_snapshot) "
                 "values (:k, :o, :e, cast(:out as jsonb), :it, :ot, :m) "
                 "on conflict (processing_key) do nothing"),

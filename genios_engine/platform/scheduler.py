@@ -29,16 +29,34 @@ _stop = threading.Event()
 _SWEEP_TIMEOUT_S = 1200.0      # 20 min — generous for a real multi-org sweep, still bounded
 
 
-def _run_sweep_bounded():
+def _tick():
+    """One heartbeat, marked as the SCHEDULER's poll so L1.2.6's cadence gate binds it.
+
+    This is the wiring the polling scheduler was missing. `run_sync` asks whose turn it is —
+    per source cadence, per connection jitter, catch-up page budget — but only for a run that
+    belongs to a rhythm, and `scheduled_sweep()` is what says this one does. Without the mark
+    the tick behaves exactly as it did before: every connection polled on every tick, whatever
+    its source. With it, a Notion page stops being re-listed four times a day and an outage is
+    paid for in pages once instead of being silently skipped.
+
+    Marked HERE rather than around `start_scheduler` because the mark is thread-local and this
+    function is what actually runs on the worker thread the sweep is executed on.
+    """
     # lazy import: routes.py wires the stores at import time; importing here avoids a cycle
     from genios_engine.api.routes import run_maintenance_sweep
+    from genios_engine.capture.acquire.sync_runner import scheduled_sweep
 
+    with scheduled_sweep():
+        return run_maintenance_sweep()
+
+
+def _run_sweep_bounded():
     # NOT a `with ThreadPoolExecutor(...)` block — its __exit__ calls shutdown(wait=True), which
     # re-blocks on the same hung worker the instant .result(timeout=...) gives up, making the
     # deadline cosmetic (the exact bug this incident traced back to in composio_base.py).
-    ex = _futures.ThreadPoolExecutor(max_workers=1)
+    ex = _futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="genios-sweep-tick")
     try:
-        return ex.submit(run_maintenance_sweep).result(timeout=_SWEEP_TIMEOUT_S)
+        return ex.submit(_tick).result(timeout=_SWEEP_TIMEOUT_S)
     finally:
         ex.shutdown(wait=False)
 

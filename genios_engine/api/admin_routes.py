@@ -27,6 +27,7 @@ from sqlalchemy import text
 
 from genios_engine.platform import metrics as M
 from genios_engine.platform.auth import AuthCtx, require_admin
+from genios_engine.platform.config import get_settings
 from genios_engine.platform.logging import get_logger
 from genios_engine.platform.wiring import make_graph_store
 
@@ -601,8 +602,224 @@ def set_internal(target_org: str, body: InternalFlag,
     return {"org_id": target_org, "is_internal": bool(body.is_internal)}
 
 
+# ════════════════════════════════════════════════════════════════════════════════════════
+# 5 ── DISCOVERY (L1.4.5-U3 · the open lane's weekly report)
+# ════════════════════════════════════════════════════════════════════════════════════════
+@router.get("/discovery")
+def discovery(days: int = Query(30, ge=1, le=365),
+              min_occurrences: int = Query(5, ge=1, le=1000),
+              examples: int = Query(0, ge=0, le=3),
+              ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """What the extractor keeps noticing that the closed vocabulary has no name for.
+
+    This is the artifact that decides what the 35th observation kind should be: a `proposed_kind`
+    by frequency, how many orgs it spans, when it was first and last seen, and how much of that
+    frequency is actually substantiated by a receipt. Promotion itself is a human act with a code
+    change attached (L1.4.5-U2) — this endpoint proposes, it never edits the vocabulary.
+
+    ON DEMAND, not on a beat. The Celery broker here is a quota-limited Upstash Redis, and this
+    report is read by a person in a review, so it runs when that person asks for it.
+
+    `examples` is the one exception to this console's no-content rule, and it costs an audit row.
+    The rest of the admin surface returns counts and money only; a discovery review cannot be done
+    on labels alone — "the model called it `budget_freeze` 41 times" is not enough to name a
+    vocabulary member, and the sentences are what tell a reviewer whether it is one thing or
+    three. Only VERIFIED quotes are ever returned, so nothing here is a sentence the model
+    invented, and the ask is recorded against the admin who made it.
+    """
+    from genios_engine.capture.semantic import open_lane
+
+    _engine()                       # the same 503 every other admin read gives with no database
+    store = open_lane.PostgresOpenLaneStore(get_settings().database_url)
+    report = open_lane.discovery_report(store, eval_time=_now(), window_days=int(days),
+                                        min_occurrences=int(min_occurrences),
+                                        examples=int(examples))
+    if examples:
+        from genios_engine.platform.audit import record
+        record(ctx.org_id, "data_exported", actor_type="user", actor_id=ctx.org_id,
+               target_type="workspace", target_id="cross_org",
+               metadata={"audit_category": "admin", "report": "open_lane_discovery",
+                         "example_quotes": int(examples), "window_days": int(days)})
+    return {
+        "generated_at": _iso(report.generated_at),
+        "window_days": report.window_days,
+        "min_occurrences": report.min_occurrences,
+        "rows": [{"proposed_kind": row.proposed_kind, "occurrences": row.occurrences,
+                  "verified_occurrences": row.verified_occurrences, "orgs": row.orgs,
+                  "first_seen": _iso(row.first_seen), "last_seen": _iso(row.last_seen),
+                  "promotable": row.promotable, "example_quotes": list(row.example_quotes)}
+                 for row in report.rows],
+    }
+
+
+class PromotionBody(BaseModel):
+    """A HUMAN's promotion decision, in full. Every field is one only a person can supply, which
+    is `PromotionDecision`'s own rule restated at the edge: there is no `auto`, no threshold
+    override and no "promote everything above N"."""
+
+    proposed_kind: str
+    vocabulary_member: str
+    schema_version_before: str
+    schema_version_after: str
+
+
+@router.post("/discovery/promote")
+def promote_discovery_kind(body: PromotionBody,
+                           ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """L1.4.5-U2 · stamp the historical rows for a kind an admin has decided to promote.
+
+    THE HUMAN GATE, WHICH HAD NO DOOR. `discovery` above proposes and `promote_kind` performs the
+    data half, and `promote_kind` was reachable from nothing: the open lane could report for ever
+    and the vocabulary could never grow from it, so every discovery review ended in a report
+    nobody could act on. This is that door, and it is deliberately the only one — the endpoint
+    refuses everything `promote_kind` refuses (an unnamed decider, a name that is not a
+    snake_case member, a schema version that was not bumped, a kind already promoted, evidence
+    below the bar), and it does NOT touch the closed vocabulary.
+
+    `decided_by` is the AUTHENTICATED admin, never a field in the body. The whole point of the
+    unit is that a promotion is an act somebody signed, and a signature the caller types is not
+    one. The vocabulary edit the admin still has to make comes back in the response, because the
+    data half without the code half is a promotion that changes nothing about what gets
+    extracted.
+    """
+    from genios_engine.capture.semantic import open_lane
+
+    _engine()
+    decided_by = ctx.actor_id or ctx.org_id
+    store = open_lane.PostgresOpenLaneStore(get_settings().database_url)
+    decision = open_lane.PromotionDecision(
+        proposed_kind=body.proposed_kind, vocabulary_member=body.vocabulary_member,
+        decided_by=decided_by, schema_version_before=body.schema_version_before,
+        schema_version_after=body.schema_version_after)
+    try:
+        promotion = open_lane.promote_kind(store, decision, eval_time=_now())
+    except open_lane.PromotionRefused as exc:
+        # 409, not 400: every refusal is about the STATE of the evidence or the vocabulary — too
+        # few substantiated occurrences, an already-promoted kind, an un-bumped version — rather
+        # than about a malformed request, and the remedy is to change that state.
+        raise HTTPException(409, str(exc)) from exc
+
+    from genios_engine.platform.audit import record
+    record(ctx.org_id, "data_updated", actor_type="user", actor_id=decided_by,
+           target_type="workspace", target_id="cross_org",
+           metadata={"audit_category": "admin", "action": "open_lane_promotion",
+                     "proposed_kind": promotion.decision.proposed_kind,
+                     "vocabulary_member": promotion.decision.vocabulary_member,
+                     "rows_marked": promotion.rows_marked})
+    return {"proposed_kind": promotion.decision.proposed_kind,
+            "vocabulary_member": promotion.decision.vocabulary_member,
+            "decided_by": decided_by,
+            "rows_marked": promotion.rows_marked,
+            "promoted_at": _iso(promotion.promoted_at),
+            "occurrences": promotion.candidate.occurrences,
+            "verified_occurrences": promotion.candidate.verified_occurrences,
+            "vocabulary_edit": promotion.vocabulary_edit}
+
+
 @router.get("/whoami")
 def admin_whoami(ctx: AuthCtx = Depends(require_admin)) -> dict:
     """Cheap gate probe: the dashboard calls this to decide whether to render the Admin nav item.
     A 403 here is the normal answer for a customer, not an error."""
     return {"admin": True, "org_id": ctx.org_id}
+
+
+# ════════════════════════════════════════════════════════════════════════════════════════
+# 7 ── G10 · PILOT ACTIVATION (the L1 v2 semantic lane, one tenant at a time)
+# ════════════════════════════════════════════════════════════════════════════════════════
+# THE DEFECT THIS CLOSES. `platform/activation.py` and migration 0085 shipped the table, and
+# `api/routes.py::_semantic_activated_orgs` reads it on every sweep — so the READ was wired and
+# the WRITE was not. `activate_semantic` / `deactivate_semantic` had no caller anywhere outside
+# their own unit test, which means the only way to start or stop a pilot was an operator typing
+# INSERT into a psql session against the production tenant database. That is the same shape of
+# failure the activation rule was written against (`use_domain_compiler=False`, set in no
+# environment, 152 capabilities dark): a switch nothing can flip is a switch that is always off.
+#
+# WHY THESE THREE ROUTES LIVE ON THE ADMIN ROUTER. Activation is not a tenant preference. It
+# changes which extraction path a customer's mail goes through and therefore what their sweep
+# costs us, and the plan makes the decision ours by naming a pilot of one tenant. `require_admin`
+# is the only boundary in the engine that means "is this us?" — an owner JWT whose email is in
+# GENIOS_SUPERADMIN_EMAILS, never a scoped key. A customer-facing route here would let a tenant
+# switch on their own unbudgeted model calls.
+#
+# These are the second and third MUTATIONS on this router (after the `is_internal` flag), so the
+# module docstring's "read-only" claim is now "read-only except three audited switches". Both
+# writes are audited against the admin who made them, for the reason the table stores
+# `enabled_by` at all.
+class PilotActivation(BaseModel):
+    """The body of a switch-on. `notes` is the plan's printed fourth column — why this tenant."""
+
+    notes: str | None = None
+
+
+def _activation_row(record) -> dict:
+    return {"org_id": record.org_id, "enabled_at": _iso(record.enabled_at),
+            "enabled_by": record.enabled_by, "notes": record.notes,
+            "disabled_at": _iso(record.disabled_at), "disabled_by": record.disabled_by,
+            "live": record.live}
+
+
+@router.get("/l1-activation")
+def list_pilot_activation(include_disabled: bool = Query(False),
+                          _ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """Who is on the L1 v2 semantic lane, and since when.
+
+    `include_disabled=true` adds the tenants that were switched back off, which is the read
+    `scripts/l1_shadow_diff.py` is interpreted against: a seven-day window over a tenant whose
+    row was stamped on day four is a window in which the two paths ran side by side for four
+    days and not seven.
+    """
+    from genios_engine.platform.activation import list_semantic_activations
+    rows = list_semantic_activations(_engine(), include_disabled=bool(include_disabled))
+    return {"activations": [_activation_row(r) for r in rows],
+            "live": sum(1 for r in rows if r.live), "total": len(rows)}
+
+
+@router.post("/l1-activation/{target_org}")
+def activate_pilot(target_org: str, body: PilotActivation,
+                   ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """Put ONE tenant on the L1 v2 semantic lane. Idempotent, audited, reversible.
+
+    The tenant must exist: without the check the org FK raises a 500 on a typo'd id, and an
+    operator who mistypes a pilot tenant should be told which word was wrong rather than handed
+    a stack trace. Idempotent because the failure mode of a double-click must not be a second
+    pilot start date — `activate_semantic` keeps the original enabling record for a live row.
+    """
+    engine = _engine()
+    with engine.connect() as c:
+        if c.execute(text("select 1 from orgs where id=:o"), {"o": target_org}).first() is None:
+            raise HTTPException(404, "account not found")
+    from genios_engine.platform.activation import activate_semantic
+    record = activate_semantic(engine, target_org, by=ctx.actor_id or ctx.org_id,
+                               notes=body.notes)
+    from genios_engine.platform.audit import record as audit
+    audit(ctx.org_id, "config_changed", actor_type="user", actor_id=ctx.actor_id or ctx.org_id,
+          target_type="org", target_id=target_org,
+          metadata={"audit_category": "admin", "field": "l1_semantic_activation",
+                    "value": True, "notes": body.notes})
+    _log.info("L1 v2 semantic lane ACTIVATED for org=%s by=%s", target_org, record.enabled_by)
+    return _activation_row(record)
+
+
+@router.delete("/l1-activation/{target_org}")
+def deactivate_pilot(target_org: str, ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """Take ONE tenant back off the lane. The rollback half, and it is not optional — a migration
+    you cannot reverse is a cutover with extra steps.
+
+    Returns `switched_off: false` for a tenant that was already off rather than 404: the caller's
+    intent ("this tenant must not be on the new lane") is satisfied either way, and a 404 would
+    make a retry after a dropped connection look like a failure.
+    """
+    from genios_engine.platform.activation import (deactivate_semantic,
+                                                   get_semantic_activation)
+    engine = _engine()
+    switched_off = deactivate_semantic(engine, target_org, by=ctx.actor_id or ctx.org_id)
+    if switched_off:
+        from genios_engine.platform.audit import record as audit
+        audit(ctx.org_id, "config_changed", actor_type="user",
+              actor_id=ctx.actor_id or ctx.org_id, target_type="org", target_id=target_org,
+              metadata={"audit_category": "admin", "field": "l1_semantic_activation",
+                        "value": False})
+        _log.info("L1 v2 semantic lane DEACTIVATED for org=%s by=%s", target_org, ctx.actor_id)
+    record = get_semantic_activation(engine, target_org)
+    return {"org_id": target_org, "switched_off": switched_off,
+            "activation": _activation_row(record) if record else None}

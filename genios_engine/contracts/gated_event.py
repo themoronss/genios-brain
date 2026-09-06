@@ -54,6 +54,15 @@ class GatedEvent(BaseModel):
     #: trust a seam that carries nothing, and None reads as "unknown" exactly where a caller
     #: most wants a yes.
     coverage_ready: bool | None = None
+    #: Whether at least one of this event's domains was NOT covered, so L3 must compile it in
+    #: degraded mode instead of pretending full expertise.
+    #:
+    #: The SECOND half of the answer `coverage_ready` gives, and the same defect one field
+    #: along: `capture/esqe/domain.tag_domains` computed it on the request path, the trace row
+    #: recorded it, and the boundary object dropped it — so L2, which reads the gated event and
+    #: not our trace rows, could not tell a full compile from a degraded one. `None` means no
+    #: tagger ran (a pre-S4 row); a freshly gated event always carries a real bool.
+    degraded_compile: bool | None = None
     # Company canon (capture.internal_knowledge.INTERNAL_KINDS) — the authority this
     # event carries into the graph. None = observed traffic, ordinary rank.
     internal_kind: str | None = None

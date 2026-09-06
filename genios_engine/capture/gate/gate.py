@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from genios_engine.capture.structured.registry import has_mapping
+from genios_engine.capture.structured.mapper import route_structured
 from genios_engine.contracts.trace import EventTrace
 
 from .context import GateContext, GateResult
@@ -58,10 +58,26 @@ def run_gate(ctx: GateContext, trace: EventTrace,
 
     # S1.5 — structured short-circuit (already typed; skips email N-codes)
     if ctx.is_structured:
-        if has_mapping(ctx.event.source, ctx.event.object_type):
-            trace.record("S1.5", "short_circuit", reason_code="structured_mapped")
+        route = route_structured(ctx.event.source, ctx.event.object_type)
+        if route.mapped:
+            trace.record("S1.5", "short_circuit", reason_code="structured_mapped",
+                         mapping_id=route.mapping.mapping_id)
             return GateResult(action="short_circuit", route="structured")
-        trace.record("S1.5", "park", reason_code="mapping_missing")
+        # DIVERGENCE FROM DOC 03 L1.3.9, deliberate and narrower than the doc.
+        #
+        # The doc's failure table says an unregistered structured source "falls to
+        # `needs_extraction`, model runs on JSON — acceptable fallback, but counted". This gate
+        # PARKS instead, and keeps doing so: parking is recoverable and free, and
+        # `parked/drain.py` re-drains `mapping_missing` the moment a mapping is registered, so
+        # the object flows through the bypass it was always entitled to rather than through a
+        # model reading raw JSON at model confidence. Running the model is the strictly worse
+        # half of the doc's own sentence and is the one thing the component exists to avoid.
+        #
+        # The METRIC is the half worth keeping, and it is kept: `unmapped_structured` rides the
+        # trace, so "how many objects paid for a mapping nobody wrote?" is countable from stored
+        # traces instead of being a number nothing emits.
+        trace.record("S1.5", "park", reason_code="mapping_missing",
+                     unmapped_structured=route.unmapped_structured)
         return GateResult(action="park", reason_code="mapping_missing")
 
     # S1a — the rest of content integrity, evaluated for EVERYONE. "Can we read this?" is not a

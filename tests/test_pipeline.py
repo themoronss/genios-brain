@@ -22,7 +22,9 @@ def test_full_pipeline_emits_gated_event_with_full_trace():
     assert res.gated.triage_lane in {"P0", "P1", "P2", "P3"}
     # trace shows every L1 stage in order
     stages = [r.stage for r in res.trace.records]
-    assert stages == ["landing", "preprocess", "S0", "S1", "S2", "triage", "emit"]
+    # `s4_esqe` sits between triage and emit: S4 qualifies every emitted event — it is pure,
+    # unbilled and takes no wiring, so there is no configuration in which it is absent.
+    assert stages == ["landing", "preprocess", "S0", "S1", "S2", "triage", "s4_esqe", "emit"]
 
 
 def test_duplicate_stops_at_landing():
@@ -76,4 +78,5 @@ def test_structured_event_emits_structured_route():
     assert res.gated.route == "structured"
     assert res.gated.structured_fields == {"deal.stage": "proposal"}
     # structured skips preprocess + email N-codes
-    assert [r.stage for r in res.trace.records] == ["landing", "S0", "S1.5", "triage", "emit"]
+    assert [r.stage for r in res.trace.records] == ["landing", "S0", "S1.5", "triage",
+                                                    "s4_esqe", "emit"]

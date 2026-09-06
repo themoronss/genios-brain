@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import base64
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Mapping
 
 from genios_engine.capture.documents.native import process_document
 
@@ -187,6 +187,15 @@ class ComposioDriveConnector:
         objs = [self._to_raw(f) for f in files if isinstance(f, dict)]
         return SourceBatch(objects=[o for o in objs if o], next_cursor=data.get("nextPageToken"))
 
+    def webhook_objects(self, payload: Mapping[str, Any]) -> tuple[RawObject, ...]:
+        """L1.2.5-U1 — one pushed Drive change → the row a poll of that file produces. The
+        trigger names the file; `_to_raw` downloads and extracts it, as the sweep does."""
+        file = payload.get("file") or payload.get("object") or payload
+        if not isinstance(file, Mapping):
+            return ()
+        obj = self._to_raw(dict(file))
+        return (obj,) if obj is not None else ()
+
     def _to_raw(self, f: dict) -> RawObject | None:
         fid = f.get("id")
         if not fid:
@@ -205,7 +214,7 @@ class ComposioDriveConnector:
             raw={"subject": name, "body": r.text, "mime": mime, "has_attachment": bool(r.text),
                  "document": {"native_parse_used": r.native_parse_used, "ocr_used": r.ocr_used,
                               "ocr_engine": r.ocr_engine, "ocr_pages": r.ocr_pages,
-                              "avg_confidence": r.avg_confidence, "status": r.status,
+                              "confidence_bp": r.confidence_bp, "status": r.status,
                               **file_metadata(f)}},
         )
 

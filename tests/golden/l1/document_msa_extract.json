@@ -1,0 +1,151 @@
+{
+  "fixture_id": "document_msa_extract",
+  "provenance": "doc 04 L1.4.2's document profile \u2014 emphasis amounts, dates, entity mentions, obligations. An obligation in a contract IS a commitment by a party, which is the correction profiles.py records against the doc's table.",
+  "profile_id": "document",
+  "tier": "T3",
+  "source": "drive",
+  "locale": "en_US",
+  "timezone": "UTC",
+  "eval_time": "2026-01-14T09:00:00+00:00",
+  "envelope": {
+    "direction": "internal",
+    "sender": "",
+    "recipients": [],
+    "thread_position": 1,
+    "thread_depth": 1,
+    "subject": "MSA extract"
+  },
+  "content": "MASTER SERVICES AGREEMENT \u2014 EXTRACT\n3.1 Fees. The Customer shall pay a subscription fee of $240,000 per annum, invoiced annually in advance.\n3.2 Term. This Agreement renews on October 15, 2026 unless either party gives written notice of non-renewal at least 60 days prior.\n4.2 Support. The Supplier shall respond to a Severity 1 incident within 4 hours.",
+  "expected": {
+    "intent": "inform",
+    "amounts": [
+      "$240,000"
+    ],
+    "dates": [
+      {
+        "as_written": "October 15, 2026",
+        "certainty": "exact"
+      }
+    ],
+    "commitments": [
+      {
+        "actor": "Customer",
+        "action_contains": "subscription fee",
+        "is_conditional": false
+      },
+      {
+        "actor": "Supplier",
+        "action_contains": "Severity 1",
+        "is_conditional": false
+      }
+    ]
+  },
+  "recorded_model_output": {
+    "intent": "inform",
+    "stance": "neutral",
+    "topics": [
+      "contract_renewal",
+      "fees",
+      "support_sla"
+    ],
+    "entity_mentions": [
+      {
+        "surface_form": "Customer",
+        "entity_type": "organization",
+        "evidence": [
+          {
+            "quote": "The Customer shall pay",
+            "start_offset": 46,
+            "end_offset": 68
+          }
+        ],
+        "confidence_bp": 8500
+      },
+      {
+        "surface_form": "Supplier",
+        "entity_type": "vendor",
+        "evidence": [
+          {
+            "quote": "The Supplier shall respond",
+            "start_offset": 286,
+            "end_offset": 312
+          }
+        ],
+        "confidence_bp": 8500
+      }
+    ],
+    "amounts": [
+      {
+        "minor_units": 24000000,
+        "currency": "USD",
+        "as_written": "$240,000"
+      }
+    ],
+    "dates_mentioned": [
+      {
+        "as_written": "October 15, 2026",
+        "evidence": [
+          {
+            "quote": "October 15, 2026",
+            "start_offset": 176,
+            "end_offset": 192
+          }
+        ]
+      }
+    ],
+    "commitments": [
+      {
+        "actor": "Customer",
+        "action": "pay the subscription fee of $240,000 per annum",
+        "beneficiary": "Supplier",
+        "is_conditional": false,
+        "evidence": [
+          {
+            "quote": "The Customer shall pay a subscription fee of $240,000 per annum",
+            "start_offset": 46,
+            "end_offset": 109
+          }
+        ],
+        "confidence_bp": 9200
+      },
+      {
+        "actor": "Supplier",
+        "action": "respond to a Severity 1 incident within 4 hours",
+        "beneficiary": "Customer",
+        "is_conditional": false,
+        "evidence": [
+          {
+            "quote": "The Supplier shall respond to a Severity 1 incident within 4 hours",
+            "start_offset": 286,
+            "end_offset": 352
+          }
+        ],
+        "confidence_bp": 9300
+      }
+    ],
+    "decision_states": [],
+    "dependencies": [],
+    "implied_actions": [
+      "give notice of non-renewal at least 60 days before October 15, 2026"
+    ],
+    "questions": [],
+    "unclassified_observations": [
+      {
+        "proposed_kind": "notice_period",
+        "description": "non-renewal requires 60 days written notice",
+        "evidence": [
+          {
+            "quote": "at least 60 days prior",
+            "start_offset": 249,
+            "end_offset": 271
+          }
+        ],
+        "confidence_bp": 8800
+      }
+    ],
+    "field_confidence": {
+      "commitments": 9200,
+      "amounts": 9400
+    }
+  }
+}

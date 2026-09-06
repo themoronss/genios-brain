@@ -121,6 +121,17 @@ SOURCES: tuple[SourceDescriptor, ...] = (
     SourceDescriptor("gdrive", "knowledge", capability="document_store", buildable=True,
                      aliases=("drive", "google_drive"), object_types=("file",),
                      immutable=False, version_field="modifiedTime"),
+    # Two tiles the dashboard has always rendered as clickable while both connect endpoints
+    # refuse them — the exact lie L1.1-U2 is about. Described here so the catalog can say
+    # "coming soon, tell us you want it" instead of the UI inventing an availability the
+    # engine never claimed. Documents are edited after we first see them; the version field
+    # is declared now so flipping `buildable` later is a one-word change, not a dedup bug.
+    SourceDescriptor("gsheets", "knowledge", capability="document_store",
+                     aliases=("sheets", "google_sheets"),
+                     immutable=False, version_field="modifiedTime"),
+    SourceDescriptor("gdocs", "knowledge", capability="document_store",
+                     aliases=("docs", "google_docs"),
+                     immutable=False, version_field="modifiedTime"),
     SourceDescriptor("confluence", "knowledge"),
     SourceDescriptor("upload", "knowledge", deliberate=True,
                      object_types=("document_chunk",)),
@@ -238,3 +249,89 @@ def version_field_for(source: str) -> str | None:
     """The field a mutable source must carry a version in."""
     d = descriptor_of(source)
     return d.version_field if d else None
+
+
+# ── L1.1-U2 · registry honesty: the ONE answer the UI is allowed to render ───────
+#
+# The gap this closes. `BUILDABLE_SOURCES` decides, in both connect endpoints, whether a
+# tenant may connect a source at all — and nothing ever exposed it. So the dashboard kept
+# its own hand-written list of clickable tiles, and four of the nine it listed (slack,
+# jira, gsheets, gdocs) are hard-refused by the very endpoint the tile calls. The tile is
+# a promise the engine breaks the moment it is clicked; the fifth list drifted exactly the
+# way the four the registry replaced did.
+#
+# `catalog()` is that list, derived. A source is described once, here, and the UI reads the
+# derivation instead of re-typing it. Three statuses, because "connectable or not" is one
+# distinction too few and would make the upload door look broken:
+#
+#   connectable — `make_connector_for` can build it; the connect endpoints accept it.
+#   deliberate  — no connector by design. A person writes or uploads this (upload, internal,
+#                 human, agent). Refusing it at /connect is CORRECT, so rendering it as
+#                 "coming soon" would be its own lie: the door exists, it is just not OAuth.
+#   waitlist    — described, not built. "Coming soon" plus a recordable request
+#                 (`capture.source_waitlist`), never an available tile that errors.
+#
+# GeniOS's own output re-entering as evidence (`family == "intelligence"`) is not offered at
+# all: it is not a thing a tenant connects, and putting it on a waitlist would invite a
+# request nobody could ever fulfil.
+_NOT_OFFERED_FAMILIES: frozenset[str] = frozenset({"intelligence"})
+
+#: The three answers `SourceOffer.status` may carry. Declared, not derived, so a test can
+#: assert the set rather than discover it from whatever the current SOURCES happen to be.
+OFFER_STATUSES: frozenset[str] = frozenset({"connectable", "deliberate", "waitlist"})
+
+
+@dataclass(frozen=True, slots=True)
+class SourceOffer:
+    """What the product may TRUTHFULLY say about one source, derived from its descriptor.
+
+    `connectable` is redundant with `status == "connectable"` on purpose: it is the single
+    boolean a tile's disabled-state binds to, and a UI that has to parse a string to learn
+    whether a button works is a UI that will get it wrong once.
+    """
+
+    source: str
+    family: str
+    status: str
+    connectable: bool
+    capability: str | None
+    aliases: tuple[str, ...]
+    object_types: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if self.status not in OFFER_STATUSES:
+            raise ValueError(f"{self.source}: unknown offer status {self.status!r}")
+        if self.connectable != (self.status == "connectable"):
+            raise ValueError(
+                f"{self.source}: connectable={self.connectable} contradicts status "
+                f"{self.status!r} — the two answers a tile reads must not disagree")
+
+
+def _status_of(descriptor: SourceDescriptor) -> str:
+    if descriptor.buildable:
+        return "connectable"
+    if descriptor.deliberate:
+        return "deliberate"
+    return "waitlist"
+
+
+def offer_of(source: str) -> SourceOffer | None:
+    """The offer for one source id or alias — None for an unknown or unoffered source."""
+    descriptor = descriptor_of(source)
+    if descriptor is None or descriptor.family in _NOT_OFFERED_FAMILIES:
+        return None
+    status = _status_of(descriptor)
+    return SourceOffer(source=descriptor.source, family=descriptor.family, status=status,
+                       connectable=status == "connectable", capability=descriptor.capability,
+                       aliases=descriptor.aliases, object_types=descriptor.object_types)
+
+
+def catalog() -> tuple[SourceOffer, ...]:
+    """Every source the product may show, connectable ones first, each group alphabetical.
+
+    Ordered here rather than in the route or the browser: the order IS product copy (the
+    things you can connect today, then the things you cannot), and three call sites sorting
+    a list three ways is the same drift this module exists to end.
+    """
+    offers = [offer for offer in (offer_of(d.source) for d in SOURCES) if offer is not None]
+    return tuple(sorted(offers, key=lambda o: (not o.connectable, o.status, o.source)))

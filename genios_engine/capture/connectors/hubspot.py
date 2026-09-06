@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Mapping
 
 from .base import RawObject, SourceBatch
 from .composio_base import ComposioExec
@@ -28,6 +28,25 @@ def _parse_ts(v: Any) -> datetime:
     return datetime.now(timezone.utc)
 
 
+#: Fields that mean "this payload carries the deal itself" rather than only a pointer to it.
+_DEAL_FIELDS = ("properties", "dealname", "dealstage", "amount", "closedate")
+
+
+def _webhook_record(payload: Any) -> dict | None:
+    """The deal record inside a pushed envelope, whatever wrapper it arrived in."""
+    if not isinstance(payload, Mapping):
+        return None
+    for key in ("deal", "object", "record"):
+        nested = payload.get(key)
+        if isinstance(nested, Mapping):
+            return dict(nested)
+    return dict(payload)
+
+
+def _has_deal_fields(record: Mapping[str, Any]) -> bool:
+    return any(record.get(f) for f in _DEAL_FIELDS)
+
+
 class ComposioHubspotConnector:
     source = "hubspot"
 
@@ -50,8 +69,50 @@ class ComposioHubspotConnector:
             cursor = paging["next"].get("after")
         return SourceBatch(objects=[o for o in objs if o], next_cursor=cursor)
 
+    def webhook_objects(self, payload: Mapping[str, Any]) -> tuple[RawObject, ...]:
+        """L1.2.5-U1 — one pushed HubSpot trigger → the row a poll of that deal produces.
+
+        THIS IS THE SOURCE THAT WAS DROPPING ITS ENTIRE REAL-TIME LANE. `dispatch.py` had no
+        HubSpot branch, so every CRM push answered "unmapped payload" while the poll path read
+        the same deals fine.
+
+        Two envelope shapes arrive, and only one of them carries a record. Composio nests the
+        object (`deal` / `object` / `record`) or sends it bare; HubSpot's own webhook sends a
+        PROPERTY CHANGE — an `objectId` and the one field that moved, nothing else. Parsing that
+        envelope on its own would land a deal with no name, stage or amount and freeze the real
+        one out by dedup, so an id-only push FETCHES the deal: same record, same `_to_raw`, same
+        row as the sweep. If the fetch cannot be made (no credentials) or comes back empty, this
+        reports nothing rather than fabricating a hollow deal.
+        """
+        record = _webhook_record(payload)
+        if record is None:
+            return ()
+        if not _has_deal_fields(record):
+            record = self._fetch_deal(record)
+            if record is None:
+                return ()
+        obj = self._to_raw(record)
+        return (obj,) if obj is not None else ()
+
+    def _fetch_deal(self, record: dict) -> dict | None:
+        """Resolve an id-only push into the full deal, or None when we cannot."""
+        did = record.get("id") or record.get("dealId") or record.get("objectId")
+        if did is None:
+            return None
+        try:
+            fetched = self.fetch_content(str(did))
+        except Exception:      # noqa: BLE001 — a webhook must never 500 on a provider hiccup
+            return None
+        if not isinstance(fetched, Mapping):
+            return None
+        inner = fetched.get("data") if isinstance(fetched.get("data"), Mapping) else fetched
+        deal = _webhook_record(inner)
+        return deal if deal is not None and _has_deal_fields(deal) else None
+
     def _to_raw(self, d: dict) -> RawObject | None:
-        did = d.get("id") or d.get("dealId")
+        # `objectId` is HubSpot's own name for the id in a webhook envelope; the list API says
+        # `id`. Both read here so ONE parser serves both doors (L1.2.5-U1 parity).
+        did = d.get("id") or d.get("dealId") or d.get("objectId")
         if did is None:
             return None
         props = d.get("properties") if isinstance(d.get("properties"), dict) else {}

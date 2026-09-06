@@ -897,7 +897,18 @@ def _park(engine, row: dict, now: datetime, *, detail: str, out: dict) -> None:
         c.execute(text(
             "update delivery_outbox set status=:parked, last_error=:e where id=:i"),
             {"parked": UNDELIVERABLE, "e": detail, "i": row["id"]})
-        _mark_lifecycle(c, row, "undeliverable", "undeliverable", now,
+        # `lifecycle` is the closed public vocabulary pinned by delivery_outbox_lifecycle_ck
+        # (migration 0043): queued/deferred/delivered/viewed/ignored/accepted/executed/failed/
+        # suppressed/cancelled/expired. "undeliverable" is a `status` value, not a lifecycle one,
+        # and writing it here raised CheckViolation on every park — so the drain died on the first
+        # card whose channel had no adapter instead of parking it.
+        #
+        # `suppressed` is the honest lifecycle: nothing was attempted (attempts stay untouched, and
+        # `failed` would claim a transport call that never happened), and nothing will retry on a
+        # timer — but `revive_undeliverable` still selects the row the moment a channel appears.
+        # The event `kind` stays "undeliverable" because the audit trail should name the actual
+        # reason, which is narrower than the lifecycle bucket it maps onto.
+        _mark_lifecycle(c, row, "suppressed", "undeliverable", now,
                         detail={"reason": detail})
     out["undeliverable"] = out.get("undeliverable", 0) + 1
 

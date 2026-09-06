@@ -323,7 +323,58 @@ _ORG_SCOPED_TABLES = [
     "graph_source_refs", "graph_facts", "graph_edges", "graph_observations",
     "source_identity_map", "graph_nodes", "graph_versions", "baselines",
     "raw_payloads", "prepared_content", "document_jobs", "resource_uploads",
-    "l2_extraction_results", "l2_processing_runs", "event_trace", "parked_events",
+    "l1_extraction_results", "l2_processing_runs", "event_trace", "parked_events",
+    # L1.5.5's conflict record (migration 0087). It holds both sides of a disagreement VERBATIM —
+    # contract amounts, renewal dates and the quoted sentences they were read from — so a tenant
+    # deletion that skipped it would leave a deleted customer's contract terms in the database.
+    # The org FK cascades on account deletion; this entry is what makes /reset erase it too.
+    "signal_conflicts",
+    # L1.4.5's open lane. It holds message QUOTES — the receipt behind an observation the
+    # vocabulary had no word for — so a tenant deletion that skipped it would leave a deleted
+    # customer's sentences in a cross-org discovery report. The org FK cascades on account
+    # deletion; this row is what makes /reset erase it too.
+    "unclassified_observations",
+    # L1.1-U2's waitlist: which sources this tenant asked for and could not connect. Demand,
+    # but demand attached to a named org — it leaves with the org.
+    "source_waitlist",
+    # L1.6.8's floor and its ledger (migration 0088). `qualification_drops` holds the tenant's
+    # own subject keys and the importance components computed from their amounts and dates —
+    # a record of what we decided NOT to show them, which is still their data. The floor row and
+    # its changelog name the number a human set for this tenant and who set it. The org FK
+    # cascades on account deletion; these entries are what make /reset erase them too.
+    "qualification_drops", "qualification_floor_changes", "org_qualification_floors",
+    # L1.6.10's rejection ledger (migration 0092). `reason` quotes the tenant's own values back —
+    # the amount that was out of range, the kind that was not in the taxonomy, the sentence a
+    # receipt-less claim was made in — and `payload_ref` points at a body kept 90 days on this
+    # row's own promise. A deletion that skipped it would leave a deleted customer's words behind
+    # in the table built to explain what we refused to tell them. The org FK cascades on account
+    # deletion; this entry is what makes /reset erase it too.
+    "publication_rejections",
+    # L1.6.7 term 4 rung 1 (migration 0091). It names the tenant's own vendors and carries the
+    # free-text reason a human gave for tagging each one, so it is theirs to have erased. The org
+    # FK cascades on account deletion; this entry is what makes /reset erase it too.
+    "org_mission_critical_entities",
+    # L1.7.4's signal store (migration 0089) — everything Layer 1 CONCLUDED about this tenant.
+    # It holds `evidence_refs`, which are verbatim quotes out of the tenant's own mail, plus the
+    # subject keys, amounts and dates those quotes were about. A tenant deletion that skipped it
+    # would leave a deleted customer's sentences in the database in the one table built to be
+    # read by every downstream surface. The org FK cascades on account deletion; this entry is
+    # what makes /reset erase it too — and the loop below runs with no try/except by design, so
+    # a name missing from this list leaks silently rather than failing loudly.
+    "qualified_signals",
+    # L1.6.9's lifecycle rows (migration 0093). `subject_key` is ALG-22's derived subject and
+    # carries the tenant's own counterparties and deal names, so a deletion that skipped it would
+    # leave a deleted customer's subjects behind. The org FK cascades on account deletion; this
+    # entry is what makes /reset erase it too.
+    "signal_lifecycle",
+    # W10/G10's pilot switch (migrations 0085 + 0090). It names a person (`enabled_by`,
+    # `disabled_by`) and carries free text about the tenant (`notes`), so it is theirs to have
+    # erased. It is also the one entry in this list whose removal changes BEHAVIOUR rather than
+    # only deleting data — and it changes it in the safe direction: a tenant whose graph was just
+    # wiped comes back on the OLD extraction path until somebody deliberately switches them on
+    # again, which is the same default every tenant that never joined the pilot has. The org FK
+    # cascades on account deletion; this entry is what makes /reset erase it too.
+    "l1_semantic_activation",
     "source_coverage", "sync_cursors", "l1_sync_runs", "source_events",
     "agent_events", "human_events",
     "onboarding_progress", "sync_jobs",          # sync progress + durable job queue (org-scoped)

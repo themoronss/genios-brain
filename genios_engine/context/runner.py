@@ -138,6 +138,28 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
     return res.outcome, res.primary_node
 
 
+#: The extraction-cache rows that mean "LAYER 2 already read this message".
+#:
+#: `l1_extraction_results` has TWO writers and they mean opposite things to this drain.
+#: `GraphStore.cache_set` — L2's own writer, three files away — files the row this loop must not
+#: pay for twice, and it writes no `profile_id` because the L2 lane has no profiles.
+#: `capture/semantic/cache.PostgresExtractionCache` files Layer 1's extraction and ALWAYS carries
+#: one (`cache_key` refuses a blank component, and the structured mapper files `structured`).
+#:
+#: The guard used to be `event_id not in (select event_id from l1_extraction_results)` with no
+#: discriminator, which was correct for exactly as long as L2 was the only writer. Migration 0080
+#: moved the table to Layer 1 and L1 v2 began filing every event it extracts — so the guard
+#: silently inverted its meaning: the events Layer 1 understood BEST became the events Layer 2
+#: refused to drain. Nothing errors in that state. The sweep reports a clean run, the drain
+#: returns `processed: 0`, and the graph simply stops growing — which makes switching activation
+#: on strictly WORSE than leaving it off, rather than incomplete.
+#:
+#: `profile_id is null` is the discriminator rather than a name pattern or a date cutoff because
+#: it is a property of the WRITER, not of a convention either side could drift from.
+_L2_OWN_EXTRACTIONS = ("select event_id from l1_extraction_results "
+                       "where org_id=:o and profile_id is null")
+
+
 def _pull(store: GraphStore, org_id: str, limit: int):
     """Drain order = L1's triage lane FIRST (P0 preempts P3 — the lane was computed at
     ingestion and previously thrown away), then arrival time. Prepared text rides along
@@ -154,7 +176,7 @@ def _pull(store: GraphStore, org_id: str, limit: int):
             "join raw_payloads rp on rp.event_id = se.event_id "
             "left join prepared_content pc on pc.event_id = se.event_id and pc.org_id = se.org_id "
             "where se.org_id=:o and se.outcome='emitted' "
-            "and se.event_id not in (select event_id from l2_extraction_results where org_id=:o) "
+            f"and se.event_id not in ({_L2_OWN_EXTRACTIONS}) "
             "and se.event_id not in (select event_id from l2_processing_runs "
             "                        where org_id=:o and status in ('done','parked')) "
             "order by coalesce(se.triage_lane, 'P3') asc, se.occurred_at asc "

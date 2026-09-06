@@ -1,0 +1,67 @@
+{
+  "fixture_id": "chat_reschedule",
+  "gate": false,
+  "provenance": "doc 04 is explicit: the chat profile has no live connector (L1.1 priority P4), so it is written and unit-tested against a SYNTHETIC fixture and is NOT part of the W4 acceptance gate. It runs; it is not graded.",
+  "profile_id": "chat",
+  "tier": "T1",
+  "source": "slack",
+  "locale": "en_US",
+  "timezone": "UTC",
+  "eval_time": "2026-01-14T09:00:00+00:00",
+  "envelope": {
+    "direction": "internal",
+    "sender": "@dev",
+    "recipients": [
+      "#eng"
+    ],
+    "thread_position": 1,
+    "thread_depth": 1,
+    "subject": ""
+  },
+  "content": "can we push the standup to 10:30 tomorrow? I have the vendor call at 10 and I don't want to double book. also did we ever hear back on the pricing question",
+  "expected": {
+    "intent": "schedule",
+    "stance": "neutral",
+    "commitments": []
+  },
+  "recorded_model_output": {
+    "intent": "schedule",
+    "stance": "neutral",
+    "topics": [
+      "scheduling",
+      "pricing"
+    ],
+    "entity_mentions": [],
+    "amounts": [],
+    "dates_mentioned": [
+      {
+        "as_written": "tomorrow",
+        "evidence": [
+          {
+            "quote": "tomorrow",
+            "start_offset": 33,
+            "end_offset": 41
+          }
+        ]
+      }
+    ],
+    "commitments": [],
+    "decision_states": [],
+    "dependencies": [],
+    "implied_actions": [
+      "move the standup to 10:30"
+    ],
+    "questions": [
+      "did we ever hear back on the pricing question"
+    ],
+    "scheduling_proposals": [
+      {
+        "what": "standup",
+        "when": "10:30 tomorrow"
+      }
+    ],
+    "field_confidence": {
+      "questions": 9000
+    }
+  }
+}

@@ -138,7 +138,19 @@ def test_a_deal_fact_from_correspondence_mints_a_deal_node(pg_store):
     assert len(deals) == 1, "correspondence carrying deal.* must produce exactly one deal node"
     # Named after the ACCOUNT. A card says this out loud, and "deal:node_abc123" in front of a
     # founder is worse than no card at all.
-    assert "acme.io" in (deals[0].display_name or "")
+    #
+    # Assert that against the account's OWN name rather than against the literal "acme.io": the
+    # company node here resolves to "Acme", so the deal is "Acme — deal", and hard-coding the
+    # domain pinned the FALLBACK (`label or company`, taken only when the account has no
+    # display_name) as though it were the rule. That made the better name look like a regression.
+    with pg_store.engine.begin() as conn:
+        account = conn.execute(text(
+            "select display_name, canonical_key from graph_nodes where org_id=:o "
+            "and node_type='company' and valid_to is null"), {"o": org}).one()
+    name = deals[0].display_name or ""
+    assert (account.display_name or account.canonical_key) in name, (
+        f"the deal must be named after the account, got {name!r}")
+    assert "node_" not in name, f"an opaque node id reached a founder-visible name: {name!r}"
 
 
 def test_deal_facts_land_on_the_deal_not_on_the_person(pg_store):

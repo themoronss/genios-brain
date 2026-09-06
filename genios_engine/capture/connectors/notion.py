@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Mapping
 
 from .base import RawObject, SourceBatch
 from .composio_base import ComposioExec
@@ -57,6 +57,16 @@ class ComposioNotionConnector:
         objs = [self._to_raw(p) for p in results if isinstance(p, dict)]
         cursor = data.get("next_cursor") if data.get("has_more") else None
         return SourceBatch(objects=[o for o in objs if o], next_cursor=cursor)
+
+    def webhook_objects(self, payload: Mapping[str, Any]) -> tuple[RawObject, ...]:
+        """L1.2.5-U1 — one pushed Notion trigger → the row a poll of that page produces. The
+        trigger carries a reference, not the body, so `_to_raw` fetches the markdown exactly as
+        the sweep does — which is what makes the two rows identical."""
+        page = payload.get("page") or payload.get("object") or payload
+        if not isinstance(page, Mapping):
+            return ()
+        obj = self._to_raw(dict(page))
+        return (obj,) if obj is not None else ()
 
     def _to_raw(self, page: dict) -> RawObject | None:
         pid = page.get("id")

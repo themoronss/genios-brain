@@ -43,7 +43,7 @@ def test_drive_file_edit_relands_via_content_version(monkeypatch):
         ocr_used = False
         ocr_engine = None
         ocr_pages = 0
-        avg_confidence = 1.0
+        confidence_bp, detail = None, None      # native parse, no OCR score
         status = "ok"
 
     monkeypatch.setattr(drive_mod, "process_document", lambda **kw: _R())
