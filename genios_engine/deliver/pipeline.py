@@ -284,10 +284,29 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             bands_cfg = effective.get("scoring", {}).get("bands")
             budget = int(effective.get("scoring", {}).get("budget_per_user_day", 7))
             # ABSTENTION GATE. A card may only instruct when the expertise behind it has been
-            # reviewed and accepted. The corpus currently holds 152 capabilities, 0 of them
-            # accepted, so every prescription shipped on unreviewed authority — the system was
-            # structurally unable to say "this is outside what I have been taught". Downgrading
-            # keeps the observation (which is real and useful) and drops only the instruction.
+            # reviewed and accepted. Downgrading keeps the observation (which is real and useful)
+            # and drops only the instruction.
+            #
+            # THE WORLD THIS COMMENT USED TO DESCRIBE IS OVER. It read "the corpus currently holds
+            # 152 capabilities, 0 of them accepted, so every prescription shipped on unreviewed
+            # authority" — and a reader arriving today would conclude that every compiled card is
+            # downgraded and stop looking. Every authored capability now clears the admission
+            # ceremony (155 of 155 at the time of writing; the count moves as the corpus is
+            # authored, the property does not):
+            # `identity.status == 'stable'`, `metadata.review_status == 'approved'` with
+            # a named reviewer, and `admission.accepted_content_hash` equal to the hash of the
+            # routed bytes minus the admission block. `capability_resolver._admission_reason`
+            # returns None for every one of them, so `RoutePlan.admitted` is True, the package's
+            # `metadata['review_state']` is `accepted`, and a STAMPED capability's signal reaches
+            # this gate as `prescriptive` and leaves it un-downgraded.
+            #
+            # What still downgrades is a DRAFT: a measurement compile
+            # (`require_admission=False`) over content whose acceptance hash no longer matches its
+            # bytes carries `review_state='draft'`, `domain_shadow._persist_live` emits it at
+            # `observation`, and `is_actionable` refuses it above. The gate reads the LIVE
+            # admission state — the hash pin is recomputed on every compile, so an edit after
+            # review un-accepts the capability by itself — never a cached count.
+            # `tests/packs/compiler/test_stamped_vs_draft_abstention.py` drives both halves.
             sig = _apply_abstention(sig, effective)
             # LOADED BEFORE THE BUILD, and that ordering is the fix to a gate that could never
             # have fired. `build_draft` runs `clarity_verdict` over `signal["observations"]` — and

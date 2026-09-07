@@ -1,0 +1,33 @@
+# Load-set for admin.admin_operations.goal_and_progress — REFERENCES ONLY, never an inline object.
+#
+# THE OBJECT THIS CAPABILITY WANTS DOES NOT EXIST, AND THAT IS THE ACCURATE STATE. A `goal` — a
+# stated target with a date, an owner and an evidence path — is the right noun and it is not
+# authored, because nothing writes one: there is no store, no extractor and no L2 emitter for a
+# founder's stated target. A 23-section object about a thing the pipeline cannot produce is
+# inventory, and a thin one is worse than none because it looks finished.
+#
+# So the load-set is the two nouns the live situation can actually be fed with: what we have
+# promised, and the dates attached to those promises. That is deliberately NOT a goal, and the
+# situation's render hint says so on every card rather than letting the reader assume otherwise.
+
+capability: admin.admin_operations.goal_and_progress
+
+core:
+  required:
+    - admin.obj.core.commitment
+    - admin.obj.core.deadline
+  optional:
+    - admin.obj.core.action_item
+    - admin.obj.core.request
+
+scoped:
+  required: []
+  optional: []
+
+never_load:
+  # None of this is about money moving, people records or property. Resolving them would read
+  # downstream as "checked, and there are none".
+  - admin.obj.core.invoice
+  - admin.obj.core.employee_record
+  - admin.obj.core.asset
+  - admin.obj.core.access_right

@@ -318,6 +318,18 @@ map:
         - sales.obj.core.opportunity
         - sales.obj.core.risk
 
+# ── Deferred ──────────────────────────────────────────────────────────────
+# Capabilities with no door and a named reason for it. They appear in no route, the
+# situations they own are suppressed from the map above, and they compile into zero
+# packages. Authored in <domain>/deferrals.yaml; not deleted, not deprecated.
+deferred_capabilities: {}
+
+# Situations dropped from the map because the capability that owns them is deferred.
+suppressed_situations: []
+
+# Deferred and yet still reachable — the ledger and the corpus disagree. Must be empty.
+deferral_contradictions: []
+
 # ── Blocked on Layers 1 and 2 ─────────────────────────────────────────────
 # These situations are authored and route NOTHING, because the type that would
 # trigger them is not in any shipped pack's signal_vocab. Not a defect in the
@@ -359,6 +371,9 @@ stats:
   capabilities_stub: 0
   capabilities_complete: 47
   capabilities_routed: 47
+  capabilities_deferred: 0
+  capabilities_unrouted_unreasoned: 0
+  situations_suppressed: 0
   objects_total: 29
   objects_core: 24
   objects_scoped: 5

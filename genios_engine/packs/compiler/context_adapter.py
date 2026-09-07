@@ -3,6 +3,61 @@
 Layer 3 does not fetch the graph. It can only inspect the BusinessSituationObject and relevant
 context slice already frozen by Layer 2. Unknown predicate inputs remain unknown; they are never
 coerced to a match just to keep a route alive.
+
+L3.1-U1 · THE ANALYTIC PREDICATES. Layer 2.4 computes trends, cohort positions and anomalies and
+files each one as a `derived.*` graph fact; Layer 1 publishes the disagreements between claims;
+`context/quality` types every absence. Until this file could read them, none of that was
+expressible in an authored `matches.when` block — a capability could ask what a fact IS and never
+ask whether it is FALLING, whether it sits at the bad end of its peer group, whether it broke
+against its own baseline, or whether the field it rests on is contested.
+
+Five kinds, all spelled `{kind: ...}`, all evaluated under the same three-state rule as the rest
+of this module:
+
+    {kind: trend,    metric: engagement, direction: DECLINING, min_confidence_bp: 5000}
+    {kind: cohort,   metric: spend_growth, band: D1, min_population: 5}
+    {kind: anomaly,  metric: support_tickets}
+    {kind: absence,  fact: decision.scheduled, type: GENUINELY_ABSENT}
+    {kind: conflict, field: contract.value}
+
+**A REFUSAL UPSTREAM IS UNKNOWN HERE, NEVER FALSE.** This is the whole reason the analytic
+stratum returns refusals as first-class values instead of weak answers. `INSUFFICIENT_HISTORY`
+means *we cannot see enough of this to say*, and answering FALSE to "is engagement declining?"
+over it is a claim that engagement is NOT declining, drawn from the fact that we have not looked
+long enough. The same holds for a cohort that refused for `insufficient_population` and for an
+anomaly verdict that refused for `no_current_reading`.
+
+**`UNKNOWABLE` NEVER SATISFIES AN ABSENCE.** `{kind: absence, type: GENUINELY_ABSENT}` is TRUE
+only where `context/quality` typed the absence as GENUINELY_ABSENT under a coverage epoch that
+still stands — a source that could have carried the fact was connected, everything visible was
+checked, and none of it held the fact. Where the absence is UNKNOWABLE the verdict is UNKNOWN,
+exactly as the older `{absent: ...}` operator already answers, because "we cannot see it" and "it
+is not there" are opposite claims and a dark connector is what turns the second into the first.
+
+**THE CORPUS VALIDATOR HAS TO ADMIT THESE FORMS BEFORE A HUMAN CAN AUTHOR ONE.**
+`Domain Expertise/_tools/validate.py` carries a `FORM_KEYS` whitelist — "predicate {keys} matches
+no form the engine dispatches on" — and it does not yet list the five below, so a situation file
+carrying one is rejected by the corpus validator even though this adapter evaluates it. That file
+belongs to the corpus wave and is deliberately not edited from here; the forms it needs are:
+
+    {kind, metric} + optional {direction, min_confidence_bp}      trend
+    {kind, metric} + optional {band, min_population}              cohort
+    {kind, metric} + optional {direction, min_z_like_bp}          anomaly
+    {kind, fact, type}                                            absence
+    {kind, field} + optional {resolution}                         conflict
+
+`tests/packs/compiler/test_analytic_predicates.py::test_every_form_the_corpus_validator_admits_
+is_one_this_adapter_dispatches` is the seam in the other direction: it goes red if the validator
+ever admits a form this module cannot answer.
+
+**ONE SOURCE PER ANSWER.** The trend / cohort / anomaly kinds read the `derived.*` graph fact and
+nothing else. The BusinessSituationObject also carries `metadata['trends']`,
+`['cohort_positions']` and `['anomalies']`, and they are deliberately NOT consulted: those lists
+hold the receipt of the importance MODIFIER that fired, so they exist only for a declining trend
+above the composer's confidence floor, only for a cohort position at the worst extreme, only for
+a flagged anomaly. Reading them would make `direction: DECLINING` answerable and
+`direction: RISING` unanswerable on the same situation, and would silently import the composer's
+thresholds into a predicate whose thresholds the author declared.
 """
 
 from __future__ import annotations
@@ -19,10 +74,12 @@ from genios_engine.context.quality.inference import (ABSENT_FIELDS_KEY,
                                                       UNKNOWABLE_FIELDS_KEY,
                                                       may_infer_absent, read_licence,
                                                       read_string_set)
+from genios_engine.contracts.analytic import CohortBand
 from genios_engine.contracts.domain_expertise import (
     BusinessSituationObject,
     SituationContextSlice,
 )
+from genios_engine.contracts.quality import AbsenceType
 from genios_engine.contracts.visibility import SCOPES, Visibility
 from genios_engine.platform.canonical import semantic_hash
 
@@ -42,8 +99,70 @@ class PredicateVerdict:
     missing: tuple[str, ...] = ()
 
 
+_TRUE = PredicateVerdict(PredicateState.TRUE)
+_FALSE = PredicateVerdict(PredicateState.FALSE)
+
+
+def _unknown(*receipts: str) -> PredicateVerdict:
+    """UNKNOWN, with the reason NAMED. Every one of these reaches
+    `RoutePlan.unresolved_predicates` and from there the package's
+    `metadata['unresolved_route_predicates']`, so "why did this capability not decide?" is
+    answerable from the artifact rather than from a re-run."""
+    return PredicateVerdict(PredicateState.UNKNOWN, receipts)
+
+
+#: The `graph_facts.field` prefixes the three analytic families write under.
+#:
+#: SPELLED HERE, NOT IMPORTED, for the reason `context/importance.py` gives for spelling the same
+#: four strings: this module must not drag `context/analytic/` — six modules, a SQLAlchemy
+#: dependency and the whole sampler — into the compiler's import graph to learn three prefixes.
+#: `tests/packs/compiler/test_analytic_predicates.py` pins each one against the module that owns
+#: it (`analytic.trend`, `analytic.comparator`, `analytic.anomaly`), so the copy cannot drift
+#: without a red test.
+TREND_FACT_PREFIX = "derived.trend."
+COHORT_POSITION_FACT_PREFIX = "derived.cohort_position."
+ANOMALY_FACT_PREFIX = "derived.anomaly."
+
+#: `signal_conflicts.resolution` for a disagreement Layer 1 could not settle — the only one a
+#: `{kind: conflict}` predicate treats as material by default, on `importance._conflict_term`'s
+#: argument: the other two verdicts HAVE an answer, and firing on a disagreement we already
+#: resolved would charge the reader for our own resolution logic. Pinned against
+#: `context.importance.UNRESOLVED_RESOLUTION` by the same test as the prefixes above.
+UNRESOLVED_CONFLICT = "unresolved_surface_both"
+
+#: `TrendDirection`'s two REFUSALS, as they appear in the fact body. A trend over either is
+#: UNKNOWN — see the module docstring. Spelled beside the three answers so a body carrying a
+#: sixth, unrecognised word is UNKNOWN too rather than falling through as an answer.
+TREND_REFUSALS = frozenset({"insufficient_history", "insufficient_coverage"})
+TREND_ANSWERS = frozenset({"rising", "declining", "flat"})
+
+#: The absence types a context slice can actually answer. `build_context_slice` carries exactly
+#: two of `AbsenceType`'s five — the UNKNOWABLE paths and the GENUINELY_ABSENT ones — because
+#: those are the two that decide whether a negative inference is licensed. PRESENT, STALE and
+#: NOT_EXPECTED are not carried, so a predicate naming one of them is refused by name rather than
+#: answered from a set that does not describe it.
+ABSENCE_PREDICATE_TYPES = frozenset({AbsenceType.GENUINELY_ABSENT.value,
+                                     AbsenceType.UNKNOWABLE.value})
+
+#: The five analytic predicate kinds, as a closed set. A `kind:` outside it is UNKNOWN and named,
+#: never evaluated as one of the older key-based predicates: a typo that fell through to the
+#: `path:` tail would be answered by a completely different question.
+PREDICATE_KINDS = frozenset({"trend", "cohort", "anomaly", "absence", "conflict"})
+
+
 def _normal(value: Any) -> str:
     return "_".join(str(value or "").strip().lower().replace("-", " ").split())
+
+
+def _whole(value: Any) -> int | None:
+    """An integer, or nothing. `True` is refused — bool is an int in Python, and a `flagged`
+    read as a 1 would become a confidence of one basis point nobody measured. A `Decimal` is
+    refused for the same reason a float is: every number in this stratum is an integer basis
+    point or an integer count, and a fractional one arriving here is a producer defect that must
+    be named, not silently compared."""
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    return value
 
 
 class ContextAdapter:
@@ -184,7 +303,240 @@ class ContextAdapter:
             return False, name
         return True, threshold
 
+    # =============================================================================================
+    # L3.1-U1 · THE ANALYTIC PREDICATES
+    # =============================================================================================
+
+    def _derived(self, prefix: str, metric: Any) -> tuple[str, Mapping[str, Any] | None]:
+        """The `derived.<family>.<metric>` fact body, or None.
+
+        THE SUBJECT FIRST, THEN THE NEIGHBOURHOOD, in that fixed order — never a set, never
+        iteration order, because this function's answer feeds a content-addressed package.
+
+        The neighbourhood is consulted at all because of where these facts LAND. A derived fact is
+        filed against the `subject_node_id` it was measured on, and a situation anchored on a
+        company holds almost none of its own (15 of 18 held literally zero on the design partner's
+        org): engagement is measured on the people, spend on the deals. `reason/runner._neighborhood`
+        already merges the 1-hop facts deterministically — newest `occurred_at` wins, ties broken
+        on node id — and `domain_shadow` hands that merge to the slice. Reading the anchor alone
+        here would make every analytic predicate a rule that is always right and never fires.
+        """
+        path = f"{prefix}{metric}"
+        for neighbor in (False, True):
+            present, value = self._fact(path, neighbor=neighbor)
+            if present and isinstance(value, Mapping):
+                return path, value
+        return path, None
+
+    def _trend(self, condition: Mapping[str, Any]) -> PredicateVerdict:
+        """`{kind: trend, metric: ..., direction: DECLINING, min_confidence_bp: 5000}`."""
+        metric = condition.get("metric")
+        if not metric:
+            return _unknown("trend:no_metric")
+        path, body = self._derived(TREND_FACT_PREFIX, metric)
+        if body is None:
+            # No trend has been computed for this (node, metric). "We have not measured it" is
+            # not "it is not declining", so this is the same UNKNOWN a refusal produces.
+            return _unknown(path)
+        direction = _normal(body.get("direction"))
+        if direction in TREND_REFUSALS:
+            # THE REFUSAL, CARRIED. `insufficient_history` / `insufficient_coverage` are
+            # `TrendDirection` members and first-class return values, and the receipt names which
+            # one so a reader can tell "too few points" from "too many gaps".
+            return _unknown(f"{path}:{direction}")
+        if direction not in TREND_ANSWERS:
+            return _unknown(f"{path}:direction")
+        wanted = condition.get("direction")
+        if wanted is not None and _normal(wanted) != direction:
+            return _FALSE
+        floor = condition.get("min_confidence_bp")
+        if floor is not None:
+            confidence = _whole(body.get("trend_confidence_bp"))
+            if confidence is None:
+                return _unknown(f"{path}:trend_confidence_bp")
+            authored_floor = _whole(floor)
+            if authored_floor is None:
+                return _unknown("trend:min_confidence_bp")
+            # A KNOWN number under the author's own bar is FALSE, not UNKNOWN. The direction was
+            # answered and the strength was measured; the author said how strong it had to be.
+            if confidence < authored_floor:
+                return _FALSE
+        return _TRUE
+
+    def _cohort(self, condition: Mapping[str, Any]) -> PredicateVerdict:
+        """`{kind: cohort, metric: ..., band: D1, min_population: 5}`."""
+        metric = condition.get("metric")
+        if not metric:
+            return _unknown("cohort:no_metric")
+        path, body = self._derived(COHORT_POSITION_FACT_PREFIX, metric)
+        if body is None:
+            return _unknown(path)
+        refused = body.get("refused")
+        if refused:
+            # `CohortRefusalReason` — insufficient_population, degenerate_distribution,
+            # subject_not_a_member and the rest. A cohort that could not position the subject has
+            # not placed it OUTSIDE the band; it has not placed it at all.
+            return _unknown(f"{path}:{_normal(refused)}")
+        population = _whole(body.get("population_size"))
+        if population is None:
+            return _unknown(f"{path}:population_size")
+        floor = condition.get("min_population")
+        if floor is not None:
+            authored_floor = _whole(floor)
+            if authored_floor is None:
+                return _unknown("cohort:min_population")
+            if population < authored_floor:
+                return _FALSE
+        band_name = condition.get("band")
+        if band_name is None:
+            return _TRUE
+        try:
+            wanted = CohortBand(str(band_name).strip().upper())
+        except ValueError:
+            # The vocabulary is the contract's fourteen labels and there is no second one. A
+            # symbolic alias like `top_decile` would be a parallel grammar for the same fact, and
+            # the day the two disagree the card prints the loser.
+            return _unknown(f"cohort_band:{band_name}")
+        percentile = _whole(body.get("percentile_bp"))
+        if percentile is None or not 0 <= percentile <= 10_000:
+            return _unknown(f"{path}:percentile_bp")
+        try:
+            # RECOMPUTED from the percentile and the population, never read off the body — the
+            # same rule `importance._expressible_band` keeps and for the same reason: a `D1`
+            # written by an older, un-narrowed writer is a decile claim a cohort of six could
+            # never have produced. `CohortBand.for_percentile` owns the narrowing.
+            actual = CohortBand.for_percentile(percentile, divisions=wanted.divisions,
+                                               population_size=population)
+        except (TypeError, ValueError):
+            # A population too small to express ANY scheme. It has not answered "no"; it cannot
+            # answer at all, and a FALSE here would read as "this account is not at the bottom".
+            return _unknown(f"{path}:population_too_small")
+        return _TRUE if actual is wanted else _FALSE
+
+    def _anomaly(self, condition: Mapping[str, Any]) -> PredicateVerdict:
+        """`{kind: anomaly, metric: ..., direction: above, min_z_like_bp: 30000}`."""
+        metric = condition.get("metric")
+        if not metric:
+            return _unknown("anomaly:no_metric")
+        path, body = self._derived(ANOMALY_FACT_PREFIX, metric)
+        if body is None:
+            return _unknown(path)
+        refusal = body.get("refusal")
+        if refusal:
+            # `AnomalyRefusal.INSUFFICIENT_HISTORY` — no normal to be abnormal against — or
+            # `NO_CURRENT_READING`, a series ending on a period we have no reading for. Neither
+            # is evidence that the metric behaved.
+            return _unknown(f"{path}:{_normal(refusal)}")
+        flagged = body.get("flagged")
+        if not isinstance(flagged, bool):
+            return _unknown(f"{path}:flagged")
+        if not flagged:
+            # MEASURED AND NOT FLAGGED is a real FALSE: the detector had a baseline, computed the
+            # deviation, and both of its conjuncts failed. That is the one case here that is an
+            # answer rather than an abstention.
+            return _FALSE
+        wanted = condition.get("direction")
+        if wanted is not None:
+            direction = _normal(body.get("direction"))
+            if not direction:
+                return _unknown(f"{path}:direction")
+            if _normal(wanted) != direction:
+                return _FALSE
+        floor = condition.get("min_z_like_bp")
+        if floor is not None:
+            z_like = _whole(body.get("z_like_bp"))
+            if z_like is None:
+                return _unknown(f"{path}:z_like_bp")
+            authored_floor = _whole(floor)
+            if authored_floor is None:
+                return _unknown("anomaly:min_z_like_bp")
+            if z_like < authored_floor:
+                return _FALSE
+        return _TRUE
+
+    def _typed_absence(self, condition: Mapping[str, Any]) -> PredicateVerdict:
+        """`{kind: absence, fact: decision.scheduled, type: GENUINELY_ABSENT}`.
+
+        THE DIFFERENCE FROM `{absent: ...}`. The older operator asks whether the fact is held and
+        whether an inference over its absence is licensed; it answers TRUE for an untyped gap
+        under a licence that was never withdrawn. This one asks the classifier's own question —
+        *which KIND of not-held is this?* — and it will not answer from silence: a slice that
+        carried no absence typing for the path says UNKNOWN, because an untyped gap is exactly
+        what `context/quality` exists to stop being read as a finding.
+        """
+        path = str(condition.get("fact") or condition.get("path") or "")
+        if not path:
+            return _unknown("absence:no_fact")
+        wanted = _normal(condition.get("type"))
+        if wanted not in ABSENCE_PREDICATE_TYPES:
+            # Includes the untyped case. `{kind: absence, fact: x}` with no `type:` is not
+            # defaulted to GENUINELY_ABSENT: defaulting silently to the one member that licenses
+            # a negative inference is how the licence gets granted by omission.
+            return _unknown(f"absence_type:{_normal(condition.get('type')) or 'untyped'}")
+        # HELD ANYWHERE IS NOT ABSENT. The neighbourhood counts as held for the same reason
+        # `situation_bso._missing_paths` counts it: `reason/adapters/native` borrows a root field
+        # from the 1-hop neighbours, so a fact present there is one the reasoner can read, and
+        # calling it absent would be a finding over evidence we have.
+        if self._fact(path)[0] or self._fact(path, neighbor=True)[0]:
+            return _FALSE
+        if path in self.unknowable_fields:
+            # THE LAW, at its call site. An UNKNOWABLE path satisfies `GENUINELY_ABSENT` never —
+            # not FALSE either, because "no connected source could have carried it" is not
+            # evidence about the world, only about us.
+            return _TRUE if wanted == AbsenceType.UNKNOWABLE.value else _unknown(path)
+        if path in self.absent_fields:
+            # Typed GENUINELY_ABSENT under a coverage epoch that still stands. Definitely not
+            # UNKNOWABLE, so the other question has a real negative answer here.
+            return (_TRUE if wanted == AbsenceType.GENUINELY_ABSENT.value else _FALSE)
+        return _unknown(f"absence:{path}")
+
+    def _conflict(self, condition: Mapping[str, Any]) -> PredicateVerdict:
+        """`{kind: conflict, field: contract.value}` — is this field CONTESTED?
+
+        Layer 1 publishes each disagreement between claims and how it settled it, and
+        `situation_bso.gather_conflicts` carries the records (not just the ids) onto the BSO
+        precisely so Layer 3 does not have to read past Layer 2 to find out. A situation resting
+        on a contested claim must not reach a capability looking settled.
+        """
+        field = str(condition.get("field") or "")
+        if not field:
+            return _unknown("conflict:no_field")
+        records = self.situation.metadata.get("conflicts")
+        if records is None:
+            # The key is written on every BSO this codebase builds. Absent means the object came
+            # from a producer that does not carry conflicts, and silence is not "nothing is
+            # contested".
+            return _unknown(f"conflict:{field}")
+        wanted = str(condition.get("resolution") or UNRESOLVED_CONFLICT)
+        carried = tuple(record for record in records if isinstance(record, Mapping))
+        for record in carried:
+            if str(record.get("field") or "") == field and \
+                    str(record.get("resolution") or "") == wanted:
+                return _TRUE
+        pointers = self.situation.metadata.get("conflict_ids") or ()
+        if len(tuple(pointers)) > len(carried):
+            # `_attach_conflicts` caps the records at MAX_CONFLICTS while `conflict_ids` keeps
+            # pointing at all of them. More pointers than records means a disagreement about this
+            # field may be one of the ones that did not travel — countable, so say so.
+            return _unknown(f"conflict:{field}:truncated")
+        return _FALSE
+
     def evaluate(self, condition: Mapping[str, Any]) -> PredicateVerdict:
+        kind = condition.get("kind")
+        if kind is not None:
+            # DISPATCHED FIRST, and on a closed set. An unrecognised kind must not fall through
+            # into the `path:` tail below, where it would be answered by a different question
+            # entirely; it is refused by name and counted.
+            normalized = _normal(kind)
+            if normalized not in PREDICATE_KINDS:
+                return _unknown(f"unsupported_predicate_kind:{normalized or 'blank'}")
+            return {
+                "trend": self._trend,
+                "cohort": self._cohort,
+                "anomaly": self._anomaly,
+                "absence": self._typed_absence,
+                "conflict": self._conflict,
+            }[normalized](condition)
         if "exists" in condition:
             path = str(condition["exists"])
             # An UNKNOWABLE field is not held and is not evidence that it does not exist, so
@@ -329,4 +681,16 @@ class ContextAdapter:
         return bindings
 
 
-__all__ = ["ContextAdapter", "PredicateState", "PredicateVerdict"]
+__all__ = [
+    "ABSENCE_PREDICATE_TYPES",
+    "ANOMALY_FACT_PREFIX",
+    "COHORT_POSITION_FACT_PREFIX",
+    "ContextAdapter",
+    "PREDICATE_KINDS",
+    "PredicateState",
+    "PredicateVerdict",
+    "TREND_ANSWERS",
+    "TREND_FACT_PREFIX",
+    "TREND_REFUSALS",
+    "UNRESOLVED_CONFLICT",
+]

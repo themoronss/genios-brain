@@ -45,6 +45,7 @@ def test_drive_file_edit_relands_via_content_version(monkeypatch):
         ocr_pages = 0
         confidence_bp, detail = None, None      # native parse, no OCR score
         status = "ok"
+        page_offsets = ()                       # L1.3.4-U5 · a handbook stub with no pages
 
     monkeypatch.setattr(drive_mod, "process_document", lambda **kw: _R())
 

@@ -1,0 +1,132 @@
+# THE MIRROR OF COMMITMENT TRACKING, AND THE REASON THIS SUBDOMAIN NEEDED A SECOND CAPABILITY.
+# `commitment_tracking` holds OUR word: what we promised, to whom, by when. This holds THEIRS —
+# specifically the conditional kind, the sentence that ends "…once you have X" or "…let's revisit
+# after Q3". A conditional promise is not an obligation and does not belong in an obligation
+# ledger: it has no date, nobody is late, and the only thing that ever changes about it is the
+# world. Filed as a commitment it ages into a nag; filed nowhere, which is the usual outcome, it
+# is simply lost, and the loss is invisible because nothing was ever overdue.
+
+identity:
+  id: admin.executive_support.opportunity_tracking
+  name: Opportunity Tracking
+  domain: admin
+  subdomain: executive_support
+  version: 1.0.0
+  status: stable
+  stub: false
+
+description: >
+  Keeping the conditions other people set, so that the day one of them is met the organisation
+  knows it. Somebody said they would move once a thing were true; four months later the thing is
+  true and nobody remembers the sentence. This capability is the memory of those sentences and
+  the discipline of re-reading them against what has since happened.
+
+question: "What did someone say they would do once something were true — and is that thing true now?"
+
+# WHAT DONE LOOKS LIKE. Each is a state an observer could check, not an intention.
+outcomes:
+- 'The condition captured in the counterparty''s OWN words, with the message it came from. A
+  paraphrased condition cannot be checked, because the check is a comparison against a sentence
+  and a summary is not a sentence.'
+- 'A reopening that names the satisfying evidence. The whole value of a reopening is that it does
+  not ask them to remember: it says what they said, and what has since become true, and lets them
+  answer the question rather than reconstruct the thread.'
+- 'The rhetorical conditions filtered out and never surfaced. "Come back when you are the market
+  leader" is a decline wearing a condition''s clothes, and treating it as a live opening is how a
+  system trained on politeness produces persistence nobody wanted.'
+- 'A dormant opening either reopened or explicitly closed. The negative outcome, and the one that
+  makes the rest trustworthy: an opening that has been sitting for a year with no movement in the
+  world is a dead one, and a register that never retires anything is a register nobody reads.'
+- 'Dismissals classified rather than counted. A user who dismisses a reopening because they
+  already handled it offline has told us the reading was RIGHT and the coverage was incomplete —
+  that is a signal about our sight, not about our judgement, and conflating the two teaches the
+  system exactly the wrong lesson.'
+
+# HOW SOMEONE COMPETENT DOES THIS BADLY.
+failure_modes:
+- 'READING EVERY SOFT NO AS A CONDITION. "Not right now" sets no condition and creates no opening;
+  it is a decline with a courtesy on it. Manufacturing a trigger from it produces a reopening
+  whose premise the counterparty never stated, which is worse than silence because it is
+  confidently wrong about something they said.'
+- 'REOPENING WITHOUT THE EVIDENCE. A message that says "checking in, has anything changed?" throws
+  away the only asset the wait bought — the specific thing that is now true. It also puts the work
+  of remembering back on them, which is the exact cost the condition was supposed to defer.'
+- 'ACTING ON A SATISFACTION NOBODY CONFIRMED. An inferred satisfaction is a hypothesis about the
+  world. Reopening on it asserts the hypothesis to the person best placed to know it is wrong, and
+  a single confident error here costs more than every correct reopening earns.'
+- 'TREATING THE CONDITION AS A DEADLINE. Conditions have no dates. Attaching one — a review date,
+  a reminder cadence — converts a live opening into a recurring task, and the recurrence is what
+  makes the user stop reading them.'
+- 'MISSING THAT THE PERSON MOVED ON. A condition belongs to a person in a role. When they change
+  company or the role changes hands, the condition does not transfer, and reopening it with the
+  successor reads as a stranger citing a conversation they were not in.'
+- 'LETTING THE OPENING GO STALE WHILE BEING CHECKED. A satisfied condition has a short half-life:
+  the evidence that satisfied it is public, so whoever else was waiting on the same condition is
+  moving too. A reopening held for a week of internal confirmation arrives after the window it
+  was worth having.'
+
+kpis:
+- name: condition_capture_rate
+  unit: percent
+  description: Share of conditional statements in correspondence that reached the register at all.
+    Everything downstream is arithmetic over what was captured.
+  direction: higher_is_better
+- name: reopening_with_named_evidence_rate
+  unit: percent
+  description: Share of reopenings that cite the specific thing that became true. The metric that
+    separates this capability from a check-in reminder.
+  direction: higher_is_better
+- name: false_opening_rate
+  unit: percent
+  description: Share of surfaced openings the user judged never to have been a real condition. The
+    damage metric — rhetorical conditions read as live ones.
+  direction: lower_is_better
+- name: already_handled_share
+  unit: percent
+  description: Share of dismissals given as "already handled". A COVERAGE reading, not an accuracy
+    one; it rises when our sight of the user's own actions is poor and should be read that way.
+  direction: lower_is_better
+- name: time_from_satisfaction_to_reopening
+  unit: days
+  description: How long the evidence sat before anyone used it. The half-life metric.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - admin.executive_support.inbox_and_correspondence
+  - admin.meeting_operations.minutes_and_documentation
+  downstream:
+  - admin.executive_support.commitment_tracking
+  - admin.executive_support.briefing_and_preparation
+  parallel:
+  - admin.executive_support.calendar_management
+
+applies_to:
+  models: [in_house, executive_office, startup_lean, distributed, hybrid]
+  offerings: [coordinative, custodial]
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-09-07'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-09-07'
+  notes: >
+    Authored net-new for founder surface 14, the one written in the founder's own register:
+    forward-looking, revenue-adjacent, and the surface people remember because it is the one that
+    finds something rather than reminding them of something.
+
+    Half of it is reachable today and half is not, and the two situations say which is which.
+    `dormant_commitment_reopenable` routes on live evidence — a deferred decision plus a long
+    silence — and its honest output is "here is the sentence they parked this on, is it true
+    yet?". `condition_now_satisfied` is the other half and is pending on a Layer 2 emitter that
+    detects satisfaction; until it ships nothing in this capability may claim a condition has been
+    met, and the rule file enforces that rather than trusting the render hint to remember.
+
+    No numbers here, by contract. How long a silence has to be, and how much evidence a
+    satisfaction needs, are Layer 4's arithmetic.
+
+admission:
+  accepted_content_hash: 7a65dbd28234293c3c4ed692ee8b5c9202ee4a4d53eb33e0604eb33edc8c25c6

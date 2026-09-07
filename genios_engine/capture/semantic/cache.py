@@ -128,6 +128,18 @@ def _sha256(material: str) -> str:
     return hashlib.sha256(material.encode("utf-8")).hexdigest()
 
 
+def content_digest(content: str) -> str:
+    """The `content_hash` component of a cache key, as a value anything may compute.
+
+    `qualified_signals.content_hash` (migration 0115) stores this digest for the prepared text a
+    signal's claims were read out of, so a published signal and a cached extraction can be
+    compared without re-reading either — and that comparison only holds while both sides hash the
+    same way. This is the seam that keeps them the same way: the publisher calls it instead of
+    spelling `hashlib.sha256` a second time, and a change to the digest changes both at once.
+    """
+    return _sha256(content)
+
+
 def _framed(*fields: str) -> str:
     """Length-prefixed join — `7:acme_co|4:b3-4|...` — never a bare `:` join.
 
@@ -220,7 +232,7 @@ def cache_key(*, org_id: str, content: str, profile_id: str, prompt_version: str
         "vocab_fingerprint": vocab_fingerprint.strip(),
         # Hashed, not stripped: leading whitespace in an envelope is part of the prompt text.
         "envelope_hash": _sha256(envelope),
-        "content_hash": _sha256(content),
+        "content_hash": content_digest(content),
     }
     for name in KEY_COMPONENTS:
         if not values[name]:
@@ -430,4 +442,4 @@ class PostgresExtractionCache:
 __all__ = ["CACHE_TABLE", "EMPTY_ENVELOPE", "KEY_COMPONENTS", "KEY_DIGEST_CHARS", "CacheEntry",
            "CacheOutcome", "ExtractionCacheKey", "ExtractionCacheStore",
            "InMemoryExtractionCache", "PostgresExtractionCache", "cache_key",
-           "cached_extraction"]
+           "cached_extraction", "content_digest"]

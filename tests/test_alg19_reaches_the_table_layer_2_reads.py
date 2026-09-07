@@ -183,17 +183,25 @@ def test_an_active_record_never_reopens_a_signal_the_gate_retired(pg_store):
 
 
 def test_the_sync_door_carries_the_lifecycle_onto_the_published_rows():
-    """The store method is not the fix; the CALL is. `api/routes._run_ledger` is the one hook
-    every `run_sync` caller in the HTTP layer already passes — the same argument
-    `qualify_sweep`, `sweep_lifecycle` and `publish_sweep` are filed from — so a lane that ran on
-    five of the six sync call sites would leave the sixth tenant's signals live for ever."""
+    """The store method is not the fix; the CALL is — and the ORDER of the calls.
+
+    The sequence moved out of `api/routes._run_ledger` into `capture/esqe/finalize.finalize_l1`
+    when the upload door needed to reach it too (a `run_sync` hook covers exactly the callers of
+    `run_sync`, and an uploaded contract is not one). Both halves are still asserted, because
+    both can break independently: the sync door must REACH the sequence, and the sequence must
+    keep its order."""
     import inspect
 
     from genios_engine.api import routes
+    from genios_engine.capture.esqe import finalize
 
-    source = inspect.getsource(routes._run_ledger)
+    door = inspect.getsource(routes._run_ledger)
+    assert "finalize_l1(" in door, (
+        "the sync door no longer reaches L1's finalizer — nothing qualifies, ages or publishes")
+
+    source = inspect.getsource(finalize.finalize_l1)
     assert "apply_lifecycle" in source, (
-        "the sync door computes the lifecycle and never carries it onto `qualified_signals`")
+        "the finalizer computes the lifecycle and never carries it onto `qualified_signals`")
     assert source.index("sweep_lifecycle(") < source.index("apply_lifecycle"), (
         "the verdict is applied before it is decided")
     assert source.index("apply_lifecycle") < source.index("publish_sweep("), (

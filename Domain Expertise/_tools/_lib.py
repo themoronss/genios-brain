@@ -234,3 +234,32 @@ def refs_in_condition(cond: dict) -> tuple[list[str], list[str], list[str]]:
     if isinstance(val, dict) and "baseline" in val:
         base.append(val["baseline"])
     return paths, obs, base
+
+
+#: The authored V1 routing-deferral ledger, one per domain, sitting beside domain.yaml.
+#:
+#: It is NOT picked up by `walk()` — `classify()` returns None for it — which is deliberate: it is
+#: a routing decision about capabilities, not a piece of expertise, and it has no JSON Schema
+#: because the two tools that read it are the two tools that enforce it.
+DEFERRALS_FILENAME = "deferrals.yaml"
+
+DEFERRAL_KINDS = ("out_of_v1_scope", "blocked_on_l2_type", "no_runtime_trigger")
+
+
+def deferrals(domain_root: Path) -> dict[str, dict]:
+    """capability id -> its deferral entry, for one domain. Empty when the domain has no ledger.
+
+    A deferred capability gets no door AND no situation: `index.py` drops every situation it owns
+    from the generated map, so the resolver — which builds its capability set from the situations
+    the map names — can never reach it. That is what makes a deferral structural rather than a
+    label, and it is why this loader lives beside `load_set` rather than inside one tool.
+    """
+    path = domain_root / DEFERRALS_FILENAME
+    if not path.is_file():
+        return {}
+    data = load_yaml(path) or {}
+    out: dict[str, dict] = {}
+    for entry in data.get("deferred") or []:
+        if isinstance(entry, dict) and entry.get("capability"):
+            out[str(entry["capability"])] = entry
+    return out

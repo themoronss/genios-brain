@@ -8,6 +8,7 @@ heuristics:
   core: []
   scoped:
   - admin.heu.delegation_and_task_routing.delegation_is_trust_plus_verification
+  - admin.heu.delegation_and_task_routing.an_unowned_item_is_not_a_late_item
 mental_models:
   core: []
   scoped: []

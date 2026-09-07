@@ -1,0 +1,143 @@
+identity:
+  id: admin.heu.goal_and_progress.a_target_nobody_stated_is_not_a_miss
+  name: A target nobody stated is not a miss
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.goal_and_progress
+  subdomain: admin_operations
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: Progress can only be read against a target a human stated. A pace computed from the
+    organisation's own past is a standard the system authored, and reporting it as a finding
+    quietly makes the tool the judge of work it was asked to help with.
+  answers:
+  - May a slow fortnight be reported when nobody said what fast would look like?
+  - What is the correct output when the goal does not exist as data?
+  - Why is a trend not a target?
+  not:
+  - A claim that trends are useless. A trend is a fact about the past; it is not a standard.
+  - A rule about how to set goals. Setting them is the founder's; storing them is ours.
+
+heuristic:
+  statement: 'Where no target and date have been stated, ask once and then stay silent. Never
+    derive a benchmark from the tenant''s own history and report performance against it — a
+    number nobody agreed to is not a measurement, it is an accusation with arithmetic on it.'
+  why: 'A founder reading "you are behind" wants to know behind WHAT, and the only honest answer
+    from a derived benchmark is "behind the rate you happened to run at last fortnight". That is
+    not a goal — the previous fortnight had no more intention behind it than this one — and the
+    moment the reader works this out, every other number the product shows becomes suspect. The
+    damage is not the wrong reading; it is that a derived standard cannot be argued with, because
+    there is no author to take it up with. A stated goal can be revised, retired or admitted to be
+    wrong. An inferred one just sits there being met or missed, and the reader''s only available
+    response is to stop looking.'
+  confidence_bp: 9000
+  applies_when: 'Any reading of progress, pace or trajectory over a period. The test is a single
+    question — can a human be named who said what this was meant to reach?'
+  breaks_down_when: 'Three regimes.
+
+    ONE — THE TARGET IS EXTERNAL AND NON-NEGOTIABLE. A statutory date, a contractual service level,
+    a programme deadline. Nobody in the organisation stated it and it is still a real standard,
+    because a third party set it and it binds. The heuristic is about INVENTED standards, not
+    about standards with an author elsewhere.
+
+    TWO — THE FOUNDER ASKED FOR THE COMPARISON. "Am I writing to fewer people than last month" is
+    a question about the past and answering it is a service. The distinction is who initiated: a
+    comparison requested is information, the same comparison volunteered as a finding is a verdict.
+
+    THREE — A COUNT WITH NO COMPARISON. "Fourteen introductions this fortnight" needs no target
+    and asserts nothing. Reporting the observation is always allowed; it is the word BEHIND that
+    requires an author.'
+  reads:
+  - admin.obj.core.commitment
+  - admin.obj.core.deadline
+  - period.events_this_window
+  - period.events_prev_window
+  contradicts:
+  - admin.heu.admin_analytics.invisible_work_gets_cut_first
+
+when_to_use:
+  situations:
+  - admin.sit.goal_has_no_evidence
+  - admin.sit.goal_behind_pace
+  conditions:
+  - {path: period.events_this_window, op: ">=", value: 5}
+  signals:
+  - deadline_stated
+  do_not_use_when:
+  - The target was set by a regulator, a contract or a programme; those have an author already.
+  - The reader asked for the comparison. Answering a question is not authoring a standard.
+
+objects_used:
+- admin.obj.core.commitment
+- admin.obj.core.deadline
+- admin.obj.core.action_item
+
+outcomes:
+- No period card compares this window against a previous one as a measure of performance.
+- Where a target exists, the reading names it and the human who set it.
+
+failure_modes:
+- 'READ AS "SAY NOTHING ABOUT PERIODS". Counts and observations are always allowed; it is the
+  comparison against an unauthored standard that is not. A capability that reports nothing has
+  over-applied this and made itself useless.'
+- 'SATISFIED BY A DISCLAIMER. "Based on your recent activity, you appear to be behind" carries the
+  invented benchmark and a hedge. The hedge does not remove the standard.'
+- 'ASKED REPEATEDLY. The once in "ask once" is load-bearing. An unanswered ask restated weekly is
+  the same nagging the heuristic was protecting against, arriving by a different door.'
+
+limits:
+- Says nothing about how to elicit a goal, only that one must be elicited. The shortest possible
+  ask is the playbook question and it is not authored here.
+- Assumes a stated goal is a good goal. A badly chosen target measured faithfully is still a bad
+  target, and this heuristic will report progress against it without comment.
+
+variants:
+- applies_to: regulated
+  change: External obligations are read as stated targets with the regime as their author, and
+    are reported against without any ask.
+  why: A statutory date has an author, a consequence and no need for consent.
+- applies_to: startup_lean
+  change: The ask rides on a message already going out rather than becoming its own card.
+  why: The scarce resource is founder attention; a dedicated card asking for a goal spends more of
+    it than the goal is worth on the day it is asked for.
+
+metrics:
+- name: invented_benchmark_count
+  unit: count
+  description: Readings that compared against a target no human stated. Expected zero; a non-zero
+    value is a gate failure rather than a metric to improve.
+  direction: lower_is_better
+- name: stated_goal_coverage
+  unit: percent
+  description: Share of active periods with a human-stated target behind them. The thing the ask
+    is for.
+  direction: higher_is_better
+
+references:
+- title: How to Measure Anything
+  kind: book
+  author: Douglas W. Hubbard
+  note: The distinction between a measurement and a number — a measurement reduces uncertainty
+    about something someone cares about, and nobody stated caring about last fortnight's rate.
+- title: Administrative reporting practice — the unauthored standard
+  kind: practitioner
+  note: Every reporting function eventually derives a benchmark because the data allows it, and
+    every one of them learns the same way that the reader stops trusting the whole report.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-09-07'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: >
+    The statement is written to be quoted verbatim on a card, because the citation binder does
+    exactly that. The `contradicts` link is real and worth reading: invisible-work-gets-cut-first
+    argues for surfacing administrative volume so it is not underrated, and this argues against
+    turning that volume into a standard. Both are right and the tension is where the judgement
+    lives.

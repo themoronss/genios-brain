@@ -1,0 +1,142 @@
+# THE HALF OF FOUNDER SURFACE 14 THAT IS REACHABLE TODAY.
+#
+# The surface is "a condition someone set four months ago is now met". Layer 2 cannot yet see the
+# second clause — nothing detects satisfaction — but it can see the first with real evidence:
+# `decision_deferred` is a live observation kind and it is emitted on exactly the sentence this
+# capability exists for, the one that parks a decision on something rather than refusing it. Pair
+# it with a long silence and you have the honest V1 reading: not "this is now possible", which
+# would be an invented finding, but "this was parked on a condition, here is the condition, is it
+# true yet?" — a question only the reader can answer and one nobody else in the product asks.
+
+identity:
+  id: admin.sit.dormant_commitment_reopenable
+  name: Dormant Commitment, Reopenable
+  domain: admin
+  owner_capability: admin.executive_support.opportunity_tracking
+  version: 1.0.0
+  status: stable
+
+description: >
+  Someone deferred a decision rather than declining it, and nothing has been heard since. The
+  deferral is on the record in their own message; the silence is arithmetic against the last
+  inbound. Neither fact is inferred and neither is a judgement about them.
+
+  The distinction this file exists to hold is DEFERRED versus DECLINED, and it is not a matter of
+  degree. A decline ends the thread and a deferral moves it — usually onto a condition, sometimes
+  onto a date, occasionally onto nothing at all, which is the polite version of a decline. The
+  three excluded observation kinds below are what keep the first case out of the second's lane:
+  a fund's pass, a lost deal and an explicit no are all things this situation must never reopen.
+
+  What it may NOT say is that the condition has been met. Nothing here can see that. The whole
+  output is the sentence they parked it on, the time since, and the question — and the rule file
+  makes that a gate rather than a hope, because a card that asserts a satisfaction the system
+  cannot observe is the single most expensive error this capability can make.
+
+matches:
+  l2_situation_types:
+    - admin_contact
+    - relationship
+  # Deliberately NOT bound to `awaiting_response`. That type is minted on the `outreach` anchor
+  # for a counterparty who owes US a reply — the last word is ours. A parked decision is the
+  # opposite shape: THEY spoke last, and the ball is with the world rather than with either party.
+  scope: person
+  when:
+    # The deferral itself. This is the whole discriminator and it is a real, live observation
+    # kind — `context/vocabulary.py` emits it on "let's revisit", "come back once", "after we
+    # close the round". Without it this situation would be "an old thread", which is not a finding.
+    - has_obs: decision_deferred
+    # Long enough that nobody is still waiting on the last message. A parked decision re-read a
+    # week later is a chase; re-read after a season it is a fresh piece of work.
+    - fn: days_since
+      path: thread.last_inbound
+      op: ">="
+      value: 30
+    # THEY ALREADY SAID NO. A pass is often reversible and a lost deal is not, and neither is a
+    # deferral. Reopening either is the product not having read the reply.
+    - no_obs: pass_received
+    - no_obs: closed_lost_mention
+
+also_serves:
+  - admin.executive_support.commitment_tracking
+  - admin.executive_support.inbox_and_correspondence
+
+objects:
+  load:
+    - admin.obj.core.commitment
+    - admin.obj.core.request
+  optional:
+    - admin.obj.core.deadline
+    - admin.obj.core.meeting
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+
+priority_bp: 5800
+typical_duration_days: 120
+
+signals_of_progress:
+  - positive_reply
+  - meeting_scheduled
+  - next_step_agreed
+  - intro_made
+
+signals_of_decay:
+  - pass_received
+  - negative_reply
+  - going_dark
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    This card asks a question. It does not report a change.
+
+    Headline: who parked this, and how long ago. Not "opportunity" — say what was parked.
+
+    Situation: quote or closely paraphrase the deferral in their own words, and say how long it
+    has been since anything was heard. Then state plainly that we cannot see whether the thing
+    they were waiting on has happened, and that the reader can. Never write that a condition has
+    been met, that circumstances have changed, or that now is a good time — none of those is
+    observable here, and asserting one to the person best placed to know it is wrong is how this
+    whole surface loses its credit in a single card.
+
+    Artifact: the message that reopens WITH THE EVIDENCE NAMED. It must contain the specific thing
+    that is now true — a raise closed, a quarter started, a hire made — supplied by the reader, and
+    it must restate their own condition so they are not asked to remember it. If the reader has no
+    such evidence, the correct artifact is not a message: it is a line saying the opening is not
+    ready and what would make it ready.
+  fallback:
+    # Two clauses, and the subject leads. `last_heard_days` is the only uncertain slot; it stands
+    # alone so a missing value cuts the clause and not the sentence.
+    headline: "{entity} — a decision parked, not declined"
+    situation: >-
+      {entity} deferred this rather than declining it — nothing heard for {last_heard_days} days.
+      Whether the thing they were waiting on has happened is not something this system can see.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-09-07'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-09-07'
+  notes: >
+    Every predicate has a live writer. `decision_deferred` is in `CANONICAL_OBS_KINDS` and is
+    offered to the extractor on every message; `thread.last_inbound` is an engine field both packs
+    read; `pass_received` and `closed_lost_mention` are the two kinds
+    `admin.sit.outbound_awaiting_reply` already relies on for the same purpose, and the reason
+    `pass_received` exists as its own kind is that filing a reversible investor pass under
+    `closed_lost_mention` produced "Save the deal now" on a fundraising rejection.
+
+    `negative_reply` is NOT excluded, on purpose. A deferral is very often tagged negative as well
+    as deferred — "no for now, come back after the round" carries both — and excluding it would
+    remove the commonest true case in the pursuit of a cleaner gate. The three-way filter above
+    catches the actual declines.
+
+    THIRTY DAYS IS A ROUTING FLOOR, NOT A THRESHOLD. It decides whether this situation is worth
+    compiling at all; how stale is too stale, and how to rank one parked decision against another,
+    are Layer 4's arithmetic and live in the pack.
+
+admission:
+  accepted_content_hash: 23913ef8c120863e40b4eaea46d1b070243893859ea4349b41b98dbbd96ac617

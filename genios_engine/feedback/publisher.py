@@ -104,7 +104,37 @@ def publish_brain(conn, obj: LearningObject, *, at: datetime) -> str:
 
 
 def publish_runtime(conn, obj: LearningObject, *, at: datetime) -> str:
-    """A Runtime lease → temporary_memories, immediate, with its mandatory expiry."""
+    """A Runtime lease → temporary_memories, immediate, with its mandatory expiry.
+
+    ONE ACTIVE LEASE PER (org, subject), the same rule `publish_brain` enforces for the versioned
+    brains — because the Adaptive brain is read the same way. `contracts/learned_state.snapshot`
+    puts every live row for a subject into one dict keyed BY subject, and
+    `packs/compiler/runtime_brains.py` matches a subject's colon segments, so two live leases on
+    `adaptive:card_timing:<capability>` are two contradictory statements of one preference with
+    nothing to choose between them. The newer proposal is the one built from the larger cohort —
+    a founder's fourth complaint supersedes the lease their third earned — so the older row is
+    retired here rather than left to run its own clock out beside it.
+
+    The retirement is a lifecycle event and is written as one: `temporary → archived`, which is
+    the edge the contract actually has (`temporary → expired` is reserved for the clock, and a
+    lease replaced by a better-evidenced one did not run out). A row whose proposal is the object
+    being published is left alone — an object superseding itself is not an event.
+    """
+    superseded = conn.execute(text(
+        "update temporary_memories set active = false "
+        "where org_id = :o and subject = :s and active "
+        "returning memory_id, learning_id"),
+        {"o": obj.org_id, "s": obj.subject}).mappings().all()
+    for row in superseded:
+        learning_id = row["learning_id"]
+        if not learning_id or str(learning_id) == obj.learning_id:
+            continue
+        log_transition(conn, org_id=obj.org_id, learning_id=str(learning_id),
+                       from_state=LearningState.TEMPORARY.value,
+                       to_state=LearningState.ARCHIVED.value,
+                       reason_code="superseded_by_lease", at=at, actor="pipeline",
+                       detail={"memory_id": str(row["memory_id"]),
+                               "superseded_by": obj.learning_id})
     conn.execute(text(
         "insert into temporary_memories (org_id, memory_id, learning_id, subject, value, "
         "visibility_scope, visibility, expires_at, active, created_at) "

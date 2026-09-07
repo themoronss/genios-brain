@@ -972,3 +972,150 @@ def deactivate_l2_pilot(target_org: str, switch: str = Query("both"),
     record = get_l2_activation(engine, target_org)
     return {"org_id": target_org, "switched_off": switched_off,
             "activation": record.as_record() if record else None}
+
+
+# =================================================================================================
+# LAYER 3 v2 PILOT — per (tenant, DOMAIN), because the corpus is three domains and V1 is one
+# =================================================================================================
+#
+# WHY THIS BLOCK EXISTS AT ALL. `platform/l3_activation.activate` had no request path, so the only
+# way to start an L3 pilot was a hand-written INSERT into `l3_activation` — which is the exact
+# defect `tests/test_l2_pilot_activation.py` was written against one layer down. A pilot begun by
+# SQL has no `enabled_by` anybody trusts and no audit row at all.
+#
+# PER DOMAIN, NOT PER TENANT. L3's activation key is (org_id, domain) and that is not decoration:
+# the corpus carries three domains (Admin 371 files, Customer Support 604, Sales 418) and doc 00's
+# scope rule is "Admin domain first ... Sales and CS corpora stay compiled and stamped but
+# activate later". A per-tenant boolean would turn on 1,394 files' worth of expertise in one
+# request, which is the `use_domain_compiler` mistake with a nicer name.
+#
+# NO "all" SHORTHAND, deliberately unlike L2's `switch="both"`. There, both switches gate passes
+# that were designed to run together. Here a domain is a whole authored corpus with its own V1
+# readiness, and the plan activates exactly one first. An operator who wants three domains should
+# have to say so three times.
+class L3PilotActivation(BaseModel):
+    """The body of a domain switch-on. `domain` is required and has no default — the whole point
+    of the key is that turning on Admin is not turning on Sales."""
+
+    domain: str
+    notes: str | None = None
+
+
+def _l3_domain(domain: str) -> str:
+    """Validated by the module that owns the names, so the refusal is a 400 naming the legal
+    domains rather than a 422 whose body an operator has to decode."""
+    from genios_engine.platform.l3_activation import require_domain
+    try:
+        return require_domain(domain)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@router.get("/l3-activation")
+def list_l3_pilot_activation(include_disabled: bool = Query(False),
+                             _ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """Who is on the Layer 3 pilot, for WHICH DOMAIN, since when, and what that turned on.
+
+    `include_disabled=true` adds the (tenant, domain) pairs that were stamped off, for the same
+    reason L2's list does: `scripts/l3_pilot_report.py --days 7` is interpreted against this read,
+    and a seven-day window over a domain that was switched off on day four is four days of
+    compiled packages and three of nothing.
+    """
+    from genios_engine.platform.l3_activation import EFFECTS, list_l3_activations
+    rows = list_l3_activations(_engine(), include_disabled=bool(include_disabled))
+    live = [r for r in rows if r.live]
+    return {"activations": [r.as_record() for r in rows],
+            "live": len(live),
+            "live_domains": sorted({r.domain for r in live}),
+            "total": len(rows),
+            "effects": EFFECTS}
+
+
+@router.get("/l3-activation/{target_org}")
+def get_l3_pilot_activation(target_org: str, _ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """ONE tenant's L3 state, across every domain.
+
+    Returns the domains rather than a boolean because "is this org on the L3 pilot" is not a
+    question with a yes/no answer once the key is (org, domain) — a tenant can be compiling Admin
+    and not Sales, and an operator told only "activated: true" will assume both.
+    """
+    from genios_engine.platform.l3_activation import (EFFECTS, L3_DOMAINS, activated_domains,
+                                                      get_l3_activation)
+    records = [r for r in (get_l3_activation(_engine(), target_org, d) for d in L3_DOMAINS)
+               if r is not None]
+    live = sorted(activated_domains(_engine(), target_org))
+    return {"org_id": target_org,
+            "in_pilot": bool(live),
+            "live_domains": live,
+            "activations": [r.as_record() for r in records],
+            "effects": EFFECTS}
+
+
+@router.post("/l3-activation/{target_org}")
+def activate_l3_pilot(target_org: str, body: L3PilotActivation,
+                      ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """Put ONE tenant's ONE domain on the Layer 3 pilot. Idempotent, audited, reversible.
+
+    THE ORDERING THIS ROUTE MUST NOT BE USED TO VIOLATE. Doc 06: "the one ordering that must not
+    be violated is Y1 before Y5", because flipping activation without the typed consumers produces
+    the fake success the adapter's own docstring warns about — "activation would LOOK successful
+    while producing generic output". Y1 has landed and J1 passed, so this route is now safe to
+    exist; it was deliberately not built before that.
+
+    IDEMPOTENT IN THE SENSE THAT MATTERS: activating a live domain twice keeps the original
+    `enabled_at`, so a retry after a dropped connection does not re-date a pilot whose whole
+    purpose is a seven-day window. Nothing here launches work — the compiler's live pass reads
+    this table on its next sweep.
+
+    The tenant must exist: without the check the org FK raises a 500 on a typo'd id, and an
+    operator who mistypes a pilot tenant should be told which word was wrong.
+    """
+    domain = _l3_domain(body.domain)
+    engine = _engine()
+    with engine.connect() as c:
+        if c.execute(text("select 1 from orgs where id=:o"), {"o": target_org}).first() is None:
+            raise HTTPException(404, "account not found")
+    from genios_engine.platform.l3_activation import EFFECTS, activate
+    record = activate(engine, target_org, domain=domain, by=ctx.actor_id or ctx.org_id,
+                      notes=body.notes)
+    from genios_engine.platform.audit import record as audit
+    audit(ctx.org_id, "config_changed", actor_type="user", actor_id=ctx.actor_id or ctx.org_id,
+          target_type="org", target_id=target_org,
+          metadata={"audit_category": "admin", "field": "l3_activation",
+                    "domain": domain, "value": True, "notes": body.notes})
+    _log.info("L3 pilot ACTIVATED for org=%s domain=%s by=%s",
+              target_org, domain, ctx.actor_id)
+    return {"org_id": target_org, "switched_on": domain,
+            "activation": record.as_record(),
+            "effect": EFFECTS.get(domain)}
+
+
+@router.delete("/l3-activation/{target_org}")
+def deactivate_l3_pilot(target_org: str, domain: str = Query(...),
+                        ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """Take ONE tenant's ONE domain back off. The rollback half, and it is not optional.
+
+    `domain` is a REQUIRED query parameter with no default. Everywhere else in this file a
+    reversal defaults to the widest reading, because taking something off is the safe direction —
+    but here the widest reading would silently end two other domains' pilots, and a pilot ended by
+    accident is a seven-day window nobody can read afterwards.
+
+    Returns `switched_off: null` for a domain that was already off rather than 404: the caller's
+    intent ("this tenant must not be compiling Admin") is satisfied either way, and a 404 would
+    make a retry after a dropped connection look like a failure.
+    """
+    domain = _l3_domain(domain)
+    engine = _engine()
+    from genios_engine.platform.l3_activation import deactivate, get_l3_activation
+    turned_off = deactivate(engine, target_org, domain=domain, by=ctx.actor_id or ctx.org_id)
+    if turned_off:
+        from genios_engine.platform.audit import record as audit
+        audit(ctx.org_id, "config_changed", actor_type="user",
+              actor_id=ctx.actor_id or ctx.org_id, target_type="org", target_id=target_org,
+              metadata={"audit_category": "admin", "field": "l3_activation",
+                        "domain": domain, "value": False})
+        _log.info("L3 pilot DEACTIVATED for org=%s domain=%s by=%s",
+                  target_org, domain, ctx.actor_id)
+    record = get_l3_activation(engine, target_org, domain)
+    return {"org_id": target_org, "switched_off": domain if turned_off else None,
+            "activation": record.as_record() if record else None}

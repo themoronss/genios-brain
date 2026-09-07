@@ -1,0 +1,146 @@
+identity:
+  id: admin.heu.delegation_and_task_routing.an_unowned_item_is_not_a_late_item
+  name: An unowned item is not a late item
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.delegation_and_task_routing
+  subdomain: executive_support
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: An item with no owner is not a low-priority item, it is the shape that goes missing —
+    because every mechanism that would surface it later needs a name to address and there isn't
+    one.
+  answers:
+  - Why does an unowned item deserve attention ahead of an owned one that is further overdue?
+  - What is the correct first move on an item nobody owns?
+  - Why is assigning it more valuable than chasing it?
+  not:
+  - A prioritisation formula. It argues that ownership is a different axis from lateness, not
+    where the line falls.
+  - A claim that unowned items are somebody's fault. The absence is usually structural.
+
+heuristic:
+  statement: 'Treat a missing owner as the finding, ahead of the missed date. An overdue item with
+    a name on it is being handled badly; an item with no name on it is not being handled at all,
+    and no amount of further ageing will change that — the ageing is what an unowned item does.'
+  why: 'Everything an organisation does to recover a slipping item is addressed to a person. A
+    chase needs a recipient, an escalation needs a rung, a renegotiation needs somebody entitled
+    to move the date. Strip the name and every one of those mechanisms fails silently — the item
+    does not get refused, it simply never gets picked up, and the register grows a class of entry
+    that ages forever and is never worked. That is why the unowned item is worse than the late
+    one despite looking milder on a sorted list: lateness is a state that a person can leave, and
+    ownerlessness is a state that only an assignment can leave.'
+  confidence_bp: 8800
+  applies_when: 'A commitment or action item exists, its content is known, and no owner or
+    recipient is recorded against it.'
+  breaks_down_when: 'Three regimes.
+
+    ONE — THE OWNER IS OBVIOUS FROM ONE HOP. Where the item sits on a thread with exactly one
+    counterparty, the absence is a recording gap rather than an ownership gap, and treating it as
+    a finding produces a card asking somebody to name the person they are visibly talking to.
+
+    TWO — THE ITEM IS NOT REALLY WORK. Extraction pulls conditional and rhetorical sentences into
+    the same shape as commitments. An unowned item that is not an obligation at all should be
+    closed, not assigned, and the assignment reads as bureaucracy applied to a turn of phrase.
+
+    THREE — DELIBERATE COLLECTIVE OWNERSHIP. A small team genuinely holding something jointly is a
+    real arrangement and works while the team is small. It stops working at the exact moment
+    nobody notices, which is why it should be recorded as a choice rather than left as a blank.'
+  reads:
+  - admin.obj.core.action_item
+  - admin.obj.core.commitment
+  - commitment.action
+  - commitment.owed_to
+  contradicts:
+  - admin.heu.commitment_tracking.forgotten_beats_broken_for_damage
+
+when_to_use:
+  situations:
+  - admin.sit.work_item_unowned
+  conditions:
+  - {exists: commitment.action}
+  - {absent: commitment.owed_to}
+  signals:
+  - next_step_agreed
+  - followup_sent
+  do_not_use_when:
+  - The thread has exactly one counterparty and the owner is unambiguous from context.
+  - The extracted item is a turn of phrase rather than an obligation; close it instead.
+
+objects_used:
+- admin.obj.core.action_item
+- admin.obj.core.commitment
+- admin.obj.core.request
+
+outcomes:
+- Unowned items are surfaced as an ownership finding rather than sorted into the overdue list.
+- The first offered move on an unowned item is an assignment, not a chase.
+
+failure_modes:
+- 'ASSIGNING TO WHOEVER IS NEAREST. The absence of an owner is not licence to invent one. A name
+  attached without the person having accepted it is an unowned item with a label on it.'
+- 'APPLIED TO EVERY EXTRACTED SENTENCE. Extraction is generous; not everything shaped like a
+  commitment is one, and running this over all of them produces an assignment queue nobody asked
+  for.'
+- 'READ AS URGENCY. It argues that ownership is a different axis, not that unowned items are
+  always the most urgent thing on the list.'
+
+limits:
+- Says nothing about who the owner should be. Choosing is a routing decision with inputs this
+  heuristic does not read.
+- Cannot distinguish a genuinely unrecorded owner from one the extractor failed to capture. The
+  typed-absence predicate does that upstream, and where it abstains this heuristic never runs.
+
+variants:
+- applies_to: startup_lean
+  change: Assignment is usually to the founder by default and the useful act is naming the
+    DEADLINE rather than the person.
+  why: With three people the owner is rarely genuinely ambiguous; the date is.
+- applies_to: shared_services
+  change: Assign to a queue rather than a person, and record the queue as the owner.
+  why: A named individual in a shared-services model creates a single point of failure the model
+    exists to avoid; a queue is a real owner there and a blank is still not.
+
+metrics:
+- name: unowned_item_share
+  unit: percent
+  description: Share of live obligations with no owner recorded. The population this heuristic is
+    about, and the number that says whether the register can be worked at all.
+  direction: lower_is_better
+- name: time_to_first_owner
+  unit: days
+  description: Days between an item appearing and a name being recorded against it.
+  direction: lower_is_better
+
+references:
+- title: The Checklist Manifesto
+  kind: book
+  author: Atul Gawande
+  note: The argument that a step with no named owner is a step that does not reliably happen, made
+    in a setting where the failure is visible immediately rather than months later.
+- title: Administrative practice — the blank owner column
+  kind: practitioner
+  note: Every action-item register acquires one. The good ones refuse to accept an entry without a
+    name, which is the same rule stated as a form constraint.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-09-07'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: >
+    The `contradicts` link is genuine and useful: forgotten-beats-broken argues to spend the
+    message on renegotiating a date, and this argues to spend it on finding a name. On an item
+    that is both unowned and slipping they compete for the same single message, and the judgement
+    is which of the two absences the counterparty will feel first.
+
+    The first breakdown regime is the one that will bite on live data — a thread with one
+    counterparty where `commitment.owed_to` simply was not written. The situation's typed-absence
+    predicate is what keeps that case out, and this heuristic states the same boundary in words so
+    a reviewer can see the two are meant to agree.

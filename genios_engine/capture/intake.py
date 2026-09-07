@@ -26,7 +26,7 @@ def ingest_manual(*, org_id: str, source: str, object_type: str, source_object_i
                   raw_extra: dict | None = None, internal_kind: str | None = None,
                   content_version: str | None = None,
                   repo, payload_store=None, prepared_store=None, trace_repo=None,
-                  coverage_fn=None, semantic=None,
+                  coverage_fn=None, semantic=None, esqe=None,
                   connection_id: str = "manual") -> CaptureResult:
     """One deliberately-provided object → the full L1 pipeline. Idempotent via the
     same dedup ledger as everything else (same object id → duplicate, not a re-land).
@@ -34,7 +34,13 @@ def ingest_manual(*, org_id: str, source: str, object_type: str, source_object_i
     `coverage_fn` is threaded from every caller rather than defaulted here. The manual door is a
     real capture entry — an upload becomes a `source_events` row and reaches L2 exactly like a
     swept email — so an event that arrives through it with `coverage_ready=None` is the same
-    hole in the same population, just entered by a different door."""
+    hole in the same population, just entered by a different door.
+
+    `semantic` and `esqe` are threaded for the SAME reason and it is the same defect one step
+    later: S4 always runs, but it returns before detection when `extraction is None`, so a door
+    that captured without S2 produced an event with no signals — and a signal that never existed
+    cannot be qualified, published or explained. A caller with no lane still passes nothing and
+    the pipeline behaves exactly as it did before the lanes existed."""
     raw = RawObject(
         source=source, object_type=object_type, source_object_id=source_object_id,
         occurred_at=occurred_at or datetime.now(timezone.utc),
@@ -44,7 +50,8 @@ def ingest_manual(*, org_id: str, source: str, object_type: str, source_object_i
     )
     return capture_event(raw, org_id=org_id, connection_id=connection_id, repo=repo,
                          payload_store=payload_store, prepared_store=prepared_store,
-                         trace_repo=trace_repo, coverage_fn=coverage_fn, semantic=semantic)
+                         trace_repo=trace_repo, coverage_fn=coverage_fn, semantic=semantic,
+                         esqe=esqe)
 
 
 def ingest_internal_knowledge(*, org_id: str, kind: str, title: str, body: str,

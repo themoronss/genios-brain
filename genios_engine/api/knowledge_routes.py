@@ -11,7 +11,7 @@ unchanged content is a no-op duplicate, not a re-land.
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
@@ -56,7 +56,8 @@ def list_kinds(org_id: str, org: str = Depends(_org)) -> dict:
 
 
 @router.post("/api/org/{org_id}/knowledge")
-def write_knowledge(org_id: str, body: KnowledgeIn, org: str = Depends(_org)) -> dict:
+def write_knowledge(org_id: str, body: KnowledgeIn, background: BackgroundTasks,
+                    org: str = Depends(_org)) -> dict:
     """Write one piece of company canon into the graph's world."""
     kind = normalize_kind(body.kind)
     if kind is None:
@@ -81,6 +82,16 @@ def write_knowledge(org_id: str, body: KnowledgeIn, org: str = Depends(_org)) ->
     record(org, "data_written", actor_type="user", actor_id=author or org,
            target_type="knowledge", target_id=result.event.dedup_key,
            metadata={"kind": kind, "title": body.title, "outcome": result.outcome})
+
+    # N-3 · ORG-BRAIN DISCOVERY (L3.2-U1 step 1). The company just WROTE DOWN a rule; this is
+    # the door doc 02 means by "on canon ingest". In-process BackgroundTask, never Celery (the
+    # broker is quota-limited Upstash), and a sweep rather than a single event id because the
+    # other canon door — a tagged upload — emits one event per chunk and keeps none of their
+    # ids. Idempotent by construction: `org_rule_discovery_runs` is keyed on the document
+    # VERSION, so scheduling it on every write costs one indexed read per already-read document,
+    # and it does nothing at all when the kind is not rule-bearing or no model is configured.
+    from genios_engine.feedback.org_rule_ingest import sweep_org_rule_discovery
+    background.add_task(sweep_org_rule_discovery, org)
 
     # `duplicate` is a SUCCESS: the org re-submitted content it had already asserted, so
     # the graph already holds it. Reporting it as an error would push users to edit text

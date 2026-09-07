@@ -10,6 +10,11 @@ from enum import Enum
 from types import MappingProxyType
 from typing import Any
 
+from genios_engine.contracts.domain_expertise import (
+    MAX_CITATIONS,
+    require_citation,
+    require_constraint_application,
+)
 from genios_engine.platform.canonical import canonicalize, semantic_hash, stable_id
 
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@/-]{0,191}$")
@@ -755,6 +760,25 @@ class ReasoningDecision:
     expires_at: datetime
     outcome_window_days: int | None = None
 
+    # ── E-02 · what Layer 3's corpus contributed to THIS decision ───────────────────────────
+    #
+    # Both default empty and both are additive: every decision written before this wave still
+    # constructs, and `to_semantic_dict` omits them when empty so an old-shaped decision keeps
+    # the exact `decision_hash` already sitting in its audit row.  Widening the hash for content
+    # that does not exist would invalidate replay for every stored decision in exchange for
+    # nothing.
+    #
+    #: Carried through from the ExpertisePackage — the authored claims this decision rests on,
+    #: QUOTED.  `require_citation` re-checks byte-identity here rather than trusting the package,
+    #: because this is the object a card renders from and the render is where a paraphrase would
+    #: finally become visible to a customer.
+    citations: tuple[Mapping[str, Any], ...] = ()
+    #: Which compiled corpus rules fired, were satisfied, or could not be evaluated — the last of
+    #: those naming what was UNKNOWN.  A blocking rule that fired names the candidates it
+    #: eliminated, and those ids must be eliminated candidates ON THIS DECISION, which is what
+    #: makes E5's "why not X?" answerable from the record instead of from a re-run.
+    constraints_applied: tuple[Mapping[str, Any], ...] = ()
+
     def __post_init__(self) -> None:
         if not isinstance(self.outcome, DecisionOutcome):
             object.__setattr__(self, "outcome", DecisionOutcome(self.outcome))
@@ -802,9 +826,35 @@ class ReasoningDecision:
         if self.outcome in {DecisionOutcome.NO_ACTION, DecisionOutcome.INSUFFICIENT_CONTEXT,
                             DecisionOutcome.FAILED} and self.candidates:
             raise ValueError(f"{self.outcome.value} outcome cannot contain candidates")
+        object.__setattr__(self, "citations", tuple(
+            require_citation(citation, "decision citation") for citation in self.citations))
+        if len(self.citations) > MAX_CITATIONS:
+            raise ValueError(
+                f"a decision carries at most {MAX_CITATIONS} citations, got {len(self.citations)} "
+                "— CLG-08 caps and RECEIPTS the truncation rather than letting a card grow a "
+                "bibliography")
+        object.__setattr__(self, "constraints_applied", tuple(
+            require_constraint_application(applied, "constraint applied")
+            for applied in self.constraints_applied))
+        applied_ids = [applied["rule_id"] for applied in self.constraints_applied]
+        if len(applied_ids) != len(set(applied_ids)):
+            raise ValueError("a compiled rule is applied once per decision; a duplicate rule_id "
+                             "means two records disagree about what the same rule did")
+        # An elimination has to name a candidate that IS here and IS eliminated.  Naming an absent
+        # or surviving candidate is a receipt that reads correctly and is false, which is worse
+        # than no receipt at all: it is what `alternatives_rejected` renders straight onto a card.
+        eliminated_here = {c.candidate_id for c in self.candidates
+                           if c.disposition == CandidateDisposition.ELIMINATED}
+        for applied in self.constraints_applied:
+            for candidate_id in applied.get("eliminated_candidate_ids", ()):
+                if candidate_id not in eliminated_here:
+                    raise ValueError(
+                        f"rule {applied['rule_id']} claims to have eliminated candidate "
+                        f"{candidate_id}, which is not an eliminated candidate on this decision")
 
     def to_semantic_dict(self) -> dict[str, Any]:
-        return {"outcome": self.outcome, "capability_id": self.capability_id,
+        body: dict[str, Any] = {
+                "outcome": self.outcome, "capability_id": self.capability_id,
                 "capability_version": self.capability_version,
                 "context_snapshot_id": self.context_snapshot_id,
                 "candidates": self.candidates,
@@ -813,6 +863,14 @@ class ReasoningDecision:
                 "do_nothing_consequence": self.do_nothing_consequence,
                 "expires_at": self.expires_at,
                 "outcome_window_days": self.outcome_window_days}
+        # Present only when carried — see the field comments.  `decision_hash` is stored in
+        # `reasoning_runs` and compared on replay, so a decision that gained no corpus content must
+        # hash to what it hashed to before this wave existed.
+        if self.citations:
+            body["citations"] = self.citations
+        if self.constraints_applied:
+            body["constraints_applied"] = self.constraints_applied
+        return body
 
     @property
     def semantic_hash(self) -> str:

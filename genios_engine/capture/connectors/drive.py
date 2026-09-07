@@ -212,9 +212,12 @@ class ComposioDriveConnector:
             # and its extracted text updates, instead of being deduped to the first version seen.
             content_version=str(f.get("modifiedTime")) if f.get("modifiedTime") else None,
             raw={"subject": name, "body": r.text, "mime": mime, "has_attachment": bool(r.text),
+                 # `page_offsets` — L1.3.4-U5's map, on the same terms as the Gmail connector's:
+                 # a Drive PDF is the paged document this product is most often asked to cite.
                  "document": {"native_parse_used": r.native_parse_used, "ocr_used": r.ocr_used,
                               "ocr_engine": r.ocr_engine, "ocr_pages": r.ocr_pages,
                               "confidence_bp": r.confidence_bp, "status": r.status,
+                              "page_offsets": list(r.page_offsets), "first_page": 1,
                               **file_metadata(f)}},
         )
 

@@ -83,7 +83,7 @@ from genios_engine.contracts.evidence import EvidenceSpan
 from genios_engine.contracts.extraction import ExtractionResult
 from genios_engine.contracts.gated_event import DomainHint
 from genios_engine.contracts.validators import (require_aware, require_bool, require_bp,
-                                                require_enum, require_identifier,
+                                                require_enum, require_hash64, require_identifier,
                                                 require_ordinal, require_strings, require_text)
 from genios_engine.contracts.visibility import Visibility
 
@@ -400,6 +400,62 @@ class QualifiedEnterpriseSignal(BaseModel):
     #: that did not write it. Values are `Any`, which is the hole V-7 exists for:
     #: `require_no_float` walks the whole mapping.
     versions: dict[str, Any]
+
+    # --- the four provenance answers the seam used to drop (migration 0115) ---
+    #
+    # All four are optional and default to None, deliberately. Every one of them is knowable on
+    # the capture path and unknowable afterwards, so a row that carries None is a row written
+    # before this existed or by a door that genuinely could not answer — never a placeholder.
+
+    #: WHEN WE FIRST SAW IT. `occurred_at` is world time: when the email was sent, when the
+    #: meeting starts. That is the right instant to reason about and the wrong one to operate on,
+    #: because it says nothing about whether the message reached us in ten seconds or in a
+    #: backfill three weeks later. `SourceEvent.captured_at`, carried across the seam.
+    ingested_at: datetime | None = None
+    #: sha256 of the PREPARED text these claims were read out of — the same digest
+    #: `capture/semantic/cache.py` folds into its key, so a signal and its cached extraction can
+    #: be compared without re-reading either. Stored rather than derived on demand because
+    #: `prepared_content` has a retention window and this must outlive it: when the body is gone,
+    #: the hash is the only thing left that can say the source has not silently changed.
+    content_hash: str | None = None
+    #: WHY ALG-18 let this through — `QualificationReason`'s value. A refusal has always carried
+    #: its reason into `qualification_drops`; an acceptance carried none, so "at or above the
+    #: floor", "could not be scored and therefore travels", "carries a conflict" and "company
+    #: canon" were four different decisions that all read as a published row.
+    qualification_reason: str | None = None
+    #: The FORWARD half of the supersession link — the signal that REPLACED this one. `supersedes`
+    #: points backwards from the new row; without this, reaching the replacement from the old id
+    #: meant scanning every row for one pointing at you. Written by the store when the replacement
+    #: is published, so the two halves are set in one place and cannot disagree.
+    superseded_by: str | None = None
+
+    @field_validator("ingested_at", mode="before")
+    @classmethod
+    def _ingested(cls, value: Any) -> Any:
+        """Aware or absent. A naive capture time is the same replay hazard `occurred_at` refuses,
+        one column over: it reads as UTC on one host and as local on another."""
+        return None if value is None else require_aware(value, "ingested_at")
+
+    @field_validator("content_hash", mode="before")
+    @classmethod
+    def _content_hash(cls, value: Any) -> Any:
+        """64 lowercase hex, or nothing. An upper-cased or truncated digest compares unequal to
+        the same content hashed by the extraction cache, which is the one use this field has."""
+        return None if value is None else require_hash64(value, "content_hash")
+
+    @model_validator(mode="after")
+    def _supersession_is_not_a_loop(self) -> "QualifiedEnterpriseSignal":
+        """Neither half of the link may point at its own row. The database carries the same two
+        checks (migration 0115); stating them here is what stops an in-memory dev run from being
+        the place a cycle of one first becomes possible."""
+        if self.superseded_by is not None and self.superseded_by == self.signal_id:
+            raise ValueError(f"signal {self.signal_id} cannot be superseded by itself")
+        if (self.superseded_by is not None and self.supersedes is not None
+                and self.superseded_by == self.supersedes):
+            raise ValueError(
+                f"signal {self.signal_id} both replaces and is replaced by {self.supersedes} — "
+                "one of the two halves of the link was written in the wrong direction")
+        return self
 
     # ------------------------------------------------------------------ envelope + identity
 

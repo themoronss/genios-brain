@@ -150,6 +150,12 @@ def test_the_expertise_adapter_reports_what_it_refused_to_convert():
         # carries its own `success_probability_bp` instead of the 5,000bp default. Empty here —
         # this test is about the conversion receipt, not about learning.
         adaptive_preferences = ()
+        # Read since CLG-07 made the cap selection-aware: which situations fired (nothing here,
+        # so no play is situation-fit) and when each owning capability was last stamped (no
+        # capabilities, so every play sorts undated). With both empty the ranking falls through
+        # to its final tie-break, the rule id — which is what the assertions below still pin.
+        metadata: dict = {}
+        capabilities = ()
 
     plays, receipt = _plays(_Package())
     assert len(plays) == MAX_PLAYS
@@ -172,6 +178,8 @@ def test_the_generic_fallback_is_tagged_non_prescriptive():
     class _Empty:
         expert_rules = ()
         adaptive_preferences = ()
+        metadata: dict = {}
+        capabilities = ()
 
     plays, receipt = _plays(_Empty())
     assert receipt["generic_fallback_used"] is True

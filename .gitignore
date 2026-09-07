@@ -11,3 +11,7 @@ venv/
 .ruff_cache/
 .trace/
 graphify-out/
+
+# Test upload artifacts — the upload door writes here at runtime; a policy fixture
+# committed by a test run is not source.
+uploads/

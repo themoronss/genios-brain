@@ -6,6 +6,12 @@
 "the same sweep at the same `eval_time` produces byte-identical lifecycles" is the property the
 whole no-clock discipline in `lifecycle.py` exists to buy. It had no caller outside its own unit
 test, so the discipline was unmeasured on every production sweep.
+
+The four seams `_run_ledger` used to call inline now live in `capture/esqe/finalize.py`, so the
+upload door can reach the same sequence instead of dropping its signals on the floor. The DRIVER
+here is deliberately unchanged — `routes._run_ledger`, the hook every HTTP sync caller shares —
+because what this file proves is that a real request path reaches the digest, not which module
+holds the line that computes it. Only the patch target moved.
 """
 
 from __future__ import annotations
@@ -15,6 +21,7 @@ from datetime import datetime, timezone
 import pytest
 
 from genios_engine.api import routes
+from genios_engine.capture.esqe import finalize as F
 from genios_engine.capture.esqe import lifecycle as L
 
 NOW = datetime(2026, 4, 2, 9, 0, tzinfo=timezone.utc)
@@ -26,7 +33,7 @@ def test_the_ledger_hook_computes_the_replay_digest(monkeypatch, caplog):
     computed in a helper nothing calls fails here."""
     seen: list[str] = []
     real = L.outcome_digest
-    monkeypatch.setattr(routes, "outcome_digest",
+    monkeypatch.setattr(F, "outcome_digest",
                         lambda outcome: seen.append(real(outcome)) or real(outcome))
     for name in ("_graph", "_conflict_store", "_floor_store", "_drop_ledger",
                  "_signal_store", "_rejection_ledger", "_parked"):
@@ -38,7 +45,7 @@ def test_the_ledger_hook_computes_the_replay_digest(monkeypatch, caplog):
     transitions, records = L.apply_expiries((before,), eval_time=NOW)
     assert transitions, "the fixture did not actually expire — the digest would be of nothing"
     monkeypatch.setattr(
-        routes, "sweep_lifecycle",
+        F, "sweep_lifecycle",
         lambda *a, **kw: L.LifecycleOutcome(org_id=ORG, eval_time=NOW,
                                             transitions=transitions, records=records))
 

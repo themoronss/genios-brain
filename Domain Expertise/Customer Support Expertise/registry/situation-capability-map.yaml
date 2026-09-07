@@ -424,6 +424,18 @@ map:
         - customer_support.obj.core.resolution
         - customer_support.obj.core.sla_target
 
+# ── Deferred ──────────────────────────────────────────────────────────────
+# Capabilities with no door and a named reason for it. They appear in no route, the
+# situations they own are suppressed from the map above, and they compile into zero
+# packages. Authored in <domain>/deferrals.yaml; not deleted, not deprecated.
+deferred_capabilities: {}
+
+# Situations dropped from the map because the capability that owns them is deferred.
+suppressed_situations: []
+
+# Deferred and yet still reachable — the ledger and the corpus disagree. Must be empty.
+deferral_contradictions: []
+
 # ── Blocked on Layers 1 and 2 ─────────────────────────────────────────────
 # These situations are authored and route NOTHING, because the type that would
 # trigger them is not in any shipped pack's signal_vocab. Not a defect in the
@@ -499,6 +511,9 @@ stats:
   capabilities_stub: 0
   capabilities_complete: 49
   capabilities_routed: 42
+  capabilities_deferred: 0
+  capabilities_unrouted_unreasoned: 7
+  situations_suppressed: 0
   objects_total: 21
   objects_core: 19
   objects_scoped: 2

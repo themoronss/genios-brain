@@ -441,6 +441,23 @@ _ORG_SCOPED_TABLES = [
     # whose graph was just wiped has no fire evidence left to accumulate against anyway. The org
     # FK cascades on account deletion; this entry is what makes /reset erase it too.
     "l2_v2_activation",
+    # Y0/E-03's Layer 3 pilot switch (migration 0107). Same argument as the two rows above it and
+    # the same behavioural direction: it names a person (`enabled_by`, `disabled_by`) and carries
+    # free text about the tenant (`notes`), and removing it returns them to the state every org
+    # that never joined the pilot is in — the domain compiler's live pass skipping every corpus,
+    # which is where every tenant sits today. One row per activated (org, domain), so a tenant on
+    # the Admin pilot leaves no Sales row behind either. The org FK cascades on account deletion;
+    # this entry is what makes /reset erase it too — and the loop below runs with no try/except by
+    # design, so a name missing here leaks silently.
+    "l3_activation",
+    # N-3's discovery receipt (migration 0113). One row per canon document VERSION this tenant
+    # has had read for org rules: which of their own policies and SOPs were opened, what was
+    # proposed and what was refused. That is a record about the tenant's own documents, so it
+    # dies with them — and clearing it on /reset is also the behaviour a reader expects, because
+    # the graph it produced is being wiped and the documents will be read again. The org FK
+    # cascades on account deletion; this entry is what makes /reset erase it too — and the loop
+    # below runs with no try/except by design, so a name missing here leaks silently.
+    "org_rule_discovery_runs",
     "source_coverage",
     # L2.5.5 / L-5 (migration 0104). `situation_absences` is a derived view of situations that
     # are about to be wiped, so leaving it would keep a finding about a deleted customer; and

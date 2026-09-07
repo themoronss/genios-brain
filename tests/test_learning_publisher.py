@@ -126,3 +126,52 @@ def test_runtime_publishes_a_temporary_lease(conn):
     n = c.execute(text("select count(*) from temporary_memories where org_id=:o and subject='ctx:x' and active"),
                   {"o": org}).scalar()
     assert n == 1
+
+
+def test_a_newer_lease_supersedes_the_live_one_on_the_same_subject(conn):
+    """ONE ACTIVE LEASE PER (org, subject) — the rule `publish_brain` keeps, kept for Runtime too.
+
+    `contracts/learned_state.snapshot` collects live leases into a dict keyed by subject and
+    `packs/compiler/runtime_brains.py` matches subject segments, so two live rows on one subject
+    are two contradictory answers to one question with nothing to choose between them. The older
+    row is retired and the ledger says why: superseded, not expired — nothing ran out.
+    """
+    from sqlalchemy import text
+    c, org = conn
+    first = _obj(org, target=LearningTarget.RUNTIME, subject="ctx:lease", value={"v": 1},
+                 expires_at=NOW + timedelta(hours=1))
+    second = _obj(org, target=LearningTarget.RUNTIME, subject="ctx:lease", value={"v": 2},
+                  expires_at=NOW + timedelta(hours=2))
+    publisher.publish_runtime(c, first, at=NOW)
+    publisher.publish_runtime(c, second, at=NOW + timedelta(minutes=1))
+
+    rows = c.execute(text("select learning_id, active, value from temporary_memories "
+                          "where org_id=:o and subject='ctx:lease' order by created_at"),
+                     {"o": org}).mappings().all()
+    assert [r["active"] for r in rows] == [False, True]
+    assert rows[1]["learning_id"] == second.learning_id
+
+    ledger = c.execute(text(
+        "select from_state, to_state, reason_code, actor, detail from learning_transitions "
+        "where org_id=:o and learning_id=:l"),
+        {"o": org, "l": first.learning_id}).mappings().all()
+    assert len(ledger) == 1
+    assert (ledger[0]["from_state"], ledger[0]["to_state"]) == (
+        LearningState.TEMPORARY.value, LearningState.ARCHIVED.value)
+    assert ledger[0]["reason_code"] == "superseded_by_lease"
+    assert ledger[0]["actor"] == "pipeline"
+    assert ledger[0]["detail"]["superseded_by"] == second.learning_id
+
+
+def test_a_lease_does_not_supersede_itself(conn):
+    """Re-publishing the same object writes no lifecycle event — an object is not its own event."""
+    from sqlalchemy import text
+    c, org = conn
+    obj = _obj(org, target=LearningTarget.RUNTIME, subject="ctx:self",
+               expires_at=NOW + timedelta(hours=1))
+    publisher.publish_runtime(c, obj, at=NOW)
+    publisher.publish_runtime(c, obj, at=NOW + timedelta(minutes=1))
+    assert c.execute(text("select count(*) from learning_transitions where org_id=:o "
+                          "and learning_id=:l"), {"o": org, "l": obj.learning_id}).scalar() == 0
+    assert c.execute(text("select count(*) from temporary_memories where org_id=:o "
+                          "and subject='ctx:self' and active"), {"o": org}).scalar() == 1

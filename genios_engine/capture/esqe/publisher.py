@@ -362,6 +362,14 @@ class SignalInputs:
     #: second spelling of its digest here, because a content address computed twice is two
     #: addresses the day either copy is edited.
     conflict_ids: tuple[str, ...] = ()
+    #: `SourceEvent.captured_at` — when WE saw it, as against `occurred_at`, when it happened.
+    ingested_at: Any = None
+    #: sha256 of the prepared text the claims were read out of. Computed once per event by
+    #: `_inputs_for` from the SAME material the extraction cache hashes, so the two digests are
+    #: comparable; `None` for an event with no prepared row (a structured object).
+    content_hash: str | None = None
+    #: `QualificationReason`'s value off the verdict — why the floor let this through.
+    qualification_reason: str | None = None
 
 
 def build_signal(signal: NormalizedSignal, inputs: SignalInputs, *, eval_time: datetime,
@@ -411,6 +419,12 @@ def build_signal(signal: NormalizedSignal, inputs: SignalInputs, *, eval_time: d
         internal_kind=signal.internal_kind,
         recipients=tuple(signal.recipients or ()),
         versions=dict(getattr(gated, "versions", None) or {}),
+        # Migration 0115. Read off the inputs rather than re-derived here: the capture path is
+        # the only place that knows when we saw the object and what its prepared text hashed to,
+        # and a second derivation at the seam would be a second answer.
+        ingested_at=inputs.ingested_at,
+        content_hash=inputs.content_hash,
+        qualification_reason=inputs.qualification_reason,
     )
     try:
         return QualifiedEnterpriseSignal(**kwargs), composed, None
@@ -539,6 +553,13 @@ def _row_for(published: QualifiedEnterpriseSignal, inputs: SignalInputs, *,
         occurred_at=published.occurred_at,
         envelope=_envelope_of(published),
         authority_rank=authority_rank,
+        # Migration 0115. Read off the PUBLISHED signal on this function's own stated argument:
+        # the row is built from what the gate returned, never from the caller's input, so a value
+        # a validator normalised is the value that gets stored. `superseded_by` is absent by
+        # design — the store writes it when the replacement lands.
+        ingested_at=published.ingested_at,
+        content_hash=published.content_hash,
+        qualification_reason=published.qualification_reason,
     )
 
 
@@ -937,6 +958,27 @@ def _conflict_ids_for(conflict_rows: Sequence[Any], event_id: str) -> tuple[str,
                  if event_id in (getattr(row, "event_ids", ()) or ()))
 
 
+def prepared_content_hash(result: Any) -> str | None:
+    """sha256 of the prepared text this event's claims were read out of, or None.
+
+    THE SAME DIGEST THE EXTRACTION CACHE COMPUTES. `capture/semantic/cache.py` hashes
+    `PreparedContent.clean_text` into its key under the name `content_hash`, and the whole value
+    of storing it on the signal is that the two can be compared — so this reuses that module's
+    `content_digest` rather than spelling `hashlib.sha256(...)` a second time. Two spellings of
+    one content address are two addresses the day either is changed.
+
+    `None` when the event has no prepared row at all: a structured object (a CRM deal) carries
+    typed fields and no prose, and hashing the empty string would give every one of them the same
+    non-answer dressed as a digest.
+    """
+    prepared = getattr(result, "prepared", None)
+    text = getattr(prepared, "clean_text", None)
+    if not text or not str(text).strip():
+        return None
+    from genios_engine.capture.semantic.cache import content_digest
+    return content_digest(str(text))
+
+
 def _inputs_for(result: Any, signal: NormalizedSignal, verdict: Any, summary: Any, *,
                 conflict_rows: Sequence[Any] = ()) -> SignalInputs:
     """Everything about one signal that the normalized record does not carry, read off the
@@ -944,6 +986,8 @@ def _inputs_for(result: Any, signal: NormalizedSignal, verdict: Any, summary: An
     esqe = getattr(result, "esqe", None)
     classification = getattr(esqe, "classification", None)
     domains = getattr(esqe, "domains", None)
+    event = getattr(result, "event", None)
+    reason = getattr(verdict, "reason", None)
     return SignalInputs(
         importance_bp=getattr(verdict, "importance_bp", None),
         importance_components=dict(getattr(verdict, "components", None) or {}),
@@ -955,7 +999,10 @@ def _inputs_for(result: Any, signal: NormalizedSignal, verdict: Any, summary: An
         secondary_types=tuple(getattr(classification, "secondary_types", ()) or ()),
         domain_hints=tuple(getattr(domains, "hints", ()) or ()),
         conflicts=_conflicts_for(summary, signal.event_id),
-        conflict_ids=_conflict_ids_for(conflict_rows, signal.event_id))
+        conflict_ids=_conflict_ids_for(conflict_rows, signal.event_id),
+        ingested_at=getattr(event, "captured_at", None),
+        content_hash=prepared_content_hash(result),
+        qualification_reason=getattr(reason, "value", reason))
 
 
 def publish_sweep(summary: Any, outcome: QualificationOutcome, *, org_id: str,

@@ -35,6 +35,11 @@ class SourceDocument:
 class DomainRecord:
     domain: SourceDocument
     routes: Mapping[str, Any]
+    #: L3.1-U2 · the generated registry's OPTIONAL `patterns:` section — L2.6 `pattern_id` to the
+    #: same route shape `routes` carries. Empty for every domain today, which is exactly the
+    #: migration property doc 01 asks for: the anchor-type route below keeps working, unchanged,
+    #: until a tenant's patterns are activated and the registry names them.
+    pattern_routes: Mapping[str, Any]
     capabilities: Mapping[str, SourceDocument]
     situations: Mapping[str, SourceDocument]
     objects: Mapping[str, SourceDocument]
@@ -90,6 +95,24 @@ class RoutePlan:
     priority_bp: int | None = None
     #: Which situation the priority came from, for the same reason `render_situation_id` exists.
     priority_situation_id: str | None = None
+    #: L3.1-U2 · the L2.6 `pattern_id` that selected this route, or None when the anchor-derived
+    #: situation type did. A route is a claim about which expertise this situation gets, and a
+    #: claim with no receipt cannot be audited — this is the receipt, and it reaches the package's
+    #: metadata whenever it is not None.
+    #:
+    #: PRECISELY: set when AT LEAST ONE domain's route was chosen by the pattern rather than by
+    #: the anchor type. A situation may name several domains, and a pattern route in one of them
+    #: does not stop another from routing on its type; `situation_ids` is what says which
+    #: situations actually came back, and reading this field as "every situation here came from
+    #: the pattern" would be an overclaim in that case.
+    pattern_route_id: str | None = None
+    #: WHY the pattern did not route, when a fire was present and did not. Three values and no
+    #: fourth: `routed` (an activated fire matched an authored pattern route), `shadow` (a fire
+    #: matched but the tenant has not activated the pattern, so it may annotate and not route —
+    #: `context/patterns/store.py`'s own migration rule), `unregistered` (an activated fire whose
+    #: pattern_id no registry names yet). None means no fire reached this compile at all, which
+    #: is every tenant until X6 lands for them.
+    pattern_route_state: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

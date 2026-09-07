@@ -1,0 +1,153 @@
+# The one playbook this capability needs, and the reason it exists is a single sentence that has
+# to be in the outgoing message: THE THING THAT IS NOW TRUE. Every step below is in service of
+# getting that sentence right, and the last two steps exist because getting it wrong is worse than
+# not sending.
+
+identity:
+  id: admin.pb.opportunity_tracking.reopen_with_the_evidence_named
+  name: Reopen with the evidence named
+  kind: playbook
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.opportunity_tracking
+  subdomain: executive_support
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: Restart a conversation that was parked on a condition, by quoting the condition and
+    naming the specific thing that has since become true — so the counterparty answers a question
+    instead of reconstructing a thread.
+  answers:
+  - How is a four-month-old conversation reopened without asking them to remember it?
+  - What has to be in the message before it is worth sending?
+  - When is the right output NOT a message?
+  not:
+  - A cadence for checking dormant openings. This is what to do when one moves.
+  - A negotiation play. Reopening restores the conversation; it does not advance it.
+
+when_to_use:
+  situations:
+  - admin.sit.dormant_commitment_reopenable
+  - admin.sit.condition_now_satisfied
+  conditions:
+  - {has_obs: decision_deferred}
+  signals:
+  - positive_reply
+  - next_step_agreed
+  do_not_use_when:
+  - The counterparty declined rather than deferred. A pass and a parked decision are different
+    conversations and the reopening reads as not having read the reply.
+  - The reader cannot name what has changed. There is no version of this that works without it.
+  - The person who set the condition has left the role. Their sentence did not transfer with them.
+
+steps:
+- order: 1
+  name: Find the sentence
+  actor: system
+  produces: The counterparty's own words setting the condition, with the message and date it came
+    from.
+  done_when: The condition is quoted, not paraphrased, and the source message is identified.
+- order: 2
+  name: Decide whether it was a condition at all
+  actor: human
+  produces: A verdict — live condition, or a decline in a condition's clothes.
+  done_when: The reader has said which, and a rhetorical condition has been closed rather than
+    carried forward. This is the step that cannot be automated and the step most often skipped.
+- order: 3
+  name: Name what is now true
+  actor: human
+  produces: One specific, dateable, verifiable fact that satisfies the condition.
+  done_when: The fact is written down as a single sentence a stranger could check. "Things have
+    progressed" fails this step; "the round closed on the 12th" passes it.
+- order: 4
+  name: Check the evidence is theirs to see
+  actor: human
+  produces: A judgement on whether the fact can be stated publicly and whether they can verify it.
+  done_when: Either the fact is public, or the message is rewritten to say only what may be said.
+    A reopening that leaks something is a reopening that ends a relationship.
+- order: 5
+  name: Write the two-sentence reopening
+  actor: human
+  produces: A message whose first sentence is their condition and whose second is the fact.
+  done_when: The message contains no request for a call, no summary of the intervening months and
+    no apology for the gap. The ask, if any, is one line and comes third.
+- order: 6
+  name: Close it if it did not clear
+  actor: human
+  produces: A closed opening with a recorded reason.
+  done_when: An opening that failed step 2, 3 or 4 has been retired from the register rather than
+    left to be re-surfaced next month. A register that never retires anything stops being read.
+
+objects_used:
+- admin.obj.core.commitment
+- admin.obj.core.request
+- admin.obj.core.deadline
+
+outcomes:
+- The counterparty is answering a question rather than reconstructing a thread.
+- Every reopening on the record cites a specific fact, so a wrong one is auditable.
+- Rhetorical conditions leave the register instead of ageing in it.
+
+failure_modes:
+- 'THE CHECK-IN. Steps 3 and 4 dropped, leaving "just circling back — anything changed?". It costs
+  nothing to send and it is the message that teaches the counterparty this sender has nothing.'
+- 'THE RECAP. A reopening that summarises the last four months puts the work back on the reader
+  and signals that we think the gap needs explaining. It does not.'
+- 'THE MANUFACTURED FACT. Step 3 satisfied with something that sounds like progress and is not
+  checkable. The counterparty checks.'
+- 'REOPENING WITH A CALENDAR LINK. The condition being met is not permission to book time; the
+  reopening restores the conversation and the counterparty decides what it becomes.'
+
+limits:
+- Says nothing about what to do once they reply. That is the capability the conversation belongs
+  to — a deal, a hire, a supplier — not this one.
+- Assumes one condition. Where several were stacked, each has to clear separately and the message
+  should name the one that moved.
+
+variants:
+- applies_to: executive_office
+  change: Steps 3 and 4 are done by the assistant, step 5 is drafted for the principal's signature,
+    and the message goes from the principal.
+  why: The value of remembering accrues to whoever appears to have remembered.
+- applies_to: regulated
+  change: Step 4 is a formal check against what may be disclosed, and its outcome is recorded.
+  why: A fact that satisfies a condition is frequently price-sensitive or confidential, and the
+    reopening is written evidence of having disclosed it.
+
+metrics:
+- name: reopening_with_named_evidence_rate
+  unit: percent
+  description: Share of reopenings whose message contains a specific dateable fact. The playbook's
+    whole point, made countable.
+  direction: higher_is_better
+- name: openings_retired_rate
+  unit: percent
+  description: Share of surfaced openings closed at step 2 or step 6 rather than carried. A zero
+    here means the register is growing and nobody is reading it.
+  direction: higher_is_better
+
+references:
+- title: Never Split the Difference
+  kind: book
+  author: Chris Voss
+  note: The argument for quoting the counterparty's own words back to them — it moves the
+    conversation from persuasion to confirmation, which is exactly what a reopening needs.
+- title: Executive office practice — the conditions list
+  kind: practitioner
+  note: Kept in every good chief-of-staff function and almost never written down, which is why the
+    step that retires a dead condition is the one nobody has.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-09-07'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Step 2 is deliberately `actor: human` and deliberately early. The rhetorical condition is the
+    failure mode that makes this surface look foolish, and nothing in Layer 1 or Layer 2 can tell
+    "come back once you have raised" from "come back when you are the market leader" — the words
+    are the same shape and only the reader knows the tone of the room they were said in.

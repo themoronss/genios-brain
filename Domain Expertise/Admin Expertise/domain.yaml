@@ -61,7 +61,7 @@ subdomains:
     question: "Is the principal's time, attention and word under control?"
     capabilities: [calendar_management, inbox_and_correspondence, commitment_tracking,
                    approval_coordination, briefing_and_preparation, gatekeeping,
-                   delegation_and_task_routing]
+                   delegation_and_task_routing, opportunity_tracking]
     note: >
       The only subdomain organised around a PERSON rather than a process. Everything here is
       scarce-attention allocation, which is why the same work looks trivial in a queue and is
@@ -140,7 +140,7 @@ subdomains:
     name: Admin Operations
     question: "Is the administrative function itself measurable, repeatable and resilient?"
     capabilities: [request_intake, sop_management, service_level_management, admin_analytics,
-                   business_continuity_administration, process_improvement]
+                   business_continuity_administration, process_improvement, goal_and_progress]
     note: >
       The function administering itself. This is the subdomain most administrative teams never
       staff, and its absence is why the other nine are invisible until they fail.
@@ -243,6 +243,14 @@ glossary:
     means: >
       The load-set selector between a capability and its objects. Exists so a compile loads
       five objects instead of forty. Lives in situations/ inside its owning capability.
+
+  - term: Deferred capability
+    means: >
+      A capability with no door and a written reason it has none, recorded in `deferrals.yaml`.
+      It appears in no route, every situation it owns is suppressed from the generated map, and
+      it compiles into zero packages. Not deprecated and not deleted — the expertise is sound;
+      either nobody asked for it in V1, or its trigger does not exist. The state it replaces is
+      the dangerous one: authored, admission-stamped, reachable by nothing, and silent about it.
 
   - term: pending_l2_situation_types
     means: >

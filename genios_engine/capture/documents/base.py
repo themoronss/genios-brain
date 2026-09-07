@@ -124,6 +124,11 @@ class DocumentResult:
     confidence_bp: int | None
     status: str                          # a DocumentStatus value
     detail: str | None = None            # why, in one phrase, when the text is empty
+    #: L1.3.4-U5 · where each page's text begins in `text`, in the coordinates of `text` itself.
+    #: Known only while the pages are being joined and unrecoverable afterwards — concatenation
+    #: is not invertible — so it is carried here rather than re-derived. Empty for every format
+    #: with no pages, which is not the same as a one-page document. See `capture/documents/pages.py`.
+    page_offsets: tuple[int, ...] = ()
 
 
 class OcrEngine(Protocol):

@@ -13,7 +13,8 @@ mental_models:
   scoped: []
 rules:
   core: []
-  scoped: []
+  scoped:
+  - admin.rule.gatekeeping.evidence_then_a_structural_fix
 decision_frameworks:
   core: []
   scoped: []

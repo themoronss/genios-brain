@@ -13,6 +13,7 @@ from datetime import datetime
 from sqlalchemy import text
 
 from genios_engine.contracts.learning import LearningPolicy, LearningState
+from genios_engine.feedback.brain_pipeline import brain_pipeline_proposals, expire_leases
 from genios_engine.feedback.governance import govern, preflight
 from genios_engine.feedback.publisher import persist, publish
 from genios_engine.feedback.store import load_batch
@@ -119,7 +120,18 @@ def run_learning(conn, *, org_id: str, now: datetime) -> dict:
     # makes that arrival visible instead of making it a mystery about why learning ignores a
     # ledger somebody just wired up.
     inbox_unconsumed = len(getattr(batch, "inbox", ()) or ())
-    proposals = run_all_units(batch, policy, now)
+    # A Runtime lease carries a mandatory expiry, and an expiry nothing acts on is a label. The
+    # weekly pass retires the ones whose clock ran out BEFORE it proposes, so a lease re-proposed
+    # this week supersedes a dead one rather than sitting beside it.
+    expired_leases = expire_leases(conn, org_id=org_id, now=now)
+    # Layer 3's brain-content pipelines are proposal PRODUCERS and nothing else: N-4 turns L2.4's
+    # measured findings into behaviour patterns and the Adaptive path turns card verdicts into
+    # leases. They are appended to this run's proposals so the SAME loop below validates, governs,
+    # persists and publishes them — one claimed run, one pinned policy revision, one set of
+    # counts. A producer that published on its own would be the "write outside the L6 pipeline"
+    # the J4 gate counts, and there would be no way to see it from here.
+    proposals = list(run_all_units(batch, policy, now))
+    proposals.extend(brain_pipeline_proposals(conn, org_id=org_id, policy=policy, now=now))
 
     inserted = published = held = refused = unchanged = queued_for_review = 0
     for obj in proposals:
@@ -165,7 +177,7 @@ def run_learning(conn, *, org_id: str, now: datetime) -> dict:
               # A run that proposed nothing because its inputs were empty is NOT a healthy run
               # that found nothing to learn, and the two were indistinguishable from the counts.
               "degraded": bool(degraded_seams), "degraded_seams": sorted(degraded_seams),
-              "inbox_unconsumed": inbox_unconsumed}
+              "inbox_unconsumed": inbox_unconsumed, "expired_leases": expired_leases}
     conn.execute(text(
         "update learning_runs set status = 'completed', completed_at = :at, "
         "objects_inserted = :ins, objects_unchanged = :unc, counts = cast(:c as jsonb) "

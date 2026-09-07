@@ -22,6 +22,7 @@ _DET_JUNK_PREFILTER = os.environ.get("GENIOS_L1_DET_JUNK", "true").lower() != "f
 _FETCH_WORKERS = int(os.environ.get("GENIOS_L1_FETCH_WORKERS", "12"))
 
 from genios_engine.capture.documents.native import process_document
+from genios_engine.capture.documents.router import has_pages
 # The fetch decision and the gate decision key on the SAME threshold, or they drift — and this
 # import is load-bearing at RUNTIME only (_skip_body), which is exactly how its absence shipped:
 # the module imported cleanly, every test passed, and the first real fetch with a drop verdict
@@ -524,6 +525,26 @@ class ComposioGmailConnector:
                 "headers": headers,            # revives the header-based noise rules (N-01/02/04)
                 "to": to_emails, "cc": cc_emails,
                 "has_attachment": bool(atts),  # keeps attachment-only emails out of the N-10 drop
+                # W-04, WIRED. `gate/rules.whitelist` has read `raw["important_attachment"]` since
+                # the gate was written and NOTHING in the engine ever set it, so the rung named
+                # "a contract/invoice is attached, do not blanket-drop this" could not fire — a
+                # documented rule that is unreachable is the same as an absent one, and harder to
+                # notice. It matters for exactly one class: N-06/N-07 drop on Gmail's own
+                # PROMOTIONS/SOCIAL guess REGARDLESS of attachments (unlike N-02/03/04, which
+                # already exempt them), so a renewal notice with the countersigned PDF attached,
+                # from a sender we have not met yet, lost its covering email and every date and
+                # amount stated in it. The FILE always survived — `attachment_overrides_junk`
+                # forces the full fetch and the attachment lands as its own event with no labels
+                # on it — but a contract with no covering message is a document with no context.
+                #
+                # Deliberately narrow: only a part we could actually READ (`_is_extractable_part`
+                # over the real MIME/extension table), never an `invite.ics` or a signature image,
+                # because the whitelist skips EVERY N-code and a wider rule would readmit the
+                # newsletter volume the prefilter exists to refuse.
+                "important_attachment": any(
+                    _is_extractable_part(a.get("mime"), a.get("filename"),
+                                         ocr_enabled=self._ocr is not None)
+                    for a in atts),
             },
         )]
 
@@ -536,14 +557,26 @@ class ComposioGmailConnector:
             worth = mime in _EXTRACTABLE_ATTACHMENT_MIMES or (self._ocr and mime.startswith("image/"))
             if not worth:
                 # Don't SILENTLY vanish a real named file. Inline signature images / tracking
-                # pixels (image001.png, gifs) are true noise → skip; a .csv / .zip / screenshot
-                # invoice lands as a stub that PARKS (DOC-02, reviewable). Store-don't-delete.
+                # pixels (image001.png, gifs) are true noise → skip; a .csv / .zip / a screenshot
+                # invoice lands as a stub that PARKS (reviewable). Store-don't-delete.
                 fn = (a.get("filename") or "").lower()
                 if mime == "image/gif" or re.match(r"image\d{3}\.\w+$", fn):
                     continue
+                # WHICH park code, and why the distinction is the whole point. `unsupported`
+                # (DOC-02) says *nothing can ever read this* — a .zip, a firmware blob — and it
+                # is terminal: `parked/drain.py` will not requeue it. A screenshot invoice or a
+                # scanned PO is the opposite: readable in principle, unread only because no OCR
+                # engine is wired on this host, which is `ocr_unavailable` (DOC-06) and is fixed
+                # by one config line plus a redeploy. `documents/router.py` already draws this
+                # line for the files we DO download ("`unsupported` shrank"); the pre-download
+                # skip above never learned it, so every scanned attachment in production was
+                # filed as permanently unreadable and the OCR gap it actually reported was
+                # invisible. `has_pages` is imported from the router rather than restated here,
+                # so the two doors cannot drift about what "has pages" means.
+                status = "ocr_unavailable" if has_pages(mime, fn) else "unsupported"
                 objs.append(self._attachment_stub(
                     mid=mid, att=a, idx=i, occurred=occurred, sender_email=sender_email,
-                    to_emails=to_emails, cc_emails=cc_emails, status="unsupported"))
+                    to_emails=to_emails, cc_emails=cc_emails, status=status))
                 continue
             raw_bytes = _b64url(a.get("data")) if a.get("data") else \
                 self._attachment_bytes(mid, a.get("attachmentId"))
@@ -566,9 +599,14 @@ class ComposioGmailConnector:
                     "body": r.text,            # extracted document text → L2 facts
                     "mime": a.get("mime"),
                     "has_attachment": bool(r.text),
+                    # `page_offsets` is L1.3.4-U5's map: where each page of this file begins in
+                    # the text above. Carried on the event because it exists for one moment
+                    # inside the extractor and is unrecoverable afterwards — it is what lets an
+                    # evidence span say "page 4" instead of "character 4,812".
                     "document": {"native_parse_used": r.native_parse_used, "ocr_used": r.ocr_used,
                                  "ocr_engine": r.ocr_engine, "ocr_pages": r.ocr_pages,
-                                 "confidence_bp": r.confidence_bp, "status": r.status},
+                                 "confidence_bp": r.confidence_bp, "status": r.status,
+                                 "page_offsets": list(r.page_offsets), "first_page": 1},
                     "to": to_emails, "cc": cc_emails,
                 },
             ))

@@ -59,7 +59,8 @@ _COLUMNS = ("signal_id, org_id, event_id, trace_id, signal_type, secondary_types
             "importance_bp, importance_components, importance_version, confidence_bp, "
             "confidence_vector, domain_hints, visibility, coverage_ready, extraction_ref, "
             "evidence_refs, conflict_ids, state, supersedes, expires_at, internal_kind, "
-            "occurred_at, envelope, authority_rank")
+            "occurred_at, envelope, authority_rank, ingested_at, content_hash, "
+            "qualification_reason, superseded_by")
 
 
 def _jsonable(value: Any) -> Any:
@@ -151,6 +152,15 @@ class QualifiedSignalRow:
     #: The database's own write time. `None` on a row that has not been stored yet — the column
     #: defaults in SQL, so the publisher never has to read a clock to fill it.
     created_at: datetime | None = None
+    #: Migration 0115 — the four provenance answers the seam used to drop. `None` on any row
+    #: written before it, which is an honest absence: none of the four can be reconstructed
+    #: afterwards, so backfilling them with a default would be inventing history.
+    ingested_at: datetime | None = None
+    content_hash: str | None = None
+    qualification_reason: str | None = None
+    #: The FORWARD half of the supersession link, written by `put` when the REPLACEMENT lands —
+    #: never by the publisher, which is holding the new signal and not the old row.
+    superseded_by: str | None = None
 
     def __post_init__(self) -> None:
         # The two range checks the table also carries. Here as well, because the in-memory store
@@ -173,6 +183,15 @@ class QualifiedSignalRow:
                 "Layer 2 fact write, or silently mean a different tier")
         if self.supersedes is not None and self.supersedes == self.signal_id:
             raise ValueError(f"signal {self.signal_id} cannot supersede itself")
+        if self.superseded_by is not None and self.superseded_by == self.signal_id:
+            raise ValueError(f"signal {self.signal_id} cannot be superseded by itself")
+        digest = self.content_hash
+        if digest is not None and (len(digest) != 64
+                                   or any(c not in "0123456789abcdef" for c in digest)):
+            raise ValueError(
+                f"content_hash must be 64 lowercase hex or None, got {digest!r} — an upper-cased "
+                "or truncated digest compares unequal to the same content hashed by the "
+                "extraction cache, which is the only comparison the column exists for")
 
     def as_params(self) -> dict[str, Any]:
         """The bind parameters for one insert. Built here rather than at the SQL so the column
@@ -190,7 +209,8 @@ class QualifiedSignalRow:
             "cids": _dumps(list(self.conflict_ids)), "state": self.state,
             "sup": self.supersedes, "exp": self.expires_at, "kind": self.internal_kind,
             "occ": self.occurred_at, "env": _dumps(dict(self.envelope)),
-            "arank": self.authority_rank,
+            "arank": self.authority_rank, "ing": self.ingested_at, "chash": self.content_hash,
+            "qreason": self.qualification_reason, "supby": self.superseded_by,
         }
 
 
@@ -212,7 +232,42 @@ def _to_row(row: Any) -> QualifiedSignalRow:
         supersedes=row.supersedes, expires_at=row.expires_at,
         internal_kind=row.internal_kind, occurred_at=row.occurred_at,
         envelope=_loads(getattr(row, "envelope", None), {}),
-        authority_rank=getattr(row, "authority_rank", None))
+        authority_rank=getattr(row, "authority_rank", None),
+        ingested_at=getattr(row, "ingested_at", None),
+        content_hash=getattr(row, "content_hash", None),
+        qualification_reason=getattr(row, "qualification_reason", None),
+        superseded_by=getattr(row, "superseded_by", None))
+
+
+def _link_supersessions(rows: Sequence[QualifiedSignalRow], *, get, set_link) -> int:
+    """Write the FORWARD half of every supersession this batch declares. Returns links written.
+
+    ALG-19 decides that a new signal replaces an old one and stamps `supersedes` on the NEW row —
+    which is the only direction the publisher can know, because it is holding the replacement and
+    not the thing replaced. From the old id there was then no way to reach the new one without
+    scanning the table for a row pointing at you, and "what replaced this?" is the ordinary
+    question a founder asks about a renewal that moved.
+
+    Written HERE, at the store's own write seam, for the reason `finalize_l1` exists: both capture
+    doors and every replay go through `put`, so a link written at a call site would be a link some
+    door forgets. Only ever set on a row that EXISTS — a signal superseding something this tenant
+    no longer holds (erased, or published before the column did) leaves no orphan pointer.
+    """
+    written = 0
+    for row in rows:
+        old = row.supersedes
+        if not old or old == row.signal_id:
+            continue
+        held = get((row.org_id, old))
+        # Absent, or already linked. A signal replaced twice was replaced by the EARLIER one and
+        # THAT one was then replaced; overwriting reports the chain's last link as its first and
+        # loses the middle. The Postgres side spells the same rule as `where superseded_by is
+        # null`, which is also what makes a replay idempotent.
+        if held is None or getattr(held, "superseded_by", None) is not None:
+            continue
+        set_link((row.org_id, old), row.signal_id)
+        written += 1
+    return written
 
 
 class SignalStore(Protocol):
@@ -247,7 +302,13 @@ class InMemorySignalStore:
     def put(self, rows: Sequence[QualifiedSignalRow]) -> int:
         for row in rows:
             self._rows[(row.org_id, row.signal_id)] = row
+        _link_supersessions(rows, get=self._rows.get, set_link=self._set_link)
         return len(rows)
+
+    def _set_link(self, key: tuple[str, str], replacement: str) -> None:
+        held = self._rows.get(key)
+        if held is not None:
+            self._rows[key] = replace(held, superseded_by=replacement)
 
     def apply_lifecycle(self, records: Sequence[Any]) -> int:
         """ALG-19's verdict about signals ALREADY stored — see the Postgres store's version."""
@@ -314,7 +375,8 @@ class PostgresSignalStore:
                         " cast(:comp as jsonb), :iver, :conf, cast(:cvec as jsonb),"
                         " cast(:dom as jsonb), cast(:vis as jsonb), :cov, :xref,"
                         " cast(:ev_refs as jsonb), cast(:cids as jsonb), :state, :sup, :exp,"
-                        " :kind, :occ, cast(:env as jsonb), :arank) "
+                        " :kind, :occ, cast(:env as jsonb), :arank, :ing, :chash, :qreason,"
+                        " :supby) "
                         "on conflict (signal_id) do update set "
                         "secondary_types=excluded.secondary_types, "
                         "importance_bp=excluded.importance_bp, "
@@ -332,8 +394,30 @@ class PostgresSignalStore:
                         "expires_at=excluded.expires_at, "
                         "internal_kind=excluded.internal_kind, "
                         "occurred_at=excluded.occurred_at, envelope=excluded.envelope, "
-                        "authority_rank=excluded.authority_rank"),
+                        "authority_rank=excluded.authority_rank, "
+                        "ingested_at=excluded.ingested_at, "
+                        "content_hash=excluded.content_hash, "
+                        "qualification_reason=excluded.qualification_reason, "
+                        # NOT `excluded.superseded_by`. The replayed publish is holding the
+                        # signal, which never knows what replaced it; the link is written by the
+                        # UPDATE below when the replacement lands. Taking it from `excluded`
+                        # would erase that link on every re-publish of the same sweep.
+                        "superseded_by=coalesce(qualified_signals.superseded_by, "
+                        "excluded.superseded_by)"),
                         row.as_params())
+                # The forward half of the link, in the SAME transaction as the rows that declare
+                # it: a commit that stored the replacement and not the pointer to it would leave
+                # the table permanently half-linked, and nothing downstream would ever notice.
+                # `where superseded_by is null` makes it idempotent under replay and keeps the
+                # FIRST replacement — a signal replaced twice was replaced by the earlier one and
+                # then that one was replaced, which is what the chain has to say.
+                for row in rows:
+                    if not row.supersedes or row.supersedes == row.signal_id:
+                        continue
+                    conn.execute(text(
+                        f"update {SIGNAL_TABLE} set superseded_by = :new "
+                        "where org_id = :o and signal_id = :old and superseded_by is null"),
+                        {"new": row.signal_id, "o": row.org_id, "old": row.supersedes})
         except Exception as exc:      # noqa: BLE001 — a signal store never kills a sweep
             _log.warning("could not store %d qualified signal(s) for org=%s: %s",
                          len(rows), rows[0].org_id, exc)

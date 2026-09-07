@@ -1,0 +1,117 @@
+# THE ASK, AND THE ONLY THING THIS CAPABILITY MAY DO BEFORE A GOAL EXISTS.
+#
+# It binds `admin_period_review`, the tenant-anchored window `context/periodic.py` mints, because
+# that is the one situation in the system whose subject is the ORGANISATION rather than a
+# counterparty — and a goal belongs to the organisation. What the window carries is activity:
+# events, open deals, commitments, counterparties waiting. What it does not carry, and cannot, is
+# what any of that was FOR.
+#
+# This situation is defined by an absence and says so, which is what stops it instructing. There
+# is nothing to instruct about: the reader has not told us what they are trying to reach, and the
+# correct card is a question with a place to put the answer.
+
+identity:
+  id: admin.sit.goal_has_no_evidence
+  name: Goal Has No Evidence
+  domain: admin
+  owner_capability: admin.admin_operations.goal_and_progress
+  version: 1.0.0
+  status: stable
+
+description: >
+  A period of real activity is on the record and no stated target sits behind it. Events happened,
+  commitments were made, people are waiting — and nothing anywhere says what any of it was
+  supposed to add up to, so no reading of progress is possible.
+
+  The failure this file exists to prevent is the invented benchmark. Every ingredient for one is
+  on the row: this window's event count, the previous window's, the open commitments. Dividing two
+  of them produces a number that looks exactly like a pace reading and is a target the founder
+  never set. The moment such a number ships, the system has authored a standard and begun holding
+  its user to it.
+
+  ONE ASK, THEN SILENCE — Globe's own instruction, and it is a property of this situation rather
+  than of the renderer. The card asks for a target and a date once. Whether the answer is a goal,
+  a refusal, or nothing at all, the ask is not repeated for the same period; a weekly restatement
+  of an unanswered question is the fastest way to get a whole surface muted.
+
+matches:
+  l2_situation_types:
+    - admin_period_review
+  # Narrowed so the ask lands on a window with something in it. Asking what somebody was trying to
+  # achieve in a fortnight where nothing happened is a question about an empty room.
+  when:
+    - path: period.events_this_window
+      op: ">="
+      value: 5
+
+also_serves:
+  - admin.admin_operations.admin_analytics
+
+objects:
+  load:
+    - admin.obj.core.commitment
+    - admin.obj.core.deadline
+  optional:
+    - admin.obj.core.action_item
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+
+priority_bp: 3500
+typical_duration_days: 14
+
+signals_of_progress:
+  - deadline_stated
+  - next_step_agreed
+
+signals_of_decay:
+  - decision_deferred
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    This card asks ONE question and reports NO progress.
+
+    Headline: that there is no stated target for this period. Not a metric, not a count, not a
+    comparison with the last fortnight.
+
+    Situation: name the activity that is on the record — how many events, how many open
+    commitments — and then say plainly that nothing on record says what it was for, so no
+    judgement about pace is available. Never write "behind", "ahead", "on track", "slowing" or
+    any comparison against a previous window. Those words require a target, and there is none;
+    manufacturing one from the tenant's own history is the specific error this card exists to
+    prevent.
+
+    Artifact: the shortest possible way to state a goal — one target, one date. Nothing else. A
+    form with six fields gets a goal from nobody.
+  fallback:
+    headline: "No target on record for this period"
+    situation: >-
+      There is activity on the record for this period and nothing stating what it was meant to
+      reach, so no reading of progress is possible.
+    # A card about what is NOT on record cannot instruct, because there is nothing to instruct
+    # about. Declaring it here writes the card at `review` — a human must look, and here is the
+    # exact question — instead of `prescriptive`, and keeps it off the app and agent surfaces.
+    states_absence: true
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-09-07'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-09-07'
+  notes: >
+    `period.events_this_window` is written by `context/periodic.py` onto the tenant node and is
+    live. `period.events_prev_window` is on the same row and is deliberately NOT read here: it is
+    the ingredient for the invented benchmark, and a situation that loads it is one prompt away
+    from comparing them.
+
+    The priority is low on purpose. This is the least urgent card the domain can produce and it
+    should never outrank an overdue promise or a person waiting on a reply — it is a setup step
+    that happens to be surfaced, not a finding.
+
+admission:
+  accepted_content_hash: e491b188508fadb798e903a403477d20b35649d2517e47dd9420506d47c5b109

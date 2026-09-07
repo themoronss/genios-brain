@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import io
+from dataclasses import replace as _dc_replace
 from html.parser import HTMLParser
 
+from . import pages as pages_module
 from .base import DocumentInput, DocumentResult, DocumentStatus, OcrEngine
 from .ocr_policy import decide_ocr_outcome
+from .pages import PageMap
 from .router import route_document
 from .transcript import SpeechEngine
 
@@ -55,10 +58,51 @@ def _docx_to_text(raw: bytes) -> str:
     return "\n".join(parts)
 
 
-def _pdf_to_text(raw: bytes) -> str:
+def _pdf_pages(raw: bytes) -> list[str]:
+    """One string per page, in order. The join and its page map are both built from this list, so
+    the boundaries and the text can never describe two different documents."""
     from pypdf import PdfReader
     reader = PdfReader(io.BytesIO(raw))
-    return "\n".join((pg.extract_text() or "") for pg in reader.pages).strip()
+    return [(pg.extract_text() or "") for pg in reader.pages]
+
+
+def _pdf_to_text(raw: bytes) -> str:
+    return "\n".join(_pdf_pages(raw)).strip()
+
+
+def native_page_map(*, mime: str, data: bytes | str, filename: str = "") -> PageMap:
+    """The page map for a format that HAS pages, or EMPTY.
+
+    Only PDFs today: a DOCX's page breaks are decided at render time and pypdf is the one parser
+    here that reports a page boundary at all. A format with no pages answers EMPTY rather than a
+    single-page map, because "page 1 of an email" is a number invented to fill a column.
+
+    NOTE the `.strip()` in `_pdf_to_text`: it removes leading whitespace from the joined text and
+    would shift every offset in the map by that much, so the map is built from the STRIPPED
+    join — computed here the same way the text is, not from the raw page lengths.
+    """
+    lower = (mime or "").lower()
+    if lower != "application/pdf" and not (filename or "").lower().endswith(".pdf"):
+        return pages_module.EMPTY
+    raw = data.encode() if isinstance(data, str) else data
+    try:
+        texts = _pdf_pages(raw)
+    except Exception:      # noqa: BLE001 — a page map is a nicety; the text is the product
+        return pages_module.EMPTY
+    if not texts:
+        return pages_module.EMPTY
+    joined = "\n".join(texts)
+    lead = len(joined) - len(joined.lstrip())
+    stripped_len = len(joined.strip())
+    unshifted = pages_module.from_pages(texts)
+    # Shift by the leading whitespace `_pdf_to_text` strips, drop pages that fall off the end of
+    # the stripped text, and re-anchor the first entry at 0 — a map whose first offset is not 0
+    # is not a map of the text anybody is holding.
+    shifted = [max(0, o - lead) for o in unshifted.offsets if o - lead < stripped_len]
+    if not shifted:
+        return pages_module.EMPTY
+    shifted[0] = 0
+    return PageMap(offsets=tuple(shifted))
 
 
 def extract_native_text(*, mime: str, data: bytes | str, filename: str = "") -> str | None:
@@ -154,9 +198,14 @@ def _ocr_pdf_bytes(data: bytes, ocr: OcrEngine) -> DocumentResult:
     # Integer mean in basis points — the page confidences are already on that scale.
     avg_bp = sum(confs) // len(confs) if confs else 0
     outcome = decide_ocr_outcome(text="\n".join(texts), confidence_bp=avg_bp)
+    # The rasterized path is a per-page loop, so its map is exact and free. A page that OCR'd to
+    # nothing is not in `texts` and so is not in the map either — which is honest: we have no
+    # characters from it to cite, and numbering the ones we do have as if it were there would put
+    # every later citation on the wrong page.
     return DocumentResult(text="\n".join(texts), native_parse_used=False, ocr_used=True,
                           ocr_engine=engine_name, ocr_pages=len(texts), confidence_bp=avg_bp,
-                          status=outcome.status, detail=outcome.detail)
+                          status=outcome.status, detail=outcome.detail,
+                          page_offsets=pages_module.from_pages(texts).offsets)
 
 
 def process_document(*, mime: str, data: bytes | str, filename: str = "",
@@ -183,7 +232,16 @@ def process_document(*, mime: str, data: bytes | str, filename: str = "",
             return _ocr_pdf_bytes(data, ocr)          # always marked: ocr_failed, never a silent empty
     doc = DocumentInput(mime=mime, filename=filename, text_layer=text, image_ref=image_ref,
                         media_ref=media_ref)
-    return route_document(doc, ocr=ocr, speech=speech)
+    result = route_document(doc, ocr=ocr, speech=speech)
+    # L1.3.4-U5 · the page map, attached only when the text we are returning IS the text the map
+    # describes. `route_document` may take the OCR branch, reject a short text layer, or return
+    # an empty marked result, and a map from the native parse would then be offsets into a string
+    # nobody is holding — a receipt pointing at the wrong page is worse than one with no page.
+    if result.text and text and result.text == text and not result.ocr_used:
+        page_map = native_page_map(mime=mime, data=data, filename=filename)
+        if page_map:
+            return _dc_replace(result, page_offsets=page_map.offsets)
+    return result
 
 
 # text-ish formats we decode straight to utf-8 when there is no modelled parser (csv/json/logs/yaml).
