@@ -174,7 +174,7 @@ def compute(store, org_id: str, *, now: datetime | None = None) -> int:
 #:
 #: These words are a STAGE vocabulary, not a status one. `engaged`, `evaluating` and `proposing`
 #: all describe a deal that is OPEN, and `pipeline._normalise_deal_status` is the single place
-#: that mapping lives — see `_stage_pairs` below for why this distinction is load-bearing.
+#: that mapping lives — see `_STAGE_BY_KIND` below for why this distinction is load-bearing.
 _STAGE_BY_KIND: tuple[tuple[str, str], ...] = (
     ("closed_lost_mention", "lost"),
     ("proposal_sent", "proposing"),

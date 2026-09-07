@@ -1,0 +1,26 @@
+# "Send it once legal signs off" — legal has signed off, months later, and the ball is ours.
+#
+# THIS IS THE PATTERN L2.3.4 EXISTS TO MAKE POSSIBLE. `derived.timeline.condition_satisfied` is
+# written only when the cross-timeline correlator can produce BOTH spans — the sentence that stated
+# the condition and the fact that satisfied it — so this pattern cannot fire on a satisfaction
+# nobody can read back. A one-span satisfaction does not exist in that table by design.
+#
+# `thread.ball_in_court = us` is what makes it a situation rather than a note: a condition that
+# came true on somebody else's side of the exchange is their move, not ours.
+pattern_id: condition_now_satisfied
+version: 1
+domain: [sales, admin, customer_support]
+anchor: {node_type: person}
+conditions:
+  - {kind: fact, field: derived.timeline.condition_satisfied, op: exists}
+  - {kind: fact, field: thread.ball_in_court,                 op: eq,      value: us}
+optional_signals:
+  - {kind: observation, kind_name: deadline_stated,   within_days: 120, weight_bp: 1000}
+  - {kind: observation, kind_name: next_step_agreed,  within_days: 120, weight_bp: 1000}
+emits:
+  situation_type: condition_now_satisfied
+expected_fire_rate: {per_100_anchors_per_30d: 6}
+owner: harsh@thegenios.com
+first_evidence:
+  positive: "tests/context/patterns/test_seed_patterns.py::test_condition_now_satisfied_fires"
+  negative: "tests/context/patterns/test_seed_patterns.py::test_condition_now_satisfied_ignores_their_move"

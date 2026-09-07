@@ -2843,6 +2843,35 @@ def graph_node_detail(node_id: str, org_id: str = Depends(get_current_org)) -> d
     }
 
 
+@router.get("/graph/as-of")
+def graph_as_of(at: str | None = None, org_id: str = Depends(get_current_org)) -> dict:
+    """L2.2.7-U1 · the graph as it stood at an instant — *"what did GeniOS know when it made that
+    decision?"*, which doc 02 says every enterprise security review asks and which this system
+    could not answer at all: `graph_versions` was a counter and there was no `as_of` query.
+
+    `?at=` is an ISO-8601 instant; omitted, it reads the live graph, and the two paths are the
+    SAME reader (`GraphStore.read_graph` / `.live_graph`) so an audit answer and the dashboard
+    cannot disagree about what is currently true. An instant before the org's first write returns
+    an empty graph with `graph_version: null` — a representable answer, not a 404.
+
+    The clock is read HERE, at the seam, and nowhere in the store: `read_graph` takes the instant
+    as a parameter so a replay of a March decision returns March's graph in September.
+    """
+    if _graph is None:
+        raise HTTPException(400, "graph store not configured")
+    from datetime import datetime, timezone
+    if at:
+        try:
+            parsed = datetime.fromisoformat(at.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise HTTPException(400, f"at must be an ISO-8601 instant: {at!r}") from exc
+        instant = parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+        view = _graph.read_graph(org_id, as_of=instant)
+    else:
+        view = _graph.live_graph(org_id)
+    return view.as_record()
+
+
 @router.get("/graph/stats")
 def graph_stats(org_id: str = Depends(get_current_org)) -> dict:
     if _graph is None:

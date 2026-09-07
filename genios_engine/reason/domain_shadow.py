@@ -27,13 +27,17 @@ from datetime import datetime, timezone
 from sqlalchemy import text
 
 from genios_engine.context.graph_store import GraphStore
+from genios_engine.context.quality.lens import read_coverage_lens
+from genios_engine.context.quality.missing import read_absences
 from genios_engine.context.situation_bso import (
     build_business_situation,
     build_context_slice,
     gather_evidence_and_signals,
     gather_l1_signals,
     gather_members,
+    gather_pattern_fires,
     gather_visibility,
+    stored_importance,
 )
 from genios_engine.contracts.reasoning import ExecutionMode
 from genios_engine.packs.compiler import DomainCompiler, PostgresRuntimeBrains
@@ -60,6 +64,18 @@ logger = logging.getLogger(__name__)
 _ACTIVE_SITUATIONS = (
     "select s.situation_id, s.situation_type, s.domain, s.status, s.correlation_id, "
     "       s.confidence_overall, s.coverage, s.missing, s.first_seen_at, s.last_seen_at, "
+    # L2.7.8 · THE OTHER FIVE CONFIDENCE AXES, and who closed the situation. Selected because the
+    # BSO carries the VECTOR now, not the minimum alone (doc 09's "must not regress" row 3: the
+    # confidence vector is never collapsed to a scalar). Reading only `confidence_overall` here
+    # meant `situation_bso.situation_confidence_vector` could report five of the six axes as
+    # unassessed on the one path that actually publishes — a vector that passes its own gate
+    # structurally while saying nothing. Columns only; the WHERE clause is untouched.
+    "       s.confidence_evidence, s.confidence_freshness, s.confidence_consistency, "
+    "       s.confidence_identity, s.confidence_analytic, s.resolved_by, "
+    # BLG-18's stored composition. SELECTED, not recomputed: `refresh_situations` ran steps 2..6
+    # once for the whole org and stored the arithmetic, and re-deriving it here would be five
+    # reads per situation for a number that is already on the row being read.
+    "       s.importance_bp, s.importance_components, "
     "       s.anchor_node_id, n.display_name as anchor_name, n.node_type as anchor_type "
     "from context_situations s "
     "left join graph_nodes n on n.org_id = s.org_id and n.node_id = s.anchor_node_id "
@@ -320,6 +336,46 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     with store.engine.connect() as conn:
         situations = conn.execute(text(_ACTIVE_SITUATIONS),
                                   {"o": org_id, "lim": limit}).mappings().all()
+        # L2.5.5 · the typed absences the drain wrote, for the WHOLE pass, in one read — the
+        # same shape as every other gather here, and for the same reason: there are as many
+        # absence rows as there are expected fields across the tenant's situations, and a
+        # per-situation query would be one round trip per situation to answer a question the
+        # table can answer once. Grouped by situation so the slice builder is a dict lookup.
+        #
+        # WHY THIS IS ON THIS PATH. `{absent: thread.last_inbound}` — "they never replied" —
+        # evaluated TRUE for every situation of an org with no mailbox connected, because the
+        # only thing the adapter could ask was whether the fact was in the slice. These rows are
+        # what let it ask the second question instead. `coverage_ready` per domain comes off the
+        # same lens, tri-state, so an unassessed domain withdraws nothing.
+        absences_by_situation: dict[str, list] = {}
+        coverage_lens = None
+        try:
+            coverage_lens = read_coverage_lens(conn, org_id)
+            for absence in read_absences(
+                    conn, org_id,
+                    situation_ids=[str(r["situation_id"]) for r in situations],
+                    current={d: e for d, e in coverage_lens.epochs.items()}):
+                absences_by_situation.setdefault(absence.situation_id, []).append(absence)
+        except Exception:      # noqa: BLE001 — absence typing is a refinement; the pass is the product
+            logger.exception("could not read typed absences for org=%s", org_id)
+        # L2.6 · which declared pattern matched each anchor, for the WHOLE pass, in one read.
+        # SHADOW BY DEFAULT: `pattern_fires.activated` is false until a tenant activates the
+        # pattern, and `situation_bso._situation_type` refuses to rename a situation on an
+        # unactivated fire — `context/patterns/store.py`'s stated migration rule ("compare fire
+        # sets on a pilot for 7 days before switching; do not delete the anchor path in this
+        # wave"). What the fire always carries is its per-condition evidence, which is what makes
+        # that comparison possible and is H8's third bold row.
+        #
+        # Wrapped like the absence read above and for the same reason: pattern matching is a
+        # refinement of a pass whose product is the package, and a failure to read one must not
+        # cost the tenant every situation.
+        pattern_fires: dict = {}
+        try:
+            pattern_fires = gather_pattern_fires(
+                conn, org_id, [str(r["anchor_node_id"]) for r in situations
+                               if r["anchor_node_id"]])
+        except Exception:      # noqa: BLE001 — the package is the product; the pattern is context
+            logger.exception("could not read pattern fires for org=%s", org_id)
         compiler = DomainCompiler(
             catalog=catalog,
             runtime_brains=PostgresRuntimeBrains(conn),
@@ -362,17 +418,25 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # used to stamp a constant over all three. `None` here (a tenant with no qualified
                 # signals yet) is the pre-activation path, unchanged.
                 l1 = gather_l1_signals(conn, org_id, row["correlation_id"])
+                # STEPS 2..6, read back off the row. `None` for a tenant whose sweep predates the
+                # composer — the BSO then carries Layer 1's base alone, which is exactly what this
+                # pass published before BLG-18 and is still correct.
+                composed = stored_importance(row)
                 trace_id = new_id("trace")
                 bso = build_business_situation(
                     org_id=org_id, situation=row,
                     signal_ids=signal_ids, evidence=evidence, trace_id=trace_id,
-                    members=members, visibility=situation_visibility, l1=l1)
+                    members=members, visibility=situation_visibility, l1=l1,
+                    composed=composed, pattern=pattern_fires.get(str(anchor)))
                 context_slice = build_context_slice(
                     visibility=situation_visibility,
                     org_id=org_id, situation=row, facts=node_ctx.facts,
                     observations=node_ctx.obs,
                     neighbor=neighbor, graph_version=graph_version,
-                    eval_time=eval_time, trace_id=trace_id)
+                    eval_time=eval_time, trace_id=trace_id,
+                    absences=tuple(absences_by_situation.get(str(row["situation_id"]), ())),
+                    coverage_ready=(coverage_lens.ready_for(row["domain"])
+                                    if coverage_lens is not None else None))
                 package = compiler.compile(bso, context_slice)
                 counts["compiled"] += 1
                 counts["capabilities_total"] += len(package.capabilities)

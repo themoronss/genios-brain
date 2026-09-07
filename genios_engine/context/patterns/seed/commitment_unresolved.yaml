@@ -1,0 +1,34 @@
+# A promise that came due and has no delivery recorded.
+#
+# WHY THE ABSENCE CONDITION IS A TYPED ONE. "No delivery recorded" is the whole finding, and it is
+# also the exact sentence a disconnected source produces. `commitment.delivered_at` must come back
+# GENUINELY_ABSENT — a source that could have carried it was checked and did not — or this pattern
+# says nothing. Without that, an org whose delivery evidence lives in a tool we do not read would
+# have every commitment it ever made reported as broken.
+#
+# WHAT COULD KEEP IT SILENT (the honest list, for the 30-day fire report):
+#   * `commitment.status` is not written as `open` by the pipeline for this tenant;
+#   * no expectation map declares `commitment.delivered_at`, so every absence is UNKNOWABLE.
+# Both are visible as a failing condition in `scripts/pattern_fire_report.py`, which is the point
+# of recording WHICH condition failed rather than only that the pattern did not fire.
+pattern_id: commitment_unresolved
+version: 1
+domain: [sales, admin, customer_support]
+anchor: {node_type: commitment}
+conditions:
+  - {kind: fact,     field: commitment.status,       op: eq,              value: open}
+  - {kind: temporal, field: commitment.due_at,       op: older_than_days, value: 3}
+  - {kind: absence,  field: commitment.delivered_at, type: GENUINELY_ABSENT}
+optional_signals:
+  # A stated deadline makes the same overdue commitment a harder promise, and the counterparty
+  # said so in their own words — which is why this raises strength and does not gate the fire.
+  - {kind: observation, kind_name: deadline_stated, within_days: 90, weight_bp: 1000}
+  # Somebody is owed it by name. A promise with an addressee is chaseable; one without is a note.
+  - {kind: fact, field: commitment.owed_to, op: exists, weight_bp: 500}
+emits:
+  situation_type: commitment_unresolved
+expected_fire_rate: {per_100_anchors_per_30d: 12}
+owner: harsh@thegenios.com
+first_evidence:
+  positive: "tests/context/patterns/test_seed_patterns.py::test_commitment_unresolved_fires"
+  negative: "tests/context/patterns/test_seed_patterns.py::test_commitment_unresolved_holds_off_when_delivery_is_unknowable"

@@ -210,3 +210,31 @@ def l1_pending():
         pytest.skip(f"{gate} pending — {wave} has not landed ({builds}). The wave that builds "
                     f"it replaces this placeholder with the real gate.")
     return _pending
+
+
+@pytest.fixture
+def l2_pending():
+    """Declares a Layer 2 v2 acceptance gate that cannot be built yet, and SKIPS it by naming
+    the wave that will.
+
+    Same mechanism and same reasoning as `tests/conftest.py::l1_pending` — the gates in
+    `02-Layer-2-Plan/09-Build-Order-and-Acceptance.md` are COMMANDS (`pytest
+    tests/context/analytic/test_trend.py -q`), so a path that does not exist makes the gate
+    fail with pytest's usage error, which is the same red as a genuinely broken gate and tells
+    the reader nothing about which of the two it is.
+
+    A separate fixture from `l1_pending` rather than a reused one, because the wave vocabulary
+    is different and that difference is load-bearing: Layer 1 counts **W**0-W10 and Layer 2
+    counts **X**0-X8, the two run in parallel (doc 09: "X0 through X4 can be built while Layer
+    1 is still in progress"), and a skip reason that said "W1" in the context tree would send
+    the reader to the wrong build order. The signature carries the L2 gate id (H0-H8) for the
+    same reason.
+
+    A skip is not a pass. `pytest tests/context -q` printing N skipped IS Layer 2's progress
+    bar, and the wave that lands the code DELETES the placeholder and writes the real gate in
+    its place — it does not add a passing test beside it.
+    """
+    def _pending(wave: str, gate: str, builds: str) -> None:
+        pytest.skip(f"{gate} pending — {wave} has not landed ({builds}). The wave that builds "
+                    f"it replaces this placeholder with the real gate.")
+    return _pending

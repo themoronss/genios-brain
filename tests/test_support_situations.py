@@ -232,6 +232,58 @@ def test_the_percentile_is_computed_in_python_because_the_module_must_run_on_sql
     assert percentile_bp([], 5.0) == 0
 
 
+def test_the_half_basis_point_case_floors_deliberately_and_not_by_accident():
+    """`int(round(...))` was round-half-EVEN; `(2*below+ties)*10000//(2*n)` is FLOOR. On a
+    population whose exact answer is a half basis point the two differ by one, and the integer
+    form is kept on purpose — the float's half-rule only ever APPLIES when the division happened
+    to be binary-exact, which is the non-determinism the doctrine bans, not a tie-break policy.
+
+    Seven values below 8.0, one equal to it, eight above: `(2*7 + 1) * 10000 / 32` is exactly
+    4687.5. Round-half-even says 4688. This says 4687, and says it on every machine."""
+    population = [float(v) for v in range(1, 17)]
+    assert percentile_bp(population, 8.0) == 4687
+    # the statistic that was replaced, spelled out rather than described, so the delta is visible
+    assert int(round(10000 * (7 + 1 / 2.0) / 16)) == 4688
+
+
+def test_flooring_can_only_ever_lower_the_percentile_never_raise_it():
+    """The direction is what makes the change safe. `read_backlog_items` skips on
+    `age < band and pctl < AGING_PERCENTILE_BP`, so a percentile that is never ABOVE the old one
+    can only suppress an aging finding, never mint one — and minting is the failure this module
+    exists to prevent. The gap is at most a single basis point."""
+    for n in range(1, 40):
+        population = [float(v) for v in range(n)]
+        for value in population + [-1.0, float(n)]:
+            below = sum(1 for v in population if v < value)
+            ties = sum(1 for v in population if v == value)
+            was = int(round(10000 * (below + ties / 2.0) / n))
+            now = percentile_bp(population, value)
+            assert 0 <= was - now <= 1, (n, value, was, now)
+
+
+def test_the_aging_guard_is_strict_at_exactly_nine_thousand():
+    """`pctl < AGING_PERCENTILE_BP` is a STRICT comparison and the boundary is load-bearing: five
+    distinct ages put the oldest at `(2*4 + 1) * 10000 // 10` == 9000 exactly, which does NOT
+    satisfy `< 9000`, so it is reported even though it sits under the three-day band. Four ages
+    put the oldest at 8750 and nothing is reported. Pinned here because the floor/round decision
+    above is only defensible while this comparison stays where it is — loosening it to `<=` would
+    silence the exact case that flooring was argued to be safe around."""
+    def desk_with(ages: list[float]) -> Desk:
+        return _desk(
+            loops=tuple(_loop(f"l{i}", f"t{i}", days_open=a) for i, a in enumerate(ages)),
+            thread_node={f"t{i}": f"n_t{i}" for i in range(len(ages))},
+            thread_facts={f"n_t{i}": {"thread.ball_in_court": "us"} for i in range(len(ages))})
+
+    five = read_backlog_items(desk_with([0.5, 1.0, 1.5, 2.0, 2.5]))
+    assert [f.inputs["loop_id"] for f in five] == ["l4"], five
+    assert five[0].inputs["age_percentile_bp"] == 9000
+    # every age is under the 3-day floor band, so the percentile is the ONLY thing reporting it
+    assert five[0].inputs["age_days"] < five[0].inputs["band_days"]
+
+    assert read_backlog_items(desk_with([0.5, 1.0, 1.5, 2.0])) == []
+    assert percentile_bp([0.5, 1.0, 1.5, 2.0], 2.0) == 8750
+
+
 # ── reading 3 · escalation ───────────────────────────────────────────────────────────────────
 
 def test_an_escalation_stays_open_across_replies():
