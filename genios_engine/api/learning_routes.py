@@ -153,8 +153,18 @@ def review(learning_id: str, approve: bool = Body(..., embed=True),
         # publication is exactly the split this fixes, and a crash between two transactions would
         # recreate it.
         published_sink = None
+        projected = None
         if approve:
             published_sink = _publish_approved(c, ctx.org_id, learning_id, at=now)
+            # ONE DISCOVERY, TWO CONSUMERS (L3.2-U1 step 6). An approved N-3 org rule is both an
+            # Organization-brain entry and an `authority_rules` row — the L2.1.4 Authority view
+            # that the Policy and Constraint reasoning units read. Same transaction as the
+            # publish, for the reason the publish is in the same transaction as the state change:
+            # an approval that commits without the row it authorises is the exact split above.
+            # A no-op for every other unit, so this handler needs to know nothing about Layer 3.
+            from genios_engine.feedback.org_rule_ingest import project_confirmed_rule
+            projected = project_confirmed_rule(c, org_id=ctx.org_id, learning_id=learning_id,
+                                               at=now)
         # The parallel ledger. A knowledge suggestion carries its own review row, and this
         # handler never touched it — an approved suggestion kept state='human_review' and
         # reviewed_at=NULL forever, so the suggestions queue re-listed work a human had already
@@ -166,6 +176,8 @@ def review(learning_id: str, approve: bool = Body(..., embed=True),
              "o": ctx.org_id, "l": learning_id})
     return {"learning_id": learning_id, "state": to_state,
             "published": published_sink,
+            # None for everything that is not an org-rule discovery; the counts when it is.
+            "authority_rules": projected,
             # Layer 7 versions LEARNED brains. The authored Expert Brain is never editable from
             # here, and saying so on every response is the guard against that drifting.
             "expert_brain_changed": False}
@@ -199,7 +211,7 @@ def _publish_approved(conn, org_id: str, learning_id: str, *, at: datetime) -> s
     # correct-looking-but-never-once-executed trap this whole program keeps finding.
     row = conn.execute(text(
         "select unit, target, subject, proposed_value, evidence, visibility_scope, visibility, "
-        "policy_key, subject_principal, lineage_complete, "
+        "policy_key, subject_principal, lineage_complete, semantic_hash, "
         "first_seen_at, last_seen_at, expires_at "
         "from learning_objects where org_id = :o and learning_id = :l"),
         {"o": org_id, "l": learning_id}).mappings().first()
@@ -221,7 +233,17 @@ def _publish_approved(conn, org_id: str, learning_id: str, *, at: datetime) -> s
                 scope=VisibilityScope(vis.get("scope") or row["visibility_scope"]
                                       or "organization"),
                 principals=tuple(vis.get("principals") or ()),
-                derived_from=str(vis.get("derived_from") or "learning_objects_row")),
+                # `derived_from` is a TUPLE OF STRINGS on the contract and a JSON array in the
+                # column. `str(...)` on that array produced "['internal_kind:policy', 'evt_…']"
+                # and `Visibility.__post_init__` then ran `tuple()` over that STRING — so the
+                # rehydrated lineage was a tuple of single CHARACTERS, the identity hash was a
+                # different hash, and every approval published its brain entry under a
+                # FABRICATED learning_id that joins back to no proposal. The gate's own
+                # instrument reads that join: six discovered Organization entries reported as
+                # `unattributed`, which is the "writes outside the L6 pipeline" row. An empty
+                # array is empty lineage, not the invented "learning_objects_row" token — the
+                # rehydration's job is to reproduce the object, never to add to it.
+                derived_from=_derived_from(vis.get("derived_from"))),
             subject_principal=row["subject_principal"],
             lineage_complete=bool(row["lineage_complete"]),
             policy_key=row["policy_key"],
@@ -230,9 +252,35 @@ def _publish_approved(conn, org_id: str, learning_id: str, *, at: datetime) -> s
     except Exception:      # noqa: BLE001 — the approval stands; report why it could not publish
         logger.exception("approved learning object %s could not be rehydrated", learning_id)
         return "object_unreadable"
+
+    # THE REHYDRATED OBJECT MUST BE THE OBJECT. `LearningObject` is content-addressed: its
+    # `learning_id` IS its identity hash, and `publish` writes that id onto the brain entry. A
+    # rehydration that reproduces the row imperfectly therefore does not fail — it SUCCEEDS under
+    # a different id, and the entry it writes can never be joined back to the proposal a human
+    # approved. `learning_objects.semantic_hash` is the column persist() wrote at proposal time,
+    # so the check costs one comparison and is the only thing that can catch the next field whose
+    # JSON round-trip is lossy. Refusing to publish is the honest outcome: an unpublished
+    # approval is visible and re-runnable, a mis-attributed brain entry is neither.
+    if obj.semantic_hash() != row["semantic_hash"]:
+        logger.error("rehydrated learning object %s hashed to %s, not %s — refusing to publish "
+                     "under a fabricated identity", learning_id, obj.learning_id, learning_id)
+        return "identity_mismatch"
     # The reviewer approved a state the governance layer already chose; publishing re-derives it
     # from the object rather than trusting a column that could have been written by an older run.
     return publish(conn, obj, target_state=_target_state_for(obj), at=at)
+
+
+def _derived_from(raw: object) -> tuple[str, ...]:
+    """The persisted lineage as the contract's tuple. A JSON array stays an array of REFS.
+
+    A bare string is one ref, not a sequence of characters — the shape that produced the
+    fabricated identity above, kept impossible here rather than only at the one call site.
+    """
+    if raw is None or raw == "" or raw == []:
+        return ()
+    if isinstance(raw, str):
+        return (raw,)
+    return tuple(str(item) for item in raw)
 
 
 def _target_state_for(obj) -> object:

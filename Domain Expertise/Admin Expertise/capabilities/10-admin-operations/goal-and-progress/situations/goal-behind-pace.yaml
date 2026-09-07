@@ -1,0 +1,100 @@
+# The reading this capability exists for, and it cannot be taken today.
+#
+# Behind pace requires three things and the tenant has one of them: evidence (yes, the period
+# aggregates), a stated target (no store holds one), and an evidence path connecting the two (no,
+# and it is per-goal — "thirty introductions" counts one thing, "£40k MRR" counts another the
+# system cannot see at all). Binding this to `admin_period_review` would give it a door and no
+# hands: the card would fire on every window and have nothing true to say.
+#
+# Authored now because the emitter has to be built against it. A signal that says only "behind"
+# is unusable; what has to arrive is the target, the date, the count observed, and the evidence
+# path that produced the count — and that requirement is easier to hold in an authored situation
+# than in a ticket.
+
+identity:
+  id: admin.sit.goal_behind_pace
+  name: Goal Behind Pace
+  domain: admin
+  owner_capability: admin.admin_operations.goal_and_progress
+  version: 1.0.0
+  status: stable
+
+description: >
+  A target somebody stated, with a date, is not being met by the evidence observed against it. The
+  reading is a comparison between two things that both have to exist as data: what was said, and
+  what has happened.
+
+  It is a reading and never a verdict. The output names the target, the date, the count observed
+  and the evidence path that produced it — and it stops there. Why the gap exists is causal and
+  this system has no causal evidence; attributing a miss to a person or a decision is the fastest
+  way to make a founder close the product and not reopen it.
+
+  The regime that must be designed for is the flat window. Goals worth stating do not move
+  linearly, and a fortnight of no observable movement is the ordinary texture of a quarter. A
+  reading that fires on any flat window is a weekly false alarm, so the emitter has to compare
+  against the goal's own remaining runway rather than against the previous window.
+
+matches:
+  pending_l2_situation_types:
+    - type: goal_behind_pace
+      owner_layer: L2
+      nearest_today: admin_period_review
+      note: >
+        Needs a stated goal to exist as data — target, date, owner and an evidence path — and a
+        detector that counts observed evidence against that path. The emitted situation must carry
+        all four plus the count, because a signal that carries only a verdict cannot be rendered
+        into anything a reader can check. `admin_period_review` is the nearest live type and is
+        deliberately not bound: it carries activity and no target, so a card built on it would be
+        comparing against a benchmark the system invented.
+
+also_serves:
+  - admin.admin_operations.admin_analytics
+  - admin.executive_support.briefing_and_preparation
+
+objects:
+  load:
+    - admin.obj.core.commitment
+    - admin.obj.core.deadline
+  optional:
+    - admin.obj.core.action_item
+    - admin.obj.core.request
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+
+priority_bp: 6600
+typical_duration_days: 30
+
+signals_of_progress:
+  - next_step_agreed
+  - positive_reply
+  - meeting_scheduled
+
+signals_of_decay:
+  - decision_deferred
+  - timeline_slip
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-09-07'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-09-07'
+  notes: >
+    No `render` block: a situation that routes nothing has no card to write, and reviewing copy
+    against a signal whose shape is not fixed is reviewing a guess.
+
+    `goal_behind_pace` is not yet in `_schema/vocabulary.yaml`
+    `planned_substrate.l2_situation_types`, so validate.py warns. The warning is the census
+    working — the ask is real and belongs on that list in the commit where a Layer 2 owner takes
+    it.
+
+    The first thing to author when the goal record exists is a scoped `goal` object. It is
+    deliberately absent today: nothing writes one, and a 23-section noun about an unwritable thing
+    is inventory.
+
+admission:
+  accepted_content_hash: 141350f2d3e336f67aef7ca02d945726b12261f31d29641c3ecf62f155b71a52

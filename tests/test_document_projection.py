@@ -100,6 +100,9 @@ def test_the_metadata_rides_beside_the_parse_provenance_without_disturbing_it(mo
         native_parse_used, ocr_used, ocr_engine, ocr_pages = True, False, None, 0
         # native parse → no OCR confidence at all (bp, never a float: L1.3.4-U2)
         confidence_bp, status, detail = None, "accepted", None
+        # L1.3.4-U5 · a text file has no pages, and the stub says so the way the real
+        # `DocumentResult` does: an empty map, never a missing attribute.
+        page_offsets = ()
 
     monkeypatch.setattr(drive_mod, "process_document", lambda **kw: _R())
     conn = ComposioDriveConnector.__new__(ComposioDriveConnector)

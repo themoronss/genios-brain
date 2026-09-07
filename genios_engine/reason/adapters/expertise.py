@@ -9,15 +9,37 @@ executable inference patterns. Package knowledge is content-hashed into the mani
 overlay change yields new immutable bytes (same discipline as `legacy_capability_manifest`).
 
 Knowledge-in, DAG-supplied. It never decides — it only shapes what Layer 4 will reason over.
+
+WAVE Y1 · THE WELD (doc 03). Until this version, this adapter consumed `organization_rules` and
+nothing else. Every authored rule, heuristic, mental model and decision framework — 446 of the
+corpus's 712 artifacts — was retrieved, content-hashed into the manifest version, and dropped, and
+the only receipt any of them got was `no_steps_artifact_unsupported`, which described this
+function rather than the system. Law 4: knowledge is not shipped until Layer 4 can consume it,
+TYPED. So each class now has a reader, and this module is where the three of them meet:
+
+    rules (CLG-06)          `rule_compiler` -> compiled constraints; a blocking rule that fires
+                            eliminates the plays in its own capability through `core.constraint`'s
+                            existing tenant block seam, and names itself on the decision.
+    heuristics (CLG-08)     `citations` -> quoted claims on the decision, byte-identical.
+    models + frameworks     `citations` -> framing blocks: input material for the renderer.
+    playbooks (CLG-07)      plays, with a cap that RANKS instead of sorting by filename.
+
+`metadata["weld"]` carries all of it plus the receipt, and `decision_maker` reads three fields out
+of it — nothing here decides anything, which is Law 1.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import replace
+from dataclasses import dataclass, field, replace
 from typing import Any
 
-from genios_engine.contracts.domain_expertise import ExpertisePackage
+from genios_engine.contracts.domain_expertise import (
+    BusinessSituationObject,
+    ExpertisePackage,
+    SituationContextSlice,
+    require_weld_receipt,
+)
 from genios_engine.platform.canonical import stable_id
 from genios_engine.contracts.reasoning import (
     CapabilityManifest,
@@ -26,10 +48,21 @@ from genios_engine.contracts.reasoning import (
     PlayDefinition,
     ReasonerSpec,
 )
+from genios_engine.packs.compiler.context_adapter import ContextAdapter
 from genios_engine.platform.canonical import semantic_hash
 
+from .citations import UNDATED, bind_citations, descending_date
+from .rule_compiler import artifact_class, compile_package_rules, play_id_for
+
 ADAPTER_ID = "expertise_to_capability"
-ADAPTER_VERSION = "1.0.0"
+# 2.0.0 — the typed consumers (doc 03, wave Y1). Every artifact class the corpus carries now has
+# a reader at this seam, so a manifest built by 1.0.0 and one built by this version are different
+# objects even from identical knowledge: the version says which is which.
+ADAPTER_VERSION = "2.0.0"
+
+#: The weld's own schema name, carried in `manifest.metadata["weld"]` so a downstream reader can
+#: tell a manifest that carries compiled doctrine from one that predates the typed consumers.
+WELD_SCHEMA = "weld.v1"
 _REQUIRED = FailurePolicy.REQUIRED
 
 
@@ -49,8 +82,8 @@ def _executable_required_fields(package: ExpertisePackage) -> tuple[str, ...]:
             for pattern in patterns.get(group, []) or []:
                 if not isinstance(pattern, Mapping) or pattern.get("status") != "executable":
                     continue
-                for field in pattern.get("evidence_fields", []) or []:
-                    fields.add(str(field))
+                for path in pattern.get("evidence_fields", []) or []:
+                    fields.add(str(path))
                 for cond in pattern.get("when", []) or []:
                     if isinstance(cond, Mapping) and cond.get("path"):
                         fields.add(str(cond["path"]))
@@ -236,6 +269,57 @@ def _blocked_play_ids(package: ExpertisePackage) -> tuple[str, ...]:
     return tuple(sorted(blocked))
 
 
+#: Which artifact classes are consumed by a reader OTHER than the play converter, and by which
+#: one. This mapping is the whole of the J1 gate's "`no_steps_artifact_unsupported` receipts on
+#: rules / heuristics / models / frameworks: 0" — those four now have consumers, so the receipt
+#: that said nobody read them is replaced by a receipt naming who does.
+_CONSUMED_ELSEWHERE: Mapping[str, str] = {
+    "rule": "consumed_as_compiled_constraint",
+    "heuristic": "consumed_as_citation",
+    "mental_model": "consumed_as_framing_block",
+    "decision_framework": "consumed_as_framing_block",
+}
+
+#: Sorts last in the recency term. THE citation binder's constant, imported rather than restated,
+#: so "undated" cannot come to mean two different positions in two rankings.
+_UNDATED = UNDATED
+
+
+def _capability_recency(package: ExpertisePackage) -> dict[str, str]:
+    """capability id -> the date its document was last stamped.
+
+    Doc 03 asks the play cap to rank on "capability admission recency (re-stamped = maintained)".
+    The `admission` block holds a content hash and NO timestamp — re-stamping proves the reviewer
+    saw the current bytes, not when — so the date the corpus actually carries is
+    `metadata.last_updated`, which `_tools/admit.py` and the author move together. Named here
+    rather than quietly substituted: this is a proxy, and a reader deserves to know which.
+    """
+    out: dict[str, str] = {}
+    for capability in package.capabilities or ():
+        if not isinstance(capability, Mapping):
+            continue
+        definition = capability.get("definition")
+        metadata = definition.get("metadata") if isinstance(definition, Mapping) else None
+        last_updated = (metadata or {}).get("last_updated") if isinstance(metadata, Mapping) else None
+        out[str(capability.get("id") or "")] = str(last_updated or _UNDATED)
+    return out
+
+
+def _authored_play_priority(definition: Mapping[str, Any]) -> int | None:
+    """A playbook's own declared priority, in basis points, or None when it declares none.
+
+    Nothing in the shipped corpus declares one. The term exists because doc 03 names it and
+    because an author who wants to order two plays inside one capability has nowhere else to say
+    so; the receipt reports how many plays used it, so "this rank term is currently constant" is a
+    number rather than a thing to rediscover.
+    """
+    metadata = definition.get("metadata") if isinstance(definition, Mapping) else None
+    raw = (metadata or {}).get("priority_bp") if isinstance(metadata, Mapping) else None
+    if isinstance(raw, bool) or not isinstance(raw, int) or not 0 <= raw <= 10_000:
+        return None
+    return raw
+
+
 def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]:
     """Playbook `expert_rules` (definitions carrying steps) become read-only review plays —
     plus a RECEIPT of everything this conversion refused or cut.
@@ -247,15 +331,39 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]
     manifest version, and still emit one generic play — activation would LOOK successful while
     producing generic output, which is precisely the state L3's flip must be able to detect.
 
-    Ordering is deterministic before the cap is applied (rule id, not corpus iteration order),
-    so which plays survive the cut cannot depend on file-system enumeration.
+    CLG-07 · THE CAP IS LEGITIMATE; ALPHABETICAL SELECTION WAS NOT. Ordering was deterministic
+    (rule id, not corpus iteration order) and that fixed the enumeration bug — but it left the
+    SELECTION to file naming. On the design partner's `deal` route that is not academic: 21
+    playbooks compile, sixteen survive, and the five cut are `need_analysis`, `pipeline_management`,
+    `procurement`, `stakeholder_mapping` and `value_proposition` — four of which declare the very
+    situation that fired — while five `icp_definition` plays survive because "i" sorts before "n".
+    A cut decided by the first letter of a filename is not judgment.
+
+    Plays are now ranked by what the author actually declared, in doc 03's order:
+
+      1. SITUATION FIT   the play's `when_to_use.situations` names one of the situations that
+                         matched. The strongest authored statement of relevance there is.
+      2. ADMISSION RECENCY  the owning capability's `metadata.last_updated` — a re-stamped
+                         capability is a maintained one. The `admission` block itself carries only
+                         a content hash and no date, so this is the recency signal the corpus
+                         actually holds, named here rather than implied.
+      3. AUTHORED PRIORITY  `metadata.priority_bp` on the playbook, if declared. NOTHING in the
+                         shipped corpus declares one today, so this term is currently constant and
+                         the receipt says so with a count rather than leaving it to be discovered.
+      4. RULE ID         the final tie-break, LAST — where a deterministic tie-break belongs, not
+                         first, where it was the selector.
 
     Everything Layer 3 supplies is advisory knowledge, so every play is read_only and leaves any
     outreach to explicit human approval.
     """
-    candidates: list[tuple[str, PlayDefinition]] = []
+    situations = frozenset(str(item) for item in
+                           (package.metadata.get("matched_situation_ids") or ()))
+    recency = _capability_recency(package)
+    candidates: list[tuple[tuple, str, PlayDefinition]] = []
     skipped: dict[str, str] = {}
     seen: set[str] = set()
+    fits = 0
+    prioritised = 0
     efficacy = _learned_play_efficacy(package)
     for position, rule in enumerate(package.expert_rules):
         if not isinstance(rule, Mapping):
@@ -263,13 +371,23 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]
             continue
         rule_id = str(rule.get("id") or f"rule_{position}")
         definition = rule.get("definition") or {}
+        klass = artifact_class(rule)
+        if klass in _CONSUMED_ELSEWHERE:
+            # THE RECEIPT THAT USED TO SAY `no_steps_artifact_unsupported` FOR ALL OF THESE. It
+            # was accurate about this function and wrong about the system: a heuristic has no steps
+            # because it is a claim, not a procedure, and it now travels as a citation. Naming the
+            # consumer per class is what makes "5 of 5 artifact classes have a typed consumer"
+            # readable from the receipt instead of assertable only in a review.
+            skipped[rule_id] = _CONSUMED_ELSEWHERE[klass]
+            continue
         raw_steps = definition.get("steps") if isinstance(definition, Mapping) else None
         if not raw_steps:
-            # A rule with no steps is a NON-STEPS artifact class (a heuristic, a threshold, a
-            # question), not a defect — but this adapter only knows how to consume steps, and
-            # saying so per class is what makes "add a typed consumer" a visible piece of work
-            # instead of a quiet loss.
-            skipped[rule_id] = "no_steps_artifact_unsupported"
+            # A PLAYBOOK with no steps is a real authoring defect (the schema requires them); an
+            # artifact class this adapter has never heard of is the honest survivor of the old
+            # receipt, and it stays, because the day a sixth class is authored this is the line
+            # that says nobody consumes it.
+            skipped[rule_id] = ("playbook_without_steps" if klass == "playbook"
+                                else "no_steps_artifact_unsupported")
             continue
         steps = tuple(
             str(step.get("description") or step.get("name")) if isinstance(step, Mapping)
@@ -280,7 +398,10 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]
         if not steps:
             skipped[rule_id] = "steps_empty_after_normalisation"
             continue
-        play_id = rule_id.replace(" ", "_")[:120]
+        # ONE spelling of a play id, shared with the rule compiler's scope map. Two copies of
+        # this line would let a rule's blast radius and the manifest's play list disagree about
+        # what the same playbook is called, which is an elimination pointing at nothing.
+        play_id = play_id_for(rule_id)
         if play_id in seen:
             skipped[rule_id] = "duplicate_play_id"
             continue
@@ -292,7 +413,17 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]
         # operate", and it is not a new mechanism: the field already means exactly this, the
         # learning already measured it, and the two had simply never been joined.
         learned = efficacy.get(play_id)
-        candidates.append((play_id, PlayDefinition(
+        identity = definition.get("identity") if isinstance(definition, Mapping) else {}
+        owner = str((identity or {}).get("owner_capability") or "")
+        declared = frozenset(str(item) for item in
+                             ((definition.get("when_to_use") or {}).get("situations") or ()))
+        fit = bool(declared & situations)
+        priority_bp = _authored_play_priority(definition)
+        fits += int(fit)
+        prioritised += int(priority_bp is not None)
+        rank = (0 if fit else 1, descending_date(recency.get(owner, _UNDATED)),
+                -(priority_bp or 0), play_id)
+        candidates.append((rank, play_id, PlayDefinition(
             play_id, "1.0.0", str(definition.get("name") or play_id)[:200],
             steps=steps,
             read_only=True,
@@ -304,23 +435,30 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]
                       **({"learned_success_from": learned[1]} if learned else {})},
         )))
 
-    candidates.sort(key=lambda pair: pair[0])
-    plays = [play for _, play in candidates[:MAX_PLAYS]]
-    truncated = [play_id for play_id, _ in candidates[MAX_PLAYS:]]
+    candidates.sort(key=lambda item: item[0])
+    plays = [play for _, _, play in candidates[:MAX_PLAYS]]
+    truncated = [play_id for _, play_id, _ in candidates[MAX_PLAYS:]]
     for play_id in truncated:
         skipped[play_id] = f"over_play_cap_{MAX_PLAYS}"
 
     receipt = {
         "authored_rules": len(package.expert_rules),
         "plays_emitted": len(plays),
+        # CLG-07's own numbers. "Ranked, not alphabetical" is only a claim if the ranking's inputs
+        # are visible: how many plays declared the situation that fired, how many the corpus gave
+        # an authored priority (zero today), and which plays the ranked cap actually cut.
+        "plays_situation_fit": fits,
+        "plays_with_authored_priority": prioritised,
+        "plays_truncated": sorted(truncated),
+        "selection": "situation_fit, capability recency, authored priority, then rule id",
         # Which plays this tenant's own outcomes re-scored, and which kept the 5,000bp default.
         # A number, not a boolean: "the adaptive brain influenced this decision" is only a real
         # claim if you can say how many of the options it touched.
         "plays_rescored_by_learning": sorted(
             play.play_id for play in plays if play.metadata.get("learned_success_from")),
         "skipped_rule_ids": dict(sorted(skipped.items())),
-        "truncation_reason": (f"deterministic cap at {MAX_PLAYS} plays, ordered by rule id"
-                              if truncated else None),
+        "truncation_reason": (f"ranked cap at {MAX_PLAYS} plays: situation fit first, "
+                              "rule id last" if truncated else None),
         "generic_fallback_used": not plays,
     }
     if not plays:
@@ -339,6 +477,100 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]
             metadata={"source": "adapter_default", "external_recipient_required": False},
         ))
     return tuple(plays), receipt
+
+
+@dataclass(frozen=True, slots=True)
+class Weld:
+    """Everything the typed consumers produced for one package — CLG-06, CLG-07 and CLG-08.
+
+    One object rather than three return values because the three consumers are not independent:
+    a rule's scope is resolved against the plays that survived the cap, a citation is refused when
+    it contradicts a rule that fired, and the receipt has to add up across all of them. Assembling
+    them in one place is what makes "every refusal named and counted" checkable in one read.
+    """
+
+    compiled_constraints: tuple[Mapping[str, Any], ...] = ()
+    citations: tuple[Mapping[str, Any], ...] = ()
+    framing_blocks: tuple[Mapping[str, Any], ...] = ()
+    rule_verdicts: tuple[Mapping[str, Any], ...] = ()
+    conflicts: tuple[Mapping[str, Any], ...] = ()
+    abstain_on_conflict: bool = False
+    blocked_play_ids: tuple[str, ...] = ()
+    receipt: Mapping[str, Any] = field(default_factory=dict)
+    bound: bool = False
+
+    def as_metadata(self) -> dict[str, Any]:
+        """The manifest-borne form. Plain lists and dicts, because this crosses `jsonb` on the way
+        into `reasoning_capability_snapshots` and comes back through `capability_from_manifest`;
+        `freeze` normalises list and tuple identically, so the round trip is hash-stable."""
+        return {
+            "schema": WELD_SCHEMA,
+            "adapter_version": ADAPTER_VERSION,
+            # False when no situation slice reached this adapter — every rule is then `unevaluable`
+            # naming `situation_slice_not_supplied`, and this flag is what stops a reader taking
+            # that for "no rule applied".
+            "bound": self.bound,
+            "compiled_constraints": [dict(item) for item in self.compiled_constraints],
+            "citations": [dict(item) for item in self.citations],
+            "framing_blocks": [dict(item) for item in self.framing_blocks],
+            "rule_verdicts": [dict(item) for item in self.rule_verdicts],
+            "conflicts": [dict(item) for item in self.conflicts],
+            "abstain_on_conflict": self.abstain_on_conflict,
+            "blocked_play_ids": list(self.blocked_play_ids),
+            "weld_receipt": dict(self.receipt),
+        }
+
+
+def weld_package(package: ExpertisePackage, *, declared_play_ids: frozenset[str],
+                 play_receipt: Mapping[str, Any],
+                 adapter: ContextAdapter | None = None) -> Weld:
+    """Run every typed consumer over one package and account for the result.
+
+    ORDER IS LOAD-BEARING. Plays are already chosen when this runs, so a blocking rule can only
+    eliminate a candidate that exists (`declared_play_ids`). Rules are compiled and bound before
+    citations, so the binder knows which doctrine fired and can refuse a claim that denies it.
+    The receipt is built last, from what the other two actually produced, and is validated by the
+    contract's `require_weld_receipt` — all eight counters, zeros included, arithmetic checked.
+    """
+    rules = compile_package_rules(package, adapter, declared_play_ids=declared_play_ids)
+    binding = bind_citations(package, rules.verdicts)
+
+    refusals = dict(rules.refusals)
+    for reason, count in binding.refusals.items():
+        refusals[reason] = refusals.get(reason, 0) + count
+
+    receipt = require_weld_receipt({
+        "rules_compiled": len(rules.constraints),
+        "rules_fired": len(rules.fired),
+        "rules_unevaluable": len(rules.unevaluable),
+        "rules_skipped": len(rules.skipped),
+        "citations_attached": len(binding.citations),
+        "citations_truncated": binding.citations_truncated,
+        "plays_selected": int(play_receipt.get("plays_emitted") or 0),
+        "plays_over_cap": len(play_receipt.get("plays_truncated") or ()),
+        # Beyond the eight the contract fixes. Framing blocks are capped by this adapter rather
+        # than by the contract, so their truncation is counted here or nowhere.
+        "framing_blocks_attached": len(binding.framing_blocks),
+        "framing_blocks_truncated": binding.framing_truncated,
+        "rules_blocking_fired": sum(1 for verdict in rules.verdicts if verdict.blocks),
+        "conflicts_named": len(binding.conflicts),
+        "by_class": binding.by_class,
+        "refusals": [{"reason": reason, "count": count}
+                     for reason, count in sorted(refusals.items())],
+        "skipped_rule_ids": dict(rules.skipped),
+    }, "weld receipt")
+
+    return Weld(
+        compiled_constraints=rules.constraints,
+        citations=binding.citations,
+        framing_blocks=binding.framing_blocks,
+        rule_verdicts=tuple(verdict.as_record() for verdict in rules.verdicts),
+        conflicts=binding.conflicts,
+        abstain_on_conflict=binding.abstain,
+        blocked_play_ids=rules.blocked_play_ids,
+        receipt=receipt,
+        bound=adapter is not None,
+    )
 
 
 def _goal(package: ExpertisePackage, situation_type: str) -> Goal:
@@ -367,8 +599,23 @@ def _goal(package: ExpertisePackage, situation_type: str) -> Goal:
 def expertise_capability_manifest(
     package: ExpertisePackage, *, root_entity_type: str,
     live_delivery_enabled: bool = False,
+    situation: BusinessSituationObject | None = None,
+    context: SituationContextSlice | None = None,
 ) -> CapabilityManifest:
     """One ExpertisePackage -> one CapabilityManifest driving Layer 4's reasoning.
+
+    ``situation`` and ``context`` are what CLG-06 BINDS against, and they are parameters rather
+    than something read off the package because the package does not carry them: an
+    `ExpertisePackage` holds the knowledge that was selected, not the facts it was selected for.
+    `ContextAdapter` is the compiler's own three-state evaluator and needs both — and it is the
+    only thing that can tell an UNKNOWABLE absence from an unmet one, which is the difference
+    between a blocking rule firing and a blocking rule abstaining. `domain_shadow` has both in
+    scope at the call site.
+
+    Omitting them is legal and honest, not silent: every rule is then `unevaluable` naming
+    `situation_slice_not_supplied`, `metadata["weld"]["bound"]` is False, and nothing is
+    eliminated. A caller that only wants the manifest's shape gets it without the weld claiming a
+    binding it never performed.
 
     ``live_delivery_enabled`` defaults to False — the measurement pass must stay advisory. It is
     True only on the cutover path, because the delivery authority predicate reads it directly
@@ -377,7 +624,14 @@ def expertise_capability_manifest(
     """
     situation_type = str(package.metadata.get("situation_type") or "situation")
     plays, play_receipt = _plays(package)
-    blocked_plays = _blocked_play_ids(package)
+    adapter = ContextAdapter(situation, context) if situation is not None else None
+    weld = weld_package(package, declared_play_ids=frozenset(play.play_id for play in plays),
+                        play_receipt=play_receipt, adapter=adapter)
+    # TWO SOURCES, ONE BLOCK LIST. The organisation brain's permission entries and the corpus's
+    # own blocking doctrine both reach `core.constraint` through the seam it already owns and that
+    # `reason/store.py` and `reason/authority.py` already re-prove. Merged and sorted so the
+    # config is a property of what was decided rather than of which source was read first.
+    blocked_plays = tuple(sorted(set(_blocked_play_ids(package)) | set(weld.blocked_play_ids)))
     domain_ids = package.metadata.get("domain_ids") or ()
     domain = str(domain_ids[0]) if domain_ids else "general"
     required_fields = _executable_required_fields(package)
@@ -422,6 +676,12 @@ def expertise_capability_manifest(
             # What the play conversion refused or cut — so "compiled fine, emitted one generic
             # play" is a readable state instead of a successful-looking silence.
             "play_receipt": play_receipt,
+            # THE WELD (doc 03). Compiled constraints, quoted citations, framing blocks, the
+            # per-rule verdicts the Decision Maker turns into `constraints_applied` once candidate
+            # ids exist, and the receipt that says what every artifact class contributed or why it
+            # did not. This is the structure that makes Law 4 checkable: knowledge that is not
+            # here was not consumed.
+            "weld": weld.as_metadata(),
             "situation_type": situation_type,
             # The situation's own card copy. Delivery reads it off `rcap.manifest` — the same
             # audited snapshot the authority predicate already joins — so a card's wording is
@@ -487,4 +747,5 @@ def expertise_capability_manifest(
     return replace(manifest, version=f"exp.{knowledge_hash[:12]}.{content[:12]}")
 
 
-__all__ = ["expertise_capability_manifest", "ADAPTER_ID", "ADAPTER_VERSION"]
+__all__ = ["ADAPTER_ID", "ADAPTER_VERSION", "MAX_PLAYS", "WELD_SCHEMA", "Weld",
+           "expertise_capability_manifest", "weld_package"]

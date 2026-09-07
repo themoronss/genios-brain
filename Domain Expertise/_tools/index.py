@@ -22,7 +22,7 @@ from collections import defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _lib import domains, load_set, load_vocabulary, walk  # noqa: E402
+from _lib import deferrals, domains, load_set, load_vocabulary, walk  # noqa: E402
 
 HEADER = """# GENERATED FILE — do not hand-edit.
 #   regenerate:  python "Domain Expertise/_tools/index.py"
@@ -71,8 +71,22 @@ def main() -> int:
         objects = {d["identity"]["id"]: d for k, _, d in files
                    if k == "object" and d.get("identity")}
 
+        # DEFERRAL IS STRUCTURAL, NOT A LABEL. A capability the domain has deferred owns no door:
+        # every situation it owns is dropped from the map below, so the resolver — which builds
+        # its capability set from the situations the map names, not from the map's own capability
+        # list — can never select it and no package can compile through it. Suppressing the
+        # SITUATION rather than editing the situation's authored bindings is what keeps the
+        # deferral reversible in one file and keeps the expertise on disk unaltered.
+        deferred = deferrals(droot)
+        suppressed = sorted(
+            sid for sid, s in situations.items()
+            if (s.get("identity") or {}).get("owner_capability") in deferred
+            and ((s.get("matches") or {}).get("l2_situation_types") or []))
+
         by_type: dict[str, list[str]] = defaultdict(list)
         for sid, s in situations.items():
+            if (s.get("identity") or {}).get("owner_capability") in deferred:
+                continue
             for t in (s.get("matches") or {}).get("l2_situation_types") or []:
                 by_type[t].append(sid)
 
@@ -126,7 +140,15 @@ def main() -> int:
 
         # Types this domain binds, vs types nothing anywhere binds. Two different facts.
         routed_here = sorted(t for t in all_l2 if by_type.get(t))
-        orphans = sorted(set(caps) - routed_caps)
+        # An orphan is a capability nobody routed AND nobody reasoned about. A deferral moves a
+        # capability out of this list and into the one below it, which is the entire difference
+        # between a gap and a decision.
+        orphans = sorted(set(caps) - routed_caps - set(deferred))
+        # A deferred capability that still reaches a route means the ledger and the corpus
+        # disagree — almost always a deferred id left in some live situation's `also_serves`.
+        # Reported here and ERRORed by validate.py; never silently reconciled, because the
+        # reconciliation the resolver would perform is an AuthoringIntegrityError at compile.
+        contradictions = sorted(routed_caps & set(deferred))
         stubs = sorted(cid for cid, c in caps.items() if c["identity"].get("stub"))
         unreachable = sorted(set(objects) - all_loaded)
         core_n = sum(1 for o in objects.values() if o["identity"].get("scope") == "core")
@@ -140,6 +162,28 @@ def main() -> int:
                     pending[p["type"]].append(sid)
 
         lines += [
+            "# ── Deferred ──────────────────────────────────────────────────────────────",
+            "# Capabilities with no door and a named reason for it. They appear in no route, the",
+            "# situations they own are suppressed from the map above, and they compile into zero",
+            "# packages. Authored in <domain>/deferrals.yaml; not deleted, not deprecated.",
+            "deferred_capabilities:",
+        ]
+        if not deferred:
+            lines[-1] = "deferred_capabilities: {}"
+        for cid in sorted(deferred):
+            entry = deferred[cid]
+            reason = " ".join(str(entry.get("reason") or "").split())
+            lines.append(f"  {cid}:")
+            lines.append(f"    kind: {entry.get('kind') or 'unstated'}")
+            lines.append(f"    reason: {reason!r}")
+            if entry.get("blocked_on"):
+                lines.append(f"    blocked_on:{ylist(entry['blocked_on'], 6)}")
+        lines += [
+            "",
+            "# Situations dropped from the map because the capability that owns them is deferred.",
+            f"suppressed_situations:{ylist(suppressed, 2)}", "",
+            "# Deferred and yet still reachable — the ledger and the corpus disagree. Must be empty.",
+            f"deferral_contradictions:{ylist(contradictions, 2)}", "",
             "# ── Blocked on Layers 1 and 2 ─────────────────────────────────────────────",
             "# These situations are authored and route NOTHING, because the type that would",
             "# trigger them is not in any shipped pack's signal_vocab. Not a defect in the",
@@ -173,6 +217,9 @@ def main() -> int:
             f"  capabilities_stub: {len(stubs)}",
             f"  capabilities_complete: {len(caps) - len(stubs)}",
             f"  capabilities_routed: {len(routed_caps)}",
+            f"  capabilities_deferred: {len(deferred)}",
+            f"  capabilities_unrouted_unreasoned: {len(orphans)}",
+            f"  situations_suppressed: {len(suppressed)}",
             f"  objects_total: {len(objects)}",
             f"  objects_core: {core_n}",
             f"  objects_scoped: {len(objects) - core_n}",
@@ -188,7 +235,9 @@ def main() -> int:
         print(f"  wrote {out.relative_to(droot.parent)}")
         print(f"  L2 routed here {len(routed_here)}/{len(all_l2)} ({pct}%)")
         print(f"  capabilities   {len(caps) - len(stubs)} complete, {len(stubs)} stub, "
-              f"{len(routed_caps)} routed")
+              f"{len(routed_caps)} routed, {len(deferred)} deferred, {len(orphans)} neither")
+        if contradictions:
+            print(f"  CONTRADICTION  deferred and still routed: {', '.join(contradictions)}")
         print(f"  objects        {core_n} core, {len(objects) - core_n} scoped, "
               f"{len(unreachable)} unreachable")
         print(f"  situations     {len(situations)}, {len(pending)} blocked on a missing L2 type")

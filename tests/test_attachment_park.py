@@ -62,9 +62,37 @@ def test_inline_signature_image_is_still_skipped_no_flood():
     assert all(o.object_type != "email_attachment" for o in objs)     # no stub → no parked-queue flood
 
 
-def test_real_screenshot_invoice_is_surfaced_when_ocr_off():
+def test_real_screenshot_invoice_parks_as_ocr_unavailable_not_unsupported():
+    """A screenshot invoice with no OCR engine is READABLE IN PRINCIPLE, and the park code has to
+    say so. `unsupported` (DOC-02) means nothing can ever read this file; `ocr_unavailable`
+    (DOC-06) means the engine is not wired on this host — one config line and a redeploy. The two
+    read identically in a queue and are opposite facts about the same file, and production filed
+    681 of these under the terminal one, which is why the OCR gap was invisible."""
     conn = _conn()
     parts = [{"mimeType": "image/png", "filename": "invoice-scan.png", "body": {"attachmentId": "a3"}}]
     objs = conn._to_objects(_msg(parts, mid="m4"))
+    atts = [o for o in objs if o.object_type == "email_attachment"]
+    assert len(atts) == 1 and atts[0].raw["document"]["status"] == "ocr_unavailable"
+    assert _park_reason(atts[0]) == ("parked", "DOC-06")       # in NEEDS_REFETCH → drainable
+
+
+def test_a_scanned_pdf_whose_download_is_skipped_is_not_called_unsupported():
+    """The same distinction reached by extension rather than by MIME: some senders attach a PDF
+    with a generic `application/octet-stream` type, and the pre-download skip judges it on the
+    filename. It has pages either way."""
+    conn = _conn()
+    parts = [{"mimeType": "application/octet-stream", "filename": "PO-8841.pdf",
+              "body": {"attachmentId": "a4"}}]
+    objs = conn._to_objects(_msg(parts, mid="m5"))
+    atts = [o for o in objs if o.object_type == "email_attachment"]
+    assert len(atts) == 1 and atts[0].raw["document"]["status"] == "ocr_unavailable"
+
+
+def test_a_true_binary_is_still_terminal_unsupported():
+    """The other half of the rule: a .zip has no pages, no text layer and no audio. Widening
+    DOC-06 to everything would put files nothing can read into a retry ladder for ever."""
+    conn = _conn()
+    parts = [{"mimeType": "application/zip", "filename": "export.zip", "body": {"attachmentId": "a5"}}]
+    objs = conn._to_objects(_msg(parts, mid="m6"))
     atts = [o for o in objs if o.object_type == "email_attachment"]
     assert len(atts) == 1 and atts[0].raw["document"]["status"] == "unsupported"

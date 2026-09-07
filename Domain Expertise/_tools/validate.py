@@ -34,8 +34,8 @@ from collections import defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _lib import (ARTIFACT_ID_PREFIX, ARTIFACT_KIND_BY_DIR,  # noqa: E402
-                  artifact_dir_of, capability_dir_of, domains, iter_bp_fields,
+from _lib import (ARTIFACT_ID_PREFIX, ARTIFACT_KIND_BY_DIR, DEFERRAL_KINDS,  # noqa: E402
+                  artifact_dir_of, capability_dir_of, deferrals, domains, iter_bp_fields,
                   iter_predicate_blocks, knowledge_refs, load_schema, load_set,
                   load_vocabulary, object_scope_of, patterns_of, refs_in_condition, walk)
 
@@ -473,6 +473,64 @@ def main(strict: bool = False) -> int:
         for missing in sorted(core_roster - on_disk_core):
             warn(droot / "domain.yaml",
                  f"core object {missing!r} is on the roster but not authored yet")
+
+        # ── pass E · the routing census: a door, or a named reason there is none ──────
+        #
+        # Every capability is ROUTED or DEFERRED. The third state — authored, admission-stamped
+        # and reachable by nothing, with no record of anyone having decided that — is the one
+        # this pass exists to abolish: twenty-one Admin capabilities sat in it, and an unrouted
+        # capability is indistinguishable from a forgotten one until somebody writes the reason
+        # down.
+        #
+        # Enforced as ERRORS only for a domain that has opted in by authoring deferrals.yaml.
+        # A domain with no ledger is not yet held to the census and gets the warning it already
+        # got, because turning the census on for everybody at once would fail three domains for
+        # a discipline two of them have not been asked to adopt.
+        deferred = deferrals(droot)
+        ledger = droot / "deferrals.yaml"
+        routed_caps: set[str] = set()
+        for sid, s in situations.items():
+            owner = (s.get("identity") or {}).get("owner_capability")
+            if owner in deferred:
+                # index.py suppresses this situation entirely, so it routes nothing at all.
+                continue
+            if not ((s.get("matches") or {}).get("l2_situation_types") or []):
+                continue
+            serving = ([owner] if owner else []) + list(s.get("also_serves") or [])
+            routed_caps.update(c for c in serving if c)
+            # A deferred id reached through a LIVE situation somebody else owns is the one
+            # shape that cannot be fixed by suppressing a situation: the resolver would add
+            # the capability from `also_serves`, the generated map would not list it, and the
+            # compile would die on the staleness check rather than on anything a reader can
+            # see. Caught here, at the only point where both halves are in view.
+            for cid in serving:
+                if cid in deferred and cid != owner:
+                    err(ledger, f"{cid} is deferred but is reached through the live situation "
+                                f"{sid!r}, which {(s.get('identity') or {}).get('owner_capability')!r} "
+                                f"owns — remove it from that situation's also_serves, or "
+                                f"remove its deferral")
+
+        if deferred:
+            for cid, entry in sorted(deferred.items()):
+                if cid not in capabilities:
+                    err(ledger, f"deferred capability {cid!r} has no capability.yaml")
+                if entry.get("kind") not in DEFERRAL_KINDS:
+                    err(ledger, f"{cid}: kind {entry.get('kind')!r} is not one of "
+                                f"{list(DEFERRAL_KINDS)}")
+                # A deferral whose reason is a category is not a reason. The sentence is the
+                # half a reader six months from now actually needs.
+                if len(" ".join(str(entry.get("reason") or "").split())) < 40:
+                    err(ledger, f"{cid}: deferral has no reason — a category is not a reason")
+            for cid in sorted(routed_caps & set(deferred)):
+                err(ledger, f"{cid} is deferred and still routed; deferral must be structural")
+            for cid in sorted(set(capabilities) - routed_caps - set(deferred)):
+                err(ledger, f"{cid} is authored, routed by nothing, and carries no deferral — "
+                            f"add a door or a reason it has none")
+        else:
+            for cid in sorted(set(capabilities) - routed_caps):
+                warn(droot / "domain.yaml",
+                     f"{cid} is authored and routed by nothing, and this domain has no "
+                     f"deferrals.yaml to say why")
 
         # every L2 type the pipeline emits should reach at least one situation, in SOME domain
         for s in situations.values():

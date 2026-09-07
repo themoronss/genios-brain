@@ -100,6 +100,58 @@ class EvidenceSpan(BaseModel):
     #: signal seam does not kill the signal: V-5 downgrades confidence, flags it, and emits.
     verified: bool = False
 
+    #: WHICH PAGE, 1-based, or None when the source has no pages.
+    #:
+    #: Offsets alone are a receipt a machine can resolve and a human cannot open. "Character 4,812
+    #: of the prepared text" is not something anybody can check against a signed PDF; *page 4* is.
+    #: Filled at the alignment seam from the page map the document extractor produced (a PDF's
+    #: page boundaries, native or rasterized), and recomputed rather than carried when ALG-08
+    #: relocates a quote — a moved span may have moved across a page break, and a page number
+    #: that no longer matches its offsets is worse than none.
+    #:
+    #: None for everything without pages: an email body, a chat message, a calendar event. Not 1 —
+    #: "page one of an email" is a number invented to fill a column.
+    page: int | None = None
+
+    #: WHICH SECTION — the heading the quote sits under, verbatim, or None.
+    #:
+    #: `capture/documents/chunking.py` already detects section boundaries and refuses to split a
+    #: clause across them, so the title is known at the moment the model is shown the text and is
+    #: unrecoverable afterwards. A quote from *Termination* and a quote from *Payment Terms* are
+    #: different facts about a contract, and until this field existed both resolved to "somewhere
+    #: in the agreement".
+    #:
+    #: NOT a table cell. `documents/native.py` flattens a DOCX table into lines, so no row or
+    #: column identity survives extraction and a `cell` field here could only ever be filled with
+    #: a guess. Table-cell provenance needs a table-aware extractor first; the gap is recorded in
+    #: `docs/plans/L1_PRODUCTION_READINESS.md` rather than papered over with a column nothing can
+    #: honestly fill.
+    section: str | None = None
+
+    @field_validator("page", mode="before")
+    @classmethod
+    def _require_page(cls, value: Any) -> Any:
+        """1-based, or absent. Page 0 is a coordinate system nobody prints on a document."""
+        if value is None:
+            return None
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise TypeError("page must be a 1-based integer page number or None")
+        if value < 1:
+            raise ValueError(f"page must be 1 or greater, got {value} — pages are numbered the "
+                             "way they are printed, not the way a list is indexed")
+        return value
+
+    @field_validator("section", mode="before")
+    @classmethod
+    def _require_section(cls, value: Any) -> Any:
+        """The heading verbatim, or None. An empty string is not a section — it is the absence of
+        one wearing the shape of a value, and it would render as an empty crumb in a citation."""
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise TypeError("section must be the heading text or None")
+        return value if value.strip() else None
+
     @field_validator("source_ref", mode="before")
     @classmethod
     def _require_source_ref(cls, value: Any) -> str:

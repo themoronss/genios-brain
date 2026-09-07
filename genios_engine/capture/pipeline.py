@@ -8,6 +8,7 @@ from typing import Any, Mapping, Sequence
 
 from genios_engine.capture.connectors.base import RawObject
 from genios_engine.capture.documents.native import extract_native_text
+from genios_engine.capture.documents.pages import from_record as page_map_from_record
 from genios_engine.capture.domain.hints import domain_hints
 # S4 (L1.6) — ESQE. Imported by their PUBLIC names only, on the same terms as `capture/semantic/*`
 # below: the pipeline consumes the package, it never reaches inside it.
@@ -39,7 +40,7 @@ from genios_engine.capture.semantic.model_router import (NO_T3_BUDGET, T3Budget,
                                                          TierRequest, decide_tier,
                                                          demote_for_cost, record)
 from genios_engine.capture.semantic.router import routing_input_for, select_profile
-from genios_engine.capture.source_registry import family_of
+from genios_engine.capture.source_registry import DELIBERATE_SOURCES, family_of
 from genios_engine.capture.structural.threads import (BallInCourt, ThreadMessage,
                                                       reconstruct_thread)
 from genios_engine.capture.structural.tokens import router_counts, scan
@@ -449,8 +450,21 @@ def _envelope_direction(event: SourceEvent, mailbox_owner: str | None) -> str | 
     inbound, which is how a product's own onboarding mail got modelled as a prospect asking for a
     demo. The extractor's `EventEnvelope` refuses an unknown direction at construction, so the only
     honest options here are a derived answer or no model call at all.
+
+    A DELIBERATE SOURCE IS INTERNAL BY CONSTRUCTION, and reading `internal_kind` alone was not
+    enough. `internal_kind` is set by a TAG — an upload tagged `policy`, `sop`, `pricing` — so an
+    UNTAGGED upload (a signed MSA, an audit checklist, a vendor quote a founder drags into the
+    dashboard) arrived with no kind, no mailbox owner and no sender, fell to the `not owner`
+    branch, and was refused a direction. `run_semantic_lane` then skipped it as
+    `direction_unknown`, S4 returned before detection because `extraction is None`, and the most
+    deliberate source a tenant has produced no signal at all — visible only as one short-circuit
+    row in `event_trace`. `DELIBERATE_SOURCES` is the registry's own answer to "who handed us
+    this" (`upload`, `human`, `agent`, `internal`) and the gate already whitelists on it as W-05;
+    the same set is used here rather than a second list, because a file the tenant put in front of
+    us has no counterparty to be inbound FROM whatever tag it carries.
     """
-    if event.internal_kind or family_of(event.source) in _INTERNAL_FAMILIES:
+    if (event.internal_kind or family_of(event.source) in _INTERNAL_FAMILIES
+            or event.source in DELIBERATE_SOURCES):
         return "internal"
     owner = (mailbox_owner or "").strip().lower()
     sender = (event.actor.email or "").strip().lower()
@@ -578,19 +592,43 @@ def run_semantic_lane(event: SourceEvent, prepared: PreparedContent | None,
         return SemanticVerdict(skipped=outcome.reason or "budget_exhausted",
                                tier=outcome.decision.tier, profile_id=choice.profile_id)
     decision = outcome.decision
+    # L1.3.4-U5 · the document's own coordinates, read off what the connector attached. Both
+    # halves travel to the extractor (which attaches them to every receipt at the alignment seam)
+    # and to ALG-08 (which must be able to recompute a page when it RELOCATES a quote). One
+    # object, read once, handed to both — a second read is a second answer.
+    document = body.get("document") if isinstance(body.get("document"), Mapping) else None
+    page_map = page_map_from_record(document)
+    section = _section_of(body)
     request = ExtractionRequest(
         org_id=event.org_id, event_id=event.event_id, source=event.source,
         profile_id=choice.profile_id, tier=decision.tier, prepared=prepared, envelope=envelope,
-        eval_time=lane.eval_time, timezone=lane.timezone, locale=lane.locale)
+        eval_time=lane.eval_time, timezone=lane.timezone, locale=lane.locale,
+        page_map=page_map, section=section)
     outcome = extract(request, llm=lane.llm, store=lane.cache, open_lane=lane.open_lane)
-    outcome, counters = _grade_spans(outcome, prepared.clean_text, locale=lane.locale)
+    outcome, counters = _grade_spans(outcome, prepared.clean_text, locale=lane.locale,
+                                     prepared=prepared, page_map=page_map, section=section)
     return SemanticVerdict(outcome=outcome, spans=counters,
                            tier=decision.tier, profile_id=choice.profile_id,
                            tier_demoted=decision.tier_demoted,
                            demotion_reason=decision.demotion_reason)
 
 
-def _grade_spans(outcome: Any, source_text: str, *, locale: str | None):
+def _section_of(body: Mapping[str, Any]) -> str | None:
+    """The heading this event's text sits under, as the door stated it. Never inferred.
+
+    An upload chunk carries its chunker-detected `section_title`; a message carries nothing, and
+    nothing is what it gets. Inferring a section from the first line of an email would put a
+    subject line into a field that is supposed to mean "the heading in the document", and a
+    citation reading *Termination · "we are cancelling"* about an email is a receipt that lies
+    about where it came from.
+    """
+    document = body.get("document")
+    title = document.get("section_title") if isinstance(document, Mapping) else None
+    return title if isinstance(title, str) and title.strip() else None
+
+
+def _grade_spans(outcome: Any, source_text: str, *, locale: str | None,
+                 prepared: Any = None, page_map=None, section: str | None = None):
     """**L1.5.1 (ALG-08) ON THE PRODUCTION PATH** — the step that stamps `verified`.
 
     THE DEFECT THIS CLOSES. `capture/semantic/evidence_binder.py` builds every receipt with
@@ -624,7 +662,8 @@ def _grade_spans(outcome: Any, source_text: str, *, locale: str | None):
     if result is None:
         return outcome, None
     try:
-        graded, counters = apply_verdicts(result, source_text, locale=locale)
+        graded, counters = apply_verdicts(result, source_text, locale=locale,
+                                          prepared=prepared, page_map=page_map, section=section)
     except Exception:      # noqa: BLE001 — a grading failure costs a checkmark, never the sweep
         _log.warning("could not grade evidence spans for event=%s",
                      getattr(outcome, "event_id", "?"), exc_info=True)

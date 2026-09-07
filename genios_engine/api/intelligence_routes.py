@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from genios_engine.deliver.actions import WRONG_REASONS
 from genios_engine.platform.auth import AuthCtx, get_current_org, require_scope
 from genios_engine.platform.cache import get_cache
 from genios_engine.platform.config import get_settings
@@ -516,7 +517,7 @@ def list_insights(limit: int = 50, state: str = "open",
                 "k.context_tags, k.created_at, k.actions, n.display_name as entity, "
                 "k.why_now, k.level, k.unresolved_item, k.do_nothing_consequence, "
                 "k.abstained_because, k.outcome_window_days, k.success_signal, "
-                "k.capability_review_state, s.uncertainty, s.rejected_candidates, "
+                "k.capability_review_state, s.uncertainty, s.rejected_candidates, s.citations, "
                 "s.candidate_steps, s.reason_code "
                 "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
                 "left join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=k.org_id "
@@ -540,7 +541,7 @@ def list_insights(limit: int = 50, state: str = "open",
                 # outcome contract were computed, stored, and thrown away at the last join.
                 "k.why_now, k.level, k.unresolved_item, k.do_nothing_consequence, "
                 "k.abstained_because, k.outcome_window_days, k.success_signal, "
-                "k.capability_review_state, s.uncertainty, s.rejected_candidates, "
+                "k.capability_review_state, s.uncertainty, s.rejected_candidates, s.citations, "
                 "s.candidate_steps, "
                 "selected_rc.final_utility_bp, " + AUTHORITATIVE_REASON_CODE_SQL + " as reason_code "
                 "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id " +
@@ -616,6 +617,12 @@ def list_insights(limit: int = 50, state: str = "open",
                 "expertise_review_state": _col(r, "capability_review_state"),
                 "uncertainty": _jsonish(_col(r, "uncertainty")),
                 "alternatives_rejected": _jsonish(_col(r, "rejected_candidates")),
+                # THE EXPERT CLAIM THE ADVICE RESTS ON, quoted. `statement` is byte-identical
+                # to the authored artifact — the contract proved that twice before the row was
+                # written — so a surface may render it verbatim and must never paraphrase it.
+                # Absent (not empty) on a legacy-lane card, which carries no compiled
+                # expertise: an empty bibliography is a different claim from no bibliography.
+                "citations": _jsonish(_col(r, "citations")),
                 "steps": _jsonish(_col(r, "candidate_steps")),
             },
         })
@@ -757,6 +764,16 @@ class FeedbackBody(BaseModel):
     decision_id: str | None = None
     insight_id: str | None = None
     edit_diff: dict | None = None
+    #: WHICH KIND OF WRONG. The card surface has always offered three (`deliver/card_builder.py`
+    #: renders `{"type": "wrong", "reasons": [...]}`), the ledger has always stored three
+    #: (`card_feedback_verdicts`' CHECK, migration 0034) and calibration has always READ three
+    #: (`feedback/calibrate.py` maps `wrong:bad_timing` to precision "none"). This route was the
+    #: one link that could not carry the answer: it overwrote whatever the human said with
+    #: `not_relevant`, so `bad_timing` — the card was right and the MOMENT was wrong — was
+    #: unsayable, and every timing complaint arrived as a quality complaint that counted against
+    #: a correct rule. Optional, and absent still means `not_relevant`, so an older client's
+    #: bytes mean exactly what they meant before.
+    reason: str | None = None
 
 
 # Map the extension's feedback verbs to the CANONICAL card-action shape L6 precision reads
@@ -766,6 +783,10 @@ class FeedbackBody(BaseModel):
 _FB_CAUSE = {"thumbs_up": "do_it_myself", "edit": "do_it_myself",
              "thumbs_down": "wrong", "never_show": "wrong", "snooze": "snooze"}
 _FB_REASON = {"thumbs_down": "not_relevant", "never_show": "not_relevant"}
+#: The closed vocabulary, read off the delivery lane's own constant rather than respelled — the
+#: database CHECK and the card surface already agree on these three, and a fourth spelling here
+#: would be a value the ledger refuses discovered at INSERT time, inside a human's write.
+_FB_WRONG_REASONS = WRONG_REASONS
 
 
 @router.post("/v1/intelligence/feedback")
@@ -779,6 +800,15 @@ def intelligence_feedback(
         raise HTTPException(400, "graph store not configured")
     if body.action not in _FB_CAUSE:
         raise HTTPException(422, "unsupported feedback action")
+    # A reason is a statement about a WRONG card. Refused on any other verb rather than dropped:
+    # a client that sends one on `thumbs_up` has misunderstood the shape, and silently ignoring
+    # it is how a founder's answer disappears without anybody being told.
+    if body.reason is not None:
+        if _FB_CAUSE[body.action] != "wrong":
+            raise HTTPException(422, "a reason belongs to a 'wrong' verdict")
+        if body.reason not in _FB_WRONG_REASONS:
+            raise HTTPException(422, "unsupported wrong reason: "
+                                     f"{sorted(_FB_WRONG_REASONS)}")
     if not body.insight_id or body.decision_id is not None:
         raise HTTPException(
             422,
@@ -797,7 +827,13 @@ def intelligence_feedback(
     if body.insight_id:      # an insight IS a card → feed L6 through the card_events ledger
         detail = dict(body.edit_diff or {})
         if body.action in _FB_REASON:
-            detail["reason"] = _FB_REASON[body.action]     # → precision denominator (rel_wrong)
+            # THE HUMAN'S ANSWER WINS over the verb's default. `_FB_REASON` is what a client that
+            # asked no question means; it is not a correction of a client that did ask. The old
+            # unconditional assignment made `bad_timing` unreachable through this route while the
+            # ledger, the card surface and the calibrator all already spoke it — so a founder who
+            # said "right card, wrong moment" was recorded as saying "this card should not exist",
+            # which mutes a correct rule and starves the Adaptive brain of the only input it has.
+            detail["reason"] = body.reason or _FB_REASON[body.action]
         try:
             encoded_detail = json.dumps(
                 detail, sort_keys=True, separators=(",", ":"), default=str, allow_nan=False)
@@ -854,20 +890,32 @@ def intelligence_feedback(
                 changed = inserted is not None
             else:
                 reason = detail.get("reason") if cause == "wrong" else None
+                # `occurred_at` IS `as_of`, not the database's own `clock_timestamp()`. One
+                # request evaluates at one instant: `as_of` is what the authority SELECT above
+                # judged the card against and what `lease_from_card_feedback` below counts its
+                # cohort up to. Leaving the column default in place stamped the row a few
+                # milliseconds AFTER `as_of` — from a different clock, at that, since one is the
+                # app process and the other the database — so the verdict that triggered the
+                # lease evaluation fell outside its own cohort's `until` and was not counted.
+                # A founder's fourth click then earned a lease on the strength of the first
+                # three, and on a host whose clocks drifted the other way it would have counted
+                # itself. Neither is a decision anybody made; both disappear when the request has
+                # one instant.
                 inserted = c.execute(text(
                     "insert into card_feedback_verdicts "
                     "(feedback_id,org_id,card_id,pack_id,pack_version,authority_pack_revision,"
                     "capability_id,"
-                    "capability_version,rule_id,cause,reason,detail,actor_id,verdict_version) "
+                    "capability_version,rule_id,cause,reason,detail,actor_id,verdict_version,"
+                    "occurred_at) "
                     "values (:id,:o,:card,:p,:pv,:pr,:cap,:capv,:r,:cause,:reason,"
-                    "cast(:d as jsonb),:actor,1) "
+                    "cast(:d as jsonb),:actor,1,:as_of) "
                     "on conflict (org_id,card_id) do nothing returning verdict_version"),
                     {"id": fid, "o": org_id, "card": body.insight_id,
                      "p": card.pack_id, "pv": card.pack_version,
                      "pr": int(card.authority_pack_revision),
                      "cap": card.capability_id, "capv": card.capability_version,
                      "r": card.rule_id, "cause": cause, "reason": reason,
-                     "d": encoded_detail, "actor": actor_id}).first()
+                     "d": encoded_detail, "actor": actor_id, "as_of": as_of}).first()
                 if inserted is not None:
                     verdict_version = int(inserted.verdict_version)
                     changed = True
@@ -875,12 +923,13 @@ def intelligence_feedback(
                     updated = c.execute(text(
                         "update card_feedback_verdicts set cause=:cause,reason=:reason,"
                         "detail=cast(:d as jsonb),actor_id=:actor,"
-                        "verdict_version=verdict_version+1,occurred_at=clock_timestamp() "
+                        "verdict_version=verdict_version+1,occurred_at=:as_of "
                         "where org_id=:o and card_id=:card and "
                         "(cause,reason,detail) is distinct from "
                         "(:cause,:reason,cast(:d as jsonb)) returning verdict_version"),
                         {"o": org_id, "card": body.insight_id, "cause": cause,
-                         "reason": reason, "d": encoded_detail, "actor": actor_id}).first()
+                         "reason": reason, "d": encoded_detail, "actor": actor_id,
+                         "as_of": as_of}).first()
                     if updated is not None:
                         verdict_version = int(updated.verdict_version)
                         changed = True
@@ -904,6 +953,19 @@ def intelligence_feedback(
                         {"rid": revision_id, "fid": fid, "o": org_id,
                          "card": body.insight_id, "v": verdict_version, "cause": cause,
                          "reason": reason, "d": encoded_detail, "actor": actor_id})
+                    # THE ADAPTIVE LEASE, IMMEDIATELY. A `bad_timing` verdict is not a complaint
+                    # about the card's quality — it says the card was right and the moment was
+                    # wrong, which is a statement about NOW with a clock already on it. That is a
+                    # short-term Adaptive preference, and a preference that only reaches the brain
+                    # at next week's batch is not a current preference. Evaluated INSIDE this
+                    # transaction, so the cohort it counts includes the verdict just written and
+                    # the two commit together; isolated in a savepoint inside, so a lease this
+                    # tenant has not earned can never cost the founder their feedback write. It
+                    # decides nothing: it proposes into the Layer 6 pipeline, where the tenant's
+                    # own floors and `govern()` decide, exactly as the weekly batch does.
+                    from genios_engine.feedback.brain_pipeline import lease_from_card_feedback
+                    lease_from_card_feedback(c, org_id=org_id, now=as_of,
+                                             capability_ids=(card.capability_id,))
         routed = True
     return {"feedback_id": fid,
             "correction_id": fid if body.action in ("thumbs_down", "never_show", "edit") else None,

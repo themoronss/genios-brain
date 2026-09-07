@@ -1,0 +1,20 @@
+# Knowledge manifest — auto-linked from pages' own owner_capability declarations.
+capability: admin.executive_support.opportunity_tracking
+playbooks:
+  core: []
+  scoped:
+  - admin.pb.opportunity_tracking.reopen_with_the_evidence_named
+heuristics:
+  core: []
+  scoped:
+  - admin.heu.opportunity_tracking.a_satisfied_condition_has_a_short_half_life
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped:
+  - admin.rule.opportunity_tracking.no_reopening_on_an_inferred_satisfaction
+decision_frameworks:
+  core: []
+  scoped: []

@@ -22,10 +22,7 @@ from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org,
                                           require_internal, require_owner, require_scope)
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.logging import get_logger
-from genios_engine.capture.esqe.lifecycle import outcome_digest, sweep_lifecycle
-from genios_engine.capture.esqe.publisher import publish_sweep
-from genios_engine.capture.esqe.qualification import qualify_sweep
-from genios_engine.capture.validate.conflict_store import persist_sweep_conflicts
+from genios_engine.capture.esqe.finalize import L1Stores, finalize_l1
 from genios_engine.platform.wiring import (make_agent_event_store,
                                            make_agent_registry_store, make_card_store,
                                            make_conflict_store,
@@ -101,6 +98,19 @@ _graph = make_graph_store()                           # L2 context graph (None w
 _registry = make_pack_registry()                      # L4 pack registry (None without DB)
 _card_store = make_card_store()                       # L5 delivery cards (None without DB)
 _demo_repo = InMemorySourceEventRepository()          # /dev/ingest-sample only (no persistence)
+
+
+def _l1_stores() -> L1Stores:
+    """The seven stores `finalize_l1` writes through, bundled at the call rather than at import.
+
+    A module-level constant would freeze whatever the seven factories returned the first time this
+    module was imported — which is right for the stores themselves (they are thin, engine-backed
+    and reused) and wrong for the BUNDLE, because a test that swaps one of them expects the swap
+    to be seen. Building the frozen bundle per call costs seven attribute reads.
+    """
+    return L1Stores(conflicts=_conflict_store, floors=_floor_store, drops=_drop_ledger,
+                    lifecycle=_lifecycle_store, signals=_signal_store, parked=_parked,
+                    rejections=_rejection_ledger)
 
 
 # ── health / config ──────────────────────────────────────────────────────────────
@@ -241,96 +251,20 @@ def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summ
     connector never returned a batch, so no SyncSummary exists) — previously this case produced no
     row at all, so a fully-broken connection was invisible anywhere but the server log. Never raises:
     a ledger hiccup must not break the caller, whether that's the sync loop or a failure handler."""
-    # D8 · file the sweep's CONFLICTS FIRST, and unconditionally.
+    # L1.6.10 · THE FOUR THINGS LAYER 1 DOES AFTER A DOOR HAS CAPTURED — in `capture/esqe/
+    # finalize.py`, not here, because this hook is exactly one door wide.
     #
-    # This used to sit at the BOTTOM of the function, below the `_graph is None` return two
-    # lines down — so an engine with a conflict store but no L2 graph store filed nothing at
-    # all, silently and with no log line, because that early return is about the sync LEDGER
-    # and knows nothing about ALG-12. Two unrelated subsystems sharing one off-switch is how a
-    # record that is supposed to be permanent becomes conditional on something it has no
-    # relationship with. `persist_sweep_conflicts` never raises, so nothing below it can be
-    # made worse by running it first.
-    persist_sweep_conflicts(summary, org_id=org_id, store=_conflict_store)
-    # L1.6.8 · qualify the sweep's signals against THIS tenant's floor, and file every refusal.
+    # The sequence (conflicts → floor → lifecycle → publish) and the reason for its ORDER are
+    # written where the sequence is. What moved and why: every comment this block used to carry
+    # argued that filing from this hook is what stops the floor depending on which of the six
+    # `run_sync` call sites remembered to ask for it — a good argument that covers precisely the
+    # callers of `run_sync`. The UPLOAD door captures through `intake.ingest_manual` and reaches
+    # no part of it, so a file the tenant handed us by hand was scored and then dropped on the
+    # floor of the function that captured it. One module, two callers, no second copy to drift.
     #
-    # Filed from the same hook and for the same reason the conflicts above are: this is the one
-    # place every `run_sync` caller in the HTTP layer already reaches, so "the floor ran" does
-    # not depend on which of the six sync call sites remembered to ask for it. It sits ABOVE the
-    # `_graph is None` return two lines down for the same reason as well — the early return is
-    # about the sync LEDGER, and a tenant with no L2 graph store must still be able to answer
-    # "why did I never see X?".
-    #
-    # `qualify_sweep` never raises and never drops mail: it reads the summary's own frozen
-    # instant, scores through L1.6.7, and writes `qualification_drops` rows for what the floor
-    # refused. A signal it could not score TRAVELS.
-    qualification = qualify_sweep(summary, org_id=org_id, floor_store=_floor_store,
-                                  ledger=_drop_ledger)
-    # L1.6.9 (ALG-19) · age this tenant's signals: expire the clocks that ran out, and let the
-    # sweep's newer signals supersede what they replace.
-    #
-    # Filed from this hook on the same argument as the two above, and it matters more here than
-    # for either of them: a lifecycle that ran on five of the six sync call sites would leave the
-    # sixth tenant's signals standing live for ever, and "live for ever" is invisible — nothing
-    # errors, a founder is simply nudged about a contract that was cancelled last week.
-    #
-    # ABOVE the `_graph is None` return for the third time and the same reason: that return is
-    # about the sync LEDGER. `sweep_lifecycle` never raises and never drops mail — it reads the
-    # sweep's own frozen instant, never a clock, so the same sweep replays to the same states.
-    lifecycle = sweep_lifecycle(summary, org_id=org_id, store=_lifecycle_store)
-    if lifecycle.transitions:
-        # ALG-19's REPLAY CHECK, on the path that produces the states. `outcome_digest` is a
-        # stable fingerprint of what a sweep decided, and it is the thing an operator compares
-        # instead of eyeballing a list of records — "the same sweep at the same `eval_time`
-        # produces byte-identical lifecycles" is the property the whole no-clock discipline in
-        # `lifecycle.py` exists to buy, and until this line nothing outside its own unit test
-        # had ever computed it. Logged rather than stored: it is a check on a decision the
-        # `signal_lifecycle` rows already hold, not a second copy of them.
-        _log.info("lifecycle swept org=%s transitions=%d records=%d digest=%s",
-                  org_id, len(lifecycle.transitions), len(lifecycle.records),
-                  outcome_digest(lifecycle))
-    # ALG-19's verdict, carried onto the table LAYER 2 ACTUALLY READS.
-    #
-    # `sweep_lifecycle` above writes what it decided to `signal_lifecycle`.
-    # `context/situation_bso.gather_l1_signals` — the one production reader of Layer 1's output —
-    # filters a situation's LIVE set on `qualified_signals.state`, and the signals ALG-19
-    # supersedes or expires are by definition the ones an EARLIER sweep published, which the
-    # `publish_sweep` below never revisits (it writes this sweep's signals and nothing else). So
-    # the two tables disagreed permanently: `signal_lifecycle` said `superseded` while
-    # `qualified_signals` said `active`, and a founder kept being nudged about a renewal that a
-    # later email had already replaced — which is the first thing migration 0093 says it closes.
-    #
-    # Update-only, terminal states only, and it never raises: see `apply_lifecycle`. `hasattr`
-    # because a dev store older than this method must not take the sweep down.
-    if lifecycle.records and hasattr(_signal_store, "apply_lifecycle"):
-        retired = _signal_store.apply_lifecycle(lifecycle.records)
-        if retired:
-            _log.info("lifecycle retired %d stored signal(s) org=%s", retired, org_id)
-    # L1.6.10 · THE L1 -> L2 BOUNDARY, and the last thing Layer 1 does on this path.
-    #
-    # `publish_sweep` runs `contracts/publication.validate_publication` (V-1..V-7) over the
-    # signals the floor QUALIFIED — the dropped half already has its ledger row and stops there —
-    # and writes what survives to `qualified_signals`. Before this call the engine detected,
-    # scored, qualified and aged signals on every sync and then dropped every one of them on the
-    # floor: L2 had no durable set to read, re-read or replay against, so "what does the engine
-    # believe about this tenant" could only be answered by re-running capture over mail we had
-    # already paid to read.
-    #
-    # AFTER the lifecycle pass, and that order is the design rather than an accident of where the
-    # line was added. ALG-19 has just decided which of these signals supersedes something the
-    # tenant already holds and whether any of them arrived already expired; its outcome is handed
-    # straight in, so the stored row carries the state the lifecycle pass decided instead of a
-    # publisher's guess of `active`. A row saying live about a signal the same sweep superseded is
-    # exactly the kind of disagreement a store that feeds every downstream surface must not have.
-    #
-    # ABOVE the `_graph is None` return for the fourth time and the same reason: that return is
-    # about the sync LEDGER, and a tenant with no L2 graph store must still have its signals
-    # stored — otherwise the table built to feed Layer 2 is switched off by an unrelated
-    # subsystem's off-switch, which is the defect D8 already had to fix once for conflicts.
-    #
-    # `publish_sweep` never raises and never drops mail: a signal it cannot publish leaves a park
-    # row (V-1) or a logged refusal, never an exception into the ingestion path.
-    publish_sweep(summary, qualification, org_id=org_id, store=_signal_store,
-                  parked_store=_parked, rejections=_rejection_ledger, lifecycle=lifecycle)
+    # `finalize_l1` never raises: every seam inside it is guarded on its own terms, because all
+    # four are downstream of capture and capture is the part the tenant paid for.
+    finalize_l1(summary, org_id=org_id, stores=_l1_stores())
     if _graph is None:
         return
     from sqlalchemy import text
@@ -340,13 +274,19 @@ def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summ
         with _graph.engine.begin() as c:
             c.execute(text(
                 "insert into l1_sync_runs (run_id, org_id, connection_id, source, mode, "
-                "scanned, emitted, dropped, parked, duplicate, quarantined, error) "
-                "values (:r,:o,:c,:s,:m,:sc,:em,:dr,:pa,:du,:qu,:err)"),
+                "scanned, emitted, dropped, parked, duplicate, quarantined, error, started_at) "
+                "values (:r,:o,:c,:s,:m,:sc,:em,:dr,:pa,:du,:qu,:err,:start)"),
                 {"r": new_id("run"), "o": org_id, "c": connection_id, "s": source, "m": mode,
                  "sc": getattr(summary, "scanned", 0), "em": getattr(summary, "emitted", 0),
                  "dr": getattr(summary, "dropped", 0), "pa": getattr(summary, "parked", 0),
                  "du": getattr(summary, "duplicate", 0), "qu": getattr(summary, "quarantined", 0),
-                 "err": error})
+                 # The column has existed since the table did and the insert never named it, so
+                 # every row in production says when a sync finished and not when it began — and
+                 # "how long did this tenant's sync take" is the first question asked of a slow
+                 # one. `run_sync` now carries its own start; a caller reporting a TOTAL failure
+                 # has no summary and writes NULL, which is the honest answer for a run that
+                 # never started.
+                 "err": error, "start": getattr(summary, "started_at", None)})
     except Exception:      # noqa: BLE001 — a ledger hiccup must not break the caller
         _log.exception("l1_sync_runs write failed org=%s conn=%s", org_id, connection_id)
     # (The conflict filing this hook is also responsible for happens at the TOP of the function
@@ -1423,6 +1363,16 @@ def list_qualified_signals(event_id: str | None = None, state: str | None = "act
         "days_old": a.days_old, "authority_rank": a.row.authority_rank,
         "occurred_at": a.row.occurred_at.isoformat(),
         "expires_at": a.row.expires_at.isoformat() if a.row.expires_at else None,
+        # Migration 0115 · the four provenance answers, RETURNED and not merely stored. A column
+        # written by a publisher and read by no surface is the same defect as a unit called by no
+        # request path: `ingested_at` is what answers "did this reach us late", `content_hash` is
+        # what answers "has the source changed since", `qualification_reason` is why the floor let
+        # it through, and `superseded_by` is what replaced it — the forward link, so a reader
+        # follows the chain from the id they are holding.
+        "ingested_at": a.row.ingested_at.isoformat() if a.row.ingested_at else None,
+        "content_hash": a.row.content_hash,
+        "qualification_reason": a.row.qualification_reason,
+        "supersedes": a.row.supersedes, "superseded_by": a.row.superseded_by,
     } for a in aged]}
 
 

@@ -1,0 +1,125 @@
+# The blocking rule founder surface 13 turns on. It spans the two objects that between them hold
+# everything this capability can see — what was promised, and the dates on those promises — and
+# neither of them holds the one thing that would make a pace reading legitimate: a target somebody
+# stated. That is precisely why the condition cannot live inside either object.
+
+identity:
+  id: admin.rule.goal_and_progress.no_goal_no_reading
+  name: No goal, no reading
+  kind: rule
+  domain: admin
+  scope: capability
+  owner_capability: admin.admin_operations.goal_and_progress
+  subdomain: admin_operations
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'Where no target and date have been stated by a human, this capability''s only
+    permitted output is a single ask. No pace, no trajectory, no comparison with a previous
+    period, and no second ask.'
+  answers:
+  - What may be said about progress before a goal exists?
+  - How many times may the goal be asked for?
+  not:
+  - A rule against reporting activity. A count is an observation; a comparison is a judgement.
+  - A rule about goal quality. It gates whether a reading may happen, not whether the target is
+    a sensible one.
+
+rule:
+  statement: 'A period with no human-stated target MUST NOT produce any output containing a pace,
+    a trajectory, an on-track verdict, or a comparison against a previous window. The single
+    permitted output is one ask for a target and a date, made once per period and recorded as
+    made. A second ask for the same period is itself a violation.'
+  spans:
+  - admin.obj.core.commitment
+  - admin.obj.core.deadline
+  when:
+  - {path: period.events_this_window, op: ">=", value: 5}
+  then: 'Suppress every comparative and evaluative rendering for this period. Emit the observed
+    counts and the ask, at review level rather than prescriptive. Record the ask so the next
+    compile over the same period does not repeat it.'
+  severity: blocking
+  why: 'Every ingredient for a manufactured target is already on the row — this window''s event
+    count, the previous window''s, the open commitments — so the wrong output is one division
+    away and it renders identically to a real finding. And a derived standard is uniquely
+    corrosive because it has no author: a stated goal can be revised or admitted to be wrong,
+    while an inferred one just sits there being missed, and the reader''s only available response
+    is to stop reading. The second half of the rule matters as much as the first. An ask is a
+    reasonable thing to see once and an unreasonable thing to see every week, and a weekly
+    unanswered question is how a founder learns to dismiss this surface without opening it.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'AN EXTERNAL TARGET WITH AN AUTHOR. A statutory date, a contractual service level or a
+    programme deadline is a stated target whose author is elsewhere. It binds, it may be reported
+    against, and no ask is needed — the rule bars UNAUTHORED standards, not external ones.'
+  - 'THE READER ASKED. A comparison requested by the founder is information they went looking for.
+    The rule governs what this capability VOLUNTEERS as a finding.'
+  - 'A BARE COUNT. "Fourteen introductions this fortnight" states an observation and compares
+    against nothing. Always permitted, and it is the honest half of what a period card can say.'
+
+objects_used:
+- admin.obj.core.commitment
+- admin.obj.core.deadline
+- admin.obj.core.action_item
+
+outcomes:
+- No compiled output says "behind", "ahead" or "on track" without naming a human-stated target.
+- The goal ask appears at most once per period, and its outcome is recorded.
+
+failure_modes:
+- 'ENFORCED AS SILENCE. Suppressing the observed counts along with the comparison leaves a card
+  that says nothing at all. The counts are the honest half and are meant to survive the gate.'
+- 'THE ASK BECOMES A CARD FOREVER. Recording that the ask was made is part of the rule, not an
+  optimisation. Without the record the "once" is unenforceable and the rule inverts into the
+  nagging it exists to stop.'
+- 'READ AS APPLYING TO SALES OR SUPPORT PERIODS. It governs this capability. A pipeline period
+  review has its own targets, its own authors and its own rules.'
+
+limits:
+- Cannot tell a stated goal from a restated one. Where the founder states the same target twice in
+  different words, both are stated and neither is invented, so the rule is silent on the duplicate.
+- Says nothing about a goal whose date has passed. Retiring it is an outcome of the capability,
+  not a constraint on it.
+
+variants:
+- applies_to: regulated
+  change: External obligations are treated as stated targets and reported against without an ask,
+    including their consequence.
+  why: The regime is the author, and its date is not a matter this organisation can decline to
+    have a view on.
+
+metrics:
+- name: invented_benchmark_count
+  unit: count
+  description: Outputs that compared against a target no human stated. The rule drives this to
+    zero; a non-zero value is a gate failure.
+  direction: lower_is_better
+- name: ask_repetition_count
+  unit: count
+  description: Times the goal ask was made for the same period. Anything above one is a violation
+    of the rule's second clause.
+  direction: lower_is_better
+
+references:
+- title: Administrative reporting practice — reporting against nothing
+  kind: practitioner
+  note: The standard failure of a management-information function given data and no objectives.
+    It always derives one, and it always loses the reader.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-09-07'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: >
+    `severity: blocking` and `enforced_by: L4_constraint` together are the point: this is the
+    first Admin rule whose primary effect is to make a capability produce LESS, and it only works
+    if the rule-to-constraint compilation reads it. As a comment in a file it prevents nothing —
+    the invented benchmark is one division away from data that is already on the row.
+
+    The predicate is the same window gate the live situation carries, so the rule fires exactly
+    where the reading would have been taken and nowhere else.

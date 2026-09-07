@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import re
+from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -18,16 +19,23 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPExcepti
 from pydantic import BaseModel
 from sqlalchemy import text
 
-from genios_engine.capture.documents.chunking import chunk_text
+from genios_engine.capture.documents.chunking import (SECTION, SENTENCE, Chunk, chunk_document)
+from genios_engine.capture.documents.native import native_page_map
+from genios_engine.capture.esqe.finalize import L1Stores, ManualSweep, finalize_l1
 from genios_engine.capture.documents.native import extract_text_best_effort
 from genios_engine.capture.internal_knowledge import (authority_rank_for, is_canon,
                                                       normalize_kind)
 from genios_engine.platform.auth import get_current_org
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.logging import get_logger
-from genios_engine.platform.wiring import (make_coverage_fn, make_graph_store,
-                                           make_llm_client, make_ocr, make_payload_store,
-                                           make_prepared_store, make_repo, make_trace_repo)
+from genios_engine.platform.wiring import (make_conflict_store, make_coverage_fn,
+                                           make_drop_ledger, make_esqe_stage, make_floor_store,
+                                           make_graph_store, make_lifecycle_store,
+                                           make_llm_client, make_ocr, make_parked_store,
+                                           make_payload_store, make_prepared_store,
+                                           make_rejection_ledger, make_repo,
+                                           make_semantic_lane, make_signal_store,
+                                           make_trace_repo)
 
 router = APIRouter()
 _log = get_logger("genios.uploads")
@@ -37,6 +45,10 @@ _payloads = make_payload_store()
 _repo = make_repo()
 _prepared = make_prepared_store()
 _trace_repo = make_trace_repo()
+# L1.6.10 · the same seven stores the sync door finalizes through. Built here rather than
+# imported from `api/routes.py` so this module keeps no dependency on that one; they are thin
+# wrappers over the same engine URL, so two handles cost nothing a connection pool notices.
+_parked = make_parked_store()
 
 UPLOAD_DIR = Path(__file__).resolve().parents[2] / "uploads"   # genios-engine/uploads/
 MAX_BYTES = 10 * 1024 * 1024                                    # 10 MiB
@@ -67,16 +79,56 @@ def _extract_text(name: str, data: bytes, content_type: str = "",
                                     ocr=make_ocr(org_id))
 
 
-def _chunk(text_content: str) -> list[str]:
+def _chunk(text_content: str) -> list[Chunk]:
     """Boundary-aware chunking (capture.documents.chunking) — a fact is never sliced
-    mid-sentence. Returns ALL chunks; the caller applies MAX_CHUNKS and reports any
-    truncation, so a big file is never silently cut off while status reports success."""
-    return chunk_text(text_content, max_chars=CHUNK_CHARS)
+    mid-sentence, and never across a HEADING. Returns ALL chunks; the caller applies MAX_CHUNKS
+    and reports any truncation, so a big file is never silently cut off while status reports
+    success.
+
+    The SECTION strategy, which is what doc-04 assigns to the `document` profile and what an
+    upload is. The door used to chunk by sentence, so a clause could be split at the point of its
+    own emphasis and — the reason this changed — no chunk knew which heading it sat under, which
+    is half of what makes a citation checkable by a person.
+
+    The `Chunk` OBJECTS now, not `chunk_text`'s strings: each one carries its own `start_offset`
+    into the document and the `section_title` the chunker detected, and both are the locator an
+    evidence span needs to say *page 4 · Termination* instead of *character 4,812*. They exist
+    for the length of this function and are unrecoverable afterwards — `chunk_text`'s own
+    docstring says it drops them because the upload door "has no use for offsets yet", which
+    stopped being true the moment a receipt had to be human-checkable.
+    """
+    sections = chunk_document(text_content, max_chars=CHUNK_CHARS, strategy=SECTION)
+    out: list[Chunk] = []
+    for piece in sections:
+        if not piece.oversized:
+            out.append(replace(piece, index=len(out)))
+            continue
+        # A section longer than the chunk cap is emitted WHOLE by the section strategy — the
+        # chunker refuses to tear a clause apart, and says so — which leaves the caller the
+        # choice its docstring names: "pay for the longer prompt, or page the chunk yourself".
+        # We page it, by sentence, and every piece INHERITS the heading it came from. Paying the
+        # longer prompt would put a 50-page agreement into one model call; dropping the heading
+        # to get sentence chunking would trade a citation that says *Termination* for one that
+        # says "somewhere in the agreement".
+        for inner in chunk_document(piece.text, max_chars=CHUNK_CHARS, strategy=SENTENCE):
+            out.append(replace(
+                inner, index=len(out), section_title=piece.section_title,
+                start_offset=piece.start_offset + inner.start_offset,
+                end_offset=piece.start_offset + inner.end_offset))
+    return out
+
+
+def _l1_stores() -> L1Stores:
+    """The bundle `finalize_l1` writes through — see `api/routes._l1_stores`, same seven stores."""
+    return L1Stores(conflicts=make_conflict_store(), floors=make_floor_store(),
+                    drops=make_drop_ledger(), lifecycle=make_lifecycle_store(),
+                    signals=make_signal_store(), parked=_parked,
+                    rejections=make_rejection_ledger())
 
 
 def _emit_chunk(org_id: str, file_id: str, idx: int, subject: str, body: str,
                 uploader_email: str, internal_kind: str | None = None,
-                coverage_fn=None) -> None:
+                coverage_fn=None, semantic=None, esqe=None, locator: dict | None = None):
     """One upload chunk → THE ONE DOOR (capture_event via intake): deduped, traced,
     W-05-whitelisted, payload + prepared text persisted — identical to a connector sync.
     (Was a hand-rolled SQL insert that skipped the gate, the trace and the seam.)
@@ -93,19 +145,33 @@ def _emit_chunk(org_id: str, file_id: str, idx: int, subject: str, body: str,
     connections read plus one count query and a 30-chunk PDF would otherwise pay for both
     thirty times. Omitting it is what made every uploaded chunk land with
     `coverage_ready=None` — the same 100%-None population the sweep was fixed for, entered by
-    a different door."""
+    a different door.
+
+    RETURNS the `CaptureResult` — it used to return None, and that is how the signals an upload
+    produced were lost: the caller had nothing to hand `finalize_l1`, so the floor, the lifecycle
+    and the publisher never saw a file the tenant chose by hand. A chunk that lands as a
+    duplicate returns one too; `qualify_sweep` reads `result.esqe` and a duplicate has none."""
     from genios_engine.capture.intake import ingest_manual
-    ingest_manual(org_id=org_id, source="upload", object_type="document_chunk",
-                  source_object_id=f"{file_id}:chunk_{idx}", body=body, subject=subject,
-                  actor_type="internal_user", actor_email=uploader_email,
-                  internal_kind=internal_kind,
-                  # One canon node per FILE, not per chunk. Keying on the event would give
-                  # a 30-chunk pricing PDF thirty separate "Pricing" entities, each holding
-                  # a slice of one document — the graph would look like thirty price lists.
-                  raw_extra=({"knowledge_key": file_id, "title": subject}
-                             if internal_kind else None),
-                  repo=_repo, payload_store=_payloads, prepared_store=_prepared,
-                  trace_repo=_trace_repo, coverage_fn=coverage_fn, connection_id="upload")
+    return ingest_manual(
+        org_id=org_id, source="upload", object_type="document_chunk",
+        source_object_id=f"{file_id}:chunk_{idx}", body=body, subject=subject,
+        actor_type="internal_user", actor_email=uploader_email,
+        internal_kind=internal_kind,
+        # One canon node per FILE, not per chunk. Keying on the event would give
+        # a 30-chunk pricing PDF thirty separate "Pricing" entities, each holding
+        # a slice of one document — the graph would look like thirty price lists.
+        # Two independent things ride in `raw_extra` and neither may erase the other: the canon
+        # key (one node per FILE) and the chunk's own locator (which page and section its text
+        # came from). Merged into one mapping rather than passed as two arguments, because
+        # `ingest_manual` writes `raw_extra` straight onto the raw object.
+        raw_extra=({**({"knowledge_key": file_id, "title": subject} if internal_kind else {}),
+                    **({"document": locator} if locator else {})} or None),
+        repo=_repo, payload_store=_payloads, prepared_store=_prepared,
+        trace_repo=_trace_repo, coverage_fn=coverage_fn, connection_id="upload",
+        # S2 and S4, threaded from the caller for the same reason `coverage_fn` is: they are
+        # facts about the TENANT (an activation row, an importance baseline), computed once per
+        # file, and a 30-chunk PDF must not buy either of them thirty times.
+        semantic=semantic, esqe=esqe)
 
 
 def _ingest(org_id: str, file_id: str, prefix: str, truncated: int = 0) -> None:
@@ -204,8 +270,14 @@ async def upload_resource(org_id: str, background_tasks: BackgroundTasks,
         return {"file_id": file_id, "status": existing.status,
                 "chunks": int(existing.chunks or 0), "duplicate": True}
 
-    all_chunks = _chunk(_extract_text(name, data, file.content_type or "", org_id=org_id))
+    text_content = _extract_text(name, data, file.content_type or "", org_id=org_id)
+    all_chunks = _chunk(text_content)
     chunks = all_chunks[:MAX_CHUNKS]
+    # ONE page map for the whole file, sliced per chunk below. Computed here rather than inside
+    # `_extract_text` because the best-effort extractor has three fallback paths and only one of
+    # them produces a paged document; asking for the map separately keeps "what is the text" and
+    # "where are its pages" from having to agree inside a function that answers the first.
+    page_map = native_page_map(mime=file.content_type or "", data=data, filename=name)
     truncated = len(all_chunks) - len(chunks)          # >0 → reported in _ingest, never silent
     status = "extracting" if chunks else "failed"
     err = None if chunks else "No extractable text found in this file."
@@ -249,11 +321,50 @@ async def upload_resource(org_id: str, background_tasks: BackgroundTasks,
     # and a count(distinct source_object_id), and they are facts about the TENANT's sources, not
     # about a paragraph of a PDF.
     coverage_fn = make_coverage_fn(org)
+    # ONE lane and ONE baseline for the whole file, on the same argument `coverage_fn` makes
+    # above: `make_semantic_lane` reads the tenant's activation row and builds a cost governor,
+    # `make_esqe_stage` computes L1.6.7's org baseline off a windowed scan. Per chunk, a 30-page
+    # PDF would pay for both thirty times. `semantic` is None for a tenant with no activation
+    # row, which is the state every tenant is in until a pilot switches one on — and the file
+    # still lands, is still chunked and still reaches L2 exactly as before.
+    semantic = make_semantic_lane(org, engine=getattr(_graph, "engine", None))
+    esqe = make_esqe_stage(org, engine=getattr(_graph, "engine", None))
+    results = []
     for i, ch in enumerate(chunks):
-        _emit_chunk(org, file_id, i, name, ch, uploader, internal_kind=kind,
-                    coverage_fn=coverage_fn)
+        # The chunk's slice of the file's page map, re-expressed in the CHUNK's own coordinates —
+        # a chunk starting halfway down page 3 gets a one-entry map numbered 3, so every span in
+        # it cites page 3. Plus the section heading the chunker detected, which is a property of
+        # the whole chunk.
+        chunk_pages = page_map.for_slice(ch.start_offset, ch.end_offset)
+        locator = {**chunk_pages.as_record(), "section_title": ch.section_title} \
+            if (chunk_pages or ch.section_title) else None
+        res = _emit_chunk(org, file_id, i, name, ch.text, uploader, internal_kind=kind,
+                          coverage_fn=coverage_fn, semantic=semantic, esqe=esqe,
+                          locator=locator)
+        if res is not None:
+            results.append(res)
+    if results:
+        # L1.6.10 · THE SAME FINALIZER THE SYNC DOOR USES. Without this the chunks were captured,
+        # extracted and SCORED and then nothing filed the conflicts, ran the floor, aged the
+        # lifecycle or published — so `qualified_signals` held no row for the one source the
+        # tenant chose deliberately. Synchronous rather than a background task: it is four
+        # in-process passes over the events this request just captured, it never raises, and
+        # deferring it would put the publish behind `_ingest`'s L2 drain, which reads what this
+        # writes.
+        finalize_l1(ManualSweep(org_id=org, results=tuple(results), emitted=len(results),
+                                scanned=len(chunks)),
+                    org_id=org, stores=_l1_stores())
     if chunks:
         background_tasks.add_task(_ingest, org, file_id, prefix, truncated)
+        # N-3 · ORG-BRAIN DISCOVERY (L3.2-U1 step 1) — the SECOND canon door. A file tagged with
+        # a rule-bearing kind (policy, sop, pricing, org_structure) is the company's own written
+        # rules arriving; doc 02's trigger is "on canon ingest" and this is it. A sweep rather
+        # than a per-chunk call because the chunk event ids are not kept here, and it is
+        # idempotent on the document version, so an already-read chunk costs one indexed read.
+        # Queued AFTER `_ingest` so L2's drain has run first and an approver named in the policy
+        # has a node to resolve to.
+        from genios_engine.feedback.org_rule_ingest import sweep_org_rule_discovery
+        background_tasks.add_task(sweep_org_rule_discovery, org)
 
     from genios_engine.platform.audit import record
     record(org, "data_accessed", actor_type="user", actor_id=uploader, target_type="upload",

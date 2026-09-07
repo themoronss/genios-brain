@@ -131,6 +131,32 @@ def _tenant_pack(registry, store, org_id: str, pack_id: str) -> dict | None:
             "rule_ids": {str(rule.get("id")) for rule in (effective.get("rules") or ())}}
 
 
+def _rejected_candidates(decision, selected) -> list[dict]:
+    """The losing candidates, each with the authored doctrine that removed it.
+
+    `eliminated_by` is read off `decision.constraints_applied`, which the contract has already
+    checked: a rule may only name a candidate that IS eliminated on this decision, and the quote
+    it carries has already been proven byte-identical to the authored artifact. So the card layer
+    renders an expert rule verbatim without ever opening the corpus, and this function cannot
+    invent an attribution of its own.
+    """
+    by_candidate: dict[str, list[dict]] = {}
+    for applied in decision.constraints_applied or ():
+        for candidate_id in applied.get("eliminated_candidate_ids") or ():
+            by_candidate.setdefault(str(candidate_id), []).append({
+                "rule_id": applied["rule_id"],
+                "severity": applied["severity"],
+                "statement": applied.get("statement"),
+            })
+    selected_play = getattr(selected, "play_id", None)
+    return [{"play_id": candidate.play_id,
+             "disposition": candidate.disposition.value,
+             "utility_bp": candidate.utility_bp,
+             "eliminated_by": by_candidate.get(str(candidate.candidate_id), [])}
+            for candidate in decision.candidates
+            if candidate.play_id != selected_play]
+
+
 def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, execution, bundle,
                             eval_time, pack: dict) -> str:
     """Write the compiled brain's decision as signal.v1, tagged with the capability that made it.
@@ -230,10 +256,11 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
         "config_snapshot_id, reasoning_run_id, reasoning_candidate_id, reasoning_decision_hash, "
         "authority_expires_at, authority_binding_version, authority_pack_revision, "
         "do_nothing_consequence, uncertainty, outcome_window_days, "
-        "capability_id, capability_version, capability_review_state) "
+        "capability_id, capability_version, capability_review_state, rejected_candidates, "
+        "citations) "
         "values (:id,:o,:pack,:packv,:r,:rv,:lv,:n,:s,cast(:si as jsonb),:rc,cast(:ev as jsonb),"
         ":play,:et,:cfg,:run,:cand,:dhash,:exp,1,:rev,:dnc,cast(:unc as jsonb),:owd,"
-        ":cap,:capv,:caprev) "
+        ":cap,:capv,:caprev,cast(:rej as jsonb),cast(:cit as jsonb)) "
         "on conflict (org_id,pack_id,pack_version,rule_id,subject_node_id) "
         "where status='open' do nothing returning signal_id"), {
             "id": new_id("sig"), "o": org_id,
@@ -267,6 +294,26 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
             "owd": decision.outcome_window_days,
             "cap": decision.capability_id, "capv": decision.capability_version,
             "caprev": review_state,
+            # WHAT WAS CONSIDERED AND REJECTED, which the compiled lane has never written. The
+            # legacy runner has filled this column since migration 0070 and the API renders it as
+            # `alternatives_rejected`; a compiled card's "why not X?" therefore came back empty
+            # however completely Layer 3's doctrine had answered it. Each rejected candidate now
+            # carries the corpus rules that eliminated it, quoted — which is the J1 row "a
+            # blocking rule eliminating a candidate, NAMED in alternatives_rejected".
+            "rej": json.dumps(_rejected_candidates(decision, selected)),
+            # THE EXPERT'S OWN WORDS, one hop further than they used to travel. CLG-08 quoted
+            # these at the weld and the contract re-checked every `statement_hash` against the
+            # statement again at the decision, so what lands here is provably the authored text —
+            # but `ReasoningDecision.citations` was an in-memory field with no writer, and a claim
+            # that reaches no row reaches no card. That made J5's headline measurement ("a card
+            # carrying a heuristic/rule citation") structurally unreachable rather than merely
+            # unmet: no tenant and no seven days would ever have produced one. The rule half has
+            # landed since `rejected_candidates`; this is the claim half, same shape, same writer.
+            #
+            # NULL rather than `[]` when there are none, so "this decision quoted nothing" and
+            # "this lane does not quote" stay different answers in the column.
+            "cit": (json.dumps([dict(c) for c in decision.citations])
+                    if decision.citations else None),
         }).first()
     return "emitted" if row is not None else "race_lost"
 
@@ -449,7 +496,14 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                         # The delivery authority predicate reads this flag off the persisted
                         # capability snapshot. False (the measurement default) means no card can
                         # ever be built from the decision, however complete its audit bundle is.
-                        live_delivery_enabled=live)
+                        live_delivery_enabled=live,
+                        # WHAT THE CORPUS'S RULES BIND AGAINST (CLG-06). The package carries the
+                        # knowledge that was selected; only these two carry the facts it was
+                        # selected FOR, and only the frozen slice knows which absences are
+                        # UNKNOWABLE — the difference between a blocking rule firing and a
+                        # blocking rule honestly abstaining. Both are already in scope here, and
+                        # passing them is what makes the weld bound rather than declared.
+                        situation=bso, context=context_slice)
                     pack = None
                     if live:
                         # The config snapshot must EXIST before reasoning and be passed in, not

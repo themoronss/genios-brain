@@ -147,8 +147,10 @@ from typing import Any, Protocol
 
 from genios_engine.capture.semantic.cache import (
     ExtractionCacheKey, ExtractionCacheStore, cache_key, cached_extraction)
+from genios_engine.capture.documents.pages import PageMap
 from genios_engine.capture.semantic.evidence_binder import (
-    PREPARED_FRAME_PREFIX, BoundClaim, ClaimDraft, ModelSpan, align_span, bind_evidence)
+    PREPARED_FRAME_PREFIX, AlignedSpan, BindOutcome, BoundClaim, ClaimDraft, ModelSpan,
+    align_span, bind_evidence)
 from genios_engine.capture.semantic.injection import FencedContent, fence, scan_output
 from genios_engine.capture.semantic.profiles import (
     BLOCK_MARKERS, CONTENT_MARKER, END_MARKER, ENVELOPE_MARKER, NON_EMPHASISABLE_FIELDS, TIERS,
@@ -436,6 +438,15 @@ class ExtractionRequest:
     #: the day-month ambiguity; never guessed.
     locale: str | None = None
     max_output_tokens: int = 4096
+    #: L1.3.4-U5 · where this event's text divides into PAGES, when it has any. Read off the
+    #: document metadata the connector attached and passed straight through to the alignment
+    #: seam, which is the only place that holds both a span's offsets and the map they resolve
+    #: against. `PageMap()` — the empty map — for an email, a chat message, a calendar event.
+    page_map: PageMap = dataclass_field(default_factory=PageMap)
+    #: The heading this event's text sits under, when the chunker found one. A property of the
+    #: whole event rather than of an offset: an upload chunk IS one section, and a message has
+    #: none. `None` is the ordinary case.
+    section: str | None = None
 
     def __post_init__(self) -> None:
         require_text(self.org_id, "org_id")
@@ -454,6 +465,9 @@ class ExtractionRequest:
             raise TypeError("envelope must be an EventEnvelope")
         if self.max_output_tokens < 1:
             raise ValueError("max_output_tokens must be positive")
+        if not isinstance(self.page_map, PageMap):
+            raise TypeError("page_map must be a documents.pages.PageMap — an unvalidated list of "
+                            "offsets is how a citation ends up naming a page the quote is not on")
 
     @property
     def content(self) -> str:
@@ -962,6 +976,7 @@ def _spans_from_payload(value: Any, request: ExtractionRequest, call: AssembledC
         if aligned is None:
             tally.unalignable_spans += 1
             continue
+        aligned = _located(aligned, request)
         if call.fenced.span_is_escaped(view_start, view_start + len(quote)):
             tally.escaped_span_quotes += 1
         elif request.content[aligned.prepared_start:aligned.prepared_end] != quote:
@@ -974,6 +989,67 @@ def _spans_from_payload(value: Any, request: ExtractionRequest, call: AssembledC
             tally.offset_frame_misses += 1
         spans.append(aligned.span)
     return tuple(spans)
+
+
+def locate_span(span: EvidenceSpan, request: ExtractionRequest, *,
+                source_start: int | None = None) -> EvidenceSpan:
+    """One span, with its page and section attached. The same answer for every span in an event.
+
+    `source_start` is the span's offset in the ORIGINAL text when the caller already resolved it
+    (`align_span` does); otherwise it is resolved here through `PreparedContent.to_source_offset`,
+    the map the preprocessor built. The distinction matters: the page map describes the original
+    text, and the prepared frame has mask tokens in it whose lengths shift every offset above
+    them — so looking a page up by a prepared offset puts every citation below a redacted phone
+    number on the wrong page.
+
+    Rebuilt through the constructor rather than `model_copy`, on `EvidenceSpan`'s own terms: the
+    type is frozen so that a change is revalidated.
+    """
+    if source_start is None:
+        try:
+            source_start = request.prepared.to_source_offset(span.start_offset)
+        except Exception:      # noqa: BLE001 — a map that cannot answer costs a page, not a claim
+            source_start = None
+    page = None if source_start is None else request.page_map.page_at(source_start)
+    if page is None and request.section is None:
+        return span
+    if span.page == page and span.section == request.section:
+        return span
+    return EvidenceSpan(
+        source_ref=span.source_ref, quote=span.quote, start_offset=span.start_offset,
+        end_offset=span.end_offset, verified=span.verified,
+        page=page, section=request.section)
+
+
+def _located(aligned: AlignedSpan, request: ExtractionRequest) -> AlignedSpan:
+    """L1.3.4-U5 · the human-readable half of a receipt: which page, and which section.
+
+    Attached HERE because this is the one place that holds both halves of the answer — the span's
+    resolved offsets and the map they resolve against — and because a page number derived later,
+    from a stored span alone, would need the document re-parsed and would silently be a guess when
+    it could not be.
+
+    The PAGE is looked up against `source_start`: the map describes the ORIGINAL text, and the
+    prepared frame has mask tokens in it whose lengths shift every offset above them. Using the
+    prepared offset would put every citation below a redacted phone number on the wrong page,
+    which is exactly the class of error the three-frame discipline in `evidence_binder` exists to
+    stop. The SECTION is a property of the whole event, not of an offset, so it is copied.
+
+    An unpaged text (an email, a chat message) leaves both None. Nothing is invented: a
+    single-page number for something with no pages is a value nobody can check.
+    """
+    located = locate_span(aligned.span, request, source_start=aligned.source_start)
+    return aligned if located is aligned.span else replace(aligned, span=located)
+
+
+def _locate_bound(outcome: BindOutcome, request: ExtractionRequest) -> BindOutcome:
+    """Every bound claim's receipts, with page and section attached. Counters untouched."""
+    if not outcome.claims or (not request.page_map and request.section is None):
+        return outcome
+    claims = tuple(
+        replace(claim, evidence=tuple(locate_span(span, request) for span in claim.evidence))
+        for claim in outcome.claims)
+    return replace(outcome, claims=claims)
 
 
 def _claim_entries(payload: Mapping[str, Any], field: str) -> list[Mapping[str, Any]]:
@@ -1304,6 +1380,12 @@ def parse_response(payload: Any, *, request: ExtractionRequest, call: AssembledC
 
     outcome = bind_evidence((item.draft for item in pending), prepared_text=request.content,
                             source_ref=request.source_ref)
+    # U1 SYNTHESIZES a receipt for a claim that cited nothing, and the binder knows no page map —
+    # it is handed a string and a frame name and nothing else, deliberately. So the located half
+    # is attached here, where the request is: without this a synthesized span is the one receipt
+    # in an extraction that cannot say which page it came from, and "some of them have pages" is
+    # a worse surface than either all or none.
+    outcome = _locate_bound(outcome, request)
     tally.claims_bound = outcome.counters.bound
     tally.synthesized_spans = outcome.counters.synthesized
     tally.no_evidence_drops = outcome.counters.no_evidence

@@ -228,18 +228,6 @@ def make_prepared_store():
     return InMemoryPreparedContentStore()
 
 
-def make_open_lane_store():
-    """L1.4.5's open lane — the observations the closed vocabulary had no field for.
-    Postgres if DATABASE_URL is set, else in-memory. Read by the weekly discovery report and by
-    nothing else: no rule, no pack, no reasoner."""
-    s = get_settings()
-    if s.use_real_db:
-        from genios_engine.capture.semantic.open_lane import PostgresOpenLaneStore
-        return PostgresOpenLaneStore(s.database_url)
-    from genios_engine.capture.semantic.open_lane import InMemoryOpenLaneStore
-    return InMemoryOpenLaneStore()
-
-
 def make_source_waitlist_store():
     """L1.1-U2's waitlist — the sources a tenant asked for and cannot connect yet.
     Postgres if DATABASE_URL is set, else in-memory. Nothing in the capture pipeline reads it:

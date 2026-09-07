@@ -1,0 +1,138 @@
+# FOUNDER SURFACE 7 — THE BOTTLENECK — and the only situation in this corpus whose subject is the
+# organisation itself rather than a counterparty.
+#
+# That is not an accident of convenience. A bottleneck is not visible from any one thread: every
+# individual person waiting is normal, and the finding is the COUNT. `admin_period_review` is
+# minted on the tenant node and carries `period.counterparties_awaiting_us`, which is the only
+# place in the system where that count exists.
+#
+# The honest scope, stated once here so no output overstates it: this says how many counterparties
+# are waiting on us in this window. On a founder-operated organisation "us" and "the founder" are
+# the same person and the reading is direct. On a larger one it is the organisation's queue and
+# not one individual's, and nothing on the row can split it by approver — `period.*` has no
+# per-person breakdown, and inventing one would put a named person at the centre of a finding the
+# data does not support.
+
+identity:
+  id: admin.sit.approvals_converging_on_one_person
+  name: Approvals Converging On One Person
+  domain: admin
+  owner_capability: admin.executive_support.gatekeeping
+  version: 1.0.0
+  status: stable
+
+description: >
+  A material number of counterparties are waiting on us at the same time, in one window. Each of
+  them individually is an ordinary wait; together they are a queue, and a queue in front of one
+  desk is the single most common structural failure in a founder-run organisation.
+
+  The reading is about a STRUCTURE and never about a person. Everyone in this situation is working
+  hard — that is why the queue formed — and the finding is that the routing is wrong, not that
+  somebody is slow. `admin.rule.gatekeeping.evidence_then_a_structural_fix` makes that a gate
+  rather than a matter of tone, because the natural language for a bottleneck is the language of
+  blame and it arrives by default.
+
+  What the row cannot do is split the queue by approver. There is no per-person breakdown in the
+  period aggregate and none can be inferred, so the useful output is the count, the oldest wait,
+  and the one structural move that shortens the queue: a standing threshold below which somebody
+  else may decide. That move is the Behavior brain's territory — "forty-one of forty-one approvals
+  under five thousand" is the kind of finding that turns into a delegated threshold — and it is
+  why this situation matters more once that brain has content in it.
+
+matches:
+  l2_situation_types:
+    - admin_period_review
+  when:
+    # A queue, not a busy week. One or two counterparties waiting is the ordinary state of any
+    # correspondence; the finding is the concurrency.
+    - path: period.counterparties_awaiting_us
+      op: ">="
+      value: 5
+    # And there is work behind it. A window where people are waiting and nothing is open is a
+    # different reading — that is silence, not congestion.
+    - path: period.commitments_open
+      op: ">="
+      value: 1
+
+also_serves:
+  - admin.executive_support.approval_coordination
+  - admin.executive_support.delegation_and_task_routing
+
+objects:
+  load:
+    - admin.obj.core.approval
+    - admin.obj.core.approver
+  optional:
+    - admin.obj.core.request
+    - admin.obj.core.commitment
+    - admin.obj.core.policy
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+
+priority_bp: 7200
+typical_duration_days: 14
+
+signals_of_progress:
+  - approval_granted
+  - next_step_agreed
+  - document_sent
+
+signals_of_decay:
+  - approval_blocked
+  - decision_deferred
+  - going_dark
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    Lead with the evidence and end with a structural fix. Never a judgement about a person.
+
+    Headline: how many counterparties are waiting on us in this window. A number, not an adjective.
+
+    Situation: state the count and what is open behind it. Do not write "you are the bottleneck",
+    "you are slow", "you are holding this up", or any second-person sentence about the reader's
+    conduct — the finding is a queue, and everybody in a queue like this is working hard, which is
+    why it formed. Do not name an individual approver: the row carries no per-person breakdown and
+    naming one would invent the very attribution this card exists to avoid.
+
+    Artifact: one structural move, not a to-do list. The move that works is a standing threshold —
+    a class of decision somebody else may take without asking — stated as a single sentence the
+    reader could send to their team today. If no threshold can be proposed from what is on record,
+    say what would be needed to propose one rather than offering a general suggestion to delegate.
+  fallback:
+    # NO SLOT. `deliver/slots.py` computes nothing off `period.*` — `awaiting` reads
+    # `cohort.awaiting` and would resolve to its sentinel on a tenant-anchored card. A headline
+    # built on a slot that always misses is a headline that always reads "several".
+    headline: "Several counterparties waiting on us at once"
+    situation: >-
+      Several counterparties are waiting on us at the same time in this window, with work still
+      open behind them. The queue is the finding, not any one of the waits.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-09-07'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-09-07'
+  notes: >
+    `period.counterparties_awaiting_us` and `period.commitments_open` are written by
+    `context/periodic.py` onto the tenant node and are live. The approximation is named in the
+    description rather than hidden: this is the ORGANISATION's queue, and on a founder tenant that
+    is one person's queue, and there is no per-approver split anywhere on the row.
+
+    The five is a routing floor, not a threshold. Where the line between a busy window and a
+    congested one falls is Layer 4's arithmetic and belongs in the pack; this decides only whether
+    the situation is worth compiling.
+
+    The fallback carries no slot at all, and that is a finding worth recording rather than a
+    stylistic choice: `deliver/slots.py` computes eighteen slots and not one of them reads a
+    `period.*` fact, so every tenant-anchored card in this domain currently renders its numbers
+    only through the model. A `waiting_now` slot off `period.counterparties_awaiting_us` is the
+    smallest change that would let this card state its own evidence deterministically.
+
+admission:
+  accepted_content_hash: b4e1bbeefa34b50af1919f648eba09b86321aefce0cab2cabdebd6458b09d79f

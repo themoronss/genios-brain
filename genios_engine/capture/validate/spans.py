@@ -333,8 +333,10 @@ def _rewrite(span: EvidenceSpan, start: int, end: int,
     quote = source_text[start:end]
     if not quote.strip() or len(quote) > MAX_QUOTE_CHARS:
         return None
+    # The locator travels with the correction. `page` may be stale after a move — the caller's
+    # `_relocated_locator` is what re-examines it, because only that caller holds the map.
     return EvidenceSpan(source_ref=span.source_ref, quote=quote, start_offset=start,
-                        end_offset=end, verified=True)
+                        end_offset=end, verified=True, page=span.page, section=span.section)
 
 
 def _as_unverified(span: EvidenceSpan) -> EvidenceSpan:
@@ -359,7 +361,7 @@ def _as_unverified(span: EvidenceSpan) -> EvidenceSpan:
         return span
     return EvidenceSpan(source_ref=span.source_ref, quote=span.quote,
                         start_offset=span.start_offset, end_offset=span.end_offset,
-                        verified=False)
+                        verified=False, page=span.page, section=span.section)
 
 
 def _match_at(folded: _FoldedText, original_offset: int, needle: str) -> tuple[int, int] | None:
@@ -709,8 +711,45 @@ def _kept(claims: list[Any], resolve: Any) -> list[Any]:
     return [resolved for resolved in (resolve(claim) for claim in claims) if resolved is not None]
 
 
+def _relocated_locator(original: EvidenceSpan, resolved: EvidenceSpan, prepared: Any,
+                       page_map: Any, section: str | None) -> EvidenceSpan:
+    """The graded span, with its page recomputed if — and only if — its offsets moved.
+
+    A relocation is a statement that the quote is somewhere else in the document, and "somewhere
+    else" can be a different page. The three ways this can go, and only the first is free:
+
+    * offsets unchanged  -> the extractor's page is still right. Returned untouched, which is the
+      overwhelmingly common case and allocates nothing.
+    * offsets moved, map available -> the page is looked up at the NEW position, through the same
+      prepared -> source translation the extractor used.
+    * offsets moved, no map -> the page is DROPPED. A page number that survives a relocation
+      unexamined is a confident citation pointing at the wrong page, which is worse than a
+      citation that admits it does not know.
+
+    `section` is a property of the whole event and does not move with an offset, so it is
+    preserved rather than recomputed.
+    """
+    if resolved.start_offset == original.start_offset or resolved.page is None:
+        return resolved
+    source_start = None
+    if prepared is not None:
+        try:
+            source_start = prepared.to_source_offset(resolved.start_offset)
+        except Exception:      # noqa: BLE001 — an unusable map costs a page, never a claim
+            source_start = None
+    page = None if (page_map is None or source_start is None) else page_map.page_at(source_start)
+    if page == resolved.page:
+        return resolved
+    return EvidenceSpan(source_ref=resolved.source_ref, quote=resolved.quote,
+                        start_offset=resolved.start_offset, end_offset=resolved.end_offset,
+                        verified=resolved.verified, page=page,
+                        section=section if section is not None else resolved.section)
+
+
 def apply_verdicts(result: ExtractionResult, source_text: str, *,
-                   locale: str | None = None) -> tuple[ExtractionResult, SpanCounters]:
+                   locale: str | None = None, prepared: Any = None,
+                   page_map: Any = None,
+                   section: str | None = None) -> tuple[ExtractionResult, SpanCounters]:
     """Verify every span in an extraction and apply the per-claim-type policy to the whole thing.
 
     Returns a NEW `ExtractionResult` — the input is left alone, because the unverified original
@@ -733,6 +772,14 @@ def apply_verdicts(result: ExtractionResult, source_text: str, *,
     `all_evidence` keeps its failures deliberately. It is the extractor's ledger, not the claim's
     receipt list, and pruning it would hide exactly the trend U2 is monitoring.
 
+    `page_map`, `prepared` and `section` are L1.3.4-U5's locator, and they are here for ONE
+    reason: this module RELOCATES quotes. A span whose offsets were wrong and whose words are
+    real is rewritten at its true position, and a rewritten span may have crossed a page break —
+    so the page has to be recomputed against the map rather than carried, and carrying it is the
+    one option that produces a confident citation naming the wrong page. Omitting all three is
+    supported and means "no locator available": pages are then left exactly as the extractor
+    attached them, which is right for every caller that is not re-positioning anything.
+
     `locale` is the CONNECTION's declared locale — the same one the normalizer was given, and
     None when the connection declares none. It is used for one thing: re-deriving an amount from
     its own `as_written` to check the extractor's integer against it. Passing a different locale
@@ -748,7 +795,8 @@ def apply_verdicts(result: ExtractionResult, source_text: str, *,
         # importantly — counted once.
         cached = graded.get(span)
         if cached is None:
-            cached = _verify(span, index)
+            verdict, resolved = _verify(span, index)
+            cached = (verdict, _relocated_locator(span, resolved, prepared, page_map, section))
             graded[span] = cached
         return cached
 

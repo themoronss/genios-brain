@@ -56,6 +56,37 @@ DOMAIN_ALIASES: dict[str, str] = {
 UNCLASSIFIED_DOMAINS: frozenset[str] = frozenset({"general", "unknown", ""})
 
 
+#: L3.1-U2 · the BSO metadata keys `situation_bso._pattern_metadata` writes for every situation,
+#: whether or not a pattern matched. Spelled here because the resolver reads them and a key
+#: spelled two ways is a route that silently never fires.
+PATTERN_ID_KEY = "pattern_id"
+PATTERN_ACTIVATED_KEY = "pattern_activated"
+
+#: What `RoutePlan.pattern_route_state` may say. See the field's own docstring for the argument.
+PATTERN_ROUTED = "routed"
+PATTERN_SHADOW = "shadow"
+PATTERN_UNREGISTERED = "unregistered"
+
+
+def _pattern_fire(situation: BusinessSituationObject) -> tuple[str | None, bool]:
+    """`(pattern_id, activated)` for this situation, from the BSO's own metadata.
+
+    ACTIVATION GATES THE ROUTE, and that is not caution — it is the rule L2 already keeps one
+    layer down. `situation_bso._situation_type` refuses to let an unactivated fire rename a
+    situation, and `context/patterns/store.py` states why: *"compare fire sets on a pilot for 7
+    days before switching. Do not delete the anchor path in this wave."* Routing is a STRONGER
+    effect than renaming — it decides which capabilities, objects and knowledge the situation
+    gets — so a shadow fire that could not be trusted to rename a situation certainly may not
+    redirect its expertise. The fire still travels and is still receipted; it just does not
+    decide. That is also Law 5: activation is per tenant, never a global flip.
+    """
+    metadata = situation.metadata
+    pattern_id = metadata.get(PATTERN_ID_KEY)
+    if not pattern_id:
+        return None, False
+    return str(pattern_id), bool(metadata.get(PATTERN_ACTIVATED_KEY))
+
+
 def _plain(value):
     """Deep copy an authored fragment into ordinary dicts/lists.
 
@@ -175,12 +206,28 @@ class CapabilityResolver:
         priority_situation_id: str | None = None
         priority_rank: tuple[int, str] | None = None
         saw_index_route = False
+        # L3.1-U2 · the richer routing key, when the tenant has one. Read ONCE for the whole
+        # resolve so every domain answers against the same fire.
+        pattern_id, pattern_activated = _pattern_fire(situation)
+        pattern_route_id: str | None = None
+        pattern_route_state: str | None = None
+        if pattern_id is not None:
+            pattern_route_state = PATTERN_ROUTED if pattern_activated else PATTERN_SHADOW
 
         for domain_id in domain_ids:
             domain = self.catalog.domain(domain_id)
-            route = domain.routes.get(situation.type)
+            # PATTERN FIRST, ANCHOR TYPE SECOND. The fallback is the migration: no registry emits
+            # a `patterns:` section yet, so `pattern_route` is None for every domain today and
+            # this reads exactly as it read before — which is the property doc 01 requires, "a
+            # tenant with patterns not yet activated must not lose routing".
+            pattern_route = (domain.pattern_routes.get(pattern_id)
+                             if pattern_id is not None and pattern_activated else None)
+            route = pattern_route if isinstance(pattern_route, Mapping) else \
+                domain.routes.get(situation.type)
             if not isinstance(route, Mapping):
                 continue
+            if isinstance(pattern_route, Mapping):
+                pattern_route_id = pattern_id
             saw_index_route = True
             selected_here: list[str] = []
             for situation_id in route.get("situations") or ():
@@ -339,6 +386,14 @@ class CapabilityResolver:
             render_situation_id=render_situation_id,
             priority_bp=priority_bp,
             priority_situation_id=priority_situation_id,
+            pattern_route_id=pattern_route_id,
+            # An ACTIVATED fire that no registry names is not the same fact as a shadow fire, and
+            # it is the one an operator has to act on: the tenant switched a pattern on and the
+            # corpus has nothing authored for it. Named rather than silently falling back.
+            pattern_route_state=(
+                PATTERN_UNREGISTERED
+                if pattern_route_state == PATTERN_ROUTED and pattern_route_id is None
+                else pattern_route_state),
         )
 
 

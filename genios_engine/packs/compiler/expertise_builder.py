@@ -116,6 +116,26 @@ class ExpertiseBuilder:
             "authored_priority_bp": plan.priority_bp,
             "priority_situation_id": plan.priority_situation_id,
         }
+        # L3.1-U2 · the routing receipt, WRITTEN ONLY WHEN THERE IS ONE.
+        #
+        # A key written `None` on every package would be a key hashed into every package's
+        # content address, which re-mints the id of every package that already exists for a fact
+        # nobody has — the exact shape of the churn `e1a0c47` stopped and of the 995 MB that took
+        # a production database read-only. `build_context_slice.absence_metadata` omits its keys
+        # on the same argument, and this follows it: a tenant with no pattern fire compiles to a
+        # byte-identical package before and after this wave.
+        #
+        # AND NO NEW CHURN CLASS FOR A TENANT THAT DOES HAVE FIRES. These keys appear only when
+        # the BSO carries a pattern fire — and a BSO carrying one already hashes differently from
+        # one that does not, because `situation_bso._pattern_metadata` puts `pattern_id`,
+        # `pattern_version`, `pattern_activated` and `matched_conditions` into the situation's own
+        # metadata, which is `metadata['situation_hash']` above. The address of such a package
+        # moved when the FIRE arrived, not when this receipt did; the receipt costs one re-mint on
+        # the sweep it lands and nothing per sweep after it.
+        if plan.pattern_route_state is not None:
+            metadata["pattern_route_state"] = plan.pattern_route_state
+        if plan.pattern_route_id is not None:
+            metadata["pattern_route_id"] = plan.pattern_route_id
         body = {
             "org_id": situation.org_id,
             "schema_version": "expertise-package.v1",

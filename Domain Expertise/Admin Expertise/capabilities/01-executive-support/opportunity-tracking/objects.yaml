@@ -1,0 +1,37 @@
+# Load-set for admin.executive_support.opportunity_tracking — REFERENCES ONLY, never an inline object.
+#
+# core   -> objects/core/                    loaded by more than one capability
+# scoped -> objects/opportunity-tracking/    loaded by this capability alone
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+#
+# NO SCOPED OBJECT, DELIBERATELY. The obvious move is to mint a `conditional_opening` noun, and it
+# is the wrong one for V1: the reference graph does not justify it (one capability would load it),
+# and a 23-section object about a thing Layer 2 cannot yet detect is inventory. The condition is
+# read as a COMMITMENT whose owner edge points at the counterparty — the domain glossary already
+# allows that reading, and `admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball` already
+# depends on it. When `condition_satisfied` ships and the satisfaction carries its own evidence
+# and certainty, the noun earns its file; not before.
+
+capability: admin.executive_support.opportunity_tracking
+
+core:
+  required:
+    - admin.obj.core.commitment
+    - admin.obj.core.request
+  optional:
+    - admin.obj.core.deadline
+    - admin.obj.core.meeting
+
+scoped:
+  required: []
+  optional: []
+
+never_load:
+  # An opening is not an obligation and not a transaction. Loading these would resolve them to
+  # `unknown` and read downstream as "checked, and there are none".
+  - admin.obj.core.invoice
+  - admin.obj.core.employee_record
+  - admin.obj.core.asset
+  - admin.obj.core.access_right

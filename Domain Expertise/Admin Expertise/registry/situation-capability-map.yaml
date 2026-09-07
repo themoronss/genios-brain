@@ -56,8 +56,8 @@ map:
 
   admin_contact:
     situations:
-      - admin.sit.date_bound_logistics
       - admin.sit.decision_waiting_on_a_person
+      - admin.sit.dormant_commitment_reopenable
       - admin.sit.live_admin_contact
       - admin.sit.meeting_ahead
       - admin.sit.meeting_left_open
@@ -77,6 +77,7 @@ map:
       - admin.executive_support.delegation_and_task_routing
       - admin.executive_support.gatekeeping
       - admin.executive_support.inbox_and_correspondence
+      - admin.executive_support.opportunity_tracking
       - admin.finance_administration.expense_management
       - admin.finance_administration.invoice_processing
       - admin.finance_administration.payables_administration
@@ -87,15 +88,11 @@ map:
       - admin.meeting_operations.follow_up_coordination
       - admin.meeting_operations.meeting_scheduling
       - admin.meeting_operations.minutes_and_documentation
-      - admin.travel_and_events.event_coordination
-      - admin.travel_and_events.itinerary_management
-      - admin.travel_and_events.travel_booking
     objects:
       load:
         - admin.obj.calendar_management.time_block
         - admin.obj.core.action_item
         - admin.obj.core.approver
-        - admin.obj.core.budget_line
         - admin.obj.core.commitment
         - admin.obj.core.contract
         - admin.obj.core.deadline
@@ -104,9 +101,8 @@ map:
         - admin.obj.core.request
         - admin.obj.core.sop
         - admin.obj.core.vendor
-        - admin.obj.event_coordination.event
-        - admin.obj.travel_booking.trip
       optional:
+        - admin.obj.core.budget_line
         - admin.obj.core.compliance_obligation
         - admin.obj.core.escalation
       never_load:
@@ -120,8 +116,8 @@ map:
 
   relationship:
     situations:
-      - admin.sit.date_bound_logistics
       - admin.sit.decision_waiting_on_a_person
+      - admin.sit.dormant_commitment_reopenable
       - admin.sit.meeting_ahead
       - admin.sit.meeting_left_open
       - admin.sit.money_owed_either_way
@@ -136,8 +132,11 @@ map:
       - admin.executive_support.approval_coordination
       - admin.executive_support.briefing_and_preparation
       - admin.executive_support.calendar_management
+      - admin.executive_support.commitment_tracking
       - admin.executive_support.delegation_and_task_routing
       - admin.executive_support.gatekeeping
+      - admin.executive_support.inbox_and_correspondence
+      - admin.executive_support.opportunity_tracking
       - admin.finance_administration.expense_management
       - admin.finance_administration.invoice_processing
       - admin.finance_administration.payables_administration
@@ -147,15 +146,11 @@ map:
       - admin.meeting_operations.agenda_preparation
       - admin.meeting_operations.meeting_scheduling
       - admin.meeting_operations.minutes_and_documentation
-      - admin.travel_and_events.event_coordination
-      - admin.travel_and_events.itinerary_management
-      - admin.travel_and_events.travel_booking
     objects:
       load:
         - admin.obj.calendar_management.time_block
         - admin.obj.core.action_item
         - admin.obj.core.approver
-        - admin.obj.core.budget_line
         - admin.obj.core.commitment
         - admin.obj.core.contract
         - admin.obj.core.deadline
@@ -164,9 +159,8 @@ map:
         - admin.obj.core.request
         - admin.obj.core.sop
         - admin.obj.core.vendor
-        - admin.obj.event_coordination.event
-        - admin.obj.travel_booking.trip
       optional:
+        - admin.obj.core.budget_line
         - admin.obj.core.compliance_obligation
         - admin.obj.core.escalation
       never_load:
@@ -181,14 +175,23 @@ map:
   admin_period_review:
     situations:
       - admin.sit.admin_service_under_load
+      - admin.sit.approvals_converging_on_one_person
+      - admin.sit.goal_has_no_evidence
     capabilities:
       - admin.admin_operations.admin_analytics
       - admin.admin_operations.business_continuity_administration
+      - admin.admin_operations.goal_and_progress
       - admin.admin_operations.process_improvement
       - admin.admin_operations.service_level_management
       - admin.admin_operations.sop_management
+      - admin.executive_support.approval_coordination
+      - admin.executive_support.delegation_and_task_routing
+      - admin.executive_support.gatekeeping
     objects:
       load:
+        - admin.obj.core.action_item
+        - admin.obj.core.approval
+        - admin.obj.core.approver
         - admin.obj.core.commitment
         - admin.obj.core.deadline
         - admin.obj.core.document
@@ -196,14 +199,14 @@ map:
         - admin.obj.core.request
         - admin.obj.core.sop
       optional:
-        - admin.obj.core.action_item
-        - admin.obj.core.approval
-        - admin.obj.core.asset
         - admin.obj.core.compliance_obligation
-        - admin.obj.core.employee_record
         - admin.obj.core.escalation
-        - admin.obj.core.invoice
         - admin.obj.core.vendor
+      never_load:
+        - admin.obj.core.access_right
+        - admin.obj.core.asset
+        - admin.obj.core.employee_record
+        - admin.obj.core.invoice
 
   cohort_outreach_gap:
     situations:
@@ -258,6 +261,7 @@ map:
   commitment_overdue:
     situations:
       - admin.sit.promise_past_its_date
+      - admin.sit.work_item_unowned
     capabilities:
       - admin.executive_support.commitment_tracking
       - admin.executive_support.delegation_and_task_routing
@@ -273,8 +277,10 @@ map:
         - admin.obj.core.escalation
         - admin.obj.core.meeting
       never_load:
+        - admin.obj.core.access_right
         - admin.obj.core.asset
         - admin.obj.core.employee_record
+        - admin.obj.core.invoice
 
   meeting_follow_through:
     situations:
@@ -322,6 +328,118 @@ map:
         - admin.obj.core.deadline
         - admin.obj.core.employee_record
 
+# ── Deferred ──────────────────────────────────────────────────────────────
+# Capabilities with no door and a named reason for it. They appear in no route, the
+# situations they own are suppressed from the map above, and they compile into zero
+# packages. Authored in <domain>/deferrals.yaml; not deleted, not deprecated.
+deferred_capabilities:
+  admin.compliance_and_governance.audit_support:
+    kind: no_runtime_trigger
+    reason: 'An audit request arrives as an email and is indistinguishable from any other information request. Routing this on `information_requested` would attach audit-evidence expertise to every question a counterparty asks.'
+  admin.compliance_and_governance.board_and_secretarial:
+    kind: no_runtime_trigger
+    reason: 'Resolutions, registers and statutory books live in a company-secretarial system, not in a mailbox. A board meeting appears on the calendar exactly as any other meeting does, so the only reading available is the generic one `meeting_follow_through` already gives.'
+  admin.compliance_and_governance.data_protection_administration:
+    kind: no_runtime_trigger
+    reason: 'A subject access request has a statutory clock and arrives looking like ordinary correspondence. Guessing at it would put a legal deadline on a message that does not carry one, which is the most expensive wrong card this domain could produce.'
+  admin.compliance_and_governance.licence_and_registration:
+    kind: blocked_on_l2_type
+    reason: 'A licence expiring is a date in a register nobody has connected. The renewal correspondence that would carry it is indistinguishable from any other vendor thread.'
+    blocked_on:
+      - licence_expiring
+  admin.compliance_and_governance.policy_administration:
+    kind: blocked_on_l2_type
+    reason: 'An attestation cycle needs a policy register and a roster to attest against. The document register can see a file; it cannot see that the file is a policy, and no predicate in the grammar matches on a title.'
+    blocked_on:
+      - policy_attestation_due
+      - policy_review_overdue
+  admin.compliance_and_governance.statutory_filing:
+    kind: blocked_on_l2_type
+    reason: 'Owns `admin.sit.obligation_falls_due`, which declares its trigger as pending rather than borrowing `commitment_overdue`. A filing deadline is external and non-negotiable and a promise is neither; reading one through the other would produce a card telling a founder to renegotiate a date with a registrar.'
+    blocked_on:
+      - filing_due
+      - filing_overdue
+  admin.contract_and_vendor.purchase_order_management:
+    kind: blocked_on_l2_type
+    reason: 'A PO is raised, consumed and exhausted inside a finance system. The five sibling contract and vendor capabilities route on correspondence because a contract is negotiated in email; a purchase order is not.'
+    blocked_on:
+      - goods_receipted
+      - po_exhausted
+      - po_raised
+  admin.facilities_and_assets.asset_issuance_and_recovery:
+    kind: out_of_v1_scope
+    reason: 'Issue and recover is the transaction half of a register the tenant does not keep. Deferred with the register rather than left routing into it.'
+    blocked_on:
+      - asset_unreturned
+  admin.facilities_and_assets.asset_register:
+    kind: out_of_v1_scope
+    reason: 'Custody of physical assets is invisible to mail and calendar — an unreturned laptop generates no message — and it is not one of the fifteen founder surfaces. Owns `admin.sit.asset_in_custody`, which is suppressed with it and routes nothing.'
+    blocked_on:
+      - asset_custody_unknown
+      - asset_unreturned
+  admin.facilities_and_assets.health_and_safety_administration:
+    kind: out_of_v1_scope
+    reason: 'A statutory duty of an employer with premises. Real, and answerable only from records this tenant has never kept in a mailbox.'
+  admin.facilities_and_assets.maintenance_coordination:
+    kind: out_of_v1_scope
+    reason: 'Premises maintenance. Out of the founder-intelligence bar and out of V1 scope; nothing here is wrong, and nothing here is what a founder opens the product to see.'
+  admin.facilities_and_assets.workplace_management:
+    kind: out_of_v1_scope
+    reason: 'A founder tenant has no workplace to manage and no facilities function to advise. Sound administrative expertise, aimed at a reader this product does not have in V1.'
+  admin.finance_administration.budget_tracking:
+    kind: blocked_on_l2_type
+    reason: 'Owns `admin.sit.spend_against_a_commitment`, pending on a budget signal. Founder surface 12 (financial obligation) is already served by the five finance capabilities that route on invoices and payment correspondence; what is missing here is the ledger, not the expertise.'
+    blocked_on:
+      - budget_overcommitted
+  admin.people_administration.access_and_identity_administration:
+    kind: blocked_on_l2_type
+    reason: "Needs an identity provider's account list to say anything at all. Without it there is no denominator, and an access review with no denominator is a list of guesses."
+    blocked_on:
+      - access_orphaned
+      - access_review_due
+  admin.people_administration.attendance_and_leave:
+    kind: no_runtime_trigger
+    reason: 'Leave is booked in a leave system. A calendar entry marked out-of-office is not a leave record, and treating it as one produces a balance nobody agreed to.'
+  admin.people_administration.employee_records_administration:
+    kind: no_runtime_trigger
+    reason: "A record's completeness can only be judged against a schedule of what the record must hold. That schedule is HR configuration; it is not derivable from anything this tenant has."
+  admin.people_administration.offboarding_administration:
+    kind: blocked_on_l2_type
+    reason: 'The expensive half of people administration and the one with a real clock — access left live after a leaver. Nothing in mail or calendar reports a leaver, and inferring one from correspondence going quiet would be a fabricated finding about a named person.'
+    blocked_on:
+      - access_orphaned
+  admin.people_administration.onboarding_administration:
+    kind: blocked_on_l2_type
+    reason: 'Owns `admin.sit.employee_lifecycle_event`, pending on a joiner signal. A start date exists in an offer letter and in an HR system; neither is connected, and a calendar invite for a first day is not a joiner record.'
+    blocked_on:
+      - onboarding_task_overdue
+      - start_date_approaching
+  admin.people_administration.payroll_input_administration:
+    kind: no_runtime_trigger
+    reason: 'Payroll inputs are assembled from systems of record with a hard monthly cut-off. There is no partial version of this that is safe to be approximately right about.'
+  admin.travel_and_events.event_coordination:
+    kind: out_of_v1_scope
+    reason: 'Owns `admin.sit.date_bound_logistics`, which bound the generic `admin_contact` and `relationship` lanes because the subdomain had no trigger of its own. Suppressing that situation is the whole of this deferral: five capabilities stop reaching a lane that was never about them.'
+  admin.travel_and_events.itinerary_management:
+    kind: out_of_v1_scope
+    reason: 'Reached only through `admin.sit.date_bound_logistics`. Deferred with its door.'
+  admin.travel_and_events.travel_booking:
+    kind: out_of_v1_scope
+    reason: 'Reached only through `admin.sit.date_bound_logistics`. Deferred with its door.'
+  admin.travel_and_events.travel_expense_administration:
+    kind: out_of_v1_scope
+    reason: 'Already unreachable and deliberately so — no fact records a reimbursable expense on a mail-and-calendar tenant. Reimbursement of the ordinary kind is served by `admin.finance_administration.reimbursement_processing`, which routes.'
+  admin.travel_and_events.visa_and_documentation:
+    kind: out_of_v1_scope
+    reason: 'Already unreachable and deliberately so — `date_bound_logistics` refused to serve it on the grounds that no fact records a document application. The refusal was right; this records it.'
+
+# Situations dropped from the map because the capability that owns them is deferred.
+suppressed_situations:
+  - admin.sit.date_bound_logistics
+
+# Deferred and yet still reachable — the ledger and the corpus disagree. Must be empty.
+deferral_contradictions: []
+
 # ── Blocked on Layers 1 and 2 ─────────────────────────────────────────────
 # These situations are authored and route NOTHING, because the type that would
 # trigger them is not in any shipped pack's signal_vocab. Not a defect in the
@@ -330,9 +448,15 @@ pending_l2_types:
   asset_in_custody:
     situations:
       - admin.sit.asset_in_custody
+  condition_satisfied:
+    situations:
+      - admin.sit.condition_now_satisfied
   employee_lifecycle_event:
     situations:
       - admin.sit.employee_lifecycle_event
+  goal_behind_pace:
+    situations:
+      - admin.sit.goal_behind_pace
   obligation_falls_due:
     situations:
       - admin.sit.obligation_falls_due
@@ -358,28 +482,7 @@ routed_l2_types:
 unrouted_l2_types: []
 
 # Authored but unreachable — no situation routes into them.
-orphan_capabilities:
-  - admin.compliance_and_governance.audit_support
-  - admin.compliance_and_governance.board_and_secretarial
-  - admin.compliance_and_governance.data_protection_administration
-  - admin.compliance_and_governance.licence_and_registration
-  - admin.compliance_and_governance.policy_administration
-  - admin.compliance_and_governance.statutory_filing
-  - admin.contract_and_vendor.purchase_order_management
-  - admin.facilities_and_assets.asset_issuance_and_recovery
-  - admin.facilities_and_assets.asset_register
-  - admin.facilities_and_assets.health_and_safety_administration
-  - admin.facilities_and_assets.maintenance_coordination
-  - admin.facilities_and_assets.workplace_management
-  - admin.finance_administration.budget_tracking
-  - admin.people_administration.access_and_identity_administration
-  - admin.people_administration.attendance_and_leave
-  - admin.people_administration.employee_records_administration
-  - admin.people_administration.offboarding_administration
-  - admin.people_administration.onboarding_administration
-  - admin.people_administration.payroll_input_administration
-  - admin.travel_and_events.travel_expense_administration
-  - admin.travel_and_events.visa_and_documentation
+orphan_capabilities: []
 
 # Authored but no capability's objects.yaml loads them.
 unreachable_objects: []
@@ -388,12 +491,15 @@ stats:
   l2_types_total: 26
   l2_types_routed_here: 9
   l2_types_unrouted_globally: 0
-  l2_types_pending: 4
-  situations: 18
-  capabilities: 57
+  l2_types_pending: 6
+  situations: 24
+  capabilities: 59
   capabilities_stub: 0
-  capabilities_complete: 57
-  capabilities_routed: 36
+  capabilities_complete: 59
+  capabilities_routed: 35
+  capabilities_deferred: 24
+  capabilities_unrouted_unreasoned: 0
+  situations_suppressed: 1
   objects_total: 25
   objects_core: 20
   objects_scoped: 5

@@ -228,6 +228,13 @@ class SyncSummary:
     #: `capture_event` for the reason `claim_groups` is: a conflict lives BETWEEN two events, and
     #: the covering mail's $84,000 only meets the signed PDF's $74,000 once both have landed.
     conflicts: ConflictOutcome | None = None
+    #: WHEN THIS RUN BEGAN — wall time, at the edge, for the ledger and for nothing else.
+    #: `l1_sync_runs.started_at` is a column the writer never filled, so every row in production
+    #: reports a finish with no start and "this sync took eleven minutes" was a question the
+    #: ledger could not answer. Nothing under `capture/` branches on it: it is observability, it
+    #: is read once by `api/routes._run_ledger`, and it comes from the SAME `_now` seam the poll
+    #: decision uses so a test can freeze it rather than race it.
+    started_at: datetime | None = None
 
     @property
     def skipped_not_due(self) -> bool:
@@ -467,9 +474,12 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
     # mode="recovery" = a safety re-scan of a fixed lookback window (ignores watermark,
     # doesn't move it) — anything the primary sync missed lands; dupes drop at dedup.
     since = None
+    # The run's own start, taken once, from the injectable seam rather than a bare clock so the
+    # ledger row and the cadence decision below cannot disagree about when "now" was.
+    started_at = (_now or (lambda: datetime.now(timezone.utc)))()
     saved = None
     if mode == "recovery":
-        since = datetime.now(timezone.utc) - timedelta(days=reconcile_days)
+        since = started_at - timedelta(days=reconcile_days)
     elif cursor_store is not None and mode != "backfill":
         saved = cursor_store.get(org_id, connection_id, source)
         if saved is not None:
@@ -496,7 +506,7 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                       "(cadence %ss, origin=%s)", org_id, connection_id, source,
                       decision.next_run_at.isoformat(), decision.cadence.interval_seconds,
                       decision.cadence.origin)
-            return SyncSummary(next_cursor=cursor, poll=decision)
+            return SyncSummary(next_cursor=cursor, poll=decision, started_at=started_at)
         if decision.is_catch_up:
             # An outage is paid for in PAGES, once, resuming from the stored watermark — never by
             # re-reading history the watermark already covers.
@@ -514,7 +524,7 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                 since = decision.catch_up.since
 
     sync_mode = SyncMode.backfill if mode == "backfill" else SyncMode.incremental
-    summary = SyncSummary(poll=decision)
+    summary = SyncSummary(poll=decision, started_at=started_at)
     watermark = since
     page_cursor = cursor
     # PREFETCH the next page while this one is being captured.
@@ -707,6 +717,9 @@ def backfill_drain(connector: SourceConnector, *, org_id: str, connection_id: st
                            cursor_store=None, max_pages=take, **kw)
         for f in ("scanned", "emitted", "dropped", "parked", "duplicate", "quarantined"):
             setattr(total, f, getattr(total, f) + getattr(summary, f))
+        # The FIRST round's start is the backfill's start; later rounds would report the last
+        # page's, which is the one number a duration cannot be computed from.
+        total.started_at = total.started_at or summary.started_at
         total.gated.extend(summary.gated)
         total.results.extend(summary.results)
         cursor = summary.next_cursor

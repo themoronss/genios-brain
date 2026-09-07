@@ -128,6 +128,14 @@ class ExpertBrainCatalog:
         routes = registry.get("map") or {}
         if not isinstance(routes, dict):
             raise AuthoringIntegrityError(f"registry.map must be a mapping: {registry_path}")
+        # L3.1-U2 · the OPTIONAL pattern section, in the same shape as `map`. Optional because
+        # `Domain Expertise/_tools/index.py` does not emit one yet and the generated registry is
+        # never hand-edited: a domain whose registry predates patterns must load exactly as it
+        # loaded before, with an empty mapping rather than a KeyError.
+        pattern_routes = registry.get("patterns") or {}
+        if not isinstance(pattern_routes, dict):
+            raise AuthoringIntegrityError(
+                f"registry.patterns must be a mapping: {registry_path}")
 
         capabilities: dict[str, SourceDocument] = {}
         situations: dict[str, SourceDocument] = {}
@@ -185,19 +193,25 @@ class ExpertBrainCatalog:
             if capability_id not in knowledge_manifests:
                 raise AuthoringIntegrityError(
                     f"capability {capability_id!r} has no knowledge.yaml")
-        for situation_type, route in routes.items():
-            if not isinstance(route, dict):
-                raise AuthoringIntegrityError(
-                    f"registry route {domain_id}:{situation_type} must be a mapping")
-            for situation_id in route.get("situations") or ():
-                if situation_id not in situations:
+        # Both sections are validated by the SAME loop. A pattern route that pointed at a
+        # situation nobody authored would be a route that raises inside the compile rather than
+        # at load — and the whole value of an integrity check at load time is that a broken
+        # registry cannot reach a tenant.
+        for section, table in (("map", routes), ("patterns", pattern_routes)):
+            for route_key, route in table.items():
+                if not isinstance(route, dict):
                     raise AuthoringIntegrityError(
-                        f"registry route {domain_id}:{situation_type} references missing "
-                        f"situation {situation_id!r}")
+                        f"registry {section} route {domain_id}:{route_key} must be a mapping")
+                for situation_id in route.get("situations") or ():
+                    if situation_id not in situations:
+                        raise AuthoringIntegrityError(
+                            f"registry {section} route {domain_id}:{route_key} references "
+                            f"missing situation {situation_id!r}")
 
         return DomainRecord(
             domain=domain_doc,
             routes=freeze_mapping(routes),
+            pattern_routes=freeze_mapping(pattern_routes),
             capabilities=MappingProxyType(capabilities),
             situations=MappingProxyType(situations),
             objects=MappingProxyType(objects),

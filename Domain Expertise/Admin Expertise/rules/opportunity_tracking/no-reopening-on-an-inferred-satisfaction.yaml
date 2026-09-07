@@ -1,0 +1,127 @@
+# The gate that keeps founder surface 14 honest. It spans two objects because neither can see the
+# condition: `commitment` holds the sentence the counterparty parked this on, `request` is the
+# reopening we would issue, and the fact that connects them — whether the condition is OBSERVED to
+# hold or merely LIKELY to — belongs to neither.
+
+identity:
+  id: admin.rule.opportunity_tracking.no_reopening_on_an_inferred_satisfaction
+  name: No reopening on an inferred satisfaction
+  kind: rule
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.opportunity_tracking
+  subdomain: executive_support
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A reopening may assert that a condition has been met only when the satisfaction was
+    OBSERVED. A satisfaction inferred from circumstance — a relative reading, a likely one, a
+    pattern — may produce a question and may never produce a statement.'
+  answers:
+  - May this opening be reopened as a fact, or only as a question?
+  - What is the difference between a satisfaction we saw and one we worked out?
+  not:
+  - A rule about whether the opening is worth pursuing. It gates the CLAIM, not the pursuit.
+  - A confidence threshold. Thresholds are Layer 4's arithmetic; this is a categorical gate.
+
+rule:
+  statement: 'An opening whose satisfaction is not carried as an OBSERVED fact with its own
+    evidence MUST NOT produce any output asserting that the condition has been met, that
+    circumstances have changed, or that the timing is now right. The permitted output is a
+    question: their condition, restated, and an explicit statement that whether it now holds is
+    not something this system can see.'
+  spans:
+  - admin.obj.core.commitment
+  - admin.obj.core.request
+  when:
+  - {has_obs: decision_deferred}
+  then: 'Suppress every assertive rendering. Emit the parked condition and the elapsed time, and
+    require the reader to supply the satisfying fact before any message is drafted. Where a
+    satisfaction signal exists but carries a relative or inferred certainty, it is treated the
+    same way as no signal at all for the purposes of this gate.'
+  severity: blocking
+  why: 'The counterparty is the single person best placed to know whether their own condition has
+    been met. A message telling them it has, when it has not, does not read as an error — it reads
+    as someone who has not been paying attention pretending to have been, which is precisely the
+    opposite of the impression the whole surface exists to create. The asymmetry is brutal and it
+    is why this is a gate rather than a guideline: a correct reopening earns a reply, and a single
+    confident wrong one ends the correspondence and takes the credibility of every future
+    reopening with it. It is also the failure an eager system produces BY DEFAULT, because
+    "probably true" and "true" render identically once the sentence is written.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'THE READER SUPPLIED THE FACT. Where a human has named the satisfying evidence, the assertion
+    is theirs and not the system''s, and the gate has done its job by requiring them to make it.'
+  - 'THE COUNTERPARTY SAID SO. Where the satisfaction arrives in their own message — "we closed
+    the round" — it is observed, not inferred, and the reopening may state it. This is the case
+    the gate is waiting for and the reason the `condition_satisfied` emitter must carry the
+    evidence span rather than a verdict.'
+  - 'THE CONDITION WAS A DATE. "Come back after Q3" is satisfied by the calendar, which is the one
+    piece of evidence this system holds with certainty and the one case where an assertion needs
+    no reader. Note that a date is the only such case; every other condition is about the world.'
+
+objects_used:
+- admin.obj.core.commitment
+- admin.obj.core.request
+- admin.obj.core.deadline
+
+outcomes:
+- No compiled output claims a condition has been met on evidence the system did not observe.
+- Reopenings on inferred satisfactions arrive as questions with the original condition attached.
+
+failure_modes:
+- 'READ AS "DO NOT SURFACE". The rule gates the claim, not the opening. An opening suppressed
+  entirely because its satisfaction is uncertain is the whole surface switched off, which is a
+  worse outcome than the confident sentence it was preventing.'
+- 'SATISFIED BY HEDGING. "It looks like things may have changed" is the assertion with a hedge
+  bolted on; it still puts our reading of their situation in the message. The permitted output is
+  a question about their condition, not a softened statement about their circumstances.'
+
+limits:
+- Rests on the satisfaction signal carrying a certainty at all. Until `condition_satisfied` ships,
+  every satisfaction is treated as inferred and the gate is always closed — which is the correct
+  default and not a bug.
+- Says nothing about the rhetorical-condition case. A rhetorical condition can be observed to be
+  satisfied and still must not be reopened; that is the playbook's step 2 and needs a human.
+
+variants:
+- applies_to: regulated
+  change: The assertion is barred outright, satisfied or not, unless the evidence is on the
+    record and disclosable.
+  why: A statement about a counterparty's circumstances in written correspondence is discoverable,
+    and being right is not a defence against having written it.
+
+metrics:
+- name: false_opening_rate
+  unit: percent
+  description: Share of surfaced openings the reader judged never to have been live. The rule
+    drives the assertive subset of this to zero; the rest is the playbook's step 2.
+  direction: lower_is_better
+- name: asserted_satisfaction_count
+  unit: count
+  description: Compiled outputs that asserted a condition was met. Expected to be zero until the
+    satisfaction emitter ships, and a non-zero value is a gate failure rather than a metric.
+  direction: lower_is_better
+
+references:
+- title: Administrative correspondence practice — never tell them their own news
+  kind: practitioner
+  note: The oldest rule in an executive office and the one most often broken by tooling, because
+    tooling optimises for a reason to send and a counterparty's own circumstances are the easiest
+    one to manufacture.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-09-07'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Written against the certainty tiers Layer 2 v2 carries: an ABSOLUTE satisfaction is observed,
+    a RELATIVE one is worked out from circumstance, and an UNKNOWABLE one is typed absence. Only
+    the first clears this gate, and until the emitter exists every satisfaction is treated as the
+    second. Stated as a categorical gate rather than a confidence floor on purpose — a floor
+    invites tuning, and the thing being gated is not a matter of degree.

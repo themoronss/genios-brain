@@ -66,6 +66,19 @@ CONFIDENCE_FLOOR_KEY = "confidence_floor_bp"
 #: Recorded in `ReasoningDecision.uncertainty` when the floor converts a decision into an ask.
 BELOW_FLOOR_REASON = "below_confidence_floor"
 
+#: Capability metadata carrying Layer 3's typed consumers — `reason/adapters/expertise.py`'s weld
+#: (doc 03). The Decision Maker reads three things out of it and computes nothing of its own: the
+#: quoted citations, the per-rule verdicts it turns into `constraints_applied` once candidate ids
+#: exist, and whether two authored rules that both fired contradict each other.
+WELD_KEY = "weld"
+
+#: Recorded in `uncertainty` when two rules that BOTH fired are declared in tension with each
+#: other. Doc 03: *"both fire; the contradiction surfaces on the decision as a named conflict —
+#: L4 abstains rather than picking silently"*. Abstention here is DEFER, which is the outcome this
+#: kernel already uses for "the ranked field is real, nothing is selected, ask a human" — the same
+#: shape the confidence floor produces, for the same reason.
+RULE_CONFLICT_REASON = "corpus_rule_conflict"
+
 
 def _authority(request: Any, key: str, default: str) -> str:
     value = request.capability.metadata.get(key, default)
@@ -391,6 +404,7 @@ class DecisionMaker:
         it cannot re-earn.
         """
         uncertainty = list(uncertainty)
+        weld = request.capability.metadata.get(WELD_KEY) or {}
         if terminal is None:
             candidates, confidence_bp = build_candidates(request, results, degraded)
             outcome = (DecisionOutcome.DECISION if any(
@@ -405,6 +419,17 @@ class DecisionMaker:
                 # requests input rather than inventing the missing fact.
                 outcome = DecisionOutcome.DEFER
                 uncertainty.append(f"{BELOW_FLOOR_REASON}:{confidence_bp}<{floor_bp}")
+            if outcome == DecisionOutcome.DECISION and weld.get("abstain_on_conflict"):
+                # Two pieces of authored doctrine both applied and the corpus itself says they
+                # disagree. Selecting one of them would be this kernel arbitrating an expert
+                # dispute it has no basis to settle, silently. The field stays visible and
+                # nothing is selected.
+                outcome = DecisionOutcome.DEFER
+                uncertainty.extend(
+                    f"{RULE_CONFLICT_REASON}:{conflict['left']}|{conflict['right']}"
+                    for conflict in weld.get("conflicts") or ()
+                    if conflict.get("left_role") == "fired_rule"
+                    and conflict.get("right_role") == "fired_rule")
         else:
             candidates = ()
             confidence_bp = calculate_confidence(results, request, degraded)
@@ -413,6 +438,12 @@ class DecisionMaker:
         selected = next((item for item in candidates
                          if item.disposition == CandidateDisposition.ELIGIBLE), None)
         play_by_id = {play.play_id: play for play in request.capability.plays}
+        # LAYER 3's CONTRIBUTION, ATTACHED WHERE IT BECOMES ANSWERABLE. The citations were chosen
+        # and quoted at the weld; the constraint APPLICATIONS could not be, because a rule can
+        # only name the candidate it eliminated once the candidate exists, and candidate ids are
+        # minted from candidate content a few lines above. Imported inside the function because
+        # `reason.adapters` imports the orchestrator, which imports this module.
+        from genios_engine.reason.adapters.rule_compiler import constraint_applications
         decision = ReasoningDecision(
             outcome=outcome,
             capability_id=request.capability.capability_id,
@@ -429,11 +460,15 @@ class DecisionMaker:
             outcome_window_days=(play_by_id[selected.play_id].window_days
                                  if outcome == DecisionOutcome.DECISION
                                  and selected is not None else None),
+            citations=tuple(weld.get("citations") or ()),
+            constraints_applied=constraint_applications(
+                weld.get("rule_verdicts") or (), candidates),
         )
         return DecisionSynthesis(candidates=candidates, decision=decision)
 
 
-__all__ = ["BELOW_FLOOR_REASON", "CONFIDENCE_AUTHORITY", "CONFIDENCE_AUTHORITY_KEY",
+__all__ = ["BELOW_FLOOR_REASON", "RULE_CONFLICT_REASON", "WELD_KEY",
+           "CONFIDENCE_AUTHORITY", "CONFIDENCE_AUTHORITY_KEY",
            "CONFIDENCE_FLOOR_KEY", "DECISION_MAKER_VERSION",
            "PRIORITY_AUTHORITY", "PRIORITY_AUTHORITY_KEY", "DecisionMaker", "DecisionSynthesis",
            "ProposedCandidate", "aggregate_evidence", "build_candidate_objects",

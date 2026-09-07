@@ -1,0 +1,144 @@
+identity:
+  id: admin.heu.opportunity_tracking.a_satisfied_condition_has_a_short_half_life
+  name: A satisfied condition has a short half-life
+  kind: heuristic
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.opportunity_tracking
+  subdomain: executive_support
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: A condition that becomes true is worth acting on for days, not months, because the
+    evidence that satisfied it is public and everyone else who was waiting on it can see it too.
+  answers:
+  - How long is a reopening worth sending after the thing they were waiting on happened?
+  - Why does a correct opening stop being worth anything?
+  - What should be spent to shorten the gap between the evidence and the message?
+  not:
+  - A rule about how often to check dormant openings. This is about what happens after one moves.
+  - A claim that speed beats quality. The evidence still has to be named; it just has to be named
+    this week.
+
+heuristic:
+  statement: 'Act on a satisfied condition while the evidence is still fresh. A reopening sent in
+    the days after the thing became true is a person who was paying attention; the same message a
+    month later is a person who read the news, and the difference is legible to the recipient.'
+  why: 'The condition was never really about the condition. It was a way of saying "not now,
+    and here is what would change my mind" — so the moment the thing happens, the counterparty
+    knows their own sentence is now due. For a short window they are expecting to hear from
+    somebody, and the first person to arrive with their own words quoted back is the one who
+    inherits the goodwill of having remembered. After that window the same message competes with
+    everyone else who noticed, and it reads as a reaction to public information rather than as the
+    resumption of a conversation. The asymmetry is what makes this worth optimising: the cost of
+    sending three days early is nothing, and the cost of sending three weeks late is the whole
+    value of having waited four months.'
+  confidence_bp: 8000
+  applies_when: 'A condition attached to a future move by the counterparty is observed to hold,
+    and the evidence for it is something they can also see.'
+  breaks_down_when: 'Three regimes, and the first is the one that will bite.
+
+    ONE — THE EVIDENCE IS PRIVATE. If what satisfied the condition is known only to us — an
+    internal milestone, a hire not yet announced — nobody else is racing and the half-life is long.
+    Speed then buys nothing and the cost of arriving before we can say the thing publicly is real.
+
+    TWO — THE CONDITION WAS RHETORICAL. "Come back when you have a hundred customers" from someone
+    who meant no will satisfy eventually, and arriving fast makes the misreading more conspicuous,
+    not less. Freshness amplifies whatever the reading was; it does not improve it.
+
+    THREE — A SCHEDULED MOMENT IS COMING. Where the counterparty has a known cycle — a board
+    meeting, a quarter start, a programme intake — the message is worth timing to that rather than
+    to the evidence. The half-life argument is about attention, and their attention is on a
+    calendar we can see.'
+  reads:
+  - admin.obj.core.commitment
+  - admin.obj.core.request
+  - thread.last_inbound
+  - relationship.nature
+  contradicts:
+  # Momentum decays in days is about a live thread; this is about a dead one. They pull in
+  # opposite directions on the same question — how long is a gap worth acting across.
+  - admin.heu.follow_up_coordination.momentum_decays_in_days
+
+when_to_use:
+  situations:
+  - admin.sit.dormant_commitment_reopenable
+  conditions:
+  - {has_obs: decision_deferred}
+  signals:
+  - positive_reply
+  - next_step_agreed
+  do_not_use_when:
+  - The satisfaction is inferred rather than observed; speed on a guess is a faster mistake.
+  - The evidence is not something the counterparty can independently verify.
+  - The relationship has an explicit next contact date already agreed.
+
+objects_used:
+- admin.obj.core.commitment
+- admin.obj.core.request
+- admin.obj.core.deadline
+
+outcomes:
+- Reopenings go out in days rather than being batched into a monthly review.
+- The gap between an observed satisfaction and the message is measured and treated as a cost.
+
+failure_modes:
+- 'READ AS PERMISSION TO SKIP THE EVIDENCE. Speed without the named evidence produces "checking in
+  — anything changed?", which is the message this whole capability exists to avoid sending.'
+- 'APPLIED TO THE DORMANT CASE. An opening nobody has observed to move has no half-life running;
+  urgency there is manufactured, and it produces a weekly nag about a four-month-old sentence.'
+- 'USED TO JUSTIFY AUTOMATIC SENDING. The window is days, not minutes. There is time for a human
+  to read it, and the errors this capability makes are the kind only a human catches.'
+
+limits:
+- Says nothing about which of several satisfied conditions to act on first.
+- Assumes the counterparty is still in the role they held when they set the condition. A person
+  who has moved carries no obligation to a sentence they said on behalf of a previous employer.
+- Silent on internal openings, where the arithmetic of attention is different and a stale
+  reopening costs almost nothing.
+
+variants:
+- applies_to: startup_lean
+  change: Fold the reopening into whatever message is already going out that week rather than
+    sending its own, unless the evidence is genuinely public and dated.
+  why: With no administrative layer the scarce resource is founder attention, not counterparty
+    goodwill, and a separate message costs more here than the freshness buys.
+- applies_to: executive_office
+  change: Draft on the day, send on the principal's next correspondence slot.
+  why: The signature matters more than the day; a reopening sent by an assistant loses the thing
+    that made remembering worth anything.
+
+metrics:
+- name: time_from_satisfaction_to_reopening
+  unit: days
+  description: Days between the observed satisfaction and the message going out. The half-life
+    made countable.
+  direction: lower_is_better
+- name: reopening_reply_rate
+  unit: percent
+  description: Share of reopenings that get a reply, split by how many days after the evidence
+    they were sent. The pairing is what tests this heuristic rather than assuming it.
+  direction: higher_is_better
+
+references:
+- title: Administrative practice — the parked conversation
+  kind: practitioner
+  note: Every well-run executive office keeps a list of conditions other people set. Almost none
+    of them write down that the list has a clock on it, which is why the list is usually reviewed
+    monthly and the value is usually gone.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-09-07'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: >
+    The statement is the product line for founder surface 14 and is written to survive being read
+    out loud on a card, because the citation binder quotes heuristics verbatim. The
+    `breaks_down_when` regimes are the part that matters in review: the private-evidence case is
+    common in early-stage fundraising, where the thing that satisfies the condition is a term
+    sheet nobody has announced.

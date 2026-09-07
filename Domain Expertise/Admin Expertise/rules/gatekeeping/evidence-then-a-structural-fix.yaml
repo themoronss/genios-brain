@@ -1,0 +1,134 @@
+# Founder surface 7's tone warning, authored as a gate rather than left to the render hint.
+#
+# It spans `approver` and `approval` because the thing being constrained sits between them: the
+# approval knows it is waiting, the approver knows they are the one waiting on, and the SENTENCE
+# that turns those two facts into a statement about somebody's conduct belongs to neither.
+
+identity:
+  id: admin.rule.gatekeeping.evidence_then_a_structural_fix
+  name: Evidence, then a structural fix — never a judgement about a person
+  kind: rule
+  domain: admin
+  scope: capability
+  owner_capability: admin.executive_support.gatekeeping
+  subdomain: executive_support
+  version: 1.0.0
+  status: stable
+
+purpose:
+  statement: 'A congestion finding may state the evidence and propose a change to the routing. It
+    may not characterise a person — not the reader, not a named approver, not a team.'
+  answers:
+  - How may a bottleneck be reported to the person who is the bottleneck?
+  - What is the permitted shape of the recommendation?
+  not:
+  - A rule about whether to surface congestion. Surfacing it is the point; this governs the words.
+  - A politeness convention. It bars a class of CLAIM, not a register of speech.
+
+rule:
+  statement: 'An output built on a congestion or queue reading MUST state the observed counts and
+    MUST NOT contain an evaluative claim about any person''s conduct, capacity or speed — the
+    reader''s included. The permitted recommendation is structural: a change to who may decide
+    what, stated as one sentence. Where the evidence supports no such change, the correct output
+    says what would be needed to propose one.'
+  spans:
+  - admin.obj.core.approver
+  - admin.obj.core.approval
+  when:
+  - {path: period.counterparties_awaiting_us, op: ">=", value: 5}
+  then: 'Suppress every evaluative rendering of the reader or of a named approver. Emit the counts,
+    the oldest wait, and at most one structural proposal. Where no per-person breakdown exists on
+    the row, no individual may be named at all.'
+  severity: blocking
+  why: 'The reader of this card is almost always the person the queue is in front of, and they
+    already know they are busy. A sentence telling them they are the bottleneck adds no
+    information and converts a structural observation into a personal one — at which point the
+    only available response is defensive, and the product has spent its credibility to tell
+    somebody something they knew. The structural framing is not a softening of the same message:
+    it is a DIFFERENT message, because a queue in front of one desk is a routing fact, and routing
+    can be changed by an act the reader can take this afternoon. Naming an individual approver is
+    worse still, because nothing on the row splits the queue by person: the attribution would be
+    invented, and it would be invented about a colleague.'
+  enforced_by: L4_constraint
+  exceptions:
+  - 'THE READER ASKED WHO. A direct question about where approvals are stacking is a request for
+    an attribution, and answering it with what the data supports — including that it supports
+    nothing per-person — is a service rather than a judgement.'
+  - 'AN EXPLICIT STANDING DELEGATION EXISTS. Where the organisation has stated that a class of
+    decision belongs to a named person, saying that decisions in that class are waiting on them is
+    a statement about the arrangement, not about them.'
+
+objects_used:
+- admin.obj.core.approval
+- admin.obj.core.approver
+- admin.obj.core.request
+
+outcomes:
+- No congestion card contains a second-person claim about the reader's conduct or capacity.
+- No individual approver is named on a reading that carries no per-person evidence.
+- Every congestion card ends in a structural proposal or an explicit statement of what is missing.
+
+failure_modes:
+- 'THE HEDGE. "It looks like a lot may be waiting on you" carries the judgement and a softener.
+  The rule bars the claim, and a claim with an adverb in front of it is the claim.'
+- 'THE GENERIC DELEGATION SUGGESTION. "Consider delegating more" is structural in form and empty
+  in content — it proposes no specific class of decision and cannot be acted on. It satisfies the
+  letter of the rule and defeats its purpose.'
+- 'SUPPRESSING THE COUNTS. Reading this as "say less about congestion" removes the evidence and
+  leaves the advice, which is the exact inversion: the numbers are what the reader can check.'
+
+limits:
+- Cannot distinguish a queue caused by routing from one caused by volume. Both look identical on
+  the row, and the structural proposal is right for the first and useless for the second.
+- Silent on internal escalation, where naming who a decision is waiting on is the normal and
+  correct content of a status update.
+
+variants:
+- applies_to: executive_office
+  change: The structural proposal is addressed to the principal's chief of staff rather than to
+    the principal, because the person who can change the routing is not always the person queued
+    behind it.
+  why: Delegation thresholds are set by whoever holds the authority to set them, and in this model
+    that is a stated arrangement rather than an ad-hoc decision.
+- applies_to: regulated
+  change: A delegation proposal must name the authority under which the delegate would act.
+  why: In a governed context a decision taken by somebody without stated authority is a finding,
+    and the fix must not create one.
+
+metrics:
+- name: personal_attribution_count
+  unit: count
+  description: Congestion outputs containing an evaluative claim about a person. Expected zero; a
+    non-zero value is a gate failure rather than a metric to trend.
+  direction: lower_is_better
+- name: structural_proposal_rate
+  unit: percent
+  description: Share of congestion cards ending in a specific, actionable change to who may decide
+    what — as against a generic suggestion to delegate.
+  direction: higher_is_better
+
+references:
+- title: The Goal
+  kind: book
+  author: Eliyahu M. Goldratt
+  note: The constraint is a property of the system, not of the person standing at it. The whole
+    argument for structural framing is here and it predates every tool that gets it wrong.
+- title: Executive office practice — reporting congestion upward
+  kind: practitioner
+  note: The standard discipline is evidence, then one proposal. It is almost never written down,
+    which is why software reintroduces the personal framing on every attempt.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-09-07'
+  review_status: approved
+  confidence: provisional
+  completeness: complete
+  notes: >
+    Authored net-new with `admin.sit.approvals_converging_on_one_person`, and the predicate is
+    that situation's own gate so the rule fires exactly where the reading is taken. The reason it
+    is `blocking` rather than a render note: the natural language for a queue is the language of
+    blame, and a render hint is an instruction to a model while a constraint is a check on what
+    the model produced.

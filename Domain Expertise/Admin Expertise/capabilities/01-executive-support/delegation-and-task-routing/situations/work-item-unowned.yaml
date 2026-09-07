@@ -1,0 +1,135 @@
+# FOUNDER SURFACE 6 — OWNERSHIP — read as a TYPED ABSENCE, and read from the only absence on this
+# anchor that is real.
+#
+# THE ABSENCE THE SURFACE ASKS FOR IS NOT AVAILABLE, and pretending otherwise would have produced
+# a route that can never fire. `commitment.owed_to` looks like the field for "nobody owns this",
+# and `context/outreach_situations.py::read_overdue_commitments` writes it as
+# `held.get("_name") or "this contact"` — a fallback string, on every row. So `{absent:
+# commitment.owed_to}` is FALSE for every commitment that has ever existed, and a situation gated
+# on it would sit in the registry looking like coverage and compile nothing, forever. That is the
+# exact failure the pending mechanism exists to prevent, and it is worth writing down here rather
+# than discovering from a dashboard of zeroes.
+#
+# `commitment.action` is written CONDITIONALLY — `if action:` on the same function — so its
+# absence is a genuine fact about the record, and it is an ownership failure in the only sense
+# that matters operationally: an obligation nobody can name is an obligation nobody can be handed.
+# A chase needs a subject, an assignment needs a thing to assign, and a closure needs something to
+# say was done. None of the three is available, so the item ages and is never worked.
+
+identity:
+  id: admin.sit.work_item_unowned
+  name: Work Item Unowned
+  domain: admin
+  owner_capability: admin.executive_support.delegation_and_task_routing
+  version: 1.0.0
+  status: stable
+
+description: >
+  A promise is past its own stated date and the record does not carry what was promised. Nobody
+  can be handed it, because there is nothing to hand over; nobody can close it, because there is
+  nothing to say was done.
+
+  This is not a low-priority version of an overdue item. It is the shape that goes missing.
+  `admin.sit.promise_past_its_date` deliberately refuses to route without the text — "you owe them
+  something" is not an instruction — and that refusal is correct and leaves this class of item
+  with no card at all. This file is the other half of that decision: the item still exists, it is
+  still late, and the useful output is not a chase but a question about what it was.
+
+  The failure this file prevents is a judgement about a person. There is no owner on the row and
+  no text on the row — that IS the finding — so any output naming somebody has invented them. The
+  correct output names the counterparty and the date, says plainly that the record does not say
+  what was promised, and offers the smallest structural fix there is: write it down, or close it.
+
+matches:
+  l2_situation_types:
+    - commitment_overdue
+  scope: person
+  when:
+    # The date has actually passed. `commitment.days_overdue` is written by the same pass that
+    # mints this anchor, so its presence is the anchor's own guarantee rather than an assumption.
+    - exists: commitment.days_overdue
+    # THE FINDING. `commitment.action` is the extractor's capture of what was promised and it is
+    # written only when there was something to write, so this absence is a fact about the record
+    # rather than about our sight. Where the adapter cannot license the negative inference it
+    # abstains and this situation stays silent, which is the behaviour that keeps it honest.
+    - absent: commitment.action
+
+also_serves:
+  - admin.executive_support.commitment_tracking
+  - admin.meeting_operations.action_item_tracking
+
+objects:
+  load:
+    - admin.obj.core.action_item
+    - admin.obj.core.commitment
+  optional:
+    - admin.obj.core.deadline
+    - admin.obj.core.request
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.asset
+    - admin.obj.core.access_right
+
+priority_bp: 6400
+typical_duration_days: 7
+
+signals_of_progress:
+  - next_step_agreed
+  - followup_sent
+  - document_sent
+
+signals_of_decay:
+  - decision_deferred
+  - timeline_slip
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    The headline is what is missing from the record, not the missed date.
+
+    Headline: that a promise to this counterparty is past its date and the record does not say
+    what it was.
+
+    Situation: name the counterparty and how far past the date it is, then say plainly that what
+    was promised is not on record, so the item cannot be assigned, chased or closed as it stands.
+    Do NOT guess the content of the promise, do not name a likely owner, and do not describe the
+    item as neglected or dropped — an unrecorded obligation is not evidence of anybody's conduct.
+
+    Artifact: the smallest structural fix available — one line to the counterparty asking what
+    they are still expecting from us, which both recovers the content and hands them the chance to
+    say it is no longer needed. If that message would be inappropriate, the alternative is a note
+    closing the item with a reason, not a reminder about a thing nobody can state.
+  fallback:
+    headline: "A promise to {entity} — no record of what it was"
+    situation: >-
+      Something we promised {entity} is past its date and the record does not say what it was, so
+      it cannot be assigned, chased or closed as it stands.
+    # A fact about our own record rather than about the world. Nothing here can be instructed
+    # about until a human supplies what was promised.
+    states_absence: true
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-09-07'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-09-07'
+  notes: >
+    THE ENGINE CHANGE THIS SITUATION IS WAITING FOR, stated where the next reader will find it:
+    `context/outreach_situations.py::read_overdue_commitments` writes
+    `("commitment.owed_to", held.get("_name") or "this contact", "string")`. Substituting a
+    placeholder for a missing counterparty destroys the distinction between "owed to nobody we can
+    name" and "owed to this contact", and it is the single change that would let founder surface 6
+    be read as the surface actually describes it — omit the fact when the name is unknown, and let
+    typed absence do its job. Until then the ownership reading available here is the one authored
+    above, and it is narrower than the surface.
+
+    `commitment.days_overdue` and `commitment.action` are both written by that same function;
+    `action` conditionally, which is what makes its absence a finding. The `absent:` predicate is
+    the L2.5.5 typed-absence path — TRUE only under a coverage epoch that stands, UNKNOWN where
+    the field is merely missing — so this cannot fire on an org whose mailbox was never connected.
+
+admission:
+  accepted_content_hash: 8a28dc441e579fe6377b298a77e81f317216c4c84eb5ee738c16dcd012f03067

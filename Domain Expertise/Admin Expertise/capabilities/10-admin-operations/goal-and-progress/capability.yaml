@@ -1,0 +1,124 @@
+# FOUNDER SURFACE 13, AND THE ONLY CAPABILITY IN THIS CORPUS WHOSE PRIMARY V1 OUTPUT IS A
+# QUESTION. Everything else here reads evidence the tenant already generates. This reads evidence
+# against an INTENTION, and an intention is not evidence — it has to be stated by a person, once,
+# and stored. Where it has not been, the honest output is not a smaller finding or a softer one.
+# It is a single ask, and then silence.
+#
+# The temptation this file exists to resist is the invented benchmark. Every input needed to
+# manufacture one is present — a window, a count, a previous window — and a system that divides
+# two of them and calls the result "behind" has fabricated a target the founder never set and
+# will be measured against it. That is worse than saying nothing, because it is confidently wrong
+# about what the reader was trying to do.
+
+identity:
+  id: admin.admin_operations.goal_and_progress
+  name: Goal & Progress
+  domain: admin
+  subdomain: admin_operations
+  version: 1.0.0
+  status: stable
+  stub: false
+
+description: >
+  Reading observed evidence against a target somebody actually stated. A goal exists here only as
+  data — a thing the founder said they were trying to do, with a number or a date attached — and
+  the capability's whole discipline is refusing to proceed without one while making it trivially
+  easy to supply.
+
+question: "What did we say we were trying to reach by when — and does the evidence say we are on pace?"
+
+outcomes:
+- 'A stated goal on the record, with its target and its date, in the founder''s own words. The
+  first and often only output: the capability''s job before any goal exists is to obtain one.'
+- 'A pace reading that names the evidence it used and the evidence it could not see. "Fourteen of
+  the thirty introductions you said you needed" is a reading; "you are behind" is a verdict
+  nobody can check.'
+- 'One ask, then silence. Where no goal has been stated, the ask is made once and recorded as
+  made. A capability that re-asks weekly is a capability the founder switches off, and it takes
+  the surfaces either side of it when it goes.'
+- 'The unmeasurable goal named as unmeasurable rather than approximated. "Build the brand" has no
+  evidence path in this system, and saying so is the useful output — it tells the founder which
+  of their goals this product can help with and which it cannot.'
+- 'A goal explicitly retired when its date passes. The negative outcome: a target whose date has
+  gone is either met, missed or abandoned, and leaving it live means every later reading is
+  measured against a thing nobody is still trying to do.'
+
+failure_modes:
+- 'INVENTING THE BENCHMARK. The defining failure. A pace computed against a rate derived from the
+  tenant''s own history is a target they never set, and reporting it as progress makes the system
+  the author of a standard it then holds them to.'
+- 'ASKING REPEATEDLY. An unanswered ask restated every week reads as nagging about something the
+  founder has already decided not to do. The ask is a one-time act with a recorded outcome, and
+  "declined to state one" is a valid outcome.'
+- 'MEASURING WHAT IS COUNTABLE RATHER THAN WHAT WAS SAID. Where the stated goal is revenue and the
+  only countable evidence is meetings, reporting meetings as progress substitutes a proxy for the
+  target without saying so. Name the gap; do not fill it.'
+- 'CONFUSING A DEADLINE WITH A TARGET. A date on its own is not a goal — the goal is the thing to
+  be true by that date. Tracking the date alone produces a countdown, which is pressure without
+  information.'
+- 'READING A FLAT WINDOW AS A STALL. Most goals worth stating do not move linearly, and a fortnight
+  with no observable progress is the normal texture of a quarter. A pace reading that fires on any
+  flat window is a weekly false alarm and teaches the reader to stop opening it.'
+- 'ATTRIBUTING THE MISS. Explaining why a goal is behind requires causal evidence this system does
+  not have. The reading stops at the gap; the cause is the founder''s to supply.'
+
+kpis:
+- name: stated_goal_coverage
+  unit: percent
+  description: Share of active periods with at least one goal stated by a human. The number this
+    capability lives or dies by — every reading below is arithmetic over what was stated.
+  direction: higher_is_better
+- name: ask_repetition_count
+  unit: count
+  description: How many times the one-time ask was made for the same period. Anything above one is
+    a defect, and it is the defect that gets the whole surface muted.
+  direction: lower_is_better
+- name: reading_with_named_evidence_rate
+  unit: percent
+  description: Share of pace readings that state which evidence they used and which they could
+    not see.
+  direction: higher_is_better
+- name: invented_benchmark_count
+  unit: count
+  description: Readings that compared against a target no human stated. Expected to be zero; a
+    non-zero value is a gate failure, not a metric.
+  direction: lower_is_better
+
+handoffs:
+  upstream:
+  - admin.admin_operations.admin_analytics
+  - admin.executive_support.commitment_tracking
+  downstream:
+  - admin.admin_operations.process_improvement
+  - admin.executive_support.briefing_and_preparation
+  parallel:
+  - admin.admin_operations.service_level_management
+
+applies_to:
+  models: [in_house, executive_office, startup_lean, distributed, hybrid]
+  offerings: [assurance, coordinative]
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: harsh
+  last_updated: '2026-09-07'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-09-07'
+  notes: >
+    Filed under admin_operations rather than executive_support because its evidence is the period
+    aggregate the tenant node carries — `period.*`, written by `context/periodic.py` — and its
+    siblings there already read the same window. The goal belongs to the founder; the arithmetic
+    belongs to the function that measures itself.
+
+    Two situations and only one of them routes. `goal_has_no_evidence` is live on
+    `admin_period_review` and its output is the one-time ask. `goal_behind_pace` is pending,
+    because a pace reading needs a stated target to exist as data and no store holds one — a
+    `goal` object and its L2 emitter are both unbuilt, and authoring the noun before the writer
+    would put a thin object in the library and a target-shaped hole in the compile.
+
+    No numbers, by contract: what counts as behind, and how flat a window has to be, are Layer 4's.
+
+admission:
+  accepted_content_hash: 885f103a95137988602c360710a749cc6006c9c3a09ddd8c64cd5b3b33d9d8b5
