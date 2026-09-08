@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="The GeniOS Globe architecture against the first live run: layer by layer, what was expected, what shipped, and the exact units that produce the wrong card.">
+<title>Expected vs Reality</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root{
+  --bg:#f4f6f8; --surface:#fff; --surface-2:#eef2f5; --ink:#16202b; --muted:#5b6b7c;
+  --line:#d9e1e8; --line-soft:#e8eef2;
+  --flag:#a03a2e; --flag-soft:#f8e6e2; --ok:#0c6a67; --ok-soft:#dcefee;
+  --warn:#8a5a12; --warn-soft:#f7edda;
+  --shadow:0 1px 2px rgba(22,32,43,.06),0 8px 24px -16px rgba(22,32,43,.28);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1319; --surface:#141c24; --surface-2:#1b242e; --ink:#e2e9f0; --muted:#93a4b5;
+  --line:#24303c; --line-soft:#1d2732;
+  --flag:#ec8a7c; --flag-soft:#341c18; --ok:#4dbfb5; --ok-soft:#10312f;
+  --warn:#e0ae5c; --warn-soft:#332715;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -18px rgba(0,0,0,.8);
+}}
+:root[data-theme="dark"]{
+  --bg:#0d1319; --surface:#141c24; --surface-2:#1b242e; --ink:#e2e9f0; --muted:#93a4b5;
+  --line:#24303c; --line-soft:#1d2732;
+  --flag:#ec8a7c; --flag-soft:#341c18; --ok:#4dbfb5; --ok-soft:#10312f;
+  --warn:#e0ae5c; --warn-soft:#332715;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.6}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+header{padding:56px 0 34px;border-bottom:1px solid var(--line)}
+.kicker{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+h1{font-family:'Source Serif 4',Georgia,serif;font-weight:600;font-size:clamp(30px,4.6vw,46px);
+  line-height:1.1;letter-spacing:-.02em;margin:0 0 14px}
+.lede{font-family:'Source Serif 4',Georgia,serif;font-size:19px;line-height:1.55;color:var(--muted);max-width:70ch;margin:0 0 20px}
+.meta{display:flex;flex-wrap:wrap;gap:8px}
+.pill{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 10px;border-radius:100px;
+  border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.pill b{color:var(--ink)}
+section{padding:40px 0;border-bottom:1px solid var(--line-soft)}
+h2{font-family:'Source Serif 4',Georgia,serif;font-weight:600;font-size:27px;letter-spacing:-.015em;margin:0 0 6px}
+h3{font-size:17px;font-weight:600;margin:30px 0 8px;letter-spacing:-.01em}
+.sub{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+p{margin:0 0 14px;color:var(--ink)}
+p.q{color:var(--muted)}
+code{font-family:'IBM Plex Mono',monospace;font-size:.85em;background:var(--surface-2);
+  border:1px solid var(--line-soft);border-radius:4px;padding:1px 5px}
+.callout{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--flag);
+  border-radius:0 10px 10px 0;padding:18px 20px;margin:20px 0;box-shadow:var(--shadow)}
+.callout.ok{border-left-color:var(--ok)} .callout.warn{border-left-color:var(--warn)}
+.callout h4{margin:0 0 8px;font-size:14px;font-family:'IBM Plex Mono',monospace;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--flag)}
+.callout.ok h4{color:var(--ok)} .callout.warn h4{color:var(--warn)}
+.callout p:last-child{margin-bottom:0}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);margin:18px 0;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px}
+th{text-align:left;padding:10px 14px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);
+  border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top;line-height:1.5}
+tr:last-child td{border-bottom:0}
+.tag{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 7px;border-radius:4px;white-space:nowrap;font-weight:500}
+.t-bad{background:var(--flag-soft);color:var(--flag)}
+.t-ok{background:var(--ok-soft);color:var(--ok)}
+.t-mid{background:var(--warn-soft);color:var(--warn)}
+.rows{display:grid;gap:12px;margin:18px 0}
+.row{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+.row .rh{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:10px}
+.row .rid{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--muted)}
+.row .rt{font-weight:600;font-size:15.5px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.duo .b{border-radius:8px;padding:12px 14px;font-size:13.5px;line-height:1.5}
+.duo .exp{background:var(--surface-2);border:1px solid var(--line-soft)}
+.duo .real{background:var(--flag-soft);border:1px solid transparent;color:var(--ink)}
+.duo .real.good{background:var(--ok-soft)}
+.duo .real.mid{background:var(--warn-soft)}
+.duo .lab{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);display:block;margin-bottom:5px}
+pre{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:10px;padding:14px 16px;
+  overflow-x:auto;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.6;margin:16px 0}
+.funnel{display:grid;gap:6px;margin:18px 0}
+.fstep{display:flex;align-items:center;gap:12px;font-size:13.5px}
+.fstep .fl{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted);flex:0 0 130px}
+.fbar{height:22px;border-radius:5px;background:var(--ok);min-width:3px}
+.fbar.loss{background:var(--flag)}
+.fstep .fn{font-family:'IBM Plex Mono',monospace;font-size:12px;flex:0 0 58px;text-align:right}
+.chain{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin:18px 0;box-shadow:var(--shadow)}
+.chain ol{margin:0;padding-left:20px}
+.chain li{margin-bottom:9px;font-size:14px}
+.chain li b{color:var(--flag)}
+footer{padding:40px 0 64px;color:var(--muted);font-size:13px}
+@media(max-width:760px){.duo{grid-template-columns:1fr}.fstep .fl{flex:0 0 96px;font-size:10.5px}}
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <div class="kicker">GeniOS · Design Globe vs the first live run · 8 Sep 2026</div>
+  <h1>Expected vs Reality</h1>
+  <p class="lede">The design document said eight layers, 219 components and six Admin surfaces reachable
+  on two connectors. The first live tenant produced nine cards, three of which are the same marketing
+  email rendered as the founder's own overdue promise. This page puts the two side by side, layer by
+  layer, and names the units responsible.</p>
+  <div class="meta">
+    <span class="pill"><b>849</b> objects in</span>
+    <span class="pill"><b>9</b> cards out</span>
+    <span class="pill"><b>18/231</b> situations admitted</span>
+    <span class="pill"><b>0/159</b> attachments read</span>
+    <span class="pill"><b>1 of 4</b> brains speaking</span>
+    <span class="pill">code <b>acb18c8</b></span>
+  </div>
+</div></header>
+
+<main>
+
+<section><div class="wrap">
+  <div class="sub">00 · The answer in one paragraph</div>
+  <h2>Nothing hallucinated. Four defensible decisions compose into a wrong product.</h2>
+  <p>Layer 1 has no feature that distinguishes a message addressed to you from a message blasted to a
+  list, so cold marketing enters as ordinary business mail. Layer 2 builds <code>commitment_overdue</code>
+  without reading the <code>owns</code> edge it just wrote, so somebody else's promise is rendered in the
+  founder's voice. Layer 2's admission gate requires a quoted span, which an <em>absence</em> can never
+  have, so the 114 situations describing the real inbox work are held forever. Layer 3's Admin corpus is
+  authored against facts nothing emits, so the one activated domain cannot fire and the general fallback
+  copy renders what is left.</p>
+  <div class="callout">
+    <h4>The compound effect</h4>
+    <p>Spam surviving would be tolerable if the real work were arriving too — it would rank below it.
+    What happened is that the genuine inbox work was held at the gate while the marketing mail sailed
+    through. The noise is not merely present; it is <strong>over-represented by construction</strong>.</p>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sub">01 · The funnel, measured</div>
+  <h2>849 in, 9 out</h2>
+  <div class="funnel">
+    <div class="fstep"><span class="fl">captured</span><span class="fbar" style="width:100%"></span><span class="fn">849</span></div>
+    <div class="fstep"><span class="fl">emitted</span><span class="fbar" style="width:26.5%"></span><span class="fn">225</span></div>
+    <div class="fstep"><span class="fl">signals</span><span class="fbar" style="width:46.5%"></span><span class="fn">395</span></div>
+    <div class="fstep"><span class="fl">situations</span><span class="fbar" style="width:27.2%"></span><span class="fn">231</span></div>
+    <div class="fstep"><span class="fl">admitted to L3</span><span class="fbar loss" style="width:2.1%"></span><span class="fn">18</span></div>
+    <div class="fstep"><span class="fl">candidates</span><span class="fbar" style="width:13.2%"></span><span class="fn">112</span></div>
+    <div class="fstep"><span class="fl">cards</span><span class="fbar loss" style="width:1.1%"></span><span class="fn">9</span></div>
+  </div>
+  <p class="q">The narrowest point is Layer 2 admission at 8%. The second is delivery at 8% of candidates.
+  Between them sits a Layer 3 that compiled 349 packages carrying one brain slice of four.</p>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sub">02 · Layer 1 · Knowledge</div>
+  <h2>What went in, and why</h2>
+
+  <div class="rows">
+    <div class="row">
+      <div class="rh"><span class="rid">L1.1</span><span class="rt">Enterprise sources</span><span class="tag t-mid">honest, but thin</span></div>
+      <div class="duo">
+        <div class="b exp"><span class="lab">Expected</span>16 source categories; the worked example needs Gmail + contract PDF + finance + Slack + calendar.</div>
+        <div class="b real mid"><span class="lab">Reality</span><strong>33 descriptors declared, 8 buildable, 2 connected.</strong> No finance connector, no Slack. The Globe's own flagship AWS example is unreachable on the shipped system.</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="rh"><span class="rid">L1.3a</span><span class="rt">Content pipeline</span><span class="tag t-bad">total loss</span></div>
+      <div class="duo">
+        <div class="b exp"><span class="lab">Expected</span>OCR → normalize → chunk → entity + relationship extraction → embeddings → dedup. Documents are the highest-value evidence class.</div>
+        <div class="b real"><span class="lab">Reality</span><strong>159 of 159 attachments produced no text.</strong> <code>DOC-02</code> unsupported 119 · <code>DOC-06</code> no OCR engine 25 · <code>DOC-05</code> fetch failed 15. The gate parks correctly; there is simply no engine behind it.</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="rh"><span class="rid">L1.4</span><span class="rt">ESQE · the gate</span><span class="tag t-ok">works as written</span></div>
+      <div class="duo">
+        <div class="b exp"><span class="lab">Expected</span>Rules first, model second; drops are logged, never silent; importance is deterministic and LLM-free.</div>
+        <div class="b real good"><span class="lab">Reality</span>Exactly that. 367 dropped on markers (<code>N-02</code> 198 · <code>N-06</code> 87 · <code>N-03</code> 82), 63 by the model gate, and every drop carries a reason code. ALG-17 is table-driven, integer, clock-free.</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="rh"><span class="rid">L1.4</span><span class="rt">The missing unit — audience fan-out</span><span class="tag t-bad">not in code, not in the spec</span></div>
+      <div class="duo">
+        <div class="b exp"><span class="lab">Expected</span>Nothing. The Globe never assigns the question <em>“was this addressed to me, or blasted to a list?”</em> to any layer.</div>
+        <div class="b real"><span class="lab">Reality</span><code>To</code> and <code>Cc</code> are captured in full and persisted as <code>source_events.recipients</code>. Four modules read that column — the extraction prompt, the publisher record, the document register, support situations. <strong>No gate, scorer or situation rule reads the fan-out.</strong> A mail to one person and a mail to four hundred are the same message to every decision in this pipeline.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>And the ladders do not compensate</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Ladder</th><th>Value for a cold external stranger</th></tr></thead>
+    <tbody>
+      <tr><td><code>RUNG_AUTHORITY_BP[EXTERNAL]</code></td><td>5000 / 10000</td></tr>
+      <tr><td><code>RUNG_AUTHORITY_BP[UNKNOWN]</code></td><td>3000 / 10000</td></tr>
+      <tr><td><code>ENTITY_CRITICALITY_BP[FIRST_SEEN]</code></td><td>2000 / 10000</td></tr>
+    </tbody>
+  </table></div>
+  <p class="q">Mid-band on authority, low-but-never-zero on criticality. The fix is one derived column
+  and one weighted term — not a model.</p>
+
+  <div class="callout ok">
+    <h4>The extractor was right</h4>
+    <p>On the email that became the top card the model returned <code>actor = "HealthX Elevate program"</code>,
+    <code>beneficiary = "selected applicants"</code>. It attributed the promise <strong>away from the tenant</strong>.
+    Layer 1's three real failures are different in kind: <strong>absence</strong> (no documents readable),
+    <strong>blindness</strong> (no fan-out feature) and <strong>compression</strong> (nothing scored above
+    4,640 of 10,000, because the money term carries the largest weight and this inbox has no amounts).</p>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sub">03 · Layer 2 · Context</div>
+  <h2>What it made of it — and the two units that break the product</h2>
+
+  <p>395 signals became <strong>252 nodes, 2,350 facts, 245 edges</strong> and <strong>231 situations</strong>,
+  dominated by two types: <code>awaiting_response</code> and <code>first_response_overdue</code>.
+  Eighteen were admitted.</p>
+
+  <div class="rows">
+    <div class="row">
+      <div class="rh"><span class="rid">#1</span><span class="rt">The ownership fact stops being read one hop before the sentence that needs it</span><span class="tag t-bad">3 of 9 cards</span></div>
+      <pre>graph_edges:  sunil.s@sanchiconnect.tech  --owns--&gt;  commitment "provide fundraising opportunities…"
+
+context/pipeline._resolve_subject:452     unresolvable actor  →  falls back to THE SENDER
+context/outreach_situations.read_overdue_commitments   builds for EVERY overdue commitment node,
+                                                       never asks who owns it
+packs/general_v1.py:146   "Deliver {action} to {entity} today" / "{days}d overdue — you promised this"</pre>
+      <p>A promise the incubator made <em>to</em> the founder is rendered as a promise the founder owes
+      <em>them</em>, in the imperative voice, at <code>critical</code> urgency. Every layer did what it was
+      told. <strong>Two lines of code would have prevented it, and neither is in the model.</strong></p>
+    </div>
+
+    <div class="row">
+      <div class="rh"><span class="rid">#2</span><span class="rt">An absence can never carry a quoted span</span><span class="tag t-bad">114 situations</span></div>
+      <div class="duo">
+        <div class="b exp"><span class="lab">Expected · Globe Rule 04</span>Evidence travels with every claim. Confidence without receipts is a guess.</div>
+        <div class="b real"><span class="lab">Reality</span><code>awaiting_response</code> (74) and <code>first_response_overdue</code> (40) are built from a thread's <strong>silence</strong>. There is no sentence to quote, so <code>verified_evidence_required</code> holds every one — on every tenant, for ever. The rule is right for a claim and wrong for an absence, and these are the two commonest situation types in any inbox.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tw"><table>
+    <thead><tr><th>Admission held for</th><th>Count</th></tr></thead>
+    <tbody>
+      <tr><td><code>qes_required</code> + <code>verified_evidence_required</code></td><td><strong>184</strong></td></tr>
+      <tr><td><code>conflict_open</code></td><td>17</td></tr>
+      <tr><td><code>conflict_open</code> + <code>identity_review_required</code></td><td>1</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>The 50 calendar events produced zero meeting situations</h3>
+  <p>Two deliberate decisions close the Globe's Scheduling/Preparation surface between them.
+  <code>ANCHOR_PRIORITY</code> does not include a meeting — <em>“a meeting is not a situation, it is
+  evidence within”</em> the counterparty's situation — so calendar events become facts on relationship
+  rows. And <code>meeting_follow_through</code> is specified against <code>meeting.recap_sent</code>,
+  a fact whose own declaration says it <strong>has no writer</strong>.</p>
+
+  <h3>Group inventory against the Globe</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Globe group</th><th>Expected</th><th>In code</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td>L2.1 Context Graph</td><td>8 views</td><td>nodes/facts/edges + projections</td><td><span class="tag t-ok">views are queries — fine</span></td></tr>
+      <tr><td>L2.2 Graph Engines</td><td>8 components</td><td>graph_store · identity · merge · canon · lifecycle/* · derived</td><td><span class="tag t-ok">present</span></td></tr>
+      <tr><td>L2.3 Cross-Correlation</td><td>8 correlators</td><td><strong>4 named modules</strong>: entity · timeline · dependency · resource</td><td><span class="tag t-mid">cross-user / conversation / domain / org unnamed</span></td></tr>
+      <tr><td>L2.4 Context Quality</td><td>8 components</td><td>quality/{missing,lens,epoch,inference} + validate/{confidence,conflict}</td><td><span class="tag t-mid">split across two layers</span></td></tr>
+      <tr><td>L2.5–2.6 Situation engine</td><td>9 components</td><td>situations · situation_bso · situation_publisher · outreach · support · periodic</td><td><span class="tag t-ok">present</span></td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sub">04 · Layer 3 · Domain Expertise</div>
+  <h2>The compiler is complete. The knowledge it compiles is pointed at a substrate that does not exist.</h2>
+
+  <p>All nine Globe compiler components exist as modules. <strong>349 packages</strong> were compiled over
+  130 situations — and every one carries capabilities and <strong>zero</strong> behaviour entries, org
+  rules and adaptive preferences.</p>
+
+  <div class="callout warn">
+    <h4>Status correction against the funnel doc</h4>
+    <p>The first of the three brain faults is now fixed in code: <code>gather_brain_subject_keys</code>
+    exists at <code>context/situation_bso.py:790</code> and is called from <code>reason/domain_shadow.py:651</code>.
+    The 349 measured packages predate that commit. The other two — the Behaviour subject vocabulary never
+    intersecting a situation's email-address entity ids, and the Adaptive brain writing
+    <code>temporary_memories</code> while the reader selects <code>learned_brain_entries</code> — are open.</p>
+  </div>
+
+  <h3>The finding that explains the whole Admin lane</h3>
+  <p>The corpus schema splits the world into <code>substrate</code> (what the engine actually writes) and
+  <code>planned_substrate</code> (what the corpus wishes existed).</p>
+
+  <div class="tw"><table>
+    <thead><tr><th></th><th>substrate — real</th><th>planned — unfireable</th></tr></thead>
+    <tbody>
+      <tr><td>L2 situation types</td><td>26</td><td><strong>40</strong></td></tr>
+      <tr><td>fact paths</td><td>136</td><td><strong>70</strong></td></tr>
+      <tr><td>observation kinds</td><td>51</td><td><strong>65</strong></td></tr>
+      <tr><td>baselines</td><td>2</td><td><strong>7</strong></td></tr>
+    </tbody>
+  </table></div>
+
+  <p>Now cross that against what each domain's authored capabilities actually ask for:</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Domain</th><th>Capability files</th><th>Fact paths used that EXIST</th><th>Fact paths PLANNED-ONLY</th><th>Situation types PLANNED-ONLY</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Admin</strong></td><td>201</td><td>38</td><td><strong>20</strong></td><td><strong>20</strong></td></tr>
+      <tr><td>Sales</td><td>156</td><td>21</td><td><strong>0</strong></td><td>2</td></tr>
+      <tr><td>Customer Support</td><td>167</td><td>27</td><td>24</td><td>12</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    <h4>The single most important line in this analysis</h4>
+    <p>The Sales corpus is substrate-aligned: it asks only for facts the engine writes. The Admin corpus
+    asks for <code>approval.state</code>, <code>filing.due_at</code>, <code>invoice.amount</code>,
+    <code>asset.custodian</code>, <code>contract.end_at</code> and fifteen more that <strong>nothing
+    emits</strong>, plus twenty situation types that <strong>nothing mints</strong>. On a tenant where
+    <code>admin</code> is the only activated domain, the Admin lane is structurally silent — and
+    <code>general_v1</code>'s relationship-hygiene copy renders the cards instead. That is not
+    mis-tuning. It is a knowledge base pointed at a substrate that has not been built.</p>
+  </div>
+
+  <p class="q"><code>packs/admin_v1.py</code> is 128 lines against <code>sales_v1.py</code>'s 712, with
+  <code>"rules": []</code> and <code>"plays": {}</code> — and its own docstring gives this exact reason.
+  The pack grants authority and declares vocabulary. It does not pretend to reason.</p>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sub">05 · Layer 4 · Reasoning</div>
+  <h2>The most faithfully built layer in the system</h2>
+  <p>All 17 reasoning units exist as modules, alongside the orchestrator, the evidence layer and a single
+  <code>decision_maker</code> — exactly as the Globe specifies. 33 runs completed: <strong>17 decided at
+  5000 bp, 16 deferred at 2300–3300</strong>.</p>
+
+  <div class="rows">
+    <div class="row">
+      <div class="rh"><span class="rt">Why half the runs defer</span><span class="tag t-ok">the guard working</span></div>
+      <p style="margin:0">The floor is <code>DEFAULT_CONFIDENCE_FLOOR_BP = 4500</code>. The binding input is
+      Layer 2's own per-axis confidence, taken as a <em>ceiling</em>: on a subject known from one email and
+      one source, <code>evidence_score(1, 1) = 33</code> → 3300 → refused. An engine that speaks confidently
+      about a single unconfirmed email is precisely what the floor exists to stop. <strong>The deferrals are
+      an L1/L2 coverage symptom surfacing at L4</strong>, not an L4 defect.</p>
+    </div>
+    <div class="row">
+      <div class="rh"><span class="rt">The formula moves — but a third of it is constant</span><span class="tag t-mid">4,000 bp idle</span></div>
+      <p style="margin:0"><code>RANKING_WEIGHTS_V2</code> = importance 2500 · impact 2000 · urgency 2000 ·
+      success 1500 · effort 1000 · risk 1000, and it resolved <strong>41 distinct utilities across 106
+      candidates</strong> — genuinely discriminating, unlike the v1 constant it replaced. But
+      <code>impact</code>, <code>risk</code> and <code>opportunity</code> remain known constants.</p>
+    </div>
+    <div class="row">
+      <div class="rh"><span class="rt">Sales plays top the board on an admin-only tenant</span><span class="tag t-ok">a Layer 3 symptom</span></div>
+      <p style="margin:0">The highest utilities come from <code>usage_triggered_upsell</code> (6643),
+      <code>adjacent_problem_cross_sell</code> (6545) and <code>renewal_starts_at_day_one</code> (6475).
+      Read §04 again: the Sales corpus is the only substrate-aligned one, so it is the only one that can
+      score. Ranking is reporting the knowledge base's shape accurately.</p>
+    </div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sub">06 · Layers 5 / 5.2 / 6</div>
+  <h2>Executive, Delivery, Learning</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Globe expectation</th><th>Reality</th></tr></thead>
+    <tbody>
+      <tr><td>L5 Executive · 11 units, plan + watch loop</td><td><span class="tag t-ok">present</span> 23 modules — the most complete non-reasoning layer</td></tr>
+      <tr><td>L5.2 · 11 delivery units</td><td>all 11 registered; <code>email</code> is <code>engine_ready=False</code>; <strong>only Slack has an adapter</strong> — every other push channel reports <code>no_adapter</code></td></tr>
+      <tr><td>Flagship surfaces: desktop card, inline Gmail card, mobile push</td><td><span class="tag t-bad">no client exists</span> for any of the three; <code>in_app</code>/<code>dashboard</code> are pull surfaces</td></tr>
+      <tr><td>L6 · 11 learning units</td><td><span class="tag t-ok">all 11 present</span> in <code>feedback/units.py</code></td></tr>
+      <tr><td>L6 closes the loop into L3</td><td><span class="tag t-bad">cannot</span> while three of four brain slices are empty</td></tr>
+    </tbody>
+  </table></div>
+  <p class="q">Delivery outcome: 9 cards — 1 critical queued, 5 standard queued, <strong>3 expired unseen</strong>.</p>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sub">07 · Why it looks weird</div>
+  <h2>The five-step chain</h2>
+  <div class="chain"><ol>
+    <li>L1 has <b>no fan-out feature</b> → mass outreach enters as ordinary business mail.</li>
+    <li>The ESQE budget guard trips at a 10% ambiguous share → <b>69 events skipped</b> the one check that could have caught it, and fail open at unknown authority.</li>
+    <li>L2 <b>loses the <code>owns</code> edge</b> → their promise is rendered in the founder's voice.</li>
+    <li>L2 <b>blocks absence-shaped situations</b> → 114 real items never compete for the same slots.</li>
+    <li>L3's <b>Admin corpus is unfireable</b> → general hygiene copy renders whatever is left.</li>
+  </ol></div>
+
+  <h3>Chain of custody for the top card</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Layer</th><th>What it did</th><th>Right?</th></tr></thead>
+    <tbody>
+      <tr><td>L1 S1 gate</td><td>passed — no N-code matched; Gmail itself filed it <code>CATEGORY_PERSONAL</code></td><td><span class="tag t-mid">right by its rules, blind to mass outreach</span></td></tr>
+      <tr><td>L1 S2 model gate</td><td>kept at 0.75, “named person sharing substantive business insight”</td><td><span class="tag t-ok">right — it IS business mail</span></td></tr>
+      <tr><td>L1 extraction</td><td><code>actor = HealthX Elevate program</code></td><td><span class="tag t-ok">right</span></td></tr>
+      <tr><td>L1 ESQE</td><td>kept at unknown authority; LLM-5 skipped on budget</td><td><span class="tag t-mid">the one check that could have caught it, skipped</span></td></tr>
+      <tr><td>L2 graph</td><td><code>sanchiconnect --owns--&gt; commitment</code></td><td><span class="tag t-ok">right</span></td></tr>
+      <tr><td>L2 situation</td><td><code>commitment_overdue</code> built without reading the owner</td><td><span class="tag t-bad">wrong</span></td></tr>
+      <tr><td>L3</td><td>compiled the admin corpus for it</td><td><span class="tag t-mid">as configured</span></td></tr>
+      <tr><td>L4</td><td>ranked it top, <code>critical</code></td><td><span class="tag t-ok">correct given the situation handed to it</span></td></tr>
+      <tr><td>Card</td><td>“Deliver … NOW”, “you promised this”</td><td><span class="tag t-bad">wrong — the voice assumes the tenant owes it</span></td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sub">08 · The register</div>
+  <h2>Which unit is failing, exactly</h2>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>layer.group.unit</th><th>Actual behaviour</th><th>Size</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><code>l2.outreach.read_overdue_commitments</code> + <code>packs.general_v1</code></td><td>owner never read; imperative copy</td><td>3 of 9 cards</td><td>read the <code>owns</code> edge; branch the copy</td></tr>
+      <tr><td>2</td><td><code>l2.situation_publisher._preflight</code></td><td>an absence can never carry a span</td><td>114 situations</td><td>typed-absence receipt, or cite the anchor's last inbound span</td></tr>
+      <tr><td>3</td><td><em>missing</em> <code>l1.esqe.audience_fanout</code></td><td><code>recipients</code> captured, read by nobody</td><td>all mass mail</td><td>derive <code>audience_size</code>; one S1 rule + one ALG-17 term</td></tr>
+      <tr><td>4</td><td><code>l1.content.ocr</code></td><td>no engine in the image</td><td>159 of 159 files</td><td>deploy the built image + <code>GENIOS_ENABLE_OCR</code></td></tr>
+      <tr><td>5</td><td><code>l3.corpus.admin</code></td><td>20 planned-only facts, 20 planned-only situation types</td><td>the whole Admin lane</td><td>write the L2 producers, or re-author onto substrate</td></tr>
+      <tr><td>6</td><td><code>l1.esqe.relevance</code> budget guard</td><td>trips permanently on a young graph</td><td>69 events</td><td>raise the budget for cold tenants, or seed the graph</td></tr>
+      <tr><td>7</td><td><code>l3.compiler.runtime_brains</code></td><td>one brain of four speaks</td><td>349 packages</td><td>subject-vocabulary bridge + union <code>temporary_memories</code></td></tr>
+      <tr><td>8</td><td><code>l4.decision_maker</code> constants</td><td>impact / risk / opportunity constant</td><td>4,000 bp</td><td>wire the three to real measurements</td></tr>
+      <tr><td>9</td><td><code>l5_2.channels</code></td><td>1 adapter; no desktop / Gmail / mobile client</td><td>3 cards expired</td><td>build one client, or lean on the dashboard</td></tr>
+      <tr><td>10</td><td><code>l1.sources</code></td><td>8 buildable, 2 connected</td><td>every system-of-record surface</td><td>the connector roadmap <em>is</em> the product roadmap</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sub">09 · The 15 Admin surfaces</div>
+  <h2>Six promised on two connectors. One and a half shipped.</h2>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>Surface</th><th>Globe</th><th>Measured</th><th>Blocked by</th></tr></thead>
+    <tbody>
+      <tr><td>01</td><td>Commitment</td><td>full</td><td><span class="tag t-mid">fires, wrong voice</span></td><td>unit #1</td></tr>
+      <tr><td>02</td><td>Follow-up / Relationship</td><td>full</td><td><span class="tag t-bad">blocked at admission</span></td><td>unit #2</td></tr>
+      <tr><td>03</td><td>Deadline</td><td>partial</td><td><span class="tag t-mid">131 signals, no chains</span></td><td>unit #4</td></tr>
+      <tr><td>04</td><td>Scheduling / Meeting prep</td><td>full</td><td><span class="tag t-bad">0 situations</span></td><td>meeting is not an anchor; <code>meeting.recap_sent</code> has no writer</td></tr>
+      <tr><td>05</td><td>Decision debt</td><td>partial</td><td><span class="tag t-bad">24 signals, no situation type</span></td><td>no producer</td></tr>
+      <tr><td>06</td><td>Ownership</td><td>partial</td><td><span class="tag t-bad">none</span></td><td>no ownership facts</td></tr>
+      <tr><td>07</td><td>Founder bottleneck</td><td>full</td><td><span class="tag t-bad">none</span></td><td><code>approval.*</code> is planned-only</td></tr>
+      <tr><td>08–12</td><td>Coordination · Process · Doc integrity · Vendor · Financial</td><td>no / partial</td><td><span class="tag t-bad">none</span></td><td>connectors + OCR</td></tr>
+      <tr><td>13</td><td>Goal / Progress</td><td>partial</td><td><span class="tag t-bad">none</span></td><td>no stated goal as data</td></tr>
+      <tr><td>14</td><td>Opportunity</td><td>full</td><td><span class="tag t-mid">16 situations, 2 admitted</span></td><td>unit #2</td></tr>
+      <tr><td>15</td><td>Risk</td><td>no</td><td><span class="tag t-ok">none, as designed</span></td><td>—</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sub">10 · Order of work</div>
+  <h2>What to do, and in which order</h2>
+  <div class="rows">
+    <div class="row"><div class="rh"><span class="rid">P0</span><span class="rt">Ownership</span></div>
+      <p style="margin:0">Read the <code>owns</code> edge in <code>read_overdue_commitments</code>; branch the copy in <code>general_v1</code>. Smallest diff in this document; removes the worst card in the product.</p></div>
+    <div class="row"><div class="rh"><span class="rid">P1</span><span class="rt">Audience fan-out</span></div>
+      <p style="margin:0">Derive <code>audience_size</code> from the column already stored, add one S1 rule for a large external fan-out with no prior relationship, and one ALG-17 term. This is the missing unit the Globe never specified, and the reason promotional mail passes.</p></div>
+    <div class="row"><div class="rh"><span class="rid">P2</span><span class="rt">Absence receipts</span></div>
+      <p style="margin:0">Unblocks 114 situations — the two commonest types in any inbox. Until this lands, Follow-up Intelligence does not exist as a product.</p></div>
+    <div class="row"><div class="rh"><span class="rid">P3</span><span class="rt">OCR</span></div>
+      <p style="margin:0">The image is built. Deploy, flip the env, and 159 parked files drain themselves.</p></div>
+    <div class="row"><div class="rh"><span class="rid">P4</span><span class="rt">Corpus vs substrate</span></div>
+      <p style="margin:0">Decide explicitly: write the L2 producers for <code>approval.*</code>, <code>filing.*</code>, <code>invoice.*</code>, <code>asset.*</code> — or re-author the Admin corpus onto the 136 fact paths that exist. And switch <code>sales</code> on for this tenant now: it is a founder's fundraising inbox and the sales corpus is the substrate-aligned one.</p></div>
+    <div class="row"><div class="rh"><span class="rid">P5</span><span class="rt">Re-measure</span></div>
+      <p style="margin:0"><code>python scripts/pipeline_funnel_report.py --org &lt;org&gt;</code> after each. Every number here came from that command or from <code>grep</code> over the repository.</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sub">11 · Back-pressure on the design doc</div>
+  <h2>Five corrections the Globe itself should absorb</h2>
+  <ol>
+    <li><strong>“Six surfaces fully reachable on two connectors”</strong> → one and a half, measured.</li>
+    <li><strong>The audience fan-out unit is missing from the architecture</strong>, not merely from the code. No layer in the Globe owns the question <em>“addressed to me, or blasted to a list?”</em></li>
+    <li><strong>Rule 04 needs an absence clause.</strong> As written it makes silence unpublishable — and silence is the most common finding in an inbox.</li>
+    <li><strong>Domain knowledge needs a substrate contract.</strong> A capability reading a fact with no writer should fail authoring, not compile silently into a package that can never fire.</li>
+    <li><strong>The worked example needs a connector precondition.</strong> The AWS renewal trace requires finance and chat sources that are not buildable today.</li>
+  </ol>
+</div></section>
+
+</main>
+
+<footer><div class="wrap">
+  Expected side: <em>GeniOS Design Globe</em>. Reality side: <code>genios_engine/</code> at <code>acb18c8</code>,
+  the <code>Domain Expertise/</code> corpus, and <code>scripts/pipeline_funnel_report.py</code> run against
+  <code>org_e97e86f858ad48b2bbf64b8a</code>, 12 Aug – 8 Sep 2026. Companion to
+  <code>L1_L4_PILOT_FUNNEL.md</code>.
+</div></footer>
+
+</body>
+</html>
