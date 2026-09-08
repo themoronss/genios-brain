@@ -332,3 +332,264 @@ SHOULD have decided.
 
 **P5 · Re-measure.** `python scripts/pipeline_funnel_report.py --org <org> --database-url "<url>"`
 after each of the above. Every number in this file came from that command.
+
+---
+
+## 8. WHY — the rule behind every group, and the case that proves it
+
+Counts say *what* happened. This section says *why*, rule by rule, and traces one real email all
+the way through so the reasoning is checkable rather than asserted.
+
+### 8.0 The case: one email, seven stages
+
+From `sunil.s@sanchiconnect.tech`, subject *"something that's been on my mind about healthcare
+startups"* — cold marketing outreach for the **HealthX Elevate** programme. It produced the
+tenant's **top three cards**, including the only `critical` one. Its full trace:
+
+| Stage | Verdict | Why, in the code |
+|---|---|---|
+| landing | pass | new `dedup_key`, visibility derivable from participants |
+| preprocess | pass | prose, 1 protected span, language `en` |
+| S0 | pass | in scope |
+| **S1** | **pass, no whitelist** | **no N-code matched — see 8.1** |
+| **S2 gate** | **pass, relevance 0.75** | model's own words: *"Named person sharing substantive business insight"* |
+| s2_semantic_extraction | pass, T1, 19 claims, 13 spans | profile `email`, 1 model call |
+| s4_esqe | pass, `ambiguous_over_budget` | LLM-5 was NOT called — budget guard; kept at unknown authority |
+| emit | emit | lane P2, route `needs_extraction` |
+
+### 8.1 L1 · S1 — why the noise rules did NOT fire on it
+
+The gate is a table of predicates over `raw`. For this email each one was asked and each said no:
+
+| Rule | Predicate (`capture/gate/rules.py`) | On this email |
+|---|---|---|
+| `N-09` | label `SPAM` / `TRASH` | labels were `IMPORTANT`, `CATEGORY_PERSONAL`, `INBOX` → **no** |
+| `N-06` | label `CATEGORY_PROMOTIONS` | **Gmail itself filed it as PERSONAL** → no |
+| `N-07` | label `CATEGORY_SOCIAL` | no |
+| `N-01` | header `Auto-Submitted != no` | headers empty → no |
+| `N-02` | `List-Unsubscribe` / `List-Id` / `Feedback-ID` | **no bulk headers at all** → no |
+| `N-04` | `Precedence: bulk\|list\|junk` | no |
+| `N-03` | `mailer-daemon\|bounces@\|postmaster@`, or an automated local-part (`no-reply`, `notify`, `newsletter`, `digest`, `mailer`, `marketing`, `alerts`) | sender is `sunil.s@` — **a named human** → no |
+| `N-05` | out-of-office in the SUBJECT | no |
+| `N-10` | empty body and no attachment | no |
+
+**This is the answer to "why do some promotional emails pass".** The gate is deterministic and
+looks only at labels, headers and the sender's local part. Cold outreach written by a person, from
+a personal address, with no mailing-list headers, is **indistinguishable from real mail at S1** —
+because at S1 there is nothing to distinguish it by. Gmail's own classifier, which is the one
+signal that could have caught it, put it in `CATEGORY_PERSONAL`.
+
+The 367 that WERE dropped had the markers this one lacked: 198 carried unsubscribe headers, 87
+were labelled Promotions by Gmail, 82 came from `no-reply@`-shaped addresses.
+
+**Why the whitelist matters too.** 107 of the 245 that passed S1 did so on a whitelist, which
+skips every N-code:
+
+| Code | Rule | Count |
+|---|---|---|
+| `W-01` | sender is already a person in the graph | 58 |
+| `W-02` | Gmail `STARRED` | 39 |
+| `W-04` | a READABLE document is attached (pdf/docx/xlsx/pptx) | 10 |
+| — | no whitelist, simply matched no N-code | 138 |
+
+### 8.2 L1 · S2 — the model gate, and what it is allowed to do
+
+`capture/gate/relevance.py`. One question per message, scored 0–1. The rule:
+
+```
+verdict = "drop"  AND  relevance < 0.25   →  DROP   (63 events)
+verdict = "drop"  AND  relevance >= 0.25  →  PARK   (7 events, recoverable)
+anything else                             →  KEEP
+```
+
+Real verdicts from this run, in the model's own words:
+
+| Model's reason | Score | Outcome |
+|---|---|---|
+| Named person sharing substantive business insight | 0.75 | keep ← *the HealthX email* |
+| Live session invite with Zoom link, attendance expected | 0.75 – 0.80 | keep |
+| Human confirming availability for scheduled meeting | 0.85 | keep |
+| Canceled meeting notification, no action needed | 0.20 | drop |
+| Automated event invitation, one-to-many broadcast | 0.20 | drop |
+| Enrollment confirmation, automated receipt | 0.00 | drop |
+| known sender | 0.90 | keep, **no model call spent** |
+
+The gate is asking *"is this business mail?"* — and a well-written funding-programme pitch **is**
+business mail. It is not asking *"is this addressed to me personally or blasted to a list?"*, and
+nothing in the pipeline asks that question of prose.
+
+### 8.3 L1 · S4 ESQE — five rules, and the budget guard that skipped 69
+
+`capture/esqe/relevance.py`, in order; the first that matches wins:
+
+| Rule | Verdict | Relevance bp |
+|---|---|---|
+| sender known in the graph | relevant | 9000 |
+| `internal_kind` set (company canon) | relevant | 9500 |
+| structured source (calendar, CRM) | relevant | 8000 |
+| bulk headers present | **not** relevant | 500 |
+| service account **and** zero typed claims | **not** relevant | 800 |
+| *(no rule matched)* | → the model, LLM-5 | 6000 / 1000 |
+
+Measured here: `known_counterparty` 58 · `structured_source` 50 · `bulk_headers` 46 (short-circuit)
+· `llm5_not_business` 2 · **`ambiguous_over_budget` 69**.
+
+Those 69 — including the HealthX email — were never judged by LLM-5 at all. The guard:
+
+> above **10%** ambiguous share (`AMBIGUOUS_BUDGET_BP = 1000`, min sample 50) the unit **alerts
+> instead of spending**, and the events fail OPEN at `unknown` authority.
+
+The doctrine is that a high ambiguous share is a graph-coverage problem, not a relevance one. On a
+tenant this new almost every sender is unknown, so the guard trips and the one component that
+could have said *"this is a mass programme announcement"* never ran.
+
+### 8.4 L1 · extraction — the model got it RIGHT
+
+This is the part worth being precise about, because the failure is **not** the model's:
+
+```
+actor       : "HealthX Elevate program"
+action      : "provide fundraising opportunities through direct engagement with
+               healthcare leaders, investors, and potential collaborators…"
+beneficiary : "selected applicants"
+due         : "30th August 2026"
+```
+
+The extractor correctly identified the **programme** as the promiser and **applicants** as the
+beneficiary. All four commitments in that email are attributed away from the tenant.
+
+### 8.5 L1 · the floor — why nothing scored high
+
+`DEFAULT_FLOOR_BP = 2500`, and this tenant has no `org_qualification_floors` row, so it runs on
+the default. 68 signals fell under it (`relationship_change` 48, `commitment_made` 20).
+
+The whole tenant tops out at **4,640 bp of 10,000**, because ALG-17's money term is the largest
+weight (3,000) and this inbox carries almost no amounts — so every score is decided by deadline
+proximity, actor authority and entity criticality alone, and `entity_criticality` is `first_seen`
+(2,000 bp) for nearly every counterparty on a three-week-old graph.
+
+### 8.6 L2 · admission — the two unconditional halves
+
+`context/situation_publisher.decide_publication`. Two halves, and only one is conditional:
+
+**Conditional (skipped when the tenant's L1 is not scoring):** `qes_required`.
+
+**Unconditional, on every tenant:** no **verified evidence span** · an **open conflict** · an
+**unresolved identity** · insufficient coverage · a receipt-less activated pattern.
+
+Measured: 184 held for `qes_required + verified_evidence_required`, 17 for `conflict_open`, 1 for
+`conflict_open + identity_review_required`.
+
+**Why `awaiting_response` (74) and `first_response_overdue` (40) can NEVER pass.** Both situations
+are built from a thread's SILENCE — the finding *is* that nobody wrote back. There is no sentence
+to quote, so no verified span can exist, so the unconditional half holds every one of them, on
+every tenant, for ever. The rule is right for a claim and wrong for an absence, and these are the
+two commonest situation types in any inbox.
+
+The three types that DO pass — `investor_relationship` (10), `relationship` (6), `opportunity` (2)
+— are all built from something somebody actually wrote, so a span exists to carry.
+
+### 8.7 L2 · the situation rule that mis-attributed the promise — **the quality bug**
+
+The graph stored the ownership **correctly**:
+
+```
+graph_edges:  sunil.s@sanchiconnect.tech  --owns-->  commitment "provide fundraising opportunities…"
+```
+
+`context/pipeline.py:1238` resolves the promiser with:
+
+```python
+subj = _resolve_subject(cm.get("actor"), name_to_node, sender_node)
+
+def _resolve_subject(name, name_to_node, fallback):
+    if name and _norm(str(name)) in name_to_node:
+        return name_to_node[_norm(str(name))]
+    return fallback                      # ← the SENDER
+```
+
+`"HealthX Elevate program"` is not a resolvable identity in that email's entity map, so it falls
+back to the sender — which happens to be right here, and is right only by luck: the fallback
+assumes the sender is the promiser whenever the named actor cannot be resolved.
+
+Then `context/outreach_situations.py:240-261` builds `commitment_overdue` for **every** commitment
+node whose `commitment.due_at` has passed — it never asks who owns it:
+
+```python
+display_name = f"{name} — promise past due"
+facts        = [... ("commitment.owed_to", name, "string") ...]
+```
+
+And `packs/general_v1.py:146` renders it:
+
+```python
+"fallback": {"headline": "Deliver {action} to {entity} today",
+             "situation": "{days}d overdue — you promised this"}
+```
+
+**So a promise the incubator made TO the founder is rendered as a promise the founder owes THEM,
+in the imperative voice, at `critical` urgency.** Three of the nine cards are this same email.
+Every layer did what it was told; the ownership fact stops being read one hop before the sentence
+that needs it.
+
+### 8.8 L3 · what compiled, and why the brains are empty
+
+`admin` is the only activated domain, and `shadow_compile` compiles a package **per admitted
+situation** — 349 packages over 130 situations. Each carries 2–13 capabilities and **zero**
+behaviour entries, org rules and adaptive preferences, because:
+
+1. `brain_subject_keys` — the selector that binds a situation to its brain entries — **has no
+   writer** anywhere in the engine;
+2. a Behaviour subject is `behavior:<metric>:<node_id>` while a situation's entity ids are **email
+   addresses**; the two vocabularies never intersect;
+3. the Adaptive brain writes to `temporary_memories` and the reader selects only from
+   `learned_brain_entries`.
+
+So the Expert corpus speaks and the other three cannot. (`L3_V2_BUILD_RECORD.md` §5.1.)
+
+### 8.9 L4 · why 16 of 33 runs deferred
+
+Two gates in series.
+
+**The confidence floor** — `DEFAULT_CONFIDENCE_FLOOR_BP = 4500`. Measured confidences were
+2,300–3,300 on the deferrals and 5,000 on the decisions. The binding input is Layer 2's own
+per-axis situation confidence, taken as a **ceiling** (`min`, never a raise): on a subject known
+from one email and one source, `evidence_score(event_count=1, source_count=1) = 33`, so the
+ceiling lands at 3,300 and the floor refuses. That is the guard working — an engine that speaks
+confidently about a single unconfirmed email is what the floor exists to stop.
+
+**The ranking formula** — six components, weights `importance 2500 · impact 2000 · urgency 2000 ·
+success 1500 · effort 1000 · risk 1000`. It resolved **41 distinct utilities** across 106
+candidates here, so the formula is moving. Three of its six components (`impact`, `risk`,
+`opportunity`) are known constants — that is 4,000 of 10,000 basis points not discriminating.
+
+### 8.10 The chain of custody for the top card, end to end
+
+| Layer | What it did | Was it right? |
+|---|---|---|
+| L1 gate | passed — no N-code matched, Gmail said PERSONAL | **right by its own rules**, blind to mass outreach |
+| L1 model gate | kept at 0.75, *"substantive business insight"* | right — it IS business mail |
+| L1 extraction | `actor = HealthX Elevate program` | **right** |
+| L1 ESQE | kept at unknown authority, LLM-5 skipped (budget) | the one check that could have caught it, skipped |
+| L2 graph | `sanchiconnect --owns--> commitment` | **right** |
+| L2 situation | `commitment_overdue` built without reading the owner | **wrong** |
+| L3 | compiled the admin corpus for it | as configured |
+| L4 | ranked it top, `critical` | correct given the situation it was handed |
+| Card | *"Deliver … NOW"*, *"you promised this"* | **wrong — the voice assumes the tenant owes it** |
+
+**Two lines of code would have prevented the wrong card**, and neither is in the model: the
+situation rule reading the `owns` edge, and the card copy branching on who owns the promise.
+
+---
+
+## 9. The fix list, revised by this analysis
+
+| # | Fix | Where | Why it is the fix |
+|---|---|---|---|
+| **1** | `commitment_overdue` must read the `owns` edge, and the copy must branch on it | `context/outreach_situations.py` + `packs/general_v1.py` | 3 of 9 cards are one marketing email rendered as the founder's own overdue promise |
+| **2** | Absence-shaped situations need an absence receipt | `context/situation_publisher.py` | 114 situations can never be admitted while a quoted span is required for a silence |
+| **3** | Raise the LLM-5 ambiguous budget, or seed the graph | `capture/esqe/relevance.py` | 69 events skipped the only check that asks "is this addressed to me or blasted to a list?" |
+| **4** | Turn OCR on | deploy + env | 159 of 159 attachments unread |
+| **5** | Teach `commitment.actor` to resolve to an identity, and stop defaulting to the sender | `context/pipeline._resolve_subject` | the fallback is right by luck here and wrong the moment a third party is named |
+| **6** | Give the packages their brains | `packs/compiler/runtime_brains.py` | 349 packages, three empty slices |
+| **7** | Switch `sales` on for this tenant | `activate_tenant.py --domains admin,sales` | the sales plays already produce the highest utilities here |
