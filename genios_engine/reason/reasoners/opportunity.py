@@ -44,6 +44,21 @@ DEFAULT_MOMENTUM_SOURCE = "core.temporal"
 #: Published when nothing was declared for a plugin to read. Silence that names itself.
 UNDECLARED_REASON = "opportunity_signals_undeclared"
 
+#: Named when this unit DID have inputs bound, looked at them, and found nothing above the
+#: threshold — the honest negative.
+#:
+#: **LAW 6 — every silence names itself.** This branch used to emit `codes = ()`: the unit
+#: published `opportunity_bp: 0` and said nothing whatever about it. That made three different
+#: states indistinguishable in the audit row — "no inputs were declared" (which DID have a code),
+#: "inputs declared, nothing found", and "the unit never ran" — and the last two are the ones a
+#: reviewer most needs to tell apart, because only one of them is a reason to go and connect a
+#: source. `core.opportunity` feeds `core.tradeoff` and `core.validation`, so a silent zero
+#: propagates into two more units' inputs without ever naming itself.
+#:
+#: The verdict is UNCHANGED (`matched=False` — the unit looked and found nothing, which is a real
+#: negative finding, not an absence). Only the silence became legible.
+NO_SIGNAL_REASON = "opportunity_none_above_threshold"
+
 
 def _config_bp(view: UnitView, key: str, default: int) -> int:
     value = view.config.get(key, default)
@@ -244,7 +259,9 @@ class OpportunityUnit(ReasoningUnit):
         if present:
             codes = tuple(sorted({code for item in observations for code in item.reason_codes}))
         else:
-            codes = () if declared else (UNDECLARED_REASON,)
+            # Both branches now carry a code: "we had nothing to look at" and "we looked and found
+            # nothing" are different facts and neither of them is silence. See `NO_SIGNAL_REASON`.
+            codes = (NO_SIGNAL_REASON,) if declared else (UNDECLARED_REASON,)
         return Verdict(
             matched=present if declared else None,
             metrics=dict(metrics),
@@ -253,5 +270,6 @@ class OpportunityUnit(ReasoningUnit):
         )
 
 
-__all__ = ["DEFAULT_MOMENTUM_SOURCE", "OpportunityUnit", "StalledButOpenPlugin",
-           "UNDECLARED_REASON", "UnansweredInboundPlugin", "UnworkedRelationshipPlugin"]
+__all__ = ["DEFAULT_MOMENTUM_SOURCE", "NO_SIGNAL_REASON", "OpportunityUnit",
+           "StalledButOpenPlugin", "UNDECLARED_REASON", "UnansweredInboundPlugin",
+           "UnworkedRelationshipPlugin"]

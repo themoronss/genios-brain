@@ -3609,6 +3609,46 @@ def _meeting_neighbors(c, org_id: str, node_id: str) -> list[dict]:
     return out[:4]
 
 
+#: Fact NAMESPACES that are the engine's own working state, not a description of a person.
+#: `derived.*` is Layer 2's analytic stratum — `derived.anomaly.engagement.days_since_contact`,
+#: `derived.trend.*`, and the raw `derived.sentiment` / `engagement` / `momentum` scalars. They are
+#: real and they are load-bearing for RANKING; they are not a profile. A founder opening a card saw
+#: `engagement 1.8868`, `momentum 0` and four rows reading `[object Object]` — because those four
+#: are jsonb OBJECTS and the value went to the client untouched. Both halves are fixed below: the
+#: namespace is not offered, and no value leaves this function unless it renders as a sentence.
+_PROFILE_SKIP_PREFIXES = ("thread.", "derived.")
+
+
+def _fact_display(value: Any) -> str | None:
+    """One graph fact as a string a person can read, or None when it has no honest string form.
+
+    `graph_facts.value` is jsonb, so it holds strings, numbers, booleans AND objects. The card
+    detail rendered whatever came back, and a dict rendered as `[object Object]` — a row that
+    occupies a line, says nothing, and looks like a bug in the product to the person it is shown
+    to. Returning None instead DROPS the row: a fact we cannot phrase is not a fact worth showing,
+    and inventing a phrasing for a structure we did not design is how a card starts asserting
+    something the graph never said.
+    """
+    if value is None or isinstance(value, (dict, list, tuple, set)):
+        return None
+    if isinstance(value, bool):
+        return "yes" if value else "no"
+    text_value = str(value).strip()
+    return text_value or None
+
+
+def _profile_rows(facts: Mapping[str, Any]) -> list[dict]:
+    """The subject's captured profile — only what a human would recognise as one."""
+    rows = []
+    for field, value in facts.items():
+        if field in _CONTEXT_FACT_SKIP or field.startswith(_PROFILE_SKIP_PREFIXES):
+            continue
+        shown = _fact_display(value)
+        if shown is not None:
+            rows.append({"field": field, "value": shown})
+    return rows
+
+
 def _card_intelligence(org_id: str, card: dict) -> tuple[dict, dict, dict]:
     """Return (context, actionability, decision) for a card — the subject's captured profile facts +
     relationship signals, the Update-1 clarity gate, and the card.v2 decision projection. One DB read,
@@ -3650,8 +3690,7 @@ def _card_intelligence(org_id: str, card: dict) -> tuple[dict, dict, dict]:
         situation = dict(sit) if sit else None
     obs_kinds = {r.kind for r in obs}
     obs_counts = {r.kind: int(r.n) for r in obs}
-    profile = [{"field": k, "value": v} for k, v in facts.items()
-               if k not in _CONTEXT_FACT_SKIP and not k.startswith("thread.")]
+    profile = _profile_rows(facts)
     signals = [{"kind": r.kind, "label": _CONTEXT_OBS[r.kind], "count": int(r.n)}
                for r in obs if r.kind in _CONTEXT_OBS]
     # The promised/said text lives on the connected commitment node (already extracted). Use it to

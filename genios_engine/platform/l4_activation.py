@@ -106,6 +106,48 @@ PRECONDITIONS = {
     FEATURE_BRIEF: (FEATURE_RANKING_V2,),
 }
 
+#: THE PRECONDITIONS THAT ARE NOT LAYER 4's. `PRECONDITIONS` above orders the five switches against
+#: EACH OTHER and stops there — which meant the single most consequential ordering in the stack was
+#: not expressed anywhere, not reported anywhere, and not checkable by an operator at all:
+#:
+#:   `ranking_v2` gives the utility formula its sixth component, IMPORTANCE, and importance is
+#:   composed by Layer 2 out of a score Layer 1 publishes. On a tenant whose Layer 1 semantic lane
+#:   has never been switched on, `qualified_signals` carries no scores, Layer 2 composes no
+#:   importance, and `decision_maker.effective_weights` redistributes the absent 2,500bp over the
+#:   remaining five components — recording `L2_IMPORTANCE_NOT_ACTIVE`, honestly, on every decision.
+#:   The operator's console said `ranking_v2: live`. Both statements were true and together they
+#:   were misleading: the six-weight model was on and could not reach six weights.
+#:
+#:   `roster_v2` plans the staged roster for a package Layer 3 compiled. With no L3 domain
+#:   activated for the tenant, `reason/runner` passes an empty `live_domains` and the compile runs
+#:   SHADOW — nothing is published — so the roster is awake over output nobody reads.
+#:
+#: REPORTED, NEVER ENFORCED, for exactly the reason the intra-layer map is: an operator debugging a
+#: pilot at 2am must be able to switch one thing on in isolation. What changes is that the wave
+#: order across layers is now a value this module can compute, so a violation is visible on the
+#: console and in the sweep's own counts instead of being discovered by a K-gate a fortnight later.
+CROSS_LAYER_PRECONDITIONS = {
+    FEATURE_ROSTER_V2: ("l3_domain",),
+    FEATURE_RANKING_V2: ("l1_semantic",),
+    FEATURE_BUNDLE: ("l1_semantic",),
+    FEATURE_CRITIQUE: ("l1_semantic",),
+    FEATURE_BRIEF: ("l1_semantic",),
+}
+
+#: What each cross-layer precondition MEANS, and what an operator has to do to satisfy it. A
+#: console that can say "unmet" and cannot say "turn on what" sends the reader to the source.
+CROSS_LAYER_EFFECTS = {
+    "l1_semantic": (
+        "Layer 1's semantic lane is not activated for this tenant (platform/activation, table "
+        "l1_semantic_activation), so qualified_signals carries no importance scores, Layer 2 "
+        "composes no situation importance, and the six-weight ranking model reweighs its "
+        "remaining five components recording L2_IMPORTANCE_NOT_ACTIVE on every decision"),
+    "l3_domain": (
+        "no Layer 3 domain is activated for this tenant (platform/l3_activation, table "
+        "l3_activation), so the domain compile runs in SHADOW and publishes nothing — the staged "
+        "roster runs over output no card can reach"),
+}
+
 #: What flipping ONE feature on ACTUALLY does, in one sentence, returned beside `live` wherever a
 #: console reads this table. An operator who can see a switch is on and cannot see what it turned on
 #: will assume it turned on everything.
@@ -281,6 +323,34 @@ def missing_preconditions(engine, org_id: str, feature: str) -> tuple[str, ...]:
     return tuple(item for item in PRECONDITIONS[feature] if item not in live)
 
 
+def missing_cross_layer_preconditions(engine, org_id: str, feature: str) -> tuple[str, ...]:
+    """Which LAYER 1/2/3 states this feature expects and this tenant does not have. Reported.
+
+    The counterpart to `missing_preconditions` for the orderings that cross a layer boundary — see
+    `CROSS_LAYER_PRECONDITIONS` for why the absence of this function was the more expensive gap.
+
+    Fail-CLOSED in the sense that matters here: every sibling reader (`is_semantic_activated`,
+    `activated_domains`) answers "not activated" for a missing database or an unreadable table, so
+    an unreadable switch is REPORTED AS UNMET rather than silently satisfied. A precondition report
+    that quietly passes when it cannot read anything is worse than no report, because it is read as
+    a green light.
+    """
+    require_feature(feature)
+    required = CROSS_LAYER_PRECONDITIONS.get(feature, ())
+    if not required or engine is None:
+        # No engine means nothing can be verified, so nothing is claimed satisfied.
+        return required
+    from genios_engine.platform.activation import is_semantic_activated
+    from genios_engine.platform.l3_activation import activated_domains
+    unmet: list[str] = []
+    for item in required:
+        if item == "l1_semantic" and not is_semantic_activated(engine, org_id):
+            unmet.append(item)
+        elif item == "l3_domain" and not activated_domains(engine, org_id):
+            unmet.append(item)
+    return tuple(unmet)
+
+
 # ── the console's reads: NOT fail-closed ─────────────────────────────────────────────────────
 
 def get_l4_activation(engine, org_id: str, feature: str) -> L4Activation | None:
@@ -391,8 +461,9 @@ def deactivate(engine, org_id: str, *, feature: str, by: str = "unrecorded",
     return switched_off
 
 
-__all__ = ["EFFECTS", "FEATURE_BRIEF", "FEATURE_BUNDLE", "FEATURE_CRITIQUE", "FEATURE_RANKING_V2",
-           "FEATURE_ROSTER_V2", "FEATURE_WAVES", "L4Activation", "L4_ACTIVATION_TABLE",
-           "L4_FEATURES", "PRECONDITIONS", "activate", "activated_features", "deactivate",
-           "get_l4_activation", "is_l4_activated", "l4_activated_orgs", "list_l4_activations",
+__all__ = ["CROSS_LAYER_EFFECTS", "CROSS_LAYER_PRECONDITIONS", "EFFECTS", "FEATURE_BRIEF",
+           "FEATURE_BUNDLE", "FEATURE_CRITIQUE", "FEATURE_RANKING_V2", "FEATURE_ROSTER_V2",
+           "FEATURE_WAVES", "L4Activation", "L4_ACTIVATION_TABLE", "L4_FEATURES", "PRECONDITIONS",
+           "activate", "activated_features", "deactivate", "get_l4_activation", "is_l4_activated",
+           "l4_activated_orgs", "list_l4_activations", "missing_cross_layer_preconditions",
            "missing_preconditions", "require_feature"]

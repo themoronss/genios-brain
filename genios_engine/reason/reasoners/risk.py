@@ -57,12 +57,39 @@ from .common import basis_points, clamp_bp, divide_half_up, integer
 #: The single unit-level reason code. Risk is one claim about the do-nothing branch, so the result
 #: carries one code — the per-plugin codes stay on their own findings as provenance.
 #:
-#: FROZEN STRING. The word in it is domain vocabulary this unit no longer uses anywhere else, and
-#: it stays anyway: `core.risk` is one of the six units that has actually been running on the
-#: compiled lane, so this exact code is already written into audit rows and into the reasons
-#: attached to shipped signals. Renaming it would orphan every one of them to purify a spelling.
-#: `tests/reason/reasoners/test_units_domain_free.py` pins it as the ONE permitted occurrence.
-RISK_REASON_CODE = "deal_momentum_risk"
+#: **THIS SPELLING CHANGED, AND THE OLD FREEZE WAS THE WRONG TRADE.** The argument for keeping the
+#: previous code was real: `core.risk` is one of the six units that has actually been running on
+#: the compiled lane, so the old string is already written into audit rows and into the reasons
+#: attached to shipped signals, and renaming it orphans them. But the cost of keeping it was paid
+#: on every run, not once — this unit emits its code on EVERY situation it scores, including
+#: `account_admin` and support situations that one vertical's vocabulary has no business
+#: describing, so a founder reading an admin card's reasons saw that vertical's word on it. A
+#: frozen string that keeps being WRITTEN is not a legacy row; it is an ongoing emission, and
+#: Law 5 is about what the unit says today.
+#:
+#: So the emission moves and the history keeps its name: `LEGACY_RISK_REASON_CODE` below is the
+#: read-side alias, exported and documented, so anything interpreting stored rows resolves both
+#: spellings to one meaning. Nothing is orphaned, and nothing new carries the old vocabulary.
+#:
+#: The new spelling is the finding's own name (`risk.do_nothing`) rather than a fresh coinage: the
+#: unit has always answered "what does it cost us if nobody does anything", and the code now says
+#: exactly that in the vocabulary the unit actually uses.
+RISK_REASON_CODE = "do_nothing_exposure"
+
+#: What `RISK_REASON_CODE` was before this wave. **NEVER EMITTED** — it exists so a reader of
+#: stored `reasoning_run_outputs`, audit bundles and shipped signal reasons can resolve the old
+#: spelling to the current meaning. `RISK_REASON_CODES` is the pair, for exactly that lookup.
+#:
+#: This is the one line in this file that carries domain vocabulary, and
+#: `tests/reason/test_units_domain_free.py` pins it as the single permitted occurrence — now as a
+#: HISTORICAL alias rather than as a live emission, which is the whole of the change.
+LEGACY_RISK_REASON_CODE = "deal_momentum_risk"
+
+#: Every spelling this unit's headline code has ever had, newest first. A consumer filtering stored
+#: rows for "the risk unit's verdict" must match on this, not on either string alone: matching only
+#: the new one loses every row written before this wave, and matching only the old one loses every
+#: row written after it.
+RISK_REASON_CODES = (RISK_REASON_CODE, LEGACY_RISK_REASON_CODE)
 
 #: Carried by every adjustment, so an auditor asking "what moved this play's risk component?" gets
 #: an answer that names the authored mitigation rather than the unit.
@@ -313,6 +340,7 @@ class RiskUnit(ReasoningUnit):
 RiskReasoner = RiskUnit
 
 __all__ = ["DEFAULT_RELATIONSHIP_SOURCE", "DEFAULT_TEMPORAL_SOURCE",
-           "MOMENTUM_UNMEASURED_REASON", "MomentumDecayPlugin", "PlayMitigationPlugin",
-           "RELATIONSHIP_UNMEASURED_REASON", "RISK_MITIGATION_REASON", "RISK_REASON_CODE",
-           "RelationshipHealthPlugin", "RiskReasoner", "RiskUnit"]
+           "LEGACY_RISK_REASON_CODE", "MOMENTUM_UNMEASURED_REASON", "MomentumDecayPlugin",
+           "PlayMitigationPlugin", "RELATIONSHIP_UNMEASURED_REASON", "RISK_MITIGATION_REASON",
+           "RISK_REASON_CODE", "RISK_REASON_CODES", "RelationshipHealthPlugin", "RiskReasoner",
+           "RiskUnit"]

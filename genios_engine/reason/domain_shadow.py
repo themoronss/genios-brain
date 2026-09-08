@@ -29,6 +29,7 @@ from typing import Any
 from sqlalchemy import text
 
 from genios_engine.context.graph_store import GraphStore
+from genios_engine.context.importance import read_l1_scoring_live
 from genios_engine.context.quality.lens import read_coverage_lens
 from genios_engine.context.quality.missing import read_absences
 from genios_engine.context.situation_bso import (
@@ -56,10 +57,12 @@ from genios_engine.packs.compiler.expertise_publisher import PostgresExpertisePu
 from genios_engine.packs.domain_wiring import expert_catalog
 from genios_engine.packs.wiring import make_registry
 from genios_engine.platform.l4_activation import (
+    CROSS_LAYER_EFFECTS,
     FEATURE_BUNDLE,
     FEATURE_RANKING_V2,
     FEATURE_ROSTER_V2,
     is_l4_activated,
+    missing_cross_layer_preconditions,
 )
 from genios_engine.platform.ids import new_id
 from genios_engine.reason.adapters.expertise import expertise_capability_manifest
@@ -452,6 +455,25 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     # The interpreter itself is inert on a tenant with nothing ambiguous to read: `find_ambiguities`
     # is a pure read of the snapshot, and a situation with no hedged claim on a field the plan reads
     # costs nothing at all.
+    # WAVE ORDER, ACROSS LAYERS, MADE VISIBLE WHERE THE WORK HAPPENS. Reported and NOT enforced,
+    # on the same argument the two reads above make for ignoring `PRECONDITIONS`: a gate that
+    # silently ignored an operator's switch because a different switch was off is harder to
+    # diagnose than the ordering it enforced. What was missing was not enforcement — it was the
+    # REPORT. `ranking_v2` on a tenant whose Layer 1 has never been activated is the six-weight
+    # model permanently reweighing five, and the console said only `live`. Now the sweep says so
+    # too, in its own counts, once per pass.
+    for _feature, _flag in ((FEATURE_ROSTER_V2, roster_v2), (FEATURE_RANKING_V2, ranking_v2)):
+        if not _flag:
+            continue
+        _unmet = missing_cross_layer_preconditions(store.engine, org_id, _feature)
+        counts[f"{_feature}_cross_layer_unmet"] = len(_unmet)
+        if _unmet:
+            logger.warning(
+                "Layer 4 %s is LIVE for org=%s while its cross-layer preconditions are unmet: %s "
+                "— the feature runs, and these are the reasons it cannot do what its EFFECTS say: "
+                "%s", _feature, org_id, ", ".join(_unmet),
+                " | ".join(CROSS_LAYER_EFFECTS[item] for item in _unmet))
+
     interpreter = None
     if any_live and is_l4_activated(store.engine, org_id, FEATURE_BUNDLE):
         interpreter = make_interpreter(org_id=org_id, engine=store.engine,
@@ -469,9 +491,21 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
             conn, org_id,
             [str(row["correlation_id"]) for row in situations if row["correlation_id"]])
         # L2.5.8 · IS LAYER 1's SCORER LIVE FOR THIS TENANT AT ALL? Measured ONCE for the sweep,
-        # over the supply just read, on exactly the predicate
-        # `situation_bso.refresh_situation_importance` feeds to `assess_l1_supply` — a property of
-        # the tenant's supply, never of one situation.
+        # TENANT-SCOPED, with one `select exists` against `qualified_signals`.
+        #
+        # THIS USED TO FOLD THE SWEEP'S OWN SLICE — `any(l1.importance_bp is not None for l1 in
+        # l1_by_correlation.values())` — over at most `limit` (default 500) situations, while its
+        # comment claimed the result was "a property of the tenant's supply, never of one
+        # situation". It was neither: a tenant whose Layer 1 IS scoring, whose sweep window
+        # happened to hold only unscored situations, got the relaxed gate for that batch and its
+        # candidates were admitted carrying `ImportanceBasis.UNSCORED` rather than held for a
+        # retry that would have worked. Worse, on an EMPTY slice it answered False while
+        # `context/importance.assess_l1_supply` answered True for the same tenant on the same
+        # sweep — one question, two modules, opposite answers.
+        #
+        # `read_l1_scoring_live` is now the single tenant-scoped answer and fails STRICT (see its
+        # docstring); `assess_l1_supply` keeps the flatness question it was always actually
+        # answering, on the sample it was always actually folding.
         #
         # It conditions ONE hold reason (`qes_required`) and nothing else. On a tenant Layer 1 IS
         # scoring, a situation that carries no score is a real, retryable gap and the gate holds
@@ -480,9 +514,13 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
         # nothing. The candidate is admitted carrying `ImportanceBasis.UNSCORED`, and doc 04's
         # honesty guard (`decision_maker.IMPORTANCE_ABSENT_REASON`) reweighs the remaining five
         # components and names why on every decision. See `situation_publisher.decide_publication`.
-        l1_scoring_active = any(l1.importance_bp is not None
-                                for l1 in l1_by_correlation.values())
+        l1_scoring_active = read_l1_scoring_live(conn, org_id)
         counts["l1_scoring_active"] = int(l1_scoring_active)
+        # The sweep's own reading, kept BESIDE the tenant fact rather than instead of it: the two
+        # disagreeing is the interesting case ("Layer 1 scores here, but nothing in this window
+        # carries a score") and it is exactly what the old fold silently collapsed.
+        counts["l1_scored_in_sweep"] = int(any(l1.importance_bp is not None
+                                               for l1 in l1_by_correlation.values()))
         # L2.5.5 · the typed absences the drain wrote, for the WHOLE pass, in one read — the
         # same shape as every other gather here, and for the same reason: there are as many
         # absence rows as there are expected fields across the tenant's situations, and a

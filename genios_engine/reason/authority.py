@@ -82,6 +82,24 @@ def _published_metric(name: str) -> str:
 # predicate, which never reads this, but wrong enough to make a human distrust a correct decision.
 # `freshness_bp` backs `recency_bp` because it is the same question asked in native vocabulary:
 # how stale is the evidence under this claim.
+#
+# 'M' — WAVE Z3's IMPORTANCE, and the reason it is read from a different place than the rest.
+#
+# Every other term here comes from a unit's published metric, because every other component is
+# something a unit measured. Importance is not: Layer 2 composes it and `decision_maker` inserts it
+# onto the candidate directly, deliberately outside `guards.CANDIDATE_COMPONENTS` so that no
+# reasoning unit can move it — *"a unit that could raise it could raise its own card"*. There is
+# therefore no `importance_bp` metric on any reasoner result to coalesce, and the only immutable
+# record of what the ranking actually used is the candidate's own stored `score_components`.
+#
+# That is a stronger proof than the others, not a weaker one: it is the exact number the formula
+# weighted, not a metric re-read from the unit that supplied it.
+#
+# NULL when the run had no importance — a five-weight capability, or a tenant whose Layer 1 is
+# dark and whose decision carries `L2_IMPORTANCE_NOT_ACTIVE`. `jsonb_build_object` keeps the key
+# with a null value, which is the honest reading: "this decision had no importance term" rather
+# than "importance was zero". `_score_inputs` omits the key entirely for the same situation, and
+# `tests/test_native_publication.py` pins the two against each other.
 AUTHORITATIVE_SCORE_INPUTS_SQL = (
     "jsonb_build_object("
     "'U', (coalesce((authority_source.output->'metrics'->>'urgency_bp')::int, "
@@ -93,6 +111,7 @@ AUTHORITATIVE_SCORE_INPUTS_SQL = (
     "'R', (coalesce((authority_source.output->'metrics'->>'recency_bp')::int, "
     + _published_metric("recency_bp") + ", " + _published_metric("freshness_bp") + ", "
     "5000) + 50) / 100, "
+    "'M', ((selected_rc.score_components->>'importance')::int + 50) / 100, "
     "'C', (selected_rc.confidence_bp + 50) / 100)"
 )
 

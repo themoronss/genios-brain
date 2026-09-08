@@ -52,6 +52,39 @@ NATIVE_SIGNAL_LEVEL = "prescriptive"
 #: default behaviour is "do not say it again until the last one stopped being true".
 COOLDOWN_HOURS_KEY = "publication_cooldown_hours"
 
+#: THE DECOMPOSITION, NAMED ONCE — the single-letter key each ranking component is published under.
+#:
+#: **WHY THIS IS A CONSTANT AND NOT SIX STRING LITERALS.** The score decomposition is written twice
+#: by two different mechanisms that must agree and had no way to: `_score_inputs` below copies it
+#: onto the row, and `authority.AUTHORITATIVE_SCORE_INPUTS_SQL` re-derives it from the immutable
+#: audit rows because — as that module says — *"a value copied into a mutable table is a claim and
+#: a value re-derived from immutable rows is a proof"*. Two hand-maintained key sets for one
+#: decomposition drifted exactly as you would expect: the stored copy wrote `U I S E K C` and the
+#: re-derivation wrote `U I R C`, so four of the six stored keys had no proof behind them and the
+#: `R` in the proof had no stored counterpart at all.
+#:
+#: **AND NEITHER OF THEM CARRIED IMPORTANCE.** Wave Z3 gives the utility formula its sixth
+#: component and makes it the LARGEST weight in the engine — 2,500 of 10,000, more than impact —
+#: and it appeared in no published decomposition on either side. A card answering "why is this
+#: first today" could name every reason except the biggest one, and the seven-day K7 report reads
+#: those same fields. Layer 2 composes importance, Layer 4 ranks on it, and the seam to Layer 5
+#: dropped it on the floor.
+SCORE_INPUT_KEYS: Mapping[str, str] = {
+    "urgency": "U",
+    "impact": "I",
+    "success": "S",
+    "effort": "E",
+    "risk": "K",
+    # Z3's sixth component. `M` for "matters" — `I` was already impact's, and a decomposition whose
+    # keys collide is worse than one that is short.
+    "importance": "M",
+}
+
+#: Confidence is not a ranking component — it is the run's own certainty about the whole decision,
+#: not a weighted term in the utility — so it is published beside the decomposition rather than
+#: inside it, and it is spelled here so the two writers cannot disagree about that either.
+CONFIDENCE_INPUT_KEY = "C"
+
 
 def native_rule_id(capability_id: str) -> str:
     """The `rule_id` a natively-reasoned capability publishes under.
@@ -125,16 +158,19 @@ def _score_inputs(candidate: Any, confidence_bp: int) -> dict[str, int]:
     `AUTHORITATIVE_SCORE_INPUTS_SQL`, because a value copied into a mutable table is a claim and a
     value re-derived from immutable rows is a proof.  It is still written, because when the two
     disagree the stored copy is what tells you *when* they diverged.
+
+    **AN ABSENT COMPONENT IS OMITTED, NOT ZEROED**, and that is the one judgement in this function.
+    The old shape defaulted every component to 0, so a capability on the five-weight model — which
+    has no `importance` at all — published `M: 0`, indistinguishable from a situation Layer 2
+    measured and found genuinely unimportant. Those are different claims and the difference is
+    precisely what `decision_maker.IMPORTANCE_ABSENT_REASON` exists to record, so a component the
+    run never scored does not appear. Every key here is one the ranking actually produced.
     """
     components = dict(candidate.score_components)
-    return {
-        "U": projected_score(components.get("urgency", 0)),
-        "I": projected_score(components.get("impact", 0)),
-        "S": projected_score(components.get("success", 0)),
-        "E": projected_score(components.get("effort", 0)),
-        "K": projected_score(components.get("risk", 0)),
-        "C": projected_score(confidence_bp),
-    }
+    inputs = {key: projected_score(components[name])
+              for name, key in SCORE_INPUT_KEYS.items() if name in components}
+    inputs[CONFIDENCE_INPUT_KEY] = projected_score(confidence_bp)
+    return inputs
 
 
 def _evidence(execution: Any, candidate: Any) -> tuple[Mapping[str, Any], ...]:

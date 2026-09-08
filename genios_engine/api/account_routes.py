@@ -492,6 +492,13 @@ _ORG_SCOPED_TABLES = [
     # `coverage_epochs` is the tenant's own connection history, which is theirs to have erased.
     # Both cascade on account deletion; these entries are what make /reset erase them too.
     "situation_absences", "coverage_epochs",
+    # …and the situations themselves, which the line above assumed were "about to be wiped" and
+    # which nothing here wiped. `context_situations` cascades from `orgs`, so ACCOUNT DELETION
+    # erased it and `/reset` did not: a tenant that reset its workspace kept every situation the
+    # previous graph had produced, and the next sweep's findings landed beside conclusions drawn
+    # from facts that no longer exist. The absences were erased and the things they were absences
+    # ABOUT survived.
+    "context_situations",
     "sync_cursors", "l1_sync_runs", "source_events",
     "agent_events", "human_events",
     "onboarding_progress", "sync_jobs",          # sync progress + durable job queue (org-scoped)

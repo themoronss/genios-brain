@@ -157,7 +157,7 @@ def test_the_expertise_adapter_reports_what_it_refused_to_convert():
         metadata: dict = {}
         capabilities = ()
 
-    plays, receipt = _plays(_Package())
+    plays, receipt, _defs = _plays(_Package())
     assert len(plays) == MAX_PLAYS
     assert receipt["plays_emitted"] == MAX_PLAYS
     assert receipt["skipped_rule_ids"]["heuristic_1"] == "no_steps_artifact_unsupported"
@@ -181,6 +181,6 @@ def test_the_generic_fallback_is_tagged_non_prescriptive():
         metadata: dict = {}
         capabilities = ()
 
-    plays, receipt = _plays(_Empty())
+    plays, receipt, _defs = _plays(_Empty())
     assert receipt["generic_fallback_used"] is True
     assert "non_prescriptive" in plays[0].tags
