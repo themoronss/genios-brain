@@ -419,9 +419,9 @@ def test_an_uploaded_policy_fills_the_organization_brain_through_the_console(cli
 
     entries = [b for b in brains(client) if b["brain"] == "organization" and b["active"]]
     assert len(entries) >= 3, f"J4 organization row NOT earned: {entries}"
-    assert len(entries) == len(RULES_BY_DESIGN) - 1        # the percentage rule; see its own test
+    assert len(entries) == len(RULES_BY_DESIGN)           # the percentage rule included — see its own test
     assert sorted(e["subject"] for e in entries) == sorted(
-        s for q, s in RULES_BY_DESIGN.items() if q != PERCENTAGE_RULE)
+        s for q, s in RULES_BY_DESIGN.items())
     assert all(e["version"] == 1 for e in entries)
     # Every one of them says where it came from, in the vocabulary doc 02 fixed:
     # admin_declared > discovered > inferred.
@@ -450,15 +450,18 @@ def test_the_five_numbers_the_gate_asks_for(client, seeded):
     # 3 · what CLG-09 admitted, and its complement. `admitted` vs `human_review` is CLG-09's own
     # split (an approver it could not resolve would land in the second); `awaiting_human` is
     # GOVERNANCE's, and it is 6 because an Organization proposal always stops for a human.
-    assert counters["admitted"] == 6 and counters["human_review"] == 0
-    assert counters["refused"] == 9                  # 7 prose + the file name + the percentage
-    assert counters["proposed"] == 6 and counters["awaiting_human"] == 6
+    assert counters["admitted"] == 7 and counters["human_review"] == 0
+    # 7 prose + the door's file-name line. The percentage rule USED to be the ninth: it is now
+    # admitted with its bound intact — see
+    # `test_a_percentage_threshold_now_reaches_the_brain_with_its_bound_intact`.
+    assert counters["refused"] == 8
+    assert counters["proposed"] == 7 and counters["awaiting_human"] == 7
     assert counters["admitted"] + counters["refused"] == counters["candidates"]
 
     confirmed = confirm_everything(client)
-    assert len(confirmed) == 6
+    assert len(confirmed) == 7
     entries = [row for row in brain_rows(seeded) if row["active"]]
-    assert len(entries) == 6
+    assert len(entries) == 7
     assert all(row["brain"] == "organization" for row in entries)
 
 
@@ -474,8 +477,11 @@ def test_clg09_refuses_the_prose_for_the_reason_the_design_names(client, seeded)
     assert set(reasons) <= set(REFUSAL_REASONS), f"an unnamed refusal reason: {reasons}"
     assert len(PROSE_BY_DESIGN) == 7
     assert reasons["no_deontic_force"] == 8          # the seven, plus the door's file-name line
-    assert reasons["threshold_unparseable"] == 1
-    assert sum(reasons.values()) == 9
+    # `threshold_unparseable` no longer fires on this document. `contracts/units.Ratio` gave the
+    # gate a second exact reading of the same characters, so `15%` is a bound rather than a
+    # refusal. The reason code still EXISTS and still fires on a token neither dimension can read.
+    assert "threshold_unparseable" not in reasons
+    assert sum(reasons.values()) == 8
 
     # Each of the seven is refused by NAME, so a leak shows up as a missing row rather than as a
     # larger total that a reader would have to reconcile by hand.
@@ -491,37 +497,49 @@ def test_clg09_refuses_the_prose_for_the_reason_the_design_names(client, seeded)
     confirm_everything(client)
     statements = {row["value"]["statement"] for row in brain_rows(seeded)}
     assert not (statements & set(PROSE_BY_DESIGN))
-    assert statements == set(RULES_BY_DESIGN) - {PERCENTAGE_RULE}
+    assert statements == set(RULES_BY_DESIGN)
 
 
-def test_a_percentage_threshold_costs_the_tenant_a_real_rule(client, seeded):
-    """A FINDING, pinned as a test rather than written in a report nobody re-runs.
+def test_a_percentage_threshold_now_reaches_the_brain_with_its_bound_intact(client, seeded):
+    """THE FINDING THIS TEST USED TO PIN, CLOSED — and pinned the other way round.
 
     `A discount greater than 15% requires approval from the founder.` has a condition, a
-    consequence and an authority. It is a rule by every clause of CLG-09's own definition, the
-    production prompt names "20%" as a legal `threshold_as_written`, and it is still refused —
-    because `threshold_as_written` is validated by ALG-10, which is a MONEY parser, and "15%"
-    comes back UNPARSEABLE_TOKEN. The whole rule is dropped, not the threshold.
+    consequence and an authority. It is a rule by every clause of CLG-09's own definition and the
+    production prompt names "20%" as a legal `threshold_as_written` — and it was refused, because
+    `threshold_as_written` was validated by ALG-10 alone, which is a MONEY parser, and "15%" comes
+    back UNPARSEABLE_TOKEN. The WHOLE RULE was dropped, not the threshold. Discount authority is
+    the single most common approval rule a sales-led startup writes down, and it was the one shape
+    this unit could not read.
 
-    What that costs: discount authority is the single most common approval rule a sales-led
-    startup writes down, and it is the one shape this unit cannot read. The refusal is COUNTED
-    and visible, which is the design working as designed; the gap is that a percentage bound has
-    no representation between `Money` and nothing.
+    `contracts/units.Ratio` is the representation that was missing between `Money` and nothing.
+    The gate now reads the same characters a second time, deterministically, and refuses only when
+    BOTH dimensions fail — so the bound survives as basis points and the rule survives with it.
+
+    Three things are asserted, and the third is the one that matters: the rule reaches the brain,
+    the BOUND reaches the brain with it, and the invented-threshold catch is untouched. A rule
+    admitted with its threshold silently dropped would be worse than the refusal it replaced.
     """
     upload_policy(client)
     confirm_everything(client)
 
-    subjects = {row["subject"] for row in brain_rows(seeded)}
-    assert RULES_BY_DESIGN[PERCENTAGE_RULE] not in subjects
+    rows = {row["subject"]: row for row in brain_rows(seeded)}
+    subject = RULES_BY_DESIGN[PERCENTAGE_RULE]
+    assert subject in rows, sorted(rows)
+    value = rows[subject]["value"]
+    assert value["statement"] == PERCENTAGE_RULE
+    # THE BOUND, not just the rule. 15% is 1500 basis points, exactly, and it is carried in its own
+    # field: 1500 minor units and 1500 basis points are the same integer and mean nothing alike.
+    assert value["threshold_basis_points"] == 1500
+    assert value["threshold_as_written"] == "15%"
+    assert value["threshold_minor_units"] is None and value["currency"] is None
+    # And no rule was smuggled in by loosening the gate: the percentage refusal is gone, the
+    # money rules still parsed under the tenant's declared locale, and the prose is still out.
     with seeded.connect() as conn:
-        reason = conn.execute(text(
-            "select reason_code from learning_input_rejections "
+        assert conn.execute(text(
+            "select count(*) from learning_input_rejections "
             "where org_id = :o and reason_code like 'threshold_unparseable%'"),
-            {"o": ORG}).scalar()
-    assert reason and "15%" in reason, reason
-    # Not a currency question: the tenant HAS declared a locale, and the money rules in the same
-    # document parsed under it.
-    assert "orgrule:approval:contract" in subjects and "orgrule:approval:expense" in subjects
+            {"o": ORG}).scalar() == 0
+    assert "orgrule:approval:contract" in rows and "orgrule:approval:expense" in rows
 
 
 # ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -530,7 +548,7 @@ def test_a_percentage_threshold_costs_the_tenant_a_real_rule(client, seeded):
 
 def test_the_upload_alone_writes_no_brain_and_no_authority(client, seeded):
     """THE MODEL PROPOSES; DETERMINISTIC GOVERNANCE DECIDES. The document is uploaded, N-3 has
-    run, six proposals exist — and the tenant's brain is still empty until a named human says so.
+    run, seven proposals exist — and the tenant's brain is still empty until a named human says so.
 
     Asserted at the two tables a decision path actually reads, because "it goes to human review"
     is a claim about governance's return value and this is a claim about the database.
@@ -538,7 +556,7 @@ def test_the_upload_alone_writes_no_brain_and_no_authority(client, seeded):
     upload_policy(client)
     with seeded.connect() as conn:
         assert conn.execute(text("select count(*) from learning_objects where org_id = :o "
-                                 "and state = 'human_review'"), {"o": ORG}).scalar() == 6
+                                 "and state = 'human_review'"), {"o": ORG}).scalar() == 7
         assert conn.execute(text("select count(*) from learned_brain_entries where org_id = :o"),
                             {"o": ORG}).scalar() == 0
         assert conn.execute(text("select count(*) from authority_rules where org_id = :o"),
@@ -562,7 +580,7 @@ def test_every_admitted_rule_climbed_the_l6_ladder_before_it_reached_a_human(cli
     by_object: dict[str, dict[str, str]] = {}
     for row in rows:
         by_object.setdefault(row["learning_id"], {})[row["from_state"] or ""] = row["to_state"]
-    assert len(by_object) == 6
+    assert len(by_object) == 7
     for learning_id, edges in by_object.items():
         walk, state = [], ""
         while state in edges:
@@ -571,7 +589,7 @@ def test_every_admitted_rule_climbed_the_l6_ladder_before_it_reached_a_human(cli
         assert not edges, f"{learning_id}: transitions off the chain: {edges}"
         assert walk == ["observed", "candidate", "validated", "governed", "human_review"], walk
     floors = [row["detail"] for row in rows if row["reason_code"] == "floors_evaluated"]
-    assert len(floors) == 6
+    assert len(floors) == 7
     assert all("floors_ok" in (d or {}) and "floors_reason" in (d or {}) for d in floors)
 
 
@@ -581,18 +599,29 @@ def test_the_confirmed_approval_rules_reach_the_authority_view(client, seeded):
     name no signatory and correctly bind nobody."""
     upload_policy(client)
     last = confirm_everything(client)[-1]
-    assert last["authority_rules"]["upserted"] == 4
+    # Four money rules plus the percentage one, which now projects with `threshold_basis_points`
+    # rather than being dropped upstream. Asserted below that its BOUND survived the projection:
+    # a discount rule with both threshold columns null would read as "any discount needs the
+    # founder" — stricter than the policy, written by an omission.
+    assert last["authority_rules"]["upserted"] == 5
 
     with seeded.connect() as conn:
         rules = conn.execute(text(
-            "select subject_type, threshold_minor_units, currency, approver_node_id, source, "
-            "evidence_ref, valid_until from authority_rules where org_id = :o "
+            "select subject_type, threshold_minor_units, threshold_basis_points, currency, "
+            "approver_node_id, source, evidence_ref, valid_until from authority_rules "
+            "where org_id = :o "
             "order by subject_type"), {"o": ORG}).mappings().all()
-    assert [r["subject_type"] for r in rules] == ["contract", "database", "expense", "hiring"]
+    assert [r["subject_type"] for r in rules] == ["contract", "database", "discount", "expense",
+                                                  "hiring"]
     assert all(r["source"] == "discovered" and r["valid_until"] is None for r in rules)
     assert all(r["evidence_ref"].startswith("prepared_content:") for r in rules)
     by_type = {r["subject_type"]: r for r in rules}
     assert by_type["contract"]["threshold_minor_units"] == 5_000_000
+    # THE RATIO ARM, PROJECTED. 15% is 1500 basis points in its own column, and the money columns
+    # stay null — the two dimensions are mutually exclusive by contract and by check constraint.
+    assert by_type["discount"]["threshold_basis_points"] == 1500
+    assert by_type["discount"]["threshold_minor_units"] is None
+    assert by_type["discount"]["currency"] is None
     assert by_type["expense"]["threshold_minor_units"] == 200_000
     assert by_type["contract"]["currency"] == by_type["expense"]["currency"] == "USD"
     # A role resolves through the identity layer's own key, and the two heads are not the founder.
@@ -669,13 +698,13 @@ def test_the_j4_report_reads_this_orgs_row_as_earned(client, seeded):
         built = report.build_report(conn, org_id=ORG, at=datetime.now(timezone.utc))
 
     organization = built.brain("organization")
-    assert organization.entries == 6 >= report.MIN_ORGANIZATION_ENTRIES
-    assert organization.by_provenance == {"discovered": 6}
+    assert organization.entries == 7 >= report.MIN_ORGANIZATION_ENTRIES
+    assert organization.by_provenance == {"discovered": 7}
     assert built.outside_pipeline == 0
     assert built.unattributed == 0
     assert built.expert_rows == 0
     rows = {label: (ok, measured) for label, ok, measured in built.checks}
-    assert rows[f"organization entries >= {report.MIN_ORGANIZATION_ENTRIES}"] == (True, "6")
+    assert rows[f"organization entries >= {report.MIN_ORGANIZATION_ENTRIES}"] == (True, "7")
     assert rows["writes outside the L6 pipeline == 0"][0] is True
     assert rows["entries with unnameable provenance == 0"][0] is True
     assert rows["rows with brain='expert' == 0"][0] is True
@@ -713,7 +742,7 @@ def test_every_brain_entry_names_the_proposal_the_human_approved(client, seeded)
             "left join learning_objects o on o.org_id = e.org_id "
             "and o.learning_id = e.learning_id "
             "where e.org_id = :o and e.active"), {"o": ORG}).mappings().all()
-    assert len(rows) == 6
+    assert len(rows) == 7
     # Every entry joins, to a PROMOTED N-3 proposal, and to one of the objects this test approved.
     assert all(row["unit"] == "org_rule_discovery" for row in rows), \
         "a brain entry with no proposal behind it — the L6 pipeline was bypassed"
@@ -738,7 +767,7 @@ def test_an_edited_policy_supersedes_the_rule_it_replaces(client, seeded):
     revised = POLICY_DOC.replace("REVISION 3", "REVISION 4").replace("$50,000", "$75,000")
     second = upload_policy(client, body=revised)
     assert second.get("duplicate") is not True, "an edited policy was mistaken for the same file"
-    assert len(pending(client)) == 6, "the edited document was not read again"
+    assert len(pending(client)) == 7, "the edited document was not read again"
     confirm_everything(client)
 
     with seeded.connect() as conn:

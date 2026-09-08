@@ -327,13 +327,16 @@ def run_org_discovery(conn, *, org_id: str, event_id: str, extractor: OrgRuleExt
 #: pinned to the contract by `test_the_authority_projection_covers_every_contract_field`.
 _AUTHORITY_UPSERT = text(
     "insert into authority_rules (org_id, rule_id, subject_type, threshold_minor_units, currency, "
+    "threshold_basis_points, "
     "approver_node_id, delegate_node_id, source, evidence_ref, valid_from, valid_until) "
     "values (:org_id, :rule_id, :subject_type, :threshold_minor_units, :currency, "
+    ":threshold_basis_points, "
     ":approver_node_id, :delegate_node_id, :source, :evidence_ref, :valid_from, :valid_until) "
     "on conflict (org_id, rule_id, valid_from) do update set "
     "  subject_type = excluded.subject_type, "
     "  threshold_minor_units = excluded.threshold_minor_units, "
     "  currency = excluded.currency, "
+    "  threshold_basis_points = excluded.threshold_basis_points, "
     "  approver_node_id = excluded.approver_node_id, "
     "  delegate_node_id = excluded.delegate_node_id, "
     "  source = excluded.source, "
@@ -379,7 +382,13 @@ def project_authority_rules(conn, *, org_id: str, at: datetime) -> dict[str, int
             rule_id=authority_rule_id(row["subject"]),
             subject_type=value.get("subject_type") or "",
             threshold_minor_units=value.get("threshold_minor_units"),
-            currency=value.get("currency"), approver_node_id=approver,
+            currency=value.get("currency"),
+            # The ratio arm. A percentage rule reaches the Authority view with its BOUND intact
+            # rather than as an unbounded "any discount needs the founder", which is what
+            # projecting it with both threshold columns null would have meant — a rule stricter
+            # than the policy it was read from, written by an omission.
+            threshold_basis_points=value.get("threshold_basis_points"),
+            approver_node_id=approver,
             source=AuthoritySource.DISCOVERED,
             evidence_ref=(value.get("evidence") or {}).get("source_ref"),
             valid_from=valid_from)
@@ -392,6 +401,7 @@ def project_authority_rules(conn, *, org_id: str, at: datetime) -> dict[str, int
         conn.execute(_AUTHORITY_UPSERT, {
             "org_id": org_id, "rule_id": rule.rule_id, "subject_type": rule.subject_type,
             "threshold_minor_units": rule.threshold_minor_units, "currency": rule.currency,
+            "threshold_basis_points": rule.threshold_basis_points,
             "approver_node_id": rule.approver_node_id, "delegate_node_id": rule.delegate_node_id,
             "source": rule.source.value, "evidence_ref": rule.evidence_ref,
             "valid_from": rule.valid_from, "valid_until": rule.valid_until})

@@ -263,4 +263,84 @@ class ResolvedDate(BaseModel):
         return mine[0] <= theirs[1] and theirs[0] <= mine[1]
 
 
-__all__ = ["ISO_4217", "UNKNOWN_CURRENCY", "DateCertainty", "Money", "ResolvedDate"]
+#: `15%` -> 1500, `7.5%` -> 750, `1/3` is NOT a ratio this parser accepts. Anchored, so a token
+#: with anything else attached (`15%-20%`, `15%,`) does not silently parse as its first half — a
+#: threshold read looser than it was written is an approval limit somebody could be held to.
+_RATIO_TOKEN = re.compile(r"^(\d{1,3})(?:[.,](\d{1,2}))?\s*%$")
+
+
+class Ratio(BaseModel):
+    """A percentage threshold, in basis points. The dimension `Money` could not carry.
+
+    **WHY THIS TYPE EXISTS.** *"A discount greater than 15% requires approval from the founder"*
+    has a condition, a consequence and an authority — a rule by every clause of CLG-09's own
+    definition, and `packs/brains/org_rule_extract`'s production prompt offers `20%` as a legal
+    `threshold_as_written`. But `threshold_as_written` was validated by ALG-10, a MONEY parser,
+    which answers `UNPARSEABLE_TOKEN` for `15%` — and `org_discovery.gate_candidates` refused the
+    WHOLE RULE, not just the threshold. Discount authority is the most common approval rule a
+    sales-led startup writes down, and the Organization brain could not hold one.
+
+    **BASIS POINTS, FOR THE REASON MONEY IS MINOR UNITS.** `0.155` is not representable in binary
+    floating point, and a threshold that drifts in the last place is one nobody can trace back to
+    the sentence it came from. 15.5% is 1550, exactly, forever.
+
+    **`as_written` IS NOT DECORATION.** Same contract as `Money.as_written`: the literal characters
+    from the document, kept so a card can show what the policy said next to what we made of it.
+    It is the only way a normalisation bug is visible to the person it would otherwise mislead.
+    """
+
+    #: 0..10000. A threshold above 100% is refused rather than clamped: it is a parse that went
+    #: wrong, and clamping it to 10000 would turn a bug into a rule that always fires.
+    basis_points: int
+    #: The literal source string, e.g. `"15%"`.
+    as_written: str
+
+    @field_validator("basis_points", mode="before")
+    @classmethod
+    def _integer_only(cls, value: Any) -> int:
+        result = _exact_int(value, "basis_points")
+        if not 0 <= result <= 10_000:
+            raise ValueError(f"basis_points must be 0..10000, got {result}")
+        return result
+
+    @field_validator("as_written")
+    @classmethod
+    def _source_string(cls, value: str) -> str:
+        return _verbatim(value, "as_written")
+
+    @property
+    def percent_str(self) -> str:
+        """`1550` -> `"15.5%"`. Rendering only; nothing compares against this."""
+        whole, rest = divmod(self.basis_points, 100)
+        return f"{whole}%" if rest == 0 else f"{whole}.{rest:02d}".rstrip("0") + "%"
+
+
+def parse_ratio(as_written: Any) -> Ratio | None:
+    """`"15%"` -> `Ratio(1500, "15%")`; anything else -> `None`.
+
+    Deterministic and total: no model, no locale table, no cascade. A percentage is one of the few
+    quantities that means the same thing in every locale a comma or a full stop can be written
+    with, so `15,5%` and `15.5%` both resolve to 1550 without needing to know where the document
+    came from — which is exactly the ambiguity that makes ALG-10's money cascade a locale problem.
+
+    `None` rather than an exception: the caller is a gate that has a refusal vocabulary of its own,
+    and a threshold this cannot read must land there rather than as a traceback.
+    """
+    if as_written is None:
+        return None
+    text = str(as_written).strip()
+    match = _RATIO_TOKEN.match(text)
+    if match is None:
+        return None
+    whole = int(match.group(1))
+    fraction = (match.group(2) or "").ljust(2, "0")
+    basis_points = whole * 100 + int(fraction)
+    if basis_points > 10_000:
+        # "150%" — a real string a document could contain, and not a threshold anyone approves
+        # against. Refused, never clamped.
+        return None
+    return Ratio(basis_points=basis_points, as_written=text)
+
+
+__all__ = ["ISO_4217", "UNKNOWN_CURRENCY", "DateCertainty", "Money", "Ratio", "ResolvedDate",
+           "parse_ratio"]

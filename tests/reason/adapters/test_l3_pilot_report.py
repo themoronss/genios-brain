@@ -19,6 +19,7 @@ Real Postgres, real Layer 1 ingestion, real corpus, real reasoning, real deliver
 from __future__ import annotations
 
 import json
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
@@ -325,3 +326,134 @@ def test_the_pilot_report_scores_a_real_org(pg_store, capsys):
     # reported either way, so a zero here is readable rather than mute.
     assert isinstance(verdict.brain_entries, dict)
     assert "expert" not in verdict.activated_domains
+
+
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+# J5 ROW 4 — the brains speak
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+
+def test_all_three_runtime_brains_reach_a_compiled_package(pg_store):
+    """THE LAYER'S OPEN DEFECT, CLOSED — and measured at the number that reported it.
+
+    `L3_V2_BUILD_RECORD.md` §5.1: *"a package with non-empty Org/Behavior/Adaptive slices >= 1 —
+    the brains speak"*. Measured on a tenant holding six behaviour entries, five organization
+    entries and a live adaptive lease: `packages_with_a_brain_slice = 0` across four compiled
+    packages. Not an empty brain — an unaddressable one, from three independent faults:
+
+      1. `brain_subject_keys` had two READERS and no writer anywhere in the engine;
+      2. a Behaviour subject names a `node_id` and a correlated situation's entity ids are EMAIL
+         ADDRESSES, so the segment match could never intersect;
+      3. `PostgresRuntimeBrains.snapshot` selected only `learned_brain_entries`, and an Adaptive
+         lease lives in `temporary_memories` — so `adaptive_preferences` was STRUCTURALLY always
+         empty, whatever the tenant had told us.
+
+    This drives all three through the production publishers and asserts the row is earned. It
+    asserts the RECEIPT too: a package that says "this policy applied" and cannot say which
+    dimension bound it is a package a reader has to take on faith, and taking Layer 3 on faith is
+    how a headline row read zero for three months without anyone being able to say why.
+    """
+    import json
+
+    from tests.reason.adapters.l3_pilot_seed import seed_admin_pilot
+
+    org = "pk_l3_brains_speak"
+    out = seed_admin_pilot(pg_store, org, with_brains=True)
+    # `no_material_change` is `publish_brain`'s idempotent answer when the identical value is
+    # already live, which is what a re-run against a warm scratch database produces. Both outcomes
+    # mean the same thing for this test — the row is published and active — and pinning only the
+    # first would make the test pass or fail on whether someone had dropped their database.
+    assert set(out["brains"]) == {"organization", "behavior", "behavior_unrelated", "adaptive"}
+    assert out["brains"]["organization"] in {"published_v1", "no_material_change"}
+    assert out["brains"]["behavior"] in {"published_v1", "no_material_change"}
+    assert out["brains"]["adaptive"] == "temporary_published"
+    assert out["compile"]["compiled"] >= 1, out["compile"]
+
+    with pg_store.engine.connect() as c:
+        payloads = [json.loads(r) if isinstance(r, str) else r for r in c.execute(text(
+            "select payload from expertise_packages where org_id = :o"), {"o": org}).scalars()]
+    assert payloads, "the pilot compiled nothing, so the row cannot be read either way"
+
+    # ── The row itself.
+    def slices(payload):
+        return {name: payload.get(name) or []
+                for name in ("organization_rules", "behavior_patterns",
+                             "adaptive_preferences")}
+
+    with_a_slice = [p for p in payloads if any(slices(p).values())]
+    assert with_a_slice, (
+        "no package carries a runtime-brain slice — this is the J5 row that has read 0 since the "
+        "layer shipped")
+
+    # ── And ALL THREE brains, not just the cheapest one. Each was blocked by a different fault,
+    #    so a pass that only proves one of them proves nothing about the other two.
+    reached = {name for p in payloads for name, rows in slices(p).items() if rows}
+    assert reached == {"organization_rules", "behavior_patterns", "adaptive_preferences"}, (
+        f"only {sorted(reached)} reached a package")
+
+    # ── THE RECEIPT. Every applied entry names the token that selected it, and none of them rests
+    #    on the pre-address heuristic (`legacy_*`), which would mean the producer had not actually
+    #    been taught to publish an address.
+    # ── THE CONTROL. A Behaviour pattern measured on a person NO situation here is about must not
+    #    bind. A selector that returned the tenant's whole brain would satisfy every assertion
+    #    above and would be the opposite of a fix.
+    from tests.reason.adapters.l3_pilot_seed import EVAL_TIME  # noqa: F401  (documents the clock)
+    with pg_store.engine.connect() as c:
+        unrelated = c.execute(text(
+            "select node_id from graph_nodes where org_id = :o and valid_to is null "
+            "and node_type = 'person' and lower(canonical_key) = :e"),
+            {"o": org, "e": "meera@northwind-registry.test"}).scalar()
+    applied_subjects = {str(row.get("subject_key"))
+                        for p in payloads for row in (p.get("behavior_patterns") or [])}
+    assert applied_subjects, "no behaviour pattern applied at all"
+    assert not any(str(unrelated) in subject for subject in applied_subjects), (
+        f"a pattern about an unrelated person bound anyway: {sorted(applied_subjects)}")
+
+    evidence = [e for p in payloads for e in (p.get("evidence") or [])
+                if str(e.get("brain")) in {"organization", "behavior", "adaptive"}]
+    assert evidence, "the brains reached the package and left no evidence row"
+    for row in evidence:
+        basis = (row.get("metadata") or {}).get("selection_basis") or []
+        assert basis, f"{row.get('source_ref')} was selected and cannot say why"
+        assert not any(str(b).startswith("legacy_") for b in basis), (
+            f"{row.get('source_ref')} bound through the pre-address heuristic: {basis}")
+
+
+def test_an_expired_adaptive_lease_is_not_applied(pg_store):
+    """THE TTL IS JUDGED AGAINST THE COMPILE'S FROZEN CLOCK, never the wall clock.
+
+    A lease has an expiry and a package must be reproducible. Reading `now()` in the lease query
+    would mean a compile replayed for an audit could apply a preference that had already lapsed
+    when the decision was taken — a package whose content depends on when you look at it, which is
+    the one property Layer 3 is required not to have.
+
+    Asserted by moving the CLOCK rather than the row: the lease is published live, and a compile
+    evaluated after its expiry must not carry it.
+    """
+    import json
+
+    from tests.reason.adapters.l3_pilot_seed import EVAL_TIME, seed_admin_pilot
+
+    org = "pk_l3_lease_expiry"
+    seed_admin_pilot(pg_store, org, with_brains=True, build_cards=False)
+
+    from genios_engine.packs.wiring import make_registry
+    from genios_engine.reason.domain_shadow import shadow_compile
+
+    url = pg_store.engine.url.render_as_string(hide_password=False)
+    # The seeded lease expires 7 days after EVAL_TIME. Compile 30 days later.
+    later = EVAL_TIME + timedelta(days=30)
+    shadow_compile(store=pg_store, org_id=org, eval_time=later, live=True,
+                   registry=make_registry(url))
+
+    with pg_store.engine.connect() as c:
+        payloads = [json.loads(r) if isinstance(r, str) else r for r in c.execute(text(
+            "select payload from expertise_packages where org_id = :o "
+            "order by created_at desc"), {"o": org}).scalars()]
+    # The lease row is still ACTIVE in the table — nothing expired it — and no package compiled
+    # against the later clock may carry it.
+    with pg_store.engine.connect() as c:
+        assert c.execute(text("select count(*) from temporary_memories "
+                              "where org_id = :o and active"), {"o": org}).scalar() == 1
+    assert payloads
+    assert not any(p.get("adaptive_preferences") for p in payloads[:2]), (
+        "an expired lease reached a package — the TTL is being read against the wrong clock")

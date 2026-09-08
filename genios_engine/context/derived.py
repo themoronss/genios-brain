@@ -206,19 +206,47 @@ def compute_deal_view(store, org_id: str, *, now: datetime | None = None) -> int
     """
     now = now or datetime.now(timezone.utc)
     with store.engine.begin() as c:
-        # Latest inbound anywhere under each company, through its edges.
+        # Latest inbound anywhere under each account, through its edges.
+        #
+        # EDGE DIRECTION, AND NODE TYPE, AND EDGE VALIDITY — the same three the commitment roll-up
+        # below and `_person_neighbours` were already fixed for, and the last two roll-ups still
+        # carrying the bug. `pipeline.py::_works_at` writes PERSON -> COMPANY, so `from_node_id`
+        # is the PERSON on every affiliation edge: taking it "as company" wrote `deal.last_inbound`
+        # and `deal.status` onto the PEOPLE and reached a company only through `owns`
+        # (company -> deal), where no thread fact lives. `_person_neighbours`'s docstring measured
+        # the result — 33 of 40 companies holding zero facts of any kind — and named these two
+        # selects as the cause, and then only fixed itself.
+        #
+        # Three corrections, all of them the rule that docstring states:
+        #   * traverse BOTH directions and decide membership on NODE TYPE, never on which column
+        #     the writer happened to use;
+        #   * require the account end to actually BE a company or deal — an unfiltered
+        #     `from_node_id` made every edge in the graph an account roll-up, including
+        #     person -> person;
+        #   * honour `e.valid_to is null`, which neither select did, so a retired affiliation kept
+        #     rolling a former colleague's threads onto the account forever.
+        _ACCOUNT_EDGE = (
+            "from graph_nodes a "
+            "join graph_edges e on e.org_id = a.org_id and e.valid_to is null "
+            "  and (e.from_node_id = a.node_id or e.to_node_id = a.node_id) ")
+        _OTHER_END = ("case when e.from_node_id = a.node_id "
+                      "     then e.to_node_id else e.from_node_id end")
+        _ACCOUNT_WHERE = ("where a.org_id = :o and a.valid_to is null "
+                          "  and a.node_type in ('company', 'deal') ")
         rows = c.execute(text(
-            "select e.from_node_id as company, max(f.value #>> '{}') as last_inbound "
-            "from graph_edges e "
-            "join graph_facts f on f.subject_node_id = e.to_node_id and f.org_id = e.org_id "
-            "where e.org_id = :o and f.field = 'thread.last_inbound' and f.status = 'active' "
-            "group by e.from_node_id"), {"o": org_id}).all()
+            "select a.node_id as company, max(f.value #>> '{}') as last_inbound "
+            + _ACCOUNT_EDGE +
+            "join graph_facts f on f.org_id = a.org_id and f.subject_node_id = " + _OTHER_END + " "
+            + _ACCOUNT_WHERE +
+            "  and f.field = 'thread.last_inbound' and f.status = 'active' "
+            "group by a.node_id"), {"o": org_id}).all()
         stages = c.execute(text(
-            "select e.from_node_id as company, o2.kind "
-            "from graph_edges e "
-            "join graph_observations o2 on o2.subject_node_id = e.to_node_id "
-            "and o2.org_id = e.org_id "
-            "where e.org_id = :o and o2.status = 'active'"), {"o": org_id}).all()
+            "select a.node_id as company, o2.kind "
+            + _ACCOUNT_EDGE +
+            "join graph_observations o2 on o2.org_id = a.org_id "
+            "  and o2.subject_node_id = " + _OTHER_END + " "
+            + _ACCOUNT_WHERE +
+            "  and o2.status = 'active'"), {"o": org_id}).all()
 
         best_stage: dict[str, str] = {}
         kind_to_stage = dict(_STAGE_BY_KIND)

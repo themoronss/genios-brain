@@ -73,10 +73,37 @@ _DEFAULT_RUNTIME_CONFIDENCE_BP = 6000
 
 
 def _normalize_l6_visibility(visibility: Mapping[str, Any]) -> dict[str, Any]:
-    scope = visibility.get("scope")
+    """Absorb BOTH differences between Layer 6's visibility record and this compiler's model.
+
+    **THE SECOND ONE WAS A SILENT TOTAL LOSS, AND IT ONLY BECAME REACHABLE WHEN SELECTION STARTED
+    WORKING.** `contracts/learning.Visibility.derived_from` is a LIST — `org_discovery` publishes
+    `("internal_kind:policy", "<event id>")` and everything else publishes `[]`. This module's
+    `contracts/visibility.Visibility.derived_from` is a `str`. So `Visibility.model_validate` in
+    `RuntimeBrainEntry.__post_init__` raised on EVERY entry Layer 6 has ever published, and
+    `shadow_compile` catches per situation: the situation was counted as `error` and its package —
+    the whole package, not just the brain slice — was never built.
+
+    It could not be observed before, because the selector never returned a row for the mapper to
+    choke on. Two defects in series, the second hidden behind the first, and the visible symptom of
+    both was the same: a compiled brain that produced nothing.
+
+    A list becomes the joined provenance rather than being dropped: `derived_from` exists so a
+    wrong audience is traceable to the connector that decided it, and replacing a real provenance
+    with the default string would make an entry look like it came from nowhere. Empty stays empty
+    so the model's own default applies.
+    """
+    normalized = dict(visibility)
+    scope = normalized.get("scope")
     if scope in _L6_SCOPE_ALIASES:
-        return {**visibility, "scope": _L6_SCOPE_ALIASES[scope]}
-    return dict(visibility)
+        normalized["scope"] = _L6_SCOPE_ALIASES[scope]
+    derived = normalized.get("derived_from")
+    if isinstance(derived, (list, tuple)):
+        joined = ",".join(str(item) for item in derived if item)
+        if joined:
+            normalized["derived_from"] = joined
+        else:
+            normalized.pop("derived_from", None)
+    return normalized
 
 
 def _entry_from_l6_row(row: Any) -> RuntimeBrainEntry:
