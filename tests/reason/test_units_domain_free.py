@@ -37,12 +37,18 @@ DOMAIN_TOKENS = re.compile(r"(?<![A-Za-z])(deal|champion|pipeline|ticket)s?(?![A
 #: The units this wave purged. Zero domain tokens, with exactly one pinned exception.
 PURGED = ("opportunity.py", "risk.py", "resource_unit.py")
 
-#: The ONE domain token allowed to survive the purge, and why. `core.risk` is one of the six units
-#: that has actually been running, so this exact string is already in audit rows and in the reasons
-#: attached to shipped signals; renaming it would orphan them to purify a spelling. Pinned as a
-#: whole line so it cannot be joined by a second exception without this list changing.
+#: The ONE domain token allowed to survive the purge, and why.
+#:
+#: **THIS CHANGED, AND THE CHANGE IS THE POINT.** It used to pin the LIVE emission
+#: (`RISK_REASON_CODE = "deal_momentum_risk"`) on the argument that the string was already in audit
+#: rows and renaming it would orphan them. That argument covered the stored rows and quietly
+#: covered the ongoing emission too — `core.risk` writes its code on every situation it scores,
+#: including `account_admin` ones with no deal in them, so the word kept arriving on new cards.
+#: The emission is now domain-free (`do_nothing_exposure`) and the old spelling survives ONLY as a
+#: read-side alias for the history, which is what the original argument actually justified.
+#: Pinned as a whole line so it cannot be joined by a second exception without this list changing.
 FROZEN_LINES = {
-    "risk.py": ('RISK_REASON_CODE = "deal_momentum_risk"',),
+    "risk.py": ('LEGACY_RISK_REASON_CODE = "deal_momentum_risk"',),
 }
 
 #: Units NOT in this wave's scope, with the number of domain-token lines each carries today. The
@@ -82,8 +88,35 @@ def test_the_frozen_exception_is_exactly_one_line_and_still_there():
     exact text, so widening it is an edit to this test and therefore a decision somebody made."""
     source = _sources()["risk.py"]
 
-    assert 'RISK_REASON_CODE = "deal_momentum_risk"' in source
+    assert 'LEGACY_RISK_REASON_CODE = "deal_momentum_risk"' in source
     assert sum(1 for line in source.splitlines() if DOMAIN_TOKENS.search(line)) == 1
+
+
+def test_the_surviving_domain_token_is_a_historical_alias_and_is_never_emitted():
+    """The freeze is only defensible for stored history. The moment the old spelling is emitted
+    again it is not a legacy row, it is this unit saying "deal" on an admin situation — which is
+    the defect Law 5 names, and which the previous version of this file permitted."""
+    from genios_engine.reason.reasoners.risk import (
+        LEGACY_RISK_REASON_CODE,
+        RISK_REASON_CODE,
+        RISK_REASON_CODES,
+    )
+
+    assert not DOMAIN_TOKENS.search(RISK_REASON_CODE), (
+        f"the LIVE risk reason code carries domain vocabulary again: {RISK_REASON_CODE}")
+    assert LEGACY_RISK_REASON_CODE in RISK_REASON_CODES, (
+        "the old spelling must stay resolvable or every stored row loses its meaning")
+
+    tree = ast.parse(_sources()["risk.py"])
+    emitted = [
+        node.id for node in ast.walk(tree)
+        if isinstance(node, ast.Name) and node.id == "LEGACY_RISK_REASON_CODE"
+    ]
+    # Two references only: the assignment target, and its membership in `RISK_REASON_CODES`.
+    # Anything more means something started reading it on the write path.
+    assert len(emitted) <= 2, (
+        "LEGACY_RISK_REASON_CODE is referenced beyond its definition and the alias tuple — it is "
+        "a read-side alias and must never reach an emitted reason code")
 
 
 @pytest.mark.parametrize("filename", sorted(DOMAIN_DEBT))

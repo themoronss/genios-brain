@@ -55,6 +55,14 @@ from genios_engine.reason.decision_maker import SITUATION_IMPORTANCE_KEY
 from genios_engine.reason.plan import CONTEXT_AWARE_SELECTION_KEY, LATENCY_CEILING_KEY
 
 from .citations import UNDATED, bind_citations, descending_date
+from .play_priors import (
+    EFFORT_DELTA_KEY,
+    IMPACT_DELTA_KEY,
+    RISK_REDUCTION_KEY,
+    SUCCESS_DELTA_KEY,
+    derive_play_priors,
+    play_deltas,
+)
 from .rule_compiler import artifact_class, compile_package_rules, play_id_for
 from .situation_projection import SituationProjection
 
@@ -510,10 +518,33 @@ def _declared_field(unit: _RosterUnit, bound: Mapping[str, str],
     return (gated[0],) if gated else ()
 
 
+#: WHICH UNIT READS WHICH DELTA MAP. The four maps are the ONLY path from a measured unit output to
+#: the ranking formula, and every one of them was authored in exactly one hand-written native
+#: capability and nowhere on the compiled lane — so `core.impact`, `core.risk`,
+#: `core.recommendation` and `core.cost` ran on every compiled tenant, emitted, and moved no score
+#: by design. A key spelled here that the unit does not read is a silent no-op, which is the
+#: failure being removed, so the pairing is a constant and
+#: `tests/reason/adapters/test_play_priors.py` asserts each unit's source actually reads its key.
+#: `core.cost` IS ABSENT ON PURPOSE, and finding out why is the reason this table is explicit.
+#: `packs/capabilities/deal_cooling_v2.py` authors `play_effort_bp` in `core.cost`'s config and
+#: **no code reads that key** — `cost_unit` corrects effort by comparing the play's declared
+#: `effort_bp` against `_step_effort`, and has never looked for an authored map. Copying that key
+#: onto the compiled lane would have shipped 228 playbooks' worth of config that nothing consumes,
+#: which is the exact silent no-op the other three entries exist to remove. The effort component
+#: gets its variance from the PRIOR instead (`play_priors._effort`), and `cost_unit` now reads the
+#: same actor-weighted basis so the two cannot disagree.
+_DELTA_CONSUMERS: Mapping[str, str] = {
+    "core.impact": IMPACT_DELTA_KEY,
+    "core.risk": RISK_REDUCTION_KEY,
+    "core.recommendation": SUCCESS_DELTA_KEY,
+}
+
+
 def _roster_specs(package: ExpertisePackage, *, gate_fields: tuple[str, ...],
                   available: frozenset[str], present: frozenset[str],
                   authored_priority_bp: int | None,
                   blocked_play_ids: tuple[str, ...],
+                  play_definitions: Mapping[str, Mapping[str, Any]] | None = None,
                   projection: SituationProjection | None = None
                   ) -> tuple[tuple[ReasonerSpec, ...], dict[str, Any]]:
     """The staged roster for one package, plus the receipt for everything it declined.
@@ -542,6 +573,10 @@ def _roster_specs(package: ExpertisePackage, *, gate_fields: tuple[str, ...],
     """
     projected_declared = projection.declared_fields if projection is not None else ()
     unknowable = frozenset(projection.unknowable_paths) if projection is not None else frozenset()
+    # Built ONCE for the roster rather than per unit: four units read four different keys off one
+    # derivation, and deriving it four times would be four chances for them to disagree about the
+    # same play.
+    deltas = play_deltas(play_definitions or {})
     declined: dict[str, dict[str, Any]] = {}
     kept: list[tuple[_RosterUnit, dict[str, Any], dict[str, str], dict[str, list[str]]]] = []
     for unit in _ROSTER:
@@ -579,6 +614,16 @@ def _roster_specs(package: ExpertisePackage, *, gate_fields: tuple[str, ...],
             declared_fields = _declared_field(unit, bound, bound_lists, present)
         if unit.unit_id == "core.constraint" and blocked_play_ids:
             config["blocked_play_ids"] = list(blocked_play_ids)
+        # K1 · THE MEASURED HALF REACHES THE SCORE. Without this key the unit measures its
+        # dimension, publishes the metric, iterates an empty authored map and emits no adjustment
+        # at all — which is what `core.impact`, `core.risk`, `core.recommendation` and `core.cost`
+        # have done on every compiled decision this engine has made. The ceiling per play comes
+        # from the same authored evidence the priors read (`adapters/play_priors.play_deltas`), so
+        # a play that declared a measurable outcome is tilted further by a measured stake than a
+        # procedural checklist is.
+        delta_key = _DELTA_CONSUMERS.get(unit.unit_id)
+        if delta_key is not None and deltas.get(delta_key):
+            config[delta_key] = dict(deltas[delta_key])
         if unit.unit_id == "core.priority" and authored_priority_bp is not None:
             # THE AUTHOR'S RULING, and no `source_reasoner`. A declared source disables
             # `MaximumUrgencyPlugin` outright, and the six-unit lane declared `core.risk` — a unit
@@ -763,7 +808,8 @@ def _authored_play_priority(definition: Mapping[str, Any]) -> int | None:
     return raw
 
 
-def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]:
+def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict,
+                                               dict[str, Mapping[str, Any]]]:
     """Playbook `expert_rules` (definitions carrying steps) become read-only review plays —
     plus a RECEIPT of everything this conversion refused or cut.
 
@@ -808,6 +854,12 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]
     fits = 0
     prioritised = 0
     efficacy = _learned_play_efficacy(package)
+    # K1 · the derivation's own workings, kept per play so the receipt can carry the arithmetic and
+    # `_roster_specs` can author the delta maps from the SAME declared evidence the priors read.
+    # Keyed by play id rather than rule id because that is what every downstream consumer — the
+    # config maps, the receipt, the candidate rows — addresses a play by.
+    priors_by_play: dict[str, Any] = {}
+    definitions_by_play: dict[str, Mapping[str, Any]] = {}
     for position, rule in enumerate(package.expert_rules):
         if not isinstance(rule, Mapping):
             skipped[f"unmapped_{position}"] = "not_a_mapping"
@@ -866,16 +918,44 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]
         prioritised += int(priority_bp is not None)
         rank = (0 if fit else 1, descending_date(recency.get(owner, _UNDATED)),
                 -(priority_bp or 0), play_id)
+        # K1 · THE THREE COMPONENTS THIS LANE NEVER MEASURED. Until now `PlayDefinition` was
+        # constructed without `impact_bp`, `effort_bp` or `risk_bp`, so every compiled play took
+        # the dataclass defaults — 5,000 apiece — and 45% of the ranking formula's weight sat on
+        # three numbers that were identical across every candidate on every situation. The priors
+        # are read off what the AUTHOR declared (steps and their actors, failure modes, limits,
+        # declared outcomes, status); `adapters/play_priors` carries the derivation and the
+        # arithmetic receipt for each term.
+        priors = derive_play_priors(definition, situation_fit=fit)
+        priors_by_play[play_id] = priors
+        definitions_by_play[play_id] = definition
         candidates.append((rank, play_id, PlayDefinition(
             play_id, "1.0.0", str(definition.get("name") or play_id)[:200],
             steps=steps,
             read_only=True,
-            success_probability_bp=learned[0] if learned else 5_000,
+            impact_bp=priors.impact_bp,
+            effort_bp=priors.effort_bp,
+            risk_bp=priors.risk_bp,
+            # MEASURED BEATS AUTHORED, and only in that direction. The org's own outcomes win
+            # wherever the learning has them; the authored prior replaces the flat 5,000 fallback
+            # everywhere else, which is every play on a tenant that has not yet accumulated any —
+            # i.e. every play on day one, which is exactly when ranking has to work.
+            success_probability_bp=learned[0] if learned else priors.success_bp,
             tags=("human_approval", "playbook"),
             metadata={"source": "expert_playbook", "external_recipient_required": False,
                       # Provenance on the play itself, so an auditor reading a candidate can see
                       # WHICH learned entry moved it rather than inferring it from a score.
-                      **({"learned_success_from": learned[1]} if learned else {})},
+                      **({"learned_success_from": learned[1]} if learned else {}),
+                      "success_source": "learned" if learned else "authored_prior",
+                      # WHY THE EFFORT BASIS TRAVELS ON THE PLAY. `PlayDefinition.steps` is a
+                      # tuple of STRINGS — the actor each step declares is gone by the time
+                      # `core.cost` sees it, so `cost_unit._step_effort` prices every step at one
+                      # flat human rate. That was harmless while `effort_bp` was a flat 5,000 and
+                      # actively wrong the moment it stopped being: a nine-step AUTOMATED play
+                      # would read as drifted and be "corrected" back up by 3,000bp, re-imposing
+                      # the human assumption the prior exists to remove. The adapter knows the
+                      # actor mix; the unit does not; so the adapter says so here and the unit
+                      # reads it (`cost_unit._step_effort`) instead of guessing.
+                      "effort_basis_bp": priors.effort_bp},
         )))
 
     candidates.sort(key=lambda item: item[0])
@@ -903,6 +983,29 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]
         "truncation_reason": (f"ranked cap at {MAX_PLAYS} plays: situation fit first, "
                               "rule id last" if truncated else None),
         "generic_fallback_used": not plays,
+        # K1 · THE ARITHMETIC BEHIND THE THREE COMPONENTS THAT USED TO BE CONSTANT. Per surviving
+        # play, every term that produced its impact, effort, risk and authored success, naming the
+        # corpus field each was read from. This is what makes "the formula decides" checkable from
+        # a stored manifest rather than by re-running the compiler: a reviewer asking why play A
+        # outranked play B reads the two receipts side by side.
+        "play_components": {
+            play.play_id: {
+                "impact_bp": play.impact_bp,
+                "effort_bp": play.effort_bp,
+                "risk_bp": play.risk_bp,
+                "success_probability_bp": play.success_probability_bp,
+                "success_source": play.metadata.get("success_source"),
+                "derivation": dict(priors_by_play[play.play_id].receipt),
+            }
+            for play in plays if play.play_id in priors_by_play
+        },
+        # The spread, as one number per component, so "three of six ranking components do not move"
+        # is answerable from the receipt instead of from a population sweep. A 1 here on a
+        # multi-play capability is the defect returning.
+        "component_distinct_values": {
+            name: len({getattr(play, name) for play in plays})
+            for name in ("impact_bp", "effort_bp", "risk_bp", "success_probability_bp")
+        },
     }
     if not plays:
         plays.append(PlayDefinition(
@@ -919,7 +1022,13 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict]
             tags=("human_approval", "review", "non_prescriptive"),
             metadata={"source": "adapter_default", "external_recipient_required": False},
         ))
-    return tuple(plays), receipt
+    # The SURVIVING plays' authored definitions, for the delta maps. Only the survivors: a ceiling
+    # authored for a play the cap cut is config nothing can ever read, and every unit's config
+    # reaches the manifest's content address, so carrying the cut ones would move a capability
+    # version for plays that are not in it.
+    surviving = {play.play_id: definitions_by_play[play.play_id]
+                 for play in plays if play.play_id in definitions_by_play}
+    return tuple(plays), receipt, surviving
 
 
 @dataclass(frozen=True, slots=True)
@@ -1133,7 +1242,7 @@ def expertise_capability_manifest(
     False can never become a card, however complete the rest of its audit bundle is.
     """
     situation_type = str(package.metadata.get("situation_type") or "situation")
-    plays, play_receipt = _plays(package)
+    plays, play_receipt, play_definitions = _plays(package)
     adapter = ContextAdapter(situation, context) if situation is not None else None
     weld = weld_package(package, declared_play_ids=frozenset(play.play_id for play in plays),
                         play_receipt=play_receipt, adapter=adapter)
@@ -1170,7 +1279,8 @@ def expertise_capability_manifest(
         reasoners, roster_receipt = _roster_specs(
             package, gate_fields=gate_fields, available=frozenset(required_fields),
             present=present, authored_priority_bp=package.metadata.get("authored_priority_bp"),
-            blocked_play_ids=blocked_plays, projection=projection)
+            blocked_play_ids=blocked_plays, play_definitions=play_definitions,
+            projection=projection)
     else:
         reasoners = _default_dag(gate_fields, package.metadata.get("authored_priority_bp"),
                                  blocked_play_ids=blocked_plays)

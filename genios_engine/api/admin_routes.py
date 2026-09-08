@@ -1185,19 +1185,31 @@ def get_l4_pilot_activation(target_org: str, _ctx: AuthCtx = Depends(require_adm
     real, and a tenant running `bundle` with `ranking_v2` off is narrating a decision the formula
     never made. This read is where that is visible before a gate report says it a fortnight later.
     """
-    from genios_engine.platform.l4_activation import (EFFECTS, L4_FEATURES, activated_features,
-                                                      get_l4_activation, missing_preconditions)
+    from genios_engine.platform.l4_activation import (CROSS_LAYER_EFFECTS, EFFECTS, L4_FEATURES,
+                                                      activated_features, get_l4_activation,
+                                                      missing_cross_layer_preconditions,
+                                                      missing_preconditions)
     engine = _engine()
     records = [r for r in (get_l4_activation(engine, target_org, f) for f in L4_FEATURES)
                if r is not None]
     live = sorted(activated_features(engine, target_org))
+    # THE ORDERING THAT CROSSES A LAYER, reported beside the one that does not. `ranking_v2` live
+    # on a tenant whose Layer 1 was never activated is the six-weight model permanently reweighing
+    # five — true, receipted on every decision, and completely invisible on a console that showed
+    # only `live: true`. See `l4_activation.CROSS_LAYER_PRECONDITIONS`.
+    cross = {f: list(missing_cross_layer_preconditions(engine, target_org, f)) for f in live}
     return {"org_id": target_org,
             "in_pilot": bool(live),
             "live_features": live,
             "missing_preconditions": {f: list(missing_preconditions(engine, target_org, f))
                                       for f in live},
+            "missing_cross_layer_preconditions": cross,
             "activations": [r.as_record() for r in records],
-            "effects": EFFECTS}
+            "effects": EFFECTS,
+            # Only the ones actually unmet: an operator reading a console needs the explanation for
+            # the state they are in, not a glossary of every state they are not.
+            "cross_layer_effects": {item: CROSS_LAYER_EFFECTS[item]
+                                    for items in cross.values() for item in items}}
 
 
 @router.post("/l4-activation/{target_org}")
@@ -1223,21 +1235,31 @@ def activate_l4_pilot(target_org: str, body: L4PilotActivation,
     with engine.connect() as c:
         if c.execute(text("select 1 from orgs where id=:o"), {"o": target_org}).first() is None:
             raise HTTPException(404, "account not found")
-    from genios_engine.platform.l4_activation import EFFECTS, activate, missing_preconditions
+    from genios_engine.platform.l4_activation import (CROSS_LAYER_EFFECTS, EFFECTS, activate,
+                                                      missing_cross_layer_preconditions,
+                                                      missing_preconditions)
     record = activate(engine, target_org, feature=feature, by=ctx.actor_id or ctx.org_id,
                       notes=body.notes)
     pending = missing_preconditions(engine, target_org, feature)
+    # Said on the way IN, where it can still change the operator's mind — see the docstring. This
+    # is the ordering that used to be unsayable: switching `ranking_v2` on for a tenant whose
+    # Layer 1 is dark returned an unqualified success.
+    cross = missing_cross_layer_preconditions(engine, target_org, feature)
     from genios_engine.platform.audit import record as audit
     audit(ctx.org_id, "config_changed", actor_type="user", actor_id=ctx.actor_id or ctx.org_id,
           target_type="org", target_id=target_org,
           metadata={"audit_category": "admin", "field": "l4_activation",
                     "feature": feature, "value": True, "notes": body.notes,
-                    "missing_preconditions": list(pending)})
-    _log.info("L4 pilot ACTIVATED for org=%s feature=%s by=%s (missing preconditions: %s)",
-              target_org, feature, ctx.actor_id, ", ".join(pending) or "none")
+                    "missing_preconditions": list(pending),
+                    "missing_cross_layer_preconditions": list(cross)})
+    _log.info("L4 pilot ACTIVATED for org=%s feature=%s by=%s (missing preconditions: %s; "
+              "cross-layer: %s)", target_org, feature, ctx.actor_id,
+              ", ".join(pending) or "none", ", ".join(cross) or "none")
     return {"org_id": target_org, "switched_on": feature,
             "activation": record.as_record(),
             "missing_preconditions": list(pending),
+            "missing_cross_layer_preconditions": list(cross),
+            "cross_layer_effects": {item: CROSS_LAYER_EFFECTS[item] for item in cross},
             "effect": EFFECTS.get(feature)}
 
 

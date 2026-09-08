@@ -56,6 +56,22 @@ from .common import clamp_bp, divide_half_up, evidence_ids, fact_value, integer
 #: moved this play?" and get an answer that names the stake rather than the unit.
 IMPACT_ADJUSTMENT_REASON = "impact_magnitude_at_stake"
 
+#: Named when NO dimension of the stake reported, so `impact_bp` was never computed.
+#:
+#: **LAW 6 — every silence names itself.** This unit ran, emitted a result, and returned
+#: `Verdict(matched=None)` carrying no reason codes at all: a reader could not tell an impact this
+#: unit declined to judge from one it judged immaterial, and the audit row for the two was
+#: identical. `core.impact` carries 2,000 of the formula's 10,000 basis points, so "the largest
+#: single component was withheld and nothing said why" is the difference between a decision a
+#: reviewer can defend and one they can only re-run. `reasoners/risk.py` already owns this idiom
+#: (`MOMENTUM_UNMEASURED_REASON`, `RELATIONSHIP_UNMEASURED_REASON`); this is the same claim for the
+#: unit next to it.
+#:
+#: The behaviour is UNCHANGED — an unmeasured stake still withholds `impact_bp` rather than
+#: manufacturing a 0, which is `calculate`'s documented asymmetry against `core.risk`'s. Only the
+#: silence became legible.
+IMPACT_UNMEASURED_REASON = "impact_unmeasured"
+
 
 def _config_bp(view: UnitView, key: str, default: int) -> int:
     """Read one basis-point tuning value, refusing anything that is not integer bp.
@@ -317,7 +333,10 @@ class ImpactUnit(ReasoningUnit):
         """
         impact_bp = metrics.get("impact_bp")
         if impact_bp is None:
-            return Verdict(matched=None, metrics=dict(metrics))
+            # `matched` stays None — the unit has no opinion, which is not "immaterial" — but the
+            # result now SAYS so. See `IMPACT_UNMEASURED_REASON`.
+            return Verdict(matched=None, metrics=dict(metrics),
+                           reason_codes=(IMPACT_UNMEASURED_REASON,))
 
         threshold = _config_bp(view, "impact_threshold_bp", 5_000)
         material = impact_bp >= threshold
@@ -362,5 +381,5 @@ class ImpactUnit(ReasoningUnit):
         )
 
 
-__all__ = ["AccountImportancePlugin", "IMPACT_ADJUSTMENT_REASON", "ImpactUnit",
-           "RevenueExposurePlugin", "StrategicLinkagePlugin"]
+__all__ = ["AccountImportancePlugin", "IMPACT_ADJUSTMENT_REASON", "IMPACT_UNMEASURED_REASON",
+           "ImpactUnit", "RevenueExposurePlugin", "StrategicLinkagePlugin"]

@@ -154,7 +154,7 @@ def _playbook(artifact_id, *, owner, situations=(), priority_bp=None):
 
 def _order(package):
     from genios_engine.reason.adapters.expertise import _plays
-    plays, _ = _plays(package)
+    plays, _, _defs = _plays(package)
     return [play.play_id for play in plays]
 
 

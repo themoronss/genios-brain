@@ -612,13 +612,37 @@ class ComposedImportance:
 
 @dataclass(frozen=True, slots=True)
 class L1Supply:
-    """Whether Layer 1's scorer is actually live for this tenant, measured on its own output."""
+    """Whether Layer 1's scorer is actually live for this tenant, measured on its own output.
+
+    **TWO QUESTIONS LIVE HERE, AND CONFLATING THEM WAS A REAL DEFECT.** "Is Layer 1 scoring for
+    this tenant at all?" and "is the supply it produced flat enough to be useless?" are different
+    questions with different populations and different right answers on an empty supply, and the
+    codebase answered them in two modules under one name:
+
+    * `assess_l1_supply` (here) folds a SAMPLE and asks about FLATNESS. An empty supply returns
+      `active=True` — a tenant that published nothing has published no evidence the scorer is
+      broken, and suppressing the L2 modifiers there would leave a pre-L1-v2 tenant with no
+      ranking at all.
+    * `reason/domain_shadow` folded the CURRENT SWEEP's slice with `any(importance_bp is not
+      None)` and called the result `l1_scoring_active`, whose docstring claimed it was *"a property
+      of the tenant's supply, never of one situation"*. It was a property of at most 500 situations
+      — and on an empty slice it answered **False**, the exact opposite of the function one module
+      over, for the same tenant, on the same sweep.
+
+    So the two facts are now named separately and each is measured on the population its own
+    question is about. `active` is the flatness verdict over whatever sample was folded.
+    `scoring_live` is the tenant-scoped fact and is `None` here, because a fold over an iterable
+    cannot know it — only `read_l1_scoring_live` can, and it asks the whole table.
+    """
 
     scored_count: int
     flat_count: int
     #: `flat_count * 10000 // scored_count`, or 0 on an empty supply.
     flat_share_bp: int
     active: bool
+    #: Has Layer 1 EVER published a scored signal for this tenant? `None` means "not asked" — the
+    #: fold below cannot answer it. Set only by `read_l1_scoring_live`, which is tenant-scoped.
+    scoring_live: bool | None = None
 
 
 def assess_l1_supply(importance_bps: Iterable[int | None]) -> L1Supply:
@@ -649,6 +673,54 @@ def assess_l1_supply(importance_bps: Iterable[int | None]) -> L1Supply:
             "SUPPRESSED, because a spread composed on a constant is a spread this system invented.",
             L1_NOT_ACTIVE, flat, len(scores), share, FLAT_BASE_BP)
     return L1Supply(scored_count=len(scores), flat_count=flat, flat_share_bp=share, active=active)
+
+
+#: The scored-signal predicate, spelled ONCE. `_l1_from_rows` excludes `importance_version =
+#: 'unscored'` rows because an unscored signal publishes at 0 — the floor refusing to invent a
+#: number, not a measurement of zero importance — and a tenant-scope read that counted those would
+#: report a scorer as live on a tenant whose every row is a refusal. Restated rather than imported
+#: from `situation_bso` because that module imports THIS one and the cycle is not worth the reuse;
+#: `tests/context/test_l1_supply_scope.py` asserts the two spellings agree.
+_UNSCORED_VERSION = "unscored"
+
+#: Tenant-scoped, and deliberately `exists` rather than `count`. The question is binary — has this
+#: tenant's Layer 1 ever published a scored signal — and `count(*)` over a large tenant's whole
+#: signal table to learn "more than zero" is a table scan to answer a yes/no.
+_L1_SCORING_LIVE = (
+    "select exists (select 1 from qualified_signals "
+    "where org_id = :o and importance_version <> :unscored and importance_bp is not null)")
+
+
+def read_l1_scoring_live(conn, org_id: str) -> bool:
+    """Has Layer 1 EVER published a scored signal for this tenant? Tenant-scoped, one statement.
+
+    **WHY THIS EXISTS.** `reason/domain_shadow` needs to know whether a situation carrying no
+    importance is a RETRYABLE gap (Layer 1 is scoring here; this one has not been reached yet) or
+    a STRUCTURAL one (Layer 1 has never scored here; no sweep will ever repair it). It answered by
+    folding the current sweep's own slice — `limit`, default 500 — so a tenant whose Layer 1 *is*
+    scoring, whose sweep window happened to hold only unscored situations, got the structural
+    answer for that batch: its candidates were admitted carrying `ImportanceBasis.UNSCORED` and
+    ranked without importance, instead of being held for a retry that would have worked.
+
+    The failure was survivable and receipted, which is why it lasted: "decide without importance
+    and say so" is an honest degradation. It is still the wrong answer to a question the database
+    can answer exactly, and the docstring at the call site claimed it was already tenant-scoped.
+
+    **FAIL-OPEN, and that is the safe direction here.** An unreadable table returns True — "assume
+    Layer 1 is scoring" — because True is the STRICT branch at the only call site: it makes the
+    admission gate hold a situation for retry rather than admit it unscored. A database blip must
+    not silently relax an admission gate; the cost of the other direction is a delayed situation,
+    the cost of this one is a decision made on a supply nobody verified.
+    """
+    from sqlalchemy import text
+    try:
+        return bool(conn.execute(text(_L1_SCORING_LIVE),
+                                 {"o": org_id, "unscored": _UNSCORED_VERSION}).scalar())
+    except Exception:      # noqa: BLE001 — see the docstring: unreadable means STRICT, not relaxed
+        _log.exception("could not read Layer 1 scoring state for org=%s; assuming it IS scoring, "
+                       "which holds unscored situations for retry rather than admitting them",
+                       org_id)
+        return True
 
 
 # =================================================================================================
@@ -1239,6 +1311,7 @@ __all__ = [
     "DependencyInput", "ImportanceBase", "L1Supply", "MetricPolarity", "ModifierInputs",
     "ModifierName", "ModifierReason", "ModifierTerm", "SituationRef", "TrendInput",
     "assess_l1_supply", "compose_situation_importance", "load_modifier_inputs",
+    "read_l1_scoring_live",
     "read_constituent_signals", "read_derived_modifier_facts", "read_domain_coverage",
     "read_unresolved_conflicts", "worst_band",
 ]

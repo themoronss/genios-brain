@@ -77,7 +77,25 @@ def _step_effort(view: UnitView, play: PlayDefinition) -> int:
     human has to do, whatever number the author typed into ``effort_bp`` last quarter. Costing each
     declared step at a fixed configured rate keeps this arithmetic auditable — a reviewer can count
     the steps in the manifest and reproduce the number by hand.
+
+    **WHEN THE PLAY CARRIES ITS OWN BASIS, THAT WINS — and the flat rate is why it has to.**
+    ``PlayDefinition.steps`` is a tuple of strings: whatever the corpus said about WHO performs
+    each step is gone by the time this unit sees it, so the flat rate below prices a fully
+    automated nine-step play exactly like a nine-person-day one. That was invisible while every
+    compiled play carried a flat ``effort_bp`` of 5,000 — both numbers were fiction and the drift
+    check compared one to the other. It stops being invisible the moment ``effort_bp`` is derived
+    from the actor mix (``adapters/play_priors._effort``): this function would then read a cheap
+    automated play as *drifted*, and "correct" it back up by the full ceiling, re-imposing the
+    human assumption the derivation exists to remove.
+
+    So an adapter that KNOWS the actor mix states the basis on the play and this reads it. Nothing
+    is trusted blindly: the value goes through ``clamp_bp`` and must be a real non-negative int,
+    and a play that carries nothing keeps the flat rate exactly as before — which is every
+    hand-authored native capability, whose numbers do not move.
     """
+    declared = play.metadata.get("effort_basis_bp")
+    if isinstance(declared, int) and not isinstance(declared, bool) and declared >= 0:
+        return clamp_bp(declared)
     return clamp_bp(_config_bp(view, "step_effort_bp", 1_200) * len(play.steps))
 
 
