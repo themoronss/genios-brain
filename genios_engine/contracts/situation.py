@@ -102,6 +102,7 @@ from genios_engine.contracts.validators import (require_aware, require_bool, req
                                                 require_non_negative, require_sorted_unique,
                                                 require_text)
 from genios_engine.contracts.visibility import Visibility
+from genios_engine.platform.canonical import semantic_hash
 
 #: The v2 schema id. A NEW string rather than a bump of `business-situation.v1`, because the v1
 #: value is baked into `expertise_packages` content addresses that already exist: reusing it would
@@ -114,7 +115,8 @@ BUSINESS_SITUATION_V2_VERSION = "business-situation.v2"
 #: a text column and the wire form, the column and the contract must stay the same literal word.
 #: Spelled here rather than imported because `contracts/` may not import `context/` — the topology
 #: test enforces that — and `tests/contracts/test_l2_contracts.py` pins the two together.
-SITUATION_STATES: frozenset[str] = frozenset({"active", "dormant", "resolved", "archived"})
+SITUATION_STATES: frozenset[str] = frozenset(
+    {"active", "partial", "dormant", "resolved", "archived"})
 
 #: The six confidence axes, exactly. Doc 05's own acceptance row is "confidence vector axes on
 #: every situation: all 6", and five of them already exist as functions in
@@ -811,6 +813,27 @@ class BusinessSituationObject(BaseModel):
         payload = self.model_dump(mode="json")
         payload.pop("trace_id", None)
         return payload
+
+    # Compatibility reads used by the Layer 3 compiler.  They are views of first-class v2
+    # fields, not a second representation: callers can move to the typed fields independently
+    # while production publishes one object and one schema version.
+    def to_semantic_dict(self) -> dict[str, Any]:
+        return self.content_key()
+
+    @property
+    def semantic_hash(self) -> str:
+        return semantic_hash(self.content_key())
+
+    @property
+    def domain_hints(self) -> tuple[str, ...]:
+        return self.domain_ids
+
+    @property
+    def brain_subject_keys(self) -> tuple[str, ...]:
+        raw = self.metadata.get("brain_subject_keys") or ()
+        if isinstance(raw, str):
+            raw = (raw,)
+        return require_sorted_unique(raw, "brain subject key")
 
 
 # ====================================================================== V-1..V-8, the gate

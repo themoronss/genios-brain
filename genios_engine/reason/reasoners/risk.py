@@ -5,9 +5,9 @@ Answers one question: *what does it cost us if nobody does anything?*
 Risk here is not a mood and not a forecast. It is the downside already visible in the situation,
 read off two independent signals that were measured elsewhere and are merely *weighted* here:
 
-* **Momentum decay** — the deal is going quiet. `core.temporal` owns the clock and publishes
-  `drop_bp`; this unit does not re-derive it, because two units deriving the same number from the
-  same facts is how they drift apart.
+* **Momentum decay** — the engagement is going quiet. `core.temporal` owns the clock and
+  publishes `drop_bp`; this unit does not re-derive it, because two units deriving the same number
+  from the same facts is how they drift apart.
 * **Relationship health** — the account is thinly held. `core.relationship` owns coverage and
   publishes `relationship_risk_bp`.
 
@@ -20,8 +20,8 @@ Three properties are load-bearing and must survive any future edit:
 
 **The blend is fixed, the floor is authored.** Decay carries 60% of the weighted term and
 relationship health 40%, over a basis of 100 — integers throughout, half-up rounding, so the same
-inputs give the same basis points on every machine. The `base_risk_bp` floor exists because a deal
-that looks perfect is still a deal that can be lost; the capability author sets how much of that
+inputs give the same basis points on every machine. The `base_risk_bp` floor exists because work
+that looks perfect is still work that can be lost; the capability author sets how much of that
 irreducible exposure to carry.
 
 **Silence is zero, deliberately.** Unlike the Impact unit, an absent dependency here contributes
@@ -48,20 +48,27 @@ from genios_engine.contracts.reasoning import (
     ReasonerResult,
     ReasonerSpec,
     ReasoningRequest,
+    ResultStatus,
 )
 
 from ..unit import Observation, ReasoningUnit, UnitCategory, UnitView, Verdict
 from .common import basis_points, clamp_bp, divide_half_up, integer
 
-#: The single reason code this unit publishes. Risk is one claim about the do-nothing branch, so it
-#: carries one code — the per-plugin codes below stay inside the observations as provenance.
+#: The single unit-level reason code. Risk is one claim about the do-nothing branch, so the result
+#: carries one code — the per-plugin codes stay on their own findings as provenance.
+#:
+#: FROZEN STRING. The word in it is domain vocabulary this unit no longer uses anywhere else, and
+#: it stays anyway: `core.risk` is one of the six units that has actually been running on the
+#: compiled lane, so this exact code is already written into audit rows and into the reasons
+#: attached to shipped signals. Renaming it would orphan every one of them to purify a spelling.
+#: `tests/reason/reasoners/test_units_domain_free.py` pins it as the ONE permitted occurrence.
 RISK_REASON_CODE = "deal_momentum_risk"
 
 #: Carried by every adjustment, so an auditor asking "what moved this play's risk component?" gets
 #: an answer that names the authored mitigation rather than the unit.
 RISK_MITIGATION_REASON = "play_mitigates_detected_risk"
 
-#: The blend: 60/40 over a basis of 100. Decay leads because a deal that has stopped moving is the
+#: The blend: 60/40 over a basis of 100. Decay leads because work that has stopped moving is the
 #: nearer loss; thin coverage is the slower one. Named rather than inlined so the weighting is
 #: reviewable, but *not* configurable — moving these would re-score every shipped decision.
 MOMENTUM_WEIGHT = 60
@@ -74,18 +81,40 @@ MOMENTUM_PLUGIN = "momentum_decay"
 RELATIONSHIP_PLUGIN = "relationship_health"
 MITIGATION_PLUGIN = "risk_mitigation"
 
+#: The units that own the two exposures. Defaults, overridable per capability, and enumerated here
+#: so the registration check can prove they name units that exist — a source unit that was never
+#: registered reads exactly like a source unit that did not run.
+DEFAULT_TEMPORAL_SOURCE = "core.temporal"
+DEFAULT_RELATIONSHIP_SOURCE = "core.relationship"
 
-def _published(view: UnitView, reasoner_id: str, name: str) -> int:
-    """Read one metric a named dependency published, treating "did not run" as zero.
+#: Named when an exposure's source unit did not run. This is the difference between "we measured
+#: the decay and there is none" and "nothing measured the decay" — two situations that produce the
+#: identical `risk_bp` and mean entirely different things. Until these codes existed, a risk
+#: reading taken with both eyes shut was indistinguishable from a calm one, which is precisely the
+#: state `core.risk` has been in on the compiled lane: it schedules neither source, so two of its
+#: three plugins have never contributed a number, and the result never said so.
+MOMENTUM_UNMEASURED_REASON = "momentum_unmeasured"
+RELATIONSHIP_UNMEASURED_REASON = "relationship_unmeasured"
+
+
+def _published(view: UnitView, reasoner_id: str, name: str) -> int | None:
+    """Read one metric a named dependency published, or None when nothing published it.
 
     Deliberately not `UnitView.prior_metric`: that helper substitutes its default whenever the
     prior result is not COMPLETED *or* the value is not an int, whereas this unit has always
     coerced through `integer()` and let a non-integer metric fail loudly. Risk is summed into the
     ranking math, so a metric the system cannot read as an integer is an authoring fault worth
     surfacing, not a value to quietly replace with zero.
+
+    The None is new and it is the whole of K1a: the caller now knows whether it is looking at a
+    measurement or at a blind spot. What it does with that is unchanged — an unmeasured exposure
+    still contributes nothing to `risk_bp`, because this unit's documented asymmetry is that
+    silence is zero here, and the floor carries the rest.
     """
     result = view.prior.get(reasoner_id)
-    return integer((result.metrics if result else {}).get(name, 0), name)
+    if result is None or result.status != ResultStatus.COMPLETED or name not in result.metrics:
+        return None
+    return integer(result.metrics[name], name)
 
 
 def _observed(observations: Sequence[Observation], plugin_id: str, name: str) -> int:
@@ -110,11 +139,20 @@ class MomentumDecayPlugin:
     plugin_id = MOMENTUM_PLUGIN
 
     def contribute(self, view: UnitView) -> tuple[Observation, ...]:
-        source = str(view.config.get("temporal_reasoner") or "core.temporal")
+        source = str(view.config.get("temporal_reasoner") or DEFAULT_TEMPORAL_SOURCE)
+        drop = _published(view, source, "drop_bp")
+        if drop is None:
+            # No metric, because there is no measurement. An observation carrying `drop_bp: 0`
+            # would be a claim that the engagement is intact, made by a plugin that never saw it.
+            return (Observation(
+                plugin_id=self.plugin_id,
+                kind="risk.momentum_decay",
+                reason_codes=(MOMENTUM_UNMEASURED_REASON,),
+            ),)
         return (Observation(
             plugin_id=self.plugin_id,
             kind="risk.momentum_decay",
-            metrics={"drop_bp": _published(view, source, "drop_bp")},
+            metrics={"drop_bp": drop},
             reason_codes=("momentum_decay_exposure",),
         ),)
 
@@ -122,7 +160,7 @@ class MomentumDecayPlugin:
 class RelationshipHealthPlugin:
     """How thinly the account is held, as measured by the relationship unit.
 
-    A single-threaded deal is one departure away from starting over, and that exposure is
+    A single-threaded relationship is one departure away from starting over, and that exposure is
     independent of how recently anyone spoke — which is exactly why it is a separate contribution
     with its own weight rather than a modifier on decay.
     """
@@ -130,11 +168,18 @@ class RelationshipHealthPlugin:
     plugin_id = RELATIONSHIP_PLUGIN
 
     def contribute(self, view: UnitView) -> tuple[Observation, ...]:
-        source = str(view.config.get("relationship_reasoner") or "core.relationship")
+        source = str(view.config.get("relationship_reasoner") or DEFAULT_RELATIONSHIP_SOURCE)
+        concentration = _published(view, source, "relationship_risk_bp")
+        if concentration is None:
+            return (Observation(
+                plugin_id=self.plugin_id,
+                kind="risk.relationship_health",
+                reason_codes=(RELATIONSHIP_UNMEASURED_REASON,),
+            ),)
         return (Observation(
             plugin_id=self.plugin_id,
             kind="risk.relationship_health",
-            metrics={"relationship_risk_bp": _published(view, source, "relationship_risk_bp")},
+            metrics={"relationship_risk_bp": concentration},
             reason_codes=("relationship_exposure",),
         ),)
 
@@ -223,10 +268,14 @@ class RiskUnit(ReasoningUnit):
         the number is the statement, and a boolean would invite a downstream reader to treat this
         unit as a gate.
 
-        The finding carries the single unit-level reason code. The plugins' own codes stay inside
-        their observations as provenance rather than being unioned into the result: a reader of a
-        `risk` result should see one claim, not three, and the composition of the score is already
-        visible in the metric.
+        The headline finding carries the single unit-level reason code, and each exposure carries
+        its own provenance on its own finding: a reader of a `risk` result sees one claim, and an
+        auditor reading the findings sees what it was built from.
+
+        The one thing that IS unioned into the result's reason codes is an exposure that could not
+        be measured. That is not provenance, it is a limit on the claim — a `risk_bp` computed
+        with the decay source absent is a narrower statement than the same number computed with it
+        present, and the result has to say which one it is.
         """
         risk_bp = metrics["risk_bp"]
         adjustments: list[CandidateAdjustment] = []
@@ -236,15 +285,34 @@ class RiskUnit(ReasoningUnit):
             for play_id in sorted(observation.metrics):
                 adjustments.append(CandidateAdjustment(
                     play_id, "risk", -observation.metrics[play_id], RISK_MITIGATION_REASON))
-        finding = Finding("risk.do_nothing", "risk", metrics={"risk_bp": risk_bp},
-                          reason_codes=(RISK_REASON_CODE,))
-        return Verdict(matched=None, metrics=dict(finding.metrics), findings=(finding,),
-                       adjustments=tuple(adjustments), reason_codes=finding.reason_codes)
+        headline = Finding("risk.do_nothing", "risk", metrics={"risk_bp": risk_bp},
+                           reason_codes=(RISK_REASON_CODE,))
+        # Both exposures reach the evidence layer as their own findings — including the ones that
+        # could not be measured. A blend is not an explanation: `risk_bp` alone cannot tell a
+        # reader whether the number came from decay, from thin coverage, from the floor, or from
+        # two units that never ran, and the last of those is a fact about the reasoning that has
+        # to travel with it.
+        exposures = tuple(Finding(
+            finding_id=f"risk.{item.plugin_id}",
+            kind="risk",
+            matched=None,
+            metrics=item.metrics,
+            evidence_ids=item.evidence_ids,
+            reason_codes=item.reason_codes,
+        ) for item in observations if item.plugin_id != MITIGATION_PLUGIN)
+        blind = tuple(sorted({code for item in observations for code in item.reason_codes}
+                             & {MOMENTUM_UNMEASURED_REASON, RELATIONSHIP_UNMEASURED_REASON}))
+        return Verdict(matched=None, metrics=dict(headline.metrics),
+                       findings=(headline,) + exposures,
+                       adjustments=tuple(adjustments),
+                       reason_codes=(RISK_REASON_CODE,) + blind)
 
 
 #: The name the roster and every shipped capability import. Kept as an alias so the migration onto
 #: the unit framework is invisible to `reasoners/__init__.py` and to any pinned manifest.
 RiskReasoner = RiskUnit
 
-__all__ = ["MomentumDecayPlugin", "PlayMitigationPlugin", "RISK_MITIGATION_REASON",
-           "RISK_REASON_CODE", "RelationshipHealthPlugin", "RiskReasoner", "RiskUnit"]
+__all__ = ["DEFAULT_RELATIONSHIP_SOURCE", "DEFAULT_TEMPORAL_SOURCE",
+           "MOMENTUM_UNMEASURED_REASON", "MomentumDecayPlugin", "PlayMitigationPlugin",
+           "RELATIONSHIP_UNMEASURED_REASON", "RISK_MITIGATION_REASON", "RISK_REASON_CODE",
+           "RelationshipHealthPlugin", "RiskReasoner", "RiskUnit"]

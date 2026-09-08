@@ -31,6 +31,25 @@ pytestmark = pytest.mark.pg
 
 #: The corpus this gate is a pilot for.
 _ADMIN_RULES = Path("Domain Expertise/Admin Expertise/rules")
+#: The authored heuristics a compiled Admin signal may quote, for the V-1 byte-identity check.
+_ADMIN_HEURISTICS = Path("Domain Expertise/Admin Expertise/heuristics")
+
+
+def _authored_heuristics() -> dict[str, str]:
+    """`artifact_id -> the statement exactly as the corpus author wrote it.` No normalisation.
+
+    V-1 is a claim about BYTES, so the comparison has to be against the file rather than against a
+    tidied copy of it — see `contracts/domain_expertise._statement`: "a trailing newline quietly
+    removed here is a citation that fails V-1 for a reason nobody reading the two strings can see."
+    """
+    out: dict[str, str] = {}
+    for path in sorted(_ADMIN_HEURISTICS.glob("*/*.yaml")):
+        record = yaml.safe_load(path.read_text()) or {}
+        identity = record.get("identity") or {}
+        heuristic = record.get("heuristic") or {}
+        if identity.get("id") and isinstance(heuristic.get("statement"), str):
+            out[str(identity["id"])] = heuristic["statement"]
+    return out
 
 
 # ── the detectors, and the report's own boundaries ──────────────────────────────
@@ -168,12 +187,25 @@ def test_a_compiled_signal_carries_the_expert_claim_it_rests_on(pg_store):
             value = json.loads(value)
         carried.extend(value or ())
     assert carried, "the compiled lane still writes no citations — the claim dies in memory"
+    authored = _authored_heuristics()
     for citation in carried:
         assert set(citation) >= {"artifact_id", "artifact_class", "statement", "statement_hash",
                                  "source_ref"}
         assert citation["artifact_class"] == "heuristic"
-        assert citation["statement"].strip() == citation["statement"], (
-            "a stored quote was reflowed; V-1 exists so a card can render it verbatim")
+        # V-1, AGAINST THE CORPUS FILE ITSELF. This line used to read
+        # `citation["statement"].strip() == citation["statement"]`, and that assertion was wrong
+        # twice over. It did not detect reflowing — YAML's folded `>` scalar joins the authored
+        # lines with spaces before any code sees the value, and `.strip()` cannot see that — and
+        # it CONTRADICTED the contract it cites: `contracts/domain_expertise._statement` takes a
+        # statement exactly as authored on purpose ("a trailing newline quietly removed here is a
+        # citation that fails V-1 for a reason nobody reading the two strings can see"), and 245
+        # of the corpus's 1087 authored statements end in the newline a `>` scalar carries. So the
+        # old assertion failed a citation for OBEYING V-1. Byte-identity against the authored file
+        # is what V-1 actually asks for, and it is strictly stronger: it catches a reflow, a
+        # paraphrase and a truncation, none of which `.strip()` ever could.
+        assert citation["artifact_id"] in authored, citation["artifact_id"]
+        assert citation["statement"] == authored[citation["artifact_id"]], (
+            f"{citation['artifact_id']}: the stored quote is not the authored one")
         # And the stored quote is still the authored one, re-hashed with the contract's own
         # function rather than compared against a copy of it.
         assert citation_statement_hash(citation["statement"]) == citation["statement_hash"]

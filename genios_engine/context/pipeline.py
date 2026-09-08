@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
@@ -36,9 +36,20 @@ def parse_due(text: str | None, base: datetime) -> datetime | None:
     if not text:
         return None
     try:
-        return datetime.fromisoformat(text.strip().replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(text.strip().replace("Z", "+00:00"))
     except ValueError:
         pass
+    else:
+        # NORMALISED HERE, because L1 is where a date is normalised and Layer 4 never re-parses
+        # one. `fromisoformat` returns a NAIVE datetime for the commonest shape a promise takes
+        # ("2026-08-27", "by 27 August" -> a plain date), while every relative branch below
+        # inherits `base`'s zone and comes back aware. So a commitment dated in words was
+        # readable downstream and the same commitment dated explicitly was not:
+        # `reasoners/common.parse_time` refuses a naive timestamp, `timeline_unit._moment`
+        # swallows that as unreadable data, and the U5 urgency ladder published its
+        # measured-absence 0 for a date the extractor had read correctly.
+        return parsed if parsed.tzinfo is not None and parsed.utcoffset() is not None \
+            else parsed.replace(tzinfo=base.tzinfo or timezone.utc)
     t = text.strip().lower()
     if "today" in t or "eod" in t or "aaj" in t:
         return base.replace(hour=18, minute=0, second=0, microsecond=0)
@@ -509,14 +520,15 @@ def _normalise_meeting_status(value):
 def process_event(*, org_id: str, event_id: str, source: str, content: str,
                   sender_email: str | None, occurred_at: datetime | None,
                   sender_name: str | None = None,
-                  llm: LLMClient, store: GraphStore, is_inbound: bool = False,
+                  llm: LLMClient | None, store: GraphStore, is_inbound: bool = False,
                   recipient_emails: list[str] | None = None,
                   internal_emails: frozenset[str] | None = None,
                   internal_kind: str | None = None,
                   thread_id: str | None = None,
                   domain_hints: list | None = None,
                   canon_meta: dict | None = None,
-                  effective: dict | None = None) -> L2Result:
+                  effective: dict | None = None,
+                  qualified_extraction: Extraction | None = None) -> L2Result:
     # replay cache — identical content+prompt → reuse, no re-call, deterministic. The key is
     # ORG-SCOPED (org_id in the hash) so tenant A's cached extraction can never be served to
     # tenant B on byte-identical content (e.g. the same newsletter) — the cross-tenant leak fix.
@@ -525,32 +537,42 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
     # cover only tenant + prompt version + content, so this org held 260 cached extractions that
     # would have survived a prompt fix and hidden it completely — the fix would ship, the
     # numbers would not move, and the conclusion would be that the fix did not work.
-    pack_fingerprint = _vocab_fingerprint(effective)
-    key = LLMClient.content_hash(
-        f"{org_id}:{PROMPT_VERSION}:{EXTRACTION_SCHEMA_VERSION}:"
-        f"{getattr(llm, 'model', '?')}:{pack_fingerprint}:{content}")
-    cached = store.cache_get(key, org_id=org_id)
-    if cached is not None:
-        ex, is_cached = _from_cache(cached), True
+    if qualified_extraction is not None:
+        # The production L1 -> L2 seam.  L1 already interpreted, validated and published this
+        # extraction as a QES.  Re-reading the prose with this layer's legacy prompt would create
+        # two semantic verdicts for one event, so this branch performs no cache read and no call.
+        ex, is_cached = qualified_extraction, True
     else:
+        if llm is None:
+            raise ValueError(
+                "Layer 2 semantic processing requires a qualified L1 extraction; the legacy "
+                "LLM may only be supplied explicitly by a compatibility caller")
+        pack_fingerprint = _vocab_fingerprint(effective)
+        key = LLMClient.content_hash(
+            f"{org_id}:{PROMPT_VERSION}:{EXTRACTION_SCHEMA_VERSION}:"
+            f"{getattr(llm, 'model', '?')}:{pack_fingerprint}:{content}")
+        cached = store.cache_get(key, org_id=org_id)
+        if cached is not None:
+            ex, is_cached = _from_cache(cached), True
+        else:
         # The envelope is built from data the pipeline already holds — it was simply never
         # passed to the model, which is why direction and party roles had to be guessed from
         # prose and were routinely guessed wrong.
-        envelope = Envelope(
-            sender=(sender_email or "").strip().lower(),
-            recipients=tuple((r or "").strip().lower() for r in (recipient_emails or []) if r),
-            self_identities=frozenset(internal_emails or ()))
-        ex, is_cached = extract(llm, source=source, content=content,
-                                envelope=envelope, effective=effective), False
-        store.record_cost(org_id=org_id, model=llm.model, purpose="extract",
-                          input_tokens=ex.input_tokens, output_tokens=ex.output_tokens,
-                          success=ex.ok, error=ex.error, event_id=event_id)
-        if not ex.ok:
-            return L2Result(event_id, "extract_failed", input_tokens=ex.input_tokens,
-                            output_tokens=ex.output_tokens)
-        store.cache_set(processing_key=key, org_id=org_id, event_id=event_id,
-                        output=_to_cache(ex), input_tokens=ex.input_tokens,
-                        output_tokens=ex.output_tokens, model=llm.model)
+            envelope = Envelope(
+                sender=(sender_email or "").strip().lower(),
+                recipients=tuple((r or "").strip().lower() for r in (recipient_emails or []) if r),
+                self_identities=frozenset(internal_emails or ()))
+            ex, is_cached = extract(llm, source=source, content=content,
+                                    envelope=envelope, effective=effective), False
+            store.record_cost(org_id=org_id, model=llm.model, purpose="extract",
+                              input_tokens=ex.input_tokens, output_tokens=ex.output_tokens,
+                              success=ex.ok, error=ex.error, event_id=event_id)
+            if not ex.ok:
+                return L2Result(event_id, "extract_failed", input_tokens=ex.input_tokens,
+                                output_tokens=ex.output_tokens)
+            store.cache_set(processing_key=key, org_id=org_id, event_id=event_id,
+                            output=_to_cache(ex), input_tokens=ex.input_tokens,
+                            output_tokens=ex.output_tokens, model=llm.model)
 
     # RELEVANCE IS A SCORE, NOT A DELETE GATE. The Haiku call already extracted AND scored this
     # email — so we PERSIST all of it, tagged with that relevance (→ each fact's confidence), and
@@ -1148,6 +1170,21 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 occurred_at=occurred_at, event_id=event_id,
                 evidence={"text": (r or {}).get("evidence_text")},
                 source=source, authority_rank=2)
+            store.write_fact(
+                conn, org_id=org_id, subject_node_id=rnode,
+                field="party.role_basis", value="inferred_from_qes", value_type="enum",
+                confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
+                occurred_at=occurred_at, event_id=event_id,
+                evidence={"text": (r or {}).get("evidence_text")},
+                source=source, authority_rank=2)
+            if thread_id:
+                store.write_fact(
+                    conn, org_id=org_id, subject_node_id=rnode,
+                    field="party.role_context_ref", value=f"thread:{thread_id}",
+                    value_type="reference", confidence=FACT_CONF_BY_RANK[2],
+                    relevance=ex.relevance, occurred_at=occurred_at, event_id=event_id,
+                    evidence={"text": (r or {}).get("evidence_text")},
+                    source=source, authority_rank=2)
 
         # relationships → the LENS. `party.role` says who acted in this exchange; this says what
         # the two sides ARE to each other, and it is the fact that decides which expertise may

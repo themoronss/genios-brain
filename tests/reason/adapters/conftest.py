@@ -64,13 +64,20 @@ def compile_situation(*, situation_type: str = "deal", domain: str = "sales",
                       facts: dict[str, Any] | None = None,
                       observations: Sequence[str] = DEAL_OBSERVATIONS,
                       edge_count: int = 4, absent: Sequence[str] = (),
-                      unknowable: Sequence[str] = ()) -> Compiled:
+                      unknowable: Sequence[str] = (),
+                      composed: Any = None) -> Compiled:
     """Compile one situation through the shipped corpus.
 
     `absent` is L2.5.5's typed absence — the fact paths a connected source COULD have carried and
     none did. It is what turns `{absent: commitment.due_at}` from UNKNOWN into TRUE, which is the
     difference between the blocking rule abstaining and the blocking rule firing. Both states are
     tested, so both are reachable from this one argument.
+
+    `composed` is BLG-18's stored `ComposedImportance` — the analytic stratum the sweep already
+    ran. Optional and defaulting to None, so every existing caller compiles exactly the situation
+    it compiled before; supplied, the BSO carries `importance_components` and wave Z5's
+    projection has an analytic stratum to project. It is a `ComposedImportance`, never a dict,
+    because the number and the arithmetic that produced it must not be able to arrive separately.
     """
     row = {
         "situation_id": f"sit_{situation_type}", "situation_type": situation_type,
@@ -82,7 +89,7 @@ def compile_situation(*, situation_type: str = "deal", domain: str = "sales",
                                                        row["situation_id"])
     situation = build_business_situation(
         org_id="org_weld", situation=row, signal_ids=signal_ids, evidence=evidence,
-        trace_id="trace_weld")
+        trace_id="trace_weld", composed=composed)
     context = build_context_slice(
         org_id="org_weld", situation=row,
         facts={path: {"value": value}

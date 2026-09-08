@@ -340,6 +340,12 @@ class RuleVerdict:
     owner_capability: str
     missing: tuple[str, ...] = ()
     blocked_play_ids: tuple[str, ...] = ()
+    #: WAVE Z5 · doc 06 IN-2's second row: a fired WARNING annotates the candidates it is ABOUT
+    #: and eliminates none of them. The scope is resolved exactly as a blocking rule's is — the
+    #: plays compiled from the capability this doctrine governs — but it is a SEPARATE field,
+    #: because `blocked_play_ids` is what `core.constraint` eliminates from and a warning that
+    #: shared it would eliminate a candidate the corpus only cautioned about.
+    warned_play_ids: tuple[str, ...] = ()
 
     @property
     def fired(self) -> bool:
@@ -365,6 +371,12 @@ class RuleVerdict:
         }
         if self.missing:
             record["missing"] = list(self.missing)
+        # Written ONLY when a warning actually fired with a scope. The weld's records are hashed
+        # into the manifest version, so a key present on every verdict would re-mint the
+        # capability version of every welded manifest in the tree for a fact most of them do not
+        # have. Conditional inclusion is the same discipline `Finding.value_bp` keeps.
+        if self.warned_play_ids:
+            record["warned_play_ids"] = list(self.warned_play_ids)
         return record
 
 
@@ -495,13 +507,22 @@ def compile_package_rules(package, adapter: ContextAdapter | None = None, *,
 
         outcome, missing = _bind(adapter, when)
         blocked = ()
+        warned = ()
         if outcome == "fired" and severity == BLOCKING:
             blocked = plays_by_capability.get(owner_capability, ())
+        elif outcome == "fired" and severity == WARNING:
+            # THE SAME SCOPE, A DIFFERENT CONSEQUENCE. A warning's `when` is a predicate over the
+            # SITUATION exactly as a blocking rule's is, so "which recommendation is this caution
+            # about?" has the same answer: the plays compiled from the capability the doctrine
+            # governs. Until this field existed the answer was nowhere, and a fired warning
+            # reached the decision as a rule id with nothing to attach it to.
+            warned = plays_by_capability.get(owner_capability, ())
         constraints.append(constraint)
         verdicts.append(RuleVerdict(
             rule_id=rule_id, severity=severity, outcome=outcome, statement=statement,
             statement_hash=constraint["statement_hash"], source_ref=source_ref,
-            owner_capability=owner_capability, missing=missing, blocked_play_ids=blocked))
+            owner_capability=owner_capability, missing=missing, blocked_play_ids=blocked,
+            warned_play_ids=warned))
 
     return CompiledRules(
         constraints=tuple(constraints),
@@ -559,6 +580,45 @@ def _plays_by_capability(package,
 # THE DECISION-TIME HALF — what each compiled rule DID to this decision's candidates
 # =================================================================================================
 
+#: The reason code `core.constraint` stamps on the elimination it performs from its
+#: `blocked_play_ids` config — the seam the compiled corpus's blocking doctrine travels through.
+#: RESTATED here rather than imported, on the same argument `expertise._GATE_FIELDS` is restated:
+#: `reason/adapters` must not import a unit's internals, and importing it would make this adapter
+#: fail to load the day a unit renames a constant. `test_seams_in.py` drives the real unit and
+#: asserts the two still agree, so drift fails a test instead of silently un-attributing every
+#: elimination the corpus performs.
+POLICY_BLOCK_REASON = "tenant_policy_block"
+
+#: The check outcome that removes a candidate. `contracts.reasoning.CheckOutcome.ELIMINATE`'s
+#: value, compared as a string because a check read back off the audit store is a mapping.
+ELIMINATE_OUTCOME = "eliminate"
+
+
+def _policy_eliminated(candidate: Any) -> bool:
+    """Was this candidate removed BY THE CONSTRAINT POLICY SEAM, rather than by something else?
+
+    THE DEFECT THIS CLOSES. Attribution used to be a join on `play_id` alone: any candidate the
+    decision eliminated, for any reason, was claimed by every fired blocking rule whose scope
+    covered it. A play removed by `read_only_policy`, by `human_approval_required` or by
+    `no_unverified_recipient` therefore arrived in `alternatives_rejected` quoting an authored
+    corpus rule that had not touched it — a receipt that reads correctly and is false, which is
+    precisely what `require_constraint_application` exists to refuse and could not see.
+
+    The rule id travels on the CHECK, so the check is what is asked. `core.constraint` stamps
+    `tenant_policy_block` on exactly the eliminations it performs from `blocked_play_ids`, and
+    that config is where the corpus's blocking doctrine arrives (`expertise._roster_specs`).
+    """
+    for check in getattr(candidate, "checks", ()) or ():
+        outcome = getattr(check, "outcome", None)
+        reason = getattr(check, "reason_code", None)
+        if check is None:
+            continue
+        if str(getattr(outcome, "value", outcome)) == ELIMINATE_OUTCOME and \
+                str(reason) == POLICY_BLOCK_REASON:
+            return True
+    return False
+
+
 def constraint_applications(verdicts: Sequence[Mapping[str, Any]],
                             candidates: Sequence[Any]) -> tuple[Mapping[str, Any], ...]:
     """Turn the manifest's rule verdicts into `ReasoningDecision.constraints_applied`.
@@ -569,14 +629,26 @@ def constraint_applications(verdicts: Sequence[Mapping[str, Any]],
     ELIMINATED candidate on this decision is refused, because a receipt that reads correctly and
     is false is worse than no receipt at all.
 
-    Only candidates the decision actually eliminated are named. A blocking rule whose scope covers
-    a play that survived (another unit let it through, or the play was not declared) records the
-    rule as fired with no elimination rather than claiming one.
+    Only candidates the constraint policy seam actually eliminated are named (see
+    `_policy_eliminated`). A blocking rule whose scope covers a play that survived, or that was
+    removed by a different check entirely, records the rule as fired and names the plays it
+    covered in `blocked_plays_not_eliminated` — the honest middle state between "this rule removed
+    that option" and silence.
+
+    WARNING severity ANNOTATES (doc 06 IN-2's second row). A fired warning eliminates nothing and
+    never has; what was missing was any link from the warning to the candidates it is ABOUT, so a
+    bundle could not say which recommendation the caution applied to. `warned_play_ids` and
+    `warned_candidate_ids` carry that link. Both keys, and `blocked_plays_not_eliminated`, are
+    written only when non-empty: a decision where none of them applies hashes to exactly what it
+    hashed to before this wave.
     """
     eliminated_by_play: dict[str, str] = {}
+    by_play: dict[str, str] = {}
     for candidate in candidates:
         disposition = getattr(candidate, "disposition", None)
-        if getattr(disposition, "value", disposition) == "eliminated":
+        by_play[str(candidate.play_id)] = str(candidate.candidate_id)
+        if getattr(disposition, "value", disposition) == "eliminated" \
+                and _policy_eliminated(candidate):
             eliminated_by_play[str(candidate.play_id)] = str(candidate.candidate_id)
 
     applications: list[Mapping[str, Any]] = []
@@ -590,14 +662,25 @@ def constraint_applications(verdicts: Sequence[Mapping[str, Any]],
             "statement": verdict["statement"],
             "statement_hash": verdict["statement_hash"],
         }
+        scope = tuple(str(play_id) for play_id in verdict.get("blocked_play_ids") or ())
         if verdict["outcome"] == "unevaluable":
             record["missing"] = list(verdict.get("missing") or ("unnamed_predicate",))
         if verdict["outcome"] == "fired" and verdict["severity"] == BLOCKING:
-            eliminated = sorted({eliminated_by_play[play_id]
-                                 for play_id in verdict.get("blocked_play_ids") or ()
+            eliminated = sorted({eliminated_by_play[play_id] for play_id in scope
                                  if play_id in eliminated_by_play})
             if eliminated:
                 record["eliminated_candidate_ids"] = eliminated
+            unclaimed = sorted({play_id for play_id in scope
+                                if play_id not in eliminated_by_play})
+            if unclaimed:
+                record["blocked_plays_not_eliminated"] = unclaimed
+        if verdict["outcome"] == "fired" and verdict["severity"] == WARNING:
+            warned_plays = sorted({str(play_id)
+                                   for play_id in verdict.get("warned_play_ids") or ()
+                                   if str(play_id) in by_play})
+            if warned_plays:
+                record["warned_play_ids"] = warned_plays
+                record["warned_candidate_ids"] = sorted({by_play[p] for p in warned_plays})
         applications.append(require_constraint_application(
             record, f"constraint applied {verdict['rule_id']}"))
     return tuple(applications)
@@ -606,6 +689,8 @@ def constraint_applications(verdicts: Sequence[Mapping[str, Any]],
 __all__ = [
     "AUTHORED_OPERATORS",
     "BLOCKING",
+    "ELIMINATE_OUTCOME",
+    "POLICY_BLOCK_REASON",
     "BP_SCALE",
     "CompiledRules",
     "ENFORCED_BY_L4",

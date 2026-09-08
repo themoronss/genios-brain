@@ -19,13 +19,10 @@ doc 06 requires: *"keep anchor-based detection running alongside. Compare fire s
     `SituationCandidate` instead of from a correlation — a change to that module, made against
     seven days of fire evidence from this one.
 
-THE TWO PROVIDERS ARE SEAMS, NOT OMISSIONS. `absences` and `edge_coverage` are what license the
-two NEGATIVE condition kinds, and both are owned by L2.5.5 (typed absence), which lands in this
-same wave in `context/quality/`. Rather than reach into a module that may not exist, this file
-takes them as injectable providers that default to EMPTY — so an absence condition simply does not
-hold until a coverage answer exists. That is the safe direction and the honest one: the fire report
-shows `absence_not_licensed` as the failing condition, which reads as "we cannot see this yet"
-rather than as a finding about a customer.
+`absences` and `edge_coverage` license the two NEGATIVE condition kinds.  Production evaluation
+reads the current typed-absence store and explicit edge-coverage declarations; tests may still
+inject either provider.  No row means no licence, so the fire report says
+`absence_not_licensed` rather than drawing a finding from an unconnected source.
 """
 from __future__ import annotations
 
@@ -45,6 +42,7 @@ from genios_engine.context.patterns.registry import (ActivationDecision, FireObs
                                                      seed_registry)
 from genios_engine.context.patterns.slice import (GraphSlice, MissingFact, SliceEdge, SliceFact,
                                                   SliceNode, SliceObservation)
+from genios_engine.context.quality.missing import read_absences
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.logging import get_logger
 
@@ -84,6 +82,67 @@ def _no_absences(conn: Any, org_id: str, node_ids: tuple[str, ...]) -> tuple[Mis
 
 def _no_edge_coverage(conn: Any, org_id: str) -> frozenset[str]:
     return frozenset()
+
+
+def stored_absence_provider(conn: Any, org_id: str,
+                            node_ids: tuple[str, ...]) -> tuple[MissingFact, ...]:
+    """Current-epoch typed absences for the anchors being evaluated.
+
+    A stale ``GENUINELY_ABSENT`` row is deliberately omitted: its embedded contract still says it
+    licenses inference, while the storage wrapper knows the coverage epoch has moved.  Omitting it
+    makes the matcher answer ``absence_not_licensed`` until the next absence refresh rechecks it.
+    UNKNOWABLE/STALE rows remain visible and fail safely through their own contract property.
+    """
+    wanted = frozenset(str(node_id) for node_id in node_ids)
+    out: list[MissingFact] = []
+    for stored in read_absences(conn, org_id):
+        if stored.fact.subject_node_id not in wanted:
+            continue
+        if stored.fact.is_finding and not stored.licenses_negative_inference:
+            continue
+        out.append(stored.fact)
+    return tuple(sorted(out, key=lambda fact: (fact.subject_node_id, fact.expected_fact)))
+
+
+def declared_edge_coverage(conn: Any, org_id: str) -> frozenset[str]:
+    """Edge types whose absence an explicit, current declaration licenses.
+
+    Presence in the graph is not coverage: seeing one ``owns`` edge proves that edge and says
+    nothing about an anchor where it is absent.  The declaration therefore requires a non-empty
+    capability basis and a ready flag.  No row means no licence.
+    """
+    rows = _rows(conn,
+        "select edge_type from edge_coverage_declarations "
+        "where org_id = :o and coverage_ready and jsonb_array_length(coverage_basis) > 0 "
+        "order by edge_type", {"o": org_id})
+    return frozenset(str(row.edge_type) for row in rows)
+
+
+def declare_edge_coverage(conn: Any, *, org_id: str, edge_type: str,
+                          coverage_ready: bool, coverage_basis: Sequence[str],
+                          coverage_epoch: int, declared_by: str,
+                          declared_at: datetime) -> None:
+    """Record the audited licence used by missing-edge pattern conditions."""
+    edge_type = str(edge_type).strip()
+    declared_by = str(declared_by).strip()
+    basis = sorted({str(value).strip() for value in coverage_basis if str(value).strip()})
+    if not edge_type or not declared_by:
+        raise ValueError("edge_type and declared_by are required")
+    if coverage_ready and not basis:
+        raise ValueError("ready edge coverage requires a non-empty capability basis")
+    if isinstance(coverage_epoch, bool) or not isinstance(coverage_epoch, int) or coverage_epoch < 1:
+        raise ValueError("coverage_epoch must be a positive integer")
+    conn.execute(text(
+        "insert into edge_coverage_declarations "
+        "(org_id, edge_type, coverage_ready, coverage_basis, coverage_epoch, declared_by, "
+        " declared_at) values (:o,:edge,:ready,cast(:basis as jsonb),:epoch,:by,:at) "
+        "on conflict (org_id, edge_type) do update set "
+        "coverage_ready=excluded.coverage_ready, coverage_basis=excluded.coverage_basis, "
+        "coverage_epoch=excluded.coverage_epoch, declared_by=excluded.declared_by, "
+        "declared_at=excluded.declared_at"), {
+            "o": org_id, "edge": edge_type, "ready": bool(coverage_ready),
+            "basis": json.dumps(basis), "epoch": coverage_epoch,
+            "by": declared_by, "at": declared_at})
 
 
 @dataclass(frozen=True, slots=True)
@@ -290,8 +349,8 @@ def _threshold_for(view: AuthorityView | None, org_id: str, *, eval_time: dateti
 def evaluate_org(store, org_id: str, *, eval_time: datetime,
                  registry: PatternRegistry | None = None,
                  limit: int = ANCHOR_BUDGET,
-                 absence_provider: AbsenceProvider = _no_absences,
-                 edge_coverage_provider: EdgeCoverageProvider = _no_edge_coverage,
+                 absence_provider: AbsenceProvider | None = None,
+                 edge_coverage_provider: EdgeCoverageProvider | None = None,
                  record: bool = True) -> EvaluationReport:
     """Run every registered pattern over one tenant and record what happened.
 
@@ -301,6 +360,8 @@ def evaluate_org(store, org_id: str, *, eval_time: datetime,
     as a very good day.
     """
     registry = registry or seed_registry()
+    absence_provider = absence_provider or stored_absence_provider
+    edge_coverage_provider = edge_coverage_provider or declared_edge_coverage
     view = _authority_view(store)
     runs: list[PatternRun] = []
     with store.engine.connect() as conn:
@@ -513,5 +574,7 @@ def utc_now() -> datetime:
 
 __all__ = ["ANCHOR_BUDGET", "FIRE_RETENTION_DAYS", "FIRE_WRITE_BUDGET", "AbsenceProvider",
            "EdgeCoverageProvider", "EvaluationReport", "PatternRun", "activate",
-           "activation_state", "deactivate", "evaluate_org", "fire_observations",
-           "prune_fire_log", "record_evaluation", "slices_for", "utc_now"]
+           "activation_state", "deactivate", "declare_edge_coverage",
+           "declared_edge_coverage", "evaluate_org", "fire_observations",
+           "prune_fire_log", "record_evaluation", "slices_for",
+           "stored_absence_provider", "utc_now"]

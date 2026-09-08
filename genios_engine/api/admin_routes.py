@@ -1119,3 +1119,155 @@ def deactivate_l3_pilot(target_org: str, domain: str = Query(...),
     record = get_l3_activation(engine, target_org, domain)
     return {"org_id": target_org, "switched_off": domain if turned_off else None,
             "activation": record.as_record() if record else None}
+
+
+# ════════════════════════════════════════════════════════════════════════════════════════
+# Z0 / G-07 · Layer 4 pilot activation — five features, per tenant
+#
+# BUILT IN THE SAME WAVE AS THE TABLE, DELIBERATELY, AND FOR THE FOURTH TIME.
+# `l1_semantic_activation` shipped with a reader and no writer anything could reach.
+# `l2_v2_activation` landed its routes in the same wave because of that. `l3_activation` shipped
+# in Y0 with a reader, a fail-closed gate and an erasure row — and `activate`/`deactivate`
+# reachable from nothing, so the only way to start a pilot was a hand-written INSERT, and a pilot
+# begun by SQL has no `enabled_by` anybody trusts and no audit row at all. Doc 07 says not to
+# repeat that a fourth time, so these four routes exist before the first feature does.
+# ════════════════════════════════════════════════════════════════════════════════════════
+
+
+class L4PilotActivation(BaseModel):
+    """The body of a feature switch-on. `feature` is required and has no default — the whole point
+    of the key is that turning on the roster is not turning on the narrative."""
+
+    feature: str
+    notes: str | None = None
+
+
+def _l4_feature(feature: str) -> str:
+    """Validated by the module that owns the names, so the refusal is a 400 naming the legal
+    features rather than a 422 whose body an operator has to decode."""
+    from genios_engine.platform.l4_activation import require_feature
+    try:
+        return require_feature(feature)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@router.get("/l4-activation")
+def list_l4_pilot_activation(include_disabled: bool = Query(False),
+                             _ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """Who is on the Layer 4 pilot, for WHICH FEATURES, since when, and what that turned on.
+
+    `include_disabled=true` adds the (tenant, feature) pairs that were stamped off, for the same
+    reason L2's and L3's lists do: a seven-day K7 window over a feature that was switched off on
+    day four is four days of the new behaviour and three of the old one, and a read that hid the
+    stamped rows would present that as seven.
+    """
+    from genios_engine.platform.l4_activation import EFFECTS, FEATURE_WAVES, list_l4_activations
+    rows = list_l4_activations(_engine(), include_disabled=bool(include_disabled))
+    live = [r for r in rows if r.live]
+    return {"activations": [r.as_record() for r in rows],
+            "live": len(live),
+            "live_features": sorted({r.feature for r in live}),
+            "total": len(rows),
+            "waves": FEATURE_WAVES,
+            "effects": EFFECTS}
+
+
+@router.get("/l4-activation/{target_org}")
+def get_l4_pilot_activation(target_org: str, _ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """ONE tenant's L4 state, across every feature.
+
+    Returns the features rather than a boolean because "is this org on the L4 pilot" is not a
+    question with a yes/no answer once the key is (org, feature) — a tenant can have the roster
+    awake and no narrative at all, and an operator told only "activated: true" will assume both.
+
+    `missing_preconditions` is reported per live feature, not enforced: doc 08's wave order is
+    real, and a tenant running `bundle` with `ranking_v2` off is narrating a decision the formula
+    never made. This read is where that is visible before a gate report says it a fortnight later.
+    """
+    from genios_engine.platform.l4_activation import (EFFECTS, L4_FEATURES, activated_features,
+                                                      get_l4_activation, missing_preconditions)
+    engine = _engine()
+    records = [r for r in (get_l4_activation(engine, target_org, f) for f in L4_FEATURES)
+               if r is not None]
+    live = sorted(activated_features(engine, target_org))
+    return {"org_id": target_org,
+            "in_pilot": bool(live),
+            "live_features": live,
+            "missing_preconditions": {f: list(missing_preconditions(engine, target_org, f))
+                                      for f in live},
+            "activations": [r.as_record() for r in records],
+            "effects": EFFECTS}
+
+
+@router.post("/l4-activation/{target_org}")
+def activate_l4_pilot(target_org: str, body: L4PilotActivation,
+                      ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """Put ONE tenant's ONE feature on the Layer 4 pilot. Idempotent, audited, reversible.
+
+    IDEMPOTENT IN THE SENSE THAT MATTERS: activating a live feature twice keeps the original
+    `enabled_at`, so a retry after a dropped connection does not re-date a pilot whose whole
+    purpose is a seven-day window. Nothing here launches work — the next ordinary reasoning run
+    reads the switch.
+
+    THE WAVE ORDER IS REPORTED, NOT ENFORCED. `missing_preconditions` comes back on the response
+    naming the features this one expects to be live and are not. Refusing here would stop an
+    operator switching one thing on in isolation to debug it; saying nothing would let `bundle`
+    reach a tenant whose formula has not been woken. So it is said, on the way in.
+
+    The tenant must exist: without the check the org FK raises a 500 on a typo'd id, and an
+    operator who mistypes a pilot tenant should be told which word was wrong.
+    """
+    feature = _l4_feature(body.feature)
+    engine = _engine()
+    with engine.connect() as c:
+        if c.execute(text("select 1 from orgs where id=:o"), {"o": target_org}).first() is None:
+            raise HTTPException(404, "account not found")
+    from genios_engine.platform.l4_activation import EFFECTS, activate, missing_preconditions
+    record = activate(engine, target_org, feature=feature, by=ctx.actor_id or ctx.org_id,
+                      notes=body.notes)
+    pending = missing_preconditions(engine, target_org, feature)
+    from genios_engine.platform.audit import record as audit
+    audit(ctx.org_id, "config_changed", actor_type="user", actor_id=ctx.actor_id or ctx.org_id,
+          target_type="org", target_id=target_org,
+          metadata={"audit_category": "admin", "field": "l4_activation",
+                    "feature": feature, "value": True, "notes": body.notes,
+                    "missing_preconditions": list(pending)})
+    _log.info("L4 pilot ACTIVATED for org=%s feature=%s by=%s (missing preconditions: %s)",
+              target_org, feature, ctx.actor_id, ", ".join(pending) or "none")
+    return {"org_id": target_org, "switched_on": feature,
+            "activation": record.as_record(),
+            "missing_preconditions": list(pending),
+            "effect": EFFECTS.get(feature)}
+
+
+@router.delete("/l4-activation/{target_org}")
+def deactivate_l4_pilot(target_org: str, feature: str = Query(...),
+                        ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """Take ONE tenant's ONE feature back off. The rollback half, and it is not optional.
+
+    `feature` is a REQUIRED query parameter with no default, for the reason L3's `domain` is:
+    everywhere else in this file a reversal defaults to the widest reading, because taking
+    something off is the safe direction — but the widest reading here would silently end four
+    other features' pilots, and a pilot ended by accident is a seven-day window nobody can read
+    afterwards.
+
+    Returns `switched_off: null` for a feature that was already off rather than 404: the caller's
+    intent ("this tenant must not be narrating") is satisfied either way, and a 404 would make a
+    retry after a dropped connection look like a failure.
+    """
+    feature = _l4_feature(feature)
+    engine = _engine()
+    from genios_engine.platform.l4_activation import deactivate, get_l4_activation
+    turned_off = deactivate(engine, target_org, feature=feature, by=ctx.actor_id or ctx.org_id)
+    if turned_off:
+        from genios_engine.platform.audit import record as audit
+        audit(ctx.org_id, "config_changed", actor_type="user",
+              actor_id=ctx.actor_id or ctx.org_id, target_type="org", target_id=target_org,
+              metadata={"audit_category": "admin", "field": "l4_activation",
+                        "feature": feature, "value": False})
+        _log.info("L4 pilot DEACTIVATED for org=%s feature=%s by=%s",
+                  target_org, feature, ctx.actor_id)
+    record = get_l4_activation(engine, target_org, feature)
+    return {"org_id": target_org, "switched_off": feature if turned_off else None,
+            "activation": record.as_record() if record else None}

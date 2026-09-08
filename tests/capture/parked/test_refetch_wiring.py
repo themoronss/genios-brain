@@ -80,9 +80,12 @@ def test_the_heartbeat_pass_reports_what_the_drain_did(monkeypatch):
     queue = InMemoryRefetchQueue()
     monkeypatch.setattr(routes, "_attachment_refetch_queue", lambda: queue)
     monkeypatch.setattr(routes, "_attachment_connector_for", lambda _c: None)
+    # `requeued` and `ocr_scopes` join the report when the pass learned to carry an OCR engine
+    # and to put capability dead letters back: an empty backlog on a host with no engine is
+    # zeros AND an empty scope list, which is a different fact from "we did not look".
     assert routes._drain_attachment_refetch(NOW) == {
         "claimed": 0, "recovered": 0, "dead_lettered": 0, "retry_scheduled": 0,
-        "text_chars_recovered": 0, "failures_by_kind": {}}
+        "text_chars_recovered": 0, "failures_by_kind": {}, "requeued": 0, "ocr_scopes": []}
 
 
 def test_the_requeue_route_refuses_when_there_is_no_database(monkeypatch):

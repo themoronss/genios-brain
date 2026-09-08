@@ -39,6 +39,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from datetime import datetime, timezone
+from time import perf_counter
 from typing import Any
 
 from genios_engine.context.lifecycle import gate as gate_mod
@@ -54,6 +55,7 @@ from genios_engine.context.lifecycle.contract import (
 from genios_engine.context.lifecycle.judge import judge
 from genios_engine.context.lifecycle.ledger import derive_statement_state
 from genios_engine.context.lifecycle.prompt import build_prompt, parse_description
+from genios_engine.context.model_audit import record_model_run
 from genios_engine.context.situations import (
     RESOLVED_BY_STATEMENT,
     STATEMENT_NONE,
@@ -171,7 +173,14 @@ def detect_resolutions(store, org_id: str, *, llm: Any | None = None,
         org_calls += 1
         per_situation_calls[situation.situation_id] = (
             per_situation_calls.get(situation.situation_id, 0) + 1)
+        started = perf_counter()
         result = llm.call(prompt, max_tokens=MAX_OUTPUT_TOKENS)
+        record_model_run(
+            store.engine, org_id=org_id, site="resolution",
+            subject_ref=f"situation:{situation.situation_id}:event:{row['event_id']}",
+            prompt_version=PROMPT_VERSION, prompt=prompt, result=result, called_at=now,
+            max_tokens=MAX_OUTPUT_TOKENS,
+            latency_ms=max(0, int((perf_counter() - started) * 1000)))
         if not getattr(result, "ok", False):
             # A transient failure is NOT a judgement about the message: nothing is stored, so the
             # next sweep reads it again. Storing a rejection here would make one bad minute a

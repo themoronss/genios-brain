@@ -14,6 +14,12 @@ from typing import Any, Protocol
 
 from sqlalchemy import text
 
+from genios_engine.contracts.brain_address import (
+    address_tokens,
+    legacy_tokens,
+    selection_basis,
+    token,
+)
 from genios_engine.contracts.domain_expertise import (
     BrainKind,
     BusinessSituationObject,
@@ -23,7 +29,8 @@ from genios_engine.contracts.visibility import SCOPES, Visibility
 from genios_engine.platform.canonical import semantic_hash, stable_id
 
 from .errors import BrainPolicyViolation
-from .models import RoutePlan, RuntimeBrainEntry, RuntimeBrainSnapshot
+from .models import (RoutePlan, RuntimeBrainEntry, RuntimeBrainSnapshot,
+                     entity_fields)
 
 _PERMISSION_CATEGORIES = frozenset({
     "approval", "compliance", "constraint", "permission", "policy", "retention", "security",
@@ -37,7 +44,8 @@ _PREFERENCE_PRECEDENCE = {
 
 class RuntimeBrains(Protocol):
     def snapshot(self, *, situation: BusinessSituationObject, plan: RoutePlan,
-                 object_ids: Sequence[str]) -> RuntimeBrainSnapshot: ...
+                 object_ids: Sequence[str],
+                 eval_time: datetime | None = None) -> RuntimeBrainSnapshot: ...
 
 
 def _row_value(row: Any, name: str, default: Any = None) -> Any:
@@ -111,26 +119,136 @@ def _visibility_allows_package(entry: Mapping[str, Any], package: Mapping[str, A
 
 def _selectors(situation: BusinessSituationObject, plan: RoutePlan,
                object_ids: Sequence[str]) -> tuple[str, ...]:
+    """The BARE values a subject key may be matched against, unchanged from before the address.
+
+    Kept exactly as it was, and still consulted, because it is what every pre-address entry was
+    published to be found by. `_situation_tokens` below is the vocabulary that actually binds; this
+    is the compatibility half, and the two are deliberately separate so that deleting the legacy
+    lane later is deleting a function rather than untangling one.
+    """
     values = set(situation.brain_subject_keys)
     values.update(plan.capability_ids)
     values.update(object_ids)
     values.add(situation.id)
     for entity in situation.entities:
-        value = entity.get("id") or entity.get("entity_id")
+        fields = entity_fields(entity)
+        value = fields.get("id") or fields.get("entity_id")
         if value:
             values.add(str(value))
     return tuple(sorted(values))
 
 
+def _situation_tokens(situation: BusinessSituationObject, plan: RoutePlan,
+                      object_ids: Sequence[str]) -> tuple[str, ...]:
+    """WHAT THIS SITUATION IS ABOUT, in `contracts/brain_address`'s vocabulary.
+
+    Two sources, and the distinction matters. `situation.brain_subject_keys` is what LAYER 2
+    declared — written by `context/situation_bso.gather_brain_subject_keys`, which is the reader
+    this metadata key waited for since it shipped. Everything else here is derived from the route
+    and the situation's own fields, so a tenant whose sweep predates that writer still binds on
+    capability, object, situation and entity — it just does not get the node ids and typed entity
+    kinds only Layer 2 can resolve.
+
+    A `brain_subject_key` that is ALREADY a token (`node:...`, `capability:...`) is passed through;
+    one that is a bare value is promoted to whichever kind it looks like. That promotion is why an
+    older Layer 2 does not have to be redeployed in lockstep with this compiler.
+    """
+    values: set[str] = set()
+
+    def add(kind: str, value: Any) -> None:
+        if not value:
+            return
+        try:
+            values.add(token(kind, value))
+        except ValueError:
+            # A value the vocabulary refuses — a node id with a colon in it, an empty capability.
+            # Dropped, never raised: one malformed entity must not cost this situation every other
+            # piece of knowledge it could have bound.
+            return
+
+    add("org", situation.org_id)
+    values.add(token("orgwide", situation.org_id))
+    add("situation", situation.id)
+    add("situation_type", situation.type)
+    for domain_id in (*plan.domain_ids, *situation.domain_hints):
+        add("domain", domain_id)
+    for capability_id in plan.capability_ids:
+        add("capability", capability_id)
+    for object_id in (*object_ids, *plan.required_object_ids, *plan.optional_object_ids):
+        add("object", object_id)
+    for entity in situation.entities:
+        fields = entity_fields(entity)
+        identifier = fields.get("id") or fields.get("entity_id")
+        if not identifier:
+            continue
+        identifier = str(identifier)
+        # An entity id is EITHER a graph node id or an email address, and which one it is decides
+        # which brain can find it. `gather_members` emits emails; the anchor path emits node ids.
+        # Both are emitted under their own kind, so neither has to pretend to be the other.
+        if "@" in identifier:
+            add("email", identifier)
+        else:
+            add("node", identifier)
+        kind = str(fields.get("type") or "").lower()
+        if kind in {"person", "external_contact", "user"}:
+            add("person", identifier)
+        elif kind in {"organization", "company", "account"}:
+            add("company", identifier)
+        # `node_id` is the resolved graph identity Layer 2 attaches beside the email — the one
+        # thing that lets a Behaviour pattern measured on a node reach a situation known by
+        # address. Absent on the anchor-only path, which is why it is read rather than required.
+        add("node", fields.get("node_id"))
+    for raw in situation.brain_subject_keys:
+        kind, _, rest = str(raw).partition(":")
+        if kind in {"org", "orgwide", "domain", "capability", "object", "situation",
+                    "situation_type", "node", "email", "person", "company", "jurisdiction",
+                    "metric", "actor"} and rest:
+            values.add(str(raw))
+        elif "@" in str(raw):
+            add("email", raw)
+        else:
+            add("node", raw)
+    return tuple(sorted(values))
+
+
+def _entry_tokens(entry: RuntimeBrainEntry) -> tuple[str, ...]:
+    """The entry's address — declared if the producer wrote one, derived if it did not."""
+    declared = address_tokens(entry.value)
+    if declared:
+        return declared
+    return legacy_tokens(entry.brain.value, entry.subject_key, entry.org_id)
+
+
 def _relevant(entry: RuntimeBrainEntry, *, capabilities: set[str],
-              selectors: set[str]) -> bool:
-    if entry.subject_key in selectors:
-        return True
+              selectors: set[str], situation_tokens: set[str]) -> tuple[str, ...] | None:
+    """The matched tokens when this entry applies, `None` when it does not.
+
+    Returns the RECEIPT rather than a boolean on purpose. "This policy was applied" that cannot
+    say which dimension matched is a claim an operator has to take on faith, and Layer 3 spent
+    three months reporting a brain-slice count of zero precisely because nothing on this path was
+    answerable from the outside.
+
+    Four ways to match, in descending order of how much we trust them:
+
+    1. the ADDRESS — token intersection, the contract, the only one a new producer should use;
+    2. the entry's own `capability_id`, which the Adaptive lease has always carried;
+    3. the whole subject key appearing as a selector;
+    4. the subject key's `:`-segments intersecting the selectors — the pre-address heuristic,
+       kept so nothing that binds today stops binding, and reported as `legacy_segment` so the
+       receipts say when a match rested on it.
+    """
+    matched = selection_basis(_entry_tokens(entry), situation_tokens)
+    if matched:
+        return matched
     capability = entry.value.get("capability_id")
     if capability is not None and str(capability) in capabilities:
-        return True
-    segments = set(entry.subject_key.split(":"))
-    return bool(segments & selectors)
+        return (f"capability:{capability}",)
+    if entry.subject_key in selectors:
+        return (f"legacy_subject:{entry.subject_key}",)
+    segments = set(entry.subject_key.split(":")) & selectors
+    if segments:
+        return tuple(f"legacy_segment:{segment}" for segment in sorted(segments))
+    return None
 
 
 def _validate_axis(entry: RuntimeBrainEntry) -> None:
@@ -194,19 +312,26 @@ def _build_snapshot(entries: Iterable[RuntimeBrainEntry], *,
                     situation: BusinessSituationObject, plan: RoutePlan,
                     object_ids: Sequence[str]) -> RuntimeBrainSnapshot:
     selectors = set(_selectors(situation, plan, object_ids))
+    situation_tokens = set(_situation_tokens(situation, plan, object_ids))
     capabilities = set(plan.capability_ids)
     included: list[RuntimeBrainEntry] = []
     excluded: list[str] = []
+    #: entry id -> the tokens that selected it. Reaches the evidence rows below, so every applied
+    #: piece of runtime knowledge can name WHY it was applied.
+    bases: dict[str, tuple[str, ...]] = {}
     for entry in sorted(entries, key=lambda item: (
             item.brain.value, item.subject_key, item.version, item.entry_id)):
         if entry.org_id != situation.org_id:
             continue
-        if not _relevant(entry, capabilities=capabilities, selectors=selectors):
+        basis = _relevant(entry, capabilities=capabilities, selectors=selectors,
+                          situation_tokens=situation_tokens)
+        if basis is None:
             continue
         _validate_axis(entry)
         if not _visibility_allows_package(entry.visibility, situation.visibility):
             excluded.append(entry.entry_id)
             continue
+        bases[entry.entry_id] = basis
         included.append(entry)
 
     selected, shadowed, resolutions = _resolve_conflicts(included)
@@ -238,6 +363,10 @@ def _build_snapshot(entries: Iterable[RuntimeBrainEntry], *,
             "subject_key": entry.subject_key,
             "selection": "selected" if entry.entry_id in selected_ids else "shadowed",
             "conflict_key": entry.value.get("conflict_key"),
+            # WHICH DIMENSION BOUND THIS. See `_relevant` — a receipt, not a boolean. A value
+            # starting `legacy_` means the match rested on the pre-address heuristic and this
+            # entry's producer has not been taught to publish an address yet.
+            "selection_basis": bases.get(entry.entry_id, ()),
         },
     ) for entry in included)
     return RuntimeBrainSnapshot(
@@ -250,39 +379,127 @@ def _build_snapshot(entries: Iterable[RuntimeBrainEntry], *,
     )
 
 
+def _entry_from_lease_row(row: Any, *, org_id: str) -> RuntimeBrainEntry:
+    """Map one `temporary_memories` row onto the compiler's RuntimeBrainEntry.
+
+    THE TABLE IS SHAPED FOR A LEASE, NOT FOR A BRAIN ENTRY, and the three differences are the
+    reason this reader is separate from `_entry_from_l6_row` rather than a `union all` in SQL:
+
+    * there is no `brain` column. A row in this table is Adaptive by construction — Layer 6's only
+      path here is `LearningTarget.TEMPORARY` — so the kind is stamped rather than read.
+    * there is no `version` column. A lease is replaced, not versioned; the constant 1 is honest
+      about that, and `memory_id` carries the identity the version would otherwise supply.
+    * there is no `confidence` column, exactly as `learned_brain_entries` has none, so the same
+      governance floor applies for the same reason.
+
+    `expires_at` travels into `value` as `lease_expires_at` so a decision that rested on a
+    preference can say when that preference stops being true. It is NOT used for filtering here —
+    the SQL already filtered on the frozen evaluation time, and a second clock in Python would be
+    a second answer to the same question.
+    """
+    value = _json(_row_value(row, "value"))
+    memory_id = str(_row_value(row, "memory_id"))
+    subject = str(_row_value(row, "subject"))
+    expires_at = _row_value(row, "expires_at")
+    learning_id = str(_row_value(row, "learning_id") or memory_id)
+    return RuntimeBrainEntry(
+        org_id=org_id,
+        brain=BrainKind.ADAPTIVE,
+        entry_id=f"adaptive:{subject}:{memory_id}",
+        subject_key=subject,
+        version=1,
+        value={**value, "lease_expires_at": (
+            expires_at.isoformat() if hasattr(expires_at, "isoformat") else str(expires_at))},
+        confidence_bp=int(value.get("confidence_bp", _DEFAULT_RUNTIME_CONFIDENCE_BP)),
+        learning_id=learning_id,
+        effective_at=_row_value(row, "created_at"),
+        visibility=_normalize_l6_visibility(_json(_row_value(row, "visibility"))),
+        trace_id=learning_id,
+    )
+
+
 class InMemoryRuntimeBrains:
     def __init__(self, entries: Iterable[RuntimeBrainEntry] = ()) -> None:
         self.entries = tuple(entries)
 
     def snapshot(self, *, situation: BusinessSituationObject, plan: RoutePlan,
-                 object_ids: Sequence[str]) -> RuntimeBrainSnapshot:
+                 object_ids: Sequence[str],
+                 eval_time: datetime | None = None) -> RuntimeBrainSnapshot:
+        # `eval_time` is accepted and unused: an in-memory brain holds whatever the caller put in
+        # it, and filtering a hand-built fixture by a clock would make a test's own setup
+        # conditional on the test's own clock. The Postgres reader is where the lease TTL lives.
         return _build_snapshot(self.entries, situation=situation, plan=plan,
                                object_ids=object_ids)
 
 
 class PostgresRuntimeBrains:
-    """Read the active versions published by Layer 6 through one tenant-scoped query."""
+    """Read what Layer 6 published — BOTH of its stores — through two tenant-scoped queries.
+
+    **THE SECOND QUERY IS THE POINT.** Doc 02 §1 names the Adaptive store as
+    `learned_brain_entries` **plus** `temporary_memories`; the build split them and taught this
+    reader only the first. `feedback/brain_pipeline.publish_runtime` writes a founder's
+    `bad_timing` verdict into `temporary_memories`, this class selected from
+    `learned_brain_entries` alone, and so `ExpertisePackage.adaptive_preferences` was structurally
+    always empty — every piece of card feedback the product has ever collected was stored, governed,
+    expired on schedule, and read by nothing.
+    """
 
     def __init__(self, connection) -> None:
         self.connection = connection
 
     def snapshot(self, *, situation: BusinessSituationObject, plan: RoutePlan,
-                 object_ids: Sequence[str]) -> RuntimeBrainSnapshot:
+                 object_ids: Sequence[str],
+                 eval_time: datetime | None = None) -> RuntimeBrainSnapshot:
         selectors = _selectors(situation, plan, object_ids)
+        tokens = _situation_tokens(situation, plan, object_ids)
+        # THE PREFILTER MUST NOT BE NARROWER THAN `_relevant`, and it used to be wider in one place
+        # and narrower in another. The `position(':'||sel||':' ...)` clause matched a colon-bearing
+        # selector that Python's `set(subject.split(':'))` then threw away; the address clause below
+        # is the one that actually binds, and the three legacy clauses are kept verbatim so nothing
+        # that reaches a package today stops reaching it.
+        params = {"o": situation.org_id, "capabilities": list(plan.capability_ids),
+                  "selectors": list(selectors), "tokens": list(tokens)}
         rows = self.connection.execute(text(
             "select org_id,brain,subject,version,value,learning_id,created_at,visibility "
             "from learned_brain_entries "
             "where org_id=:o and active and brain in ('organization','behavior','adaptive') "
-            "and ((value->>'capability_id')=any(cast(:capabilities as text[])) "
+            "and (jsonb_exists_any(coalesce(value->'address'->'tokens','[]'::jsonb), "
+            "                      cast(:tokens as text[])) "
+            "or brain='organization' "
+            "or (value->>'capability_id')=any(cast(:capabilities as text[])) "
             "or subject=any(cast(:selectors as text[])) "
             "or exists (select 1 from unnest(cast(:selectors as text[])) selected(value) "
             "where position(':' || selected.value || ':' in ':' || subject || ':')>0)) "
-            "order by brain,subject,version"),
-            {"o": situation.org_id, "capabilities": list(plan.capability_ids),
-             "selectors": list(selectors)}).mappings().all()
-        entries = tuple(_entry_from_l6_row(row) for row in rows)
-        return _build_snapshot(entries, situation=situation, plan=plan,
-                               object_ids=object_ids)
+            "order by brain,subject,version"), params).mappings().all()
+        entries = list(_entry_from_l6_row(row) for row in rows)
+
+        # ── The Adaptive lease store. Filtered on the FROZEN evaluation time, never `now()`.
+        #
+        # `eval_time` is the sweep's own clock, the same one the situation, the context slice and
+        # the decision are all pinned to. Using `now()` here would mean a compile replayed for an
+        # audit could select a preference that had already expired when the decision was taken —
+        # a package that is not reproducible, which is the one property Layer 3 is required to
+        # have. When the caller supplies no evaluation time we read NO leases at all rather than
+        # falling back to the wall clock: a missing clock is a reason to apply no preference, not
+        # a licence to invent one.
+        if eval_time is not None:
+            lease_rows = self.connection.execute(text(
+                "select memory_id,subject,value,learning_id,created_at,visibility,expires_at "
+                "from temporary_memories "
+                "where org_id=:o and active and expires_at > :at "
+                "and (jsonb_exists_any(coalesce(value->'address'->'tokens','[]'::jsonb), "
+                "                      cast(:tokens as text[])) "
+                "or (value->>'capability_id')=any(cast(:capabilities as text[])) "
+                "or subject=any(cast(:selectors as text[])) "
+                "or exists (select 1 from unnest(cast(:selectors as text[])) selected(value) "
+                "where position(':' || selected.value || ':' in ':' || subject || ':')>0)) "
+                "order by subject,memory_id"),
+                {**params, "at": eval_time}).mappings().all()
+            entries.extend(_entry_from_lease_row(row, org_id=situation.org_id)
+                           for row in lease_rows)
+
+        return _build_snapshot(tuple(entries), situation=situation, plan=plan,
+                              object_ids=object_ids)
 
 
 __all__ = [

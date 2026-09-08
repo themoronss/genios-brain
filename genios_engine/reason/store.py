@@ -178,12 +178,157 @@ def _integrity_equal(label: str, actual: Any, expected: Any) -> None:
         raise ReplayIntegrityError(f"{label} integrity mismatch")
 
 
+class EvidenceDigestMismatch(ReplayIntegrityError):
+    """A permanent evidence digest does not match the set hash bound to its snapshot.
+
+    A subclass of ReplayIntegrityError on purpose: a caller that already fails closed on replay
+    integrity keeps failing closed here without knowing this class exists. Adding a digest that
+    some callers treat as a soft warning would be a new way to accept a bad payload, which is the
+    one thing doc 03's S3 warns about.
+    """
+
+
+#: doc 03 S3 · the permanent row's fields, in the order the digest hash covers them.
+_DIGEST_COLUMNS = ("evidence_id", "field", "context_scope", "value_digest", "rendered_text",
+                   "observed_at_key", "source_ref_id", "independence_group", "digest_hash")
+
+_INSERT_DIGEST = text(
+    "insert into reasoning_evidence_digests (org_id, context_snapshot_id, evidence_id, field, "
+    "context_scope, value_digest, rendered_text, observed_at_key, source_ref_id, "
+    "independence_group, digest_hash) values "
+    "(:o,:snap,:evidence_id,:field,:context_scope,:value_digest,:rendered_text,"
+    ":observed_at_key,:source_ref_id,:independence_group,:digest_hash) "
+    "on conflict (org_id, context_snapshot_id, evidence_id) do nothing")
+
+_SELECT_DIGESTS = text(
+    "select evidence_id, field, context_scope, value_digest, rendered_text, observed_at_key, "
+    "source_ref_id, independence_group, unit_refs, digest_hash "
+    "from reasoning_evidence_digests where org_id=:o and context_snapshot_id=:snap "
+    "order by evidence_id asc")
+
+
+def _digest_body(row: Mapping[str, Any]) -> dict[str, Any]:
+    """The immutable half of one digest row, in the exact shape `evidence.digest_row` hashes."""
+    return {name: row[name] for name in _DIGEST_COLUMNS}
+
+
+def _evidence_digest_rows(payload: Mapping[str, Any]) -> list[dict[str, Any]]:
+    from genios_engine.reason.evidence import digests_for_payload
+
+    return digests_for_payload(payload)
+
+
+def _evidence_digest_set_hash(*, payload_hash: str,
+                              rows: Sequence[Mapping[str, Any]]) -> str:
+    from genios_engine.reason.evidence import digest_set_hash
+
+    return digest_set_hash(payload_hash=payload_hash, rows=rows)
+
+
+def _write_evidence_digests(conn, *, org_id: str, context_snapshot_id: str,
+                            payload: Mapping[str, Any], payload_hash: str) -> str:
+    """S3 · mint the permanent digest set for one payload, in the payload's own transaction.
+
+    Doc 03 names "a digest written for a payload that never persisted" as a failure mode and
+    prescribes one transaction; every caller here is already inside the write scope that commits
+    the payload (or, in the purge, the one that deletes it), so the two artifacts can never
+    disagree about whether the fact existed.
+
+    Idempotent, and NOT trusting: a re-run inserts nothing and then RE-READS what is held and
+    compares it to what it would have written. That is the difference between a digest table and
+    a digest table you can rely on when the payload is gone.
+    """
+    rows = _evidence_digest_rows(payload)
+    set_hash = _evidence_digest_set_hash(payload_hash=payload_hash, rows=rows)
+    for row in rows:
+        conn.execute(_INSERT_DIGEST, {"o": org_id, "snap": context_snapshot_id, **_digest_body(row)})
+    held = conn.execute(_SELECT_DIGESTS, {"o": org_id, "snap": context_snapshot_id}).mappings().all()
+    held_bodies = [_digest_body(item) for item in held]
+    if held_bodies != [_digest_body(row) for row in rows]:
+        raise EvidenceDigestMismatch("stored evidence digests differ from the payload they bind")
+    held_hash = _evidence_digest_set_hash(payload_hash=payload_hash, rows=held_bodies)
+    if held_hash != set_hash:
+        raise EvidenceDigestMismatch("evidence digest set hash does not match its stored rows")
+    stamped = conn.execute(text(
+        "update reasoning_context_snapshots set evidence_digest_hash=:h "
+        "where org_id=:o and context_snapshot_id=:snap "
+        "and (evidence_digest_hash is null or evidence_digest_hash=:h) "
+        "returning evidence_digest_hash"),
+        {"o": org_id, "snap": context_snapshot_id, "h": set_hash}).first()
+    if stamped is None:
+        raise EvidenceDigestMismatch(
+            "context snapshot already carries a different evidence digest hash")
+    return set_hash
+
+
 _POLICY_CHECK_REQUIREMENTS: dict[str, tuple[str, str]] = {
     "read_only": ("policy", "read_only_policy_pass"),
     "human_approval_required": ("permission", "human_approval_boundary_pass"),
     "evidence_required": ("policy", "evidence_policy_pass"),
     "no_unverified_recipient": ("permission", "verified_recipient_guard_pass"),
 }
+
+
+def _cited_evidence_ids(bundle: Mapping[str, Any]) -> set[str]:
+    """Every evidence id the persisted trace actually leans on."""
+    cited: set[str] = set()
+    for key in ("reasoner_results", "candidates"):
+        for row in _sequence(bundle.get(key), key):
+            refs = _json_value(_mapping(row, key).get("evidence_refs")) or ()
+            if isinstance(refs, (list, tuple)):
+                cited.update(str(item) for item in refs)
+    return cited
+
+
+def _verify_evidence_digests(bundle: Mapping[str, Any], context: Mapping[str, Any], *,
+                             payload: Mapping[str, Any] | None, payload_hash: str,
+                             digest_only: bool) -> None:
+    """S3 · prove the permanent digest set, and REFUSE to let it be the weaker proof by default.
+
+    Three distinct jobs, in the order that makes the third safe:
+
+    1. While the payload lives, the digests are RE-DERIVED from it and compared row for row. So
+       the digest table is continuously audited by the full-strength path, and a row edited today
+       is caught long before the payload expires — not discovered in five years, when it is the
+       only copy left.
+    2. The set hash is checked against `evidence_digest_hash`, which is bound to `payload_hash`,
+       which sits inside `context_hash`, which is the snapshot id. A digest set cannot be forged
+       in isolation or transplanted from another snapshot.
+    3. In digest mode ONLY, the set must additionally COVER every evidence id the trace cites.
+       A replay that verified three digests and quietly said nothing about the fourth fact the
+       decision rested on would be exactly the false reassurance this whole group exists to
+       prevent.
+    """
+    from genios_engine.reason.evidence import digest_set_hash, digests_for_payload
+
+    expected_hash = _optional_text(context.get("evidence_digest_hash"))
+    rows = [_mapping(item, "evidence digest") for item in
+            _sequence(bundle.get("evidence_digests"), "evidence_digests")]
+    if payload is not None:
+        derived = digests_for_payload(payload)
+        if expected_hash is not None or rows:
+            if [_digest_body(item) for item in rows] != [_digest_body(item) for item in derived]:
+                raise EvidenceDigestMismatch(
+                    "permanent evidence digests differ from the payload they describe")
+    if expected_hash is None:
+        if digest_only:
+            raise EvidenceDigestMismatch(
+                "this decision predates the permanent evidence digest and its payload is gone — "
+                "it can no longer be re-justified, and saying so is the only honest answer")
+        if rows:
+            raise EvidenceDigestMismatch(
+                "evidence digests exist for a snapshot with no digest set hash")
+        return
+    actual = digest_set_hash(payload_hash=payload_hash,
+                             rows=[_digest_body(item) for item in rows])
+    _integrity_equal("evidence digest set", actual, expected_hash)
+    if digest_only:
+        available = {str(item.get("evidence_id")) for item in rows}
+        missing = sorted(_cited_evidence_ids(bundle) - available)
+        if missing:
+            raise EvidenceDigestMismatch(
+                f"{len(missing)} cited evidence id(s) have no permanent digest: "
+                f"{', '.join(missing[:5])}")
 
 
 def _contract_check(value: Any, *, play_id: str | None = None) -> dict[str, Any]:
@@ -238,6 +383,37 @@ def _typed_reasoner_result(value: Mapping[str, Any]):
         reason_codes=tuple(_sequence(output.get("reason_codes"), "reasoner reason codes")),
         diagnostics=_mapping(value.get("diagnostics") or {}, "reasoner diagnostics"),
     )
+
+
+def _audited_order(reasoner_plan: Sequence[str], expected_plan: Sequence[str]) -> list[str]:
+    """The order EVERY persisted result row follows: the plan that executed, then the declared
+    units the Unit Selector left out, in the DAG's own topological order.
+
+    Until the roster woke, the two were the same list and this function would have been an
+    identity. A capability that opts into context-aware selection schedules a SUB-PLAN — a
+    money-less situation does not pay for `core.cost` — so a store that demanded equality with the
+    full DAG refused to persist any selected run at all, which is how a woken roster reasons
+    perfectly in memory and writes nothing an auditor can read.
+
+    Nothing is relaxed. The executed plan must still name only declared units, in the DAG's own
+    order, without repeats; and the caller still requires one row per DECLARED unit, so a unit
+    that did not run has to arrive as a `skipped` row carrying its receipt. The invariant moves
+    from "the plan is the DAG" to the stronger "the plan is a sub-plan of the DAG and every
+    omission names itself".
+    """
+    executed = [str(item) for item in reasoner_plan]
+    if len(set(executed)) != len(executed):
+        raise ReasoningStoreError("reasoner plan repeats a unit")
+    position = {reasoner_id: index for index, reasoner_id in enumerate(expected_plan)}
+    ordinals = []
+    for reasoner_id in executed:
+        if reasoner_id not in position:
+            raise ReasoningStoreError("reasoner plan differs from capability DAG")
+        ordinals.append(position[reasoner_id])
+    if ordinals != sorted(ordinals):
+        raise ReasoningStoreError("reasoner plan reorders the capability DAG")
+    omitted = [reasoner_id for reasoner_id in expected_plan if reasoner_id not in set(executed)]
+    return executed + omitted
 
 
 def _topological_spec_ids(specs: Sequence[Mapping[str, Any]]) -> list[str]:
@@ -523,12 +699,21 @@ class ReasoningStore:
                     or _encoded_semantic_hash(held_payload.payload) != payload_hash):
                 raise ContextSnapshotMismatch("stored context payload does not match payload_hash")
 
+            # S3 · the permanent half, minted in the SAME transaction as the payload it
+            # describes. Doc 03's second failure mode is "a digest written for a payload that
+            # never persisted"; writing it here — after the payload has proved its own hash and
+            # before this scope commits — makes the pair atomic in both directions.
+            evidence_digest_hash = _write_evidence_digests(
+                conn, org_id=org_id, context_snapshot_id=snapshot_id,
+                payload=payload_obj, payload_hash=payload_hash)
+
         return {
             "org_id": org_id,
             "context_snapshot_id": snapshot_id,
             "context_hash": context_hash,
             "payload_hash": payload_hash,
             "selector_hash": selector_hash,
+            "evidence_digest_hash": evidence_digest_hash,
             "graph_version": graph_version,
             "evaluation_time": eval_time,
         }
@@ -692,8 +877,10 @@ class ReasoningStore:
             manifest_specs = [_decanonicalize(_mapping(item, "reasoner spec")) for item in
                               _sequence(manifest.get("reasoners"), "capability reasoners")]
             expected_plan = _topological_spec_ids(manifest_specs)
-            if reasoner_plan != expected_plan:
-                raise ReasoningStoreError("reasoner plan differs from capability DAG")
+            # The executed plan may be a SUB-plan (context-aware selection), but every DECLARED
+            # unit still owes a row: the ones that ran, then the ones the selector dropped,
+            # carrying their skip receipt. Coverage is unchanged and the receipt is now durable.
+            expected_order = _audited_order(reasoner_plan, expected_plan)
             ordered_results = sorted(results, key=lambda item: item["ordinal"])
             if len(ordered_results) != len(manifest_specs):
                 raise ReasoningStoreError("reasoner results do not cover the capability DAG")
@@ -706,10 +893,16 @@ class ReasoningStore:
                 reasoner_id = result["reasoner_id"]
                 spec = spec_by_id.get(reasoner_id)
                 if (result["ordinal"] != ordinal or spec is None
-                        or expected_plan[ordinal] != reasoner_id
+                        or expected_order[ordinal] != reasoner_id
                         or result["reasoner_version"] != spec.get("version")):
                     raise ReasoningStoreError(
                         "reasoner result order/identity/version differs from capability DAG")
+                if ordinal >= len(reasoner_plan) and not (
+                        result.get("status") == "skipped" and result.get("skip_reason_code")):
+                    # A unit that was never scheduled and does not say why is the silence this
+                    # whole layer refuses. It cannot be written.
+                    raise ReasoningStoreError(
+                        f"{reasoner_id} was not scheduled and carries no skip receipt")
                 output = result["output"]
                 contract_result = {
                     "reasoner_id": reasoner_id,
@@ -968,12 +1161,49 @@ class ReasoningStore:
                 self._insert_candidates(conn, org_id, run_id, prepared_candidates)
                 self._insert_checks(conn, org_id, run_id, prepared_checks)
                 self._insert_output(conn, org_id, run_id, prepared_output)
+                # S1 · stamp the permanent digest with WHICH UNITS OBSERVED each fact, in the
+                # run's own transaction. This is the run's last chance: after the 720h TTL the
+                # payload is gone, and a digest that says what the evidence was but not who read
+                # it cannot answer "why did this decision happen" a year later. It is also where
+                # `unit_ref` resolution is ENFORCED on every finding on every run — `emissions()`
+                # membership-checks each one — rather than sampled on a pilot.
+                self._stamp_evidence_unit_refs(
+                    conn, org_id=org_id, context_snapshot_id=context_snapshot_id,
+                    results=ordered_results)
 
         bundle = self.load_bundle(org_id=org_id, run_id=run_id, _conn=_conn)
         if bundle is None:
             raise ReasoningStoreError("completed bundle could not be loaded")
         bundle["idempotent_reuse"] = not inserted_run
         return bundle
+
+    @staticmethod
+    def _stamp_evidence_unit_refs(conn, *, org_id: str, context_snapshot_id: str,
+                                  results: Sequence[Mapping[str, Any]]) -> dict[str, tuple[str, ...]]:
+        """Record, on each permanent digest row, the units that observed that evidence id.
+
+        UNION rather than replace: one content-addressed snapshot can serve several runs, and a
+        second run must not erase the first run's receipt. Deterministic order (sorted) so the
+        column is comparable across replays.
+
+        Deliberately NOT part of `digest_hash`: the digest set is per-snapshot and content
+        addressed, and folding a per-run column into it would make the set hash move for a reason
+        that is not tampering. It stays verifiable anyway — every unit_ref here is re-derivable
+        from `reasoning_reasoner_results`, which the replay verifier already hashes end to end.
+        """
+        from genios_engine.reason.evidence import unit_refs_by_evidence
+
+        typed = [_typed_reasoner_result(item) for item in results]
+        mapping = unit_refs_by_evidence(typed)
+        for evidence_id, refs in mapping.items():
+            conn.execute(text(
+                "update reasoning_evidence_digests set unit_refs = ("
+                "  select coalesce(jsonb_agg(distinct value order by value), '[]'::jsonb) "
+                "  from jsonb_array_elements_text(unit_refs || cast(:refs as jsonb)) as t(value)"
+                ") where org_id=:o and context_snapshot_id=:snap and evidence_id=:e"),
+                {"o": org_id, "snap": context_snapshot_id, "e": evidence_id,
+                 "refs": _json_param(list(refs))})
+        return mapping
 
     def _prepare_results(self, run_id: str, run_input_hash: str,
                          values: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -1351,9 +1581,19 @@ class ReasoningStore:
             output = conn.execute(text(
                 "select * from reasoning_run_outputs where org_id=:o and run_id=:r"),
                 {"o": org_id, "r": run_id}).mappings().first()
+            # The permanent half rides with the trace, verified. Pre-0117 snapshots whose payload
+            # has not yet been swept return `[]`, which is why every reader below must ask
+            # `payload is None` and not `not evidence_digests` — no digests and no payload is a
+            # decision that cannot be re-justified, and it must say so rather than look empty.
+            digests = (self._evidence_digests(
+                conn, org_id=org_id, context_snapshot_id=context["context_snapshot_id"],
+                payload_hash=context.get("payload_hash"),
+                expected_hash=context.get("evidence_digest_hash"))
+                if context else [])
         return {
             "run": self._decoded_row(run),
             "context_snapshot": self._decoded_row(context) if context else None,
+            "evidence_digests": digests,
             "config_snapshot": self._decoded_row(config) if config else None,
             "reasoner_results": [self._decoded_row(row) for row in results],
             "candidates": [self._decoded_row(row) for row in candidates],
@@ -1362,7 +1602,8 @@ class ReasoningStore:
         }
 
     def verify_replay_bundle(self, bundle: Mapping[str, Any], *,
-                             org_id: str | None = None) -> None:
+                             org_id: str | None = None,
+                             digest_only: bool = False) -> None:
         """Verify every immutable semantic artifact before replay may consume it.
 
         Replay is an audit operation, not a best-effort deserialize.  This
@@ -1374,7 +1615,7 @@ class ReasoningStore:
         rejected before any reasoner executes.
         """
         try:
-            self._verify_replay_bundle(bundle, org_id=org_id)
+            self._verify_replay_bundle(bundle, org_id=org_id, digest_only=digest_only)
         except ReplayIntegrityError:
             raise
         except (KeyError, TypeError, ValueError, AttributeError) as exc:
@@ -1382,7 +1623,8 @@ class ReasoningStore:
 
     @staticmethod
     def _verify_replay_bundle(bundle: Mapping[str, Any], *,
-                              org_id: str | None = None) -> None:
+                              org_id: str | None = None,
+                              digest_only: bool = False) -> None:
         run = _mapping(bundle.get("run"), "run")
         context = _mapping(bundle.get("context_snapshot"), "context_snapshot")
         capability = _mapping(bundle.get("capability_snapshot"), "capability_snapshot")
@@ -1478,21 +1720,42 @@ class ReasoningStore:
         # a selector hash without the selector cannot be independently audited.
         if context.get("selector") is None:
             raise ReplayIntegrityError("context selector bytes are unavailable for replay")
-        if context.get("payload") is None:
-            raise ContextPayloadExpired(context.get("context_snapshot_id") or run.get("run_id"))
+        payload_present = context.get("payload") is not None
         payload_expires_at = context.get("payload_expires_at")
-        if (payload_expires_at is not None
-                and _aware_datetime(payload_expires_at, "payload_expires_at")
-                <= datetime.now(timezone.utc)):
-            raise ContextPayloadExpired(context.get("context_snapshot_id") or run.get("run_id"))
+        payload_expired = (payload_expires_at is not None
+                           and _aware_datetime(payload_expires_at, "payload_expires_at")
+                           <= datetime.now(timezone.utc))
+        if not digest_only:
+            # UNCHANGED, AND DELIBERATELY FIRST. While the payload exists, the payload is what is
+            # verified — the digest lane is NOT a fallback for a payload that failed its hash.
+            # That ordering is the whole safety argument for adding a digest at all: a caller can
+            # only reach digest verification when there is genuinely nothing to verify against,
+            # never by presenting a payload that does not match.
+            if not payload_present:
+                raise ContextPayloadExpired(
+                    context.get("context_snapshot_id") or run.get("run_id"))
+            if payload_expired:
+                raise ContextPayloadExpired(
+                    context.get("context_snapshot_id") or run.get("run_id"))
+        elif payload_present and not payload_expired:
+            raise ReplayIntegrityError(
+                "digest replay was requested for a snapshot whose payload is still present — "
+                "the weaker proof may never stand in for the stronger one that exists")
         selector = _decanonicalize(_mapping(context.get("selector"), "context selector"))
-        payload = _decanonicalize(_mapping(context.get("payload"), "context payload"))
+        payload = (_decanonicalize(_mapping(context.get("payload"), "context payload"))
+                   if payload_present else None)
         source_manifest = _decanonicalize(
             _sequence(context.get("source_manifest"), "context source_manifest"))
         selector_hash = _semantic_hash(selector)
-        payload_hash = _semantic_hash(payload)
+        # In digest mode `payload_hash` is READ from the snapshot row rather than recomputed —
+        # and it is not taken on trust: it is folded into `context_material` below, whose hash
+        # must equal the stored `context_hash`, whose hash must equal the stored snapshot id.
+        payload_hash = (_semantic_hash(payload) if payload is not None
+                        else _required_text(context, "payload_hash"))
         _integrity_equal("context selector hash", context.get("selector_hash"), selector_hash)
         _integrity_equal("context payload hash", context.get("payload_hash"), payload_hash)
+        _verify_evidence_digests(bundle, context, payload=payload, payload_hash=payload_hash,
+                                 digest_only=digest_only)
         evaluation_time = _aware_datetime(context.get("evaluation_time"),
                                           "context evaluation_time")
         schema_version = int(context.get("schema_version"))
@@ -1523,23 +1786,28 @@ class ReasoningStore:
         _integrity_equal("run context snapshot", run.get("context_snapshot_id"),
                          context_snapshot_id)
 
-        # Snapshot metadata must describe the payload it claims to bind.
-        _integrity_equal("payload tenant", payload.get("org_id"), expected_org)
-        _integrity_equal("payload graph version", payload.get("graph_version"),
-                         int(context.get("graph_version")))
-        _integrity_equal("payload root node", payload.get("root_entity_id"),
-                         context.get("root_node_id"))
-        _integrity_equal("payload root type", payload.get("root_entity_type"),
-                         context.get("root_node_type"))
+        # Snapshot metadata must describe the payload it claims to bind.  With the payload
+        # purged there is nothing to compare the row against, so these checks are SKIPPED rather
+        # than faked — every one of them is a payload-vs-row agreement, and inventing an answer
+        # for an absent side is precisely the "silently returning less" doc 03 refuses.  The
+        # row's own identity remains fully proved by `context_hash` above.
+        if payload is not None:
+            _integrity_equal("payload tenant", payload.get("org_id"), expected_org)
+            _integrity_equal("payload graph version", payload.get("graph_version"),
+                             int(context.get("graph_version")))
+            _integrity_equal("payload root node", payload.get("root_entity_id"),
+                             context.get("root_node_id"))
+            _integrity_equal("payload root type", payload.get("root_entity_type"),
+                             context.get("root_node_type"))
+            _integrity_equal("payload selector version", payload.get("selector_version"),
+                             context.get("selector_version"))
+            _integrity_equal(
+                "payload evaluation time",
+                _aware_datetime(payload.get("evaluation_time"), "payload evaluation_time"),
+                evaluation_time,
+            )
         _integrity_equal("capability/context root type", context.get("root_node_type"),
                          _required_text(manifest, "root_entity_type"))
-        _integrity_equal("payload selector version", payload.get("selector_version"),
-                         context.get("selector_version"))
-        _integrity_equal(
-            "payload evaluation time",
-            _aware_datetime(payload.get("evaluation_time"), "payload evaluation_time"),
-            evaluation_time,
-        )
 
         # Run input provenance, including every field that can alter authority or
         # replay lineage.  An explicit idempotency key can no longer alias these.
@@ -1579,7 +1847,11 @@ class ReasoningStore:
         })
         _integrity_equal("run input hash", run.get("input_hash"), run_input_hash)
 
-        contract_context_hash = _semantic_hash(payload)
+        # `input_manifest` is hashed into `run_input_hash`, which was just proved against the
+        # stored `input_hash` — so in digest mode this value is taken from a tamper-evident row
+        # rather than recomputed from bytes that no longer exist.
+        contract_context_hash = (_semantic_hash(payload) if payload is not None
+                                 else _required_text(input_manifest, "contract_context_hash"))
         contract_context_id = f"ctx_{contract_context_hash}"
         _integrity_equal("contract context hash",
                          input_manifest.get("contract_context_hash"), contract_context_hash)
@@ -1613,10 +1885,12 @@ class ReasoningStore:
         spec_by_id = {_required_text(item, "reasoner_id"): item for item in manifest_specs}
         if len(spec_by_id) != len(manifest_specs):
             raise ReplayIntegrityError("duplicate capability reasoner identity")
-        _integrity_equal("reasoner plan", reasoner_plan,
-                         _topological_spec_ids(manifest_specs))
+        try:
+            expected_order = _audited_order(reasoner_plan, _topological_spec_ids(manifest_specs))
+        except ReasoningStoreError as exc:
+            raise ReplayIntegrityError(str(exc)) from exc
         ordered_results = sorted(results, key=lambda item: int(item.get("ordinal")))
-        _integrity_equal("reasoner result count", len(ordered_results), len(reasoner_plan))
+        _integrity_equal("reasoner result count", len(ordered_results), len(expected_order))
         contract_results: dict[str, dict[str, Any]] = {}
         contract_result_hashes: list[list[str]] = []
         persistence_result_hashes: list[str] = []
@@ -1624,7 +1898,12 @@ class ReasoningStore:
             _integrity_equal("reasoner result ordinal", int(row.get("ordinal")), ordinal)
             reasoner_id = _required_text(row, "reasoner_id")
             _integrity_equal("reasoner result plan position", reasoner_id,
-                             reasoner_plan[ordinal])
+                             expected_order[ordinal])
+            if ordinal >= len(reasoner_plan) and not (
+                    row.get("status") == "skipped"
+                    and _optional_text(row.get("skip_reason_code"))):
+                raise ReplayIntegrityError(
+                    f"{reasoner_id} was not scheduled and carries no skip receipt")
             spec = spec_by_id.get(reasoner_id)
             if spec is None:
                 raise ReplayIntegrityError("reasoner result is absent from capability manifest")
@@ -1872,6 +2151,20 @@ class ReasoningStore:
             "expires_at": decision_core.get("expires_at"),
             "outcome_window_days": decision_core.get("outcome_window_days"),
         }
+        # THE CONDITIONAL HALF OF THE CONTRACT'S SEMANTIC DICT. `ReasoningDecision` folds five
+        # fields into its hash only when they are carried, and this rebuild used to know about
+        # none of them — so the moment Layer 3's weld put `citations` on a compiled decision, every
+        # compiled bundle failed here with `contract decision hash integrity mismatch` and the
+        # lane's replay guarantee was gone without a single test going red.
+        #
+        # Read from `decision_core` rather than recomputed, and the emptiness rule is the
+        # contract's own: a field the decision did not carry must not appear, or a bundle written
+        # before it existed stops verifying. `audit._output` writes them on exactly these terms.
+        for _optional in ("citations", "constraints_applied", "confidence_vector",
+                          "ranking_weights_version", "do_nothing"):
+            _carried = decision_core.get(_optional)
+            if _carried:
+                contract_decision[_optional] = _carried
         contract_decision_hash = _semantic_hash(contract_decision)
         _integrity_equal("contract decision hash",
                          decision_core.get("contract_decision_hash"), contract_decision_hash)
@@ -1895,17 +2188,33 @@ class ReasoningStore:
         })
         _integrity_equal("run output hash", run.get("output_hash"), aggregate_output_hash)
 
-    def load_replay_bundle(self, *, org_id: str, run_id: str) -> dict[str, Any]:
+    #: What a returned replay bundle proves. `payload_verified` is the full-strength path and is
+    #: what every caller gets unless it explicitly asks otherwise; `digest_verified` is doc 03's
+    #: post-TTL degradation and CANNOT re-execute the run — a re-justification, not a replay.
+    PAYLOAD_VERIFIED = "payload_verified"
+    DIGEST_VERIFIED = "digest_verified"
+
+    def load_replay_bundle(self, *, org_id: str, run_id: str,
+                           allow_digest_replay: bool = False) -> dict[str, Any]:
+        """Load a verified trace, and SAY which of the two proofs it carries.
+
+        `allow_digest_replay` defaults to False, so nothing that replays today changes: a purged
+        payload still raises `ContextPayloadExpired`, because re-EXECUTING a run without its
+        bounded context is impossible and returning a bundle that looks replayable would be a
+        lie of shape. What the flag unlocks is the other question doc 03 asks — "what did this
+        decision see?" — which the permanent digests can still answer, and the answer arrives
+        LABELLED `digest_verified` so a reader is never left to assume it was the strong one.
+        """
         bundle = self.load_bundle(org_id=org_id, run_id=run_id)
         if bundle is None:
             raise ReasoningStoreError("reasoning run not found")
         context = bundle.get("context_snapshot") or {}
-        if context.get("payload") is None:
-            raise ContextPayloadExpired(context.get("context_snapshot_id") or run_id)
         payload_expires_at = context.get("payload_expires_at")
-        if (payload_expires_at is not None
-                and _aware_datetime(payload_expires_at, "payload_expires_at")
-                <= datetime.now(timezone.utc)):
+        expired = (context.get("payload") is None
+                   or (payload_expires_at is not None
+                       and _aware_datetime(payload_expires_at, "payload_expires_at")
+                       <= datetime.now(timezone.utc)))
+        if expired and not allow_digest_replay:
             raise ContextPayloadExpired(context.get("context_snapshot_id") or run_id)
         run_config_snapshot_id = _optional_text(bundle["run"].get("config_snapshot_id"))
         if run_config_snapshot_id is not None and bundle.get("config_snapshot") is None:
@@ -1917,7 +2226,11 @@ class ReasoningStore:
         if capability is None:
             raise ReasoningStoreError("capability snapshot is unavailable for replay")
         bundle["capability_snapshot"] = capability
-        self.verify_replay_bundle(bundle, org_id=org_id)
+        self.verify_replay_bundle(bundle, org_id=org_id, digest_only=expired)
+        bundle["replay_mode"] = self.DIGEST_VERIFIED if expired else self.PAYLOAD_VERIFIED
+        # The label is not decoration: a digest-verified bundle has no `payload`, so
+        # `request_from_replay_bundle` cannot rebuild a request from it. Callers branch on this.
+        bundle["replayable"] = not expired
         return bundle
 
     def load_by_idempotency(self, *, org_id: str,
@@ -1928,13 +2241,155 @@ class ReasoningStore:
                 {"o": org_id, "k": idempotency_key}).scalar()
         return self.load_bundle(org_id=org_id, run_id=run_id) if run_id else None
 
-    def purge_expired_context_payloads(self, *, eval_time: datetime | str) -> int:
+    def purge_expired_context_payloads(self, *, eval_time: datetime | str,
+                                       batch_limit: int = 2_000) -> int:
+        """Purge expired payloads — and never before their permanent digest exists.
+
+        This is where the historic half of S3 and S2 both land, and it is the strongest place
+        either could land: a payload written before migration 0117 has no digest set and no id
+        map, and this is the LAST moment either can be derived from it. Minting them here, in the
+        transaction that deletes the payload, means the retention clock can never turn a decision
+        into an un-re-justifiable one. There is no separate backfill job to forget to run: the
+        heartbeat that already calls this (api/routes.py) is the backfill.
+
+        `batch_limit` bounds one sweep. The previous statement deleted every expired row in one
+        unbounded DELETE; now that each row is read and digested first, an unbounded sweep on a
+        long-neglected table would be an unbounded transaction on the heartbeat. The heartbeat
+        repeats, so a bounded batch drains — a payload living one tick longer is a retention
+        rounding error, a stalled heartbeat is an outage.
+        """
         now = _aware_datetime(eval_time, "eval_time")
+        limit = _integer(batch_limit, "batch_limit", minimum=1)
         with self._engine.begin() as conn:
+            expiring = conn.execute(text(
+                "select p.org_id, p.context_snapshot_id, p.payload, s.payload_hash, "
+                "s.root_node_id, s.evidence_digest_hash "
+                "from reasoning_context_payloads p "
+                "join reasoning_context_snapshots s "
+                "  on s.org_id=p.org_id and s.context_snapshot_id=p.context_snapshot_id "
+                "where p.expires_at is not null and p.expires_at < :now "
+                "order by p.expires_at asc limit :lim for update of p"),
+                {"now": now, "lim": limit}).mappings().all()
+            if not expiring:
+                return 0
+            for row in expiring:
+                payload = _decanonicalize(_json_value(row["payload"]))
+                if not isinstance(payload, Mapping):
+                    raise ContextSnapshotMismatch("expiring context payload bytes are invalid")
+                _write_evidence_digests(
+                    conn, org_id=row["org_id"],
+                    context_snapshot_id=row["context_snapshot_id"],
+                    payload=payload, payload_hash=row["payload_hash"])
+                self._map_historic_evidence_ids(
+                    conn, org_id=row["org_id"],
+                    context_snapshot_id=row["context_snapshot_id"],
+                    root_node_id=row["root_node_id"], payload=payload)
             result = conn.execute(text(
                 "delete from reasoning_context_payloads "
-                "where expires_at is not null and expires_at < :now"), {"now": now})
+                "where (org_id, context_snapshot_id) in "
+                "(select * from unnest(cast(:orgs as text[]), cast(:snaps as text[])))"),
+                {"orgs": [row["org_id"] for row in expiring],
+                 "snaps": [row["context_snapshot_id"] for row in expiring]})
         return int(result.rowcount or 0)
+
+    @staticmethod
+    def _map_historic_evidence_ids(conn, *, org_id: str, context_snapshot_id: str,
+                                   root_node_id: str | None,
+                                   payload: Mapping[str, Any]) -> int:
+        """S2's migration half: map every pre-0117 lane id forward to the one canonical id.
+
+        The legacy id is NOT rewritten. It is embedded in a hash-verified payload and in every
+        `evidence_refs` array of every reasoner result and candidate on the run; rewriting one
+        would invalidate hashes that are the audit trail's whole value. So historic decisions
+        replay against a MAPPING, exactly as doc 03 requires, and never against a silently
+        different id.
+
+        Every seed component is recoverable from the stored ref, which is why this can be
+        complete rather than best-effort — see `evidence.canonical_evidence_id_for`.
+        """
+        from genios_engine.reason.evidence import canonical_evidence_id_for
+
+        if not root_node_id:
+            return 0
+        written = 0
+        for ref in payload.get("evidence") or ():
+            if not isinstance(ref, Mapping):
+                continue
+            legacy = _optional_text(ref.get("evidence_id"))
+            if legacy is None:
+                continue
+            canonical = canonical_evidence_id_for(
+                org_id=org_id, root_entity_id=root_node_id, ref=ref)
+            if canonical == legacy:
+                continue
+            conn.execute(text(
+                "insert into reasoning_evidence_id_map "
+                "(org_id, legacy_evidence_id, evidence_id, context_snapshot_id, lane) "
+                "values (:o,:legacy,:canonical,:snap,'historic') "
+                "on conflict (org_id, legacy_evidence_id) do nothing"),
+                {"o": org_id, "legacy": legacy, "canonical": canonical,
+                 "snap": context_snapshot_id})
+            written += 1
+        return written
+
+    def canonical_evidence_id(self, *, org_id: str, legacy_evidence_id: str) -> str | None:
+        """Look one pre-0117 lane id forward. None when the id was already canonical."""
+        with self._engine.connect() as conn:
+            return conn.execute(text(
+                "select evidence_id from reasoning_evidence_id_map "
+                "where org_id=:o and legacy_evidence_id=:l"),
+                {"o": org_id, "l": legacy_evidence_id}).scalar()
+
+    def load_evidence_digests(self, *, org_id: str, context_snapshot_id: str,
+                              _conn=None) -> list[dict[str, Any]]:
+        """The permanent digests for one snapshot, VERIFIED against the set hash before return.
+
+        Fails closed. `EvidenceDigestMismatch` is a `ReplayIntegrityError`, so a caller that
+        already refuses a tampered trace refuses a tampered digest without being changed. An
+        unverifiable digest set is not "less evidence" — it is a claim about what a decision saw
+        that nothing can vouch for, which is worse than no claim.
+        """
+        with self._read_scope(_conn) as conn:
+            snapshot = conn.execute(text(
+                "select payload_hash, evidence_digest_hash from reasoning_context_snapshots "
+                "where org_id=:o and context_snapshot_id=:snap"),
+                {"o": org_id, "snap": context_snapshot_id}).mappings().first()
+            if snapshot is None:
+                raise ReasoningStoreError("context snapshot not found")
+            return self._evidence_digests(
+                conn, org_id=org_id, context_snapshot_id=context_snapshot_id,
+                payload_hash=snapshot.get("payload_hash"),
+                expected_hash=snapshot.get("evidence_digest_hash"))
+
+    @staticmethod
+    def _evidence_digests(conn, *, org_id: str, context_snapshot_id: str,
+                          payload_hash: Any, expected_hash: Any) -> list[dict[str, Any]]:
+        """Read and PROVE one snapshot's digest set. Split out so `load_bundle` can reuse the
+        snapshot row it has already fetched instead of paying for a second tenant-scoped read of
+        the same row on every trace load."""
+        rows = conn.execute(_SELECT_DIGESTS,
+                            {"o": org_id, "snap": context_snapshot_id}).mappings().all()
+        expected_hash = _optional_text(expected_hash)
+        if expected_hash is None:
+            # A snapshot written before 0117 whose payload has not yet been swept. Absent is
+            # reported as absent; an empty list here would read as "this decision cited nothing".
+            if rows:
+                raise EvidenceDigestMismatch(
+                    "evidence digests exist for a snapshot with no digest set hash")
+            return []
+        bodies = [_digest_body(row) for row in rows]
+        for body in bodies:
+            if body["digest_hash"] != _semantic_hash(
+                    {key: value for key, value in body.items() if key != "digest_hash"}):
+                raise EvidenceDigestMismatch(
+                    f"evidence digest {body['evidence_id']} does not match its own row")
+        actual = _evidence_digest_set_hash(
+            payload_hash=_required_text({"payload_hash": payload_hash}, "payload_hash"),
+            rows=bodies)
+        if actual != expected_hash:
+            raise EvidenceDigestMismatch("evidence digest set hash does not match its rows")
+        return [{**_digest_body(row), "unit_refs": tuple(_json_value(row["unit_refs"]) or ())}
+                for row in rows]
 
     @staticmethod
     def _decoded_row(row: Mapping[str, Any]) -> dict[str, Any]:

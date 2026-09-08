@@ -236,6 +236,7 @@ def register_document_node(conn, store, *, org_id: str, source: str, meta: dict,
     owner_email = norm_email(meta.get("owner_email"))
     if owner_email:
         pairs.append(("document.owner_email", owner_email, "string"))
+        pairs.append(("document.owner_basis", "declared_by_source", "enum"))
     editor_email = norm_email(meta.get("last_modified_by"))
     if editor_email:
         pairs.append(("document.last_modified_by", editor_email, "string"))

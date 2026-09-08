@@ -491,6 +491,23 @@ def _action_label(actions) -> str | None:
     return None
 
 
+def _card_narratives(org_id: str, card_ids: list[str]) -> dict:
+    """Layer 4.5's rendered narratives for a page of cards, or `{}`.
+
+    A thin wrapper so the route body stays a route body and the failure mode is stated once: the
+    reasoning bundle is an ENHANCEMENT on a card that already renders, so anything that goes wrong
+    reading it must produce a feed without narratives rather than a 500.
+    """
+    if _graph is None:
+        return {}
+    try:
+        from genios_engine.reason.bundle import bundles_for_cards
+        return bundles_for_cards(_graph.engine, org_id=org_id, card_ids=card_ids)
+    except Exception:      # noqa: BLE001 — a missing narrative is never a failed feed
+        _log.exception("could not attach reasoning narratives for org=%s", org_id)
+        return {}
+
+
 @router.get("/v1/insights")
 def list_insights(limit: int = 50, state: str = "open",
                   ctx: AuthCtx = Depends(require_scope("insights.read"))) -> dict:
@@ -565,6 +582,13 @@ def list_insights(limit: int = 50, state: str = "open",
                     "and not exists (select 1 from card_events ce where ce.org_id=k.org_id "
                     "and ce.card_id=k.card_id and ce.kind='card.surfaced') on conflict do nothing"),
                     {"o": org_id, "ids": [r.card_id for r in rows]})
+    # Z4 / L4.5 · THE VOICE, on the surface a founder actually opens.
+    #
+    # ONE query for the whole page, read-only, and fail-closed to `{}` — a feed whose narrative
+    # table is unavailable renders exactly as it renders today. Nothing is GENERATED here: bundles
+    # are written by the narration pass at the end of `reason/runner.run_all`, after the decision
+    # is fixed and published, so a slow model can never delay this response (doc 11 guard 5).
+    narratives = _card_narratives(org_id, [r.card_id for r in rows])
     insights = []
     for r in rows:
         head, sit = (r.headline or "Recommendation"), (r.situation or "")
@@ -625,6 +649,14 @@ def list_insights(limit: int = 50, state: str = "open",
                 "citations": _jsonish(_col(r, "citations")),
                 "steps": _jsonish(_col(r, "candidate_steps")),
             },
+            # THE REASONING NARRATIVE — the founder's card: WHY THIS MATTERS / ROOT CAUSE /
+            # RECOMMENDATION / EXPECTED EFFECT, with every number already substituted by code and
+            # every claim bound to an evidence id. Absent (not empty) when this decision has not
+            # been narrated: "no narrative yet" and "a narrative that says nothing" are different
+            # facts, and a client must be able to tell them apart before it draws a heading.
+            # `generation` is always present when the block is, so a labelled deterministic
+            # fallback can never be read as a narrative.
+            "reasoning": narratives.get(r.card_id),
         })
     return {"insights": insights, "count": len(insights)}
 
@@ -723,12 +755,31 @@ def explain_decision(decision_id: str, org_id: str = Depends(get_current_org)) -
                              for item in checks]
             all_sources.extend(tagged_sources)
             all_checks.extend(tagged_checks)
+            # Z2 / doc 03 S3 · what this run SAW, after its bounded context payload expires.
+            # `source_facts` above comes from the snapshot's source manifest and survives; the
+            # values themselves live in a 720h payload, so a card explained a year later used to
+            # be able to name its evidence and never re-read it. The permanent digests answer
+            # that, and the response says WHICH proof it is carrying rather than degrading
+            # silently — `unavailable_pre_digest` is a decision written before migration 0117
+            # whose payload was already swept, and it is reported as unavailable, never as empty.
+            context_row = bundle.get("context_snapshot") or {}
+            digests = bundle.get("evidence_digests") or []
+            payload_live = context_row.get("payload") is not None
             run_views.append({
                 "reasoning_run_id": run_id,
                 "decision_path": decision_path,
                 "source_facts": source_manifest,
                 "confidence_basis_points": confidence_bp,
                 "constraints_checked": checks,
+                "evidence_provenance": ("payload_verified" if payload_live
+                                        else "digest_verified" if digests
+                                        else "unavailable_pre_digest"),
+                "evidence": [{"evidence_id": item["evidence_id"], "field": item["field"],
+                              "claim": item["rendered_text"],
+                              "value_digest": item["value_digest"],
+                              "observed_at": item["observed_at_key"],
+                              "observed_by_units": list(item.get("unit_refs") or ())}
+                             for item in digests],
             })
         paths = [view["decision_path"] for view in run_views]
         aggregate_path = (paths[0] if len(paths) == 1 else " | ".join(
@@ -1292,3 +1343,131 @@ def draft_reply(contact: str, instruction: str = "", org_id: str = Depends(get_c
         except Exception:  # noqa: BLE001
             _log.warning("credit deduct failed (draft) for %s", org_id)
     return {"draft": draft, "contact": node.display_name}
+
+
+# ── L4.5 · R-3 and R-4 on demand: why the other options lost, and what changes if we act ──────
+#
+# CARD EXPAND, NOT THE FEED. Doc 11 §1 prices R-3 "on card expand only" and doc 05 §7 keeps every
+# narration off the decision's critical path. Both hold here structurally: this endpoint reads a
+# decision that was made and persisted hours ago and narrates it; nothing it does can change a
+# score, a rank or a card. If both sites fall back, the response is the deterministic template —
+# plainer, never less true, and labelled by its `generation` so a client can tell.
+
+def _decision_core(conn, org_id: str, decision_hash: str) -> dict:
+    """The stored decision's own content, by the hash the signal carries.
+
+    `do_nothing` (E4's computed `{cost_bp, horizon, statement, source}`) and `constraints_applied`
+    (Layer 3's compiled rules, each naming the candidates it eliminated) both live here and nowhere
+    else a card can reach. Absent for a pre-Z3 decision, which is why every reader below treats an
+    empty mapping as "not measured" rather than as zero.
+    """
+    if not decision_hash:
+        return {}
+    row = conn.execute(text(
+        "select decision_core from reasoning_run_outputs "
+        "where org_id = :o and decision_hash = :h limit 1"),
+        {"o": org_id, "h": decision_hash}).first()
+    if row is None:
+        return {}
+    core = row.decision_core
+    if isinstance(core, str):
+        try:
+            core = json.loads(core)
+        except ValueError:
+            return {}
+    return core if isinstance(core, dict) else {}
+
+
+@router.get("/v1/intelligence/cards/{card_id}/reasoning")
+def card_reasoning(card_id: str, org_id: str = Depends(get_current_org)) -> dict:
+    """R-3 + R-4 for one card: the narrated alternatives and the framed expected effect.
+
+    Every number in either string is a placeholder the engine substitutes (`rendered`), so a digit
+    on this response is a digit the deterministic half computed. `numbers_used` is returned beside
+    the text so a client — or the bundle, which folds `expected_effect` in verbatim — can prove that
+    without re-deriving anything.
+    """
+    if _graph is None:
+        raise HTTPException(400, "graph store not configured")
+    from genios_engine.reason.llm_sites import (SITE_R3, PostgresSiteCache, make_gate,
+                                                make_site_client, tier_for)
+    from genios_engine.reason.narration import (EffectInputs, frame_expected_effect,
+                                                narrate_alternatives,
+                                                rejected_options_from_card)
+    with _graph.engine.connect() as c:
+        row = c.execute(text(
+            "select k.card_id, k.headline, k.do_nothing_consequence, k.outcome_window_days, "
+            "s.rejected_candidates, s.reasoning_decision_hash "
+            "from cards k left join signals s on s.signal_id = k.signal_id and s.org_id = k.org_id "
+            "where k.org_id = :o and k.card_id = :c"), {"o": org_id, "c": card_id}).first()
+        if row is None:
+            raise HTTPException(404, "card not found")
+        decision_hash = str(_col(row, "reasoning_decision_hash") or "")
+        core = _decision_core(c, org_id, decision_hash)
+
+    options = rejected_options_from_card(_jsonish(_col(row, "rejected_candidates")))
+    do_nothing = core.get("do_nothing") if isinstance(core.get("do_nothing"), dict) else {}
+    if not do_nothing and _col(row, "do_nothing_consequence"):
+        # A pre-Z3 card carries the manifest sentence and no measurement. Labelled as exactly that:
+        # `manifest_fallback` is what stops `effect_numbers` reading a cost nobody computed.
+        do_nothing = {"statement": str(row.do_nothing_consequence), "source": "manifest_fallback"}
+
+    # THE PUBLISHED NARRATIVE WINS. R-2 folds `expected_effect` — and, when something lost,
+    # `alternatives_narrative` — into the bundle it writes for a published decision. If one exists
+    # for this decision, re-narrating here would put a SECOND wording of the same two facts in front
+    # of the same person, and pay for it. So the stored bundle is read first and these sites run only
+    # for what it does not carry, which is exactly doc 11's "on card expand only".
+    stored = None
+    if decision_hash:
+        from genios_engine.reason.bundle import BundleStore
+        stored = BundleStore(_graph.engine).get(org_id=org_id, decision_hash=decision_hash)
+
+    def _from_bundle(field: str) -> dict | None:
+        if stored is None:
+            return None
+        text_value = getattr(stored.bundle, field, None)
+        if not text_value:
+            return None
+        return {"text": text_value,
+                "rendered": str((stored.rendered or {}).get(field) or text_value),
+                "numbers_used": dict(stored.bundle.numbers_used),
+                "generation": stored.generation, "outcome": "cached", "source": "bundle"}
+
+    def _out(result) -> dict:
+        return {"text": result.text, "rendered": result.rendered,
+                "numbers_used": dict(result.numbers_used), "generation": result.generation,
+                "outcome": result.receipt.outcome, "source": "on_demand"}
+
+    alternatives_out = _from_bundle("alternatives_narrative")
+    effect_out = _from_bundle("expected_effect")
+    if alternatives_out is None or effect_out is None:
+        # ONE gate for this request, so the two sites share one activation read and one advancing
+        # budget — a card whose alternatives were affordable and whose expected effect was not would
+        # be a ceiling nobody could explain.
+        gate = make_gate(org_id=org_id, engine=_graph.engine,
+                         client=make_site_client(tier_for(SITE_R3)),
+                         record_cost=_graph.record_cost)
+        cache = PostgresSiteCache(engine=_graph.engine)
+        seed = decision_hash or f"card:{card_id}"
+        if alternatives_out is None:
+            alternatives_out = _out(narrate_alternatives(
+                org_id=org_id, decision_hash=seed, options=options, selected_utility_bp=None,
+                gate=gate, cache=cache, subject_ref=f"card:{card_id}"))
+        if effect_out is None:
+            effect_out = _out(frame_expected_effect(
+                org_id=org_id, decision_hash=seed,
+                inputs=EffectInputs(do_nothing=do_nothing,
+                                    horizon_days=_col(row, "outcome_window_days"),
+                                    action_label=str(row.headline or "the recommended action")),
+                gate=gate, cache=cache, subject_ref=f"card:{card_id}"))
+
+    return {
+        "card_id": card_id,
+        "decision_hash": decision_hash or None,
+        # The receipt R-3 narrated FROM, returned beside the narration: a client that wants to show
+        # "why not X?" as a list rather than as prose has the same rows the model was given, and a
+        # reviewer can check the prose against them without a second query.
+        "alternatives_rejected": [option.as_record() for option in options],
+        "alternatives": alternatives_out,
+        "expected_effect": effect_out,
+    }

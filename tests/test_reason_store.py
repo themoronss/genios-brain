@@ -391,6 +391,12 @@ class _ReadConnection:
                 "source_manifest": [],
                 "payload": {"facts": {}},
             })
+        if "from reasoning_evidence_digests" in sql:
+            # Z2 · load_bundle now also reads the permanent evidence digests. Listed here for the
+            # same reason every other table is: this fake exists to prove that EVERY read
+            # load_bundle performs is tenant-scoped, so a new read must be declared, never
+            # tolerated by a catch-all.
+            return _Result(rows=[])
         if "from reasoning_reasoner_results" in sql:
             return _Result(rows=[])
         if "from reasoning_candidates" in sql:

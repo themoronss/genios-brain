@@ -18,8 +18,10 @@ the card is a better judge of that than a threshold. Policy elimination belongs 
 `core.constraint`; this unit only ever raises a `precondition` WARN so the shortfall travels with
 the candidate and is visible at the point of decision.
 
-**Facts this unit reads, all optional.** `deal.owner`, `owner.availability_bp`, `owner.status`,
-`owner.load_bp`, `owner.open_items`, `team.load_bp`, `team.open_items`, `budget.remaining_minor`,
+**Facts this unit reads, all optional.** A declared owner field (`owner_field`, bound by the
+capability's Layer 3 manifest — which record carries the assignee is domain knowledge, and Law 5
+keeps it out of a core unit), `owner.availability_bp`, `owner.status`, `owner.load_bp`,
+`owner.open_items`, `team.load_bp`, `team.open_items`, `budget.remaining_minor`,
 `budget.total_minor`, and a configurable deadline field (default `commitment.due_at`). Layer 2 may
 supply none of them. Where a fact is absent the responsible plugin contributes nothing, and the
 unit reports capacity as *unknown* rather than as zero — an unmeasured owner is not an unavailable
@@ -67,6 +69,21 @@ def _config_count(view: UnitView, key: str, default: int) -> int:
     return value
 
 
+def _owner_field(view: UnitView) -> str | None:
+    """Which fact carries the person who would carry the work out, as the manifest declared it.
+
+    Undeclared means undeclared: the plugin then has no record to look at and stays silent, which
+    is a different reading from "the record exists and names nobody" and must not be confused with
+    it. Naming that field here would put one vertical's schema inside a unit every vertical runs.
+    """
+    raw = view.config.get("owner_field")
+    if raw is None:
+        return None
+    if not isinstance(raw, str) or not raw.strip():
+        raise ValueError("owner_field must be a non-empty fact field name")
+    return raw.strip()
+
+
 def _ratio_bp(part: int, whole: int) -> int:
     """What fraction of `whole` is left, in basis points, saturating at both ends."""
     return clamp_bp(divide_half_up(min(max(part, 0), whole) * 10_000, whole))
@@ -91,33 +108,34 @@ class OwnerAvailabilityPlugin:
     the organisation can close in seconds) and *the owner is away* (a gap only time closes).
 
     An empty owner field that Layer 2 did in fact capture is evidence of zero capacity — someone
-    looked and there was no one. An owner field that was never captured is silence, and silence
-    stays silence.
+    looked and there was no one. An owner field that was never captured, or never declared by the
+    manifest, is silence, and silence stays silence.
     """
 
     plugin_id = "owner_availability"
 
     def contribute(self, view: UnitView) -> tuple[Observation, ...]:
         request = view.request
-        owner_captured = "deal.owner" in request.context.facts
-        owner = str(fact_value(request, "deal.owner") or "").strip()
+        field = _owner_field(view)
+        owner_captured = field is not None and field in request.context.facts
+        owner = str(fact_value(request, field) or "").strip() if field else ""
         if owner_captured and not owner:
             return (Observation(
                 plugin_id=self.plugin_id,
                 kind="resource.owner_unassigned",
                 metrics={"capacity_bp": 0},
-                evidence_ids=evidence_ids(request, "deal.owner"),
+                evidence_ids=evidence_ids(request, field),
                 reason_codes=("no_owner_to_execute",),
             ),)
         availability = self._declared_availability(view)
         if availability is None:
             return ()                      # nothing was declared; do not invent an availability
+        named = (field,) if field else ()
         return (Observation(
             plugin_id=self.plugin_id,
             kind="resource.owner_availability",
             metrics={"capacity_bp": availability},
-            evidence_ids=evidence_ids(request, "deal.owner", "owner.availability_bp",
-                                      "owner.status"),
+            evidence_ids=evidence_ids(request, *named, "owner.availability_bp", "owner.status"),
             reason_codes=("owner_availability_declared",),
         ),)
 

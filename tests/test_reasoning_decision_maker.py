@@ -35,6 +35,8 @@ from genios_engine.contracts.reasoning import (
 )
 from genios_engine.reason.decision_maker import (
     BELOW_FLOOR_REASON,
+    DEFAULT_CONFIDENCE_FLOOR_BP,
+    ConfidenceViolation,
     CONFIDENCE_FLOOR_KEY,
     CONFIDENCE_AUTHORITY,
     CONFIDENCE_AUTHORITY_KEY,
@@ -134,11 +136,19 @@ def test_a_unit_running_after_the_authority_cannot_move_confidence():
     assert calculate_confidence(results, _request(), False) == 9_100
 
 
-def test_without_an_authority_the_last_observer_stands():
+def test_without_an_authority_an_uncited_raise_is_refused():
+    """This test used to assert that the LAST observer stands. That was the defect.
+
+    With no authority to end the scan, every publisher overwrote the previous one, so the
+    decision's confidence was whatever the last unit to speak happened to say — a raise from
+    3000 to 4200 with nothing named at all. Rule 11 forbids exactly that, and the refusal is an
+    exception rather than a receipt because a warn ships.
+    """
     results = [_completed("legacy.rule", confidence_bp=3_000),
                _completed("legacy.score_gate", confidence_bp=4_200)]
 
-    assert calculate_confidence(results, _request(), False) == 4_200
+    with pytest.raises(ConfidenceViolation, match="no independent evidence named"):
+        calculate_confidence(results, _request(), False)
 
 
 def test_a_failed_authority_does_not_publish_a_value():
@@ -352,9 +362,18 @@ def test_confidence_at_the_floor_still_decides():
         == DecisionOutcome.DECISION
 
 
-def test_a_capability_without_a_floor_is_unchanged():
-    """Absent declaration disables the gate entirely, so existing capabilities keep their behavior."""
-    assert _decide(confidence_bp=1, floor_bp=None).decision.outcome == DecisionOutcome.DECISION
+def test_a_capability_without_a_declared_floor_falls_back_to_its_LANE_floor():
+    """This test used to assert that an absent declaration DISABLES the gate. That was the defect.
+
+    The compiled lane declares no floor, so the default of 0 meant `confidence_bp < 0` was never
+    true and the system had never once abstained on it. A floor that defaults to 0 is not a floor
+    (Law 3): an undeclared lane now inherits `DEFAULT_CONFIDENCE_FLOOR_BP`, and a decision built
+    on a confidence of 1 becomes a question instead of a recommendation.
+    """
+    synthesis = _decide(confidence_bp=1, floor_bp=None)
+
+    assert synthesis.decision.outcome == DecisionOutcome.DEFER
+    assert f"{BELOW_FLOOR_REASON}:1<{DEFAULT_CONFIDENCE_FLOOR_BP}" in synthesis.decision.uncertainty
 
 
 def test_the_floor_cannot_manufacture_a_decision_from_a_terminal_run():

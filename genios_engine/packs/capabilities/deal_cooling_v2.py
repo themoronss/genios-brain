@@ -95,6 +95,15 @@ def _full_roster() -> tuple[ReasonerSpec, ...]:
             # An unanswered buyer is the cheapest opportunity in the system: they already spent
             # the effort, and the whole cost of capture is one considered reply.
             "opportunity_threshold_bp": 2_500,
+            # WHICH facts carry an inbound, a state and an owner — and which state words mean the
+            # work is still winnable — is sales knowledge, and it belongs here rather than inside
+            # a unit every domain runs (Law 5). `core.opportunity` reads the shapes; this manifest
+            # names them. An undeclared binding is silence with a receipt, not a zero.
+            "inbound_field": "deal.last_inbound",
+            "outbound_field": "deal.last_outbound",
+            "status_field": "deal.status",
+            "active_statuses": ("open", "active", "in_progress", "negotiation"),
+            "owner_field": "deal.owner",
         }),
         _spec("core.impact", config={
             "play_impact_bp": {"restore_momentum": 400},
@@ -105,7 +114,11 @@ def _full_roster() -> tuple[ReasonerSpec, ...]:
 
     # --- Category 3 · Optimization -----------------------------------------------------------
     optimization = (
-        _spec("core.resource"),
+        _spec("core.resource", config={
+            # Same rule, same reason: the unit knows what an assignee IS, this manifest knows
+            # which field holds one.
+            "owner_field": "deal.owner",
+        }),
         _spec("core.scheduling"),
         _spec("core.cost", config={
             # Multithreading costs more than a follow-up: it spends relationship capital that

@@ -18,6 +18,7 @@ be traced back to the rows that produced it.
 """
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
@@ -128,8 +129,10 @@ def _observation_counts(c, org_id: str, recent_from: datetime, baseline_from: da
 _UPSERT_FACT = (
     "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, "
     "field, value, value_type, status, authority_rank, confidence, occurred_at, "
-    "valid_from, visibility_scope) values "
-    "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), :t, 'active', 100, 0.9, :now, :now, 'org') "
+    "valid_from, visibility_scope, derivation_type, trace_id, schema_version, source_authority, "
+    "provenance_refs) values "
+    "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), :t, 'active', 100, 0.9, :now, :now, 'org', "
+    "'deterministic_derived', :trace, 'graph-fact.v2', 'R100', cast(:provenance as jsonb)) "
     "on conflict (fact_version_id) do update set value = excluded.value, "
     "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from")
 
@@ -138,7 +141,9 @@ def _write_fact(c, org_id: str, node_id: str, field: str, value: str, value_type
                 now: datetime) -> None:
     c.execute(text(_UPSERT_FACT), {
         "vid": f"fv_derived_{node_id}_{field}", "fid": f"f_derived_{node_id}_{field}",
-        "o": org_id, "n": node_id, "f": field, "v": value, "t": value_type, "now": now})
+        "o": org_id, "n": node_id, "f": field, "v": value, "t": value_type, "now": now,
+        "trace": f"l2:derived:{now.isoformat()}",
+        "provenance": json.dumps([f"observations:{node_id}", "window:56d"])})
 
 
 def compute(store, org_id: str, *, now: datetime | None = None) -> int:
@@ -235,30 +240,71 @@ def compute_deal_view(store, org_id: str, *, now: datetime | None = None) -> int
         # `commitment.text`, and both the sales pack and the compiled capabilities ask for
         # `commitment.action`. Reading the former and publishing the latter closes it here rather
         # than renaming a field other readers already depend on.
+        # EDGE DIRECTION, and it is the reason this roll-up wrote zero rows on every org since
+        # the day it shipped. `pipeline.py` writes PERSON -> COMPANY (`works_at`) and
+        # PERSON -> COMMITMENT (`owns`), so a company appears on the FROM side of nothing on the
+        # path to a promise. The chain above required `company -> person -> commitment`, matched
+        # no row anywhere, and `commitment.due_at` was therefore absent from every
+        # company-anchored situation the reasoner ever saw. `_person_neighbours` names this exact
+        # bug class ("two shipped roll-ups already have it") and its rule is applied here:
+        # traverse BOTH directions at BOTH hops and decide membership on node type, never on
+        # which column the writer happened to use.
+        #
+        # The consequence downstream was not a missing field, it was a dead ladder:
+        # `reasoners/timeline_unit.py`'s U5 urgency ladder reads `commitment.due_at`, found
+        # nothing on any situation, and published its measured-absence 0 for every decision in
+        # the org — a constant wearing a score's clothes.
+        #
+        # `min()` per column is also gone. The old shape took the soonest due date and the
+        # alphabetically-first action INDEPENDENTLY, so an account with two open promises could
+        # publish the date of one and the text of the other. The pairing is done in Python below,
+        # on the soonest-due row, so the two fields always describe the same obligation.
         commitments = c.execute(text(
-            "select e1.from_node_id as company, "
-            "min(due.value #>> '{}') as due_at, "
-            "min(act.value #>> '{}') as action "
-            "from graph_edges e1 "
-            "join graph_edges e2 on e2.from_node_id = e1.to_node_id and e2.org_id = e1.org_id "
-            "join graph_facts due on due.subject_node_id = e2.to_node_id "
-            "and due.org_id = e1.org_id and due.field = 'commitment.due_at' "
-            "and due.status = 'active' "
-            "left join graph_facts act on act.subject_node_id = e2.to_node_id "
-            "and act.org_id = e1.org_id and act.field = 'commitment.text' "
-            "and act.status = 'active' "
-            "join graph_facts st on st.subject_node_id = e2.to_node_id "
-            "and st.org_id = e1.org_id and st.field = 'commitment.status' "
-            "and st.status = 'active' and st.value #>> '{}' = 'open' "
-            "where e1.org_id = :o group by e1.from_node_id"), {"o": org_id}).all()
+            "select acc.node_id as account, "
+            "due.value #>> '{}' as due_at, act.value #>> '{}' as action "
+            "from graph_nodes acc "
+            "join graph_edges e1 on e1.org_id = acc.org_id and e1.valid_to is null "
+            "  and (e1.from_node_id = acc.node_id or e1.to_node_id = acc.node_id) "
+            "join graph_nodes p on p.org_id = acc.org_id and p.valid_to is null "
+            "  and p.node_type = 'person' "
+            "  and p.node_id = case when e1.from_node_id = acc.node_id "
+            "                       then e1.to_node_id else e1.from_node_id end "
+            "join graph_edges e2 on e2.org_id = acc.org_id and e2.valid_to is null "
+            "  and (e2.from_node_id = p.node_id or e2.to_node_id = p.node_id) "
+            "join graph_nodes cm on cm.org_id = acc.org_id and cm.valid_to is null "
+            "  and cm.node_type = 'commitment' "
+            "  and cm.node_id = case when e2.from_node_id = p.node_id "
+            "                        then e2.to_node_id else e2.from_node_id end "
+            "join graph_facts due on due.subject_node_id = cm.node_id "
+            "  and due.org_id = acc.org_id and due.field = 'commitment.due_at' "
+            "  and due.status = 'active' and due.valid_to is null "
+            "join graph_facts st on st.subject_node_id = cm.node_id "
+            "  and st.org_id = acc.org_id and st.field = 'commitment.status' "
+            "  and st.status = 'active' and st.valid_to is null "
+            "  and st.value #>> '{}' = 'open' "
+            "left join graph_facts act on act.subject_node_id = cm.node_id "
+            "  and act.org_id = acc.org_id and act.field = 'commitment.text' "
+            "  and act.status = 'active' and act.valid_to is null "
+            "where acc.org_id = :o and acc.valid_to is null "
+            "  and acc.node_type in ('company', 'deal')"), {"o": org_id}).all()
+        # Soonest OPEN obligation per account, with its own action text. ISO-8601 strings from
+        # one writer compare lexically in the same order they compare chronologically, which is
+        # why this needs no parse — and a parse here would be a second date reader disagreeing
+        # with L1's.
+        soonest: dict[str, tuple[str, str | None]] = {}
+        for account, due_at, action in commitments:
+            if not due_at:
+                continue
+            held = soonest.get(account)
+            if held is None or due_at < held[0]:
+                soonest[account] = (due_at, action)
 
         written = 0
         pairs: list[tuple[str, str, str]] = []
-        for company, due_at, action in commitments:
-            if due_at:
-                pairs.append((company, "commitment.due_at", due_at))
+        for account, (due_at, action) in sorted(soonest.items()):
+            pairs.append((account, "commitment.due_at", due_at))
             if action:
-                pairs.append((company, "commitment.action", action))
+                pairs.append((account, "commitment.action", action))
         for company, last_inbound in rows:
             if last_inbound:
                 pairs.append((company, "deal.last_inbound", last_inbound))

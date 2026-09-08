@@ -21,8 +21,10 @@ from __future__ import annotations
 import json
 import logging
 from collections import Counter
+from collections.abc import Iterable
 from dataclasses import replace
 from datetime import datetime, timezone
+from typing import Any
 
 from sqlalchemy import text
 
@@ -32,13 +34,15 @@ from genios_engine.context.quality.missing import read_absences
 from genios_engine.context.situation_bso import (
     build_business_situation,
     build_context_slice,
+    gather_brain_subject_keys,
     gather_evidence_and_signals,
-    gather_l1_signals,
+    gather_l1_signals_bulk,
     gather_members,
     gather_pattern_fires,
     gather_visibility,
     stored_importance,
 )
+from genios_engine.context.situation_publisher import publish_situation
 from genios_engine.contracts.reasoning import ExecutionMode
 from genios_engine.packs.compiler import DomainCompiler, PostgresRuntimeBrains
 from genios_engine.packs.compiler.errors import (
@@ -51,9 +55,17 @@ from genios_engine.packs.compiler.errors import (
 from genios_engine.packs.compiler.expertise_publisher import PostgresExpertisePublisher
 from genios_engine.packs.domain_wiring import expert_catalog
 from genios_engine.packs.wiring import make_registry
+from genios_engine.platform.l4_activation import (
+    FEATURE_BUNDLE,
+    FEATURE_RANKING_V2,
+    FEATURE_ROSTER_V2,
+    is_l4_activated,
+)
 from genios_engine.platform.ids import new_id
 from genios_engine.reason.adapters.expertise import expertise_capability_manifest
 from genios_engine.reason.adapters.native import reason_native_capability
+from genios_engine.reason.interpretation import make_interpreter
+from genios_engine.reason.adapters.situation_projection import project_situation
 from genios_engine.reason.audit import persist_execution
 from genios_engine.reason.store import ReasoningStore
 
@@ -80,7 +92,7 @@ _ACTIVE_SITUATIONS = (
     "from context_situations s "
     "left join graph_nodes n on n.org_id = s.org_id and n.node_id = s.anchor_node_id "
     "     and n.valid_to is null "
-    "where s.org_id = :o and s.status = 'active' "
+    "where s.org_id = :o and s.status in ('active', 'partial') "
     "order by s.confidence_overall desc, s.last_seen_at desc nulls last limit :lim"
 )
 
@@ -334,8 +346,26 @@ def _persist_live(*, store: GraphStore, reasoning_store: ReasoningStore, org_id:
             bundle=bundle, eval_time=eval_time, pack=pack)
 
 
+#: Layer 2 names a situation's domain in its OWN vocabulary (`context/domain_spec.py`), and
+#: `platform/l3_activation.L3_DOMAINS` names the three authored corpora. They agree on two words
+#: out of five and disagree on the third, so the translation is written down once, here, rather
+#: than being a string comparison that silently never matches.
+#:
+#: `fundraising` and `general` map to NOTHING and that is not an oversight: no corpus was authored
+#: for them, so there is no domain an operator could activate, and mapping them onto `admin` to
+#: "get some coverage" would put Admin doctrine on a fundraising situation.
+_L2_TO_L3_DOMAIN = {"admin": "admin", "sales": "sales", "support": "customer_support",
+                    "customer_support": "customer_support"}
+
+
+def l3_domain_for(l2_domain: Any) -> str | None:
+    """The activatable corpus for one L2 domain, or None when no corpus claims it."""
+    return _L2_TO_L3_DOMAIN.get(str(l2_domain or "").strip().lower())
+
+
 def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None = None,
-                   limit: int = 200, live: bool = False, registry=None) -> dict:
+                   limit: int = 200, live: bool = False, registry=None,
+                   live_domains: frozenset[str] | Iterable[str] = ()) -> dict:
     """Compile every active L2 situation into an ExpertisePackage; return route/coverage tallies.
 
     ``live=False`` (the default, and every existing caller) is unchanged: nothing is persisted and
@@ -356,8 +386,32 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     card: the compile ran (behind a flag that is off), published nothing, and reasoned in SHADOW.
     Every card on every tenant came from the legacy pack rules, which is exactly what the product
     was showing.
+
+    ``live_domains`` is the row-driven half of the same switch, and it is the one that actually
+    turns Layer 3 on for a customer. ``live=True`` is the GLOBAL flag — one boolean,
+    ``platform/config.use_domain_compiler``, set in no environment, which moves every tenant at
+    once or nobody. ``live_domains`` is ``platform/l3_activation.activated_domains(engine, org)``:
+    a set of corpus names a person switched on for THIS tenant, which is what makes "Admin on,
+    Sales off" expressible at all.
+
+    **THIS IS THE DEFECT THE ACTIVATION TABLE SHIPPED WITH.** `l3_activation` landed with a reader,
+    a fail-closed gate, an erasure row, an admin API and a J5 report — and no caller. `runner.py`
+    still read `get_settings().use_domain_compiler` and nothing else, so an operator could POST an
+    activation, see it in the console, read `EFFECTS` telling them the compiler's live pass now
+    compiles that corpus, and get a shadow pass: no package published, no signal emitted, no card.
+    A switch that reports itself as on and changes nothing is worse than no switch, because the
+    next person debugging it starts from the belief that Layer 3 was tried.
+
+    The two are OR-ed PER SITUATION, never globally: a tenant with `admin` activated runs its Admin
+    situations live and its Sales situations in shadow, in the same sweep, from the same read.
     """
     eval_time = eval_time or datetime.now(timezone.utc)
+    live_domains = frozenset(str(d) for d in (live_domains or ()))
+    # ANY live lane at all — the global flag, or at least one activated corpus. Everything that
+    # only a live compile needs (a tenant pack registry, a reasoning store, an admission-gated
+    # compiler with a publisher) is built when this is true and never otherwise, so a tenant with
+    # no activation row pays exactly what it paid before.
+    any_live = bool(live or live_domains)
     # Local imports: the shadow pass depends on the runner's context loaders, and the runner
     # imports this module behind the flag — a module-level import would be a cycle.
     from genios_engine.reason.runner import (
@@ -373,8 +427,36 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     # Postgres, a one-off script against another tenant's database) would silently resolve the
     # tenant pack from the WRONG database and count every capability as `no_tenant_pack` — the
     # exact symptom this pass exists to remove, arriving from the harness instead of the code.
-    registry = (registry or make_registry()) if live else None
-    reasoning_store = ReasoningStore(engine=store.engine) if live else None
+    registry = (registry or make_registry()) if any_live else None
+    reasoning_store = ReasoningStore(engine=store.engine) if any_live else None
+    # WAVE Z1 · the staged roster, per tenant, read ONCE for the pass rather than per situation:
+    # a switch that flipped halfway through a sweep would make two situations in one pass
+    # incomparable. Fail-closed by construction (`platform/l4_activation`), so a tenant that is
+    # not switched on — or a database that cannot answer — reasons through exactly the six-unit
+    # DAG it reasons through today.
+    roster_v2 = is_l4_activated(store.engine, org_id, FEATURE_ROSTER_V2)
+    counts["roster_v2"] = int(roster_v2)
+    # WAVE Z3 · the six-weight utility model, read once for the pass for the reason above and
+    # fail-closed for the reason above. Independent of `roster_v2` at this seam even though
+    # `l4_activation.PRECONDITIONS` orders the two waves: the precondition is reported at the
+    # activation console, and a gate that silently ignored an operator's switch because a
+    # different switch was off would be harder to diagnose than the ordering it enforced.
+    ranking_v2 = is_l4_activated(store.engine, org_id, FEATURE_RANKING_V2)
+    counts["ranking_v2"] = int(ranking_v2)
+    # WAVE Z4 · R-1, the ambiguity interpreter. Built once per pass for the reason the two switches
+    # above are read once, and only on the LIVE lane: a shadow pass exists to measure what the
+    # deterministic half does, and buying interpretations for a decision nobody will ever see is the
+    # "just in case" spend doc 11 guard 7 forbids. Gated on `bundle` — the narrative spend is one
+    # opt-in per tenant (doc 01 C5 step 1), not four switches an operator has to keep consistent.
+    #
+    # The interpreter itself is inert on a tenant with nothing ambiguous to read: `find_ambiguities`
+    # is a pure read of the snapshot, and a situation with no hedged claim on a field the plan reads
+    # costs nothing at all.
+    interpreter = None
+    if any_live and is_l4_activated(store.engine, org_id, FEATURE_BUNDLE):
+        interpreter = make_interpreter(org_id=org_id, engine=store.engine,
+                                       record_cost=store.record_cost)
+    counts["r1_interpreter"] = int(interpreter is not None)
     packs: dict[str, dict | None] = {}      # capability domain -> the tenant's active pack lane
 
     # READS only on this connection, in both modes. Every live write (package, audit bundle,
@@ -383,6 +465,24 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     with store.engine.connect() as conn:
         situations = conn.execute(text(_ACTIVE_SITUATIONS),
                                   {"o": org_id, "lim": limit}).mappings().all()
+        l1_by_correlation = gather_l1_signals_bulk(
+            conn, org_id,
+            [str(row["correlation_id"]) for row in situations if row["correlation_id"]])
+        # L2.5.8 · IS LAYER 1's SCORER LIVE FOR THIS TENANT AT ALL? Measured ONCE for the sweep,
+        # over the supply just read, on exactly the predicate
+        # `situation_bso.refresh_situation_importance` feeds to `assess_l1_supply` — a property of
+        # the tenant's supply, never of one situation.
+        #
+        # It conditions ONE hold reason (`qes_required`) and nothing else. On a tenant Layer 1 IS
+        # scoring, a situation that carries no score is a real, retryable gap and the gate holds
+        # it. On a tenant Layer 1 has never scored, the same absence is structural: no sweep will
+        # ever repair it, so holding costs that tenant its whole L3/L4 lane in exchange for
+        # nothing. The candidate is admitted carrying `ImportanceBasis.UNSCORED`, and doc 04's
+        # honesty guard (`decision_maker.IMPORTANCE_ABSENT_REASON`) reweighs the remaining five
+        # components and names why on every decision. See `situation_publisher.decide_publication`.
+        l1_scoring_active = any(l1.importance_bp is not None
+                                for l1 in l1_by_correlation.values())
+        counts["l1_scoring_active"] = int(l1_scoring_active)
         # L2.5.5 · the typed absences the drain wrote, for the WHOLE pass, in one read — the
         # same shape as every other gather here, and for the same reason: there are as many
         # absence rows as there are expected fields across the tenant's situations, and a
@@ -423,20 +523,49 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                                if r["anchor_node_id"]])
         except Exception:      # noqa: BLE001 — the package is the product; the pattern is context
             logger.exception("could not read pattern fires for org=%s", org_id)
-        compiler = DomainCompiler(
+        brains = PostgresRuntimeBrains(conn)
+        # TWO COMPILERS, ONE CONNECTION, chosen PER SITUATION by the situation's own domain.
+        #
+        # The three things that separate a live compile from a measurement — a publisher, the
+        # fail-closed admission gate, and (below) LIVE execution with an emitted signal — are set
+        # at construction, so a single compiler cannot serve a tenant that has Admin activated and
+        # Sales not. Building both is cheap: they share the catalog and the same runtime-brain
+        # reader on the same connection, and the shadow one is what every unactivated situation
+        # already used.
+        compiler_measure = DomainCompiler(
             catalog=catalog,
-            runtime_brains=PostgresRuntimeBrains(conn),
-            # shadow: never write an expertise_packages row. live: write it, or the compiled
-            # brain has no durable authority for delivery to read back.
-            publisher=_TxnExpertisePublisher(store.engine) if live else None,
+            runtime_brains=brains,
+            # shadow: never write an expertise_packages row.
+            publisher=None,
             # MEASUREMENT mode: draft content may compile so route coverage is measurable, but
             # the package carries review_state='draft' and the delivery abstention gate keeps
-            # anything built from it non-prescriptive. Authority compiles use the fail-closed
-            # default — a text-editor stub flip can no longer grant production authority.
-            require_admission=bool(live),
+            # anything built from it non-prescriptive.
+            require_admission=False,
         )
+        compiler_live = DomainCompiler(
+            catalog=catalog,
+            runtime_brains=brains,
+            # live: write the package, or the compiled brain has no durable authority for
+            # delivery to read back.
+            publisher=_TxnExpertisePublisher(store.engine),
+            # Authority compiles use the fail-closed default — a text-editor stub flip can no
+            # longer grant production authority.
+            require_admission=True,
+        ) if any_live else None
+        counts["l3_activated_domains"] = len(live_domains)
         for row in situations:
             counts["situations"] += 1
+            # WHICH LANE THIS SITUATION IS ON. The global flag still forces live for a deployment
+            # that has already set it — its behaviour is unchanged — and otherwise the answer is
+            # the tenant's activation row for THIS situation's corpus. A domain with no corpus
+            # (`fundraising`, `general`) resolves to None and can never be live, which is the
+            # fail-closed direction: an unactivatable domain compiles and measures exactly as it
+            # does today.
+            row_domain = l3_domain_for(row["domain"])
+            live_row = bool(live or (row_domain is not None and row_domain in live_domains))
+            counts["live_situations" if live_row else "shadow_situations"] += 1
+            compiler = compiler_live if (live_row and compiler_live is not None) \
+                else compiler_measure
             anchor = row["anchor_node_id"]
             if not anchor:
                 counts["no_anchor"] += 1
@@ -464,17 +593,51 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # the receipts and the conflict pointers are Layer 1's decisions, and this pass
                 # used to stamp a constant over all three. `None` here (a tenant with no qualified
                 # signals yet) is the pre-activation path, unchanged.
-                l1 = gather_l1_signals(conn, org_id, row["correlation_id"])
+                l1 = l1_by_correlation.get(str(row["correlation_id"]))
                 # STEPS 2..6, read back off the row. `None` for a tenant whose sweep predates the
                 # composer — the BSO then carries Layer 1's base alone, which is exactly what this
                 # pass published before BLG-18 and is still correct.
                 composed = stored_importance(row)
                 trace_id = new_id("trace")
-                bso = build_business_situation(
+                candidate = build_business_situation(
                     org_id=org_id, situation=row,
                     signal_ids=signal_ids, evidence=evidence, trace_id=trace_id,
                     members=members, visibility=situation_visibility, l1=l1,
-                    composed=composed, pattern=pattern_fires.get(str(anchor)))
+                    composed=composed, pattern=pattern_fires.get(str(anchor)),
+                    # THE BRAIN ADDRESS, resolved on the same connection as every other gather
+                    # above and for the same reason. This is the writer
+                    # `packs/compiler/runtime_brains._selectors` has read for and never had: it
+                    # turns the situation's email-keyed members into the graph node ids the
+                    # Behaviour brain publishes under, so the tenant's own learned knowledge can
+                    # finally be selected for the situation it is about.
+                    brain_subject_keys=gather_brain_subject_keys(conn, org_id, row, members))
+                current_absences = tuple(
+                    absence.fact
+                    for absence in absences_by_situation.get(str(row["situation_id"]), ())
+                    if not (absence.fact.is_finding and absence.stale_coverage)
+                )
+                publication = publish_situation(
+                    store.engine, candidate, decided_at=eval_time,
+                    missing_facts=current_absences,
+                    l1_scoring_active=l1_scoring_active,
+                    # THE RECEIPT IS THE LIVE PUBLISHER'S, NOT THE MEASUREMENT'S. `record=True`
+                    # unconditionally made this pass INSERT into `situation_admission_decisions`,
+                    # and a shadow pass persists nothing by definition -- everything else on this
+                    # branch is gated on `live`. Two costs, both real: a measurement rewrote the
+                    # durable ledger of what the live lane had decided, and
+                    # `scripts/unit_reachability_report.py` -- the K1a gate command, read-only AT
+                    # THE SERVER on purpose -- raised `ReadOnlySqlTransaction` on the first
+                    # situation. `shadow_compile` catches per situation, so the gate did not
+                    # crash: it reported `reasoned=0`, "units emitting findings: 0" and
+                    # UNRECEIPTED SILENCE for all twenty units, and declared K1a FAIL on a tenant
+                    # whose roster was in fact fully awake.
+                    record=live_row)
+                counts[f"admission_{publication.outcome.value}"] += 1
+                if not publication.admitted or publication.situation is None:
+                    # HOLD/REJECT is the output.  Nothing above Layer 2 receives a weak object;
+                    # the durable ledger says exactly what the next sweep may repair.
+                    continue
+                bso = publication.situation
                 context_slice = build_context_slice(
                     visibility=situation_visibility,
                     org_id=org_id, situation=row, facts=node_ctx.facts,
@@ -491,21 +654,43 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # SHADOW mode + live_delivery_enabled=False on the manifest -> a decision is
                 # produced and measured but never delivered or persisted as a signal.
                 try:
+                    # WAVE Z5 · DLG-06. Layer 2's own readings, in snapshot shape, built ONCE
+                    # and handed to both consumers: the manifest DECLARES the projected fields
+                    # and the snapshot SUPPLIES them, so two derivations would be two chances to
+                    # disagree. Gated on `roster_v2` because the six-unit DAG declares no
+                    # projected fact — injecting facts nothing reads would move an unactivated
+                    # tenant's context snapshot id, and therefore its decision hashes, for
+                    # nothing.
+                    projection = (project_situation(
+                        situation=bso, context=context_slice, root_entity_id=node_ctx.node_id)
+                        if roster_v2 else None)
+                    if projection is not None:
+                        counts["projected_situation_facts"] += len(projection.facts)
+                        counts["projected_unknown_fields"] += len(projection.unknown_fields)
                     manifest = expertise_capability_manifest(
                         package, root_entity_type=node_ctx.node_type,
                         # The delivery authority predicate reads this flag off the persisted
                         # capability snapshot. False (the measurement default) means no card can
                         # ever be built from the decision, however complete its audit bundle is.
-                        live_delivery_enabled=live,
+                        live_delivery_enabled=live_row,
                         # WHAT THE CORPUS'S RULES BIND AGAINST (CLG-06). The package carries the
                         # knowledge that was selected; only these two carry the facts it was
                         # selected FOR, and only the frozen slice knows which absences are
                         # UNKNOWABLE — the difference between a blocking rule firing and a
                         # blocking rule honestly abstaining. Both are already in scope here, and
                         # passing them is what makes the weld bound rather than declared.
-                        situation=bso, context=context_slice)
+                        situation=bso, context=context_slice,
+                        # The full family, or the six-unit DAG. Never a global flag: the roster
+                        # changes which units observe a tenant's data, and that is a per-tenant
+                        # decision an operator makes and can undo.
+                        roster_v2=roster_v2,
+                        # WAVE Z3 · importance becomes the sixth utility component and the
+                        # authored corpus priority stops replacing the formula.
+                        ranking_v2=ranking_v2,
+                        # WAVE Z5 · the same object the snapshot below is built from.
+                        projection=projection)
                     pack = None
-                    if live:
+                    if live_row:
                         # The config snapshot must EXIST before reasoning and be passed in, not
                         # injected afterwards: `request_id` is derived from request content, so a
                         # `dataclasses.replace` after the fact invalidates it (obstacle 7).
@@ -522,12 +707,17 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                         org_id=org_id, context=node_ctx, capability=manifest,
                         evaluation_time=eval_time, graph_version=graph_version,
                         config_snapshot_id=(pack["snapshot_id"] if pack else None),
-                        mode=ExecutionMode.LIVE if live else ExecutionMode.SHADOW)
+                        mode=ExecutionMode.LIVE if live_row else ExecutionMode.SHADOW,
+                        projection=projection,
+                        # R-1. None on the shadow lane and on any tenant without `bundle`, and
+                        # `augment` returns the SAME request when it reads nothing — so a run with
+                        # no interpretation hashes to exactly what it hashed to before this seam.
+                        interpreter=interpreter)
                     counts["reasoned"] += 1
                     if execution.decision is None:
                         continue
                     counts["decided"] += 1
-                    if not live:
+                    if not live_row:
                         continue
                     try:
                         counts[_persist_live(
@@ -579,7 +769,9 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 conn.rollback()
 
     result = dict(counts)
-    logger.info("domain-compiler %s org=%s %s", "LIVE" if live else "shadow", org_id, result)
+    logger.info("domain-compiler %s org=%s domains=%s %s",
+                "LIVE" if live else ("PILOT" if live_domains else "shadow"),
+                org_id, sorted(live_domains) or "-", result)
     return result
 
 

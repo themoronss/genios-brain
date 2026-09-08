@@ -1662,7 +1662,8 @@ def draft_prompt(ask: str, brief: DraftBrief) -> str:
         "the rule; the engine counts.\n")
 
 
-def llm_predicate_drafter(llm, *, max_tokens: int = 1024) -> Drafter:
+def llm_predicate_drafter(llm, *, org_id: str, engine, eval_time: datetime,
+                          max_tokens: int = 1024) -> Drafter:
     """Adapt the engine's LLM client into a `Drafter`. THE one model call in L2.4.
 
     Injected rather than constructed inside `propose_cohort` for the reason the whole layer is
@@ -1670,7 +1671,18 @@ def llm_predicate_drafter(llm, *, max_tokens: int = 1024) -> Drafter:
     path cannot reach a model even by accident because it never receives one.
     """
     def _draft(ask: str, brief: DraftBrief) -> Mapping[str, Any]:
-        result = llm.call(draft_prompt(ask, brief), max_tokens=max_tokens)
+        from time import perf_counter
+        from genios_engine.context.model_audit import record_model_run
+
+        prompt = draft_prompt(ask, brief)
+        started = perf_counter()
+        result = llm.call(prompt, max_tokens=max_tokens)
+        record_model_run(
+            engine, org_id=org_id, site="cohort_predicate",
+            subject_ref=f"cohort-draft:{semantic_hash({'ask': ask, 'brief': brief})}",
+            prompt_version="cohort-draft.v1", prompt=prompt, result=result,
+            called_at=eval_time, max_tokens=max_tokens,
+            latency_ms=max(0, int((perf_counter() - started) * 1000)))
         if not getattr(result, "ok", False):
             raise ProposalRefused(ProposalRefusalReason.MODEL_UNAVAILABLE,
                                   str(getattr(result, "error", "no response"))[:200])

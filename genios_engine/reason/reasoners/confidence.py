@@ -16,6 +16,14 @@ along four independent axes that fail independently:
 * **Corroboration** — whether each fact was seen once or seen repeatedly.
 * **Evidence coverage** — how many genuinely independent sources stand behind the snapshot at all.
 
+Those four are a reading of THIS snapshot. A fifth input is a reading of the SITUATION, and it
+comes from the layer that built it: Layer 2 publishes a six-axis confidence vector per situation,
+the projection mints it into the snapshot as `situation.confidence.<axis>` facts, and
+:class:`SituationTrustPlugin` applies it as a CEILING — never as a fifth weighted term, never as
+anything that can raise. On the compiled lane, where the manifest declares no required fields, the
+four axes above are constants and that ceiling is the only thing that varies at all; the plugin's
+docstring carries the measurement.
+
 Two branches, one output. When a capability names a `source_reasoner` in config, this unit
 *bridges* that reasoner's confidence instead of recomputing it — that is how the legacy strangler
 packs keep one confidence authority while the old scoring still owns the number. Otherwise it
@@ -33,6 +41,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 
 from genios_engine.contracts.reasoning import Finding, ReasonerResult, ResultStatus
+from genios_engine.contracts.situation_evidence import AXIS_UNKNOWN_BP, CONFIDENCE_AXES
 
 from ..unit import Observation, ReasoningUnit, UnitCategory, UnitView, Verdict
 from .common import basis_points, clamp_bp, divide_half_up, fact_record, integer, ratio_bp
@@ -41,6 +50,41 @@ from .common import basis_points, clamp_bp, divide_half_up, fact_record, integer
 #: produced — there is no "confidence unknown" outcome — so the code states that the number exists,
 #: not what it turned out to be.
 CONFIDENCE_REASON = "confidence_computed"
+
+#: Emitted BESIDE :data:`CONFIDENCE_REASON`, and only when Layer 2's own trust reading actually
+#: lowered the blend. A receipt for a movement that happened, never a label for one that could
+#: have: a reason code attached to every run would say nothing about any of them.
+CONFIDENCE_SITUATION_CEILING_REASON = "confidence_capped_by_situation_trust"
+
+#: Prefix of the companion receipt naming WHICH of Layer 2's axes was the weakest, i.e. the one the
+#: ceiling was taken from. Travels with the ceiling reason code and only with it.
+SITUATION_TRUST_WEAKEST_PREFIX = "situation_trust_weakest:"
+
+#: The namespace `reason.adapters.situation_projection` mints Layer 2's six-axis confidence vector
+#: into, one fact per axis. Spelled here rather than imported because that module imports the
+#: evidence builder, which imports the orchestrator, which imports this roster — so the seam is
+#: held by a test instead (`test_confidence_rule11.py`, the projection-prefix pin) rather than by
+#: an import cycle.
+SITUATION_CONFIDENCE_PREFIX = "situation.confidence."
+
+#: The axis on that namespace this unit deliberately does NOT read, and the reason, because a
+#: later author will otherwise "complete" the set.
+#:
+#: `context/situations.py` keeps `coverage` OUT of Layer 2's own `overall` and says why:
+#: *"Completeness is a different question from correctness"* — not knowing one field does not make
+#: the fields we DO know less true, and *"folding coverage into overall would make absence read as
+#: doubt."* (Paraphrased around that module's one worked example, because Law 5 forbids a core unit
+#: from carrying a vertical's vocabulary even inside a quotation.) Reading coverage here would
+#: reverse Layer 2's decision one layer up, and it would double-count:
+#: `CoverageCompletenessPlugin` already answers exactly the completeness question, against THIS
+#: capability's declared fields rather than against Layer 2's domain expectations.
+_UNREAD_SITUATION_AXES = ("coverage",)
+
+#: The axes that DO bind, in the order they are reported. Four of them are Layer 2's own trust
+#: minimum; `analytic` is the one this layer adds, and it is added on purpose — see
+#: :class:`SituationTrustPlugin`.
+SITUATION_TRUST_AXES = tuple(axis for axis in CONFIDENCE_AXES
+                             if axis not in _UNREAD_SITUATION_AXES)
 
 #: The blend, as whole percentages summing to 100. What the facts claim about themselves dominates,
 #: how much of the picture arrived is next, and independent corroboration is the tie-breaker.
@@ -196,6 +240,26 @@ class CoverageCompletenessPlugin:
     snapshot as a whole. It counts every evidence item in the frozen context rather than only the
     items backing this unit's fields, because independence is a property of where the picture came
     from, not of which field is being read right now.
+
+    **INDEPENDENCE IS ASSERTED, NEVER INFERRED — and the unstated pool is not an origin.**
+    `decision_maker._stated_groups` has always drawn that line for Rule 11: a ref that named no
+    independence group lands in the single `unattributed` pool, which "may lower a confidence and
+    can never raise one". This plugin used to draw it somewhere else — it folded every unnamed ref
+    INTO `unattributed` and then counted that pool as though it were an independent origin, so an
+    origin nobody stated bought 2,500 bp of coverage and 250 bp of blended confidence.
+
+    Two modules holding two rules for one word is a seam, and R-1 walks straight through it. The
+    ambiguity interpreter mints its reading into the unstated pool ON PURPOSE and its own module
+    docstring claims the consequence — *"IT CANNOT RAISE CONFIDENCE"* — but that claim was only
+    true of `decision_maker`. Measured on the real unit: one interpretation ref moved
+    `independent_evidence_groups` 2 -> 3, `evidence_coverage_bp` 5,000 -> 7,500 and `confidence_bp`
+    6,700 -> 6,950. Confidence is what the floor is applied to, so a model output was raising a
+    number that decides whether the engine speaks or stays silent — which is the doctrine's
+    "may never PERMIT", reached through the one R-site that runs before the decision.
+
+    So the pool is excluded from the count here too, and the two modules now say the same thing.
+    Unstated evidence still lands in the snapshot, is still cited, and still counts for
+    completeness and for source quality; what it cannot do is buy independence it never claimed.
     """
 
     plugin_id = "coverage_completeness"
@@ -208,8 +272,11 @@ class CoverageCompletenessPlugin:
         # A capability that declared no required fields asked for nothing and got all of it.
         completeness_bp = divide_half_up(len(present) * 10_000, len(declared)) if declared \
             else 10_000
-        groups = {item.independence_group or _UNATTRIBUTED_GROUP
-                  for item in view.request.context.evidence}
+        # Stated groups only. `strip()` and the emptiness check mirror `_stated_groups` exactly,
+        # so a ref carrying "" or "   " is unstated on both sides of the seam rather than on one.
+        groups = {name for name in (str(item.independence_group or "").strip()
+                                    for item in view.request.context.evidence)
+                  if name and name != _UNATTRIBUTED_GROUP}
         return (Observation(
             plugin_id=self.plugin_id,
             kind="confidence.coverage_completeness",
@@ -221,6 +288,105 @@ class CoverageCompletenessPlugin:
                 "present_field_count": len(present),
             },
         ),)
+
+
+class SituationTrustPlugin:
+    """Layer 2's own reading of the situation, as a CEILING on this unit's blend.
+
+    THE DEFECT THIS CLOSES. On the compiled lane the capability manifest declares
+    `required_fields: []`, so every axis above collapses to a constant and always the same one:
+    `CoverageCompletenessPlugin` takes its "asked for nothing and got all of it" branch (10,000),
+    `_present_fields` is empty so `FactSourceQualityPlugin` inspects no fact at all and both of its
+    readings fall to `_NEUTRAL_BP`, and the projection mints every situation fact into ONE
+    independence group (`l2:situation:<id>`, deliberately — one situation is one witness) so the
+    coverage axis is a constant 2,500. 40x5000 + 30x10000 + 20x5000 + 10x2500 = **6,250 on every
+    run, by construction**, measured at 60 of 60 on the K1 pilot. A confidence that cannot move
+    cannot trip a floor, and a floor that never trips is not a floor (Law 3).
+
+    Meanwhile Layer 2 had already published the varying reading, one axis at a time, into the same
+    snapshot — `situation.confidence.<axis>` — and nothing read it. That is the whole bug: not a
+    missing computation, a missing seam.
+
+    LOWERING ONLY, WHICH IS WHY RULE 11 IS SAFE HERE BY CONSTRUCTION. Every projected axis carries
+    the SAME independence group, so it could never license a raise, and this plugin never asks for
+    one: it reports a ceiling and `calculate` takes a minimum. Confidence falls freely; nothing
+    here can make it rise, so no uncited raise can enter through this seam.
+
+    THE MINIMUM, NOT THE MEAN — `context/situations.py` states the rule this obeys: *"They are
+    failure modes, not features, and averaging lets one strong dimension hide a fatal one: perfect
+    evidence about an entity we cannot identify is not 60% confidence, it is unusable."*
+
+    THE SENTINEL IS NOT A ZERO. An axis Layer 2 could not assess is `AXIS_UNKNOWN_BP` (-1) and the
+    projection does not publish it as a fact at all — the NAME goes to `missing_fields`. It can
+    therefore never reach this scan. The explicit skip below is the second lock: were a -1 ever to
+    arrive in a fact record, averaging or clamping it would read "no comparison was made" as "the
+    comparative evidence is bad", which is exactly the confusion the sentinel was built to prevent.
+    An unassessed axis is excluded from the minimum, never scored into it.
+
+    WHY `analytic` BINDS HERE THOUGH LAYER 2 KEEPS IT OUT OF ITS OWN `overall`. `situations.py`
+    excludes it and says why: *"A five-member cohort does not make the situation less true; it
+    makes the IMPORTANCE that leaned on it less certain."* That is right for Layer 2, whose
+    `overall` is a claim about the facts. It is precisely backwards for Layer 4, which RANKS BY
+    that importance — an importance composed off a five-member cohort is exactly a reason to trust
+    this decision less than one composed off two hundred. Layer 2 declined to fold it into a claim
+    about facts; this layer folds it into a claim about a decision, which is a different claim.
+
+    `coverage` does not bind: see `_UNREAD_SITUATION_AXES`.
+    """
+
+    plugin_id = "situation_trust"
+
+    def contribute(self, view: UnitView) -> tuple[Observation, ...]:
+        if _bridged_confidence_bp(view) is not None:
+            return ()                       # the capability delegated confidence; say nothing
+        facts = view.request.context.facts
+        readings: list[int] = []
+        weakest: str = ""
+        for axis in SITUATION_TRUST_AXES:
+            record = facts.get(f"{SITUATION_CONFIDENCE_PREFIX}{axis}")
+            if not isinstance(record, Mapping):
+                continue
+            payload = record.get("value")
+            raw = payload.get("value_bp") if isinstance(payload, Mapping) else payload
+            if isinstance(raw, bool) or not isinstance(raw, int):
+                continue                    # not a reading this unit knows how to read
+            if raw == AXIS_UNKNOWN_BP or raw < 0:
+                continue                    # unassessed: excluded from the minimum, never zeroed
+            value = clamp_bp(raw)
+            if not readings or value < min(readings):
+                weakest = axis
+            readings.append(value)
+        if not readings:
+            # No axis applied. ABSENT, not neutral — substituting a midpoint for a reading that
+            # does not exist is the bug the rest of this module exists to avoid.
+            return ()
+        return (Observation(
+            plugin_id=self.plugin_id,
+            kind="confidence.situation_trust",
+            metrics={"situation_trust_bp": min(readings),
+                     "situation_trust_axis_count": len(readings)},
+            # WHICH axis was the thin one, carried as a receipt rather than left to be
+            # re-derived. A ceiling that says only "3,300" makes a reader argue with a number;
+            # one that says "evidence" tells them what would move it.
+            reason_codes=(f"{SITUATION_TRUST_WEAKEST_PREFIX}{weakest}",),
+        ),)
+
+
+def _blend_bp(source_bp: int, completeness_bp: int, corroboration_bp: int,
+              evidence_coverage_bp: int) -> int:
+    """The four-axis weighted mean, before Layer 2's ceiling is applied.
+
+    A named function rather than an expression inlined twice: `calculate` needs the blend to take a
+    minimum against, and `evaluate_meaning` needs it to answer whether the ceiling actually BOUND —
+    and two copies of a weighted mean drift the day a weight changes.
+
+    No renormalisation: each axis always reports, using its neutral midpoint where it had nothing
+    to measure, so the divisor is the constant `_WEIGHT_TOTAL` and the arithmetic stays integral.
+    """
+    return clamp_bp(divide_half_up(
+        source_bp * _SOURCE_WEIGHT + completeness_bp * _COMPLETENESS_WEIGHT
+        + corroboration_bp * _CORROBORATION_WEIGHT
+        + evidence_coverage_bp * _COVERAGE_WEIGHT, _WEIGHT_TOTAL))
 
 
 class ConfidenceReasoner(ReasoningUnit):
@@ -235,9 +401,15 @@ class ConfidenceReasoner(ReasoningUnit):
     version = "1.0.0"
     category = UnitCategory.BUSINESS_EVALUATION
     #: `completeness_bp` is emitted too — see UNDECLARED_METRICS for why it cannot be listed here.
+    #: PURELY ADDITIVE. `situation_trust_bp` and `situation_trust_axis_count` are new names, not
+    #: renamed ones, and they appear in a result only on runs where Layer 2 actually published an
+    #: axis — so a snapshot that carries no situation facts hashes to exactly the bytes it hashed
+    #: to before this seam existed.
     publishes = ("confidence_bp", "source", "source_quality_bp", "corroboration_bp",
-                 "evidence_coverage_bp", "independent_evidence_groups")
-    plugins = (LegacyBridgePlugin(), FactSourceQualityPlugin(), CoverageCompletenessPlugin())
+                 "evidence_coverage_bp", "independent_evidence_groups",
+                 "situation_trust_bp", "situation_trust_axis_count")
+    plugins = (LegacyBridgePlugin(), FactSourceQualityPlugin(), CoverageCompletenessPlugin(),
+               SituationTrustPlugin())
 
     def validate(self, view: UnitView) -> None:
         """Never refuse. A missing field is this unit's subject matter, not an obstacle to it.
@@ -270,17 +442,26 @@ class ConfidenceReasoner(ReasoningUnit):
         completeness_bp = coverage.metrics["completeness_bp"] if coverage else 10_000
         evidence_coverage_bp = coverage.metrics["evidence_coverage_bp"] if coverage else 0
         groups = coverage.metrics["independent_evidence_groups"] if coverage else 0
-        return {
-            "confidence_bp": clamp_bp(divide_half_up(
-                source_bp * _SOURCE_WEIGHT + completeness_bp * _COMPLETENESS_WEIGHT
-                + corroboration_bp * _CORROBORATION_WEIGHT
-                + evidence_coverage_bp * _COVERAGE_WEIGHT, _WEIGHT_TOTAL)),
+        blend_bp = _blend_bp(source_bp, completeness_bp, corroboration_bp, evidence_coverage_bp)
+        metrics = {
+            "confidence_bp": blend_bp,
             "source_quality_bp": source_bp,
             "completeness_bp": completeness_bp,
             "corroboration_bp": corroboration_bp,
             "evidence_coverage_bp": evidence_coverage_bp,
             "independent_evidence_groups": groups,
         }
+        # Layer 2's ceiling, applied last and only downwards. A MINIMUM rather than a fifth
+        # weighted term: a term would let three healthy axes average away an identity we could not
+        # establish, and it would also let a strong Layer 2 reading RAISE the blend, which is the
+        # one thing Rule 11 forbids without named cross-group evidence. Every projected axis shares
+        # one independence group, so no such evidence exists here and none is claimed.
+        trust = by_plugin.get(SituationTrustPlugin.plugin_id)
+        if trust is not None:
+            metrics["situation_trust_bp"] = trust.metrics["situation_trust_bp"]
+            metrics["situation_trust_axis_count"] = trust.metrics["situation_trust_axis_count"]
+            metrics["confidence_bp"] = min(blend_bp, trust.metrics["situation_trust_bp"])
+        return metrics
 
     def evaluate_meaning(self, view: UnitView, metrics: Mapping[str, int],
                          observations: Sequence[Observation]) -> Verdict:
@@ -295,6 +476,16 @@ class ConfidenceReasoner(ReasoningUnit):
         read downstream as "the confidence check failed".
         """
         published: dict[str, object] = dict(metrics)
+        reason_codes: tuple[str, ...] = (CONFIDENCE_REASON,)
+        trust = next((item for item in observations
+                      if item.plugin_id == SituationTrustPlugin.plugin_id), None)
+        if trust is not None and trust.metrics["situation_trust_bp"] < _blend_bp(
+                metrics["source_quality_bp"], metrics["completeness_bp"],
+                metrics["corroboration_bp"], metrics["evidence_coverage_bp"]):
+            # Only when the ceiling actually BOUND. A receipt for a movement that did not happen
+            # is noise, and noise in a reason-code stream is how a real receipt stops being read.
+            reason_codes = (CONFIDENCE_REASON, CONFIDENCE_SITUATION_CEILING_REASON,
+                            *trust.reason_codes)
         if any(item.plugin_id == LegacyBridgePlugin.plugin_id for item in observations):
             # Marks the number as somebody else's, so an auditor reading the result can tell a
             # bridged confidence from a computed one without re-deriving the branch. A deliberately
@@ -302,7 +493,7 @@ class ConfidenceReasoner(ReasoningUnit):
             # change the result hash of every legacy strangler decision ever replayed.
             published["source"] = "legacy"
         finding = Finding("confidence.decomposition", "confidence", metrics=published,
-                          reason_codes=(CONFIDENCE_REASON,))
+                          reason_codes=reason_codes)
         return Verdict(
             matched=None,
             metrics={name: value for name, value in published.items()
@@ -339,5 +530,7 @@ class ConfidenceReasoner(ReasoningUnit):
         )
 
 
-__all__ = ["CONFIDENCE_REASON", "ConfidenceReasoner", "CoverageCompletenessPlugin",
-           "FactSourceQualityPlugin", "LegacyBridgePlugin", "UNDECLARED_METRICS"]
+__all__ = ["CONFIDENCE_REASON", "CONFIDENCE_SITUATION_CEILING_REASON", "ConfidenceReasoner",
+           "CoverageCompletenessPlugin", "FactSourceQualityPlugin", "LegacyBridgePlugin",
+           "SITUATION_CONFIDENCE_PREFIX", "SITUATION_TRUST_AXES",
+           "SITUATION_TRUST_WEAKEST_PREFIX", "SituationTrustPlugin", "UNDECLARED_METRICS"]

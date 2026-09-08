@@ -71,6 +71,8 @@ from sqlalchemy import text
 from genios_engine.context import situations
 from genios_engine.context.pipeline import process_event
 
+from ...l1_supply import attach_l1_signals
+
 from ...test_admin_support_packs import NOW, _FakeLLM, _seed_event, _seed_org
 
 #: The instant the whole seed is evaluated at. One clock for the drain, the roll-ups, the
@@ -201,6 +203,18 @@ def seed_admin_pilot(store, org: str, *, eval_time=EVAL_TIME, build_cards: bool 
 
     out: dict = {"derived": derive(store, org, eval_time=eval_time)}
     situations.refresh_situations(store, org, eval_time=eval_time)
+    # LAYER 1'S HALF, which this seed never supplied and a customer always does. L2's admission
+    # gate (`context/situation_publisher`, migration 0122) refuses to publish a situation carrying
+    # no VERIFIED EVIDENCE SPAN, and a verified span only ever arrives on a `qualified_signals`
+    # row. This seed drives `process_event` straight into `refresh_situations`, so before this
+    # line every situation it produced was HELD and `shadow_compile` returned a clean
+    # `admission_hold` with no `compiled`, no `reasoned` and no `emitted` — a pilot tenant that
+    # reasoned about nothing, which is not what the module docstring above claims to seed.
+    #
+    # The gate is untouched and still refuses a tenant without these rows; what changed is that
+    # the seed now supplies what a customer supplies. See `tests/l1_supply` for why the span takes
+    # `verify_evidence_spans`' documented "no source text -> Layer 1's flag stands" branch.
+    out["l1_signals"] = attach_l1_signals(store, org, eval_time=eval_time)
 
     url = store.engine.url.render_as_string(hide_password=False)
     registry = make_registry(url)

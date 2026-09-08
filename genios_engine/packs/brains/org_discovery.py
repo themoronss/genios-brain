@@ -102,6 +102,7 @@ from typing import Any, Protocol
 
 from genios_engine.capture.validate.money import parse_money_outcome
 from genios_engine.capture.validate.spans import SpanVerdict, verify_span
+from genios_engine.contracts.brain_address import BrainAddress, org_scope
 from genios_engine.contracts.evidence import EvidenceSpan
 from genios_engine.contracts.learning import (
     LearningEvidence,
@@ -459,6 +460,28 @@ def proposed_value(doc: CanonDocument, rule: GatedRule) -> dict[str, Any]:
         "document": {"event_id": doc.event_id, "kind": doc.kind, "title": doc.title,
                      "version_key": doc.version_key,
                      "stated_at": doc.occurred_at.isoformat()},
+        # THE ADDRESS — what this rule is ABOUT, in the one vocabulary a situation also speaks.
+        #
+        # Tenant-wide, and that is a judgement worth stating rather than defaulting into. An
+        # Organization rule is extracted from the tenant's OWN approved policy document, gated on
+        # that document's bytes and confirmed by a human; it is a declaration by the company about
+        # the company. Its subject key — `orgrule:<category>:<subject_type>` — names its own
+        # taxonomy and nothing any situation knows about itself, which is exactly why it selected
+        # into zero packages before this existed. The narrower address does not exist to be
+        # written: a policy does not say which capability will need it.
+        #
+        # `orgwide` is minted only by `brain_address.org_scope`, and only Organization knowledge
+        # may carry it — `BrainAddress` refuses it for Behaviour and Adaptive, because a
+        # measurement or a preference that bound everywhere would be a rule nobody approved.
+        "address": BrainAddress(
+            org_id=doc.org_id, brain="organization",
+            tokens=org_scope(doc.org_id),
+            authority={"source": DISCOVERY_SOURCE, "category": rule.category,
+                       "subject_type": rule.subject_type,
+                       "document_event_id": doc.event_id,
+                       "document_version_key": doc.version_key,
+                       "approver_node_id": rule.approver_node_id,
+                       "authority_pending": rule.authority_pending}).as_value(),
     }
 
 

@@ -237,7 +237,9 @@ def propose(org_id: str, body: ProposeCohort, org: str = Depends(_org),
         raise HTTPException(400, f"this tenant has no {body.node_type} records to draft against")
     try:
         proposal = propose_cohort(
-            org_id=org, ask=body.ask, drafter=llm_predicate_drafter(make_llm_client()),
+            org_id=org, ask=body.ask,
+            drafter=llm_predicate_drafter(
+                make_llm_client(), org_id=org, engine=_store().engine, eval_time=at),
             node_type=body.node_type, node_facts=facts,
             node_names=load_node_names(_store().engine, org, sorted(facts)),
             eval_time=at, reference_node_id=body.reference_node_id, registry=registry)

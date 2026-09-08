@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
-from genios_engine.contracts.events import AGENT_ACTIONS, AGENT_API_SCOPES, HUMAN_API_SCOPES
+from genios_engine.contracts.events import (AGENT_ACTIONS, AGENT_API_SCOPES,
+                                            HUMAN_API_SCOPES, INTELLIGENCE_API_SCOPES)
 from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org, hash_key,
                                          hash_password, invalidate_key_cache, jwt_encode,
                                          new_api_key, require_owner, verify_password)
@@ -34,7 +35,7 @@ def _enc_key(raw: str) -> bytes | None:
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 JWT_TTL_SECONDS = 7 * 24 * 3600
-GRANTABLE = AGENT_ACTIONS | AGENT_API_SCOPES | HUMAN_API_SCOPES
+GRANTABLE = AGENT_ACTIONS | AGENT_API_SCOPES | HUMAN_API_SCOPES | INTELLIGENCE_API_SCOPES
 
 
 def _engine():

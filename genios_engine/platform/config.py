@@ -58,6 +58,18 @@ class Settings(BaseSettings):
     # `llm_costs` records no tier and a sub-ledger opened at a guessed balance would demote
     # frontier work for a reason nobody could check.
     daily_t3_llm_usd_cap: float = 0.0
+    # Layer 4.5's NARRATIVE spend, per org per day, in USD. Doc 11 §2 sizes a pilot org at about
+    # $0.58/day of bundle generation; this ceiling is a little over three times that, so an
+    # ordinary day never touches it and a runaway is stopped inside one day instead of at the end
+    # of a month. On breach the narrative degrades to the labelled deterministic template and
+    # DECISIONS ARE UNAFFECTED — narration runs after publication, so there is nothing for a
+    # spend ceiling here to block. 0 = no L4 narrative ceiling, the same meaning
+    # `daily_llm_usd_cap` gives zero.
+    l4_bundle_daily_usd_cap: float = 2.0
+    # The per-DECISION ceiling, in USD. Doc 11 §5's acceptance row is "<= $0.02 per published
+    # decision"; this is that row as a control rather than a report, with headroom for a long
+    # situation. A single consult estimated above it is refused before it runs.
+    l4_bundle_max_usd_per_decision: float = 0.05
     # OUR OWN domains — the product's transactional mail, not anybody's counterparty.
     #
     # A customer's inbox contains our onboarding, invite and billing mail. Without this the

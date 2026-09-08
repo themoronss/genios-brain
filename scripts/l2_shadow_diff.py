@@ -406,6 +406,10 @@ class ShadowDiff:
     silent: tuple[SilentPattern, ...]
     regressions: tuple[tuple[str, str, str], ...]     # (card_id, situation_id, anchor_node_id)
     caveats: tuple[str, ...] = field(default_factory=tuple)
+    #: Live in the window but written by neither path — `periodic.py` and the readings that
+    #: follow it insert straight into `context_situations` with a synthetic correlation id. Named
+    #: in every report, counted in none: see `read_direct_writer_situations`.
+    direct_writer_situations: tuple[tuple[str, str, str], ...] = field(default_factory=tuple)
 
     # ── row 1 ────────────────────────────────────────────────────────────────────────────────
     @property
@@ -475,6 +479,10 @@ class ShadowDiff:
             "window": {"since": self.since.isoformat(), "until": self.until.isoformat()},
             "activation": self.activation.as_dict(),
             "anchor_situations": len(self.anchor_situations),
+            "direct_writer_situations": [
+                {"situation_id": s, "anchor_node_id": a, "situation_type": t}
+                for s, a, t in self.direct_writer_situations[:MAX_BREACH_EXAMPLES]],
+            "direct_writer_situation_count": len(self.direct_writer_situations),
             "pattern_runs": self.pattern_runs,
             "pattern_anchors": len(self.pattern_anchors),
             "lost_situations": [{"situation_id": s, "anchor_node_id": a, "situation_type": t}
@@ -521,6 +529,17 @@ def read_activation(conn, *, org_id: str) -> Activation:
         enabled_by=str(row.enabled_by or ""), notes=str(row.notes or ""))
 
 
+#: The anchor path is `context/situations.refresh_situations`, and this module's own header
+#: defines it as "one situation per row of `context_correlations`". That join is the definition,
+#: not an optimisation — see `read_anchor_situations`.
+_ANCHOR_PATH_WINDOW = (
+    "from context_situations s "
+    "{join} context_correlations c on c.org_id = s.org_id "
+    "  and c.correlation_id = s.correlation_id "
+    "where s.org_id = :org and s.computed_at >= :since and s.computed_at <= :until "
+    "and s.status = any(:statuses) {extra} order by s.situation_id")
+
+
 def read_anchor_situations(conn, *, org_id: str, since: datetime, until: datetime
                            ) -> tuple[tuple[str, str, str], ...]:
     """The OLD path's output for the window: live situations `refresh_situations` computed.
@@ -531,11 +550,51 @@ def read_anchor_situations(conn, *, org_id: str, since: datetime, until: datetim
     tenant's own evidence last moved, so a window keyed on it would drop a live situation the
     anchor path produced all week about a relationship that has gone quiet, which is exactly the
     kind of situation the pattern path is most likely to miss.
+
+    THE JOIN TO `context_correlations` IS THE DEFINITION OF THE PATH, and it used to be absent.
+    `context_situations` is not one producer's table: `periodic.py`, `support_situations.py`,
+    `document_register.py` and the readings that follow them write their rows DIRECTLY, with a
+    synthetic correlation id and no `context_correlations` row, because their subject is a window
+    or a computed anchor rather than a group of correlated events. This module's own header names
+    the old path as "`context/situations.refresh_situations` derives one situation per row of
+    `context_correlations`", and A-28 records that the row being scored is that path's loss —
+    so counting a period aggregate the anchor path never produced attributes another producer's
+    output to it, and then scores the pattern path for failing to reproduce something no pattern
+    can anchor on (`patterns/store.evaluate_org` only ever walks `registry.anchor_types()`, and no
+    pattern anchors on the tenant node `periodic.py` mints).
+
+    This was invisible until the sweep clock was bound. The direct writers were called with the
+    WALL clock while the rest of the drain ran at `sweep_at`, so their `computed_at` landed outside
+    every historical window and they fell out of this read by accident. Binding them to `sweep_at`
+    (the correct fix — one clock per sweep) put them in, and the mis-attribution surfaced as a
+    gate that no tenant could ever pass: a real org gets one period situation per domain per week,
+    forever, and none of them is reachable by the pattern path. `situations.active_situations`
+    already carries the same distinction, in the opposite direction, for the same reason.
+
+    NOTHING IS DROPPED SILENTLY: the excluded rows are read by `read_direct_writer_situations`
+    and printed under their own heading in every report.
     """
     rows = conn.execute(sql(
-        "select situation_id, anchor_node_id, situation_type from context_situations "
-        "where org_id = :org and computed_at >= :since and computed_at <= :until "
-        "and status = any(:statuses) order by situation_id"),
+        "select s.situation_id, s.anchor_node_id, s.situation_type "
+        + _ANCHOR_PATH_WINDOW.format(join="join", extra="")),
+        {"org": org_id, "since": since, "until": until,
+         "statuses": list(LIVE_SITUATION_STATUSES)}).all()
+    return tuple((str(r.situation_id), str(r.anchor_node_id), str(r.situation_type)) for r in rows)
+
+
+def read_direct_writer_situations(conn, *, org_id: str, since: datetime, until: datetime
+                                  ) -> tuple[tuple[str, str, str], ...]:
+    """The live situations in the window that NEITHER path produced — the direct writers' rows.
+
+    Printed, never scored, for the same reason a silent pattern is: they are a legitimate answer
+    about a tenant rather than a breach, and a report that removed them from the loss check
+    without naming them would be hiding the fact that they too disappear if anchor-based detection
+    is deleted. They are named here so the reader can see exactly what was set aside and why.
+    """
+    rows = conn.execute(sql(
+        "select s.situation_id, s.anchor_node_id, s.situation_type "
+        + _ANCHOR_PATH_WINDOW.format(join="left join",
+                                     extra="and c.correlation_id is null")),
         {"org": org_id, "since": since, "until": until,
          "statuses": list(LIVE_SITUATION_STATUSES)}).all()
     return tuple((str(r.situation_id), str(r.anchor_node_id), str(r.situation_type)) for r in rows)
@@ -741,6 +800,7 @@ def read_regressions(conn, *, org_id: str, since: datetime,
 def build_report(conn, *, org_id: str, since: datetime, until: datetime) -> ShadowDiff:
     activation = read_activation(conn, org_id=org_id)
     anchor_situations = read_anchor_situations(conn, org_id=org_id, since=since, until=until)
+    direct_writers = read_direct_writer_situations(conn, org_id=org_id, since=since, until=until)
     pattern_anchors = read_pattern_anchors(conn, org_id=org_id, since=since, until=until)
     runs = count_pattern_runs(conn, org_id=org_id, since=since, until=until)
 
@@ -787,7 +847,7 @@ def build_report(conn, *, org_id: str, since: datetime, until: datetime) -> Shad
         patterns=read_pattern_receipts(conn, org_id=org_id, since=since, until=until),
         silent=read_silent_patterns(conn, org_id=org_id, since=since, until=until),
         regressions=read_regressions(conn, org_id=org_id, since=since, until=until),
-        caveats=tuple(caveats))
+        caveats=tuple(caveats), direct_writer_situations=direct_writers)
 
 
 # ── rendering: the receipts, not the counts ──────────────────────────────────────────────────
@@ -799,7 +859,9 @@ def render(report: ShadowDiff) -> str:
              "  activation " + ("  ".join(
                  f"{s}={'LIVE' if (act.analytic_live if s == SWITCH_ANALYTIC else act.patterns_live) else 'off'}"
                  for s in SWITCHES) + (f"   (by {act.enabled_by})" if act.enabled_by else "")),
-             f"  anchor path  {len(report.anchor_situations)} live situations",
+             f"  anchor path  {len(report.anchor_situations)} live situations"
+             + (f"  (+{len(report.direct_writer_situations)} written by neither path)"
+                if report.direct_writer_situations else ""),
              f"  pattern path {report.pattern_runs} runs, "
              f"{len(report.pattern_anchors)} anchors fired, {len(report.patterns)} fires", ""]
     for key, observed, gate, ok in report.checks:
@@ -812,6 +874,17 @@ def render(report: ShadowDiff) -> str:
             lines.append(f"    {sid}  anchor={anchor}  type={stype}")
         if len(report.lost_situations) > MAX_BREACH_EXAMPLES:
             lines.append(f"    … and {len(report.lost_situations) - MAX_BREACH_EXAMPLES} more")
+
+    if report.direct_writer_situations:
+        lines += ["", "  live situations written by NEITHER path — `periodic.py` and the readings "
+                      "that follow it insert directly, with no `context_correlations` row, so "
+                      "`refresh_situations` never produced them and no pattern can anchor on "
+                      "them (printed, never scored; they disappear with the anchor path too):"]
+        for sid, anchor, stype in report.direct_writer_situations[:MAX_BREACH_EXAMPLES]:
+            lines.append(f"    {sid}  anchor={anchor}  type={stype}")
+        if len(report.direct_writer_situations) > MAX_BREACH_EXAMPLES:
+            lines.append("    … and "
+                         f"{len(report.direct_writer_situations) - MAX_BREACH_EXAMPLES} more")
 
     # THE RECEIPTS. Doc 09's three bold rows are claims, and a claim without its numbers is the
     # thing this layer exists to stop producing — so the numbers are printed, not summarised.

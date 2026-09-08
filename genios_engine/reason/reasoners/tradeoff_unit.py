@@ -47,6 +47,27 @@ from .common import clamp_bp, divide_half_up
 # difference between a measured absence of pressure and a blind spot.
 _ABSENT = -1
 
+#: Every axis side, as (config key, default source unit, metric). The table exists so the defaults
+#: are *enumerable*: a unit id that no capability ever overrides is still a hard dependency on the
+#: roster, and until this table existed there was no way to ask whether those dependencies were
+#: real. One of them was not. `cost_source` defaulted to `core.effort` — a unit that has never been
+#: written, never been registered, and never published anything — so `_prior_bp` read an absent
+#: prior on every run, `CostVersusBenefitPlugin` returned no observation, and this unit has been
+#: comparing two axes while declaring three since the day it shipped. Nothing failed, because a
+#: missing source is indistinguishable from a source that did not run, which is exactly the
+#: silence a tradeoff is supposed to keep. `effort_bp` is published by `core.cost`, and always was.
+AXIS_SOURCES: tuple[tuple[str, str, str], ...] = (
+    ("benefit_source", "core.impact", "impact_bp"),
+    ("certainty_source", "core.confidence", "confidence_bp"),
+    ("cost_source", "core.cost", "effort_bp"),
+    ("reward_source", "core.opportunity", "opportunity_bp"),
+    ("risk_source", "core.risk", "risk_bp"),
+    ("speed_source", "core.temporal", "urgency_bp"),
+)
+
+_AXIS_BY_KEY: Mapping[str, tuple[str, str]] = {
+    key: (unit_id, metric) for key, unit_id, metric in AXIS_SOURCES}
+
 
 def _config_bp(view: UnitView, key: str, default: int) -> int:
     value = view.config.get(key, default)
@@ -63,8 +84,13 @@ def _config_id(view: UnitView, key: str, default: str) -> str:
     return value.strip()
 
 
-def _prior_bp(view: UnitView, key: str, default_unit: str, metric: str) -> int | None:
-    """One side of a tradeoff, or None when the unit that owns it did not complete."""
+def _side_bp(view: UnitView, key: str) -> int | None:
+    """One side of a tradeoff, or None when the unit that owns it did not complete.
+
+    The source unit and the metric both come from :data:`AXIS_SOURCES`, so a plugin cannot name a
+    default this module has not declared and the registration check has not seen.
+    """
+    default_unit, metric = _AXIS_BY_KEY[key]
     value = view.prior_metric(_config_id(view, key, default_unit), metric, _ABSENT)
     return None if value == _ABSENT else clamp_bp(value)
 
@@ -123,8 +149,8 @@ class SpeedVersusCertaintyPlugin:
     plugin_id = "speed_vs_certainty"
 
     def contribute(self, view: UnitView) -> tuple[Observation, ...]:
-        speed = _prior_bp(view, "speed_source", "core.temporal", "urgency_bp")
-        confidence = _prior_bp(view, "certainty_source", "core.confidence", "confidence_bp")
+        speed = _side_bp(view, "speed_source")
+        confidence = _side_bp(view, "certainty_source")
         if speed is None or confidence is None:
             return ()
         # The case for waiting is exactly as strong as our remaining doubt.
@@ -144,8 +170,8 @@ class RiskVersusRewardPlugin:
     plugin_id = "risk_vs_reward"
 
     def contribute(self, view: UnitView) -> tuple[Observation, ...]:
-        reward = _prior_bp(view, "reward_source", "core.opportunity", "opportunity_bp")
-        risk = _prior_bp(view, "risk_source", "core.risk", "risk_bp")
+        reward = _side_bp(view, "reward_source")
+        risk = _side_bp(view, "risk_source")
         if reward is None or risk is None:
             return ()
         return _weigh(view, self.plugin_id, "risk_vs_reward",
@@ -162,13 +188,17 @@ class CostVersusBenefitPlugin:
 
     Both sides come from whichever units a capability appoints; where neither has been deployed the
     plugin stays silent rather than treating unmeasured effort as free.
+
+    The default cost source is `core.cost`, which is where `effort_bp` has always been published.
+    It used to be `core.effort`, a unit that does not exist — so this axis, alone among the three,
+    could never speak, and its silence was indistinguishable from an honest one.
     """
 
     plugin_id = "cost_vs_benefit"
 
     def contribute(self, view: UnitView) -> tuple[Observation, ...]:
-        benefit = _prior_bp(view, "benefit_source", "core.impact", "impact_bp")
-        cost = _prior_bp(view, "cost_source", "core.effort", "effort_bp")
+        benefit = _side_bp(view, "benefit_source")
+        cost = _side_bp(view, "cost_source")
         if benefit is None or cost is None:
             return ()
         return _weigh(view, self.plugin_id, "cost_vs_benefit",
@@ -256,5 +286,5 @@ class TradeoffUnit(ReasoningUnit):
         )))
 
 
-__all__ = ["CostVersusBenefitPlugin", "RiskVersusRewardPlugin", "SpeedVersusCertaintyPlugin",
-           "TradeoffUnit"]
+__all__ = ["AXIS_SOURCES", "CostVersusBenefitPlugin", "RiskVersusRewardPlugin",
+           "SpeedVersusCertaintyPlugin", "TradeoffUnit"]

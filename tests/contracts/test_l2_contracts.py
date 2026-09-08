@@ -1024,7 +1024,8 @@ def test_the_situation_states_match_the_live_lifecycle():
     together here, the way `signal.py`'s constants are pinned to Layer 1's."""
     from genios_engine.context import situations
     assert SITUATION_STATES == {situations.STATUS_ACTIVE, situations.STATUS_DORMANT,
-                                situations.STATUS_RESOLVED, situations.STATUS_ARCHIVED}
+                                situations.STATUS_RESOLVED, situations.STATUS_ARCHIVED,
+                                situations.STATUS_PARTIALLY_RESOLVED}
 
 
 @pytest.mark.parametrize("field,value", [("signal_ids", ()), ("evidence", ())])
