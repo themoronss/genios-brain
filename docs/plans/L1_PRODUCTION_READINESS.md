@@ -216,13 +216,23 @@ dirty scratch DB the same run showed 8 unrelated failures — drop and recreate 
 
 **P0.2 · Activate ONE org and watch it.** *Owner decision: this starts per-message model spend.*
 
+Layer 1's switch is one of NINE across four layers, and their order is load-bearing — L1's lane is
+the only producer of the verified spans L2's admission gate requires, so a tenant switched on from
+the top down has every layer above L1 fed held situations while every console reads green.
+`scripts/activate_tenant.py` is the one command that knows the order:
+
 ```bash
-# through the audited admin route, never a raw insert
-curl -X POST "$BRAIN/admin/l1-activation/<org_id>" -H "Authorization: Bearer <owner JWT>" \
-     -d '{"notes":"L1 pilot, day 1"}'
-# then a sync, in the background (a sync sync/reason call gets killed by the gateway)
+python scripts/activate_tenant.py --org <org_id> --database-url "<url>"           # dry run
+python scripts/activate_tenant.py --org <org_id> --database-url "<url>" --apply
+python scripts/activate_tenant.py --org <org_id> --database-url "<url>" --status
+# then a sync, in the background (a synchronous sync/reason call gets killed by the gateway)
 curl -X POST "$BRAIN/integrations/sync-all" -H "Authorization: Bearer <owner JWT>"
 ```
+
+It writes through each layer's own `activate` (idempotent, audited, original `enabled_at` kept),
+validates every domain and feature name BEFORE the first flip so a typo cannot leave a tenant
+half-activated, and stops short of the two switches that spend per item (`bundle`, `critique`,
+`brief` are opt-in via `--features`). The per-layer admin routes still exist for one-off changes.
 
 Verify, in this order — each answers a different failure:
 

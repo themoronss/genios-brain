@@ -25,13 +25,35 @@ from genios_engine.api.routes import _sync_connection      # exact API sync+L2 p
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.wiring import make_connection_store, make_graph_store
 
-# org_id-keyed tables cleared by --fresh (capture + graph + read models). Missing tables skipped.
-_FRESH_TABLES = [
-    "source_refs", "graph_facts", "graph_observations", "graph_edges", "graph_changes",
-    "discrepancies", "source_identity_map", "graph_nodes", "context_read_models",
-    "l1_extraction_results", "l2_processing_runs", "processing_cache",
-    "parked_events", "sync_cursors", "source_events",
-]
+# org_id-keyed tables cleared by --fresh. READ OFF THE ERASURE LIST, never hand-listed here.
+#
+# This was a hand-written list of fifteen names, and it was written before Layer 1 v2, Layer 2 v2
+# and Layer 4 v2 existed. A `--fresh` run therefore cleared `source_events` and the cursors — so a
+# re-ingest genuinely re-read the mailbox — while leaving `qualified_signals`, `context_situations`,
+# `situation_admission_decisions`, `prepared_content`, `signals`, `cards` and `reasoning_runs`
+# behind: the new run's rows landed on top of the old run's conclusions and the tenant reported a
+# state neither pass produced. `api/account_routes._ORG_SCOPED_TABLES` is the list the product's
+# own `/reset` and account deletion use, it is test-enforced against the schema, and a table added
+# to a layer lands here the day it lands there.
+from genios_engine.api.account_routes import _ORG_SCOPED_TABLES as _ERASURE_TABLES   # noqa: E402
+
+#: The four PILOT SWITCHES a re-ingest must not touch. They are correctly in the erasure list —
+#: deleting an account deletes which layers it was on — but `--fresh` is not a deletion, it is a
+#: re-read of the same tenant's mailbox. Wiping them means the re-ingest runs with Layer 1's
+#: semantic lane OFF, and the symptom is not an error: events land, the funnel looks healthy, and
+#: `s2_semantic_extraction` is simply absent from every trace. Learned it the hard way — a live
+#: pilot re-ingested 718 events through a lane that had been switched on four minutes earlier and
+#: deleted two minutes later.
+_KEEP_ON_FRESH = frozenset({
+    "l1_semantic_activation", "l2_v2_activation", "l3_activation", "l4_activation",
+    # The tenant's floor is a tuned number with an owner and an append-only change log; a
+    # re-ingest that resets it to the default silently re-qualifies the whole mailbox.
+    "org_qualification_floors", "qualification_floor_changes",
+})
+
+#: The erasure list minus the switches, plus the legacy names older databases still carry.
+_FRESH_TABLES = [t for t in _ERASURE_TABLES if t not in _KEEP_ON_FRESH] + [
+    "source_refs", "graph_changes", "processing_cache"]
 # tables with NO org_id column (keyed by event_id) — must be deleted via a source_events join,
 # BEFORE source_events is cleared. (Deleting these by org_id silently no-ops → stale payloads
 # survive → dedup blocks re-fetch → the "no edges / to=None" bug.)
