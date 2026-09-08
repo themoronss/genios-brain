@@ -487,8 +487,38 @@ class BusinessSituationObject:
             "importance_bp": self.importance_bp,
             "evidence": self.evidence,
             "state": self.state,
-            "metadata": self.metadata,
+            "metadata": self.address_free_metadata,
         }
+
+    #: Metadata keys that are OBSERVATION, not content — excluded from the content address for the
+    #: same reason `trace_id` and `SituationContextSlice.evaluation_time` are.
+    #:
+    #: `brain_subject_keys` is the situation's BRAIN ADDRESS: which tenant, domain, capability,
+    #: node and correspondent this situation is about, so `packs/compiler/runtime_brains` can select
+    #: the knowledge that applies to it. It is derived from the GRAPH — `gather_brain_subject_keys`
+    #: resolves member emails to node ids — and the graph grows. A correspondent whose node is
+    #: created on Tuesday adds a token on Tuesday, and if that token were content, every situation
+    #: they appear on would mint a fresh ~238 kB expertise package that afternoon for knowledge
+    #: that had not changed.
+    #:
+    #: That is not a hypothetical: it is the mechanism that put the design partner's database at
+    #: 4,086 rows and 995 MB — 67% of the whole database for 127 distinct situations — and crossed
+    #: the disk quota into read-only, which stops every write the product makes. It is caught here
+    #: by `l3_pilot_report`'s `worst_addresses_per_situation`, which read 3 for one situation the
+    #: first time this key was hashed in.
+    #:
+    #: NOTHING IS LOST BY EXCLUDING IT. The address decides WHICH knowledge is selected; the
+    #: selected knowledge is itself part of the package (`organization_policies`,
+    #: `behavior_patterns`, `adaptive_preferences`, and `brain_snapshot_id` over all three). So a
+    #: package compiled with the tenant's policy in it already addresses differently from one
+    #: compiled without it — through the knowledge, which is the content, rather than through the
+    #: selector, which is the lookup.
+    _NON_CONTENT_METADATA = ("brain_subject_keys",)
+
+    @property
+    def address_free_metadata(self) -> Mapping[str, Any]:
+        """`metadata` minus the keys that describe how this situation was LOOKED UP."""
+        return {k: v for k, v in self.metadata.items() if k not in self._NON_CONTENT_METADATA}
 
     @property
     def semantic_hash(self) -> str:

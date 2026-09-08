@@ -16,3 +16,8 @@ graphify-out/
 # Test upload artifacts — the upload door writes here at runtime; a policy fixture
 # committed by a test run is not source.
 uploads/
+
+# v1 leftovers and a stale partial copy of a SEPARATE product, both popped in from the
+# old `conversation-work-backup` stash. genios-dashboard has its own git history one level up.
+app/
+genios-dashboard/

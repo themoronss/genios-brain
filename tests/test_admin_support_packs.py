@@ -31,6 +31,8 @@ from genios_engine.packs.sales_v1 import SALES_V1
 from genios_engine.packs.support_v1 import SUPPORT_V1
 from genios_engine.packs.wiring import BUILTIN_PACKS, DEFAULT_PACKS
 
+from .l1_supply import attach_l1_signals
+
 NOW = datetime(2026, 8, 20, tzinfo=timezone.utc)
 NEW_PACKS = (ADMIN_V1, SUPPORT_V1)
 
@@ -168,6 +170,31 @@ def _seed_org(store, org: str) -> None:
                                    else "o@x.test" if "email" in r.column_name else org)
         conn.execute(text(f"insert into orgs ({','.join(parts)}) values ({','.join(ph)}) "
                           "on conflict do nothing"), vals)
+
+
+def _erase_tenant(store, org: str) -> None:
+    """Erase one tenant through `account_routes._wipe` — the same list `/reset` runs.
+
+    Wiping through the production erasure list rather than a hand-written DELETE means a table
+    this path writes but that list has forgotten shows up here as a stale row, instead of as a
+    tenant's data surviving their own deletion.
+    """
+    from genios_engine.api.account_routes import _wipe
+
+    with store.engine.begin() as conn:
+        _wipe(conn, org)
+        # Not on the `/reset` list — migration 0037 erases these by schema on account DELETION,
+        # which `/reset` does not do — and this test has to start from an empty graph either way.
+        #
+        # `expertise_packages` IS A REPORTED GAP, not a convenience. It is org-scoped and Layer 3
+        # writes it on every live compile, and it appears nowhere in
+        # `account_routes._ORG_SCOPED_TABLES` (87 names, checked) — so `/reset` leaves a tenant's
+        # compiled brain standing while erasing every signal, card and audit row built from it.
+        # Deleted here because this test asserts `packages == 1`; the production list is
+        # `api/account_routes.py`'s and not this file's to change.
+        for tbl in ("context_correlation_members", "context_situations", "context_correlations",
+                    "expertise_packages"):
+            conn.execute(text(f"delete from {tbl} where org_id=:o"), {"o": org})
 
 
 def _seed_event(conn, org: str, event_id: str, domain: str) -> None:
@@ -324,8 +351,22 @@ def test_an_admin_situation_now_compiles_instead_of_dying_on_no_tenant_pack(pg_s
 
     org = "pk_admin_compile"
     _seed_org(pg_store, org)
+    # ERASED FIRST, through the production `/reset` list. `_persist_live` is idempotent by signal
+    # identity, so on a scratch database that outlives one pytest process the SECOND run of this
+    # file compiles and reasons exactly as the first and then reports `standing` instead of
+    # `emitted` — the assertion below goes red about a signal that is present rather than absent.
+    # A test whose verdict depends on whether anyone ran it before is not measuring the compile.
+    _erase_tenant(pg_store, org)
     _run_admin(pg_store, org)
     situations.refresh_situations(pg_store, org, eval_time=NOW)
+    # LAYER 1'S HALF. L2's admission gate (`context/situation_publisher`, migration 0122) refuses
+    # to publish a situation carrying no VERIFIED EVIDENCE SPAN, and a verified span only ever
+    # arrives on a `qualified_signals` row. `_run_admin` commits correspondence and goes straight
+    # to `refresh_situations`, so without this the one situation it seeds is HELD and the compile
+    # this test is ABOUT never runs: `shadow_compile` returns `admission_hold` and every assertion
+    # below fails on a tenant the pack lane was never asked about. The gate is untouched — the
+    # fixture now supplies what a customer supplies.
+    attach_l1_signals(pg_store, org, eval_time=NOW)
     registry = make_registry(pg_store.engine.url.render_as_string(hide_password=False))
     ensure_defaults(registry, org)
 

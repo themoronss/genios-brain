@@ -41,8 +41,16 @@ class DomainCompiler:
         plan = self.capability_resolver.resolve(situation, context)
         objects = self.object_resolver.resolve(plan)
         knowledge = self.knowledge_retriever.retrieve(plan, situation)
+        # THE COMPILER'S CLOCK IS THE SLICE'S, OR THERE ISN'T ONE. `SituationContextSlice`
+        # already carries the sweep's `evaluation_time` and deliberately keeps it out of its own
+        # semantic hash, so reading it here costs the package's content address nothing while
+        # giving the Adaptive lease reader the frozen time its TTL has to be judged against.
+        # `None` (a caller compiling with no context at all) means no lease is applied — see
+        # `PostgresRuntimeBrains.snapshot`; the compiler never reaches for a wall clock.
+        eval_time = getattr(context, "evaluation_time", None) if context is not None else None
         expert, runtime, brain_snapshot_id = self.brain_resolver.resolve(
-            situation=situation, plan=plan, objects=objects, knowledge=knowledge)
+            situation=situation, plan=plan, objects=objects, knowledge=knowledge,
+            eval_time=eval_time)
         evidence = self.evidence_aggregator.aggregate(
             situation=situation, expert=expert, runtime=runtime)
         package = self.builder.build(

@@ -102,6 +102,7 @@ from typing import Any, Protocol
 
 from genios_engine.capture.validate.money import parse_money_outcome
 from genios_engine.capture.validate.spans import SpanVerdict, verify_span
+from genios_engine.contracts.brain_address import BrainAddress, org_scope
 from genios_engine.contracts.evidence import EvidenceSpan
 from genios_engine.contracts.learning import (
     LearningEvidence,
@@ -111,7 +112,7 @@ from genios_engine.contracts.learning import (
     Visibility,
     VisibilityScope,
 )
-from genios_engine.contracts.units import Money
+from genios_engine.contracts.units import Money, Ratio, parse_ratio
 
 #: The unit name every proposal carries. `learning_objects.unit` is how the console, the
 #: projection and any later audit tell an N-3 discovery from a weekly analysis unit.
@@ -245,6 +246,10 @@ class GatedRule:
     verdict: SpanVerdict
     disposition: Disposition
     threshold: Money | None = None
+    #: The percentage threshold, when the amount was written as one. A rule has AT MOST ONE
+    #: threshold and it is either money or a ratio — never both — so these two fields are
+    #: mutually exclusive by construction in `gate_candidates` rather than by a validator here.
+    ratio: Ratio | None = None
     approver_as_written: str | None = None
     approver_node_id: str | None = None
 
@@ -358,6 +363,7 @@ def _gate_one(doc: CanonDocument, candidate: Mapping[str, Any],
         return Refusal("subject_type_not_in_quote", subject_type)
 
     threshold: Money | None = None
+    ratio: Ratio | None = None
     as_written = candidate.get("threshold_as_written")
     if as_written not in (None, ""):
         as_written = str(as_written)
@@ -368,9 +374,26 @@ def _gate_one(doc: CanonDocument, candidate: Mapping[str, Any],
             return Refusal("threshold_not_in_quote", as_written[:60])
         parsed = parse_money_outcome(as_written, locale=doc.locale)
         if parsed.money is None:
-            return Refusal("threshold_unparseable",
-                           f"{as_written[:40]}: {parsed.failure.value if parsed.failure else '?'}")
-        threshold = parsed.money
+            # NOT MONEY — TRY THE OTHER DIMENSION BEFORE REFUSING THE WHOLE RULE.
+            #
+            # *"A discount greater than 15% requires approval from the founder"* used to die here.
+            # `threshold_as_written` was validated by ALG-10 alone, a money cascade, which answers
+            # UNPARSEABLE_TOKEN for `15%` — and the refusal took the rule with it, not just the
+            # number. The condition, the consequence and the named authority were all present and
+            # all discarded, and discount authority is the most common approval rule a sales-led
+            # startup writes down.
+            #
+            # `parse_ratio` is deterministic and total (`contracts/units`), so this is a second
+            # exact reading of the same characters, not a second guess at them. The
+            # invented-threshold catch above still runs FIRST and is unchanged: a percentage that
+            # is not literally in the cited sentence is still refused as `threshold_not_in_quote`.
+            ratio = parse_ratio(as_written)
+            if ratio is None:
+                return Refusal(
+                    "threshold_unparseable",
+                    f"{as_written[:40]}: {parsed.failure.value if parsed.failure else '?'}")
+        else:
+            threshold = parsed.money
 
     approver_as_written = candidate.get("approver_as_written")
     approver_as_written = (str(approver_as_written).strip()
@@ -391,7 +414,7 @@ def _gate_one(doc: CanonDocument, candidate: Mapping[str, Any],
                    if category in AUTHORITY_BEARING_CATEGORIES and approver_node_id is None
                    else Disposition.ADMITTED)
     return GatedRule(category=category, subject_type=subject_type, statement=statement, span=span,
-                     verdict=verdict, disposition=disposition, threshold=threshold,
+                     verdict=verdict, disposition=disposition, threshold=threshold, ratio=ratio,
                      approver_as_written=approver_as_written, approver_node_id=approver_node_id)
 
 
@@ -449,7 +472,14 @@ def proposed_value(doc: CanonDocument, rule: GatedRule) -> dict[str, Any]:
         "statement_hash": hashlib.sha256(rule.statement.encode()).hexdigest(),
         "threshold_minor_units": None if rule.threshold is None else rule.threshold.minor_units,
         "currency": None if rule.threshold is None else rule.threshold.currency,
-        "threshold_as_written": None if rule.threshold is None else rule.threshold.as_written,
+        "threshold_as_written": (
+            rule.threshold.as_written if rule.threshold is not None
+            else (rule.ratio.as_written if rule.ratio is not None else None)),
+        # THE RATIO ARM. Kept in its own field rather than folded into `threshold_minor_units`:
+        # 1500 basis points and 1500 minor units are the same integer and mean nothing alike, and
+        # a reader that had to consult `currency` to find out which it was holding would get it
+        # wrong once. `None` on a money rule and on a rule with no threshold at all.
+        "threshold_basis_points": None if rule.ratio is None else rule.ratio.basis_points,
         "approver_as_written": rule.approver_as_written,
         "approver_node_id": rule.approver_node_id,
         "authority_pending": rule.authority_pending,
@@ -459,6 +489,28 @@ def proposed_value(doc: CanonDocument, rule: GatedRule) -> dict[str, Any]:
         "document": {"event_id": doc.event_id, "kind": doc.kind, "title": doc.title,
                      "version_key": doc.version_key,
                      "stated_at": doc.occurred_at.isoformat()},
+        # THE ADDRESS — what this rule is ABOUT, in the one vocabulary a situation also speaks.
+        #
+        # Tenant-wide, and that is a judgement worth stating rather than defaulting into. An
+        # Organization rule is extracted from the tenant's OWN approved policy document, gated on
+        # that document's bytes and confirmed by a human; it is a declaration by the company about
+        # the company. Its subject key — `orgrule:<category>:<subject_type>` — names its own
+        # taxonomy and nothing any situation knows about itself, which is exactly why it selected
+        # into zero packages before this existed. The narrower address does not exist to be
+        # written: a policy does not say which capability will need it.
+        #
+        # `orgwide` is minted only by `brain_address.org_scope`, and only Organization knowledge
+        # may carry it — `BrainAddress` refuses it for Behaviour and Adaptive, because a
+        # measurement or a preference that bound everywhere would be a rule nobody approved.
+        "address": BrainAddress(
+            org_id=doc.org_id, brain="organization",
+            tokens=org_scope(doc.org_id),
+            authority={"source": DISCOVERY_SOURCE, "category": rule.category,
+                       "subject_type": rule.subject_type,
+                       "document_event_id": doc.event_id,
+                       "document_version_key": doc.version_key,
+                       "approver_node_id": rule.approver_node_id,
+                       "authority_pending": rule.authority_pending}).as_value(),
     }
 
 

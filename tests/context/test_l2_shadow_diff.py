@@ -433,6 +433,37 @@ def test_a_situation_the_pattern_path_did_not_produce_is_named_not_counted(dark)
 
 
 @pytest.mark.pg
+def test_a_situation_no_correlation_produced_is_named_but_never_scored(pilot):
+    """The period readings are in `context_situations` and in NEITHER path — they must be printed.
+
+    `periodic.py` mints a tenant node, writes the window aggregates onto it and inserts a
+    situation per domain DIRECTLY, with a synthetic correlation id and no `context_correlations`
+    row. `refresh_situations` — the path row 1 scores — never produced them, and
+    `patterns/store.evaluate_org` can never reach them either: it walks
+    `registry.anchor_types()`, and no pattern anchors on a tenant node. Counting them as
+    anchor-path output made row 1 arithmetically unreachable for every tenant that has been swept
+    even once, which is the same class of defect as a bottom decile that cannot exist below n=11.
+
+    They are still a loss if anchor-based detection is deleted, so they are NAMED in the report
+    rather than dropped: this asserts both halves, the exclusion and the receipt.
+
+    This was invisible until the drain bound one clock: the direct writers ran on the WALL clock
+    while the rest of the sweep ran at `sweep_at`, so their `computed_at` fell outside every
+    historical window and out of the read by accident.
+    """
+    assert pilot.direct_writer_situations, "the swept tenant has period readings to set aside"
+    assert {t for _s, _a, t in pilot.direct_writer_situations} == {
+        "admin_period_review", "pipeline_period_review", "support_period_review"}
+    # One tenant node carries all three; none of them is an anchor-path subject.
+    assert len({a for _s, a, _t in pilot.direct_writer_situations}) == 1
+    assert not ({a for _s, a, _t in pilot.direct_writer_situations}
+                & {a for _s, a, _t in pilot.anchor_situations})
+    assert "written by NEITHER path" in SD.render(pilot)
+    assert SD.render(pilot).count("_period_review") >= 3
+    assert pilot.as_dict()["direct_writer_situation_count"] == len(pilot.direct_writer_situations)
+
+
+@pytest.mark.pg
 def test_an_empty_anchor_path_reports_zero_not_a_hundred_percent(ro):
     """A window with no anchor situations has not been COMPARED. Reporting 100% on an empty
     denominator is how "neither path ran here" reads as "the two agree completely"."""

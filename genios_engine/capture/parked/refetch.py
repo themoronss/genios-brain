@@ -244,7 +244,8 @@ class RefetchQueue(Protocol):
                      limit: int = 100) -> tuple[DeadLetter, ...]: ...
 
     def requeue_dead_letters(self, *, eval_time: datetime, org_id: str | None = None,
-                             reason_codes: frozenset[str] | None = None) -> int: ...
+                             reason_codes: frozenset[str] | None = None,
+                             not_attempted_since: datetime | None = None) -> int: ...
 
 
 # ── the orchestrator (the public callable of L1.3.8-U1) ──────────────────────────────────────
@@ -557,7 +558,8 @@ class InMemoryRefetchQueue:
         return tuple(out[:limit])
 
     def requeue_dead_letters(self, *, eval_time: datetime, org_id: str | None = None,
-                             reason_codes: frozenset[str] | None = None) -> int:
+                             reason_codes: frozenset[str] | None = None,
+                             not_attempted_since: datetime | None = None) -> int:
         reasons = reason_codes if reason_codes is not None else NEEDS_REFETCH
         n = 0
         for event_id, candidate in list(self.candidates.items()):
@@ -567,6 +569,10 @@ class InMemoryRefetchQueue:
                 continue
             if candidate.reason_code not in reasons:
                 continue
+            if not_attempted_since is not None:
+                last = self.last_attempt_at.get(event_id)
+                if last is not None and last >= not_attempted_since:
+                    continue
             self.candidates[event_id] = replace(candidate, status=ParkStatus.PENDING.value,
                                                 attempts=0, next_attempt_at=None)
             # The kind goes with the ladder it described. A requeued row that kept its old
@@ -875,19 +881,33 @@ class PostgresRefetchQueue:
                      for r in rows)
 
     def requeue_dead_letters(self, *, eval_time: datetime, org_id: str | None = None,
-                             reason_codes: frozenset[str] | None = None) -> int:
+                             reason_codes: frozenset[str] | None = None,
+                             not_attempted_since: datetime | None = None) -> int:
         """Put dead letters back on the ladder — the action that makes a CAPABILITY dead letter
         honest. `ocr_unavailable` is not "we lost it", it is "we could not read it yet", and the
-        day an OCR engine is wired somebody has to be able to say so to 369 documents at once."""
+        day an OCR engine is wired somebody has to be able to say so to 369 documents at once.
+
+        `not_attempted_since` is what lets the HEARTBEAT do the saying instead of an operator.
+        Without it an automatic requeue is a loop: the rows come back, the ladder spends five
+        attempts re-learning the same gap, they dead-letter again, and the next tick requeues
+        them again. Bounded to rows nobody has touched since that instant, the pass can run every
+        beat and still cost at most one ladder per row per window — which is the same slow clock
+        `refetch_policy` already defers a capability failure on, applied one level up.
+        """
         reasons = sorted(reason_codes if reason_codes is not None else NEEDS_REFETCH)
         where_org = "and org_id = :org" if org_id else ""
+        where_age = ("and (refetch_last_attempt_at is null or refetch_last_attempt_at < :since)"
+                     if not_attempted_since is not None else "")
         params: dict[str, Any] = {"reasons": reasons, "now": eval_time}
         if org_id:
             params["org"] = org_id
+        if not_attempted_since is not None:
+            params["since"] = not_attempted_since
         with self._engine.begin() as c:
             return c.execute(text(
                 "update parked_events set status='pending', refetch_attempts=0, "
                 "refetch_next_attempt_at=null, refetch_last_error=null, "
                 "refetch_failure_kind=null "
-                f"where status='dead_letter' and reason_code = any(:reasons) {where_org}"),
+                f"where status='dead_letter' and reason_code = any(:reasons) {where_org} "
+                f"{where_age}"),
                 params).rowcount

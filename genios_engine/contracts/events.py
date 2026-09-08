@@ -53,6 +53,16 @@ AGENT_ACTIONS = {
 # The $15/agent read-and-claim surface is authorized by these; the L1 event-write grant is distinct.
 AGENT_API_SCOPES = {"signals.read", "artifacts.read", "signals.claim", "signals.result"}
 
+# L4 Z6 evaluation grants (doc 06 OUT-1) — a THIRD family, and separate from both of the others on
+# purpose. `AGENT_API_SCOPES` authorises the read-and-claim surface an executor works through and
+# `HUMAN_API_SCOPES` authorises a person's client; this one buys neither. It lets somebody else's
+# agent ask GeniOS to SCORE an action it is about to take, and grants no read of the card queue, no
+# claim, and no write of any kind — the critique seam emits nothing and its verdict is advisory by
+# construction. Folding it into either family would WIDEN a grant tenants have already issued:
+# every key carrying `signals.read` would silently gain the ability to submit proposals, which is
+# the opposite of what a scope is for.
+INTELLIGENCE_API_SCOPES = {"intelligence.critique"}
+
 # Human interaction grants are separate from both executor outcomes and agent polling. A key that
 # can merely read signals must never be able to train org-wide calibration or request execution.
 HUMAN_API_SCOPES = {

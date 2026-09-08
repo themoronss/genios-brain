@@ -8,8 +8,9 @@ from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
-from genios_engine.contracts.reasoning import ContextSnapshot, EvidenceRef
-from genios_engine.platform.canonical import canonical_dumps, semantic_hash, stable_id
+from genios_engine.contracts.reasoning import ContextSnapshot
+from genios_engine.platform.canonical import canonical_dumps
+from genios_engine.reason.evidence import build_evidence_ref
 from genios_engine.reason.engine import NodeContext
 from genios_engine.reason.rules import Rule
 
@@ -122,24 +123,20 @@ def legacy_context_snapshot(*, org_id: str, context: NodeContext, rule: Rule,
             continue
         value = semantic_legacy_value(record.get("value"))
         occurred_at = _occurred_at(record)
-        seed = {
-            "org_id": org_id,
-            "node_id": context.node_id,
-            "field": field,
-            "value_hash": semantic_hash(value),
-            "occurred_at": occurred_at,
-            "source_ref_id": record.get("source_ref_id"),
-            "fact_version_id": record.get("fact_version_id"),
-        }
-        evidence.append(EvidenceRef(
-            evidence_id=stable_id("evidence", seed),
+        # DLG-11 · one builder, one seed. The old seed here carried `value_hash` and
+        # `fact_version_id`; both are gone from the IDENTITY (a hash that moves when the value
+        # moves is a version, not an identity, and it made "have we already said this?"
+        # unanswerable) and `fact_version_id` is still carried on the ref as lineage.
+        evidence.append(build_evidence_ref(
+            org_id=org_id,
+            entity_ref=context.node_id,
             field=field,
             value=value,
-            source_ref_id=(str(record["source_ref_id"])
-                           if record.get("source_ref_id") else None),
+            source_ref=(str(record["source_ref_id"])
+                        if record.get("source_ref_id") else None),
+            observed_at=occurred_at,
             fact_version_id=(str(record["fact_version_id"])
                              if record.get("fact_version_id") else None),
-            occurred_at=occurred_at,
             confidence_bp=_confidence_bp(record),
             authority_rank=_authority_rank(record),
             independence_group=(str(record["independence_group"])

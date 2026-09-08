@@ -84,7 +84,7 @@ from genios_engine.contracts.visibility import SCOPES, Visibility
 from genios_engine.platform.canonical import semantic_hash
 
 from .errors import SituationContextConflict
-from .models import SourceDocument
+from .models import SourceDocument, entity_fields
 
 
 class PredicateState(str, Enum):
@@ -657,12 +657,13 @@ class ContextAdapter:
     def bind_objects(self, objects: Sequence[SourceDocument]) -> dict[str, tuple[str, ...]]:
         entities: list[tuple[str, set[str]]] = []
         for index, entity in enumerate(self.situation.entities):
-            entity_id = str(entity.get("id") or entity.get("entity_id") or f"entity:{index}")
+            fields = entity_fields(entity)
+            entity_id = str(fields.get("id") or fields.get("entity_id") or f"entity:{index}")
             names = {
-                _normal(entity.get("type")),
-                _normal(entity.get("object_type")),
-                _normal(entity.get("kind")),
-                _normal(entity.get("name")),
+                _normal(fields.get("type")),
+                _normal(fields.get("object_type")),
+                _normal(fields.get("kind")),
+                _normal(fields.get("name")),
             }
             entities.append((entity_id, {value for value in names if value}))
 

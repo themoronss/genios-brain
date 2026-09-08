@@ -20,6 +20,7 @@ from genios_engine.api.identity_routes import router as identity_router
 from genios_engine.api.intelligence_routes import router as intelligence_router
 from genios_engine.api.brain_routes import router as brain_router
 from genios_engine.api.knowledge_routes import router as knowledge_router
+from genios_engine.api.l4_seam_routes import router as l4_seam_router
 from genios_engine.api.learning_routes import router as learning_router
 from genios_engine.api.policy_routes import router as policy_router
 from genios_engine.api.routes import router
@@ -155,6 +156,7 @@ app.include_router(cohort_router)    # L2.4.4 cohorts + M-9 authoring (on demand
 app.include_router(quality_router)   # L2.5.5 typed absence + L-5 coverage epochs, read-only
 app.include_router(correlation_router)  # L2.4.7 declared metric pairs, read on demand
 app.include_router(pattern_router)    # L2.6 pattern registry — shadow evaluation + activation guard
+app.include_router(l4_seam_router)     # L4 Z6 seams OUT: the critique endpoint + the book-level brief
 
 
 @app.get("/")

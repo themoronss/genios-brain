@@ -67,6 +67,14 @@ def capability_from_manifest(value: Mapping[str, Any]) -> CapabilityManifest:
         reasoners=tuple(ReasonerSpec(**item) for item in data["reasoners"]),
         plays=tuple(PlayDefinition(**item) for item in data["plays"]),
         required_fields=tuple(data.get("required_fields") or ()),
+        # RESTORED, not merely available. `CapabilityManifest.to_semantic_dict` carries
+        # `selection_fields` and `capability_snapshot_id` is the address of that dict, so a reader
+        # that dropped the field rebuilt a capability that could not address to the row it was
+        # read from: every compiled manifest round-tripped here came back with a DIFFERENT
+        # `capability_snapshot_id` (measured: 9 selection fields -> 0, ids unequal). Replay is the
+        # audit's proof that a stored decision is the decision that was made; a replay conducted
+        # under a capability that is not the stored one proves something else.
+        selection_fields=tuple(data.get("selection_fields") or ()),
         intelligence_objects=tuple(IntelligenceObject(**item)
                                    for item in data.get("intelligence_objects") or ()),
         ranking_weights=data.get("ranking_weights") or {},
@@ -164,8 +172,16 @@ def replay_persisted(*, store: ReasoningStore, org_id: str, run_id: str,
     expected_decision = str(core.get("contract_decision_hash") or "")
     expected_reasoners = tuple(tuple(item) for item in core.get("reasoner_result_hashes") or ())
     expected_candidates = tuple(core.get("candidate_hashes") or ())
+    # The SAME function the writer used (`audit.audited_results`), not a second reconstruction of
+    # it: the stored list is every DECLARED unit — the ones that ran, then the ones the Unit
+    # Selector dropped, each carrying its receipt — and rebuilding only `ordered_results` here
+    # compared 20 rows against 15 and called an honest run forged. Imported inside the function
+    # because `audit` imports this module's neighbours and a module-level import would make the
+    # two files import each other.
+    from .audit import audited_results
+
     actual_reasoners = tuple((item.reasoner_id, item.semantic_hash)
-                             for item in replayed.ordered_results)
+                             for item, _input_hash in audited_results(replayed))
     actual_candidates = tuple(item.semantic_hash for item in replayed.candidates)
     decision_matches = expected_decision == replayed.decision.semantic_hash
     reasoners_match = expected_reasoners == actual_reasoners

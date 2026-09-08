@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from genios_engine.contracts.domain_expertise import BusinessSituationObject
 from genios_engine.platform.canonical import stable_id
 
@@ -18,7 +20,8 @@ class BrainResolver:
         self.runtime_brains = runtime_brains
 
     def resolve(self, *, situation: BusinessSituationObject, plan: RoutePlan,
-                objects: ResolvedObjects, knowledge: RetrievedKnowledge) \
+                objects: ResolvedObjects, knowledge: RetrievedKnowledge,
+                eval_time: datetime | None = None) \
             -> tuple[ExpertSlice, RuntimeBrainSnapshot, str]:
         situation_sources = tuple(
             self.catalog.domain(domain_id).situations[situation_id]
@@ -67,6 +70,10 @@ class BrainResolver:
             situation=situation,
             plan=plan,
             object_ids=tuple(item.id for item in objects.documents),
+            # The sweep's frozen clock, threaded rather than re-read. An Adaptive lease has a TTL
+            # and a package must be reproducible; those two facts together mean the expiry has to
+            # be judged against the time the decision was taken, not the time anyone replays it.
+            eval_time=eval_time,
         )
         combined = stable_id("brains", {
             "expert": expert.snapshot_id,

@@ -159,15 +159,19 @@ def refresh_period_situations(store, org_id: str, *, now: datetime | None = None
             c.execute(text(
                 "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, "
                 "field, value, value_type, status, authority_rank, confidence, occurred_at, "
-                "valid_from, visibility_scope) values "
+                "valid_from, visibility_scope, derivation_type, trace_id, schema_version, "
+                "source_authority, provenance_refs) values "
                 "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), 'number', 'active', 100, 0.95, "
-                ":now, :now, 'org') "
+                ":now, :now, 'org', 'deterministic_derived', :trace, 'graph-fact.v2', 'R100', "
+                "cast(:provenance as jsonb)) "
                 # Same reasoning as `derived.py`: a recompute overwrites its own version id rather
                 # than appending a row per sweep, or the table grows by seven rows an org forever.
                 "on conflict (fact_version_id) do update set value = excluded.value, "
                 "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from"),
                 {"vid": f"fv_period_{org_id}_{field}", "fid": f"f_period_{org_id}_{field}",
-                 "o": org_id, "n": node_id, "f": field, "v": repr(round(value, 4)), "now": now})
+                 "o": org_id, "n": node_id, "f": field, "v": repr(round(value, 4)), "now": now,
+                 "trace": f"l2:period:{key}",
+                 "provenance": json.dumps([f"org:{org_id}", f"window:{WINDOW_DAYS}d"])})
             written += 1
 
         for domain in period_domains():

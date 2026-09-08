@@ -17,7 +17,7 @@ from genios_engine.capture.landing.repository import InMemorySourceEventReposito
 from genios_engine.capture.pipeline import capture_event
 from genios_engine.contracts.connection import Connection
 from genios_engine.contracts.events import (AGENT_ACTIONS, AGENT_API_SCOPES, HUMAN_API_SCOPES,
-                                            AgentEvent, HumanEvent)
+                                            INTELLIGENCE_API_SCOPES, AgentEvent, HumanEvent)
 from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org,
                                           require_internal, require_owner, require_scope)
 from genios_engine.platform.config import get_settings
@@ -1419,17 +1419,76 @@ def _attachment_connector_for(candidate):
     return connector if hasattr(connector, "fetch_attachment") else None
 
 
+#: Park codes whose fix is a TOOLCHAIN and not a retry — the ones an OCR engine settles. `DOC-05`
+#: is deliberately absent: a download that failed five times is a fetch problem, and requeueing it
+#: because an unrelated capability arrived is a guess about a different failure.
+_OCR_FIXABLE_CODES = frozenset({"DOC-02", "DOC-04", "DOC-06"})
+
+#: How stale a capability dead letter must be before the heartbeat puts it back. Long enough that
+#: a row cannot walk the five-attempt ladder more than once a week, short enough that the backlog
+#: clears within days of an engine landing.
+_CAPABILITY_REQUEUE_WINDOW_DAYS = 7
+
+
 def _drain_attachment_refetch(now) -> dict:
+    """One refetch cycle per OCR-capable scope, plus the requeue that makes an engine retroactive.
+
+    TWO DEFECTS THIS CLOSES, and both had the same shape: the machinery existed and the day it
+    would matter, nothing reached it.
+
+    **1 · The drain ran with no OCR engine at all.** `refetch_parked_attachments` takes an `ocr`
+    argument and this caller never passed one, so every scanned attachment the ladder re-fetched
+    was re-judged by a toolchain that cannot read it — `refetch_policy`'s own docstring says as
+    much ("the heartbeat drains with ``ocr=None``"). Wiring `tesseract` into the image would have
+    changed nothing here: the backlog would keep re-learning the same gap until every row
+    dead-lettered. The allowlisted orgs are drained FIRST, each with its own engine, because the
+    fleet pass claims across every tenant and a row it takes with `ocr=None` has spent an attempt.
+
+    **2 · A capability dead letter was a manual recovery.** `requeue_dead_letters` had exactly one
+    caller — an HTTP route somebody had to remember to hit — so the fifty rows that had already
+    walked the ladder before an engine existed would have stayed dead for ever, and "turn OCR on"
+    would silently mean "turn OCR on and also go and requeue". It runs here now, bounded to rows
+    nothing has attempted in a week so the pass cannot become a loop, and only when an engine
+    actually exists.
+    """
     queue = _attachment_refetch_queue()
     if queue is None:
         return {"skipped": "no database"}
+    from datetime import timedelta as _dt_timedelta
+
+    from genios_engine.capture.documents.enablement import parse_org_allowlist
     from genios_engine.capture.parked.refetch import refetch_parked_attachments
-    report = refetch_parked_attachments(queue, connector_for=_attachment_connector_for,
-                                        eval_time=now)
-    return {"claimed": report.claimed, "recovered": report.recovered,
-            "dead_lettered": report.dead_lettered, "retry_scheduled": report.retry_scheduled,
-            "text_chars_recovered": report.text_chars_recovered,
-            "failures_by_kind": dict(report.failures_by_kind)}
+    from genios_engine.platform.wiring import make_ocr
+
+    settings = get_settings()
+    scopes: list[tuple[str | None, Any]] = []
+    for org in sorted(parse_org_allowlist(getattr(settings, "ocr_enabled_orgs", ""))):
+        engine = make_ocr(org)
+        if engine is not None:
+            scopes.append((org, engine))
+    scopes.append((None, make_ocr(None)))          # the fleet pass, last, with whatever it has
+
+    requeued = 0
+    if any(engine is not None for _org, engine in scopes):
+        requeued = queue.requeue_dead_letters(
+            eval_time=now, reason_codes=_OCR_FIXABLE_CODES,
+            not_attempted_since=now - _dt_timedelta(days=_CAPABILITY_REQUEUE_WINDOW_DAYS))
+        if requeued:
+            _log.info("requeued %d capability dead letter(s) — an OCR engine is available now",
+                      requeued)
+
+    totals = {"claimed": 0, "recovered": 0, "dead_lettered": 0, "retry_scheduled": 0,
+              "text_chars_recovered": 0}
+    failures: dict[str, int] = {}
+    for org, engine in scopes:
+        report = refetch_parked_attachments(queue, connector_for=_attachment_connector_for,
+                                            eval_time=now, org_id=org, ocr=engine)
+        for key in totals:
+            totals[key] += getattr(report, key)
+        for kind, count in (report.failures_by_kind or ()):
+            failures[kind] = failures.get(kind, 0) + count
+    return {**totals, "failures_by_kind": failures, "requeued": requeued,
+            "ocr_scopes": [org or "fleet" for org, engine in scopes if engine is not None]}
 
 
 def _drain_recapture(now) -> dict:
@@ -3209,7 +3268,10 @@ def register_agent(body: RegisterAgent, ctx: AuthCtx = Depends(require_owner)) -
     # Only an authenticated tenant (owner session) may mint an agent for ITS OWN org. A grant may
     # be an L1 outcome action OR an L5 Agent-API scope (§5.16) — a key can carry either.
     org_id = ctx.org_id
-    allowed = AGENT_ACTIONS | AGENT_API_SCOPES | HUMAN_API_SCOPES
+    # L4 Z6's evaluation family travels here too: a tenant that wants its agent to consult
+    # the critique seam mints the key through this route, and a grant this set does not name
+    # is refused rather than written as a scope nothing will ever read.
+    allowed = AGENT_ACTIONS | AGENT_API_SCOPES | HUMAN_API_SCOPES | INTELLIGENCE_API_SCOPES
     bad = [a for a in body.allowed_actions if a not in allowed]
     if bad:
         raise HTTPException(422, f"unknown actions/scopes: {bad}")

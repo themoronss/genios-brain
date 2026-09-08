@@ -314,7 +314,16 @@ _ORG_SCOPED_TABLES = [
     # Layer 4 deletion order is load-bearing: signals reference runs; runs reference context +
     # config; context references capability. Payloads are explicit as defense in depth even though
     # the context FK also cascades them.
-    "reasoning_runs", "reasoning_context_payloads", "reasoning_context_snapshots",
+    # Layer 4.5's narratives and consult ledger (migration 0120). The narrative is prose ABOUT a
+    # tenant's own counterparties, quoting their own material, so a deletion that skipped it would
+    # leave a deleted account's sentences behind; the ledger says what we spent narrating them.
+    # Both org FKs cascade on account deletion; these entries are what make /reset erase them too,
+    # and the loop below runs with no try/except by design, so a name missing here leaks silently.
+    # BEFORE reasoning_runs: the bundle points at a run, and the deletion order in this list is
+    # load-bearing.
+    "l4_reasoning_bundles", "l4_r_site_calls",
+    "reasoning_runs", "reasoning_evidence_digests", "reasoning_evidence_id_map",
+    "reasoning_context_payloads", "reasoning_context_snapshots",
     "reasoning_capability_snapshots", "config_snapshots",
     "signal_suppression_log", "decisions", "approvals_queue",
     "rule_mutes", "calibration_nudges", "calibration_runs", "macv_ledger",
@@ -337,6 +346,12 @@ _ORG_SCOPED_TABLES = [
     # it too — and the loop below runs with no try/except by design, so a name missing here leaks
     # silently.
     "l2_convergence",
+    # L4 Z6's daily book-level brief (migration 0119). One row per tenant per day holding the
+    # ranking of that tenant's own open decisions, the components that produced it, and the
+    # headline of every card it ranked. Every byte of it is a statement about this tenant's
+    # situations, so it has no business outliving the account; the org FK cascades on account
+    # deletion and this entry is what makes /reset erase it too.
+    "l4_brief_rankings",
     # L2.4.4's cohorts (migration 0096). `cohort_membership` says which of the tenant's accounts,
     # deals and people sit in which peer group — a statement ABOUT their counterparties (who is in
     # the bottom ARR quartile, who dropped out of the healthy-engagement cohort), keyed on their
@@ -354,7 +369,7 @@ _ORG_SCOPED_TABLES = [
     # names, so a ladder never outlives the population it describes. The org FK cascades on
     # account deletion; this entry is what makes /reset erase it too — and the loop below
     # runs with no try/except by design, so a name missing here leaks silently.
-    "peer_baselines",
+    "peer_baselines", "contract_spend_attributions", "l2_model_runs",
     # L2.7.7's resolution claims (migration 0101). One row per (situation, message) M-4 judged —
     # the verbatim sentence somebody wrote, who wrote it, and what we concluded. It quotes the
     # tenant's own mail, so a deletion that skipped it would leave sentences from a deleted
@@ -433,7 +448,11 @@ _ORG_SCOPED_TABLES = [
     # BEFORE the activation row so a fire never outlives the switch that licensed it. All three org
     # FKs cascade on account deletion; these entries are what make /reset erase them too — and the
     # loop below runs with no try/except by design, so a name missing here leaks silently.
-    "pattern_fires", "pattern_runs", "pattern_activation",
+    "pattern_fires", "pattern_runs", "edge_coverage_declarations", "pattern_activation",
+    # L2.5.8's boundary ledger contains the candidate BSO (including evidence quotes) and the
+    # reason it was admitted, held or rejected.  It is tenant content even when the candidate
+    # never crossed the boundary, so reset must erase it as deliberately as a published signal.
+    "situation_admission_decisions",
     # X8/H8's Layer 2 pilot switch (migration 0106). Same argument as the row above it, and the
     # same behavioural direction: it names a person (`enabled_by`) and carries free text about the
     # tenant (`notes`), and removing it returns the tenant to the state every org that never
@@ -450,6 +469,15 @@ _ORG_SCOPED_TABLES = [
     # this entry is what makes /reset erase it too — and the loop below runs with no try/except by
     # design, so a name missing here leaks silently.
     "l3_activation",
+    # Z0/G-07's Layer 4 pilot switch (migration 0116). Same argument as the three rows above it
+    # and the same behavioural direction: it names a person (`enabled_by`, `disabled_by`) and
+    # carries free text about the tenant (`notes`), and removing it returns them to the state
+    # every org that never joined the pilot is in — the six hardcoded units, the override
+    # deciding, no narrative — which is where every tenant sits today. One row per activated
+    # (org, feature), so a tenant on the roster pilot leaves no `bundle` row behind either. The
+    # org FK cascades on account deletion; this entry is what makes /reset erase it too — and the
+    # loop below runs with no try/except by design, so a name missing here leaks silently.
+    "l4_activation",
     # N-3's discovery receipt (migration 0113). One row per canon document VERSION this tenant
     # has had read for org rules: which of their own policies and SOPs were opened, what was
     # proposed and what was refused. That is a record about the tenant's own documents, so it

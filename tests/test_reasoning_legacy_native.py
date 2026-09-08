@@ -306,8 +306,15 @@ def test_native_deal_cooling_produces_three_constrained_ranked_plays_in_shadow()
                for candidate in first.candidates for check in candidate.checks)
     assert all(type(candidate.utility_bp) is int for candidate in first.candidates)
     confidence = first.result_by_id["core.confidence"]
-    assert confidence.metrics["independent_evidence_groups"] == 1
-    assert confidence.metrics["evidence_coverage_bp"] == 2_500
+    # ZERO, and it used to read 1. This fixture's evidence names no independence group, so the one
+    # it was counting was the UNSTATED pool — `decision_maker._stated_groups` has always excluded
+    # that pool from Rule 11 ("may lower a confidence and can never raise one") while
+    # `core.confidence` was counting it as an origin. That split is what let R-1's interpretation
+    # ref buy 2,500 bp of coverage; see
+    # tests/reason/test_r1_interpretation.py::test_the_reading_cannot_move_the_number_the_floor_is_applied_to.
+    # An unstated origin now buys nothing on either side of the seam.
+    assert confidence.metrics["independent_evidence_groups"] == 0
+    assert confidence.metrics["evidence_coverage_bp"] == 0
 
 
 def test_native_constraint_eliminates_an_ineligible_play_before_ranking():

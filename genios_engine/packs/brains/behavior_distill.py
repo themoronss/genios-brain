@@ -62,6 +62,8 @@ from typing import Any
 from sqlalchemy import text
 
 from genios_engine.contracts.analytic import DIRECTIONAL, TrendDirection
+from genios_engine.contracts.brain_address import BrainAddress
+from genios_engine.contracts.brain_address import token as address_token
 from genios_engine.contracts.learning import (
     LearningEvidence,
     LearningObject,
@@ -580,9 +582,27 @@ def _evidence(pattern: BehaviorPattern, reading: TrendReading) -> LearningEviden
 
 
 def _value(pattern: BehaviorPattern, reading: TrendReading, statement: str, labeler_id: str,
-           *, active: bool) -> dict[str, Any]:
+           *, active: bool, org_id: str) -> dict[str, Any]:
     """The published brain value. Descriptive only, clock-free, and it names its own cohort."""
     return {
+        # THE ADDRESS — the node this behaviour was measured ON, and the metric it measured.
+        #
+        # `subject_node_id` was already here, and that is the whole frustration: this brain has
+        # always known which entity it was about and the compiler could never find out. The subject
+        # key `behavior:<metric>:<node_id>` was matched by splitting it on `:` and intersecting the
+        # segments with the situation's entity ids — which are EMAIL ADDRESSES — so a node id and
+        # an email never met and `behavior_patterns` compiled empty on every tenant.
+        #
+        # Emitted as an address rather than by re-keying the subject: the subject is this entry's
+        # identity and re-keying it would orphan every version already published under the old one.
+        # Deliberately NOT org-wide — `BrainAddress` refuses that for an observational brain.
+        "address": BrainAddress(
+            org_id=org_id, brain="behavior",
+            tokens=(address_token("node", reading.subject_node_id),
+                    address_token("metric", pattern.metric)),
+            authority={"source": "l2_trend_distillation", "labeler_id": labeler_id,
+                       "window_days": pattern.window_days,
+                       "observations": pattern.observations}).as_value(),
         "kind": "behavior_pattern",
         "active": active,
         "pattern_statement": statement,
@@ -608,7 +628,8 @@ def _proposal(pattern: BehaviorPattern, reading: TrendReading, *, org_id: str,
     return LearningObject(
         org_id=org_id, unit=BEHAVIOR_UNIT, target=LearningTarget.BEHAVIOR,
         subject=behavior_subject(pattern.metric, reading.subject_node_id),
-        proposed_value=_value(pattern, reading, statement, labeler_id, active=active),
+        proposed_value=_value(pattern, reading, statement, labeler_id, active=active,
+                              org_id=org_id),
         evidence=_evidence(pattern, reading),
         visibility=Visibility(scope=VisibilityScope.ORGANIZATION),
         # Not identity-bearing (see `LearningObject.identity`), and taken from the SERIES rather

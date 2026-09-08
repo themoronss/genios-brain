@@ -213,17 +213,23 @@ _OPEN_ROW_SQL = text(
 _UPSERT_SQL = text(
     f"insert into {FACT_TABLE} (fact_version_id, fact_id, org_id, subject_node_id, field, "
     "value, value_type, status, authority_rank, confidence, occurred_at, valid_from, valid_to, "
-    "visibility_scope) values "
+    "visibility_scope, derivation_type, trace_id, schema_version, source_authority, "
+    "provenance_refs) values "
     "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), :vt, 'active', :rank, :conf, :occ, :now, null, "
-    ":scope) "
+    ":scope, 'deterministic_derived', :trace, 'graph-fact.v2', 'R100', "
+    "cast(:provenance as jsonb)) "
     "on conflict (fact_version_id) do update set value = excluded.value, "
     "occurred_at = excluded.occurred_at, value_type = excluded.value_type, "
-    "visibility_scope = excluded.visibility_scope, valid_to = null, status = 'active' "
+    "visibility_scope = excluded.visibility_scope, derivation_type=excluded.derivation_type, "
+    "trace_id=excluded.trace_id, schema_version=excluded.schema_version, "
+    "source_authority=excluded.source_authority, provenance_refs=excluded.provenance_refs, "
+    "valid_to = null, status = 'active' "
     "returning valid_from")
 
 _REVISE_SQL = text(
     f"update {FACT_TABLE} set value = cast(:v as jsonb), occurred_at = :occ, "
-    "value_type = :vt, visibility_scope = :scope, confidence = :conf "
+    "value_type = :vt, visibility_scope = :scope, confidence = :conf, trace_id=:trace, "
+    "provenance_refs=cast(:provenance as jsonb) "
     "where fact_version_id = :vid and org_id = :o returning valid_from")
 
 _CLOSE_SQL = text(
@@ -275,7 +281,10 @@ def publish_derived_fact(target, *, org_id: str, subject_node_id: str, field: st
     params = {"vid": version_id, "fid": fact_id or f"{prefix}{node}:{name}", "o": org_id,
               "n": node, "f": name, "v": body, "vt": require_text(value_type, "value_type"),
               "rank": int(authority_rank), "conf": _confidence(confidence_bp), "occ": occurred,
-              "now": at, "scope": scope}
+              "now": at, "scope": scope,
+              "trace": f"l2:{prefix.rstrip(':_')}:{at.isoformat()}",
+              "provenance": json.dumps([
+                  f"derived:{prefix.rstrip(':_')}", f"subject:{node}", f"field:{name}"]),}
 
     if hasattr(target, "begin") and not hasattr(target, "execute"):
         with target.begin() as conn:                       # an engine: one transaction, here

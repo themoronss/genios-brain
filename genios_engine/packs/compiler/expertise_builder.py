@@ -13,6 +13,11 @@ from genios_engine.contracts.domain_expertise import (
     SituationContextSlice,
     expertise_id,
 )
+# The package's OWN normaliser, imported rather than restated. It is underscore-private to
+# `contracts.domain_expertise` and this is the one importer: `ExpertisePackage.__post_init__`
+# runs it on `visibility` a moment after `expertise_id` hashes the same field, so a second
+# implementation here would be two spellings of one rule that can drift into a content address.
+from genios_engine.contracts.domain_expertise import _visibility
 
 from .context_adapter import ContextAdapter
 from .models import ExpertSlice, RoutePlan, RuntimeBrainEntry, RuntimeBrainSnapshot
@@ -140,7 +145,17 @@ class ExpertiseBuilder:
             "org_id": situation.org_id,
             "schema_version": "expertise-package.v1",
             "trace_id": situation.trace_id,
-            "visibility": situation.visibility,
+            # NORMALIZED BEFORE HASHING, not after. `ExpertisePackage.__post_init__` runs
+            # `_visibility` on this field anyway, but `expertise_id(body)` is computed on the raw
+            # `body` one line down, and `canonicalize` has no rule for a pydantic model: L2's
+            # admission gate hands `shadow_compile` the upgraded strict object, whose
+            # `visibility` is a `Visibility` and not the mapping the v1 lane carried, so every
+            # admitted situation died with `CanonicalizationError: unsupported semantic value:
+            # Visibility` inside `compile` -- caught per situation, counted `error`, and the
+            # compiled lane published nothing. Normalising here also makes the content address
+            # what it always claimed to be: the id is now taken over the same shape the package
+            # actually holds, so the two cannot disagree about what was hashed.
+            "visibility": _visibility(situation.visibility),
             "situation_id": situation.id,
             "brain_snapshot_id": brain_snapshot_id,
             "capabilities": capabilities,

@@ -537,13 +537,17 @@ def _write_trend_fact(conn, *, org_id: str, node_id: str, field_name: str, value
     conn.execute(text(
         "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, "
         "field, value, value_type, status, authority_rank, confidence, occurred_at, "
-        "valid_from, visibility_scope) values "
-        "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), :vt, 'active', 100, 0.9, :now, :now, 'org') "
+        "valid_from, visibility_scope, derivation_type, trace_id, schema_version, "
+        "source_authority, provenance_refs) values "
+        "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), :vt, 'active', 100, 0.9, :now, :now, 'org', "
+        "'deterministic_derived', :trace, 'graph-fact.v2', 'R100', cast(:provenance as jsonb)) "
         "on conflict (fact_version_id) do update set value = excluded.value, "
         "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from"),
         {"vid": f"fv_trend_{node_id}_{field_name}", "fid": f"f_trend_{node_id}_{field_name}",
          "o": org_id, "n": node_id, "f": field_name,
-         "v": json.dumps(value, default=str, sort_keys=True), "vt": TREND_VALUE_TYPE, "now": now})
+         "v": json.dumps(value, default=str, sort_keys=True), "vt": TREND_VALUE_TYPE, "now": now,
+         "trace": f"l2:trend:{now.isoformat()}",
+         "provenance": json.dumps([f"metric-history:{node_id}:{field_name}"])})
 
 
 def refresh_trend_facts(store, org_id: str, *, eval_time: datetime,

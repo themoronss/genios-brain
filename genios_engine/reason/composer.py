@@ -19,10 +19,10 @@ from sqlalchemy import text
 from genios_engine.contracts.reasoning import (ContextSnapshot, EvidenceRef, ExecutionMode,
                                                ReasoningRequest)
 from genios_engine.packs.capabilities import DEAL_HEALTH_V1
-from genios_engine.platform.canonical import stable_id
 from genios_engine.platform.ids import new_id
 from genios_engine.reason.adapters.legacy_context import semantic_legacy_value
 from genios_engine.reason.audit import persist_execution
+from genios_engine.reason.evidence import build_evidence_ref
 from genios_engine.reason.authority import (
     AUTHORITATIVE_REASON_CODE_SQL,
     AUTHORITATIVE_SCORE_SQL,
@@ -129,25 +129,37 @@ def plan_composites(deal_ids, signals, adj: dict):
     return plans
 
 
-def _reason_composite(*, org_id: str, plan: dict, eval_time, snapshot_id: str,
-                      graph_version: int, mode: ExecutionMode):
-    members = tuple(plan["members"])
-    evidence = tuple(EvidenceRef(
-        evidence_id=stable_id("evidence", {
-            "org_id": org_id,
-            "deal_id": plan["deal_id"],
-            "signal_id": member["signal_id"],
-            "reasoning_run_id": member["reasoning_run_id"],
-        }),
+def composite_evidence(*, org_id: str, deal_id: str, members) -> tuple[EvidenceRef, ...]:
+    """DLG-11 · the composition lane's evidence, minted by the ONE builder.
+
+    This used to seed the id from {org_id, deal_id, signal_id, reasoning_run_id}, which meant a
+    signal recorded here and the same underlying fact read by the legacy or native lane carried
+    three different identities — and Rule 11, which raises confidence only across independence
+    groups derived from source identity, could therefore be raised twice by one observation.
+    `reasoning_run_id` is lineage and stays ON the ref (`fact_version_id`, `independence_group`);
+    it is out of the SEED, which is now the five-tuple every lane shares.
+
+    Extracted to module level so the cross-lane identity can be proved against this lane directly
+    instead of only through an orchestrated run.
+    """
+    return tuple(build_evidence_ref(
+        org_id=org_id,
+        entity_ref=deal_id,
         field="signals.open",
         value=member,
-        source_ref_id=str(member["signal_id"]),
+        source_ref=str(member["signal_id"]),
         fact_version_id=str(member["reasoning_run_id"]),
         confidence_bp=max(0, min(10_000, int(
             (member.get("score_inputs") or {}).get("C", 50)) * 100)),
         authority_rank=2,
         independence_group=str(member["reasoning_run_id"]),
     ) for member in members)
+
+
+def _reason_composite(*, org_id: str, plan: dict, eval_time, snapshot_id: str,
+                      graph_version: int, mode: ExecutionMode):
+    members = tuple(plan["members"])
+    evidence = composite_evidence(org_id=org_id, deal_id=plan["deal_id"], members=members)
     context = ContextSnapshot(
         org_id=org_id,
         graph_version=graph_version,

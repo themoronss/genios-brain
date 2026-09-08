@@ -42,6 +42,7 @@ from genios_engine.contracts.domain_expertise import (
 )
 from genios_engine.platform.canonical import stable_id
 from genios_engine.contracts.reasoning import (
+    RANKING_WEIGHTS_V2,
     CapabilityManifest,
     FailurePolicy,
     Goal,
@@ -50,9 +51,12 @@ from genios_engine.contracts.reasoning import (
 )
 from genios_engine.packs.compiler.context_adapter import ContextAdapter
 from genios_engine.platform.canonical import semantic_hash
+from genios_engine.reason.decision_maker import SITUATION_IMPORTANCE_KEY
+from genios_engine.reason.plan import CONTEXT_AWARE_SELECTION_KEY, LATENCY_CEILING_KEY
 
 from .citations import UNDATED, bind_citations, descending_date
 from .rule_compiler import artifact_class, compile_package_rules, play_id_for
+from .situation_projection import SituationProjection
 
 ADAPTER_ID = "expertise_to_capability"
 # 2.0.0 — the typed consumers (doc 03, wave Y1). Every artifact class the corpus carries now has
@@ -187,6 +191,445 @@ def _default_dag(required_fields: tuple[str, ...],
         failure_policy=_REQUIRED,
     )
     return (context, risk, constraint, priority, confidence, planning)
+
+
+# =================================================================================================
+# WAVE Z1 · THE STAGED ROSTER (doc 01 C1, doc 02 U1/U2)
+# =================================================================================================
+#
+# `_default_dag` above schedules six units: context, risk, constraint, priority, confidence,
+# planning. Twenty-three unit ids are registered (`reasoners.default_registry`, counted rather
+# than remembered), and the four categories of the frozen architecture reason about time,
+# dependencies, policy, opportunity, impact, cost, resource, scheduling, tradeoffs, alternatives,
+# validation and recommendation — none of which has ever run on this lane. Worse, the six that DO
+# run, run half-blind: `core.risk`
+# reads `drop_bp` from `core.temporal` and `coverage_bp` from `core.relationship`, and neither was
+# scheduled, so two of its three plugins have been correctly silent since the day it shipped.
+#
+# THE MECHANISM IS NOT NEW. `reason/plan.py` has carried a deterministic, receipted Unit Selector
+# since it was written and no manifest has ever switched it on. This roster declares the full
+# family, marks everything that is not load-bearing OPTIONAL with the inputs it actually reads,
+# and sets `context_aware_selection`. The selector then drops what this situation cannot feed and
+# says so, per unit, by name — which is the only honest way to run a twenty-unit roster.
+#
+# WHAT DECIDES WHETHER A UNIT IS DECLARED AT ALL. Two different questions, and conflating them is
+# how a roster becomes noise:
+#
+#   does this EXPERTISE read anything this unit can use?   -> the manifest declares it, or does
+#                                                             not, and `metadata["roster"]` says
+#                                                             which and why
+#   does this SITUATION carry that input?                  -> the selector schedules it, or drops
+#                                                             it with a `SkippedStep` receipt
+#
+# The first question is answered against the package's own executable inference patterns — the
+# fact paths the corpus itself names — so nothing here invents a vocabulary. A unit whose roles
+# bind nothing is left out with a receipt naming its candidates, rather than declared with fields
+# no authored pattern ever asked for: those names would enter `core.context`'s completeness
+# denominator (`context_unit.declared_fields` unions every reasoner's `required_fields`) and make
+# every situation read as less complete than it is. Binding only to fields the expertise already
+# selects means the denominator cannot move.
+#
+# WHY AT MOST ONE FIELD IS DECLARED PER UNIT. The orchestrator refuses a unit when ANY declared
+# field is missing (`orchestrator.execute` -> `required_missing`), while the selector drops it only
+# when EVERY declared field is missing. Declaring three fields therefore buys one extra drop case
+# and three extra refusal cases. So a unit declares the single field it most needs — the one whose
+# absence means it has nothing to read — and reads everything else through config, which it can do
+# because `native._selected_fields` pulls the union of the capability's `selection_fields` into the
+# snapshot whether a unit declared it or not.
+
+#: Fact paths that answer "when did the other side last move?". Both spellings: Layer 2 writes
+#: `thread.last_inbound` on people and threads, and the corpus's sales patterns name
+#: `deal.last_inbound` on the deal. Preference order is L2's own spelling first.
+_INBOUND_MOMENTS: tuple[str, ...] = ("thread.last_inbound", "deal.last_inbound")
+
+#: "When did we last move?" — the mirror of the above.
+_OUTBOUND_MOMENTS: tuple[str, ...] = ("thread.last_outbound", "deal.last_outbound")
+
+#: Every dated event `core.timeline` can arrange into a shape.
+_TIMELINE_MOMENTS: tuple[str, ...] = _INBOUND_MOMENTS + _OUTBOUND_MOMENTS + ("meeting.start_at",)
+
+#: Dated obligations a situation can be materially late for — the input to U5's urgency ladder.
+#: `commitment.due_at` is the one the corpus and Layer 2 both carry; `deal.close_date` is
+#: `core.scheduling`'s own default and binds the day a connector writes it.
+_DEADLINES: tuple[str, ...] = ("commitment.due_at", "deal.close_date")
+
+#: Proportions `core.temporal` can read as engagement. `derived.sentiment` is deliberately absent:
+#: it is signed, and a negative sentiment read through `ratio_bp` clamps to zero, which this unit
+#: would publish as total engagement collapse. A wrong reading is worse than no reading.
+_ENGAGEMENT_RATIOS: tuple[str, ...] = ("derived.engagement", "derived.momentum")
+
+#: The state of the relationship itself, for `core.relationship`'s anchor. Only a genuine status
+#: qualifies: the unit compares it to an expected value and reports `linked_open_deal` or not, so
+#: binding it to `thread.ball_in_court` would put a false reading in the trace to keep a unit busy.
+_RELATIONSHIP_STATUS: tuple[str, ...] = ("deal.status",)
+
+#: What this work is worth, for `core.impact` and `core.policy`'s approval threshold.
+_MONEY: tuple[str, ...] = ("deal.value",)
+
+#: Who would carry the work out, for `core.dependency`, `core.opportunity` and `core.resource`.
+_OWNER: tuple[str, ...] = ("deal.owner",)
+
+#: Which values of a bound status fact mean the work is STILL LIVE. `core.opportunity` refuses a
+#: status field with no vocabulary — correctly, because "is `negotiation` still open?" is domain
+#: knowledge and a core unit that answered it would be shipping one vertical to every tenant. The
+#: answer belongs to a manifest, so it is stated here, per fact, for the compiled lane; the same
+#: vocabulary is authored by hand on the native sales capability
+#: (`packs/capabilities/deal_cooling_v2`), which is the sibling declaration to compare against
+#: when either moves. A candidate with no entry here is never bound to a status role: a guess
+#: about what counts as live is exactly what the unit refused to make.
+_ACTIVE_STATUSES: Mapping[str, tuple[str, ...]] = {
+    "deal.status": ("open", "active", "in_progress", "negotiation"),
+}
+
+#: Approval gates. Restated rather than imported from `reasoners/dependency_unit.py`: a core unit's
+#: defaults are that unit's business, and importing them would make this adapter fail to load the
+#: day the roster renames a constant. `tests/reason/adapters/test_roster_v2.py` asserts the two
+#: lists agree, so the copy cannot drift silently either.
+_GATE_FIELDS: tuple[str, ...] = ("approval.status", "finance.approval_status",
+                                 "legal.review_status", "procurement.status",
+                                 "security.review_status")
+
+
+@dataclass(frozen=True, slots=True)
+class _RosterUnit:
+    """One unit's place in the compiled roster: its edges, its budget, and what it reads.
+
+    `roles` and `list_roles` map a unit's own config key to the fact paths that can fill it, in
+    preference order. `gates_on` names the roles whose bound field is DECLARED (and therefore
+    gates the unit through the selector); `essential` names the roles without which the unit is
+    not declared at all. `always` is the opposite claim, and it has to be stated in words: a unit
+    that can never be dropped for want of a fact must say why, or "it never drops" is
+    indistinguishable from "nobody declared its inputs".
+    """
+
+    unit_id: str
+    dependencies: tuple[str, ...] = ()
+    required: bool = False
+    latency_budget_ms: int = 25
+    roles: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    list_roles: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    gates_on: tuple[str, ...] = ()
+    essential: tuple[str, ...] = ()
+    sources: tuple[tuple[str, str], ...] = ()
+    config: Mapping[str, Any] = field(default_factory=dict)
+    input_kind: str = "context_snapshot"
+    output_kind: str = "finding"
+    always: str | None = None
+
+
+#: The roster, in the four categories of the frozen architecture. Dependencies are Globe's shape
+#: where Globe states one (`tradeoff <- risk, opportunity, impact, cost`;
+#: `validation <- risk, opportunity, impact, confidence`) and each unit's own declared sources
+#: otherwise — an axis whose source is not a dependency is an axis that can never read, which is
+#: precisely the defect `core.effort` was.
+_ROSTER: tuple[_RosterUnit, ...] = (
+    # --- Category 1 · Situation Understanding ----------------------------------------------------
+    _RosterUnit("core.context", required=True, latency_budget_ms=40,
+                always="the situation's own completeness is never absent"),
+    _RosterUnit("core.temporal", ("core.context",), latency_budget_ms=20,
+                roles=(("engagement_field", _ENGAGEMENT_RATIOS),
+                       ("timestamp_field", _INBOUND_MOMENTS)),
+                gates_on=("engagement_field",), essential=("engagement_field",)),
+    _RosterUnit("core.relationship", ("core.context",), latency_budget_ms=20,
+                roles=(("status_field", _RELATIONSHIP_STATUS),),
+                gates_on=("status_field",), essential=("status_field",),
+                config={"status_location": "root", "target_relationships": 3}),
+    _RosterUnit("core.timeline", ("core.context", "core.temporal"), latency_budget_ms=30,
+                list_roles=(("timeline_fields", _TIMELINE_MOMENTS),
+                            ("deadline_fields", _DEADLINES)),
+                gates_on=("timeline_fields", "deadline_fields"),
+                essential=("timeline_fields", "deadline_fields")),
+    _RosterUnit("core.dependency", ("core.context",), latency_budget_ms=30,
+                roles=(("owner_field", _OWNER),),
+                list_roles=(("gate_fields", _GATE_FIELDS),),
+                always="an absent prerequisite is this unit's subject; absence cannot starve it"),
+    # --- Category 2 · Business Evaluation --------------------------------------------------------
+    _RosterUnit("core.constraint", ("core.context",), required=True, latency_budget_ms=40,
+                input_kind="candidate_plays", output_kind="candidate_checks",
+                always="elimination is required before anything may be ranked"),
+    _RosterUnit("core.policy", ("core.context",), latency_budget_ms=30,
+                roles=(("approval_value_field", _MONEY),
+                       ("approval_status_field", ("deal.approval_status",)),
+                       ("do_not_contact_field", ("contact.do_not_contact",)),
+                       ("consent_status_field", ("contact.consent_status",))),
+                gates_on=("approval_value_field", "approval_status_field",
+                          "do_not_contact_field", "consent_status_field"),
+                essential=("approval_value_field", "approval_status_field",
+                           "do_not_contact_field", "consent_status_field")),
+    _RosterUnit("core.risk", ("core.context", "core.temporal", "core.relationship"),
+                required=True, latency_budget_ms=25,
+                sources=(("temporal_reasoner", "core.temporal"),
+                         ("relationship_reasoner", "core.relationship")),
+                always="pressure is the reading the whole lane already depends on"),
+    _RosterUnit("core.opportunity", ("core.context", "core.temporal"), latency_budget_ms=25,
+                roles=(("inbound_field", _INBOUND_MOMENTS),
+                       ("outbound_field", _OUTBOUND_MOMENTS),
+                       ("status_field", _RELATIONSHIP_STATUS),
+                       ("owner_field", _OWNER)),
+                sources=(("momentum_source", "core.temporal"),),
+                gates_on=("inbound_field", "status_field", "owner_field"),
+                essential=("inbound_field", "outbound_field", "status_field", "owner_field")),
+    _RosterUnit("core.impact", ("core.context", "core.relationship"), latency_budget_ms=25,
+                roles=(("value_field", _MONEY),),
+                sources=(("relationship_reasoner", "core.relationship"),),
+                always="account weight is read from the relationship prior, not from a fact"),
+    _RosterUnit("core.cost", ("core.context", "core.temporal", "core.opportunity"),
+                latency_budget_ms=30,
+                roles=(("delay_field", _INBOUND_MOMENTS),),
+                always="the effort of the declared plays is readable with no fact at all"),
+    _RosterUnit("core.resource", ("core.context",), latency_budget_ms=25,
+                roles=(("deadline_field", _DEADLINES), ("owner_field", _OWNER)),
+                gates_on=("deadline_field", "owner_field"),
+                essential=("deadline_field", "owner_field")),
+    _RosterUnit("core.scheduling", ("core.context",), latency_budget_ms=30,
+                roles=(("next_interaction_field", ("meeting.start_at",
+                                                   "calendar.next_meeting_at")),
+                       ("deadline_field", _DEADLINES),
+                       ("last_contact_field", _OUTBOUND_MOMENTS),
+                       ("quiet_until_field", ("schedule.quiet_until",))),
+                gates_on=("next_interaction_field", "deadline_field", "last_contact_field",
+                          "quiet_until_field"),
+                essential=("next_interaction_field", "deadline_field", "last_contact_field",
+                           "quiet_until_field")),
+    # --- Category 3 · Optimization ---------------------------------------------------------------
+    _RosterUnit("core.tradeoff",
+                ("core.risk", "core.opportunity", "core.impact", "core.cost", "core.confidence",
+                 "core.temporal"),
+                latency_budget_ms=25,
+                sources=(("benefit_source", "core.impact"),
+                         ("certainty_source", "core.confidence"),
+                         ("cost_source", "core.cost"),
+                         ("reward_source", "core.opportunity"),
+                         ("risk_source", "core.risk"),
+                         ("speed_source", "core.temporal")),
+                always="a tension is read from priors; it has no fact of its own"),
+    _RosterUnit("core.alternative",
+                ("core.constraint", "core.cost", "core.opportunity", "core.temporal", "core.risk"),
+                latency_budget_ms=25,
+                sources=(("inaction_cost_source", "core.cost"),
+                         ("headroom_source", "core.opportunity"),
+                         ("momentum_source", "core.temporal"),
+                         ("exposure_source", "core.risk")),
+                always="the options are the capability's own declared plays"),
+    _RosterUnit("core.priority",
+                ("core.constraint", "core.risk", "core.temporal", "core.timeline"),
+                required=True, latency_budget_ms=20,
+                always="urgency is resolved for every decision, or nothing can be ranked"),
+    _RosterUnit("core.confidence", ("core.context", "core.risk"), required=True,
+                latency_budget_ms=25,
+                always="a thin snapshot must answer with low confidence, never with silence"),
+    # --- Category 4 · Decision Support -----------------------------------------------------------
+    _RosterUnit("core.validation",
+                ("core.risk", "core.opportunity", "core.impact", "core.confidence"),
+                latency_budget_ms=30,
+                always="a conclusion is checked against itself, with or without facts"),
+    _RosterUnit("core.recommendation", ("core.validation", "core.dependency"),
+                latency_budget_ms=30,
+                sources=(("dependency_source", "core.dependency"),),
+                always="play support is read from the capability's own plays"),
+    _RosterUnit("core.planning", ("core.constraint", "core.priority", "core.confidence"),
+                required=True, latency_budget_ms=20,
+                input_kind="ranked_candidates", output_kind="planning_checks",
+                always="whether an outcome is observable is a property of the plays"),
+)
+
+#: The whole sequential run's declared ceiling. Every unit above declares its own budget and the
+#: planner refuses the manifest when they exceed this — the refusal that makes a twenty-unit
+#: roster safe to switch on. Tune the BUDGETS if a roster outgrows it; never this number, and
+#: never the refusal (doc 01 C2).
+ROSTER_LATENCY_CEILING_MS = 1_500
+
+#: The receipt's schema name, in `metadata["roster"]`.
+ROSTER_SCHEMA = "roster.v2"
+
+
+def _bind_role(candidates: tuple[str, ...], available: frozenset[str],
+               present: frozenset[str]) -> str | None:
+    """The one fact path that fills a role, or None when this expertise names none.
+
+    Two filters, in this order. A candidate must be a field the EXPERTISE reads (`available`, the
+    union of the package's executable inference patterns) — anything else would be a fact nobody
+    authored and nobody selects. Among those, a field this SITUATION actually carries wins, so the
+    field a unit is gated on is a field that is there. Preference order breaks the remaining tie,
+    deterministically.
+    """
+    eligible = [name for name in candidates if name in available]
+    for name in eligible:
+        if name in present:
+            return name
+    return eligible[0] if eligible else None
+
+
+def _bind_roles(unit: _RosterUnit, available: frozenset[str], present: frozenset[str]
+                ) -> tuple[dict[str, Any], dict[str, str], dict[str, list[str]]]:
+    """Resolve every role this unit declares into config. Returns (config, bound, bound_lists)."""
+    config: dict[str, Any] = dict(unit.config)
+    bound: dict[str, str] = {}
+    bound_lists: dict[str, list[str]] = {}
+    for key, candidates in unit.roles:
+        name = _bind_role(candidates, available, present)
+        if name is None:
+            continue
+        if key == "status_field" and unit.unit_id == "core.opportunity":
+            # A status field with no live vocabulary is a question this manifest asked and did not
+            # answer, and `core.opportunity` raises rather than guess. So the two travel together
+            # or neither is bound.
+            live = _ACTIVE_STATUSES.get(name)
+            if not live:
+                continue
+            config["active_statuses"] = list(live)
+        config[key] = name
+        bound[key] = name
+    for key, candidates in unit.list_roles:
+        names = [name for name in candidates if name in available]
+        if names:
+            config[key] = names
+            bound_lists[key] = names
+    return config, bound, bound_lists
+
+
+def _declared_field(unit: _RosterUnit, bound: Mapping[str, str],
+                    bound_lists: Mapping[str, list[str]],
+                    present: frozenset[str]) -> tuple[str, ...]:
+    """The single field this unit is gated on, or `()` when it is gated on nothing.
+
+    One field, never several: the orchestrator refuses a unit when ANY declared field is missing,
+    while the selector drops it only when EVERY declared field is missing, so a second declared
+    field buys one extra drop case and one extra refusal. The gate is therefore the single field
+    whose absence means the unit has nothing at all to read; everything else it reads travels as
+    config, which the snapshot supplies anyway.
+
+    A field this situation CARRIES wins over one it merely might: gating a scheduled unit on a
+    field that is not there would drop a unit that had something to say.
+    """
+    gated = [name for key in unit.gates_on
+             for name in ([bound[key]] if key in bound else bound_lists.get(key, []))]
+    for name in gated:
+        if name in present:
+            return (name,)
+    return (gated[0],) if gated else ()
+
+
+def _roster_specs(package: ExpertisePackage, *, gate_fields: tuple[str, ...],
+                  available: frozenset[str], present: frozenset[str],
+                  authored_priority_bp: int | None,
+                  blocked_play_ids: tuple[str, ...],
+                  projection: SituationProjection | None = None
+                  ) -> tuple[tuple[ReasonerSpec, ...], dict[str, Any]]:
+    """The staged roster for one package, plus the receipt for everything it declined.
+
+    Declaration happens in two passes because an edge may only point at a unit that survived the
+    first: a dependency on a unit this expertise cannot feed would fail `topological_order`, and a
+    `*_source` naming one is refused by the registry check that exists to catch exactly that.
+
+    WAVE Z5 · WHERE THE PROJECTION IS CONSUMED (DLG-06). Two units, two different consumptions,
+    and neither of them invents a reading:
+
+      `core.context` DECLARES every projected fact this situation carries. Its declared set is
+      the completeness denominator (`context_unit.declared_fields`) and `FactCoveragePlugin`
+      cites the evidence of every declared field it finds — so Layer 2's trend, cohort position,
+      anomaly, confidence axes and typed absences are read, counted and CITED by a registered
+      unit on the live compiled lane, which is doc 06's IN-1 acceptance row. The unknown-typed
+      names are NOT declared: they reach the same denominator through the snapshot's
+      `missing_fields`, where they count as known absences rather than dropping the unit.
+
+      `core.dependency` STOPS declaring the UNKNOWABLE ones. `PrerequisiteAbsencePlugin` reports
+      a declared fact that is not in the snapshot as a blocker the workflow can go and clear —
+      "go find it". For a fact path Layer 2 has typed UNKNOWABLE there is nothing to go to: no
+      connected source could have carried it, and reporting it as a chaseable prerequisite is the
+      exact negative inference `context.quality.missing` exists to refuse. They are withheld and
+      NAMED in the receipt, so the withholding is visible rather than a shorter list.
+    """
+    projected_declared = projection.declared_fields if projection is not None else ()
+    unknowable = frozenset(projection.unknowable_paths) if projection is not None else frozenset()
+    declined: dict[str, dict[str, Any]] = {}
+    kept: list[tuple[_RosterUnit, dict[str, Any], dict[str, str], dict[str, list[str]]]] = []
+    for unit in _ROSTER:
+        config, bound, bound_lists = _bind_roles(unit, available, present)
+        if unit.essential and not (set(bound) | set(bound_lists)) & set(unit.essential):
+            declined[unit.unit_id] = {
+                "reason": "no_declared_field_in_this_expertise",
+                "roles": sorted(unit.essential),
+                "candidates": sorted({name for key, names in (unit.roles + unit.list_roles)
+                                      if key in unit.essential for name in names}),
+            }
+            continue
+        kept.append((unit, config, bound, bound_lists))
+
+    declared_ids = {unit.unit_id for unit, _, _, _ in kept}
+    specs: list[ReasonerSpec] = []
+    receipt_units: dict[str, Any] = {}
+    pruned: dict[str, list[str]] = {}
+    for unit, config, bound, bound_lists in kept:
+        for key, source in unit.sources:
+            if source in declared_ids:
+                config[key] = source
+            else:
+                pruned.setdefault(unit.unit_id, []).append(f"{key}={source}")
+        dependencies = tuple(name for name in unit.dependencies if name in declared_ids)
+        if unit.unit_id == "core.context":
+            declared_fields = tuple(sorted(set(gate_fields) | set(projected_declared)))
+        elif unit.unit_id == "core.dependency":
+            # The prerequisites ARE the expertise's own executable fields: this unit's subject is
+            # what the reasoning waits on, and Layer 3 is the only layer that knows what that is.
+            # MINUS the paths Layer 2 typed UNKNOWABLE — see this function's docstring.
+            config["prerequisite_fields"] = sorted(available - unknowable)
+            declared_fields = ()
+        else:
+            declared_fields = _declared_field(unit, bound, bound_lists, present)
+        if unit.unit_id == "core.constraint" and blocked_play_ids:
+            config["blocked_play_ids"] = list(blocked_play_ids)
+        if unit.unit_id == "core.priority" and authored_priority_bp is not None:
+            # THE AUTHOR'S RULING, and no `source_reasoner`. A declared source disables
+            # `MaximumUrgencyPlugin` outright, and the six-unit lane declared `core.risk` — a unit
+            # that publishes no `urgency_bp` — so every compiled decision read the neutral 5,000
+            # midpoint. With no source declared, priority resolves max-wins across every prior it
+            # can see, which is what `core.timeline`'s urgency ladder (doc 02 U5) exists to feed.
+            config["authored_priority_bp"] = int(authored_priority_bp)
+        specs.append(ReasonerSpec(
+            unit.unit_id, "1.0.0",
+            dependencies=dependencies,
+            required_fields=declared_fields,
+            latency_budget_ms=unit.latency_budget_ms,
+            failure_policy=(_REQUIRED if unit.required else FailurePolicy.OPTIONAL),
+            input_kind=unit.input_kind,
+            output_kind=unit.output_kind,
+            config=config,
+        ))
+        receipt_units[unit.unit_id] = {
+            "policy": "required" if unit.required else "optional",
+            "declared_fields": list(declared_fields),
+            "bound": dict(sorted(bound.items())),
+            "bound_lists": {key: sorted(value) for key, value in sorted(bound_lists.items())},
+            "dependencies": list(dependencies),
+            "never_dropped": unit.always,
+        }
+
+    receipt = {
+        "schema": ROSTER_SCHEMA,
+        "declared": sorted(declared_ids),
+        "declared_count": len(declared_ids),
+        "required": sorted(unit.unit_id for unit, _, _, _ in kept if unit.required),
+        "optional": sorted(unit.unit_id for unit, _, _, _ in kept if not unit.required),
+        "gated_on_a_fact": sorted(unit_id for unit_id, row in receipt_units.items()
+                                  if row["declared_fields"]),
+        "declined": dict(sorted(declined.items())),
+        "pruned_sources": {unit_id: sorted(values) for unit_id, values in sorted(pruned.items())},
+        "units": dict(sorted(receipt_units.items())),
+        "available_fields": sorted(available),
+        "latency_ceiling_ms": ROSTER_LATENCY_CEILING_MS,
+        "sequential_budget_ms": sum(spec.latency_budget_ms for spec in specs),
+        # WAVE Z5. Present only when a projection reached this roster, so a manifest built
+        # without one is byte-identical to what it was.
+        **({"situation_projection": {
+            "declared_on_core_context": list(projected_declared),
+            "unknown_typed": list(projection.unknown_fields),
+            # The withheld prerequisites, NAMED. A shorter `prerequisite_fields` with no record
+            # of what left it is indistinguishable from an expertise that reads fewer facts.
+            "prerequisites_withheld_unknowable": sorted(available & unknowable),
+        }} if projection is not None else {}),
+    }
+    return tuple(specs), receipt
 
 
 #: How many plays a manifest carries. A cap is legitimate (the Decision Maker ranks a small
@@ -596,11 +1039,47 @@ def _goal(package: ExpertisePackage, situation_type: str) -> Goal:
     )
 
 
+def _situation_importance(situation: BusinessSituationObject | None) -> dict[str, Any]:
+    """WAVE Z3 · L2's composed importance, carried onto the manifest for the Decision Maker.
+
+    This is the last hop of a three-layer supply chain that has never delivered. L1's ALG-17
+    scores a signal, L2's BLG-18 composes those scores into a situation's `importance_bp`, and
+    Layer 4 — the layer both were built for — has never opened the envelope: before this wave
+    `importance_bp` appeared exactly once anywhere under `reason/`, in a SQL select.
+
+    It is carried as METADATA and not as a context fact on purpose. `reason/store.py` proves a
+    persisted audit row by re-running the ranker against the stored manifest, so the number the
+    ranker read has to be inside the thing that was stored; the context snapshot is stored too but
+    is built by field SELECTION off the graph, and a situation-level score is not a fact about the
+    anchor node.
+
+    `fallback` and `source` travel with the number because the number alone cannot be trusted.
+    `context/situation_bso.importance_base` publishes the neutral 5,000 midpoint for a situation
+    whose signals Layer 1 never scored, and a composed 5,000 and a defaulted 5,000 are the same
+    integer — so the BSO declares which, and `decision_maker.situation_importance` reweighs rather
+    than ranking a whole tenant on a constant.
+    """
+    if situation is None:
+        return {}
+    metadata = situation.metadata or {}
+    return {SITUATION_IMPORTANCE_KEY: {
+        "importance_bp": int(situation.importance_bp),
+        "source": str(metadata.get("importance_source") or "unknown"),
+        # Defaults to True — an unstated provenance is not a measurement.
+        "fallback": bool(metadata.get("importance_fallback", True)),
+        "version": (str(metadata["importance_version"])
+                    if metadata.get("importance_version") else None),
+    }}
+
+
 def expertise_capability_manifest(
     package: ExpertisePackage, *, root_entity_type: str,
     live_delivery_enabled: bool = False,
     situation: BusinessSituationObject | None = None,
     context: SituationContextSlice | None = None,
+    roster_v2: bool = False,
+    ranking_v2: bool = False,
+    projection: SituationProjection | None = None,
 ) -> CapabilityManifest:
     """One ExpertisePackage -> one CapabilityManifest driving Layer 4's reasoning.
 
@@ -616,6 +1095,37 @@ def expertise_capability_manifest(
     `situation_slice_not_supplied`, `metadata["weld"]["bound"]` is False, and nothing is
     eliminated. A caller that only wants the manifest's shape gets it without the weld claiming a
     binding it never performed.
+
+    ``roster_v2`` is doc 02 U1's staged roster, gated per tenant on
+    ``l4_activation(org, 'roster_v2')`` and therefore a PARAMETER rather than a flag read here:
+    this function must reach the same manifest for the same package on every machine, and an
+    adapter that read an activation table would make its own output depend on a database. False
+    (the default, and every caller that has not been switched on) builds the six-unit DAG below,
+    byte for byte, so an unactivated tenant's manifest — and its content-addressed version —
+    cannot move. True declares the full family, binds each unit's inputs to the fact paths this
+    expertise actually reads, and switches on the planner's Unit Selector so the units this
+    SITUATION cannot feed are dropped with a receipt instead of running blind.
+
+    ``ranking_v2`` is doc 04 E1's six-weight utility model, gated per tenant on
+    ``l4_activation(org, 'ranking_v2')`` and a PARAMETER for exactly the reason ``roster_v2`` is.
+    False builds the five-weight manifest byte for byte, so an unactivated tenant's capability
+    version cannot move and the audit rows already written against it stay verifiable. True
+    declares ``RANKING_WEIGHTS_V2`` — importance at 2,500 of 10,000, the largest weight in the
+    engine — and carries L2's composed importance onto the manifest so the Decision Maker can read
+    it; without the carrier the ranker reweighs the other five and records
+    ``L2_IMPORTANCE_NOT_ACTIVE``, which is honest and is not the point of the wave.
+
+    ``projection`` is doc 06 IN-1's BSO-to-snapshot projection (wave Z5), built once by the caller
+    from the same ``situation`` and ``context`` this function binds against and handed to
+    ``reason_native_capability`` as well. It is a PARAMETER rather than something derived here for
+    one reason: the manifest DECLARES the projected fields and the snapshot SUPPLIES them, and two
+    derivations of the same projection is exactly how a manifest ends up declaring a field its
+    snapshot does not carry. One object, two consumers, no drift — and ``native_context_snapshot``
+    refuses the mismatch rather than reasoning through it.
+
+    A projection is only legal alongside ``roster_v2``. The six-unit DAG has no consumer for it,
+    so declaring it there would change an unactivated tenant's snapshot — and therefore its
+    decision hashes — for facts nothing reads. That is refused loudly instead of ignored quietly.
 
     ``live_delivery_enabled`` defaults to False — the measurement pass must stay advisory. It is
     True only on the cutover path, because the delivery authority predicate reads it directly
@@ -643,6 +1153,29 @@ def expertise_capability_manifest(
     # stops being vetoed by a field only one of its patterns reads.
     gate_fields = _universal_required_fields(package)
 
+    # WHAT THIS SITUATION ACTUALLY CARRIES, for the roster's field binding. Root and neighbour
+    # both, because `native.native_context_snapshot` resolves a root field from the 1-hop
+    # neighbourhood when the anchor does not hold it — an aggregate anchor owns no facts of its
+    # own, and gating a unit on a field the snapshot will happily borrow would drop it for a
+    # reason the snapshot does not agree with.
+    present: frozenset[str] = frozenset()
+    if context is not None:
+        present = frozenset(context.facts) | frozenset(context.neighbor_facts)
+    if projection is not None and not roster_v2:
+        raise ValueError(
+            "a situation projection was supplied without roster_v2 — the six-unit DAG declares no "
+            "projected fact, so the projection would enter the snapshot unread and move an "
+            "unactivated tenant's decision hashes for nothing")
+    if roster_v2:
+        reasoners, roster_receipt = _roster_specs(
+            package, gate_fields=gate_fields, available=frozenset(required_fields),
+            present=present, authored_priority_bp=package.metadata.get("authored_priority_bp"),
+            blocked_play_ids=blocked_plays, projection=projection)
+    else:
+        reasoners = _default_dag(gate_fields, package.metadata.get("authored_priority_bp"),
+                                 blocked_play_ids=blocked_plays)
+        roster_receipt = None
+
     knowledge_hash = semantic_hash({
         "capabilities": package.capabilities,
         "objects": package.objects,
@@ -660,11 +1193,20 @@ def expertise_capability_manifest(
         domain=domain,
         root_entity_type=str(root_entity_type or "entity"),
         goal=_goal(package, situation_type),
-        reasoners=_default_dag(gate_fields, package.metadata.get("authored_priority_bp"),
-                               blocked_play_ids=blocked_plays),
+        reasoners=reasoners,
         plays=plays,
         required_fields=gate_fields,
-        selection_fields=required_fields,
+        # The projected names ride in `selection_fields`, never in `required_fields`: the
+        # orchestrator GATES the whole capability on `required_fields`, and a capability vetoed
+        # because Layer 2 published no trend would be the projection making the engine quieter.
+        # `native._projected_declarations` reads this set, so the snapshot/manifest mismatch guard
+        # fires even for a package whose roster declared nothing.
+        selection_fields=tuple(sorted(set(required_fields) | set(
+            projection.declared_fields if projection is not None else ()))),
+        # WAVE Z3. Conditional so the default construction is untouched: the five-weight default
+        # lives on `CapabilityManifest` and passing it explicitly here would be a second copy of a
+        # number that must not be able to disagree with itself.
+        **({"ranking_weights": dict(RANKING_WEIGHTS_V2)} if ranking_v2 else {}),
         policies=("read_only", "human_approval_required", "evidence_required"),
         live_delivery_enabled=live_delivery_enabled,   # advisory by default; True only on cutover
         do_nothing_consequence=(
@@ -673,8 +1215,19 @@ def expertise_capability_manifest(
         metadata={
             "adapter": ADAPTER_ID,
             "adapter_version": ADAPTER_VERSION,
+            # WAVE Z1. Present only when the roster is awake, so an unactivated tenant's manifest
+            # bytes — and therefore its version — are exactly what they were. When it is present
+            # it carries the Unit Selector's switch, the run's declared ceiling, and the receipt
+            # naming every unit this expertise could not feed and why.
+            **({CONTEXT_AWARE_SELECTION_KEY: True,
+                LATENCY_CEILING_KEY: ROSTER_LATENCY_CEILING_MS,
+                "roster": roster_receipt} if roster_receipt is not None else {}),
             # What the play conversion refused or cut — so "compiled fine, emitted one generic
             # play" is a readable state instead of a successful-looking silence.
+            # WAVE Z3, and present only when the six-weight model is on — for the same reason
+            # the roster receipt is: an unactivated tenant's manifest bytes, and therefore its
+            # content-addressed version, must not move.
+            **(_situation_importance(situation) if ranking_v2 else {}),
             "play_receipt": play_receipt,
             # THE WELD (doc 03). Compiled constraints, quoted citations, framing blocks, the
             # per-rule verdicts the Decision Maker turns into `constraints_applied` once candidate
@@ -747,5 +1300,6 @@ def expertise_capability_manifest(
     return replace(manifest, version=f"exp.{knowledge_hash[:12]}.{content[:12]}")
 
 
-__all__ = ["ADAPTER_ID", "ADAPTER_VERSION", "MAX_PLAYS", "WELD_SCHEMA", "Weld",
+__all__ = ["ADAPTER_ID", "ADAPTER_VERSION", "MAX_PLAYS", "ROSTER_LATENCY_CEILING_MS",
+           "ROSTER_SCHEMA", "WELD_SCHEMA", "Weld",
            "expertise_capability_manifest", "weld_package"]

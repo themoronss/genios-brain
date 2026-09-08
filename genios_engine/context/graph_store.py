@@ -414,13 +414,17 @@ class GraphStore:
         conn.execute(text(
             "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, field, "
             "value, value_type, status, authority_rank, confidence, relevance, occurred_at, "
-            "created_by_event_id"
+            "created_by_event_id, derivation_type, trace_id, schema_version, source_authority, "
+            "provenance_refs"
             + (", valid_to" if status == "historical" else "") + ") "
-            "values (:fv, :fid, :o, :s, :f, cast(:val as jsonb), :vt, :st, :ar, :c, :rel, :oc, :ev"
+            "values (:fv, :fid, :o, :s, :f, cast(:val as jsonb), :vt, :st, :ar, :c, :rel, :oc, :ev, "
+            "'source_event', :ev, 'graph-fact.v2', :authority, cast(:provenance as jsonb)"
             + (", now()" if status == "historical" else "") + ")"),
             {"fv": fv, "fid": new_id("fact"), "o": org_id, "s": subject_node_id, "f": field,
              "val": new_val, "vt": value_type, "st": status, "ar": authority_rank,
-             "c": confidence, "rel": relevance, "oc": occurred_at, "ev": event_id})
+             "c": confidence, "rel": relevance, "oc": occurred_at, "ev": event_id,
+             "authority": f"R{authority_rank}",
+             "provenance": json.dumps([f"event:{event_id}"])})
         self._write_ref(conn, org_id=org_id, fact_version_id=fv, event_id=event_id,
                         source=source, evidence=evidence)
         return fv

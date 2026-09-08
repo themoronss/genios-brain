@@ -91,8 +91,20 @@ class AuthorityRule(BaseModel):
     #: applies at ANY value — a distinct, common and legitimate case (a hiring approval has no
     #: amount), which is why it is nullable rather than defaulted to zero.
     threshold_minor_units: int | None = None
-    #: ISO 4217, or `UNKNOWN_CURRENCY`. REQUIRED whenever a threshold is set, refused otherwise.
+    #: ISO 4217, or `UNKNOWN_CURRENCY`. REQUIRED whenever a MONEY threshold is set, refused
+    #: otherwise. A ratio threshold has no currency and must not be given one.
     currency: str | None = None
+    #: The percentage at or above which the rule bites, in basis points — 15% is 1500.
+    #:
+    #: THE DIMENSION THIS TABLE COULD NOT HOLD. *"A discount greater than 15% requires approval
+    #: from the founder"* was refused in WHOLE by CLG-09, not merely stripped of its threshold,
+    #: because `threshold_as_written` was validated by a money parser alone. Discount authority is
+    #: the most common approval rule a sales-led startup writes down.
+    #:
+    #: Mutually exclusive with `threshold_minor_units` (see `_coherent_rule`): a rule has at most
+    #: one bound, and 1500 minor units and 1500 basis points are the same integer meaning nothing
+    #: alike. Kept as its own field for exactly that reason rather than sharing the money column.
+    threshold_basis_points: int | None = None
     #: Who approves. A graph node id, so the Founder Bottleneck query is a group-by on this
     #: column rather than a string match on a name.
     approver_node_id: str
@@ -151,6 +163,21 @@ class AuthorityRule(BaseModel):
             raise ValueError("threshold_minor_units must not be negative")
         return value
 
+    @field_validator("threshold_basis_points", mode="before")
+    @classmethod
+    def _basis_points(cls, value: Any) -> int | None:
+        """0..10000, integer. A float here is the rounding that decides who signs, one dimension
+        over from the `$84K` / `$8.4K` fault `threshold_minor_units` is integer for. Above 10000 is
+        a parse that went wrong and is refused rather than clamped — clamping would turn a bug into
+        a rule that always fires."""
+        if value is None:
+            return None
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise TypeError("threshold_basis_points must be integer basis points, never a float")
+        if not 0 <= value <= 10_000:
+            raise ValueError(f"threshold_basis_points must be 0..10000, got {value}")
+        return value
+
     @field_validator("currency", mode="before")
     @classmethod
     def _currency(cls, value: Any) -> str | None:
@@ -201,6 +228,11 @@ class AuthorityRule(BaseModel):
         if self.threshold_minor_units is None and self.currency is not None:
             raise ValueError(
                 "currency without a threshold denominates an amount that does not exist")
+        if self.threshold_basis_points is not None and self.threshold_minor_units is not None:
+            raise ValueError(
+                "a rule has at most one threshold dimension — money OR a ratio. Both set is not a "
+                "stricter rule, it is an unreadable one: nothing downstream could say which bound "
+                "bit")
         if self.source is AuthoritySource.DISCOVERED and self.evidence_ref is None:
             raise ValueError(
                 "a discovered rule must name the document it was read from — without it an "

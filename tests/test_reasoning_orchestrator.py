@@ -422,7 +422,12 @@ def _reserve_execution(rich_result):
     calls: list[str] = []
     reasoners = (
         _StubReasoner(_RICH, rich_result, calls),
-        _StubReasoner(_RESERVE, _result(_RESERVE, metrics={"confidence_bp": 4_000}), calls),
+        # Weaker than the primary's 9000 — that is this test's subject — and below the degraded
+        # cap of 5000, but ABOVE the lane confidence floor, which is a different mechanism with
+        # its own tests. At the 4000 this used to publish, the reserve's reading now falls under
+        # `DEFAULT_CONFIDENCE_FLOOR_BP` and the run correctly DEFERs, which would make this test
+        # assert the floor instead of the fallback.
+        _StubReasoner(_RESERVE, _result(_RESERVE, metrics={"confidence_bp": 4_800}), calls),
     )
     execution = ReasoningOrchestrator(ReasonerRegistry(reasoners)).execute(
         _request((_RESERVE, _RICH)))
@@ -452,7 +457,7 @@ def test_a_reserve_unit_takes_over_when_its_primary_fails():
     assert by_id["core.simple"].status == ResultStatus.COMPLETED
     assert execution.decision.outcome == DecisionOutcome.DECISION
     # The reserve's weaker reading is what the decision now rests on...
-    assert execution.decision.confidence_bp == 4_000
+    assert execution.decision.confidence_bp == 4_800
     # ...and the run still admits it needed one.
     assert any("optional" in item and "core.rich" in item
                for item in execution.decision.uncertainty)

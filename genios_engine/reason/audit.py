@@ -7,8 +7,13 @@ from datetime import timedelta
 from typing import Any
 
 from genios_engine import __version__ as ENGINE_VERSION
-from genios_engine.contracts.reasoning import DecisionOutcome, ExecutionMode
-from genios_engine.platform.canonical import stable_id
+from genios_engine.contracts.reasoning import (
+    DecisionOutcome,
+    ExecutionMode,
+    ReasonerResult,
+    ResultStatus,
+)
+from genios_engine.platform.canonical import semantic_hash, stable_id
 
 from .orchestrator import ReasoningExecution
 from .store import ReasoningStore, ReasoningStoreError
@@ -49,15 +54,56 @@ def _source_manifest(execution: ReasoningExecution) -> list[dict[str, Any]]:
     } for item in execution.request.context.evidence]
 
 
-def _result_rows(execution: ReasoningExecution) -> list[dict[str, Any]]:
+def _audited_results(execution: ReasoningExecution) -> list[tuple[ReasonerResult, str]]:
+    """Every DECLARED unit's result and input hash, in the order the audit store expects.
+
+    The units that ran, in plan order, then the units the Unit Selector dropped — each one turned
+    into an explicit `skipped` result carrying the planner's receipt (`no_declared_input_available`
+    with the absent fields, `dependency_not_scheduled` with the sources that went). Before the
+    roster woke, selection was enabled by no manifest and this tail was always empty; now it is
+    where a compiled decision keeps its answer to "why did `core.cost` not run?". Dropping the
+    receipt at the persistence boundary would leave that question answerable in memory and
+    unanswerable in the audit — which is where it is actually asked.
+
+    The input hash uses the ORCHESTRATOR's formula, because the replay verifier recomputes it for
+    every persisted row from the manifest spec and the results ahead of it. A skipped unit sees
+    exactly the dependency results the verifier will reconstruct, which is why the tail is emitted
+    in the DAG's own topological order.
+    """
+    contract: dict[str, ReasonerResult] = {}
     steps = {step.reasoner_id: step for step in execution.trace.steps}
+    rows: list[tuple[ReasonerResult, str]] = []
+    for result in execution.ordered_results:
+        contract[result.reasoner_id] = result
+        rows.append((result, steps[result.reasoner_id].input_hash))
+    specs = {spec.reasoner_id: spec for spec in execution.request.capability.reasoners}
+    for step in execution.plan.skipped:
+        spec = specs[step.reasoner_id]
+        result = ReasonerResult(
+            reasoner_id=step.reasoner_id,
+            reasoner_version=step.reasoner_version,
+            status=ResultStatus.SKIPPED,
+            missing_fields=step.missing_fields,
+            reason_codes=(step.reason_code,),
+        )
+        input_hash = semantic_hash({
+            "request_hash": execution.request.semantic_hash,
+            "spec": spec,
+            "dependencies": {name: contract[name] for name in spec.dependencies
+                             if name in contract},
+        })
+        contract[step.reasoner_id] = result
+        rows.append((result, input_hash))
+    return rows
+
+
+def _result_rows(execution: ReasoningExecution) -> list[dict[str, Any]]:
     rows = []
-    for ordinal, result in enumerate(execution.ordered_results):
-        step = steps[result.reasoner_id]
+    for ordinal, (result, input_hash) in enumerate(_audited_results(execution)):
         rows.append({
             **result.to_semantic_dict(),
             "ordinal": ordinal,
-            "input_hash": step.input_hash,
+            "input_hash": input_hash,
             "diagnostics": result.diagnostics,
             "skip_reason_code": (result.reason_codes[0]
                                  if result.status.value == "skipped" and result.reason_codes
@@ -86,8 +132,33 @@ def _output(execution: ReasoningExecution) -> dict[str, Any]:
             "do_nothing_consequence": decision.do_nothing_consequence,
             "expires_at": decision.expires_at,
             "outcome_window_days": decision.outcome_window_days,
+            # EVERY CONDITIONAL FIELD OF `ReasoningDecision.to_semantic_dict`, on the same terms.
+            #
+            # `store.verify_replay_bundle` proves a persisted decision by REBUILDING its semantic
+            # dict from these rows and comparing the hash. Anything the contract folds into that
+            # dict and this envelope does not carry is unreconstructable, so the rebuild produces a
+            # different hash and the run cannot be replayed at all. That is not hypothetical: the
+            # weld (doc 03) gave every compiled decision `citations` and `constraints_applied`, and
+            # from that day forward EVERY compiled-lane bundle failed
+            # `contract decision hash integrity mismatch` — a whole lane's audit trail
+            # unverifiable, with nothing failing loudly enough to say so.
+            #
+            # Written only when carried, exactly as the contract includes them only when carried,
+            # so a decision that grew none of this hashes — and now persists — to the bytes it
+            # always did.
+            **{name: value for name, value in (
+                ("citations", decision.citations),
+                ("constraints_applied", decision.constraints_applied),
+                ("confidence_vector", decision.confidence_vector),
+                ("ranking_weights_version", decision.ranking_weights_version),
+                ("do_nothing", decision.do_nothing),
+            ) if value},
+            # Every persisted row, the receipts for the units selection dropped included: the
+            # replay verifier rebuilds this list from the rows it reads, so the two must describe
+            # the same set or a selected run cannot be verified at all.
             "reasoner_result_hashes": tuple(
-                (item.reasoner_id, item.semantic_hash) for item in execution.ordered_results),
+                (item.reasoner_id, item.semantic_hash)
+                for item, _input_hash in _audited_results(execution)),
             "candidate_hashes": tuple(item.semantic_hash for item in execution.candidates),
         },
         "confidence_bp": decision.confidence_bp,
@@ -209,4 +280,15 @@ def persist_execution(*, store: ReasoningStore, execution: ReasoningExecution,
     return _write_execution_bundle(**write_args)
 
 
-__all__ = ["persist_execution"]
+#: PUBLIC because the replay verifier must ask the SAME question the writer answered. `decision_core
+#: .reasoner_result_hashes` is written from this function; `reason/replay.replay_persisted` used to
+#: rebuild its half of the comparison from `execution.ordered_results` alone, which excludes the
+#: units the Unit Selector dropped. That was harmless while selection was enabled by no manifest and
+#: the skipped tail was always empty; the moment the roster woke it made the verifier disagree with
+#: the writer on every selected run — measured at 605 false mismatches in a 660-run population, with
+#: `decision_hash` and `candidate_hashes` both matching on all of them. A verifier that reports a
+#: mismatch on 92% of honest rows cannot be used to find the dishonest one, so both sides now come
+#: from here.
+audited_results = _audited_results
+
+__all__ = ["audited_results", "persist_execution"]

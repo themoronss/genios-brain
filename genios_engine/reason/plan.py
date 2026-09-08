@@ -38,7 +38,7 @@ from genios_engine.platform.canonical import semantic_hash
 from .decision_maker import CONFIDENCE_AUTHORITY_KEY, PRIORITY_AUTHORITY_KEY
 from .guards import required_missing
 from .protocols import OrchestrationError
-from .registry import ReasonerRegistry
+from .registry import ReasonerRegistry, validate_capability_sources
 
 PLANNER_VERSION = "1.1.0"
 
@@ -223,8 +223,25 @@ def _select(ordered: Sequence[ReasonerSpec], capability: CapabilityManifest,
     Three rules keep this honest. Only *optional* units are ever dropped, because a required unit's
     missing input is a fact the decision must confront, not one the schedule may hide. A unit is
     dropped only when **every** field it declared is unavailable — a partially-fed unit still has
-    something to say. And anything depending on a dropped unit is dropped with it, since running a
-    dependent whose input never arrived just relocates the failure.
+    something to say. And a unit whose declared inputs have *all* gone is dropped with them, since
+    running a unit whose every input never arrived just relocates the failure.
+
+    **THE STARVATION RULE IS THE SAME ON BOTH KINDS OF INPUT, AND IT DID NOT USED TO BE.** A unit
+    draws inputs from two places — the situation's facts and the units it declared as
+    dependencies — and this pass applied opposite rules to them: *every* declared field had to be
+    absent before a unit was dropped, but *any* dropped dependency dropped its dependent. On a
+    six-unit hardcoded lane the asymmetry never showed. On the staged roster it is the difference
+    between a roster and a rumour: `core.tradeoff` declares four evaluative sources, and under the
+    any-rule a single unfed one (an expertise that names no money fact, so `core.cost` drops)
+    removed tradeoff, then `core.alternative`, then `core.validation` and `core.recommendation`
+    behind it — six units lost to one absent fact, each one receipted, none of them starved.
+
+    So the rule is stated once and applied to both: a unit is dropped when it has NOTHING left to
+    read. Three of four sources still reporting is three readings, exactly as one of two declared
+    fields present is one reading. What a partially-fed unit does with the gap is the unit's own
+    business, and every unit here already answers a missing prior with an explicit absent sentinel
+    rather than a zero — that is why the number it publishes cannot quietly move when a source is
+    missing, and why keeping it scheduled cannot manufacture a reading.
     """
     if request is None or not capability.metadata.get(CONTEXT_AWARE_SELECTION_KEY):
         return tuple(ordered), ()
@@ -233,8 +250,10 @@ def _select(ordered: Sequence[ReasonerSpec], capability: CapabilityManifest,
     skipped: list[SkippedStep] = []
     dropped: set[str] = set()
     for spec in ordered:
-        orphaned = tuple(sorted(set(spec.dependencies) & dropped))
-        if orphaned and spec.failure_policy == FailurePolicy.OPTIONAL:
+        declared = set(spec.dependencies)
+        orphaned = tuple(sorted(declared & dropped))
+        if (declared and len(orphaned) == len(declared)
+                and spec.failure_policy == FailurePolicy.OPTIONAL):
             dropped.add(spec.reasoner_id)
             skipped.append(SkippedStep(spec.reasoner_id, spec.version,
                                        "dependency_not_scheduled", orphaned))
@@ -344,6 +363,11 @@ class ReasoningPlanner:
         )
         _validate_budget(plan, capability)
         _validate_metric_authorities(plan, capability)
+        # A source this manifest names must be a unit it declares AND made visible. Structural
+        # only — whether the named unit was ever WRITTEN is the registry's half, asked in
+        # `resolve` — but it is asked here so a manifest that configures an impossible read is
+        # refused wherever a plan is built, including by tooling that holds no registry.
+        validate_capability_sources(capability)
         _validate_fallbacks(plan)
         return plan
 
@@ -354,7 +378,13 @@ class ReasoningPlanner:
         A capability that can only partly execute is a broken deployment, so this refuses the whole
         plan rather than discovering the gap halfway through and emitting a decision built on the
         units that happened to exist.
+
+        The registry is asked about every unit the manifest DECLARES, not only the ones this
+        situation scheduled. Selection drops units, and a dropped unit is never resolved — so
+        without this the first tenant whose facts happened to schedule an unregistered unit would
+        be the one to discover it, in production, as a failed run.
         """
+        registry.validate_capability(capability)
         by_id = {spec.reasoner_id: spec for spec in capability.reasoners}
         return MappingProxyType({
             step.reasoner_id: registry.get(by_id[step.reasoner_id]) for step in plan.steps})

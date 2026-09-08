@@ -787,6 +787,81 @@ def gather_members(conn, org_id: str, correlation_id: str | None) -> tuple[Mappi
     } for r in rows)
 
 
+def gather_brain_subject_keys(conn, org_id: str, situation: Mapping[str, Any],
+                              members: tuple[Mapping[str, Any], ...] = ()) -> tuple[str, ...]:
+    """WHAT THIS SITUATION IS ABOUT, in `contracts/brain_address`'s vocabulary.
+
+    **THE READER THIS WRITES FOR HAS BEEN WAITING SINCE IT SHIPPED.**
+    `packs/compiler/runtime_brains._selectors` reads `situation.brain_subject_keys`;
+    `contracts/domain_expertise.py:506` reads it off `metadata["brain_subject_keys"]`; and
+    `grep -rn brain_subject_keys genios_engine/` returned those two readers and NO WRITER. The one
+    selector meant to bind a live situation to the tenant's own learned knowledge was dead metadata,
+    which is most of why `packages_with_a_brain_slice` measured 0 on a tenant holding eleven
+    published brain entries and a live lease.
+
+    **WHY THE NODE IDS ARE THE WHOLE POINT.** `gather_members` groups correlated counterparties by
+    `actor->>'email'`, so a situation's entity ids are EMAIL ADDRESSES. A Behaviour pattern is
+    published as `behavior:<metric>:<node_id>` because that is what Layer 2's trend facts are keyed
+    by. Those two identities are the same people and have never been the same string, so the match
+    could not fire. This resolves the emails to their graph nodes through `graph_nodes.canonical_key`
+    — one indexed query per situation — and emits BOTH identities as their own token kinds, so
+    neither has to pretend to be the other and knowledge published under either binds.
+
+    **ONE QUERY, AND IT MAY RETURN NOTHING.** A tenant whose graph has no node for a correspondent
+    (a first-contact address, a connector that has not been reconciled) yields no `node:` token for
+    them, and the situation still carries every other dimension. The absence is a narrower address,
+    never an error: a situation that failed to resolve one member must not lose the policy that
+    applies to its whole organization.
+    """
+    from genios_engine.contracts.brain_address import token
+
+    tokens: set[str] = set()
+
+    def add(kind: str, value: Any) -> None:
+        if not value:
+            return
+        try:
+            tokens.add(token(kind, value))
+        except ValueError:
+            # A value the vocabulary refuses. Dropped rather than raised, for the reason above:
+            # one malformed identity must not cost this situation every other binding it has.
+            return
+
+    add("org", org_id)
+    add("situation", situation.get("situation_id"))
+    add("domain", situation.get("domain"))
+    anchor = situation.get("anchor_node_id")
+    add("node", anchor)
+    anchor_type = str(situation.get("anchor_type") or "").lower()
+    if anchor and anchor_type in {"person", "external_contact", "user"}:
+        add("person", anchor)
+    elif anchor and anchor_type in {"company", "organization", "account"}:
+        add("company", anchor)
+
+    emails = sorted({str(m.get("id")).lower() for m in members
+                     if m.get("id") and "@" in str(m.get("id"))})
+    for email in emails:
+        add("email", email)
+    if emails and conn is not None:
+        try:
+            rows = conn.execute(text(
+                "select node_id, node_type from graph_nodes "
+                "where org_id = :o and valid_to is null "
+                "and lower(canonical_key) = any(cast(:keys as text[]))"),
+                {"o": org_id, "keys": emails}).mappings().all()
+        except Exception:      # noqa: BLE001 — an address is a refinement; the situation is the product
+            _log.exception("could not resolve member node ids for org=%s", org_id)
+            rows = []
+        for row in rows:
+            add("node", row["node_id"])
+            kind = str(row["node_type"] or "").lower()
+            if kind in {"person", "external_contact", "user"}:
+                add("person", row["node_id"])
+            elif kind in {"company", "organization", "account"}:
+                add("company", row["node_id"])
+    return tuple(sorted(tokens))
+
+
 def _distinct_external_domains(members: tuple[Mapping[str, Any], ...]) -> set[str]:
     domains = set()
     for m in members:
@@ -1048,6 +1123,7 @@ def build_business_situation(
     l1: L1Signals | None = None,
     composed: ComposedImportance | None = None,
     pattern: PatternFire | None = None,
+    brain_subject_keys: tuple[str, ...] = (),
 ) -> BusinessSituationObject:
     """``members`` — real correlated counterparties from ``gather_members`` — is a separate,
     explicit parameter rather than a key smuggled onto ``situation``. Callers pass a raw DB row
@@ -1139,6 +1215,16 @@ def build_business_situation(
         state=str(situation.get("status") or "active"),
         metadata={
             "domain_ids": [str(domain)] if domain else [],
+            # THE BRAIN ADDRESS. `gather_brain_subject_keys`' answer, carried on the one metadata
+            # key `packs/compiler/runtime_brains` has always read and nothing has ever written.
+            # An empty tuple is the pre-writer behaviour exactly: the compiler then binds on
+            # capability, object and situation alone, which is what it did before this existed.
+            #
+            # It IS part of `to_semantic_dict`, so a situation that gains an address mints a new
+            # expertise package once. That is correct — a package compiled with the tenant's policy
+            # in it is not the package compiled without it — and it happens once per situation, not
+            # per sweep, because the address is derived from the graph and not from a clock.
+            "brain_subject_keys": list(brain_subject_keys),
             "coverage_bp": _bp(situation.get("coverage")),
             "importance_source": importance_source,
             # THE FALLBACK, DECLARED. Doc 07's acceptance row reads "importance_bp is not 5000

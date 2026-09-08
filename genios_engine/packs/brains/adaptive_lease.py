@@ -43,6 +43,8 @@ from typing import Any
 
 from sqlalchemy import text
 
+from genios_engine.contracts.brain_address import BrainAddress
+from genios_engine.contracts.brain_address import token as address_token
 from genios_engine.contracts.learning import (
     LearningEvidence,
     LearningObject,
@@ -219,6 +221,19 @@ def _proposal(cohort: TimingCohort, *, org_id: str, policy: LearningPolicy,
             # `capability_id` is a first-class key, not decoration: it is what a reader matches on
             # when it holds a route plan rather than a subject string.
             "capability_id": cohort.capability_id,
+            # THE ADDRESS. `capability_id` above was already matchable and is kept exactly as it
+            # was; this says the same thing in the vocabulary the other two brains now speak, so
+            # one selector serves all three rather than three special cases serving one each.
+            #
+            # The lease is the brain that was unreachable for a SECOND reason, and the address does
+            # not fix that one: it is written to `temporary_memories` and the compiler read only
+            # `learned_brain_entries`. See `PostgresRuntimeBrains.snapshot`, which now reads both.
+            "address": BrainAddress(
+                org_id=org_id, brain="adaptive",
+                tokens=(address_token("capability", cohort.capability_id),),
+                authority={"source": "card_feedback", "reason": LEASE_REASON,
+                           "verdicts": cohort.verdicts,
+                           "distinct_actors": cohort.distinct_actors}).as_value(),
             "statement": lease_statement(cohort),
             "source": "card_feedback",
             "reason": LEASE_REASON,

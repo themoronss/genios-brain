@@ -485,8 +485,10 @@ def _write_fact(conn, *, org_id: str, node_id: str, field_name: str, value, valu
     conn.execute(text(
         "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, "
         "field, value, value_type, status, authority_rank, confidence, occurred_at, "
-        "valid_from, visibility_scope) values "
-        "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), :vt, 'active', 100, 0.95, :now, :now, 'org') "
+        "valid_from, visibility_scope, derivation_type, trace_id, schema_version, "
+        "source_authority, provenance_refs) values "
+        "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), :vt, 'active', 100, 0.95, :now, :now, 'org', "
+        "'deterministic_derived', :trace, 'graph-fact.v2', 'R100', cast(:provenance as jsonb)) "
         # Same reasoning as `periodic.py` and `derived.py`: a recompute overwrites its own
         # deterministic version id rather than appending a row per sweep, or the table grows by two
         # rows per document forever and a reader picking "latest" is sifting duplicates.
@@ -494,7 +496,9 @@ def _write_fact(conn, *, org_id: str, node_id: str, field_name: str, value, valu
         "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from"),
         {"vid": f"fv_doc_{org_id}_{node_id}_{field_name}",
          "fid": f"f_doc_{org_id}_{node_id}_{field_name}", "o": org_id, "n": node_id,
-         "f": field_name, "v": json.dumps(value, default=str), "vt": value_type, "now": now})
+         "f": field_name, "v": json.dumps(value, default=str), "vt": value_type, "now": now,
+         "trace": f"l2:document-register:{now.isoformat()}",
+         "provenance": json.dumps([f"document:{node_id}"])})
 
 
 def refresh_document_situations(store, org_id: str, *, now: datetime | None = None) -> int:

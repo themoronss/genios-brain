@@ -1396,12 +1396,32 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
     # question — and `l1_seam_enabled(None, ...)` is False, which is the same OFF every
     # other failure of this lookup returns. A missing engine must not raise here: this is
     # a gate in front of an optional pass, not the sweep's own storage.
-    if live_compile or l1_seam_enabled(getattr(store, "engine", None), org_id):
+    engine = getattr(store, "engine", None)
+    # ── WHICH CORPORA THIS TENANT HAS ACTUALLY BEEN SWITCHED ON FOR.
+    #
+    # THIS READ IS WHAT THE ACTIVATION TABLE SHIPPED WITHOUT. `platform/l3_activation` landed with
+    # a reader, a fail-closed gate, an erasure row, an admin API under `require_admin` and a J5
+    # report — and no production caller. The line above was the only thing that entered the pass,
+    # so `POST /v1/admin/l3/activate` wrote a row, the console showed the tenant as on, `EFFECTS`
+    # said the compiler's live pass would now compile that corpus, and the sweep ran a SHADOW pass
+    # that published nothing. Every symptom of "Layer 3 does not work" was downstream of this
+    # missing line, and it was invisible precisely because the switch reported success.
+    #
+    # Read ONCE per sweep, not per situation: a switch flipped halfway through would make two
+    # situations in the same pass incomparable, which is the same reason `roster_v2` and
+    # `ranking_v2` are read once inside the pass. Fail-closed by construction — `activated_domains`
+    # answers `frozenset()` for a missing database, an unreadable table or a query that errored, so
+    # the failure mode is a tenant that compiles exactly as it does today.
+    from genios_engine.platform.l3_activation import activated_domains
+    l3_domains = activated_domains(engine, org_id)
+    if live_compile or l3_domains or l1_seam_enabled(engine, org_id):
         try:
             from genios_engine.reason.domain_shadow import shadow_compile
-            shadow_compile(store=store, org_id=org_id, eval_time=eval_time, live=live_compile)
+            shadow_compile(store=store, org_id=org_id, eval_time=eval_time, live=live_compile,
+                           live_domains=l3_domains)
         except Exception:
-            logger.exception("domain-compiler pass failed org=%s live=%s", org_id, live_compile)
+            logger.exception("domain-compiler pass failed org=%s live=%s domains=%s",
+                             org_id, live_compile, sorted(l3_domains))
 
     with store.engine.connect() as c:
         pack_ids = [r[0] for r in c.execute(text(
@@ -1415,5 +1435,27 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
         nodes = max(nodes, res["nodes"])
         for k, v in res["outcomes"].items():
             combined[k] += v
+    # ── Z4 / L4.5 · THE VOICE. Give the decisions this sweep just published their narrative.
+    #
+    # LAST, AND DELIBERATELY SO. Doc 05 §7 and doc 11 guard 5: a bundle is generated AFTER
+    # publication and never in a decision's critical path. Everything above has already decided,
+    # persisted and emitted; if this pass does nothing at all — a tenant not on the pilot, no
+    # model configured, the day's narrative budget spent — every card still renders exactly as it
+    # renders today and every decision is byte-identical. That is the property
+    # `tests/reason/test_bundle_doctrine.py` holds, and it is why this call can sit inside the
+    # sweep without being able to change what the sweep decided.
+    #
+    # Gated on `l4_activation(org, 'bundle')`, read inside the pass, so a tenant with no row pays
+    # one query. Wrapped, for the same reason `shadow_compile` above is: a narrative that failed
+    # is a plainer card, and it must never be a failed sweep.
+    try:
+        from genios_engine.reason.bundle import narrate_published
+        narration = narrate_published(store=store, org_id=org_id, eval_time=eval_time)
+        if narration.get("narrated") or narration.get("considered"):
+            logger.info("L4.5 narration org=%s %s", org_id, narration)
+    except Exception:
+        logger.exception("Layer 4.5 narration pass failed org=%s", org_id)
+        narration = {"error": True}
+
     return {"nodes": nodes, "outcomes": dict(combined), "eval_time": eval_time.isoformat(),
-            "packs": pack_ids}
+            "packs": pack_ids, "narration": narration}

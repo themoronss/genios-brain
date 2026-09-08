@@ -231,6 +231,33 @@ def test_a_warning_rule_that_fires_annotates_and_eliminates_nothing(deal_with_ab
         assert not verdict.blocks
 
 
+def test_a_fired_warning_names_the_plays_it_cautions_about(deal_with_absence):
+    """WAVE Z5 · doc 06 IN-2's second row, at the compiler.
+
+    A fired warning used to carry no play scope at all, so "which recommendation is this caution
+    about?" had no answer anywhere on the decision — the annotation existed as a rule id and
+    nothing to attach it to. The scope is resolved exactly as a blocking rule's is (the plays
+    compiled from the capability the doctrine governs) and lands in a SEPARATE field, because
+    `blocked_play_ids` is what `core.constraint` eliminates from and a shared one would turn every
+    caution into an elimination.
+    """
+    scopes = rc._plays_by_capability(deal_with_absence.package)
+    compiled = rc.compile_package_rules(deal_with_absence.package, deal_with_absence.adapter)
+    named = [v for v in compiled.fired
+             if v.severity == rc.WARNING and scopes.get(v.owner_capability)]
+    assert named, "no fired warning on this fixture governs a declared play"
+    for verdict in named:
+        assert verdict.blocked_play_ids == ()
+        assert verdict.warned_play_ids == scopes[verdict.owner_capability]
+        assert verdict.as_record()["warned_play_ids"] == list(verdict.warned_play_ids)
+    # And a rule that did not fire carries no scope, so the record cannot be read as a standing
+    # caution about plays nothing said anything about.
+    for verdict in compiled.verdicts:
+        if verdict.outcome != "fired" or verdict.severity != rc.WARNING:
+            assert verdict.warned_play_ids == ()
+            assert "warned_play_ids" not in verdict.as_record()
+
+
 def test_without_a_situation_every_rule_is_unevaluable_and_says_so(deal_with_absence):
     """A package compiled outside the live path must not claim that no rule applied."""
     compiled = rc.compile_package_rules(deal_with_absence.package, adapter=None)
@@ -290,11 +317,28 @@ def test_the_compile_is_reproducible(deal_with_absence):
 # THE DECISION-TIME HALF
 # =================================================================================================
 
+class _Check:
+    """The shape `core.constraint` stamps on the elimination it performs from `blocked_play_ids`.
+
+    WAVE Z5. This used not to exist and the candidate stub carried no checks at all, which made
+    the attribution test unable to tell a candidate this rule eliminated from one something else
+    removed — the exact false attribution `_policy_eliminated` closes. The stub now models the
+    real check, so `test_a_fired_blocking_rule_names_the_candidate_it_eliminated` proves the rule
+    named a candidate IT removed rather than any candidate that happens to be gone.
+    """
+
+    def __init__(self, reason_code: str = rc.POLICY_BLOCK_REASON,
+                 outcome: str = rc.ELIMINATE_OUTCOME) -> None:
+        self.reason_code = reason_code
+        self.outcome = outcome
+
+
 class _Candidate:
-    def __init__(self, play_id: str, candidate_id: str, disposition: str) -> None:
+    def __init__(self, play_id: str, candidate_id: str, disposition: str, checks=()) -> None:
         self.play_id = play_id
         self.candidate_id = candidate_id
         self.disposition = disposition
+        self.checks = tuple(checks)
 
 
 def test_a_fired_blocking_rule_names_the_candidate_it_eliminated():
@@ -302,9 +346,39 @@ def test_a_fired_blocking_rule_names_the_candidate_it_eliminated():
                  "statement": "A statement.", "statement_hash": citation_statement_hash(
                      "A statement."), "blocked_play_ids": ["p1"]}]
     applied = rc.constraint_applications(
-        verdicts, [_Candidate("p1", "cand_1", "eliminated"),
+        verdicts, [_Candidate("p1", "cand_1", "eliminated", checks=(_Check(),)),
                    _Candidate("p2", "cand_2", "eligible")])
     assert applied[0]["eliminated_candidate_ids"] == ("cand_1",)
+    assert "blocked_plays_not_eliminated" not in applied[0]
+
+
+def test_a_rule_does_not_claim_a_candidate_something_else_eliminated():
+    """WAVE Z5. `p1` is eliminated — by a policy check that is not the corpus block seam. The
+    rule's scope covers it, and before this it appeared in `alternatives_rejected` quoting an
+    authored corpus rule that had not touched it."""
+    verdicts = [{"rule_id": "x.rule.a.b", "severity": "blocking", "outcome": "fired",
+                 "statement": "A statement.", "statement_hash": citation_statement_hash(
+                     "A statement."), "blocked_play_ids": ["p1"]}]
+    applied = rc.constraint_applications(verdicts, [
+        _Candidate("p1", "cand_1", "eliminated",
+                   checks=(_Check(reason_code="read_only_policy"),))])
+    assert "eliminated_candidate_ids" not in applied[0]
+    # And the middle state is stated rather than implied by silence.
+    assert applied[0]["blocked_plays_not_eliminated"] == ("p1",)
+
+
+def test_a_fired_warning_annotates_the_candidates_it_is_about():
+    """Doc 06 IN-2 row 2. A warning eliminates nothing and now says WHICH recommendation it
+    cautions about — the link a bundle needs and that did not exist."""
+    verdicts = [{"rule_id": "x.rule.a.b", "severity": "warning", "outcome": "fired",
+                 "statement": "A statement.", "statement_hash": citation_statement_hash(
+                     "A statement."), "blocked_play_ids": [], "warned_play_ids": ["p1"]}]
+    applied = rc.constraint_applications(
+        verdicts, [_Candidate("p1", "cand_1", "eligible"),
+                   _Candidate("p2", "cand_2", "eligible")])
+    assert applied[0]["warned_play_ids"] == ("p1",)
+    assert applied[0]["warned_candidate_ids"] == ("cand_1",)
+    assert "eliminated_candidate_ids" not in applied[0]
 
 
 def test_a_rule_never_claims_a_candidate_that_survived():
@@ -330,7 +404,8 @@ def test_a_warning_application_may_not_eliminate():
     verdicts = [{"rule_id": "x.rule.a.b", "severity": "warning", "outcome": "fired",
                  "statement": "A statement.", "statement_hash": citation_statement_hash(
                      "A statement."), "blocked_play_ids": ["p1"]}]
-    applied = rc.constraint_applications(verdicts, [_Candidate("p1", "c1", "eliminated")])
+    applied = rc.constraint_applications(
+        verdicts, [_Candidate("p1", "c1", "eliminated", checks=(_Check(),))])
     assert "eliminated_candidate_ids" not in applied[0]
 
 

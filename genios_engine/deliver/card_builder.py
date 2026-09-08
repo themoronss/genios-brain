@@ -484,11 +484,30 @@ def _plain_value(value):
     return value
 
 
-def _why(evidence: list, _facts: dict) -> list[dict]:
-    """Project only evidence that the immutable reasoning context actually bound.
+#: How many authored claims a card may rest its `why` on. Two, not all of them: the block is read
+#: by a person deciding in a few seconds, and a bibliography is not a reason. The decision's full
+#: citation list stays on the signal row for anyone auditing it.
+MAX_WHY_CITATIONS = 2
+
+
+def _why(evidence: list, _facts: dict, citations: list | None = None) -> list[dict]:
+    """Project the evidence the immutable reasoning context bound, then the doctrine it rested on.
 
     A short evidence chain must stay short and honest. Unrelated current graph facts cannot be
     promoted into post-hoc reasons merely to satisfy a presentation count.
+
+    **THE CITATION HALF, AND WHY IT WAS MISSING.** CLG-08 attaches the authored heuristic to
+    `ReasoningDecision.citations` byte-identical to the corpus, migration 0114 gave `signals` a
+    column for it, and the trail stopped there: this function projected `field`/`value` pairs and
+    nothing else, so `scripts/l3_pilot_report.py`'s stricter row —
+    `cards_quoting_the_claim_in_their_own_copy` — read **0 on every card ever built**. The expert's
+    sentence reached the row BEHIND the card and never the card. A reader of J5 could see a
+    citation count and conclude the doctrine had reached a human when it had reached a table.
+
+    **QUOTED VERBATIM, NEVER PARAPHRASED.** `statement_hash` pins the stored quote to the authored
+    bytes precisely so a renderer cannot reword it and still claim the citation, and the pilot
+    report's verbatim substring test is the check. The statement is passed through untouched and
+    carries its own `artifact_id`, so a card's claim is traceable to the file it came from.
     """
     out = []
     for e in (evidence or []):
@@ -500,6 +519,22 @@ def _why(evidence: list, _facts: dict) -> list[dict]:
         field = e.get("field", "")
         out.append({"field": field, "value": _plain_value(e.get("value")),
                     "source": _SOURCE.get(field.split(".")[0], "graph")})
+    for citation in (citations or [])[:MAX_WHY_CITATIONS]:
+        if not isinstance(citation, dict):
+            continue
+        statement = str(citation.get("statement") or "").strip()
+        if not statement:
+            continue
+        out.append({
+            "statement": statement,
+            "artifact_id": citation.get("artifact_id"),
+            "artifact_class": citation.get("artifact_class"),
+            "statement_hash": citation.get("statement_hash"),
+            # `expertise`, not `graph`: this is authored doctrine, not a reading of the tenant's
+            # data, and a surface that showed the two the same way would be claiming the corpus
+            # observed something.
+            "source": "expertise",
+        })
     return out
 
 
@@ -749,7 +784,8 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         # Decomposed, not a scalar: "unsure about the evidence" and "unsure about the timing"
         # call for different user actions and a single number cannot tell them apart.
         "confidence_vector": {k: score_inputs.get(k) for k in ("C", "U", "I", "R")},
-        "actions": actions, "why": _why(signal.get("evidence"), facts),
+        "actions": actions,
+        "why": _why(signal.get("evidence"), facts, signal.get("citations")),
         "surfaces": _surfaces(facts, signal, actions,
                               has_finding=has_finding and has_quote),
         "context_tags": _context_tags(node_type, attrs, facts, sources),

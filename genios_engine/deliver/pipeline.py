@@ -64,7 +64,12 @@ def _open_signals_without_cards(graph, org_id: str,
             # The DecisionObject's own content (0070). Reading it here is what retires the API
             # layer's reason_code if/elif chain as the source of a card's recommendation.
             "s.do_nothing_consequence, s.uncertainty, s.outcome_window_days as decision_window, "
-            "s.rejected_candidates, s.candidate_steps "
+            "s.rejected_candidates, s.candidate_steps, "
+            # CLG-08's citations (0114). Selected here because a quote that reaches the signal row
+            # and not the card is a quote that reached nobody: `scripts/l3_pilot_report.py`
+            # measured `cards_quoting_the_claim_in_their_own_copy` at 0 on every card ever built,
+            # and the cause was this column having no reader between the emitter and the surface.
+            "s.citations "
             "from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
             " left join reasoning_context_payloads authority_payload "
             "on authority_payload.org_id=authority_ctx.org_id and "

@@ -20,6 +20,7 @@ from sqlalchemy import text
 
 from genios_engine.context import situations
 
+from ...l1_supply import attach_l1_signals
 from ...test_admin_support_packs import NOW, _run_admin, _seed_org
 
 pytestmark = pytest.mark.pg
@@ -40,6 +41,12 @@ def test_a_compiled_signal_carries_its_rejected_candidates(pg_store):
         conn.execute(text("delete from signals where org_id = :o"), {"o": org})
     _run_admin(pg_store, org)
     situations.refresh_situations(pg_store, org, eval_time=NOW)
+    # SCORED Layer 1 supply — the activated tenant this test claims to be. Nothing here is about
+    # importance; what the situation needs from Layer 1 to be ADMITTED at all is its verified
+    # evidence span, and that is only ever published on a `qualified_signals` row. Before the L2
+    # admission gate landed the fixture could skip Layer 1 entirely and still compile, which is
+    # the only reason it ever passed without this.
+    assert attach_l1_signals(pg_store, org, eval_time=NOW) > 0
     registry = make_registry(pg_store.engine.url.render_as_string(hide_password=False))
     ensure_defaults(registry, org)
 

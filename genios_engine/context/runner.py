@@ -14,6 +14,7 @@ from genios_engine.capture.structured.registry import get_mapping
 from genios_engine.context.graph_store import GraphStore
 from genios_engine.context.llm.client import LLMClient
 from genios_engine.context.pipeline import process_event
+from genios_engine.context.qes_adapter import adapt_qes_extraction
 from genios_engine.context.read_models import build_entity_360
 from genios_engine.context.structured import commit_structured
 from genios_engine.platform.crypto import decrypt
@@ -115,17 +116,29 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
                         event_id=row.event_id, output={"structured": True},
                         input_tokens=0, output_tokens=0, model="structured")
         return "committed_structured", res.node_id
-    if llm is None:
-        return "skipped_no_llm", None
     content = _clean_for_llm(raw, row.event_id,      # unstructured lane (B3, LLM)
                              prepared_text=getattr(row, "prepared_text", None))
     is_inbound = "SENT" not in (raw.get("labelIds") or [])   # direction → thread state
     # recipients (To + Cc, captured in L1) → sender↔recipient correspondence edges in L2
     recipients = [e for e in ((raw.get("to") or []) + (raw.get("cc") or [])) if e]
+    qes_output = getattr(row, "qes_output", None)
+    if qes_output is None:
+        # A QES whose extraction pointer cannot be resolved is incomplete input, not permission
+        # for Layer 2 to reinterpret the raw message.  Leave it retryable: cache repair or an L1
+        # replay can fill the pointer and the next drain will pick it up.
+        return "held_missing_qes_extraction", None
+    if not isinstance(qes_output, dict):
+        qes_output = json.loads(qes_output)
+    qualified = adapt_qes_extraction(
+        qes_output,
+        confidence_bp=int(getattr(row, "qes_confidence_bp", 0) or 0),
+        domain_hints=getattr(row, "qes_domain_hints", None) or (),
+        signal_types=getattr(row, "qes_signal_types", None) or (),
+    )
     res = process_event(org_id=org_id, event_id=row.event_id, source=row.source, content=content,
                         sender_email=row.sender, recipient_emails=recipients,
                         sender_name=getattr(row, "sender_name", None),
-                        occurred_at=row.occurred_at, llm=llm, store=store,
+                        occurred_at=row.occurred_at, llm=None, store=store,
                         is_inbound=is_inbound, internal_emails=internal_emails,
                         internal_kind=getattr(row, "internal_kind", None),
                         thread_id=getattr(row, "parent_object_id", None),
@@ -134,7 +147,7 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
                         # The tenant's own pack vocabulary. Without it the extractor runs one
                         # hardcoded B2B-SaaS ontology for everyone, and a rule reading
                         # `deal.status` is dead because the model was never told the name.
-                        effective=effective)
+                        effective=effective, qualified_extraction=qualified)
     return res.outcome, res.primary_node
 
 
@@ -161,21 +174,47 @@ _L2_OWN_EXTRACTIONS = ("select event_id from l1_extraction_results "
 
 
 def _pull(store: GraphStore, org_id: str, limit: int):
-    """Drain order = L1's triage lane FIRST (P0 preempts P3 — the lane was computed at
-    ingestion and previously thrown away), then arrival time. Prepared text rides along
-    from the seam so processing doesn't re-derive it."""
+    """Pull only events that crossed Layer 1's QES publication boundary.
+
+    One event may publish several signals; the lateral fold chooses its highest-importance live
+    signal for confidence/domain metadata and retains every signal type.  All signals for one
+    event point at the same cached extraction, so the expensive artifact is joined once.
+    """
     with store.engine.connect() as c:
         return c.execute(text(
             "select se.event_id, se.source, se.object_type, se.actor->>'email' as sender, "
             "se.actor->>'name' as sender_name, "
             "se.occurred_at, se.source_object_id, se.triage_lane, se.internal_kind, "
             "se.parent_object_id, se.domain_hints, "
+            "q.qes_confidence_bp, q.qes_signal_types, q.qes_domain_hints, "
+            "xr.output as qes_output, "
             "rp.enc_content, "
             "pc.clean_text as prepared_text "
             "from source_events se "
             "join raw_payloads rp on rp.event_id = se.event_id "
             "left join prepared_content pc on pc.event_id = se.event_id and pc.org_id = se.org_id "
+            "join lateral ("
+            "  select max(qs.confidence_bp)::int as qes_confidence_bp, "
+            "         array_agg(distinct qs.signal_type order by qs.signal_type) as qes_signal_types, "
+            "         (array_agg(qs.domain_hints order by qs.importance_bp desc, qs.signal_id))[1] "
+            "             as qes_domain_hints, "
+            "         (array_agg(qs.extraction_ref order by qs.importance_bp desc, qs.signal_id))[1] "
+            "             as qes_extraction_ref "
+            "  from qualified_signals qs "
+            "  where qs.org_id = se.org_id and qs.event_id = se.event_id "
+            "    and qs.state = 'active'"
+            ") q on q.qes_extraction_ref is not null "
+            "left join l1_extraction_results xr on xr.org_id = se.org_id "
+            "     and xr.processing_key = q.qes_extraction_ref "
             "where se.org_id=:o and se.outcome='emitted' "
+            # RESTORED. The QES rewrite of this query dropped this clause and left the constant,
+            # its eighteen-line rationale and the other consumer (`api/routes._pending_count`)
+            # standing — so the drain and the progress bar disagreed again, which is the exact
+            # drift the discriminator was written to end. The new lateral join is about L1's
+            # extraction (`profile_id` NOT null, reached through `qes_extraction_ref`); this
+            # clause is about L2's OWN (`profile_id is null`, written by `GraphStore.cache_set`).
+            # They are different rows and the second one is what stops the model being paid twice
+            # for one message on every sweep, for ever.
             f"and se.event_id not in ({_L2_OWN_EXTRACTIONS}) "
             "and se.event_id not in (select event_id from l2_processing_runs "
             "                        where org_id=:o and status in ('done','parked')) "
@@ -206,6 +245,16 @@ def _record_failure(store, org_id: str, event_id: str, error: str | None) -> int
                            "last_error=coalesce(:err,'model_unavailable') where org_id=:o and event_id=:e"),
                       {"o": org_id, "e": event_id, "err": (error or "model_unavailable")[:400]})
     return int(n)
+
+
+def _record_hold(store, org_id: str, event_id: str, reason: str) -> None:
+    """Persist recoverable L1->L2 incompleteness without consuming the failure retry budget."""
+    with store.engine.begin() as c:
+        c.execute(text(
+            "insert into l2_processing_runs (org_id, event_id, status, attempts, last_error) "
+            "values (:o,:e,'held',0,:reason) on conflict (org_id, event_id) do update set "
+            "status='held', last_error=:reason, updated_at=now()"),
+            {"o": org_id, "e": event_id, "reason": reason[:400]})
 
 
 # =================================================================================================
@@ -444,7 +493,7 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         rows = [r for r in _pull(store, org_id, _BATCH) if r.event_id not in seen]
         if not rows:
             break
-        with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as ex:   # parallel LLM calls
+        with ThreadPoolExecutor(max_workers=_MAX_WORKERS) as ex:   # parallel graph commits
             results = list(ex.map(
                 lambda r: _safe_process_one(r, org_id=org_id, store=store, llm=llm,
                                             crypto_key=crypto_key,
@@ -458,6 +507,8 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             if outcome in ("error", "extract_failed"):
                 n = _record_failure(store, org_id, row.event_id, err)
                 out["parked_model_unavailable" if n >= _MAX_ATTEMPTS else "retry_pending"] += 1
+            elif outcome.startswith("held_"):
+                _record_hold(store, org_id, row.event_id, outcome)
             elif outcome in _DONE_OUTCOMES:
                 _record_done(store, org_id, row.event_id)
         done += len(rows)
@@ -488,9 +539,15 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     # clock), so they belong on the same schedule. Cost is a handful of bulk queries per org per
     # sweep, which is what the passes were already designed for — no per-node round-trips.
     try:
+        from functools import partial
+
         from genios_engine.context.derived import compute as compute_derived
         from genios_engine.context.derived import compute_account_view, compute_deal_view
-        derived_rows = compute_derived(store, org_id) + compute_deal_view(store, org_id)
+        # Bind the sweep clock once so every derived writer observes the same instant while
+        # preserving the established two-argument invocation contract used by the drain gate.
+        compute_derived = partial(compute_derived, now=sweep_at)
+        derived_rows = (compute_derived(store, org_id)
+                        + compute_deal_view(store, org_id, now=sweep_at))
         # ACCOUNT level, after the person level and for the same reason: it is an aggregate
         # of the facts the two passes above just committed, so it has to run behind them.
         # 33 of 40 companies on the design partner's org hold no fact row at all. The
@@ -499,33 +556,33 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         # reasoning and not reasoning; it is the difference between the account's own
         # aggregate and whichever neighbour was written last, and between a row existing for
         # every non-reasoner reader and not. See `compute_account_view` for the measurement.
-        derived_rows += compute_account_view(store, org_id)
+        derived_rows += compute_account_view(store, org_id, now=sweep_at)
         # WAITING state — the only facts in this layer derived from what did NOT happen.
         # Runs behind the person and account passes because it reads the same thread state
         # they commit, and ahead of the situation refresh below so a situation's coverage can
         # see them. Everything above records an event; nothing records silence, which is the
         # shape of most of what a user actually wants told to them.
         from genios_engine.context.waiting import compute_waiting
-        derived_rows += compute_waiting(store, org_id)
+        derived_rows += compute_waiting(store, org_id, now=sweep_at)
         # PERIOD aggregates and their situations, in the same pass and for the same reason:
         # they are computed from facts that now exist, they are cheap, and a period read that
         # is only refreshed by a separate schedule is a period read that is always stale.
         # Twenty-two authored capabilities are reachable only through these.
         from genios_engine.context.periodic import refresh_period_situations
-        derived_rows += refresh_period_situations(store, org_id)
+        derived_rows += refresh_period_situations(store, org_id, now=sweep_at)
         # The seven correspondence-derived support readings, in the same pass and for the
         # same reason: a first-response clock, an aging item and a repeat contact are all
         # computed from the thread state and open loops THIS drain just committed, and a
         # reading refreshed only by a separate schedule is a reading that is always stale.
         # Seven authored situation types were unroutable until these existed.
         from genios_engine.context.support_situations import refresh_support_situations
-        derived_rows += refresh_support_situations(store, org_id)
+        derived_rows += refresh_support_situations(store, org_id, now=sweep_at)
         # The one non-mail channel the graph actually holds. `demo` was unroutable not because
         # the corpus was thin but because a meeting with an outside party — 48 of them on the
         # design partner's org — reached no situation at all. Same pass, same reason: it reads
         # the calendar facts this drain just committed.
         from genios_engine.context.meeting_touch import refresh_channel_touch_situations
-        derived_rows += refresh_channel_touch_situations(store, org_id)
+        derived_rows += refresh_channel_touch_situations(store, org_id, now=sweep_at)
         # THE STATE READINGS, last of the derived passes because they read what every pass
         # above just wrote — the waiting arithmetic in particular. These are the only
         # situations in the system named after what is HAPPENING rather than who it is
@@ -533,16 +590,31 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         # something to route on. Same self-correcting contract as the support readings: a
         # finding that stops being true is resolved by fact on the next sweep.
         from genios_engine.context.outreach_situations import refresh_state_situations
-        derived_rows += refresh_state_situations(store, org_id)
+        derived_rows += refresh_state_situations(store, org_id, now=sweep_at)
         # The records reading, in the same pass and for the same reason: a document's control
         # gaps are computed from the file metadata THIS drain just projected, and the copy
         # clustering has to re-run whenever a file lands or a second copy of one appears. It
         # costs two queries and returns immediately on an org with no file store connected.
         from genios_engine.context.document_register import refresh_document_situations
-        derived_rows += refresh_document_situations(store, org_id)
+        derived_rows += refresh_document_situations(store, org_id, now=sweep_at)
     except Exception:      # noqa: BLE001 — derived view, recomputed next drain
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception("derived fact refresh failed for org=%s", org_id)
+
+    # L2.3.5 · contract -> invoice/payment/spend.  This runs after structured/event projection
+    # has populated the graph and before situations are refreshed, so finance situations read
+    # this sweep's attribution.  The correlator never converts currency or guesses through an
+    # unresolved vendor/reference; every decision is persisted with its input fact-version ids.
+    resource_correlation: dict = {}
+    try:
+        from genios_engine.context.correlation_resource import refresh_contract_spend
+        resource_correlation = refresh_contract_spend(
+            store, org_id, eval_time=sweep_at).as_record()
+        derived_rows += int(resource_correlation.get("summaries_written", 0))
+    except Exception:      # noqa: BLE001 — a derived correlation retries from graph state
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception(
+            "contract-spend correlation failed for org=%s", org_id)
     # RETENTION on `metric_history` (L2.4.1). The analytic stratum's history table is the one
     # store in L2 that only ever APPENDS, which is the exact shape that put this database into
     # read-only once before, so its 24-month horizon is enforced on a path that actually runs
@@ -574,7 +646,7 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     if done or affected:
         try:
             from genios_engine.context.attention import refresh_attention
-            attention_rows = refresh_attention(store, org_id)
+            attention_rows = refresh_attention(store, org_id, eval_time=sweep_at)
         except Exception:      # noqa: BLE001 — attention is an ordering hint, never fatal
             pass
 
@@ -586,7 +658,7 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     if done or affected:
         try:
             from genios_engine.context.situations import refresh_situations
-            situation_rows = refresh_situations(store, org_id)
+            situation_rows = refresh_situations(store, org_id, eval_time=sweep_at)
         except Exception:      # noqa: BLE001 — derived view, rebuilt next drain
             from genios_engine.platform.logging import get_logger
             get_logger("genios.l2").exception(
@@ -1034,12 +1106,9 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     # `sweep_at`, like every pass above: one instant for the whole drain, so a replay reproduces
     # the same fires. `evaluate_org` reads the clock nowhere below this line.
     #
-    # FLAGGED, NOT HIDDEN: the two NEGATIVE condition kinds are evaluated with `evaluate_org`'s
-    # DEFAULT providers, which return empty — so an `absence` condition does not hold and the fire
-    # report says `absence_not_licensed` rather than drawing a finding from a missing connector.
-    # Wiring `context/quality`'s typed absence into this seam changes what the patterns MEAN and is
-    # the switch-over wave's decision, not this one's; `api/pattern_routes.py` takes the same
-    # defaults, so the drain and the route agree about what fired.
+    # The two NEGATIVE condition kinds use the production typed-absence and explicit edge-coverage
+    # providers.  Neither infers coverage from an empty query: an absence whose coverage epoch is
+    # stale and an edge type with no declared capability both fail as `absence_not_licensed`.
     #
     # BOUNDED: `ANCHOR_BUDGET` slices per node type per pattern, `FIRE_WRITE_BUDGET` fire rows per
     # run (the TRUE count still lands on `pattern_runs.fires`, which is the number the guard
@@ -1060,23 +1129,10 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception("pattern shadow evaluation failed for org=%s", org_id)
 
-    # Credits: charge only the LLM-metered Gmail extraction — structured Calendar events use no LLM,
-    # so they never bill. 1 credit per 10 emails keeps a sync from draining the balance. Never blocks
-    # ingestion (background must keep flowing even at zero balance; the user-facing query/draft gates
-    # do the hard block). Idempotent per drain so a re-run doesn't double-charge.
-    llm_events = done - out.get("committed_structured", 0) - out.get("skipped_no_llm", 0)
-    # 1 credit per 10 LLM-extracted items, but ALWAYS at least 1 whenever the LLM actually ran —
-    # so a small upload or a light sync still visibly bills. No LLM work → no charge.
-    charge = max(1, llm_events // 10) if llm_events > 0 else 0
-    if charge > 0:
-        try:
-            from datetime import datetime, timezone
-            from genios_engine.platform import billing as _B
-            idem = f"sync:{org_id}:{datetime.now(timezone.utc):%Y%m%d%H%M}:{done}"
-            with store.engine.begin() as c:
-                _B.deduct(c, org_id, charge, reason="gmail_extraction", idem=idem, bucket="sync")
-        except Exception:      # noqa: BLE001 — billing must never break ingestion
-            pass
+    # No extraction credit is charged here.  Semantic rows arrive with an L1 QES and are adapted
+    # without a model call; structured rows are deterministic too.  Charging either at this seam
+    # billed the same L1 interpretation twice.  The two remaining L2 model sites write their own
+    # token/cost receipts through `context.model_audit`.
     # L-4 · the fixpoint's "after", and the bookkeeping. LAST, after every pass that can move a
     # situation, a membership or a lifecycle state — a hash taken before the composer would call a
     # sweep converged that had not finished changing the graph.
@@ -1101,6 +1157,7 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             # drain for the reason `budget_exhausted` is — a site that made no calls because it
             # ran out of budget must not look like a site with nothing to do.
             "resolutions": resolutions,
+            "resource_correlation": resource_correlation,
             "derived_rows": derived_rows, "history_points_pruned": history_points_pruned,
             "history_backfilled": history_backfilled,
             "metric_points": metric_points, "trend_facts": trend_facts,

@@ -1,0 +1,1422 @@
+{
+ "set_id": "l4_bundle_review",
+ "site": "R-2 · the reasoning bundle narrative (05-Group-L4.5)",
+ "gate": {
+  "min_fixtures": 25,
+  "min_clean": 6,
+  "min_hinglish": 3,
+  "min_adversarial": 12,
+  "checks_covered": [
+   "V-1",
+   "V-2",
+   "V-3",
+   "V-4",
+   "V-5",
+   "V-6",
+   "V-7"
+  ],
+  "ten_second_max_words_per_section": 45,
+  "ten_second_max_words_per_card": 160,
+  "ten_second_glance_fields": [
+   "headline",
+   "situation_summary",
+   "why_it_matters",
+   "root_cause",
+   "recommendation_rationale",
+   "expected_effect"
+  ]
+ },
+ "how_to_read": "REPLAY LANE, the same shape tests/golden/l2 uses. `model_answer` is what R-2 returned when this fixture was labelled, and on more than half of them it is WRONG ON PURPOSE — what this set grades is OUR CODE: the gauntlet, the number substitution, the fallback. `situation` is expanded into a real ReasoningDecision with real units, candidates, constraints and citations by tests/reason/test_bundle_gauntlet.py, so nothing here is a mock of the contract. `expect.gauntlet` is pass/fail/not_run; `expect.checks_failed` names WHICH check must catch it, so a fixture that starts failing for a different reason is a regression rather than a pass. `model_answer: null` means no generation existed at all — the budget was spent, the tenant was not activated, or the model did not return JSON. THE TEN-SECOND TEST IS A HUMAN STANDARD and it is why `expect.rendered` is committed: a reviewer reads the card exactly as a founder would, with every number already substituted.",
+ "situations": {
+  "renewal_northwind": {
+   "provenance": "doc 05 §5 — the card the founder's bar is written against, reproduced end to end.",
+   "subject_type": "deal",
+   "capability_id": "expertise.renewal_risk",
+   "domain": "sales",
+   "confidence_bp": 7800,
+   "confidence_vector": {
+    "independent_evidence_groups": 3,
+    "evidence_coverage_bp": 8100,
+    "corroboration_bp": 7400,
+    "source_quality_bp": 7000
+   },
+   "do_nothing": {
+    "cost_bp": 2800,
+    "horizon_days": 11,
+    "statement": "Exposure compounds to the renewal date.",
+    "source": "computed"
+   },
+   "outcome_window_days": 7,
+   "expires_in_days": 11,
+   "facts": {
+    "deal.stage": "renewal",
+    "deal.owner": "Priya",
+    "account.name": "Northwind",
+    "relationship.cadence": "six day"
+   },
+   "evidence_ids": [
+    "ev_thread_pricing",
+    "ev_cadence",
+    "ev_committee"
+   ],
+   "units": [
+    {
+     "unit": "core.risk",
+     "metrics": {
+      "exposure_bp": 4400
+     },
+     "findings": [
+      {
+       "kind": "engagement_gap",
+       "value_bp": -3200,
+       "metrics": {
+        "quiet_days": 14,
+        "cadence_days": 6
+       },
+       "evidence_ids": [
+        "ev_cadence"
+       ],
+       "reason_codes": [
+        "cadence_broken"
+       ]
+      },
+      {
+       "kind": "buying_committee_silent",
+       "value_bp": -2100,
+       "metrics": {
+        "silent_stakeholder_count": 2
+       },
+       "evidence_ids": [
+        "ev_committee"
+       ]
+      }
+     ]
+    },
+    {
+     "unit": "core.timeline",
+     "metrics": {
+      "urgency_bp": 7600
+     },
+     "findings": [
+      {
+       "kind": "decision_window",
+       "value_bp": 7600,
+       "metrics": {
+        "window_days": 11
+       },
+       "evidence_ids": [
+        "ev_thread_pricing"
+       ]
+      }
+     ]
+    }
+   ],
+   "candidates": [
+    {
+     "play_id": "renewal_risk_outreach",
+     "label": "Renewal-risk outreach to the economic buyer",
+     "steps": [
+      "Draft the outreach",
+      "Reference the pricing thread"
+     ],
+     "utility_bp": 7400,
+     "formula_utility_bp": 7200,
+     "rank": 1,
+     "components": {
+      "importance": 6900,
+      "impact": 7100,
+      "urgency": 7600,
+      "success": 6200,
+      "effort": 2000,
+      "risk": 1800
+     }
+    },
+    {
+     "play_id": "discount_offer",
+     "label": "Discount offer",
+     "steps": [
+      "Offer a discount"
+     ],
+     "utility_bp": 5100,
+     "formula_utility_bp": 5100,
+     "rank": null,
+     "eliminated": true,
+     "components": {
+      "importance": 6900,
+      "impact": 5200
+     }
+    }
+   ],
+   "constraints": [
+    {
+     "rule_id": "ADM014",
+     "severity": "blocking",
+     "eliminates": "discount_offer",
+     "statement": "No unapproved discount above ten percent may be offered to a renewal account."
+    }
+   ],
+   "citations": [
+    {
+     "artifact_id": "ADM014",
+     "artifact_class": "rule",
+     "source_ref": "admin_corpus",
+     "statement": "No unapproved discount above ten percent may be offered to a renewal account."
+    }
+   ]
+  },
+  "stalled_deal_hinglish": {
+   "provenance": "doc 09 case 9 — mixed-script material; the corpus is Hinglish-bearing (L2).",
+   "subject_type": "deal",
+   "capability_id": "expertise.deal_cooling",
+   "domain": "sales",
+   "confidence_bp": 6100,
+   "confidence_vector": {
+    "independent_evidence_groups": 2,
+    "evidence_coverage_bp": 5200,
+    "corroboration_bp": 6000,
+    "source_quality_bp": 6400
+   },
+   "do_nothing": {
+    "cost_bp": 1900,
+    "horizon_days": 21,
+    "statement": "The deal keeps sliding without a next step.",
+    "source": "computed"
+   },
+   "outcome_window_days": 5,
+   "expires_in_days": 14,
+   "facts": {
+    "deal.stage": "proposal",
+    "note.last": "budget approval pending hai, next week dekhte hain",
+    "contact.name": "Aditya"
+   },
+   "evidence_ids": [
+    "ev_note_hinglish",
+    "ev_last_reply"
+   ],
+   "units": [
+    {
+     "unit": "core.risk",
+     "metrics": {},
+     "findings": [
+      {
+       "kind": "stall",
+       "value_bp": -2600,
+       "metrics": {
+        "silent_days": 19
+       },
+       "evidence_ids": [
+        "ev_last_reply"
+       ],
+       "reason_codes": [
+        "no_reply"
+       ]
+      }
+     ]
+    },
+    {
+     "unit": "core.relationship",
+     "metrics": {},
+     "findings": [
+      {
+       "kind": "single_threaded",
+       "value_bp": -1500,
+       "metrics": {
+        "warm_contact_count": 1
+       },
+       "evidence_ids": [
+        "ev_note_hinglish"
+       ]
+      }
+     ]
+    }
+   ],
+   "candidates": [
+    {
+     "play_id": "multi_thread",
+     "label": "Widen contacts on the account",
+     "steps": [
+      "Identify a second stakeholder",
+      "Send a short check-in"
+     ],
+     "utility_bp": 6300,
+     "formula_utility_bp": 6300,
+     "rank": 1,
+     "components": {
+      "importance": 5800,
+      "impact": 6100
+     }
+    },
+    {
+     "play_id": "follow_up",
+     "label": "Follow up with the same contact",
+     "steps": [
+      "Send a reminder"
+     ],
+     "utility_bp": 4900,
+     "formula_utility_bp": 4900,
+     "rank": 2,
+     "components": {
+      "importance": 5800,
+      "impact": 4200
+     }
+    }
+   ],
+   "constraints": [],
+   "citations": []
+  },
+  "support_escalation": {
+   "provenance": "a non-sales domain, to prove the core units carry no domain vocabulary.",
+   "subject_type": "ticket",
+   "capability_id": "expertise.support_escalation",
+   "domain": "support",
+   "confidence_bp": 8300,
+   "confidence_vector": {
+    "independent_evidence_groups": 4,
+    "evidence_coverage_bp": 8800,
+    "corroboration_bp": 8200,
+    "source_quality_bp": 8600
+   },
+   "do_nothing": {
+    "cost_bp": 4100,
+    "horizon_days": 2,
+    "statement": "The breach becomes contractual at the next checkpoint.",
+    "source": "computed"
+   },
+   "outcome_window_days": 2,
+   "expires_in_days": 3,
+   "facts": {
+    "ticket.severity": "high",
+    "ticket.customer": "Meridian",
+    "contract.response_target": "four hour"
+   },
+   "evidence_ids": [
+    "ev_ticket",
+    "ev_sla",
+    "ev_owner"
+   ],
+   "units": [
+    {
+     "unit": "core.timeline",
+     "metrics": {
+      "urgency_bp": 9100
+     },
+     "findings": [
+      {
+       "kind": "response_target_breached",
+       "value_bp": 6400,
+       "metrics": {
+        "overdue_hours": 9
+       },
+       "evidence_ids": [
+        "ev_sla"
+       ]
+      }
+     ]
+    },
+    {
+     "unit": "core.impact",
+     "metrics": {},
+     "findings": [
+      {
+       "kind": "contractual_exposure",
+       "value_bp": 5900,
+       "metrics": {
+        "affected_seat_count": 240
+       },
+       "evidence_ids": [
+        "ev_ticket"
+       ]
+      }
+     ]
+    }
+   ],
+   "candidates": [
+    {
+     "play_id": "escalate_to_owner",
+     "label": "Escalate to the named account owner",
+     "steps": [
+      "Page the owner",
+      "Attach the breach timeline"
+     ],
+     "utility_bp": 8100,
+     "formula_utility_bp": 8000,
+     "rank": 1,
+     "components": {
+      "importance": 7900,
+      "impact": 8400,
+      "urgency": 9100
+     }
+    },
+    {
+     "play_id": "auto_reply",
+     "label": "Send an automated holding reply",
+     "steps": [
+      "Send the template"
+     ],
+     "utility_bp": 3200,
+     "formula_utility_bp": 3200,
+     "rank": null,
+     "eliminated": true,
+     "components": {
+      "importance": 7900,
+      "impact": 2100
+     }
+    }
+   ],
+   "constraints": [
+    {
+     "rule_id": "SUP007",
+     "severity": "blocking",
+     "eliminates": "auto_reply",
+     "statement": "A breached response target is never answered with an automated reply."
+    }
+   ],
+   "citations": [
+    {
+     "artifact_id": "SUP007",
+     "artifact_class": "rule",
+     "source_ref": "support_corpus",
+     "statement": "A breached response target is never answered with an automated reply."
+    }
+   ]
+  },
+  "thin_evidence": {
+   "provenance": "doc 09 case 4 — the prose must not sound more certain than the weakest axis.",
+   "subject_type": "account",
+   "capability_id": "expertise.account_drift",
+   "domain": "sales",
+   "confidence_bp": 5200,
+   "confidence_vector": {
+    "independent_evidence_groups": 1,
+    "evidence_coverage_bp": 3100,
+    "corroboration_bp": 4400,
+    "source_quality_bp": 5000
+   },
+   "do_nothing": {
+    "cost_bp": 900,
+    "horizon_days": 45,
+    "statement": "The account drifts without a check-in.",
+    "source": "manifest_fallback"
+   },
+   "outcome_window_days": 14,
+   "expires_in_days": 30,
+   "facts": {
+    "account.name": "Calder",
+    "account.owner": "Rohit"
+   },
+   "evidence_ids": [
+    "ev_single_touch"
+   ],
+   "units": [
+    {
+     "unit": "core.relationship",
+     "metrics": {},
+     "findings": [
+      {
+       "kind": "coverage_thin",
+       "value_bp": -1200,
+       "metrics": {
+        "known_contact_count": 1
+       },
+       "evidence_ids": [
+        "ev_single_touch"
+       ],
+       "reason_codes": [
+        "single_source"
+       ]
+      }
+     ]
+    }
+   ],
+   "candidates": [
+    {
+     "play_id": "review_account",
+     "label": "Review the account before acting",
+     "steps": [
+      "Open the account",
+      "Confirm the owner"
+     ],
+     "utility_bp": 5400,
+     "formula_utility_bp": 5400,
+     "rank": 1,
+     "components": {
+      "importance": 4200,
+      "impact": 4800
+     }
+    }
+   ],
+   "constraints": [],
+   "citations": []
+  },
+  "vendor_cost": {
+   "provenance": "a money-bearing situation where the do-nothing cost is the whole story.",
+   "subject_type": "vendor",
+   "capability_id": "expertise.vendor_renewal",
+   "domain": "operations",
+   "confidence_bp": 7100,
+   "confidence_vector": {
+    "independent_evidence_groups": 2,
+    "evidence_coverage_bp": 6900,
+    "corroboration_bp": 7000,
+    "source_quality_bp": 7500
+   },
+   "do_nothing": {
+    "cost_bp": 3300,
+    "horizon_days": 9,
+    "statement": "The contract auto-renews at the higher rate.",
+    "source": "computed"
+   },
+   "outcome_window_days": 9,
+   "expires_in_days": 9,
+   "facts": {
+    "vendor.name": "Halcyon",
+    "contract.auto_renew": "true"
+   },
+   "evidence_ids": [
+    "ev_contract",
+    "ev_usage"
+   ],
+   "units": [
+    {
+     "unit": "core.cost",
+     "metrics": {},
+     "findings": [
+      {
+       "kind": "spend_above_usage",
+       "value_bp": 3300,
+       "metrics": {
+        "unused_seat_count": 18
+       },
+       "evidence_ids": [
+        "ev_usage"
+       ]
+      }
+     ]
+    },
+    {
+     "unit": "core.timeline",
+     "metrics": {
+      "urgency_bp": 8200
+     },
+     "findings": [
+      {
+       "kind": "auto_renew_window",
+       "value_bp": 8200,
+       "metrics": {
+        "notice_days": 9
+       },
+       "evidence_ids": [
+        "ev_contract"
+       ]
+      }
+     ]
+    }
+   ],
+   "candidates": [
+    {
+     "play_id": "serve_notice",
+     "label": "Serve notice before the auto-renew window closes",
+     "steps": [
+      "Draft the notice",
+      "Send it to the named contact"
+     ],
+     "utility_bp": 7700,
+     "formula_utility_bp": 7500,
+     "rank": 1,
+     "components": {
+      "importance": 7000,
+      "impact": 7800,
+      "urgency": 8200
+     }
+    },
+    {
+     "play_id": "renegotiate",
+     "label": "Renegotiate the seat count",
+     "steps": [
+      "Open a negotiation"
+     ],
+     "utility_bp": 6100,
+     "formula_utility_bp": 6100,
+     "rank": 2,
+     "components": {
+      "importance": 7000,
+      "impact": 6200
+     }
+    }
+   ],
+   "constraints": [],
+   "citations": []
+  },
+  "commitment_slip": {
+   "provenance": "an internal commitment, to prove the narrative works with no external party.",
+   "subject_type": "commitment",
+   "capability_id": "expertise.commitment_tracking",
+   "domain": "operations",
+   "confidence_bp": 6800,
+   "confidence_vector": {
+    "independent_evidence_groups": 2,
+    "evidence_coverage_bp": 7200,
+    "corroboration_bp": 6600,
+    "source_quality_bp": 6900
+   },
+   "do_nothing": {
+    "cost_bp": 1500,
+    "horizon_days": 4,
+    "statement": "The promised date passes unacknowledged.",
+    "source": "computed"
+   },
+   "outcome_window_days": 3,
+   "expires_in_days": 6,
+   "facts": {
+    "commitment.owner": "Harsh",
+    "commitment.promised": "the migration plan"
+   },
+   "evidence_ids": [
+    "ev_promise",
+    "ev_no_update"
+   ],
+   "units": [
+    {
+     "unit": "core.timeline",
+     "metrics": {
+      "urgency_bp": 6900
+     },
+     "findings": [
+      {
+       "kind": "promised_date_slipping",
+       "value_bp": 4800,
+       "metrics": {
+        "promise_days": 4
+       },
+       "evidence_ids": [
+        "ev_promise"
+       ]
+      }
+     ]
+    },
+    {
+     "unit": "core.dependency",
+     "metrics": {},
+     "findings": [
+      {
+       "kind": "blocked_downstream",
+       "value_bp": 2600,
+       "metrics": {
+        "blocked_item_count": 3
+       },
+       "evidence_ids": [
+        "ev_no_update"
+       ]
+      }
+     ]
+    }
+   ],
+   "candidates": [
+    {
+     "play_id": "send_recap",
+     "label": "Send a status recap to the people waiting",
+     "steps": [
+      "Summarise the state",
+      "Restate the date"
+     ],
+     "utility_bp": 6600,
+     "formula_utility_bp": 6400,
+     "rank": 1,
+     "components": {
+      "importance": 6100,
+      "impact": 6300
+     }
+    },
+    {
+     "play_id": "reschedule",
+     "label": "Move the promised date",
+     "steps": [
+      "Propose a new date"
+     ],
+     "utility_bp": 5000,
+     "formula_utility_bp": 5000,
+     "rank": 2,
+     "components": {
+      "importance": 6100,
+      "impact": 4700
+     }
+    }
+   ],
+   "constraints": [],
+   "citations": []
+  }
+ },
+ "fixtures": [
+  {
+   "fixture_id": "renewal_founder_bar",
+   "situation": "renewal_northwind",
+   "provenance": "doc 05 §5 — the founder-bar card: WHY / ROOT CAUSE / RECOMMENDATION / EXPECTED EFFECT with a real L3 citation.",
+   "tags": [
+    "founder_bar",
+    "clean",
+    "citation"
+   ],
+   "model_answer": {
+    "headline": "Renewal at risk — the buying committee has gone quiet",
+    "situation_summary": "The renewal decision window closes in {core_timeline_window_days} days and the buying committee has not replied for {core_risk_quiet_days} days, against a {core_risk_cadence_days}-day cadence for this account.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, and that exposure is fully realised within {do_nothing_horizon_days} days when the renewal lands.",
+    "root_cause": "Engagement fell away after the pricing thread: the risk unit reads the gap at {core_risk_engagement_gap_bp} basis points, and {core_risk_silent_stakeholder_count} of the named stakeholders have gone silent, so only one contact is still warm.",
+    "recommendation_rationale": "Send the renewal-risk outreach to the economic buyer today, referencing the pricing thread directly. It scored {recommended_score_pct} percent, and the discount offer was eliminated outright by an authored rule rather than by score.",
+    "expected_effect": "Acting restores the cadence before the decision window closes, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the exposure of {do_nothing_cost_bp} basis points standing to the renewal date.",
+    "alternatives_narrative": "The discount offer was rejected: an authored rule blocks an unapproved discount on a renewal account, so it never reached the ranking."
+   },
+   "expect": {
+    "gauntlet": "pass",
+    "checks_failed": [],
+    "generation": "llm",
+    "rendered": {
+     "headline": "Renewal at risk — the buying committee has gone quiet",
+     "situation_summary": "The renewal decision window closes in 11 days and the buying committee has not replied for 14 days, against a 6-day cadence for this account.",
+     "why_it_matters": "Not acting carries a priced exposure of 2800 basis points, and that exposure is fully realised within 11 days when the renewal lands.",
+     "root_cause": "Engagement fell away after the pricing thread: the risk unit reads the gap at -3200 basis points, and 2 of the named stakeholders have gone silent, so only one contact is still warm.",
+     "recommendation_rationale": "Send the renewal-risk outreach to the economic buyer today, referencing the pricing thread directly. It scored 74 percent, and the discount offer was eliminated outright by an authored rule rather than by score.",
+     "expected_effect": "Acting restores the cadence before the decision window closes, and the effect should be visible within 7 days. Doing nothing leaves the exposure of 2800 basis points standing to the renewal date.",
+     "alternatives_narrative": "The discount offer was rejected: an authored rule blocks an unapproved discount on a renewal account, so it never reached the ranking."
+    },
+    "words": {
+     "headline": 10,
+     "situation_summary": 25,
+     "why_it_matters": 23,
+     "root_cause": 33,
+     "recommendation_rationale": 33,
+     "expected_effect": 32,
+     "alternatives_narrative": 22
+    },
+    "card_words": 156
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "renewal_bare_digits",
+   "situation": "renewal_northwind",
+   "provenance": "doc 09 case 3 — a number drifts. The model typed the digits instead of the placeholder.",
+   "tags": [
+    "adversarial",
+    "V-4"
+   ],
+   "model_answer": {
+    "headline": "Renewal at risk — the buying committee has gone quiet",
+    "situation_summary": "The renewal decision window closes in {core_timeline_window_days} days and the buying committee has not replied for {core_risk_quiet_days} days, against a {core_risk_cadence_days}-day cadence for this account.",
+    "why_it_matters": "The renewal is 11 days out and $84,000 of ARR is exposed if nobody replies.",
+    "root_cause": "Engagement fell away after the pricing thread: the risk unit reads the gap at {core_risk_engagement_gap_bp} basis points, and {core_risk_silent_stakeholder_count} of the named stakeholders have gone silent, so only one contact is still warm.",
+    "recommendation_rationale": "Send the renewal-risk outreach to the economic buyer today, referencing the pricing thread directly. It scored {recommended_score_pct} percent, and the discount offer was eliminated outright by an authored rule rather than by score.",
+    "expected_effect": "Acting restores the cadence before the decision window closes, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the exposure of {do_nothing_cost_bp} basis points standing to the renewal date.",
+    "alternatives_narrative": "The discount offer was rejected: an authored rule blocks an unapproved discount on a renewal account, so it never reached the ranking."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-4"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "renewal_spelled_number",
+   "situation": "renewal_northwind",
+   "provenance": "V-4's second half — told not to type digits, the model spells the quantity instead.",
+   "tags": [
+    "adversarial",
+    "V-4"
+   ],
+   "model_answer": {
+    "headline": "Renewal at risk — the buying committee has gone quiet",
+    "situation_summary": "The committee has been quiet for fourteen days against a six day cadence, and the window is closing.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, and that exposure is fully realised within {do_nothing_horizon_days} days when the renewal lands.",
+    "root_cause": "Engagement fell away after the pricing thread: the risk unit reads the gap at {core_risk_engagement_gap_bp} basis points, and {core_risk_silent_stakeholder_count} of the named stakeholders have gone silent, so only one contact is still warm.",
+    "recommendation_rationale": "Send the renewal-risk outreach to the economic buyer today, referencing the pricing thread directly. It scored {recommended_score_pct} percent, and the discount offer was eliminated outright by an authored rule rather than by score.",
+    "expected_effect": "Acting restores the cadence before the decision window closes, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the exposure of {do_nothing_cost_bp} basis points standing to the renewal date.",
+    "alternatives_narrative": "The discount offer was rejected: an authored rule blocks an unapproved discount on a renewal account, so it never reached the ranking."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-4"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "renewal_paraphrased_citation",
+   "situation": "renewal_northwind",
+   "provenance": "doc 09 case 6 — a citation paraphrased instead of quoted.",
+   "tags": [
+    "adversarial",
+    "V-2"
+   ],
+   "model_answer": {
+    "headline": "Renewal at risk — the buying committee has gone quiet",
+    "situation_summary": "The renewal decision window closes in {core_timeline_window_days} days and the buying committee has not replied for {core_risk_quiet_days} days, against a {core_risk_cadence_days}-day cadence for this account.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, and that exposure is fully realised within {do_nothing_horizon_days} days when the renewal lands.",
+    "root_cause": "Engagement fell away after the pricing thread: the risk unit reads the gap at {core_risk_engagement_gap_bp} basis points, and {core_risk_silent_stakeholder_count} of the named stakeholders have gone silent, so only one contact is still warm.",
+    "recommendation_rationale": "Send the renewal-risk outreach to the economic buyer today. The corpus says \"discounts over ten percent need approval\", so the discount play was eliminated.",
+    "expected_effect": "Acting restores the cadence before the decision window closes, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the exposure of {do_nothing_cost_bp} basis points standing to the renewal date.",
+    "alternatives_narrative": "The discount offer was rejected: an authored rule blocks an unapproved discount on a renewal account, so it never reached the ranking."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-2"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "renewal_recommends_the_rejected",
+   "situation": "renewal_northwind",
+   "provenance": "doc 09 case 2 — THE WORST OUTPUT THIS LAYER COULD PRODUCE: the prose recommends the option the corpus eliminated.",
+   "tags": [
+    "adversarial",
+    "V-3",
+    "worst_case"
+   ],
+   "model_answer": {
+    "headline": "Renewal at risk — the buying committee has gone quiet",
+    "situation_summary": "The renewal decision window closes in {core_timeline_window_days} days and the buying committee has not replied for {core_risk_quiet_days} days, against a {core_risk_cadence_days}-day cadence for this account.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, and that exposure is fully realised within {do_nothing_horizon_days} days when the renewal lands.",
+    "root_cause": "Engagement fell away after the pricing thread: the risk unit reads the gap at {core_risk_engagement_gap_bp} basis points, and {core_risk_silent_stakeholder_count} of the named stakeholders have gone silent, so only one contact is still warm.",
+    "recommendation_rationale": "Open with a discount offer to the economic buyer; a renewal-risk outreach can follow if it does not land.",
+    "expected_effect": "Acting restores the cadence before the decision window closes, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the exposure of {do_nothing_cost_bp} basis points standing to the renewal date.",
+    "alternatives_narrative": "The discount offer was rejected: an authored rule blocks an unapproved discount on a renewal account, so it never reached the ranking."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-3"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "renewal_directive_in_description",
+   "situation": "renewal_northwind",
+   "provenance": "the no-directives cap, kept where it was doing work: a DESCRIPTIVE section that instructs is a model choosing.",
+   "tags": [
+    "adversarial",
+    "V-3"
+   ],
+   "model_answer": {
+    "headline": "Renewal at risk — the buying committee has gone quiet",
+    "situation_summary": "The renewal decision window closes in {core_timeline_window_days} days and the buying committee has not replied for {core_risk_quiet_days} days, against a {core_risk_cadence_days}-day cadence for this account.",
+    "why_it_matters": "The exposure is {do_nothing_cost_bp} basis points, so you should call the economic buyer today.",
+    "root_cause": "Engagement fell away after the pricing thread: the risk unit reads the gap at {core_risk_engagement_gap_bp} basis points, and {core_risk_silent_stakeholder_count} of the named stakeholders have gone silent, so only one contact is still warm.",
+    "recommendation_rationale": "Send the renewal-risk outreach to the economic buyer today, referencing the pricing thread directly. It scored {recommended_score_pct} percent, and the discount offer was eliminated outright by an authored rule rather than by score.",
+    "expected_effect": "Acting restores the cadence before the decision window closes, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the exposure of {do_nothing_cost_bp} basis points standing to the renewal date.",
+    "alternatives_narrative": "The discount offer was rejected: an authored rule blocks an unapproved discount on a renewal account, so it never reached the ranking."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-3"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "renewal_invented_entity",
+   "situation": "renewal_northwind",
+   "provenance": "doc 09 case 7 / V-6 — a company nobody mentioned appears in the prose.",
+   "tags": [
+    "adversarial",
+    "V-6"
+   ],
+   "model_answer": {
+    "headline": "Renewal at risk — the buying committee has gone quiet",
+    "situation_summary": "The renewal decision window closes in {core_timeline_window_days} days and the buying committee has not replied for {core_risk_quiet_days} days, against a {core_risk_cadence_days}-day cadence for this account.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, and that exposure is fully realised within {do_nothing_horizon_days} days when the renewal lands.",
+    "root_cause": "Engagement fell away after the pricing thread, and Contoso has since been evaluating the same category, which is why the committee went quiet.",
+    "recommendation_rationale": "Send the renewal-risk outreach to the economic buyer today, referencing the pricing thread directly. It scored {recommended_score_pct} percent, and the discount offer was eliminated outright by an authored rule rather than by score.",
+    "expected_effect": "Acting restores the cadence before the decision window closes, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the exposure of {do_nothing_cost_bp} basis points standing to the renewal date.",
+    "alternatives_narrative": "The discount offer was rejected: an authored rule blocks an unapproved discount on a renewal account, so it never reached the ranking."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-6"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "renewal_invented_address",
+   "situation": "renewal_northwind",
+   "provenance": "V-6's other half — an address or URL that exists nowhere in the situation.",
+   "tags": [
+    "adversarial",
+    "V-6"
+   ],
+   "model_answer": {
+    "headline": "Renewal at risk — the buying committee has gone quiet",
+    "situation_summary": "The renewal decision window closes in {core_timeline_window_days} days and the buying committee has not replied for {core_risk_quiet_days} days, against a {core_risk_cadence_days}-day cadence for this account.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, and that exposure is fully realised within {do_nothing_horizon_days} days when the renewal lands.",
+    "root_cause": "Engagement fell away after the pricing thread: the risk unit reads the gap at {core_risk_engagement_gap_bp} basis points, and {core_risk_silent_stakeholder_count} of the named stakeholders have gone silent, so only one contact is still warm.",
+    "recommendation_rationale": "Send the renewal-risk outreach to the economic buyer at buyer@northwind-holdings.example today, referencing the pricing thread.",
+    "expected_effect": "Acting restores the cadence before the decision window closes, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the exposure of {do_nothing_cost_bp} basis points standing to the renewal date.",
+    "alternatives_narrative": "The discount offer was rejected: an authored rule blocks an unapproved discount on a renewal account, so it never reached the ranking."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-6"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "renewal_unknown_placeholder",
+   "situation": "renewal_northwind",
+   "provenance": "V-5 — the model asked for a number the deterministic half never computed.",
+   "tags": [
+    "adversarial",
+    "V-5"
+   ],
+   "model_answer": {
+    "headline": "Renewal at risk — the buying committee has gone quiet",
+    "situation_summary": "The renewal decision window closes in {core_timeline_window_days} days and the buying committee has not replied for {core_risk_quiet_days} days, against a {core_risk_cadence_days}-day cadence for this account.",
+    "why_it_matters": "Exposure compounds at {daily_burn_rate} per day until the renewal lands, which is {do_nothing_horizon_days} days away.",
+    "root_cause": "Engagement fell away after the pricing thread: the risk unit reads the gap at {core_risk_engagement_gap_bp} basis points, and {core_risk_silent_stakeholder_count} of the named stakeholders have gone silent, so only one contact is still warm.",
+    "recommendation_rationale": "Send the renewal-risk outreach to the economic buyer today, referencing the pricing thread directly. It scored {recommended_score_pct} percent, and the discount offer was eliminated outright by an authored rule rather than by score.",
+    "expected_effect": "Acting restores the cadence before the decision window closes, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the exposure of {do_nothing_cost_bp} basis points standing to the renewal date.",
+    "alternatives_narrative": "The discount offer was rejected: an authored rule blocks an unapproved discount on a renewal account, so it never reached the ranking."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-5"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "renewal_markdown_residue",
+   "situation": "renewal_northwind",
+   "provenance": "V-7 — the model answered with a document rather than a sentence.",
+   "tags": [
+    "adversarial",
+    "V-7"
+   ],
+   "model_answer": {
+    "headline": "Renewal at risk — the buying committee has gone quiet",
+    "situation_summary": "The renewal decision window closes in {core_timeline_window_days} days and the buying committee has not replied for {core_risk_quiet_days} days, against a {core_risk_cadence_days}-day cadence for this account.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, and that exposure is fully realised within {do_nothing_horizon_days} days when the renewal lands.",
+    "root_cause": "**Root cause:** engagement fell away after the pricing thread and the committee stopped replying to the thread.",
+    "recommendation_rationale": "Send the renewal-risk outreach to the economic buyer today, referencing the pricing thread directly. It scored {recommended_score_pct} percent, and the discount offer was eliminated outright by an authored rule rather than by score.",
+    "expected_effect": "Acting restores the cadence before the decision window closes, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the exposure of {do_nothing_cost_bp} basis points standing to the renewal date.",
+    "alternatives_narrative": "The discount offer was rejected: an authored rule blocks an unapproved discount on a renewal account, so it never reached the ranking."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-7"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "renewal_empty_section",
+   "situation": "renewal_northwind",
+   "provenance": "V-7 — a section that says nothing satisfies every character cap and leaves a hole in the card.",
+   "tags": [
+    "adversarial",
+    "V-7"
+   ],
+   "model_answer": {
+    "headline": "Renewal at risk — the buying committee has gone quiet",
+    "situation_summary": "The renewal decision window closes in {core_timeline_window_days} days and the buying committee has not replied for {core_risk_quiet_days} days, against a {core_risk_cadence_days}-day cadence for this account.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, and that exposure is fully realised within {do_nothing_horizon_days} days when the renewal lands.",
+    "root_cause": "N/A",
+    "recommendation_rationale": "Send the renewal-risk outreach to the economic buyer today, referencing the pricing thread directly. It scored {recommended_score_pct} percent, and the discount offer was eliminated outright by an authored rule rather than by score.",
+    "expected_effect": "Acting restores the cadence before the decision window closes, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the exposure of {do_nothing_cost_bp} basis points standing to the renewal date.",
+    "alternatives_narrative": "The discount offer was rejected: an authored rule blocks an unapproved discount on a renewal account, so it never reached the ranking."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-7"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "renewal_missing_section",
+   "situation": "renewal_northwind",
+   "provenance": "V-7 — one of the five sections the card renders never arrived.",
+   "tags": [
+    "adversarial",
+    "V-7"
+   ],
+   "model_answer": {
+    "headline": "Renewal at risk — the buying committee has gone quiet",
+    "situation_summary": "The renewal decision window closes in {core_timeline_window_days} days and the buying committee has not replied for {core_risk_quiet_days} days, against a {core_risk_cadence_days}-day cadence for this account.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, and that exposure is fully realised within {do_nothing_horizon_days} days when the renewal lands.",
+    "root_cause": "Engagement fell away after the pricing thread: the risk unit reads the gap at {core_risk_engagement_gap_bp} basis points, and {core_risk_silent_stakeholder_count} of the named stakeholders have gone silent, so only one contact is still warm.",
+    "recommendation_rationale": "Send the renewal-risk outreach to the economic buyer today, referencing the pricing thread directly. It scored {recommended_score_pct} percent, and the discount offer was eliminated outright by an authored rule rather than by score.",
+    "alternatives_narrative": "The discount offer was rejected: an authored rule blocks an unapproved discount on a renewal account, so it never reached the ranking."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-7"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "renewal_ungrounded_claim",
+   "situation": "renewal_northwind",
+   "provenance": "doc 09 case 1 — a sentence that asserts a fact no unit found.",
+   "tags": [
+    "adversarial",
+    "V-1"
+   ],
+   "model_answer": {
+    "headline": "Renewal at risk — the buying committee has gone quiet",
+    "situation_summary": "Procurement has frozen all discretionary spending until the fiscal quarter turns over.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, and that exposure is fully realised within {do_nothing_horizon_days} days when the renewal lands.",
+    "root_cause": "Engagement fell away after the pricing thread: the risk unit reads the gap at {core_risk_engagement_gap_bp} basis points, and {core_risk_silent_stakeholder_count} of the named stakeholders have gone silent, so only one contact is still warm.",
+    "recommendation_rationale": "Send the renewal-risk outreach to the economic buyer today, referencing the pricing thread directly. It scored {recommended_score_pct} percent, and the discount offer was eliminated outright by an authored rule rather than by score.",
+    "expected_effect": "Acting restores the cadence before the decision window closes, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the exposure of {do_nothing_cost_bp} basis points standing to the renewal date.",
+    "alternatives_narrative": "The discount offer was rejected: an authored rule blocks an unapproved discount on a renewal account, so it never reached the ranking."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-1"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "hinglish_clean",
+   "situation": "stalled_deal_hinglish",
+   "provenance": "doc 09 case 9 — mixed-script material quoted in its own script, no translation.",
+   "tags": [
+    "clean",
+    "hinglish"
+   ],
+   "model_answer": {
+    "headline": "Deal cooling — one contact, no reply",
+    "situation_summary": "The last note on this deal says budget approval pending hai, next week dekhte hain, and there has been no reply for {core_risk_silent_days} days.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, realised within {do_nothing_horizon_days} days as the deal slides past its stage.",
+    "root_cause": "On the evidence available, the account is single-threaded: the relationship unit counts {core_relationship_warm_contact_count} warm contact, so the deal depends entirely on one person who has stopped replying.",
+    "recommendation_rationale": "Widen contacts on the account rather than chasing the same person again. It ranked {score_gap_bp} basis points ahead of another follow-up on the same axes.",
+    "expected_effect": "A second stakeholder gives the deal a path that does not depend on one reply, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the exposure standing at {do_nothing_cost_bp} basis points."
+   },
+   "expect": {
+    "gauntlet": "pass",
+    "checks_failed": [],
+    "generation": "llm",
+    "rendered": {
+     "headline": "Deal cooling — one contact, no reply",
+     "situation_summary": "The last note on this deal says budget approval pending hai, next week dekhte hain, and there has been no reply for 19 days.",
+     "why_it_matters": "Not acting carries a priced exposure of 1900 basis points, realised within 21 days as the deal slides past its stage.",
+     "root_cause": "On the evidence available, the account is single-threaded: the relationship unit counts 1 warm contact, so the deal depends entirely on one person who has stopped replying.",
+     "recommendation_rationale": "Widen contacts on the account rather than chasing the same person again. It ranked 1400 basis points ahead of another follow-up on the same axes.",
+     "expected_effect": "A second stakeholder gives the deal a path that does not depend on one reply, and the effect should be visible within 5 days. Doing nothing leaves the exposure standing at 1900 basis points."
+    },
+    "words": {
+     "headline": 7,
+     "situation_summary": 24,
+     "why_it_matters": 21,
+     "root_cause": 27,
+     "recommendation_rationale": 25,
+     "expected_effect": 34
+    },
+    "card_words": 138
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "hinglish_translated_quote",
+   "situation": "stalled_deal_hinglish",
+   "provenance": "the customer's own words rewritten into English — a paraphrase wearing a quotation's clothes.",
+   "tags": [
+    "adversarial",
+    "hinglish",
+    "V-2"
+   ],
+   "model_answer": {
+    "headline": "Deal cooling — one contact, no reply",
+    "situation_summary": "The last note on this deal says \"budget approval is pending, let us see next week\", and there has been no reply for {core_risk_silent_days} days.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, realised within {do_nothing_horizon_days} days as the deal slides past its stage.",
+    "root_cause": "On the evidence available, the account is single-threaded: the relationship unit counts {core_relationship_warm_contact_count} warm contact, so the deal depends entirely on one person who has stopped replying.",
+    "recommendation_rationale": "Widen contacts on the account rather than chasing the same person again. It ranked {score_gap_bp} basis points ahead of another follow-up on the same axes.",
+    "expected_effect": "A second stakeholder gives the deal a path that does not depend on one reply, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the exposure standing at {do_nothing_cost_bp} basis points."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-2"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "hinglish_overconfident",
+   "situation": "stalled_deal_hinglish",
+   "provenance": "doc 09 case 4 — a root cause that sounds more certain than the confidence vector allows.",
+   "tags": [
+    "adversarial",
+    "hinglish",
+    "hedging"
+   ],
+   "model_answer": {
+    "headline": "Deal cooling — one contact, no reply",
+    "situation_summary": "The last note on this deal says budget approval pending hai, next week dekhte hain, and there has been no reply for {core_risk_silent_days} days.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, realised within {do_nothing_horizon_days} days as the deal slides past its stage.",
+    "root_cause": "The buyer has decided against the purchase and is managing the exit politely, which is why nobody replies.",
+    "recommendation_rationale": "Widen contacts on the account rather than chasing the same person again. It ranked {score_gap_bp} basis points ahead of another follow-up on the same axes.",
+    "expected_effect": "A second stakeholder gives the deal a path that does not depend on one reply, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the exposure standing at {do_nothing_cost_bp} basis points."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-1"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "support_clean",
+   "situation": "support_escalation",
+   "provenance": "a non-sales domain: the same five sections, no sales vocabulary anywhere.",
+   "tags": [
+    "clean",
+    "domain_free",
+    "citation"
+   ],
+   "model_answer": {
+    "headline": "Response target breached — escalate to the account owner",
+    "situation_summary": "The response target on this ticket has been breached by {core_timeline_overdue_hours} hours, and it affects {core_impact_affected_seat_count} seats at the customer.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, and it becomes contractual within {do_nothing_horizon_days} days at the next checkpoint.",
+    "root_cause": "The ticket has no named owner watching it: the timeline unit reads the breach at {core_timeline_response_target_breached_bp} basis points against a target the contract states in hours, and nothing has moved since it opened.",
+    "recommendation_rationale": "Escalate to the named account owner and attach the breach timeline. An automated holding reply was removed outright by an authored rule, so escalation is the only route that remains.",
+    "expected_effect": "Escalation puts a named person on the breach before the checkpoint, and the effect should be visible within {outcome_window_days} days. Doing nothing carries the exposure into a contractual conversation.",
+    "alternatives_narrative": "The automated holding reply was rejected: an authored rule forbids answering a breached response target with an automated reply."
+   },
+   "expect": {
+    "gauntlet": "pass",
+    "checks_failed": [],
+    "generation": "llm",
+    "rendered": {
+     "headline": "Response target breached — escalate to the account owner",
+     "situation_summary": "The response target on this ticket has been breached by 9 hours, and it affects 240 seats at the customer.",
+     "why_it_matters": "Not acting carries a priced exposure of 4100 basis points, and it becomes contractual within 2 days at the next checkpoint.",
+     "root_cause": "The ticket has no named owner watching it: the timeline unit reads the breach at 6400 basis points against a target the contract states in hours, and nothing has moved since it opened.",
+     "recommendation_rationale": "Escalate to the named account owner and attach the breach timeline. An automated holding reply was removed outright by an authored rule, so escalation is the only route that remains.",
+     "expected_effect": "Escalation puts a named person on the breach before the checkpoint, and the effect should be visible within 2 days. Doing nothing carries the exposure into a contractual conversation.",
+     "alternatives_narrative": "The automated holding reply was rejected: an authored rule forbids answering a breached response target with an automated reply."
+    },
+    "words": {
+     "headline": 9,
+     "situation_summary": 20,
+     "why_it_matters": 21,
+     "root_cause": 33,
+     "recommendation_rationale": 30,
+     "expected_effect": 29,
+     "alternatives_narrative": 19
+    },
+    "card_words": 142
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "support_names_rejected_uncontradicted",
+   "situation": "support_escalation",
+   "provenance": "V-3 — a rejected option named without being contradicted reads as a second recommendation.",
+   "tags": [
+    "adversarial",
+    "V-3"
+   ],
+   "model_answer": {
+    "headline": "Response target breached — escalate to the account owner",
+    "situation_summary": "The response target on this ticket has been breached by {core_timeline_overdue_hours} hours, and it affects {core_impact_affected_seat_count} seats at the customer.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, and it becomes contractual within {do_nothing_horizon_days} days at the next checkpoint.",
+    "root_cause": "The ticket has no named owner watching it: the timeline unit reads the breach at {core_timeline_response_target_breached_bp} basis points against a target the contract states in hours, and nothing has moved since it opened.",
+    "recommendation_rationale": "Escalate to the named account owner and attach the breach timeline. An automated holding reply was removed outright by an authored rule, so escalation is the only route that remains.",
+    "expected_effect": "An automated holding reply buys time while the owner is paged, and the effect should be visible within {outcome_window_days} days.",
+    "alternatives_narrative": "The automated holding reply was rejected: an authored rule forbids answering a breached response target with an automated reply."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-3"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "support_runaway_length",
+   "situation": "support_escalation",
+   "provenance": "V-7 — a generation that keeps going. The cap refuses a runaway; it does not compress a narrative.",
+   "tags": [
+    "adversarial",
+    "V-7"
+   ],
+   "model_answer": {
+    "headline": "Response target breached — escalate to the account owner",
+    "situation_summary": "The response target on this ticket has been breached by {core_timeline_overdue_hours} hours, and it affects {core_impact_affected_seat_count} seats at the customer.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, and it becomes contractual within {do_nothing_horizon_days} days at the next checkpoint.",
+    "root_cause": "The ticket has no named owner watching it. The ticket has no named owner watching it. The ticket has no named owner watching it. The ticket has no named owner watching it. The ticket has no named owner watching it. The ticket has no named owner watching it. The ticket has no named owner watching it. The ticket has no named owner watching it. The ticket has no named owner watching it. The ticket has no named owner watching it. The ticket has no named owner watching it. The ticket has no named owner watching it.",
+    "recommendation_rationale": "Escalate to the named account owner and attach the breach timeline. An automated holding reply was removed outright by an authored rule, so escalation is the only route that remains.",
+    "expected_effect": "Escalation puts a named person on the breach before the checkpoint, and the effect should be visible within {outcome_window_days} days. Doing nothing carries the exposure into a contractual conversation.",
+    "alternatives_narrative": "The automated holding reply was rejected: an authored rule forbids answering a breached response target with an automated reply."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-7"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "thin_hedged_clean",
+   "situation": "thin_evidence",
+   "provenance": "doc 09 case 4 — the qualifier the weakest axis obliges, present and bound to the number.",
+   "tags": [
+    "clean",
+    "hedging"
+   ],
+   "model_answer": {
+    "headline": "Account drift — review before acting",
+    "situation_summary": "Only {core_relationship_known_contact_count} contact is known on this account, and the reasoning rests on a single source.",
+    "why_it_matters": "The priced exposure is small at {do_nothing_cost_bp} basis points, but it is unmeasured rather than absent: evidence coverage on the facts this decision needed was only {evidence_coverage_pct} percent.",
+    "root_cause": "On the evidence available, the reading rests on one source and cannot separate a quiet account from an unrecorded one, which is what the relationship unit reports as thin coverage.",
+    "recommendation_rationale": "Review the account before acting, and confirm the owner. It is the only candidate the engine could rank on {core_relationship_known_contact_count} known contact.",
+    "expected_effect": "A review either produces the missing evidence or confirms the account is genuinely quiet, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the account where it is, with coverage still thin."
+   },
+   "expect": {
+    "gauntlet": "pass",
+    "checks_failed": [],
+    "generation": "llm",
+    "rendered": {
+     "headline": "Account drift — review before acting",
+     "situation_summary": "Only 1 contact is known on this account, and the reasoning rests on a single source.",
+     "why_it_matters": "The priced exposure is small at 900 basis points, but it is unmeasured rather than absent: evidence coverage on the facts this decision needed was only 31 percent.",
+     "root_cause": "On the evidence available, the reading rests on one source and cannot separate a quiet account from an unrecorded one, which is what the relationship unit reports as thin coverage.",
+     "recommendation_rationale": "Review the account before acting, and confirm the owner. It is the only candidate the engine could rank on 1 known contact.",
+     "expected_effect": "A review either produces the missing evidence or confirms the account is genuinely quiet, and the effect should be visible within 14 days. Doing nothing leaves the account where it is, with coverage still thin."
+    },
+    "words": {
+     "headline": 6,
+     "situation_summary": 16,
+     "why_it_matters": 28,
+     "root_cause": 30,
+     "recommendation_rationale": 22,
+     "expected_effect": 35
+    },
+    "card_words": 137
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "thin_no_alternatives_invented",
+   "situation": "thin_evidence",
+   "provenance": "a situation with ONE candidate. The narrative invents a comparison that never happened — and it grounds on ordinary vocabulary, so V-1 provably cannot see it. V-3 does: the record says how many options existed.",
+   "tags": [
+    "adversarial",
+    "V-3"
+   ],
+   "model_answer": {
+    "headline": "Account drift — review before acting",
+    "situation_summary": "Only {core_relationship_known_contact_count} contact is known on this account, and the reasoning rests on a single source.",
+    "why_it_matters": "The priced exposure is small at {do_nothing_cost_bp} basis points, but it is unmeasured rather than absent: evidence coverage on the facts this decision needed was only {evidence_coverage_pct} percent.",
+    "root_cause": "On the evidence available, the reading rests on one source and cannot separate a quiet account from an unrecorded one, which is what the relationship unit reports as thin coverage.",
+    "recommendation_rationale": "Review the account before acting. It beat a competitive displacement play and a pricing review on every axis the engine weighed.",
+    "expected_effect": "A review either produces the missing evidence or confirms the account is genuinely quiet, and the effect should be visible within {outcome_window_days} days. Doing nothing leaves the account where it is, with coverage still thin."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-3"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "vendor_clean",
+   "situation": "vendor_cost",
+   "provenance": "a money-bearing situation where the do-nothing contrast is the point of the card.",
+   "tags": [
+    "clean",
+    "do_nothing"
+   ],
+   "model_answer": {
+    "headline": "Auto-renew window closing on an underused contract",
+    "situation_summary": "The notice window on this contract closes in {core_timeline_notice_days} days, and the cost unit counts {core_cost_unused_seat_count} seats nobody has used.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, and it is realised in full within {do_nothing_horizon_days} days when the contract renews itself.",
+    "root_cause": "Spend has stayed flat while usage fell: the cost unit reads spend above usage at {core_cost_spend_above_usage_bp} basis points, and the contract renews automatically unless notice is served.",
+    "recommendation_rationale": "Serve notice before the auto-renew window closes, then negotiate from a position that still has an exit. It ranked {score_gap_bp} basis points ahead of renegotiating without notice.",
+    "expected_effect": "Serving notice keeps both options open past the window, and the effect should be visible within {outcome_window_days} days. Doing nothing renews the contract at the higher rate.",
+    "alternatives_narrative": "Renegotiating the seat count was rejected: it ranked lower because it leaves the auto-renew running while the conversation happens."
+   },
+   "expect": {
+    "gauntlet": "pass",
+    "checks_failed": [],
+    "generation": "llm",
+    "rendered": {
+     "headline": "Auto-renew window closing on an underused contract",
+     "situation_summary": "The notice window on this contract closes in 9 days, and the cost unit counts 18 seats nobody has used.",
+     "why_it_matters": "Not acting carries a priced exposure of 3300 basis points, and it is realised in full within 9 days when the contract renews itself.",
+     "root_cause": "Spend has stayed flat while usage fell: the cost unit reads spend above usage at 3300 basis points, and the contract renews automatically unless notice is served.",
+     "recommendation_rationale": "Serve notice before the auto-renew window closes, then negotiate from a position that still has an exit. It ranked 1600 basis points ahead of renegotiating without notice.",
+     "expected_effect": "Serving notice keeps both options open past the window, and the effect should be visible within 9 days. Doing nothing renews the contract at the higher rate.",
+     "alternatives_narrative": "Renegotiating the seat count was rejected: it ranked lower because it leaves the auto-renew running while the conversation happens."
+    },
+    "words": {
+     "headline": 7,
+     "situation_summary": 20,
+     "why_it_matters": 24,
+     "root_cause": 27,
+     "recommendation_rationale": 27,
+     "expected_effect": 27,
+     "alternatives_narrative": 19
+    },
+    "card_words": 132
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "vendor_headline_is_a_paragraph",
+   "situation": "vendor_cost",
+   "provenance": "V-7 — the headline is a card title, not the first sentence of the card.",
+   "tags": [
+    "adversarial",
+    "V-7"
+   ],
+   "model_answer": {
+    "headline": "The auto-renew window on this contract closes shortly and the cost unit has counted a number of seats nobody has used, so notice should be served.",
+    "situation_summary": "The notice window on this contract closes in {core_timeline_notice_days} days, and the cost unit counts {core_cost_unused_seat_count} seats nobody has used.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, and it is realised in full within {do_nothing_horizon_days} days when the contract renews itself.",
+    "root_cause": "Spend has stayed flat while usage fell: the cost unit reads spend above usage at {core_cost_spend_above_usage_bp} basis points, and the contract renews automatically unless notice is served.",
+    "recommendation_rationale": "Serve notice before the auto-renew window closes, then negotiate from a position that still has an exit. It ranked {score_gap_bp} basis points ahead of renegotiating without notice.",
+    "expected_effect": "Serving notice keeps both options open past the window, and the effect should be visible within {outcome_window_days} days. Doing nothing renews the contract at the higher rate.",
+    "alternatives_narrative": "Renegotiating the seat count was rejected: it ranked lower because it leaves the auto-renew running while the conversation happens."
+   },
+   "expect": {
+    "gauntlet": "fail",
+    "checks_failed": [
+     "V-7"
+    ],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "commitment_clean",
+   "situation": "commitment_slip",
+   "provenance": "an internal commitment with no external counterparty — the narrative still has five sections.",
+   "tags": [
+    "clean",
+    "internal"
+   ],
+   "model_answer": {
+    "headline": "Promised date slipping with work blocked behind it",
+    "situation_summary": "The promised date is {core_timeline_promise_days} days out and {core_dependency_blocked_item_count} items are waiting behind it with no update recorded.",
+    "why_it_matters": "Not acting carries a priced exposure of {do_nothing_cost_bp} basis points, realised within {do_nothing_horizon_days} days when the date passes unacknowledged.",
+    "root_cause": "Nothing has been said since the promise was made: the timeline unit reads the slip at {core_timeline_promised_date_slipping_bp} basis points and the dependency unit finds work blocked behind it.",
+    "recommendation_rationale": "Send a status recap to the people waiting, restating the date. It ranked {score_gap_bp} basis points ahead of moving the date, because a recap costs nothing and a move spends credibility.",
+    "expected_effect": "A recap turns silence into a known state for everyone blocked, and the effect should be visible within {outcome_window_days} days. Doing nothing lets the date pass without anyone being told.",
+    "alternatives_narrative": "Moving the promised date was rejected: it ranked lower while nobody has been told the current date is at risk."
+   },
+   "expect": {
+    "gauntlet": "pass",
+    "checks_failed": [],
+    "generation": "llm",
+    "rendered": {
+     "headline": "Promised date slipping with work blocked behind it",
+     "situation_summary": "The promised date is 4 days out and 3 items are waiting behind it with no update recorded.",
+     "why_it_matters": "Not acting carries a priced exposure of 1500 basis points, realised within 4 days when the date passes unacknowledged.",
+     "root_cause": "Nothing has been said since the promise was made: the timeline unit reads the slip at 4800 basis points and the dependency unit finds work blocked behind it.",
+     "recommendation_rationale": "Send a status recap to the people waiting, restating the date. It ranked 1600 basis points ahead of moving the date, because a recap costs nothing and a move spends credibility.",
+     "expected_effect": "A recap turns silence into a known state for everyone blocked, and the effect should be visible within 3 days. Doing nothing lets the date pass without anyone being told.",
+     "alternatives_narrative": "Moving the promised date was rejected: it ranked lower while nobody has been told the current date is at risk."
+    },
+    "words": {
+     "headline": 8,
+     "situation_summary": 18,
+     "why_it_matters": 19,
+     "root_cause": 28,
+     "recommendation_rationale": 31,
+     "expected_effect": 30,
+     "alternatives_narrative": 20
+    },
+    "card_words": 134
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "commitment_unparseable",
+   "situation": "commitment_slip",
+   "provenance": "the model did not return JSON at all. Guard 4: one retry, then the labelled template.",
+   "tags": [
+    "adversarial",
+    "generation"
+   ],
+   "model_answer": null,
+   "expect": {
+    "gauntlet": "not_run",
+    "checks_failed": [],
+    "generation": "template_fallback"
+   },
+   "note": ""
+  },
+  {
+   "fixture_id": "commitment_budget_exhausted",
+   "situation": "commitment_slip",
+   "provenance": "doc 11 guard 1 — the day's narrative budget is spent. The decision is unaffected; the card gets plainer.",
+   "tags": [
+    "adversarial",
+    "budget"
+   ],
+   "model_answer": null,
+   "expect": {
+    "gauntlet": "not_run",
+    "checks_failed": [],
+    "generation": "template_fallback",
+    "gate_outcome": "skipped_budget"
+   },
+   "note": "the harness refuses the consult at the budget step rather than mutating the answer"
+  },
+  {
+   "fixture_id": "commitment_not_activated",
+   "situation": "commitment_slip",
+   "provenance": "step 1 of the gate — the tenant is not on the pilot. The commonest outcome, by design.",
+   "tags": [
+    "adversarial",
+    "activation"
+   ],
+   "model_answer": null,
+   "expect": {
+    "gauntlet": "not_run",
+    "checks_failed": [],
+    "generation": "template_fallback",
+    "gate_outcome": "skipped_not_activated"
+   },
+   "note": ""
+  }
+ ]
+}

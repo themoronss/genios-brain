@@ -17,6 +17,29 @@ from genios_engine.contracts.validators import (
 )
 
 
+def entity_fields(entity: Any) -> Mapping[str, Any]:
+    """One situation entity as a plain mapping, whatever shape the caller was handed.
+
+    TWO SHAPES REACH THE COMPILER and only one of them ever did. The v1 lane put free mappings on
+    `BusinessSituationObject.entities`; L2's admission gate now hands `shadow_compile` the
+    UPGRADED strict object, whose entities are frozen `SituationEntity` models — attributes, no
+    `.get`. Every dict read on one raises AttributeError inside `DomainCompiler.compile`, which
+    `shadow_compile` catches PER SITUATION: so an admitted situation counted as `error`, the
+    compiled lane produced nothing at all, and the sweep still reported a clean `admission_admit`.
+
+    Resolved ONCE, here, rather than at each reader: two call sites coercing the same object their
+    own way is how one idea becomes two vocabularies that disagree later. A mapping is returned
+    unchanged so the v1 lane keeps its exact keys, including the ones the model does not name
+    (`entity_id`, `object_type`, `kind`).
+    """
+    if isinstance(entity, Mapping):
+        return entity
+    dump = getattr(entity, "model_dump", None)
+    if callable(dump):
+        return dump()
+    return {}
+
+
 @dataclass(frozen=True, slots=True)
 class SourceDocument:
     kind: str
@@ -181,6 +204,7 @@ class RuntimeBrainSnapshot:
 
 
 __all__ = [
+    "entity_fields",
     "DomainRecord",
     "ExpertSlice",
     "RoutePlan",
