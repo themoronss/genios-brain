@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="The first live Layer 1-4 run on a real tenant, measured group by group: 849 objects in, 9 cards out.">
+<style>
+  html { color-scheme: light dark; }
+  body { margin: 0; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+<title>Pilot Funnel: 849 to 9</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+  :root {
+    --bg:#f4f6f8; --surface:#ffffff; --surface-2:#eef2f5; --ink:#16202b; --muted:#5b6b7c;
+    --line:#d9e1e8; --line-soft:#e8eef2;
+    /* Chart series — validated (light + dark) with the dataviz palette script.
+       kept = blue slot 1, lost = orange slot 2. Two series, legend + direct labels. */
+    --kept:#2a78d6; --lost:#eb6834;
+    --flag:#a03a2e; --flag-soft:#f8e6e2; --ok:#0c6a67; --ok-soft:#dcefee;
+    --shadow:0 1px 2px rgba(22,32,43,.06), 0 8px 24px -16px rgba(22,32,43,.28);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#0d1319; --surface:#141c24; --surface-2:#1b242e; --ink:#e2e9f0; --muted:#93a4b5;
+      --line:#24303c; --line-soft:#1d2732;
+      --kept:#3987e5; --lost:#d95926;
+      --flag:#ec8a7c; --flag-soft:#341c18; --ok:#4dbfb5; --ok-soft:#10312f;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#0d1319; --surface:#141c24; --surface-2:#1b242e; --ink:#e2e9f0; --muted:#93a4b5;
+    --line:#24303c; --line-soft:#1d2732;
+    --kept:#3987e5; --lost:#d95926;
+    --flag:#ec8a7c; --flag-soft:#341c18; --ok:#4dbfb5; --ok-soft:#10312f;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font-family:"Source Serif 4",Georgia,serif;
+         font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1120px; margin:0 auto; padding:40px 24px 96px; }
+  h1,h2,h3,.ui { font-family:"IBM Plex Sans",system-ui,sans-serif; }
+  h1 { font-size:34px; line-height:1.15; font-weight:700; margin:0 0 10px; letter-spacing:-.01em; text-wrap:balance; }
+  h2 { font-size:21px; font-weight:600; margin:0 0 4px; text-wrap:balance; }
+  h3 { font-size:14px; font-weight:600; margin:0 0 8px; }
+  p { margin:0 0 12px; max-width:68ch; }
+  .lede { font-size:18px; color:var(--muted); max-width:76ch; }
+  code, .mono, th { font-family:"IBM Plex Mono",ui-monospace,monospace; }
+  code { font-size:.84em; background:var(--surface-2); border:1px solid var(--line-soft);
+         padding:1px 5px; border-radius:4px; white-space:nowrap; }
+  .eyebrow { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.14em;
+             text-transform:uppercase; color:var(--muted); margin:0 0 6px; }
+  section { margin-top:52px; }
+  .sub { color:var(--muted); font-size:14.5px; margin-bottom:18px; max-width:76ch; }
+
+  table { width:100%; border-collapse:collapse; margin:4px 0; font-size:13.5px;
+          font-family:"IBM Plex Sans",sans-serif; }
+  th { text-align:left; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+       color:var(--muted); font-weight:500; padding:0 12px 7px 0; border-bottom:1px solid var(--line); }
+  td { padding:7px 12px 7px 0; border-bottom:1px solid var(--line-soft); vertical-align:top; }
+  td:last-child, th:last-child { padding-right:0; }
+  .num { text-align:right; font-variant-numeric:tabular-nums; }
+  .scroll { overflow-x:auto; }
+  tr.zero td { color:var(--flag); }
+  tr.zero td:first-child { font-weight:600; }
+
+  .panel { background:var(--surface); border:1px solid var(--line); border-radius:10px;
+           padding:18px 20px; box-shadow:var(--shadow); }
+  .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+  .flag { border-left:3px solid var(--flag); }
+  .good { border-left:3px solid var(--ok); }
+
+  figure { margin:20px 0 8px; }
+  .canvas { background:var(--surface); border:1px solid var(--line); border-radius:10px;
+            padding:20px 18px 12px; overflow-x:auto; box-shadow:var(--shadow); }
+  svg { max-width:100%; height:auto; display:block; }
+  figcaption { color:var(--muted); font-size:13.5px; margin-top:10px; max-width:74ch; }
+  .legend { display:flex; gap:18px; align-items:center; font-family:"IBM Plex Sans",sans-serif;
+            font-size:12.5px; color:var(--muted); margin:0 0 14px; }
+  .swatch { display:inline-block; width:11px; height:11px; border-radius:2px; margin-right:6px;
+            vertical-align:-1px; }
+
+  .strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px;
+           background:var(--line); border:1px solid var(--line); border-radius:8px;
+           overflow:hidden; margin:26px 0 8px; }
+  .strip div { background:var(--surface); padding:14px 16px; }
+  .strip .k { font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.12em;
+              text-transform:uppercase; color:var(--muted); }
+  .strip .v { font-family:"IBM Plex Sans",sans-serif; font-size:22px; font-weight:600;
+              font-variant-numeric:tabular-nums; margin-top:3px; }
+  .strip .n { font-size:12.5px; color:var(--muted); font-family:"IBM Plex Sans",sans-serif; }
+  .v.warn { color:var(--flag); } .v.ok { color:var(--ok); }
+
+  ol.fix { counter-reset:f; list-style:none; padding:0; margin:10px 0 0; }
+  ol.fix li { counter-increment:f; position:relative; padding:12px 0 12px 46px;
+              border-bottom:1px solid var(--line-soft); font-size:14.5px; }
+  ol.fix li::before { content:"P" counter(f, decimal); position:absolute; left:0; top:12px;
+              font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted);
+              border:1px solid var(--line); border-radius:4px; padding:2px 6px; }
+  ol.fix li:last-child { border-bottom:0; }
+  ol.fix b { font-family:"IBM Plex Sans",sans-serif; }
+
+  footer { margin-top:64px; padding-top:18px; border-top:1px solid var(--line);
+           color:var(--muted); font-size:13px; font-family:"IBM Plex Sans",sans-serif; }
+  :focus-visible { outline:2px solid var(--kept); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce) { * { animation:none!important; transition:none!important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">org_e97e86f8… · gmail + calendar · 12 aug – 8 sep 2026</p>
+  <h1>849 objects went in. 9 cards came out.</h1>
+  <p class="lede">The first end-to-end run with Layers 1–4 switched on for a real tenant — read
+  out of the tables the sweep itself wrote. Every number below is a count, not an estimate.</p>
+
+  <div class="strip">
+    <div><div class="k">Captured</div><div class="v">849</div><div class="n">640 mail · 159 files · 50 events</div></div>
+    <div><div class="k">Signals</div><div class="v ok">395</div><div class="n">11 of 14 types</div></div>
+    <div><div class="k">With a receipt</div><div class="v ok">91%</div><div class="n">359 verified spans</div></div>
+    <div><div class="k">Admitted to L3</div><div class="v warn">8%</div><div class="n">18 of 231 situations</div></div>
+    <div><div class="k">Cards</div><div class="v">9</div><div class="n">1 critical · 8 standard</div></div>
+  </div>
+
+  <!-- ===================================================== FUNNEL -->
+  <section>
+    <p class="eyebrow">The funnel</p>
+    <h2>Where the 849 went</h2>
+    <p class="sub">Each bar is one stage. Blue is what carried forward; orange is what stopped
+    there — dropped, parked or held. Every stage records its own reason, so nothing here is
+    unexplained.</p>
+
+    <figure>
+      <div class="legend">
+        <span><span class="swatch" style="background:var(--kept)"></span>carried forward</span>
+        <span><span class="swatch" style="background:var(--lost)"></span>stopped here</span>
+      </div>
+      <div class="canvas">
+        <svg viewBox="0 0 900 340" role="img"
+             aria-label="Funnel: 849 captured, 225 emitted after the gate, 395 signals published, 231 situations built, 18 admitted to Layer 3, 112 reasoning candidates, 9 cards. The narrowest step is admission, at 8 percent.">
+          <g font-family="IBM Plex Sans, sans-serif">
+            <!-- rows: label | bar | value  · scale: 720px = 849 -->
+            <!-- 1 captured 849 -->
+            <text x="0" y="26" font-size="12.5" fill="var(--ink)">captured</text>
+            <rect x="150" y="14" width="720" height="18" rx="4" fill="var(--kept)"/>
+            <text x="878" y="27" font-size="12" fill="var(--ink)" text-anchor="end" font-weight="600">849</text>
+
+            <!-- 2 emitted 225 / lost 624 -->
+            <text x="0" y="70" font-size="12.5" fill="var(--ink)">emitted by L1</text>
+            <rect x="150" y="58" width="191" height="18" rx="4" fill="var(--kept)"/>
+            <rect x="345" y="58" width="525" height="18" rx="4" fill="var(--lost)" opacity=".85"/>
+            <text x="878" y="71" font-size="12" fill="var(--ink)" text-anchor="end" font-weight="600">225</text>
+            <text x="608" y="71" font-size="11" fill="#ffffff" text-anchor="middle">624 dropped · parked</text>
+
+            <!-- 3 signals 395 -->
+            <text x="0" y="114" font-size="12.5" fill="var(--ink)">signals published</text>
+            <rect x="150" y="102" width="335" height="18" rx="4" fill="var(--kept)"/>
+            <text x="878" y="115" font-size="12" fill="var(--ink)" text-anchor="end" font-weight="600">395</text>
+            <text x="497" y="115" font-size="11" fill="var(--muted)">1.8 per emitted event</text>
+
+            <!-- 4 situations 231 -->
+            <text x="0" y="158" font-size="12.5" fill="var(--ink)">situations built</text>
+            <rect x="150" y="146" width="196" height="18" rx="4" fill="var(--kept)"/>
+            <text x="878" y="159" font-size="12" fill="var(--ink)" text-anchor="end" font-weight="600">231</text>
+
+            <!-- 5 admitted 18 / held 213 -->
+            <text x="0" y="202" font-size="12.5" fill="var(--ink)" font-weight="600">admitted to L3</text>
+            <rect x="150" y="190" width="16" height="18" rx="4" fill="var(--kept)"/>
+            <rect x="170" y="190" width="176" height="18" rx="4" fill="var(--lost)" opacity=".85"/>
+            <text x="878" y="203" font-size="12" fill="var(--ink)" text-anchor="end" font-weight="600">18</text>
+            <text x="258" y="203" font-size="11" fill="#ffffff" text-anchor="middle">213 held</text>
+
+            <!-- 6 candidates 112 -->
+            <text x="0" y="246" font-size="12.5" fill="var(--ink)">L4 candidates</text>
+            <rect x="150" y="234" width="95" height="18" rx="4" fill="var(--kept)"/>
+            <text x="878" y="247" font-size="12" fill="var(--ink)" text-anchor="end" font-weight="600">112</text>
+
+            <!-- 7 cards 9 -->
+            <text x="0" y="290" font-size="12.5" fill="var(--ink)">cards</text>
+            <rect x="150" y="278" width="8" height="18" rx="4" fill="var(--kept)"/>
+            <text x="878" y="291" font-size="12" fill="var(--ink)" text-anchor="end" font-weight="600">9</text>
+
+            <!-- the narrow point -->
+            <line x1="150" y1="316" x2="870" y2="316" stroke="var(--line)"/>
+            <text x="150" y="332" font-size="11" fill="var(--flag)"
+                  font-family="IBM Plex Mono, monospace">narrowest step · admission · 8%</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption><b>Signals outnumber emitted events</b> — one email can state a deadline and a
+      commitment, and each becomes its own signal. The collapse is not there; it is at admission,
+      where 213 of 231 situations were held.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===================================================== LAYER 1 -->
+  <section>
+    <p class="eyebrow">Layer 1 · capture</p>
+    <h2>Every gate decision, with its reason</h2>
+
+    <div class="cols" style="margin-bottom:20px">
+      <div class="panel good">
+        <h3>Working</h3>
+        <table>
+          <tr><td>Landed</td><td class="num">849</td></tr>
+          <tr><td>Semantic extraction ran</td><td class="num">172</td></tr>
+          <tr><td>Emitted</td><td class="num">225</td></tr>
+          <tr><td>Signals with a verified span</td><td class="num">359 / 395</td></tr>
+        </table>
+      </div>
+      <div class="panel flag">
+        <h3>Stopped</h3>
+        <table>
+          <tr><td><code>N-02</code> bulk / unsubscribe</td><td class="num">198</td></tr>
+          <tr><td><code>DOC-02</code> unsupported file</td><td class="num">119</td></tr>
+          <tr><td><code>N-06</code> Gmail Promotions</td><td class="num">87</td></tr>
+          <tr><td><code>N-03</code> no-reply sender</td><td class="num">82</td></tr>
+          <tr><td><code>llm_junk</code></td><td class="num">63</td></tr>
+          <tr><td><code>DOC-06</code> no OCR engine</td><td class="num">25</td></tr>
+          <tr><td><code>N-01</code> machine ack</td><td class="num">20</td></tr>
+          <tr><td><code>DOC-05</code> download failed</td><td class="num">15</td></tr>
+          <tr><td><code>N-04</code> bulk precedence</td><td class="num">8</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <h3>Per source — which tool loses what</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Source</th><th>Emitted</th><th>Dropped</th><th>Parked</th><th>Pass rate</th></tr></thead>
+        <tbody>
+          <tr><td><b>Calendar</b></td><td class="num">50</td><td class="num">0</td><td class="num">0</td><td class="num" style="color:var(--ok)"><b>100%</b></td></tr>
+          <tr><td><b>Gmail</b></td><td class="num">175</td><td class="num">395</td><td class="num">169</td><td class="num" style="color:var(--flag)"><b>27%</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:24px">Signals published — 395 across 11 types</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Signal type</th><th class="num">Count</th><th class="num">min bp</th><th class="num">max bp</th><th class="num">Verified span</th></tr></thead>
+        <tbody>
+          <tr><td>deadline_stated</td><td class="num">131</td><td class="num">1180</td><td class="num">3870</td><td class="num">131</td></tr>
+          <tr><td>relationship_change</td><td class="num">49</td><td class="num">880</td><td class="num">1240</td><td class="num">48</td></tr>
+          <tr><td>opportunity_signal</td><td class="num">46</td><td class="num">1040</td><td class="num">4440</td><td class="num">41</td></tr>
+          <tr><td>commitment_made</td><td class="num">44</td><td class="num">1000</td><td class="num">4160</td><td class="num">41</td></tr>
+          <tr><td>commitment_due</td><td class="num">25</td><td class="num">2700</td><td class="num">3800</td><td class="num">25</td></tr>
+          <tr><td>decision_pending</td><td class="num">24</td><td class="num">1120</td><td class="num">3480</td><td class="num">15</td></tr>
+          <tr><td>financial_obligation</td><td class="num">22</td><td class="num">1760</td><td class="num">4560</td><td class="num">21</td></tr>
+          <tr><td>contract_renewal</td><td class="num">21</td><td class="num">1600</td><td class="num">4640</td><td class="num">16</td></tr>
+          <tr><td>approval_requested</td><td class="num">17</td><td class="num">1240</td><td class="num">3920</td><td class="num">11</td></tr>
+          <tr><td>decision_made</td><td class="num">13</td><td class="num">920</td><td class="num">3600</td><td class="num">7</td></tr>
+          <tr><td>risk_flagged</td><td class="num">3</td><td class="num">1760</td><td class="num">3760</td><td class="num">3</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:12px"><b>Nothing scored above 4,640 bp</b> on a 0–10,000 scale. The floor
+    at 2,500 refused 68 signals — 48 <code>relationship_change</code>, 20 <code>commitment_made</code>.</p>
+  </section>
+
+  <!-- ===================================================== LAYER 2 -->
+  <section>
+    <p class="eyebrow">Layer 2 · context</p>
+    <h2>The gate that stopped 213 of 231</h2>
+    <p class="sub">Graph built: 252 nodes · 2,350 facts · 245 edges. Then every situation is judged
+    before Layer 3 may see it.</p>
+
+    <div class="cols">
+      <div class="panel">
+        <h3>Held for</h3>
+        <table>
+          <tr><td><code>qes_required</code> + <code>verified_evidence_required</code></td><td class="num"><b>184</b></td></tr>
+          <tr><td><code>conflict_open</code></td><td class="num">17</td></tr>
+          <tr><td><code>conflict_open</code> + <code>identity_review_required</code></td><td class="num">1</td></tr>
+        </table>
+      </div>
+      <div class="panel flag">
+        <h3>Admission by situation type</h3>
+        <table>
+          <thead><tr><th>Type</th><th class="num">Admit</th><th class="num">Held</th></tr></thead>
+          <tbody>
+            <tr><td>investor_relationship</td><td class="num">10</td><td class="num">14</td></tr>
+            <tr><td>relationship</td><td class="num">6</td><td class="num">23</td></tr>
+            <tr><td>opportunity</td><td class="num">2</td><td class="num">14</td></tr>
+            <tr class="zero"><td>awaiting_response</td><td class="num">0</td><td class="num">74</td></tr>
+            <tr class="zero"><td>first_response_overdue</td><td class="num">0</td><td class="num">40</td></tr>
+            <tr class="zero"><td>ticket_aging</td><td class="num">0</td><td class="num">17</td></tr>
+            <tr class="zero"><td>deal</td><td class="num">0</td><td class="num">7</td></tr>
+            <tr class="zero"><td>commitment_overdue</td><td class="num">0</td><td class="num">6</td></tr>
+            <tr class="zero"><td>admin_period_review</td><td class="num">0</td><td class="num">3</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p style="margin-top:16px"><b>Only three situation types get through.</b> The two commonest in
+    any inbox — <em>waiting on a reply</em> and <em>first response overdue</em> — admit zero, all
+    114 of them. Both are absence-shaped: their evidence is that nobody wrote back, so there is no
+    sentence to quote, and the rule that demands a quoted receipt holds every one.</p>
+  </section>
+
+  <!-- ===================================================== LAYER 3 -->
+  <section>
+    <p class="eyebrow">Layer 3 · expertise</p>
+    <h2>349 packages, and three of the four brains are empty</h2>
+    <p class="sub">Domain <code>admin</code> is live; <code>sales</code> and
+    <code>customer_support</code> are compiled but switched off.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th class="num">Capabilities</th><th class="num">Behaviour</th><th class="num">Org rules</th><th class="num">Adaptive</th><th class="num">Packages</th></tr></thead>
+        <tbody>
+          <tr><td class="num">4</td><td class="num" style="color:var(--flag)">0</td><td class="num" style="color:var(--flag)">0</td><td class="num" style="color:var(--flag)">0</td><td class="num">166</td></tr>
+          <tr><td class="num">9</td><td class="num" style="color:var(--flag)">0</td><td class="num" style="color:var(--flag)">0</td><td class="num" style="color:var(--flag)">0</td><td class="num">55</td></tr>
+          <tr><td class="num">2</td><td class="num" style="color:var(--flag)">0</td><td class="num" style="color:var(--flag)">0</td><td class="num" style="color:var(--flag)">0</td><td class="num">30</td></tr>
+          <tr><td class="num">3</td><td class="num" style="color:var(--flag)">0</td><td class="num" style="color:var(--flag)">0</td><td class="num" style="color:var(--flag)">0</td><td class="num">27</td></tr>
+          <tr><td class="num">11 – 13</td><td class="num" style="color:var(--flag)">0</td><td class="num" style="color:var(--flag)">0</td><td class="num" style="color:var(--flag)">0</td><td class="num">44</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:12px">The Expert corpus speaks. The Behaviour, Organization and Adaptive
+    brains are empty on <b>all 349</b> — a known defect with a named fix sequence.</p>
+  </section>
+
+  <!-- ===================================================== LAYER 4 -->
+  <section>
+    <p class="eyebrow">Layer 4 · reasoning</p>
+    <h2>Half the runs decide, half defer</h2>
+    <div class="cols">
+      <div class="panel">
+        <h3>Outcome per run</h3>
+        <table>
+          <thead><tr><th>Outcome</th><th class="num">Runs</th><th class="num">Confidence</th></tr></thead>
+          <tbody>
+            <tr><td>decision</td><td class="num">17</td><td class="num">5,000</td></tr>
+            <tr><td>defer</td><td class="num">16</td><td class="num">2,300 – 3,300</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:13px;color:var(--muted);margin:10px 0 0">The floor is 4,500. The 16
+        deferrals name what would resolve them.</p>
+      </div>
+      <div class="panel good">
+        <h3>Candidates — the formula moves</h3>
+        <table>
+          <thead><tr><th>Disposition</th><th class="num">Count</th><th class="num">Range bp</th><th class="num">Distinct</th></tr></thead>
+          <tbody>
+            <tr><td>eligible</td><td class="num">106</td><td class="num">4200 – 6545</td><td class="num">41</td></tr>
+            <tr><td>eliminated</td><td class="num">6</td><td class="num">6301 – 6643</td><td class="num">6</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:13px;color:var(--muted);margin:10px 0 0">41 distinct utilities across
+        106 candidates — not a constant.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:22px">Top plays by best utility</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Play</th><th class="num">Candidates</th><th class="num">Best bp</th></tr></thead>
+        <tbody>
+          <tr><td><code>sales.pb.upsell.usage_triggered_upsell</code></td><td class="num">5</td><td class="num">6643</td></tr>
+          <tr><td><code>sales.pb.cross_sell.adjacent_problem_cross_sell</code></td><td class="num">5</td><td class="num">6545</td></tr>
+          <tr><td><code>sales.pb.churn_prevention.save_play_with_dignity</code></td><td class="num">5</td><td class="num">6482</td></tr>
+          <tr><td><code>sales.pb.renewal.renewal_starts_at_day_one</code></td><td class="num">5</td><td class="num">6475</td></tr>
+          <tr><td><code>sales.pb.investor_relations.reopen_after_a_pass</code></td><td class="num">9</td><td class="num">6366</td></tr>
+          <tr><td><code>sales.pb.account_research.fifteen_minute_account_brief</code></td><td class="num">15</td><td class="num">6299</td></tr>
+          <tr><td><code>reply</code> · <code>wait_unanswered_email</code></td><td class="num">22</td><td class="num">4900</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:12px"><b>The mismatch worth noticing:</b> the highest utilities all come
+    from <code>sales</code> plays, on a tenant where only the <code>admin</code> corpus is
+    switched on.</p>
+  </section>
+
+  <!-- ===================================================== CARDS -->
+  <section>
+    <p class="eyebrow">Delivery</p>
+    <h2>The nine cards</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th class="num">Score</th><th>Urgency</th><th>Headline</th></tr></thead>
+        <tbody>
+          <tr><td class="num"><b>63</b></td><td style="color:var(--flag)">critical</td><td>Deliver fundraising opportunities to sanchiconnect.tech NOW</td></tr>
+          <tr><td class="num">50</td><td>standard</td><td>Deliver mentorship guidance from expert mentors now</td></tr>
+          <tr><td class="num">50</td><td>standard</td><td>Deliver fundraising opportunities to healthcare leaders</td></tr>
+          <tr><td class="num">49</td><td>standard</td><td>Reply to Sehan Sanjula now</td></tr>
+          <tr><td class="num">48</td><td>standard</td><td>Reply to Sunil about HealthX Elevate visibility</td></tr>
+          <tr><td class="num">44</td><td>standard</td><td>Confirm your attendance for Evokoa's call</td></tr>
+          <tr><td class="num">43</td><td>standard</td><td>Send Lalitha A R the product context materials</td></tr>
+          <tr><td class="num">42</td><td>standard</td><td>Book time with Sal Stabler on her calendar link</td></tr>
+          <tr><td class="num">42</td><td>standard</td><td>Reply to Manik about GeniOS demo access</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:14px">Each one traces back to a quoted line in a real email. The top card
+    carries <code>commitment.due_at = 2026-08-30</code> and the promise it was extracted from,
+    both sourced to Gmail.</p>
+  </section>
+
+  <!-- ===================================================== FIXES -->
+  <section>
+    <p class="eyebrow">What to do</p>
+    <h2>The seven losses, and the order to fix them</h2>
+    <ol class="fix">
+      <li><b>114 situations that can never be admitted.</b> <code>awaiting_response</code> and
+        <code>first_response_overdue</code> are absence-shaped — the evidence is that nobody
+        replied. Either the gate lets an absence-typed situation cite its anchor's last inbound
+        span, or those types carry a typed-absence receipt.</li>
+      <li><b>159 of 159 attachments unread.</b> The image is built; deploy it, then
+        <code>GENIOS_ENABLE_OCR=true</code> + the org allowlist. The parked files drain themselves.</li>
+      <li><b>Three empty brains on 349 packages.</b> Cheapest first: teach the runtime-brain
+        snapshot to union <code>temporary_memories</code>.</li>
+      <li><b>Switch <code>sales</code> on for this tenant.</b> Its plays already produce the highest
+        utilities here, and this is a founder's fundraising inbox.</li>
+      <li><b>Read the 16 deferrals before touching the floor.</b> A floor nothing trips and a floor
+        everything trips are both wrong; 16 of 33 is neither.</li>
+      <li><b>367 emails dropped at the gate.</b> Correct for newsletters —
+        <code>N-06</code> is Gmail's own classifier and takes a first-time vendor with it.</li>
+      <li><b>69 events kept at unknown authority.</b> The relevance model was refused because the
+        ambiguous share was over 10% — a graph-coverage symptom, not a relevance one.</li>
+    </ol>
+  </section>
+
+  <footer>
+    Measured with <code>scripts/pipeline_funnel_report.py --org &lt;org&gt;</code> ·
+    read-only · full write-up in <code>docs/plans/L1_L4_PILOT_FUNNEL.md</code>
+  </footer>
+</div>
+</body>
+</html>
