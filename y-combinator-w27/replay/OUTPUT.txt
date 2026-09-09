@@ -1,0 +1,95 @@
+
+==============================================================================
+LAYER 1 — the shipped guards replayed over all 395 stored signals
+==============================================================================
+  refused as REPLY HISTORY            23
+  refused as a THIN RECEIPT            8   (strictest reading: 79)
+  survive                            364   (92% of 395)
+
+  --- refused as history (top by importance) ---
+    4560 bp  financial_obligation   'On Mon, 3 Aug 2026 at 08:00, Mr Rohit Swerashi wrote:'
+    4560 bp  financial_obligation   'On Tue, 28 Jul 2026 at 12:39, Mr Rohit Swerashi wrote:'
+    4560 bp  financial_obligation   'On Sat, 8 Aug 2026 at 14:22, Manik Pasricha wrote:'
+    4240 bp  financial_obligation   'On Tue, 24 Jun 2025 at 11:37, Surge wrote:'
+    3960 bp  financial_obligation   'On Thu, 16 Jul 2026 at 22:40, Aditya Dwivedi wrote:'
+    3760 bp  deadline_stated        'On Tue, 28 Jul 2026 at 12:39, Mr Rohit Swerashi wrote:'
+
+  --- refused as a thin receipt ---
+    3520 bp  financial_obligation   'Wed, 12 Aug 2026, 22:58'
+    3520 bp  financial_obligation   'Wed 5 Aug 2026 2:15pm - 2:45pm (IST)'
+    1240 bp  relationship_change    'Hii Vatsal,'
+     880 bp  relationship_change    'Hi Rohit,'
+     880 bp  relationship_change    'Hi Rohit and Boardy,'
+     880 bp  relationship_change    'Hi Rohit,'
+
+==============================================================================
+LAYER 2 — the shipped readings, run on the live graph
+==============================================================================
+  rows the gather held             141
+  awaiting_response findings        20   (was 41 on the stored run)
+  nodes we actually ASKED           19   (was 1 by the old rule)
+
+  DAYS  FU  ASKED  COUNTERPARTY
+  ----  --  -----  ----------------------------------------------
+    50   0  ·      rohit@crescerelabs.com
+    47   1  ·      notification@accubate.app
+    46   1  YES    vatsa@valiron.co
+    46   1  YES    Leslie Omonzane
+    42   1  YES    tripathihk2014@gmail.com
+    28   0  YES    apply@surgeahead.com
+    28   0  YES    harshita@peakxv.com
+    28   0  ·      madison@afore.vc
+    28   2  ·      adityad@iima.ac.in
+    28   0  ·      Manik Pasricha
+    28   0  YES    joseph@afore.vc
+    28   0  ·      siddhant@neon.fund
+    28   0  ·      vidushi@peakxv.com
+    28   0  ·      shivam@together.fund
+    28   0  ·      piyush@3one4capital.com
+    28   1  ·      team@zfellows.com
+    27   1  YES    boardy@boardy.ai
+    22   1  ·      support@bharatkesuperfounders.com
+    13   5  YES    theresa.hoffmann@antler.co
+    13   0  YES    applications.initiate@hub71.com
+
+  --- absence receipts, resolved by the shipped resolver ---
+   situations checked                84
+   now carry a real L1 bundle        81   (was 0 — all held at the 4000 default)
+   still no receipt                   3
+   importance now spans            880–4560 bp across 30 distinct values
+
+==============================================================================
+LAYER 3 — activation gating, measured on the 381 stored packages
+==============================================================================
+  activated domains: ['admin']
+  packages that survive the filter   71 of 381
+
+  PACK                CAPABILITY SLOTS BEFORE    AFTER
+  sales                                  1306        0
+  customer_support                        594        0
+  admin                                   311      311
+
+==============================================================================
+THE FEED — awaiting_response, ranked by the receipt it now carries
+==============================================================================
+  RANK     bp  DAYS  FU  COUNTERPARTY
+     1   4560    28   0  Manik Pasricha
+     2   4560    28   0  vidushi@peakxv.com
+     3   4560    28   0  shivam@together.fund
+     4   4240    28   0  apply@surgeahead.com
+     5   4160    42   1  tripathihk2014@gmail.com
+     6   3920    28   0  harshita@peakxv.com
+     7   3920    28   0  piyush@3one4capital.com
+     8   3840    28   2  adityad@iima.ac.in
+     9   3600    27   1  boardy@boardy.ai
+    10   3600    13   0  applications.initiate@hub71.com
+    11   3520    28   1  team@zfellows.com
+    12   3520    22   1  support@bharatkesuperfounders.com
+    13   3520    13   5  theresa.hoffmann@antler.co
+    14   3400    50   0  rohit@crescerelabs.com
+    15   2440    28   0  madison@afore.vc
+    16   1940    28   0  siddhant@neon.fund
+    17   1920    28   0  joseph@afore.vc
+    18   1720    47   1  notification@accubate.app
+    19   1600    46   1  vatsa@valiron.co
+    20   1600    46   1  Leslie Omonzane
