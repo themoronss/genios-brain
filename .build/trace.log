@@ -208,3 +208,39 @@ FAIL   M5.C1 first cut  The owner-identity check was `owner in actor or actor in
               returns None for a single-token name: the condition still surfaces, the claim about
               whose it is does not. Two tests pin the trap by name.
 VERIFY Full suite 8963 passed / 24 failed. Same pre-existing 24. +23 tests, zero regressions.
+
+--- M6 · THE OUTCOME VOCABULARY, 2026-09-09 --------------------------------------------------
+NOTE   USER: a master failure-and-edge-case inventory -- 11 required outcomes, 12 failure types,
+              15 categories, 12 combined scenarios, 20 variants. "Every test case should expect
+              exactly one of these outcomes."
+FIND   THAT SENTENCE COULD NOT BE WRITTEN. The outcomes are real and spread across SIX
+              vocabularies in FOUR contracts: abstention.Level (6), delivery.DeliveryVerdict (3),
+              delivery.DeliveryLifecycle (11), reasoning.DecisionOutcome (6),
+              execution.ExecutionState + execution.EscalationAction, and authority's bare
+              NO_AUTHORITY_RULE string. `defer` is declared TWICE meaning two different things;
+              `cancelled` twice; `escalate` twice inside one file; `retry` nowhere.
+PASS   M6.C1  contracts/outcomes.py. The canonical 11, plus a PROJECTION from every value each
+              layer can produce onto them. Replaces nothing -- each enum is correct for its own
+              layer and rewriting them is a migration, not a clarification. 31 tests, of which the
+              load-bearing ones are DRIFT GUARDS: a value added to any real enum that this module
+              has not been taught fails the suite, because a projection returning None silently
+              would make every outcome assertion stop asserting.
+FAIL   M6.C1 first cut  UNEXPRESSED_BY was hand-written. Its own test caught THREE errors in it
+              within a minute, including a docstring claiming "every one of the eleven is
+              reachable" when ESCALATE was reachable from nothing. Now COMPUTED from PROJECTION.
+FIND   FOUR GAPS, each a value that exists in some contract and cannot be said by the layer that
+              needs to say it. Pinned by tests written to FAIL when fixed, so the fix cannot land
+              silently:
+              * DELIVERY CANNOT TELL AN OBSERVATION FROM AN INSTRUCTION. DeliveryVerdict is
+                send/defer/suppress. No verdict means "deliver this, but it is an observation" --
+                precisely the failure contracts/abstention.py exists to prevent, one layer later.
+              * ASK_DECISION exists ONCE, as abstention.Level.REVIEW. Reasoning, delivery and
+                execution cannot say it, so "only the founder may answer this" cannot be routed.
+              * ESCALATE is execution.EscalationAction and nothing a card or delivery surface
+                reads. An escalation renders as an ordinary instruction.
+              * ABSTAIN is reasoning-only. A card has no way to say "I cannot safely determine
+                this."
+              Plus: RETRY is reachable only from a FAILURE state -- no layer has a verdict meaning
+              "the connector was down, the intelligence stands", which is why SRC-01 and EXE-01
+              cannot be asserted without conflating a broken tool with a bad recommendation.
+VERIFY Full suite 8994 passed / 24 failed. Same pre-existing 24. +31 tests, zero regressions.
