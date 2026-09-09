@@ -336,3 +336,36 @@ PASS   M8.C1  format_reminder states the rung. escalate -> "Escalated — <goal>
               contracts/outcomes projects onto ESCALATE, so the stored outcome and the sentence a
               human reads cannot disagree. 16 tests.
 VERIFY Full suite 9072 passed / 24 failed. Same pre-existing 24. Zero regressions.
+
+--- M9 · CC-25..CC-30, CROSS CONVERSATION, 2026-09-09 ----------------------------------------
+FIND   The HCC catalogue names eight correlators. MEASURED against the tree: FOUR exist --
+              correlation.py (anchor/tool/user joins), correlation_resource.py,
+              correlation_timeline.py, correlation_dependency.py. CROSS CONVERSATION, CROSS DOMAIN
+              and CROSS ORGANIZATION have no code at all.
+FIND   Cross Conversation is the one blocking the card the user asked for. On the pilot, 11 Aug
+              03:02-08:39, seventeen messages to eighteen recipients -- Peak XV, Afore, Titan,
+              Neon, Together, 3one4, Surge, Z Fellows, Antler, IIM-B -- all carrying one sentence.
+              That is one campaign; the system saw eighteen unrelated threads.
+              read_outreach_cohorts exists to answer exactly this and returns ZERO on that data,
+              because it groups by EMPLOYER and eleven investors at nine firms never reach its
+              floor. The grouping key was wrong: a fundraise is not a company, it is a message.
+PASS   M9.C1  context/correlation_conversation.py. A campaign = one sentence, >= MIN_RECIPIENTS
+              distinct counterparties, inside WINDOW_HOURS. All three, because each alone is
+              wrong. It does NOT deduplicate signals -- ten investors are ten real conversations,
+              and M1.C3 was retired for exactly that reason; this adds a GROUP over them. 17 tests.
+FAIL   M9.C1 first cut  Ran on live data before writing tests and it reported the 11 Aug raise at
+              FOURTEEN recipients for seven real people: `thread.last_outbound` is written on both
+              the thread node and the party, so every investor was counted twice. Worse than not
+              finding it -- the number is what the card would say. Resolved through the same
+              `corresponded_with` bridge M2.C1 uses.
+FAIL   M9.C1 second cut  The founder appeared inside his own campaign, inflating it by one:
+              thread.last_outbound is written on every participant including ours. Now compared
+              against the EVENT's actor, so it holds for a tenant with several sending seats.
+FAIL   M9.C1 third cut  The query used `#>>`. Every one of the 17 tests failed on SQLite with
+              `unrecognized token: "#"`. The codebase already records the rule in
+              situation_bso._L1_BY_EVENT_SELECT -- a query whose correctness can only be
+              demonstrated against production is a query nobody can hold to account. evidence_refs
+              and actor now come back RAW and are decoded in the pure function, which also puts
+              the sentence rule and the sender rule where a reader can check them.
+VERIFY Live Postgres and SQLite agree: 2 campaigns, 7 and 6 recipients, no thread twins, no self.
+              Full suite 9089 passed / 24 failed. Same pre-existing 24. Zero regressions.
