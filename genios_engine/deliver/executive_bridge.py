@@ -90,10 +90,17 @@ def format_reminder(row: dict) -> dict:
     if row.get("escalation_day") is not None:
         parts.append(f"day {row['escalation_day']} of the escalation ladder")
 
+    # THE HEADLINE STATES THE RUNG. See `_ESCALATING_ACTIONS`: the reason code has carried the
+    # action all along and the sentence ignored it.
+    action = escalation_action(row.get("reason_code"))
+    frame = _ESCALATING_ACTIONS.get(action)
     return {
-        "kind": "execution_reminder",
+        "kind": "execution_escalation" if frame else "execution_reminder",
         "urgency": urgency,
-        "headline": goal,
+        # Carried explicitly so a channel adapter can style it without re-parsing the code, and so
+        # the outcome is legible in the stored payload rather than inferable from a string.
+        "escalation_action": action,
+        "headline": f"{frame} — {goal}" if frame else goal,
         "situation": " · ".join(parts),
         "next_action": str(facts.get("next_action") or ""),
         "consequence": str(facts.get("consequence") or ""),
@@ -101,6 +108,38 @@ def format_reminder(row: dict) -> dict:
         "card_id": row.get("card_id"),
         "reason_code": str(row.get("reason_code") or ""),
     }
+
+
+#: ── AN ESCALATION MUST SAY IT IS ONE ─────────────────────────────────────────────────────────
+#: `executive/reminder.py` records the rung it fired as the reason code —
+#: `escalation_notify`, `escalation_remind`, `escalation_escalate`, `escalation_critical` — and
+#: this bridge already carries that code into the message dict. Nothing read it. The headline was
+#: the bare goal, so the fourth rung of a ladder, the one that widens the audience and interrupts,
+#: reached a human looking exactly like the first gentle nudge. `escalation_day` appeared as a
+#: fragment in the sub-line ("day 3 of the escalation ladder") and that was the whole difference.
+#:
+#: This is the same defect the card headline had, one surface over: the information existed and
+#: the sentence did not use it. `contracts/outcomes` names the outcome `ESCALATE` and records that
+#: no card or delivery vocabulary could express it — this is the seam where that stops being true
+#: for the surface a person actually reads.
+#:
+#: NOTIFY AND REMIND ARE LEFT ALONE. They are rungs of the ladder too, and they are ordinary
+#: nudges; framing them as escalations would make the word mean nothing by the time it is needed.
+_ESCALATING_ACTIONS: dict[str, str] = {
+    "escalate": "Escalated",
+    "critical": "Escalated · urgent",
+}
+
+
+def escalation_action(reason_code: str | None) -> str:
+    """The ladder rung this reminder fired, or `""`. Parsed from the reason code Layer 5 wrote."""
+    code = str(reason_code or "").strip().lower()
+    return code[len("escalation_"):] if code.startswith("escalation_") else ""
+
+
+def is_escalation(reason_code: str | None) -> bool:
+    """Whether this rung widens the audience or interrupts — not merely whether it is a rung."""
+    return escalation_action(reason_code) in _ESCALATING_ACTIONS
 
 
 def _render(channel: str, message: dict, *, base_url: str = "") -> dict:

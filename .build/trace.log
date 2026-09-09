@@ -313,3 +313,26 @@ TEST   tests/test_learning_units.py::test_outcome_analysis_counts_and_neutral_do
               replaced it. A sibling test was added so a human dismissal still grades as failure --
               the guard must not become a way for a play to never be wrong.
 VERIFY Full suite 9056 passed / 24 failed. Same pre-existing 24. Zero regressions.
+
+--- M8 · DEL-03, AN ESCALATION MUST SAY IT IS ONE, 2026-09-09 --------------------------------
+FIND   contracts/outcomes recorded ESCALATE as reachable from execution.EscalationAction and from
+              NO card or delivery vocabulary. Traced it to the surface a human reads:
+              executive/reminder.py:170 writes the fired rung into the reason code
+              (escalation_notify / _remind / _escalate / _critical) and
+              deliver/executive_bridge.py ALREADY carried that code into the message dict.
+              NOTHING READ IT. The headline was the bare goal, so the fourth rung -- the one that
+              widens the audience and interrupts -- reached a human looking exactly like the first
+              gentle nudge. The only difference was a fragment in the sub-line, "day 3 of the
+              escalation ladder".
+              Same defect shape as the card headline one surface over: the information existed and
+              the sentence did not use it.
+PASS   M8.C1  format_reminder states the rung. escalate -> "Escalated — <goal>",
+              critical -> "Escalated · urgent — <goal>", and `kind` becomes
+              execution_escalation. The action travels as its own field so a channel adapter can
+              style it without re-parsing a string.
+              NOTIFY AND REMIND ARE DELIBERATELY LEFT ALONE. They are rungs too and they are
+              ordinary nudges; framing them as escalations would make the word mean nothing by the
+              time it is needed. A test pins that the bridge frames EXACTLY the pair
+              contracts/outcomes projects onto ESCALATE, so the stored outcome and the sentence a
+              human reads cannot disagree. 16 tests.
+VERIFY Full suite 9072 passed / 24 failed. Same pre-existing 24. Zero regressions.
