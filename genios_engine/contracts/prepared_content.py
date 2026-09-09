@@ -33,6 +33,11 @@ class PreparedContent(BaseModel):
     language: str                                   # en | hi | hinglish | other
     masked_spans: list[MaskedSpan] = Field(default_factory=list)
     protected_spans: list[tuple[int, int]] = Field(default_factory=list)  # in clean_text coords
+    #: REPLY HISTORY, in clean_text coordinates, half-open. The characters of this message that
+    #: the sender did not write — the thread quoted beneath their words. Computed once, here,
+    #: because every later reader needs the same answer and none of them should re-derive it.
+    #: Defaulted so every row written before this field existed still loads.
+    history_spans: list[tuple[int, int]] = Field(default_factory=list)
     signature_hints: dict[str, Any] = Field(default_factory=dict)
     offset_map: list[OffsetSegment] = Field(default_factory=list)
     preprocessor_version: str = "prep-1"

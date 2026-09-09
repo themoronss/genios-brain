@@ -62,10 +62,12 @@ reads the text the model was shown and the text it was shown a view OF.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field as dataclass_field
 
 from genios_engine.capture.documents.chunking import Chunk
+from genios_engine.capture.preprocess.quoted import quoted_regions
 from genios_engine.capture.validate.spans import BP_FULL, SpanVerdict, verify_span
 from genios_engine.contracts.evidence import MAX_QUOTE_CHARS, EvidenceSpan
 from genios_engine.contracts.prepared_content import PreparedContent
@@ -358,6 +360,16 @@ class BinderCounters:
     carried_own_evidence: int = 0
     synthesized: int = 0
     no_evidence: int = 0
+    #: Claims whose every receipt landed in REPLY HISTORY — the thread quoted beneath the
+    #: sender's words. Counted apart from `no_evidence` because they say opposite things about
+    #: the extraction: `no_evidence` means the model asserted something the message does not
+    #: say, which blocks a release; this means the model read a real sentence that a different
+    #: person wrote on a different day, which is a reading-window problem, not a hallucination.
+    quoted_history: int = 0
+    #: Claims whose every receipt was a string that cannot substantiate anything — a bare
+    #: datetime literal or a bare salutation. Separate again, because this is a prompt asking the
+    #: model to cite and getting a fragment, not a hallucination and not a reading-window problem.
+    unsubstantive: int = 0
 
     @property
     def bound(self) -> int:
@@ -434,6 +446,88 @@ def _require_same_frame(draft: ClaimDraft, source_ref: str) -> None:
                 "because both numbers look plausible. Bind each frame's claims in its own pass.")
 
 
+#: A quote that is ENTIRELY a date or time expression. `2026-07-24T12:30:00+05:30`,
+#: `Wed 5 Aug 2026 2:15pm - 2:45pm (IST)`, `14/08/2026`. Forty-nine signals on the pilot had
+#: nothing else as their receipt, and every one of them passed span verification — because the
+#: verifier checks that the quoted text EXISTS in the source, which it does. A timestamp proves a
+#: timestamp was printed; it does not evidence that anybody stated a deadline.
+_DATE_TOKENS = (r"\d{1,4}[-/:.]\d{1,2}(?:[-/:.]\d{1,4})?"
+                r"|\d{1,2}\s*[ap]\.?m\.?"
+                r"|\d{1,4}"
+                r"|mon|tue|wed|thu|fri|sat|sun"
+                r"|monday|tuesday|wednesday|thursday|friday|saturday|sunday"
+                r"|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec"
+                r"|january|february|march|april|june|july|august|september|october"
+                r"|november|december|at|to|t|z|utc|ist|gmt|am|pm|st|nd|rd|th")
+_BARE_DATETIME = re.compile(
+    rf"^[\s\-–—(),:+]*(?:(?:{_DATE_TOKENS})[\s\-–—(),:+]*)+$", re.IGNORECASE)
+
+#: A quote that is ENTIRELY a greeting. `Hi Rohit,` was stored three times as a
+#: `relationship_change`. Deliberately anchored and deliberately short-tailed: this must match a
+#: salutation LINE and never a sentence that opens with one, so the tail admits a name and a
+#: comma and nothing with terminal punctuation in it.
+_BARE_SALUTATION = re.compile(
+    r"^\s*(?:hi|hey|hello|dear|greetings|good\s+(?:morning|afternoon|evening))"
+    r"[\s,!:-]*[A-Za-z.\'-]{0,30}(?:\s+[A-Za-z.\'-]{1,30}){0,2}[\s,!:.-]*$", re.IGNORECASE)
+
+
+#: THE LANES WHERE A DATE LITERAL IS THE CLAIM, not a fragment standing in for one. A
+#: `dates_mentioned` entry and a commitment's own `due` are extractions OF a date, so
+#: `"October 15, 2026"` is the correct and complete receipt for them — the golden corpus'
+#: `document_msa_extract` case is exactly this and it is right. Everywhere else a bare timestamp
+#: substantiates nothing: forty-nine pilot signals had one as their whole receipt, including a
+#: `deadline_stated` whose evidence was `"2026-07-24T12:30:00+05:30"` lifted out of a calendar
+#: field, which proves a timestamp was printed and not that anybody stated a deadline.
+DATE_BEARING_FIELDS = frozenset({"dates_mentioned", "commitments.due"})
+
+
+def substantive(quote: str, field: str | None = None) -> bool:
+    """Whether this string is capable of being the receipt for a claim in `field`.
+
+    A SHAPE FLOOR, NOT A JUDGEMENT, and the distinction is the whole design. Every rule here is
+    decided by looking at the characters — no model, no similarity, no embedding — for the same
+    reason ALG-08 refuses fuzzy matching one module over: a validator that reasons about meaning
+    accepts a paraphrase, and this one would start refusing sentences it found unconvincing.
+
+    Two rules, both narrow, both of which a real sentence passes by containing any word outside
+    the pattern. `"Considering 14 August as the last date"` is substantive; `"14 August"` is not.
+    `"Hi Rohit, the invoice is attached"` is substantive; `"Hi Rohit,"` is not.
+
+    THE DATE RULE IS SCOPED TO THE LANE, and the first cut of this floor was not — it refused
+    `"October 15, 2026"` in the golden corpus' MSA document, where the claim being made IS that
+    date. A floor that cannot tell "the receipt is a date" from "the claim is a date" is refusing
+    correct extractions, so `DATE_BEARING_FIELDS` names the two lanes where the literal is the
+    whole claim. The salutation rule is unscoped: no lane's claim is a greeting.
+
+    WHAT IS DELIBERATELY NOT HERE. A subject line — `"Pitching GeniOS (Software That Thinks For
+    Your Company) From India"` produced ten signals across two types — is not refused, because
+    nothing in the string says it is a subject. Refusing it needs the envelope, which this pass is
+    not given, and inventing a length or capitalisation heuristic for it would be exactly the
+    meaning-judgement this floor exists to avoid. It stays a known gap rather than a bad rule.
+    """
+    text = (quote or "").strip()
+    if not text:
+        return False
+    if _BARE_SALUTATION.match(text):
+        return False
+    if field in DATE_BEARING_FIELDS:
+        return True
+    return not _BARE_DATETIME.match(text)
+
+
+def _live_spans(spans, history) -> tuple:
+    """The receipts that are THIS sender's sentences, in order, duplicates preserved.
+
+    Any overlap disqualifies, matching `in_quoted_history`: a quote that starts in the live text
+    and runs into the history is not a sentence the sender wrote either, and demanding full
+    containment would make the guard avoidable by widening the quote by one character.
+    """
+    if not history:
+        return tuple(spans)
+    return tuple(sp for sp in spans
+                 if not any(sp.start_offset < hi and sp.end_offset > lo for lo, hi in history))
+
+
 def bind_evidence(drafts: Iterable[ClaimDraft], *, prepared_text: str,
                   source_ref: str) -> BindOutcome:
     """L1.4.6-U1 · every claim leaves with a receipt, or it does not leave.
@@ -465,31 +559,69 @@ def bind_evidence(drafts: Iterable[ClaimDraft], *, prepared_text: str,
     unit later as ALG-08's INVALID_BOUNDS — which reads as a model that invented an offset when
     what happened is an extractor that stamped the wrong frame.
 
+    A FOURTH OUTCOME: the receipt is real, and it is somebody else's sentence. Mail is quoted,
+    so the raw body of a twelfth-turn reply contains eleven older messages, and a model reading it
+    extracts eleven older messages' claims and dates them today. Measured on the pilot before this
+    check existed: twenty-three signals whose entire receipt was an attribution line — one of them
+    `"On Sat, 8 Aug 2026 at 14:22, Manik Pasricha wrote:"` stored as a `financial_obligation` at
+    4560 bp, the second-highest importance on the tenant — plus roughly sixty that were ONE
+    sentence counted once per message that quoted it (`copies == distinct_events` in every
+    duplicate group, no within-event duplication anywhere).
+
+    History is computed HERE, from `prepared_text`, rather than passed in. `prepared_text` is the
+    frame these offsets are measured against and it is not always `clean_text` — for a `chunk:`
+    reference it is the chunk's own text. Ranges computed against a different string would
+    disqualify the wrong characters silently, so the only safe source is the string the binder was
+    actually handed.
+
+    A claim keeps its LIVE receipts and loses only the historical ones; it is dropped when nothing
+    live remains, because a claim standing entirely on the quoted thread is a claim about the
+    quoted thread. A claim that cited nothing and whose words are only found inside history is
+    dropped for the same reason rather than synthesized.
+
     Order is preserved and nothing is merged: two claims quoting the same sentence get one
     receipt each, and `EvidenceSpan` is frozen and hashable so the duplicate costs one shared
     object rather than a copy.
     """
     require_text(source_ref, "source_ref")
+    history = quoted_regions(prepared_text)
     bound: list[BoundClaim] = []
-    seen = carried = synthesized = dropped = 0
+    seen = carried = synthesized = dropped = quoted = thin = 0
     for draft in drafts:
         seen += 1
         if draft.evidence:
             _require_same_frame(draft, source_ref)
+            live = _live_spans(draft.evidence, history)
+            if not live:
+                quoted += 1
+                continue
+            # HISTORY FIRST, then shape. A quoted timestamp is refused as history rather than as a
+            # fragment, because "somebody else's message" is the stronger and more useful fact.
+            usable = tuple(sp for sp in live if substantive(sp.quote, draft.field))
+            if not usable:
+                thin += 1
+                continue
             carried += 1
-            bound.append(BoundClaim(draft=draft, evidence=draft.evidence,
+            bound.append(BoundClaim(draft=draft, evidence=usable,
                                     confidence_bp=draft.confidence_bp, synthesized=False))
             continue
         span = _synthesize(draft.claim_text, prepared_text, source_ref)
         if span is None:
             dropped += 1
             continue
+        if not _live_spans((span,), history):
+            quoted += 1
+            continue
+        if not substantive(span.quote, draft.field):
+            thin += 1
+            continue
         synthesized += 1
         bound.append(BoundClaim(draft=draft, evidence=(span,),
                                 confidence_bp=_reduced(draft.confidence_bp), synthesized=True))
     return BindOutcome(claims=tuple(bound),
                        counters=BinderCounters(claims_in=seen, carried_own_evidence=carried,
-                                               synthesized=synthesized, no_evidence=dropped))
+                                               synthesized=synthesized, no_evidence=dropped,
+                                               quoted_history=quoted, unsubstantive=thin))
 
 
 def no_evidence_rate_bp(counters: BinderCounters) -> int:

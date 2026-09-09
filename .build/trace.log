@@ -67,3 +67,37 @@ NOTE   Both hold reasons are one starvation. `qes_required` fires when importanc
               both, so the 349 double-held candidates have one cause, not two.
 VERIFY tests/context/test_absence_receipt.py 25 passed (was 14). Full suite 8853 passed / 24
               failed -- the same 24 that fail at 23d47640. Zero regressions, zero skips added.
+
+--- M1 · LAYER 1, build-up 2026-09-09 -------------------------------------------------------
+PASS   M1.C1.L-contract.V0.U01  Quoted-history detection moved to capture/preprocess/quoted.py;
+              context/lifecycle/textguard.py re-exports it. L2 importing L1 is the correct
+              direction. textguard's adversarial suite unchanged at 18 passed.
+PASS   M1.C1.L-logic.V1.U02  PreparedContent.history_spans, computed once in preprocess(),
+              defaulted so stored rows still load.
+PASS   M1.C1.L-logic.V1.U03  The trimmer stops PROTECTING reply history. preprocess/text.py
+              _DEADLINE matches \b(mon|tue|wed|thu|fri|sat|sun)\b and every attribution line
+              carries a weekday, so "On Sat, 8 Aug 2026 at 14:22, X wrote:" scored as a deadline
+              line and the token budget was being spent keeping the one part of the message
+              nobody in it wrote. 13 tests.
+PASS   M1.C1.L-logic.V2.U04  bind_evidence gains a fourth outcome: a receipt landing in reply
+              history is not a receipt for this message. Per receipt, not per claim. Counted
+              apart from no_evidence because a hallucination and a reading-window error say
+              opposite things about a prompt. 10 tests.
+FAIL   M1.C2.L-logic.V0.U05  RETIRED. Applied the bare-datetime rule to every lane. Within one
+              run tests/golden/l1/test_golden_corpus.py failed on document_msa_extract:
+              date {'as_written': 'October 15, 2026'} not extracted -- and it was RIGHT. In an
+              MSA that literal is not a fragment standing in for a claim, it IS the claim. A
+              floor that cannot tell "the receipt is a date" from "the claim is a date" refuses
+              correct extractions. The corpus was not weakened; the unit was redrawn.
+PASS   M1.C2.L-logic.V0.U07  The floor is scoped to the lane. DATE_BEARING_FIELDS =
+              {dates_mentioned, commitments.due}; everywhere else a bare datetime substantiates
+              nothing. The salutation rule stays unscoped -- no lane's claim is a greeting.
+              34 tests, five of which pin the scope so the corpus regression cannot return.
+NOTE   Shape floor only. No model, no similarity, no embedding -- the same discipline ALG-08
+              states one module over. A subject line ("Pitching GeniOS..." produced 10 signals
+              across 2 types) is NOT refused: nothing in the string says it is a subject, that
+              needs the envelope this pass is not given, and inventing a length or capitalisation
+              heuristic would be exactly the meaning-judgement the floor exists to avoid. Known
+              gap, recorded rather than papered over with a bad rule.
+VERIFY Full suite 8910 passed / 24 failed. The 24 are the pre-existing set; every failure sits
+              in one of the five known files. +57 tests, zero regressions, zero skips added.

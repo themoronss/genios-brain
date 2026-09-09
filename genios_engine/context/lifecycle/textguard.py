@@ -41,75 +41,15 @@ import re
 
 __all__ = ["NEGATORS", "in_quoted_history", "negator_in_clause", "quoted_regions"]
 
-#: An attribution line — the header a mail client writes above the text it is quoting. Everything
-#: from here to the end of the message is history. Deliberately anchored to the START of a line
-#: and deliberately narrow: matching "wrote:" anywhere would swallow "as Priya wrote: this is
-#: done" mid-paragraph, which is live text and must stay quotable.
-_ATTRIBUTION = re.compile(
-    r"^[ \t]*(?:"
-    r"-{2,}\s*(?:original message|forwarded message)\s*-{2,}"          # Outlook / Gmail forward
-    r"|_{5,}"                                                          # Outlook's rule
-    r"|on\b.{0,200}?\bwrote:[ \t]*$"                                   # "On 12 Feb, X wrote:"
-    r"|from:.{0,200}$(?=\n[ \t]*(?:sent|date|to):)"                    # Outlook header block
-    r"|(?:begin|-+)\s*forwarded message"
-    r")",
-    re.IGNORECASE | re.MULTILINE | re.DOTALL)
-
-#: A quote marker: one or more '>' at the start of a line, the convention every plain-text mail
-#: client emits.
-_QUOTE_LINE = re.compile(r"^[ \t]*>+", re.MULTILINE)
-
-
-def quoted_regions(text: str) -> tuple[tuple[int, int], ...]:
-    """The character ranges of `text` that are REPLY HISTORY rather than this sender's words.
-
-    Two shapes, because mail clients produce two. A run of `>`-prefixed lines is its own region;
-    an attribution line makes everything after it history, since no client writes one and then
-    resumes the live message below it (top-posting is the norm and bottom-posting puts the live
-    text ABOVE the attribution too).
-
-    Returns ranges in ascending order. Half-open, `[start, end)`, the same convention
-    `EvidenceSpan` uses, so a caller can compare them against a span's offsets directly.
-    """
-    if not text:
-        return ()
-    regions: list[tuple[int, int]] = []
-
-    attribution = _ATTRIBUTION.search(text)
-    if attribution is not None:
-        regions.append((attribution.start(), len(text)))
-
-    # Contiguous runs of quoted lines are merged, so a quoted paragraph is ONE region rather than
-    # one per line — a span crossing two quoted lines must still land inside a single range.
-    run_start: int | None = None
-    run_end = 0
-    for match in _QUOTE_LINE.finditer(text):
-        line_end = text.find("\n", match.start())
-        line_end = len(text) if line_end == -1 else line_end + 1
-        if run_start is not None and match.start() <= run_end:
-            run_end = max(run_end, line_end)
-            continue
-        if run_start is not None:
-            regions.append((run_start, run_end))
-        run_start, run_end = match.start(), line_end
-    if run_start is not None:
-        regions.append((run_start, run_end))
-
-    return tuple(sorted(regions))
-
-
-def in_quoted_history(text: str, start: int, end: int) -> bool:
-    """Whether the span at `[start, end)` lies inside quoted history.
-
-    ANY OVERLAP COUNTS, not containment. A quote that begins in the live text and runs into the
-    history is not a sentence the sender wrote either, and requiring full containment would make
-    the guard avoidable by widening the quote by one character.
-    """
-    if end <= start:
-        return False
-    return any(start < region_end and end > region_start
-               for region_start, region_end in quoted_regions(text))
-
+#: MOVED, NOT DELETED. `quoted_regions` and `in_quoted_history` now live in
+#: `capture/preprocess/quoted.py`, because reply history is a property of the raw message and
+#: Layer 1 has to know it BEFORE anything is extracted — see that module's header for the 23
+#: signals this file's absence from the capture path was producing. Re-exported here so this
+#: module's public surface, `judge.py` and `test_h6_adversarial.py` are all unchanged.
+from genios_engine.capture.preprocess.quoted import (        # noqa: E402
+    in_quoted_history,
+    quoted_regions,
+)
 
 #: The negators, lower-cased, matched on WORD BOUNDARIES. English and Hinglish together for the
 #: reason doc 12 case 6 gives about the prompt: this corpus is mixed-script, and an English-only

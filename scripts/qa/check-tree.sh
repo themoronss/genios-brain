@@ -2,7 +2,7 @@
 # Preconditions build-up refuses to start without. Exit 0 = safe to build.
 set -uo pipefail
 cd "$(dirname "$0")/../.."
-python - <<'PY'
+"${GENIOS_PY:-python3}" - <<'PY'
 import sys, yaml, collections
 try: t = yaml.safe_load(open("tree.yaml"))
 except Exception as e: print("FAIL parse:", e); sys.exit(1)
