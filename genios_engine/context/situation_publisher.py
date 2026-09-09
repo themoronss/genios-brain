@@ -56,6 +56,13 @@ class HoldReason(str, Enum):
     PATTERN_EVIDENCE_REQUIRED = "pattern_evidence_required"
     SOURCE_COVERAGE_INSUFFICIENT = "source_coverage_insufficient"
     CONFLICT_OPEN = "conflict_open"
+    #: TWO DOMAINS CLAIMING OPPOSITE THINGS ABOUT ONE SUBJECT. `CONFLICT_OPEN` above is the same
+    #: shape one layer down — Layer 1 preserving two incompatible FACTS — and its comment already
+    #: states the principle this extends: publishing a candidate as settled while the disagreement
+    #: stands would erase it by omission. Measured on the pilot: three counterparties carried
+    #: `admin:awaiting_response` (they owe us a reply) and `support:first_response_overdue` (we
+    #: never answered them) at the same time. Both cards would have gone out.
+    CROSS_DOMAIN_CONTRADICTION = "cross_domain_contradiction"
 
 
 @dataclass(frozen=True, slots=True)
@@ -231,6 +238,17 @@ def _preflight(old: LegacySituation, *, l1_scoring_active: bool) -> tuple[str, .
         reasons.append(HoldReason.IDENTITY_REVIEW_REQUIRED.value)
     if bool(meta.get("requires_complete_coverage")) and meta.get("coverage_ready") is not True:
         reasons.append(HoldReason.SOURCE_COVERAGE_INSUFFICIENT.value)
+    if meta.get("contradicted_by"):
+        # THE LOSING SIDE OF A DECLARED IMPOSSIBILITY, or either side of one nothing settles.
+        # `context/correlation_domain.py` finds these and refuses to delete anything; the decision
+        # of what to do belongs here, and it is the same decision `CONFLICT_OPEN` makes: hold, so
+        # the claim does not travel while a contradiction about it stands.
+        #
+        # HOLD AND NOT REJECT, deliberately. This is recoverable in the ordinary way — the arbiter
+        # fact moves, or the losing situation resolves itself on the next sweep, and the retry
+        # `reevaluate_after` promises is one a sweep genuinely keeps. That is the test the
+        # docstring below sets for the difference between the two outcomes.
+        reasons.append(HoldReason.CROSS_DOMAIN_CONTRADICTION.value)
     if meta.get("conflict_ids"):
         # A pointer means Layer 1 deliberately preserved two incompatible claims.  Until this
         # seam can attach both typed Conflict sides, publishing the candidate as settled would

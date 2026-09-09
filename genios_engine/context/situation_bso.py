@@ -1336,6 +1336,7 @@ def build_business_situation(
     composed: ComposedImportance | None = None,
     pattern: PatternFire | None = None,
     brain_subject_keys: tuple[str, ...] = (),
+    contradicted_by: tuple[str, ...] = (),
 ) -> BusinessSituationObject:
     """``members`` — real correlated counterparties from ``gather_members`` — is a separate,
     explicit parameter rather than a key smuggled onto ``situation``. Callers pass a raw DB row
@@ -1485,6 +1486,17 @@ def build_business_situation(
             # same discipline `qualified_signals.conflict_ids` keeps one layer down. A situation
             # built on a contradicted claim must not reach Layer 3 looking settled.
             "conflict_ids": list(l1.conflict_ids) if l1 is not None else [],
+            # THE SAME DISCIPLINE ONE LAYER UP. `conflict_ids` above points at Layer 1's
+            # incompatible FACTS; this points at another SITUATION that claims the opposite of
+            # this one about the same subject. `context/correlation_domain.py` finds them against
+            # a declared list of impossibilities and refuses to delete anything, so the decision
+            # lands where `conflict_ids`' does — `situation_publisher._preflight`, which holds.
+            #
+            # Measured on the pilot: three counterparties carried `admin:awaiting_response` (they
+            # owe us a reply) and `support:first_response_overdue` (we never answered them) at
+            # once, and both cards would have gone out. Empty is the ordinary case and is exactly
+            # the behaviour this pass had before the correlator existed.
+            "contradicted_by": list(contradicted_by),
             # L2.5.1's confidence VECTOR, carried whole rather than as the minimum alone. The
             # group gate's second row ("confidence vector axes present — all 6") is a count over
             # this key; `confidence_vector_complete` is that count already taken, so a gate does

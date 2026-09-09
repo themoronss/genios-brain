@@ -561,6 +561,35 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                                if r["anchor_node_id"]])
         except Exception:      # noqa: BLE001 — the package is the product; the pattern is context
             logger.exception("could not read pattern fires for org=%s", org_id)
+        # L2.3 · CROSS DOMAIN. Which situations are contradicted by another domain's situation
+        # about the same subject, read ONCE for the sweep beside every other bulk gather above.
+        #
+        # `correlation_domain` returns findings and deletes nothing; the decision is
+        # `situation_publisher._preflight`'s, which HOLDS a contradicted candidate exactly as it
+        # holds one carrying Layer 1 `conflict_ids`. Measured on the pilot: three counterparties
+        # were simultaneously "they owe us a reply" (admin) and "we never answered them"
+        # (support), and both cards would have gone out saying opposite things about one person.
+        #
+        # NEVER FATAL, and the same reason the pattern read above is not: a correlator is a
+        # refinement of a pass whose product is the package. A failure to read one must not cost
+        # the tenant every situation — it costs only the contradiction guard for this sweep, and
+        # the next sweep reads it again.
+        contradicted: dict[str, list[str]] = {}
+        try:
+            from genios_engine.context.correlation_domain import read_contradictions
+
+            for finding in read_contradictions(conn, org_id):
+                # BOTH SIDES when nothing settles it, the LOSER alone when something does. An
+                # unresolved contradiction is not a reason to trust either claim, and picking one
+                # by coin toss is worse than telling a reviewer the system cannot tell.
+                blocked = ([sid for _key, sid in finding.sides] if not finding.resolved
+                           else [sid for key, sid in finding.sides if key == finding.loser])
+                for situation_id in blocked:
+                    contradicted.setdefault(situation_id, []).append(
+                        f"{finding.exclusion.left}|{finding.exclusion.right}")
+        except Exception:      # noqa: BLE001 — a correlator is context, not the product
+            logger.exception("could not read cross-domain contradictions for org=%s", org_id)
+        counts["contradicted_situations"] = len(contradicted)
         brains = PostgresRuntimeBrains(conn)
         # TWO COMPILERS, ONE CONNECTION, chosen PER SITUATION by the situation's own domain.
         #
@@ -664,7 +693,10 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     # turns the situation's email-keyed members into the graph node ids the
                     # Behaviour brain publishes under, so the tenant's own learned knowledge can
                     # finally be selected for the situation it is about.
-                    brain_subject_keys=gather_brain_subject_keys(conn, org_id, row, members))
+                    brain_subject_keys=gather_brain_subject_keys(conn, org_id, row, members),
+                    # Empty for all but the contradicted few, which is the behaviour this pass had
+                    # before the correlator existed.
+                    contradicted_by=tuple(contradicted.get(str(row["situation_id"]), ())))
                 current_absences = tuple(
                     absence.fact
                     for absence in absences_by_situation.get(str(row["situation_id"]), ())
