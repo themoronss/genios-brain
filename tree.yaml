@@ -27,9 +27,17 @@ milestones:
     name: Layer 1 — a signal is about this message
     ships: >
       No qualified signal on the pilot quotes a reply-attribution header, a bare timestamp or a
-      greeting, and no sentence produces a signal in more than one event because a later message
-      quoted it. Measured today: 23 header signals, 49 bare-timestamp spans, 39 spans under 25
-      characters, and ~60 signals that are one sentence counted N times.
+      greeting. Measured before the work: 23 header signals, 49 bare-timestamp spans, 39 spans
+      under 25 characters.
+    known_gap: >
+      Two, both recorded rather than fixed with a bad rule. (1) A SUBJECT LINE is not refused —
+      nothing in the string says it is a subject, that needs the envelope this pass is not given,
+      and a length or capitalisation heuristic would be the meaning-judgement the floor exists to
+      avoid. (2) "If you are unable to attend, please inform us at least one hour in advance"
+      produced 13 `commitment_due` signals from 13 meeting invitations by one sender. That
+      sentence is an INSTRUCTION TO THE RECIPIENT, not a promise by anyone, so the defect is a
+      misclassification in extraction, not a duplication to be deduplicated — and it is a prompt
+      problem, not something deterministic code should paper over.
     categories:
 
       # ─────────────────────────────────────────────────────────────────────────────────────
@@ -123,27 +131,31 @@ milestones:
                     depends_on: []
 
       # ─────────────────────────────────────────────────────────────────────────────────────
+      # ─────────────────────────────────────────────────────────────────────────────────────
       - id: M1.C3
         name: Template text is not a promise
         why: >
-          "If you are unable to attend, please inform us at least one hour in advance" is stored
-          as a commitment_due THIRTEEN times, once per calendar invite. Unlike the reply-history
-          duplicates this is genuinely one sentence in thirteen different messages, so M1.C1 does
-          not remove it. A sentence that arrives identically across many events from different
-          senders is boilerplate, and boilerplate is not a commitment anybody made.
+          RETIRED, and the data says why. The unit assumed a sentence recurring across many
+          events was boilerplate. Measured: every repeated quote on the tenant has exactly ONE
+          distinct sender, and zero signals quote a `>`-prefixed line. The repeats are not
+          templates and not reply history — they are ONE SENDER'S CAMPAIGN.
+          "Pitching GeniOS (Software That Thinks For Your Company) From India" appears ten times
+          because Rohit sent the same pitch to ten VCs, and "we can expect the numbers to hit
+          nearly ~$2-3k MRR" ten times for the same reason. Ten investors, ten threads, ten
+          situations — that is CORRECT, and it is precisely the investor-outreach intelligence
+          this whole effort exists to surface. A recurrence rule would have deleted it.
         layers:
           - layer: logic
             levels:
               - level: 0
                 units:
                   - id: M1.C3.L-logic.V0.U06
-                    what: >
-                      Recurrence-based boilerplate refusal at qualification. Scoped to the tenant
-                      and measured over stored signals, so it cannot mis-fire on the first
-                      occurrence of a real promise.
-                    artifact: genios_engine/capture/esqe/importance.py
-                    verify: uv run --no-sync pytest tests/capture/esqe/test_boilerplate.py -q
-                    depends_on: []
+                    retired: true
+                    retired_reason: >
+                      Recurrence is evidence of a campaign on this tenant, not of boilerplate.
+                      Building it would have refused the ten cold-outreach signals to Peak XV,
+                      Titan, Afore and the rest — the exact intelligence the feed is missing.
+                    superseded_by: []
 
   # ═══════════════════════════════════════════════════════════════════════════════════════════
   - id: M2

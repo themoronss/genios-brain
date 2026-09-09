@@ -101,7 +101,27 @@ text exists in the source. It does not check that the text means anything.**
 |---|---|---|---|
 | **L1-1** | **Reply-attribution headers are extracted as business signals.** `'On Sat, 8 Aug 2026 at 14:22, Manik Pasricha wrote:'` is stored as a `financial_obligation` at **4560 bp** — the second-highest importance on the tenant. `'On Tue, 24 Jun 2025 at 11:37, Surge wrote:'` likewise. | 23 of 395 signals match `^On …wrote:` — 16 `deadline_stated`, 7 `financial_obligation` | **23 signals** |
 | **L1-2** | **Meaningless spans pass verification.** 49 signals quote a bare ISO timestamp (`'2026-07-24T12:30:00+05:30'`). 39 quote fewer than 25 characters. **`'Hi Rohit,'` is stored three times as a `relationship_change`.** | `evidence_refs[0].quote` | **~90 of 395 (23%)** |
-| **L1-3** | **One sentence produces up to twelve signals.** No dedup on the extracted span. | see table below | **~60 signals** |
+| **L1-3** | ~~One sentence produces up to twelve signals.~~ **WITHDRAWN — see the correction below.** | | **0** |
+
+> ### L1-3 is withdrawn, and the reason matters more than the finding did
+>
+> The table below is real, but the conclusion drawn from it was wrong. Measured afterwards:
+> **every repeated quote on the tenant has exactly ONE distinct sender, and zero signals quote a
+> `>`-prefixed line.** These are not templates and not reply history. They are **one sender's
+> campaign.**
+>
+> "Pitching GeniOS (Software That Thinks For Your Company) From India" appears ten times because
+> Rohit sent the same pitch to ten VCs. "we can expect the numbers to hit nearly ~$2-3k MRR"
+> appears ten times for the same reason. **Ten investors, ten threads, ten situations — that is
+> correct**, and it is precisely the investor-outreach intelligence this whole effort exists to
+> surface. The deduplication rule that was planned for it would have deleted the Peak XV, Titan,
+> Afore and Neon signals. The unit was retired before it was built.
+>
+> One residual is real: `"If you are unable to attend, please inform us at least one hour in
+> advance"` produced 13 `commitment_due` signals from 13 meeting invitations. That sentence is an
+> **instruction to the recipient, not a promise by anyone** — so it is a misclassification in
+> extraction, not a duplication, and the fix is a prompt, not deterministic code. Recorded as a
+> known gap.
 
 The duplicate table, measured:
 
