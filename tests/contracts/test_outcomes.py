@@ -212,3 +212,92 @@ def test_every_projected_vocabulary_is_guarded_by_this_file():
     """A vocabulary added to `PROJECTION` without being added to `REAL` above would be unguarded,
     and its drift would be invisible."""
     assert set(PROJECTION) == {key for key, _ in REAL}
+
+
+# =============================================================================================
+# resolve() — the function that makes "expect exactly one outcome" writable.
+#
+# THE DEFECT IT EXISTS FOR is not that delivery cannot tell an observation from an instruction —
+# deliver/pipeline.py checks `abstention.is_actionable` before it pushes, so an abstaining card
+# genuinely does not interrupt. The defect is narrower and worse: what happened to a situation is
+# decided in several places in several vocabularies and nothing folds them into one answer, so a
+# card can be SEND by verdict, not-pushed by abstention and no_action by reasoning at the same
+# instant. "What happened" has three answers, and the inventory needs one.
+# =============================================================================================
+from genios_engine.contracts.outcomes import RANK, disagreements, implied, resolve  # noqa: E402
+
+
+def test_nothing_said_resolves_to_nothing():
+    """`None` is not `EMIT_ACTION`. A situation no layer has judged has no outcome, and defaulting
+    to the permissive end would make every unjudged card look approved."""
+    assert resolve() is None
+    assert resolve(**{"abstention.Level": None}) is None
+
+
+def test_a_single_layer_speaks_for_itself():
+    assert resolve(**{"abstention.Level": "prescriptive"}) is Outcome.EMIT_ACTION
+
+
+def test_the_conflict_the_pipeline_actually_produces():
+    """A card whose level says "I decline to advise" and whose delivery verdict says "send" is the
+    real shape on this codebase — the verdict has no way to carry the distinction and a separate
+    guard enforces it. Resolution keeps the card's own claim; the discarded one is reported."""
+    signals = {"abstention.Level": "observation", "delivery.DeliveryVerdict": "send"}
+
+    assert resolve(**signals) is Outcome.EMIT_OBSERVATION
+    assert disagreements(**signals) == (Outcome.EMIT_ACTION,)
+
+
+def test_a_cancelled_situation_is_cancelled_whatever_the_card_claimed():
+    """COR-07 and DEL-07: a commitment completed between detection and delivery. The card still
+    says prescriptive because it was built before; the situation is over."""
+    signals = {"abstention.Level": "prescriptive", "delivery.DeliveryLifecycle": "cancelled"}
+
+    assert resolve(**signals) is Outcome.CANCEL
+    assert Outcome.EMIT_ACTION in disagreements(**signals)
+
+
+def test_a_transport_failure_outranks_the_recommendation():
+    """LRN-07 and Combined Case 9: the tool never delivered the request. Reading "the owner
+    ignored it" from that is the confusion this precedence prevents."""
+    assert resolve(**{"abstention.Level": "prescriptive",
+                      "delivery.DeliveryLifecycle": "failed"}) is Outcome.RETRY
+
+
+def test_no_authority_outranks_a_confident_recommendation():
+    """EXE-06: the recommendation may be sound and we may not act on it."""
+    assert resolve(**{"abstention.Level": "prescriptive",
+                      "execution.ExecutionState": "blocked"}) is Outcome.NO_AUTHORITY
+
+
+def test_suppression_outranks_everything_except_the_end_of_the_situation():
+    assert resolve(**{"abstention.Level": "suppress",
+                      "delivery.DeliveryVerdict": "send"}) is Outcome.SUPPRESS
+    assert resolve(**{"abstention.Level": "suppress",
+                      "delivery.DeliveryLifecycle": "cancelled"}) is Outcome.CANCEL
+
+
+def test_agreement_reports_no_disagreement():
+    assert disagreements(**{"abstention.Level": "prescriptive",
+                            "delivery.DeliveryVerdict": "send"}) == ()
+
+
+def test_disagreements_never_include_the_winner():
+    signals = {"abstention.Level": "observation", "delivery.DeliveryVerdict": "send",
+               "delivery.DeliveryLifecycle": "cancelled"}
+
+    assert resolve(**signals) not in disagreements(**signals)
+
+
+def test_implied_drops_what_it_cannot_read_rather_than_guessing():
+    got = implied(**{"abstention.Level": "prescriptive", "abstention.Level ": None,
+                     "no.such.vocabulary": "send"})
+
+    assert got == {"abstention.Level": Outcome.EMIT_ACTION}
+
+
+def test_the_precedence_covers_every_outcome():
+    """A `RANK` missing an outcome would make `resolve` return `None` for a situation that was
+    judged — silently, and only for that one kind."""
+    assert set(RANK) == set(Outcome)
+    assert len(RANK) == len(Outcome)

@@ -244,3 +244,39 @@ FIND   FOUR GAPS, each a value that exists in some contract and cannot be said b
               "the connector was down, the intelligence stands", which is why SRC-01 and EXE-01
               cannot be asserted without conflating a broken tool with a bad recommendation.
 VERIFY Full suite 8994 passed / 24 failed. Same pre-existing 24. +31 tests, zero regressions.
+
+--- M6.C2 · THE HEADLINE MUST NOT OUTRANK THE CARD, 2026-09-09 -------------------------------
+CORR   I claimed "delivery cannot tell an observation from an instruction". TOO STRONG, and the
+              module docstring now says so. deliver/pipeline.py:408 DOES check
+              abstention.is_actionable before pushing, so an abstaining card genuinely does not
+              interrupt. DeliveryVerdict cannot carry the distinction; a separate guard enforces
+              it. The real defect is narrower and worse -- see below.
+PASS   M6.C2  contracts/outcomes.resolve()/disagreements(). What happened to a situation is
+              decided in several places in several vocabularies and NOTHING folds them into one
+              answer: a card can be SEND by verdict, not-pushed by abstention and no_action by
+              reasoning at the same instant. RANK orders the eleven by how much each OVERRIDES --
+              a cancelled situation is cancelled whatever the card said; a transport failure means
+              no judgement about the situation should be read at all.
+FIND   RESOLVED OVER THE 15 LIVE CARDS, read-only. FOURTEEN OF FIFTEEN have two layers implying
+              different outcomes. The tally: cancel 8, ask_decision 3, emit_observation 3,
+              emit_action 1. ELEVEN cards carry level=review -- the card's own body saying "there
+              is no instruction to give, a human must look" -- and three carry observation.
+              EXACTLY ONE card on the tenant is prescriptive.
+              Their headlines: "Deliver fundraising opportunities to sanchiconnect.tech NOW",
+              "Renew Growth plan at $599/month now", "Reply to Sehan Sanjula now".
+              card_builder withdraws the authority in E0 ("it just stops claiming the authority to
+              give an order it cannot phrase"); render writes the sentence in E1 and contained NO
+              REFERENCE TO `level` at all. The two stages never met.
+PASS   M6.C2  deliver/render.state_not_command(), wired at the one point where both facts are in
+              hand (deliver/pipeline.py, right after render_copy). A SAFETY transform, not
+              copywriting: no verb surgery -- deterministic rewriting of "Send Lalitha A R the
+              product context materials" produces fragments -- the urgency tail goes and a prefix
+              states what the card is. 31 tests.
+FAIL   M6.C2 first cut  Capping the JOINED string let the cap treat the em dash as a clause
+              boundary and cut everything after it: the pilot's top card became the bare words
+              "Needs a decision", strictly worse than the imperative it replaced. Budget is now
+              spent on the body and the frame added afterwards.
+FAIL   M6.C2 second cut  Idempotence guarded only the MATCHING frame, so a card whose level moved
+              between builds stacked them: "Needs a decision — Unresolved — Reply to Sehan
+              Sanjula". Any known frame is now stripped first. Caught by its own test.
+VERIFY Full suite 9036 passed / 24 failed. Same pre-existing 24. +73 tests today, zero regressions.

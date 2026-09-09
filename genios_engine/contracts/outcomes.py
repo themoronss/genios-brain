@@ -164,6 +164,12 @@ PROJECTION: dict[str, dict[str, Outcome]] = {
 #: from a FAILURE state — no layer has a verdict meaning "the connector was down, the intelligence
 #: stands". `ASK_DECISION` exists only as an abstention `Level`; neither delivery nor reasoning can
 #: say it, so a decision the founder must make cannot be routed as one.
+#:
+#: WHAT IT DOES NOT SHOW, and an earlier draft of this file claimed it did. "Delivery cannot tell
+#: an observation from an instruction" is too strong: `deliver/pipeline.py` checks
+#: `abstention.is_actionable` before it pushes, so an abstaining card genuinely does not interrupt.
+#: The `DeliveryVerdict` cannot carry the distinction, but a separate guard does. The real defect
+#: is narrower and worse — see `resolve`.
 UNEXPRESSED_BY: dict["Outcome", tuple[str, ...]] = {}
 
 
@@ -173,6 +179,79 @@ def _compute_gaps() -> None:
                               if outcome not in values.values()))
         if cannot:
             UNEXPRESSED_BY[outcome] = cannot
+
+
+#: ── PRECEDENCE ───────────────────────────────────────────────────────────────────────────────
+#: THE DEFECT `resolve` EXISTS FOR. What happened to one situation is decided in several places in
+#: several vocabularies, and nothing folds them into one answer. `deliver/pipeline.py` consults
+#: `abstention.is_actionable` to decide whether to interrupt; `deliver/gate.py` independently
+#: produces a `DeliveryVerdict`; `reason` has already recorded a `DecisionOutcome`; the lifecycle
+#: row carries its own state. A card can therefore be `SEND` by verdict, not-pushed by abstention
+#: and `no_action` by reasoning at the same instant, and "what happened to this situation" has
+#: three answers — which is exactly why the inventory's "expect exactly one outcome" could not be
+#: written.
+#:
+#: The order below is by HOW MUCH EACH OVERRIDES, not by which layer runs last. A cancelled
+#: situation is cancelled whatever the card said. A suppressed one was deliberately refused. A
+#: transport failure means nothing has happened yet and no judgement about the situation should be
+#: read from it. Only when nothing overrides does the card's own claim decide.
+RANK: tuple[Outcome, ...] = (
+    Outcome.CANCEL,          # the situation is over; nothing else about it matters
+    Outcome.SUPPRESS,        # deliberately refused
+    Outcome.RETRY,           # the machinery failed; there is no verdict on the situation yet
+    Outcome.NO_AUTHORITY,    # we may not proceed, whatever we would have advised
+    Outcome.DEFER,           # valid and complete; wrong instant
+    Outcome.ESCALATE,        # being handed up
+    Outcome.ASK_DECISION,    # a person must answer
+    Outcome.ABSTAIN,         # we cannot safely determine it
+    Outcome.HOLD,            # not yet true
+    Outcome.EMIT_OBSERVATION,  # true, and we will not prescribe
+    Outcome.EMIT_ACTION,     # everything agreed
+)
+
+
+def implied(**signals: str | None) -> dict[str, Outcome]:
+    """Every outcome the given layer values imply, keyed by vocabulary.
+
+    Call as `implied(**{"abstention.Level": "observation", ...})`. Unknown or absent values are
+    dropped rather than guessed — see `project`.
+    """
+    out: dict[str, Outcome] = {}
+    for vocabulary, value in signals.items():
+        if value is None:
+            continue
+        outcome = project(vocabulary, value)
+        if outcome is not None:
+            out[vocabulary] = outcome
+    return out
+
+
+def resolve(**signals: str | None) -> Outcome | None:
+    """The single canonical outcome for one situation. `None` when nothing was said at all.
+
+    This is the function that makes "expect exactly one outcome" writable. It does not change any
+    layer's behaviour; it states, in one place and by a documented precedence, what the layers
+    together mean.
+    """
+    seen = set(implied(**signals).values())
+    if not seen:
+        return None
+    for outcome in RANK:
+        if outcome in seen:
+            return outcome
+    return None                                            # pragma: no cover - RANK is total
+
+
+def disagreements(**signals: str | None) -> tuple[Outcome, ...]:
+    """The outcomes the layers imply that the resolution DISCARDED, in rank order.
+
+    Empty means every layer agreed. Non-empty is not automatically a bug — a cancelled situation
+    whose card said `prescriptive` is a perfectly ordinary race — but it is the set a test asserts
+    on when the inventory asks "which layer first got this wrong".
+    """
+    seen = set(implied(**signals).values())
+    winner = resolve(**signals)
+    return tuple(o for o in RANK if o in seen and o is not winner)
 
 
 def project(vocabulary: str, value: str) -> Outcome | None:

@@ -16,6 +16,7 @@ from genios_engine.reason.authority import (
 )
 
 from genios_engine.contracts.abstention import downgrade_to_observation, is_actionable
+from genios_engine.deliver.render import state_not_command
 from .card_builder import BUILDER_VERSION, build_draft, load_evidence_quotes
 from .render import render_copy
 from .router import budget_full
@@ -341,6 +342,14 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                 # own outgoing mail — and the whole card shipped as an empty stub because of it.
                 identities=identities, quotes=quotes,
                 subject_ref=f"signal:{sig['signal_id']}")
+            # THE HEADLINE MUST NOT OUTRANK THE CARD. E0 decides the level and withdraws the
+            # authority to instruct; E1 writes the sentence and, until this line, had no reference
+            # to `level` anywhere in it. On the pilot's fifteen live cards ELEVEN carry `review`
+            # and three `observation` — one is prescriptive — and their headlines read "Deliver
+            # fundraising opportunities to sanchiconnect.tech NOW". The push gate below already
+            # honours the level; the sentence did not, and the sentence is what the reader sees
+            # first. This is the one point where both facts are in hand.
+            copy = {**copy, "headline": state_not_command(copy.get("headline"), draft["level"])}
             # artifact_ready must reflect the REAL render — a raw-slot fallback has an empty body,
             # so Run Play must not advertise a ready draft.
             ready = bool((copy.get("artifact") or {}).get("body"))

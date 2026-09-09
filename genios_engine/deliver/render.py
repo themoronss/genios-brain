@@ -321,6 +321,80 @@ def _cap(text: str, cap: int) -> str:
     return _fit(text, cap) or _trim_to_word(text, cap)
 
 
+#: ── THE HEADLINE MUST NOT OUTRANK THE CARD ───────────────────────────────────────────────────
+#: `card_builder` downgrades a card's `level` when it cannot say what to do — its own comment:
+#: *"it just stops claiming the authority to give an order it cannot phrase."* The level is
+#: decided in E0. The headline is written here, in E1. **The two stages never meet**, and this
+#: module contained no reference to `level` at all, so a card whose authority had been withdrawn
+#: still shipped an imperative.
+#:
+#: MEASURED on the pilot's fifteen live cards: eleven carry `level = review` — the card's own body
+#: saying "there is no instruction to give, a human must look" — and three carry `observation`.
+#: Exactly ONE is `prescriptive`. Their headlines read
+#: *"Deliver fundraising opportunities to sanchiconnect.tech NOW"*,
+#: *"Renew Growth plan at $599/month now"*, *"Reply to Sehan Sanjula now"*.
+#: The push gate honours the level (`deliver/pipeline.py` checks `is_actionable` before it
+#: interrupts) — the SENTENCE does not.
+#:
+#: THIS IS A SAFETY TRANSFORM, NOT COPYWRITING, and the distinction governs the design. It does
+#: not rewrite the sentence, because deterministic verb surgery on
+#: *"Send Lalitha A R the product context materials"* produces fragments. It reframes: the trailing
+#: urgency word goes, and a prefix states what the card actually is. A slightly stiff honest
+#: headline beats a fluent false one, and stiffness is the price of never inventing a clause.
+_URGENCY_TAIL = re.compile(r"[\s,;:—-]*\b(now|today|immediately|asap)\s*[.!]*\s*$", re.IGNORECASE)
+
+#: What each non-actionable level says the card IS. Keyed by `abstention.Level` values; a level
+#: absent from this map is left alone, which is the fail-open direction on purpose — an unknown
+#: level must not silently restyle a headline nobody has reasoned about.
+_LEVEL_FRAME: dict[str, str] = {
+    "review": "Needs a decision",
+    "observation": "Unresolved",
+    "wait": "Waiting",
+    "suppress": "Closed",
+}
+
+
+def state_not_command(headline: str, level: str | None) -> str:
+    """Reframe a headline whose card is not allowed to instruct. Actionable cards pass through.
+
+    Idempotent: a headline already carrying its frame is returned unchanged, so a rebuild cannot
+    stack "Unresolved — Unresolved — …".
+    """
+    from genios_engine.contracts.abstention import is_actionable
+
+    head = (headline or "").strip()
+    if not head or is_actionable(level):
+        return head
+    frame = _LEVEL_FRAME.get(str(level or "").strip().lower())
+    if frame is None:
+        return head
+    # ANY existing frame is stripped, not just this level's. A card whose level moves between
+    # builds — `observation` on Monday, `review` on Tuesday once the owner went absent — otherwise
+    # accumulates them: "Needs a decision — Unresolved — Reply to Sehan Sanjula". Guarding only
+    # against the matching prefix makes the transform idempotent for a fixed level and stacking
+    # for a moving one, which is the case that actually happens.
+    for existing in _LEVEL_FRAME.values():
+        prefix_form = existing.lower() + " — "
+        if head.lower().startswith(prefix_form):
+            head = head[len(prefix_form):].strip()
+            break
+    if head.lower().startswith(frame.lower() + " —"):
+        return head
+    body = _URGENCY_TAIL.sub("", head).strip()
+    # THE BUDGET IS SPENT ON THE BODY, NEVER THE FRAME. Capping the joined string lets `_cap`
+    # treat the em dash as a clause boundary and cut everything after it — which returned the bare
+    # words "Needs a decision" for the pilot's top card, a headline strictly worse than the
+    # imperative it replaced. The frame is fixed-width and known, so the body is cut to what
+    # remains and the two are joined afterwards.
+    prefix = f"{frame} — "
+    room = HEADLINE_CAP - len(prefix)
+    if room < 12:
+        # No headline budget can carry both. Keep the body, which at least says what this is
+        # about; the level still travels on the card and the surface can render it.
+        return _cap(body, HEADLINE_CAP)
+    return prefix + _cap(body, room)
+
+
 def _fallback(template: dict, slots: dict) -> dict:
     fb = template.get("fallback", {})
     head = _cap(_interpolate(fb.get("headline", "{entity}"), slots), HEADLINE_CAP)
