@@ -148,6 +148,37 @@ _COMMITMENT_OWNERS = (
     "where e.org_id = :o and e.edge_type = 'owns' and e.valid_to is null"
 )
 
+#: THREADS WHOSE COUNTERPARTY IS ALREADY WAITING IN THEIR OWN RIGHT.
+#:
+#: `waiting.py` writes `thread.*` onto BOTH subjects — the thread node and the party who
+#: corresponded on it — because "this thread has waited 28 days" and "this person has waited 28
+#: days" are genuinely different facts and a later reader may want either. This reading wanted
+#: neither in duplicate: it mints one anchor per node carrying the facts, so it produced two
+#: situations for every waiting conversation. Measured on the pilot: 41 `awaiting_response`
+#: situations covering 22 distinct counterparties, the thread-anchored twin of each pair carrying
+#: `confidence_overall = 0` and a display name of "Thread with vatsa@valiron.co" beside the real
+#: one's "vatsa@valiron.co".
+#:
+#: THE PERSON IS THE SUBJECT, so the thread yields. A card reads "Vidushi has not replied in 28
+#: days"; "Thread with vidushi@peakxv.com has not replied" is the same sentence said worse.
+#:
+#: The party must ALSO be waiting, not merely exist. Three of the pilot's twenty-one waiting
+#: threads have no waiting party — a thread whose counterparty node was never resolved, which is
+#: exactly the case that must keep its situation rather than vanish into a gap nobody sees.
+_THREAD_COVERED_BY_PARTY = (
+    "select distinct e.to_node_id as thread, e.from_node_id as party, "
+    "       p.display_name as party_name "
+    "from graph_edges e "
+    "join graph_nodes t on t.org_id = e.org_id and t.node_id = e.to_node_id "
+    "                  and t.node_type = 'thread' and t.valid_to is null "
+    "join graph_nodes p on p.org_id = e.org_id and p.node_id = e.from_node_id "
+    "                  and p.valid_to is null "
+    "join graph_facts f on f.org_id = e.org_id and f.subject_node_id = e.from_node_id "
+    "                  and f.field = 'thread.days_waiting' and f.status = 'active' "
+    "                  and f.valid_to is null "
+    "where e.org_id = :o and e.edge_type = 'corresponded_with' and e.valid_to is null"
+)
+
 _EVENT_COUNTS = (
     "select o.subject_node_id as node_id, count(*) as events, "
     "       count(distinct r.source) as sources, min(o.occurred_at) as first_at, "
@@ -204,6 +235,13 @@ def read_awaiting_response(rows: dict, now: datetime, employers: dict) -> list[_
     for node_id, held in rows.items():
         waited = _num(held.get("thread.days_waiting"))
         if waited is None or waited < _WAITING_AFTER_DAYS:
+            continue
+        if held.get("_covered_by_party"):
+            # ONE SITUATION PER CONVERSATION. This node is a thread whose counterparty carries
+            # the same waiting facts and will mint the anchor themselves — see
+            # `_THREAD_COVERED_BY_PARTY`. Skipped here rather than deduplicated afterwards
+            # because the two rows are not near-duplicates to be merged: one of them is simply
+            # the wrong subject to address a card to.
             continue
         name = held.get("_name") or "this contact"
         facts: list[tuple[str, object, str]] = [
@@ -468,6 +506,12 @@ def _gather(store, org_id: str) -> tuple[dict, dict, dict]:
                      for r in c.execute(text(_EMPLOYERS), {"o": org_id}) if r.company}
         # Stamped onto the held row rather than passed as a fourth mapping, so the readers keep
         # the signature the dispatch loop depends on and stay pure functions over their facts.
+        # Stamped, not filtered, for the same reason the owner is: the readers stay pure
+        # functions over their facts and the dispatch loop keeps one signature.
+        for row in c.execute(text(_THREAD_COVERED_BY_PARTY), {"o": org_id}):
+            entry = held.get(str(row.thread))
+            if entry is not None:
+                entry["_covered_by_party"] = str(row.party_name or "") or str(row.party)
         for row in c.execute(text(_COMMITMENT_OWNERS), {"o": org_id}):
             entry = held.get(str(row.commitment))
             if entry is None:

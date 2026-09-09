@@ -167,24 +167,62 @@ milestones:
       with the other side.
     categories:
       - id: M2.C1
-        name: One anchor per outreach reading
+        name: One situation per conversation
         why: >
-          Measured: 41 situations, 22 distinct counterparties — every one minted twice, once on
-          the person node and once on the thread node ("vatsa@valiron.co" and "Thread with
-          vatsa@valiron.co"). The thread-anchored twins carry confidence_overall = 0.
-        layers: []          # decomposed when M1 is green
+          Measured: 41 `awaiting_response` situations covering 22 distinct counterparties. Nobody
+          wrote a bug — `waiting.py` writes `thread.*` onto BOTH the thread node and the party who
+          corresponded on it, because those are genuinely different facts, and this reading mints
+          one anchor per node carrying them. The two rows are not near-duplicates to be merged
+          afterwards: one of them is simply the wrong subject to address a card to.
+        layers:
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M2.C1.L-logic.V0.U01
+                    what: >
+                      A thread whose counterparty carries the same waiting facts yields to them.
+                      The `corresponded_with` edge is the bridge; the party must ALSO be waiting,
+                      so the three pilot threads whose counterparty was never resolved keep their
+                      situation instead of vanishing.
+                    artifact: genios_engine/context/outreach_situations.py
+                    verify: uv run --no-sync pytest tests/context/test_one_situation_per_conversation.py -q
+                    depends_on: []
+
       - id: M2.C2
-        name: response_expected reflects whose court the ball is in
+        name: response_expected means WE asked THEM
         why: >
-          40 of 41 say false, including every 28-day investor thread. Exactly one row in the
-          tenant says true. Meanwhile first_response_overdue independently computes
-          ball_in_court = us on 40 threads, so the fact is already known elsewhere.
-        layers: []
+          40 of 41 said false, including every 28-day investor thread, and the one that said true
+          was wrong for the opposite reason. An observation is attributed to its message's SENDER,
+          so outbound mail produced 425 observations across exactly TWO nodes — Rohit's pitch to
+          eleven VCs recorded the ask on Rohit and never on the VC. Meanwhile the old read matched
+          any ask-kind observation on the node regardless of direction, so a question THEY asked
+          US marked us as awaiting THEIR answer, and `mrrohitswerashi@gmail.com` matched itself.
+        layers:
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M2.C2.L-logic.V0.U02
+                    what: >
+                      The flag resolves from an ask-kind observation on a message WE SENT this
+                      node, joined through `thread.last_outbound` and `graph_source_refs`.
+                      Validated read-only against the tenant before it was written: 19 nodes
+                      resolve where 12 did, and the 11 dropped are all inbound questions or the
+                      founder's own node.
+                    artifact: genios_engine/context/waiting.py
+                    verify: uv run --no-sync pytest tests/context/test_response_expected.py -q
+                    depends_on: []
+
       - id: M2.C3
         name: The absence receipt lands
         why: >
-          Already built and tested on this branch (25 passed), never executed against the tenant.
-          103 absence situations sit at exactly 4000 bp with count(distinct importance_bp) = 1.
+          Built and tested earlier on this branch (25 passed) and never executed against the
+          tenant. 103 absence situations sit at exactly 4000 bp with
+          count(distinct importance_bp) = 1 — the DEFAULT_IMPORTANCE_BP fallback, which is the
+          visible fingerprint of the L1 bundle never arriving. L2-4 (confidence 0-30 on exactly
+          the situations that matter) is downstream of the same starvation and needs no separate
+          unit. BLOCKED on a pipeline run, not on code.
         layers: []
 
   # ═══════════════════════════════════════════════════════════════════════════════════════════

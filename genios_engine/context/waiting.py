@@ -25,7 +25,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from statistics import median
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
 from genios_engine.context.derived import _write_fact
 
@@ -60,10 +60,39 @@ _TIMELINE = (
     "and se.occurred_at >= :since"
 )
 
+#: AN ASK WE MADE, not an ask that mentions them. The distinction is the whole point of
+#: `response_expected` and the previous read had it backwards in both directions.
+#:
+#: MEASURED ON THE PILOT. Outbound mail produced 425 observations across just TWO subject nodes,
+#: because an observation from a message we sent is attributed to the sender — us. So when Rohit
+#: pitched eleven VCs, the ask landed on Rohit's own node and never on theirs, and every one of
+#: Peak XV, Afore, Neon, Together, 3one4, Surge, Z Fellows and Hub71 read as
+#: `response_expected = false`: "we just have not written lately", about a fundraise.
+#: Exactly one waiting person in the tenant had the flag set.
+#:
+#: AND THE FALSE POSITIVES WERE WORSE THAN THE MISSES. The old read matched any ask-kind
+#: observation on the node whatever its direction, so `question` observations extracted from
+#: THEIR inbound mail — Evokoa Team, Lalitha A R, Sehan Sanjula, Pablo Llanos, Prema Roman —
+#: marked us as awaiting THEIR answer when they were awaiting ours. It also matched
+#: `mrrohitswerashi@gmail.com`, the founder's own node.
+#:
+#: This read asks the only question the flag means: was there an ask-kind observation on a
+#: message WE SENT THIS NODE. `thread.last_outbound` is written per counterparty and
+#: `graph_source_refs` maps its fact version back to the event, which is the same join the
+#: absence receipt uses and it resolves for every waiting node on the tenant.
+#:
+#: `in :kinds` with an expanding bindparam rather than `= any(:kinds)`: the array cast is
+#: Postgres-only, and a correctness argument that can only be demonstrated against production is
+#: one nobody can check.
 _ASKS = (
-    "select distinct subject_node_id from graph_observations "
-    "where org_id = :o and status = 'active' and kind = any(:kinds) "
-    "and subject_node_id is not null"
+    "select distinct f.subject_node_id as subject_node_id "
+    "from graph_facts f "
+    "join graph_source_refs r "
+    "  on r.fact_version_id = f.fact_version_id and r.org_id = f.org_id "
+    "join graph_observations o "
+    "  on o.org_id = f.org_id and o.created_by_event_id = r.event_id "
+    "where f.org_id = :o and f.field = 'thread.last_outbound' and f.status = 'active' "
+    "  and o.status = 'active' and o.kind in :kinds"
 )
 
 
@@ -126,8 +155,9 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
 
     with store.engine.begin() as c:
         rows = c.execute(text(_TIMELINE), {"o": org_id, "since": since}).all()
-        asked = {r[0] for r in c.execute(text(_ASKS),
-                                         {"o": org_id, "kinds": list(_ASK_KINDS)}).all()}
+        asked = {r[0] for r in c.execute(
+            text(_ASKS).bindparams(bindparam("kinds", expanding=True)),
+            {"o": org_id, "kinds": sorted(_ASK_KINDS)}).all()}
 
         per_node: dict[str, list[tuple[str, datetime]]] = {}
         for node_id, field, at in rows:

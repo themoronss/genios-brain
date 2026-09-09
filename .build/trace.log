@@ -101,3 +101,32 @@ NOTE   Shape floor only. No model, no similarity, no embedding -- the same disci
               gap, recorded rather than papered over with a bad rule.
 VERIFY Full suite 8910 passed / 24 failed. The 24 are the pre-existing set; every failure sits
               in one of the five known files. +57 tests, zero regressions, zero skips added.
+
+--- M2 · LAYER 2, build-up 2026-09-09 -------------------------------------------------------
+PASS   M2.C1.L-logic.V0.U01  One situation per conversation. 41 awaiting_response situations
+              covered 22 counterparties: waiting.py writes thread.* onto BOTH the thread node and
+              the party who corresponded on it, and this reading mints one anchor per node
+              carrying them. Not near-duplicates to merge -- one is the wrong subject to address
+              a card to. The `corresponded_with` edge bridges them; the party must ALSO be
+              waiting, so the 3 threads whose counterparty was never resolved keep theirs.
+              12 tests.
+PASS   M2.C2.L-logic.V0.U02  response_expected means WE asked THEM, and it was wrong in BOTH
+              directions. Misses: an observation is attributed to its message's sender, so
+              outbound mail produced 425 observations across exactly TWO nodes -- Rohit's pitch to
+              eleven VCs recorded the ask on Rohit, never on the VC, and Peak XV / Afore / Neon /
+              Together / 3one4 / Surge / Z Fellows / Hub71 all read "we just have not written
+              lately" about a fundraise. False positives, which were worse: the old read matched
+              any ask-kind observation on the node regardless of direction, so a question THEY
+              asked US marked us as awaiting THEIR answer (Evokoa, Lalitha, Sehan, Pablo, Prema),
+              and mrrohitswerashi@gmail.com matched itself.
+              Validated read-only against the tenant BEFORE writing: 19 nodes resolve where 12
+              did, and all 11 dropped are inbound questions or the founder's own node. 10 tests.
+NOTE   L2-4 (confidence_overall 0-30 on exactly the situations that matter) needs no unit. The
+              thread-anchored twins carrying 0 are gone with M2.C1, and the rest is downstream of
+              the same L1-bundle starvation M2.C3 addresses.
+BLOCK  M2.C3  The absence receipt is built and tested (25 passed) and has never executed against
+              the tenant. 103 absence situations sit at exactly 4000 bp with
+              count(distinct importance_bp) = 1 -- the DEFAULT_IMPORTANCE_BP fallback, which is
+              the visible fingerprint of the bundle never arriving. Blocked on a pipeline run,
+              not on code. Recorded RED rather than claimed.
+VERIFY Full suite 8932 passed / 24 failed. Same pre-existing 24. +22 tests, zero regressions.
