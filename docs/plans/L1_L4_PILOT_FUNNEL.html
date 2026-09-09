@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="The first live Layer 1-4 run on a real tenant, measured group by group: 849 objects in, 9 cards out.">
+<meta name="description" content="The first live Layer 1-4 run on a real tenant, measured group by group, with the rule behind every pass and fail.">
 <style>
   html { color-scheme: light dark; }
   body { margin: 0; }
@@ -403,11 +403,176 @@
     both sourced to Gmail.</p>
   </section>
 
+
+  <!-- ===================================================== WHY -->
+  <section>
+    <p class="eyebrow">The reasoning</p>
+    <h2>Why each group passed or failed — the rule, not the count</h2>
+    <p class="sub">One real email, traced through all seven stages, answers the sharpest question:
+    <b>how does a marketing email become the top card?</b></p>
+
+    <div class="panel flag" style="margin-bottom:22px">
+      <h3>The case</h3>
+      <p style="margin:0 0 10px">From <code>sunil.s@sanchiconnect.tech</code> — <em>“something
+      that’s been on my mind about healthcare startups”</em>. Cold outreach for the HealthX Elevate
+      programme. It produced <b>three of the nine cards</b>, including the only
+      <span style="color:var(--flag)"><b>critical</b></span> one.</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Stage</th><th>Verdict</th><th>Why, in the code</th></tr></thead>
+          <tbody>
+            <tr><td>landing</td><td>pass</td><td>new dedup key, audience derivable</td></tr>
+            <tr><td>preprocess</td><td>pass</td><td>prose, 1 protected span, <code>en</code></td></tr>
+            <tr><td><b>S1 gate</b></td><td><b>pass — no whitelist</b></td><td><b>no N-code matched</b> — see below</td></tr>
+            <tr><td><b>S2 model gate</b></td><td><b>keep, 0.75</b></td><td>model’s words: <em>“Named person sharing substantive business insight”</em></td></tr>
+            <tr><td>extraction</td><td>T1 · 19 claims · 13 spans</td><td>profile <code>email</code>, one model call</td></tr>
+            <tr><td>S4 ESQE</td><td><code>ambiguous_over_budget</code></td><td><b>LLM-5 never ran</b> — budget guard; kept at unknown authority</td></tr>
+            <tr><td>emit</td><td>emit</td><td>lane P2</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3>L1 · S1 — why every noise rule said “no”</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Rule</th><th>What it tests</th><th>On this email</th></tr></thead>
+        <tbody>
+          <tr><td><code>N-09</code></td><td>label SPAM / TRASH</td><td>labels were IMPORTANT, <b>CATEGORY_PERSONAL</b>, INBOX → no</td></tr>
+          <tr><td><code>N-06</code></td><td>label CATEGORY_PROMOTIONS</td><td><b>Gmail itself filed it as personal</b> → no</td></tr>
+          <tr><td><code>N-02</code></td><td>List-Unsubscribe / List-Id / Feedback-ID</td><td><b>no bulk headers at all</b> → no</td></tr>
+          <tr><td><code>N-04</code></td><td>Precedence: bulk / list / junk</td><td>no</td></tr>
+          <tr><td><code>N-03</code></td><td>mailer-daemon, bounces@, or an automated local part (<code>no-reply</code>, <code>notify</code>, <code>newsletter</code>, <code>digest</code>, <code>marketing</code>)</td><td>sender is <code>sunil.s@</code> — <b>a named human</b> → no</td></tr>
+          <tr><td><code>N-01</code> · <code>N-05</code> · <code>N-10</code></td><td>auto-submitted header · OOO subject · empty body</td><td>no</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:12px"><b>That is the answer.</b> S1 is deterministic and looks only at
+    labels, headers and the sender’s local part. Cold outreach written by a person, from a personal
+    address, with no mailing-list headers, is <b>indistinguishable from real mail at S1</b> — there
+    is nothing there to distinguish it by. The 367 that were dropped had exactly the markers this
+    one lacked.</p>
+
+    <h3 style="margin-top:24px">And 107 passed on a whitelist, which skips every N-code</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Code</th><th>Rule</th><th class="num">Count</th></tr></thead>
+        <tbody>
+          <tr><td><code>W-01</code></td><td>sender is already a person in the graph</td><td class="num">58</td></tr>
+          <tr><td><code>W-02</code></td><td>Gmail STARRED</td><td class="num">39</td></tr>
+          <tr><td><code>W-04</code></td><td>a readable document is attached</td><td class="num">10</td></tr>
+          <tr><td>—</td><td>no whitelist, simply matched no N-code</td><td class="num">138</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:24px">L1 · S2 — what the model gate actually decides</h3>
+    <p class="sub" style="margin-bottom:10px">One question per message, scored 0–1. Below 0.25 with
+    a “drop” verdict it deletes; at or above it parks instead. Real verdicts from this run:</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>The model’s own reason</th><th class="num">Score</th><th>Outcome</th></tr></thead>
+        <tbody>
+          <tr><td>known sender — no model call spent</td><td class="num">0.90</td><td>keep</td></tr>
+          <tr><td>Human confirming availability for scheduled meeting</td><td class="num">0.85</td><td>keep</td></tr>
+          <tr><td>Live session invite with Zoom link, attendance expected</td><td class="num">0.75</td><td>keep</td></tr>
+          <tr><td><b>Named person sharing substantive business insight</b></td><td class="num">0.75</td><td><b>keep ← the HealthX email</b></td></tr>
+          <tr><td>Canceled meeting notification, no action needed</td><td class="num">0.20</td><td>drop</td></tr>
+          <tr><td>Automated event invitation, one-to-many broadcast</td><td class="num">0.20</td><td>drop</td></tr>
+          <tr><td>Enrollment confirmation, automated receipt</td><td class="num">0.00</td><td>drop</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:12px">The gate asks <em>“is this business mail?”</em> — and a well-written
+    funding-programme pitch <b>is</b> business mail. It never asks <em>“was this written to me, or
+    blasted to a list?”</em>, and nothing else in the pipeline asks that of prose either.</p>
+
+    <h3 style="margin-top:24px">L1 · S4 — five rules, and the guard that skipped 69</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Rule, in order</th><th>Verdict</th><th class="num">bp</th><th class="num">Fired here</th></tr></thead>
+        <tbody>
+          <tr><td>sender known in the graph</td><td>relevant</td><td class="num">9000</td><td class="num">58</td></tr>
+          <tr><td>company canon (<code>internal_kind</code>)</td><td>relevant</td><td class="num">9500</td><td class="num">0</td></tr>
+          <tr><td>structured source (calendar / CRM)</td><td>relevant</td><td class="num">8000</td><td class="num">50</td></tr>
+          <tr><td>bulk headers present</td><td>not relevant</td><td class="num">500</td><td class="num">46</td></tr>
+          <tr><td>service account with zero typed claims</td><td>not relevant</td><td class="num">800</td><td class="num">0</td></tr>
+          <tr class="zero"><td><b>no rule matched → LLM-5</b></td><td><b>never called</b></td><td class="num">3000</td><td class="num"><b>69</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:12px">Above a <b>10% ambiguous share</b> the unit alerts instead of
+    spending, and those events fail open at <em>unknown</em> authority. On a three-week-old graph
+    almost every sender is unknown, so the guard trips — and the one component that could have said
+    <em>“this is a mass programme announcement”</em> never ran.</p>
+
+    <h3 style="margin-top:24px">L1 · extraction — the model got it right</h3>
+    <div class="panel good">
+<pre style="margin:0;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.7;white-space:pre-wrap">actor       : "HealthX Elevate program"
+action      : "provide fundraising opportunities through direct engagement
+               with healthcare leaders, investors, and potential collaborators…"
+beneficiary : "selected applicants"
+due         : "30th August 2026"</pre>
+    </div>
+    <p style="margin-top:12px">All four commitments in that email were attributed <b>away from the
+    tenant</b>. The failure that follows is not the model’s.</p>
+
+    <h3 style="margin-top:24px">L2 · why 114 situations can never be admitted</h3>
+    <p>The admission gate has two halves. One is conditional (<code>qes_required</code>, skipped on
+    a tenant whose Layer 1 is not scoring). The other is unconditional on every tenant: <b>no
+    verified evidence span</b>, an open conflict, an unresolved identity, insufficient coverage.</p>
+    <p><code>awaiting_response</code> (74) and <code>first_response_overdue</code> (40) are built
+    from a thread’s <b>silence</b> — the finding <em>is</em> that nobody wrote back. There is no
+    sentence to quote, so no verified span can exist, so the unconditional half holds every one of
+    them, for ever. <b>The rule is right for a claim and wrong for an absence.</b> The three types
+    that do pass are all built from something somebody actually wrote.</p>
+
+    <h3 style="margin-top:24px">L2 · the quality bug — the graph knew, the card did not</h3>
+    <div class="panel flag">
+<pre style="margin:0 0 12px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.7;white-space:pre-wrap">graph_edges:  sunil.s@sanchiconnect.tech  --owns-->  "provide fundraising opportunities…"</pre>
+      <p style="margin:0 0 10px">The graph stored the ownership <b>correctly</b>. Then the situation
+      rule builds <code>commitment_overdue</code> for every commitment whose date has passed —
+      <b>without ever reading who owns it</b>:</p>
+<pre style="margin:0 0 12px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.7;white-space:pre-wrap">display_name = f"{name} — promise past due"
+facts        = [ ("commitment.owed_to", name, "string"), … ]</pre>
+      <p style="margin:0 0 10px">…and the card copy hard-codes the voice:</p>
+<pre style="margin:0 0 12px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.7;white-space:pre-wrap">"headline":  "Deliver {action} to {entity} today"
+"situation": "{days}d overdue — you promised this"</pre>
+      <p style="margin:0"><b>So a promise the incubator made TO the founder is rendered as a promise
+      the founder owes THEM</b> — imperative voice, <code>critical</code> urgency. Three of the nine
+      cards are this one email. Every layer did what it was told; the ownership fact stops being
+      read one hop before the sentence that needs it.</p>
+    </div>
+
+    <h3 style="margin-top:24px">Chain of custody for the top card</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Layer</th><th>What it did</th><th>Right?</th></tr></thead>
+        <tbody>
+          <tr><td>L1 gate</td><td>passed — no N-code matched, Gmail said personal</td><td style="color:var(--ok)">right by its rules, blind to mass outreach</td></tr>
+          <tr><td>L1 model gate</td><td>kept at 0.75</td><td style="color:var(--ok)">right — it is business mail</td></tr>
+          <tr><td>L1 extraction</td><td><code>actor = HealthX Elevate program</code></td><td style="color:var(--ok)"><b>right</b></td></tr>
+          <tr><td>L1 ESQE</td><td>LLM-5 skipped (budget)</td><td style="color:var(--flag)">the one check that could have caught it</td></tr>
+          <tr><td>L2 graph</td><td><code>sanchiconnect owns commitment</code></td><td style="color:var(--ok)"><b>right</b></td></tr>
+          <tr><td>L2 situation</td><td>built without reading the owner</td><td style="color:var(--flag)"><b>wrong</b></td></tr>
+          <tr><td>L3 · L4</td><td>compiled, ranked it top</td><td>correct given what it was handed</td></tr>
+          <tr><td>Card</td><td>“Deliver … NOW”, “you promised this”</td><td style="color:var(--flag)"><b>wrong — the voice assumes the tenant owes it</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:14px"><b>Two lines of code would have prevented the wrong card</b>, and
+    neither is in the model: the situation rule reading the <code>owns</code> edge, and the card
+    copy branching on who owns the promise.</p>
+  </section>
+
   <!-- ===================================================== FIXES -->
   <section>
     <p class="eyebrow">What to do</p>
     <h2>The seven losses, and the order to fix them</h2>
     <ol class="fix">
+      <li><b><code>commitment_overdue</code> must read the <code>owns</code> edge, and the card
+        copy must branch on it.</b> Three of the nine cards are one marketing email rendered as the
+        founder's own overdue promise.</li>
       <li><b>114 situations that can never be admitted.</b> <code>awaiting_response</code> and
         <code>first_response_overdue</code> are absence-shaped — the evidence is that nobody
         replied. Either the gate lets an absence-typed situation cite its anchor's last inbound
