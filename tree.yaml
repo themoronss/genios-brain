@@ -1,0 +1,429 @@
+# tree.yaml — y-combinator-w27
+# Cut from harsh/mvp @ 23d47640. Addresses the inverted intelligence feed.
+#
+# Every `verify` below assumes this prelude has been exported in the shell. It is stated once
+# rather than repeated on 19 units, because a verify command nobody can run is a wish.
+verify_env: |
+  export PATH="/Users/rohitswerashi/MacBook Air Professional/VS Code/VS Code Setup/toolchains/bin:$PATH"
+  export UV_PROJECT_ENVIRONMENT="/private/tmp/claude-501/-Users-rohitswerashi--config-superpowers-worktrees-genios-brain-rohit-yc-brain-secret-war/0194842c-da98-4a8d-9625-db062192e9da/scratchpad/venv"
+
+# Measured on this tree, before any unit is built. A unit is green only against ITS OWN numbers;
+# these are the numbers it must not lower. Target files are run INDIVIDUALLY — running
+# tests/capture/esqe/test_importance.py alongside its siblings produces 6 fixture-ordering errors
+# that do not occur when it runs alone, and that pollution is not this branch's problem to solve.
+baseline:
+  full_suite: "8787 passed, 24 failed"          # the 24 are pre-existing and fail identically at 23d47640
+  known_failing:
+    - tests/capture/esqe/test_qualification_routes.py
+    - tests/capture/esqe/test_rejection_ledger.py
+    - tests/capture/connectors/test_new_route_wiring.py
+    - tests/capture/test_g9_gate_probes.py
+    - tests/contracts/test_h0_gate.py
+  target_files:
+    tests/capture/esqe/test_relevance.py: "55 passed"
+    tests/context/test_situation_publisher.py: "32 passed, 5 skipped"
+    tests/test_automated_sender_gate.py: "3 passed"
+    tests/capture/esqe/test_importance.py: "98 passed, 6 skipped"
+
+vision: >
+  The card feed shows the work that is actually waiting. A message we sent that nobody answered
+  becomes a card naming the counterparty, how long they have been silent, and what we wanted from
+  them. A promise renders in the voice of whoever made it. Marketing mail — a cold-outreach blast
+  from a human-looking address, a mentorship pitch, a course newsletter — does not appear in the
+  feed at all, no matter how many times that sender has written before. The 114 absence situations
+  that describe the real inbox stop being held forever, and the nine cards the pilot produced stop
+  being eight pieces of noise.
+
+milestones:
+
+  # =========================================================================================
+  - id: M1
+    name: Noise never reaches the feed
+    ships: >
+      Marketing mail is dropped at L1 whether or not its sender is already in the graph, it can
+      no longer mint the graph identity that was promoting it, and a message blasted to a list
+      cannot outrank one addressed to a person.
+    categories:
+
+      - id: M1.C1
+        name: Relevance cascade
+        layers:
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  # ---------------------------------------------------------------------------
+                  # RETIRED, ids never reused. Both units proposed reordering the cascade so the
+                  # bulk-header rule outranked `sender_known`. On contact with the code that is
+                  # WRONG: tests/capture/esqe/test_relevance.py:126
+                  # (`test_the_cascade_order_is_the_one_the_plan_fixed`) pins the current order
+                  # deliberately, and its reason is correct — a counterparty we genuinely deal
+                  # with, sending through Mailchimp, must not be dropped for having a
+                  # List-Unsubscribe header. Building U01 would have required weakening that
+                  # test, which is the one thing this pipeline forbids.
+                  #
+                  # The defect is real but it is one level down: `sender_known` means "this
+                  # address is ANY person node", and a cold marketer becomes a person node by
+                  # writing at us once. The cascade is fine; its INPUT is a lie. Replaced by
+                  # U05/U06, which tighten the input and leave the cascade and its tests alone.
+                  # ---------------------------------------------------------------------------
+                  - id: M1.C1.L-logic.V0.U01
+                    retired: true
+                    retired_reason: >
+                      Would have required weakening test_the_cascade_order_is_the_one_the_plan_fixed,
+                      whose stated intent is correct. Root cause is the definition of sender_known.
+                    superseded_by: [M1.C1.L-logic.V0.U05, M1.C1.L-logic.V0.U06]
+
+                  - id: M1.C1.L-logic.V0.U02
+                    retired: true
+                    retired_reason: Test for a change that is no longer the right change.
+                    superseded_by: [M1.C1.L-logic.V0.U06]
+
+                  - id: M1.C1.L-logic.V0.U05
+                    what: >
+                      `sender_known` stops meaning "a person node exists for this address" and
+                      starts meaning "we have actually corresponded with this address" — the
+                      graph already knows, because `thread.last_outbound` is written as a fact
+                      per counterparty node (context/waiting.py). A sender we have never written
+                      to is NOT a known counterparty, so a cold-outreach blast reaches the
+                      bulk-header rule instead of short-circuiting at 9000 bp above it. The
+                      cascade order and every relevance test are untouched.
+                    artifact: genios_engine/api/routes.py
+                    verify: uv run --no-sync pytest tests/capture/esqe/test_relevance.py tests/api/test_sender_resolver.py -q
+                    depends_on: []
+
+                  - id: M1.C1.L-logic.V0.U06
+                    what: >
+                      Test for the tightened resolver against an injected row source — a node we
+                      have written to resolves known; a node that has only ever written AT us
+                      does not; the four pilot senders are named as cases.
+                    artifact: tests/api/test_sender_resolver.py
+                    verify: uv run --no-sync pytest tests/api/test_sender_resolver.py -q
+                    depends_on: [M1.C1.L-logic.V0.U05]
+
+              - level: 1
+                units:
+                  # RETIRED. The premise was wrong twice over.
+                  #
+                  # First, `MIN_BUDGET_SAMPLE` already exists and is already applied
+                  # (relevance.py: `total >= MIN_BUDGET_SAMPLE and share_bp > AMBIGUOUS_BUDGET_BP`),
+                  # so the guard does NOT trip on a sample of one. The tree said it did.
+                  #
+                  # Second, and decisively: "alert rather than spend" is a deliberate cost decision
+                  # with a documented rationale, pinned by
+                  # `test_an_ambiguous_share_over_ten_percent_alerts_instead_of_spending`, which
+                  # uses a client that RAISES on any call. Reversing it would mean weakening that
+                  # test — the same trap M1.C1.U01 fell into — and the decision it protects is
+                  # sound: paying a model per event is not the fix for a graph-coverage problem.
+                  #
+                  # WHAT THE READER SHOULD KNOW ANYWAY. U05 tightens `sender_known`, so fewer
+                  # senders count as known and the ambiguous share on a cold tenant RISES. The
+                  # guard will therefore fire more often, which is correct signalling rather than
+                  # a regression: it is the system saying the graph does not know enough people
+                  # yet. The events it declines to read are kept at 3000 bp — the lowest non-
+                  # refused rank — and now also carry the audience discount, so they rank low
+                  # without anyone spending. Whether to raise the ceiling is a COST decision for
+                  # the owner of the budget, not a defect for this branch to fix quietly.
+                  - id: M1.C1.L-logic.V1.U03
+                    retired: true
+                    retired_reason: >
+                      MIN_BUDGET_SAMPLE already applied; and "alert rather than spend" is a
+                      deliberate tested cost decision, not a defect. Raising the ceiling is the
+                      budget owner's call.
+                    superseded_by: []
+
+                  - id: M1.C1.L-logic.V1.U04
+                    retired: true
+                    retired_reason: Test for a change that should not be made.
+                    superseded_by: []
+
+      - id: M1.C2
+        name: Graph identity admission
+        layers:
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M1.C2.L-logic.V0.U01
+                    what: >
+                      `_AUTOMATED_SENDER` widened to the role-account local-parts it currently
+                      misses — hello, hi, hey, team, info, contact, marketing, news, crew,
+                      founders, hello-there style variants — so they land as `service`, never
+                      `person`. Regex stays deterministic and stays conservative about real names.
+                    artifact: genios_engine/context/pipeline.py
+                    verify: uv run --no-sync pytest tests/test_automated_sender_gate.py -q
+                    depends_on: []
+
+                  - id: M1.C2.L-logic.V0.U02
+                    what: >
+                      Bulk-header mail never mints a `person` node, whatever its local-part looks
+                      like. This is the rule that actually closes the ratchet — a human-named
+                      cold-outreach address (sahan@, lora@) is caught by its headers, not by a
+                      name list nobody can finish.
+                    artifact: genios_engine/context/pipeline.py
+                    verify: uv run --no-sync pytest tests/context/test_graph_admission_bulk.py -q
+                    depends_on: [M1.C2.L-logic.V0.U01]
+
+                  - id: M1.C2.L-logic.V0.U03
+                    what: >
+                      Test for both admission rules, including the regression that made this
+                      branch necessary: a sender fail-opened once by the budget guard must not
+                      be `sender_known` on its second message.
+                    artifact: tests/context/test_graph_admission_bulk.py
+                    verify: uv run --no-sync pytest tests/context/test_graph_admission_bulk.py -q
+                    depends_on: [M1.C2.L-logic.V0.U02]
+
+      - id: M1.C3
+        name: Audience size
+        layers:
+          - layer: contract
+            levels:
+              - level: 0
+                units:
+                  - id: M1.C3.L-contract.V0.U01
+                    what: >
+                      `audience_size` carried on the scoring candidate — an integer, absent
+                      rather than zero when the connector gave no recipient list, so a source
+                      that cannot report it is not scored as if it were a private message.
+                    artifact: genios_engine/capture/esqe/importance.py
+                    verify: uv run --no-sync pytest tests/capture/esqe/test_importance.py -q
+                    depends_on: []
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M1.C3.L-logic.V0.U02
+                    what: >
+                      Derive `audience_size` from the stored recipients tuple (To + Cc, already
+                      captured at connectors/composio.py:302 and read today only by
+                      visibility_rules) and hand it to the scorer.
+                    artifact: genios_engine/capture/pipeline.py
+                    verify: uv run --no-sync pytest tests/capture/esqe/test_audience_size.py -q
+                    depends_on: [M1.C3.L-contract.V0.U01]
+              - level: 1
+                units:
+                  - id: M1.C3.L-logic.V1.U03
+                    what: >
+                      Importance term — a blast penalty that scales with audience_size, so a
+                      5000-recipient send cannot outrank a message addressed to one person.
+                      Absent audience_size contributes nothing rather than a default.
+                    artifact: genios_engine/capture/esqe/importance.py
+                    verify: uv run --no-sync pytest tests/capture/esqe/test_importance.py tests/capture/esqe/test_audience_size.py -q
+                    depends_on: [M1.C3.L-logic.V0.U02]
+                  - id: M1.C3.L-logic.V1.U04
+                    what: >
+                      Test: identical signal, audience of 1 vs 5000 → the blast ranks strictly
+                      lower; audience_size absent → score unchanged from baseline.
+                    artifact: tests/capture/esqe/test_audience_size.py
+                    verify: uv run --no-sync pytest tests/capture/esqe/test_audience_size.py -q
+                    depends_on: [M1.C3.L-logic.V1.U03]
+
+  # =========================================================================================
+  - id: M2
+    name: Absence situations publish
+    ships: >
+      `awaiting_response` and `first_response_overdue` reach the feed carrying a typed absence
+      receipt that cites the message WE sent, instead of being held forever for a quote that a
+      silence can never produce.
+    categories:
+
+      - id: M2.C1
+        name: Absence receipts
+        layers:
+          # -----------------------------------------------------------------------------------
+          # THE TREE WAS WRONG HERE AND THE CODE CORRECTED IT.
+          #
+          # This category was drawn as "invent a typed absence receipt and widen the publisher
+          # gate to accept it". Both halves are unnecessary and the second is harmful.
+          #
+          # What the code actually says. `situation_bso._signals_and_evidence` builds a
+          # situation's evidence from `context_correlation_members`. An absence situation is
+          # anchored on a synthetic correlation the correlation engine deliberately cannot reach
+          # (outreach_situations module docstring), so that lookup returns nothing and the
+          # function falls back to a placeholder record it labels `reconstructed: True`, which
+          # carries no `quote`. One layer up, `gather_l1_signals_bulk` keys L1 evidence by the
+          # same correlation id and also misses, so `evidence_verified_spans` is set to 0 at
+          # situation_bso.py:1286. The publisher then holds on BOTH halves of its check — and it
+          # is holding on a number nobody computed, not on a claim that lacked a receipt.
+          #
+          # So the gate is RIGHT and must not be widened. A receipt for this claim exists: the
+          # message WE SENT is a real event, with real extracted spans quoting real text. Nobody
+          # was looking for it. The fix is to go and get it.
+          #
+          # RETIRED: U01 (invent a contract type), U03 (widen _preflight).
+          # KEPT AS DRAWN: U04, U05 (the tests still describe the right outcomes).
+          # -----------------------------------------------------------------------------------
+          - layer: contract
+            levels:
+              - level: 0
+                units:
+                  - id: M2.C1.L-contract.V0.U01
+                    retired: true
+                    retired_reason: >
+                      No new contract type is needed. The outbound message already produces
+                      ordinary EvidenceSpans; the absence claim cites the sentence we wrote.
+                    superseded_by: [M2.C1.L-data.V0.U07, M2.C1.L-logic.V0.U09]
+          - layer: data
+            levels:
+              - level: 0
+                units:
+                  - id: M2.C1.L-data.V0.U07
+                    what: >
+                      `outbound_event_ids(conn, org_id, anchor_node_id)` — the events in which WE
+                      wrote to this counterparty. `thread.last_outbound` is written onto the
+                      recipient's own person node, and `graph_source_refs` maps that fact version
+                      back to the event that produced it. Pure read, no new state.
+                    artifact: genios_engine/context/situation_bso.py
+                    verify: uv run --no-sync pytest tests/context/test_absence_receipt.py -q
+                    depends_on: []
+                  - id: M2.C1.L-data.V0.U08
+                    what: >
+                      Test for the query on a real database — an anchor we wrote to yields its
+                      event; an anchor that only ever wrote at us yields nothing; another org's
+                      rows are never visible.
+                    artifact: tests/context/test_absence_receipt.py
+                    verify: uv run --no-sync pytest tests/context/test_absence_receipt.py -q
+                    depends_on: [M2.C1.L-data.V0.U07]
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M2.C1.L-logic.V0.U02
+                    retired: true
+                    retired_reason: >
+                      Superseded. The reader does not need to carry a receipt; the composition
+                      path can fetch it, which keeps outreach_situations a pure fact reader.
+                    superseded_by: [M2.C1.L-logic.V0.U09, M2.C1.L-logic.V1.U10]
+                  - id: M2.C1.L-logic.V0.U09
+                    what: >
+                      `gather_l1_signals_for_events` — the same projection and folding
+                      `gather_l1_signals_bulk` uses, joined on `qualified_signals.event_id`
+                      directly instead of through `context_correlation_members`. Identical in
+                      every judgement to the correlation read; it just reaches events a synthetic
+                      correlation cannot.
+                    artifact: genios_engine/context/situation_bso.py
+                    verify: uv run --no-sync pytest tests/context/test_absence_receipt.py -q
+                    depends_on: [M2.C1.L-data.V0.U07]
+              - level: 1
+                units:
+                  - id: M2.C1.L-logic.V1.U03
+                    retired: true
+                    retired_reason: >
+                      The gate is correct and must not be widened. It was holding on
+                      evidence_verified_spans=0, a number that was never computed for these
+                      situations — not on a missing receipt. Feed it instead.
+                    superseded_by: [M2.C1.L-logic.V1.U10]
+                  - id: M2.C1.L-logic.V1.U10
+                    what: >
+                      Composition wiring — when the correlation lookup yields no L1 bundle and
+                      the anchor is a counterparty we have written to, compose the bundle from
+                      the outbound events instead. `evidence_verified_spans` and the situation's
+                      evidence records then come from real spans, and `_preflight` passes on its
+                      own terms with no change to the publisher.
+                    artifact: genios_engine/context/situation_bso.py
+                    verify: uv run --no-sync pytest tests/context/test_absence_receipt.py tests/context/test_situation_publisher.py -q
+                    depends_on: [M2.C1.L-logic.V0.U09]
+                  - id: M2.C1.L-logic.V1.U04
+                    what: >
+                      Test: an absence situation carrying a real outbound span PUBLISHES; one
+                      carrying no receipt at all still HOLDS; a normal quote-bearing situation is
+                      unaffected. Pins that the gate was FED, not widened.
+                    artifact: tests/context/test_absence_receipt.py
+                    verify: uv run --no-sync pytest tests/context/test_absence_receipt.py -q
+                    depends_on: [M2.C1.L-logic.V1.U10]
+          - layer: integration
+            levels:
+              - level: 0
+                units:
+                  - id: M2.C1.L-integration.V0.U05
+                    what: >
+                      End to end: a thread where we wrote and nobody answered for longer than
+                      _WAITING_AFTER_DAYS produces a PUBLISHED situation, not a held row.
+                    artifact: tests/context/test_absence_publishes_e2e.py
+                    verify: uv run --no-sync pytest tests/context/test_absence_publishes_e2e.py -q
+                    depends_on: [M2.C1.L-logic.V1.U04]
+
+  # =========================================================================================
+  - id: M3
+    name: A promise is attributed to whoever made it
+    ships: >
+      `commitment_overdue` reads the `owns` edge, and the card copy branches on it — someone
+      else's promise stops rendering as the founder's own overdue obligation.
+    categories:
+      - id: M3.C1
+        name: Ownership and voice
+        layers:
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M3.C1.L-logic.V0.U01
+                    what: >
+                      `read_overdue_commitments` reads the `owns` edge and writes
+                      `commitment.owner` onto the finding, absent when the graph does not know.
+                    artifact: genios_engine/context/outreach_situations.py
+                    verify: uv run --no-sync pytest tests/context/test_commitment_owner.py -q
+                    depends_on: []
+          - layer: interface
+            levels:
+              - level: 0
+                units:
+                  - id: M3.C1.L-interface.V0.U02
+                    what: >
+                      Card copy branches on owner — first person when the owner is the reader,
+                      third person naming them when it is not, and a neutral observation when
+                      the owner is absent. No imperative in the two latter cases.
+                    artifact: genios_engine/packs/general_v1.py
+                    verify: uv run --no-sync pytest tests/test_admin_support_packs.py tests/context/test_commitment_owner.py -q
+                    depends_on: [M3.C1.L-logic.V0.U01]
+                  - id: M3.C1.L-interface.V0.U03
+                    what: >
+                      Test for all three voices, including the pilot regression: a promise owned
+                      by someone else must not render at critical urgency in the founder's voice.
+                    artifact: tests/context/test_commitment_owner.py
+                    verify: uv run --no-sync pytest tests/context/test_commitment_owner.py -q
+                    depends_on: [M3.C1.L-interface.V0.U02]
+
+  # =========================================================================================
+  - id: M4
+    name: The whole feed proves out
+    ships: >
+      The branch is demonstrably better than the parent commit on the same tenant, and demonstrably
+      no worse anywhere else.
+    categories:
+      - id: M4.C1
+        name: Regression and funnel
+        layers:
+          - layer: integration
+            levels:
+              - level: 0
+                units:
+                  - id: M4.C1.L-integration.V0.U01
+                    what: >
+                      Full suite. The 24 known-failing tests may still fail; NOTHING else may.
+                      A skip introduced by this branch counts as a failure.
+                    artifact: (no artifact — a gate)
+                    verify: uv run --no-sync pytest tests/ -q
+                    depends_on:
+                      - M1.C1.L-logic.V0.U06
+                      - M1.C2.L-logic.V0.U03
+                      - M1.C3.L-logic.V1.U04
+                      - M2.C1.L-integration.V0.U05
+                      - M3.C1.L-interface.V0.U03
+              - level: 1
+                units:
+                  - id: M4.C1.L-integration.V1.U02
+                    what: >
+                      Funnel report on the pilot tenant, before vs after. The claim this branch
+                      has to survive: marketing cards gone, awaiting_response cards present.
+                    artifact: scripts/pipeline_funnel_report.py
+                    verify: uv run --no-sync python scripts/pipeline_funnel_report.py --org $GENIOS_PILOT_ORG --database-url $GENIOS_DATABASE_URL
+                    requires_live_db: true
+                    blocked: >
+                      NOT RUNNABLE IN THIS WORKTREE. The script takes --org and --database-url and
+                      reads the pilot tenant's Postgres, which this session does not have. This unit
+                      is the only honest proof of the vision — marketing cards gone, awaiting_response
+                      cards present — so it is kept in the tree rather than quietly dropped, and it
+                      stays RED until someone runs it against the pilot database. Every other unit is
+                      verifiable here; this one is verifiable only where the data lives.
+                    depends_on: [M4.C1.L-integration.V0.U01]

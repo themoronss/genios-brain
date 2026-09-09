@@ -429,6 +429,15 @@ register(DomainSpec(
             "commitment.days_overdue": "how far past the date it is",
             "commitment.action": "what was promised",
             "commitment.owed_to": "who it is owed to",
+            # WHOSE PROMISE IT IS. The `owns` edge from the commitment actor has always been
+            # written and was never read, so a counterparty's promise rendered as the founder's
+            # own overdue obligation — three of the nine cards on the pilot tenant, at critical
+            # urgency, in the founder's voice. Declared as two fields because the NAME is what a
+            # card says and the KEY is what a renderer compares against its reader: without the
+            # key, "is this mine?" can only be answered by matching display names, which is how
+            # two people called Priya become one person.
+            "commitment.owner": "who made the promise",
+            "commitment.owner_key": "that person's address, for deciding whose voice to use",
             "commitment.delivered_at": "whether it was actually delivered",
         },
         # A CAMPAIGN'S STATE. Eight of the nine have writers in

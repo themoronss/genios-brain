@@ -1,0 +1,41 @@
+--- y-combinator-w27 build log (append-only) ---
+RETIRE M1.C1.L-logic.V0.U01  reordering cascade would require weakening test_relevance.py:126, whose intent is correct
+RETIRE M1.C1.L-logic.V0.U02  test for a change that is no longer the right change
+MINT   M1.C1.L-logic.V0.U05  tighten sender_known to "we have corresponded", leave cascade untouched
+MINT   M1.C1.L-logic.V0.U06  test for the tightened resolver
+PASS   M1.C1.L-logic.V0.U05  sender_known = corresponded, not seen. routes.py KNOWN_COUNTERPARTY_SQL. verify 67 passed
+PASS   M1.C1.L-logic.V0.U06  tests/api/test_sender_resolver.py 12 passed, real SQL on real sqlite
+GREEN  M1.C1.L-logic.V0      relevance baseline 55 unchanged, no test weakened
+FINDING M2 is deeper than the tree drew it. situation_bso.py:1500 `l1 = l1_by_correlation.get(key)`
+        keys the L1 evidence bundle by CORRELATION ID. Absence situations use a synthetic
+        correlation id on purpose (outreach_situations docstring: "an anchor node the correlation
+        engine cannot reach"), so the lookup misses, l1 is None, and situation_bso.py:1286 sets
+        evidence_verified_spans = 0. The publisher then holds on a number that was never computed
+        rather than on a claim that lacked a receipt. Needs a unit the tree does not have: surface
+        the outbound event's span to the absence reader.
+FINDING M1.C1 <-> M1.C2 interaction. U05 admits only node_type='person'. Widening the automated-
+        sender regex (M1.C2.U01) would push role addresses to node_type='service', so a vendor we
+        genuinely correspond with at billing@ or support@ would stop being a counterparty. The two
+        fixes are individually right and jointly wrong. Do not build M1.C2 as drawn.
+RETIRE M2.C1.L-contract.V0.U01  no new contract type needed; the outbound message already has spans
+RETIRE M2.C1.L-logic.V0.U02     reader stays a pure fact reader; composition path fetches the receipt
+RETIRE M2.C1.L-logic.V1.U03     gate is correct and must NOT be widened; it was starving, not wrong
+MINT   M2.C1.L-data.V0.U07/U08  outbound_event_ids + tests
+MINT   M2.C1.L-logic.V0.U09     gather_l1_signals_for_events (portable expanding bindparam)
+MINT   M2.C1.L-logic.V1.U10     backfill_absence_l1, additive only
+PASS   M2.C1  tests/context/test_absence_receipt.py 14 passed; publisher 32/5 unchanged; bso 5 passed
+PASS   M1.C3  audience as a MULTIPLIER (not a 6th weight — weights are total-checked at import).
+              Derived from NormalizedSignal.recipients, which already existed and was read only by
+              visibility_rules. internal_kind exempt. Absent == neutral == bit-identical arithmetic.
+              tests/capture/esqe/test_audience_size.py 21 passed; importance baseline 98/6 unchanged
+PASS   M3.C1  the `owns` edge was ALWAYS written (pipeline.py, "commitment actor") and never read.
+              _COMMITMENT_OWNERS bulk read beside _EMPLOYERS; reader emits commitment.owner +
+              commitment.owner_key; absent stays absent, never defaulted to us. display_name now
+              names who owes whom. tests/context/test_commitment_owner.py 8 passed
+RETIRE M1.C1.L-logic.V1.U03/U04  budget guard NOT changed. MIN_BUDGET_SAMPLE already applied, and
+              "alert rather than spend" is a deliberate cost decision pinned by a RaisingLLM test.
+              Consequence to flag: U05 raises the ambiguous share, so the guard fires more on cold
+              tenants. Correct signalling; raising the ceiling is a cost decision, not ours.
+PASS   M3.C1.L-interface.V0.U02  commitment.owner added to evidence_fields so the card SHOWS whose
+              promise it is. Voice-branching NOT done here: pack rules have no notion of the reader;
+              that belongs to L5.2's audience resolver. Recorded as open rather than half-built.

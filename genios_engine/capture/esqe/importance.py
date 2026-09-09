@@ -98,12 +98,16 @@ from genios_engine.contracts.units import (UNKNOWN_CURRENCY, DateCertainty, Mone
 
 __all__ = [
     "ABSOLUTE_LADDER",
+    "AUDIENCE_FLOOR_BP",
+    "AUDIENCE_LADDER",
+    "AUDIENCE_NEUTRAL_BP",
     "DEADLINE_LADDER",
     "ENTITY_CRITICALITY_BP",
     "IMPORTANCE_VERSION",
     "IMPORTANCE_WEIGHTS_V1",
     "RATIO_LADDER",
     "SIGNAL_TYPE_WEIGHT_BP",
+    "audience_multiplier_bp",
     "BaselineBasis",
     "BaselineObservation",
     "EntityStanding",
@@ -161,6 +165,61 @@ IMPORTANCE_WEIGHTS_V1 = ImportanceWeights(money=3000, deadline=2500, authority=1
 if IMPORTANCE_WEIGHTS_V1.total != BP_MAX:                              # pragma: no cover
     raise RuntimeError("ALG-17 weights must sum to 10000; "
                        f"got {IMPORTANCE_WEIGHTS_V1.total}")
+
+# ------------------------------------------------------------------------------------------
+# AUDIENCE — a message blasted to a list is not a message addressed to a person.
+#
+# WHY THIS IS A MULTIPLIER AND NOT A SIXTH WEIGHT. `ImportanceWeights` is total-checked at import
+# precisely because `/ 10000` is only a weighted MEAN while the five weights sum to 10000; a sixth
+# term added without rescaling the other five would silently move every score in the product and
+# nothing would go red. So audience joins `evidence_authority_multiplier_bp` as a factor applied
+# to the finished mean, which is the shape this module already has for "a property of the message
+# rather than of the claim".
+#
+# WHY IT PENALISES RATHER THAN BOOSTS. The neutral case is a message written to a person, and that
+# is what the existing scores are calibrated against. Boosting small audiences would inflate the
+# whole distribution and re-rank everything already stored; discounting large ones moves only the
+# mail that earned it.
+#
+# THE ORG'S OWN TRAFFIC IS NOT PUNISHED. An all-hands to 200 colleagues is a large audience and a
+# real one, so `internal_kind` mail never reaches here with a fanout — the caller passes None, and
+# None is neutral. This ladder is about a stranger's send list, not about company-wide mail.
+AUDIENCE_NEUTRAL_BP = 10000
+
+#: (inclusive upper bound on recipients, multiplier in bp). First row that matches wins.
+#: Ten is the top of "a person wrote to some people": a founder, two colleagues and a cc list.
+#: Past that the message stops being addressed and starts being distributed, and the discount
+#: deepens by steps rather than continuously so the number a founder is shown is explainable —
+#: "this went to a few hundred people" is a fact; a 0.6187 coefficient is not.
+AUDIENCE_LADDER: tuple[tuple[int, int], ...] = (
+    (10, AUDIENCE_NEUTRAL_BP),
+    (50, 8000),
+    (500, 6000),
+    (5000, 4000),
+)
+
+#: Beyond the last rung. Not zero: a 20,000-recipient send can still carry a real obligation (a
+#: provider's breach notice reaches everyone), and scoring it to nothing would be the same
+#: mistake in the other direction. It ranks low; it does not disappear.
+AUDIENCE_FLOOR_BP = 3000
+
+
+def audience_multiplier_bp(audience_size: int | None) -> int:
+    """The discount this send earns for its size. Neutral when the size is unknown.
+
+    ABSENT IS NEUTRAL, NEVER PENALISED. A connector that cannot report recipients (a webhook, a
+    CRM row, an uploaded document) must not have its signals quietly ranked below an email's, and
+    a missing number is not evidence of a large audience. `None` therefore returns exactly
+    `AUDIENCE_NEUTRAL_BP`, which leaves the score bit-identical to what it was before this term
+    existed — the property the round-trip test pins.
+    """
+    if audience_size is None or audience_size <= 0:
+        return AUDIENCE_NEUTRAL_BP
+    for ceiling, value in AUDIENCE_LADDER:
+        if audience_size <= ceiling:
+            return value
+    return AUDIENCE_FLOOR_BP
+
 
 #: Doc 06 L1.6.7-U1 term 5 — a NUDGE by type, never the dominant term (weight 1000 of 10000).
 #:
@@ -579,6 +638,14 @@ class ImportanceComponents:
     #: What was missing or substituted. Order is the enum's, deduplicated — a set would
     #: serialise differently on two runs and break the byte-identical property.
     flags: tuple[ImportanceFlag, ...] = ()
+    #: How many people this message was sent to, when the source could say. `None` is ABSENT and
+    #: is not the same as 1 — a webhook and a private email are both unable to be a blast, but
+    #: only one of them was checked.
+    audience_size: int | None = None
+    #: The discount `audience_size` earned. Stored rather than recomputed at read time for the
+    #: reason the whole components record exists: a later change to the ladder must not
+    #: re-explain a decision that was already made and shown to someone.
+    audience_multiplier_bp: int = AUDIENCE_NEUTRAL_BP
 
     @classmethod
     def from_record(cls, record: Mapping[str, object]) -> "ImportanceComponents":
@@ -611,7 +678,15 @@ class ImportanceComponents:
                 baseline_basis=BaselineBasis(record["baseline_basis"]),
                 entity_standing=EntityStanding(record["entity_standing"]),
                 eval_time=datetime.fromisoformat(str(record["eval_time"])),
-                flags=tuple(ImportanceFlag(f) for f in record.get("flags", ()) or ()))
+                flags=tuple(ImportanceFlag(f) for f in record.get("flags", ()) or ()),
+                # `.get`, unlike every required key above, because these two did not exist when
+                # the stored rows this reader opens were written. A row without them is not
+                # malformed — it predates the term — and it loads as ABSENT/neutral, which is
+                # exactly the score it was given.
+                audience_size=(None if record.get("audience_size") is None
+                               else int(record["audience_size"])),                # type: ignore[arg-type]
+                audience_multiplier_bp=int(
+                    record.get("audience_multiplier_bp", AUDIENCE_NEUTRAL_BP)))   # type: ignore[arg-type]
         except (KeyError, TypeError) as exc:
             raise ValueError(f"importance_components record is not the stored shape: {exc}") from exc
 
@@ -636,6 +711,8 @@ class ImportanceComponents:
             "entity_standing": self.entity_standing.value,
             "eval_time": self.eval_time.isoformat(),
             "flags": [flag.value for flag in self.flags],
+            "audience_size": self.audience_size,
+            "audience_multiplier_bp": self.audience_multiplier_bp,
         }
 
 
@@ -776,7 +853,8 @@ def _entity_criticality(entity: str | None,
 
 def score_importance(signal: NormalizedSignal, baseline: OrgBaseline, *,
                      eval_time: datetime,
-                     weights: ImportanceWeights = IMPORTANCE_WEIGHTS_V1) -> ImportanceScore:
+                     weights: ImportanceWeights = IMPORTANCE_WEIGHTS_V1,
+                     audience_size: int | None = None) -> ImportanceScore:
     """ALG-17 · how big is this thing, intrinsically. 0..10000 basis points, integer, replayable.
 
     Total over its DATA: no signal, no baseline and no missing term makes this raise, and that
@@ -816,12 +894,35 @@ def score_importance(signal: NormalizedSignal, baseline: OrgBaseline, *,
     multiplier_bp = signal.attribution.evidence_authority_multiplier_bp
     type_bp = SIGNAL_TYPE_WEIGHT_BP[signal.signal_type]
 
+    # DERIVED, not plumbed. `NormalizedSignal.recipients` is already the To+Cc tuple the connector
+    # captured (`connectors/composio.py`) and it has been carried this far and read by nobody but
+    # `visibility_rules` — i.e. the system knew how many people a message went to and used it only
+    # to decide who may SEE the result, never to decide how much it MATTERED. An explicit argument
+    # still wins, so a caller with a better count (a Slack channel's member count, say) can say so.
+    #
+    # An EMPTY tuple is ABSENT, not an audience of zero: a webhook, a CRM row and an uploaded
+    # document all have no recipient list and must score exactly as they do today.
+    #
+    # OUR OWN MAIL IS EXEMPT. An all-hands to 200 colleagues is a large audience and a real one,
+    # and `internal_kind` is precisely the flag that says "the company wrote this". Discounting it
+    # would punish the org for talking to itself, which is the opposite of the defect being fixed.
+    if audience_size is None and not signal.internal_kind:
+        audience_size = len(signal.recipients) or None
+    audience_bp = audience_multiplier_bp(audience_size)
+
     weighted_bp = (weights.money * money_bp
                    + weights.deadline * deadline_bp
                    + weights.authority * authority_bp
                    + weights.criticality * criticality_bp
                    + weights.signal_type * type_bp) // BP_MAX
+    # THE AUDIENCE FACTOR IS ITS OWN DIVISION, for the reason the two above are separate: each
+    # stored number must reproduce the score exactly. Folding it into the line above would make
+    # the components add up to a score up to 1 bp away from the one a founder was shown, and an
+    # explanation that does not reconcile is worse than a coarser one. When `audience_size` is
+    # absent this multiplies by 10000 and divides by 10000 — bit-identical to the old arithmetic,
+    # which is what keeps every existing score and every stored replay valid.
     importance_bp = min(BP_MAX, max(0, weighted_bp * multiplier_bp // BP_MAX))
+    importance_bp = min(BP_MAX, max(0, importance_bp * audience_bp // BP_MAX))
 
     return ImportanceScore(
         importance_bp=importance_bp,
@@ -838,7 +939,9 @@ def score_importance(signal: NormalizedSignal, baseline: OrgBaseline, *,
             baseline_basis=baseline.basis,
             entity_standing=standing,
             eval_time=eval_time,
-            flags=tuple(money_flags + date_flags + entity_flags)))
+            flags=tuple(money_flags + date_flags + entity_flags),
+            audience_size=audience_size,
+            audience_multiplier_bp=audience_bp))
 
 
 # ------------------------------------------------------------------------------------------

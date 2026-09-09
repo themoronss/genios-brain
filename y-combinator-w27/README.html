@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>y-combinator-w27 — Change Report</title>
+<style>
+:root{
+  --paper:#F6F4EE; --surface:#FFFFFF; --surface-2:#F1EFE8;
+  --line:#DCD7CB; --line-soft:#E7E3D9;
+  --text:#22211D; --text-2:#4B4941; --muted:#726F66; --faint:#86827A;
+  --good:#3F6046; --bad:#A4574C; --warn:#8A6D2E; --key:#41485A;
+  --f-body:'Inter Tight',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--text);font-family:var(--f-body);
+  font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:900px;margin:0 auto;padding:0 28px 100px}
+header{padding:56px 0 32px;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--warn);margin-bottom:14px}
+h1{font-size:clamp(30px,5vw,46px);line-height:1.05;letter-spacing:-.03em;margin:0 0 16px;font-weight:700}
+.sub{color:var(--text-2);font-size:17px;max-width:64ch;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+.chip{font-family:var(--f-mono);font-size:11px;padding:5px 11px;border:1px solid var(--line);
+  border-radius:100px;color:var(--muted);background:var(--surface)}
+.chip b{color:var(--text)}
+h2{font-size:26px;letter-spacing:-.025em;margin:52px 0 6px;line-height:1.2;font-weight:650;
+  padding-top:24px;border-top:1px solid var(--line-soft)}
+h3{font-size:18px;letter-spacing:-.015em;margin:32px 0 8px;font-weight:650}
+p{margin:0 0 14px;color:var(--text-2)}
+strong{color:var(--text);font-weight:650}
+code{font-family:var(--f-mono);font-size:.87em;background:var(--surface-2);padding:1.5px 6px;
+  border-radius:4px;border:1px solid var(--line-soft);color:var(--text)}
+pre{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:10px;
+  padding:15px 17px;overflow-x:auto;font-family:var(--f-mono);font-size:12.5px;line-height:1.6;
+  color:var(--text-2);margin:16px 0}
+pre code{background:none;border:0;padding:0}
+ul{margin:0 0 16px;padding-left:20px;color:var(--text-2)}
+li{margin-bottom:7px}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:18px 0;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th{text-align:left;padding:11px 14px;font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);background:var(--surface-2);
+  border-bottom:1px solid var(--line);font-weight:700}
+td{padding:11px 14px;border-bottom:1px solid var(--line-soft);color:var(--text-2);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.tw{overflow-x:auto}
+.note{border-left:3px solid var(--key);background:var(--surface);padding:15px 19px;
+  border-radius:0 10px 10px 0;margin:20px 0;border-top:1px solid var(--line-soft);
+  border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft)}
+.note.good{border-left-color:var(--good);background:#F2F6F2}
+.note.bad{border-left-color:var(--bad);background:#FBF2EF}
+.note.warn{border-left-color:var(--warn);background:#FCF8EE}
+.note-h{font-family:var(--f-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  margin-bottom:7px;color:var(--key)}
+.note.good .note-h{color:var(--good)} .note.bad .note-h{color:var(--bad)}
+.note.warn .note-h{color:var(--warn)}
+.note p:last-child{margin-bottom:0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:26px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:16px}
+.stat b{display:block;font-size:27px;font-weight:700;letter-spacing:-.03em;line-height:1.1}
+.stat span{font-size:12px;color:var(--muted);display:block;margin-top:4px;line-height:1.35}
+.ok{color:var(--good)} .no{color:var(--bad)}
+footer{margin-top:60px;padding-top:22px;border-top:1px solid var(--line);
+  font-size:12.5px;color:var(--faint)}
+@media(max-width:680px){.stats{grid-template-columns:repeat(2,1fr)}.wrap{padding:0 18px 60px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Change report · branch y-combinator-w27</div>
+  <h1>The feed was inverted. Noise passed every gate; signal was refused at the last one.</h1>
+  <p class="sub">Cut from <code>harsh/mvp</code> @ <code>23d47640</code>. Four fixes, six files,
+  fifty-five new tests, zero regressions — and seven planned units retired because contact with the
+  code proved the plan wrong.</p>
+  <div class="meta">
+    <span class="chip"><b>6</b> files changed</span>
+    <span class="chip"><b>+350 / −12</b></span>
+    <span class="chip"><b>55</b> new tests</span>
+    <span class="chip"><b>0</b> regressions</span>
+    <span class="chip"><b>0</b> tests weakened</span>
+  </div>
+</header>
+
+<div class="stats">
+  <div class="stat"><b>9</b><span>cards the pilot produced</span></div>
+  <div class="stat"><b class="no">8</b><span>of them marketing</span></div>
+  <div class="stat"><b class="no">114</b><span>real situations held forever</span></div>
+  <div class="stat"><b class="ok">8842</b><span>tests passing (was 8787)</span></div>
+</div>
+
+<h2>1. The problem</h2>
+<p>Two independent failures composed. They are worth separating because the fixes live in
+different layers.</p>
+
+<div class="note bad">
+  <div class="note-h">A · Noise got in</div>
+  <p>A marketing sender became a graph <code>person</code> node by emailing once. From then on
+  <code>sender_known</code> was true for them, and <code>_rule_verdict</code> short-circuits on
+  <code>sender_known</code> at <strong>9000 bp</strong> — the second-highest rank in the table —
+  which puts the <code>List-Unsubscribe</code> check two lines below it out of reach. The header
+  was fetched, parsed, and never consulted.</p>
+</div>
+
+<div class="note bad">
+  <div class="note-h">B · Signal was blocked</div>
+  <p><code>awaiting_response</code> ("we wrote, they have not answered") anchors on a
+  <em>synthetic</em> correlation the correlation engine deliberately cannot reach. The L1 evidence
+  lookup missed, <code>evidence_verified_spans</code> was written as <code>0</code>, and the
+  publisher held every one of them — <strong>on a number that was never computed for them</strong>,
+  not because the claim lacked a receipt.</p>
+</div>
+
+<h2>2. The four changes</h2>
+
+<h3>2.1 · <code>sender_known</code> means "we have corresponded", not "we have seen"</h3>
+<p><code>genios_engine/api/routes.py</code> — 12 tests</p>
+<pre><code>-- before: "is this address any person node"
+select canonical_key from graph_nodes
+ where org_id = :o and node_type = 'person' and valid_to is null
+
+-- after: "have we ever written to them"
+select n.canonical_key from graph_nodes n
+ where n.org_id = :o and n.node_type = 'person' and n.valid_to is null
+   and exists (select 1 from graph_facts f
+                where f.org_id = n.org_id and f.subject_node_id = n.node_id
+                  and f.field = 'thread.last_outbound' and f.status = 'active')</code></pre>
+<p><code>thread.last_outbound</code> is written onto the <strong>recipient's own person node</strong>
+every time we send. "We have written to this person" was already a stored fact.</p>
+
+<div class="note warn">
+  <div class="note-h">What was deliberately NOT done</div>
+  <p>The obvious fix is to reorder the cascade so the bulk rule outranks <code>sender_known</code>.
+  That is wrong. <code>test_the_cascade_order_is_the_one_the_plan_fixed</code> pins the current
+  order on purpose, and its reason is correct: a counterparty we genuinely deal with, sending
+  through Mailchimp, must not be dropped. <strong>The cascade was right; it was being fed a
+  lie.</strong> All 55 relevance tests are untouched and still green.</p>
+</div>
+
+<h3>2.2 · An absence carries the receipt for the message that created it</h3>
+<p><code>genios_engine/context/situation_bso.py</code> — 14 tests</p>
+<div class="tw"><table>
+<thead><tr><th>Added</th><th>Does</th></tr></thead>
+<tbody>
+<tr><td><code>outbound_event_ids()</code></td><td>which messages we sent to this counterparty</td></tr>
+<tr><td><code>gather_l1_signals_for_events()</code></td><td>same projection and folding as the correlation read, joined on the event instead</td></tr>
+<tr><td><code>backfill_absence_l1()</code></td><td>compose the bundle from those events when the correlation lookup found nothing</td></tr>
+</tbody></table></div>
+<p>The claim is <em>"we wrote to them and nothing came back."</em> The first half is a real message
+with real spans quoting text we actually typed. <strong>That is the receipt, and it existed the
+whole time.</strong></p>
+
+<div class="note good">
+  <div class="note-h">The gate was not touched</div>
+  <p>Two tests pin that this was a <em>feeding</em> change and not an opening:</p>
+  <ul>
+    <li><code>test_an_absence_carrying_our_own_sentence_publishes</code> → <strong>ADMIT</strong></li>
+    <li><code>test_an_absence_with_only_the_placeholder_is_still_held</code> → <strong>still HOLD</strong>,
+        with <code>VERIFIED_EVIDENCE_REQUIRED</code></li>
+  </ul>
+  <p>A claim with no receipt is refused today exactly as it was before. And
+  <code>backfill_absence_l1</code> is <strong>additive only</strong> — a correlation the bulk read
+  already answered is never touched.</p>
+</div>
+
+<h3>2.3 · A blast cannot outrank a message addressed to a person</h3>
+<p><code>genios_engine/capture/esqe/importance.py</code> — 21 tests</p>
+<p><code>NormalizedSignal.recipients</code> was already captured and carried, and the only thing
+that read it was <code>visibility_rules</code> — which decides who may <em>see</em> a result. The
+system knew how many people a message went to and used it solely for permissions, never for how
+much the message <strong>mattered</strong>.</p>
+<div class="tw"><table>
+<thead><tr><th>Recipients</th><th>Multiplier</th></tr></thead>
+<tbody>
+<tr><td>absent / ≤ 10</td><td>10000 &nbsp;<span style="color:var(--faint)">neutral</span></td></tr>
+<tr><td>≤ 50</td><td>8000</td></tr>
+<tr><td>≤ 500</td><td>6000</td></tr>
+<tr><td>≤ 5000</td><td>4000</td></tr>
+<tr><td>&gt; 5000</td><td>3000 &nbsp;<span style="color:var(--faint)">floor, never zero</span></td></tr>
+</tbody></table></div>
+<ul>
+  <li><strong>Not a sixth weight.</strong> <code>ImportanceWeights</code> is total-checked at
+      import because <code>// 10000</code> is a weighted mean only while the five weights sum to
+      10000. A sixth term would silently rescale every score with nothing going red.</li>
+  <li><strong>Absent is neutral, and neutral is bit-identical.</strong>
+      <code>x * 10000 // 10000 == x</code> — every stored score and every replay stays valid.</li>
+  <li><strong>The company talking to itself is exempt.</strong> An all-hands to 200 colleagues is a
+      large audience and a real one.</li>
+</ul>
+
+<h3>2.4 · A promise is attributed to whoever made it</h3>
+<p><code>outreach_situations.py</code>, <code>domain_spec.py</code>, <code>general_v1.py</code> — 8 tests</p>
+<p><code>context/pipeline.py</code> writes an <code>owns</code> edge from the commitment
+<strong>actor</strong> to the commitment node, tagged <code>{"derived": "commitment actor"}</code>.
+It has been written on every commitment this system has ever extracted.
+<code>read_overdue_commitments</code> never asked — its own docstring, <em>"one finding per promise
+of ours"</em>, was an assumption the code never checked.</p>
+<p>Three of the nine cards therefore rendered <strong>somebody else's promise as the founder's own
+overdue obligation, at critical urgency, in the founder's voice.</strong></p>
+<div class="note">
+  <div class="note-h">Absent stays absent</div>
+  <p>"We do not know who promised this" and "the founder promised this" are different cards, and
+  the second was being shown for both. An unknown owner is never defaulted to us.</p>
+</div>
+
+<h2>3. What was deliberately not built</h2>
+<p>Seven planned units were retired because contact with the code proved the plan wrong. In every
+case the alternative meant weakening a test that was protecting a correct decision.</p>
+<div class="tw"><table>
+<thead><tr><th>Unit</th><th>Planned</th><th>Why it was wrong</th></tr></thead>
+<tbody>
+<tr><td><code>M1.C1.U01/U02</code></td><td>Reorder the relevance cascade</td><td>A real counterparty using a mailing platform must not be dropped. The order is right; its input was wrong.</td></tr>
+<tr><td><code>M2.C1.U01</code></td><td>Invent a typed absence-receipt contract</td><td>Not needed — the outbound message already produces ordinary <code>EvidenceSpan</code>s.</td></tr>
+<tr><td><code>M2.C1.U02</code></td><td>Make the reader carry the receipt</td><td>Keeps the reader pure; the composition path fetches it instead.</td></tr>
+<tr><td><code>M2.C1.U03</code></td><td>Widen <code>_preflight</code></td><td><strong>The gate is correct.</strong> It was starving, not wrong. Widening would let receiptless claims through.</td></tr>
+<tr><td><code>M1.C1.U03/U04</code></td><td>Loosen the LLM budget guard</td><td>"Alert rather than spend" is a deliberate cost decision, pinned by a test using a client that <em>raises</em> on any call.</td></tr>
+<tr><td><code>M1.C2</code></td><td>Widen the automated-sender regex</td><td>Would push <code>billing@</code> / <code>support@</code> to <code>service</code>, so a vendor we genuinely correspond with stops being a counterparty. Individually right, jointly wrong with §2.1.</td></tr>
+</tbody></table></div>
+
+<div class="note good">
+  <div class="note-h">The pattern worth noticing</div>
+  <p><strong>Three of the four shipped fixes are not new intelligence.</strong> They are reads of
+  data the graph was already writing and nobody was consuming: the outbound span, the recipients
+  tuple, the <code>owns</code> edge. That is why the risk is low, and why the baseline did not
+  move.</p>
+</div>
+
+<h2>4. Known consequence to decide on</h2>
+<div class="note warn">
+  <div class="note-h">A cost decision, not ours to make quietly</div>
+  <p>§2.1 tightens what counts as a known counterparty, so the ambiguous share on a cold tenant
+  <strong>rises</strong> and the LLM-5 budget guard will fire more often. That is correct
+  signalling — the system saying the graph does not know enough people yet — and the events it
+  declines to read are kept at 3000 bp, the lowest non-refused rank, and now also carry the
+  audience discount. They rank low without anyone spending.</p>
+  <p>Whether to raise the 10% ceiling belongs to the owner of the budget.</p>
+</div>
+
+<h2>5. Still open</h2>
+<div class="tw"><table>
+<thead><tr><th>Item</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Card <strong>voice</strong> — "you promised" vs "Priya promised"</td>
+    <td>Not done here. Pack rules have no notion of who is reading; the layer that legitimately
+    knows the recipient is L5.2's audience resolver. The card now <em>names</em> the owner, which
+    removes the false accusation; the voice makes it read naturally.</td></tr>
+<tr><td>Funnel report on the pilot tenant</td>
+    <td><strong class="no">RED, and honest.</strong> Needs <code>--org</code> and
+    <code>--database-url</code> against the pilot Postgres. It is the only check that
+    <em>proves</em> the feed flipped, and it has not been run. Kept in the tree rather than quietly
+    dropped.</td></tr>
+<tr><td>The 24 pre-existing failures</td>
+    <td>Untouched. They fail identically at <code>23d47640</code>. Out of scope.</td></tr>
+</tbody></table></div>
+
+<h2>6. How to verify</h2>
+<pre><code># the four new suites
+pytest tests/api/test_sender_resolver.py -q          # 12 passed
+pytest tests/context/test_absence_receipt.py -q      # 14 passed
+pytest tests/capture/esqe/test_audience_size.py -q   # 21 passed
+pytest tests/context/test_commitment_owner.py -q     #  8 passed
+
+# the baselines that must not move
+pytest tests/capture/esqe/test_relevance.py -q          # 55 passed
+pytest tests/context/test_situation_publisher.py -q     # 32 passed, 5 skipped
+pytest tests/capture/esqe/test_importance.py -q         # 98 passed, 6 skipped
+
+# everything
+pytest tests/ -q                                        # 8842 passed, 24 failed</code></pre>
+<p style="font-size:14px;color:var(--muted)">Run the target files <strong>individually</strong>.
+Running <code>test_importance.py</code> alongside its siblings produces six fixture-ordering errors
+that do not occur alone; that pollution predates this branch.</p>
+
+<h2>7. Files</h2>
+<div class="tw"><table>
+<thead><tr><th>File</th><th>Δ</th><th>What</th></tr></thead>
+<tbody>
+<tr><td><code>api/routes.py</code></td><td>+48 −5</td><td><code>KNOWN_COUNTERPARTY_SQL</code>, <code>known_counterparty_keys()</code></td></tr>
+<tr><td><code>context/situation_bso.py</code></td><td>+128 −1</td><td>outbound events, per-event L1 gather, absence backfill</td></tr>
+<tr><td><code>capture/esqe/importance.py</code></td><td>+109 −2</td><td>audience ladder, multiplier, components</td></tr>
+<tr><td><code>context/outreach_situations.py</code></td><td>+44 −2</td><td><code>_COMMITMENT_OWNERS</code>, owner on the finding</td></tr>
+<tr><td><code>packs/general_v1.py</code></td><td>+24 −1</td><td><code>commitment.owner</code> as declared evidence</td></tr>
+<tr><td><code>context/domain_spec.py</code></td><td>+9</td><td>owner field declarations</td></tr>
+</tbody></table></div>
+<p style="font-size:14px;color:var(--muted)">Supporting, not shipped to production paths:
+<code>tree.yaml</code> (the build tree, including every retirement and its reason),
+<code>scripts/qa/check-tree.sh</code>, <code>.build/trace.log</code> (append-only decision log).</p>
+
+<footer>
+  y-combinator-w27 · cut from harsh/mvp @ 23d47640 · 8842 passed / 24 pre-existing failures ·
+  0 regressions · 0 tests weakened
+</footer>
+
+</div>
+</body>
+</html>

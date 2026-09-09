@@ -31,7 +31,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
 from genios_engine.capture.validate.spans import SpanVerdict, verify_span
 from genios_engine.context.domain_spec import spec_for
@@ -675,6 +675,131 @@ def gather_l1_signals_bulk(conn, org_id: str,
             if folded is not None:
                 out[correlation_id] = folded
     return _attach_conflicts(conn, org_id, _verify_evidence(conn, org_id, out))
+
+
+# =================================================================================================
+# THE ABSENCE PATH. Why these two reads exist.
+#
+# `awaiting_response` and `first_response_overdue` are the two commonest readings in any inbox —
+# 114 of them on the pilot tenant — and not one had ever been published. The publisher held every
+# one on VERIFIED_EVIDENCE_REQUIRED, and the obvious diagnosis is wrong: it is not that a silence
+# cannot be quoted.
+#
+# It is that nobody looked. These situations anchor on a synthetic correlation the correlation
+# engine deliberately cannot reach (`outreach_situations` module docstring), so
+# `gather_l1_signals_bulk` above misses, `l1` is None, and `evidence_verified_spans` is written as
+# 0 at the BSO seam. The gate then refuses a claim on the strength of a number that was never
+# computed for it, and `_signals_and_evidence` supplies a `reconstructed: True` placeholder that
+# carries no quote, so the receipt half fails too. Two failures, one cause, and neither of them is
+# "this claim has no evidence".
+#
+# The claim is "WE WROTE TO THEM AND NOTHING CAME BACK". The first half of that is a message we
+# sent: a real event, extracted like any other, carrying real spans that quote real text we typed.
+# That is the receipt, it has existed the whole time, and Rule 04 is satisfied on its own terms
+# rather than by widening the gate to admit claims without receipts. The gate is right. It was
+# starving.
+# =================================================================================================
+
+#: The events in which WE wrote to this counterparty. `thread.last_outbound` is written onto the
+#: RECIPIENT's own person node on the outbound leg (`context/pipeline.py`), and `graph_source_refs`
+#: maps a fact version back to the event that produced it — so "which messages did we send this
+#: person" is already answerable and this read invents nothing.
+_OUTBOUND_EVENTS_SQL = (
+    "select distinct r.event_id as event_id "
+    "from graph_facts f "
+    "join graph_source_refs r "
+    "  on r.fact_version_id = f.fact_version_id and r.org_id = f.org_id "
+    "where f.org_id = :o and f.subject_node_id = :n and f.field = 'thread.last_outbound' "
+    "order by r.event_id"
+)
+
+#: `_L1_SELECT` reaches qualified signals THROUGH `context_correlation_members`, which is exactly
+#: why it cannot see an absence anchor. This is the same projection and is folded by the same
+#: `_l1_from_rows`, joined on the event instead. Identical in every judgement — the state filter,
+#: the max over the live scored subset, the all-state provenance — it just starts from a set of
+#: events rather than from a correlation.
+#:
+#: `in :ev` with an EXPANDING bindparam rather than `= any(cast(:ev as text[]))`, which is what the
+#: reads above use: the array cast is Postgres-only, and a query whose correctness can only be
+#: demonstrated against production is a query nobody can hold to account. This form runs on both.
+_L1_BY_EVENT_SELECT = (
+    "select qs.signal_id, qs.state, qs.importance_bp, "
+    "qs.importance_version, qs.importance_components, qs.evidence_refs, qs.conflict_ids, "
+    "qs.signal_type, qs.coverage_ready "
+    "from qualified_signals qs "
+    "where qs.org_id = :o and qs.event_id in :ev "
+    "order by qs.importance_bp desc, qs.signal_id"
+)
+
+#: How many of our own messages may ground one absence. The newest is the one the claim is really
+#: about ("we wrote, and since then nothing"); the rest are the follow-ups, which are part of the
+#: same story. Bounded so a decade-long thread cannot drag its whole history into one card.
+MAX_ABSENCE_RECEIPTS = 5
+
+
+def outbound_event_ids(conn, org_id: str, anchor_node_id: str,
+                       limit: int = MAX_ABSENCE_RECEIPTS) -> tuple[str, ...]:
+    """The events in which we wrote TO `anchor_node_id`. Empty when we never have.
+
+    Empty is the honest answer and the important one: a counterparty we have never written to has
+    no absence to describe, because nothing was ever awaited. Every one of the pilot's marketing
+    senders is in that state.
+    """
+    if not anchor_node_id:
+        return ()
+    rows = conn.execute(text(_OUTBOUND_EVENTS_SQL),
+                        {"o": org_id, "n": anchor_node_id}).mappings().all()
+    return tuple(str(r["event_id"]) for r in rows if r["event_id"])[:limit]
+
+
+def gather_l1_signals_for_events(conn, org_id: str,
+                                 event_ids: Sequence[str]) -> L1Signals | None:
+    """Layer 1's verdicts for a specific set of EVENTS, folded exactly as the correlation read
+    folds them. `None` when those events produced no qualified signal at all — the same honest
+    absence `gather_l1_signals` returns, which keeps the pre-activation fallback reachable.
+    """
+    ids = [str(e) for e in event_ids if e]
+    if not ids:
+        return None
+    stmt = text(_L1_BY_EVENT_SELECT).bindparams(bindparam("ev", expanding=True))
+    rows = conn.execute(stmt, {"o": org_id, "ev": ids}).mappings().all()
+    folded = _l1_from_rows(rows)
+    if folded is None:
+        return None
+    # The same two enrichment passes the bulk read applies, so an absence receipt is graded and
+    # conflict-aware on exactly the terms every other receipt is. `verified` on these spans still
+    # means L1.5.1 found the quote in real source text; nothing here can set it.
+    keyed = _attach_conflicts(conn, org_id,
+                              _verify_evidence(conn, org_id, {"absence": folded}))
+    return keyed.get("absence")
+
+
+def backfill_absence_l1(conn, org_id: str, subjects, l1_by_correlation: dict):
+    """Give the situations the correlation read could not reach the receipts they already have.
+
+    ADDITIVE ONLY, and that is the whole safety argument. A correlation that `gather_l1_signals_bulk`
+    already answered is never touched, so every situation that publishes today publishes on exactly
+    the evidence it publishes on today. This can only ever ADD a bundle where there was `None`, and
+    `None` is the state that was producing a permanent hold.
+
+    It also cannot invent one. `outbound_event_ids` returns empty for an anchor we have never
+    written to, and `gather_l1_signals_for_events` returns `None` when those events carry no
+    qualified signal — so a situation with nothing behind it keeps its `None`, keeps its zero, and
+    keeps being held. That is correct: the gate should refuse a claim with no receipt, and after
+    this change it still does. What it stops doing is refusing claims whose receipts nobody fetched.
+    """
+    for subject in subjects:
+        key = getattr(subject, "correlation_id", None)
+        anchor = getattr(subject, "anchor_node_id", None)
+        if not key or not anchor or key in l1_by_correlation:
+            continue
+        events = outbound_event_ids(conn, org_id, str(anchor))
+        if not events:
+            continue
+        folded = gather_l1_signals_for_events(conn, org_id, events)
+        if folded is not None:
+            l1_by_correlation[key] = folded
+    return l1_by_correlation
 
 
 def gather_subject_nodes(conn, org_id: str,
@@ -1467,6 +1592,7 @@ def compose_org_importance(conn, org_id: str, subjects: Sequence[SituationSubjec
         return {}
     correlations = [s.correlation_id for s in subjects if s.correlation_id]
     l1_by_correlation = gather_l1_signals_bulk(conn, org_id, correlations)
+    l1_by_correlation = backfill_absence_l1(conn, org_id, subjects, l1_by_correlation)
     nodes_by_correlation = gather_subject_nodes(conn, org_id, correlations)
     constituents = read_constituent_signals(conn, org_id, correlations)
 

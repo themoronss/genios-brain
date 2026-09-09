@@ -126,6 +126,28 @@ _EMPLOYERS = (
     "where e.org_id = :o and e.edge_type = 'works_at' and e.valid_to is null"
 )
 
+#: commitment node -> the person who MADE the promise.
+#:
+#: THE EDGE HAS ALWAYS EXISTED AND NOBODY READ IT. `context/pipeline.py` writes
+#: `owns` from the commitment ACTOR to the commitment node, with `evidence={"derived":
+#: "commitment actor"}` — so the graph has always known whose promise it was. This reading never
+#: asked, and its docstring says "one finding per promise of OURS", which is true only when the
+#: actor happens to be us. On the pilot tenant it frequently was not: three of the nine cards
+#: rendered a counterparty's promise as the founder's own overdue obligation, at critical urgency,
+#: in the founder's voice.
+#:
+#: Bulk, keyed by the commitment node, read once per sweep beside `_EMPLOYERS` — the same
+#: discipline every other pass in this layer keeps, and for the same reason: a per-finding read
+#: here is one round trip per card against a table that answers the whole org in one.
+_COMMITMENT_OWNERS = (
+    "select e.to_node_id as commitment, e.from_node_id as owner_node, "
+    "       n.display_name as owner_name, n.canonical_key as owner_key "
+    "from graph_edges e "
+    "join graph_nodes n on n.org_id = e.org_id and n.node_id = e.from_node_id "
+    "     and n.valid_to is null "
+    "where e.org_id = :o and e.edge_type = 'owns' and e.valid_to is null"
+)
+
 _EVENT_COUNTS = (
     "select o.subject_node_id as node_id, count(*) as events, "
     "       count(distinct r.source) as sources, min(o.occurred_at) as first_at, "
@@ -255,10 +277,21 @@ def read_overdue_commitments(rows: dict, now: datetime, employers: dict) -> list
         ]
         if action:
             facts.append(("commitment.action", str(action), "string"))
+        # WHOSE PROMISE IT IS. Read from the `owns` edge the extractor has always written from the
+        # commitment ACTOR. Absent when the graph cannot say, and absent is left absent rather
+        # than defaulted to us — "we do not know who promised this" and "the founder promised
+        # this" are different cards, and the second one was being shown for both.
+        owner_name = held.get("_owner_name")
+        owner_key = held.get("_owner_key")
+        if owner_name:
+            facts.append(("commitment.owner", str(owner_name), "string"))
+        if owner_key:
+            facts.append(("commitment.owner_key", str(owner_key), "string"))
         findings.append(_Finding(
             anchor=ANCHOR_COMMITMENT,
             canonical_key=f"commitment:{node_id}",
-            display_name=f"{name} — promise past due",
+            display_name=(f"{owner_name} — promise to {name} past due" if owner_name
+                          else f"{name} — promise past due"),
             facts=facts,
             concerns_node=node_id,
             correlation_id=f"commitment:{node_id}",
@@ -433,6 +466,15 @@ def _gather(store, org_id: str) -> tuple[dict, dict, dict]:
         # pass in this layer keeps.
         employers = {str(r.person): str(r.company)
                      for r in c.execute(text(_EMPLOYERS), {"o": org_id}) if r.company}
+        # Stamped onto the held row rather than passed as a fourth mapping, so the readers keep
+        # the signature the dispatch loop depends on and stay pure functions over their facts.
+        for row in c.execute(text(_COMMITMENT_OWNERS), {"o": org_id}):
+            entry = held.get(str(row.commitment))
+            if entry is None:
+                continue
+            entry["_owner_node"] = str(row.owner_node)
+            entry["_owner_name"] = str(row.owner_name or "") or None
+            entry["_owner_key"] = str(row.owner_key or "") or None
     return held, counts, employers
 
 

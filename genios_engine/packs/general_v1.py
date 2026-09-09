@@ -72,7 +72,21 @@ GENERAL_V1 = {
          "when": [{"fn": "days_since", "path": "commitment.due_at", "op": ">", "value": 0}],
          "urgency": {"type": "elapsed", "path": "commitment.due_at", "h": 1},
          "reason_code": "commitment_overdue", "play": "deliver_commitment", "cooldown_hours": 48,
-         "linked_deal": True, "evidence_fields": ["commitment.due_at", "commitment.action"]},
+         # `commitment.owner` ON THE CARD. Three of the pilot's nine cards rendered someone else's
+         # promise as the reader's own overdue obligation, and the card gave them no way to tell:
+         # it named who the promise was OWED TO and never who MADE it. The `owns` edge has always
+         # been written (`context/pipeline.py`, "commitment actor"); it is now read, and putting it
+         # in `evidence_fields` is what makes it visible rather than merely stored.
+         #
+         # WHAT THIS DOES NOT DO, DELIBERATELY. It does not branch the VOICE. A rule here cannot:
+         # pack rules have no notion of who is reading, and inventing one would put a delivery
+         # concern into domain knowledge — the layer that legitimately knows the recipient is
+         # L5.2's audience resolver. So the card now SHOWS whose promise it is, and choosing
+         # between "you promised" and "Priya promised" stays an open unit against the layer that
+         # can actually answer it. Naming the owner is the half that removes the false accusation;
+         # the voice is the half that makes it read naturally.
+         "linked_deal": True,
+         "evidence_fields": ["commitment.due_at", "commitment.action", "commitment.owner"]},
 
         {"id": "unanswered_email", "level": "prescriptive", "scope": "person",
          "when": [{"path": "thread.ball_in_court", "op": "=", "value": "us"},
@@ -176,7 +190,13 @@ GENERAL_V1 = {
     },
 
     "schema": {
-        "fields": ["commitment.due_at", "commitment.action", "thread.last_inbound",
+        # `commitment.owner` — whose promise it is. Declared here as well as in
+        # `context/domain_spec` because the two lists answer different questions and a field must
+        # pass both: the spec says what the SITUATION may carry, this says what a RULE may cite as
+        # evidence, and `test_general_rule_evidence_fields_are_declared_in_schema` is the seam that
+        # refuses a rule citing something the pack never declared.
+        "fields": ["commitment.due_at", "commitment.action", "commitment.owner",
+                   "thread.last_inbound",
                    "thread.ball_in_court", "meeting.status", "meeting.start_at",
                    # The five fields `meeting.status` was aliasing. `status` stays declared —
                    # it is still a real captured fact, it simply may no longer stand in for

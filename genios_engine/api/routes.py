@@ -220,6 +220,48 @@ _SENDER_CACHE: dict[str, tuple[float, frozenset]] = {}
 _SENDER_TTL_S = 300.0
 
 
+#: The addresses we have actually CORRESPONDED with — not merely the ones we have seen.
+#:
+#: This query used to be `select canonical_key from graph_nodes where node_type='person'`, i.e.
+#: "is this address any person node at all". That is a much weaker claim than the name
+#: `sender_known` makes, and the gap between the two is what inverted the pilot's feed. A
+#: cold-outreach sender becomes a person node by writing at us ONCE — the automated-sender regex
+#: in `context/pipeline.py` only catches role accounts like `noreply@`, so `sahan@…`, `lora@…`
+#: and `hello@…` all landed as people. On their second message `sender_known` was True, and
+#: `esqe/relevance._rule_verdict` short-circuits on it at RULE_KNOWN_COUNTERPARTY / 9000 bp —
+#: the second-highest rank in the table — which puts `_has_bulk_headers` two lines below out of
+#: reach. A List-Unsubscribe header was fetched, parsed and then never consulted.
+#:
+#: The cascade order is NOT the bug and must not be reordered: a counterparty we genuinely deal
+#: with, sending through a mailing platform, should still be relevant, which is exactly what
+#: `test_the_cascade_order_is_the_one_the_plan_fixed` protects. The bug was that the cascade was
+#: being fed a lie. So the fix is here, at the input.
+#:
+#: `thread.last_outbound` is written onto the RECIPIENT's own person node every time we send
+#: (`context/pipeline.py`, the outbound leg), so "we have written to this person" is already a
+#: stored fact. This is a filter over facts that exist, not a new computation, and it is exactly
+#: the line between a counterparty and a stranger with our address.
+KNOWN_COUNTERPARTY_SQL = (
+    "select n.canonical_key from graph_nodes n "
+    "where n.org_id = :o and n.node_type = 'person' and n.valid_to is null "
+    "and exists (select 1 from graph_facts f "
+    "             where f.org_id = n.org_id and f.subject_node_id = n.node_id "
+    "               and f.field = 'thread.last_outbound' and f.status = 'active')"
+)
+
+
+def known_counterparty_keys(connection, org_id: str) -> frozenset[str]:
+    """Run `KNOWN_COUNTERPARTY_SQL` and return the canonical keys, lowercased.
+
+    Split out from `_sender_resolver_for` so the rule can be tested against a real database
+    rather than asserted about a string. The resolver below is then a cache around this.
+    """
+    from sqlalchemy import text
+
+    rows = connection.execute(text(KNOWN_COUNTERPARTY_SQL), {"o": org_id}).fetchall()
+    return frozenset((r.canonical_key or "").strip().lower() for r in rows if r.canonical_key)
+
+
 def _sender_resolver_for(org_id: str):
     if _graph is None:
         return None
@@ -232,12 +274,8 @@ def _sender_resolver_for(org_id: str):
         now = time.time()
         hit = _SENDER_CACHE.get(org_id)
         if hit is None or now - hit[0] > _SENDER_TTL_S:
-            from sqlalchemy import text
             with _graph.engine.connect() as c:
-                rows = c.execute(text(
-                    "select canonical_key from graph_nodes where org_id=:o "
-                    "and node_type='person' and valid_to is null"), {"o": org_id}).fetchall()
-            hit = (now, frozenset(r.canonical_key for r in rows if r.canonical_key))
+                hit = (now, known_counterparty_keys(c, org_id))
             _SENDER_CACHE[org_id] = hit
         return email in hit[1]
     return _known
