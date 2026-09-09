@@ -369,3 +369,47 @@ FAIL   M9.C1 third cut  The query used `#>>`. Every one of the 17 tests failed o
               the sentence rule and the sender rule where a reader can check them.
 VERIFY Live Postgres and SQLite agree: 2 campaigns, 7 and 6 recipients, no thread twins, no self.
               Full suite 9089 passed / 24 failed. Same pre-existing 24. Zero regressions.
+
+--- M10 · THE DROPPED THREAD: THE CONDITION QUEUE REACHES A CARD, 2026-09-09 -----------------
+NOTE   USER CAUGHT A DROPPED THREAD. After M5 I wrote "yeh 16 findings situations banni chahiye
+              taaki card tak pahunchein" and then moved to other work. The reading existed and
+              NOTHING CALLED IT -- 16 findings that reached no situation and therefore no card.
+              Finished here.
+PASS   M10.C1  domain_spec declares `condition` -> `condition_in_review` on ADMIN ALONE, with
+              expected_fields that deliberately OMIT `condition.predicate`: everything in this
+              queue is here BECAUSE no predicate could be parsed, so requiring it would score
+              every row incomplete for the one reason they all share.
+PASS   M10.C2  outreach_situations gains ANCHOR_CONDITION and read_conditions_for_dispatch, so
+              the queue travels the same find_or_create_node / _write_fact / concerns-edge path
+              every other state reading takes rather than a second persistence route.
+FAIL   M10.C2 first cut  `_gather` stamps `_conditions` and `_mailbox_owner` into `rows`, and the
+              three readings that iterate `rows` BY NODE crashed on the first --
+              `'str' object has no attribute 'get'` -- taking every commitment and cohort finding
+              with them. Reserved-key guard added to all three; a parametrised test pins each.
+FAIL   M10.C2 second cut  The owner resolved to `mailbox:<org>:<connection>`, the mailbox node's
+              canonical key -- an internal identifier, not an email -- so `condition.actor_is_us`
+              could never match a human name and was silently always false. It now resolves from
+              the ADDRESS THAT SENT our outbound mail, and returns None for a tenant with two
+              sending seats, where `_is_owner` declines the claim rather than guessing.
+PASS   M10.C3  Authored `admin.sit.condition_awaiting_review` and regenerated the route index.
+              THREE STANDING GUARDS CAUGHT THIS WORK AND ALL THREE WERE RIGHT:
+              * test_producible_vocabulary_is_small_and_closed -- its own docstring says growing
+                the set "is exactly the event the test exists to force someone to look at".
+              * test_no_producible_situation_type_is_globally_unrouted -- "either author a
+                situation for it or stop producing the type". The YAML alone was not enough:
+                `routes` comes from a GENERATED index, gated on `_schema/vocabulary.yaml`.
+                Admin L2 coverage 9/26 -> 10/27.
+              * test_no_authored_fallback_narrates_an_absence_without_declaring_it -- the fallback
+                narrated an empty state at full prescriptive authority. `states_absence: true`.
+CORR   A WORKFLOW OF FIVE READERS CORRECTED ME TWICE, and both corrections are in the file:
+              * I claimed `review_status: draft` kept the situation out of a live compile. FALSE.
+                `authoring.py` reads no `admission` block for a SITUATION and
+                `capability_resolver._admission_reason` takes a CAPABILITY. A situation's status
+                gates nothing; `states_absence: true` is the actual guard. Recorded in the file
+                rather than quietly deleted -- a comment that lies about a safety property is
+                worse than no comment.
+              * `{path, op: '!=', value: ''}` answers UNKNOWN over an absent fact, not FALSE, so
+                the situation would compile carrying a missing-field gap instead of not matching.
+                `{exists: <path>}` is the form the engine dispatches for presence.
+VERIFY corpus validator 0 errors, 292 warnings (unchanged). Full suite 9097 passed / 24 failed --
+              the same pre-existing 24. Zero regressions.

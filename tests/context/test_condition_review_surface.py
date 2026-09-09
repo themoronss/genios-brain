@@ -299,3 +299,69 @@ def test_the_read_and_the_reading_compose(db):
 
     assert facts_of(finding)["condition.actor"] == "Hub71"
     assert "stay engaged" in facts_of(finding)["condition.quote"]
+
+
+# =============================================================================================
+# THE WIRING. The reading existed and nothing called it — 16 findings that reached no situation
+# and therefore no card. These pin the three seams that had to be joined for that to change.
+# =============================================================================================
+def test_the_condition_reading_is_on_the_dispatch():
+    """`READINGS` is what `refresh_state_situations` iterates. A reading absent from it runs
+    nowhere, which is exactly the state this queue was in."""
+    from genios_engine.context.outreach_situations import ANCHOR_CONDITION, READINGS
+
+    assert ANCHOR_CONDITION in [anchor for anchor, _reader in READINGS]
+
+
+def test_the_anchor_is_declared_by_exactly_one_domain():
+    """`domains_declaring` returns every domain holding the anchor and the dispatch mints one
+    situation PER claiming domain — two claimants would be two situations, two compiles and two
+    cards for one condition."""
+    from genios_engine.context.domain_spec import domains_declaring
+
+    assert domains_declaring("condition") == ("admin",)
+
+
+def test_the_expected_fields_do_not_demand_the_predicate():
+    """Everything in this queue is here BECAUSE no predicate could be parsed. Listing it as
+    expected would score every row incomplete for the one reason they all share — the reading
+    declares it `missing` instead."""
+    from genios_engine.context.domain_spec import spec_for
+
+    fields = spec_for("admin").expected_fields["condition_in_review"]
+
+    assert "condition.predicate" not in fields
+    assert {"condition.actor", "condition.action", "condition.quote"} <= set(fields)
+
+
+def test_the_dispatch_adapter_unpacks_the_reserved_key():
+    """`_gather` stamps the queue under `_conditions` rather than under a node id, because the
+    other three readings iterate `rows` BY NODE."""
+    from genios_engine.context.outreach_situations import read_conditions_for_dispatch
+
+    rows = {"_conditions": {"n_x": {"review": [condition("Hub71", "track progress")]}},
+            "_mailbox_owner": OWNER}
+
+    [finding] = read_conditions_for_dispatch(rows, NOW, {})
+
+    assert facts_of(finding)["condition.actor"] == "Hub71"
+
+
+def test_an_empty_queue_yields_nothing_rather_than_raising():
+    from genios_engine.context.outreach_situations import read_conditions_for_dispatch
+
+    assert read_conditions_for_dispatch({}, NOW, {}) == []
+
+
+@pytest.mark.parametrize("reader_name", ["read_awaiting_response", "read_overdue_commitments",
+                                         "read_outreach_cohorts"])
+def test_the_reserved_keys_never_reach_a_node_reading(reader_name):
+    """THE REGRESSION THIS CAUSED. `_gather` now puts two non-node entries in `rows`, and the
+    three readings that iterate it by node crashed on the first one —
+    `'str' object has no attribute 'get'` — taking every commitment and cohort finding with it."""
+    import genios_engine.context.outreach_situations as mod
+
+    reader = getattr(mod, reader_name)
+    rows = {"_conditions": {"n": {"review": []}}, "_mailbox_owner": OWNER}
+
+    assert reader(rows, NOW, {}) == []

@@ -66,6 +66,10 @@ ANCHOR_COMMITMENT = "commitment"
 #: arithmetic by hand.
 ANCHOR_COHORT = "cohort"
 
+#: One conditional statement nobody could turn into a checkable predicate. Its own anchor: a
+#: counterparty can leave several across months and they close separately.
+ANCHOR_CONDITION = "condition"
+
 #: How overdue a promise must be before it is a situation. Zero: a commitment is overdue the
 #: moment its own stated date passes, and that date came from the user's own words rather than
 #: from a threshold this layer invented.
@@ -233,6 +237,9 @@ def read_awaiting_response(rows: dict, now: datetime, employers: dict) -> list[_
     """
     findings: list[_Finding] = []
     for node_id, held in rows.items():
+        # Reserved keys carry the condition queue and the mailbox owner, not a node's facts.
+        if node_id.startswith("_") or not isinstance(held, dict):
+            continue
         waited = _num(held.get("thread.days_waiting"))
         if waited is None or waited < _WAITING_AFTER_DAYS:
             continue
@@ -300,6 +307,9 @@ def read_overdue_commitments(rows: dict, now: datetime, employers: dict) -> list
     """
     findings: list[_Finding] = []
     for node_id, held in rows.items():
+        # Reserved keys carry the condition queue and the mailbox owner, not a node's facts.
+        if node_id.startswith("_") or not isinstance(held, dict):
+            continue
         due = _ts(held.get("commitment.due_at"))
         if due is None:
             continue
@@ -365,6 +375,9 @@ def read_outreach_cohorts(rows: dict, now: datetime, employers: dict) -> list[_F
     """
     by_objective: dict[str, list[tuple[str, dict]]] = {}
     for node_id, held in rows.items():
+        # Reserved keys carry the condition queue and the mailbox owner, not a node's facts.
+        if node_id.startswith("_") or not isinstance(held, dict):
+            continue
         objective = held.get("thread.objective")
         if objective:
             by_objective.setdefault(str(objective), []).append((node_id, held))
@@ -474,10 +487,30 @@ def read_outreach_cohorts(rows: dict, now: datetime, employers: dict) -> list[_F
     return findings
 
 
+def read_conditions_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """The dormant-condition reading, in the shape the dispatch loop hands every reader.
+
+    `_gather` stamps the review queue onto `rows` under `_conditions` — one entry, not one per
+    node — because these rows are keyed by SUBJECT NODE in their own store and do not belong in
+    the `thread.*` map the other three readings share. Unpacking here keeps the dispatch a plain
+    lookup rather than a per-reader signature check.
+    """
+    from genios_engine.context.condition_situations import read_conditions_in_review
+
+    queue = rows.get("_conditions") or {}
+    owner = rows.get("_mailbox_owner")
+    return read_conditions_in_review(queue, now, owner)
+
+
+#: The dormant-condition review queue, read from its own store rather than from `_gather`'s
+#: `thread.*` rows — see `_gather`, which stamps it on. Wired here so it travels the same
+#: `find_or_create_node` / `_write_fact` / `concerns`-edge path every other state reading takes,
+#: instead of a second persistence route that would drift from this one.
 READINGS = (
     (ANCHOR_OUTREACH, read_awaiting_response),
     (ANCHOR_COMMITMENT, read_overdue_commitments),
     (ANCHOR_COHORT, read_outreach_cohorts),
+    (ANCHOR_CONDITION, read_conditions_for_dispatch),
 )
 
 
@@ -489,6 +522,40 @@ def state_domains() -> tuple[str, ...]:
     for anchor, _ in READINGS:
         out.update(domains_declaring(anchor))
     return tuple(sorted(out))
+
+
+#: WHO WE ARE, AS AN ADDRESS. The `mailbox` node's canonical key is
+#: `mailbox:<org>:<connection>` — an internal identifier, not an email — so reading it gave
+#: `condition.actor_is_us` a string that could never match a human name and the flag was silently
+#: always false. The owner is instead the address that SENT our outbound mail, which is a fact the
+#: events already carry.
+#:
+#: A TENANT WITH TWO SENDING SEATS GETS `None`, deliberately. `_is_owner` then declines the claim
+#: rather than guessing which seat is "us", and the condition still surfaces — see
+#: `condition_situations._is_owner`, where absent beats wrong.
+_MAILBOX_OWNER = (
+    "select distinct lower(e.actor #>> '{email}') as email "
+    "from graph_facts f "
+    "join graph_source_refs r "
+    "  on r.fact_version_id = f.fact_version_id and r.org_id = f.org_id "
+    "join source_events e on e.event_id = r.event_id and e.org_id = r.org_id "
+    "where f.org_id = :o and f.field = 'thread.last_outbound' and f.status = 'active' "
+    "  and e.actor #>> '{email}' is not null"
+)
+
+
+def _mailbox_owner(c, org_id: str) -> str | None:
+    """The address our outbound mail is sent from, or `None` when it is not one address.
+
+    `None` covers both "no outbound observed" and "several sending seats", and both are the same
+    honest answer to `condition.actor_is_us`: this pass cannot say.
+    """
+    try:
+        rows = c.execute(text(_MAILBOX_OWNER), {"o": org_id}).all()
+    except Exception:      # noqa: BLE001 — a driver without the jsonb operator is a gap, not a crash
+        return None
+    seats = {str(r[0]).strip() for r in rows if r[0]}
+    return next(iter(seats)) if len(seats) == 1 else None
 
 
 def _gather(store, org_id: str) -> tuple[dict, dict, dict]:
@@ -512,6 +579,11 @@ def _gather(store, org_id: str) -> tuple[dict, dict, dict]:
             entry = held.get(str(row.thread))
             if entry is not None:
                 entry["_covered_by_party"] = str(row.party_name or "") or str(row.party)
+        # The review queue and the mailbox owner, under reserved keys rather than node ids: the
+        # readings iterate `rows` by node, and a leading underscore cannot collide with one.
+        from genios_engine.context.condition_situations import gather_conditions_in_review
+        held["_conditions"] = gather_conditions_in_review(c, org_id)
+        held["_mailbox_owner"] = _mailbox_owner(c, org_id)
         for row in c.execute(text(_COMMITMENT_OWNERS), {"o": org_id}):
             entry = held.get(str(row.commitment))
             if entry is None:

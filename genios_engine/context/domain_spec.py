@@ -385,7 +385,15 @@ register(DomainSpec(
                      # file is about one thing — a person, a promise, a meeting, a file — so
                      # "of everyone I contacted about the raise, who has gone quiet?" could only
                      # be answered by reading N cards and doing the arithmetic by hand.
-                     "cohort": "cohort_outreach_gap"},
+                     "cohort": "cohort_outreach_gap",
+                     # A conditional statement nobody could turn into a checkable predicate.
+                     # `correlation_timeline` files these under
+                     # `derived.timeline.condition_review` and its own docstring says "a review
+                     # queue is a SURFACE, not a silence" -- that half was never built, and 24 of
+                     # them sat unread on the pilot, including Antler's "always happy to take a
+                     # look and reconsider". Its own anchor because a counterparty can leave
+                     # several conditions across months and they close separately.
+                     "condition": "condition_in_review"},
     expected_fields={
         "account_admin": {"subscription.current_period_end": "renewal date"},
         # An administrative counterparty is read through what we owe them and whose turn it is,
@@ -450,6 +458,17 @@ register(DomainSpec(
         # of 200 it has barely started, and the same numbers mean opposite things. Nothing in
         # this system holds a target, so it stays in `missing` on every row and no card here may
         # call a rate good or bad.
+        # WHAT A REVIEWER NEEDS TO ANSWER IT. `condition.predicate` is deliberately absent from
+        # this map and declared MISSING by the reading instead: everything in this queue is here
+        # BECAUSE no predicate could be parsed, so listing it as expected would score every row
+        # incomplete for the one reason they all share.
+        "condition_in_review": {
+            "condition.actor": "who set the condition",
+            "condition.action": "what they said they would do",
+            "condition.text": "the condition itself, in their words",
+            "condition.quote": "the sentence it came from",
+            "condition.age_days": "how long it has been sitting",
+        },
         "cohort_outreach_gap": {
             "cohort.objective": "what this campaign is for",
             "cohort.contacted": "how many people are in it",

@@ -62,6 +62,16 @@ def test_producible_vocabulary_is_small_and_closed():
         # test exists to force someone to look at; it is checked against the corpus by
         # `test_every_producible_type_someone_authored_for` below.
         "account_admin", "admin_contact",
+        # `condition_in_review` — one conditional statement `correlation_timeline` could not turn
+        # into a checkable predicate. It has been writing them to
+        # `derived.timeline.condition_review` since it shipped and its own docstring says "a
+        # review queue is a SURFACE, not a silence"; that half did not exist, and the pilot's
+        # queue held 24 unread — including Antler's "always happy to take a look and reconsider",
+        # which this system had earlier reasoned its way into advising the founder to STOP acting
+        # on. Bound by `admin.sit.condition_awaiting_review`, which is `review_status: draft` and
+        # carries no acceptance hash on purpose: it routes in the measurement compile and cannot
+        # reach a live prescriptive card until a named human accepts it.
+        "condition_in_review",
         "investor_relationship", "investor_contact",     # fundraising (L2-05)
         "relationship",
         # The one NON-MAIL channel the graph records rather than infers: a calendar meeting with an

@@ -476,6 +476,14 @@ substrate:
                                 #   person-anchored admin situation fell to the generic
                                 #   `<domain>_<anchor>` default (`admin_person`) and no situation
                                 #   file could claim it.
+    - condition_in_review       # admin, anchored on a CONDITION — one conditional statement
+                                #   `correlation_timeline` could not turn into a checkable
+                                #   predicate. It has written them to
+                                #   `derived.timeline.condition_review` since it shipped and its
+                                #   own docstring says "a review queue is a SURFACE, not a
+                                #   silence"; that half did not exist and the pilot's queue held
+                                #   24 unread. Its own anchor because a counterparty can leave
+                                #   several across months and they close separately.
     - investor_relationship     # fundraising, anchored on a company
     - investor_contact          # fundraising, anchored on a person
     - relationship              # general, anchored on a company or a person

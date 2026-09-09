@@ -1,0 +1,183 @@
+# THE OTHER HALF OF FOUNDER SURFACE 14, AND ITS SIBLING SAYS SO IN ITS FIRST LINE.
+#
+# `admin.sit.dormant_commitment_reopenable` opens: *"Layer 2 cannot yet see the second clause —
+# nothing detects satisfaction — but it can see the first with real evidence."* That was true when
+# it was written. It is no longer the whole picture.
+#
+# `context/correlation_timeline.py` has been finding conditional statements all along. When
+# `parse_condition` cannot turn one into a checkable predicate it files it under
+# `derived.timeline.condition_review` rather than guessing — correct, and deliberate, because
+# doc 03's first failure mode is a rhetorical condition matched. Its own docstring then says
+# *"a review queue is a SURFACE, not a silence"*, and that half was never built. On the pilot
+# tenant the queue held TWENTY-FOUR conditions, every one with an actor, an action, a date and the
+# counterparty's verbatim sentence, and not one reached a card. Among them:
+#
+#   Theresa Hoffmann, Antler, 7 Aug
+#     "If there's any changes in the business or updates you can share with us, please feel free
+#      to do so - always happy to take a look and reconsider."
+#
+#   Boardy, 13 Aug
+#     'Reply with "I want to apply to HF0" and I'll call you to kick off your application'
+#
+#   Sehan Sanjula, 28 Aug
+#     'If this isn't relevant, just reply "no" and I'll close the loop'
+#
+# WHY THIS IS A SEPARATE FILE and not two extra lines in its sibling. The sibling is bound to
+# `admin_contact` and `relationship` and gated on `has_obs: decision_deferred` — an OBSERVATION
+# kind, extracted per message. This one is bound to a type whose facts are the parsed condition
+# itself, and its gate is the presence of that condition. Different input, different gate, and the
+# sibling carries an `accepted_content_hash` a human signed; editing it to add a binding would
+# invalidate that acceptance and re-granting it in the same edit is precisely what
+# `capability_resolver._admission_gap` exists to prevent.
+#
+# WHAT ACTUALLY HOLDS THIS CARD BACK, and it is NOT the status field. The first draft of this
+# header claimed `review_status: draft` kept the situation out of a live compile. That is FALSE
+# and worth recording rather than quietly deleting: `packs/compiler/authoring.py` reads no
+# `admission` block for a situation at all, and `capability_resolver._admission_reason` takes a
+# CAPABILITY. A situation's status gates nothing.
+#
+# `states_absence: true` in the render block is the real guard, and it is also the honest
+# description. `deliver/card_builder` reads it and writes the card at `review` — "something is
+# missing and a human must look" — with no run_play button. That is exactly what this card is.
+# The status stays `draft` because it is true, not because it protects anything.
+
+identity:
+  id: admin.sit.condition_awaiting_review
+  name: Condition Awaiting Review
+  domain: admin
+  owner_capability: admin.executive_support.opportunity_tracking
+  version: 0.1.0
+  status: draft
+
+description: >
+  Somebody attached a condition to what happens next, in their own words, and the system could not
+  turn that condition into something it can check. The sentence is on the record; whether it is
+  now satisfied is a question only the reader can answer.
+
+  This is a QUEUE, not a finding, and the distinction is the whole file. A card here does not say
+  an opportunity has opened, that circumstances have changed, or that now is the moment — none of
+  those is observable from a condition nobody could parse. It says: this is what they wrote, this
+  is how long ago, is it true yet?
+
+  The conditions in it are not one shape. Some are an invitation to come back with news; some are
+  a single action we never took; some are our OWN promise, made conditionally and never closed.
+  `condition.actor_is_us` separates the last of those and is ABSENT when the actor is a bare first
+  name — this tenant has two Rohits, and guessing which one is the founder would attribute a
+  counterparty's promise to him.
+
+matches:
+  l2_situation_types:
+    - condition_in_review
+  scope: person
+  when:
+    # THE CONDITION ITSELF, in the counterparty's words. Without it there is no card — the whole
+    # output is the sentence, and a row that lost it during assembly must not render as an empty
+    # question.
+    #
+    # `exists`, not `path/op/value`. A `!= ''` comparison over an ABSENT fact answers UNKNOWN
+    # rather than FALSE — `context_adapter` returns `PredicateVerdict(UNKNOWN, (path,))` when the
+    # fact is not present — so the situation would compile carrying a missing-field gap instead
+    # of simply not matching. `exists` is the form the engine dispatches for presence.
+    - exists: condition.text
+    # AND THE SENTENCE IT CAME FROM. `condition.quote` is the verifiable receipt; `condition.text`
+    # is the correlator's extraction of the conditional clause within it. A card that showed the
+    # second without the first would be asking the reader to trust a paraphrase.
+    - exists: condition.quote
+
+also_serves:
+  - admin.executive_support.commitment_tracking
+  - admin.executive_support.inbox_and_correspondence
+
+objects:
+  load:
+    - admin.obj.core.commitment
+    - admin.obj.core.request
+  optional:
+    - admin.obj.core.deadline
+    - admin.obj.core.meeting
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+
+priority_bp: 5600
+typical_duration_days: 90
+
+signals_of_progress:
+  - positive_reply
+  - meeting_scheduled
+  - next_step_agreed
+  - intro_made
+
+signals_of_decay:
+  - pass_received
+  - negative_reply
+  - going_dark
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    This card asks a question. It does not report a change.
+
+    Headline: who set the condition, and what they said they would do. Never phrase it as an
+    instruction — the system does not know whether the condition holds, and an imperative on an
+    unresolved question is the failure `contracts/abstention.py` exists to prevent.
+
+    Situation: quote their sentence. Then say how long it has been, and state plainly that whether
+    the thing they were waiting on has happened is not something this system can see. If
+    `condition.actor_is_us` is true, say so — "you told them you would" is a different card from
+    "they told you they would", and the reader acts on them differently.
+
+    Artifact: the message that answers their condition WITH THE THING THEY ASKED FOR. It must
+    restate their own words so they are not asked to remember them, and it must carry the actual
+    new fact — a number, a milestone, a decision — supplied by the reader. If the reader has no
+    such fact, the correct artifact is not a message: it is a line saying what would make one
+    worth sending.
+  fallback:
+    # The actor leads because the card is about a person's condition, not about a thread. Age
+    # stands alone so a missing value cuts the clause rather than the sentence.
+    headline: "{entity} — a condition nobody has checked"
+    situation: >-
+      {entity} attached a condition to what happens next and it has been {age_days} days. Whether
+      it is now satisfied is not something this system can see.
+    # THE WHOLE CARD IS AN ABSENCE, and `test_no_authored_fallback_narrates_an_absence_without_
+    # declaring_it` caught this file narrating one at full prescriptive authority. Nothing here
+    # can establish whether the condition holds -- that is why the condition is in a review queue
+    # rather than in `condition_now_satisfied`. Declaring it writes the card at `review`: a human
+    # must look, and the exact question is on the card.
+    states_absence: true
+
+metadata:
+  owner: Admin
+  created_by: ai
+  last_updated: '2026-09-09'
+  review_status: draft
+  confidence: experimental
+  notes: >
+    EVERY PREDICATE HAS A LIVE WRITER, and that was checked against the tenant rather than assumed.
+    `condition.text`, `condition.quote`, `condition.actor`, `condition.action`, `condition.age_days`
+    and `condition.actor_is_us` are written by `context/condition_situations.py`, which reads
+    `derived.timeline.condition_review` — a field `correlation_timeline` has been writing since it
+    shipped. Run read-only against org_e97e86f858ad48b2bbf64b8a: 5 stored rows, 16 findings, every
+    one carrying a real sentence.
+
+    `condition.predicate` is deliberately NOT a predicate here and is declared `missing` by the
+    reading instead. Everything in this queue is here BECAUSE no predicate could be parsed;
+    requiring one would gate the situation on the single fact none of them has.
+
+    WHY NOT `has_obs`. The sibling gates on `decision_deferred`, an observation kind extracted per
+    message. That is the right gate for "somebody parked a decision". It is the wrong one here:
+    this situation's input is the PARSED CONDITION, and a tenant can hold a condition whose
+    original message produced no `decision_deferred` at all — Boardy's "Reply with I want to apply
+    to HF0" is an instruction, not a deferral, and it is exactly the kind of one-step unlock this
+    queue exists to surface.
+
+    A SITUATION HAS NO ADMISSION GATE, and the first draft of this file said it did. Checked
+    rather than assumed: `packs/compiler/authoring.py` reads no `admission` block for a situation,
+    and `capability_resolver._admission_reason` takes a CAPABILITY. `review_status: draft` here is
+    a true statement about this file's review state and nothing more — it protects nothing, and a
+    header claiming otherwise would have been a comment that lied about a safety property.
+
+    `states_absence: true` is the guard, and it is also the correct description: nothing in this
+    situation can establish whether the condition holds, which is precisely why the condition is
+    in a review queue rather than in `condition_now_satisfied`.
