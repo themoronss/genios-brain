@@ -166,3 +166,45 @@ FAIL   M4.C2  WITHDRAWN. I reported "the 30 eliminated candidates score 6301-664
               ballot polluted by L3 and refused the worst of it. Corrected in LIVE_RUN.md and
               INTELLIGENCE_AUDIT.md rather than left standing.
 VERIFY Full suite 8940 passed / 24 failed. Same pre-existing 24. Zero regressions.
+
+--- M5 · THE DORMANT-CONDITION REVIEW QUEUE, 2026-09-09 --------------------------------------
+NOTE   USER INSTRUCTION: do not hard-code one-off correlations (calendar<->person). Build the
+              general mechanism -- cases, conditions, scenarios -- so a new scenario is AUTHORED,
+              not coded. Investigated before building: that mechanism ALREADY EXISTS.
+              context/patterns/ has 8 implemented condition kinds (FACT, EDGE present-or-missing,
+              TEMPORAL, typed ABSENCE, TREND, COHORT, ANOMALY, OBSERVATION) and 6 authored
+              scenarios in seed/*.yaml. EDGE is the cross-source primitive the user asked for.
+FIND   scripts/pattern_fire_report.py run read-only on the tenant: all 6 patterns SILENT, and it
+              names the failing condition for each. condition_now_satisfied: 60 anchors, condition
+              0 (derived.timeline.condition_satisfied) fact_missing. founder_bottleneck: 60
+              anchors, authority.sole_approver_subject_count fact_missing. relationship_going_cold:
+              43 anchors, account.status fact_missing. The engine is fine and the anchors exist --
+              the FACT SUPPLY is missing.
+FIND   THE FINDING OF THE SESSION. correlation_timeline IS wired (runner.py:991) and IS working.
+              It files unparseable conditions under derived.timeline.condition_review, which is
+              correct and deliberate -- doc 03's first failure mode is a rhetorical condition
+              matched. The tenant holds 24 such conditions across 5 rows, each with an actor, an
+              action, a date and the counterparty's verbatim sentence. NOTHING SURFACES THEM. The
+              module's own docstring says "a review queue is a SURFACE, not a silence"; that half
+              was never built.
+              Among them, Theresa Hoffmann 7 Aug: "If there's any changes in the business or
+              updates you can share with us, please feel free to do so - always happy to take a
+              look and reconsider." Asked about Antler, this session's own card reasoned from
+              follow_up_count=5 and days_waiting=13 and said STOP CHASING THEM -- the exact
+              opposite, with her sentence sitting unread in the queue since the day she wrote it.
+              Also: Hub71 "stay engaged so we can continue to track your progress"; Boardy 'Reply
+              with "I want to apply to HF0" and I'll call you'; Sehan Sanjula 'If this isn't
+              relevant, just reply "no" and I'll close the loop' -- the correct action for the
+              vendor card the live feed renders as the founder's own $2,000 obligation.
+PASS   M5.C1  context/condition_situations.py. Reads the queue, emits one finding per condition
+              with actor, action, condition text, verbatim quote, age and staleness. Verified
+              read-only against live data BEFORE unit tests: 5 rows -> 16 findings, every one
+              carrying a real sentence. 23 tests.
+FAIL   M5.C1 first cut  The owner-identity check was `owner in actor or actor in owner`. Its own
+              test caught it: "Rohit Swerashi" is not a substring of "mrrohitswerashi@gmail.com".
+              Worse than the miss was the fix's trap -- normalising would make bare "Rohit" match,
+              and THIS TENANT HAS TWO ROHITS (Swerashi the owner, Nallapeta of Crescere Labs), so
+              a counterparty's promise would be stamped as the founder's own. _is_owner now
+              returns None for a single-token name: the condition still surfaces, the claim about
+              whose it is does not. Two tests pin the trap by name.
+VERIFY Full suite 8963 passed / 24 failed. Same pre-existing 24. +23 tests, zero regressions.
