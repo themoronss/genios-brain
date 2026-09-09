@@ -484,6 +484,11 @@ substrate:
                                 #   silence"; that half did not exist and the pilot's queue held
                                 #   24 unread. Its own anchor because a counterparty can leave
                                 #   several across months and they close separately.
+    - organization_gone_quiet   # admin, anchored on an ORGANIZATION — one counterparty FIRM
+                                # where more than one person has gone quiet. Not `cohort`
+                                # re-keyed: that groups by objective and spans funds, this
+                                # groups by `works_at` membership. A campaign and a
+                                # relationship close on different terms.
     - investor_relationship     # fundraising, anchored on a company
     - investor_contact          # fundraising, anchored on a person
     - relationship              # general, anchored on a company or a person

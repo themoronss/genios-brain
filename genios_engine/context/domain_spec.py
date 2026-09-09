@@ -393,7 +393,16 @@ register(DomainSpec(
                      # them sat unread on the pilot, including Antler's "always happy to take a
                      # look and reconsider". Its own anchor because a counterparty can leave
                      # several conditions across months and they close separately.
-                     "condition": "condition_in_review"},
+                     "condition": "condition_in_review",
+                     # THE SECOND GROUP-SHAPED SUBJECT, and it is not the first one re-keyed.
+                     # `cohort` groups by OBJECTIVE — "of everyone I contacted about the raise,
+                     # who has gone quiet?" — which spans funds on purpose. This groups by FIRM.
+                     # A campaign and a relationship close on different terms: one partner
+                     # replying revives the firm without reviving the campaign. Measured on the
+                     # pilot: 82 waiting anchors resolve to 41 people at 4 firms where BOTH
+                     # contacts are silent, Peak XV and Afore among them, and the system held
+                     # eight separate situations that never said so.
+                     "organization": "organization_gone_quiet"},
     expected_fields={
         "account_admin": {"subscription.current_period_end": "renewal date"},
         # An administrative counterparty is read through what we owe them and whose turn it is,
@@ -468,6 +477,19 @@ register(DomainSpec(
             "condition.text": "the condition itself, in their words",
             "condition.quote": "the sentence it came from",
             "condition.age_days": "how long it has been sitting",
+        },
+        # `organization.relationship` IS EXPECTED AND USUALLY MISSING, and that is CC-37 working
+        # rather than a gap to close. It is written only when every member of the firm carries a
+        # role and the roles agree; a supplier in one process and a customer in another share an
+        # identity and share nothing else, so one label over both would flatten two relationships
+        # into one. The pilot holds ONE role fact in total, so the field is absent on every row
+        # and the coverage score says so — which is the honest reading, not a defect.
+        "organization_gone_quiet": {
+            "organization.name": "which firm",
+            "organization.contacted": "how many people we know there",
+            "organization.awaiting": "how many of them have not replied",
+            "organization.longest_wait_days": "how long the longest silence has run",
+            "organization.relationship": "what this firm is to us, when it is one thing",
         },
         "cohort_outreach_gap": {
             "cohort.objective": "what this campaign is for",

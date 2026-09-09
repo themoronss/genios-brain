@@ -1,0 +1,163 @@
+# THE SECOND GROUP-SHAPED SUBJECT, AND ITS SIBLING'S FIRST LINE EXPLAINS WHY IT IS NOT THE FIRST.
+#
+# `admin.sit.campaign_going_quiet` opens: *"The first situation in this corpus whose subject is a
+# group."* It groups on `thread.objective` and says so twice more: **the grouping is the
+# objective, not the firm.** That is the right key for the question it answers — "of everyone I
+# contacted about this raise, who has gone quiet?" — and it is the wrong key for a different
+# question the same tenant asks.
+#
+# THE QUESTION THIS ANSWERS. On the pilot, Peak XV is two partners and Afore is two, Reticle two,
+# Vectorly two. Eight people, eight situations, eight cards, and not one of them says *"Peak XV —
+# both of them, and neither has answered."* The campaign card cannot say it either: those eight
+# sit inside one raise alongside eleven people at nine other firms, so the campaign is the wrong
+# grain to see a single firm going dark.
+#
+# WHY THE TWO CANNOT BE ONE FILE WITH A DIFFERENT KEY. A campaign and a relationship close on
+# different terms. One partner replying revives the FIRM and does nothing for the campaign —
+# nineteen others are still silent. The campaign ending — the raise closed, the round is done —
+# does not mean the firm ever answered, and next quarter's approach starts from that fact.
+# Re-keying `cohort` on the company would have broken the first question to answer the second.
+#
+# MEASURED BEFORE THIS FILE WAS WRITTEN, read-only against org_e97e86f858ad48b2bbf64b8a: 43
+# company nodes, 47 `works_at` edges, 82 waiting anchors resolving to 41 people, and 4 firms where
+# BOTH known contacts are silent.
+
+identity:
+  id: admin.sit.organization_gone_quiet
+  name: Organization Gone Quiet
+  domain: admin
+  owner_capability: admin.executive_support.inbox_and_correspondence
+  version: 0.1.0
+  status: draft
+
+description: >
+  More than one person at the same counterparty organisation has stopped answering. This reads
+  the FIRM, not the person and not the campaign: how many people we know there, how many of them
+  are waiting on us to be answered, and how long the longest silence has run.
+
+  THE GROUPING IS `works_at` MEMBERSHIP. Two partners at one fund are one firm; two partners at
+  two funds are two firms even when the same message went to both. That is the opposite choice
+  from its sibling and deliberately so — see the header for why neither key can serve both
+  questions.
+
+  WHAT THIS CARD MAY NOT DO IS SPEAK OF THE FIRM AS ONE RELATIONSHIP UNLESS IT DEMONSTRABLY IS.
+  An organisation can be a supplier in one process and a customer in another; the identity is
+  shared and nothing else is — obligation direction, money direction and confidentiality all
+  differ. `organization.relationship` is written only when every member carries a role and the
+  roles agree, and it is ABSENT rather than guessed the rest of the time. On this tenant it is
+  absent on every row, because the graph holds one role fact in total.
+
+  It also may not treat membership as applicability. That two people work at one company node
+  says they are the same counterparty for the purpose of chasing a reply. It says nothing about
+  whether an agreement with one binds the other, whether a parent's terms reach a subsidiary, or
+  whether anything signed by one is answerable by the other.
+
+matches:
+  l2_situation_types:
+    - organization_gone_quiet
+  scope: person
+  when:
+    # MORE THAN ONE PERSON, or the per-counterparty card already says everything there is to say
+    # and this one is a duplicate with a firm's name on it.
+    - path: organization.awaiting
+      op: ">="
+      value: 2
+    # AND THE SILENCE HAS TO BE WORTH REPORTING. The reading's own floor is two days — enough
+    # that a message sent this morning is not "gone quiet" — and the card asks for more, because
+    # a firm being briefly slow is not a firm that has gone dark. Seven days is the smallest span
+    # over which "nobody there has answered" is a statement about the firm rather than about the
+    # week.
+    - path: organization.longest_wait_days
+      op: ">="
+      value: 7
+
+also_serves:
+  - admin.executive_support.commitment_tracking
+  - admin.executive_support.opportunity_tracking
+
+objects:
+  load:
+    - admin.obj.core.request
+  optional:
+    - admin.obj.core.commitment
+    - admin.obj.core.meeting
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+    - admin.obj.core.access_right
+
+priority_bp: 6200
+typical_duration_days: 30
+
+signals_of_progress:
+  - positive_reply
+  - meeting_scheduled
+  - intro_made
+
+signals_of_decay:
+  - going_dark
+  - pass_received
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    This card is about a FIRM. Do not write it as though it were about the person named on it —
+    that person is the representative the evidence hangs on, not the subject — and do not write
+    it as though it were about a campaign.
+
+    Headline: the firm, and how many of the people we know there are unanswered.
+
+    Situation: how many we know there, how many are silent, and how long the longest has run.
+    Name them. If `organization.relationship` is present, say what the firm is to us. If it is
+    ABSENT, say nothing about what they are — the field is missing because the graph does not
+    know, and a guess here is the one error this card exists to avoid.
+
+    If `organization.roles` is present the firm is more than one thing to us. Say so explicitly
+    and keep the two apart: a request that suits the supplier relationship may be wrong for the
+    customer one, and the reader must not be handed a single ask that assumes either.
+
+    Artifact: the route in. Two people at one firm silent means the individual follow-up has
+    already been tried on both, so another copy of it is not the recommendation — a warm
+    introduction, a different seniority, or a decision to stop is. If the reader has no such
+    route, the honest artifact is the question of whether this firm is still worth the effort.
+  fallback:
+    # THE FIRM AND THE COUNT LEAD, because they are what the reader cannot get from any of the
+    # individual cards. Each quantity in its own clause, for the reason the sibling file records:
+    # a slot holding its sentinel takes its whole clause down with it.
+    headline: "{organization} — {awaiting} of {contacted} have gone quiet"
+    situation: >-
+      {awaiting} of the {contacted} people we know at {organization} have not answered. The
+      longest has been waiting {longest_wait_days} days.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  last_updated: '2026-09-09'
+  review_status: draft
+  confidence: experimental
+  notes: >
+    EVERY PREDICATE HAS A LIVE WRITER, checked against the tenant rather than assumed.
+    `organization.name`, `organization.contacted`, `organization.awaiting`,
+    `organization.longest_wait_days` and `organization.people` are written by
+    `outreach_situations.read_organization_silence`, which reads
+    `correlation_organization.find_organizations` over `works_at` and the same
+    `thread.days_waiting` every other state reading uses.
+
+    `organization.relationship` IS EXPECTED AND USUALLY MISSING, and that is the CC-37 guard
+    working rather than a gap to close. The pilot holds one `relationship.nature` and one
+    `party.role` across every node, so the field is absent on every row and the coverage score
+    says so. Writing a label there anyway would flatten a firm that is two things to us into one,
+    which is the failure the case names.
+
+    NOT `states_absence`. Its sibling `condition-awaiting-review.yaml` declares that flag because
+    nothing in it can establish whether the condition holds. This is the opposite: the silence IS
+    observed, on the same `thread.days_waiting` arithmetic the per-person card is built on, and
+    the firm's membership is an edge in the graph. What is unknown here is the RELATIONSHIP, and
+    that is carried in `missing` where a coverage score can see it — not by demoting the whole
+    card to a review queue.
+
+    THE FLOOR IS SEVEN DAYS AND THE READING'S IS TWO, deliberately. The reading mints the
+    situation so the state is tracked and closes itself when someone replies; the card asks for
+    more before it interrupts anyone. Two thresholds because they answer two questions — is this
+    true, and is this worth saying.

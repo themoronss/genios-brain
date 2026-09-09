@@ -166,6 +166,17 @@ def test_producible_vocabulary_is_small_and_closed():
         # many we MEANT to reach) has no writer and probably never will, so the reply rate is
         # reported and never graded.
         "cohort_outreach_gap",       # admin, anchored on the `cohort` node
+        # `organization_gone_quiet` — admin, anchored on the `organization` node. The SECOND
+        # group-shaped type, and not the first re-keyed: `cohort` groups by OBJECTIVE and spans
+        # funds on purpose, this groups by `works_at` membership. A campaign and a relationship
+        # close on different terms — one partner replying revives the firm and leaves the campaign
+        # untouched. Measured on the pilot before it was authored: 82 waiting anchors resolve to
+        # 41 people at 4 firms where BOTH known contacts are silent, Peak XV and Afore among them,
+        # and the system held eight separate situations that never said so. Bound by
+        # `admin.sit.organization_gone_quiet`, `review_status: draft` and carrying no acceptance
+        # hash, so it routes in the measurement compile and reaches no live card until a named
+        # human accepts it.
+        "organization_gone_quiet",
     }, "the L2 situation vocabulary changed — re-check every corpus route against it"
 
 

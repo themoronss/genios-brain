@@ -70,6 +70,18 @@ ANCHOR_COHORT = "cohort"
 #: counterparty can leave several across months and they close separately.
 ANCHOR_CONDITION = "condition"
 
+#: L2.3 · Cross Organization. The counterparty FIRM, not the person and not the campaign.
+#:
+#: The pilot writes to two partners at Peak XV and two at Afore and holds four situations; nothing
+#: says "Peak XV — both of them, both silent". `ANCHOR_COHORT` cannot say it either, and
+#: deliberately: it keys on the OBJECTIVE because "of everyone I contacted about the raise, who
+#: has gone quiet?" spans funds. That is a different question from "has this firm gone quiet",
+#: and answering the second by re-keying the first would break the first.
+#:
+#: Its own anchor because a firm's silence outlives any one campaign and closes on its own terms —
+#: one partner replying changes the firm's answer without changing the campaign's.
+ANCHOR_ORGANIZATION = "organization"
+
 #: How overdue a promise must be before it is a situation. Zero: a commitment is overdue the
 #: moment its own stated date passes, and that date came from the user's own words rather than
 #: from a threshold this layer invented.
@@ -487,6 +499,83 @@ def read_outreach_cohorts(rows: dict, now: datetime, employers: dict) -> list[_F
     return findings
 
 
+def read_organization_silence(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """One finding per counterparty ORGANISATION where more than one person has gone quiet.
+
+    `_gather` stamps the org groups onto `rows` under `_organizations`, the same reserved-key
+    route `_conditions` takes, so this stays a pure function over facts and the dispatch loop
+    keeps one signature.
+
+    WHAT MAKES THIS DIFFERENT FROM THE COHORT READING, which is the question a reviewer will ask
+    first. `read_outreach_cohorts` groups by OBJECTIVE and says "the raise has stalled across nine
+    funds". This groups by FIRM and says "Peak XV has stopped answering". A campaign and a
+    relationship close on different terms: one partner replying revives the firm without reviving
+    the campaign, and the campaign ending does not mean the firm ever answered. Both were measured
+    on the pilot — the cohort reading returns findings keyed on the raise, this one returns four
+    firms, and the sets are not the same rows.
+
+    IT MINTS NOTHING WHEN ONE PERSON IS SILENT AND ANOTHER ANSWERED. A firm where one of two
+    contacts replied is not a firm that has gone quiet, and a card saying so would be wrong about
+    the single fact it exists to report — so the group is narrowed to the waiting members BEFORE
+    the floor is applied, never filtered afterwards.
+    """
+    from genios_engine.context.correlation_organization import MIN_MEMBERS
+
+    groups = rows.get("_organizations") or ()
+    findings: list[_Finding] = []
+    for group in groups:
+        waiting: list[tuple[str, str, float]] = []
+        for member in group.members:
+            held = rows.get(member.node_id)
+            if not isinstance(held, dict) or held.get("_covered_by_party"):
+                continue
+            waited = _num(held.get("thread.days_waiting"))
+            if waited is None or waited < _WAITING_AFTER_DAYS:
+                continue
+            waiting.append((member.node_id, member.name, waited))
+        if len(waiting) < MIN_MEMBERS:
+            continue
+        waiting.sort(key=lambda item: -item[2])
+        longest = waiting[0]
+        facts: list[tuple[str, object, str]] = [
+            ("organization.name", group.company, "string"),
+            ("organization.contacted", group.size, "number"),
+            ("organization.awaiting", len(waiting), "number"),
+            ("organization.longest_wait_days", int(longest[2]), "number"),
+            ("organization.people", ", ".join(name for _n, name, _d in waiting[:8]), "string"),
+        ]
+        # CC-37 AT THE CARD SEAM. `organization.relationship` is written ONLY when every member
+        # carries a role and the roles agree. A firm that is a supplier in one process and a
+        # customer in another shares an identity and shares nothing else — obligation direction,
+        # money direction and confidentiality all differ — and one label over both would be the
+        # exact flattening the case names. Where the graph holds nothing (every group on the
+        # pilot, which carries one role fact in total) the field stays absent and lands in
+        # `missing`: "we do not know what they are to us" is not "they are one thing to us".
+        missing: list[str] = []
+        if group.relationship_is_uniform is True:
+            facts.append(("organization.relationship", group.roles[0], "enum"))
+        else:
+            missing.append("organization.relationship")
+        if group.is_multi_role:
+            facts.append(("organization.roles", ", ".join(group.roles), "string"))
+        findings.append(_Finding(
+            anchor=ANCHOR_ORGANIZATION,
+            canonical_key=f"organization:{group.company_node_id}",
+            display_name=f"{group.company} — nobody has answered",
+            facts=facts,
+            # The person waiting longest, so the card has a real subject to hang evidence and an
+            # owner on. A REPRESENTATIVE, not the finding's scope — `organization.awaiting` says
+            # how many this is really about.
+            concerns_node=longest[0],
+            correlation_id=f"organization:{group.company_node_id}",
+            missing=missing,
+            inputs={"reading": ANCHOR_ORGANIZATION,
+                    "organization": group.company,
+                    "derived_from": "works_at membership over per-counterparty waiting state"},
+        ))
+    return findings
+
+
 def read_conditions_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
     """The dormant-condition reading, in the shape the dispatch loop hands every reader.
 
@@ -511,6 +600,7 @@ READINGS = (
     (ANCHOR_COMMITMENT, read_overdue_commitments),
     (ANCHOR_COHORT, read_outreach_cohorts),
     (ANCHOR_CONDITION, read_conditions_for_dispatch),
+    (ANCHOR_ORGANIZATION, read_organization_silence),
 )
 
 
@@ -584,6 +674,12 @@ def _gather(store, org_id: str) -> tuple[dict, dict, dict]:
         from genios_engine.context.condition_situations import gather_conditions_in_review
         held["_conditions"] = gather_conditions_in_review(c, org_id)
         held["_mailbox_owner"] = _mailbox_owner(c, org_id)
+        # The counterparty organisations, under the same reserved-key route. Computed over the
+        # WHOLE tenant rather than over `held`: `works_at` membership is what makes two people one
+        # firm, and a firm's size — "two of the two partners we know are silent" — is only true if
+        # the denominator counts everyone there, not only the ones who happen to be waiting.
+        from genios_engine.context.correlation_organization import find_organizations
+        held["_organizations"] = find_organizations(c, org_id)
         for row in c.execute(text(_COMMITMENT_OWNERS), {"o": org_id}):
             entry = held.get(str(row.commitment))
             if entry is None:

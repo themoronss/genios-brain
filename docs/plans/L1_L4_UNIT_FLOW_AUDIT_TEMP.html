@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Temporary unit-level audit of the GeniOS Layer 1 through Layer 4 pilot data flow.">
+<title>L1–L4 Unit Flow Audit — Temporary Working File</title>
+<style>
+  :root {
+    --bg:#f3f5f7; --surface:#fff; --surface-2:#edf1f4; --ink:#17212b; --muted:#5f6f7f;
+    --line:#d8e0e7; --line-soft:#e8edf1; --ok:#0b6b61; --ok-bg:#def1ed;
+    --bad:#9d3529; --bad-bg:#f8e5e1; --warn:#85570f; --warn-bg:#f7edd8;
+    --info:#2366ad; --info-bg:#e2edf9; --shadow:0 10px 28px -22px rgba(20,31,43,.5);
+  }
+  @media (prefers-color-scheme:dark) {
+    :root { --bg:#0c1218; --surface:#141c24; --surface-2:#1b2530; --ink:#e5ebf1;
+      --muted:#98a8b7; --line:#283541; --line-soft:#202b35; --ok:#63c9bb; --ok-bg:#12332f;
+      --bad:#f09284; --bad-bg:#361e1a; --warn:#e5b45f; --warn-bg:#352815;
+      --info:#78b5f3; --info-bg:#172d43; --shadow:0 12px 30px -20px rgba(0,0,0,.9); }
+  }
+  * { box-sizing:border-box }
+  html { scroll-behavior:smooth }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif }
+  code,.mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace }
+  code { background:var(--surface-2); border:1px solid var(--line-soft); border-radius:4px; padding:1px 5px; font-size:.88em }
+  .wrap { width:min(1220px,calc(100% - 32px)); margin:auto }
+  header { padding:42px 0 28px; border-bottom:1px solid var(--line) }
+  .eyebrow { color:var(--muted); text-transform:uppercase; letter-spacing:.13em; font:11px/1.4 ui-monospace,monospace }
+  h1 { margin:8px 0 12px; font-size:clamp(30px,5vw,48px); line-height:1.08; letter-spacing:-.035em }
+  h2 { margin:0 0 8px; font-size:26px; letter-spacing:-.02em }
+  h3 { margin:28px 0 8px; font-size:18px }
+  p { max-width:82ch; margin:0 0 12px }
+  .lede { color:var(--muted); font-size:18px }
+  .meta,.filters { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px }
+  .pill,.filter { border:1px solid var(--line); background:var(--surface); color:var(--muted); border-radius:999px; padding:6px 10px; font-size:12px }
+  .pill strong { color:var(--ink) }
+  nav { position:sticky; top:0; z-index:10; background:color-mix(in srgb,var(--bg) 88%,transparent); backdrop-filter:blur(12px); border-bottom:1px solid var(--line) }
+  nav .wrap { display:flex; gap:4px; overflow:auto; padding-block:9px }
+  nav a { color:var(--muted); text-decoration:none; white-space:nowrap; padding:6px 9px; border-radius:6px; font-size:12px }
+  nav a:hover { background:var(--surface); color:var(--ink) }
+  main section { padding:38px 0; border-bottom:1px solid var(--line) }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:12px; margin:16px 0 }
+  .card,.callout { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px 18px; box-shadow:var(--shadow) }
+  .callout { border-left:4px solid var(--bad) }
+  .callout.warn { border-left-color:var(--warn) }
+  .callout.ok { border-left-color:var(--ok) }
+  .stat { font-size:28px; font-weight:700; letter-spacing:-.03em }
+  .label { color:var(--muted); font-size:12px }
+  .flow { display:flex; align-items:stretch; gap:7px; overflow:auto; padding:10px 0 4px }
+  .flow .node { min-width:150px; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:10px }
+  .flow .node.bad { border-color:var(--bad); background:var(--bad-bg) }
+  .flow .node.warn { border-color:var(--warn); background:var(--warn-bg) }
+  .flow .arrow { align-self:center; color:var(--muted) }
+  .table-wrap { overflow:auto; margin:14px 0 22px; border:1px solid var(--line); border-radius:10px; background:var(--surface); box-shadow:var(--shadow) }
+  table { border-collapse:collapse; width:100%; min-width:930px; font-size:13px }
+  th { position:sticky; top:0; z-index:1; background:var(--surface-2); color:var(--muted); text-align:left; text-transform:uppercase; letter-spacing:.08em; font:10px/1.3 ui-monospace,monospace; padding:9px 11px; border-bottom:1px solid var(--line) }
+  td { padding:9px 11px; border-bottom:1px solid var(--line-soft); vertical-align:top }
+  tr:last-child td { border-bottom:0 }
+  tbody tr:hover { background:color-mix(in srgb,var(--surface-2) 56%,transparent) }
+  .status { display:inline-block; white-space:nowrap; border-radius:5px; padding:2px 7px; font:600 10px/1.5 ui-monospace,monospace; text-transform:uppercase }
+  .pass { color:var(--ok); background:var(--ok-bg) }
+  .fail { color:var(--bad); background:var(--bad-bg) }
+  .partial,.blocked { color:var(--warn); background:var(--warn-bg) }
+  .unmeasured,.wip { color:var(--info); background:var(--info-bg) }
+  .severity { font-weight:700 }
+  .s0 { color:var(--bad) } .s1 { color:var(--warn) }
+  details { background:var(--surface); border:1px solid var(--line); border-radius:9px; margin:10px 0; padding:0 14px }
+  summary { cursor:pointer; font-weight:650; padding:12px 0 }
+  details > div { padding:0 0 14px }
+  ol,ul { padding-left:22px }
+  li { margin:5px 0 }
+  footer { padding:30px 0 60px; color:var(--muted); font-size:12px }
+  @media (max-width:700px) { .wrap { width:min(100% - 20px,1220px) } header { padding-top:30px } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Temporary working audit · read-only analysis · 9 Sep 2026</div>
+    <h1>L1–L4, group by group, unit by unit</h1>
+    <p class="lede">A source-to-card trace separating what the architecture expects, what the pilot measured,
+      what committed code at <code>23d47640</code> does, and what currently exists only as uncommitted WIP.</p>
+    <div class="meta">
+      <span class="pill">Pilot code snapshot <strong>acb18c8</strong></span>
+      <span class="pill">Current HEAD <strong>23d47640</strong></span>
+      <span class="pill">Pilot DB <strong>not replayed</strong></span>
+      <span class="pill">Status <strong>working file</strong></span>
+    </div>
+  </div>
+</header>
+
+<nav><div class="wrap">
+  <a href="#answer">Answer</a><a href="#flow">Flow</a><a href="#measurement">Measurement</a>
+  <a href="#l1">L1</a><a href="#l2">L2</a><a href="#l3">L3</a><a href="#l4">L4</a>
+  <a href="#trace">Bad card trace</a><a href="#register">Issue register</a><a href="#method">Method</a>
+</div></nav>
+
+<main>
+<section id="answer"><div class="wrap">
+  <div class="eyebrow">Current answer</div>
+  <h2>The pipeline ran. The meaning did not survive the pipeline.</h2>
+  <div class="callout">
+    <p><strong>First proven card-lineage corruption:</strong> after the L2 graph writes an <code>owns</code>
+      edge, the legacy <code>general_v1</code> commitment rule scans the graph without reading that edge.
+      The fallback renderer then changes somebody else’s promise into “you promised this.”</p>
+    <p><strong>Largest proven strict-lane suppression:</strong> synthetic absence correlations are not members
+      of <code>context_correlation_members</code>. The BSO evidence gatherer therefore misses the real outbound
+      anchor, records zero verified spans, and the admission gate correctly holds the under-evidenced object.</p>
+    <p><strong>Architectural cause:</strong> there are two reasoning lanes. The strict BSO → L3 → native L4 lane
+      is admission-gated; the legacy graph → tenant-pack rule → legacy L4 lane bypasses both that gate and L3,
+      publishes first, and receives the shared daily budget first.</p>
+  </div>
+  <div class="grid">
+    <div class="card"><div class="stat">L1</div><div class="label">mechanically active · incomplete evidence and calibration</div></div>
+    <div class="card"><div class="stat" style="color:var(--bad)">L2</div><div class="label">ownership not consumed · absence evidence not bound</div></div>
+    <div class="card"><div class="stat">L3</div><div class="label">compiler present · bypassed by the card-producing legacy lane</div></div>
+    <div class="card"><div class="stat">L4</div><div class="label">deterministic kernel · two input lanes with unequal publication order</div></div>
+  </div>
+</div></section>
+
+<section id="flow"><div class="wrap">
+  <div class="eyebrow">Boundary flow</div>
+  <h2>The graph forks into two materially different products</h2>
+  <p class="label"><strong>Shared capture and context graph</strong></p>
+  <div class="flow" aria-label="Shared source to graph data flow">
+    <div class="node"><strong>Source object</strong><br><span class="label">Gmail · Calendar · file</span></div><span class="arrow">→</span>
+    <div class="node warn"><strong>L1 QES</strong><br><span class="label">thin source coverage · documents parked</span></div><span class="arrow">→</span>
+    <div class="node"><strong>L2 graph</strong><br><span class="label">nodes · facts · edges</span></div>
+  </div>
+  <p class="label" style="margin-top:18px"><strong>Strict/native lane — admission-gated, chiefly measured/shadow in the pilot</strong></p>
+  <div class="flow" aria-label="Strict native reasoning lane">
+    <div class="node bad"><strong>L2 BSO</strong><br><span class="label">absence evidence missed</span></div><span class="arrow">→</span>
+    <div class="node warn"><strong>Admission</strong><br><span class="label">18 admits reported</span></div><span class="arrow">→</span>
+    <div class="node warn"><strong>L3 package</strong><br><span class="label">Admin substrate mismatch</span></div><span class="arrow">→</span>
+    <div class="node"><strong>Native L4</strong><br><span class="label">authorization required</span></div><span class="arrow">→</span>
+    <div class="node warn"><strong>Native signal</strong><br><span class="label">often shadow-only</span></div>
+  </div>
+  <p class="label" style="margin-top:18px"><strong>Legacy lane — reads graph facts, bypasses BSO admission and L3, publishes first</strong></p>
+  <div class="flow" aria-label="Legacy reasoning lane">
+    <div class="node bad"><strong>Tenant-pack rule</strong><br><span class="label"><code>general_v1</code> ignores owner</span></div><span class="arrow">→</span>
+    <div class="node"><strong>Legacy adapter</strong><br><span class="label">same L4 orchestrator</span></div><span class="arrow">→</span>
+    <div class="node warn"><strong>Shared budget</strong><br><span class="label">legacy consumes first</span></div><span class="arrow">→</span>
+    <div class="node bad"><strong>Card</strong><br><span class="label">wrong actor + imperative copy</span></div>
+  </div>
+  <div class="callout warn"><p><strong>Consequence:</strong> “0 <code>commitment_overdue</code> situations admitted”
+    and “commitment cards exist” are not contradictory. They refer to different lanes. Without row-level lineage,
+    the published 849 → 9 diagram cannot show which lane produced each card.</p></div>
+</div></section>
+
+<section id="measurement"><div class="wrap">
+  <div class="eyebrow">Before judging layers</div>
+  <h2>The published funnel is not a lineage funnel</h2>
+  <p>The report counts seven org-wide tables independently. It does not join the same source event through
+    signal, situation, admission, package, run and card, and it does not enforce the displayed date window.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Published claim</th><th>What the SQL actually counts</th><th>Problem</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td>231 situations → 18 admitted</td><td>Current situation rows versus all admission decision rows</td><td>Not guaranteed one decision per situation; 18 + 202 = 220, not 231.</td><td><span class="status fail">invalid ratio</span></td></tr>
+      <tr><td>213 held in HTML</td><td>Subtraction from 231</td><td>MD/database section reports 202 holds. HTML and report disagree.</td><td><span class="status fail">contradiction</span></td></tr>
+      <tr><td>114 absence situations</td><td>74 + 40 hold decision rows</td><td><code>awaiting_response</code> has 41 current situation rows but 74 held decisions; history is mixed.</td><td><span class="status partial">mechanism real, count not unique</span></td></tr>
+      <tr><td>112 candidates → 9 cards = 8%</td><td>All alternatives versus all cards</td><td>Candidates are alternatives inside 33 runs, not survivors expected to each become a card.</td><td><span class="status fail">wrong denominator</span></td></tr>
+      <tr><td>18 admitted → 349 packages → 33 runs → 9 cards</td><td>Independent totals from strict and legacy execution paths</td><td>The legacy tenant-pack lane bypasses BSO admission and L3; these totals cannot be treated as one cohort.</td><td><span class="status fail">two lanes conflated</span></td></tr>
+      <tr><td>91% verified</td><td>Rows with at least one <code>{verified:true}</code> evidence ref</td><td>Proves a locatable span, not actor, ownership or claim correctness.</td><td><span class="status partial">provenance only</span></td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<!-- Layer matrices are deliberately explicit. “Unmeasured” means the pilot supplied no evidence;
+     it does not mean the unit is absent. -->
+<section id="l1"><div class="wrap">
+  <div class="eyebrow">Layer 1 · Knowledge</div><h2>Group and unit matrix</h2>
+  <div id="l1-matrix"></div>
+</div></section>
+
+<section id="l2"><div class="wrap">
+  <div class="eyebrow">Layer 2 · Context</div><h2>Group and unit matrix</h2>
+  <div id="l2-matrix"></div>
+</div></section>
+
+<section id="l3"><div class="wrap">
+  <div class="eyebrow">Layer 3 · Domain expertise</div><h2>Group and unit matrix</h2>
+  <div id="l3-matrix"></div>
+</div></section>
+
+<section id="l4"><div class="wrap">
+  <div class="eyebrow">Layer 4 · Reasoning</div><h2>Group and unit matrix</h2>
+  <div id="l4-matrix"></div>
+</div></section>
+
+<section id="trace"><div class="wrap">
+  <div class="eyebrow">First divergent trace</div><h2>HealthX mail → critical wrong card</h2>
+  <p>The code path below is the only current path consistent with both reported facts: zero admitted
+    <code>commitment_overdue</code> situations and delivered commitment cards. A live row-level replay is still
+    required to bind this exact source event to this exact card id.</p>
+  <div id="trace-matrix"></div>
+</div></section>
+
+<section id="register"><div class="wrap">
+  <div class="eyebrow">Issue register</div><h2>Fix the first divergence, replay, then continue</h2>
+  <div id="issue-matrix"></div>
+</div></section>
+
+<section id="method"><div class="wrap">
+  <div class="eyebrow">Method and limits</div><h2>What this file can and cannot prove</h2>
+  <ul>
+    <li>Canonical inventory: <code>GeniOS-Globe.md</code>. Theory/Atlas are intent and examples, not runtime proof.</li>
+    <li>Measured evidence: the two pilot reports and their reporting SQL.</li>
+    <li>Current implementation: source at committed HEAD plus separately labelled uncommitted WIP.</li>
+    <li>The existing <code>graphify-out</code> was inspected but not used as current truth: it was built at commit <code>11431ed</code>.</li>
+    <li>No explicit <code>GENIOS_TARGET_DATABASE_URL</code> was supplied, so the tenant was not queried or replayed.</li>
+    <li>A present module or passing fixture is not customer proof. “Unmeasured” is intentional.</li>
+  </ul>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  Temporary artifact: <code>docs/plans/L1_L4_UNIT_FLOW_AUDIT_TEMP.html</code>. Do not use as a release claim until
+  a clean trace-linked tenant replay replaces the historical aggregate counts.
+</div></footer>
+
+<script>
+// Matrices are populated below while the audit progresses. Keeping data separate from rendering makes
+// this temporary file easy to correct without hand-editing repeated table markup.
+const matrices = { l1: [], l2: [], l3: [], l4: [], trace: [], issues: [] };
+
+function badge(status) {
+  const cls = ({pass:'pass',fail:'fail',partial:'partial',blocked:'blocked',unmeasured:'unmeasured',wip:'wip'})[status] || 'unmeasured';
+  return `<span class="status ${cls}">${status}</span>`;
+}
+function renderUnits(target, groups) {
+  const root = document.getElementById(target);
+  root.innerHTML = groups.map(group => `<details open><summary>${group.id} · ${group.name}</summary><div>
+    <p class="label">${group.responsibility}</p><div class="table-wrap"><table><thead><tr>
+    <th>Unit</th><th>Expected input → output</th><th>Current implementation / pilot evidence</th><th>Issue / first divergence</th><th>Status</th>
+    </tr></thead><tbody>${group.units.map(u => `<tr><td><strong>${u[0]}</strong><br><code>${u[1]}</code></td>
+    <td>${u[2]}</td><td>${u[3]}</td><td>${u[4]}</td><td>${badge(u[5])}</td></tr>`).join('')}</tbody></table></div>
+    </div></details>`).join('');
+}
+function renderSimple(target, headers, rows) {
+  document.getElementById(target).innerHTML = `<div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r=>`<tr>${r.map((v,i)=>`<td>${i===r.length-1 && /^[a-z]+$/.test(v) ? badge(v) : v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+
+matrices.l1 = [
+  {id:'L1.1',name:'Enterprise Sources',responsibility:'Acquire authorized evidence. The Globe lists 16 source categories; the pilot exercised Gmail and Calendar only.',units:[
+    ['Email','capture/connectors/gmail.py · outlook descriptor','Mailbox records → source events','Gmail produced 640 mail objects. Outlook is declared but not buildable in the current registry.','One email provider is live; this is not multi-mailbox proof.','partial'],
+    ['Calendar','capture/connectors/gcal.py','Calendar events → normalized event records','50 of 50 pilot events passed the gate.','Transport worked; meeting-intelligence usefulness failed later in L2.','pass'],
+    ['Chat','Slack / Teams descriptors','Messages, threads and reactions → source events','No Slack or Teams connector was buildable or connected in this pilot.','Cross-conversation and team-coordination evidence never entered L1.','blocked'],
+    ['Notion / Docs','source_registry.py:notion','Pages and documents → document/event records','Notion is buildable in the registry but was not connected in the pilot.','Presence in the registry is not ingestion proof.','unmeasured'],
+    ['Google Drive','source_registry.py:gdrive','Drive files and metadata → document records','Buildable connector, not connected in the pilot; the 159 file objects were not a successful Drive-content lane.','No tenant replay proves Drive text reaches QES.','unmeasured'],
+    ['CRM / ERP','source_registry.py:hubspot','Accounts, deals and operations → business events','HubSpot is buildable; no CRM or ERP source participated in the pilot.','Authority, deal stage and account context are absent.','unmeasured'],
+    ['GitHub / Jira','source descriptors','Work items and code activity → events','Descriptors exist, but neither source is buildable in the current connector registry.','Project/dependency evidence cannot enter.','blocked'],
+    ['Finance / QuickBooks','source descriptors','Transactions and obligations → finance events','No buildable finance connector was available.','The design Globe’s renewal example and amount-weighted scoring are unreachable.','blocked'],
+    ['HRIS','source descriptors','People, roles and reporting lines → organization facts','No buildable HRIS connector or pilot data.','Authority and ownership must be inferred from email alone.','blocked'],
+    ['Contracts','document source category','Contract files → clauses, dates and parties','No contract connector; file text extraction failed for all 159 pilot files.','Contract facts cannot be emitted.','blocked'],
+    ['Expense reports','source descriptors','Expense records → obligations and anomalies','No connector or pilot evidence.','Financial/Admin surface has no substrate.','blocked'],
+    ['Uploads','capture upload boundary','User files → document events','A file lane exists, but the pilot’s 159 files yielded zero readable text.','Acceptance is not successful ingestion.','partial'],
+    ['Voice / transcripts','documents/transcript.py','Audio/transcript → normalized text','Transcript seam exists; no speech-to-text provider was active.','Raw audio cannot become evidence.','blocked'],
+    ['Browser extension','source descriptors','User-selected page/context → source event','No buildable extension connector in this checkout.','No browser context entered the pilot.','blocked'],
+    ['Databases','source_registry.py:postgres · database · mysql','Rows/change events → normalized records','Three database-style constructors are registered; none was exercised by the tenant pilot.','Buildability is not row-level correctness.','unmeasured'],
+    ['Webhooks / APIs','capture connector framework','External events → durable source events','Connector/webhook plumbing exists for supported sources, but broad generic API coverage was not measured.','Declared category is wider than demonstrated operation.','partial']
+  ]},
+  {id:'L1.2',name:'Knowledge Connectors',responsibility:'Operate each source safely: construct, authenticate, scope permissions, sync incrementally and receive or poll changes.',units:[
+    ['Connector Manager','capture/source_registry.py','Descriptor + config → concrete connector','Registry declares 33 descriptors and constructs 8 source types; pilot ran 2.','Management works for a narrow subset, not the declared source surface.','partial'],
+    ['Authentication','connector-specific auth','Tenant grant → authorized connector session','Gmail and Calendar completed a live run. No per-scope audit is in the pilot report.','Transport success does not prove minimum-scope or expiry behavior.','partial'],
+    ['Permission Manager','capture policy/config','User/org policy → allowed objects and fields','Org/source gates exist; the report does not enumerate grants, denials or inaccessible coverage.','Absence findings lack a visible permission/coverage proof.','partial'],
+    ['Incremental Sync','connector cursors/watermarks','Prior cursor → only new or changed objects','Connectors expose incremental machinery, but the report aggregates a window without cursor/replay assertions.','No proof of gap-free or exactly-once tenant coverage.','unmeasured'],
+    ['Webhook Listener','connector runtime','Provider push → idempotent ingest request','Supported-source webhook paths exist; not exercised or counted in the pilot.','Latency and duplicate behavior are unknown.','unmeasured'],
+    ['Polling Scheduler','connector runtime','Schedule + cursor → repeated sync jobs','The sweep completed, but scheduler cadence, retries and watermark health are absent from the report.','A one-off sweep is not operating-loop proof.','partial']
+  ]},
+  {id:'L1.3a',name:'Content Pipeline',responsibility:'Turn files and media into normalized, attributable, deduplicated text and structure.',units:[
+    ['OCR','capture/documents/router.py','Image/PDF bytes → located text','Pilot: 25 files parked as <code>DOC-06</code> because no OCR engine was available.','Engine/image activation failure; no text can flow downstream.','fail'],
+    ['Speech to Text','capture/documents/transcript.py','Audio bytes → timestamped transcript','Schema/seam exists; no provider or pilot execution.','Voice evidence is unreachable.','blocked'],
+    ['Content Normalizer','capture/documents/*','Extracted text → canonical document text','Cannot run meaningfully on the 159 pilot files because none produced text.','Upstream extraction is the binding failure.','blocked'],
+    ['Chunking','capture/documents/pages.py','Canonical text → stable located chunks','No readable pilot document reached this unit.','No customer evidence, despite module presence.','blocked'],
+    ['Entity Extraction','capture/semantic_extraction.py','Text/chunks → typed entities','Semantic extraction ran on 172 emitted events; documents contributed nothing.','Coverage is email/event-only and accuracy is not labelled.','partial'],
+    ['Relationship Extraction','capture/semantic_extraction.py','Text/chunks → typed relationships','The HealthX exemplar attributed actor/beneficiary away from the tenant; broader precision was not measured.','Useful evidence exists, but downstream consumers later discard ownership.','partial'],
+    ['Embedding Generation','capture/validate/canonical.py','Chunks → searchable semantic vectors','L1 v2 explicitly does not emit embeddings.','Globe unit is absent from this boundary by design, so semantic document retrieval is not demonstrated.','blocked'],
+    ['Deduplication','capture/dedup.py · document register','Content identity → canonical object plus duplicate links','Dedup plumbing exists; the pilot reports no duplicate/replay rate.','Cannot distinguish present code from effective tenant dedup.','unmeasured']
+  ]},
+  {id:'L1.3b',name:'Event Pipeline',responsibility:'Normalize structured source activity without requiring document semantics.',units:[
+    ['Event Normalizer','capture/normalizer.py','Provider payload → canonical source event','849 objects landed and supported Gmail/Calendar payloads were normalized.','Mechanical path is proven for two connectors only.','pass'],
+    ['Metadata Extraction','connector mappers','Provider metadata → sender, recipients, times, ids','Sender, full To/Cc recipients and calendar metadata are persisted.','Audience data was captured but the pilot scoring path did not consume it.','partial'],
+    ['Deduplication','capture/dedup.py','Provider id/version → one canonical event','No duplicate failure is reported; reasoned idempotency exists in code.','Pilot has no replay-based duplicate assertion.','partial'],
+    ['Entity Linking','capture/entity_resolution.py','Event identities → canonical graph keys','Identities reach L2, but 69 relevance checks remained ambiguous on a young graph.','Cold-start identity/authority coverage is thin.','partial']
+  ]},
+  {id:'L1.4',name:'ESQE',responsibility:'Detect and qualify enterprise signals with deterministic policy, evidence and explicit disposition.',units:[
+    ['Signal Detector','capture/semantic_extraction.py','Normalized event → zero or more candidate signals','225 emitted events produced 395 signals across 11 types.','Volume is proven; precision/recall against labelled truth is not.','partial'],
+    ['Signal Normalizer','capture/signal_normalizer.py','Candidate → canonical signal contract','Published signals carry normalized type and basis-point fields.','Mechanical contract evidence is stronger than semantic validation.','pass'],
+    ['Signal Classifier','capture/classification.py','Signal → type/category','11 of 14 types appeared. No confusion matrix or missed-signal sample exists.','Type diversity is not classification accuracy.','unmeasured'],
+    ['Source Analyzer','capture/esqe/source_analyzer.py','Source metadata → authority/reliability features','69 events were kept at unknown authority when the ambiguity budget refused the relevance model.','Fail-open cold-start behavior lets weak senders survive.','partial'],
+    ['Business Relevance','api/routes.py · ESQE relevance','Event + relationship context → keep/drop relevance','Pilot dropped 367 on N-rules and 63 as model junk; first-time marketing could become “known” from its own inbound trace. Current dirty code requires prior outbound interaction.','The pilot known-counterparty predicate was too permissive; the observed correction is uncommitted WIP.','wip'],
+    ['Domain Mapping','capture/esqe/domain.py','Qualified content → domain candidates','Signals were mapped, but only Admin L3 activation and legacy tenant-pack activation were later conflated.','A domain label does not prove the correct expertise lane consumed it.','partial'],
+    ['Importance Scoring','capture/esqe/importance.py','Signal features → deterministic importance bp','Pilot maximum was 4,640/10,000 and sparse finance/graph features compressed scores. Dirty code now adds recipient audience size.','Audience discount was absent in the pilot; current patch is WIP, not replayed proof.','wip'],
+    ['Qualification Engine','capture/esqe/*','Policy + score + evidence → emit/drop/park','Every stopped item has a reason; 68 signals fell below 2,500.','Threshold mechanics work, but business correctness lacks labelled evaluation.','partial'],
+    ['Signal Lifecycle Manager','capture lifecycle/status','Signal revisions → current, superseded or withdrawn state','Lifecycle code exists; the pilot exposes aggregate rows rather than revision lineage.','No proof that corrections retract downstream context/cards.','unmeasured'],
+    ['Signal Publisher','capture publisher','Qualified signal → durable L1 output with evidence refs','395 rows published; 359 include at least one verified span.','Publisher works mechanically; verified location does not verify actor/ownership semantics.','pass']
+  ]},
+  {id:'L1.5',name:'Operational Stores',responsibility:'Preserve raw input, preparation state, dispositions and qualified outputs so every decision is replayable.',units:[
+    ['Source-event ledger','source_events','Provider object → durable raw/normalized event','849 objects landed with source metadata.','Pilot does not show immutable payload hashes across replay.','pass'],
+    ['Prepared payload store','prepared payload/document tables','Raw event → downstream-ready payload','Email/calendar payloads progressed; every file content path failed or parked.','Mixed readiness is hidden by the single captured total.','partial'],
+    ['Parked/dead-letter state','capture disposition tables','Unsupported/transient object → reasoned parked state','159 files and other rejected items carry explicit reason codes.','Strong observability, but parked backlog is still zero customer value.','pass'],
+    ['Qualified signal + trace','qualified_signals · ESQE trace','Admitted L1 claim → evidence-linked output','Counts and spans exist, and L2 can query them.','Later synthetic correlations can fail to bind these otherwise valid receipts.','pass']
+  ]}
+];
+
+matrices.l2 = [
+  {id:'L2.1',name:'Context Graph Views',responsibility:'Expose the same evidence through entity, relationship, time, authority, ownership, communication, resource and knowledge lenses.',units:[
+    ['Entity View','context/graph_store.py · identity.py','L1 identities → canonical entities','Pilot graph contains 252 nodes; email identities were materialized.','Node volume does not prove correct merge or business role.','partial'],
+    ['Relationship View','context/projections.py','Edges/facts → current relationship view','245 edges were written; relationship situations had 6 admits and 23 holds.','Useful structure exists, but downstream card paths can bypass typed situations.','partial'],
+    ['Temporal View','context/lifecycle/* · timeline.py','Dated facts → ordered state and expiry','Deadlines and due dates flow; 131 deadline signals were produced.','Ordinary meeting times and sparse history can masquerade as stronger temporal claims.','partial'],
+    ['Authority View','context/authority projections','Identity + org context → authority role','Young-graph ambiguity left 69 L1 events at unknown authority.','Two-source pilot cannot establish organization authority reliably.','partial'],
+    ['Ownership View','context graph <code>owns</code> edges','Actor/entity evidence → explicit owner relation','For the HealthX trace, the graph wrote <code>sanchiconnect --owns→ commitment</code>. Dirty L2 code also copies owner into BSO facts.','The card-producing legacy rule never reads this edge; WIP enrichment does not fix that lane.','fail'],
+    ['Communication View','thread/message projections','Messages + participants → thread state','Email threads support reply/relationship facts.','Fan-out and prior two-way relationship were not strong pilot inputs.','partial'],
+    ['Resource View','context/resource.py','Files, money and assets → resource state','All 159 files were unread and no finance source was connected.','The view cannot manufacture missing source evidence.','blocked'],
+    ['Knowledge View','context projections','Claims + provenance → current knowledge view','2,350 facts were stored with provenance structures.','Fact count hides unsupported domains and conflicting/current-state quality.','partial']
+  ]},
+  {id:'L2.2',name:'Graph Engines',responsibility:'Build, update, validate, resolve, age, version and keep the graph internally consistent.',units:[
+    ['Graph Builder','context/pipeline.py · graph_store.py','Qualified L1 signal → nodes, facts and edges','395 signals produced 252 nodes, 2,350 facts and 245 edges.','Mechanical materialization is proven; semantic correctness is not.','pass'],
+    ['Graph Updater','context/graph_store.py','New evidence → revised graph state','Upsert/update paths exist and the sweep completed.','Report has no before/after state transition assertions.','partial'],
+    ['Graph Validator','context/validate/*','Proposed graph write → accepted or rejected facts','Validation and confidence/conflict checks exist.','Pilot gives aggregate holds, not invalid-write cases.','unmeasured'],
+    ['Entity Resolution / Deduplicator','context/identity.py · canon.py','Aliases → canonical subject','Email identities and graph keys are linked; one brain-key bridge later maps emails to node ids.','No labelled false-merge/split evaluation for this tenant.','partial'],
+    ['Freshness Manager','context/lifecycle/freshness.py','Timestamped fact → freshness state','Temporal lifecycle modules exist.','No stale-fact inventory or source-watermark proof in the pilot.','unmeasured'],
+    ['Lifecycle Manager','context/lifecycle/*','Events → active/closed/superseded state','Situation/fact lifecycle is implemented.','Repeated admission counts versus current situations show the report mixes history.','partial'],
+    ['Version Manager','context epochs/version fields','Graph mutation → versioned state','Epoch/version concepts exist in context quality/runtime.','No reproducible graph snapshot id ties all published funnel totals together.','partial'],
+    ['Consistency Checker','context/validate/conflict.py','Competing facts → conflict/open resolution state','17 holds plus 1 identity-review hold show fail-closed conflict handling.','Guard is visible; correctness of conflict detection was not sampled.','partial']
+  ]},
+  {id:'L2.3',name:'Cross-Correlation',responsibility:'Join evidence across tools, resources, people, time, conversations, domains, organizations and dependencies.',units:[
+    ['Cross-Tool Correlation','context/correlation.py','Same business event across sources → one correlation','Only Gmail and Calendar were connected; unread files supplied no semantic join.','The pilot cannot demonstrate meaningful multi-system correlation.','blocked'],
+    ['Cross-Resource Correlation','context/resource.py','People, files, money and objects → resource relationship','Resource correlator module exists.','No finance and no readable documents leave it under-supplied.','blocked'],
+    ['Cross-User Correlation','context/identity.py','Multiple participants → roleful shared context','Identity links are written, but no cross-user labelled trace is reported.','Email-address equality is weaker than verified role/authority.','unmeasured'],
+    ['Cross-Timeline Correlation','context/timeline.py','Related dates/events → one temporal chain','Timeline code exists and due dates flow.','No joined deadline/meeting/response chain is proven in output.','partial'],
+    ['Cross-Conversation Correlation','context/outreach_situations.py','Messages/threads → conversation state','Outreach producers build awaiting-response and overdue-response cases.','Synthetic correlation ids are outside normal member rows, so their L1 receipts are missed by BSO evidence gathering.','fail'],
+    ['Cross-Domain Correlation','domain routing/projections','One situation across domain vocabularies → shared context','Admin L3 activation and legacy Sales/general pack execution coexist.','Execution lanes are not governed by one domain contract.','fail'],
+    ['Cross-Organization Correlation','identity/organization projections','External identities → organizations and roles','Some organization/entity nodes exist; no pilot-quality evaluation.','Cold senders can look relevant before two-way relationship is proven.','partial'],
+    ['Dependency Correlation','context/dependency.py','Commitments/resources/dates → dependency edges','Named dependency module exists.','No end-to-end dependency-driven card trace is in the pilot.','unmeasured']
+  ]},
+  {id:'L2.4',name:'Context Quality',responsibility:'Quantify confidence and freshness, detect conflicts/noise/missing context, aggregate evidence and enforce completeness.',units:[
+    ['Confidence Calculation','context/validate/confidence.py','Evidence axes → confidence bp','L4 later sees 3,300 for one-source/one-evidence subjects and defers below 4,500.','The ceiling exposes sparse input as intended.','pass'],
+    ['Freshness Evaluation','context/lifecycle/freshness.py','Observation time + policy → freshness','Freshness machinery exists.','No pilot distribution proves stale information was excluded.','unmeasured'],
+    ['Conflict Detection','context/validate/conflict.py','Competing claims → conflict state','18 admission decisions reference open conflict/identity review.','Fail-closed behavior is visible; false positives/negatives remain unmeasured.','partial'],
+    ['Noise Detection','capture + context filters','Low-value graph evidence → suppressed context','Most explicit noise filtering happens in L1; L2 still receives promotional business mail that survived.','No L2 audience/relationship correction before legacy rules.','fail'],
+    ['Missing Context Detection','context/quality/missing.py','Required fields/coverage → named gaps','Deferrals name missing evidence and the gate names QES/verified-evidence requirements.','The system detects symptoms but not always the missing binding that caused them.','partial'],
+    ['Evidence Aggregation','context/situation_bso.py:gather_l1_signals_bulk','Correlation members → QES evidence bundle','Committed code joins QES through <code>context_correlation_members</code>. Absence producers use synthetic correlations, so real outbound anchors are omitted. Dirty code backfills QES by outbound event id.','This is the first strict-lane failure for 114 historical absence decisions; the gate is downstream and correctly refuses zero-span objects.','wip'],
+    ['Context Completeness','context/quality/lens.py','Required views + evidence → completeness axes','Completeness/confidence axes exist and can cap L4.','No surface-specific completeness contract is reported for Admin tasks.','partial'],
+    ['Context Validation','context/validate/*','BSO/context packet → valid or held result','Bad/weak objects are held rather than silently promoted.','Correct guard, but upstream omissions make valid work look unverifiable.','pass']
+  ]},
+  {id:'L2.5–2.6',name:'Situation Engine',responsibility:'Generate, detect, build, cluster, rank, score, state-manage, age and publish typed Business Situation Objects.',units:[
+    ['Candidate Generator','context/situations.py · outreach_situations.py','Graph changes → situation candidates','231 current situation rows were reported across nine visible types.','Totals combine types and histories; no source-to-candidate recall baseline.','partial'],
+    ['Situation Detection','context/outreach_situations.py','Candidate facts → typed situation','Overdue commitment detection fires for every overdue commitment node. Dirty code reads owner edges into facts.','Pilot detector did not require tenant ownership; the legacy rule still does not.','wip'],
+    ['Situation Builder','context/situation_bso.py','Situation + QES + graph facts → strict BSO','Builds typed objects and evidence metadata. Absence cases received zero verified spans under the committed correlation-only gatherer.','Builder reconstructs placeholders when the binding is empty; current backfill patch is not replayed.','wip'],
+    ['Situation Clustering','context/situations.py','Related candidates → one business situation','Clustering/correlation structures exist.','74 awaiting-response hold rows versus 41 current rows show aggregate reports cannot establish unique clustering.','unmeasured'],
+    ['Situation Prioritization','context/situation_bso.py','BSO evidence/context → org importance','Org importance composition exists.','Sparse upstream scores and graph features compress differentiation.','partial'],
+    ['Situation Confidence','context/situation_bso.py','Evidence axes → BSO confidence','Evidence span count and other axes feed admission/L4.','A missing QES join becomes a low-confidence object even when an outbound anchor exists.','partial'],
+    ['Situation State','context/situations.py','Signals and graph state → open/held/closed situation','Current state is stored.','Reporting mixes current rows with historical admission decisions.','partial'],
+    ['Situation Lifecycle','context/lifecycle/*','Time/change → reevaluate, expire or supersede','Lifecycle framework exists.','No replay proves absence situations reopen/close correctly when a reply arrives.','unmeasured'],
+    ['Situation Publisher / Admission','context/situation_publisher.py:_preflight','Strict BSO + receipts/conflicts → ADMIT/HOLD/REJECT','13 focused admission tests pass at committed state; pilot held weak/conflicted objects.','The gate is doing its job. It cannot recover evidence that BSO aggregation failed to attach.','pass'],
+    ['Meeting Situation Producer','context/meeting_lifecycle.py · meeting_touch.py','Calendar event + conversation state → meeting/prep/follow-through situation','50 calendar events entered; pilot reported zero meeting situations in the strict surface. Legacy meeting rules exist separately.','Scheduling/meeting intelligence is not proven end to end.','unmeasured']
+  ]},
+  {id:'L2.X',name:'Execution Boundary',responsibility:'Ensure every customer-visible reasoning path consumes the same admitted, typed and evidence-complete context contract.',units:[
+    ['Strict BSO boundary','reason/domain_shadow.py','ADMIT BSO → L3; HOLD/REJECT → stop','Native compiler path enforces admission and refuses weak objects.','This safety applies only to the native lane.','pass'],
+    ['Legacy graph scan','reason/runner.py:run · packs/general_v1.py','Graph nodes/facts → tenant-pack candidates','Active tenant packs are scanned independently after shadow compilation and sent through <code>reason_legacy_rule</code>.','It bypasses BSO admission and L3, so unsafe semantics can still become cards.','fail'],
+    ['Lane lineage contract','reporting / decision metadata','Source → lane → decision → signal → card trace','No report join distinguishes native from legacy output.','The pilot cannot attribute its nine cards to the 18 admitted situations.','fail']
+  ]}
+];
+
+matrices.l3 = [
+  {id:'L3.0',name:'Activation and Routing',responsibility:'Select the intended domain and execution mode before compiling expertise.',units:[
+    ['L3 Activation','reason/runner.py:l3_activation','Tenant + domain → enabled live/shadow compiler state','Current committed runner reads <code>l3_activation</code>; pilot documents describe Admin as the only live compiled domain.','Activation proves permission to compile, not that compiled expertise influenced a delivered card.','partial'],
+    ['Tenant-Pack Activation','reason/runner.py:tenant_packs','Tenant → active legacy packs','General, Sales, Admin and Support packs can be scanned independently of L3 activation.','The reports treat legacy pack names as if they were compiled-domain evidence.','fail'],
+    ['Lane Cutover','reason/runner.py:run_all','One governed reasoning path → one publication policy','<code>run_all</code> invokes shadow/native compilation and separately loops legacy tenant packs.','Two lanes create different safety guarantees and ambiguous outcome ownership.','fail']
+  ]},
+  {id:'L3.1',name:'Domain Compiler',responsibility:'Resolve a situation into capability, object, brain, knowledge, adapted context, evidence and an immutable expertise package.',units:[
+    ['Capability Resolver','packs/compiler/*','Admitted BSO + domain → applicable capability set','Compiler resolves capability manifests; historical packages carried 2–13 capabilities.','Counts prove matching ran, not that the selected capability was correct or substrate-fireable.','partial'],
+    ['Object Resolver','packs/compiler/*','BSO subjects → domain object bindings','Typed objects and subject keys are resolved from situation context.','Planned-only Admin objects/facts cannot be bound to evidence that L2 never writes.','partial'],
+    ['Brain Resolver','packs/compiler/runtime_brains.py','Subject keys → four runtime brain slices','Current committed code bridges situation email identities to graph node ids and reads both persistent and temporary memory tables.','The expected-vs-reality document calling two of those fixes open is stale; no clean tenant replay proves non-empty slices.','unmeasured'],
+    ['Knowledge Retriever','packs/compiler/* · Domain Expertise/','Domain/object/capability → relevant authored entries','Corpus entries compile and Expert material appears in historical packages.','Retrieval cannot make planned-only fact paths exist.','partial'],
+    ['Context Adapter','packs/compiler/*','Generic BSO → domain vocabulary/context','Adapter modules exist.','Admin vocabulary requests facts and situation types that the runtime substrate does not emit.','fail'],
+    ['Evidence Aggregator','packs/compiler/*','BSO receipts + knowledge → expertise evidence bundle','Compiler carries evidence into packages for admitted objects.','It inherits L2’s missed absence binding and cannot repair legacy-lane context because that lane bypasses L3.','partial'],
+    ['Expertise Builder','packs/compiler/*','Resolved slices → immutable expertise package','349 historical package rows were counted across 130 situation ids.','130 package-bearing situations cannot be assumed to descend from the 18 reported admits without revision/time/lane joins.','partial'],
+    ['Expertise Publisher','reason/domain_shadow.py','Package + activation → native L4 invocation','Live compiler path requires ADMIT; shadow path measures without delivering.','Pilot report merges measured/shadow reasoning with customer-visible outcomes.','partial'],
+    ['Capability Registry','Domain Expertise/**/capabilities','Authored capability inventory → addressable manifests','Trees contain 201 Admin, 156 Sales and 167 Support YAML artifacts, but only 59/47/49 are actual <code>capability.yaml</code> manifests.','“Capability files” in the report overcounts manifests by including supporting YAML.','partial']
+  ]},
+  {id:'L3.2',name:'Four Brains',responsibility:'Join generic expertise with the organization’s rules, observed behavior and learned preferences.',units:[
+    ['Expert Brain','Domain Expertise/ corpus','Situation + domain → expert patterns/capabilities','Historical packages contain capability material; this was the one visibly populated slice.','Expert knowledge is authored, but Admin entries frequently target planned substrate.','partial'],
+    ['Organization Brain','runtime_brains.py','Org rules/policies → organization-specific constraints','Reader/writer paths exist in current code. Historical packages reported zero org rules.','No current replay or counterfactual proves an org rule changed a decision.','unmeasured'],
+    ['Behavior Brain','runtime_brains.py · subject-key bridge','Observed subject behavior → behavioural priors','Current committed bridge expands email identities to graph node ids. Historical packages reported zero behavior entries.','The prior vocabulary mismatch is addressed in code, not proven in the tenant outcome.','unmeasured'],
+    ['Adaptive Brain','runtime_brains.py','Learned/temporary memories → adaptive preferences','Current committed reader unions <code>learned_brain_entries</code> and <code>temporary_memories</code>. Historical packages reported zero adaptive entries.','The document’s “reader only selects learned table” claim is stale; influence remains unreplayed.','unmeasured']
+  ]},
+  {id:'L3.3',name:'Corpus–Substrate Contract',responsibility:'Reject or re-author capabilities that depend on facts, situations or observations with no runtime writer.',units:[
+    ['Vocabulary Declaration','Domain Expertise/_schema/vocabulary.yaml','Runtime vocabulary → authored capability constraints','Schema explicitly separates <code>substrate</code> from <code>planned_substrate</code>.','Declaration warns about the gap but compilation still permits unfireable knowledge.','partial'],
+    ['Admin Alignment','Domain Expertise/Admin','Existing facts/situations → applicable Admin capabilities','Admin authored material references at least 20 planned-only fact paths and 20 planned-only situation types in the prior audit.','Only activated compiled domain is structurally under-supplied.','fail'],
+    ['Sales Alignment','Domain Expertise/Sales','Existing facts/situations → applicable Sales capabilities','Sales is more aligned to current facts than Admin.','High-scoring Sales-labelled legacy plays do not prove compiled Sales L3 ran.','partial'],
+    ['Support Alignment','Domain Expertise/Customer Support','Existing facts/situations → applicable support capabilities','Support corpus and legacy pack exist; pilot supplied no compiled-influence trace.','No customer-visible proof.','unmeasured'],
+    ['Authoring Lint','compiler validation','Capability references → fail if no runtime writer exists','No hard compile-time failure prevents planned-only dependencies from packaging.','Silent compilation creates valid-looking packages that cannot fire.','fail']
+  ]}
+];
+
+matrices.l4 = [
+  {id:'L4.1',name:'Reasoning Orchestrator',responsibility:'Select units, plan dependencies and execution, apply policy, degrade safely and preserve a deterministic trace.',units:[
+    ['Unit Selector','reason/plan.py','Capability request → required reasoners','Registry and planner select from all 17 named units.','Selection exists, but pilot has no per-run unit coverage table.','partial'],
+    ['Execution Planner','reason/plan.py','Unit set + dependencies → topological stages','Planner validates dependencies and produces stages.','Plan construction is deterministic and tested in code.','pass'],
+    ['Dependency Resolver','reason/plan.py','Declared requirements → ordered graph','Cycles/missing dependencies are validated before execution.','No pilot-specific dependency trace was published.','pass'],
+    ['Parallel Scheduler','reason/orchestrator.py','Independent stage units → concurrent execution','Orchestrator executes <code>for planned in plan.steps</code> sequentially.','Planner computes parallel stages, but runtime has no parallel scheduler.','fail'],
+    ['LLM Decision Policy','reason/orchestrator.py · policies','Task/risk/evidence → allowed model use or deterministic path','Policy hooks exist and much of the kernel is deterministic.','Pilot does not report which units invoked a model or their bounded inputs.','unmeasured'],
+    ['Confidence Policy','reason/orchestrator.py · decision_maker','Per-axis evidence → speak/defer threshold','17 runs decided at 5,000 bp; 16 deferred at 2,300–3,300 against a 4,500 floor.','The guard is behaving defensibly given sparse evidence.','pass'],
+    ['Fallback Strategy','reason/orchestrator.py · packs/general_v1.py','Missing/failed specialist → safe degraded result','Deferral/degradation paths exist, but legacy general copy says “you promised this” without ownership proof.','Safety fallback is mechanically robust but semantically unsafe in the legacy lane.','partial']
+  ]},
+  {id:'L4.2',name:'17 Reasoning Units',responsibility:'Produce bounded findings for context, time, dependencies, constraints, risk, opportunity, impact, priority, confidence, tradeoffs, resources, scheduling, cost, policy, alternatives, validation and recommendation.',units:[
+    ['Context Reasoning','reason/reasoners/context.py','Expertise/context packet → relevant context findings','Registered and executable.','No pilot row proves that owner identity influenced the final card; legacy context omitted it.','partial'],
+    ['Timeline Reasoning','reason/reasoners/timeline.py','Dated facts → sequence and temporal pressure','Due dates influence urgency and overdue copy.','Correct date arithmetic does not validate who owns the obligation.','partial'],
+    ['Dependency Reasoning','reason/reasoners/dependency.py','Context graph → blockers and prerequisites','Registered.','No customer-output trace or per-unit findings in the pilot.','unmeasured'],
+    ['Constraint Reasoning','reason/reasoners/constraint.py','Rules/resources/time → hard and soft constraints','Registered.','No pilot-specific constraint finding or counterfactual.','unmeasured'],
+    ['Risk Reasoning','reason/reasoners/risk.py','Evidence → risk findings/bp','Registered.','Aggregate candidate report cannot show whether risk varied correctly; prior audit found a static decision input.','unmeasured'],
+    ['Opportunity Reasoning','reason/reasoners/opportunity.py','Evidence → opportunity findings','Registered and opportunity signals/situations exist upstream.','Opportunity is not a direct <code>RANKING_WEIGHTS_V2</code> term, contrary to the expected-vs-reality arithmetic.','partial'],
+    ['Impact Reasoning','reason/reasoners/impact.py','Evidence → impact estimate','Registered.','No measured distribution or source-bound impact proof; prior trace found a static decision input.','unmeasured'],
+    ['Priority Reasoning','reason/reasoners/priority.py','Urgency/importance/dependencies → priority','Candidates receive differentiated utilities.','Priority may be internally consistent while ranking a semantically wrong candidate.','partial'],
+    ['Confidence Reasoning','reason/reasoners/confidence.py','Evidence quality → confidence ceiling/finding','Observed 2,300–5,000 bp outcomes and deferrals show non-constant behavior.','Confidence is only as good as L2 evidence attachment and coverage.','pass'],
+    ['Tradeoff Reasoning','reason/reasoners/tradeoff.py','Alternatives → explicit tradeoffs','Registered.','No pilot artifact shows tradeoff findings reached any card.','unmeasured'],
+    ['Resource Reasoning','reason/reasoners/resource.py','People/money/assets → feasibility','Registered.','No finance and unread files leave resource evidence largely absent.','blocked'],
+    ['Scheduling Reasoning','reason/reasoners/scheduling.py','Calendar/deadlines/resources → feasible timing','Registered and 50 calendar events were captured.','No strict meeting situation/card demonstrates end-to-end scheduling intelligence.','unmeasured'],
+    ['Cost Reasoning','reason/reasoners/cost.py','Financial/resource evidence → cost estimate','Registered.','No finance connector or amounts; pilot provides no useful cost evaluation.','blocked'],
+    ['Policy Reasoning','reason/reasoners/policy.py','Org rules + request → policy finding','Registered. Historical packages had zero organization-brain entries.','No replay proves organization policy influenced a decision.','unmeasured'],
+    ['Alternative Reasoning','reason/reasoners/alternative.py','Situation + capabilities → candidate actions','112 alternatives were stored; 106 eligible and 6 hard-eliminated in the report.','Alternatives are per-run options, not funnel survivors.','pass'],
+    ['Validation Reasoning','reason/reasoners/validation.py','Candidate/finding set → valid, invalid or degraded result','Validation and explicit statuses are part of the unit contract.','No labelled semantic validation catches the wrong commitment owner.','partial'],
+    ['Recommendation Reasoning','reason/reasoners/recommendation.py','Validated evidence/alternatives → recommended action','Recommendations and cards are produced.','Top card action is wrong because the input lane omitted ownership; fluent output masks upstream corruption.','fail']
+  ]},
+  {id:'L4.3',name:'Evidence Layer',responsibility:'Require typed results, cite source evidence, propagate degradation and persist an auditable reasoning record.',units:[
+    ['Result Contract','reason/contracts.py','Reasoner execution → typed result/status/findings','Reasoners return structured results with status and confidence.','Strong mechanical contract.','pass'],
+    ['Citation / Evidence Validation','reason/evidence.py','Findings + evidence refs → validated citations','Evidence validation exists and L1 spans are carried when attached.','A valid quote still cannot establish the correct owner unless the owner relation is consumed.','partial'],
+    ['Degradation Propagation','reason/orchestrator.py','Unit failure/missing evidence → degraded/deferred decision','The 16 deferrals explicitly name missing evidence.','Legacy rules can still formulate candidates outside the stricter BSO/L3 evidence boundary.','partial'],
+    ['Audit Persistence','reason audit tables/trace','Plan + unit results + decision → durable trace','Runs, candidates and outcomes are persisted.','Reporting omits a cross-lane source-to-card join, so stored auditability is not exposed as product evidence.','partial']
+  ]},
+  {id:'L4.4',name:'Decision Maker',responsibility:'Aggregate evidence, synthesize and evaluate alternatives, rank them, calculate confidence, build the decision and record its trace.',units:[
+    ['Evidence Aggregator','reason/decision_maker.py','Unit findings → decision evidence set','Consumes structured reasoner outputs.','Cannot restore ownership or receipts omitted before L4.','partial'],
+    ['Decision Synthesizer','reason/decision_maker.py','Findings + actions → candidate decisions','33 historical runs produced decisions/deferrals and 112 candidates.','Runs may belong to different execution lanes/modes; no lineage cohort.','partial'],
+    ['Decision Evaluator','reason/decision_maker.py','Candidate + constraints → eligibility and scores','6 candidates were hard-eliminated.','Eliminated candidates can score above eligible ones; hard constraints, not utility, decide eligibility. This is expected but needs explanation.','pass'],
+    ['Decision Ranker','contracts/reasoning.py:RANKING_WEIGHTS_V2','Eligible candidates → ordered utility','106 eligible candidates had 41 distinct utilities, proving the formula moves.','Movement is not calibration. Weights are importance 2500, impact 2000, urgency 2000, success 1500, effort 1000, risk 1000; opportunity is not a direct term.','partial'],
+    ['Confidence Calculator','reason/decision_maker.py','Evidence axes → bounded confidence','17 decisions at 5,000; 16 deferrals below the 4,500 floor.','Mechanically correct; sparse L1/L2 coverage limits useful decisions.','pass'],
+    ['Decision Builder','reason/decision_maker.py','Selected candidate → typed DecisionObject','Typed objects are built for decision/defer outcomes.','A well-formed object can encode the wrong actor/action.','partial'],
+    ['Reasoning Trace','reason/orchestrator.py · audit persistence','Plan/results/choice → reproducible trace','Rich trace structures exist.','Pilot HTML reports aggregates instead of the one joined trace needed to audit each card.','partial']
+  ]},
+  {id:'L4.X',name:'Publication and Budget Seams',responsibility:'Authorize only the intended lane and convert a decision into one customer-visible signal without cross-lane competition.',units:[
+    ['Native Authorization','reason/publication.py','Native decision + live mode + policy → publishable signal','Native publication checks live mode, decision status and delivery policy; built-in native capabilities are pinned to shadow in the runner.','Strong gate, but it means native measurements are not necessarily the nine delivered cards.','partial'],
+    ['Legacy Publication','reason/adapters/legacy.py · runner.py','Legacy pack rule → L4 result → signal','Legacy rules use the same orchestrator then publish from their own runner path.','They bypass strict BSO admission and L3 expertise.','fail'],
+    ['Shared Daily Budget Ordering','reason/runner.py','Native + legacy candidates → fair governed delivery','Runner publishes legacy results before native and comments that legacy wins a contested budget.','Migration order becomes product semantics and can suppress safer native output.','fail']
+  ]}
+];
+
+matrices.trace = [
+  ['1 · Gmail connector','HealthX external email, filed by Gmail as <code>CATEGORY_PERSONAL</code>','Capture sender, recipients, headers, body and provider ids.','Durable <code>source_event</code>.','pass'],
+  ['2 · L1 deterministic/model gate','Business-looking inbound mail with no matching N-code','S1 rules do not identify it as bulk; S2 keeps it as substantive business mail.','Event proceeds to semantic extraction.','partial'],
+  ['3 · L1 semantic extraction','Email body','Extract <code>actor = HealthX Elevate program</code> and <code>beneficiary = selected applicants</code>.','Promise is attributed away from the tenant at extraction time.','pass'],
+  ['4 · L1 ESQE relevance + importance','Signal, sender and young-graph context','Relevance model can be skipped when ambiguous-share budget is exhausted; unknown authority fails open. Pilot scoring has no audience-size term.','Qualified commitment/deadline evidence survives.','fail'],
+  ['5 · L2 graph builder','Qualified signal with actor/beneficiary','Write commitment node/facts and an <code>owns</code> edge from the external organization/identity.','Graph contains the ownership relation needed for safe copy.','pass'],
+  ['6A · Strict BSO lane','Graph commitment + QES','Build <code>commitment_overdue</code> situation, preflight evidence/conflict, admit only if valid.','Pilot table: 0 admitted and 6 held for this type; this lane cannot explain a delivered card by itself.','partial'],
+  ['6B · Legacy <code>general_v1</code> rule','Every graph commitment node with due/action facts','Rule scans overdue commitments directly; its node context does not consult the <code>owns</code> edge.','Legacy candidate with action/entity/days overdue.','fail'],
+  ['7 · Legacy L4 adapter','Legacy rule candidate','Wrap as <code>legacy.rule_scan</code> request and execute through the shared orchestrator.','Typed L4 outcome despite bypassing strict BSO admission and L3.','fail'],
+  ['8 · L4 decision/ranking','Semantically wrong but structurally valid candidate','Apply urgency/importance/utility and confidence policy.','Candidate can rank at the top because owner correctness is not a scoring axis.','partial'],
+  ['9 · Legacy publication/budget','Authorized legacy decision','Publish before native candidates and consume the shared daily budget first.','Customer-visible signal/card slot.','fail'],
+  ['10 · <code>general_v1</code> fallback copy','Action, entity and overdue days without proven tenant owner','Render “Deliver {action} to {entity} today” and “you promised this.”','External party’s promise is inverted into the founder’s obligation.','fail']
+];
+
+matrices.issues = [
+  ['P0','Reporting lineage + lane identity','Every pilot ratio and every causal claim','One query joining source event → QES → graph/situation → admission → package/legacy rule → L4 run → signal → card, with lane, mode, revision and time window.','fail'],
+  ['P0','<code>packs/general_v1</code> commitment rule + legacy NodeContext','At least 3 of 9 reported cards; potentially every legacy commitment card','Fixture and tenant replay showing external-owned commitments cannot produce tenant-imperative copy; tenant-owned commitments still do.','fail'],
+  ['P0','<code>situation_bso.gather_l1_signals_bulk</code> for synthetic absence correlations','114 historical hold-decision rows across awaiting-response and first-response-overdue','Clean replay showing outbound anchor receipt plus sync/coverage watermark, verified span count &gt; 0, correct admit/hold transitions, and closure after reply.','wip'],
+  ['P0','Strict/legacy lane authority and cutover','All native and legacy candidates/cards','One documented authority model, no silent BSO/L3 bypass, identical publication guard, and controlled legacy-vs-native counterfactual.','fail'],
+  ['P1','L1 known-counterparty predicate','Cold external senders and model-budget behavior','Regression showing a first inbound alone does not establish a known relationship; prior outbound/two-way evidence does, without suppressing legitimate first contacts.','wip'],
+  ['P1','L1 audience-size importance feature','All mass outreach that lacks bulk headers','Distributional test over recipient counts plus labelled mail proving precision/recall and no double penalty with Gmail Promotions/bulk rules.','wip'],
+  ['P1','L1 document fetch/OCR/content path','159 of 159 pilot files','Image/runtime check plus replay: readable bytes → located text → chunks → QES, with park/retry behavior for genuinely unsupported files.','fail'],
+  ['P1','L3 Admin corpus–substrate contract','The activated Admin lane and promised Admin surfaces','Compile-time lint that every non-planned fact/situation dependency has a runtime writer; then a real BSO → package → changed-decision proof.','fail'],
+  ['P1','Four-brain tenant replay','349 historical packages with three empty slices','Fresh packages showing non-empty applicable slices and controlled tests where each brain changes or constrains a decision.','unmeasured'],
+  ['P2','L4 per-unit observability and ranking calibration','17 reasoners, 112 alternatives and every confidence claim','Per-run unit plan/results, feature distributions, counterfactual sensitivity and labelled rank quality—not only distinct utility counts.','unmeasured'],
+  ['P2','Strict meeting/preparation producer','50 calendar events and the Scheduling surface','Calendar → typed meeting BSO → admission → L3 → native L4 trace, plus negative cases for ordinary meetings with no required action.','unmeasured']
+];
+renderUnits('l1-matrix', matrices.l1);
+renderUnits('l2-matrix', matrices.l2);
+renderUnits('l3-matrix', matrices.l3);
+renderUnits('l4-matrix', matrices.l4);
+renderSimple('trace-matrix',['Stage / unit','Input','Transformation','Output','Verdict'],matrices.trace);
+renderSimple('issue-matrix',['Priority','First failing unit','Blast radius','Required proof before moving on','State'],matrices.issues);
+</script>
+</body>
+</html>

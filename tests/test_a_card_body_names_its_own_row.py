@@ -334,7 +334,20 @@ def test_a_thread_we_replied_on_is_aging_and_not_a_first_response_miss():
 #: have to meet is the same one in different words, and `campaign-going-quiet.yaml` meets it by
 #: stating the split (`{contacted}`, `{awaiting}`, `{past_normal}`, `{never_chased}`) rather than
 #: describing the category.
-_ORG_WIDE_ANCHORS = {"tenant", "mailbox", "cohort"}
+_ORG_WIDE_ANCHORS = {"tenant", "mailbox"}
+
+#: A GROUP-SHAPED SITUATION HAS A SUBJECT TOO — it is simply not `{entity}`.
+#:
+#: `cohort` is about a campaign and `organization` about a firm, so `{entity}` there renders the
+#: REPRESENTATIVE the evidence hangs on: the sentence would name one person and then say something
+#: about the group, which is the exact failure `_SUBJECTLESS_BY_DESIGN` records one comment below.
+#:
+#: `cohort` was therefore listed as org-wide and skipped entirely, and that was a hole rather than
+#: an exemption — it is not one per tenant, there is one per objective, and the corpus's only
+#: group-shaped card went unchecked by the law this whole file exists to hold. Both are now
+#: checked against their OWN subject slot. `tenant` and `mailbox` stay skipped: there is exactly
+#: one of each per tenant and no name to give it.
+_GROUP_SUBJECT_SLOT = {"cohort": "objective", "organization": "organization"}
 
 #: `customer_support.sit.queue_overloaded` declares TWO l2 types — `queue_overloaded` (one
 #: mailbox, org-wide) and `ticket_aging` (one backlog_item per unmet ask, 41 of them on the live
@@ -370,6 +383,46 @@ def test_every_per_subject_situation_fallback_names_its_subject():
                    if t in anchor_of}
         if not anchors or anchors <= _ORG_WIDE_ANCHORS:
             continue            # nothing routes it yet, or there is one per tenant
+        if anchors <= set(_GROUP_SUBJECT_SLOT):
+            # Every anchor here is group-shaped, so the subject is the group's own name. A file
+            # mixing a group anchor with a person one falls through to `{entity}` below, which is
+            # the stricter of the two and the right demand on a body that must serve both.
+            slots = {_GROUP_SUBJECT_SLOT[a] for a in anchors}
+            if not any(re.search(r"\{%s\}" % slot, body) for slot in slots):
+                offenders.append(sid)
+            continue
         if not re.search(r"\{(entity|who)\}", body):
             offenders.append(sid)
     assert offenders == [], offenders
+
+
+def test_the_group_shaped_rule_actually_reaches_both_group_cards():
+    """A guard that checks nothing passes forever, and `cohort` spent its whole life on the
+    org-wide list being skipped for a reason that was not true of it.
+
+    This asserts the group rule has real work to do: both group-shaped types are authored, both
+    are routed, and both carry their own subject slot. If a future edit puts either back on
+    `_ORG_WIDE_ANCHORS`, this fails rather than going quiet.
+    """
+    anchor_of = {stype: anchor for d in registered_domains()
+                 for anchor, stype in (spec_for(d).situation_types or {}).items()}
+    checked: dict[str, str] = {}
+    for path in glob.glob("Domain Expertise/**/situations/*.yaml", recursive=True):
+        doc = yaml.safe_load(open(path)) or {}
+        body = str((((doc.get("render") or {}).get("fallback")) or {}).get("situation") or "")
+        anchors = {anchor_of[t] for t in (doc.get("matches") or {}).get("l2_situation_types") or []
+                   if t in anchor_of}
+        for anchor in anchors & set(_GROUP_SUBJECT_SLOT):
+            checked[anchor] = body
+
+    assert set(checked) == set(_GROUP_SUBJECT_SLOT), (
+        "a group-shaped anchor has no authored situation, so its rule checks nothing")
+    for anchor, body in checked.items():
+        assert re.search(r"\{%s\}" % _GROUP_SUBJECT_SLOT[anchor], body), anchor
+
+
+def test_a_group_body_that_names_nothing_is_still_an_offender():
+    """The rule may not become a way for a group card to never be wrong. A body with no subject
+    slot at all fails the group check exactly as it fails the `{entity}` one."""
+    for slot in _GROUP_SUBJECT_SLOT.values():
+        assert not re.search(r"\{%s\}" % slot, "this outreach has people who have not come back")
