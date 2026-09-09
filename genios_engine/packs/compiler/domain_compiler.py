@@ -25,10 +25,12 @@ class DomainCompiler:
     def __init__(self, *, catalog: ExpertBrainCatalog, runtime_brains: RuntimeBrains,
                  publisher: ExpertisePublisher | None = None,
                  capability_resolver: CapabilityResolver | None = None,
-                 require_admission: bool = True) -> None:
+                 require_admission: bool = True,
+                 activated_domains: frozenset[str] | None = None) -> None:
         self.catalog = catalog
         self.capability_resolver = capability_resolver or CapabilityResolver(
-            catalog, require_admission=require_admission)
+            catalog, require_admission=require_admission,
+            activated_domains=activated_domains)
         self.object_resolver = ObjectResolver(catalog)
         self.knowledge_retriever = KnowledgeRetriever(catalog)
         self.brain_resolver = BrainResolver(catalog, runtime_brains)

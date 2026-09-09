@@ -227,27 +227,71 @@ milestones:
 
   # ═══════════════════════════════════════════════════════════════════════════════════════════
   - id: M3
-    name: Layer 3 — the four brains carry four things
+    name: Layer 3 — the corpus a tenant compiles from is the one it switched on
     ships: >
-      An expertise package for this tenant carries at least one non-capability contribution.
-      Today behavior_patterns, organization_rules and adaptive_preferences are 0 in all 381.
+      An expertise package for this tenant is built only from domains present in
+      `l3_activation`. Measured before: `relationship` situations routed to
+      ["admin", "customer_support", "sales"] on a tenant whose only activated domain is `admin`,
+      and the four capabilities in the most packages were all `customer_support` (150, 144, 144,
+      144) followed by eight `sales.post_sale_and_growth.*` at 79 each.
     categories:
       - id: M3.C1
+        name: Activation gates the corpus
+        why: >
+          `l3_activation(org_id, domain)` is how an operator says which expertise a tenant runs.
+          The publisher honoured it, the admission gate honoured it, and `domain_shadow` carries a
+          comment saying a single compiler cannot serve a tenant with Admin activated and Sales
+          not. THE CAPABILITY ROUTE DID NOT: with no domain hint the resolver considered every
+          authored domain, and with hints it took them whole. This is also where Layer 4's ballot
+          came from — 270 of 512 candidates were sales plays because L4's plays come from the
+          capabilities compiled here.
+        layers:
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M3.C1.L-logic.V0.U01
+                    what: >
+                      `CapabilityResolver(activated_domains=...)`, threaded through
+                      `DomainCompiler` and `make_domain_compiler`, and wired to
+                      `domain_shadow`'s existing `live_domains` on the LIVE compiler only. The
+                      measurement compiler stays unfiltered on purpose: its job is to report what
+                      a tenant would get from a corpus it has not switched on.
+                    artifact: genios_engine/packs/compiler/capability_resolver.py
+                    verify: uv run --no-sync pytest tests/packs/test_activation_gates_the_corpus.py -q
+                    depends_on: []
+
+      - id: M3.C2
         name: The three empty brains
+        why: >
+          NOT A DEFECT, and measured rather than assumed. `behavior_patterns`,
+          `organization_rules` and `adaptive_preferences` are 0 in all 381 packages because
+          `PostgresRuntimeBrains` reads `learned_brain_entries` and `temporary_memories`, and
+          BOTH ARE EMPTY FOR EVERY ORG IN THE DATABASE — as is `card_feedback_verdicts`. The
+          three brains fill from usage, nobody has ever given the system feedback on a card, so
+          they are correctly empty. This is a cold start, not a bug, and no unit can fix it.
         layers: []
 
   # ═══════════════════════════════════════════════════════════════════════════════════════════
   - id: M4
-    name: Layer 4 — the plays on the ballot belong to this tenant
+    name: Layer 4 — no defect of its own
     ships: >
-      Candidates come from packs this tenant activated. Today 270 of 512 come from `sales` on a
-      tenant whose only activated domain is `admin`, and they hold the top of the utility table.
+      NOTHING, and that is the finding. Both L4 items trace to M3.C1.
     categories:
       - id: M4.C1
-        name: Pack activation gates the ballot
+        name: The sales ballot
+        why: >
+          270 of 512 candidates came from the `sales` pack on an admin-only tenant. L4's plays
+          come from the capabilities L3 compiled, so M3.C1 is the fix and a unit here would be a
+          second guard on a corrected input.
         layers: []
       - id: M4.C2
         name: The eliminated are not the best
         why: >
-          30 eliminated candidates score 6301-6643 bp; the eligible band tops out at 6545.
+          WITHDRAWN. The 30 eliminated candidates are 15 `sales.pb.upsell` and 15
+          `sales.pb.churn_prevention`, every one eliminated by `core.constraint` at the `policy`
+          stage with `reason_code = tenant_policy_block`. Check outcomes are 2109 pass, 571 warn,
+          30 eliminate. Layer 4 received a ballot polluted by Layer 3 and refused the worst of it
+          — it was doing its job, and "the best candidates are being killed" was the wrong
+          reading of a high utility score meeting a correct guard rail.
         layers: []

@@ -130,3 +130,39 @@ BLOCK  M2.C3  The absence receipt is built and tested (25 passed) and has never 
               the visible fingerprint of the bundle never arriving. Blocked on a pipeline run,
               not on code. Recorded RED rather than claimed.
 VERIFY Full suite 8932 passed / 24 failed. Same pre-existing 24. +22 tests, zero regressions.
+
+--- M3 · LAYER 3, build-up 2026-09-09 -------------------------------------------------------
+PASS   M3.C1.L-logic.V0.U01  Activation gates the corpus. l3_activation(org_id, domain) is how an
+              operator says which expertise a tenant runs; the publisher honoured it, the
+              admission gate honoured it, domain_shadow even carries a comment saying one compiler
+              cannot serve a tenant with Admin activated and Sales not. THE CAPABILITY ROUTE DID
+              NOT: capability_resolver.py:189 read `hints or self.catalog.domains.keys()`.
+              Measured on the pilot (only `admin` activated): relationship situations routed to
+              ["admin","customer_support","sales"], and the four capabilities in the most packages
+              were ALL customer_support (150/144/144/144) then eight sales.post_sale_and_growth.*
+              at 79 each -- upsell, cross-sell, churn -- on a fundraising inbox with no customers.
+              Only two admin.* capabilities appeared at all.
+              LIVE compiler filtered; MEASUREMENT compiler deliberately left unfiltered, because
+              its job is to report what a tenant WOULD get from a corpus it has not switched on.
+              8 tests.
+NOTE   M3.C2 (three empty brains) NEEDS NO UNIT, measured rather than assumed. behavior_patterns,
+              organization_rules and adaptive_preferences are 0 in all 381 packages because
+              PostgresRuntimeBrains reads learned_brain_entries and temporary_memories, and BOTH
+              ARE EMPTY FOR EVERY ORG IN THE DATABASE -- as is card_feedback_verdicts. The three
+              brains fill from usage and nobody has ever given feedback on a card. Cold start,
+              not a bug. Recorded so nobody builds a fix for a table that is empty by definition.
+
+--- M4 · LAYER 4 ----------------------------------------------------------------------------
+NOTE   NO DEFECT OF ITS OWN. Both items trace to M3.C1.
+       M4.C1  270 of 512 candidates from the sales pack: L4's plays come from the capabilities L3
+              compiled, so M3.C1 is the fix and a unit here would be a second guard on a
+              corrected input.
+FAIL   M4.C2  WITHDRAWN. I reported "the 30 eliminated candidates score 6301-6643, higher than
+              the eligible band's 6545 -- the best-scoring candidates are being killed." Wrong
+              reading. All 30 are 15 sales.pb.upsell + 15 sales.pb.churn_prevention, every one
+              eliminated by core.constraint at the `policy` stage with reason_code =
+              tenant_policy_block. Check outcomes: 2109 pass, 571 warn, 30 eliminate. A high
+              utility score meeting a correct guard rail is the system WORKING -- L4 received a
+              ballot polluted by L3 and refused the worst of it. Corrected in LIVE_RUN.md and
+              INTELLIGENCE_AUDIT.md rather than left standing.
+VERIFY Full suite 8940 passed / 24 failed. Same pre-existing 24. Zero regressions.

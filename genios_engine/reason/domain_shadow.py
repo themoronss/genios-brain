@@ -589,6 +589,22 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
             # Authority compiles use the fail-closed default — a text-editor stub flip can no
             # longer grant production authority.
             require_admission=True,
+            # ...AND THE SAME FOR THE CORPUS IT COMPILES FROM. The comment above says a single
+            # compiler cannot serve a tenant that has Admin activated and Sales not, and that was
+            # true of the publisher and the admission gate but not of the capability route: with
+            # no domain hint the resolver considered every authored domain, and with hints it
+            # took them whole. On the pilot — only `admin` activated — `relationship` situations
+            # routed to ["admin", "customer_support", "sales"], and the four capabilities in the
+            # most packages were all `customer_support`, followed by eight
+            # `sales.post_sale_and_growth.*` on a founder's fundraising inbox. That is also where
+            # Layer 4's ballot came from: 270 of 512 candidates were sales plays, because L4's
+            # plays come from the capabilities compiled here.
+            #
+            # The MEASUREMENT compiler above stays unfiltered on purpose. Its whole job is to
+            # report what a tenant WOULD get from corpora it has not switched on, and filtering
+            # it would make route coverage unmeasurable for exactly the domains an operator is
+            # deciding whether to activate.
+            activated_domains=live_domains,
         ) if any_live else None
         counts["l3_activated_domains"] = len(live_domains)
         for row in situations:

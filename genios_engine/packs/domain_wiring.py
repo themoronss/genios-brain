@@ -25,11 +25,20 @@ def expert_catalog(authoring_root: str = "") -> ExpertBrainCatalog:
     return ExpertBrainCatalog(root)
 
 
-def make_domain_compiler(connection, *, authoring_root: str = "") -> DomainCompiler:
+def make_domain_compiler(connection, *, authoring_root: str = "",
+                         activated_domains: frozenset[str] | None = None) -> DomainCompiler:
+    """A publishing compiler for one tenant.
+
+    `activated_domains` is what `platform/l3_activation.activated_domains(engine, org)` returns,
+    and passing it is what stops a tenant compiling expertise from corpora it never switched on —
+    see `CapabilityResolver.activated_domains` for the pilot measurement that made it necessary.
+    `None` keeps the previous behaviour for callers with no tenant in hand.
+    """
     return DomainCompiler(
         catalog=expert_catalog(authoring_root),
         runtime_brains=PostgresRuntimeBrains(connection),
         publisher=PostgresExpertisePublisher(connection),
+        activated_domains=activated_domains,
     )
 
 

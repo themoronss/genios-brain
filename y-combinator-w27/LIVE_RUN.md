@@ -167,7 +167,10 @@ situations the gate below it is holding — work performed and thrown away.
 (2300–3300 bp). **512 candidates: 482 eligible, 30 eliminated.**
 
 The eliminated candidates score **6301–6643 bp** — *higher* than the eligible band tops out at
-6545. The best-scoring candidates on this tenant are the ones being killed.
+6545. That reads like a defect and is not one: all 30 are `sales.pb.upsell` and
+`sales.pb.churn_prevention`, eliminated by `core.constraint` at the `policy` stage with
+`reason_code = tenant_policy_block`. **Layer 4 received a ballot polluted by Layer 3 and refused
+the worst of it.** Check outcomes are 2109 pass, 571 warn, 30 eliminate.
 
 ### Which plays produced them
 

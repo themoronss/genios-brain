@@ -167,10 +167,33 @@ class CapabilityResolver:
     """Uses the generated reverse index, then narrows it with authored situation predicates."""
 
     def __init__(self, catalog: ExpertBrainCatalog, *, max_capabilities: int = 64,
-                 max_objects: int = 128, require_admission: bool = True) -> None:
+                 max_objects: int = 128, require_admission: bool = True,
+                 activated_domains: frozenset[str] | None = None) -> None:
         self.catalog = catalog
         self.max_capabilities = max_capabilities
         self.max_objects = max_objects
+        #: WHAT THIS TENANT SWITCHED ON, or `None` for an unfiltered compile.
+        #:
+        #: `l3_activation(org_id, domain)` is the table an operator uses to say which expertise a
+        #: tenant runs, and until this argument existed the resolver never consulted it: with no
+        #: hints it considered `self.catalog.domains.keys()` — everything authored — and with
+        #: hints it took them whole. Measured on the pilot, whose ONLY activated domain is
+        #: `admin`: `relationship` situations routed to
+        #: `["admin", "customer_support", "sales"]`, and the four capabilities compiled into the
+        #: most packages were all `customer_support` (150, 144, 144, 144) followed by eight
+        #: `sales.post_sale_and_growth.*` at 79 each — upsell, cross-sell, churn prevention,
+        #: renewal — on a founder's fundraising inbox with no customers and no support desk.
+        #: Only two `admin.*` capabilities appeared at all.
+        #:
+        #: That is also where Layer 4's ballot came from: 270 of 512 candidates were sales plays,
+        #: holding the top of the utility table, because L4's plays come from the capabilities
+        #: compiled here.
+        #:
+        #: `None` MEANS UNFILTERED and is for compiles with no tenant behind them — the corpus
+        #: tests, the authoring checks, the shadow measurement pass. It follows
+        #: `require_admission`'s shape deliberately: a constructor argument rather than a
+        #: per-call escape hatch, so nothing can quietly widen one situation's reach.
+        self.activated_domains = activated_domains
         #: Fail-closed default. False is for MEASUREMENT compiles only (the shadow pass, the
         #: corpus tests): unadmitted content may flow, but the plan says so (`admitted=False` +
         #: per-capability gaps), and the delivery layer's abstention gate keeps anything built
@@ -187,6 +210,17 @@ class CapabilityResolver:
             raise NoExpertiseRoute(
                 f"situation {situation.id!r} names unknown domains {sorted(unknown_hints)}")
         domain_ids = sorted(hints or self.catalog.domains.keys())
+        if self.activated_domains is not None:
+            live = [d for d in domain_ids if d in self.activated_domains]
+            if not live:
+                # Honest and specific. "This tenant has not switched on any domain that serves
+                # this situation" is a different fact from "nobody authored a route for it", and
+                # the operator fixes them in different places.
+                raise NoExpertiseRoute(
+                    f"situation {situation.id!r} routes to {domain_ids}, none of which this "
+                    f"tenant has activated ({sorted(self.activated_domains)}). See "
+                    "platform/l3_activation.")
+            domain_ids = live
         adapter = ContextAdapter(situation, context)
         selected_domains: set[str] = set()
         situation_ids: set[str] = set()

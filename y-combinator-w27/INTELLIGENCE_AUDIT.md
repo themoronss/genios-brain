@@ -173,7 +173,23 @@ arrives, so `importance_base()` falls to the default *and* `importance_source` n
 | # | Defect | Evidence |
 |---|---|---|
 | **L4-1** | **270 of 512 candidates come from the `sales` pack** on a tenant whose only activated domain is `admin` — and they hold the top of the utility table. `sales.pb.upsell.usage_triggered_upsell` scores **6643 bp**; `deliver_commitment` scores 6300. There are no customers to upsell. | `reasoning_candidates` by `play_id` |
-| **L4-2** | **The 30 eliminated candidates score 6301–6643 bp** — higher than the eligible band's top of 6545. The best-scoring candidates are the ones being killed. | `min/max(final_utility_bp)` by disposition |
+| **L4-2** | ~~The best-scoring candidates are being killed.~~ **WITHDRAWN — see below.** | |
+
+> ### L4-2 is withdrawn: Layer 4 was doing its job
+>
+> The 30 eliminated candidates are **15 `sales.pb.upsell.usage_triggered_upsell` and 15
+> `sales.pb.churn_prevention.save_play_with_dignity`**, and every one of them was eliminated by
+> `core.constraint` at the `policy` stage with `reason_code = tenant_policy_block`.
+>
+> They score high on the utility formula and are refused by a guard rail — which is the correct
+> outcome for an upsell play on a tenant with no customers. **Layer 4 received a ballot polluted
+> by Layer 3 and refused the worst of it.** Framing that as "the best candidates are being killed"
+> was wrong: the check counts are 2109 pass, 571 warn, 30 eliminate, and the 30 are the only
+> plays that should never have been on the ballot at all.
+>
+> **Layer 4 has no defect of its own. Both L4 findings trace to L3-1** — its plays come from the
+> capabilities Layer 3 compiled, and Layer 3 was compiling from corpora this tenant never
+> activated.
 
 ### L5.2 — Delivery · **5 defects, and these are the cheapest to fix**
 
