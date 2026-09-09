@@ -752,6 +752,84 @@ def outbound_event_ids(conn, org_id: str, anchor_node_id: str,
     return tuple(str(r["event_id"]) for r in rows if r["event_id"])[:limit]
 
 
+#: WHICH MESSAGE GROUNDS WHICH ABSENCE. Measured on the pilot, not assumed: of the 84 absence
+#: situations held there, `awaiting_response` anchors on an `outreach` node that carries only
+#: `outreach.*` facts, and `first_response_overdue` anchors on a `thread` node carrying
+#: `thread.last_inbound` and no `thread.last_outbound` at all. One direction read for both finds
+#: nothing, which is exactly what the first cut of this backfill did.
+#:
+#: THE INBOUND ENTRY IS NOT A LOOPHOLE, and the distinction is the whole safety argument. A
+#: marketing sender only ever produces inbound mail, so admitting inbound as a receipt everywhere
+#: would hand every blast a receipt. It is admitted for `first_response_overdue` ALONE, whose
+#: claim is literally about a message they sent us and we have not answered — there, their
+#: message is not evidence of our interest, it is the thing the claim is about.
+ABSENCE_RECEIPT_FIELDS: Mapping[str, tuple[str, ...]] = {
+    "awaiting_response": ("thread.last_outbound",),
+    "cohort_outreach_gap": ("thread.last_outbound",),
+    "first_response_overdue": ("thread.last_inbound",),
+}
+
+#: The same read as `_OUTBOUND_EVENTS_SQL`, with the field set as a parameter and `status` pinned
+#: to `active`. The status filter is new and it is a tightening: the pilot's anchors carry 19
+#: `superseded` and 3 `historical` versions of the same field, and grounding "nothing has happened
+#: since" on a superseded message would date the claim to a message that was itself replaced.
+_RECEIPT_EVENTS_SQL = (
+    "select distinct r.event_id as event_id "
+    "from graph_facts f "
+    "join graph_source_refs r "
+    "  on r.fact_version_id = f.fact_version_id and r.org_id = f.org_id "
+    "where f.org_id = :o and f.subject_node_id = :n and f.field in :fields "
+    "  and f.status = 'active' "
+    "order by r.event_id"
+)
+
+#: ONE HOP, through `concerns`, and no further. An `outreach` node is a claim ABOUT a thread or a
+#: person; it holds the waiting arithmetic and the counterparty's name, and the messages live on
+#: the node it points at. All 41 of the pilot's `awaiting_response` anchors reach a real qualified
+#: signal this way and none reaches one without it.
+#:
+#: The hop is directional (`from_node_id = :n`) and the edge type is fixed, so this cannot wander
+#: the graph: it reads the nodes THIS situation declares itself to be about, which is the same set
+#: `gather_subject_nodes` reads for every other purpose.
+_RECEIPT_VIA_CONCERNS_SQL = (
+    "select distinct r.event_id as event_id "
+    "from graph_edges e "
+    "join graph_facts f "
+    "  on f.org_id = e.org_id and f.subject_node_id = e.to_node_id "
+    "join graph_source_refs r "
+    "  on r.fact_version_id = f.fact_version_id and r.org_id = f.org_id "
+    "where e.org_id = :o and e.from_node_id = :n and e.edge_type = 'concerns' "
+    "  and e.valid_to is null and f.field in :fields and f.status = 'active' "
+    "order by r.event_id"
+)
+
+
+def absence_receipt_event_ids(conn, org_id: str, anchor_node_id: str, situation_type: str,
+                              limit: int = MAX_ABSENCE_RECEIPTS) -> tuple[str, ...]:
+    """The messages that ground THIS absence, in the direction its claim actually points.
+
+    Empty is the honest answer and the important one, in three separate ways. A situation type
+    with no entry in `ABSENCE_RECEIPT_FIELDS` is not an absence and gets nothing. An anchor whose
+    thread carries no message in the claimed direction gets nothing — every marketing sender on
+    the pilot is in that state for `awaiting_response`, because we never wrote to them. And an
+    anchor that reaches no `concerns` edge and holds no facts of its own gets nothing.
+
+    The anchor is read first and the hop is taken only when it yields nothing, so a node that
+    holds its own messages is never traded for a neighbour's.
+    """
+    fields = ABSENCE_RECEIPT_FIELDS.get((situation_type or "").strip())
+    if not anchor_node_id or not fields:
+        return ()
+    for sql in (_RECEIPT_EVENTS_SQL, _RECEIPT_VIA_CONCERNS_SQL):
+        stmt = text(sql).bindparams(bindparam("fields", expanding=True))
+        rows = conn.execute(stmt, {"o": org_id, "n": anchor_node_id,
+                                   "fields": list(fields)}).mappings().all()
+        found = tuple(str(r["event_id"]) for r in rows if r["event_id"])[:limit]
+        if found:
+            return found
+    return ()
+
+
 def gather_l1_signals_for_events(conn, org_id: str,
                                  event_ids: Sequence[str]) -> L1Signals | None:
     """Layer 1's verdicts for a specific set of EVENTS, folded exactly as the correlation read
@@ -782,18 +860,27 @@ def backfill_absence_l1(conn, org_id: str, subjects, l1_by_correlation: dict):
     the evidence it publishes on today. This can only ever ADD a bundle where there was `None`, and
     `None` is the state that was producing a permanent hold.
 
-    It also cannot invent one. `outbound_event_ids` returns empty for an anchor we have never
-    written to, and `gather_l1_signals_for_events` returns `None` when those events carry no
-    qualified signal — so a situation with nothing behind it keeps its `None`, keeps its zero, and
-    keeps being held. That is correct: the gate should refuse a claim with no receipt, and after
-    this change it still does. What it stops doing is refusing claims whose receipts nobody fetched.
+    It also cannot invent one. `absence_receipt_event_ids` returns empty for a situation that is
+    not an absence, for an anchor whose thread holds no message in the claimed direction, and for
+    an anchor that reaches nothing; `gather_l1_signals_for_events` returns `None` when those events
+    carry no qualified signal. So a situation with nothing behind it keeps its `None`, keeps its
+    zero, and keeps being held. That is correct: the gate should refuse a claim with no receipt,
+    and after this change it still does. What it stops doing is refusing claims whose receipts
+    nobody fetched.
+
+    ONE HOLD REASON OR TWO. `_preflight` raises `verified_evidence_required` on a missing span AND
+    `qes_required` when `importance_source` is not `l1_qualified_signals` — and on the pilot all
+    349 held candidates carry both, which reads like two independent defects. It is one: both are
+    downstream of `l1` being `None` here, because `importance_base(l1)` returns the
+    `l1_qualified_signals` arm only when a bundle arrived. Feeding the bundle clears both.
     """
     for subject in subjects:
         key = getattr(subject, "correlation_id", None)
         anchor = getattr(subject, "anchor_node_id", None)
         if not key or not anchor or key in l1_by_correlation:
             continue
-        events = outbound_event_ids(conn, org_id, str(anchor))
+        events = absence_receipt_event_ids(conn, org_id, str(anchor),
+                                           str(getattr(subject, "situation_type", "") or ""))
         if not events:
             continue
         folded = gather_l1_signals_for_events(conn, org_id, events)
@@ -1537,6 +1624,13 @@ class SituationSubject:
     situation_id: str
     correlation_id: str
     domain: str
+    #: WHICH MESSAGE GROUNDS AN ABSENCE DEPENDS ON WHICH ABSENCE IT IS, and only the type says.
+    #: `awaiting_response` claims "we wrote and nothing came back" — our outbound message is the
+    #: receipt. `first_response_overdue` claims the mirror image, "they wrote and we have not
+    #: answered" — THEIR inbound message is. Reading one direction for both is what made the
+    #: backfill find nothing on the pilot. Defaulted so the dataclass stays constructible without
+    #: it; an empty type simply resolves no receipt, which is the pre-existing behaviour.
+    situation_type: str = ""
     anchor_node_id: str | None = None
     #: `context_correlations.last_event_at`, which becomes `context_situations.last_seen_at` — THE
     #: SITUATION's own newest evidence, never the subject's. A company node is busy with forty
@@ -1644,7 +1738,7 @@ def compose_org_importance(conn, org_id: str, subjects: Sequence[SituationSubjec
 #: itself, when new evidence post-dates the resolution) must not surface a row with a null
 #: importance among ranked ones.
 _ORG_SITUATIONS = (
-    "select situation_id, correlation_id, domain, anchor_node_id, last_seen_at "
+    "select situation_id, correlation_id, domain, situation_type, anchor_node_id, last_seen_at "
     "from context_situations where org_id = :o order by situation_id")
 
 #: One UPDATE, executed once per situation as a batched parameter set. `inputs` is MERGED rather
@@ -1695,6 +1789,7 @@ def refresh_situation_importance(store, org_id: str, *, eval_time: datetime) -> 
             SituationSubject(situation_id=str(row["situation_id"]),
                              correlation_id=str(row["correlation_id"]),
                              domain=str(row["domain"] or ""),
+                             situation_type=str(row["situation_type"] or ""),
                              anchor_node_id=(str(row["anchor_node_id"])
                                              if row["anchor_node_id"] else None),
                              last_event_at=row["last_seen_at"])

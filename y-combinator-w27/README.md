@@ -42,6 +42,13 @@ lookup missed, `evidence_verified_spans` was written as `0`, and the publisher's
 `VERIFIED_EVIDENCE_REQUIRED` gate held every one of them — **on a number that was never computed
 for them**, not because the claim lacked a receipt.
 
+The live read confirmed this and enlarged it. On the pilot the publisher holds **367 candidates
+against 18 admitted**, and 349 of those holds carry *two* reasons, `qes_required +
+verified_evidence_required`, which reads like two independent defects. It is one: `qes_required`
+fires when `importance_source` is not `l1_qualified_signals`, and `importance_base()` returns that
+arm only when an L1 bundle arrived — the same bundle the evidence gate is waiting for. **Feeding
+the bundle clears both.**
+
 ---
 
 ## 2. The four changes
@@ -84,17 +91,37 @@ fact. This is a filter over facts that exist, not a new computation.
 
 **File:** `genios_engine/context/situation_bso.py` · **Tests:** `tests/context/test_absence_receipt.py` (14)
 
-Three additions, all reads:
+> **CORRECTED ON LIVE DATA, 9 Sep.** The first cut of this fix found **zero** receipts on the
+> pilot. It read `thread.last_outbound` *on the anchor*, and no absence anchor carries that field:
+> `awaiting_response` anchors on an `outreach` node holding only `outreach.*` facts, and
+> `first_response_overdue` anchors on a `thread` node holding `thread.last_inbound` and never
+> `last_outbound`. The direction was backwards for one type and the node was one hop off for the
+> other. §2.2 below describes the corrected read; the retired one is in `.build/trace.log`.
+
+Four additions, all reads:
 
 | Added | Does |
 |---|---|
-| `outbound_event_ids()` | which messages we sent to this counterparty |
+| `ABSENCE_RECEIPT_FIELDS` | which leg grounds which absence — outbound for `awaiting_response`, inbound for `first_response_overdue` |
+| `absence_receipt_event_ids()` | the anchor's own messages, or — only when it has none — the ones on the node it `concerns`, one hop, never further |
 | `gather_l1_signals_for_events()` | the same projection and folding the correlation read uses, joined on the event instead |
-| `backfill_absence_l1()` | when the correlation lookup found nothing and we *have* written to the anchor, compose the bundle from those events |
+| `backfill_absence_l1()` | when the correlation lookup found nothing, compose the bundle from those events |
 
-The claim is *"we wrote to them and nothing came back."* The first half of that is a real message
-with real extracted spans quoting text we actually typed. **That is the receipt, and it has
-existed the whole time.**
+An absence claim points at a real message, and **which** message depends on which way it points.
+*"We wrote and nothing came back"* is grounded by our outbound. *"They wrote and we have not
+answered"* is grounded by theirs. **Both receipts have existed the whole time; nobody fetched
+either.** Measured on the pilot before the code was written: **41/41** and **40/40** reach a real
+qualified signal carrying a real `importance_bp`, and 101 of those 105 receipts already carry
+verified spans.
+
+> **The inbound leg is not a loophole.** A marketing sender only ever produces inbound mail, so
+> admitting inbound *everywhere* would hand every blast a receipt — the exact failure this branch
+> exists to stop. It is admitted for `first_response_overdue` alone, whose claim is literally
+> about a message they sent us. Two tests fail if either direction widens into a union.
+
+> **`commitment_overdue` stays held, and that is correct.** Its three anchors reach only a
+> `company` node; there is no message path, so it is deliberately absent from the table. A receipt
+> that does not exist is not manufactured.
 
 > **The gate was not touched.** The publisher's `_preflight` is unchanged. Two tests pin that this
 > was a feeding change and not an opening:

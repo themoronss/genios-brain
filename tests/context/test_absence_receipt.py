@@ -30,7 +30,9 @@ import pytest
 from sqlalchemy import create_engine, text
 
 from genios_engine.context.situation_bso import (
+    ABSENCE_RECEIPT_FIELDS,
     MAX_ABSENCE_RECEIPTS,
+    absence_receipt_event_ids,
     backfill_absence_l1,
     gather_l1_signals_for_events,
     outbound_event_ids,
@@ -54,6 +56,9 @@ def db():
             "create table qualified_signals (org_id text, event_id text, signal_id text, "
             "state text, importance_bp int, importance_version text, importance_components text, "
             "evidence_refs text, conflict_ids text, signal_type text, coverage_ready int)"))
+        c.execute(text(
+            "create table graph_edges (org_id text, edge_type text, from_node_id text, "
+            "to_node_id text, valid_to timestamp)"))
     with engine.begin() as c:
         yield c
 
@@ -66,6 +71,21 @@ def _we_wrote(c, node: str, event: str, *, org: str = ORG) -> None:
               {"f": fv, "o": org, "n": node})
     c.execute(text("insert into graph_source_refs values (:o, :e, :f, 'gmail', :s, '{}')"),
               {"o": org, "e": event, "f": fv, "s": f"src_{event}"})
+
+
+def _concerns(c, outreach_node: str, target_node: str, *, org: str = ORG, valid_to=None) -> None:
+    """The edge an `outreach` node carries. It holds the waiting arithmetic; the messages live on
+    the thread or person it points at."""
+    c.execute(text("insert into graph_edges values (:o, 'concerns', :f, :t, :v)"),
+              {"o": org, "f": outreach_node, "t": target_node, "v": valid_to})
+
+
+def _superseded(c, node: str, event: str, field: str = "thread.last_outbound") -> None:
+    fv = f"fvold_{event}"
+    c.execute(text("insert into graph_facts values (:f, :o, :n, :fl, 'superseded')"),
+              {"f": fv, "o": ORG, "n": node, "fl": field})
+    c.execute(text("insert into graph_source_refs values (:o, :e, :f, 'gmail', :s, '{}')"),
+              {"o": ORG, "e": event, "f": fv, "s": f"src_{event}"})
 
 
 def _they_wrote(c, node: str, event: str) -> None:
@@ -90,9 +110,14 @@ def _signal(c, event: str, *, signal_id: str = "sig1", quote: str = "Sending the
 
 
 class _Subject:
-    def __init__(self, correlation_id, anchor_node_id):
+    """Mirrors `SituationSubject` in the three fields the backfill reads. `situation_type` is one
+    of them and defaults to the commonest absence, because the direction of the receipt is chosen
+    from it — a double without it silently resolves nothing."""
+
+    def __init__(self, correlation_id, anchor_node_id, situation_type="awaiting_response"):
         self.correlation_id = correlation_id
         self.anchor_node_id = anchor_node_id
+        self.situation_type = situation_type
 
 
 # =============================================================================================
@@ -131,6 +156,124 @@ def test_the_receipt_count_is_bounded(db):
         _we_wrote(db, "n_chatty", f"evt_{i:02d}")
 
     assert len(outbound_event_ids(db, ORG, "n_chatty")) == MAX_ABSENCE_RECEIPTS
+
+
+# =============================================================================================
+# M2.C1.L-data.V0.U10 — THE DIRECTION, and the hop. Retired U07's read was one-directional and
+# anchor-only, and on the pilot that found ZERO receipts for all 84 held absences. Measured there:
+#
+#   awaiting_response      41 situations  anchor node_type = outreach  → only `outreach.*` facts
+#   first_response_overdue 40 situations  anchor node_type = thread    → `thread.last_inbound`,
+#                                                                        never `last_outbound`
+#
+# Both reach a real qualified signal — 41/41 and 40/40 — but only through the right field, and for
+# the first only after one hop across `concerns`. These tests pin both, and pin that widening
+# either one into a union would readmit the marketing the branch exists to keep out.
+# =============================================================================================
+def test_an_outreach_anchor_reaches_our_message_one_hop_away(db):
+    """The 41. The `outreach` node holds the waiting arithmetic and no messages at all; the
+    thread it `concerns` holds the message we sent."""
+    _concerns(db, "n_outreach", "n_thread")
+    _we_wrote(db, "n_thread", "evt_1")
+
+    assert absence_receipt_event_ids(db, ORG, "n_outreach", "awaiting_response") == ("evt_1",)
+
+
+def test_first_response_overdue_is_grounded_by_THEIR_message(db):
+    """The 40, and the direction that was backwards. "They wrote and we have not answered" is a
+    claim ABOUT their message, so their message is the receipt — the mirror image of
+    `awaiting_response`, not an exception to it."""
+    _they_wrote(db, "n_thread", "evt_in")
+
+    assert absence_receipt_event_ids(db, ORG, "n_thread",
+                                     "first_response_overdue") == ("evt_in",)
+
+
+def test_an_awaiting_response_claim_is_never_grounded_by_INBOUND_mail(db):
+    """THE MARKETING GUARD, restated for the new read. Every marketing sender produces inbound
+    mail and nothing else. If inbound counted as a receipt for `awaiting_response`, every blast
+    would arrive holding one — which is the failure this whole branch exists to stop."""
+    _they_wrote(db, "n_marketer", "evt_spam")
+
+    assert absence_receipt_event_ids(db, ORG, "n_marketer", "awaiting_response") == ()
+
+
+def test_a_first_response_claim_is_not_grounded_by_our_own_message(db):
+    """The direction is a choice per type, not a union. Widening it to "any message on the thread"
+    would make both types pass on either leg and would collapse the guard above."""
+    _we_wrote(db, "n_thread", "evt_out")
+
+    assert absence_receipt_event_ids(db, ORG, "n_thread", "first_response_overdue") == ()
+
+
+def test_a_situation_type_that_is_not_an_absence_gets_nothing(db):
+    """`commitment_overdue` is the third held type on the pilot, and its anchor is a `commitment`
+    node reaching only a `company`. There is no message path, so it is not in the table and it
+    stays held — honestly, on a receipt that genuinely does not exist."""
+    _we_wrote(db, "n_thread", "evt_1")
+
+    assert absence_receipt_event_ids(db, ORG, "n_thread", "commitment_overdue") == ()
+    assert absence_receipt_event_ids(db, ORG, "n_thread", "") == ()
+    assert "commitment_overdue" not in ABSENCE_RECEIPT_FIELDS
+
+
+def test_the_anchors_own_messages_win_over_the_neighbours(db):
+    """The hop is a fallback, never a substitute. A node that holds its own messages is never
+    traded for whatever its neighbour happens to hold."""
+    _we_wrote(db, "n_anchor", "evt_own")
+    _concerns(db, "n_anchor", "n_other")
+    _we_wrote(db, "n_other", "evt_neighbour")
+
+    assert absence_receipt_event_ids(db, ORG, "n_anchor", "awaiting_response") == ("evt_own",)
+
+
+def test_a_superseded_fact_version_is_not_a_receipt(db):
+    """New, and a tightening. The pilot's anchors carry 19 `superseded` and 3 `historical`
+    versions of the same field. "Nothing has happened since X" dated to a message that was itself
+    replaced is a claim about the wrong instant."""
+    _superseded(db, "n_thread", "evt_old")
+
+    assert absence_receipt_event_ids(db, ORG, "n_thread", "awaiting_response") == ()
+
+
+def test_a_retired_concerns_edge_is_not_followed(db):
+    _concerns(db, "n_outreach", "n_thread", valid_to="2026-01-01")
+    _we_wrote(db, "n_thread", "evt_1")
+
+    assert absence_receipt_event_ids(db, ORG, "n_outreach", "awaiting_response") == ()
+
+
+def test_the_hop_never_crosses_a_tenant(db):
+    """Tenancy on the new join. Both legs filter org, and dropping either half would walk one
+    tenant's edge into another tenant's messages."""
+    _concerns(db, "n_outreach", "n_thread", org=OTHER)
+    _we_wrote(db, "n_thread", "evt_1", org=OTHER)
+
+    assert absence_receipt_event_ids(db, ORG, "n_outreach", "awaiting_response") == ()
+
+
+def test_the_hop_receipt_count_is_bounded_too(db):
+    _concerns(db, "n_outreach", "n_thread")
+    for i in range(MAX_ABSENCE_RECEIPTS + 3):
+        _we_wrote(db, "n_thread", f"evt_{i:02d}")
+
+    got = absence_receipt_event_ids(db, ORG, "n_outreach", "awaiting_response")
+    assert len(got) == MAX_ABSENCE_RECEIPTS
+
+
+def test_the_backfill_reads_the_direction_from_the_situation_type(db):
+    """The end-to-end shape of the correction: the same anchor, the same graph, two situation
+    types, and only the one whose claim points at the stored message gets a bundle."""
+    _they_wrote(db, "n_thread", "evt_in")
+    _signal(db, "evt_in", quote="Can you confirm the pricing by Friday?")
+
+    overdue = backfill_absence_l1(
+        db, ORG, [_Subject("corr_a", "n_thread", "first_response_overdue")], {})
+    awaiting = backfill_absence_l1(
+        db, ORG, [_Subject("corr_b", "n_thread", "awaiting_response")], {})
+
+    assert overdue["corr_a"].signal_ids == ("sig1",)
+    assert awaiting == {}
 
 
 # =============================================================================================

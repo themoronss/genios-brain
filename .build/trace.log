@@ -39,3 +39,31 @@ RETIRE M1.C1.L-logic.V1.U03/U04  budget guard NOT changed. MIN_BUDGET_SAMPLE alr
 PASS   M3.C1.L-interface.V0.U02  commitment.owner added to evidence_fields so the card SHOWS whose
               promise it is. Voice-branching NOT done here: pack rules have no notion of the reader;
               that belongs to L5.2's audience resolver. Recorded as open rather than half-built.
+
+--- LIVE READ, org_e97e86f858ad48b2bbf64b8a (Rohit Swerashi), 2026-09-09 ---------------------
+FUNNEL 863 captured -> 225 emitted -> 395 signals -> 231 situations -> 18 ADMITTED -> 512
+              candidates -> 15 cards. Read-only via the funnel report's own 33 selects, server
+              transaction declared read only. Admission rate 4.7%: 367 hold vs 18 admit, of which
+              349 hold on "qes_required + verified_evidence_required".
+FAIL   M2.C1.L-data.V0.U07  RETIRED. The read shipped in this branch finds ZERO receipts on the
+              pilot. It looks for `thread.last_outbound` ON THE ANCHOR; measured live, no absence
+              anchor carries that field. awaiting_response (41) anchors on an `outreach` node
+              holding only `outreach.*`; first_response_overdue (40) anchors on a `thread` node
+              holding `thread.last_inbound` and never `last_outbound`. Direction was backwards for
+              one type and the node was one hop off for the other. The branch's central claim was
+              therefore unproven AND false as written.
+PASS   M2.C1.L-data.V0.U10  Direction-aware receipt resolver. ABSENCE_RECEIPT_FIELDS maps the
+              situation type to the leg its claim actually points at; the anchor is read first and
+              `concerns` is followed one hop only when it yields nothing. Measured against live
+              data before writing: 41/41 awaiting_response and 40/40 first_response_overdue reach a
+              real qualified signal carrying a real importance_bp. 101 of 105 receipts already
+              carry verified spans. commitment_overdue (3) reaches only a company node, has no
+              message path, and is deliberately absent from the table -- it stays held honestly.
+              INBOUND IS ADMITTED FOR ONE TYPE ONLY. A union would hand every marketing blast a
+              receipt; the guard is pinned by two tests that fail if either direction widens.
+NOTE   Both hold reasons are one starvation. `qes_required` fires when importance_source is not
+              `l1_qualified_signals`, and importance_base() returns that arm only when an L1 bundle
+              arrived -- the same bundle `verified_evidence_required` waits on. Feeding it clears
+              both, so the 349 double-held candidates have one cause, not two.
+VERIFY tests/context/test_absence_receipt.py 25 passed (was 14). Full suite 8853 passed / 24
+              failed -- the same 24 that fail at 23d47640. Zero regressions, zero skips added.
