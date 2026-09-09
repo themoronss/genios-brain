@@ -402,7 +402,17 @@ register(DomainSpec(
                      # pilot: 82 waiting anchors resolve to 41 people at 4 firms where BOTH
                      # contacts are silent, Peak XV and Afore among them, and the system held
                      # eight separate situations that never said so.
-                     "organization": "organization_gone_quiet"},
+                     "organization": "organization_gone_quiet",
+                     # THE COHORT'S EVIDENCE-BACKED TWIN. `cohort` groups on `thread.objective`,
+                     # an LLM label with ZERO facts in the pilot's graph — never written, not
+                     # superseded — so `cohort_outreach_gap` returns nothing and the approved,
+                     # content-hashed card bound to it is structurally unfireable. This groups on
+                     # the sentence we actually SENT, which is observed and carries a verbatim
+                     # receipt: two campaigns on 11 August, 7 and 6 recipients. Its own anchor
+                     # rather than a second key on `cohort` because the evidence differs and one
+                     # must not silently stand in for the other; the reading yields to a cohort
+                     # covering the same people rather than competing with it.
+                     "campaign": "campaign_awaiting_reply"},
     expected_fields={
         "account_admin": {"subscription.current_period_end": "renewal date"},
         # An administrative counterparty is read through what we owe them and whose turn it is,
@@ -477,6 +487,18 @@ register(DomainSpec(
             "condition.text": "the condition itself, in their words",
             "condition.quote": "the sentence it came from",
             "condition.age_days": "how long it has been sitting",
+        },
+        # `campaign.objective` IS EXPECTED AND ALWAYS MISSING, and deliberately so. This reading
+        # groups on a SENTENCE, which is evidence of what was sent and not of what it was for.
+        # `cohort.objective` is a closed enum; a quote is not a member of it, and writing one
+        # there would put free text into a field rules gate on. The gap is real and is reported.
+        "campaign_awaiting_reply": {
+            "campaign.contacted": "how many people it went to",
+            "campaign.awaiting": "how many have not replied",
+            "campaign.longest_wait_days": "how long the longest silence has run",
+            "campaign.sent_on": "when it went out",
+            "campaign.quote": "the sentence they all received",
+            "campaign.objective": "what this outreach was for",
         },
         # `organization.relationship` IS EXPECTED AND USUALLY MISSING, and that is CC-37 working
         # rather than a gap to close. It is written only when every member of the firm carries a

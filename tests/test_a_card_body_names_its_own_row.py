@@ -347,7 +347,8 @@ _ORG_WIDE_ANCHORS = {"tenant", "mailbox"}
 #: group-shaped card went unchecked by the law this whole file exists to hold. Both are now
 #: checked against their OWN subject slot. `tenant` and `mailbox` stay skipped: there is exactly
 #: one of each per tenant and no name to give it.
-_GROUP_SUBJECT_SLOT = {"cohort": "objective", "organization": "organization"}
+_GROUP_SUBJECT_SLOT = {"cohort": "objective", "organization": "organization",
+                       "campaign": "sent_on"}
 
 #: `customer_support.sit.queue_overloaded` declares TWO l2 types — `queue_overloaded` (one
 #: mailbox, org-wide) and `ticket_aging` (one backlog_item per unmet ask, 41 of them on the live

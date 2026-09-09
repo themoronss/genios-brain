@@ -362,7 +362,7 @@ orphan_capabilities: []
 unreachable_objects: []
 
 stats:
-  l2_types_total: 28
+  l2_types_total: 29
   l2_types_routed_here: 8
   l2_types_unrouted_globally: 0
   l2_types_pending: 1

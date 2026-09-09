@@ -27,7 +27,7 @@ it, and a situation is a claim about which facts, together, are worth a decision
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
@@ -81,6 +81,29 @@ ANCHOR_CONDITION = "condition"
 #: Its own anchor because a firm's silence outlives any one campaign and closes on its own terms —
 #: one partner replying changes the firm's answer without changing the campaign's.
 ANCHOR_ORGANIZATION = "organization"
+
+#: L2.3 · Cross Conversation. The MESSAGE we actually sent, and everyone it went to.
+#:
+#: `ANCHOR_COHORT` was supposed to answer this and cannot on a real tenant. It groups on
+#: `thread.objective`, and that field has ZERO facts in the pilot's graph — not superseded, never
+#: written, because it is an LLM label and the extractor never placed one. Measured: 0 of 141
+#: waiting rows carry it, so `read_outreach_cohorts` returns 0 findings and
+#: `admin.sit.campaign_going_quiet` — authored, approved, content-hashed — is structurally
+#: unfireable. `relationship.nature`, its sibling label, has exactly one fact across every node.
+#:
+#: This anchor keys on OBSERVED EVIDENCE instead: one sentence we wrote, sent to at least three
+#: counterparties inside a day and a half, with the verbatim line and the real event ids behind
+#: it. On the pilot that finds two campaigns from 11 August, 7 and 6 recipients.
+#:
+#: Its own anchor rather than a second key on `cohort` because the two carry different evidence
+#: and must not silently substitute for one another — see `read_campaign_silence`, which yields to
+#: an objective-keyed cohort covering the same people rather than minting a second card about them.
+ANCHOR_CAMPAIGN = "campaign"
+
+#: How far back a campaign may have been sent and still be worth a card. Ninety days is the window
+#: every other backward-looking read in this layer uses, and a raise that opened six months ago is
+#: not a campaign anybody is still running.
+_CAMPAIGN_WINDOW_DAYS = 90
 
 #: How overdue a promise must be before it is a situation. Zero: a commitment is overdue the
 #: moment its own stated date passes, and that date came from the user's own words rather than
@@ -494,7 +517,99 @@ def read_outreach_cohorts(rows: dict, now: datetime, employers: dict) -> list[_F
             correlation_id=f"cohort:{objective}",
             missing=[],
             inputs={"reading": ANCHOR_COHORT, "objective": objective,
+                    # WHO THIS COVERS, so a second group-shaped reading can yield to it instead of
+                    # minting a competing card about the same people. `read_campaign_silence`
+                    # reads exactly this; without it the scope of a cohort is legible only by
+                    # re-deriving the grouping, which is how two readings drift apart.
+                    "members": sorted(node_id for node_id, _held in waiting),
                     "derived_from": "per-counterparty waiting state, grouped by stated objective"},
+        ))
+    return findings
+
+
+def read_campaign_silence(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """One finding per authored MESSAGE that went out to several people and came back from few.
+
+    `_gather` stamps the campaigns onto `rows` under `_campaigns`, the same reserved-key route
+    `_conditions` and `_organizations` take.
+
+    WHY THIS EXISTS ALONGSIDE `read_outreach_cohorts` AND NOT INSTEAD OF IT. They answer the same
+    question from different evidence. The cohort reading groups on `thread.objective` — what the
+    model judged the exchange was FOR — and that is the better key when it exists, because two
+    different messages about one raise are one campaign to a founder. It does not exist here: zero
+    `thread.objective` facts in the pilot's graph, so the reading returns nothing and its authored,
+    approved, content-hashed card can never fire. This groups on the sentence actually sent, which
+    is observed rather than inferred and carries a verbatim receipt.
+
+    IT YIELDS RATHER THAN COMPETES. A campaign whose still-waiting recipients are already inside an
+    objective-keyed cohort mints nothing: one group of people gets one group card, and the one
+    backed by a stated purpose wins. The same rule `_THREAD_COVERED_BY_PARTY` applies to a
+    conversation, applied one level up.
+    """
+    campaigns = rows.get("_campaigns") or ()
+    covered: set[str] = set()
+    for finding in read_outreach_cohorts(rows, now, employers):
+        covered.update(finding.inputs.get("members") or ())
+
+    findings: list[_Finding] = []
+    # LARGEST FIRST, so the yield below resolves in favour of the send that reaches more people.
+    # `find_campaigns` already returns them this way; sorting here as well keeps the rule true of
+    # any sequence a caller stamps on, including a hand-built one in a test.
+    for campaign in sorted(campaigns, key=lambda c: -c.size):
+        waiting: list[tuple[str, str, float]] = []
+        for node_id in campaign.recipients:
+            held = rows.get(node_id)
+            if not isinstance(held, dict) or held.get("_covered_by_party"):
+                continue
+            waited = _num(held.get("thread.days_waiting"))
+            if waited is None or waited < _WAITING_AFTER_DAYS:
+                continue
+            waiting.append((node_id, str(held.get("_name") or node_id), waited))
+        if len(waiting) < _MIN_COHORT_AWAITING:
+            continue
+        silent = {node for node, _n, _d in waiting}
+        # A SEND WHOSE SILENT PEOPLE ARE ALL ALREADY ON A CARD SAYS NOTHING NEW. This covers both
+        # directions: an objective-keyed cohort that already groups them, and a larger campaign
+        # emitted above. SUBSET, not overlap — the founder sent two different lines on 11 August
+        # and their recipient sets intersect without either containing the other, which is two
+        # real sends and not one duplicated. An overlap threshold here would be a policy invented
+        # in Layer 2, which is the choice this module refuses everywhere else.
+        if silent <= covered:
+            continue
+        covered |= silent
+        waiting.sort(key=lambda item: -item[2])
+        facts: list[tuple[str, object, str]] = [
+            ("campaign.contacted", campaign.size, "number"),
+            ("campaign.awaiting", len(waiting), "number"),
+            ("campaign.longest_wait_days", int(waiting[0][2]), "number"),
+            ("campaign.sent_on", campaign.first_sent.date().isoformat(), "string"),
+            ("campaign.people", ", ".join(name for _n, name, _d in waiting[:8]), "string"),
+            # THE VERBATIM LINE, which is the whole reason this key is trustworthy where the
+            # objective key is not. It is what L1 extracted and verified from the message we sent;
+            # nothing here re-reads a body or paraphrases one.
+            # WHITESPACE-FOLDED FOR THE CARD, and only that. The words are untouched; a mail body
+            # wraps its lines and a line break inside a headline slot breaks the sentence a reader
+            # sees. `normalise_sentence` is the same fold the grouping key uses, minus the
+            # lower-casing, so display and identity cannot disagree about what the line was.
+            ("campaign.quote", " ".join(campaign.sentence.split()), "string"),
+        ]
+        # WHAT THIS OUTREACH WAS FOR IS NOT KNOWN AND IS NOT GUESSED. `cohort.objective` is a
+        # closed enum and a sentence is not a member of it; writing the quote there would put a
+        # free-text value into a field rules gate on. It stays missing, and the card says what was
+        # SENT rather than what it was for.
+        missing = ["campaign.objective"]
+        findings.append(_Finding(
+            anchor=ANCHOR_CAMPAIGN,
+            canonical_key=f"campaign:{campaign.campaign_id}",
+            display_name=f"Sent {campaign.first_sent:%d %b} — {len(waiting)} unanswered",
+            facts=facts,
+            concerns_node=waiting[0][0],
+            correlation_id=f"campaign:{campaign.campaign_id}",
+            missing=missing,
+            inputs={"reading": ANCHOR_CAMPAIGN,
+                    "campaign_id": campaign.campaign_id,
+                    "events": list(campaign.event_ids[:20]),
+                    "derived_from": "one authored sentence, its recipients, and their waiting state"},
         ))
     return findings
 
@@ -601,6 +716,7 @@ READINGS = (
     (ANCHOR_COHORT, read_outreach_cohorts),
     (ANCHOR_CONDITION, read_conditions_for_dispatch),
     (ANCHOR_ORGANIZATION, read_organization_silence),
+    (ANCHOR_CAMPAIGN, read_campaign_silence),
 )
 
 
@@ -680,6 +796,13 @@ def _gather(store, org_id: str) -> tuple[dict, dict, dict]:
         # the denominator counts everyone there, not only the ones who happen to be waiting.
         from genios_engine.context.correlation_organization import find_organizations
         held["_organizations"] = find_organizations(c, org_id)
+        # The campaigns, same route. `find_campaigns` requires an explicit window and has no
+        # default: an unbounded read over a founder's whole mailbox is the query that makes a
+        # sweep unpredictable.
+        from genios_engine.context.correlation_conversation import find_campaigns
+        held["_campaigns"] = find_campaigns(
+            c, org_id,
+            since=datetime.now(timezone.utc) - timedelta(days=_CAMPAIGN_WINDOW_DAYS))
         for row in c.execute(text(_COMMITMENT_OWNERS), {"o": org_id}):
             entry = held.get(str(row.commitment))
             if entry is None:

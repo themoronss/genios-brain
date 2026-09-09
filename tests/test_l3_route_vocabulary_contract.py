@@ -177,6 +177,16 @@ def test_producible_vocabulary_is_small_and_closed():
         # hash, so it routes in the measurement compile and reaches no live card until a named
         # human accepts it.
         "organization_gone_quiet",
+        # `campaign_awaiting_reply` — admin, anchored on the `campaign` node. It exists because
+        # `cohort_outreach_gap` above it CANNOT FIRE: it groups on `thread.objective`, and that
+        # field has ZERO facts in the pilot's graph — never written, not superseded — so
+        # `admin.sit.campaign_going_quiet`, which is authored, approved, human-reviewed and
+        # content-hashed, has never rendered. This groups on the sentence actually sent, which is
+        # observed and carries a verbatim receipt: two sends on 11 August, 7 of 7 and 6 of 6 still
+        # silent at 29 days. Its reading YIELDS to an objective-keyed cohort covering the same
+        # people, so the day the extractor starts placing objectives the approved sibling takes
+        # over and this one goes quiet on its own.
+        "campaign_awaiting_reply",
     }, "the L2 situation vocabulary changed — re-check every corpus route against it"
 
 

@@ -1,0 +1,161 @@
+# ITS SIBLING IS APPROVED, CONTENT-HASHED, AND CANNOT FIRE.
+#
+# `admin.sit.campaign_going_quiet` is the right card. It asks the question a founder actually asks
+# in the middle of a raise, its triage split is the real value, and a human signed it. It groups on
+# `thread.objective`, and that field has ZERO facts in the pilot's graph — measured, read-only, on
+# 2026-09-09: not superseded, not inactive, never written. `objective_of` returns None whenever the
+# extractor cannot place the exchange in a closed enum, and on 141 waiting rows it placed none.
+# `relationship.nature`, the sibling label written by the same extractor, has exactly one fact
+# across every node in the tenant.
+#
+# So `read_outreach_cohorts` returns zero findings, and the approved card bound to it has never
+# rendered and cannot.
+#
+# WHAT THIS FILE DOES INSTEAD. It groups on the SENTENCE. On 11 August between 07:56 and 07:57 the
+# founder sent one line to seven people and another to six — Peak XV, Afore, Titan, Together,
+# 3one4, Z Fellows, IIM-B. `context/correlation_conversation.py` finds those from
+# `thread.last_outbound`, its source refs, and the quote L1 already extracted and verified. That is
+# OBSERVED evidence with a verbatim receipt behind it, where an objective is a model's judgment.
+#
+# WHY NOT EDIT THE SIBLING TO TAKE A SECOND KEY. Two reasons, and the first is the same one
+# `condition-awaiting-review.yaml` records: the sibling carries an `accepted_content_hash` a human
+# signed, and editing it to add a binding invalidates that acceptance — re-granting it in the same
+# edit is precisely what `capability_resolver._admission_gap` exists to prevent. The second is that
+# the two keys are not interchangeable. An objective is the BETTER key when it exists: two
+# different messages about one raise are one campaign to a founder, and only a stated purpose can
+# see that. A sentence cannot. This is the fallback that works on a real tenant, not a replacement.
+#
+# AND IT YIELDS. `read_campaign_silence` mints nothing when the people still waiting are already
+# inside an objective-keyed cohort. One group of people gets one group card, and the one backed by
+# a stated purpose wins.
+
+identity:
+  id: admin.sit.campaign_awaiting_reply
+  name: Campaign Awaiting Reply
+  domain: admin
+  owner_capability: admin.executive_support.inbox_and_correspondence
+  version: 0.1.0
+  status: draft
+
+description: >
+  One message went out to several counterparties on one day and most of them have not come back.
+  This reads the SEND, not the thread and not the firm: how many received it, how many are still
+  silent, how long the longest silence has run, and the line they all received.
+
+  THE GROUPING IS THE SENTENCE. Two people who got the same words on the same morning are one
+  send; the same words re-used next quarter are a different attempt with different traction behind
+  it, and the window says so. That is a narrower claim than its sibling's and a better-evidenced
+  one — every member is backed by a real outbound event and the line is verbatim.
+
+  WHAT THIS CARD MAY NOT DO IS SAY WHAT THE OUTREACH WAS FOR. `campaign.objective` has no writer
+  here and is reported missing on every row. A send is evidence of what was written, not of what
+  it was meant to achieve, and the difference matters: an investor we are RAISING FROM and one we
+  merely OWE A REPORT need opposite follow-ups and can receive identical sentences.
+
+  It also may not grade the send. Nothing in this system holds how many people were meant to be
+  reached, so a reply rate here has no denominator of intent — six of thirteen answered is a
+  result only against a target somebody stated, and nobody has.
+
+matches:
+  l2_situation_types:
+    - campaign_awaiting_reply
+  scope: person
+  when:
+    # ENOUGH PEOPLE THAT THE SEND IS THE SUBJECT. Below this the individual cards say everything,
+    # and the floor matches `correlation_conversation.MIN_RECIPIENTS` so the two cannot disagree
+    # about what a campaign is.
+    - path: campaign.contacted
+      op: ">="
+      value: 3
+    # AND MORE THAN ONE STILL SILENT, or this is one person not replying and the per-counterparty
+    # card already covers it exactly.
+    - path: campaign.awaiting
+      op: ">="
+      value: 2
+    # THE LINE ITSELF. It is the whole reason this key is trustworthy where the objective key is
+    # not, and a row that lost it during assembly must not render as an anonymous group.
+    - exists: campaign.quote
+
+also_serves:
+  - admin.executive_support.opportunity_tracking
+  - admin.admin_operations.admin_analytics
+
+objects:
+  load:
+    - admin.obj.core.request
+  optional:
+    - admin.obj.core.commitment
+    - admin.obj.core.deadline
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+    - admin.obj.core.access_right
+
+priority_bp: 6500
+typical_duration_days: 21
+
+signals_of_progress:
+  - positive_reply
+  - meeting_scheduled
+  - intro_made
+
+signals_of_decay:
+  - going_dark
+  - pass_received
+  - decision_deferred
+
+render:
+  artifact_kind: brief
+  render_hint: >
+    This card is about a SEND. Do not write it as though it were about the person named on it —
+    that person is the representative the evidence hangs on — and do not claim to know what the
+    outreach was for.
+
+    Headline: when it went out and how many of it are unanswered.
+
+    Situation: how many received it, how many are silent, how long the longest has run, and the
+    line they all got. QUOTE IT. The reader wrote it and will not remember which version went to
+    whom, and the quote is the one thing here nothing else in the system can show them.
+
+    Artifact: what a second message would have to carry to be worth sending. The same line again
+    is not it — they have all already received exactly that, which is the one thing this card
+    proves. A new fact, a different route in, or a decision to stop are the honest options.
+
+    Never call the reply rate good or bad. Nothing here knows how many people were meant to be
+    reached, so the rate has no denominator of intent.
+  fallback:
+    # THE DATE AND THE SPLIT LEAD. "This outreach has people who have not come back" is true of
+    # every send that ever fires and would ship one identical sentence over all of them — the
+    # failure the eleven identical cards were, recorded in the sibling file.
+    #
+    # Each quantity in its own clause: a slot holding its sentinel takes its whole clause down
+    # with it, so anything sharing a clause with it disappears too.
+    headline: "Sent {sent_on} — {awaiting} of {contacted} have not replied"
+    situation: >-
+      {contacted} people received the same message on {sent_on} and {awaiting} have not answered.
+      The longest has been waiting {longest_wait_days} days. They were sent: "{quote}"
+
+metadata:
+  owner: Admin
+  created_by: ai
+  last_updated: '2026-09-09'
+  review_status: draft
+  confidence: experimental
+  notes: >
+    EVERY PREDICATE HAS A LIVE WRITER, checked against the tenant rather than assumed.
+    `campaign.contacted`, `campaign.awaiting`, `campaign.longest_wait_days`, `campaign.sent_on`,
+    `campaign.people` and `campaign.quote` are written by
+    `outreach_situations.read_campaign_silence` over `correlation_conversation.find_campaigns`.
+    Live read on 2026-09-09: two campaigns, 7 and 6 recipients, both 11 August.
+
+    `campaign.objective` IS EXPECTED AND ALWAYS MISSING, and that is the honest state rather than a
+    gap to close here. A sentence is evidence of what was written, not of what it was for, and
+    `cohort.objective` is a closed enum a quote is not a member of. Writing the quote there would
+    put free text into a field rules gate on — the fact-field failure in a new costume.
+
+    WHY THE SIBLING IS NOT DEPRECATED. `campaign_going_quiet` is the better card the moment
+    `thread.objective` has a writer: an objective can see that two different messages about one
+    raise are one campaign, and a sentence never can. This one is what works today. The reading
+    yields to the cohort rather than competing with it, so the day the extractor starts placing
+    objectives the sibling takes over those people and this file goes quiet on its own.
