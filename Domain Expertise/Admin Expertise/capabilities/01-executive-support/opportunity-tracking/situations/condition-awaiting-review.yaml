@@ -151,7 +151,7 @@ metadata:
   owner: Admin
   created_by: ai
   last_updated: '2026-09-09'
-  review_status: draft
+  review_status: unreviewed
   confidence: experimental
   notes: >
     EVERY PREDICATE HAS A LIVE WRITER, and that was checked against the tenant rather than assumed.
