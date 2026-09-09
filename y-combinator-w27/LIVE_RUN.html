@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Live Run — L1 to L4 to the user</title>
+<style>
+:root{
+  --paper:#F6F4EE; --surface:#FFFFFF; --surface-2:#F1EFE8;
+  --line:#DCD7CB; --line-soft:#E7E3D9;
+  --text:#22211D; --text-2:#4B4941; --muted:#726F66; --faint:#86827A;
+  --good:#3F6046; --bad:#A4574C; --warn:#8A6D2E; --key:#41485A;
+  --f-body:'Inter Tight',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--text);font-family:var(--f-body);
+  font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:900px;margin:0 auto;padding:0 28px 100px}
+header{padding:56px 0 32px;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--warn);margin-bottom:14px}
+h1{font-size:clamp(30px,5vw,46px);line-height:1.05;letter-spacing:-.03em;margin:0 0 16px;font-weight:700}
+.sub{color:var(--text-2);font-size:17px;max-width:64ch;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+.chip{font-family:var(--f-mono);font-size:11px;padding:5px 11px;border:1px solid var(--line);
+  border-radius:100px;color:var(--muted);background:var(--surface)}
+.chip b{color:var(--text)}
+h2{font-size:26px;letter-spacing:-.025em;margin:52px 0 6px;line-height:1.2;font-weight:650;
+  padding-top:24px;border-top:1px solid var(--line-soft)}
+h3{font-size:18px;letter-spacing:-.015em;margin:32px 0 8px;font-weight:650}
+p{margin:0 0 14px;color:var(--text-2)}
+strong{color:var(--text);font-weight:650}
+code{font-family:var(--f-mono);font-size:.87em;background:var(--surface-2);padding:1.5px 6px;
+  border-radius:4px;border:1px solid var(--line-soft);color:var(--text)}
+pre{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:10px;
+  padding:15px 17px;overflow-x:auto;font-family:var(--f-mono);font-size:12.5px;line-height:1.6;
+  color:var(--text-2);margin:16px 0}
+pre code{background:none;border:0;padding:0}
+ul{margin:0 0 16px;padding-left:20px;color:var(--text-2)}
+li{margin-bottom:7px}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:18px 0;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th{text-align:left;padding:11px 14px;font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);background:var(--surface-2);
+  border-bottom:1px solid var(--line);font-weight:700}
+td{padding:11px 14px;border-bottom:1px solid var(--line-soft);color:var(--text-2);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.tw{overflow-x:auto}
+.note{border-left:3px solid var(--key);background:var(--surface);padding:15px 19px;
+  border-radius:0 10px 10px 0;margin:20px 0;border-top:1px solid var(--line-soft);
+  border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft)}
+.note.good{border-left-color:var(--good);background:#F2F6F2}
+.note.bad{border-left-color:var(--bad);background:#FBF2EF}
+.note.warn{border-left-color:var(--warn);background:#FCF8EE}
+.note-h{font-family:var(--f-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  margin-bottom:7px;color:var(--key)}
+.note.good .note-h{color:var(--good)} .note.bad .note-h{color:var(--bad)}
+.note.warn .note-h{color:var(--warn)}
+.note p:last-child{margin-bottom:0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:26px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:16px}
+.stat b{display:block;font-size:27px;font-weight:700;letter-spacing:-.03em;line-height:1.1}
+.stat span{font-size:12px;color:var(--muted);display:block;margin-top:4px;line-height:1.35}
+.ok{color:var(--good)} .no{color:var(--bad)}
+footer{margin-top:60px;padding-top:22px;border-top:1px solid var(--line);
+  font-size:12.5px;color:var(--faint)}
+@media(max-width:680px){.stats{grid-template-columns:repeat(2,1fr)}.wrap{padding:0 18px 60px}}
+</style>
+<style>
+.funnel{display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:var(--surface);
+  border:1px solid var(--line);border-radius:11px;padding:18px;margin:22px 0;
+  font-family:var(--f-mono);font-size:12.5px}
+.funnel i{font-style:normal;color:var(--faint)}
+.funnel b{color:var(--text);font-weight:700}
+.funnel .hot{color:var(--bad)}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}
+@media(max-width:680px){.kv{grid-template-columns:1fr}}
+.card-cmp td:first-child{background:#F2F6F2}
+.card-cmp td:last-child{background:#FBF2EF}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">Live read · org_e97e86f858ad48b2bbf64b8a · 9 Sep 2026</div>
+  <h1>What actually reaches L1, L2, L3, L4 — and what the user finally sees.</h1>
+  <p class="sub">863 objects captured from Gmail and Calendar. Fifteen cards at the other end.
+  Every number below is a <code>select</code> against the tables the sweep itself wrote —
+  nothing re-run, nothing written, no LLM called.</p>
+  <div class="meta">
+    <span class="chip"><b>863</b> captured</span>
+    <span class="chip"><b>395</b> L1 signals</span>
+    <span class="chip"><b>231</b> situations</span>
+    <span class="chip"><b>18</b> admitted</span>
+    <span class="chip"><b>15</b> cards</span>
+  </div>
+</header>
+
+<div class="note">
+  <div class="note-h">How this was read, and why it is safe</div>
+  <p><code>scripts/pipeline_funnel_report.py</code> is 33 <code>select</code> statements, zero
+  <code>insert</code>/<code>update</code>/<code>delete</code>/DDL, behind
+  <code>set transaction read only</code> issued at the server — Postgres itself would refuse a
+  write. Its guard nevertheless demands <code>GENIOS_ALLOW_PROD_WRITE=1</code>, because the guard
+  does not distinguish reads from writes. Rather than assert a write permission this work never
+  needed, the same 33 queries were run through a read-only session.
+  <strong>Nothing on this page came from re-running the pipeline.</strong></p>
+</div>
+
+<h2>0. The funnel, in one line</h2>
+
+<div class="funnel">
+  <b>863</b> <i>captured →</i> <b>225</b> <i>emitted →</i> <b>395</b> <i>signals →</i>
+  <b>231</b> <i>situations →</i> <b class="hot">18</b> <i>admitted →</i> <b>512</b>
+  <i>candidates →</i> <b>15</b> <i>cards</i>
+</div>
+
+<div class="stats">
+  <div class="stat"><b>26%</b><span>captured survive to emitted</span></div>
+  <div class="stat"><b class="no">4.7%</b><span>situations admitted to L3 — the narrowest point</span></div>
+  <div class="stat"><b class="no">0</b><span>of 84 absence situations ever shown</span></div>
+  <div class="stat"><b class="no">3 of 12</b><span>commitments actually belong to Rohit</span></div>
+</div>
+
+<p>Yesterday's run (8 Sep, <code>docs/plans/L1_L4_PILOT_FUNNEL.md</code>) read
+<code>849 → … → 18 admitted → 9 cards</code>. <strong>Admitted is still exactly 18.</strong>
+Nothing about the admission gate has moved — which is expected: production runs
+<code>harsh/mvp</code>. <strong>The <code>y-combinator-w27</code> code has never executed against
+this data.</strong></p>
+
+<h2>1. Layer 1 — Knowledge</h2>
+<p><strong>Working, and better than its reputation.</strong> 642 emails, 171 attachments, 50
+calendar events. 225 emitted, 397 dropped, 181 parked. <strong>395 qualified signals across 11
+types</strong>, and the span-verification rate is high.</p>
+
+<div class="tw"><table>
+<tr><th>Signal type</th><th>Count</th><th>Importance (bp)</th><th>Verified spans</th></tr>
+<tr><td><code>deadline_stated</code></td><td>131</td><td>1180–3870</td><td class="ok"><b>131 / 131</b></td></tr>
+<tr><td><code>relationship_change</code></td><td>49</td><td>880–1240</td><td>48 / 49</td></tr>
+<tr><td><code>opportunity_signal</code></td><td>46</td><td>1040–4440</td><td>41 / 46</td></tr>
+<tr><td><code>commitment_made</code></td><td>44</td><td>1000–4160</td><td>41 / 44</td></tr>
+<tr><td><code>commitment_due</code></td><td>25</td><td>2700–3800</td><td class="ok"><b>25 / 25</b></td></tr>
+<tr><td><code>decision_pending</code></td><td>24</td><td>1120–3480</td><td>15 / 24</td></tr>
+<tr><td><code>financial_obligation</code></td><td>22</td><td>1760–4560</td><td>21 / 22</td></tr>
+<tr><td><code>contract_renewal</code></td><td>21</td><td>1600–4640</td><td>16 / 21</td></tr>
+<tr><td><code>approval_requested</code></td><td>17</td><td>1240–3920</td><td>11 / 17</td></tr>
+<tr><td><code>decision_made</code></td><td>13</td><td>920–3600</td><td>7 / 13</td></tr>
+<tr><td><code>risk_flagged</code></td><td>3</td><td>1760–3760</td><td class="ok"><b>3 / 3</b></td></tr>
+</table></div>
+
+<div class="note good">
+  <div class="note-h">L1 is not the problem</div>
+  <p>It is classifying, scoring and quoting. What it publishes, almost nothing downstream
+  consumes: <code>decision_pending</code> (24) has no decision situation,
+  <code>contract_renewal</code> (21) has no vendor situation, <code>risk_flagged</code> (3) has no
+  risk situation.</p>
+</div>
+
+<h3>The ESQE cascade does run — here is the proof</h3>
+<p><code>.env</code> carries <code>GENIOS_ENABLE_L1_RELEVANCE=false</code>, which briefly looked
+like it might make this branch's relevance work dead code. It does not.
+<strong>There are two different gates:</strong></p>
+
+<div class="tw"><table>
+<tr><th>Module</th><th>What it is</th><th>State</th></tr>
+<tr><td><code>capture/gate/relevance.py</code></td><td>the old deterministic guesser</td><td class="no"><b>OFF</b> — this is what the flag disables</td></tr>
+<tr><td><code>capture/esqe/relevance.py</code></td><td>the ESQE business-relevance cascade</td><td class="ok"><b>ON</b>, unconditionally, at <code>capture/pipeline.py:976</code></td></tr>
+</table></div>
+
+<p>The <code>event_trace</code> table settles it. Every one of these is an <code>s4_esqe</code>
+decision recorded live:</p>
+
+<div class="tw"><table>
+<tr><th>Reason</th><th>Events</th></tr>
+<tr><td><code>ambiguous_over_budget</code></td><td><b class="no">69</b></td></tr>
+<tr><td><code>known_counterparty</code></td><td><b>58</b></td></tr>
+<tr><td><code>structured_source</code></td><td>50</td></tr>
+<tr><td><code>bulk_headers</code> (short-circuit)</td><td>46</td></tr>
+<tr><td><code>llm5_not_business</code></td><td>2</td></tr>
+</table></div>
+
+<div class="note warn">
+  <div class="note-h">Two things follow, in opposite directions</div>
+  <p><strong>The M1.C1 fix is live-relevant.</strong> 58 events passed on
+  <code>known_counterparty</code>, which today means "this address is any <code>person</code>
+  node" — the loose definition this branch tightened.</p>
+  <p><strong>But the budget guard is already the largest single ESQE outcome.</strong> 69 events —
+  more than any rule — passed on <code>ambiguous_over_budget</code>, meaning the LLM never
+  adjudicated them and they failed open. §2.1 of the README warned that tightening
+  <code>sender_known</code> raises the ambiguous share. On this tenant the guard is the top bucket
+  <em>before</em> that change lands. Raising the ceiling is a cost decision, and it now has a
+  number attached to it.</p>
+</div>
+<h2>2. Layer 2 — Context</h2>
+<p><strong>The bottleneck, and it is not close.</strong> 252 nodes, 2350 facts, 245 edges,
+231 situations. And then the gate.</p>
+
+<div class="kv">
+  <div class="tw"><table>
+  <tr><th>Outcome</th><th>Count</th></tr>
+  <tr><td><b class="no">hold</b></td><td><b class="no">367</b></td></tr>
+  <tr><td>admit</td><td>18</td></tr>
+  </table></div>
+  <div class="tw"><table>
+  <tr><th>Held for</th><th>Count</th></tr>
+  <tr><td><code>qes_required + verified_evidence_required</code></td><td><b>349</b></td></tr>
+  <tr><td><code>conflict_open</code></td><td>17</td></tr>
+  <tr><td><code>conflict_open + identity_review_required</code></td><td>1</td></tr>
+  </table></div>
+</div>
+
+<h3>Which kinds get through, and which never do</h3>
+<div class="tw"><table>
+<tr><th>Situation type</th><th>Admitted</th><th>Held</th></tr>
+<tr><td><code>investor_relationship</code></td><td>10</td><td>14</td></tr>
+<tr><td><code>relationship</code></td><td>6</td><td>23</td></tr>
+<tr><td><code>opportunity</code></td><td>2</td><td>14</td></tr>
+<tr><td><code>awaiting_response</code></td><td><b class="no">0</b></td><td><b>210</b></td></tr>
+<tr><td><code>first_response_overdue</code></td><td><b class="no">0</b></td><td><b>41</b></td></tr>
+<tr><td><code>commitment_overdue</code></td><td><b class="no">0</b></td><td><b>18</b></td></tr>
+<tr><td><code>ticket_aging</code></td><td><b class="no">0</b></td><td>17</td></tr>
+<tr><td><code>deal</code></td><td><b class="no">0</b></td><td>7</td></tr>
+<tr><td>the four period reviews</td><td><b class="no">0</b></td><td>22</td></tr>
+</table></div>
+
+<div class="note bad">
+  <div class="note-h">Every absence situation, without a single exception, is held</div>
+  <p>These are precisely the readings that would say <em>"you wrote to that investor 31 days ago
+  and they never replied"</em> — the intelligence this system exists to produce. 84 distinct
+  situations, 269 admission decisions, <strong>zero shown</strong>.</p>
+</div>
+
+<div class="note good">
+  <div class="note-h">The two hold reasons are one starvation</div>
+  <p>349 candidates carry both <code>qes_required</code> and
+  <code>verified_evidence_required</code>, which reads like two independent defects. It is one.
+  <code>_preflight</code> raises <code>qes_required</code> when <code>importance_source</code> is
+  not <code>l1_qualified_signals</code>; <code>importance_base()</code> returns that arm
+  <strong>only when an L1 bundle arrived</strong> — the same bundle the evidence gate is waiting
+  for. <strong>Feeding the bundle clears both.</strong></p>
+</div>
+
+<h2>3. Layer 3 — Expertise</h2>
+<p><strong>Running, and three-quarters hollow.</strong> 381 packages compiled over 130 situations.
+Only the <code>admin</code> domain is activated (by <code>harsh</code>). Four packs active:
+<code>sales</code> 1.13.0, <code>general</code> 1.4.0, <code>admin</code> 1.0.1,
+<code>customer_support</code> 1.0.1.</p>
+
+<p>The four-brain merge, measured across every package on the tenant:</p>
+<div class="tw"><table>
+<tr><th>capabilities</th><th>behaviour</th><th>org rules</th><th>adaptive</th><th>packages</th></tr>
+<tr><td>4</td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td>168</td></tr>
+<tr><td>9</td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td>65</td></tr>
+<tr><td>2</td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td>48</td></tr>
+<tr><td>3</td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td>27</td></tr>
+<tr><td>11</td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td>24</td></tr>
+<tr><td>13</td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td>20</td></tr>
+<tr><td>7</td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td>18</td></tr>
+<tr><td>5</td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td class="no"><b>0</b></td><td>3</td></tr>
+</table></div>
+
+<div class="note bad">
+  <div class="note-h">Three of the four brains have never contributed a row</div>
+  <p>Behaviour patterns, organization rules and adaptive preferences are empty in all 381
+  packages. <code>READINESS.md</code> predicted this from the source tree; this is the same
+  conclusion read off production.</p>
+  <p><strong>And 130 situations were packaged while only 18 were admitted.</strong> L3 is
+  compiling expertise for situations the gate below it is holding — work performed and thrown
+  away.</p>
+</div>
+
+<h2>4. Layer 4 — Reasoning</h2>
+<p><strong>Structurally sound, speaking the wrong language.</strong> 141 runs, all completed. 61
+produced a decision (all at exactly 5000 bp), 80 deferred (2300–3300 bp).
+<strong>512 candidates: 482 eligible, 30 eliminated.</strong></p>
+
+<p>The eliminated candidates score <strong>6301–6643 bp</strong> — <em>higher</em> than the
+eligible band tops out at 6545. The best-scoring candidates on this tenant are the ones being
+killed.</p>
+
+<div class="tw"><table>
+<tr><th>Play</th><th>Candidates</th><th>Best bp</th></tr>
+<tr><td><code>sales.pb.account_research.fifteen_minute_account_brief</code></td><td>75</td><td>6299</td></tr>
+<tr><td><code>sales.pb.investor_relations.reopen_after_a_pass</code></td><td>45</td><td>6366</td></tr>
+<tr><td><code>deliver_commitment</code></td><td>34</td><td>6300</td></tr>
+<tr><td><code>wait_commitment_overdue</code></td><td>34</td><td>6300</td></tr>
+<tr><td><code>reply</code></td><td>27</td><td>4900</td></tr>
+<tr><td><code>wait_unanswered_email</code></td><td>27</td><td>4900</td></tr>
+<tr><td><code>sales.pb.upsell.usage_triggered_upsell</code></td><td>25</td><td><b class="no">6643</b></td></tr>
+<tr><td><code>sales.pb.cross_sell.adjacent_problem_cross_sell</code></td><td>25</td><td>6545</td></tr>
+<tr><td><code>sales.pb.churn_prevention.save_play_with_dignity</code></td><td>25</td><td>6482</td></tr>
+<tr><td><code>sales.pb.renewal.renewal_starts_at_day_one</code></td><td>25</td><td>6475</td></tr>
+<tr><td><code>sales.pb.onboarding.time_to_first_value_sprint</code></td><td>25</td><td>6475</td></tr>
+<tr><td><code>sales.pb.customer_success.outcome_cadence_reviews</code></td><td>25</td><td>5947</td></tr>
+</table></div>
+
+<div class="note bad">
+  <div class="note-h">270 of 512 candidates come from the sales pack</div>
+  <p>On a tenant whose only activated domain is <code>admin</code> — and they hold the top of the
+  utility table. Upsell at 6643 outranks <code>deliver_commitment</code> at 6300 in a mailbox with
+  no customers to upsell.</p>
+</div>
+
+<div class="note warn">
+  <div class="note-h">A correction to READINESS.md</div>
+  <p>That document said L4's nine plays "cannot express restraint". Production shows
+  <code>wait_commitment_overdue</code> (34) and <code>wait_unanswered_email</code> (27) on the
+  ballot. They are real — but they are <strong>synthesised, not authored</strong>:
+  <code>reason/adapters/legacy_pack.py:67</code> mints a <code>wait_&lt;rule&gt;</code> twin for
+  every legacy rule, fixed at impact 2000 / success 9000 / effort 0 / risk 0, so that acting has
+  something to beat. That is a genuine do-nothing option and better than nothing. It is
+  <strong>not</strong> the seventh card part — "do not chase the four owners who already
+  delivered" — which still does not exist.</p>
+</div>
+<h2>5. What the user actually sees — 15 cards</h2>
+
+<div class="tw"><table>
+<tr><th>Band</th><th>State</th><th>Count</th><th>Score</th></tr>
+<tr><td>critical</td><td>queued</td><td>1</td><td>63</td></tr>
+<tr><td>standard</td><td>queued</td><td>6</td><td>43–49</td></tr>
+<tr><td>standard</td><td>expired</td><td>8</td><td>42–50</td></tr>
+</table></div>
+
+<p><strong>All 15 cards are <code>domain='general'</code>.</strong> The <code>admin</code> pack is
+active and produced none of them. Every card has <code>capability_key = NULL</code> — 381
+expertise packages compiled and not one card records which capability it used.</p>
+
+<div class="note good">
+  <div class="note-h">The single most useful finding on this page</div>
+  <p><strong>The card bodies are good. The headlines destroy them.</strong> The left column below
+  is the intelligence that was asked for — <em>you wrote, they did not reply, the ball is with
+  you, it has been 31 days.</em> It already exists, computed and stored, on the card. The headline
+  is an imperative template that replaces a situation with an order.</p>
+</div>
+
+<div class="tw"><table class="card-cmp">
+<tr><th>What the <code>situation</code> field says</th><th>What the <code>headline</code> says</th></tr>
+<tr><td>"Manik at Titan Capital last wrote 31 days ago sharing product links and asking you to mention something succinctly. <strong>Ball is in your court.</strong>"</td><td>"Reply to Manik about GeniOS demo access"</td></tr>
+<tr><td>"Sal sent a calendar link and said booking directly is easier for her. <strong>You haven't replied in 32 days.</strong> Ball is in your court."</td><td>"Book time with Sal Stabler on her calendar link"</td></tr>
+<tr><td>"Lalitha A R last wrote 26 days ago asking about what you're building at GeniOS."</td><td>"Send Lalitha A R the product context materials"</td></tr>
+<tr><td>"Evokoa Team sent a meeting invite for Thu 20 Aug 11:15am (IST) with Google Meet details. <strong>You haven't replied in 23 days.</strong>"</td><td>"Confirm your attendance for Evokoa's call"</td></tr>
+</table></div>
+
+<h3>And four cards accuse the founder of promises he never made</h3>
+
+<div class="tw"><table>
+<tr><th>Headline</th><th>Who the graph says owns the commitment</th></tr>
+<tr><td><strong>"Deliver fundraising opportunities to sanchiconnect.tech NOW"</strong><br><span style="color:var(--bad)">critical · score 63 · the top card in the feed</span></td><td><code>sunil.s@sanchiconnect.tech</code></td></tr>
+<tr><td>"Deliver $2,000 monthly savings to myzyner.com"</td><td><code>willow@myzyner.com</code> (Sehan Sanjula)</td></tr>
+<tr><td>"Deliver mentorship guidance from expert mentors now"</td><td>not Rohit</td></tr>
+<tr><td>"Renew Growth plan at $599/month now"</td><td>a vendor</td></tr>
+</table></div>
+
+<div class="note bad">
+  <div class="note-h">Measured, not inferred</div>
+  <p><strong>15 commitment nodes, 12 carry an <code>owns</code> edge, and only 3 are owned by
+  <code>mrrohitswerashi@gmail.com</code>.</strong> Nine belong to
+  <code>sunil.s@sanchiconnect.tech</code> (2), <code>willow@myzyner.com</code>,
+  <code>Lalitha A R</code>, <code>Shourya Sharma</code>,
+  <code>deepthi.chandrashekhar@nsrcel.iimb.ac.in</code>, <code>hv@errorcore.dev</code>.</p>
+  <p>Myzyner promised Rohit the savings. The card tells Rohit he promised Myzyner. SanchiConnect
+  promised fundraising access at their own event; that is the <strong>number one critical card in
+  the feed</strong>. This is the failure M3.C1 fixes, and the live data confirms it fires on
+  <strong>9 of 12</strong>.</p>
+</div>
+
+<h2>6. What this run proved about the branch</h2>
+
+<div class="tw"><table>
+<tr><th>Fix</th><th>Live verdict</th></tr>
+<tr><td><b>M3.C1</b> — attribute a promise to whoever made it</td><td class="ok"><b>✓ Confirmed.</b> 12 <code>owns</code> edges exist, 9 name someone other than Rohit, and 4 cards currently misattribute.</td></tr>
+<tr><td><b>M1.C1</b> — <code>sender_known</code> means "we corresponded"</td><td class="ok"><b>✓ Reaches live traffic.</b> 58 events passed on the loose definition. Consequence is real: <code>ambiguous_over_budget</code> is already the largest ESQE bucket at 69.</td></tr>
+<tr><td><b>M1.C3</b> — audience discount</td><td>Not separately measurable from stored rows; <code>recipients</code> is captured and the multiplier is neutral where absent.</td></tr>
+<tr><td><b>M2.C1</b> — absence carries its receipt</td><td class="no"><b>✗ Was wrong as shipped. Corrected 9 Sep.</b></td></tr>
+</table></div>
+
+<h3>M2.C1 — what was wrong, and what it is now</h3>
+<p>The read shipped on 8 Sep looked for <code>thread.last_outbound</code> <strong>on the anchor
+node</strong>. Measured live, <strong>no absence anchor carries that field</strong>, so it would
+have found zero receipts and unblocked nothing:</p>
+
+<div class="tw"><table>
+<tr><th>Situation</th><th>Anchor node type</th><th>What the anchor actually holds</th></tr>
+<tr><td><code>awaiting_response</code> (41)</td><td><code>outreach</code></td><td>only <code>outreach.*</code> — the waiting arithmetic, no messages</td></tr>
+<tr><td><code>first_response_overdue</code> (40)</td><td><code>thread</code></td><td><code>thread.last_inbound</code>, <strong>never</strong> <code>last_outbound</code></td></tr>
+<tr><td><code>commitment_overdue</code> (3)</td><td><code>commitment</code></td><td>reaches only a <code>company</code> node</td></tr>
+</table></div>
+
+<p>The direction was backwards for one type and the node was one hop off for the other. The
+corrected read chooses the leg from the situation type, and follows <code>concerns</code> one hop
+only when the anchor holds nothing itself. Measured on this tenant
+<strong>before the code was written</strong>:</p>
+
+<div class="tw"><table>
+<tr><th>Situation</th><th>Reach a real qualified signal</th><th>With a real <code>importance_bp</code></th></tr>
+<tr><td><code>awaiting_response</code></td><td class="ok"><b>41 / 41</b></td><td class="ok"><b>41 / 41</b></td></tr>
+<tr><td><code>first_response_overdue</code></td><td class="ok"><b>40 / 40</b></td><td class="ok"><b>40 / 40</b></td></tr>
+<tr><td><code>commitment_overdue</code></td><td>0 / 3</td><td>0 / 3 — no message path, stays held honestly</td></tr>
+</table></div>
+
+<div class="note good">
+  <div class="note-h">81 of 84</div>
+  <p>101 of those 105 receipts already carry verified spans. <strong>81 of 84 held absences have
+  had a valid, verified receipt sitting in the graph the entire time.</strong></p>
+  <p>The inbound leg is admitted for <code>first_response_overdue</code> <strong>alone</strong> —
+  a marketing sender produces only inbound mail, so a blanket union would hand every blast a
+  receipt. Two tests fail if either direction widens.</p>
+</div>
+
+<div class="stats">
+  <div class="stat"><b class="ok">25</b><span>tests in test_absence_receipt.py (was 14)</span></div>
+  <div class="stat"><b class="ok">8853</b><span>passing (was 8842)</span></div>
+  <div class="stat"><b>24</b><span>failing — the same 24 as at 23d47640</span></div>
+  <div class="stat"><b class="ok">0</b><span>regressions · 0 skips added</span></div>
+</div>
+
+<h2>7. What to fix next, in the order the data justifies</h2>
+<ul>
+  <li><strong>The headline template.</strong> The card already holds better prose than it
+  displays. Cheapest large improvement available, and it is a rendering change, not an
+  intelligence one.</li>
+  <li><strong>Deploy the branch and re-read this page.</strong> Every claim above about what
+  <em>would</em> change is still a claim. <code>admitted</code> has sat at 18 across two runs;
+  that number is the one to watch.</li>
+  <li><strong><code>ambiguous_over_budget</code> at 69.</strong> The largest ESQE outcome is "we
+  did not decide". Raising the ceiling costs money and is the budget owner's call — but it should
+  be a decision, not a default.</li>
+  <li><strong>The sales pack on an admin tenant.</strong> 270 of 512 candidates, holding the top
+  of the utility table, in a mailbox with no customers. Deactivating <code>sales</code> here is a
+  configuration change.</li>
+  <li><strong>Carry <code>capability_key</code> onto the card.</strong> 381 packages compiled,
+  zero cards say which one they used. Without it, L3's contribution is unauditable.</li>
+  <li><strong>The three empty brains.</strong> Behaviour, organization rules and adaptive
+  preferences are <code>0</code> in all 381 packages. Everything in <code>READINESS.md</code> §6
+  still stands.</li>
+</ul>
+
+<footer>
+  Read read-only on 9 Sep 2026 against <code>org_e97e86f858ad48b2bbf64b8a</code>.
+  Companion documents: <code>README.md</code> (what the branch changed),
+  <code>READINESS.md</code> (the 50-application analysis), <code>LIVE_RUN.md</code> (this page).
+</footer>
+
+</div>
+</body>
+</html>
