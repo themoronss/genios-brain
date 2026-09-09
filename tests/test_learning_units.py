@@ -35,15 +35,36 @@ def _batch(**over):
 
 
 def test_outcome_analysis_counts_and_neutral_does_not_inflate_confidence():
+    """UNCHANGED IN PURPOSE, CORRECTED IN CLASSIFICATION. This test's point — that a neutral
+    ending is excluded from `graded` and therefore cannot inflate confidence — is preserved and
+    now covers one ending more.
+
+    It used to assert `cancelled_by_world` was a FAILURE. That was incidental to what it was
+    written to check, and it was wrong: `_CANCEL_BY_WORLD` is
+    `{subject_closed, subject_missing, superseded}`, and none of the three is evidence the
+    recommendation was bad — `superseded` means a NEWER decision replaced it. Charging a play for
+    that is the inventory's LRN-08. `executive.collect.label_class` is now the single table both
+    learning units read, and it calls this ending neutral.
+    """
     batch = _batch(outcomes=(_outcome("followup", "succeeded"),
                              _outcome("followup", "completed_unproven"),
                              _outcome("followup", "cancelled_by_world")))
     objs = unit_outcome_analysis(batch, POLICY, NOW)
     assert len(objs) == 1 and objs[0].target is LearningTarget.METRICS
     v = objs[0].proposed_value
-    assert v["succeeded"] == 1 and v["neutral_unproven"] == 1 and v["failed"] == 1
-    # confidence = graded/total = 2/3; neutral is excluded from graded
-    assert objs[0].evidence.confidence_bp == round(2 * 10000 / 3)
+    assert v["succeeded"] == 1 and v["neutral_unproven"] == 2 and v["failed"] == 0
+    # confidence = graded/total = 1/3; both neutral endings are excluded from graded
+    assert objs[0].evidence.confidence_bp == round(1 * 10000 / 3)
+
+
+def test_a_dismissal_by_a_human_is_still_graded_as_a_failure():
+    """The guard above must not become a way for a play to never be wrong. A human who looked at
+    the card and cancelled it is telling us something, and it counts."""
+    batch = _batch(outcomes=(_outcome("followup", "succeeded"),
+                             _outcome("followup", "cancelled_by_human")))
+    v = unit_outcome_analysis(batch, POLICY, NOW)[0].proposed_value
+
+    assert v["succeeded"] == 1 and v["failed"] == 1
 
 
 def test_recommendation_penalises_attention_cost():

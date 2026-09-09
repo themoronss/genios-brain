@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
+
+from genios_engine.executive.collect import label_class
 from datetime import datetime
 from typing import Callable
 
@@ -25,6 +27,10 @@ from genios_engine.feedback.store import LearningBatch
 
 # The only positive outcome label; everything else is neutral or negative (Part 2 / Unit 1-2).
 _SUCCESS = "succeeded"
+#: KEPT for unit 2's own wording, but no longer the arbiter. `executive.collect.label_class` is,
+#: and it is the single table both units read — `_NEUTRAL` here and `n - succeeded` in unit 8
+#: disagreed about `cancelled_by_world` and about `completed_unproven`, which is how one unit
+#: called an ending neutral while the other charged the play for it.
 _NEUTRAL = {"completed_unproven", "expired_in_progress"}
 
 
@@ -132,19 +138,28 @@ def unit_outcome_analysis(batch: LearningBatch, policy: LearningPolicy,
                           now: datetime) -> list[LearningObject]:
     """Per (capability, play): success / neutral / negative counts + attention cost → a metric."""
     cohorts: dict[tuple[str, str], dict] = defaultdict(
-        lambda: {"n": 0, "succeeded": 0, "neutral": 0, "failed": 0,
+        lambda: {"n": 0, "succeeded": 0, "neutral": 0, "failed": 0, "mechanical": 0,
                  "reminders": 0, "escalations": 0, "first": None, "last": None})
     for o in batch.outcomes:
         cap, play = o.get("capability_id") or "unknown", o.get("play_id") or "unknown"
         c = cohorts[(cap, play)]
         c["n"] += 1
-        label = o.get("label") or ""
-        if label == _SUCCESS:
+        # ONE TABLE, NOT AN `else`. `label_class` is the shared answer to "is this ending
+        # evidence about the recommendation"; `else: failed` was the local one, and it charged a
+        # play for the world moving and for our own tooling cancelling the work.
+        kind = label_class(o.get("label"))
+        if kind == "positive":
             c["succeeded"] += 1
-        elif label in _NEUTRAL:
-            c["neutral"] += 1
-        else:
+        elif kind == "negative":
             c["failed"] += 1
+        elif kind == "mechanical":
+            # Counted, never charged. A play whose tooling fails every time is a real defect and
+            # must stay visible; it is a defect in the machinery, not in the advice.
+            c["mechanical"] += 1
+        else:
+            # `neutral` and `unknown` both land here. An unclassified label must not penalise a
+            # play — see `label_class`.
+            c["neutral"] += 1
         c["reminders"] += int(o.get("reminders_sent") or 0)
         c["escalations"] += int(o.get("escalations_fired") or 0)
         at = o.get("closed_at")
@@ -160,6 +175,7 @@ def unit_outcome_analysis(batch: LearningBatch, policy: LearningPolicy,
             subject=_subject(cap, play),
             proposed_value={"observations": c["n"], "succeeded": c["succeeded"],
                             "neutral_unproven": c["neutral"], "failed": c["failed"],
+                            "mechanical_failures": c["mechanical"],
                             "reminders": c["reminders"], "escalations": c["escalations"],
                             "success_rate_bp": _bp(c["succeeded"], graded)},
             evidence=LearningEvidence(
@@ -240,32 +256,50 @@ def unit_recommendation_learning(batch: LearningBatch, policy: LearningPolicy,
                                  now: datetime) -> list[LearningObject]:
     """Capability/play success weighed against the attention it cost (reminders + escalations)."""
     cohorts: dict[str, dict] = defaultdict(
-        lambda: {"n": 0, "succeeded": 0, "attention": 0})
+        lambda: {"n": 0, "succeeded": 0, "graded": 0, "excluded": 0, "attention": 0})
     for o in batch.outcomes:
         play = o.get("play_id") or "unknown"
         c = cohorts[play]
         c["n"] += 1
-        if (o.get("label") or "") == _SUCCESS:
+        # THE UNIT THAT CHANGES THE BRAIN. Its target is ADAPTIVE, not METRICS, and it counted
+        # `negative = n - succeeded` — so a play was penalised for `completed_unproven` (it worked
+        # and no source can prove it), for `expired_in_progress` (somebody was actively working on
+        # it), for `cancelled_by_world` (the situation resolved itself) and for
+        # `cancelled_by_system` (our own tooling cancelled it). The last two are the inventory's
+        # LRN-07; the first is LRN-01. Only a GRADED ending may move a play's efficacy.
+        kind = label_class(o.get("label"))
+        if kind == "positive":
             c["succeeded"] += 1
+            c["graded"] += 1
+        elif kind == "negative":
+            c["graded"] += 1
+        else:
+            c["excluded"] += 1
         c["attention"] += int(o.get("reminders_sent") or 0) + int(o.get("escalations_fired") or 0)
 
     out: list[LearningObject] = []
     for play, c in cohorts.items():
-        if c["n"] < policy.min_observations:
+        # THE FLOOR IS ON GRADED ENDINGS, not on how many times the play ran. A play that ran
+        # twenty times and was cancelled by the world on every one has twenty observations and
+        # nothing to learn from, and admitting it would let an unmeasured play rewrite the brain.
+        if c["graded"] < policy.min_observations:
             continue
-        # efficacy = success rate discounted by attention spent per outcome
-        per_outcome_attention_bp = _bp(c["attention"], c["n"])
-        efficacy_bp = max(0, _bp(c["succeeded"], c["n"]) - per_outcome_attention_bp // 4)
+        # efficacy = success rate discounted by attention spent per outcome. Both terms are taken
+        # over GRADED endings so an excluded one neither raises nor lowers the score.
+        per_outcome_attention_bp = _bp(c["attention"], c["graded"])
+        efficacy_bp = max(0, _bp(c["succeeded"], c["graded"]) - per_outcome_attention_bp // 4)
         out.append(LearningObject(
             org_id=batch.org_id, unit="recommendation_learning", target=LearningTarget.ADAPTIVE,
             subject=_subject("play", play),
-            proposed_value={"play": play, "success_rate_bp": _bp(c["succeeded"], c["n"]),
+            proposed_value={"play": play, "success_rate_bp": _bp(c["succeeded"], c["graded"]),
                             "attention_per_outcome_bp": per_outcome_attention_bp,
+                            "graded_endings": c["graded"], "ungraded_endings": c["excluded"],
                             "efficacy_bp": efficacy_bp},
             evidence=LearningEvidence(
-                observations=c["n"], independent_refs=c["n"], distinct_days=1,
-                positive=c["succeeded"], negative=c["n"] - c["succeeded"],
-                confidence_bp=efficacy_bp, business_value_bp=_bp(c["succeeded"], c["n"])),
+                observations=c["graded"], independent_refs=c["graded"], distinct_days=1,
+                positive=c["succeeded"], negative=c["graded"] - c["succeeded"],
+                confidence_bp=efficacy_bp,
+                business_value_bp=_bp(c["succeeded"], c["graded"])),
             visibility=_org_visibility(), first_seen_at=now, last_seen_at=now,
             policy_key=policy.policy_key))
     return out

@@ -280,3 +280,36 @@ FAIL   M6.C2 second cut  Idempotence guarded only the MATCHING frame, so a card 
               between builds stacked them: "Needs a decision — Unresolved — Reply to Sehan
               Sanjula". Any known frame is now stripped first. Caught by its own test.
 VERIFY Full suite 9036 passed / 24 failed. Same pre-existing 24. +73 tests today, zero regressions.
+
+--- M7 · LRN-01 AND LRN-07, 2026-09-09 -------------------------------------------------------
+FIND   executive/collect.py records HOW an execution ended. Whether that ending is evidence about
+              the RECOMMENDATION is a second question, and every consumer answered it by hand.
+              feedback/units.py had TWO different answers:
+                unit_outcome_analysis   `_NEUTRAL = {completed_unproven, expired_in_progress}`,
+                                        everything else `else: failed`     (target METRICS)
+                unit_recommendation_learning  `negative = n - succeeded`   (target ADAPTIVE)
+              The second CHANGES THE BRAIN, and it charged a play for:
+                completed_unproven   it worked and no source can prove it      <- LRN-01
+                expired_in_progress  somebody was actively working on it
+                cancelled_by_world   the situation resolved itself
+                cancelled_by_system  OUR OWN tooling cancelled it              <- LRN-07
+              The two units also DISAGREED with each other about cancelled_by_world and
+              completed_unproven: one called an ending neutral while the other charged for it.
+PASS   M7.C1  executive.collect.label_class() -- one table, FOUR classes. `mechanical` is separate
+              from `neutral` deliberately: both stay out of the score and only one means something
+              is BROKEN, so folding them would hide a play whose tooling fails every time.
+              An UNKNOWN label returns "unknown" and never penalises -- the old `else: failed` did
+              exactly that for four endings. Drift test fails when a new LABEL_* is unclassified.
+PASS   M7.C2  Both units read it. Unit 8's floor moved from `n` to GRADED endings: a play that ran
+              twenty times and was cancelled by the world every time has twenty observations and
+              nothing to learn from, and admitting it would let an unmeasured play rewrite the
+              brain. `mechanical_failures` is reported by unit 2 so a broken play stays visible.
+              19 tests.
+TEST   tests/test_learning_units.py::test_outcome_analysis_counts_and_neutral_does_not_inflate_
+              confidence asserted cancelled_by_world == FAILED. NOT WEAKENED -- corrected, with
+              the reason recorded in its docstring and its stated purpose preserved and widened.
+              `_CANCEL_BY_WORLD` is {subject_closed, subject_missing, superseded}; none of the
+              three says the recommendation was bad, and `superseded` means a NEWER decision
+              replaced it. A sibling test was added so a human dismissal still grades as failure --
+              the guard must not become a way for a play to never be wrong.
+VERIFY Full suite 9056 passed / 24 failed. Same pre-existing 24. Zero regressions.

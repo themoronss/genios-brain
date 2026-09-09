@@ -141,6 +141,64 @@ class ExecutionOutcome:
         return semantic_hash(self.to_semantic_dict())
 
 
+#: ── WHAT A LABEL SAYS ABOUT THE RECOMMENDATION ───────────────────────────────────────────────
+#: The labels above record HOW an execution ended. Whether that ending is evidence about the
+#: RECOMMENDATION is a second, different question, and until this table existed every consumer
+#: answered it by hand — with `else: failed`.
+#:
+#: THE COST OF THAT, measured in `feedback/units.py`. `unit_recommendation_learning` writes to
+#: `LearningTarget.ADAPTIVE` — it changes the brain — and counted `negative = n - succeeded`. So a
+#: play was penalised for `completed_unproven` (it worked; we cannot prove it), for
+#: `expired_in_progress` (somebody was actively working on it), for `cancelled_by_world` (the
+#: situation resolved itself) and for `cancelled_by_system` (our own tooling cancelled it). Two of
+#: those are the inventory's LRN-01 and LRN-07 exactly, in the one unit that actually alters
+#: behaviour.
+#:
+#: FOUR CLASSES, because three is not enough. `MECHANICAL` is separated from `NEUTRAL` on purpose:
+#: both must stay out of the recommendation's score, and only one of them means something is
+#: BROKEN. Folding them together would hide a play whose tooling fails every time behind a shrug.
+LABEL_POSITIVE: frozenset[str] = frozenset({LABEL_SUCCEEDED})
+
+#: Endings that are genuinely evidence against the recommendation. Nobody touched it before it
+#: expired, or a human looked at it and cancelled it — both are the reader telling us something.
+LABEL_NEGATIVE: frozenset[str] = frozenset({LABEL_EXPIRED_UNTOUCHED, LABEL_CANCELLED_BY_HUMAN})
+
+#: Endings that say nothing either way. The work may well have been done — `completed_unproven` is
+#: the case where it demonstrably was and no source can prove it — or the world moved underneath a
+#: recommendation that was correct when it was made.
+LABEL_NEUTRAL: frozenset[str] = frozenset({LABEL_COMPLETED_UNPROVEN, LABEL_EXPIRED_IN_PROGRESS,
+                                           LABEL_CANCELLED_BY_WORLD})
+
+#: Endings caused by our own machinery. Never evidence about the recommendation, and never
+#: invisible: a play cancelled by the system every time is a real defect, it is simply a defect in
+#: the tooling and must be counted as one.
+LABEL_MECHANICAL: frozenset[str] = frozenset({LABEL_CANCELLED_BY_SYSTEM})
+
+
+def label_class(label: str | None) -> str:
+    """`positive` | `negative` | `neutral` | `mechanical` — or `unknown`.
+
+    `unknown` is returned rather than defaulting to negative, and that direction is the whole
+    point: a label this table has not been taught must not silently penalise a play. The drift
+    test in `tests/executive/` fails when a new label arrives unclassified.
+    """
+    value = str(label or "").strip()
+    if value in LABEL_POSITIVE:
+        return "positive"
+    if value in LABEL_NEGATIVE:
+        return "negative"
+    if value in LABEL_NEUTRAL:
+        return "neutral"
+    if value in LABEL_MECHANICAL:
+        return "mechanical"
+    return "unknown"
+
+
+def counts_against_the_play(label: str | None) -> bool:
+    """Whether this ending is evidence the recommendation was wrong."""
+    return label_class(label) == "negative"
+
+
 def classify_outcome(*, terminal_state: ExecutionState, reason_code: str,
                      outcome_kind: str | None, progress_bp: int) -> str:
     """Terminal state plus cause plus progress → a label something can learn from."""
