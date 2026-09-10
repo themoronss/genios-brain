@@ -50,6 +50,11 @@ MUST_BE_CONSUMED: dict[str, str] = {
     "correlation_conversation": "context/outreach_situations.py `_gather`, via find_campaigns",
     "correlation_organization": "context/outreach_situations.py `_gather`, via find_organizations",
     "correlation_domain": "reason/domain_shadow.py, via read_contradictions",
+    # The ninth. Registered in the SAME commit that wrote it, because this branch has twice
+    # shipped a correlator that nothing consumed and then found it by audit — first
+    # `correlation_conversation`, then `correlation_organization`, whose commit message named
+    # the first defect while committing it again.
+    "correlation_history": "context/runner.py, via publish_histories",
     # L2 readings and the surfaces that turn them into situations.
     "condition_situations": "context/outreach_situations.py READINGS",
     "outreach_situations": "context/runner.py, via refresh_state_situations",
@@ -257,10 +262,17 @@ def test_something_in_the_engine_actually_imports_it(stem):
 
 def test_the_eight_named_correlators_are_all_on_the_roster():
     """The architecture names eight. Three of them were dead when this file was written, and a
-    roster that quietly lost one would let the fourth go the same way."""
+    roster that quietly lost one would let the fourth go the same way.
+
+    NINE MODULES NOW, and the ninth is not one of the architecture's eight. `correlation_history`
+    answers a question none of them asks — every one of the eight correlates observations that
+    COEXIST, and none correlates a situation against its own past. It is on this roster from its
+    first commit for the reason the roster exists.
+    """
     correlators = {stem for stem in MUST_BE_CONSUMED if stem.startswith("correlation")}
 
-    assert len(correlators) == 7, sorted(correlators)   # correlation.py carries Tool AND User
+    assert len(correlators) == 8, sorted(correlators)   # correlation.py carries Tool AND User
+    assert "correlation_history" in correlators
 
 
 def test_the_guard_is_not_vacuous():

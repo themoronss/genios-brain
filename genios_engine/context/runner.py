@@ -662,6 +662,22 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception(
             "contract-spend correlation failed for org=%s", org_id)
+    # L2.3.9 · CROSS HISTORY — what happened the LAST time this anchor was here.
+    #
+    # AFTER the correlations for this sweep are written, because it reads the generation chain
+    # and the newest generation must be in it. Before situations refresh, so an authored `when:`
+    # can gate on `derived.history.times_seen` in the same drain rather than one behind.
+    #
+    # ITS OWN BOUNDARY, like every pass above: a history read failing must not cost the sweep the
+    # contract-spend correlation that follows it.
+    try:
+        from genios_engine.context.correlation_history import publish_histories
+        derived_rows += publish_histories(store.engine, org_id, eval_time=sweep_at)
+    except Exception:      # noqa: BLE001 — a derived correlation retries from graph state
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception(
+            "cross-history correlation failed for org=%s", org_id)
+
     # RETENTION on `metric_history` (L2.4.1). The analytic stratum's history table is the one
     # store in L2 that only ever APPENDS, which is the exact shape that put this database into
     # read-only once before, so its 24-month horizon is enforced on a path that actually runs

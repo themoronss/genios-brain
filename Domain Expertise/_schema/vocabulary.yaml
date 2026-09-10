@@ -261,6 +261,25 @@ substrate:
     - party.role              # pipeline.py writes it; card_builder reads it. No pack declares it
     - role                    # legacy flat names, still written and still read. Superseded by
     - company                 #   party.role / the works_at edge, not yet removed
+    # ── CROSS HISTORY (context/correlation_history.py) ────────────────────────
+    # What happened the LAST time this anchor was in this situation. The eight named correlators
+    # all correlate observations that COEXIST; none of them correlates a situation against its
+    # own past, so before these facts existed every customer's second time through anything was
+    # treated as their first.
+    #
+    # Written for EVERY anchor including first-timers, deliberately: a rule asking "is this a
+    # recurrence?" must get FALSE on a first visit rather than UNKNOWN, and it only can if the
+    # fact is there to read. Writing only the recurrences would make "this has never happened
+    # before" indistinguishable from "we have not looked".
+    #
+    # A COUNT IS NOT A JUDGMENT. Three visits may be three unrelated questions from a good
+    # customer or one problem nobody fixed, and nothing here can tell those apart. These facts
+    # let an authored situation SAY "this is the third time" and let a person decide what it
+    # means; a `causes` edge may not be derived from a repetition, however many times it repeats.
+    - derived.history.times_seen          # generations of this anchor in this domain, live one included
+    - derived.history.days_since_prior    # whole days since the previous generation's last event
+    - derived.history.prior_outcome       # the prior execution's label, or first_time / unrecorded
+    - derived.history.prior_card_verdict  # run_play | do_it_myself | wrong:<reason>, or the two sentinels
     # ── engine-computed (never extracted; context/derived.py) ──────────────────
     - derived.momentum        # engine-computed trajectory
     - derived.engagement      # engine-computed two-way volume vs prior fortnight
