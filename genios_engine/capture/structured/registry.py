@@ -96,6 +96,27 @@ class StructuredMapping:
     #: through `namespace`, never directly, so the default is stated in one place.
     target_namespace: str | None = None
 
+    #: WHOSE MONEY THIS IS — `we_sell` or `we_buy`, or None for a source that cannot say.
+    #:
+    #: A subscription carried no direction at all, so the engine could not tell a SaaS founder's
+    #: revenue from their AWS bill. Their Stripe account holds their CUSTOMERS' subscriptions:
+    #: every active one is a paying customer and a renewal that means money coming IN. The only
+    #: reading the engine owns for a subscription is an admin card about an unowned renewal with
+    #: thirty days left to cancel — and nothing on the fact, the node, the mapping or the pattern
+    #: distinguished the two cases.
+    #:
+    #: A MAPPING-LEVEL DECLARATION, not a field, because direction is a property of WHOSE ACCOUNT
+    #: the source is and not of any column in the payload. `target_namespace` above is the exact
+    #: precedent: a mapping-level statement with a default, absent from every config written
+    #: before it existed.
+    #:
+    #: NOT NAMED `direction` WITHOUT A QUALIFIER anywhere it could be confused: `RelationMap`
+    #: fifty lines up already has a `direction` meaning graph EDGE direction, and
+    #: `pipeline._envelope_direction` means inbound/outbound MAIL. Three senses of one word in
+    #: one package is how a reader picks the wrong one; the FACT this writes is
+    #: `<namespace>.money_direction` for that reason.
+    money_direction: str | None = None
+
     @property
     def namespace(self) -> str:
         """The namespace every target of this mapping must carry. `node_type` unless declared."""
@@ -197,7 +218,8 @@ def mapping_from_dict(d: dict) -> StructuredMapping:
         # Optional, and absent from every config written before it existed: a mapping whose
         # targets are namespaced by its own node type says nothing here and gets the right
         # answer from `namespace`.
-        target_namespace=d.get("target_namespace"))
+        target_namespace=d.get("target_namespace"),
+        money_direction=d.get("money_direction"))
 
 
 def load_mappings_from_config(path: str) -> int:

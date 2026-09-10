@@ -115,8 +115,22 @@ def _ordered_keywords() -> tuple[tuple[str, "re.Pattern[str]"], ...]:
 def domain_hints(source: str, text: str | None) -> list[DomainHint]:
     hints: list[DomainHint] = []
     _, authored_priors = _authored_hints()
-    # The shipped prior wins: `stripe` means `admin` here whatever a corpus claims about it.
-    prior = _SOURCE_PRIOR.get(source) or authored_priors.get((source or "").strip().lower())
+    # THE AUTHORED PRIOR WINS, and this reverses what I wrote in the commit that added authored
+    # hints. The reasoning there was that a shipped table calibrated against a live graph beats
+    # an authored file with no evidence behind it — which is right for KEYWORDS and wrong for
+    # SOURCE PRIORS, and the difference matters.
+    #
+    # A keyword prior is a claim about LANGUAGE: "term sheet" means fundraising in every
+    # business, and a corpus asserting otherwise is probably mistaken. A source prior is a claim
+    # about WHOSE ACCOUNT THIS IS, and the engine cannot know that. `stripe -> admin` assumes
+    # the tenant is a BUYER paying for things. For a SaaS founder whose Stripe account holds
+    # their CUSTOMERS' subscriptions it is exactly backwards: every object in it is revenue, and
+    # the shipped prior filed all of it under back-office, ahead of any pattern, for every
+    # tenant of that shape. The tenant knows whose account it is. We are guessing.
+    #
+    # The shipped table stays as the DEFAULT for every tenant that has not said otherwise, which
+    # is all of them today.
+    prior = authored_priors.get((source or "").strip().lower()) or _SOURCE_PRIOR.get(source)
     if prior:
         hints.append(DomainHint(domain=prior, source="scope"))
     if text:

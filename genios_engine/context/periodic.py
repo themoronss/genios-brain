@@ -104,9 +104,31 @@ def _counts(conn, org_id: str, since: datetime, prev_since: datetime,
             now: datetime) -> dict[str, float]:
     """Everything countable from the substrate that actually exists, and nothing else.
 
-    Each figure is paired with its previous-window twin because a single number is not a finding.
-    "Eleven open deals" tells a reader nothing; "eleven, against seven" tells them what changed,
-    which is the only thing a period read is for.
+    TWO OF THE SEVEN ARE PAIRED. THE OTHER FIVE ARE NOT, AND THIS DOCSTRING USED TO CLAIM THEY
+    WERE. It said *"each figure is paired with its previous-window twin because a single number
+    is not a finding"* — which is the right principle and was false about five sevenths of the
+    function, so a reader trusting it would have believed a comparison existed where none does.
+
+    PAIRED: `period.events_this_window` and `period.events_prev_window` are windowed flows over
+    `source_events.occurred_at`, each other's twin, and together they say what changed.
+
+    NOT PAIRED: `open_deals`, `counterparties_awaiting_us`, `commitments_open`,
+    `commitments_overdue` and `active_situations` are POINT-IN-TIME STOCKS. Every one is a
+    `where … valid_to is null` count with no time bound anywhere in its SQL.
+
+    AND THE REASON THEY HAVE NO TWIN IS NOT LAZINESS. There is no time-bounded query that could
+    produce one: `graph_facts.valid_from` records when we INGESTED a fact, not when it became
+    true, so "how many deals were open a fortnight ago" would answer "how many deals we had
+    heard about a fortnight ago" — a number that moves when a backfill runs and says nothing
+    about the business. A twin computed that way would be worse than no twin, because a reader
+    would compare against it.
+
+    THE HONEST SHAPE for these five is a stored series, which `metric_history` (L2.4.2) already
+    is; pairing them here would mean inventing history from a column that does not hold it.
+
+    ONE MORE THING A READER MUST KNOW: this is computed ONCE for the org, above the per-domain
+    loop, and splatted into every domain's inputs. So a support period review carries
+    `period.open_deals`. That is org-wide by construction and not a bug in the caller.
     """
     def scalar(sql: str, **kw) -> float:
         return float(conn.execute(text(sql), {"o": org_id, **kw}).scalar() or 0)

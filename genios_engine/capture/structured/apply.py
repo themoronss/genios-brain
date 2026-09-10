@@ -35,7 +35,18 @@ def apply_mapping(mapping: StructuredMapping, raw_fields: dict[str, Any]) -> dic
     pure and idempotent, so putting it on this path costs one pass over the mapping's declared
     fields and nothing else.
     """
-    return dict(sift_mapping_targets(mapping, raw_fields).fields)
+    fields = dict(sift_mapping_targets(mapping, raw_fields).fields)
+    # WHOSE MONEY, when the mapping knows. Written here rather than in either caller because
+    # this module's own docstring states that `capture/pipeline.py`'s structured route and
+    # `context/runner.py`'s L2 drain "call these two functions and nothing else" — so one seam
+    # covers both production paths.
+    #
+    # ONLY WHEN DECLARED. An undeclared mapping writes no fact, which keeps "we do not know
+    # whose money this is" distinguishable from "it is ours" — the distinction the whole field
+    # exists for, and one a default would destroy on every source written before it.
+    if mapping.money_direction:
+        fields[f"{mapping.namespace}.money_direction"] = mapping.money_direction
+    return fields
 
 
 def _emails_from(value: Any) -> list[tuple[str, str | None]]:
