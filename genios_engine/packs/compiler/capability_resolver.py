@@ -137,6 +137,47 @@ def _hollow(capability) -> bool:
     return not (set(capability.content) - _LABEL_KEYS)
 
 
+def situation_admission_reason(authored) -> str | None:
+    """None = these WORDS may instruct. Else the named reason they may not.
+
+    THE HOLE THIS CLOSES, and it is the capability ceremony's exact shape one level down.
+    `_admission_reason` below asks a named human to accept a CAPABILITY's bytes, because
+    "an author flipping `stub: true -> false` in a text editor granted production authority".
+    A SITUATION was never asked anything. Its `identity.status` and `metadata.review_status`
+    are read by nothing: `authoring.py` parses no `admission` block for a situation, and
+    `_admission_reason` takes a capability. So a machine-written situation file
+    (`created_by: ai`, `review_status: unreviewed`) whose owning capability is approved and
+    hash-accepted produced a fully PRESCRIPTIVE card, and the human ceremony was satisfied by
+    somebody else's signature.
+
+    Measured on this corpus: 24 of 62 authored situations, including 15 that no human has
+    reviewed at all and the two this branch added.
+
+    IT FLAGS, IT DOES NOT REMOVE, and that asymmetry with the capability rule is deliberate.
+    An unadmitted CAPABILITY is dropped in live mode because its expertise is what the answer is
+    made of. A situation's DETECTION belongs to Layer 2 and is evidence-backed whatever a
+    reviewer thinks of the copy; only its prescriptive words are unreviewed. So the gap lands in
+    `admission_gaps` -> `plan.admitted=False` -> the package's `review_state='draft'` ->
+    `deliver/pipeline._apply_abstention` downgrades the card to an OBSERVATION. The intelligence
+    still ships; it stops instructing. Removing the situation would delete the finding to punish
+    its prose.
+
+    NO CONTENT HASH, unlike the capability rule. A situation file carries no `admission` block to
+    put one in, and inventing one would require editing all 62 files before this guard could be
+    turned on at all. Status plus an approved review plus a named reviewer is what every one of
+    these files already declares, and it is the part a human actually performs.
+    """
+    identity = (authored.get("identity") or {}) if hasattr(authored, "get") else {}
+    metadata = (authored.get("metadata") or {}) if hasattr(authored, "get") else {}
+    if str(identity.get("status") or "") != "stable":
+        return f"identity_status_{identity.get('status') or 'absent'}"
+    if str(metadata.get("review_status") or "") != "approved":
+        return "review_not_approved"
+    if not str(metadata.get("reviewed_by") or "").strip():
+        return "no_named_reviewer"
+    return None
+
+
 def _admission_reason(capability) -> str | None:
     """None = admitted. Else the named reason this capability may not carry authority."""
     content = capability.content
@@ -284,6 +325,11 @@ class CapabilityResolver:
             local_capabilities: set[str] = set()
             for situation_id in selected_here:
                 authored = domain.situations[situation_id].content
+                # THE WORDS' OWN ACCEPTANCE. Flagged, never removed — see
+                # `situation_admission_reason` for why the two halves of the ceremony differ.
+                situation_gap = situation_admission_reason(authored)
+                if situation_gap is not None:
+                    admission_gaps.append(f"{situation_id}:{situation_gap}")
                 # THE CARD COPY IS PART OF THE EXPERTISE, so it is collected here with the rest
                 # of what the situation declares. Without it the delivery layer looked the copy
                 # up in the TENANT PACK by reason_code — and a compiled signal's reason_code is

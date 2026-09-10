@@ -764,7 +764,15 @@ def _mailbox_owner(c, org_id: str) -> str | None:
     return next(iter(seats)) if len(seats) == 1 else None
 
 
-def _gather(store, org_id: str) -> tuple[dict, dict, dict]:
+def _gather(store, org_id: str, *, now: datetime | None = None) -> tuple[dict, dict, dict]:
+    """Everything the readings share, read once. `now` is THE SWEEP CLOCK, not the wall clock.
+
+    It has a default only because two tests call this directly; every production caller passes
+    `refresh_state_situations`' `now`, which `runner.py` reads once at the process boundary. The
+    campaign window used `datetime.now(timezone.utc)` here and that broke the replay contract
+    `runner.py:477` establishes — a replay at a past `eval_time` would have looked back ninety
+    days from TODAY and found campaigns the sweep it is replaying could not have seen.
+    """
     with store.engine.connect() as c:
         held: dict[str, dict] = {}
         for row in c.execute(text(_WAITING_ROWS), {"o": org_id}):
@@ -801,8 +809,8 @@ def _gather(store, org_id: str) -> tuple[dict, dict, dict]:
         # sweep unpredictable.
         from genios_engine.context.correlation_conversation import find_campaigns
         held["_campaigns"] = find_campaigns(
-            c, org_id,
-            since=datetime.now(timezone.utc) - timedelta(days=_CAMPAIGN_WINDOW_DAYS))
+            c, org_id, since=(now or datetime.now(timezone.utc))
+            - timedelta(days=_CAMPAIGN_WINDOW_DAYS))
         for row in c.execute(text(_COMMITMENT_OWNERS), {"o": org_id}):
             entry = held.get(str(row.commitment))
             if entry is None:
@@ -823,7 +831,7 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None)
     now = now or datetime.now(timezone.utc)
     if not state_domains():
         return 0
-    held, counts, employers = _gather(store, org_id)
+    held, counts, employers = _gather(store, org_id, now=now)
     if not held:
         return 0
 

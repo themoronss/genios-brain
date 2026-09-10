@@ -15,22 +15,29 @@ receipts — the same argument that retired the boilerplate unit and shaped Cros
 This adds a GROUP over them so a reader can see "Peak XV, two people, both silent" instead of
 discovering it by reading two cards and doing the arithmetic.
 
-**A SITUATION ANCHOR IS ALMOST NEVER A PERSON, and the first cut of this module did not know it.**
-Run read-only against the pilot before any test existed, `restrict_to=<the 82 waiting anchors>`
-returned ZERO groups. The anchors are not people:
+**A SITUATION ANCHOR IS ALMOST NEVER A PERSON.** Run read-only against the pilot before any test
+existed, narrowing this module by the 82 waiting anchor ids returned ZERO groups against a tenant
+that has four. The anchors are not people:
 
     awaiting_response       | outreach | 41        first_response_overdue | thread | 41
 
-`works_at` runs person → company, so raw anchor ids can never match one. The bridges, counted on
-the same run: `person --corresponded_with--> thread` resolves 41/41 thread anchors to 22 people,
-and `outreach --concerns--> {thread 21, person 18, service 2}` is the outreach anchor's only way
-out. `resolve_people` walks exactly those, at most two hops — the same bounded shape
-`situation_bso.absence_receipt_event_ids` uses, and bounded for the same reason: an unbounded walk
-is how one client's evidence reaches another's.
+`works_at` runs person → company, so an anchor id can never match one. The bridges the graph does
+hold, counted on the same run: `person --corresponded_with--> thread` resolves 41/41 thread
+anchors to 22 people, and `outreach --concerns--> {thread 21, person 18, service 2}` is the
+outreach anchor's only way out.
+
+**AND THEN THE RESOLVER THAT WALKED THEM WAS DELETED, which is the more useful half of the
+story.** A `resolve_people` was written here, tested eight ways, and called by nothing: the only
+caller is `_gather`, which asks for every organisation and lets `read_organization_silence`
+intersect them with the waiting rows it already holds. That is the correct order — see
+`find_organizations` on why the denominator must count everyone — so the resolver was speculative
+generality, shipped with the branch's own signature defect inside a module written to complain
+about it. `correlation_domain._SITUATIONS_BY_PERSON` does the same walk in ONE statement, for a
+consumer that exists. One walk, one caller.
 
 **THIS MODULE HAS NO OPINION ABOUT WHOSE TURN IT IS, and a reader of the numbers above needs to
-know that.** Handed all 82 waiting anchors it returns FOUR firms, and only two of them have gone
-quiet: Afore and Peak XV sit at `ball_in_court = them` with 29 days each, while Reticle and
+know that.** Narrowed to the 82 waiting anchors it finds FOUR firms, and only two of them have
+gone quiet: Afore and Peak XV sit at `ball_in_court = them` with 29 days each, while Reticle and
 Vectorly sit at `ball_in_court = us` — we are the silent party there, and a card saying Reticle
 went dark would be wrong in the one direction that matters. Grouping is a primitive; direction is
 the READING's job, and `outreach_situations.read_organization_silence` applies it by firing on
@@ -59,7 +66,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
-from sqlalchemy import bindparam, text
+from sqlalchemy import text
 
 #: How many people at one organisation make it an ORGANISATION-level reading rather than a
 #: person-level one. Two: the whole point is that a second person at the same firm changes what
@@ -155,33 +162,6 @@ _MEMBER_ROLES = (
     "order by f.subject_node_id, f.field"
 )
 
-#: HOP ONE — the anchor itself, when it already is a person.
-_ANCHOR_IS_PERSON = (
-    "select n.node_id as person_node from graph_nodes n "
-    "where n.org_id = :o and n.node_type = 'person' and n.valid_to is null "
-    "  and n.node_id in :anchors"
-)
-
-#: HOP TWO — a thread anchor. `person --corresponded_with--> thread`, the same bridge
-#: `correlation_conversation` and `_THREAD_COVERED_BY_PARTY` use. 41/41 on the pilot.
-_PARTY_ON_ANCHOR = (
-    "select e.from_node_id as person_node from graph_edges e "
-    "join graph_nodes p on p.org_id = e.org_id and p.node_id = e.from_node_id "
-    "     and p.node_type = 'person' and p.valid_to is null "
-    "where e.org_id = :o and e.edge_type = 'corresponded_with' and e.valid_to is null "
-    "  and e.to_node_id in :anchors"
-)
-
-#: HOP TWO — an outreach anchor. `outreach --concerns--> person`, and the same edge again for the
-#: 21 that concern a THREAD, whose party is then found by `_PARTY_ON_ANCHOR` on the second pass.
-#: Two passes is the whole walk; there is no third.
-_CONCERNS_TARGETS = (
-    "select e.to_node_id as target from graph_edges e "
-    "where e.org_id = :o and e.edge_type = 'concerns' and e.valid_to is null "
-    "  and e.from_node_id in :anchors"
-)
-
-
 def _role_of(entries: Mapping[str, object]) -> str | None:
     """`relationship.nature` wins over `party.role`: it is what the counterparty IS to this
     business, where `party.role` is often the structural default. Neither is invented."""
@@ -202,69 +182,16 @@ def _plain(raw) -> str | None:
     return str(raw) or None
 
 
-def _ids(conn, statement: str, org_id: str, anchors: Sequence[str], column: str) -> set[str]:
-    """One read over a list of ids.
-
-    `in :anchors` with an EXPANDING bindparam, not `= any(:anchors)` — the array cast is
-    Postgres-only and would make these paths untestable on SQLite, the rule `waiting.py:84` and
-    `situation_bso._L1_BY_EVENT_SELECT` both already record.
-
-    Empty in, empty out: `in ()` is a syntax error rather than a zero-row query, and a quiet
-    tenant reaches here with nothing.
-    """
-    if not anchors:
-        return set()
-    stmt = text(statement).bindparams(bindparam("anchors", expanding=True))
-    rows = conn.execute(stmt, {"o": org_id, "anchors": sorted(set(anchors))})
-    return {str(row[column]) for row in rows.mappings().all() if row[column]}
-
-
-def resolve_people(conn, org_id: str, anchors: Sequence[str]) -> tuple[str, ...]:
-    """Situation anchors → the counterparty people behind them. Sorted, deduplicated.
-
-    THREE SHAPES, because the pilot has three and a caller should not have to know which. An
-    anchor that already is a person; a THREAD anchor, reached by the party who corresponded on it;
-    an OUTREACH anchor, which `concerns` a person directly (18) or a thread (21) whose party is
-    then the person. `service` targets (2) resolve to nobody, correctly — a service is not a
-    counterparty we can be waiting on a human at.
-
-    AT MOST TWO HOPS, and the bound is the safety property. `concerns` and `corresponded_with` are
-    dense edges; a transitive walk would drift from one situation's counterparty to another's, and
-    on a consultant node (CC-40) from one client to another. Two hops is what the graph needs and
-    is where this stops.
-    """
-    anchors = [str(a) for a in anchors if a]
-    if not anchors:
-        return ()
-    people = _ids(conn, _ANCHOR_IS_PERSON, org_id, anchors, "person_node")
-    people |= _ids(conn, _PARTY_ON_ANCHOR, org_id, anchors, "person_node")
-    targets = _ids(conn, _CONCERNS_TARGETS, org_id, anchors, "target")
-    if targets:
-        people |= _ids(conn, _ANCHOR_IS_PERSON, org_id, sorted(targets), "person_node")
-        people |= _ids(conn, _PARTY_ON_ANCHOR, org_id, sorted(targets), "person_node")
-    return tuple(sorted(people))
-
-
 def group_by_organization(member_rows: Sequence[Mapping],
-                          role_rows: Sequence[Mapping] = (),
-                          *, restrict_to: Sequence[str] | None = None) -> tuple[OrgGroup, ...]:
-    """Group people into their counterparty organisations. Pure, so the rule reads in one place.
-
-    `restrict_to` narrows to a set of PERSON node ids — the callers that matter want "the people
-    we are WAITING on at this firm", not "everyone we have ever emailed there", and computing the
-    second and filtering afterwards would report a firm as fully silent when only one of four
-    contacts is. An empty sequence means "nobody", which is not the same as `None`.
-    """
+                          role_rows: Sequence[Mapping] = ()) -> tuple[OrgGroup, ...]:
+    """Group people into their counterparty organisations. Pure, so the rule reads in one place."""
     roles_by_person: dict[str, dict[str, object]] = {}
     for row in role_rows:
         roles_by_person.setdefault(str(row["person_node"]), {})[str(row["field"])] = row["value"]
 
-    wanted = None if restrict_to is None else {str(n) for n in restrict_to}
     buckets: dict[tuple[str, str], list[OrgMember]] = {}
     for row in member_rows:
         person = str(row["person_node"])
-        if wanted is not None and person not in wanted:
-            continue
         key = (str(row["company_node"]), str(row["company"] or ""))
         bucket = buckets.setdefault(key, [])
         # ONE ROW PER PERSON. A person with two `works_at` edges to the same company — a re-write
@@ -281,29 +208,22 @@ def group_by_organization(member_rows: Sequence[Mapping],
     return tuple(sorted(out, key=lambda g: (-g.size, g.company, g.company_node_id)))
 
 
-def find_organizations(conn, org_id: str, *,
-                       restrict_to: Sequence[str] | None = None,
-                       anchors: Sequence[str] | None = None) -> tuple[OrgGroup, ...]:
-    """Counterparty organisations with at least `MIN_MEMBERS` people, largest first.
+def find_organizations(conn, org_id: str) -> tuple[OrgGroup, ...]:
+    """Every counterparty organisation with at least `MIN_MEMBERS` people, largest first.
 
-    `anchors` is the form a caller in this layer actually has — situation anchor ids — and is
-    resolved through `resolve_people`. `restrict_to` is the resolved form, for a caller that
-    already holds person ids. Passing both narrows to the union, which is what a caller combining
-    a situation sweep with a known list means.
+    DELIBERATELY UNNARROWED, and an earlier cut of this function was wrong about that. It took
+    `anchors=` and `restrict_to=` so a caller could ask only about the people it was waiting on.
+    Nobody wants that: the DENOMINATOR is the point. "Two of the two partners we know at Peak XV
+    are silent" is a firm going dark; "two of nine" is a Tuesday, and a group narrowed before it
+    is counted cannot tell them apart. `read_organization_silence` intersects these groups with
+    the waiting rows it already holds, which is the correct order.
 
     Two statements for the whole tenant rather than one per group — the same bulk discipline every
     other pass in this layer keeps.
     """
-    narrowed: set[str] | None = None
-    if restrict_to is not None:
-        narrowed = {str(n) for n in restrict_to}
-    if anchors is not None:
-        narrowed = (narrowed or set()) | set(resolve_people(conn, org_id, anchors))
-
     members = conn.execute(text(_ORG_MEMBERS), {"o": org_id}).mappings().all()
     roles = conn.execute(text(_MEMBER_ROLES), {"o": org_id}).mappings().all()
-    return group_by_organization(members, roles,
-                                 restrict_to=None if narrowed is None else sorted(narrowed))
+    return group_by_organization(members, roles)
 
 
 __all__ = [
@@ -312,5 +232,4 @@ __all__ = [
     "OrgMember",
     "find_organizations",
     "group_by_organization",
-    "resolve_people",
 ]

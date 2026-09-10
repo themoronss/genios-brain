@@ -100,7 +100,8 @@ def _ensure_tenant_node(store, conn, org_id: str) -> str:
         display_name="This organisation", event_id=None)
 
 
-def _counts(conn, org_id: str, since: datetime, prev_since: datetime) -> dict[str, float]:
+def _counts(conn, org_id: str, since: datetime, prev_since: datetime,
+            now: datetime) -> dict[str, float]:
     """Everything countable from the substrate that actually exists, and nothing else.
 
     Each figure is paired with its previous-window twin because a single number is not a finding.
@@ -127,7 +128,11 @@ def _counts(conn, org_id: str, since: datetime, prev_since: datetime) -> dict[st
     active_sits = ("select count(*) from context_situations "
                    "where org_id=:o and status='active'")
 
-    now_s = datetime.now(timezone.utc).isoformat()
+    # THE SWEEP CLOCK, not the wall clock. `period.commitments_overdue` is the one genuinely
+    # clock-derived figure in this aggregate, and reading `datetime.now()` here broke the replay
+    # contract `runner.py:477` establishes: a replay at a past `eval_time` counted overdue
+    # against TODAY, so a period review re-run for last month reported this month's arithmetic.
+    now_s = now.isoformat()
     return {
         "period.open_deals": scalar(open_deals),
         "period.events_this_window": scalar(events_in, a=since, b=since + timedelta(days=WINDOW_DAYS)),
@@ -154,7 +159,7 @@ def refresh_period_situations(store, org_id: str, *, now: datetime | None = None
 
     with store.engine.begin() as c:
         node_id = _ensure_tenant_node(store, c, org_id)
-        aggregates = _counts(c, org_id, since, prev_since)
+        aggregates = _counts(c, org_id, since, prev_since, now)
         for field, value in aggregates.items():
             c.execute(text(
                 "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, "
