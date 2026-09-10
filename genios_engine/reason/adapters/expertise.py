@@ -578,6 +578,60 @@ _DELTA_CONSUMERS: Mapping[str, str] = {
 }
 
 
+def _approval_config(package) -> dict[str, object]:
+    """`core.policy`'s approval bar, taken from the tenant's own confirmed rules.
+
+    THE GAP THIS CLOSES. `ApprovalThresholdPlugin.contribute` opens with
+    `_config_amount(view, "approval_threshold_amount")` and returns `()` when it is absent —
+    "the tenant declared no approval rule". NOBODY WROTE THAT KEY. So an org whose uploaded SOP
+    says *"contracts above $50,000 require founder approval"* — span-verified, approver
+    resolved, human-confirmed, published to the Organization brain and projected into
+    `authority_rules` — got a card on a $120k renewal that behaved exactly as if the company
+    had no approval rule at all. The unit was built, tested and unreachable.
+
+    THE SEAM IS ONE UNIT OVER. `constraint_config["blocked_play_ids"]` is the same move for the
+    same brain, and its comment names the same defect: *"a seam built for exactly this and
+    never wired to the brain that should drive it."*
+
+    ONLY A CONFIRMED, MONEY-BOUNDED APPROVAL RULE. Three refusals, each for a failure:
+
+      * `authority_pending` means the approver could not be resolved and a human has not yet
+        said who it is. A bar with no approver behind it would block the card and name nobody.
+      * A RATIO rule is skipped here, not converted. "Above 15%" is not an amount, and
+        `approval_value_field` reads money — folding one into the other is exactly the
+        confusion `threshold_basis_points` was given its own field to prevent.
+      * THE TIGHTEST BAR WINS when a tenant has several for one subject. Taking the loosest
+        would let a $60k contract past a $50k rule because a $100k rule also exists.
+
+    NO CURRENCY CONVERSION, matching `authority_view`'s stated law: a threshold compared across
+    unknown money decides who signs on whatever the reader's locale guesses. A rule denominated
+    in a currency the situation does not carry is not applied.
+    """
+    best: dict[str, object] = {}
+    lowest: int | None = None
+    for rule in (getattr(package, "organization_rules", None) or ()):
+        try:
+            if str((rule or {}).get("category") or "").strip().lower() != "approval":
+                continue
+            if rule.get("authority_pending"):
+                continue
+            amount = rule.get("threshold_minor_units")
+            if amount is None:
+                continue                     # unbounded, or a ratio rule — see above
+            amount = int(amount)
+            if lowest is None or amount < lowest:
+                lowest = amount
+                best = {"approval_threshold_amount": amount}
+                currency = str(rule.get("currency") or "").strip()
+                if currency:
+                    best["approval_threshold_currency"] = currency
+        except (TypeError, ValueError):
+            # A malformed rule is skipped, never defaulted. Defaulting would invent a bar the
+            # company never set, which is worse than the bar it already had: none.
+            continue
+    return best
+
+
 def _package_domain(package) -> str:
     """Which domain this package belongs to, off the capabilities — the same place
     `capability_resolver` reads it when it matches a `pack_id`."""
@@ -724,11 +778,17 @@ def _roster_specs(package: ExpertisePackage, *, gate_fields: tuple[str, ...],
     # is seventeen file reads and seventeen chances to disagree about which domain they are in.
     authored_roles = _package_roles(package)
     roster = _authored_roster(_package_domain(package))
+    # THE ORGANISATION'S OWN APPROVAL BAR, for the one unit built to enforce it.
+    approval_config = _approval_config(package)
     declined: dict[str, dict[str, Any]] = {}
     kept: list[tuple[_RosterUnit, dict[str, Any], dict[str, str], dict[str, list[str]]]] = []
     for unit in roster:
         config, bound, bound_lists = _bind_roles(unit, available, present,
                                                  authored=authored_roles)
+        if unit.unit_id == "core.policy" and approval_config:
+            # MERGED, NOT REPLACED: `_bind_roles` has already resolved this unit's fact paths
+            # and those bindings are how the plugin finds the amount to compare.
+            config = {**config, **approval_config}
         if unit.essential and not (set(bound) | set(bound_lists)) & set(unit.essential):
             declined[unit.unit_id] = {
                 "reason": "no_declared_field_in_this_expertise",

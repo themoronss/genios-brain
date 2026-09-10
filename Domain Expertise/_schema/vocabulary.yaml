@@ -198,6 +198,14 @@ substrate:
     # nothing reports that a promise was kept.
     - commitment.days_overdue
     - commitment.owed_to
+    # WHO MADE THE PROMISE, written by `context/pipeline.py` beside the `owns` edge it was
+    # already writing. Moved up from `planned_substrate` because it now has a producer —
+    # that list is for names with no writer, and leaving a written fact in it is how a
+    # backlog report claims a gap that has been closed.
+    #
+    # THE VALUE IS AN EMAIL, because `executive/assignment.SeatDirectory.active_seat`
+    # resolves a seat id or an address. A node id here would resolve to nobody, silently.
+    - commitment.owner
     # ── the CAMPAIGN, on the `cohort` anchor ─────────────────────────────────
     #
     # The first family here describing a GROUP. Everything above is about one thing, so "of
@@ -917,7 +925,6 @@ planned_substrate:
 
 
   # ── Added by Admin ────────────────────────────────────────────────────────────────────
-    - commitment.owner
     - commitment.recipient
     - commitment.state
     - approval.state

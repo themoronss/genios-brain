@@ -194,9 +194,26 @@ def enqueue_executive_messages(engine, org_id: str, channel: str,
     with engine.begin() as conn:
         rows = conn.execute(text(
             "select e.event_id, e.execution_id, e.reason_code, e.detail, e.occurred_at, "
-            "x.goal, x.assignee, x.card_id, x.band, x.channel_class, x.interrupt "
+            "x.goal, x.assignee, x.card_id, x.band, x.channel_class, x.interrupt, "
+            # THE SEAT THE LADDER ACTUALLY RESOLVED. `resolve_escalation_target` climbs to the
+            # manager, `execution_escalations.target_seat` records who that was — "resolved at
+            # fire time, not plan time", says the column's own comment — and the message then
+            # went to `x.assignee`. So the manager learned nothing and the OWNER was told they
+            # had been escalated to somebody who was never contacted.
+            "esc.target_seat "
             "from execution_events e join executions x "
             "on x.org_id=e.org_id and x.execution_id=e.execution_id "
+            # LEFT join, on the day this event names. A `remind` event has no escalation row
+            # and must still be delivered — to the owner, which is correct for a reminder.
+            "left join execution_escalations esc "
+            "on esc.org_id = e.org_id and esc.execution_id = e.execution_id "
+            # COMPARED AS TEXT, NOT CAST TO INT. `detail` is jsonb written by several
+            # producers, and `cast('abc' as int)` RAISES in Postgres — one malformed
+            # `escalation_day` would take down the whole enqueue for the tenant, turning a
+            # corrupt field into a delivery outage. `day_offset` is an int column, so casting
+            # it the other way always succeeds. `tests/test_executive_bridge.py` already has a
+            # corrupt-detail fixture asserting this path degrades rather than raising.
+            "and cast(esc.day_offset as text) = nullif(e.detail ->> 'escalation_day', '') "
             "where e.org_id=:o and e.kind = any(:kinds) "
             "and x.closed_at is null and x.channel_id=:ch and x.assignee is not null "
             "and not exists (select 1 from delivery_outbox ob where ob.org_id=e.org_id "
@@ -232,7 +249,12 @@ def enqueue_executive_messages(engine, org_id: str, channel: str,
             "on conflict (org_id, card_id, channel, coalesce(recipient, '')) do nothing"),
                 {"i": new_id("ob"), "o": org_id,
                  "c": executive_card_id(row["execution_id"], row["event_id"]),
-                 "ch": channel, "p": json.dumps(payload), "seat": row["assignee"],
+                 "ch": channel, "p": json.dumps(payload),
+                 # THE LADDER'S SEAT, THEN THE OWNER. `resolve_escalation_target` already
+                 # degrades explicitly — manager, then admins, then the owner with a reason
+                 # code that says so — so a null here means the ladder itself decided the owner
+                 # is the right recipient, and the fallback is not a guess.
+                 "seat": row["target_seat"] or row["assignee"],
                  "band": row["band"],
                  # The *surface* class, derived from the adapter this row is going out on. Layer
                  # 5's own channel_class is what it planned for; a commitment planned for the

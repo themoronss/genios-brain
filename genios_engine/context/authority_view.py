@@ -252,7 +252,9 @@ def rule_record(rule: AuthorityRule) -> dict[str, Any]:
     """One rule on the wire. `enforceable` is included BECAUSE it is computed: a console that
     renders a suggestion as a rule is exactly the confusion law 1 exists to prevent."""
     return {"rule_id": rule.rule_id, "subject_type": rule.subject_type,
-            "threshold_minor_units": rule.threshold_minor_units, "currency": rule.currency,
+            "threshold_minor_units": rule.threshold_minor_units,
+            "threshold_basis_points": rule.threshold_basis_points,
+            "currency": rule.currency,
             "approver_node_id": rule.approver_node_id,
             "delegate_node_id": rule.delegate_node_id,
             "source": rule.source.value, "evidence_ref": rule.evidence_ref,
@@ -282,7 +284,7 @@ def rules_in_force(rules: Iterable[AuthorityRule], *, evaluated_at: datetime,
 
 
 def covers_amount(rule: AuthorityRule, amount_minor_units: int | None,
-                  currency: str | None) -> bool:
+                  currency: str | None, ratio_bp: int | None = None) -> bool:
     """Does this rule bite at this amount, in this currency?
 
     Two refusals, both deliberate. A rule with a threshold does not cover an amountless subject
@@ -290,6 +292,20 @@ def covers_amount(rule: AuthorityRule, amount_minor_units: int | None,
     amount in another — see the module docstring: converting would need a rate we do not hold,
     and the failure mode is a confidently named wrong approver.
     """
+    # THE RATIO ARM, SYMMETRIC WITH THE MONEY ONE. A rule bounded at 1500 basis points — "a
+    # discount above 15% needs the founder" — did not cover an amountless subject either; it
+    # covered EVERYTHING, because the only bound this function knew about was money and the
+    # ratio one had already been dropped by the store. So a 2% goodwill discount named the
+    # founder as required approver, and the Founder Bottleneck read counted them as the sole
+    # approver of the whole discount class.
+    #
+    # A ratio rule does not cover a subject with no ratio, for exactly the reason a money rule
+    # does not cover an amountless one: the bound is the whole content of the rule, and applying
+    # it to something it cannot measure is a confidently named wrong approver.
+    if rule.threshold_basis_points is not None:
+        if ratio_bp is None:
+            return False
+        return int(ratio_bp) > int(rule.threshold_basis_points)
     if rule.threshold_minor_units is None:
         return True
     if amount_minor_units is None:
@@ -316,8 +332,13 @@ def _ranked(candidates: Sequence[AuthorityRule]) -> tuple[AuthorityRule, ...]:
     by_id = sorted(candidates, key=lambda r: r.rule_id)
     return tuple(sorted(
         by_id,
+        # A RATIO BOUND IS NOT AN UNBOUNDED RULE, and sharing `_ANY_VALUE_RANK` said it was —
+        # so "any discount" and "a discount above 15%" tied, and the tie fell to `valid_from`.
+        # Ranked in its own lane: a money rule and a ratio rule are never candidates for the
+        # same subject anyway, because `covers_amount` refuses each on the other's input.
         key=lambda r: (SOURCE_AUTHORITY_BP[r.source],
                        r.threshold_minor_units if r.threshold_minor_units is not None
+                       else r.threshold_basis_points if r.threshold_basis_points is not None
                        else _ANY_VALUE_RANK,
                        r.valid_from),
         reverse=True))
@@ -325,7 +346,8 @@ def _ranked(candidates: Sequence[AuthorityRule]) -> tuple[AuthorityRule, ...]:
 
 def resolve(rules: Iterable[AuthorityRule], *, subject_type: str, evaluated_at: datetime,
             amount_minor_units: int | None = None,
-            currency: str | None = None) -> AuthorityAnswer:
+            currency: str | None = None,
+            ratio_bp: int | None = None) -> AuthorityAnswer:
     """*Who approves a `subject_type` worth `amount_minor_units`, as at `evaluated_at`?*
 
     Pure: it takes the rules it is given and a stated instant, and reads no clock and no
@@ -341,7 +363,8 @@ def resolve(rules: Iterable[AuthorityRule], *, subject_type: str, evaluated_at: 
                 "an amount must name its currency — a threshold compared across unknown money "
                 "decides who signs on whatever the reader's locale guesses")
     in_force = rules_in_force(rules, evaluated_at=moment, subject_type=wanted)
-    matching = [rule for rule in in_force if covers_amount(rule, amount_minor_units, currency)]
+    matching = [rule for rule in in_force
+                if covers_amount(rule, amount_minor_units, currency, ratio_bp)]
     suggestions = _ranked([rule for rule in matching if not rule.enforceable])
     binding = _ranked([rule for rule in matching if rule.enforceable])
 
@@ -465,14 +488,17 @@ class InMemoryAuthorityRules:
 
 
 _INSERT = f"""
-insert into {AUTHORITY_TABLE} (org_id, rule_id, subject_type, threshold_minor_units, currency,
+insert into {AUTHORITY_TABLE} (org_id, rule_id, subject_type, threshold_minor_units,
+                               threshold_basis_points, currency,
                                approver_node_id, delegate_node_id, source, evidence_ref,
                                valid_from, valid_until)
-values (:org_id, :rule_id, :subject_type, :threshold_minor_units, :currency,
+values (:org_id, :rule_id, :subject_type, :threshold_minor_units, :threshold_basis_points,
+        :currency,
         :approver_node_id, :delegate_node_id, :source, :evidence_ref, :valid_from, :valid_until)
 on conflict (org_id, rule_id, valid_from) do update set
     subject_type = excluded.subject_type,
     threshold_minor_units = excluded.threshold_minor_units,
+    threshold_basis_points = excluded.threshold_basis_points,
     currency = excluded.currency,
     approver_node_id = excluded.approver_node_id,
     delegate_node_id = excluded.delegate_node_id,
@@ -480,17 +506,20 @@ on conflict (org_id, rule_id, valid_from) do update set
     evidence_ref = excluded.evidence_ref,
     valid_until = excluded.valid_until
 where (authority_rules.subject_type, authority_rules.threshold_minor_units,
+       authority_rules.threshold_basis_points,
        authority_rules.currency, authority_rules.approver_node_id,
        authority_rules.delegate_node_id, authority_rules.source, authority_rules.evidence_ref,
        authority_rules.valid_until)
   is distinct from
-      (excluded.subject_type, excluded.threshold_minor_units, excluded.currency,
+      (excluded.subject_type, excluded.threshold_minor_units, excluded.threshold_basis_points,
+       excluded.currency,
        excluded.approver_node_id, excluded.delegate_node_id, excluded.source,
        excluded.evidence_ref, excluded.valid_until)
 """
 
 _SELECT = f"""
-select rule_id, subject_type, threshold_minor_units, currency, approver_node_id,
+select rule_id, subject_type, threshold_minor_units, threshold_basis_points, currency,
+       approver_node_id,
        delegate_node_id, source, evidence_ref, valid_from, valid_until
 from {AUTHORITY_TABLE}
 where org_id = :org_id
@@ -509,6 +538,13 @@ def row_to_rule(row: Any) -> AuthorityRule:
         rule_id=row.rule_id, subject_type=row.subject_type,
         threshold_minor_units=(None if row.threshold_minor_units is None
                                else int(row.threshold_minor_units)),
+        # THE RATIO ARM, dropped on both the write and the read until now. A discount policy
+        # projected as `threshold_basis_points=1500` — "above 15% needs the founder" — round
+        # tripped as an UNBOUNDED rule, so `covers_amount` returned True for every discount and
+        # a 2% goodwill gesture named the founder as required approver. The drop failed OPEN,
+        # which is the worst direction for an authority bound.
+        threshold_basis_points=(None if getattr(row, "threshold_basis_points", None) is None
+                                else int(row.threshold_basis_points)),
         currency=row.currency, approver_node_id=row.approver_node_id,
         delegate_node_id=row.delegate_node_id, source=row.source,
         evidence_ref=row.evidence_ref, valid_from=row.valid_from, valid_until=row.valid_until)
@@ -544,6 +580,7 @@ class PostgresAuthorityRules:
                 changed += conn.execute(text(_INSERT), {
                     "org_id": org, "rule_id": rule.rule_id, "subject_type": rule.subject_type,
                     "threshold_minor_units": rule.threshold_minor_units,
+                    "threshold_basis_points": rule.threshold_basis_points,
                     "currency": rule.currency, "approver_node_id": rule.approver_node_id,
                     "delegate_node_id": rule.delegate_node_id, "source": rule.source.value,
                     "evidence_ref": rule.evidence_ref, "valid_from": rule.valid_from,
@@ -608,12 +645,20 @@ class AuthorityView:
 
     def resolve(self, org_id: str, *, subject_type: str, evaluated_at: datetime,
                 amount_minor_units: int | None = None,
-                currency: str | None = None) -> AuthorityAnswer:
+                currency: str | None = None,
+                ratio_bp: int | None = None) -> AuthorityAnswer:
         """*Who approves this, as at `evaluated_at`?* The store is asked for the window and the
-        pure resolver decides — so the read narrows in SQL and the ranking stays testable."""
+        pure resolver decides — so the read narrows in SQL and the ranking stays testable.
+
+        `ratio_bp` is the second kind of bound a rule can carry: "a discount above 15% needs the
+        founder" is 1500 basis points, not money, and a caller asking about a 200bp discount
+        must say so or every ratio rule will refuse to cover it — which is the safe direction,
+        and the reason it is a parameter rather than an inference.
+        """
         window = self._store.rules(org_id, subject_type=subject_type, as_of=evaluated_at)
         return resolve(window, subject_type=subject_type, evaluated_at=evaluated_at,
-                       amount_minor_units=amount_minor_units, currency=currency)
+                       amount_minor_units=amount_minor_units, currency=currency,
+                       ratio_bp=ratio_bp)
 
     def bottleneck(self, org_id: str, *, evaluated_at: datetime) -> BottleneckReport:
         """*Who is the only person who can sign for a whole class?*"""

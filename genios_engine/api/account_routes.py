@@ -429,6 +429,12 @@ _ORG_SCOPED_TABLES = [
     # cascades on account deletion; this entry is what makes /reset erase it too, and the loop
     # below runs with no try/except by design, so a name missing here leaks silently.
     "authority_rules",
+    # L5.0's responsibility scope (migration 0129). `seat_responsibilities` names the tenant's
+    # own staff and what each of them answers for — which region, which client, which project,
+    # over which interval. That is an org chart in a table: a deletion that skipped it would
+    # leave a deleted customer's reporting lines and territory assignments in the database,
+    # for exactly the reason the entry above gives about approvers.
+    "seat_responsibilities",
     "source_identity_map", "graph_nodes", "graph_versions", "baselines",
     "raw_payloads", "prepared_content", "document_jobs", "resource_uploads",
     "l1_extraction_results", "l2_processing_runs", "event_trace", "parked_events",

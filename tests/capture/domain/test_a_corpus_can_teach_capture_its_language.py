@@ -70,12 +70,34 @@ def test_an_authored_corpus_can_claim_its_own_tool(authored):
     assert [h.domain for h in domain_hints("cargowise", None)] == ["logistics"]
 
 
-def test_a_shipped_source_prior_still_wins(authored):
-    """`stripe` means `admin` here whatever a corpus claims about it."""
-    corpus(authored, "Logistics Expertise", "logistics",
+def test_an_authored_source_prior_overrides_the_shipped_one(authored):
+    """REVERSED DELIBERATELY, and the distinction is the point.
+
+    A KEYWORD prior is a claim about LANGUAGE — "term sheet" means fundraising in every
+    business — so the shipped table, calibrated against a live graph, beats an authored file.
+    A SOURCE prior is a claim about WHOSE ACCOUNT THIS IS, and the engine cannot know that.
+    `stripe -> admin` assumes the tenant is a BUYER; for a SaaS founder whose Stripe holds
+    their CUSTOMERS' subscriptions it is exactly backwards, and it filed all of their revenue
+    under back-office ahead of any pattern.
+    """
+    corpus(authored, "Revenue Expertise", "revenue",
            LOGISTICS.replace("[cargowise]", "[stripe]"))
 
+    assert [h.domain for h in domain_hints("stripe", None)] == ["revenue"]
+
+
+def test_the_shipped_prior_is_still_the_default(authored):
+    """Every tenant that has said nothing — which is all of them today."""
+    corpus(authored, "Logistics Expertise", "logistics", LOGISTICS)
+
     assert [h.domain for h in domain_hints("stripe", None)] == ["admin"]
+
+
+def test_a_shipped_KEYWORD_is_still_never_overridden(authored):
+    """The half that does NOT reverse: language is not the tenant's to redefine."""
+    corpus(authored, "Sales Expertise", "sales", LOGISTICS)
+
+    assert [h.domain for h in domain_hints("gmail", "container at Nhava Sheva")] == []
 
 
 # =============================================================================================

@@ -27,7 +27,7 @@ inject either provider.  No row means no licence, so the fire report says
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Mapping, Sequence
 
@@ -309,10 +309,19 @@ def slices_for(conn, org_id: str, *, node_type: str, eval_time: datetime,
     # the instant, and asking it per anchor is 2,000 identical queries on a real tenant.
     threshold, rule_id = _threshold_for(authority, org_id, eval_time=eval_time,
                                         subject_type=authority_subject_type or node_type)
+    # Resolved ONCE for the same reason the threshold is: the answer is a property of the org,
+    # the subject type and the instant — not of the anchor.
+    approver_facts = _approver_facts(authority, org_id, eval_time=eval_time,
+                                     subject_type=authority_subject_type or node_type)
 
     out: list[GraphSlice] = []
     for row in anchors:
-        own_facts = tuple(facts.get(row.node_id, ())) + tuple(authority_by_node.get(row.node_id, ()))
+        own_facts = (tuple(facts.get(row.node_id, ()))
+                     + tuple(authority_by_node.get(row.node_id, ()))
+                     # STAMPED WITH THIS ANCHOR'S id. The facts are computed once for the org
+                     # and belong to each subject that asks, so the subject id is filled in
+                     # here rather than carried from a resolution that has no anchor in hand.
+                     + tuple(replace(f, subject_node_id=row.node_id) for f in approver_facts))
         out.append(GraphSlice(
             org_id=org_id,
             anchor=SliceNode(row.node_id, row.node_type, row.display_name),
@@ -340,6 +349,60 @@ def _threshold_for(view: AuthorityView | None, org_id: str, *, eval_time: dateti
     if answer.rule is None or answer.rule.threshold_minor_units is None:
         return None, None
     return answer.rule.threshold_minor_units, answer.rule.rule_id
+
+
+#: Stands in for an anchor id until `slices_for` stamps the real one. A visible sentinel rather
+#: than an empty string, so a fact that escaped stamping is loud in a trace.
+_UNSTAMPED = "@unstamped"
+
+
+def _approver_facts(view: AuthorityView | None, org_id: str, *, eval_time: datetime,
+                    subject_type: str) -> tuple[SliceFact, ...]:
+    """WHO signs this class, on the SUBJECT rather than on the approver.
+
+    `_authority_facts` above already lands the Founder Bottleneck counts — but on the
+    APPROVER'S OWN node, which is the right home for "you are the only approver for three
+    classes" and the wrong one for "who signs THIS". A reasoning unit holds a contract and asks
+    the contract's facts; it never holds the approver's node, so the answer was one hop away
+    from every unit that needed it.
+
+    The consequence, before this: `ApprovalThresholdPlugin` held a NUMBER AND NO PERSON, so an
+    £80K renewal told the AE "the organisation requires a signature" and could not say whose —
+    "what can I actually do" resolved to "find out who signs". The CFO who IS the enforceable
+    approver received no card at all, because nothing routed on `approver_node_id`.
+
+    ONLY AN ENFORCEABLE ANSWER IS WRITTEN. A `suggested` approver is an unconfirmed observation
+    and putting it on the subject's facts would let a rule gate on it — the same line
+    `resolve_approver_seat` holds one layer up, and the reason
+    `runtime_brains._validate_axis` raises when a Behavior brain declares a permission.
+
+    `authority.outcome` IS WRITTEN EVEN WHEN THERE IS NO APPROVER, deliberately. A unit that can
+    only tell "found" from "absent" renders an org with an unconfirmed suggestion identically
+    to an org with no governance at all, and those need opposite next actions — which is the
+    argument `AuthorityOutcome` already makes for having three values instead of two.
+    """
+    if view is None:
+        return ()
+    answer = view.resolve(org_id, subject_type=subject_type, evaluated_at=eval_time)
+    # `subject_node_id` is filled in by the caller, which is the only place an anchor exists.
+    # The sentinel is a visible placeholder rather than `None` so a fact that somehow escaped
+    # the stamping is loud in a trace instead of reading as an unattributed fact.
+    pending = _UNSTAMPED
+    facts = [SliceFact(pending, "authority.outcome", answer.outcome.value,
+                       f"authority:{subject_type}:outcome", value_type="enum")]
+    if answer.enforced and answer.approver_node_id:
+        facts.append(SliceFact(pending, "authority.approver_node_id", answer.approver_node_id,
+                               f"authority:{subject_type}:approver", value_type="string"))
+        if answer.rule is not None:
+            facts.append(SliceFact(pending, "authority.rule_id", answer.rule.rule_id,
+                                   f"authority:{subject_type}:rule", value_type="string"))
+        if answer.delegate_node_id:
+            # WHO MAY ACT IN THEIR ABSENCE — the half that answers "what should stay with
+            # somebody else". Usually null, and that IS the Founder Bottleneck finding.
+            facts.append(SliceFact(pending, "authority.delegate_node_id",
+                                   answer.delegate_node_id,
+                                   f"authority:{subject_type}:delegate", value_type="string"))
+    return tuple(facts)
 
 
 # =================================================================================================

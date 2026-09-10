@@ -25,8 +25,18 @@ matches:
   # ordinary facts, and opens one situation per domain anchored there — so the compile path reads
   # a period situation exactly as it reads any other. The type below is live.
   #
-  # What arrives with it is a COUNT and its previous-window twin, never a verdict: open deals,
-  # events this window against last, counterparties waiting on us, commitments open and overdue.
+  # What arrives with it is a COUNT, never a verdict — and ONLY ONE OF THEM HAS A TWIN. The
+  # events figure is paired (this window against last); open deals, counterparties waiting on
+  # us, commitments open and commitments overdue are POINT-IN-TIME STOCKS with nothing to
+  # compare against. This comment claimed all of them were paired, which was false about four
+  # of the five, and the render hint below must not write "against last period" for those four.
+  #
+  # THEY CANNOT BE PAIRED FROM THIS SUBSTRATE: `graph_facts.valid_from` records when we INGESTED
+  # a fact, not when it became true, so a prior-window count would answer "how many we had heard
+  # about" — a number that moves when a backfill runs. See `context/periodic._counts`.
+  #
+  # AND THE AGGREGATE IS ORG-WIDE. It is computed once for the tenant and handed to every
+  # domain, so this row carries figures from outside this capability's own world.
   # There are still no targets, no per-owner load and no cost-to-serve, and those remain listed in
   # `missing` on every situation this produces rather than being estimated.
   l2_situation_types:

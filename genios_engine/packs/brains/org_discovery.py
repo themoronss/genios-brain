@@ -567,6 +567,57 @@ def resolve_approver_node(conn, *, org_id: str, name: str) -> str | None:
                                                 resolve_person_name)
     from genios_engine.platform.identity import norm_email
 
+    from sqlalchemy import text as _text
+
+    def _names_one_of_us(c, org: str, node_id: str) -> bool:
+        """Is this node one of the tenant's OWN people?
+
+        THE FAILURE THIS REFUSES. An observed person-name alias is written from ordinary mail,
+        and ordinary mail is mostly with people who do not work here. Maya uploads an approvals
+        policy saying *"Contracts above $50,000 require approval from Arjun."* The only Arjun
+        the graph has ever seen is `arjun@bigcustomer.com` — a BUYER at their largest account.
+        `resolve_person_name` returns his node, the console shows Maya `approver_as_written:
+        "Arjun"` beside an opaque node id, and she confirms a sentence that is word-for-word
+        correct. From then on every card about a $60k contract names an external buyer as the
+        required approver, and the Founder Bottleneck read counts him as a load-bearing
+        approver of the tenant.
+
+        ONLY THE NAME RUNG IS GATED. An EMAIL alias proves one specific human and the policy
+        author typed that address deliberately; a CANON TITLE resolves a role out of a document
+        the company itself wrote. Neither is a guess. A bare first name matched against whoever
+        the mailbox happens to have seen is the one rung that can land on a stranger.
+
+        REFUSING RETURNS None, WHICH IS A ROUTE AND NOT A LOSS. `authority_pending` is exactly
+        `approver_node_id is None`, so the rule goes to human review WITH THE NAME INTACT —
+        which is what doc 02 says to do with an unresolved approver, and strictly better than
+        binding an approval right to somebody outside the company.
+
+        FAILS CLOSED. If the identity set cannot be read, the name rung does not bind. An
+        unreadable directory is a deployment problem; granting an approval right on the
+        strength of one is not a recoverable one.
+
+        THE THREE SOURCES ARE `context/runner._internal_emails`', restated here as one query
+        rather than imported: that helper takes a `GraphStore` and opens its own connection,
+        and this module is given a `conn` precisely so it holds no store. The shapes must not
+        drift — `tests/packs/brains/test_org_discovery.py` pins them against each other.
+        """
+        try:
+            key = c.execute(_text(
+                "select lower(canonical_key) from graph_nodes "
+                "where org_id = :o and node_id = :n and valid_to is null"),
+                {"o": org, "n": node_id}).scalar()
+            if not key:
+                return False
+            return bool(c.execute(_text(
+                "select 1 from org_seats "
+                "where org_id=:o and active and lower(email) = :k "
+                "union select 1 from orgs where id=:o and lower(email) = :k "
+                "union select 1 from connections "
+                "where org_id=:o and lower(external_account_id) = :k limit 1"),
+                {"o": org, "k": str(key).strip().lower()}).first())
+        except Exception:      # noqa: BLE001 — see FAILS CLOSED above
+            return False
+
     cleaned = (name or "").strip()
     if not cleaned:
         return None
@@ -576,7 +627,7 @@ def resolve_approver_node(conn, *, org_id: str, name: str) -> str | None:
         if hit:
             return hit
     hit = resolve_person_name(conn, org_id=org_id, name=cleaned)
-    if hit:
+    if hit and _names_one_of_us(conn, org_id, hit):
         return hit
     title_key = canon_title_key(cleaned)
     if title_key:

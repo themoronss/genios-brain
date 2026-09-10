@@ -141,6 +141,7 @@ def supersede_rule(org_id: str, rule_id: str, valid_from: str, valid_until: str 
 @router.get("/api/org/{org_id}/authority/resolve")
 def resolve_authority(org_id: str, subject_type: str, amount_minor_units: int | None = None,
                       currency: str | None = None, as_of: str | None = None,
+                      ratio_bp: int | None = None,
                       org: str = Depends(_org)) -> dict:
     """*Who approves a `subject_type` worth `amount_minor_units`, as at `as_of`?*
 
@@ -148,11 +149,17 @@ def resolve_authority(org_id: str, subject_type: str, amount_minor_units: int | 
     behaviour matched and a human must confirm before anybody signs; `no_authority_rule` means we
     hold no rule — which is NOT "anyone may approve", and the distinction is why `reason` is on
     the response instead of an empty object.
+
+    `ratio_bp` asks the second kind of question: a discount policy is bounded in BASIS POINTS,
+    not money. A caller that omits it gets no ratio rule matched, which is the safe direction —
+    before this parameter existed the store dropped the bound entirely and every ratio rule
+    covered every subject, so a 2% discount named the founder as its required approver.
     """
     at = _instant(as_of)
     try:
         answer = _view().resolve(org, subject_type=subject_type, evaluated_at=at,
-                                 amount_minor_units=amount_minor_units, currency=currency)
+                                 amount_minor_units=amount_minor_units, currency=currency,
+                                 ratio_bp=ratio_bp)
     except (ValueError, TypeError) as exc:
         raise HTTPException(400, str(exc)) from exc
     return answer.as_record()
