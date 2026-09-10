@@ -44,7 +44,15 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from pydantic import ValidationError
 
-from genios_engine.context import correlation, correlation_dependency, correlation_timeline
+from genios_engine.context import (
+    correlation,
+    correlation_conversation,
+    correlation_dependency,
+    correlation_domain,
+    correlation_organization,
+    correlation_resource,
+    correlation_timeline,
+)
 from genios_engine.context.correlation import ANCHOR_PRIORITY, choose_anchors
 from genios_engine.context.correlation_dependency import (FIELD_BLOCKED_COUNT, FIELD_CHAINS,
                                                           VERSION_PREFIX, DependencyClaim,
@@ -151,7 +159,14 @@ def test_a_genuine_circular_wait_is_found_and_a_stale_reverse_blocking_is_not_on
 #: name a public function or a field in what the correlators publish.
 FORBIDDEN_VERBS = ("prioriti", "recommend", "risk_score", "urgency", "severity", "score_")
 
-CORRELATORS = (correlation, correlation_dependency, correlation_timeline)
+#: ALL EIGHT NAMED CORRELATORS, and it held three. The audit found that
+#: `correlation_conversation`, `correlation_domain`, `correlation_organization` and
+#: `correlation_resource` were outside every one of these gates — the forbidden-verb scan, the
+#: no-ranking-import scan and the no-model-client scan — so a ranking could have been attached in
+#: any of the four under a name nothing checked. None of them violates any of it today, which is
+#: exactly why the list had to grow before one does.
+CORRELATORS = (correlation, correlation_conversation, correlation_dependency, correlation_domain,
+               correlation_organization, correlation_resource, correlation_timeline)
 
 
 @pytest.mark.gate
