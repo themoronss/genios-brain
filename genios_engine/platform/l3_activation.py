@@ -106,27 +106,10 @@ def _authored_domain_ids() -> tuple[str, ...]:
     outage for tenants who were already live.
     """
     shipped = (DOMAIN_ADMIN, DOMAIN_CUSTOMER_SUPPORT, DOMAIN_SALES)
-    try:
-        from genios_engine.packs.compiler.authoring import default_authoring_root
+    from genios_engine.platform.corpus import authored_domain_ids
 
-        root = default_authoring_root()
-        if not root.is_dir():
-            return shipped
-        found: set[str] = set(shipped)
-        for domain_root in sorted(root.iterdir()):
-            if (not domain_root.is_dir() or domain_root.name.startswith("_")
-                    or not (domain_root / "domain.yaml").is_file()):
-                continue
-            import yaml
-
-            data = yaml.safe_load((domain_root / "domain.yaml").read_text()) or {}
-            identity = data.get("identity") if isinstance(data, dict) else None
-            domain_id = str((identity or {}).get("id") or "").strip()
-            if domain_id:
-                found.add(domain_id)
-        return tuple(sorted(found))
-    except Exception:      # noqa: BLE001 — see FAILS SOFT above
-        return shipped
+    found = set(shipped) | set(authored_domain_ids())
+    return tuple(sorted(found))
 
 
 L3_DOMAINS = _authored_domain_ids()

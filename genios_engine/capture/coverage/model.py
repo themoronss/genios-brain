@@ -23,6 +23,65 @@ PACK_REQUIREMENTS: dict[str, dict[str, list[str]]] = {
                     "recommended": ["calendar", "document_store"]},
 }
 
+
+def _already_shipped(domain_id: str) -> bool:
+    """Is this corpus domain one the four shipped requirement sets already cover?
+
+    Delegates to `platform.corpus.speaks_for`, which carries the reasoning — including why this
+    is a membership test rather than a reversed alias map, and the live bug that taught it.
+    """
+    from genios_engine.platform.corpus import speaks_for
+
+    return speaks_for(domain_id, PACK_REQUIREMENTS)
+
+
+def _authored_requirements() -> dict[str, dict[str, list[str]]]:
+    """What each AUTHORED corpus needs connected, from its own `domain.yaml`.
+
+    Without this an authored domain is not merely unassessed — `compute_coverage` returns
+    `coverage_state='unknown_domain'` with every readiness predicate FALSE, and
+    `declaration.py:160` iterates this dict, so the domain is never even looked at. A tenant who
+    authored a corpus and connected exactly the right tools would be told, forever, that nothing
+    was ready.
+
+        coverage:
+          required: [communication]
+          recommended: [document_store]
+
+    DEFAULTS TO COMMUNICATION ALONE when the block is absent. Every domain in this product reads
+    mail; requiring more of a corpus that has not said what it needs would report a correctly
+    connected tenant as permanently incomplete — the same failure as reporting an unassessed one
+    as ready, pointed the other way, which is the argument the `fundraising` row above makes.
+
+    A SHIPPED NAME IS NEVER OVERWRITTEN: those four requirement sets are calibrated and an
+    authored file has no evidence behind it.
+    """
+    out: dict[str, dict[str, list[str]]] = {}
+    # See `_already_shipped` for why this reads `platform.corpus` and not `packs` directly.
+    from genios_engine.platform.corpus import authored_domains
+
+    for domain_id, data in authored_domains():
+        try:
+            if _already_shipped(domain_id):
+                continue
+            block = (data.get("coverage") or {}) if isinstance(data, dict) else {}
+            out[domain_id] = {
+                "required": [str(c) for c in (block.get("required") or ["communication"])],
+                "recommended": [str(c) for c in (block.get("recommended") or [])],
+            }
+        except Exception:      # noqa: BLE001 — one bad corpus must not blind coverage
+            continue
+    return out
+
+
+def pack_requirements() -> dict[str, dict[str, list[str]]]:
+    """THE function every reader should call — shipped four plus every authored corpus.
+
+    `PACK_REQUIREMENTS` stays as the module constant it has always been so a caller that only
+    wants the shipped set still has it, and so this function has an unambiguous default.
+    """
+    return {**PACK_REQUIREMENTS, **_authored_requirements()}
+
 # Derived from the source registry, not hand-listed: this list drifting from the family
 # taxonomy is why `stripe` had a capability but no family. Alias ids resolve too, so a
 # connection stored as source_type='google_calendar' now counts toward `calendar`

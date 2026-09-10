@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import pytest
 
-from genios_engine.packs.compiler.authoring import default_authoring_root
 from genios_engine.platform import l3_activation
+from genios_engine.platform.corpus import corpus_root
 from genios_engine.platform.l3_activation import (
     DOMAIN_ADMIN,
     DOMAIN_CUSTOMER_SUPPORT,
@@ -42,7 +42,7 @@ def test_the_list_matches_what_is_actually_authored():
     """The property, not the values. Whatever `Domain Expertise/` holds is what may be activated
     — so this test keeps passing the day somebody authors a fourth corpus, which a hardcoded
     expectation would not."""
-    root = default_authoring_root()
+    root = corpus_root()
     authored = {d.name for d in sorted(root.iterdir())
                 if d.is_dir() and not d.name.startswith("_") and (d / "domain.yaml").is_file()}
 
@@ -56,8 +56,7 @@ def test_a_newly_authored_corpus_becomes_activatable(tmp_path, monkeypatch):
     (tmp_path / "Clinic Expertise" / "domain.yaml").write_text(
         "identity:\n  id: clinic\n  name: Clinic Expertise\n  version: 0.0.1\n")
 
-    monkeypatch.setattr("genios_engine.packs.compiler.authoring.default_authoring_root",
-                        lambda: tmp_path)
+    monkeypatch.setattr("genios_engine.platform.corpus.corpus_root", lambda: tmp_path)
 
     assert "clinic" in l3_activation._authored_domain_ids()
 
@@ -77,7 +76,7 @@ def test_an_unreadable_corpus_does_not_take_the_shipped_domains_down(monkeypatch
     def boom():
         raise OSError("corpus volume not mounted")
 
-    monkeypatch.setattr("genios_engine.packs.compiler.authoring.default_authoring_root", boom)
+    monkeypatch.setattr("genios_engine.platform.corpus.corpus_root", boom)
 
     assert l3_activation._authored_domain_ids() == (DOMAIN_ADMIN, DOMAIN_CUSTOMER_SUPPORT,
                                                     DOMAIN_SALES)

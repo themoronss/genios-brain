@@ -72,8 +72,7 @@ closed:
     - form: "{kind: conflict, field: <path>}"
       reads: "two sources disagree about that field and Layer 1 preserved both"
 
-  # A threshold is a literal, or baseline-derived. _resolve_value() computes
-  # max(floor, mult · baseline); a cold-start baseline falls back to floor.
+
   value_forms:
     - "<literal>"
     - "{baseline: <baseline_name>, mult: <number>, floor: <number>}"
@@ -498,6 +497,44 @@ substrate:
     - payment_overdue
 
   # Learned per-entity baselines available to {baseline: ...} thresholds.
+  # A threshold is a literal, or baseline-derived. _resolve_value() computes
+  # max(floor, mult · baseline); a cold-start baseline falls back to floor.
+  # THE SLOTS A `render.fallback` MAY NAME. Transcribed from `deliver/slots.SENTINELS`, which is
+  # the engine's own list, and kept in step by
+  # `tests/deliver/test_an_authored_slot_is_one_the_engine_can_fill.py`.
+  #
+  # WHY THIS IS HERE AT ALL. `render._interpolate` used `tpl.format(**slots)` and raised KeyError
+  # on any slot the engine does not write — and THREE SHIPPED SITUATION FILES named six such
+  # slots between them, so their whole card died at render. The engine now degrades an unwritten
+  # slot to a dropped clause instead of crashing; this list is what turns the same mistake into a
+  # validator error at authoring time, which is where an author can see it.
+  fallback_slots:
+    - action            # the commitment itself
+    - awaiting          # how many of a group are still silent
+    - ball              # whose move it is
+    - concerns          # what the open items are
+    - contacted         # how many were reached
+    - days              # a generic day count
+    - entity            # the account or person the card is about
+    - follow_ups        # how many times we have chased
+    - last_heard_days   # days since they last spoke
+    - money             # an amount
+    - never_chased      # the "we asked once and stopped" case
+    - objective         # what the outreach was for
+    - past_normal       # how far past their own cadence we are
+    - role              # what this contact is to us
+    - stage             # a pipeline stage
+    - their_cadence     # how fast this counterparty normally answers
+    - waited_days       # days we have been waiting
+    - who               # the counterparty by name
+    # THE GROUP SLOTS, added with their writers. Three shipped files named these before any
+    # writer existed and every one of their cards died at render with a KeyError.
+    - age_days          # how long a held condition has been held
+    - longest_wait_days # the longest single silence inside a campaign or a firm
+    - organization      # the counterparty FIRM, where `entity` is the person
+    - quote             # the outbound line a campaign's recipients all received
+    - sent_on           # the day a campaign went out
+
   baselines:
     - reply_cadence
     - contact_rate_per_account   # per-company contacts/week over the 56d window (reason/baselines.py)

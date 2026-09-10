@@ -31,7 +31,7 @@ def _corpus(tmp_path, name, domain_id, version="0.1.0"):
 
 def test_an_authored_corpus_gets_a_lane(tmp_path, monkeypatch):
     _corpus(tmp_path, "Clinic Expertise", "clinic", "0.2.0")
-    monkeypatch.setattr("genios_engine.packs.compiler.authoring.default_authoring_root",
+    monkeypatch.setattr("genios_engine.platform.corpus.corpus_root",
                         lambda: tmp_path)
 
     packs = _corpus_packs()
@@ -44,7 +44,7 @@ def test_a_hand_written_pack_is_never_shadowed(tmp_path, monkeypatch):
     synthesised lane replacing it would silence the extractor for the domain that works."""
     _corpus(tmp_path, "Admin Expertise", "admin")
     _corpus(tmp_path, "Clinic Expertise", "clinic")
-    monkeypatch.setattr("genios_engine.packs.compiler.authoring.default_authoring_root",
+    monkeypatch.setattr("genios_engine.platform.corpus.corpus_root",
                         lambda: tmp_path)
 
     assert [p["id"] for p in _corpus_packs()] == ["clinic"]
@@ -56,7 +56,7 @@ def test_a_synthesised_lane_tells_the_extractor_nothing(tmp_path, monkeypatch):
     told to go and find. A synthesised pack has no evidence that a writer exists for anything, so
     naming one would invite an invented value for a fact nobody stated."""
     _corpus(tmp_path, "Clinic Expertise", "clinic")
-    monkeypatch.setattr("genios_engine.packs.compiler.authoring.default_authoring_root",
+    monkeypatch.setattr("genios_engine.platform.corpus.corpus_root",
                         lambda: tmp_path)
 
     pack = _corpus_packs()[0]
@@ -70,7 +70,7 @@ def test_the_shared_budget_is_not_gamed_by_a_new_domain(tmp_path, monkeypatch):
     """Cards from every pack are ranked against each other inside ONE daily budget. A new domain
     with its own gate or bands would win every tie on scale rather than on merit."""
     _corpus(tmp_path, "Clinic Expertise", "clinic")
-    monkeypatch.setattr("genios_engine.packs.compiler.authoring.default_authoring_root",
+    monkeypatch.setattr("genios_engine.platform.corpus.corpus_root",
                         lambda: tmp_path)
 
     assert _corpus_packs()[0]["scoring_defaults"] == ADMIN_V1["scoring_defaults"]
@@ -79,7 +79,7 @@ def test_the_shared_budget_is_not_gamed_by_a_new_domain(tmp_path, monkeypatch):
 def test_a_corpus_without_an_identity_id_is_skipped(tmp_path, monkeypatch):
     (tmp_path / "Broken Expertise").mkdir()
     (tmp_path / "Broken Expertise" / "domain.yaml").write_text("identity:\n  name: Broken\n")
-    monkeypatch.setattr("genios_engine.packs.compiler.authoring.default_authoring_root",
+    monkeypatch.setattr("genios_engine.platform.corpus.corpus_root",
                         lambda: tmp_path)
 
     assert _corpus_packs() == []
@@ -89,7 +89,7 @@ def test_an_unreadable_corpus_does_not_stop_the_shipped_packs(monkeypatch):
     def boom():
         raise OSError("corpus volume not mounted")
 
-    monkeypatch.setattr("genios_engine.packs.compiler.authoring.default_authoring_root", boom)
+    monkeypatch.setattr("genios_engine.platform.corpus.corpus_root", boom)
 
     assert _corpus_packs() == []
     assert len(BUILTIN_PACKS) == 4

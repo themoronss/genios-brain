@@ -20,6 +20,16 @@ BUILTIN_PACKS = [SALES_V1, GENERAL_V1, ADMIN_V1, SUPPORT_V1]
 DEFAULT_PACK_ID = "sales"
 DEFAULT_PACK_VERSION = SALES_V1["version"]
 
+# Every org gets all four applied automatically (if absent). Two of them carry legacy RULES —
+# sales (deal-linked signals) and general (relationship hygiene, any contact). The other two carry
+# none by design: `admin` and `customer_support` exist so the COMPILED Layer 3 brain has a lane
+# with authority in those domains. Without a tenant pack whose `pack_id` equals the capability's
+# `domain`, `persist_complete` refuses the write and every Admin/Support capability dies at
+# `domain_shadow.py` under `no_tenant_pack` — which is what had been happening to all 106 of them.
+# See admin_v1.py's docstring for why they hold no rules.
+DEFAULT_PACKS = [(SALES_V1["id"], SALES_V1["version"]), (GENERAL_V1["id"], GENERAL_V1["version"]),
+                 (ADMIN_V1["id"], ADMIN_V1["version"]), (SUPPORT_V1["id"], SUPPORT_V1["version"])]
+
 
 def _corpus_packs() -> list[dict]:
     """An AUTHORITY LANE for every authored corpus that does not have a hand-written pack.
@@ -56,24 +66,18 @@ def _corpus_packs() -> list[dict]:
     be read is a deployment problem, and it must not stop the four shipped packs registering.
     """
     builtin_ids = {p["id"] for p in BUILTIN_PACKS}
-    try:
-        import yaml
+    # `platform.corpus` is the ONE reader of `domain.yaml` — `capture` needs the same three
+    # lines and may not import this package, so the read lives in the cross-cutting layer that
+    # every side may reach. It also ends the two hand-counted `parents[]` roots that used to
+    # compute this directory twice at different depths.
+    from genios_engine.platform.corpus import authored_domains
 
-        from genios_engine.packs.compiler.authoring import default_authoring_root
-
-        root = default_authoring_root()
-        if not root.is_dir():
-            return []
-        out: list[dict] = []
-        for domain_root in sorted(root.iterdir()):
-            if (not domain_root.is_dir() or domain_root.name.startswith("_")
-                    or not (domain_root / "domain.yaml").is_file()):
+    out: list[dict] = []
+    for domain_id, data in authored_domains():
+        try:
+            if domain_id in builtin_ids:
                 continue
-            data = yaml.safe_load((domain_root / "domain.yaml").read_text()) or {}
-            identity = (data.get("identity") or {}) if isinstance(data, dict) else {}
-            domain_id = str(identity.get("id") or "").strip()
-            if not domain_id or domain_id in builtin_ids:
-                continue
+            identity = (data.get("identity") or {})
             out.append({
                 "id": domain_id,
                 # The AUTHOR's version. A bump in `domain.yaml` publishes a new pack version
@@ -87,19 +91,9 @@ def _corpus_packs() -> list[dict]:
                 "templates": {"_version": "cards.v2"},
                 "schema": {"fields": []},
             })
-        return out
-    except Exception:      # noqa: BLE001 — see FAILS SOFT above
-        return []
-
-# Every org gets all four applied automatically (if absent). Two of them carry legacy RULES —
-# sales (deal-linked signals) and general (relationship hygiene, any contact). The other two carry
-# none by design: `admin` and `customer_support` exist so the COMPILED Layer 3 brain has a lane
-# with authority in those domains. Without a tenant pack whose `pack_id` equals the capability's
-# `domain`, `persist_complete` refuses the write and every Admin/Support capability dies at
-# `domain_shadow.py` under `no_tenant_pack` — which is what had been happening to all 106 of them.
-# See admin_v1.py's docstring for why they hold no rules.
-DEFAULT_PACKS = [(SALES_V1["id"], SALES_V1["version"]), (GENERAL_V1["id"], GENERAL_V1["version"]),
-                 (ADMIN_V1["id"], ADMIN_V1["version"]), (SUPPORT_V1["id"], SUPPORT_V1["version"])]
+        except Exception:      # noqa: BLE001 — one bad corpus must not cost the others a lane
+            continue
+    return out
 
 
 @lru_cache(maxsize=4)

@@ -29,6 +29,7 @@ Exit 1 on any error. --strict promotes warnings to errors.
 """
 from __future__ import annotations
 
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -143,6 +144,7 @@ def main(strict: bool = False) -> int:
     sub = vocab["substrate"]
     facts, obs_kinds = set(sub["fact_paths"]), set(sub["obs_kinds"])
     baselines, l2_types = set(sub["baselines"]), set(sub["l2_situation_types"])
+    fallback_slots = set(sub.get("fallback_slots") or ())
     verbs = set(vocab["open"]["relationship_verbs"])
     ev_sources = set(vocab["open"]["evidence_sources"])
     planned_sub = vocab.get("planned_substrate") or {}
@@ -302,6 +304,20 @@ def main(strict: bool = False) -> int:
 
             # ---- situation ----
             if kind == "situation":
+                # EVERY `{slot}` IN AN AUTHORED FALLBACK MUST BE ONE THE ENGINE CAN FILL.
+                # `render._interpolate` used to raise KeyError on an unknown one and take the
+                # whole card down; it now degrades to a dropped clause, which means the mistake
+                # became SILENT instead of loud. This is where it becomes loud again, at the
+                # moment an author can still fix it.
+                fallback = ((data.get("render") or {}).get("fallback") or {})
+                for part in ("headline", "situation"):
+                    for slot in sorted(set(re.findall(r"\{(\w+)\}",
+                                                      str(fallback.get(part) or "")))):
+                        if slot not in fallback_slots:
+                            err(path, f"render.fallback.{part} names slot {{{slot}}}, which no "
+                                      f"engine writer fills — it will render as a dropped "
+                                      f"clause or as 'not recorded'. Use one of "
+                                      f"substrate.fallback_slots, or add a writer first")
                 for t in (data.get("matches") or {}).get("l2_situation_types") or []:
                     if t not in l2_types:
                         err(path, f"matches.l2_situation_types: {t!r} is not a type Layer 2 "

@@ -32,7 +32,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Callable, Iterable, Mapping
 
-from genios_engine.capture.coverage.model import (PACK_REQUIREMENTS, capability_of,
+from genios_engine.capture.coverage.model import (capability_of, pack_requirements,
                                                   compute_coverage)
 from genios_engine.contracts.connection import Connection
 
@@ -157,7 +157,10 @@ def declare_coverage(*, org_id: str, connections: Iterable[Connection],
     domains = {
         domain: compute_coverage(domain, connected,
                                  company_knowledge_count=company_knowledge_count)
-        for domain in PACK_REQUIREMENTS}
+        # `pack_requirements()`, not the constant — an authored corpus is a domain this
+        # tenant may have connected tools for, and iterating the shipped four meant it was
+        # never even assessed.
+        for domain in pack_requirements()}
     return CoverageDeclaration(org_id=org_id, computed_at=computed_at, connected=connected,
                                company_knowledge_count=company_knowledge_count, domains=domains)
 

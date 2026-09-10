@@ -192,8 +192,8 @@ def _row_capabilities(row: Any) -> dict[str, str]:
     empty — which is correct and self-consistent: `compute_coverage` fails such a domain closed at
     `coverage_ready=False`, so its regime is "unassessed" and does not change when connectors do.
     """
-    from genios_engine.capture.coverage.model import PACK_REQUIREMENTS
-    reqs = PACK_REQUIREMENTS.get(row.domain, {})
+    from genios_engine.capture.coverage.model import pack_requirements as PACK_REQ_FN
+    reqs = PACK_REQ_FN().get(row.domain, {})
     return scoped_capabilities(required=tuple(row.required or ()),
                                recommended=tuple(reqs.get("recommended", ())),
                                freshness=dict(row.freshness or {}))
