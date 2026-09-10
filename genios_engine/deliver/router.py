@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import text
 
-from genios_engine.executive.assignment import Assignment, PgSeatDirectory, resolve_owner
+from genios_engine.executive.assignment import PgSeatDirectory, resolve_owner
 
 # E3 · Delivery Router (§5.13) — now a THIN DELEGATION.
 #
@@ -37,17 +37,34 @@ def resolve_assignee(store, org_id: str, node_facts: dict,
     Kept as a function rather than replaced at every call site so the Layer 6 pipeline reads the
     same as it did before. The tuple shape is what card_builder and the tests already expect.
     """
-    assignment = resolve_assignment(store, org_id, node_facts, node_attrs)
+    with store.engine.connect() as c:
+        assignment = resolve_owner(facts=node_facts, attrs=node_attrs,
+                                   directory=PgSeatDirectory(conn=c, org_id=org_id))
     return assignment.recipient, assignment.reason_code
 
 
-def resolve_assignment(store, org_id: str, node_facts: dict, node_attrs: dict) -> Assignment:
-    """The whole answer — recipient, rule, and everyone else who declared they answer for
-    this. `resolve_assignee` keeps the two-tuple every older caller expects; the card builder
-    needs the co-recipients too, and the seat directory is opened once for both."""
-    with store.engine.connect() as c:
-        return resolve_owner(facts=node_facts, attrs=node_attrs,
-                             directory=PgSeatDirectory(conn=c, org_id=org_id))
+def co_recipients_for(store, org_id: str, node_facts: dict, node_attrs: dict,
+                      *, owner: str | None) -> tuple[dict, ...]:
+    """WHO ELSE DECLARED THEY ANSWER FOR THIS, as plain dicts the card carries.
+
+    A SECOND, ADDITIVE READ rather than a wider `resolve_assignee`. Ownership is one question
+    with one answer and every caller and test in the engine binds to that two-tuple; being told
+    about a card is a different question, and answering both through one changed signature is
+    how a routing seam acquires a second reason to break.
+
+    `()` for a tenant that declared nothing — which is every tenant on the day this ships — and
+    `()` on any error. A card that cannot compute who ELSE to tell is still a correct card for
+    the person who owns it, so this may never raise into the build.
+    """
+    try:
+        from genios_engine.executive.assignment import _answering, _others
+        with store.engine.connect() as c:
+            answering = _answering(PgSeatDirectory(conn=c, org_id=org_id), node_facts, node_attrs)
+    except Exception:      # noqa: BLE001 — see the docstring
+        return ()
+    return tuple({"seat_id": r.seat_id, "accountability": r.accountability,
+                  "scope_kind": r.scope_kind, "scope_key": r.scope_key, "source": r.source}
+                 for r in _others(answering, owner))
 
 
 def budget_full(store, org_id: str, assignee: str | None, eval_time, budget_per_day: int) -> bool:

@@ -97,4 +97,47 @@ def test_the_queue_read_now_carries_the_domain_it_partitions_on():
     src = inspect.getsource(CardStore.queue)
 
     assert "k.assignee, k.domain, k.urgency_band" in src
-    assert "rows = self._objective_order(c, org_id, assignee, rows)" in src
+    assert "rows = self._objective_order(c, org_id, seat, rows)" in src
+
+
+# =============================================================================================
+# WHO IS LOOKING is not WHICH ROWS. The two were folded, and that killed this feature for the
+# only person using the product.
+# =============================================================================================
+def test_the_founder_reading_the_whole_org_queue_is_still_a_person(conn):
+    """A dashboard JWT sets `sees_org_queue`, so the route passes `assignee=None` — correct for
+    "show me everything", and it meant the viewer had no identity at all. `viewer` carries the
+    email the JWT actually holds and resolves it to their seat."""
+    assert CardStore._viewer_seat(conn, ORG, "anisha@acme.test") == "seat-a"
+    assert CardStore._viewer_seat(conn, ORG, "ANISHA@ACME.TEST") == "seat-a"
+    assert CardStore._viewer_seat(conn, ORG, "seat-a") == "seat-a"
+
+
+def test_a_credential_with_no_person_behind_it_resolves_to_nobody(conn):
+    """`org_primary_key` is an ORGANISATION's key. It must not borrow a seat's objective."""
+    assert CardStore._viewer_seat(conn, ORG, "org_primary_key") is None
+    assert CardStore._viewer_seat(conn, ORG, None) is None
+
+
+def test_an_inactive_seat_is_not_a_viewer(conn):
+    conn.execute(text("insert into org_seats values (:o,'seat-gone','gone@acme.test',0)"),
+                 {"o": ORG})
+
+    assert CardStore._viewer_seat(conn, ORG, "gone@acme.test") is None
+
+
+def test_an_unreadable_seat_table_orders_the_queue_the_way_it_always_was():
+    engine = create_engine("sqlite://")
+    with engine.begin() as c:
+        assert CardStore._viewer_seat(c, ORG, "anisha@acme.test") is None
+
+
+def test_the_route_hands_the_queue_the_person_and_the_reach_separately():
+    import inspect
+
+    from genios_engine.api import routes
+
+    src = inspect.getsource(routes.list_cards)
+
+    assert "assignee=effective_assignee, admin=admin" in src
+    assert "viewer=ctx.actor_id or ctx.agent_id" in src

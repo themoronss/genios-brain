@@ -371,9 +371,24 @@ class CardStore:
 
     def queue(self, org_id: str, *, assignee: str | None = None, admin: bool = False,
               states=("queued", "surfaced", "snoozed", "claimed"),
-              record_impressions: bool = True) -> list[dict]:
+              record_impressions: bool = True, viewer: str | None = None) -> list[dict]:
         """Dashboard read. admin sees all queues (incl. unrouted); a member sees only their own.
-        Ranked by score desc — the morning's cards in priority order (§5.13 scenario 10)."""
+        Ranked by score desc — the morning's cards in priority order (§5.13 scenario 10).
+
+        `viewer` IS WHO IS LOOKING, and it is a different question from `assignee`.
+
+        `assignee` and `admin` decide WHICH ROWS come back. `viewer` decides how they are
+        ORDERED and what is stamped on them, and the two had been folded into one — with the
+        consequence that every per-person feature was dead for the only person using the
+        product. A founder signs in with an owner JWT, `sees_org_queue` is true, so the route
+        passed `assignee=None`: correct for "show me everything", and it also meant their
+        declared objective never reordered anything and no card could tell them why it was
+        theirs. An org API key has no person behind it and resolves to no seat, so it keeps
+        exactly the org-wide read it has.
+
+        Defaults to `assignee` so every existing caller — the digest, the tests, the agent
+        lane — behaves exactly as it did.
+        """
         q = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, "
              "k.situation, " + AUTHORITATIVE_SCORE_SQL +
              " as score, k.state, k.render_mode, k.created_at, k.expires_at "
@@ -398,6 +413,9 @@ class CardStore:
             # `k.assignee is null` matched nothing because L5 routes every card to a seat. The
             # desktop app read an empty queue for as long as it has existed. A caller with no
             # person to filter by must not be filtered to a person.
+            # A SEAT SEES ITS OWN, THE UNCLAIMED, AND WHAT IT ANSWERS FOR. The third arm is a
+            # LEFT-JOINLESS `exists` on purpose: on a tenant with no declarations the subquery
+            # matches nothing and the queue is byte-identical to what it was.
             q += (" and (k.assignee=:a or k.assignee is null or exists ("
                   "select 1 from card_recipients cr where cr.org_id=k.org_id "
                   "and cr.card_id=k.card_id and cr.seat_id=:a))")
@@ -425,18 +443,41 @@ class CardStore:
             # utility order the SQL already produced. No score moves, nothing is removed, and two
             # viewers still see identical facts. See migration 0133 for why it must be a
             # partition and not a term.
-            rows = self._your_part(c, org_id, assignee, rows)
-            rows = self._objective_order(c, org_id, assignee, rows)
+            # WHO IS LOOKING, resolved once for both per-viewer passes. A seat id, an email or
+            # nothing — an org-level key resolves to nothing and keeps the org-wide read.
+            seat = self._viewer_seat(c, org_id, viewer if viewer is not None else assignee)
+            rows = self._your_part(c, org_id, seat, rows)
+            rows = self._objective_order(c, org_id, seat, rows)
             return rows
 
     @staticmethod
-    def _your_part(conn, org_id: str, assignee: str | None, rows: list[dict]) -> list[dict]:
+    def _viewer_seat(conn, org_id: str, viewer: str | None) -> str | None:
+        """A credential's identity to an ACTIVE seat id, or None.
+
+        A dashboard JWT carries the person's EMAIL as `actor_id`; a seat-scoped credential
+        carries the seat id; an org key carries `org_primary_key`, which is nobody and must
+        resolve to nobody. Fails to None: an unreadable seat table means the queue is ordered
+        the way it always was, never that a card is hidden or mislabelled.
+        """
+        if not viewer:
+            return None
+        try:
+            row = conn.execute(text(
+                "select seat_id from org_seats where org_id=:o and active "
+                "and (seat_id=:v or lower(email)=lower(:v)) limit 1"),
+                {"o": org_id, "v": str(viewer)}).first()
+        except Exception:      # noqa: BLE001 — see the docstring
+            return None
+        return row.seat_id if row is not None else None
+
+    @staticmethod
+    def _your_part(conn, org_id: str, seat: str | None, rows: list[dict]) -> list[dict]:
         """WHY THIS CARD IS ON THIS VIEWER'S QUEUE, when it is not theirs by ownership. A card a
         seat reaches through a declared responsibility carries `your_part` — the slice, the
         accountability, and who owns it — so "does this concern me" and "what stays with
         someone else" are answered on the row. Owned cards and unnamed viewers get nothing
         stamped. Fails to no stamps: an unreadable table hides no card and invents no reason."""
-        if not assignee or not rows:
+        if not seat or not rows:
             return rows
         try:
             from sqlalchemy import bindparam
@@ -444,7 +485,7 @@ class CardStore:
                 "select card_id, accountability, scope_kind, scope_key, owner_seat "
                 "from card_recipients where org_id=:o and seat_id=:a and card_id in :ids"
             ).bindparams(bindparam("ids", expanding=True)),
-                {"o": org_id, "a": assignee, "ids": [r["card_id"] for r in rows]}).mappings().all()
+                {"o": org_id, "a": seat, "ids": [r["card_id"] for r in rows]}).mappings().all()
         except Exception:      # noqa: BLE001 — see the docstring
             return rows
         parts = {f["card_id"]: {"accountability": f["accountability"],
@@ -452,19 +493,19 @@ class CardStore:
                                 "owner_seat": f["owner_seat"]} for f in found}
         for r in rows:
             part = parts.get(r["card_id"])
-            if part is not None and r.get("assignee") != assignee:
+            if part is not None and r.get("assignee") != seat:
                 r["your_part"] = part
         return rows
 
     @staticmethod
-    def _objective_order(conn, org_id: str, assignee: str | None, rows: list[dict]) -> list[dict]:
+    def _objective_order(conn, org_id: str, seat: str | None, rows: list[dict]) -> list[dict]:
         """Stable partition of a per-viewer queue by the viewer's declared objective domain.
 
         ONLY FOR A NAMED VIEWER. An admin reading the org queue and an org-level key have no
         person to hold an objective; their order is untouched. FAILS TO THE EXISTING ORDER on any
         read error — a preference table being unreadable must not reorder or lose a queue.
         """
-        if not assignee or not rows:
+        if not seat or not rows:
             return rows
         try:
             from datetime import datetime, timezone
@@ -473,7 +514,7 @@ class CardStore:
                 "join org_seats s on s.org_id = o.org_id and lower(s.email) = o.seat_key "
                 "where o.org_id = :o and s.seat_id = :a and s.active "
                 "and (o.valid_until is null or o.valid_until > :now) limit 1"),
-                {"o": org_id, "a": assignee, "now": datetime.now(timezone.utc)}).scalar()
+                {"o": org_id, "a": seat, "now": datetime.now(timezone.utc)}).scalar()
         except Exception:      # noqa: BLE001 — a preference, never a reason to touch the queue
             return rows
         if not domain:
@@ -492,10 +533,16 @@ class CardStore:
         written as their own co-recipient. Empty in, empty table: a tenant that declared nothing
         gets exactly the rows it had, which is none.
         """
+        if not recipients:
+            # NOTHING TO SAY AND NOTHING TO CLEAR. The overwhelming majority of cards on every
+            # tenant, and the reason this must not open a statement: a hermetic card test builds
+            # its own three tables, and a DELETE against a table it never created would make
+            # every such test depend on a feature it does not use.
+            return 0
         conn.execute(text("delete from card_recipients where org_id=:o and card_id=:c"),
                      {"o": org_id, "c": card_id})
         written = 0
-        for r in recipients or ():
+        for r in recipients:
             seat = str((r or {}).get("seat_id") or "").strip()
             if not seat or seat == owner:
                 continue

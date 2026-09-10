@@ -410,6 +410,25 @@ def _run_l2(org_id: str) -> None:
     single org's failure is LOGGED (not a silent uvicorn traceback) and never touches another org."""
     if _graph is None:
         return
+    # EVERYTHING LAYER 3 NEEDS BEFORE IT CAN SAY ANYTHING, first, every time.
+    #
+    # Measured on production: a tenant that signed up and connected Gmail ninety minutes earlier
+    # held `tenant_packs` 0 and `l3_activation` 0. With no pack the compiled lane has nothing to
+    # bind; with no activation row `capability_resolver` skips every authored corpus for that
+    # tenant. So a brand-new customer could only ever receive the legacy pack lane, while the
+    # pilot tenant received the Admin corpus purely because a human had run an INSERT for it.
+    #
+    # HERE AND NOT AT SIGNUP, deliberately. Every tenant that already exists signed up before
+    # this call did; a signup-only hook would fix the next customer and leave the whole installed
+    # base on the legacy lane until somebody remembered a script. This is the one seam all four
+    # entry points share — first sync, sync-all, the durable job worker and the 6-hourly sweep —
+    # it is idempotent, and it is non-fatal, so a tenant it cannot provision today is reasoned
+    # about exactly as it was and provisioned on the next tick.
+    try:
+        from genios_engine.platform.intelligence_onboarding import provision_intelligence
+        provision_intelligence(_graph.engine, org_id)
+    except Exception:      # noqa: BLE001 — provisioning never blocks the pass it precedes
+        _log.exception("intelligence provisioning failed for org_id=%s", org_id)
     try:
         from genios_engine.context.runner import process_pending
         result = process_pending(org_id=org_id, store=_graph, llm=_llm,
@@ -2156,6 +2175,54 @@ def _mirror_connection(org_id: str, source_type: str, *, status: str = "connecte
         _log.exception("connection mirror failed org=%s source=%s", org_id, source_type)
 
 
+def _adopt_completed_oauth(org_id: str, accounts: list[dict]) -> None:
+    """Mirror every ACTIVE Composio account into `connections`, and pull once if it never has.
+
+    ADDITIVE AND IDEMPOTENT. `_mirror_connection` upserts a deterministic id, so a poll every
+    three seconds writes the same row; the first pull is gated on the source having NO sync
+    cursor, which only a source that has genuinely never been read can satisfy, and
+    `sync_jobs.enqueue` refuses a second job anyway.
+
+    NEVER RAISES. This runs inside the status read the integrations page depends on; a tenant
+    whose adoption fails must still be told what Composio says about their connections.
+    """
+    active = sorted({a["source_type"] for a in accounts if a.get("status") == "ACTIVE"})
+    if not active or _connections is None:
+        return
+    try:
+        known = {c.source_type: c.status for c in _connections.list_active()
+                 if c.org_id == org_id}
+    except Exception:      # noqa: BLE001
+        _log.exception("connection index unreadable for org=%s", org_id)
+        return
+    fresh = [st for st in active if known.get(st) != "connected"]
+    for st in fresh:
+        _mirror_connection(org_id, st)
+    if not fresh or _graph is None:
+        return
+    # NEVER PULLED, not "not pulled recently". A source with a cursor has been read before and
+    # belongs to the ordinary sweep; a source with none has no history at all, and waiting six
+    # hours to give a customer their first card is the whole of the complaint this closes.
+    try:
+        from sqlalchemy import text
+        with _graph.engine.connect() as c:
+            seen = {r[0] for r in c.execute(text(
+                "select distinct source from sync_cursors where org_id=:o"), {"o": org_id})}
+        virgin = [st for st in active if st not in seen]
+        if not virgin:
+            return
+        from genios_engine.platform import sync_jobs as J
+        if J.enqueue(_graph.engine, org_id, virgin):
+            from genios_engine.platform.audit import record
+            record(org_id, "data_synced", actor_type="system", target_type="source",
+                   target_id=",".join(virgin),
+                   metadata={"audit_category": "data_extraction", "mode": "oauth_completed",
+                             "tools": virgin})
+            _log.info("first sync enqueued for org=%s sources=%s after OAuth", org_id, virgin)
+    except Exception:      # noqa: BLE001 — see the docstring
+        _log.exception("first-pull enqueue failed for org=%s", org_id)
+
+
 def _composio_connected(org_id: str) -> list[dict]:
     """The org's Composio accounts (the source of truth for what's connected). ACTIVE = usable."""
     from composio import Composio
@@ -2229,6 +2296,23 @@ def integrations_status(org_id: str = Depends(get_current_org)) -> dict:
     # come from the job/progress state — otherwise the Sync button never shows "Syncing…" while a job
     # is actually running. Read it ONCE for the org (all its tools sync together).
     job_running = _sync_active(org_id)
+    # THE FIRST SERVER-SIDE SIGHTING OF A COMPLETED OAUTH, and until now nothing acted on it.
+    #
+    # `tool_connect_redirect` deliberately writes no `connections` row ("a click is not a
+    # completed OAuth"), and the only writers of `status='connected'` were the two SYNC routes.
+    # So a tenant who authorised Gmail and never pressed "Sync now" had either no row or — if
+    # they had disconnected once first — a row still reading `disconnected`. `run_sync_sweep`
+    # iterates `list_active()`, which filters `status == 'connected'`, so that tenant was
+    # invisible to every future tick: not slow, not queued, permanently unreachable.
+    #
+    # Measured on production: org registered 14:46, Gmail authorised 14:47, calendar 14:48; at
+    # 15:00 its connection row read `disconnected` and it held zero source events.
+    #
+    # Composio is still the source of truth for STATUS — this only mirrors what it just said —
+    # and this route is where the dashboard learns it, because the OAuth callback returns the
+    # browser here and the page polls. `_first_pull` is guarded on having never pulled that
+    # source at all, so a poll every few seconds cannot re-trigger anything.
+    _adopt_completed_oauth(org_id, accounts)
     out: dict = {}
     for a in accounts:
         active = a["status"] == "ACTIVE"
@@ -3994,8 +4078,13 @@ def list_cards(assignee: str | None = None,
     _require_l5()
     admin = ctx.sees_org_queue                       # owner session OR an org-level API key
     effective_assignee = assignee if admin else (ctx.actor_id or ctx.agent_id)
+    # WHICH ROWS is `admin`; WHO IS LOOKING is this. A founder's JWT sees the org queue AND is
+    # a person with a seat, and folding the two meant their objective ordered nothing and no
+    # card could say why it was theirs. An org API key carries `org_primary_key`, which
+    # resolves to no seat, so it keeps the org-wide read unchanged.
     return {"cards": _card_store.queue(
-        ctx.org_id, assignee=effective_assignee, admin=admin)}
+        ctx.org_id, assignee=effective_assignee, admin=admin,
+        viewer=ctx.actor_id or ctx.agent_id)}
 
 
 @router.get("/cards/{card_id}")

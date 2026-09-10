@@ -8,7 +8,7 @@ from sqlalchemy import text
 from genios_engine.contracts.abstention import Level as _ABSTENTION
 from genios_engine.contracts.abstention import VALID_LEVELS as _ABSTENTION_LEVELS
 from .bands import band
-from .router import resolve_assignment
+from .router import co_recipients_for, resolve_assignee
 from .slots import _fval, compute_slots
 
 # E0 · Card Builder (§5.10). Compose the card.v1 draft deterministically from a signal + play +
@@ -688,14 +688,14 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
 
     scoring = effective.get("scoring", {})
     urgency_band = band(int(signal["score"]), scoring.get("bands"))
-    assignment = resolve_assignment(
-        store, org_id, facts, {**(attrs or {}), **_group_memberships(store, org_id, node_id)})
-    assignee, rule = assignment.recipient, assignment.reason_code
-    # ONE CARD, EVERYONE WHO ANSWERS FOR IT. The row stays keyed on the signal; these ride
-    # beside it in `card_recipients` and each is told which slice made it theirs.
-    co_recipients = [{"seat_id": r.seat_id, "accountability": r.accountability,
-                      "scope_kind": r.scope_kind, "scope_key": r.scope_key,
-                      "source": r.source} for r in assignment.co_recipients]
+    # THE FIRM A PERSON BELONGS TO IS PART OF WHAT THIS SITUATION IS ABOUT, so a responsibility
+    # declared over `client = Peak XV` can match a card anchored on a partner there.
+    scoped_attrs = {**(attrs or {}), **_group_memberships(store, org_id, node_id)}
+    assignee, rule = resolve_assignee(store, org_id, facts, scoped_attrs)
+    # ONE CARD, EVERYONE WHO ANSWERS FOR IT. The row stays keyed on the signal — three writers
+    # upsert on `cards_one_per_signal` and every count in the product reads rows — so the people
+    # it reaches ride BESIDE it in `card_recipients`, each told which slice made it theirs.
+    co_recipients = list(co_recipients_for(store, org_id, facts, scoped_attrs, owner=assignee))
     # The rule's own declared clock, not a hand-written lookup. Each pack rule states the field
     # its urgency is timed from; the renderer used a 6-entry map and printed "severald" for the
     # other 19.
