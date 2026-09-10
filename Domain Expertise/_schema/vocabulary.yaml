@@ -77,6 +77,18 @@ closed:
   value_forms:
     - "<literal>"
     - "{baseline: <baseline_name>, mult: <number>, floor: <number>}"
+    # THE RIGHT-HAND SIDE MAY BE ANOTHER FACT, so a threshold can be the counterparty's own
+    # normal instead of a number somebody guessed for every customer at once. `other_path` is
+    # resolved off the same slice as `path`, with the same precedence (anchor first, 1-hop
+    # neighbourhood second) and the same three-state rule — absent means the condition is
+    # UNKNOWN, never a substituted default.
+    #
+    #   - path: outreach.days_waiting
+    #     op: ">"
+    #     value: {other_path: party.reply_cadence_days, mult: 1.5, floor: 3}
+    #
+    # "Half again as long as THIS counterparty usually takes, and never before day three."
+    - "{other_path: <fact_path>, mult: <number>, floor: <number>}"
 
   # Object property types the compiler can emit.
   property_types: [string, integer, number, boolean, enum, timestamp, duration, money, ref, list]

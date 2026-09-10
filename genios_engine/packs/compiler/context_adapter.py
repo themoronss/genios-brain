@@ -306,6 +306,58 @@ class ContextAdapter:
         raise ValueError(f"unsupported authored predicate operator {op!r}")
 
     def _threshold(self, value: Any) -> tuple[bool, Any]:
+        """What the left-hand side is compared AGAINST — a literal, a baseline, or another fact.
+
+        `{other_path: ...}` IS THE FORM THAT LETS A RULE STOP BEING A NUMBER.
+        Before it, everything an author could write was `path OP <literal>`, so every threshold in
+        the corpus was somebody's guess at a number that suits every customer. `outbound-awaiting-
+        reply.yaml` is the confession: it gates on `days_waiting >= 3` while its own description
+        four lines up says the opposite — *"a fund that answers in three weeks is not slow at day
+        ten."* The author knew the right rule and had no way to write it, so the file states it in
+        prose and hopes the model applies it.
+
+        The right rule compares two facts the graph already holds:
+
+            - path: outreach.days_waiting
+              op: ">"
+              value: {other_path: party.reply_cadence_days, mult: 1.5, floor: 3}
+
+        "Chase when we have waited half again as long as THIS counterparty's own normal, and never
+        before day three." That is one rule that behaves differently for a fund who replies in a
+        day and a fund who replies in a month — which is what a rule has to do when the customers
+        are not the same customer.
+
+        `mult` and `floor` mean exactly what they already mean for `baseline`, deliberately: the
+        two forms are the same shape with a different left-hand source, so an author who has
+        learnt one has learnt both.
+
+        THE THREE-STATE RULE IS NOT BENT. An `other_path` the slice does not hold returns
+        NOT-KNOWN, so the condition is UNKNOWN and `matches()` abstains. It must never fall back
+        to a default number: silently substituting one would make the comparison answer a question
+        nobody asked, and for a doctrine rule a wrong FALSE reads as *satisfied*.
+
+        RESOLVED THROUGH `_fact`, so it obeys the same precedence as the left-hand side — the
+        anchor's own value first, the 1-hop neighbourhood second, and `missing_fields` /
+        `unknowable_fields` outranking both. A company anchor holds almost no facts of its own, so
+        a form that read only the root would be unknown on nearly every situation.
+        """
+        if isinstance(value, Mapping) and "other_path" in value:
+            other = str(value["other_path"])
+            present, held = self._fact(other, neighbor=False)
+            if not present or held is None:
+                return False, f"other_path:{other}"
+            multiplier = value.get("mult", 1)
+            floor = value.get("floor")
+            try:
+                threshold = Decimal(str(held)) * Decimal(str(multiplier))
+                if floor is not None:
+                    threshold = max(threshold, Decimal(str(floor)))
+            except (DecimalException, TypeError, ValueError):
+                # A non-numeric fact on the right-hand side is not a comparison. UNKNOWN rather
+                # than an exception: an author naming a text field here has made a mistake, and
+                # the honest answer is that this rule could not be decided, not that it failed.
+                return False, f"other_path:{other}"
+            return True, threshold
         if not isinstance(value, Mapping) or "baseline" not in value:
             return True, value
         name = str(value["baseline"])
