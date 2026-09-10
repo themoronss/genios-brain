@@ -490,6 +490,28 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
         l1_by_correlation = gather_l1_signals_bulk(
             conn, org_id,
             [str(row["correlation_id"]) for row in situations if row["correlation_id"]])
+        # THE RECEIPTS AN ABSENCE SITUATION ALREADY HAS, fetched here because this is the path
+        # that decides publication and it never fetched them.
+        #
+        # `backfill_absence_l1` was called from ONE place — `compose_org_importance`, the
+        # importance sweep — so on the publish path `l1` stayed `None` for every situation that
+        # claims a silence, and `_preflight` raised `qes_required` AND
+        # `verified_evidence_required` on all of them. Measured read-only on the pilot: 504 held
+        # against 28 admitted, and 480 of those holds carry exactly that pair. Both are
+        # downstream of the same `None`.
+        #
+        # ADDITIVE ONLY. A correlation the bulk read already answered is never touched, and a
+        # situation with no receipt behind it keeps its `None` and stays held — which is correct.
+        # What stops happening is refusing claims whose receipts nobody fetched.
+        #
+        # Never fatal: this is a refinement of the evidence, and a sweep that could not fetch it
+        # publishes exactly what it published before.
+        try:
+            from genios_engine.context.situation_bso import backfill_absence_l1
+            l1_by_correlation = backfill_absence_l1(
+                conn, org_id, situations, l1_by_correlation)
+        except Exception:      # noqa: BLE001 — evidence refinement, retried next sweep
+            logger.exception("absence receipt backfill failed for org=%s", org_id)
         # L2.5.8 · IS LAYER 1's SCORER LIVE FOR THIS TENANT AT ALL? Measured ONCE for the sweep,
         # TENANT-SCOPED, with one `select exists` against `qualified_signals`.
         #

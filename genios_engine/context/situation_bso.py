@@ -868,19 +868,36 @@ def backfill_absence_l1(conn, org_id: str, subjects, l1_by_correlation: dict):
     and after this change it still does. What it stops doing is refusing claims whose receipts
     nobody fetched.
 
+    AND IT HAS TO RUN ON THE PUBLISH PATH, which for a long time it did not. This function was
+    called from exactly one place — `compose_org_importance`, the IMPORTANCE sweep — while
+    `reason/domain_shadow` did its own `gather_l1_signals_bulk` and never backfilled. So on the
+    path that actually decides publication, `l1` stayed `None` for every absence situation and
+    both hold reasons below fired anyway. Measured on the pilot: 504 held against 28 admitted,
+    and 480 of those holds carry `qes_required` AND `verified_evidence_required` — the exact
+    pair this function exists to clear.
+
     ONE HOLD REASON OR TWO. `_preflight` raises `verified_evidence_required` on a missing span AND
     `qes_required` when `importance_source` is not `l1_qualified_signals` — and on the pilot all
     349 held candidates carry both, which reads like two independent defects. It is one: both are
     downstream of `l1` being `None` here, because `importance_base(l1)` returns the
     `l1_qualified_signals` arm only when a bundle arrived. Feeding the bundle clears both.
     """
+    def field(subject, name: str):
+        """The importance sweep passes dataclass-ish rows; the PUBLISH path passes SQLAlchemy
+        `RowMapping`s, which have no attributes for their columns. Reading both is what let this
+        function be called from the seam that actually publishes."""
+        value = getattr(subject, name, None)
+        if value is None and hasattr(subject, "get"):
+            value = subject.get(name)
+        return value
+
     for subject in subjects:
-        key = getattr(subject, "correlation_id", None)
-        anchor = getattr(subject, "anchor_node_id", None)
+        key = field(subject, "correlation_id")
+        anchor = field(subject, "anchor_node_id")
         if not key or not anchor or key in l1_by_correlation:
             continue
         events = absence_receipt_event_ids(conn, org_id, str(anchor),
-                                           str(getattr(subject, "situation_type", "") or ""))
+                                           str(field(subject, "situation_type") or ""))
         if not events:
             continue
         folded = gather_l1_signals_for_events(conn, org_id, events)

@@ -302,3 +302,268 @@ def test_the_derived_block_above_them_was_already_unconditional():
     source = _process_pending_source()
 
     assert "RUNS EVERY PASS, not only when the drain committed something." in source
+
+
+# =============================================================================================
+# 5. Last week's period review is over.
+# =============================================================================================
+def _period_store():
+    """`context_situations` and the two graph tables `refresh_period_situations` writes."""
+    engine = create_engine("sqlite://")
+    with engine.begin() as c:
+        for ddl in (
+            "create table context_situations (situation_id text, org_id text, "
+            "correlation_id text, anchor_node_id text, situation_type text, domain text, "
+            "status text, resolved_by text, resolved_at timestamp, resolution_note text, "
+            "confidence_overall int, confidence_evidence int, confidence_freshness int, "
+            "confidence_consistency int, confidence_identity int, coverage int, missing text, "
+            "inputs text, first_seen_at timestamp, last_seen_at timestamp, "
+            "computed_at timestamp)",
+            "create unique index ux_sit on context_situations (org_id, correlation_id)",
+        ):
+            c.execute(text(ddl))
+    return Store(engine)
+
+
+def _period_row(store, corr: str, stype: str, *, status: str = "active",
+                resolved_by: str | None = None) -> None:
+    with store.engine.begin() as c:
+        c.execute(text(
+            "insert into context_situations (situation_id, org_id, correlation_id, "
+            "  situation_type, domain, status, resolved_by) "
+            "values (:s,:o,:c,:t,'admin',:st,:rb)"),
+            {"s": f"sit_{corr}", "o": ORG, "c": corr, "t": stype, "st": status, "rb": resolved_by})
+
+
+def _close_periods(store, *, key: str, types: list[str]):
+    """Exactly the statement `refresh_period_situations` runs, against SQLite.
+
+    Extracted rather than calling the whole refresh because that needs the graph tables and a
+    tenant node; the STATEMENT is the thing that was unverified — its own tests skip without
+    `GENIOS_TEST_DATABASE_URL`, and a skip is not a pass.
+    """
+    from sqlalchemy import bindparam
+
+    with store.engine.begin() as c:
+        return c.execute(text(
+            "update context_situations set status='resolved', resolved_at=:now, "
+            "  resolution_note='period window closed' "
+            "where org_id=:o and status='active' and situation_type in :types "
+            "  and correlation_id like :prefix and correlation_id not like :current "
+            "  and resolved_by is null").bindparams(bindparam("types", expanding=True)),
+            {"o": ORG, "now": NOW, "types": types,
+             "prefix": f"corr_period_%_{ORG}_%",
+             "current": f"corr_period_%_{ORG}_{key}"}).rowcount
+
+
+def _status(store, corr: str) -> str:
+    with store.engine.connect() as c:
+        return c.execute(text(
+            "select status from context_situations where org_id=:o and correlation_id=:c"),
+            {"o": ORG, "c": corr}).scalar()
+
+
+def test_last_windows_period_situation_is_closed():
+    """`context_situations` grew by one active row per period domain PER WEEK for the life of the
+    tenant, every one served to Layer 3 — and the count was self-inflating, because
+    `period.active_situations` counts active situations and last week's were inside it."""
+    store = _period_store()
+    _period_row(store, f"corr_period_admin_{ORG}_2026-W36", "admin_period_review")
+    _period_row(store, f"corr_period_admin_{ORG}_2026-W37", "admin_period_review")
+
+    assert _close_periods(store, key="2026-W37", types=["admin_period_review"]) == 1
+    assert _status(store, f"corr_period_admin_{ORG}_2026-W36") == "resolved"
+
+
+def test_this_windows_period_situation_is_left_open():
+    store = _period_store()
+    _period_row(store, f"corr_period_admin_{ORG}_2026-W37", "admin_period_review")
+
+    _close_periods(store, key="2026-W37", types=["admin_period_review"])
+
+    assert _status(store, f"corr_period_admin_{ORG}_2026-W37") == "active"
+
+
+def test_a_human_who_resolved_last_weeks_review_keeps_their_provenance():
+    """`resolved_by is null` in the predicate. Overwriting it would erase the same provenance the
+    `_upsert` fix above exists to preserve, through a different door."""
+    store = _period_store()
+    corr = f"corr_period_admin_{ORG}_2026-W36"
+    _period_row(store, corr, "admin_period_review", status="active", resolved_by="human")
+
+    assert _close_periods(store, key="2026-W37", types=["admin_period_review"]) == 0
+
+
+def test_only_period_types_are_closed():
+    """A blunter "close every tenant-anchored situation" would take rows another writer owns."""
+    store = _period_store()
+    _period_row(store, f"corr_period_admin_{ORG}_2026-W36", "admin_period_review")
+    _period_row(store, "corr_outreach_someone", "awaiting_response")
+
+    _close_periods(store, key="2026-W37", types=["admin_period_review"])
+
+    assert _status(store, "corr_outreach_someone") == "active"
+
+
+def test_another_tenants_period_review_is_untouched():
+    store = _period_store()
+    with store.engine.begin() as c:
+        c.execute(text(
+            "insert into context_situations (situation_id, org_id, correlation_id, "
+            "  situation_type, domain, status) "
+            "values ('s2','org_other','corr_period_admin_org_other_2026-W36',"
+            "        'admin_period_review','admin','active')"))
+
+    _close_periods(store, key="2026-W37", types=["admin_period_review"])
+
+    with store.engine.connect() as c:
+        assert c.execute(text(
+            "select status from context_situations where org_id='org_other'")).scalar() == "active"
+
+
+def test_closing_twice_is_a_no_op():
+    store = _period_store()
+    _period_row(store, f"corr_period_admin_{ORG}_2026-W36", "admin_period_review")
+
+    _close_periods(store, key="2026-W37", types=["admin_period_review"])
+
+    assert _close_periods(store, key="2026-W37", types=["admin_period_review"]) == 0
+
+
+def test_the_expanding_bindparam_is_used():
+    """Without it SQLAlchemy renders the type list as one scalar and the statement matches
+    nothing — silently. The whole closure would look like it ran and change no row."""
+    from genios_engine.context import periodic
+
+    source = inspect.getsource(periodic.refresh_period_situations)
+
+    assert 'bindparam("types", expanding=True)' in source
+
+
+# =============================================================================================
+# 6. A meeting from three years ago is not follow-through work.
+# =============================================================================================
+def _touch_store():
+    engine = create_engine("sqlite://")
+    with engine.begin() as c:
+        for ddl in (
+            "create table context_situations (situation_id text, org_id text, "
+            "correlation_id text, anchor_node_id text, situation_type text, domain text, "
+            "status text, resolved_by text, resolved_at timestamp, resolution_note text, "
+            "confidence_overall int, confidence_evidence int, confidence_freshness int, "
+            "confidence_consistency int, confidence_identity int, coverage int, missing text, "
+            "inputs text, first_seen_at timestamp, last_seen_at timestamp, "
+            "computed_at timestamp)",
+            "create unique index ux_touch on context_situations (org_id, correlation_id)",
+        ):
+            c.execute(text(ddl))
+    return Store(engine)
+
+
+def _touch_row(store, corr: str, *, status: str = "active", resolved_by=None) -> None:
+    with store.engine.begin() as c:
+        c.execute(text(
+            "insert into context_situations (situation_id, org_id, correlation_id, "
+            "  situation_type, domain, status, resolved_by) "
+            "values (:s,:o,:c,'channel_touch','sales',:st,:rb)"),
+            {"s": f"sit_{corr}", "o": ORG, "c": corr, "st": status, "rb": resolved_by})
+
+
+def _reconcile_touches(store, *, keep: list[str]):
+    """The closing statement `refresh_channel_touch_situations` runs."""
+    from sqlalchemy import bindparam
+
+    with store.engine.begin() as c:
+        return c.execute(text(
+            "update context_situations set status='resolved', resolved_at=:now, "
+            "  resolution_note='meeting outside the follow-through window' "
+            "where org_id=:o and status='active' and situation_type=:st "
+            "  and correlation_id like :prefix and resolved_by is null "
+            + ("and correlation_id not in :keep " if keep else "")
+            ).bindparams(*([bindparam("keep", expanding=True)] if keep else [])),
+            {"o": ORG, "now": NOW, "st": "channel_touch", "prefix": "corr_touch_sales_%",
+             **({"keep": sorted(keep)} if keep else {})}).rowcount
+
+
+def test_a_meeting_outside_the_window_has_its_situation_closed():
+    """It was never closed by anything: a meeting that fell out of scope simply stopped being
+    visited, and 'a finding that stops being produced is not a finding that ended' — the same
+    defect `waiting.py` carried, one situation type over."""
+    store = _touch_store()
+    _touch_row(store, "corr_touch_sales_node_old")
+
+    assert _reconcile_touches(store, keep=["corr_touch_sales_node_recent"]) == 1
+
+
+def test_a_meeting_inside_the_window_is_kept():
+    store = _touch_store()
+    _touch_row(store, "corr_touch_sales_node_recent")
+
+    assert _reconcile_touches(store, keep=["corr_touch_sales_node_recent"]) == 0
+
+
+def test_a_tenant_with_no_live_meetings_closes_all_of_them():
+    """The empty-`keep` branch, which renders a DIFFERENT statement — the `not in ()` SQLAlchemy
+    would otherwise produce is a syntax error, so this path has to be built without the clause."""
+    store = _touch_store()
+    _touch_row(store, "corr_touch_sales_a")
+    _touch_row(store, "corr_touch_sales_b")
+
+    assert _reconcile_touches(store, keep=[]) == 2
+
+
+def test_a_human_who_closed_a_meeting_keeps_their_provenance():
+    store = _touch_store()
+    _touch_row(store, "corr_touch_sales_old", resolved_by="human")
+
+    assert _reconcile_touches(store, keep=[]) == 0
+
+
+def test_freshness_is_the_meetings_own_age():
+    """It was hard-coded to `CONFIDENCE_PCT`, so a row about a meeting eleven weeks ago claimed
+    the same currency as one about yesterday."""
+    from genios_engine.context.meeting_touch import CONFIDENCE_PCT, _freshness
+
+    yesterday = _freshness(NOW - timedelta(days=1), NOW)
+    eleven_weeks = _freshness(NOW - timedelta(days=77), NOW)
+
+    assert yesterday > eleven_weeks
+    assert yesterday == 100
+    assert CONFIDENCE_PCT == 70
+
+
+def test_an_undated_meeting_is_not_reported_as_stale():
+    """`freshness_score` answers `known=False` for an undated meeting, and that is an ABSENCE of
+    information about time — scoring it 0 would turn missing data into bad news."""
+    from genios_engine.context.meeting_touch import CONFIDENCE_PCT, _freshness
+
+    assert _freshness(None, NOW) == CONFIDENCE_PCT
+
+
+def test_a_string_timestamp_is_accepted():
+    """Postgres returns a datetime; a driver need not. The whole pass would silently skip every
+    meeting on one that does not."""
+    from genios_engine.context.meeting_touch import _as_utc
+
+    assert _as_utc("2026-09-01T10:00:00+00:00") == datetime(2026, 9, 1, 10, tzinfo=timezone.utc)
+    assert _as_utc("2026-09-01T10:00:00Z") == datetime(2026, 9, 1, 10, tzinfo=timezone.utc)
+    assert _as_utc("not a date") is None
+    assert _as_utc(None) is None
+
+
+def test_a_naive_timestamp_is_read_as_utc():
+    from genios_engine.context.meeting_touch import _as_utc
+
+    assert _as_utc(datetime(2026, 9, 1, 10)).tzinfo is timezone.utc
+
+
+def test_the_window_and_last_seen_are_the_meetings_not_the_sweeps():
+    """`last_seen_at` was bumped to the sweep instant every six hours, so a three-year-old
+    meeting sat at the top of `domain_shadow`'s newest-evidence ordering, ahead of this
+    morning's mail."""
+    from genios_engine.context import meeting_touch
+
+    source = inspect.getsource(meeting_touch.refresh_channel_touch_situations)
+
+    assert '"seen": start_at or now' in source
+    assert "FOLLOW_THROUGH_DAYS" in source

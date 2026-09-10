@@ -33,7 +33,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
 from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.platform.ids import new_id
@@ -217,6 +217,40 @@ def refresh_period_situations(store, org_id: str, *, now: datetime | None = None
                  "missing": json.dumps(["targets", "per-owner load", "cost per contact"]),
                  "inputs": json.dumps({"window_days": WINDOW_DAYS, "period": key, **aggregates})})
             written += 1
+
+        # LAST WEEK'S REVIEW IS OVER, and nothing used to say so.
+        #
+        # The correlation id contains the period key, so every ISO week mints a BRAND NEW active
+        # situation per period domain — and no pass anywhere closed the previous one.
+        # `context_situations` grew by `len(period_domains())` active rows per week per org for
+        # the life of the tenant, `domain_shadow` served every one of them to Layer 3, and the
+        # count was self-inflating: `period.active_situations` counts active situations, and last
+        # week's un-closed period rows were inside that count.
+        #
+        # RESOLVED, not dormant and not deleted. A closed window is not a situation that went
+        # quiet — it is one whose subject genuinely ended, which is what `resolved` means; and
+        # `decide_lifecycle` archives a resolved row at 180 days, so retention follows for free
+        # instead of needing a second mechanism here.
+        #
+        # SCOPED TO THIS ORG'S PERIOD ROWS, by correlation-id prefix and by the period types this
+        # function itself writes. A blunter "close every tenant-anchored situation" would take
+        # `admin_period_review` rows a human had resolved, and rows another writer owns.
+        period_types = sorted({spec_for(d).type_for("tenant") for d in period_domains()})
+        if period_types:
+            # `in :types` with an EXPANDING bindparam, not a bare tuple: without it SQLAlchemy
+            # renders the tuple as a single scalar and the statement matches nothing, silently.
+            # The rule `waiting.py:84` and `situation_bso._L1_BY_EVENT_SELECT` both record.
+            closed = c.execute(text(
+                "update context_situations set status='resolved', resolved_at=:now, "
+                "  resolution_note='period window closed' "
+                "where org_id=:o and status='active' and situation_type in :types "
+                "  and correlation_id like :prefix and correlation_id not like :current "
+                "  and resolved_by is null").bindparams(
+                    bindparam("types", expanding=True)),
+                {"o": org_id, "now": now, "types": list(period_types),
+                 "prefix": f"corr_period_%_{org_id}_%",
+                 "current": f"corr_period_%_{org_id}_{key}"})
+            written += int(closed.rowcount or 0)
     return written
 
 
