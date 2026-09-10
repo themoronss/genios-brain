@@ -240,7 +240,28 @@ class ContextAdapter:
         return combined
 
     def _fact(self, path: str, *, neighbor: bool = False) -> tuple[bool, Any]:
+        """One fact, with the 1-hop borrow the rest of this class already performs.
+
+        THE TWO HALVES OF ONE RULE DISAGREED. `_typed_absence` and `_derived` both consult the
+        neighbourhood; this did not, so `exists`, `absent` and `path` saw the anchor's own facts
+        alone. On a COMPANY anchor that is almost nothing — `domain_shadow` measured 15 of 18
+        companies on the design partner's org holding zero facts of their own, because everything
+        a capability asks for (`thread.ball_in_court`, `deal.status`, `commitment.due_at`) is
+        extracted onto the PEOPLE and THREADS that constitute the relationship.
+        #
+        And `situation_bso._missing_paths` counts a neighbour-held field as HELD, so such a path
+        never entered `missing_fields` either — which is what made the answer a confident FALSE
+        rather than an honest UNKNOWN. Two halves of one rule, disagreeing about what the slice
+        contains.
+
+        ROOT FIRST, ALWAYS. A fact on the anchor itself is the anchor's own answer and outranks a
+        borrowed one; the borrow only fills a gap. `neighbor_fact` still reads the neighbourhood
+        EXCLUSIVELY, because an author writing that form is asking about the neighbourhood
+        specifically and a root value would answer a different question.
+        """
         facts = self.neighbor_facts if neighbor else self.facts
+        if path not in facts and not neighbor and path in self.neighbor_facts:
+            facts = self.neighbor_facts
         if path not in facts:
             return False, None
         value = facts[path]
@@ -545,6 +566,28 @@ class ContextAdapter:
             # expectation map and the coverage map are different declarations.
             if path in self.unknowable_fields or path in self.missing_fields:
                 return PredicateVerdict(PredicateState.UNKNOWN, (path,))
+            # THREE ANSWERS TO ONE QUESTION, and only one of them is a defect.
+            #
+            # An audit read this branch's FALSE (a path not in the slice), `absent:`'s TRUE for
+            # the same path, and `path:`'s UNKNOWN, and called them three answers. Two of the
+            # three agree: `exists`→FALSE and `absent`→TRUE both say "the fact is not there", and
+            # `path:`→UNKNOWN is right on its own terms, because a value you do not have cannot
+            # be compared to a threshold.
+            #
+            # THE REAL GAP IS UPSTREAM AND IS NOT FIXED HERE. `may_infer_absent` is
+            # `path not in unknowable`, and `unknowable_fields` holds only what somebody
+            # DECLARED unknowable — so a path nobody classified falls through to "licensed", and
+            # this branch concludes absence from silence. `AbsenceType`'s own docstring forbids
+            # exactly that: "a `coverage_ready` of None lands in UNKNOWABLE, never in
+            # GENUINELY_ABSENT — 'we did not classify this domain' is not evidence that the
+            # domain is covered." Closing it means making the coverage map TOTAL, which is a
+            # different piece of work from this evaluator and would turn most `absent:` answers
+            # into abstentions until it is done.
+            #
+            # A first cut of this comment shipped a `may_infer_absent` call here as if it fixed
+            # that. It could not: the `unknowable_fields` test three lines above has already
+            # returned, so the call can only ever answer True. Recorded rather than deleted,
+            # because a no-op wearing a fix's comment is worse than the gap it claims to close.
             return PredicateVerdict(PredicateState.TRUE if self._fact(path)[0]
                                     else PredicateState.FALSE)
         if "absent" in condition:

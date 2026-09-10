@@ -88,8 +88,45 @@ FORM_KEYS = [
 ]
 
 
+#: The five ANALYTIC forms, which no key-set can express and which this validator therefore
+#: refused outright — so the whole family was UNAUTHORABLE. `ContextAdapter.evaluate` dispatches
+#: them first, on `kind`, before any of the key-set forms below; the adapter's own docstring
+#: admitted the gap and deferred it to "the corpus wave". This is that wave.
+#:
+#: Keyed by kind → (required keys, optional keys). Validated per kind rather than waved through:
+#: `{kind: trend}` with no `metric` answers UNKNOWN forever, which is the same dead predicate the
+#: key-set check exists to prevent, one level in.
+ANALYTIC_FORMS: dict[str, tuple[set[str], set[str]]] = {
+    "trend":    ({"metric"}, {"direction", "min_confidence_bp"}),
+    "cohort":   ({"metric"}, {"band", "min_population"}),
+    "anomaly":  ({"metric"}, {"direction", "min_z_like_bp"}),
+    "absence":  ({"fact"},   {"type"}),
+    "conflict": ({"field"},  set()),
+}
+
+
 def check_predicate(path: Path, where: str, cond: dict, vocab: dict) -> None:
     keys = set(cond)
+    # DISPATCHED ON `kind` FIRST, exactly as the evaluator does. A form the engine answers by a
+    # different route must not be judged by the key-set list, which describes the OTHER route.
+    kind = str(cond.get("kind") or "").strip().lower()
+    if kind or "kind" in cond:
+        shape = ANALYTIC_FORMS.get(kind)
+        if shape is None:
+            err(path, f"{where}: analytic predicate kind {kind or '(blank)'!r} is not one of "
+                      f"{sorted(ANALYTIC_FORMS)} — `ContextAdapter.evaluate` refuses it by name "
+                      f"and the predicate can never fire")
+            return
+        required, optional = shape
+        allowed = {"kind"} | required | optional
+        if not required <= keys:
+            err(path, f"{where}: analytic predicate {kind!r} needs {sorted(required)}; "
+                      f"without them it answers UNKNOWN forever")
+        if keys - allowed:
+            err(path, f"{where}: analytic predicate {kind!r} carries {sorted(keys - allowed)}, "
+                      f"which the evaluator ignores — a key nothing reads is a rule whose author "
+                      f"believes it says more than it does")
+        return
     if keys not in FORM_KEYS:
         err(path, f"{where}: predicate {sorted(keys)} matches no form the engine dispatches "
                   f"on — _eval_condition returns False for it, so it can never fire")

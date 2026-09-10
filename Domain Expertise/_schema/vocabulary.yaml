@@ -49,6 +49,29 @@ closed:
     - form: "{path: <path>, op: <op>, value: <v>}"
       reads: "the typed fact compares true"
 
+  # THE FIVE ANALYTIC FORMS, and until 2026-09-10 they were UNAUTHORABLE. `ContextAdapter.
+  # evaluate` dispatches them FIRST, on `kind`, before any of the ten above — but `_tools/
+  # validate.py` judged every predicate by an exact key-set match against that list, so a
+  # situation file carrying one was rejected by the corpus gate. The whole family — the only part
+  # of the adapter that consults the analytic layer — could be evaluated by nothing, because
+  # nobody could write one. Zero authored instances is the measurement of that.
+  #
+  # They read the `derived.*` facts `context/analytic/` publishes: trend, cohort position,
+  # anomaly, typed absence and conflict. Each answers UNKNOWN — never False — when the analytic
+  # layer has not measured that (node, metric): "we have not measured it" is not "it is not
+  # declining", which is the whole reason these are a separate family.
+  analytic_predicate_forms:
+    - form: "{kind: trend, metric: <name>, direction: RISING|DECLINING, min_confidence_bp: <bp>}"
+      reads: "a measured trend on that metric moves that way with at least that confidence"
+    - form: "{kind: cohort, metric: <name>, band: <band>, min_population: <n>}"
+      reads: "this subject sits in that band of a cohort large enough to mean something"
+    - form: "{kind: anomaly, metric: <name>, direction: above|below, min_z_like_bp: <bp>}"
+      reads: "a measured anomaly on that metric departs that far from its own baseline"
+    - form: "{kind: absence, fact: <path>, type: GENUINELY_ABSENT|UNKNOWABLE|STALE}"
+      reads: "the typed absence for that fact is of that kind — never inferred from a gap"
+    - form: "{kind: conflict, field: <path>}"
+      reads: "two sources disagree about that field and Layer 1 preserved both"
+
   # A threshold is a literal, or baseline-derived. _resolve_value() computes
   # max(floor, mult · baseline); a cold-start baseline falls back to floor.
   value_forms:
