@@ -49,11 +49,45 @@ closed:
     - form: "{path: <path>, op: <op>, value: <v>}"
       reads: "the typed fact compares true"
 
-  # A threshold is a literal, or baseline-derived. _resolve_value() computes
-  # max(floor, mult · baseline); a cold-start baseline falls back to floor.
+  # THE FIVE ANALYTIC FORMS, and until 2026-09-10 they were UNAUTHORABLE. `ContextAdapter.
+  # evaluate` dispatches them FIRST, on `kind`, before any of the ten above — but `_tools/
+  # validate.py` judged every predicate by an exact key-set match against that list, so a
+  # situation file carrying one was rejected by the corpus gate. The whole family — the only part
+  # of the adapter that consults the analytic layer — could be evaluated by nothing, because
+  # nobody could write one. Zero authored instances is the measurement of that.
+  #
+  # They read the `derived.*` facts `context/analytic/` publishes: trend, cohort position,
+  # anomaly, typed absence and conflict. Each answers UNKNOWN — never False — when the analytic
+  # layer has not measured that (node, metric): "we have not measured it" is not "it is not
+  # declining", which is the whole reason these are a separate family.
+  analytic_predicate_forms:
+    - form: "{kind: trend, metric: <name>, direction: RISING|DECLINING, min_confidence_bp: <bp>}"
+      reads: "a measured trend on that metric moves that way with at least that confidence"
+    - form: "{kind: cohort, metric: <name>, band: <band>, min_population: <n>}"
+      reads: "this subject sits in that band of a cohort large enough to mean something"
+    - form: "{kind: anomaly, metric: <name>, direction: above|below, min_z_like_bp: <bp>}"
+      reads: "a measured anomaly on that metric departs that far from its own baseline"
+    - form: "{kind: absence, fact: <path>, type: GENUINELY_ABSENT|UNKNOWABLE|STALE}"
+      reads: "the typed absence for that fact is of that kind — never inferred from a gap"
+    - form: "{kind: conflict, field: <path>}"
+      reads: "two sources disagree about that field and Layer 1 preserved both"
+
+
   value_forms:
     - "<literal>"
     - "{baseline: <baseline_name>, mult: <number>, floor: <number>}"
+    # THE RIGHT-HAND SIDE MAY BE ANOTHER FACT, so a threshold can be the counterparty's own
+    # normal instead of a number somebody guessed for every customer at once. `other_path` is
+    # resolved off the same slice as `path`, with the same precedence (anchor first, 1-hop
+    # neighbourhood second) and the same three-state rule — absent means the condition is
+    # UNKNOWN, never a substituted default.
+    #
+    #   - path: outreach.days_waiting
+    #     op: ">"
+    #     value: {other_path: party.reply_cadence_days, mult: 1.5, floor: 3}
+    #
+    # "Half again as long as THIS counterparty usually takes, and never before day three."
+    - "{other_path: <fact_path>, mult: <number>, floor: <number>}"
 
   # Object property types the compiler can emit.
   property_types: [string, integer, number, boolean, enum, timestamp, duration, money, ref, list]
@@ -226,6 +260,25 @@ substrate:
     - party.role              # pipeline.py writes it; card_builder reads it. No pack declares it
     - role                    # legacy flat names, still written and still read. Superseded by
     - company                 #   party.role / the works_at edge, not yet removed
+    # ── CROSS HISTORY (context/correlation_history.py) ────────────────────────
+    # What happened the LAST time this anchor was in this situation. The eight named correlators
+    # all correlate observations that COEXIST; none of them correlates a situation against its
+    # own past, so before these facts existed every customer's second time through anything was
+    # treated as their first.
+    #
+    # Written for EVERY anchor including first-timers, deliberately: a rule asking "is this a
+    # recurrence?" must get FALSE on a first visit rather than UNKNOWN, and it only can if the
+    # fact is there to read. Writing only the recurrences would make "this has never happened
+    # before" indistinguishable from "we have not looked".
+    #
+    # A COUNT IS NOT A JUDGMENT. Three visits may be three unrelated questions from a good
+    # customer or one problem nobody fixed, and nothing here can tell those apart. These facts
+    # let an authored situation SAY "this is the third time" and let a person decide what it
+    # means; a `causes` edge may not be derived from a repetition, however many times it repeats.
+    - derived.history.times_seen          # generations of this anchor in this domain, live one included
+    - derived.history.days_since_prior    # whole days since the previous generation's last event
+    - derived.history.prior_outcome       # the prior execution's label, or first_time / unrecorded
+    - derived.history.prior_card_verdict  # run_play | do_it_myself | wrong:<reason>, or the two sentinels
     # ── engine-computed (never extracted; context/derived.py) ──────────────────
     - derived.momentum        # engine-computed trajectory
     - derived.engagement      # engine-computed two-way volume vs prior fortnight
@@ -444,6 +497,44 @@ substrate:
     - payment_overdue
 
   # Learned per-entity baselines available to {baseline: ...} thresholds.
+  # A threshold is a literal, or baseline-derived. _resolve_value() computes
+  # max(floor, mult · baseline); a cold-start baseline falls back to floor.
+  # THE SLOTS A `render.fallback` MAY NAME. Transcribed from `deliver/slots.SENTINELS`, which is
+  # the engine's own list, and kept in step by
+  # `tests/deliver/test_an_authored_slot_is_one_the_engine_can_fill.py`.
+  #
+  # WHY THIS IS HERE AT ALL. `render._interpolate` used `tpl.format(**slots)` and raised KeyError
+  # on any slot the engine does not write — and THREE SHIPPED SITUATION FILES named six such
+  # slots between them, so their whole card died at render. The engine now degrades an unwritten
+  # slot to a dropped clause instead of crashing; this list is what turns the same mistake into a
+  # validator error at authoring time, which is where an author can see it.
+  fallback_slots:
+    - action            # the commitment itself
+    - awaiting          # how many of a group are still silent
+    - ball              # whose move it is
+    - concerns          # what the open items are
+    - contacted         # how many were reached
+    - days              # a generic day count
+    - entity            # the account or person the card is about
+    - follow_ups        # how many times we have chased
+    - last_heard_days   # days since they last spoke
+    - money             # an amount
+    - never_chased      # the "we asked once and stopped" case
+    - objective         # what the outreach was for
+    - past_normal       # how far past their own cadence we are
+    - role              # what this contact is to us
+    - stage             # a pipeline stage
+    - their_cadence     # how fast this counterparty normally answers
+    - waited_days       # days we have been waiting
+    - who               # the counterparty by name
+    # THE GROUP SLOTS, added with their writers. Three shipped files named these before any
+    # writer existed and every one of their cards died at render with a KeyError.
+    - age_days          # how long a held condition has been held
+    - longest_wait_days # the longest single silence inside a campaign or a firm
+    - organization      # the counterparty FIRM, where `entity` is the person
+    - quote             # the outbound line a campaign's recipients all received
+    - sent_on           # the day a campaign went out
+
   baselines:
     - reply_cadence
     - contact_rate_per_account   # per-company contacts/week over the 56d window (reason/baselines.py)
@@ -569,6 +660,25 @@ substrate:
     # retention needs a schedule the tenant has never stated — so `retention_and_archival` gets a
     # route and an empty hand, and both are named in `missing` on every row.
     - document_under_control    # admin, anchored on one file (`document`)
+    # ── MINTED BY AN ACTIVATED PATTERN (context/patterns/seed/*.yaml) ─────────
+    #
+    # NOT `domain_spec.py`, and that is why they were missing. `situation_bso._situation_type`
+    # states the precedence: *"an ACTIVATED pattern names it"* — a pattern's type REPLACES the
+    # anchor-derived one, and activation is a per-tenant operator switch rather than a deploy.
+    # Six types already ship this way and NONE of them is in `domain_spec.py`, so this list —
+    # transcribed from that file alone — did not know they existed.
+    #
+    # THE COST WAS A LIE IN THE VALIDATOR. An author binding a situation to
+    # `relationship_going_cold` got "is not a type Layer 2 emits" and was told to move it to
+    # `pending_l2_situation_types` — a wish list for types nobody writes — when the type is
+    # live, minted every sweep, and already routing. The corpus was refusing the one lane that
+    # was open.
+    - commitment_unresolved
+    - condition_now_satisfied
+    - founder_bottleneck
+    - meeting_preparation_gap
+    - relationship_going_cold
+    - vendor_renewal_decision
 # ─────────────────────────────────────────────────────────────────────────────
 # PLANNED SUBSTRATE — asked for by authored expertise, emitted by nothing yet.
 #

@@ -25,7 +25,7 @@ from datetime import datetime
 from typing import Any, Mapping, Protocol
 
 from genios_engine.capture.coverage.declaration import CoverageDeclaration
-from genios_engine.capture.coverage.model import PACK_REQUIREMENTS
+from genios_engine.capture.coverage.model import pack_requirements
 from genios_engine.platform.db import get_engine
 from genios_engine.platform.logging import get_logger
 
@@ -67,7 +67,7 @@ def rows_for(declaration: CoverageDeclaration) -> list[CoverageRow]:
         # minus `missing_recommended` looks like the required set and is only equal to it while
         # every recommended capability happens to be missing — the moment a tenant connects a
         # calendar, a derivation like that would file `calendar` as REQUIRED for sales.
-        required = tuple(PACK_REQUIREMENTS.get(domain, {}).get("required", ()))
+        required = tuple(pack_requirements().get(domain, {}).get("required", ()))
         out.append(CoverageRow(
             org_id=declaration.org_id, domain=domain,
             required=required, connected=connected,

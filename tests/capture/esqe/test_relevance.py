@@ -125,16 +125,57 @@ def test_each_deterministic_rule_decides_without_a_model(name, over, relevant, r
 
 
 def test_the_cascade_order_is_the_one_the_plan_fixed():
-    """A known counterparty who happens to send through a mailing platform is still a known
-    counterparty. If the bulk rule were asked first this decision would flip, which is the
-    reordering the module docstring exists to prevent."""
+    """A known counterparty who happens to send through a mailing platform is still RELEVANT.
+    If the bulk rule were asked first this decision would flip to a drop, which is the
+    reordering the module docstring exists to prevent.
+
+    CORRECTED, NOT WEAKENED, and the difference is worth recording. This asserted the rule NAME
+    `known_counterparty`, and N-12 changed it to `known_counterparty_bulk` — the message is
+    parked at 4000 bp rather than taking the second-highest rank in the table. The property this
+    test was written to hold is that a known sender's broadcast is not DROPPED, and that is
+    exactly what still holds; the name it happened to check was never the point. The test now
+    asserts the property directly, plus the downranking, so it cannot pass again by accident if
+    somebody restores the flat 9000.
+    """
     outcome = R.assess_relevance(
         [candidate(sender_known=True, headers={"List-Unsubscribe": "<mailto:u@x.com>"})],
         llm=RaisingLLM())
 
     assert outcome.decisions[0].relevant is True
-    assert outcome.decisions[0].rule == R.RULE_KNOWN_COUNTERPARTY
+    assert outcome.decisions[0].rule == R.RULE_KNOWN_COUNTERPARTY_BULK
     assert R.RULE_ORDER.index(R.RULE_KNOWN_COUNTERPARTY) < R.RULE_ORDER.index(R.RULE_BULK_HEADERS)
+
+
+def test_a_known_senders_broadcast_does_not_outrank_the_message_they_typed():
+    """N-12, the whole of it. `gate/rules.py:228` names "bulk-from-known -> park" and nothing
+    implemented it: a counterparty's campaign was whitelisted at S1 by W-01 and then took the
+    SECOND-HIGHEST rank in `_RULE_RELEVANCE_BP`, ahead of everything but internal mail. The only
+    counterweight was the audience multiplier, which reads To+Cc — so a BCC blast reported one
+    recipient and took no discount at all."""
+    personal = R.assess_relevance([candidate(sender_known=True)], llm=RaisingLLM())
+    broadcast = R.assess_relevance(
+        [candidate(sender_known=True, headers={"List-Unsubscribe": "<mailto:u@x.com>"})],
+        llm=RaisingLLM())
+
+    assert (R._RULE_RELEVANCE_BP[broadcast.decisions[0].rule]
+            < R._RULE_RELEVANCE_BP[personal.decisions[0].rule])
+
+
+def test_a_parked_broadcast_still_outranks_nobody_deciding():
+    """PARKED, NOT DROPPED. A known counterparty's broadcast routinely carries a real fact — an
+    invoice, a price change, a deprecation notice — so it must stay above the three fail-open
+    paths, which mean "nobody decided" and here somebody did: we know exactly who they are."""
+    assert (R._RULE_RELEVANCE_BP[R.RULE_KNOWN_COUNTERPARTY_BULK]
+            > R._RULE_RELEVANCE_BP[R.RULE_LLM_UNAVAILABLE])
+    assert (R._RULE_RELEVANCE_BP[R.RULE_KNOWN_COUNTERPARTY_BULK]
+            > R._RULE_RELEVANCE_BP[R.RULE_BULK_HEADERS])
+
+
+def test_a_model_that_read_the_message_still_outranks_a_relationship():
+    """LLM-5 judged THIS message; the relationship is about the sender. For a broadcast the
+    first is the better evidence, and the ranking says so."""
+    assert (R._RULE_RELEVANCE_BP[R.RULE_KNOWN_COUNTERPARTY_BULK]
+            < R._RULE_RELEVANCE_BP[R.RULE_LLM_BUSINESS])
 
 
 def test_a_service_account_carrying_a_typed_obligation_is_not_filtered():

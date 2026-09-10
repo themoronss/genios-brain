@@ -45,6 +45,12 @@ def build_authoring_root(tmp_path: Path, *, when: str = "[]",
     """A one-domain corpus whose route predicate is whatever the test wants to author.
 
     `when` is inlined as YAML, so a test authors the predicate exactly as a human would in
+    THE SITUATIONS CARRY THEIR OWN `metadata.review_status`/`reviewed_by`. Without it every
+    compile here returns `review_state='draft'` for a reason that has nothing to do with the
+    variable under test: `capability_resolver.situation_admission_reason` asks a situation's WORDS
+    the same question the capability ceremony asks its bytes, and a fixture silent on it isolates
+    nothing. `tests/packs/compiler/test_situation_admission.py` is where that gate is exercised.
+
     `situations/*.yaml` — which is the only way to prove the grammar is expressible rather than
     merely callable.
 
@@ -127,6 +133,10 @@ matches:
   when: {_yaml_conditions(when)}
 objects:
   load: [sales.obj.core.account]
+metadata:
+  owner: Sales
+  review_status: approved
+  reviewed_by: a.named.human@example.com
 """)
     if pattern_when is not None:
         _write(cap / "situations/pattern.yaml", f"""
@@ -142,6 +152,10 @@ matches:
   when: {_yaml_conditions(pattern_when)}
 objects:
   load: [sales.obj.core.account]
+metadata:
+  owner: Sales
+  review_status: approved
+  reviewed_by: a.named.human@example.com
 """)
     _write(domain / "objects/core/account.yaml", """
 identity:

@@ -73,6 +73,31 @@ class Outcome(StrEnum):
 #: same way is the failure this whole vocabulary exists to make testable.
 INSTRUCTING: frozenset[Outcome] = frozenset({Outcome.EMIT_ACTION, Outcome.ESCALATE})
 
+#: Outcomes that justify INTERRUPTING a person, as opposed to waiting to be read.
+#:
+#: `INSTRUCTING` above is a different question — it asks whether the system is telling somebody
+#: what to do. `ASK_DECISION` is not instructing and it must still interrupt: a question only a
+#: person with authority can answer is not an abstention from advising, it IS the advice, and a
+#: question that waits in a queue is a question nobody answers.
+#:
+#: THE CASE THIS EXISTS FOR is the catalogue's DM-03, "no backup authority exists": *"Request one
+#: precise decision from the authorized manager."* Before this set, `deliver/pipeline` gated the
+#: push on `abstention.is_actionable`, which is False for `review` — so the one card whose entire
+#: purpose is to reach a named human never reached one.
+#:
+#: `EMIT_OBSERVATION` is deliberately absent, and that half is not a defect. An observation card
+#: says "here is something true, nobody needs to act" and 18 of one tenant's 24 surfaced cards
+#: were those, with 28 prescriptive ones queued behind them. Abstaining cards stay queued and are
+#: read when the user opens the app; the distinction is interruption, not visibility.
+INTERRUPTS: frozenset[Outcome] = frozenset({
+    Outcome.EMIT_ACTION, Outcome.ASK_DECISION, Outcome.ESCALATE})
+
+
+def interrupts(outcome: "Outcome | None") -> bool:
+    """May this outcome take somebody's attention now? Unknown never interrupts."""
+    return outcome in INTERRUPTS
+
+
 #: Outcomes that end the situation. Nothing further is expected for this instance.
 TERMINAL: frozenset[Outcome] = frozenset({Outcome.SUPPRESS, Outcome.CANCEL})
 
@@ -87,6 +112,23 @@ MECHANICAL: frozenset[Outcome] = frozenset({Outcome.RETRY, Outcome.NO_AUTHORITY}
 #: qualified name so a reader can see at a glance which layer is being projected, and so two
 #: layers using the same word — `defer`, `cancelled`, `suppress` — cannot collide.
 PROJECTION: dict[str, dict[str, Outcome]] = {
+    # THE GATE THAT DECIDES WHETHER A SITUATION EXISTS AT ALL, and it was missing from this map.
+    #
+    # `context/situation_publisher.PublicationOutcome` is the single biggest real producer of the
+    # canonical HOLD — measured on the pilot: 504 held against 28 admitted. Because it was not
+    # projected, `unreachable()` returned `()` and `UNEXPRESSED_BY` reported no gap for HOLD, so
+    # the map read CLEAN about a layer it had never been shown. A vocabulary missing from the
+    # projection is invisible to every guard built on it, which is the quietest way for a
+    # coverage map to be wrong.
+    #
+    # HOLD is not a refusal. `decide_publication`'s own docstring draws the line: a hold
+    # "preserves recoverable incompleteness … and may be retried after the next graph sweep",
+    # while a REJECT is a contract failure that no sweep repairs.
+    "context.PublicationOutcome": {
+        "admit": Outcome.EMIT_ACTION,
+        "hold": Outcome.HOLD,
+        "reject": Outcome.SUPPRESS,
+    },
     "abstention.Level": {
         "prescriptive": Outcome.EMIT_ACTION,
         "predictive": Outcome.EMIT_ACTION,
@@ -282,14 +324,25 @@ def unreachable() -> tuple[Outcome, ...]:
 _compute_gaps()
 
 
+#: THE PUBLIC SURFACE NAMED THE DEAD HALF. It exported `INSTRUCTING`, `MECHANICAL`,
+#: `UNEXPRESSED_BY`, `expressible_by` and `unreachable` — none of which any engine module reads —
+#: and OMITTED `interrupts` and `INTERRUPTS`, the two names that are actually wired, plus
+#: `resolve`, `implied` and `disagreements`, which the drain now folds through. An `__all__` that
+#: advertises what nobody calls and hides what everybody does is a map of the wrong territory.
 __all__ = [
     "INSTRUCTING",
+    "INTERRUPTS",
     "MECHANICAL",
     "PROJECTION",
+    "RANK",
     "TERMINAL",
     "UNEXPRESSED_BY",
     "Outcome",
+    "disagreements",
     "expressible_by",
+    "implied",
+    "interrupts",
     "project",
+    "resolve",
     "unreachable",
 ]

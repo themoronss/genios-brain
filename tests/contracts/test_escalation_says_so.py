@@ -140,3 +140,97 @@ def test_the_canonical_outcome_agrees_with_the_rungs_that_announce_themselves():
         framed = is_escalation(f"escalation_{action}")
 
         assert framed == (projected is Outcome.ESCALATE), action
+
+
+# =============================================================================================
+# The surface a founder is actually pinged on.
+# =============================================================================================
+def test_the_escalation_frame_survives_the_slack_adapter():
+    """THE SECOND HALF, and it was missing. `executive_bridge` sets `kind` and
+    `escalation_action` for exactly this, and both had ZERO consumers — `channels/slack.py`
+    prefixed all four rungs of the ladder with "Still open — ", so the rung that widens the
+    audience and interrupts arrived looking like the first gentle nudge."""
+    from genios_engine.deliver.channels.slack import format_card_message, format_reminder_message
+
+    escalated = format_reminder_message(reminder("escalation_critical"))
+    ordinary = format_reminder_message(reminder("escalation_remind"))
+
+    assert "Escalated" in escalated["text"]
+    assert "Still open" not in escalated["text"]
+    assert "Still open" in ordinary["text"]
+    assert format_card_message is not None
+
+
+def test_an_ordinary_reminder_still_reads_as_one():
+    from genios_engine.deliver.channels.slack import format_reminder_message
+
+    payload = format_reminder_message(reminder("deadline_warning"))
+
+    assert payload["text"].endswith(GOAL)
+    assert "Still open" in payload["text"]
+
+
+def test_the_blocks_and_the_fallback_text_agree():
+    """Slack shows `text` in the notification and `blocks` in the channel. Two different frames
+    would mean the ping said one thing and the message another."""
+    from genios_engine.deliver.channels.slack import format_reminder_message
+
+    payload = format_reminder_message(reminder("escalation_escalate"))
+    rendered = payload["blocks"][0]["text"]["text"]
+
+    assert payload["text"].startswith("🔴 Escalated")
+    assert rendered.startswith("🔴 *Escalated")
+
+
+# =============================================================================================
+# An abstention with no stated cause is indistinguishable from an opinion.
+# =============================================================================================
+def test_the_reason_a_card_declined_to_advise_reaches_chat():
+    """`cards.abstained_because` exists to carry it and `format_card_message` rendered headline
+    and situation only — so on the one surface a founder is pinged on, the cause was absent.
+    That matters more now that ASK_DECISION interrupts: a card whose whole content is a question
+    would have arrived looking like an instruction."""
+    from genios_engine.deliver.channels.slack import format_card_message
+
+    payload = format_card_message({
+        "card_id": "c1", "headline": "Needs a decision — who owns Document C",
+        "situation": "Nobody is recorded as accountable.",
+        "level": "review", "abstained_because": "no owner is recorded for this requirement"})
+
+    assert "no owner is recorded for this requirement" in payload["blocks"][0]["text"]["text"]
+
+
+def test_a_prescriptive_card_is_not_given_an_abstention_line():
+    """The field can be set on a card that later became actionable. Printing it there would tell
+    a reader the system declined to advise on a card that is advising."""
+    from genios_engine.deliver.channels.slack import format_card_message
+
+    payload = format_card_message({
+        "card_id": "c1", "headline": "Send the signed order form",
+        "situation": "They asked on Tuesday.",
+        "level": "prescriptive", "abstained_because": "stale"})
+
+    assert "stale" not in payload["blocks"][0]["text"]["text"]
+
+
+def test_a_card_with_no_stated_cause_renders_exactly_as_before():
+    """Most cards carry nothing here, and an empty italic line is worse than none."""
+    from genios_engine.deliver.channels.slack import format_card_message
+
+    with_field = format_card_message({"card_id": "c1", "headline": "H", "situation": "S",
+                                      "level": "observation", "abstained_because": ""})
+    without = format_card_message({"card_id": "c1", "headline": "H", "situation": "S"})
+
+    assert with_field["blocks"] == without["blocks"]
+
+
+def test_the_outbox_selects_the_two_columns_the_renderer_needs():
+    """A renderer reading a column the query never selected gets `None` on every row — the same
+    silent shape as a missing writer, one join away."""
+    import inspect
+
+    from genios_engine.deliver import outbox
+
+    source = inspect.getsource(outbox)
+
+    assert "k.level,k.abstained_because," in source

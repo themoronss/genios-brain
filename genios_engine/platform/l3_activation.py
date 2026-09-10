@@ -74,11 +74,45 @@ DOMAIN_ADMIN = "admin"
 DOMAIN_SALES = "sales"
 DOMAIN_CUSTOMER_SUPPORT = "customer_support"
 
-#: The three authored corpora under `Domain Expertise/`, in the order that directory lists them.
-#: A caller naming anything else is REFUSED by `require_domain` rather than silently writing a row
-#: no compiler will ever read — which is the failure mode a free-text column invites, and it looks
-#: exactly like an activated tenant right up until nothing happens.
-L3_DOMAINS = (DOMAIN_ADMIN, DOMAIN_CUSTOMER_SUPPORT, DOMAIN_SALES)
+#: THE AUTHORED CORPORA, READ FROM THE CORPUS RATHER THAN TRANSCRIBED FROM IT.
+#:
+#: This was a literal three-tuple, and its own comment gave the defect away: *"the three authored
+#: corpora under `Domain Expertise/`, in the order that directory lists them."* The directory was
+#: already the truth and a Python tuple copied it BY HAND — so authoring a fourth corpus produced
+#: a folder the catalog loads, the resolver routes and `require_domain` REFUSES. A customer whose
+#: business is not admin, sales or support could not be activated at all, and the refusal came
+#: from a list nobody had told about their domain.
+#:
+#: THE GATE DOES NOT MOVE. `require_domain` still refuses everything outside this set, for exactly
+#: the reason written under it — a typo must not write a row that reads as an activated tenant.
+#: What changed is where the set COMES FROM: the corpus, which is the thing an author can add to,
+#: instead of a literal, which is a thing only an engineer can. A rule may be a gate; it may not
+#: also be the vocabulary.
+#:
+#: THE THREE NAMES ABOVE STAY as module constants because call sites reference them by name and a
+#: constant that resolves at import is worth more than a string literal at each site. They are the
+#: corpora that exist today, not the list of corpora that may exist.
+def _authored_domain_ids() -> tuple[str, ...]:
+    """Every domain id under `Domain Expertise/`, sorted, by cheap scan.
+
+    NOT `ExpertBrainCatalog`, deliberately. That class parses every capability, object, situation
+    and heuristic in the tree and raises on any integrity fault anywhere in it — appropriate for a
+    compile, catastrophic for a module-level constant in `platform/`, where an authoring typo in
+    one unrelated situation file would make the ACTIVATION TABLE unimportable and take the admin
+    console down with it. This reads one key out of each `domain.yaml` and nothing else.
+
+    FAILS SOFT, ON PURPOSE, TO THE THREE THAT SHIPPED. A corpus that cannot be read is a deployment
+    problem; refusing to activate `admin` because of it would turn a missing directory into an
+    outage for tenants who were already live.
+    """
+    shipped = (DOMAIN_ADMIN, DOMAIN_CUSTOMER_SUPPORT, DOMAIN_SALES)
+    from genios_engine.platform.corpus import authored_domain_ids
+
+    found = set(shipped) | set(authored_domain_ids())
+    return tuple(sorted(found))
+
+
+L3_DOMAINS = _authored_domain_ids()
 
 #: What flipping one domain on ACTUALLY does, in one sentence per domain, returned beside `live`
 #: wherever a console reads this table. An operator who can see a switch is on and cannot see what

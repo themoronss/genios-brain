@@ -29,6 +29,7 @@ Exit 1 on any error. --strict promotes warnings to errors.
 """
 from __future__ import annotations
 
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -88,8 +89,45 @@ FORM_KEYS = [
 ]
 
 
+#: The five ANALYTIC forms, which no key-set can express and which this validator therefore
+#: refused outright — so the whole family was UNAUTHORABLE. `ContextAdapter.evaluate` dispatches
+#: them first, on `kind`, before any of the key-set forms below; the adapter's own docstring
+#: admitted the gap and deferred it to "the corpus wave". This is that wave.
+#:
+#: Keyed by kind → (required keys, optional keys). Validated per kind rather than waved through:
+#: `{kind: trend}` with no `metric` answers UNKNOWN forever, which is the same dead predicate the
+#: key-set check exists to prevent, one level in.
+ANALYTIC_FORMS: dict[str, tuple[set[str], set[str]]] = {
+    "trend":    ({"metric"}, {"direction", "min_confidence_bp"}),
+    "cohort":   ({"metric"}, {"band", "min_population"}),
+    "anomaly":  ({"metric"}, {"direction", "min_z_like_bp"}),
+    "absence":  ({"fact"},   {"type"}),
+    "conflict": ({"field"},  set()),
+}
+
+
 def check_predicate(path: Path, where: str, cond: dict, vocab: dict) -> None:
     keys = set(cond)
+    # DISPATCHED ON `kind` FIRST, exactly as the evaluator does. A form the engine answers by a
+    # different route must not be judged by the key-set list, which describes the OTHER route.
+    kind = str(cond.get("kind") or "").strip().lower()
+    if kind or "kind" in cond:
+        shape = ANALYTIC_FORMS.get(kind)
+        if shape is None:
+            err(path, f"{where}: analytic predicate kind {kind or '(blank)'!r} is not one of "
+                      f"{sorted(ANALYTIC_FORMS)} — `ContextAdapter.evaluate` refuses it by name "
+                      f"and the predicate can never fire")
+            return
+        required, optional = shape
+        allowed = {"kind"} | required | optional
+        if not required <= keys:
+            err(path, f"{where}: analytic predicate {kind!r} needs {sorted(required)}; "
+                      f"without them it answers UNKNOWN forever")
+        if keys - allowed:
+            err(path, f"{where}: analytic predicate {kind!r} carries {sorted(keys - allowed)}, "
+                      f"which the evaluator ignores — a key nothing reads is a rule whose author "
+                      f"believes it says more than it does")
+        return
     if keys not in FORM_KEYS:
         err(path, f"{where}: predicate {sorted(keys)} matches no form the engine dispatches "
                   f"on — _eval_condition returns False for it, so it can never fire")
@@ -106,6 +144,7 @@ def main(strict: bool = False) -> int:
     sub = vocab["substrate"]
     facts, obs_kinds = set(sub["fact_paths"]), set(sub["obs_kinds"])
     baselines, l2_types = set(sub["baselines"]), set(sub["l2_situation_types"])
+    fallback_slots = set(sub.get("fallback_slots") or ())
     verbs = set(vocab["open"]["relationship_verbs"])
     ev_sources = set(vocab["open"]["evidence_sources"])
     planned_sub = vocab.get("planned_substrate") or {}
@@ -113,8 +152,27 @@ def main(strict: bool = False) -> int:
 
     validators = {}
     if jsonschema is None:
-        print("NOTICE  jsonschema not installed — STRUCTURE pass skipped.\n"
-              "        pip install jsonschema   to enable it.\n")
+        # A SKIP IS NOT A PASS, and this printed "NOTICE" and then went on to report
+        # "0 error(s) — OK". A run without `jsonschema` checked SEMANTICS only, and every
+        # structural rule — the enums, the required keys, the id patterns — went unchecked while
+        # the summary line said the corpus was fine.
+        #
+        # It cost exactly what that always costs. Three situation files on this branch carried
+        # `review_status: draft`, which is not in the schema's enum (`unreviewed`, `in_review`,
+        # `approved`), and every local run reported them green. The audit that found it was
+        # reading the schema, not running the tool.
+        #
+        # Now it FAILS. `--allow-partial` is there for an environment that genuinely cannot
+        # install it, and it changes the summary line too, so a partial run can never be quoted
+        # as a full one.
+        if "--allow-partial" not in sys.argv:
+            print("ERROR   jsonschema is not installed, so the STRUCTURE pass cannot run.\n"
+                  "        Every enum, required key and id pattern would go unchecked and this\n"
+                  "        tool would still print '0 error(s) — OK'. A skip is not a pass.\n"
+                  "        pip install jsonschema     to enable it\n"
+                  "        --allow-partial            to run SEMANTICS only, reported as partial")
+            return 2
+        print("NOTICE  jsonschema not installed — STRUCTURE pass skipped (--allow-partial).\n")
     else:
         validators = build_validators()
 
@@ -246,6 +304,20 @@ def main(strict: bool = False) -> int:
 
             # ---- situation ----
             if kind == "situation":
+                # EVERY `{slot}` IN AN AUTHORED FALLBACK MUST BE ONE THE ENGINE CAN FILL.
+                # `render._interpolate` used to raise KeyError on an unknown one and take the
+                # whole card down; it now degrades to a dropped clause, which means the mistake
+                # became SILENT instead of loud. This is where it becomes loud again, at the
+                # moment an author can still fix it.
+                fallback = ((data.get("render") or {}).get("fallback") or {})
+                for part in ("headline", "situation"):
+                    for slot in sorted(set(re.findall(r"\{(\w+)\}",
+                                                      str(fallback.get(part) or "")))):
+                        if slot not in fallback_slots:
+                            err(path, f"render.fallback.{part} names slot {{{slot}}}, which no "
+                                      f"engine writer fills — it will render as a dropped "
+                                      f"clause or as 'not recorded'. Use one of "
+                                      f"substrate.fallback_slots, or add a writer first")
                 for t in (data.get("matches") or {}).get("l2_situation_types") or []:
                     if t not in l2_types:
                         err(path, f"matches.l2_situation_types: {t!r} is not a type Layer 2 "
@@ -560,6 +632,10 @@ def main(strict: bool = False) -> int:
 
     failed = bool(ERRORS) or (strict and bool(WARNINGS))
     print(f"{len(ERRORS)} error(s), {len(WARNINGS)} warning(s) — {'FAIL' if failed else 'OK'}")
+    # THE SUMMARY LINE SAYS WHICH PASSES RAN. "0 error(s) — OK" from a run that checked half the
+    # rules is the claim this whole guard exists to stop being makeable.
+    if jsonschema is None:
+        print("        ^ SEMANTICS only — the STRUCTURE pass did not run.")
     return 1 if failed else 0
 
 

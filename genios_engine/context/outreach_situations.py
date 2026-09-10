@@ -100,10 +100,14 @@ ANCHOR_ORGANIZATION = "organization"
 #: an objective-keyed cohort covering the same people rather than minting a second card about them.
 ANCHOR_CAMPAIGN = "campaign"
 
-#: How far back a campaign may have been sent and still be worth a card. Ninety days is the window
-#: every other backward-looking read in this layer uses, and a raise that opened six months ago is
-#: not a campaign anybody is still running.
-_CAMPAIGN_WINDOW_DAYS = 90
+#: How far back a campaign may have been sent and still be worth a card.
+#:
+#: A DEFAULT, NOT A LAW. `refresh_state_situations` takes it as an argument and `find_campaigns`
+#: has never had a default at all — its docstring says why: "a caller choosing the window is a
+#: caller who knows which window their answer is about." Ninety days is a founder's fundraise; a
+#: procurement cycle is longer and a support desk's is far shorter. When a per-tenant source is
+#: needed, `capture/esqe/qualification.org_qualification_floors` is the proven shape.
+CAMPAIGN_WINDOW_DAYS = 90
 
 #: How overdue a promise must be before it is a situation. Zero: a commitment is overdue the
 #: moment its own stated date passes, and that date came from the user's own words rather than
@@ -135,13 +139,20 @@ _WAITING_ROWS = (
     # any future reading that projects a fact onto its own anchor — and because a reading is
     # about real subjects by definition. `outreach` escaped only by accident: it happens to
     # project `outreach.*` rather than the `thread.*` names it reads.
-    "and n.node_type not in ('outreach', 'commitment', 'cohort') "
+    # `organization` and `campaign` were added by this branch and missed here. Harmless TODAY —
+    # `organization.*`/`campaign.*` are not in the field list below, so neither reading can read
+    # its own output back — and that is exactly the accident the comment above says `outreach`
+    # escaped by. The exclusion is on node TYPE precisely so a future field rename cannot spring
+    # the trap; leaving two anchors out of it leaves two doors open.
+    "and n.node_type not in ('outreach', 'commitment', 'cohort', 'condition', "
+    "                        'organization', 'campaign') "
     "where f.org_id = :o and f.valid_to is null and f.status = 'active' "
     "and f.field in ('thread.days_waiting', 'thread.follow_up_count', 'thread.last_heard_days', "
     "                'thread.response_expected', 'party.reply_cadence_days', "
     "                'relationship.nature', 'party.role', 'thread.ball_in_court', "
     "                'thread.objective', "
-    "                'commitment.due_at', 'commitment.action', 'thread.last_outbound')"
+    "                'commitment.due_at', 'commitment.action', 'commitment.status', "
+    "                'thread.last_outbound')"
 )
 
 #: A campaign of one is a thread, and the per-counterparty reading already covers it. Three is the
@@ -344,6 +355,25 @@ def read_overdue_commitments(rows: dict, now: datetime, employers: dict) -> list
     for node_id, held in rows.items():
         # Reserved keys carry the condition queue and the mailbox owner, not a node's facts.
         if node_id.startswith("_") or not isinstance(held, dict):
+            continue
+        # A PROMISE THAT IS NO LONGER OUTSTANDING IS NOT OVERDUE, and this reading used to have
+        # no way to know. `lifecycle/store.obligations_for` already filters on
+        # `commitment.status = 'open'` and its docstring says why — "a commitment whose status
+        # has moved off `open` is not outstanding" — but the filter was DECORATIVE, because the
+        # only writer is `pipeline.py:1258`, which writes 'open' and never anything else. So an
+        # overdue-commitment situation, once minted, was permanent: `_reconcile` can only close a
+        # finding the reading stops producing, and this one never stopped.
+        #
+        # The gate is here now, so the moment ANY writer moves the status the card closes by
+        # itself on the next sweep. `derived.retire_facts` is the mechanism that makes such a
+        # writer possible at all — before it, a derived fact could only be rewritten, never ended.
+        #
+        # WHAT STILL HAS NO AUTOMATIC WRITER, stated rather than papered over: nothing in this
+        # system observes "the promise was kept". Sending something afterwards is not sending THE
+        # thing, and claiming otherwise is the failure BS-04 names — received, complete, valid and
+        # accepted are four different facts. A human closing the card is the honest route today,
+        # and that route now works: a human resolution survives the drain.
+        if str(held.get("commitment.status") or "open").strip().lower() not in ("", "open"):
             continue
         due = _ts(held.get("commitment.due_at"))
         if due is None:
@@ -764,7 +794,16 @@ def _mailbox_owner(c, org_id: str) -> str | None:
     return next(iter(seats)) if len(seats) == 1 else None
 
 
-def _gather(store, org_id: str) -> tuple[dict, dict, dict]:
+def _gather(store, org_id: str, *, now: datetime | None = None,
+            campaign_window_days: int = CAMPAIGN_WINDOW_DAYS) -> tuple[dict, dict, dict]:
+    """Everything the readings share, read once. `now` is THE SWEEP CLOCK, not the wall clock.
+
+    It has a default only because two tests call this directly; every production caller passes
+    `refresh_state_situations`' `now`, which `runner.py` reads once at the process boundary. The
+    campaign window used `datetime.now(timezone.utc)` here and that broke the replay contract
+    `runner.py:477` establishes — a replay at a past `eval_time` would have looked back ninety
+    days from TODAY and found campaigns the sweep it is replaying could not have seen.
+    """
     with store.engine.connect() as c:
         held: dict[str, dict] = {}
         for row in c.execute(text(_WAITING_ROWS), {"o": org_id}):
@@ -796,13 +835,25 @@ def _gather(store, org_id: str) -> tuple[dict, dict, dict]:
         # the denominator counts everyone there, not only the ones who happen to be waiting.
         from genios_engine.context.correlation_organization import find_organizations
         held["_organizations"] = find_organizations(c, org_id)
+        # OPEN DUPLICATE PROPOSALS PER NODE, for the identity axis. Read here with every other
+        # bulk gather; `support_situations` reads the same table for the same purpose and this
+        # module was passing a hardcoded zero.
+        held["_merge_proposals"] = {
+            str(r[0]): int(r[1] or 0) for r in c.execute(text(
+                "select node_id, count(*) from ("
+                "  select from_node_id as node_id from merge_proposals "
+                "  where org_id = :o and status = 'open' "
+                "  union all "
+                "  select to_node_id as node_id from merge_proposals "
+                "  where org_id = :o and status = 'open') x group by node_id"),
+                {"o": org_id}).all()}
         # The campaigns, same route. `find_campaigns` requires an explicit window and has no
         # default: an unbounded read over a founder's whole mailbox is the query that makes a
         # sweep unpredictable.
         from genios_engine.context.correlation_conversation import find_campaigns
         held["_campaigns"] = find_campaigns(
-            c, org_id,
-            since=datetime.now(timezone.utc) - timedelta(days=_CAMPAIGN_WINDOW_DAYS))
+            c, org_id, since=(now or datetime.now(timezone.utc))
+            - timedelta(days=CAMPAIGN_WINDOW_DAYS))
         for row in c.execute(text(_COMMITMENT_OWNERS), {"o": org_id}):
             entry = held.get(str(row.commitment))
             if entry is None:
@@ -813,7 +864,8 @@ def _gather(store, org_id: str) -> tuple[dict, dict, dict]:
     return held, counts, employers
 
 
-def refresh_state_situations(store, org_id: str, *, now: datetime | None = None) -> int:
+def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
+                             campaign_window_days: int = CAMPAIGN_WINDOW_DAYS) -> int:
     """Open, refresh or close the state readings for this org. Returns rows written.
 
     Idempotent for the same reasons the support readings are: every fact overwrites its own
@@ -823,9 +875,17 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None)
     now = now or datetime.now(timezone.utc)
     if not state_domains():
         return 0
-    held, counts, employers = _gather(store, org_id)
-    if not held:
-        return 0
+    held, counts, employers = _gather(store, org_id, now=now,
+                                      campaign_window_days=campaign_window_days)
+    merge_open = held.get("_merge_proposals") or {}
+    # NO EARLY RETURN ON AN EMPTY SET. It used to `return 0` here, and an empty `held` is EXACTLY
+    # the state in which every finding of every reading should be closed — the last waiting fact
+    # retired on a quiet tenant, and every `awaiting_response` row stays `active` forever because
+    # the pass that would have reconciled them decided there was nothing to do. "Nothing is true
+    # any more" is not "nothing to do"; it is the whole of the work.
+    #
+    # The readings below all return `[]` on an empty `held`, so the loop costs one pass and the
+    # `_reconcile` at the bottom does what it was written for.
 
     written = 0
     with store.engine.begin() as c:
@@ -869,7 +929,15 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None)
                                 event_count=int(getattr(stats, "events", 0) or 0),
                                 source_count=int(getattr(stats, "sources", 0) or 0)),
                             freshness=fresh if fresh_known else None,
-                            identity=identity_score(open_merge_proposals=0),
+                            # OPEN DUPLICATES COUNT AGAINST IDENTITY, and this was hardcoded
+                            # to zero — so all six readings dispatched from `READINGS` published
+                            # a PERFECT identity score no matter how many unresolved merge
+                            # proposals their anchor had, while `support_situations` and
+                            # `situations` both read the real number. Three writers of one
+                            # column, one of them asserting certainty it had not checked.
+                            identity=identity_score(
+                                open_merge_proposals=merge_open.get(
+                                    finding.concerns_node, 0)),
                             first_seen=getattr(stats, "first_at", None), last_seen=last_at)
                     written += 1
             for domain, live in minted.items():

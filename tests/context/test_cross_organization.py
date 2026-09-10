@@ -15,7 +15,7 @@ RUN AGAINST LIVE DATA BEFORE THESE TESTS EXISTED, and it caught two defects that
 first cut shipped with. Both are pinned by name below:
 
   * a situation anchor is almost never a person — 41 `outreach`, 41 `thread`, 0 people — so
-    `restrict_to=<the 82 waiting anchors>` returned ZERO groups against a tenant that has four;
+    narrowing by the 82 waiting anchor ids returned ZERO groups against a tenant that has four;
   * every role fact on the tenant is absent, and a two-valued `is_multi_role` answered False for
     a group it knew nothing about, which a caller reads as "safe to treat as one relationship".
 
@@ -32,7 +32,6 @@ from genios_engine.context.correlation_organization import (
     MIN_MEMBERS,
     find_organizations,
     group_by_organization,
-    resolve_people,
 )
 
 pytestmark = pytest.mark.unit
@@ -157,111 +156,37 @@ def test_a_retired_edge_does_not_keep_someone_at_a_firm(db):
 
 
 # =============================================================================================
-# DEFECT ONE — a situation anchor is almost never a person.
+# DEFECT ONE — a situation anchor is almost never a person. RETIRED, and the record stays.
+#
+# Eight tests stood here for `resolve_people` and the `anchors=` / `restrict_to=` parameters. They
+# were correct about the graph — measured on the pilot, all 41 `awaiting_response` anchors are
+# `outreach` nodes and all 41 `first_response_overdue` anchors are `thread` nodes, and the two
+# bridges (`person --corresponded_with--> thread`, `outreach --concerns--> {thread|person}`)
+# resolved 82 anchors to 41 people.
+#
+# THEY WERE TESTING CODE NOTHING CALLED. `_gather` asks `find_organizations(c, org_id)` for every
+# organisation and lets `read_organization_silence` intersect them with the waiting rows it
+# already holds — which is the CORRECT order, because the denominator has to count everyone at a
+# firm for "two of the two partners are silent" to mean anything. So the resolver was speculative
+# generality, shipped with this branch's own signature defect inside a module written to complain
+# about it, and eight green tests hid that from every gate.
+#
+# The walk itself survives where it has a consumer: `correlation_domain._SITUATIONS_BY_PERSON`
+# does it in one statement, and `tests/context/test_cross_domain.py::
+# test_two_anchors_that_are_not_people_still_resolve_to_one_subject` is where it is pinned now.
+# Deleted rather than kept "in case" — that is what put it here.
 # =============================================================================================
-def test_a_thread_anchor_resolves_to_the_person_on_it(db):
-    """THE DEFECT THE LIVE RUN CAUGHT. On the pilot all 41 `first_response_overdue` anchors are
-    THREAD nodes and all 41 `awaiting_response` anchors are OUTREACH nodes — not one is a person.
-    `works_at` runs person → company, so raw anchor ids matched nothing and the module returned
-    zero groups against a tenant that has four."""
+def test_a_firm_is_counted_over_everyone_who_works_there(db):
+    """The property the deleted narrowing would have broken. `find_organizations` takes no filter
+    at all, so `size` is the firm's real headcount as the graph knows it and a reading can say
+    "two of the two" rather than "two of however many happened to be waiting"."""
     peak_xv(db)
-    node(db, "t_h", "Thread with harshita", "thread")
-    node(db, "t_v", "Thread with vidushi", "thread")
-    edge(db, "corresponded_with", "p_harshita", "t_h")
-    edge(db, "corresponded_with", "p_vidushi", "t_v")
+    node(db, "p_third", "third@peakxv.com")
+    works_at(db, "p_third", "c_peak")
 
-    assert resolve_people(db, ORG, ["t_h", "t_v"]) == ("p_harshita", "p_vidushi")
-    assert find_organizations(db, ORG, anchors=["t_h", "t_v"])[0].size == 2
+    [group] = find_organizations(db, ORG)
 
-
-def test_an_outreach_anchor_reaches_a_person_it_concerns(db):
-    """18 of the pilot's outreach anchors `concerns` a person directly."""
-    peak_xv(db)
-    node(db, "o_h", "Outreach to harshita", "outreach")
-    edge(db, "concerns", "o_h", "p_harshita")
-
-    assert resolve_people(db, ORG, ["o_h"]) == ("p_harshita",)
-
-
-def test_an_outreach_anchor_reaches_a_person_through_a_thread(db):
-    """And 21 concern a THREAD, whose party is the person — the second hop, and the reason this
-    resolver is two-pass rather than one."""
-    peak_xv(db)
-    node(db, "t_h", "Thread with harshita", "thread")
-    node(db, "o_h", "Outreach", "outreach")
-    edge(db, "concerns", "o_h", "t_h")
-    edge(db, "corresponded_with", "p_harshita", "t_h")
-
-    assert resolve_people(db, ORG, ["o_h"]) == ("p_harshita",)
-
-
-def test_an_anchor_that_already_is_a_person_needs_no_hop(db):
-    peak_xv(db)
-
-    assert resolve_people(db, ORG, ["p_harshita"]) == ("p_harshita",)
-
-
-def test_an_outreach_about_a_service_resolves_to_nobody(db):
-    """Two of the pilot's anchors concern a `service`. A service is not somebody we can be
-    waiting on, and inventing a person for it would be a counterparty nobody can chase."""
-    peak_xv(db)
-    node(db, "s_stripe", "stripe", "service")
-    node(db, "o_s", "Outreach", "outreach")
-    edge(db, "concerns", "o_s", "s_stripe")
-
-    assert resolve_people(db, ORG, ["o_s"]) == ()
-
-
-def test_the_walk_stops_at_two_hops(db):
-    """CC-40's safety property, stated as a bound rather than a hope. `concerns` and
-    `corresponded_with` are dense edges; a transitive walk drifts from one situation's
-    counterparty to another's, and on a consultant node from one client to another. A person
-    three hops out is NOT this anchor's counterparty."""
-    peak_xv(db)
-    node(db, "o_a", "Outreach", "outreach")
-    node(db, "t_a", "Thread A", "thread")
-    node(db, "t_far", "Thread B", "thread")
-    edge(db, "concerns", "o_a", "t_a")
-    edge(db, "concerns", "t_a", "t_far")          # hop three
-    edge(db, "corresponded_with", "p_vidushi", "t_far")
-
-    assert "p_vidushi" not in resolve_people(db, ORG, ["o_a"])
-
-
-def test_no_anchors_is_not_a_query(db):
-    """`in ()` is a syntax error, not a zero-row read, and a quiet tenant arrives here empty."""
-    peak_xv(db)
-
-    assert resolve_people(db, ORG, []) == ()
-    assert find_organizations(db, ORG, anchors=[]) == ()
-
-
-def test_an_empty_restriction_means_nobody_not_everybody(db):
-    """`[]` and `None` are different questions. Collapsing them turns "none of my situations
-    reached a person" into "show me every firm I have ever emailed"."""
-    peak_xv(db)
-
-    assert find_organizations(db, ORG, restrict_to=[]) == ()
-    assert len(find_organizations(db, ORG, restrict_to=None)) == 1
-
-
-def test_one_silent_contact_of_two_is_not_a_silent_firm(db):
-    """The reason `restrict_to` narrows BEFORE grouping instead of filtering after. A firm where
-    one of two people has replied is not a firm that has gone quiet, and a card saying so would
-    be wrong about the one fact it exists to report."""
-    peak_xv(db)
-
-    assert find_organizations(db, ORG, restrict_to=["p_harshita"]) == ()
-
-
-def test_anchors_and_an_explicit_list_are_combined(db):
-    peak_xv(db)
-    node(db, "t_v", "Thread with vidushi", "thread")
-    edge(db, "corresponded_with", "p_vidushi", "t_v")
-
-    groups = find_organizations(db, ORG, restrict_to=["p_harshita"], anchors=["t_v"])
-
-    assert groups[0].size == 2
+    assert group.size == 3
 
 
 # =============================================================================================
@@ -352,14 +277,21 @@ def test_another_orgs_firm_never_appears_in_this_ones(db):
 
 
 def test_a_shared_person_never_bridges_two_tenants(db):
-    """CC-40, at the resolver. A consultant working for two clients exists in both graphs; one
-    client's anchor must never resolve into the other's person, and one client's roles must never
-    describe the other's relationship."""
+    """CC-40. A consultant working for two clients exists in both graphs. One client's `works_at`
+    edge must never place that person inside the other client's firm, and one client's roles must
+    never describe the other's relationship."""
     peak_xv(db)
-    node(db, "t_h", "Thread", "thread", org=OTHER)
-    edge(db, "corresponded_with", "p_harshita", "t_h", org=OTHER)
+    node(db, "c_peak", "peakxv.com", "company", org=OTHER)
+    node(db, "p_harshita", "harshita@peakxv.com", org=OTHER)
+    node(db, "p_other", "someone@peakxv.com", org=OTHER)
+    works_at(db, "p_harshita", "c_peak", org=OTHER)
+    works_at(db, "p_other", "c_peak", org=OTHER)
 
-    assert resolve_people(db, ORG, ["t_h"]) == ()
+    [ours] = find_organizations(db, ORG)
+    [theirs] = find_organizations(db, OTHER)
+
+    assert {m.node_id for m in ours.members} == {"p_harshita", "p_vidushi"}
+    assert {m.node_id for m in theirs.members} == {"p_harshita", "p_other"}
 
 
 def test_a_role_recorded_by_another_tenant_is_not_read_here(db):

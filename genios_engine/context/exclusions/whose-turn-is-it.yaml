@@ -1,0 +1,31 @@
+# ONE CONVERSATION HAS ONE TURN.
+#
+# Measured read-only on the pilot on 2026-09-09, resolving every situation to the person behind
+# it: THREE counterparties — Boardy, Crescere Labs and IIM-A — carried `admin:awaiting_response`
+# and `support:first_response_overdue` at the same time. One says they owe us a reply; the other
+# says we never answered them. Two cards would have gone out telling the founder opposite things
+# about the same person.
+#
+# WHY AN ARBITER RATHER THAN A PRECEDENCE ORDER. "Admin beats support" would be a policy invented
+# here, and it would be wrong half the time — on a tenant where the support desk is the real
+# relationship, admin is the reading that drifted. `thread.ball_in_court` is not a tiebreak: it
+# is the fact BOTH readings are computed FROM. `waiting.py` derives it from the message timeline,
+# and these two situations are two readings of that one fact that disagreed. So the arbiter does
+# not pick a winner; it asks the shared source what it actually said.
+#
+# WHERE THERE IS NO ARBITER, leave `arbiter` out. The finding is then returned UNRESOLVED and
+# both sides hold. That is an honest answer and a reviewable one; a coin toss between two domains
+# is worse than telling somebody the system cannot tell.
+
+id: whose_turn_is_it
+left: admin:awaiting_response
+right: support:first_response_overdue
+
+because: >-
+  One says they owe us a reply, the other says we never answered them. Both are claims about
+  whose turn it is, and a conversation has one turn.
+
+arbiter: thread.ball_in_court
+favours:
+  them: admin:awaiting_response
+  us: support:first_response_overdue

@@ -286,9 +286,26 @@ def _interpolate(tpl: str, slots: dict) -> str:
     differently. When a slot holds its sentinel, the clause that would have carried it is cut and
     the rest of the sentence still renders.
     """
-    for name, value in sorted(slots.items()):
+    # A SLOT NOBODY WRITES IS UNGROUNDED, NOT A CRASH.
+    #
+    # `tpl.format(**slots)` raised KeyError on any `{name}` the slot vocabulary does not carry,
+    # and three SHIPPED situation files named six such slots between them — `{organization}`,
+    # `{quote}`, `{sent_on}`, `{longest_wait_days}`, `{age_days}`. The whole card died at render.
+    # An authoring mistake taking down the delivery of an otherwise correct decision is the
+    # wrong failure: the clause that cannot be substantiated should go, exactly as it does when
+    # a slot holds its sentinel, and the rest of the sentence should still reach the reader.
+    #
+    # THE VALIDATOR IS WHERE THIS IS SUPPOSED TO BE CAUGHT — `_tools/validate.py` now refuses an
+    # authored fallback naming a slot the engine cannot fill. This is the second lock, for the
+    # gap between an author writing a slot and the engine learning to write it.
+    unknown = {name for name in re.findall(r"\{(\w+)\}", tpl) if name not in slots}
+    ungrounded = [(name, True) for name in sorted(unknown)]
+    ungrounded += [(name, False) for name, value in sorted(slots.items())
+                   if SENTINELS.get(name) == value]
+
+    for name, is_unknown in ungrounded:
         placeholder = "{" + name + "}"
-        if placeholder not in tpl or SENTINELS.get(name) != value:
+        if placeholder not in tpl:
             continue
         parts = [seg for seg in re.split(r"\s+[—·-]\s+", tpl) if placeholder not in seg]
         if parts:
@@ -297,7 +314,25 @@ def _interpolate(tpl: str, slots: dict) -> str:
         # mangling the sentence — "Deliver {action} to {entity} today" would ship as "Deliver
         # to acme.com today". The sentinel stays, because a grammatical placeholder beats a
         # broken sentence and this line never reaches the model in either case.
-    return re.sub(r"\s{2,}", " ", tpl.format(**slots)).strip(" —·-")
+    # `format_map` OVER A DEFAULTING MAPPING rather than `format(**slots)`. A placeholder with no
+    # clause of its own survives the cut above by design (see the comment there), so an unknown
+    # one can still reach this line — and a KeyError here would undo the whole point.
+    # `_UNWRITTEN` is deliberately a phrase no real value can equal, so it reads as an absence to
+    # a person and to the model rather than as a fact.
+    return re.sub(r"\s{2,}", " ", tpl.format_map(_Defaulting(slots))).strip(" —·-")
+
+
+#: What an unwritten slot degrades to when its clause could not be cut. A phrase, not a blank:
+#: an empty string leaves "Sent  — 4 of 7 have not replied" and reads as a rendering bug, where
+#: this reads as the missing fact it is.
+_UNWRITTEN = "not recorded"
+
+
+class _Defaulting(dict):
+    """`str.format_map` support: an unwritten slot resolves rather than raising."""
+
+    def __missing__(self, key: str) -> str:      # noqa: D105 — the docstring above covers it
+        return _UNWRITTEN
 
 
 def _cap(text: str, cap: int) -> str:

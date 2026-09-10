@@ -34,13 +34,93 @@ _KEYWORDS: dict[str, re.Pattern[str]] = {
 }
 
 
+#: WHAT AN AUTHORED CORPUS MAY ADD TO THE TWO TABLES ABOVE.
+#:
+#: The four names above were the ONLY business domains this system could recognise, and they are
+#: a Python literal. A footwear exporter's core domain is production-and-shipping: "container
+#: held at Nhava Sheva, BIS certificate pending, L/C expires Friday" matches none of the four
+#: patterns, so `domain_hints` returns [] and the signal is tagged with nothing. Worse than
+#: nothing for a law firm — the single word that DOES match, `legal`, types every matter email
+#: as back-office admin.
+#:
+#: A corpus may now declare its own, in its `domain.yaml`:
+#:
+#:     hints:
+#:       rank: 15                       # lower is tested first; see the ordering note below
+#:       keywords: ['\b(container|bill of lading|L/?C|customs|HS ?code)\b']
+#:       source_priors: [cargowise]
+#:
+#: RANK IS AN INTEGER, NOT DICT ORDER. The ordering rule that matters — fundraising before sales,
+#: because an investor thread says "deck" AND "budget" and letting the generic sales words claim
+#: it turned six VCs into sales opportunities — used to be carried by the insertion order of a
+#: Python dict. That is invisible to an author and lost by any reordering. It is now a number
+#: the shipped table states and an authored domain competes on.
+#:
+#: THE SHIPPED FOUR ARE THE DEFAULT AND CANNOT BE OVERWRITTEN by a corpus of the same name: their
+#: patterns are calibrated against a live graph and an authored file has no evidence behind it.
+#: A corpus with a name already here is skipped rather than merged, and the skip is silent
+#: because it is the correct outcome, not an error.
+_SHIPPED_RANK: dict[str, int] = {"fundraising": 10, "sales": 20, "support": 30, "admin": 40}
+
+
+def _authored_hints() -> tuple[dict[str, tuple[int, "re.Pattern[str]"]], dict[str, str]]:
+    """`{domain: (rank, pattern)}` and `{source: domain}` from every authored corpus.
+
+    FAILS SOFT, for the reason `l3_activation._authored_domain_ids` records: a corpus that
+    cannot be read is a deployment problem, and it must not stop the shipped four recognising
+    anything. A corpus with a malformed regex is skipped by itself rather than taking the rest
+    of the catalog with it — one bad file must not blind capture.
+    """
+    keywords: dict[str, tuple[int, re.Pattern[str]]] = {}
+    priors: dict[str, str] = {}
+    # `platform.corpus`, NOT `packs.compiler.authoring`. This module is layer 1 and `packs` is
+    # layer 3; `tests/test_layer_topology.py` refused the upward import the moment it was
+    # written, which is exactly what that ratchet is for. `platform` is CROSS_CUTTING — "the
+    # composition root, may import anything" — so it may read the corpus and capture may read
+    # it, and neither direction is upward.
+    from genios_engine.platform.corpus import authored_domains
+
+    for domain_id, data in authored_domains():
+        try:
+            block = (data.get("hints") or {}) if isinstance(data, dict) else {}
+            if domain_id in _SHIPPED_RANK or not block:
+                continue
+            patterns = [str(k) for k in (block.get("keywords") or []) if str(k).strip()]
+            if patterns:
+                keywords[domain_id] = (
+                    int(block.get("rank") or 100),
+                    re.compile("|".join(f"(?:{p})" for p in patterns), re.I))
+            for source in (block.get("source_priors") or []):
+                priors.setdefault(str(source).strip().lower(), domain_id)
+        except Exception:      # noqa: BLE001 — one bad corpus must not blind capture
+            continue
+    return keywords, priors
+
+
+def _ordered_keywords() -> tuple[tuple[str, "re.Pattern[str]"], ...]:
+    """The shipped patterns and the authored ones, in rank order.
+
+    Recomputed per call rather than cached: `domain_hints` runs once per event and the corpus is
+    a handful of small files, but more importantly a cache here would mean an authored domain
+    only takes effect after a restart — which is the deploy this change exists to remove.
+    """
+    authored, _ = _authored_hints()
+    ranked = [(_SHIPPED_RANK[name], name, pattern) for name, pattern in _KEYWORDS.items()]
+    ranked += [(rank, name, pattern) for name, (rank, pattern) in authored.items()]
+    # Rank, then NAME, so two domains that declare the same rank order deterministically instead
+    # of by whichever the filesystem listed first.
+    return tuple((name, pattern) for _rank, name, pattern in sorted(ranked, key=lambda r: (r[0], r[1])))
+
+
 def domain_hints(source: str, text: str | None) -> list[DomainHint]:
     hints: list[DomainHint] = []
-    prior = _SOURCE_PRIOR.get(source)
+    _, authored_priors = _authored_hints()
+    # The shipped prior wins: `stripe` means `admin` here whatever a corpus claims about it.
+    prior = _SOURCE_PRIOR.get(source) or authored_priors.get((source or "").strip().lower())
     if prior:
         hints.append(DomainHint(domain=prior, source="scope"))
     if text:
-        for domain, pat in _KEYWORDS.items():
+        for domain, pat in _ordered_keywords():
             if pat.search(text) and not any(h.domain == domain for h in hints):
                 hints.append(DomainHint(domain=domain, source="keyword"))
     return hints

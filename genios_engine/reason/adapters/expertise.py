@@ -468,14 +468,52 @@ def _bind_role(candidates: tuple[str, ...], available: frozenset[str],
     return eligible[0] if eligible else None
 
 
-def _bind_roles(unit: _RosterUnit, available: frozenset[str], present: frozenset[str]
+def authored_role_paths(domain: str) -> dict[str, tuple[str, ...]]:
+    """`{role key: fact paths}` a domain declares for itself, in its `domain.yaml`.
+
+    THE CANDIDATE LISTS ABOVE ARE A SALES VOCABULARY. `_OWNER` is `("deal.owner",)`, `_DEADLINES`
+    is `("commitment.due_at", "deal.close_date")`, `_RELATIONSHIP_STATUS` is `("deal.status",)`.
+    A support desk's owner is `ticket.assignee` and its deadline is `sla.breach_at`; a clinic's
+    are `episode.clinician` and `appointment.starts_at`. None of those appears in any tuple here,
+    so `_bind_role` returns None, the unit's essential role is unbound, and the unit is DECLINED
+    — with a receipt saying "no declared field in this expertise", which is true and reads as
+    the corpus's fault rather than the vocabulary's.
+
+        roles:
+          owner:    [ticket.assignee]
+          deadline: [sla.breach_at]
+
+    AUTHORED PATHS GO FIRST, then the shipped ones. A domain that names its own owner means it;
+    the sales spellings stay behind as the fallback so a corpus that declares only `deadline`
+    keeps everything else working. `_bind_role`'s two filters are unchanged — a path must still
+    be one the EXPERTISE reads, and a path this situation carries still wins — so an authored
+    name that nothing writes binds nothing, exactly as an unwritten shipped name does.
+    """
+    from genios_engine.platform.corpus import authored_domains
+
+    for domain_id, data in authored_domains():
+        if domain_id != domain:
+            continue
+        block = (data.get("roles") or {}) if isinstance(data, dict) else {}
+        out: dict[str, tuple[str, ...]] = {}
+        for key, paths in block.items():
+            names = tuple(str(p).strip() for p in (paths or []) if str(p).strip())
+            if names:
+                out[str(key).strip()] = names
+        return out
+    return {}
+
+
+def _bind_roles(unit: _RosterUnit, available: frozenset[str], present: frozenset[str],
+                authored: "Mapping[str, tuple[str, ...]] | None" = None
                 ) -> tuple[dict[str, Any], dict[str, str], dict[str, list[str]]]:
     """Resolve every role this unit declares into config. Returns (config, bound, bound_lists)."""
     config: dict[str, Any] = dict(unit.config)
     bound: dict[str, str] = {}
     bound_lists: dict[str, list[str]] = {}
+    extra = authored or {}
     for key, candidates in unit.roles:
-        name = _bind_role(candidates, available, present)
+        name = _bind_role((*extra.get(key, ()), *candidates), available, present)
         if name is None:
             continue
         if key == "status_field" and unit.unit_id == "core.opportunity":
@@ -540,6 +578,111 @@ _DELTA_CONSUMERS: Mapping[str, str] = {
 }
 
 
+def _package_domain(package) -> str:
+    """Which domain this package belongs to, off the capabilities — the same place
+    `capability_resolver` reads it when it matches a `pack_id`."""
+    try:
+        for capability in (getattr(package, "capabilities", None) or ()):
+            domain = str((capability or {}).get("domain") or "").strip()
+            if domain:
+                return domain
+    except Exception:      # noqa: BLE001 — an enrichment, never a reason to lose the roster
+        return ""
+    return ""
+
+
+def _authored_roster(domain: str) -> tuple[_RosterUnit, ...]:
+    """`_ROSTER`, tuned by whatever this domain declared. The shipped roster when it declared
+    nothing — which is every domain today.
+
+    WHAT A DOMAIN MAY SAY, and the honest limit. A genuinely new reasoning UNIT is still Python:
+    a unit is a computation over a typed snapshot, and no YAML can supply one. What a domain can
+    now state without a deploy is which of the seventeen apply to it, how long each may take, and
+    which of its roles are load-bearing:
+
+        reasoning:
+          - unit: core.opportunity
+            enabled: false            # a clinic has no pipeline; declining it every time is noise
+          - unit: core.dependency
+            latency_budget_ms: 80     # this domain's chains are deep and worth the wait
+            essential: [owner_field]  # without an owner this analysis says nothing here
+
+    THREE THINGS IT MAY NOT DO, each for a failure it would cause:
+
+      * DISABLE A REQUIRED UNIT. `core.context` and the validation gate are `required=True`
+        because a plan that skips them is a plan that hides a missing prerequisite behind a
+        confident answer — the exact defect the orchestrator's own failure table calls dangerous.
+        `enabled: false` on one is ignored, loudly in the receipt rather than silently.
+      * INVENT A UNIT. A `unit:` naming nothing in `_ROSTER` is skipped; there is no computation
+        behind the name and scheduling it would be scheduling nothing.
+      * SET A BUDGET OF ZERO OR LESS. That is not "fast", it is "never runs", and a domain that
+        wanted a unit off has `enabled: false` to say so plainly.
+    """
+    if not domain:
+        return _ROSTER
+    from genios_engine.platform.corpus import authored_domains
+
+    declared: dict[str, dict] = {}
+    try:
+        for domain_id, data in authored_domains():
+            if domain_id != domain:
+                continue
+            for entry in ((data.get("reasoning") or []) if isinstance(data, dict) else []):
+                unit_id = str((entry or {}).get("unit") or "").strip()
+                if unit_id:
+                    declared[unit_id] = dict(entry)
+            break
+    except Exception:      # noqa: BLE001 — an enrichment; the shipped roster still runs
+        return _ROSTER
+    if not declared:
+        return _ROSTER
+
+    from dataclasses import replace
+
+    out: list[_RosterUnit] = []
+    for unit in _ROSTER:
+        entry = declared.get(unit.unit_id)
+        if entry is None:
+            out.append(unit)
+            continue
+        if entry.get("enabled") is False and not unit.required:
+            continue
+        changes: dict = {}
+        budget = entry.get("latency_budget_ms")
+        try:
+            if budget is not None and int(budget) > 0:
+                changes["latency_budget_ms"] = int(budget)
+        except (TypeError, ValueError):
+            pass
+        essential = entry.get("essential")
+        if isinstance(essential, list):
+            # ONLY ROLES THIS UNIT ACTUALLY DECLARES. Naming a role it does not have would make
+            # the unit permanently undeclinable-but-unbindable — essential against a key that
+            # can never be bound is a unit that never runs and never says why.
+            known = {key for key, _ in (unit.roles + unit.list_roles)}
+            named = tuple(str(k).strip() for k in essential if str(k).strip() in known)
+            if named:
+                changes["essential"] = named
+        out.append(replace(unit, **changes) if changes else unit)
+    return tuple(out)
+
+
+def _package_roles(package) -> dict[str, tuple[str, ...]]:
+    """The authored role map for whatever domain this package belongs to, or `{}`.
+
+    The domain comes off the capabilities, which is where `capability_resolver` already reads it
+    when it matches a `pack_id` — one answer to "which domain is this", not a second.
+    """
+    try:
+        for capability in (getattr(package, "capabilities", None) or ()):
+            domain = str((capability or {}).get("domain") or "").strip()
+            if domain:
+                return authored_role_paths(domain)
+    except Exception:      # noqa: BLE001 — an enrichment; the shipped tuples still bind
+        return {}
+    return {}
+
+
 def _roster_specs(package: ExpertisePackage, *, gate_fields: tuple[str, ...],
                   available: frozenset[str], present: frozenset[str],
                   authored_priority_bp: int | None,
@@ -577,10 +720,15 @@ def _roster_specs(package: ExpertisePackage, *, gate_fields: tuple[str, ...],
     # derivation, and deriving it four times would be four chances for them to disagree about the
     # same play.
     deltas = play_deltas(play_definitions or {})
+    # READ ONCE for the whole roster: seventeen units asking the same corpus the same question
+    # is seventeen file reads and seventeen chances to disagree about which domain they are in.
+    authored_roles = _package_roles(package)
+    roster = _authored_roster(_package_domain(package))
     declined: dict[str, dict[str, Any]] = {}
     kept: list[tuple[_RosterUnit, dict[str, Any], dict[str, str], dict[str, list[str]]]] = []
-    for unit in _ROSTER:
-        config, bound, bound_lists = _bind_roles(unit, available, present)
+    for unit in roster:
+        config, bound, bound_lists = _bind_roles(unit, available, present,
+                                                 authored=authored_roles)
         if unit.essential and not (set(bound) | set(bound_lists)) & set(unit.essential):
             declined[unit.unit_id] = {
                 "reason": "no_declared_field_in_this_expertise",

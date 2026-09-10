@@ -43,6 +43,7 @@ from genios_engine.context.lifecycle.contract import Obligation, ResolutionClaim
 from genios_engine.context.situations import (
     RESOLVED_BY_STATEMENT,
     STATUS_ACTIVE,
+    STATUS_ARCHIVED,
     STATUS_PARTIALLY_RESOLVED,
     STATUS_RESOLVED,
 )
@@ -102,10 +103,24 @@ def situations_to_examine(conn, org_id: str) -> list[SituationRow]:
         "left join graph_facts f on f.org_id = s.org_id "
         "     and f.subject_node_id = s.anchor_node_id and f.field = 'deal.stage' "
         "     and f.valid_to is null and f.status = 'active' "
+        # ARCHIVED IS IN THE SET, and leaving it out made dead code of a branch that names it.
+        #
+        # `decide_lifecycle`'s reopen arm lists STATUS_ARCHIVED explicitly (situations.py:549) —
+        # "the claim that closed it no longer stands, contradicted or withdrawn". This query is
+        # the only thing that feeds that arm, and it selected `resolved` and `partial` only. So a
+        # statement-resolved situation that reached 180 days was archived and became permanently
+        # unreachable to the contradiction path: the counterparty could say "actually that never
+        # happened" and nothing could reopen it, ever.
+        #
+        # SCOPED TO STATEMENT RESOLUTIONS, exactly as the two statuses beside it are. An archived
+        # row that a HUMAN closed, or one that aged out of `active`, is not pulled in — this adds
+        # the third status to a filter that was already asking "did a CLAIM close this?", and
+        # nothing else.
         "where s.org_id = :o and (s.status = :active "
-        "      or (s.status in (:resolved, :partial) and s.resolved_by = :by_statement))"),
+        "      or (s.status in (:resolved, :partial, :archived) "
+        "          and s.resolved_by = :by_statement))"),
         {"o": org_id, "active": STATUS_ACTIVE, "resolved": STATUS_RESOLVED,
-         "partial": STATUS_PARTIALLY_RESOLVED,
+         "partial": STATUS_PARTIALLY_RESOLVED, "archived": STATUS_ARCHIVED,
          "by_statement": RESOLVED_BY_STATEMENT}).mappings().all()
     return [SituationRow(situation_id=r["situation_id"], correlation_id=r["correlation_id"],
                          anchor_node_id=r["anchor_node_id"], status=r["status"],

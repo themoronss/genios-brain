@@ -28,15 +28,20 @@ from sqlalchemy import text
 
 from genios_engine.contracts.domain_expertise import BusinessSituationObject as LegacySituation
 from genios_engine.contracts.evidence import EvidenceSpan
-from genios_engine.contracts.quality import MissingFact
+from genios_engine.contracts.quality import AbsenceType, MissingFact
 from genios_engine.contracts.situation import (
+    Anomaly,
     BusinessSituationObject,
+    CohortPosition,
     ConfidenceVector,
+    Conflict,
     ImportanceAttribution,
     ImportanceBasis,
+    MatchedCondition,
     SituationEntity,
     SituationRelationship,
     TimelinePoint,
+    Trend,
     validate_situation,
 )
 from genios_engine.contracts.visibility import Visibility
@@ -174,6 +179,25 @@ def upgrade_situation(
     coverage = meta.get("coverage_ready")
     if coverage is not None:
         coverage = bool(coverage)
+    # THE TYPED LANES, FILLED FROM THE METADATA THAT ALREADY CARRIES THEM.
+    #
+    # Seven fields on the v2 object sat at their defaults on every published situation, while
+    # `situation_bso` put the same content into `metadata` a few lines earlier. Two consequences,
+    # and the second is the one that matters:
+    #
+    #   * every consumer read the v1 compatibility views, so the typed contract was decorative;
+    #   * `validate_situation`'s V-1..V-7 iterate `cohort_positions`, `trends` and `correlations`
+    #     (contracts/situation.py:1082) — all permanently empty — so SEVEN of the eight L2 laws
+    #     could never fire and only V-8 (no floats anywhere) was reachable on the live path. The
+    #     analytic content that would trip them existed the whole time, in the wrong shape.
+    #
+    # PARSED, NOT TRUSTED. Each lane validates through its own contract and a row that will not
+    # validate is DROPPED rather than passed through — this is a projection of data another layer
+    # already committed, and a publisher that could be made to emit a malformed typed field by a
+    # malformed metadata dict would be a new way in.
+    typed = _typed_lanes(meta)
+    missing_facts = _with_split_doubt(old, meta, missing_facts)
+
     return BusinessSituationObject(
         org_id=old.org_id, trace_id=old.trace_id,
         visibility=(old.visibility if isinstance(old.visibility, Visibility)
@@ -188,9 +212,86 @@ def upgrade_situation(
         coverage_ready=coverage, conflict_ids=tuple(meta.get("conflict_ids") or ()),
         missing_facts=missing_facts,
         importance=_importance(old),
+        **typed,
         # Keep the current metadata projection during the consumer migration.  These are
         # compatibility views of typed fields, not authority for constructing them.
         metadata=meta)
+
+
+def _with_split_doubt(old: LegacySituation, meta: Mapping[str, Any],
+                      missing_facts: tuple[MissingFact, ...]) -> tuple[MissingFact, ...]:
+    """Carry `split_required` onto the object as a typed absence rather than as a hold.
+
+    THE QUESTION IS REAL AND NOBODY CAN ANSWER IT. One anchor correlating more than
+    `SPLIT_REQUIRED_THRESHOLD` distinct external domains may be several relationships wearing one
+    subject — but `gather_members` reads a table that only ever grows, and no route exists for a
+    human to say "these are one after all". Holding on it was permanent, which
+    `decide_publication`'s own docstring calls "a REJECT wearing HOLD's name".
+
+    `UNKNOWABLE`, and that is the whole of the honesty here. It is emphatically NOT
+    `GENUINELY_ABSENT`, the one type that licenses a negative inference — nothing has been
+    established about whether this situation should be split, and a downstream reader must not be
+    able to conclude that it should not be. The remedy for an unknowable is to go and look, which
+    is exactly what a reviewer would do.
+    """
+    if not bool(meta.get("split_required")):
+        return missing_facts
+    anchor_node = str(meta.get("anchor_node_id") or old.id)
+    if any(f.expected_fact == "situation.identity_is_one_relationship" for f in missing_facts):
+        return missing_facts
+    return (*missing_facts, MissingFact(
+        subject_node_id=anchor_node,
+        expected_fact="situation.identity_is_one_relationship",
+        absence_type=AbsenceType.UNKNOWABLE,
+        coverage_ready=None))
+
+
+#: metadata key → (v2 field, contract). The two names differ in one case and that is deliberate:
+#: `pattern_matched_conditions` would be a third spelling of a thing already called
+#: `matched_conditions` in both the metadata and the contract.
+_TYPED_LANES: tuple[tuple[str, str, Any], ...] = (
+    ("conflicts", "conflicts", Conflict),
+    ("trends", "trends", Trend),
+    ("cohort_positions", "cohort_positions", CohortPosition),
+    ("anomalies", "anomalies", Anomaly),
+    ("matched_conditions", "matched_conditions", MatchedCondition),
+)
+
+
+def _typed_lanes(meta: Mapping[str, Any]) -> dict[str, Any]:
+    """Project the analytic metadata onto the object's typed fields.
+
+    A row that does not validate is DROPPED, never passed through: this is a projection of
+    content another layer committed, and a malformed metadata dict must not become a malformed
+    typed field. Dropping is also the honest failure — an unparseable trend is not a trend.
+
+    `pattern_id` is carried only when the pattern ACTIVATED. `BusinessSituationObject` enforces
+    that a named pattern brings its matched conditions (contracts/situation.py:761), and a shadow
+    fire has no authority to name the situation — see `_situation_type`, which refuses it there
+    for the same reason.
+    """
+    out: dict[str, Any] = {}
+    for key, field, contract in _TYPED_LANES:
+        rows = meta.get(key) or ()
+        if not isinstance(rows, (list, tuple)):
+            continue
+        parsed = []
+        for row in rows:
+            if not isinstance(row, Mapping):
+                continue
+            try:
+                parsed.append(contract.model_validate(dict(row)))
+            except (TypeError, ValueError):
+                continue
+        if parsed:
+            out[field] = tuple(parsed)
+    if meta.get("pattern_activated") and meta.get("pattern_id") and out.get("matched_conditions"):
+        out["pattern_id"] = str(meta["pattern_id"])
+    else:
+        # Without the conditions the contract refuses the id, so carrying one alone would turn a
+        # shadow fire into a rejected publication rather than an unnamed one.
+        out.pop("matched_conditions", None)
+    return out
 
 
 def _candidate_payload(
@@ -234,8 +335,24 @@ def _preflight(old: LegacySituation, *, l1_scoring_active: bool) -> tuple[str, .
         reasons.append(HoldReason.QES_REQUIRED.value)
     if int(meta.get("evidence_verified_spans") or 0) < 1 or not _receipts(old):
         reasons.append(HoldReason.VERIFIED_EVIDENCE_REQUIRED.value)
-    if bool(meta.get("split_required")):
-        reasons.append(HoldReason.IDENTITY_REVIEW_REQUIRED.value)
+    # `split_required` NO LONGER HOLDS, and this is the one place in this gate where a hold was
+    # withdrawn rather than fixed.
+    #
+    # It fires when one anchor correlates more than `SPLIT_REQUIRED_THRESHOLD` distinct external
+    # domains, and `situation_bso` promises "a reviewer (or, later, an L2 re-correlation pass)
+    # decides whether and how to split it". NEITHER EXISTS. `gather_members` reads
+    # `context_correlation_members`, which only ever grows, so nothing could ever lower the count
+    # and no route lets a human say "these are one relationship after all". By this module's own
+    # test — `decide_publication`'s docstring — a hold nothing can clear is "a REJECT wearing
+    # HOLD's name", and it was applied silently and permanently.
+    #
+    # THE DOUBT IS NOT DISCARDED, it is moved to where a reader can see it. The situation
+    # publishes carrying `split_required` in `missing_facts`, so its coverage says so and a card
+    # built from it can say "this may be several relationships" — which is the honest output of a
+    # question nobody can currently answer. Vanishing was not.
+    #
+    # Measured on the pilot: two situations. The cost of the old behaviour was small and the
+    # shape of it was not.
     if bool(meta.get("requires_complete_coverage")) and meta.get("coverage_ready") is not True:
         reasons.append(HoldReason.SOURCE_COVERAGE_INSUFFICIENT.value)
     if meta.get("contradicted_by"):
@@ -249,14 +366,31 @@ def _preflight(old: LegacySituation, *, l1_scoring_active: bool) -> tuple[str, .
         # `reevaluate_after` promises is one a sweep genuinely keeps. That is the test the
         # docstring below sets for the difference between the two outcomes.
         reasons.append(HoldReason.CROSS_DOMAIN_CONTRADICTION.value)
-    if meta.get("conflict_ids"):
+    # THE EXIT THESE TWO NAMED FOR THEMSELVES IS NOW BUILT.
+    #
+    # Both were placeholders with an explicit condition — "until this seam can attach both typed
+    # Conflict sides", "until the matcher carries the real spans" — and both conditions are met:
+    # `_typed_lanes` above projects `conflicts` and `matched_conditions` onto the published
+    # object from the metadata that has carried them all along, and the matcher's
+    # `ConditionEvidence.spans` has been `tuple[EvidenceSpan, ...]` for some time. So the holds
+    # are now conditional on the typed content actually ARRIVING, which is what they were
+    # waiting for, rather than on the pointer merely existing.
+    #
+    # A candidate whose conflict records will not parse still holds: the disagreement is real and
+    # unattached, and publishing it as settled would erase it by omission — the thing the
+    # original comment was protecting.
+    carried = _typed_lanes(meta)
+    if meta.get("conflict_ids") and not carried.get("conflicts"):
         # A pointer means Layer 1 deliberately preserved two incompatible claims.  Until this
         # seam can attach both typed Conflict sides, publishing the candidate as settled would
         # erase the disagreement by omission.
         reasons.append(HoldReason.CONFLICT_OPEN.value)
-    if bool(meta.get("pattern_activated")) and meta.get("pattern_id"):
-        # Current pattern receipts are graph fact pointers, not EvidenceSpan quotes.  Do not
-        # claim the strict pattern field until the matcher carries the real spans.
+    if (bool(meta.get("pattern_activated")) and meta.get("pattern_id")
+            and not carried.get("pattern_id")):
+        # An ACTIVATED pattern that could not carry its matched conditions onto the object. The
+        # contract refuses a named pattern with no conditions behind it
+        # (contracts/situation.py:761), so publishing would fail validation anyway — this holds
+        # it with a reason a reader can act on instead of rejecting it with a contract error.
         reasons.append(HoldReason.PATTERN_EVIDENCE_REQUIRED.value)
     return tuple(sorted(set(reasons)))
 

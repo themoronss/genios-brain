@@ -200,7 +200,21 @@ _ROLE_ALIASES: Mapping[str, str] = MappingProxyType({
     "team_lead": "lead", "tech_lead": "lead", "teamlead": "lead",
     "senior_manager": "manager", "account_manager": "manager",
     "ic": "employee", "staff": "employee", "member": "employee",
-    "consultant": "contractor", "freelancer": "contractor", "supplier": "vendor",
+    # `consultant` IS NOT HERE, and its removal is the point.
+    #
+    # It used to alias to `contractor` (5000, the floor). In a UK or Indian hospital a
+    # Consultant is the SENIOR physician — the person whose sign-off the whole record turns on
+    # — and this table filed them below an intern's manager. In a law firm, in management
+    # consulting and in most of the NHS the same word carries the same seniority. The alias was
+    # a guess about one industry's usage applied to every industry, and the guess actively
+    # INVERTED the hierarchy it was trying to read.
+    #
+    # Falling through to None is strictly better: the cascade continues to the domain rungs and
+    # attributes the person on evidence the system actually has, rather than on a word somebody
+    # assumed meant "outsider". This is the same argument the comment above makes for refusing
+    # to guess that "Growth Ninja" is a VP — and a tenant that really does mean contractor can
+    # now say so in `org_role_authority` without a deploy.
+    "freelancer": "contractor", "supplier": "vendor",
     "trainee": "intern", "internship": "intern",
 })
 
@@ -247,7 +261,8 @@ class SourceAttribution:
         return self.evidence.multiplier_bp
 
 
-def _normalise_title(value: str | None) -> str | None:
+def _normalise_title(value: str | None,
+                     ladder: Mapping[str, int] = ROLE_AUTHORITY_BP) -> str | None:
     """A free-text role -> a ladder key, or None.
 
     ``"Chief Financial Officer"``, ``"CFO"`` and ``"cfo "`` are one role written three ways, and
@@ -264,16 +279,48 @@ def _normalise_title(value: str | None) -> str | None:
     if not key:
         return None
     for candidate in (key, _ROLE_ALIASES.get(key)):
-        if candidate and candidate in ROLE_AUTHORITY_BP:
+        if candidate and candidate in ladder:
             return candidate
     head = key.split("_", 1)[0]
     for candidate in (head, _ROLE_ALIASES.get(head)):
-        if candidate and candidate in ROLE_AUTHORITY_BP:
+        if candidate and candidate in ladder:
             return candidate
     return None
 
 
-def role_authority_bp(actor_role: str | None) -> int | None:
+#: A TENANT'S OWN LADDER, merged over the shipped one. Same shape as `org_qualification_floors`
+#: and for the same reason: the rungs below are 29 rows of English corporate titles, and no list
+#: of English corporate titles describes every business. A clinic says `consultant: 9500`; an
+#: exporter says `proprietor: 10000`; a chambers says `silk: 10000`. None of those is a defect in
+#: the shipped table — they are businesses it was never asked about.
+#:
+#: THE FLOOR RULE SURVIVES ANY OVERLAY. A rung below 3000 would rank a KNOWN human under an
+#: unknown one, which makes identifying somebody a way to LOSE authority; and above 10000 is not
+#: a basis point. Both are clamped rather than refused, because a tenant's typo must not silently
+#: disable their whole ladder.
+ROLE_AUTHORITY_TABLE = "org_role_authority"
+
+
+def merged_ladder(overlay: Mapping[str, int] | None = None) -> Mapping[str, int]:
+    """The shipped ladder with a tenant's rows written over it, normalised and clamped."""
+    if not overlay:
+        return ROLE_AUTHORITY_BP
+    merged = dict(ROLE_AUTHORITY_BP)
+    for role, value in overlay.items():
+        key = _TITLE_JUNK.sub("_", str(role).strip().lower()).strip("_")
+        if not key:
+            continue
+        try:
+            merged[key] = max(3000, min(10000, int(value)))
+        except (TypeError, ValueError):
+            # A row that is not a number is not a rung. Skipped rather than defaulted: a
+            # default here would hand a made-up authority to a role the tenant mis-typed.
+            continue
+    return merged
+
+
+def role_authority_bp(actor_role: str | None,
+                      overlay: Mapping[str, int] | None = None) -> int | None:
     """Rung 1 alone — the role ladder, for a caller that already holds a graph role.
 
     Returns None for a role the ladder has no row for, which is the signal to keep descending
@@ -281,8 +328,9 @@ def role_authority_bp(actor_role: str | None) -> int | None:
     ``SourceEvent`` is in hand, and re-deriving "what is a CFO worth" at that call site is how
     two ladders come to exist.
     """
-    key = _normalise_title(actor_role)
-    return None if key is None else ROLE_AUTHORITY_BP[key]
+    ladder = merged_ladder(overlay)
+    key = _normalise_title(actor_role, ladder)
+    return None if key is None else ladder[key]
 
 
 def _domain_of(email: str | None) -> str | None:
@@ -314,7 +362,8 @@ def analyze_source(event: SourceEvent, *,
                    executed: bool = False,
                    actor_role: str | None = None,
                    mailbox_owner: str | None = None,
-                   org_domains: Iterable[str] = ()) -> SourceAttribution:
+                   org_domains: Iterable[str] = (),
+                   role_overlay: Mapping[str, int] | None = None) -> SourceAttribution:
     """**L1.6.4-U1.** Rank one event's artifact and its author. Total, deterministic, pure.
 
     ``evidence_authority_rank`` is ALG-14's, produced by handing it a ``Provenance`` built from
@@ -356,7 +405,10 @@ def analyze_source(event: SourceEvent, *,
             actor_email=email,
         )
 
-    by_role = role_authority_bp(actor_role)
+    # The tenant's own rungs, merged over the shipped ladder. None on every call today — the
+    # loader is `qualification`'s shape and the caller that holds `org_id` supplies it — and the
+    # merge is a no-op in that case, so nothing changes for a tenant who has said nothing.
+    by_role = role_authority_bp(actor_role, role_overlay)
     if by_role is not None:
         return _answer(ActorBasis.ROLE_LADDER, by_role)
 

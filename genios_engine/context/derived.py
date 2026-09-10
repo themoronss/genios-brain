@@ -18,10 +18,13 @@ be traced back to the rows that produced it.
 """
 from __future__ import annotations
 
+from genios_engine.context.vocabulary import kinds_where
+
 import json
+from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
 from genios_engine.context.pipeline import _normalise_deal_status
 
@@ -48,7 +51,10 @@ _SENTIMENT_WEIGHTS: dict[str, float] = {
 
 #: Kinds that mean the relationship MOVED, as opposed to merely made noise. Momentum asks whether
 #: anything advanced recently, which is a different question from whether the tone was warm.
-_PROGRESS_KINDS = frozenset({
+#: DERIVED FROM THE ONE MEANING TABLE — see `waiting._ASK_KINDS` for why three files deciding
+#: what one observation kind means is the defect. The literal below is the fallback for an
+#: unreadable file, not a second authority.
+_PROGRESS_KINDS_FALLBACK = frozenset({
     "next_step_agreed", "demo_requested", "proposal_sent", "meeting_request", "followup_sent",
     # Momentum asks whether anything ADVANCED. On an admin or fundraising thread the things that
     # advance are an approval landing, an introduction being made, diligence opening and a
@@ -57,6 +63,8 @@ _PROGRESS_KINDS = frozenset({
     "approval_granted", "intro_made", "diligence_started", "document_sent",
     "investor_update_sent", "meeting_scheduled",
 })
+
+_PROGRESS_KINDS = kinds_where(is_progress=True) or _PROGRESS_KINDS_FALLBACK
 
 _RECENT_DAYS = 14          # "lately"
 _BASELINE_DAYS = 56        # four times the recent window → a stable denominator, not last week's noise
@@ -133,8 +141,54 @@ _UPSERT_FACT = (
     "provenance_refs) values "
     "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), :t, 'active', 100, 0.9, :now, :now, 'org', "
     "'deterministic_derived', :trace, 'graph-fact.v2', 'R100', cast(:provenance as jsonb)) "
+    # STATUS AND valid_to ARE RESET, and they were not. Every derived fact reuses a
+    # deterministic `fact_version_id`, so a re-write lands on the SAME row — and once
+    # `waiting.compute_waiting` began superseding the waiting facts when a counterparty replies,
+    # a conversation that went quiet a second time wrote its new day count into a row still
+    # marked `status='superseded'` with `valid_to` set. The value was correct and every reader
+    # filters on `status='active'`, so the fact was written and invisible: a live wait that no
+    # card could ever see. Retirement must be reversible by the same writer that performs it.
     "on conflict (fact_version_id) do update set value = excluded.value, "
-    "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from")
+    "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from, "
+    "status = 'active', valid_to = null")
+
+
+#: A DERIVED FACT THAT STOPPED BEING TRUE, and until now there was no way to say so.
+#:
+#: `_write_fact` is an upsert on a deterministic `fact_version_id`, so a derived fact is kept
+#: current by being REWRITTEN. The failure mode is what happens when it should stop: nothing
+#: rewrites it, and a row that stops being written is not a row that ended — it stays
+#: `status='active'`, `valid_to is null`, holding whatever the last sweep computed. Every reader
+#: filters on `status='active'`, so the stale value is the live one.
+#:
+#: `waiting.py` grew its own copy of this statement when a counterparty replying stopped retiring
+#: `thread.days_waiting`. It was the second writer to need it and the first to notice; this is
+#: the one both now use, because two statements that must agree about what "no longer true"
+#: means are how they come to disagree.
+#:
+#: SUPERSEDED, NEVER DELETED. The row is how a point-in-time read knows what we believed last
+#: week, and `valid_to` is what makes that legible.
+_RETIRE_FACTS = (
+    "update graph_facts set status='superseded', valid_to=:now "
+    "where org_id=:o and subject_node_id=:n and field in :fields "
+    "  and status='active' and valid_to is null"
+)
+
+
+def retire_facts(c, org_id: str, node_id: str, fields: Sequence[str], now: datetime) -> int:
+    """Close the named derived facts on one node. Returns rows closed; a no-op after the first.
+
+    `in :fields` with an EXPANDING bindparam, not `= any(:fields)`: the array cast is
+    Postgres-only and would make every caller untestable on SQLite — the rule `waiting.py` and
+    `situation_bso._L1_BY_EVENT_SELECT` both already record.
+    """
+    fields = [str(f) for f in fields if f]
+    if not fields:
+        return 0
+    result = c.execute(
+        text(_RETIRE_FACTS).bindparams(bindparam("fields", expanding=True)),
+        {"o": org_id, "n": node_id, "now": now, "fields": sorted(set(fields))})
+    return int(result.rowcount or 0)
 
 
 def _write_fact(c, org_id: str, node_id: str, field: str, value: str, value_type: str,

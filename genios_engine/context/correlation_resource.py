@@ -7,6 +7,8 @@ produces UNKNOWN rather than a measured zero.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -273,8 +275,58 @@ _RESOURCE_FACTS = text(
     "  and n.node_type = any(cast(:types as text[])) "
     "order by n.node_id, f.field, f.fact_version_id")
 
+#: THE SHIPPED PAIR: what a COMMITMENT looks like, and what a DRAW against one looks like.
+#:
+#: They were the only two answers, and they are a procurement vocabulary. The same reading —
+#: *we committed to X and have drawn Y against it, and Z is unattributed* — is what a clinic
+#: asks of a `care_plan` against `visits`, a firm of a `retainer` against `time_entries`, a
+#: school of a `budget_line` against `requisitions`, an exporter of an `L/C` against
+#: `shipments`. Every one of those was a Python edit, and until it happened the whole correlator
+#: read a tenant's world as empty rather than as unmodelled.
+#:
+#: WHAT IS NOT AUTHORABLE, and must not become so: the three-tier EXACT / STRONG / UNATTRIBUTED
+#: discipline and the refusal to guess through an unresolved reference. Those are what make an
+#: attribution honest, and a tenant who could relax them would get a tidier report about a
+#: world that had not changed. Only WHICH NODE TYPES carry the two roles moves.
 _CONTRACT_TYPES = ("contract", "subscription")
 _SPEND_TYPES = ("invoice", "payment", "spend")
+
+#: Where an authored pair lives. One file, because a commitment type and a draw type only mean
+#: anything together — a directory of halves would let somebody declare one and wonder why
+#: nothing attributed.
+RESOURCE_KINDS_FILE = Path(__file__).resolve().parent.joinpath(
+    "observations", "resource_kinds.yaml")
+
+
+def resource_kinds(path: "Path | None" = None) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """`(commitment types, draw types)` — the shipped pair plus whatever a business declared.
+
+        commitment_types: [retainer]
+        draw_types: [time_entry]
+
+    ADDED, NEVER REPLACED. A tenant that models retainers usually still has invoices, and a
+    declaration that silently stopped reading `contract` would empty a working correlator on
+    the day somebody added a line. Removing a shipped type is a code change precisely because
+    it is the destructive direction.
+    """
+    import yaml
+
+    target = path or RESOURCE_KINDS_FILE
+    commitments, draws = list(_CONTRACT_TYPES), list(_SPEND_TYPES)
+    try:
+        if not target.is_file():
+            return tuple(commitments), tuple(draws)
+        data = yaml.safe_load(target.read_text(encoding="utf-8")) or {}
+        for key, sink in (("commitment_types", commitments), ("draw_types", draws)):
+            for name in (data.get(key) or []):
+                cleaned = str(name).strip()
+                # A TYPE MAY NOT BE BOTH. A node that is its own draw would attribute against
+                # itself and report a contract as fully spent the moment it existed.
+                if cleaned and cleaned not in commitments and cleaned not in draws:
+                    sink.append(cleaned)
+    except Exception:      # noqa: BLE001 — an unreadable file leaves the shipped pair standing
+        return _CONTRACT_TYPES, _SPEND_TYPES
+    return tuple(commitments), tuple(draws)
 
 
 def _json_value(value: Any) -> Any:
@@ -334,8 +386,9 @@ def _pick(facts: Mapping[str, tuple[Any, str, datetime | None]], *names: str) ->
 
 def _resource_inputs(conn, org_id: str) -> tuple[
         tuple[ContractResource, ...], tuple[SpendEvent, ...], dict[str, tuple[str, ...]]]:
+    commitment_types, draw_types = resource_kinds()
     rows = conn.execute(
-        _RESOURCE_FACTS, {"o": org_id, "types": [*_CONTRACT_TYPES, *_SPEND_TYPES]}
+        _RESOURCE_FACTS, {"o": org_id, "types": [*commitment_types, *draw_types]}
     ).mappings().all()
     grouped: dict[str, dict[str, tuple[Any, str, datetime | None]]] = {}
     types: dict[str, str] = {}
@@ -351,7 +404,7 @@ def _resource_inputs(conn, org_id: str) -> tuple[
     for node_id, facts in grouped.items():
         node_type = types[node_id]
         provenance[node_id] = tuple(sorted({record[1] for record in facts.values()}))
-        if node_type in _CONTRACT_TYPES:
+        if node_type in commitment_types:
             prefix = node_type
             starts = _moment(_pick(facts, f"{prefix}.starts_at", "contract.start_date"))
             amount = _money_value(

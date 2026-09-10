@@ -55,6 +55,8 @@ the ordering of `metric_a` / `metric_b` is the declaration's, not a claim about 
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -381,6 +383,52 @@ REGISTERED_PAIRS: tuple[RegisteredPair, ...] = (
 )
 
 
+#: Where an authored pair lives. One file, because the multiple-comparison bound is a property
+#: of the WHOLE list and a per-file directory would hide how long it had grown.
+#: `joinpath`, NOT `/`. `test_no_float_arithmetic_anywhere_in_the_module` walks this module's
+#: AST and refuses every `Div` node — *"true division is how a score stops being exact"* — and
+#: a path join is spelled with the same operator. The guard is right and stays; the path is
+#: spelled the other way.
+PAIRS_FILE = Path(__file__).resolve().parents[1].joinpath("observations", "correlations.yaml")
+
+
+def authored_pairs(path: "Path | None" = None) -> tuple[RegisteredPair, ...]:
+    """Question-named metric pairs from YAML, appended to the shipped six.
+
+    THE DISCIPLINE IS PRESERVED EXACTLY, and that is the whole argument for moving it. The
+    docstring below defends three properties — declared, question-named, validated — and none of
+    them requires Python. `_validated_registry` still runs over the merged list at import, so a
+    metric the sampler does not write, a metric paired with itself, and the same unordered pair
+    declared twice each still fail AT IMPORT rather than at the request that first tests them.
+
+    An author still cannot register a pair without naming the customer question it answers, and
+    still cannot register one twice. What changes is that a business whose question is "do the
+    clinics that reschedule most also pay slowest" can ask it without a deploy.
+
+    A ROW WITH NO QUESTION IS REFUSED, not defaulted. The question is not documentation: it is
+    what stops the registry becoming a fishing expedition over every pair of metrics, which is
+    the multiple-comparisons failure this file exists to bound.
+    """
+    import yaml
+
+    target = path or PAIRS_FILE
+    out: list[RegisteredPair] = []
+    try:
+        if not target.is_file():
+            return ()
+        data = yaml.safe_load(target.read_text(encoding="utf-8")) or {}
+        for row in (data.get("pairs") or []):
+            metric_a = str((row or {}).get("metric_a") or "").strip()
+            metric_b = str(row.get("metric_b") or "").strip()
+            question = str(row.get("question") or "").strip()
+            if not (metric_a and metric_b and question):
+                continue
+            out.append(RegisteredPair(metric_a=metric_a, metric_b=metric_b, question=question))
+    except Exception:      # noqa: BLE001 — an unreadable file leaves the shipped six standing
+        return ()
+    return tuple(out)
+
+
 def _validated_registry(pairs: Iterable[RegisteredPair]) -> dict[tuple[str, str], RegisteredPair]:
     """Refuse a bad registration at IMPORT, not at the request that first tests the pair.
 
@@ -407,7 +455,11 @@ def _validated_registry(pairs: Iterable[RegisteredPair]) -> dict[tuple[str, str]
     return seen
 
 
-_PAIR_INDEX: dict[tuple[str, str], RegisteredPair] = _validated_registry(REGISTERED_PAIRS)
+#: THE SHIPPED SIX PLUS WHATEVER A BUSINESS DECLARED, validated as ONE list — the
+#: multiple-comparison bound is a property of the whole registry, so an authored pair that
+#: duplicates a shipped one must fail here rather than quietly become a seventh hypothesis.
+_PAIR_INDEX: dict[tuple[str, str], RegisteredPair] = _validated_registry(
+    (*REGISTERED_PAIRS, *authored_pairs()))
 
 
 def registered_pair(metric_a: str, metric_b: str) -> RegisteredPair | None:

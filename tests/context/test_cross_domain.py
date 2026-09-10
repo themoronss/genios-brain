@@ -310,3 +310,181 @@ def test_an_arbiter_fact_from_another_tenant_does_not_settle_this_one(db):
 
 def test_a_quiet_tenant_is_not_an_error(db):
     assert read_contradictions(db, ORG) == ()
+
+
+# =============================================================================================
+# The impossibilities are AUTHORED, not coded.
+# =============================================================================================
+def _write(tmp_path, name: str, body: str):
+    (tmp_path / name).write_text(body, encoding="utf-8")
+    return tmp_path
+
+
+VALID = """
+id: whose_turn
+left: admin:awaiting_response
+right: support:first_response_overdue
+because: a conversation has one turn
+arbiter: thread.ball_in_court
+favours:
+  them: admin:awaiting_response
+  us: support:first_response_overdue
+"""
+
+
+def test_a_new_contradiction_is_one_file_and_no_python(tmp_path):
+    """THE POINT. `EXCLUSIONS` was a Python tuple with one pair in it, so a second contradiction
+    meant editing the module — and every tenant has different ones, because every business is a
+    different set of readings over a different substrate. Data, in files, is the same argument
+    `patterns/registry.SEED_DIR` makes for detectable situations."""
+    from genios_engine.context.correlation_domain import load_exclusions
+
+    _write(tmp_path, "a.yaml", VALID)
+    _write(tmp_path, "b.yaml", """
+id: two
+left: sales:deal
+right: sales:opportunity
+because: one pipeline entry cannot be both stages at once
+""")
+
+    loaded = load_exclusions(tmp_path)
+
+    assert len(loaded) == 2
+    assert {e.left for e in loaded} == {"admin:awaiting_response", "sales:deal"}
+
+
+def test_the_shipped_set_is_read_from_disk():
+    """Not a constant that happens to agree with a file — the file IS the source."""
+    from genios_engine.context.correlation_domain import EXCLUSIONS_DIR, declared_exclusions
+
+    assert EXCLUSIONS_DIR.is_dir()
+    assert {p.stem for p in EXCLUSIONS_DIR.glob("*.yaml")}
+    assert len(declared_exclusions()) == len(list(EXCLUSIONS_DIR.glob("*.yaml")))
+
+
+def test_files_load_in_filename_order(tmp_path):
+    """Sorted, so two machines load the same set and a diff of two contradiction reports is a
+    diff of behaviour rather than of `readdir`."""
+    from genios_engine.context.correlation_domain import load_exclusions
+
+    _write(tmp_path, "z.yaml", VALID.replace("admin:awaiting_response", "z:one")
+           .replace("support:first_response_overdue", "z:two").replace("arbiter", "_arbiter")
+           .replace("favours", "_favours"))
+    _write(tmp_path, "a.yaml", "id: a\nleft: a:one\nright: a:two\nbecause: because\n")
+
+    assert [e.left for e in load_exclusions(tmp_path)] == ["a:one", "z:one"]
+
+
+def test_an_empty_directory_is_a_tenant_with_no_declared_contradictions(tmp_path):
+    from genios_engine.context.correlation_domain import load_exclusions
+
+    assert load_exclusions(tmp_path) == ()
+
+
+def test_a_missing_directory_is_not_a_crash(tmp_path):
+    from genios_engine.context.correlation_domain import load_exclusions
+
+    assert load_exclusions(tmp_path / "nope") == ()
+
+
+# =============================================================================================
+# What the loader refuses, and why each refusal exists.
+# =============================================================================================
+@pytest.mark.parametrize(("field", "why"), [
+    ("left", "a pair with one side is not a pair"),
+    ("right", "a pair with one side is not a pair"),
+    ("because", "this data suppresses a domain's work; the justification is required"),
+])
+def test_a_missing_required_field_is_refused(tmp_path, field, why):
+    from genios_engine.context.correlation_domain import ExclusionError, load_exclusions
+
+    body = "\n".join(line for line in VALID.strip().split("\n")
+                     if not line.startswith(f"{field}:"))
+    _write(tmp_path, "x.yaml", body)
+
+    with pytest.raises(ExclusionError, match=field):
+        load_exclusions(tmp_path)
+
+
+def test_a_side_that_does_not_name_a_domain_is_refused(tmp_path):
+    """`awaiting_response` without its domain would match nothing and say nothing."""
+    from genios_engine.context.correlation_domain import ExclusionError, load_exclusions
+
+    _write(tmp_path, "x.yaml", VALID.replace("admin:awaiting_response", "awaiting_response"))
+
+    with pytest.raises(ExclusionError, match="domain"):
+        load_exclusions(tmp_path)
+
+
+def test_a_type_cannot_contradict_itself(tmp_path):
+    from genios_engine.context.correlation_domain import ExclusionError, load_exclusions
+
+    _write(tmp_path, "x.yaml",
+           VALID.replace("support:first_response_overdue", "admin:awaiting_response"))
+
+    with pytest.raises(ExclusionError, match="itself"):
+        load_exclusions(tmp_path)
+
+
+def test_favours_pointing_outside_its_own_pair_is_refused(tmp_path):
+    """THE TYPO THAT WOULD HAVE BEEN INVISIBLE. `winner` would return a type `loser` cannot
+    subtract from the pair, so every finding answers unresolved — indistinguishable from a
+    tenant with no contradictions, which is the failure this whole module exists to end."""
+    from genios_engine.context.correlation_domain import ExclusionError, load_exclusions
+
+    _write(tmp_path, "x.yaml", VALID.replace("us: support:first_response_overdue",
+                                             "us: sales:deal"))
+
+    with pytest.raises(ExclusionError, match="neither side"):
+        load_exclusions(tmp_path)
+
+
+def test_an_arbiter_with_no_favours_is_refused(tmp_path):
+    from genios_engine.context.correlation_domain import ExclusionError, load_exclusions
+
+    body = VALID.split("favours:")[0]
+    _write(tmp_path, "x.yaml", body)
+
+    with pytest.raises(ExclusionError, match="names no side"):
+        load_exclusions(tmp_path)
+
+
+def test_favours_with_no_arbiter_is_refused(tmp_path):
+    """Nothing would ever read it, so the author would believe they had settled a pair they had
+    not — the quietest possible way to be wrong."""
+    from genios_engine.context.correlation_domain import ExclusionError, load_exclusions
+
+    _write(tmp_path, "x.yaml", VALID.replace("arbiter: thread.ball_in_court", ""))
+
+    with pytest.raises(ExclusionError, match="no `arbiter`"):
+        load_exclusions(tmp_path)
+
+
+def test_a_pair_with_no_arbiter_at_all_is_legal(tmp_path):
+    """Not every impossibility has a fact that settles it, and refusing to declare those would
+    leave the contradiction undetected — strictly worse than detecting it unresolved."""
+    from genios_engine.context.correlation_domain import load_exclusions
+
+    _write(tmp_path, "x.yaml", "id: q\nleft: a:one\nright: b:two\nbecause: they cannot both hold\n")
+
+    [loaded] = load_exclusions(tmp_path)
+
+    assert loaded.arbiter is None and loaded.favours == {}
+
+
+def test_a_file_that_is_not_a_mapping_names_itself(tmp_path):
+    from genios_engine.context.correlation_domain import ExclusionError, load_exclusions
+
+    _write(tmp_path, "broken.yaml", "- just\n- a\n- list\n")
+
+    with pytest.raises(ExclusionError, match="broken.yaml"):
+        load_exclusions(tmp_path)
+
+
+def test_every_shipped_file_carries_a_reason_a_reviewer_can_argue_with():
+    """`because` is not decoration — it is the whole justification for suppressing a domain's
+    work, and a rule nobody can argue with is a rule nobody can remove."""
+    from genios_engine.context.correlation_domain import declared_exclusions
+
+    for exclusion in declared_exclusions():
+        assert len(exclusion.because.split()) >= 8, exclusion.left

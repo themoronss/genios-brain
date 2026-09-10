@@ -31,12 +31,81 @@ DEFAULT_PACKS = [(SALES_V1["id"], SALES_V1["version"]), (GENERAL_V1["id"], GENER
                  (ADMIN_V1["id"], ADMIN_V1["version"]), (SUPPORT_V1["id"], SUPPORT_V1["version"])]
 
 
+def _corpus_packs() -> list[dict]:
+    """An AUTHORITY LANE for every authored corpus that does not have a hand-written pack.
+
+    The comment above says *"Adding a pack = import it + register it here … Zero engine change"*,
+    and the first half contradicts the second: importing and registering IS an engine change. The
+    consequence is precise and silent. `persist_complete` compares the config snapshot's `pack_id`
+    against the capability's `domain`, so a corpus authored as "Clinic Expertise" compiles, routes
+    and reasons — and then every one of its capabilities dies at `domain_shadow.py` under
+    `no_tenant_pack`. That is exactly what had been happening to all 106 Admin capabilities before
+    `ADMIN_V1` was written, and `ADMIN_V1`'s own docstring says so. A fifth corpus repeats it.
+
+    WHAT A SYNTHESISED PACK DELIBERATELY DOES NOT CARRY, each for a fault it would cause:
+
+      rules: []          same statement `admin_v1` and `support_v1` make. A pack exists here to
+                         give the COMPILED lane authority, not to smuggle in legacy rules nobody
+                         authored.
+      schema.fields: []  THE LOAD-BEARING ONE. `context/extract/vocab.py::field_vocabulary` unions
+                         every pack's `schema.fields` into the L2 EXTRACTION PROMPT — a field named
+                         here is a field the model is told to go and find. A synthesised pack has
+                         no evidence that any writer exists for anything, so naming a field would
+                         invite the model to invent a plausible value for a fact nobody stated.
+                         Facts arrive through the pipeline and the corpus, never through here.
+      scoring_defaults   COPIED FROM `ADMIN_V1`, not invented. Cards from every pack are ranked
+                         against each other inside ONE shared daily budget, so a new domain with
+                         its own gate or bands would win (or lose) every tie on scale rather than
+                         on merit. Divergence has to be earned from a live distribution.
+
+    A HAND-WRITTEN PACK ALWAYS WINS. If `admin_v1.py` exists, the corpus never shadows it with an
+    empty lane — the builtin carries a real `schema.fields` list with real writers behind it and
+    losing that would silence the extractor for the domain that works.
+
+    FAILS SOFT for the reason `l3_activation._authored_domain_ids` records: a corpus that cannot
+    be read is a deployment problem, and it must not stop the four shipped packs registering.
+    """
+    builtin_ids = {p["id"] for p in BUILTIN_PACKS}
+    # `platform.corpus` is the ONE reader of `domain.yaml` — `capture` needs the same three
+    # lines and may not import this package, so the read lives in the cross-cutting layer that
+    # every side may reach. It also ends the two hand-counted `parents[]` roots that used to
+    # compute this directory twice at different depths.
+    from genios_engine.platform.corpus import authored_domains
+
+    out: list[dict] = []
+    for domain_id, data in authored_domains():
+        try:
+            if domain_id in builtin_ids:
+                continue
+            identity = (data.get("identity") or {})
+            out.append({
+                "id": domain_id,
+                # The AUTHOR's version. A bump in `domain.yaml` publishes a new pack version
+                # rather than mutating a used one — `registry.register` refuses changed bytes
+                # under a published version, and that refusal is the property, not an obstacle.
+                "version": str(identity.get("version") or "0.1.0"),
+                "requires": {"engine": ">=0.1.0"},
+                "scoring_defaults": ADMIN_V1["scoring_defaults"],
+                "rules": [],
+                "plays": {},
+                "templates": {"_version": "cards.v2"},
+                "schema": {"fields": []},
+            })
+        except Exception:      # noqa: BLE001 — one bad corpus must not cost the others a lane
+            continue
+    return out
+
+
 @lru_cache(maxsize=4)
 def make_registry(database_url: str = "") -> PackRegistry:
     """Registry with every built-in pack content-addressed into pack_registry (idempotent)."""
     url = database_url or get_settings().database_url
     reg = PackRegistry(url)
     for pack in BUILTIN_PACKS:
+        reg.register(pack)
+    # AND EVERY AUTHORED CORPUS THAT HAS NO HAND-WRITTEN PACK. Registering is content-addressed
+    # and idempotent, so this is a no-op on every run after the first for a given version.
+    for pack in _corpus_packs():
         reg.register(pack)
     return reg
 
@@ -59,3 +128,10 @@ def ensure_defaults(registry: PackRegistry, org_id: str) -> None:
     keep it until explicitly promoted (zero-deploy lifecycle); this only backfills what's missing."""
     for pack_id, version in DEFAULT_PACKS:
         ensure_default(registry, org_id, pack_id, version)
+    # AND THE AUTHORED CORPORA, on the same non-clobbering terms. An empty lane is inert for a
+    # tenant that has not activated that domain at Layer 3 — it carries no rules, no templates
+    # and no schema fields, so it changes no card and no extraction prompt. What it does is stop
+    # `persist_complete` refusing the write on the day somebody DOES activate, which is the
+    # silent `no_tenant_pack` death the four builtins were written to end.
+    for pack in _corpus_packs():
+        ensure_default(registry, org_id, pack["id"], pack["version"])

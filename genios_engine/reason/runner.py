@@ -275,6 +275,17 @@ def _bulk_load_situations(store, org_id: str) -> dict[str, dict]:
         "domain, status, confidence_overall, confidence_evidence, confidence_freshness, "
         "confidence_consistency, confidence_identity, coverage, missing, last_seen_at "
         "from context_situations where org_id = :o "
+        # A CLOSED SITUATION MAY NOT WIN THIS. The pick is by CONFIDENCE, and a `resolved` or
+        # `archived` row with a higher score than the anchor's live one took the `distinct on`,
+        # was attached as `ctx.situation`, and was injected as a `situation.status` fact — so a
+        # rule reasoned over a situation the lifecycle had already ended. Dormancy is the only
+        # mechanism that stops a stale situation compiling into a card, and it was being computed
+        # correctly and then ignored one layer down.
+        #
+        # `dormant` is EXCLUDED TOO, and that is the point of it: 45 days without evidence is the
+        # lifecycle saying this is no longer live. `partial` stays — a partially-resolved
+        # situation is still open on the half nobody has closed.
+        "  and coalesce(status, 'active') in ('active', 'partial') "
         "order by anchor_node_id, confidence_overall desc nulls last, situation_id"),
         {"o": org_id}).mappings().all()
     return {r["anchor_node_id"]: dict(r) for r in rows}

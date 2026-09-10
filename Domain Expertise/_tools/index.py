@@ -240,7 +240,18 @@ def main() -> int:
             print(f"  CONTRADICTION  deferred and still routed: {', '.join(contradictions)}")
         print(f"  objects        {core_n} core, {len(objects) - core_n} scoped, "
               f"{len(unreachable)} unreachable")
-        print(f"  situations     {len(situations)}, {len(pending)} blocked on a missing L2 type")
+        # COUNT THE SITUATIONS, not the types. This printed `len(pending)` — a count of TYPES —
+        # under a label that says SITUATIONS. Sales read "1 blocked" against 0 blocked situations
+        # (its one pending type is declared by no situation), and Support read "9" against 6.
+        # Two different questions answered by one number.
+        #
+        # `pending` maps a type to the SITUATION IDS that declared it under
+        # `matches.pending_l2_situation_types`, so the blocked situations are its values — a
+        # first cut of this counted `l2_situation_types` instead and reported 0 everywhere, which
+        # was a different wrong number wearing the right label.
+        blocked = {sid for sids in pending.values() for sid in sids}
+        print(f"  situations     {len(situations)}, {len(blocked)} blocked on "
+              f"{len(pending)} missing L2 type(s)")
         if pending:
             print(f"  PENDING L2     {', '.join(sorted(pending))}")
         print()

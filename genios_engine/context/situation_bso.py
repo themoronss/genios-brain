@@ -737,21 +737,16 @@ _L1_BY_EVENT_SELECT = (
 MAX_ABSENCE_RECEIPTS = 5
 
 
-def outbound_event_ids(conn, org_id: str, anchor_node_id: str,
-                       limit: int = MAX_ABSENCE_RECEIPTS) -> tuple[str, ...]:
-    """The events in which we wrote TO `anchor_node_id`. Empty when we never have.
-
-    Empty is the honest answer and the important one: a counterparty we have never written to has
-    no absence to describe, because nothing was ever awaited. Every one of the pilot's marketing
-    senders is in that state.
-    """
-    if not anchor_node_id:
-        return ()
-    rows = conn.execute(text(_OUTBOUND_EVENTS_SQL),
-                        {"o": org_id, "n": anchor_node_id}).mappings().all()
-    return tuple(str(r["event_id"]) for r in rows if r["event_id"])[:limit]
-
-
+# `outbound_event_ids` STOOD HERE AND WAS CALLED BY NOTHING. Retired 2026-09-10.
+#
+# It answered "which events did we write to this anchor in", assuming the OUTBOUND direction.
+# `absence_receipt_event_ids` below supersedes it by reading the direction from the situation
+# TYPE instead — because the assumption was wrong for `first_response_overdue`, whose claim is
+# about a message THEY sent, and a receipt read in the wrong direction cites the wrong message.
+#
+# Built, tested six ways, and every one of those tests passed while no production path called it:
+# the branch's signature defect, one more instance, inside the module that documents it most.
+# Deleted rather than kept "in case" — that is what put it here.
 #: WHICH MESSAGE GROUNDS WHICH ABSENCE. Measured on the pilot, not assumed: of the 84 absence
 #: situations held there, `awaiting_response` anchors on an `outreach` node that carries only
 #: `outreach.*` facts, and `first_response_overdue` anchors on a `thread` node carrying
@@ -763,10 +758,36 @@ def outbound_event_ids(conn, org_id: str, anchor_node_id: str,
 #: would hand every blast a receipt. It is admitted for `first_response_overdue` ALONE, whose
 #: claim is literally about a message they sent us and we have not answered — there, their
 #: message is not evidence of our interest, it is the thing the claim is about.
+#: SITUATION TYPES WHOSE CLAIM IS AN ABSENCE. A card here says something did NOT happen, and
+#: `contracts/absence` states the rule these depend on: "not observed" is not "does not exist".
+#:
+#: Wider than `ABSENCE_RECEIPT_FIELDS` below on purpose. That map answers "which outbound fact is
+#: the receipt for this silence", and only three types have one. This answers "does this claim
+#: depend on having looked everywhere", which is true of every silence — including the two group
+#: readings this branch added, whose subject is several silences at once.
+ABSENCE_CLAIMING_TYPES: frozenset[str] = frozenset({
+    "awaiting_response", "cohort_outreach_gap", "first_response_overdue",
+    "commitment_overdue", "organization_gone_quiet", "campaign_awaiting_reply",
+    "condition_in_review",
+})
+
 ABSENCE_RECEIPT_FIELDS: Mapping[str, tuple[str, ...]] = {
     "awaiting_response": ("thread.last_outbound",),
     "cohort_outreach_gap": ("thread.last_outbound",),
     "first_response_overdue": ("thread.last_inbound",),
+    # THE TWO GROUP READINGS, added late and missed here — the same "a new type and its receipt
+    # live in two files" gap this map exists to close, committed while closing it.
+    #
+    # Both claim a silence and both anchor on a SYNTHETIC node (`organization:<company>`,
+    # `campaign:<id>`), so the receipt comes through the `concerns` hop to the representative
+    # counterparty — exactly the one-hop walk `absence_receipt_event_ids` already performs for
+    # `cohort_outreach_gap`, whose anchor is synthetic for the same reason.
+    #
+    # OUTBOUND, because both say THEY have not answered US. The direction is the whole of what
+    # this map encodes — `first_response_overdue` reads the inbound leg because its claim is the
+    # opposite one — and getting it backwards is how a card cites the wrong message.
+    "organization_gone_quiet": ("thread.last_outbound",),
+    "campaign_awaiting_reply": ("thread.last_outbound",),
 }
 
 #: The same read as `_OUTBOUND_EVENTS_SQL`, with the field set as a parameter and `status` pinned
@@ -868,19 +889,36 @@ def backfill_absence_l1(conn, org_id: str, subjects, l1_by_correlation: dict):
     and after this change it still does. What it stops doing is refusing claims whose receipts
     nobody fetched.
 
+    AND IT HAS TO RUN ON THE PUBLISH PATH, which for a long time it did not. This function was
+    called from exactly one place — `compose_org_importance`, the IMPORTANCE sweep — while
+    `reason/domain_shadow` did its own `gather_l1_signals_bulk` and never backfilled. So on the
+    path that actually decides publication, `l1` stayed `None` for every absence situation and
+    both hold reasons below fired anyway. Measured on the pilot: 504 held against 28 admitted,
+    and 480 of those holds carry `qes_required` AND `verified_evidence_required` — the exact
+    pair this function exists to clear.
+
     ONE HOLD REASON OR TWO. `_preflight` raises `verified_evidence_required` on a missing span AND
     `qes_required` when `importance_source` is not `l1_qualified_signals` — and on the pilot all
     349 held candidates carry both, which reads like two independent defects. It is one: both are
     downstream of `l1` being `None` here, because `importance_base(l1)` returns the
     `l1_qualified_signals` arm only when a bundle arrived. Feeding the bundle clears both.
     """
+    def field(subject, name: str):
+        """The importance sweep passes dataclass-ish rows; the PUBLISH path passes SQLAlchemy
+        `RowMapping`s, which have no attributes for their columns. Reading both is what let this
+        function be called from the seam that actually publishes."""
+        value = getattr(subject, name, None)
+        if value is None and hasattr(subject, "get"):
+            value = subject.get(name)
+        return value
+
     for subject in subjects:
-        key = getattr(subject, "correlation_id", None)
-        anchor = getattr(subject, "anchor_node_id", None)
+        key = field(subject, "correlation_id")
+        anchor = field(subject, "anchor_node_id")
         if not key or not anchor or key in l1_by_correlation:
             continue
         events = absence_receipt_event_ids(conn, org_id, str(anchor),
-                                           str(getattr(subject, "situation_type", "") or ""))
+                                           str(field(subject, "situation_type") or ""))
         if not events:
             continue
         folded = gather_l1_signals_for_events(conn, org_id, events)
@@ -1540,6 +1578,29 @@ def build_business_situation(
             # "assessed and not ready" — the same discipline `build_context_slice` keeps for the
             # slice's `observation_licensed`.
             "coverage_ready": (l1.coverage_ready if l1 is not None else None),
+            # A8 / BS-03 · AN EMPTY SEARCH IS NOT PROOF OF NONEXISTENCE, and this is the writer
+            # that hold reason never had.
+            #
+            # `situation_publisher._preflight` reads `requires_complete_coverage` and NOTHING in
+            # genios_engine ever set it, so `SOURCE_COVERAGE_INSUFFICIENT` could not fire on any
+            # tenant, ever — measured: zero, against 480 `qes_required` and 24 `conflict_open`.
+            # The only test that exercised it set the key by hand.
+            #
+            # ONLY A SITUATION THAT CLAIMS AN ABSENCE, because only an absence claim depends on
+            # having looked everywhere. "They have not replied" is a statement about what is NOT
+            # in a source, and it is worth nothing if the source was not covered. A situation
+            # that reports something PRESENT is unaffected by a gap elsewhere.
+            #
+            # AND THE HOLD ITSELF IS GATED ON `coverage_ready is False`, not on "not True" —
+            # `_preflight` compares against `is not True` and the tri-state is what makes that
+            # safe. `False` means Layer 1 ASSESSED coverage and found it incomplete: a real
+            # reason to refuse an absence claim. `None` means nobody assessed it, which is an
+            # absence of information about coverage and must not masquerade as bad news — the
+            # same discipline `freshness_score` keeps for an undated row. On the pilot that is
+            # the difference between holding 55 and holding 274.
+            "requires_complete_coverage": (
+                str(situation.get("situation_type") or "") in ABSENCE_CLAIMING_TYPES
+                and (l1.coverage_ready if l1 is not None else None) is False),
             "shadow": True,
             # One anchor correlating more than SPLIT_REQUIRED_THRESHOLD distinct external
             # counterparties is not describing one relationship. Surfaced rather than silently
@@ -1749,9 +1810,17 @@ def compose_org_importance(conn, org_id: str, subjects: Sequence[SituationSubjec
 #: was closed still sees what it was worth, and re-opening one (`decide_lifecycle` does, by
 #: itself, when new evidence post-dates the resolution) must not surface a row with a null
 #: importance among ranked ones.
+#: ARCHIVED ROWS ARE EXCLUDED, and they were not. The comment above argues — correctly — that a
+#: dormant or resolved row keeps its ranking, so a reader can see what a closed situation was
+#: worth and a reopened one does not surface with a null importance. ARCHIVED is the state past
+#: that: 180 days after it resolved, out of the working set by definition, and nothing reopens it
+#: except the contradiction path, which recomposes on its own when it does. Recomposing an
+#: importance for it on every sweep was work whose answer nobody could ever read — and since
+#: nothing prunes `context_situations` at all, that set only grows.
 _ORG_SITUATIONS = (
     "select situation_id, correlation_id, domain, situation_type, anchor_node_id, last_seen_at "
-    "from context_situations where org_id = :o order by situation_id")
+    "from context_situations where org_id = :o and coalesce(status, '') <> 'archived' "
+    "order by situation_id")
 
 #: One UPDATE, executed once per situation as a batched parameter set. `inputs` is MERGED rather
 #: than replaced — the five other writers of this table put their own arithmetic in that column

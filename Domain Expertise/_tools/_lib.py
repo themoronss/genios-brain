@@ -233,6 +233,13 @@ def refs_in_condition(cond: dict) -> tuple[list[str], list[str], list[str]]:
     val = cond.get("value")
     if isinstance(val, dict) and "baseline" in val:
         base.append(val["baseline"])
+    # `other_path` IS A FACT PATH, and must be checked like one. It sits on the right-hand side
+    # of the comparison rather than the left, but an author who names a path the substrate does
+    # not hold has written a rule that can only ever answer UNKNOWN — silently, on every
+    # situation, forever. Collecting it here is what makes that a validator error at authoring
+    # time instead of a card that never appears.
+    if isinstance(val, dict) and "other_path" in val:
+        paths.append(val["other_path"])
     return paths, obs, base
 
 

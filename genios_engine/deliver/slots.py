@@ -143,6 +143,20 @@ SENTINELS: dict[str, str] = {
     # stay visibly different from any real objective. A card that guesses this sends the wrong
     # message with full confidence.
     "objective": "an unstated purpose",
+    # THE GROUP SLOTS. Three situation files shipped naming these and the engine wrote none of
+    # them, so `tpl.format(**slots)` raised KeyError and the whole card died at render. The
+    # readings behind them (`read_campaign_silence`, `read_organization_silence`,
+    # `read_conditions_awaiting_review`) write every fact below; only the slot was missing.
+    #
+    # `organization` and `quote` get sentinels no real value can equal, for the reason
+    # `follow_ups` does: a firm genuinely called "this firm" and an outreach line that genuinely
+    # reads "the message" do not exist, so a sentinel that could be mistaken for content would
+    # let an unnamed group card ship looking complete.
+    "organization": "an unnamed counterparty",
+    "quote": "the message we sent",
+    "sent_on": "an unrecorded day",
+    "longest_wait_days": "several",
+    "age_days": "several",
     # THE CAMPAIGN SLOTS. A cohort card's whole content is its split — how many, how many quiet,
     # how many never chased — and without slots for them the fallback would be one sentence
     # repeated over every campaign in the org. That is the "eleven identical cards" failure this
@@ -204,6 +218,16 @@ def compute_slots(reason_code: str, node_name: str, facts: dict, eval_time: date
     awaiting = _int(_fval(facts, "cohort.awaiting"))
     never_chased = _int(_fval(facts, "cohort.never_chased"))
     past_normal = _int(_fval(facts, "cohort.awaiting_beyond_normal"))
+    # THE GROUP READINGS' OWN FACTS. Each is read from the anchor the reading actually writes it
+    # on, and from nowhere else — `campaign.*` for a send, `organization.*` for a firm,
+    # `condition.*` for a held condition. Falling back across them would let a campaign's wait
+    # answer a firm's card, which is the cross-subject bleed the group cards exist to avoid.
+    organization = _fval(facts, "organization.name")
+    quote = _fval(facts, "campaign.quote")
+    sent_on = _fval(facts, "campaign.sent_on")
+    longest_wait = _int(_either(facts, "campaign.longest_wait_days",
+                                "organization.longest_wait_days"))
+    age_days = _int(_fval(facts, "condition.age_days"))
     return {
         "entity": node_name or SENTINELS["entity"],
         "days": days if days is not None else SENTINELS["days"],
@@ -226,4 +250,10 @@ def compute_slots(reason_code: str, node_name: str, facts: dict, eval_time: date
         "never_chased": (never_chased if never_chased is not None
                          else SENTINELS["never_chased"]),
         "past_normal": past_normal if past_normal is not None else SENTINELS["past_normal"],
+        "organization": organization or SENTINELS["organization"],
+        "quote": quote or SENTINELS["quote"],
+        "sent_on": sent_on or SENTINELS["sent_on"],
+        "longest_wait_days": (longest_wait if longest_wait is not None
+                              else SENTINELS["longest_wait_days"]),
+        "age_days": age_days if age_days is not None else SENTINELS["age_days"],
     }

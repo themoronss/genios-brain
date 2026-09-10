@@ -51,6 +51,13 @@ MIN_RECIPIENTS = 3
 
 #: How far apart two sends may be and still be one campaign. A raise goes out in a morning; a
 #: template reused three months later is a different attempt with different traction behind it.
+#:
+#: A DEFAULT, NOT A LAW, and `find_campaigns` takes it as an argument for that reason. Thirty-six
+#: hours is a founder's morning. A tenant whose outreach goes out over a working week would have
+#: one campaign split into five here, each below `MIN_RECIPIENTS`, and would see nothing at all —
+#: so the value has to be the caller's to choose. When a per-tenant source is needed,
+#: `capture/esqe/qualification.org_qualification_floors` is the proven shape: a table, a
+#: documented default for a tenant with no row, an owner, and an append-only change log.
 WINDOW_HOURS = 36
 
 #: Below this a "shared sentence" is a greeting, a signature or a subject fragment, and grouping on
@@ -180,7 +187,9 @@ def sender_email(actor) -> str:
     return ""
 
 
-def _rows_to_campaigns(rows: Sequence[Mapping], *, org_id: str) -> tuple[Campaign, ...]:
+def _rows_to_campaigns(rows: Sequence[Mapping], *, org_id: str,
+                       window_hours: int = WINDOW_HOURS,
+                       min_recipients: int = MIN_RECIPIENTS) -> tuple[Campaign, ...]:
     """Group `(node, event, sent_at, quote)` rows into campaigns. Pure, so it is testable without
     a database and so the grouping rule can be read in one place."""
     buckets: dict[str, list[tuple[str, str, datetime]]] = {}
@@ -216,21 +225,22 @@ def _rows_to_campaigns(rows: Sequence[Mapping], *, org_id: str) -> tuple[Campaig
         # weekday. The run breaks when the gap from the run's FIRST send exceeds the window.
         run: list[tuple[str, str, datetime]] = []
         for entry in entries:
-            if run and entry[2] - run[0][2] > timedelta(hours=WINDOW_HOURS):
-                out.extend(_finish(run, sentences[key], org_id=org_id))
+            if run and entry[2] - run[0][2] > timedelta(hours=window_hours):
+                out.extend(_finish(run, sentences[key], org_id=org_id,
+                                   min_recipients=min_recipients))
                 run = []
             run.append(entry)
-        out.extend(_finish(run, sentences[key], org_id=org_id))
+        out.extend(_finish(run, sentences[key], org_id=org_id, min_recipients=min_recipients))
     return tuple(sorted(out, key=lambda c: (-c.size, c.campaign_id)))
 
 
 def _finish(run: Sequence[tuple[str, str, datetime]], sentence: str, *,
-            org_id: str) -> tuple[Campaign, ...]:
+            org_id: str, min_recipients: int = MIN_RECIPIENTS) -> tuple[Campaign, ...]:
     """One completed run → zero or one campaign. Zero when too few counterparties received it."""
     if not run:
         return ()
     recipients = {node for node, _event, _at in run}
-    if len(recipients) < MIN_RECIPIENTS:
+    if len(recipients) < min_recipients:
         return ()
     return (Campaign(
         campaign_id=campaign_id_for(org_id=org_id, sentence=sentence, opened_at=run[0][2]),
@@ -242,7 +252,9 @@ def _finish(run: Sequence[tuple[str, str, datetime]], sentence: str, *,
     ),)
 
 
-def find_campaigns(conn, org_id: str, *, since: datetime) -> tuple[Campaign, ...]:
+def find_campaigns(conn, org_id: str, *, since: datetime,
+                   window_hours: int = WINDOW_HOURS,
+                   min_recipients: int = MIN_RECIPIENTS) -> tuple[Campaign, ...]:
     """Every campaign this org sent after `since`, largest first.
 
     `since` is required and has no default: an unbounded read on a founder's mailbox is the query
@@ -250,7 +262,8 @@ def find_campaigns(conn, org_id: str, *, since: datetime) -> tuple[Campaign, ...
     window their answer is about.
     """
     rows = conn.execute(text(_OUTBOUND_WITH_SENTENCE), {"o": org_id, "since": since}).mappings().all()
-    return _rows_to_campaigns(rows, org_id=org_id)
+    return _rows_to_campaigns(rows, org_id=org_id, window_hours=window_hours,
+                              min_recipients=min_recipients)
 
 
 __all__ = [

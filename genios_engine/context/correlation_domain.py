@@ -39,8 +39,10 @@ one layer up.
 
 from __future__ import annotations
 
+import functools
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 
 from sqlalchemy import text
 
@@ -65,24 +67,98 @@ class Exclusion:
         return frozenset((self.left, self.right))
 
 
-#: THE DECLARED IMPOSSIBILITIES. One entry per pair; a pair not listed here is overlap, not
-#: contradiction, and this module ignores it.
+#: Where the declared impossibilities live. DATA, IN FILES — adding a contradiction is a file
+#: and a review, not a deploy of new logic, which is the same argument `patterns/registry.SEED_DIR`
+#: makes for detectable situations and the same route it takes.
 #:
-#: `thread.ball_in_court` is the arbiter for the direction pair because it is the fact both
-#: readings are derived FROM: `waiting.py` computes it from the message timeline, and the two
-#: situations are two readings of it that drifted apart. Where the arbiter is absent the finding
-#: is returned unresolved rather than guessed — a coin toss between two domains is worse than
-#: telling a reviewer the system cannot tell.
-EXCLUSIONS: tuple[Exclusion, ...] = (
-    Exclusion(
-        left="admin:awaiting_response",
-        right="support:first_response_overdue",
-        because=("One says they owe us a reply, the other says we never answered them. Both are "
-                 "claims about whose turn it is, and a conversation has one turn."),
-        arbiter="thread.ball_in_court",
-        favours={"them": "admin:awaiting_response", "us": "support:first_response_overdue"},
-    ),
-)
+#: THIS WAS A PYTHON TUPLE AND THAT WAS THE WRONG SHAPE. One pair, hard-coded, so a second
+#: contradiction — and every tenant will have different ones, because every business is a
+#: different set of readings over a different substrate — meant editing this module. An
+#: exclusion is authored expertise: it says what two claims mean and which fact settles them.
+#: Nothing about it is engine logic.
+EXCLUSIONS_DIR = Path(__file__).resolve().parent / "exclusions"
+
+
+class ExclusionError(ValueError):
+    """A declared impossibility that could not be read. Carries the filename, so a load of a
+    dozen names the one that is wrong rather than failing the set."""
+
+
+def load_exclusion(data: Mapping[str, object], *, source: str = "<inline>") -> Exclusion:
+    """One authored mapping → one `Exclusion`. Every refusal names the file and the field.
+
+    STRICT ON PURPOSE. This data suppresses a domain's work, so a typo in `favours` that
+    silently made every finding unresolved would be indistinguishable from a tenant with no
+    contradictions — the failure this whole module exists to end, one layer in.
+    """
+    def need(key: str) -> str:
+        value = str(data.get(key) or "").strip()
+        if not value:
+            raise ExclusionError(f"{source}: `{key}` is required")
+        return value
+
+    left, right = need("left"), need("right")
+    for side in (left, right):
+        domain, _, stype = side.partition(":")
+        if not domain or not stype:
+            raise ExclusionError(f"{source}: {side!r} must read `<domain>:<situation_type>`")
+    if left == right:
+        raise ExclusionError(f"{source}: a type cannot contradict itself")
+
+    arbiter = str(data.get("arbiter") or "").strip() or None
+    favours_raw = data.get("favours") or {}
+    if not isinstance(favours_raw, Mapping):
+        raise ExclusionError(f"{source}: `favours` must be a mapping of fact value → side")
+    favours = {str(k): str(v) for k, v in favours_raw.items()}
+    if arbiter and not favours:
+        raise ExclusionError(f"{source}: `arbiter` is set but `favours` names no side")
+    if favours and not arbiter:
+        raise ExclusionError(f"{source}: `favours` is set but no `arbiter` decides it")
+    for value, side in favours.items():
+        if side not in (left, right):
+            # The failure mode this catches: `winner` returns a type `loser` cannot subtract
+            # from the pair, so every finding answers unresolved and nothing says why.
+            raise ExclusionError(
+                f"{source}: favours[{value!r}] = {side!r}, which is neither side of this pair")
+
+    return Exclusion(left=left, right=right, because=need("because"),
+                     arbiter=arbiter, favours=favours)
+
+
+def load_exclusions(directory: Path | None = None) -> tuple[Exclusion, ...]:
+    """Every `*.yaml` in the directory, in filename order.
+
+    Sorted, so two machines load the same set and a diff of two contradiction reports is a diff
+    of behaviour rather than of `readdir` — the reason `patterns.load_directory` sorts too.
+    """
+    import yaml
+
+    root = directory or EXCLUSIONS_DIR
+    if not root.is_dir():
+        return ()
+    out: list[Exclusion] = []
+    for path in sorted(root.glob("*.yaml")):
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError) as exc:
+            raise ExclusionError(f"{path.name} could not be read as YAML: {exc}") from exc
+        if not isinstance(data, Mapping):
+            raise ExclusionError(f"{path.name} is not an exclusion mapping")
+        out.append(load_exclusion(data, source=path.name))
+    return tuple(out)
+
+
+@functools.lru_cache(maxsize=1)
+def declared_exclusions() -> tuple[Exclusion, ...]:
+    """The shipped set. Cached: pure file IO over immutable data, and the sweep would otherwise
+    re-parse it per org. `cache_clear()` is available to a test that writes another."""
+    return load_exclusions()
+
+
+#: THE DECLARED IMPOSSIBILITIES, read from `exclusions/`. A pair not authored there is overlap,
+#: not contradiction, and this module ignores it. Kept as a module attribute so every caller's
+#: default is one thing a reader can find, and so a test can pass its own set explicitly.
+EXCLUSIONS: tuple[Exclusion, ...] = declared_exclusions()
 
 
 @dataclass(frozen=True, slots=True)
@@ -205,13 +281,37 @@ def find_contradictions(rows: Sequence[Mapping],
     """
     arbiters = arbiters or {}
     names = names or {}
+    # A SITUATION WITH MORE THAN ONE SUBJECT HAS NONE, and this is the fan-out that made that
+    # matter. `pipeline.py` writes one `person --corresponded_with--> thread` edge PER RECIPIENT,
+    # so a THREAD-anchored situation — every `first_response_overdue` row on the pilot — resolves
+    # to every participant on the thread, not to the one it is about.
+    #
+    # The harm is specific and it is the kind this module exists to prevent. A five-recipient
+    # thread carrying `first_response_overdue` attributes that claim to all five; if any one of
+    # them separately carries `awaiting_response`, a contradiction fires between two situations
+    # about DIFFERENT people, and the arbiter then settles it by reading a `ball_in_court` that
+    # belongs to only one of them. A contradiction attributed to the wrong person is worse than
+    # none: it suppresses a correct card to resolve a disagreement that never existed.
+    #
+    # DROPPED, NOT GUESSED. `_THREAD_COVERED_BY_PARTY` picks a single party for a different
+    # question and can, because it is choosing whom to ADDRESS. Here the question is whose turn
+    # it is, and picking one of five would be inventing the answer. On the pilot 41 thread
+    # anchors resolve to 22 people, so the ambiguous ones are a real slice — and they keep both
+    # of their cards, which is the status quo, rather than losing one to a coin toss.
+    subjects: dict[str, set[str]] = {}
+    for row in rows:
+        subjects.setdefault(str(row["situation_id"]), set()).add(str(row["person"]))
+
     held: dict[str, dict[str, str]] = {}
     for row in rows:
+        situation_id = str(row["situation_id"])
+        if len(subjects.get(situation_id, ())) > 1:
+            continue
         person = str(row["person"])
         key = f'{row["domain"]}:{row["situation_type"]}'
         # FIRST ONE WINS for a repeated key. Two `awaiting_response` situations on one person are
         # not a contradiction with themselves, and either can stand for the claim.
-        held.setdefault(person, {}).setdefault(key, str(row["situation_id"]))
+        held.setdefault(person, {}).setdefault(key, situation_id)
 
     out: list[Contradiction] = []
     for person, present in sorted(held.items()):
@@ -255,9 +355,14 @@ def read_contradictions(conn, org_id: str, *,
 
 __all__ = [
     "EXCLUSIONS",
+    "EXCLUSIONS_DIR",
+    "ExclusionError",
     "Contradiction",
     "Exclusion",
     "arbiter_fields",
+    "declared_exclusions",
+    "load_exclusion",
+    "load_exclusions",
     "find_contradictions",
     "read_contradictions",
 ]

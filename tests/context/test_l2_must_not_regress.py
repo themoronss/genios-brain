@@ -680,20 +680,35 @@ def test_the_tenant_node_type_the_exclusion_guards_is_one_the_system_really_writ
 
 @pytest.mark.gate
 def test_the_refusal_is_still_asserted_where_x7_put_it() -> None:
-    from genios_engine.context import correlation, correlation_dependency, correlation_timeline
+    from genios_engine.context import (
+        correlation,
+        correlation_conversation,
+        correlation_dependency,
+        correlation_domain,
+        correlation_organization,
+        correlation_resource,
+        correlation_timeline,
+    )
     module = _call_upstream(
         _TESTS_ROOT / "context" / "test_dependency_correlation.py",
         "test_a_chain_carries_a_blocked_count_and_no_score_a_reader_could_rank_on",
         "test_the_facts_the_two_sweeps_write_are_findings_and_never_a_ranking")
     surface = getattr(module, "test_no_correlator_exposes_a_way_to_prioritise_score_risk_or_"
                               "recommend")
-    for correlator in (correlation, correlation_dependency, correlation_timeline):
+    # ALL EIGHT. Four of them — conversation, domain, organization, resource — were outside
+    # every correlator gate until the audit that found it, so the ratchet has to name them too
+    # or the upstream list can shrink again without this noticing.
+    for correlator in (correlation, correlation_conversation, correlation_dependency,
+                       correlation_domain, correlation_organization, correlation_resource,
+                       correlation_timeline):
         surface(correlator)
 
 
 @pytest.mark.gate
-@pytest.mark.parametrize("module_name", ("correlation.py", "correlation_dependency.py",
-                                         "correlation_timeline.py"))
+@pytest.mark.parametrize("module_name", ("correlation.py", "correlation_conversation.py",
+                                         "correlation_dependency.py", "correlation_domain.py",
+                                         "correlation_organization.py",
+                                         "correlation_resource.py", "correlation_timeline.py"))
 def test_no_correlator_imports_the_machinery_that_ranks(module_name: str) -> None:
     """The complement to the name scan. `importance.py` composes a rank, `attention.py` sorts one
     and `reason/` acts on one; a correlator that imported any of them could attach a ranking under

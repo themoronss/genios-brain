@@ -16,11 +16,11 @@ from genios_engine.reason.authority import (
 )
 
 from genios_engine.contracts.abstention import downgrade_to_observation, is_actionable
+from genios_engine.contracts.outcomes import interrupts, project
 from genios_engine.deliver.render import state_not_command
 from .card_builder import BUILDER_VERSION, build_draft, load_evidence_quotes
 from .render import render_copy
 from .router import budget_full
-from genios_engine.contracts.abstention import is_actionable
 
 from .store import CardStore
 
@@ -306,12 +306,25 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             # `metadata['review_state']` is `accepted`, and a STAMPED capability's signal reaches
             # this gate as `prescriptive` and leaves it un-downgraded.
             #
-            # What still downgrades is a DRAFT: a measurement compile
-            # (`require_admission=False`) over content whose acceptance hash no longer matches its
-            # bytes carries `review_state='draft'`, `domain_shadow._persist_live` emits it at
-            # `observation`, and `is_actionable` refuses it above. The gate reads the LIVE
-            # admission state — the hash pin is recomputed on every compile, so an edit after
-            # review un-accepts the capability by itself — never a cached count.
+            # What still downgrades is a DRAFT, and there are now TWO ways to be one.
+            #
+            # (a) A measurement compile (`require_admission=False`) over content whose acceptance
+            #     hash no longer matches its bytes. The gate reads the LIVE admission state — the
+            #     hash pin is recomputed on every compile, so an edit after review un-accepts the
+            #     capability by itself — never a cached count.
+            #
+            # (b) A SITUATION whose own words nobody accepted. `capability_resolver.
+            #     situation_admission_reason` asks a situation the same three questions the
+            #     capability ceremony asks its bytes — stable identity, approved review, a named
+            #     reviewer — because a machine-written situation file whose owning capability was
+            #     approved used to ship a fully prescriptive card on somebody else's signature.
+            #     Measured when it was added: 24 of 62 authored situations, 15 reviewed by nobody.
+            #
+            #     THIS ONE FLAGS ON EVERY COMPILE, live or measurement, and that asymmetry with
+            #     (a) is deliberate: a situation's DETECTION is Layer 2's and is evidence-backed
+            #     whatever a reviewer thinks of its prose, so the finding still ships — it just
+            #     stops instructing. A fully live, fully hash-accepted compile of one of those
+            #     types is therefore still `draft`, and that is the intended reading, not a gap.
             # `tests/packs/compiler/test_stamped_vs_draft_abstention.py` drives both halves.
             sig = _apply_abstention(sig, effective)
             # LOADED BEFORE THE BUILD, and that ordering is the fix to a gate that could never
@@ -414,8 +427,28 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             # 3. The band and budget checks, unchanged.
             reason_code = str(sig.get("reason_code") or "")
             floods = surfaced_by_reason.get(reason_code, 0) >= _MAX_SURFACED_PER_REASON
-            if not is_actionable(draft.get("level")):
+            # THE CANONICAL OUTCOME, folded here because here is where every input to it exists.
+            #
+            # `contracts/outcomes` was written to be "the one place that names what happened",
+            # and nothing in genios_engine/ imported it — eleven outcomes, forty-two tests, zero
+            # consumers. This is the seam that makes it true, and it changes one behaviour:
+            #
+            # ASK_DECISION NOW INTERRUPTS. The gate used to be `is_actionable(level)`, which is
+            # False for `review`, so a card whose whole purpose is to put one precise question in
+            # front of the person who can answer it waited in the queue exactly as long as a card
+            # saying nothing needed doing. That is the catalogue's DM-03 ("no backup authority
+            # exists — request one precise decision from the authorized manager") having no route
+            # at all.
+            #
+            # AND ONLY WHEN IT IS ADDRESSED. `draft["assignee"]` is required below for every push,
+            # so a review card with nobody to ask still waits — a question addressed to no one is
+            # not a decision request, it is the "a human must look" abstention the flood guard
+            # above exists to keep out of the surface.
+            outcome = project("abstention.Level", str(draft.get("level") or ""))
+            if not interrupts(outcome):
                 out["not_pushed_abstained"] += 1
+                out[f"outcome_{outcome.value if outcome else 'unmapped'}"] = \
+                    out.get(f"outcome_{outcome.value if outcome else 'unmapped'}", 0) + 1
             elif floods:
                 out["not_pushed_reason_saturated"] += 1
             elif (band(int(sig["score"]), bands_cfg) in ("high", "critical")
@@ -424,6 +457,11 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                         card_id, org_id, "surfaced", "card.surfaced", cause="push",
                         allowed_from=("queued",))):
                 out["pushed"] += 1
+                # Counted under its canonical name as well as the mechanical one, so an operator
+                # asking "how many decision requests did we surface" has an answer that is not
+                # inferred from a reason-code string.
+                key = f"outcome_{outcome.value}"
+                out[key] = out.get(key, 0) + 1
                 surfaced_by_reason[reason_code] = surfaced_by_reason.get(reason_code, 0) + 1
         finally:
             card_store.release_build(org_id, sig["signal_id"], claim_token)

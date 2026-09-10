@@ -8,6 +8,8 @@ in the message comes from card columns that already passed the render validators
 The card link points back to the dashboard — Slack is the doorbell, not the house."""
 from __future__ import annotations
 
+from genios_engine.contracts.abstention import is_actionable
+from genios_engine.deliver.executive_bridge import is_escalation
 from genios_engine.deliver.channels.base import ChannelResult
 
 _BAND_ICON = {"critical": "🔴", "high": "🟠", "standard": "🔵"}
@@ -15,12 +17,28 @@ _BAND_ICON = {"critical": "🔴", "high": "🟠", "standard": "🔵"}
 
 def format_card_message(card: dict, *, base_url: str = "") -> dict:
     """Pure: a card row (headline/situation/urgency_band/score/card_id) → Slack payload.
-    Headline+situation already passed V-01/V-02 at render time — nothing new is said."""
+    Headline+situation already passed V-01/V-02 at render time — nothing new is said.
+
+    THE ABSTENTION USED TO VANISH HERE. `contracts/abstention` says an abstention with no stated
+    cause is indistinguishable from an opinion, and `cards.abstained_because` exists to carry
+    that cause. This function rendered headline and situation only, so on the surface a founder
+    actually gets pinged on, the reason a card declined to advise was simply absent — and now
+    that ASK_DECISION interrupts, a card whose whole content is a question would have arrived
+    looking like an instruction.
+
+    Both fields are ADDED, never substituted. The headline already carries its frame from
+    `render.state_not_command`; this says why underneath it, in the counterparty's absence of
+    evidence rather than in a label.
+    """
     icon = _BAND_ICON.get(str(card.get("urgency_band") or "standard"), "🔵")
     head = str(card.get("headline") or "")[:150]
     situation = str(card.get("situation") or "")[:300]
     link = f"{base_url.rstrip('/')}/cards/{card.get('card_id')}" if base_url else None
     lines = [f"{icon} *{head}*", situation]
+    because = str(card.get("abstained_because") or "").strip()
+    if because and not is_actionable(card.get("level")):
+        # Italic and last-but-one: it is context for the sentence above, not a second headline.
+        lines.append(f"_{because[:200]}_")
     if link:
         lines.append(f"<{link}|Open the card →>")
     return {"text": f"{icon} {head}",                       # notification fallback text
@@ -58,7 +76,18 @@ def format_reminder_message(payload: dict, *, base_url: str = "") -> dict:
     """
     icon = _URGENCY_ICON.get(str(payload.get("urgency") or "gentle"), "🔵")
     head = str(payload.get("headline") or "")[:150]
-    lines = [f"{icon} *Still open — {head}*"]
+    # AN ESCALATION SAYS SO, and this prefixed all four rungs of the ladder with "Still open —".
+    # `executive_bridge` parses the rung out of Layer 5's reason code and sets `kind` and
+    # `escalation_action` for exactly this — and had ZERO consumers, so the rung that widens the
+    # audience and interrupts reached a human looking like the first gentle nudge. The bridge
+    # already frames the HEADLINE for the two rungs that escalate; this stops overwriting it.
+    # ASKED, NOT RE-DECIDED. Three places answered "is this rung an escalation" — the bridge's
+    # `_ESCALATING_ACTIONS` lookup, its `is_escalation` predicate, and this string comparison —
+    # and the two live ones disagreed in FORM while the named predicate was the dead one. The
+    # bridge owns the ladder; this asks it.
+    escalating = is_escalation(payload.get("reason_code")) or \
+        str(payload.get("kind") or "") == "execution_escalation"
+    lines = [f"{icon} *{head}*" if escalating else f"{icon} *Still open — {head}*"]
     situation = str(payload.get("situation") or "")
     if situation:
         lines.append(situation)
@@ -71,7 +100,7 @@ def format_reminder_message(payload: dict, *, base_url: str = "") -> dict:
     card_id = payload.get("card_id")
     if base_url and card_id:
         lines.append(f"<{base_url.rstrip('/')}/cards/{card_id}|Open the card →>")
-    return {"text": f"{icon} Still open — {head}",
+    return {"text": (f"{icon} {head}" if escalating else f"{icon} Still open — {head}"),
             "blocks": [{"type": "section",
                         "text": {"type": "mrkdwn", "text": "\n".join(lines)}}]}
 

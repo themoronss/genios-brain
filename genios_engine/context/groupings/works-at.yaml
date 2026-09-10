@@ -1,0 +1,30 @@
+# THE SHIPPED GROUPING, stated as data so the next one is a file and not a deploy.
+#
+# "Two partners at one fund are one counterparty" is a true and useful statement, and it is
+# also only one business's version of it. A hospital groups clinicians by DEPARTMENT; a school
+# groups guardians by HOUSEHOLD; a broker groups traders by DESK; a consultancy groups people
+# by the ENGAGEMENT they are staffed on rather than by who employs them. Each of those is the
+# same reading — "more than one person on the other side has gone quiet" — over a different
+# edge, and each needed a Python edit.
+#
+# What it may NOT do is make membership mean applicability. That two people share a group node
+# says they are the same counterparty for the purpose of chasing a reply. It says nothing about
+# whether an agreement with one binds the other; `organization-gone-quiet.yaml` states that
+# limit on the card and it holds for every grouping declared here.
+
+grouping_id: works_at
+edge_type: works_at
+member_node_type: person
+group_node_type: company
+
+# Two: the whole point is that a SECOND person changes what the reader should do — chase one
+# contact, or accept that the firm has gone quiet — and one person is already fully served by
+# the per-counterparty situation. A grouping may raise this (a hospital department of three is
+# not a pattern) but the reading refuses below two, because a "group" of one is a duplicate
+# card with a firm's name on it.
+min_members: 2
+
+why: >
+  A counterparty organisation. Two partners at one fund are one firm to a founder: the
+  individual follow-up has already been tried on both, so another copy of it is not the
+  recommendation — a warm introduction, a different seniority, or a decision to stop is.

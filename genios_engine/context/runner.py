@@ -522,6 +522,18 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     # INSUFFICIENT_CONTEXT. Never fatal: a derive failure costs one cycle of freshness, and the
     # next drain recomputes from the same graph.
     derived_rows = 0
+    # ONE BOUNDARY PER PASS, and there used to be ONE FOR ALL SEVEN.
+    #
+    # A failure in `compute_derived` — the first of them — skipped every pass behind it, and with
+    # them every `_reconcile` in the sweep, so nothing closed for as long as the failure lasted.
+    # `refresh_situations` and `detect_resolutions` still ran afterwards, so the sweep reported a
+    # clean run: no exception reached the caller and the counts it prints are of the passes that
+    # DID run. A tenant could lose its whole state-reading layer for a week and every log line
+    # would look ordinary.
+    #
+    # The outer boundary stays as a backstop; these are the ones that keep a single bad pass from
+    # taking the six behind it.
+    #
     # RUNS EVERY PASS, not only when the drain committed something.
     #
     # This block used to sit behind `if done or affected`, and that was wrong for the half of it
@@ -556,33 +568,58 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         # reasoning and not reasoning; it is the difference between the account's own
         # aggregate and whichever neighbour was written last, and between a row existing for
         # every non-reasoner reader and not. See `compute_account_view` for the measurement.
-        derived_rows += compute_account_view(store, org_id, now=sweep_at)
+        try:
+            derived_rows += compute_account_view(store, org_id, now=sweep_at)
+        except Exception:      # noqa: BLE001 — one derived pass must not skip the rest
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "account view pass failed for org=%s — later passes still run", org_id)
         # WAITING state — the only facts in this layer derived from what did NOT happen.
         # Runs behind the person and account passes because it reads the same thread state
         # they commit, and ahead of the situation refresh below so a situation's coverage can
         # see them. Everything above records an event; nothing records silence, which is the
         # shape of most of what a user actually wants told to them.
         from genios_engine.context.waiting import compute_waiting
-        derived_rows += compute_waiting(store, org_id, now=sweep_at)
+        try:
+            derived_rows += compute_waiting(store, org_id, now=sweep_at)
+        except Exception:      # noqa: BLE001 — one derived pass must not skip the rest
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "waiting pass failed for org=%s — later passes still run", org_id)
         # PERIOD aggregates and their situations, in the same pass and for the same reason:
         # they are computed from facts that now exist, they are cheap, and a period read that
         # is only refreshed by a separate schedule is a period read that is always stale.
         # Twenty-two authored capabilities are reachable only through these.
         from genios_engine.context.periodic import refresh_period_situations
-        derived_rows += refresh_period_situations(store, org_id, now=sweep_at)
+        try:
+            derived_rows += refresh_period_situations(store, org_id, now=sweep_at)
+        except Exception:      # noqa: BLE001 — one derived pass must not skip the rest
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "period pass failed for org=%s — later passes still run", org_id)
         # The seven correspondence-derived support readings, in the same pass and for the
         # same reason: a first-response clock, an aging item and a repeat contact are all
         # computed from the thread state and open loops THIS drain just committed, and a
         # reading refreshed only by a separate schedule is a reading that is always stale.
         # Seven authored situation types were unroutable until these existed.
         from genios_engine.context.support_situations import refresh_support_situations
-        derived_rows += refresh_support_situations(store, org_id, now=sweep_at)
+        try:
+            derived_rows += refresh_support_situations(store, org_id, now=sweep_at)
+        except Exception:      # noqa: BLE001 — one derived pass must not skip the rest
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "support pass failed for org=%s — later passes still run", org_id)
         # The one non-mail channel the graph actually holds. `demo` was unroutable not because
         # the corpus was thin but because a meeting with an outside party — 48 of them on the
         # design partner's org — reached no situation at all. Same pass, same reason: it reads
         # the calendar facts this drain just committed.
         from genios_engine.context.meeting_touch import refresh_channel_touch_situations
-        derived_rows += refresh_channel_touch_situations(store, org_id, now=sweep_at)
+        try:
+            derived_rows += refresh_channel_touch_situations(store, org_id, now=sweep_at)
+        except Exception:      # noqa: BLE001 — one derived pass must not skip the rest
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "meeting touch pass failed for org=%s — later passes still run", org_id)
         # THE STATE READINGS, last of the derived passes because they read what every pass
         # above just wrote — the waiting arithmetic in particular. These are the only
         # situations in the system named after what is HAPPENING rather than who it is
@@ -590,13 +627,23 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         # something to route on. Same self-correcting contract as the support readings: a
         # finding that stops being true is resolved by fact on the next sweep.
         from genios_engine.context.outreach_situations import refresh_state_situations
-        derived_rows += refresh_state_situations(store, org_id, now=sweep_at)
+        try:
+            derived_rows += refresh_state_situations(store, org_id, now=sweep_at)
+        except Exception:      # noqa: BLE001 — one derived pass must not skip the rest
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "state readings pass failed for org=%s — later passes still run", org_id)
         # The records reading, in the same pass and for the same reason: a document's control
         # gaps are computed from the file metadata THIS drain just projected, and the copy
         # clustering has to re-run whenever a file lands or a second copy of one appears. It
         # costs two queries and returns immediately on an org with no file store connected.
         from genios_engine.context.document_register import refresh_document_situations
-        derived_rows += refresh_document_situations(store, org_id, now=sweep_at)
+        try:
+            derived_rows += refresh_document_situations(store, org_id, now=sweep_at)
+        except Exception:      # noqa: BLE001 — one derived pass must not skip the rest
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "documents pass failed for org=%s — later passes still run", org_id)
     except Exception:      # noqa: BLE001 — derived view, recomputed next drain
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception("derived fact refresh failed for org=%s", org_id)
@@ -615,6 +662,22 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception(
             "contract-spend correlation failed for org=%s", org_id)
+    # L2.3.9 · CROSS HISTORY — what happened the LAST time this anchor was here.
+    #
+    # AFTER the correlations for this sweep are written, because it reads the generation chain
+    # and the newest generation must be in it. Before situations refresh, so an authored `when:`
+    # can gate on `derived.history.times_seen` in the same drain rather than one behind.
+    #
+    # ITS OWN BOUNDARY, like every pass above: a history read failing must not cost the sweep the
+    # contract-spend correlation that follows it.
+    try:
+        from genios_engine.context.correlation_history import publish_histories
+        derived_rows += publish_histories(store.engine, org_id, eval_time=sweep_at)
+    except Exception:      # noqa: BLE001 — a derived correlation retries from graph state
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception(
+            "cross-history correlation failed for org=%s", org_id)
+
     # RETENTION on `metric_history` (L2.4.1). The analytic stratum's history table is the one
     # store in L2 that only ever APPENDS, which is the exact shape that put this database into
     # read-only once before, so its 24-month horizon is enforced on a path that actually runs
@@ -639,30 +702,63 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception("metric history prune failed for org=%s", org_id)
 
-    # Attention refresh — L2 is the SOLE writer of context_attention. Full-org refresh
-    # when anything changed (recency decays even for untouched nodes, and it is a few
-    # bulk queries, not per-node round-trips).
+    # Attention refresh — L2 is the SOLE writer of context_attention. Full-org refresh:
+    # recency decays even for untouched nodes, and it is a few bulk queries, not per-node
+    # round-trips.
+    #
+    # RUNS EVERY PASS, and it used to sit behind `if done or affected:` — which contradicted the
+    # sentence directly above it. Recency decaying for untouched nodes is precisely a CLOCK
+    # quantity, so gating the refresh on new mail arriving froze every attention band on the one
+    # kind of org whose quiet is the finding: nothing decayed, nothing re-ranked, and the bands a
+    # reader sees were whatever the last day with inbound mail left behind. Same argument, and
+    # the same fix, as the derived block above.
+    #
+    # THE HANDLER LOGS. It was a bare `except Exception: pass` — the only silent one in
+    # `process_pending` — so a refresh that failed every sweep for a month would have looked
+    # exactly like one that ran.
     attention_rows = 0
-    if done or affected:
-        try:
-            from genios_engine.context.attention import refresh_attention
-            attention_rows = refresh_attention(store, org_id, eval_time=sweep_at)
-        except Exception:      # noqa: BLE001 — attention is an ordering hint, never fatal
-            pass
+    try:
+        from genios_engine.context.attention import refresh_attention
+        attention_rows = refresh_attention(store, org_id, eval_time=sweep_at)
+    except Exception:      # noqa: BLE001 — attention is an ordering hint, never fatal
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("attention refresh failed for org=%s", org_id)
 
     # Situations are rebuilt AFTER attention, from correlations the drain just extended.
     # Every value is derived, so a failure here costs a refresh cycle, not data — the
     # next drain recomputes it. Never fatal: a situation view being briefly stale must
     # not stop events from landing.
+    #
+    # RUNS EVERY PASS, for the reason the derived block above already records and this one used
+    # to ignore. `decide_lifecycle` computes THREE clock-derived transitions —
+    # `confidence_freshness`, active→dormant at 45 days, resolved→archived at 180 — and dormancy
+    # is the ONLY mechanism that stops a stale situation compiling into a card. Gated on new
+    # mail, a six-month-dead situation on a quiet tenant stayed `active` and kept reaching Layer
+    # 3 forever, and a resolved one never left the working set. `detect_resolutions` below cannot
+    # cover the gap: it `continue`s on STATEMENT_NONE, which is every situation on a quiet org.
     situation_rows = 0
-    if done or affected:
-        try:
-            from genios_engine.context.situations import refresh_situations
-            situation_rows = refresh_situations(store, org_id, eval_time=sweep_at)
-        except Exception:      # noqa: BLE001 — derived view, rebuilt next drain
-            from genios_engine.platform.logging import get_logger
-            get_logger("genios.l2").exception(
-                "situation refresh failed for org=%s", org_id)
+    try:
+        from genios_engine.context.situations import refresh_situations
+        situation_rows = refresh_situations(store, org_id, eval_time=sweep_at)
+    except Exception:      # noqa: BLE001 — derived view, rebuilt next drain
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("situation refresh failed for org=%s", org_id)
+
+    # THE OTHER FIVE SIXTHS OF THE TABLE. `refresh_situations` above derives everything from
+    # `context_correlations`, so a situation whose correlation id is SYNTHETIC — the state
+    # readings, the period sweep, meeting touch, the document register — never reached
+    # `decide_lifecycle` at all. The block above claims dormancy is the only thing that stops a
+    # stale situation compiling into a card; that was true only for the rows it could see, and
+    # everything else stayed `active` forever and was served to Layer 3 on every sweep.
+    #
+    # Clock transitions only, and never a row somebody decided about. Same never-fatal contract
+    # as the refresh it follows.
+    try:
+        from genios_engine.context.situations import age_uncorrelated_situations
+        situation_rows += age_uncorrelated_situations(store, org_id, eval_time=sweep_at)
+    except Exception:      # noqa: BLE001 — derived lifecycle, retried next drain
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("uncorrelated ageing failed for org=%s", org_id)
 
     # L2.7.7-U1 · M-4 RESOLUTION DETECTION — the third way a situation can end.
     #

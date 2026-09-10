@@ -173,9 +173,24 @@ def test_producible_vocabulary_is_small_and_closed():
         # untouched. Measured on the pilot before it was authored: 82 waiting anchors resolve to
         # 41 people at 4 firms where BOTH known contacts are silent, Peak XV and Afore among them,
         # and the system held eight separate situations that never said so. Bound by
-        # `admin.sit.organization_gone_quiet`, `review_status: draft` and carrying no acceptance
-        # hash, so it routes in the measurement compile and reaches no live card until a named
-        # human accepts it.
+        # `admin.sit.organization_gone_quiet`.
+        #
+        # A CORRECTION, RECORDED RATHER THAN QUIETLY DELETED. This comment used to end: "…
+        # `review_status: draft` and carrying no acceptance hash, so it routes in the measurement
+        # compile and reaches no live card until a named human accepts it." That was FALSE, and
+        # it was false in the worst way — a comment asserting a safety property the code did not
+        # have. `condition-awaiting-review.yaml` already recorded the same finding weeks earlier
+        # ("A SITUATION HAS NO ADMISSION GATE, and the first draft of this file said it did") and
+        # the claim was made again here anyway.
+        #
+        # A situation's status gated NOTHING: `authoring.py` parses no `admission` block for a
+        # situation and `capability_resolver._admission_reason` takes a CAPABILITY. Because
+        # `admin.executive_support.inbox_and_correspondence` is approved and hash-accepted, cards
+        # from this draft situation reached readers fully PRESCRIPTIVE.
+        #
+        # `capability_resolver.situation_admission_reason` is the gate that now makes the
+        # sentence true, and it refuses this file by name in
+        # `tests/packs/compiler/test_situation_admission.py`.
         "organization_gone_quiet",
         # `campaign_awaiting_reply` — admin, anchored on the `campaign` node. It exists because
         # `cohort_outreach_gap` above it CANNOT FIRE: it groups on `thread.objective`, and that

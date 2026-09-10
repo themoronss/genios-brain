@@ -58,6 +58,14 @@ def _load_outcomes(conn, org_id: str, since: datetime) -> tuple[dict, ...]:
     rows = conn.execute(text(
         "select execution_id, capability_id, capability_version, play_id, label, terminal_state, "
         "reason_code, subject_ref, reminders_sent, escalations_fired, seconds_to_close, "
+        # `assignee` — WHOSE outcome this was. The column has existed since
+        # `0041_l5_execution.sql:241` and no unit has ever read it, so every learning object this
+        # layer produces is org-scoped: two people on one tenant with an 80% and a 20% close rate
+        # are averaged into one number that describes neither of them, and neither is ever told
+        # anything about their own pattern. `learning_objects.subject_principal`,
+        # `Visibility(PRIVATE, principals=...)` and the `actor` address token were all built for
+        # per-person learning; only the number was missing.
+        "assignee, "
         "progress_bp, closed_at from execution_outcomes "
         "where org_id = :o and closed_at >= :s order by closed_at desc limit 5000"),
         {"o": org_id, "s": since}).mappings().all()
@@ -117,6 +125,38 @@ def _load_enterprise(conn, org_id: str, since: datetime) -> tuple[dict, ...]:
 #:
 #: The real ledger of human judgments is `card_feedback_verdicts` (migration 0034).
 _OPTIONAL_FEEDBACK_TABLE = "card_feedback_verdicts"
+
+#: WHAT KIND OF CARD THE HUMAN WAS ANSWERING, joined on so the learning unit can tell them apart.
+#:
+#: `card_feedback_verdicts` records the cause and the rule; it does not record whether the card
+#: was an INSTRUCTION or a QUESTION. Without that, dismissing an `ask_decision` card — one the
+#: system put in front of a person precisely because only they could answer it — was graded
+#: identically to rejecting a bad prescription, and `calibrate.TAXONOMY` put it in the precision
+#: DENOMINATOR. Answering a question the system asked became evidence the system was wrong.
+#:
+#: This is the same defect commit 395f21ba fixed on the EXECUTION side, where
+#: `executive/collect.label_class` separated a neutral or mechanical ending from a negative one.
+#: The card side kept scoring every dismissal as a quality failure.
+_VERDICT_LEVELS = (
+    "select v.feedback_id, c.level from card_feedback_verdicts v "
+    "join cards c on c.org_id = v.org_id and c.card_id = v.card_id "
+    "where v.org_id = :o and v.occurred_at >= :s"
+)
+
+
+def _attach_card_level(conn, rows: tuple[dict, ...], org_id: str,
+                       since: datetime) -> tuple[dict, ...]:
+    """Stamp `card_level` onto each verdict. Absent stays absent — a verdict whose card has been
+    pruned is not a verdict about a prescription, and guessing one would recreate the defect."""
+    if not rows or not _table_exists(conn, "cards"):
+        return rows
+    try:
+        levels = {str(r[0]): (str(r[1]) if r[1] else None)
+                  for r in conn.execute(text(_VERDICT_LEVELS), {"o": org_id, "s": since}).all()}
+    except Exception:      # noqa: BLE001 — an enrichment, never a reason to lose the verdicts
+        return rows
+    return tuple({**row, "card_level": levels.get(str(row.get("feedback_id") or ""))}
+                 for row in rows)
 _OPTIONAL_INBOX_TABLE = "learning_event_inbox"
 
 
@@ -162,8 +202,13 @@ def _record_rejection(conn, org_id: str, seam: str, reason: str) -> None:
 
 
 def _load_feedback(conn, org_id: str, since: datetime) -> tuple[dict, ...]:
-    """Terminal card verdicts, once the canonical verdict ledger exists. Empty otherwise."""
-    return _read_optional_seam(conn, _OPTIONAL_FEEDBACK_TABLE, org_id, since, "created_at")
+    """Terminal card verdicts, once the canonical verdict ledger exists. Empty otherwise.
+
+    Each row carries `card_level` — see `_attach_card_level` for why a verdict without it is
+    ungradeable rather than negative.
+    """
+    rows = _read_optional_seam(conn, _OPTIONAL_FEEDBACK_TABLE, org_id, since, "created_at")
+    return _attach_card_level(conn, rows, org_id, since)
 
 
 def _load_inbox(conn, org_id: str, since: datetime) -> tuple[dict, ...]:

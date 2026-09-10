@@ -369,13 +369,45 @@ def test_a_repointed_situation_follows_the_surviving_entity() -> None:
 
 def test_a_failed_refresh_never_blocks_ingestion() -> None:
     """Every value is derived, so a broken refresh costs one cycle, not data. A stale
-    situation view must never stop events from landing."""
-    import inspect
+    situation view must never stop events from landing.
 
+    WIDENED TO EVERY DERIVED PASS. There used to be ONE boundary around all seven, so a failure
+    in the first skipped the six behind it — and every `_reconcile` with them — while the sweep
+    reported a clean run. Each has its own handler now, and this asserts all of them.
+
+    THE PROPERTY, NOT THE DISTANCE. This searched a 400-character window after the first
+    mention of `refresh_situations` — which was the CALL until a comment above it grew, and then
+    was the comment. A window is not the rule; being inside a `try` is. Parsed rather than
+    grepped, so prose between the two can never break it and a call that genuinely escapes its
+    handler can never pass.
+    """
+    import ast
+    import inspect
+    import textwrap
+
+    from genios_engine.context import runner
     from genios_engine.context.runner import process_pending
-    source = inspect.getsource(process_pending)
-    refresh_at = source.index("refresh_situations")
-    assert "except Exception" in source[refresh_at:refresh_at + 400]
+
+    tree = ast.parse(textwrap.dedent(inspect.getsource(process_pending)))
+
+    def calls_in(node) -> set[str]:
+        return {n.func.id for n in ast.walk(node)
+                if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+
+    guarded: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Try) and node.handlers:
+            for body_node in node.body:
+                guarded |= calls_in(body_node)
+
+    # Every pass whose failure must cost one cycle rather than the drain. `runner` is imported so
+    # a rename that empties this list fails here rather than going quiet.
+    assert runner is not None
+    for pass_name in ("refresh_situations", "age_uncorrelated_situations",
+                      "refresh_attention", "compute_waiting", "refresh_state_situations",
+                      "refresh_period_situations", "refresh_document_situations",
+                      "refresh_channel_touch_situations", "compute_account_view"):
+        assert pass_name in guarded, f"{pass_name} is not inside a try/except in process_pending"
 
 
 def test_ordering_is_by_confidence_and_says_it_is_not_priority() -> None:

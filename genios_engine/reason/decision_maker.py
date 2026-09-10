@@ -757,8 +757,41 @@ def score_candidate(request: Any, components: Mapping[str, int],
     # ranked high and the formula low or the reverse, and doc 08's retirement review asks exactly
     # that question of the recorded data.
     components[PRIORITY_OVERRIDE_COMPONENT] = priority_override
-    return clamp_bp((formula * OVERRIDE_FORMULA_WEIGHT
-                     + priority_override * OVERRIDE_PRIOR_WEIGHT) // OVERRIDE_WEIGHT_SCALE)
+    formula_w, prior_w = _override_blend(request)
+    return clamp_bp((formula * formula_w + priority_override * prior_w)
+                    // (formula_w + prior_w))
+
+
+def _override_blend(request) -> tuple[int, int]:
+    """How much of the author's own ranking survives the formula, as `(formula, prior)`.
+
+    70/30 was a module constant, and it is a JUDGMENT about how far to trust a human's ordering
+    against a computed one. That judgment is exactly what differs between a domain whose corpus
+    was written by the person who does the work and one whose corpus is a first draft — and the
+    number was the same for both.
+
+    READ FROM THE CAPABILITY MANIFEST, which is the seam that makes it safe. The manifest is
+    inside the persisted capability snapshot `reason/store.py` replays, so a historic audit row
+    still verifies against the blend that produced it. A tenant setting stored anywhere else
+    would silently rewrite the past every time somebody changed it — the same argument that
+    made `ranking_weights` manifest data rather than config.
+
+    REFUSES A DEGENERATE PAIR rather than defaulting past it. `[0, 0]` would divide by zero and
+    a negative weight would invert the blend; both are typos, and a typo must not quietly become
+    a ranking policy.
+    """
+    default = (OVERRIDE_FORMULA_WEIGHT, OVERRIDE_PRIOR_WEIGHT)
+    try:
+        declared = (getattr(request, "capability_metadata", None)
+                    or {}).get("priority_override_blend")
+        if not declared:
+            return default
+        formula_w, prior_w = (int(declared[0]), int(declared[1]))
+        if formula_w < 0 or prior_w < 0 or (formula_w + prior_w) <= 0:
+            return default
+        return formula_w, prior_w
+    except Exception:      # noqa: BLE001 — a malformed blend is not a reason to lose the rank
+        return default
 
 
 def _weighted_utility(request, components: Mapping[str, int]) -> int:

@@ -95,6 +95,19 @@ class Expectation:
     #: applies to this subject at all; a `False` answer is `NOT_EXPECTED`, which is neither a gap
     #: nor a finding. `None` means "always".
     expected_when: Callable[["AbsenceSubject"], bool] | None = None
+    #: HOW LONG THIS PARTICULAR CLAIM STAYS TRUE. `AbsenceType.STALE` existed, was tested, and
+    #: was UNREACHABLE in production: `stale_after` defaulted to None and the one caller that
+    #: could pass it never did — so a fact observed two years ago read exactly like one observed
+    #: this morning, and nothing anywhere could say "we knew this once and it has expired".
+    #:
+    #: PER CLAIM TYPE, NOT PER CALL, which is the whole point. `deal.value` from last quarter is
+    #: probably still right; `thread.ball_in_court` from last quarter is meaningless. One
+    #: call-wide switch could only ever be wrong for one of them, which is presumably why nobody
+    #: ever flipped it.
+    #:
+    #: `None` means never stale — the honest default for a claim nobody has dated, and what
+    #: every expectation carries until a domain says otherwise.
+    stale_after: timedelta | None = None
 
     def applies_to(self, subject: "AbsenceSubject") -> bool:
         return True if self.expected_when is None else bool(self.expected_when(subject))
@@ -141,8 +154,23 @@ def expectations_from_spec(domain: str | None, situation_type: str) -> tuple[Exp
     `COVERAGE_UNKNOWN` — "we never said what complete means here" — and it must not be read as
     "nothing is missing".
     """
-    return tuple(Expectation(field=path, label=label)
-                 for path, label in sorted(spec_for(domain).fields_for(situation_type).items()))
+    out: list[Expectation] = []
+    for path, declared in sorted(spec_for(domain).fields_for(situation_type).items()):
+        # TWO SHAPES, ONE MAP. `{path: "label"}` is what every domain writes today and stays
+        # legal, meaning never stale. `{path: {"label": ..., "stale_after_days": n}}` is how a
+        # domain dates the claim. Widening the value rather than adding a parallel map keeps
+        # ONE answer to "what should this situation type know" — `coverage_score` and
+        # `situation_bso._missing_paths` read the same dict, and a second one would be a third
+        # opinion whose failure mode is a field expected by one and a false finding under
+        # another.
+        if isinstance(declared, dict):
+            label = str(declared.get("label") or "")
+            days = declared.get("stale_after_days")
+            stale = timedelta(days=int(days)) if days else None
+        else:
+            label, stale = str(declared), None
+        out.append(Expectation(field=path, label=label, stale_after=stale))
+    return tuple(out)
 
 
 def classify_absence(subject: AbsenceSubject, expectation: Expectation, lens: CoverageLens, *,
@@ -154,7 +182,10 @@ def classify_absence(subject: AbsenceSubject, expectation: Expectation, lens: Co
     """
     if expectation.field in subject.present_fields:
         observed = subject.observed_at.get(expectation.field)
-        if stale_after is not None and observed is not None and observed < eval_time - stale_after:
+        # THE CLAIM'S OWN EXPIRY WINS over the call-wide one. The argument stays for a caller
+        # sweeping with a deliberate horizon; the field is what makes expiry reachable at all.
+        expiry = expectation.stale_after or stale_after
+        if expiry is not None and observed is not None and observed < eval_time - expiry:
             return AbsenceType.STALE
         return AbsenceType.PRESENT
     if not expectation.applies_to(subject):

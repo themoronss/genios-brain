@@ -59,6 +59,9 @@ import threading
 from dataclasses import dataclass, field, replace
 from typing import Any, Iterable, Mapping, Protocol, Sequence
 
+# THE ONE MACHINE-SENDER TABLE.  below delegates to it rather than carrying
+# a second regex — see that function for the eighteen addresses the two used to disagree about.
+from genios_engine.capture.gate.rules import is_automated_sender
 from genios_engine.capture.semantic.injection import fence
 
 #: This unit's trace stage. Distinct from the gate's own `relevance` record: the S1 gate decides
@@ -72,6 +75,7 @@ STAGE = "s4_business_relevance"
 # in a log is a value nobody can grep for in a database.
 # ---------------------------------------------------------------------------------------------
 RULE_KNOWN_COUNTERPARTY = "known_counterparty"
+RULE_KNOWN_COUNTERPARTY_BULK = "known_counterparty_bulk"
 RULE_INTERNAL_KIND = "internal_kind"
 RULE_STRUCTURED_SOURCE = "structured_source"
 RULE_BULK_HEADERS = "bulk_headers"
@@ -89,6 +93,7 @@ RULE_COST_REFUSED = "cost_governor_refused"
 #: inlined so that the cascade is one reviewable list — see the module docstring on why the order
 #: is the design.
 RULE_ORDER: tuple[str, ...] = (
+    RULE_KNOWN_COUNTERPARTY_BULK,
     RULE_KNOWN_COUNTERPARTY,
     RULE_INTERNAL_KIND,
     RULE_STRUCTURED_SOURCE,
@@ -109,6 +114,21 @@ DECIDED_BY_BUDGET_GUARD = "budget_guard"
 _RULE_RELEVANCE_BP: dict[str, int] = {
     RULE_INTERNAL_KIND: 9500,
     RULE_KNOWN_COUNTERPARTY: 9000,
+    # N-12 · BULK MAIL FROM SOMEBODY WE KNOW. `gate/rules.py:228` names this — "bulk-from-known
+    # -> park" — and nothing implemented it, so a counterparty's campaign was whitelisted at S1
+    # by W-01 and then took the SECOND-HIGHEST rank in this table, with no rung anywhere to
+    # discount it. The only counterweight was the audience multiplier, which reads To+Cc: a BCC
+    # blast reports one recipient and takes no discount at all.
+    #
+    # PARKED, NOT DROPPED, and that word is the rule. A known counterparty's broadcast is still
+    # from a real relationship and routinely carries a real fact — an invoice, a price change, a
+    # deprecation notice. Dropping it is the over-match `gate/rules` warns about; letting it
+    # outrank a message a person actually wrote is the failure N-12 names.
+    #
+    # 4000 places it above the three fail-open paths (3000 — "nobody decided", and here somebody
+    # did: we know exactly who they are) and below LLM-5's 6000, because a model that READ the
+    # message and judged it business is better evidence about THIS message than a relationship is.
+    RULE_KNOWN_COUNTERPARTY_BULK: 4000,
     RULE_STRUCTURED_SOURCE: 8000,
     RULE_LLM_BUSINESS: 6000,
     # The three fail-open paths share `unknown` authority (3000, the same value L1.6.4's cascade
@@ -330,13 +350,31 @@ def _has_bulk_headers(headers: Mapping[str, str]) -> bool:
 def is_service_account(sender: str) -> bool:
     """True when this address is machinery rather than a person.
 
-    Public because L1.6.4's authority cascade asks the same question for its 1000-bp rung, and
-    two implementations of "is this a robot" would eventually disagree about one address and give
-    it a person's authority in one place and a machine's in the other.
+    THE TWO TABLES DID DISAGREE, and both docstrings said they could not. This one warned that
+    "two implementations of 'is this a robot' would eventually disagree about one address"; its
+    rival at `gate/rules.is_automated_sender` named the very address —
+    *"a second regex would drift into a second answer about `notify@stripe.com`, the gate
+    dropping it as a robot while the scorer weighs it as a counterparty."* Run side by side over
+    23 addresses they disagreed on EIGHTEEN, `notify@stripe.com` among them, in both directions.
+
+    THE DANGEROUS HALF IS CLOSED BY DELEGATION. Whatever the GATE calls a robot, this now calls a
+    robot too — the first clause below. That is the direction that mattered: the gate DROPS mail
+    under N-03, so an address it discards while the scorer treats it as a person is a
+    counterparty who silently ceased to exist.
+
+    THE OTHER HALF IS KEPT, DELIBERATELY, AND IS NOT DRIFT. This table also matches `postmaster`,
+    `mailer-daemon`, `robot`, `daemon`, `cron`, `jenkins` and `build`, which the gate does not.
+    Those are not added to the gate's table because the gate's job is to DELETE the message and
+    its own comment gives the reason to stay conservative: `support@`/`hello@` are a real small
+    business, and over-matching there costs a genuine sender everything. Scoring can afford to
+    know about more machinery than dropping does. The asymmetry is now one-way and stated, where
+    it used to be two-way and denied.
     """
     address = (sender or "").strip().lower()
     if "@" not in address:
         return False
+    if is_automated_sender(address):
+        return True
     local, _, domain = address.partition("@")
     local = local.split("+", 1)[0]
     if _SERVICE_LOCAL.match(local):
@@ -348,6 +386,12 @@ def _rule_verdict(candidate: RelevanceCandidate) -> tuple[bool, str] | None:
     """The five deterministic rules, in `RULE_ORDER`. `None` means AMBIGUOUS — the only input
     LLM-5 is ever given."""
     if candidate.sender_known:
+        # N-12, and the ORDER inside this branch is the whole of it. The bulk test has to run
+        # here — not at the rung below, which a known sender never reaches — because "is this a
+        # broadcast" and "do we know them" are different questions and the answer to the second
+        # was silently answering the first.
+        if _has_bulk_headers(candidate.headers):
+            return True, RULE_KNOWN_COUNTERPARTY_BULK
         return True, RULE_KNOWN_COUNTERPARTY
     if candidate.internal_kind:
         return True, RULE_INTERNAL_KIND

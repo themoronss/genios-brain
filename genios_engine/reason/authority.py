@@ -270,7 +270,13 @@ AUTHORITATIVE_SIGNAL_PREDICATE = (
 # several wins/losses. Callers prepend ``WITH`` and provide ``:o`` plus ``:as_of``.
 AUDITED_CARD_JUDGMENTS_CTES = (
     "audited_cards as ("
-    "select k.card_id, k.created_at as card_created_at, s.authority_expires_at, "
+    # `k.level` — WHAT KIND OF CARD THE HUMAN WAS ANSWERING. It travels from here through
+    # `judgment_events` to `canonical_judgments` so `calibrate`'s precision denominator can tell
+    # a rejected INSTRUCTION from an answered QUESTION. Dismissing an `ask_decision` card — one
+    # the system put in front of a person precisely because only they could answer it — used to
+    # land in the same denominator as "this recommendation was wrong".
+    "select k.card_id, k.level as card_level, "
+    "k.created_at as card_created_at, s.authority_expires_at, "
     "authority_cfg.pack_id, authority_cfg.effective->>'version' as pack_version, "
     "s.authority_pack_revision, "
     "rr.capability_id, rr.capability_version, "
@@ -293,7 +299,7 @@ AUDITED_CARD_JUDGMENTS_CTES = (
     "), judgment_events as ("
     "select ac.pack_id, ac.pack_version, ac.authority_pack_revision, "
     "ac.capability_id, ac.capability_version, "
-    "ac.rule_id, ac.play, ac.card_id, ce.cause, ce.detail, ce.occurred_at, ce.id "
+    "ac.rule_id, ac.play, ac.card_id, ac.card_level, ce.cause, ce.detail, ce.occurred_at, ce.id "
     "from audited_cards ac join card_events ce "
     "on ce.org_id=:o and ce.card_id=ac.card_id "
     "where ce.kind='human.card_action' "
@@ -303,7 +309,7 @@ AUDITED_CARD_JUDGMENTS_CTES = (
     "union all "
     "select ac.pack_id, ac.pack_version, ac.authority_pack_revision, "
     "ac.capability_id, ac.capability_version, "
-    "ac.rule_id, ac.play, ac.card_id, fv.cause, "
+    "ac.rule_id, ac.play, ac.card_id, ac.card_level, fv.cause, "
     "case when fv.reason is null then fv.detail else "
     "fv.detail || jsonb_build_object('reason',fv.reason) end as detail, "
     "fv.occurred_at, fv.feedback_id as id "

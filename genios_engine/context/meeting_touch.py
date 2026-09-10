@@ -33,10 +33,10 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
 from genios_engine.context.domain_spec import domains_declaring, spec_for
-from genios_engine.context.situations import SCORE_MAX
+from genios_engine.context.situations import SCORE_MAX, freshness_score
 from genios_engine.platform.ids import new_id
 
 #: The anchor this module mints. WHICH DOMAIN CLAIMS IT IS NOT NAMED HERE — it is asked of the
@@ -51,6 +51,19 @@ ANCHOR = "meeting"
 #: of it, which is most of what the corpus asks for.
 CONFIDENCE_PCT = 70
 COVERAGE_CAP_PCT = 35
+
+#: How far back a meeting may be and still be a live follow-through situation.
+#:
+#: There was no window at all. Every external meeting the calendar has ever held minted an
+#: `active` situation — one from three years ago included — and `domain_shadow` served every one
+#: of them to Layer 3 forever.
+#:
+#: A DEFAULT, NOT A LAW, and `refresh_channel_touch_situations` takes it as an argument. Ninety
+#: days suits a founder's calendar; an enterprise whose sales cycle runs two quarters would lose
+#: every meeting that still matters. When a per-tenant source is needed,
+#: `capture/esqe/qualification.org_qualification_floors` is the proven shape — a table, a
+#: documented default, an owner, and an append-only change log.
+FOLLOW_THROUGH_DAYS = 90
 
 #: Stated on every row so a capability can see the shape of its own blindness rather than reading
 #: a partial view as a whole one. These are the corpus's asks that a calendar cannot answer.
@@ -74,7 +87,12 @@ _MEETINGS = (
     # meeting for its own counterparty and matched NOTHING: 62 meetings, 331 facts, every one
     # filtered out by a `having` on a fact that is never there. The link is the `attended` edge.
     "join graph_edges e "
-    "  on e.org_id = n.org_id and e.edge_type = 'attended' "
+    # `valid_to is null` — AN ATTENDANCE THAT WAS CLOSED IS NOT AN ATTENDANCE. `merge.py`
+    # dedupes and closes edges during an identity merge, and without this filter a closed edge
+    # kept contributing a counterparty to the channel-touch situation forever: the meeting
+    # reported an attendee the graph had already retired, and the situation's own counterparty
+    # list said so on the card. Every other edge read in this layer carries the same predicate.
+    "  on e.org_id = n.org_id and e.edge_type = 'attended' and e.valid_to is null "
     "  and (e.from_node_id = n.node_id or e.to_node_id = n.node_id) "
     "join graph_nodes att "
     "  on att.org_id = n.org_id and att.valid_to is null "
@@ -104,8 +122,35 @@ _MEETINGS = (
 )
 
 
+def _as_utc(value) -> datetime | None:
+    """The meeting's start, tz-aware. A driver may hand back a string; Postgres does not."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        try:
+            value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    if not isinstance(value, datetime):
+        return None
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
+def _freshness(start_at: datetime | None, now: datetime) -> int:
+    """The row's real currency, from the MEETING's instant.
+
+    `freshness_score` returns `known=False` for an undated meeting, and an undated meeting is not
+    a stale one — it is one we cannot date. `CONFIDENCE_PCT` is the honest fallback there: the
+    same number the other axes carry, which says "as sure as anything else on this row" rather
+    than manufacturing either currency or staleness.
+    """
+    score, known = freshness_score(last_seen_at=start_at, now=now)
+    return score if known else CONFIDENCE_PCT
+
+
 def refresh_channel_touch_situations(store, org_id: str, *,
-                                     now: datetime | None = None) -> int:
+                                     now: datetime | None = None,
+                                     follow_through_days: int = FOLLOW_THROUGH_DAYS) -> int:
     """Open or refresh one `channel_touch` situation per external meeting. Returns rows written.
 
     Idempotent: the correlation id is derived from the meeting node, so a sweep that runs six
@@ -117,6 +162,7 @@ def refresh_channel_touch_situations(store, org_id: str, *,
     if not domains:
         return 0                    # no domain opted in — nothing to mint, and nothing to guess
     written = 0
+    live: dict[str, set[str]] = {}
 
     with store.engine.begin() as c:
         rows = c.execute(text(_MEETINGS), {"o": org_id}).fetchall()
@@ -125,6 +171,15 @@ def refresh_channel_touch_situations(store, org_id: str, *,
             # met. It is left out rather than recorded at low confidence, because a card advising
             # follow-up on a demo that never happened is worse than no card at all.
             if str(r.status or "").strip().lower() == "cancelled":
+                # NOT `continue` ANY MORE — see `live` below. A meeting later marked cancelled
+                # had its situation left standing forever, because the only thing that ever
+                # closed one was never reaching this loop.
+                continue
+
+            start_at = _as_utc(r.start_at)
+            if start_at is not None and (now - start_at).days > follow_through_days:
+                # OUTSIDE THE WINDOW. Skipped before minting, and reconciled below if a row for
+                # it already exists — a three-year-old demo is not follow-through work.
                 continue
 
             inputs = {
@@ -154,8 +209,8 @@ def refresh_channel_touch_situations(store, org_id: str, *,
                     "  confidence_evidence, confidence_freshness, confidence_consistency, "
                     "  confidence_identity, coverage, missing, inputs, first_seen_at, last_seen_at, "
                     "  computed_at) "
-                    "values (:sid, :o, :c, :n, :st, :d, 'active', :conf, :conf, :conf, :conf, "
-                    "  :ident, :cov, cast(:missing as jsonb), cast(:inputs as jsonb), :now, :now, :now) "
+                    "values (:sid, :o, :c, :n, :st, :d, 'active', :conf, :conf, :fresh, :conf, "
+                    "  :ident, :cov, cast(:missing as jsonb), cast(:inputs as jsonb), :seen, :seen, :now) "
                     "on conflict (org_id, correlation_id) do update set "
                     "  confidence_overall = excluded.confidence_overall, "
                     "  confidence_freshness = excluded.confidence_freshness, "
@@ -164,7 +219,38 @@ def refresh_channel_touch_situations(store, org_id: str, *,
                     "  situation_type = excluded.situation_type, computed_at = excluded.computed_at"),
                 {"sid": held or new_id("sit"), "o": org_id, "c": corr_id, "n": r.node_id,
                  "st": stype, "d": domain, "now": now,
-                 "conf": CONFIDENCE_PCT, "ident": SCORE_MAX, "cov": COVERAGE_CAP_PCT,
+                 "conf": CONFIDENCE_PCT,
+                 # FRESHNESS IS THE MEETING'S, not a constant. It was hard-coded to
+                 # `CONFIDENCE_PCT` — so a row about a meeting eleven weeks ago claimed the same
+                 # currency as one about yesterday, and `last_seen_at` below made it worse by
+                 # reporting the SWEEP instant as its newest evidence. A situation may not claim
+                 # a currency it does not have.
+                 "fresh": _freshness(start_at, now),
+                 "ident": SCORE_MAX, "cov": COVERAGE_CAP_PCT,
+                 # LAST SEEN IS WHEN THE MEETING HAPPENED. Bumping it to `now` every six hours
+                 # put a three-year-old meeting at the top of `domain_shadow.py`'s
+                 # newest-evidence ordering, ahead of this morning's mail.
+                 "seen": start_at or now,
                  "missing": json.dumps(MISSING), "inputs": json.dumps(inputs)})
                 written += 1
+                live.setdefault(domain, set()).add(corr_id)
+
+        # THE CLOSING HALF, which did not exist. A meeting that fell out of the window or was
+        # later cancelled simply stopped being visited, and its situation stayed `active`
+        # forever — the same "a finding that stops being produced is not a finding that ended"
+        # defect `waiting.py` carried. Resolved by fact, exactly as the state readings do it.
+        for domain in domains:
+            stype = spec_for(domain).type_for(ANCHOR)
+            keep = live.get(domain) or set()
+            closed = c.execute(text(
+                "update context_situations set status='resolved', resolved_at=:now, "
+                "  resolution_note='meeting outside the follow-through window' "
+                "where org_id=:o and status='active' and situation_type=:st "
+                "  and correlation_id like :prefix and resolved_by is null "
+                + ("and correlation_id not in :keep " if keep else "")
+                ).bindparams(*([bindparam("keep", expanding=True)] if keep else [])),
+                {"o": org_id, "now": now, "st": stype,
+                 "prefix": f"corr_touch_{domain}_%",
+                 **({"keep": sorted(keep)} if keep else {})})
+            written += int(closed.rowcount or 0)
     return written

@@ -22,12 +22,14 @@ committed, so the same graph yields the same numbers on every run.
 """
 from __future__ import annotations
 
+from genios_engine.context.vocabulary import kinds_where
+
 from datetime import datetime, timedelta, timezone
 from statistics import median
 
 from sqlalchemy import bindparam, text
 
-from genios_engine.context.derived import _write_fact
+from genios_engine.context.derived import _write_fact, retire_facts
 
 #: How far back the timeline is reconstructed.  A follow-up count is about the CURRENT exchange,
 #: and `situations.DORMANT_AFTER_DAYS` already declares that a conversation older than 45 days has
@@ -39,17 +41,24 @@ _WINDOW_DAYS = 180
 _DIRECTION_FIELD = {"thread.last_outbound": "out", "thread.last_inbound": "in"}
 
 #: Observation kinds that mean WE PUT A QUESTION TO THEM — the difference between waiting for an
-#: answer and merely not having written lately.  Without one of these, silence is not a failure to
+#: answer and merely not having written lately. Without one of these, silence is not a failure to
 #: respond, and a card that treats it as one is inventing an obligation nobody took on.
-_ASK_KINDS: frozenset[str] = frozenset({
+#:
+#: DERIVED FROM THE ONE MEANING TABLE, not a second literal. This was a frozenset here,
+#: `_PROGRESS_KINDS` was another in `derived.py`, and polarity was a third in `vocabulary.py` —
+#: three files deciding what one kind means. A kind added to the extractor's vocabulary and not
+#: to all three scored zero in whichever it was missing from, silently. `observations/kinds.yaml`
+#: answers all three per kind, in one row.
+#:
+#: THE SHIPPED SET IS THE FALLBACK, for the reason `load_meanings` records: a file that will not
+#: parse must not make every waiting row read "we just have not written lately".
+_ASK_KINDS_FALLBACK: frozenset[str] = frozenset({
     "question", "meeting_request", "proposal_sent", "demo_requested",
     "contract_requested", "next_step_agreed",
-    # The administrative and fundraising asks. Without these the whole set was sales-shaped, so
-    # on an admin inbox `response_expected` would have been False on every row — every waiting
-    # situation reading as "we just have not written lately" when in fact a signature, an
-    # introduction or a document had been asked for and never came back.
     "approval_requested", "information_requested", "intro_requested", "investor_update_sent",
 })
+
+_ASK_KINDS: frozenset[str] = kinds_where(is_ask=True) or _ASK_KINDS_FALLBACK
 
 _TIMELINE = (
     "select f.subject_node_id as node_id, f.field as field, se.occurred_at as at "
@@ -120,6 +129,18 @@ def _reply_gaps(timeline: list[tuple[str, datetime]]) -> list[float]:
     return gaps
 
 
+#: THE FACTS THAT STOP BEING TRUE THE MOMENT THEY REPLY, retired through `derived.retire_facts`
+#: — the shared statement, because two copies of "no longer true" are how two writers come to
+#: disagree about it. This module was the first to need one and grew its own; `derived.py` now
+#: owns it and the commitment reading uses the same one.
+#:
+#: Written only while waiting, so retired together the moment waiting ends. `thread.last_heard_days`
+#: and `party.reply_cadence_days` are NOT here: they stay true after a reply and are rewritten
+#: every sweep from the same timeline.
+WAITING_ONLY_FIELDS: tuple[str, ...] = (
+    "thread.days_waiting", "thread.follow_up_count", "thread.response_expected")
+
+
 def _state(timeline: list[tuple[str, datetime]], now: datetime) -> dict:
     """One counterparty's waiting state from their directed message timeline."""
     outs = [at for direction, at in timeline if direction == "out"]
@@ -164,13 +185,34 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
             direction = _DIRECTION_FIELD.get(str(field))
             if direction is None or at is None:
                 continue
+            # A DRIVER MAY HAND BACK A STRING. Postgres returns a datetime; SQLite does not, and
+            # this module could therefore only be exercised against production — the failure
+            # `situation_bso._L1_BY_EVENT_SELECT` and `correlation_conversation` both record
+            # ("a query whose correctness can only be demonstrated against production is a query
+            # nobody can hold to account"). Coerced here, exactly as `_rows_to_campaigns` does.
+            if isinstance(at, str):
+                try:
+                    at = datetime.fromisoformat(at.replace("Z", "+00:00"))
+                except ValueError:
+                    continue
             moment = at if at.tzinfo else at.replace(tzinfo=timezone.utc)
             per_node.setdefault(str(node_id), []).append((direction, moment))
 
         written = 0
         for node_id, timeline in per_node.items():
             state = _state(timeline, now)
-            if "thread.days_waiting" in state:
+            if "thread.days_waiting" not in state:
+                # THEY ANSWERED, or we never wrote to them. Either way the waiting facts are no
+                # longer true and must be retired rather than left standing — see
+                # `_RETIRE_WAITING`. Runs for every non-waiting node on every sweep and is a
+                # no-op after the first, because the second pass finds nothing active to close.
+                #
+                # IT DOES NOT `continue`. The first cut did, and that was wrong in the direction
+                # that matters: `thread.last_heard_days` is MORE true once they answer, and
+                # skipping the write loop deleted the very evidence that the wait had ended.
+                # Retire what stopped being true, then write what still is.
+                written += retire_facts(c, org_id, node_id, WAITING_ONLY_FIELDS, now)
+            else:
                 # Written ONLY while waiting, and written as False rather than omitted when we
                 # never asked: "we are waiting and put no question to them" is a real and
                 # different situation from "we are waiting on an answer", and the two need
@@ -186,4 +228,4 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
     return written
 
 
-__all__ = ["compute_waiting"]
+__all__ = ["WAITING_ONLY_FIELDS", "compute_waiting"]

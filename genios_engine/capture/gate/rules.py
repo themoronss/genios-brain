@@ -31,6 +31,25 @@ _AUTOMATED_SENDER = re.compile(
 _JUNK_LABELS = frozenset({"SPAM", "TRASH", "CATEGORY_PROMOTIONS", "CATEGORY_SOCIAL"})
 
 
+def header(hdrs, name: str, default: str = "") -> str:
+    """Case-insensitive header read — the ONE way this file looks at a header.
+
+    RFC 5322 makes header names case-insensitive and every provider payload is case-PRESERVING,
+    so the spelling that arrives is whatever the sending mailer chose. N-01, N-02 and N-04 read
+    `hdrs.get("Auto-Submitted")`, `hdrs.get("Precedence")` and `hdrs.get("List-Unsubscribe")`
+    exactly, while `esqe/relevance._header_value` two modules over reads the same headers
+    case-INSENSITIVELY. A connector that lower-cases header names therefore turned three of this
+    gate's four bulk rules off with nothing going red — the exact failure the comment at
+    `connectors/composio.py:71` says the `_NOISE_HEADERS` tuple was written to prevent.
+    """
+    if not hdrs:
+        return default
+    for key, value in hdrs.items():
+        if str(key).strip().lower() == name.strip().lower():
+            return str(value if value is not None else default)
+    return default
+
+
 def is_automated_sender(email: str | None) -> bool:
     """True for a machine local-part / mail-blaster subdomain — the ONE machine-sender table.
 
@@ -183,7 +202,7 @@ def noise_rule(ctx: GateContext) -> tuple[str, str] | None:
     if "CATEGORY_SOCIAL" in labels:
         return ("N-07", "drop")                  # social-network notifications
 
-    if str(hdrs.get("Auto-Submitted", "no")) not in ("no", ""):
+    if header(hdrs, "Auto-Submitted", "no") not in ("no", ""):
         return ("N-01", "drop")                  # machine acknowledgement
     if _OOO.search(subject):
         return ("N-05", "drop")                  # out-of-office — SUBJECT only. Body no longer drops:
@@ -200,10 +219,10 @@ def noise_rule(ctx: GateContext) -> tuple[str, str] | None:
                                                  # digest/mailer) with no attachment — no human reply
                                                  # expected. Attachment-bearing mail is exempted
                                                  # above so a vendor invoice from noreply@ survives.
-    if not att and str(hdrs.get("Precedence", "")).lower() in ("bulk", "list", "junk"):
+    if not att and header(hdrs, "Precedence").lower() in ("bulk", "list", "junk"):
         return ("N-04", "drop")                  # bulk campaign (Precedence header)
-    if not att and (hdrs.get("List-Unsubscribe") or hdrs.get("List-Id")
-                    or hdrs.get("List-Post") or hdrs.get("Feedback-ID")):
+    if not att and any(header(hdrs, name) for name in
+                       ("List-Unsubscribe", "List-Id", "List-Post", "Feedback-ID")):
         return ("N-02", "drop")                  # bulk campaign (unsubscribe / mailing-list / ESP headers)
     # N-11 (notification linked to tracked entity → park) needs entity linkage → S3/L2.
     # N-12/N-20 (bulk-from-known → park · grey-zone relevance) need relevance/linkage → L2.
