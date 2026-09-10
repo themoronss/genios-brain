@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import shutil
 
 from .base import BP_FULL, OcrResult
@@ -14,15 +15,25 @@ TESSERACT_BINARY = "tesseract"
 
 
 def tesseract_available() -> bool:
-    """Is the OCR binary actually on this host?
+    """Can this host actually OCR — binary AND Python bindings?
 
     Doc-03's gap statement is two clauses and the second one is the operational half: *"the
     Tesseract binary is not present in the deploy image."* Without this probe, turning
     `enable_ocr` on in that image wires an engine that raises on its first call — a config flag
     whose only effect is to convert empty documents into failed ones. `enablement.py` asks this
     question before wiring anything, so "off" and "impossible" stay distinguishable.
+
+    The bindings are checked too, and that is not belt-and-braces: the deploy image gained the
+    apt packages while `pytesseract` and `Pillow` were in no requirements file, so the binary
+    probe said yes, an engine was wired, and every scanned document came back
+    `ocr_failed: ModuleNotFoundError`. A probe that answers "installed" for a stack that cannot
+    run is worse than no probe, because it moves the failure past the point where the reason is
+    still legible. `find_spec` rather than `import`: asking whether a module is importable must
+    not import it, or the probe pays Pillow's import cost on every upload.
     """
-    return shutil.which(TESSERACT_BINARY) is not None
+    if shutil.which(TESSERACT_BINARY) is None:
+        return False
+    return all(importlib.util.find_spec(m) is not None for m in ("pytesseract", "PIL"))
 
 
 class TesseractOcr:

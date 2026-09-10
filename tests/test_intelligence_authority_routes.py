@@ -372,3 +372,90 @@ def test_feedback_action_is_a_closed_enum(monkeypatch):
 
     assert exc.value.status_code == 422
     assert engine.connection.statements == []
+
+
+# ── the extension's main endpoint is not free ────────────────────────────────────────────────
+#
+# `analyze` recorded its spend in `llm_costs` and never touched the credit ledger. It is the
+# surface the Chrome extension calls on every contact, and `deep=true` routes it to Sonnet — the
+# most expensive call the product makes. Every one of them was pure loss.
+
+def _charging_graph():
+    return SimpleNamespace(engine=_CacheMissEngine(), record_cost=lambda **_kwargs: None)
+
+
+def _analyze_with_llm(monkeypatch, charges, *, ok=True):
+    from genios_engine.platform import billing
+
+    monkeypatch.setattr(routes, "_graph", _charging_graph())
+    monkeypatch.setattr(routes, "_registry", None)
+    monkeypatch.setattr(routes, "current_graph_version", lambda *_args: 9)
+    monkeypatch.setattr(routes, "_enforce_query_budget", lambda _org_id: None)
+    monkeypatch.setattr(routes, "_resolve_contact_facts", lambda *_args: (None, {}))
+    monkeypatch.setattr(routes, "_persist_decision_envelope", lambda **_kwargs: None)
+    monkeypatch.setattr(routes, "run_query", lambda **_kwargs: (
+        _envelope(), SimpleNamespace(ok=ok, model="claude-haiku-4-5", input_tokens=1200,
+                                     output_tokens=70, error=None)))
+    monkeypatch.setattr(billing, "deduct",
+                        lambda _conn, org, cost, **kw: charges.append((org, cost, kw)) or True)
+
+
+def test_a_fresh_analyze_charges_the_published_price(monkeypatch):
+    from genios_engine.platform import billing
+
+    charges = []
+    _analyze_with_llm(monkeypatch, charges)
+
+    routes.analyze_contact("Ada", org_id="org_1")
+
+    assert len(charges) == 1, "analyze ran the model and charged nothing"
+    org, cost, kwargs = charges[0]
+    assert org == "org_1"
+    assert cost == billing.cost_of("intelligence_analyze")
+    assert kwargs["bucket"] == "analyze"
+
+
+def test_deep_analysis_costs_more_than_shallow_at_the_endpoint(monkeypatch):
+    from genios_engine.platform import billing
+
+    charges = []
+    _analyze_with_llm(monkeypatch, charges)
+    monkeypatch.setattr(routes, "_deep_llm", lambda: None)   # falls back to the standard client
+
+    routes.analyze_contact("Ada", deep=True, org_id="org_1")
+
+    assert charges[0][1] == billing.cost_of("intelligence_analyze", deep=True)
+    assert charges[0][1] > billing.cost_of("intelligence_analyze")
+
+
+def test_a_failed_generation_is_not_charged(monkeypatch):
+    charges = []
+    _analyze_with_llm(monkeypatch, charges, ok=False)
+
+    routes.analyze_contact("Ada", org_id="org_1")
+
+    assert charges == [], "the customer paid for a call that produced nothing"
+
+
+def test_the_charge_is_keyed_on_the_cache_key_so_a_retry_is_free(monkeypatch):
+    """Same question, same graph, same config → same key → the ledger's unique idempotency
+    index absorbs the second charge. (A cache HIT never reaches the charge at all.)"""
+    charges = []
+    _analyze_with_llm(monkeypatch, charges)
+
+    routes.analyze_contact("Ada", org_id="org_1")
+    routes.analyze_contact("Ada", org_id="org_1")
+
+    assert charges[0][2]["idem"] == charges[1][2]["idem"]
+    assert charges[0][2]["idem"].startswith("a:")
+
+
+def test_analyze_and_query_do_not_share_an_idempotency_key(monkeypatch):
+    """Both key off the same cache key. Without distinct prefixes, asking a question and then
+    analysing the same contact would silently make one of the two free."""
+    charges = []
+    _analyze_with_llm(monkeypatch, charges)
+
+    routes.analyze_contact("Ada", org_id="org_1")
+
+    assert not charges[0][2]["idem"].startswith("q:")

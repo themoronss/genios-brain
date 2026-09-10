@@ -36,13 +36,12 @@ from .base import DocumentInput, DocumentResult, DocumentStatus, OcrEngine
 from .ocr_policy import decide_ocr_outcome, is_explained
 from .transcript import SpeechEngine, is_audio, transcribe_media
 
-# Formats we can parse natively (no OCR).
-_NATIVE_MIMES = {
-    "text/plain", "text/html", "application/pdf", "text/markdown",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # docx
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",        # xlsx
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",  # pptx
-}
+# NOTE: this module does not decide which formats parse natively — `native.extract_native_text`
+# does, by having a branch or not having one, and it hands the result here as `text_layer`. A set
+# of MIME types used to sit at this spot listing xlsx and pptx as native; nothing read it, no
+# parser existed for either, and it was the reason a spreadsheet looked supported for months
+# while every upload of one came back `unsupported`. A list that claims capability it cannot
+# enforce is worse than no list.
 _MIN_NATIVE_CHARS = 20
 
 #: Formats that HAVE pages an OCR engine could read. The distinction between "we could not read

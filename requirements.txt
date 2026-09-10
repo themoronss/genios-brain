@@ -22,9 +22,21 @@ anthropic==0.120.2                   # L2 extraction / L5 render (Haiku)
 composio==0.18.0                     # Gmail / Calendar / Notion / Drive auth + data
 httpx==0.28.1                        # outbound proactive push (GeniOS -> agent webhook); ships via anthropic too
 
-# ── document text extraction (L1 native, no OCR binary needed) ──
+# ── document text extraction, native (no OCR binary needed) ────
 python-docx==1.2.0                   # .docx
 pypdf==6.14.2                        # .pdf
+openpyxl==3.1.5                      # .xlsx / .xlsm
+xlrd==2.0.1                          # .xls — the legacy binary format openpyxl cannot read
+python-pptx==1.0.2                   # .pptx
+
+# ── document text extraction, OCR (scanned PDFs + images) ──────
+# The Dockerfile installs the apt side (tesseract-ocr, tesseract-ocr-eng, poppler-utils).
+# These are the Python halves, and they were missing from every requirements file while the
+# apt packages were present — so `tesseract_available()` said yes, an engine was wired, and
+# every scanned document came back `ocr_failed: ModuleNotFoundError`. Both halves or neither.
+pytesseract==0.3.13                  # bindings to the tesseract binary
+Pillow==11.3.0                       # image decoding for pytesseract
+pdf2image==1.17.0                    # rasterises a scanned PDF to page images (needs poppler)
 
 # ── optional: production Redis cache (engine falls back to a no-op NullCache if absent) ──
 # Set GENIOS_REDIS_URL to enable. Uncomment to install:

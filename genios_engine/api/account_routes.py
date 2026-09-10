@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from genios_engine.platform import billing as B
 from genios_engine.platform.auth import get_current_org, hash_key, hash_password, verify_password
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.logging import get_logger
@@ -25,9 +26,10 @@ _log = get_logger("genios.account")
 _graph = make_graph_store()
 
 # seat allowance by plan (Settings shows "used / limit"). Trial is deliberately small.
-_SEAT_LIMIT = {"trial": 2, "startup": 5, "growth": 15, "scale": 50}
-# monthly credit allowance by plan — period_used counts billable /v1/intelligence/query decisions.
-_CREDIT_LIMIT = {"trial": 10_000, "startup": 2000, "growth": 10000, "scale": 50000}
+# Seats and the credit allowance both come from `platform/billing.PLANS`. Two rival tables used
+# to live here: they had no row for `early` — a real, sellable plan — so a paying Early customer
+# got the 3-seat fallback and a 100-credit allowance, and they priced `startup` at 2,000 credits
+# against billing.py's 100,000.
 
 
 def _org(org_id: str, org: str = Depends(get_current_org)) -> str:
@@ -38,7 +40,10 @@ def _org(org_id: str, org: str = Depends(get_current_org)) -> str:
 
 def _org_row(c, org_id: str):
     r = c.execute(text("select id, name, email, pass_hash, subscription_tier, plan_status, "
-                       "first_name, last_name, company, role, notif_prefs, created_at "
+                       "first_name, last_name, company, role, notif_prefs, created_at, "
+                       # the billing period columns: /usage reports the ORG's period and
+                       # its real expiry, not the calendar month and a hardcoded null
+                       "plan_expires_at, grace_until, credit_period_start "
                        "from orgs where id=:o"), {"o": org_id}).first()
     if r is None:
         raise HTTPException(404, "org not found")
@@ -134,23 +139,61 @@ def get_api_key(org_id: str, org: str = Depends(_org)) -> dict:
 # ── usage ────────────────────────────────────────────────────────────────────
 @router.get("/api/org/{org_id}/usage")
 def usage(org_id: str, org: str = Depends(_org)) -> dict:
+    """What this workspace has actually spent, read from `credit_ledger`.
+
+    This used to count rows in `decisions` since the 1st of the calendar month and divide a
+    hardcoded plan limit by 30. It therefore disagreed with the balance in both directions — a
+    cached answer writes no decision but also costs nothing, a draft costs credits and writes no
+    decision at all, and the period it measured was the calendar month rather than the org's own
+    billing period. `expires_at` and `days_remaining` were hardcoded `null` while the columns
+    that answer them sat in `orgs`.
+    """
     now = datetime.now(timezone.utc)
-    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     with _graph.engine.connect() as c:
         r = _org_row(c, org)
-        used = c.execute(text("select count(*) from decisions where org_id=:o and created_at>=:s"),
-                         {"o": org, "s": month_start}).scalar() or 0
-        today = c.execute(text("select count(*) from decisions where org_id=:o and created_at>=:s"),
-                          {"o": org, "s": day_start}).scalar() or 0
-    tier = (r.subscription_tier or "trial").lower()
-    limit = _CREDIT_LIMIT.get(tier, 100)
-    today_limit = max(1, limit // 30)                       # a rough daily slice of the monthly credits
-    return {"plan": tier, "plan_status": r.plan_status or "active",
-            "today": int(today), "today_limit": today_limit,
-            "period_used": int(used), "period_limit": limit,
-            "used": int(today), "limit": today_limit,
-            "days_remaining": None, "expires_at": None, "overage_allowed": False}
+        bal = B.balance(c, org)
+        period_start = getattr(r, "credit_period_start", None) or day_start
+        used = c.execute(text(
+            "select coalesce(sum(-amount),0) from credit_ledger "
+            "where org_id=:o and kind='deduct' and occurred_at>=:s"),
+            {"o": org, "s": period_start}).scalar() or 0
+        today = c.execute(text(
+            "select coalesce(sum(-amount),0) from credit_ledger "
+            "where org_id=:o and kind='deduct' and occurred_at>=:s"),
+            {"o": org, "s": day_start}).scalar() or 0
+        by_bucket = {row.bucket or "other": int(row.n) for row in c.execute(text(
+            "select bucket, coalesce(sum(-amount),0) n from credit_ledger "
+            "where org_id=:o and kind='deduct' and occurred_at>=:s group by bucket"),
+            {"o": org, "s": period_start})}
+    tier = B.normalize_plan(r.subscription_tier or "trial")
+    plan = B.plan_of(tier)
+    expires = getattr(r, "plan_expires_at", None)
+    state = B.expiry_state(r.plan_status, expires,
+                           getattr(r, "grace_until", None), now=now)
+    from genios_engine.platform.quota import sync_status
+    sync = sync_status(_graph.engine, org)
+    return {"plan": tier, "plan_status": r.plan_status or "active", "state": state,
+            # The SECOND meter. Ingestion is included in the plan and never charged in credits —
+            # one email costs ~1.3 credits to process, so charging it would empty a free plan
+            # before the product had answered anything, and would bill the customer for how much
+            # mail other people send them.
+            "sync": {"used": sync["used"], "limit": sync["limit"],
+                     "remaining": sync["remaining"], "exhausted": sync["exhausted"]},
+            "seats_limit": plan.seats, "domains_limit": plan.domains,
+            # CREDITS everywhere on this route — the store is points, the customer is not.
+            "today": B.to_credits(today), "today_limit": B.to_credits(B.daily_credit_ceiling(tier)),
+            "period_used": B.to_credits(used), "period_limit": plan.credits,
+            "balance": B.to_credits(bal["balance"]),
+            "plan_credits": B.to_credits(bal["plan"]),
+            "topup_credits": B.to_credits(bal["topup"]),
+            "by_bucket": {k: B.to_credits(v) for k, v in by_bucket.items()},
+            "prices": {a: B.to_credits(pts) for a, pts in B.COSTS.items()},
+            "free_units": list(B.FREE_UNITS),
+            "used": B.to_credits(today), "limit": B.to_credits(B.daily_credit_ceiling(tier)),
+            "days_remaining": (max(0, (expires - now).days) if expires else None),
+            "expires_at": expires.isoformat() if expires else None,
+            "overage_allowed": False}
 
 
 # ── notification preferences ─────────────────────────────────────────────────
@@ -255,7 +298,7 @@ def list_members(org_id: str, org: str = Depends(_org)) -> dict:
                                       {"o": org})]
         tier = (r.subscription_tier or "trial").lower()
     return {"members": members, "pending_invites": invites, "count": len(members),
-            "seat_limit": _SEAT_LIMIT.get(tier, 3), "plan": tier}
+            "seat_limit": B.plan_seat_limit(tier), "plan": tier}
 
 
 class InviteBody(BaseModel):
@@ -271,7 +314,7 @@ def invite_member(org_id: str, body: InviteBody, org: str = Depends(_org)) -> di
     with _graph.engine.begin() as c:
         r = _org_row(c, org)
         tier = (r.subscription_tier or "trial").lower()
-        seats = _SEAT_LIMIT.get(tier, 3)
+        seats = B.plan_seat_limit(tier)
         taken = 1 + (c.execute(text("select count(*) from org_members where org_id=:o"),
                                {"o": org}).scalar() or 0) \
                   + (c.execute(text("select count(*) from org_invites where org_id=:o"),

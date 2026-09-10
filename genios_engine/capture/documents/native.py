@@ -12,10 +12,13 @@ from .router import route_document
 from .transcript import SpeechEngine
 
 # Native text extraction — NO OCR. If a document already has a text layer (HTML, digital
-# PDF, docx, txt/md), we pull it straight out; Tesseract is only the fallback for scanned
-# images with no text layer.
+# PDF, docx, xlsx/xls, pptx, txt/md), we pull it straight out; Tesseract is only the fallback
+# for scanned images with no text layer.
 
 _DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+_PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+_XLS = "application/vnd.ms-excel"
 
 
 class _HTMLText(HTMLParser):
@@ -56,6 +59,94 @@ def _docx_to_text(raw: bytes) -> str:
         for row in tbl.rows:
             parts += [c.text.strip() for c in row.cells if c.text.strip()]
     return "\n".join(parts)
+
+
+def _sheet_rows(rows: list[list[object]]) -> list[str]:
+    """Grid rows → one tab-separated line each, blank rows and trailing blank columns dropped.
+
+    Tab, not comma: a spreadsheet cell routinely contains a comma ("Mumbai, MH", "₹12,00,000")
+    and a comma-joined line would read as more columns than the sheet has.
+    """
+    out: list[str] = []
+    for row in rows:
+        cells = ["" if v is None else str(v).strip() for v in row]
+        while cells and not cells[-1]:                 # ragged right edge is noise, not data
+            cells.pop()
+        if any(cells):
+            out.append("\t".join(cells))
+    return out
+
+
+def _xlsx_to_text(raw: bytes) -> str:
+    """One markdown section per worksheet (.xlsx/.xlsm).
+
+    `data_only=True` returns the values Excel last calculated instead of the formulas, because
+    "=SUM(B2:B40)" tells a reader nothing and "4820000" is the fact. (A workbook Excel has never
+    opened has no cached values; that sheet reads empty, which is honest rather than wrong.)
+    `read_only=True` streams the sheet instead of materialising the whole workbook — 10 MiB of
+    xlsx is a very large grid.
+
+    The `## Sheet:` heading is not decoration. `chunking.SECTION` splits on markdown headings, so
+    this is what lets an evidence span cite *Q3 Pipeline* instead of a character offset.
+    """
+    from openpyxl import load_workbook
+    wb = load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
+    try:
+        parts: list[str] = []
+        for ws in wb.worksheets:
+            rows = _sheet_rows([list(r) for r in ws.iter_rows(values_only=True)])
+            if rows:
+                parts.append(f"## Sheet: {ws.title}\n" + "\n".join(rows))
+        return "\n\n".join(parts)
+    finally:
+        wb.close()
+
+
+def _xls_to_text(raw: bytes) -> str:
+    """The legacy binary .xls format, which openpyxl cannot read at all — xlrd 2.x reads only
+    this one, which is why both libraries are here rather than one."""
+    import xlrd
+    book = xlrd.open_workbook(file_contents=raw)
+    parts: list[str] = []
+    for sheet in book.sheets():
+        rows = _sheet_rows([sheet.row_values(i) for i in range(sheet.nrows)])
+        if rows:
+            parts.append(f"## Sheet: {sheet.name}\n" + "\n".join(rows))
+    return "\n\n".join(parts)
+
+
+def _pptx_to_text(raw: bytes) -> str:
+    """One markdown section per slide, speaker notes included.
+
+    Notes are where a deck says what it means — the slide shows "₹25k/mo", the note says why the
+    number moved — so dropping them would discard the half a reader actually needs. Tables are
+    walked cell by cell for the same reason they are in `_docx_to_text`: a pricing grid lives in
+    a table, and shape.text alone returns nothing for one.
+    """
+    from pptx import Presentation
+    prs = Presentation(io.BytesIO(raw))
+    parts: list[str] = []
+    for n, slide in enumerate(prs.slides, start=1):
+        lines: list[str] = []
+        for shape in slide.shapes:
+            if getattr(shape, "has_table", False):
+                for row in shape.table.rows:
+                    cells = [c.text.strip() for c in row.cells]
+                    if any(cells):
+                        lines.append("\t".join(cells))
+            elif getattr(shape, "has_text_frame", False):
+                t = shape.text_frame.text.strip()
+                if t:
+                    lines.append(t)
+        notes = ""
+        if slide.has_notes_slide and slide.notes_slide.notes_text_frame is not None:
+            notes = slide.notes_slide.notes_text_frame.text.strip()
+        if notes:
+            lines.append(f"Speaker notes: {notes}")
+        if lines:
+            title = lines[0].splitlines()[0][:80]
+            parts.append(f"## Slide {n}: {title}\n" + "\n".join(lines))
+    return "\n\n".join(parts)
 
 
 def _pdf_pages(raw: bytes) -> list[str]:
@@ -119,6 +210,14 @@ def extract_native_text(*, mime: str, data: bytes | str, filename: str = "") -> 
             return _html_to_text(txt)
         if mime == _DOCX or name.endswith(".docx"):
             return _docx_to_text(raw)
+        if mime == _XLSX or name.endswith((".xlsx", ".xlsm")):
+            return _xlsx_to_text(raw)
+        # .xls is checked by extension first: browsers and Composio both label old workbooks
+        # application/vnd.ms-excel, and so do some .xlsx files exported by older tooling.
+        if name.endswith(".xls") or (mime == _XLS and not name.endswith((".xlsx", ".xlsm"))):
+            return _xls_to_text(raw)
+        if mime == _PPTX or name.endswith(".pptx"):
+            return _pptx_to_text(raw)
         if mime == "application/pdf" or name.endswith(".pdf"):
             return _pdf_to_text(raw)
     except Exception:

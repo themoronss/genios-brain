@@ -1078,7 +1078,26 @@ def activate_l3_pilot(target_org: str, body: L3PilotActivation,
     with engine.connect() as c:
         if c.execute(text("select 1 from orgs where id=:o"), {"o": target_org}).first() is None:
             raise HTTPException(404, "account not found")
-    from genios_engine.platform.l3_activation import EFFECTS, activate
+    # THE PLAN'S DOMAIN BOUND. Individual buys one domain, Startup three, Growth ten — a domain
+    # is a whole compiled corpus per tenant, so it is the expensive axis of the product and the
+    # one the pricing page sells on. Re-activating a domain the tenant already has live is not a
+    # new one and must not be refused, or a double-click would read as an upsell.
+    from genios_engine.platform.billing import plan_domain_limit
+    from genios_engine.platform.l3_activation import EFFECTS, activate, activated_domains
+    live = activated_domains(engine, target_org)
+    if domain not in live:
+        with engine.connect() as c:
+            tier = c.execute(text("select subscription_tier from orgs where id=:o"),
+                             {"o": target_org}).scalar()
+        allowed = plan_domain_limit(tier)
+        if len(live) >= allowed:
+            raise HTTPException(402, {
+                "code": "DOMAIN_LIMIT_REACHED",
+                "message": f"This plan includes {allowed} expertise "
+                           f"{'domain' if allowed == 1 else 'domains'} and "
+                           f"{len(live)} {'is' if len(live) == 1 else 'are'} already live. "
+                           f"Upgrade to add another.",
+                "live": sorted(live), "limit": allowed})
     record = activate(engine, target_org, domain=domain, by=ctx.actor_id or ctx.org_id,
                       notes=body.notes, variant_ids=body.variant_ids)
     from genios_engine.platform.audit import record as audit

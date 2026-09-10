@@ -65,7 +65,7 @@ def register(body: Register) -> dict:
         # New tenants start on a 15-day trial with its credit allowance already granted —
         # otherwise the credits column defaults to 0 and a fresh trial reads as "out of credits".
         from datetime import datetime, timedelta, timezone
-        from genios_engine.platform.billing import PLAN_CREDITS, TRIAL_DAYS
+        from genios_engine.platform.billing import TRIAL_DAYS, plan_points
         now = datetime.now(timezone.utc)
         # orgs.name holds the person's full name (used for the sidebar/greeting); orgs.company holds
         # the workspace/company name typed at signup. Both are now persisted — company was dropped
@@ -76,7 +76,7 @@ def register(body: Register) -> dict:
                        "values (:id,:n,:co,:e,:p,:kh,'trial','trial',:cr,:now,:exp,:now,:exp)"),
                   {"id": org_id, "n": body.name, "co": (body.company or "").strip()[:120] or None,
                    "e": body.email, "p": hash_password(body.password), "kh": key_hash,
-                   "cr": PLAN_CREDITS["trial"], "now": now,
+                   "cr": plan_points("trial"), "now": now,
                    "exp": now + timedelta(days=TRIAL_DAYS)})
         # The org's first seat AND its durable pull surface, in the same transaction that creates
         # the org. Without the seat L2 has nobody to exclude from counterparty correlation, L5 has
@@ -88,7 +88,7 @@ def register(body: Register) -> dict:
         provision_org(c, org_id)
         c.execute(text("insert into credit_ledger (org_id,kind,amount,balance_after,reason,bucket,"
                        "idempotency_key) values (:o,'reset',:cr,:cr,'trial:signup','credits',:idem)"),
-                  {"o": org_id, "cr": PLAN_CREDITS["trial"], "idem": f"trial:{org_id}"})
+                  {"o": org_id, "cr": plan_points("trial"), "idem": f"trial:{org_id}"})
         c.execute(text("insert into api_keys (id, org_id, key_hash, key_enc, key_prefix, name, scopes) "
                        "values (:id,:o,:kh,:ke,:pfx,'primary',:sc)"),
                   {"id": new_id("key"), "o": org_id, "kh": key_hash, "ke": _enc_key(raw),

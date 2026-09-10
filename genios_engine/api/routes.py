@@ -371,6 +371,40 @@ def _notify_sync_failure(*, org_id: str, source: str, error: str) -> None:
         pass
 
 
+#: The L2 outcomes that mean a message ENTERED THE GRAPH. Only these are billable: the customer
+#: pays for what they got, and `parked_low_relevance` (the junk gate's verdict), `skipped_no_llm`
+#: and `no_op` gave them nothing however much work we did.
+_BILLABLE_L2_OUTCOMES = ("committed", "committed_structured", "committed_structural",
+                         "committed_facts", "committed_observation")
+
+
+def _charge_ingestion(org_id: str, result) -> None:
+    """Bill one sweep's reading, as ONE row.
+
+    Per-message deduction would put a database write on the ingestion path of every email, and
+    would file 1,240 ledger lines a customer has to scroll. One row carrying `units: 1240` says
+    the same thing, costs one write, and is the line they can actually check.
+
+    Idempotent on the sweep's own instant, so a retried sweep never charges the same reading
+    twice. Never raises: billing must not be able to break a sync.
+    """
+    if _graph is None or not isinstance(result, dict):
+        return
+    outcomes = result.get("outcomes") or {}
+    read = sum(int(outcomes.get(k, 0) or 0) for k in _BILLABLE_L2_OUTCOMES)
+    if read <= 0:
+        return
+    try:
+        from datetime import datetime as _dt, timezone as _tz
+        from genios_engine.platform import billing as B
+        stamp = _dt.now(_tz.utc).strftime("%Y%m%d%H%M%S")
+        with _graph.engine.begin() as c:
+            B.charge_units(c, org_id, "message_read", read,
+                           idem=f"read:{org_id}:{stamp}", bucket="ingest")
+    except Exception:                                        # noqa: BLE001
+        _log.warning("ingestion charge failed for org=%s (%d messages)", org_id, read)
+
+
 def _run_l2(org_id: str) -> None:
     """Background L2 + L3 + L5 pass for one org. In-process (no Celery/Upstash). Wrapped so a
     single org's failure is LOGGED (not a silent uvicorn traceback) and never touches another org."""
@@ -378,9 +412,10 @@ def _run_l2(org_id: str) -> None:
         return
     try:
         from genios_engine.context.runner import process_pending
-        process_pending(org_id=org_id, store=_graph, llm=_llm,
-                        registry=_registry,
-                        crypto_key=get_settings().crypto_key)
+        result = process_pending(org_id=org_id, store=_graph, llm=_llm,
+                                 registry=_registry,
+                                 crypto_key=get_settings().crypto_key)
+        _charge_ingestion(org_id, result)
         from genios_engine.reason.runner import run_all as run_l3    # L3 after the graph updates
         run_l3(org_id=org_id, store=_graph, registry=_registry)
         if _card_store is not None:                              # L5: new gated signals → cards
@@ -462,6 +497,20 @@ def _org_paused(org_id: str) -> bool:
         return False
 
 
+def _sync_headroom(org_id: str) -> int:
+    """Messages this org may still capture this period, or a large number when the meter cannot
+    be read. Fails OPEN, like every other gate on this path: a quota that cannot be read must
+    never be the reason a customer's mail stops arriving."""
+    if _graph is None:
+        return 1 << 30
+    try:
+        from genios_engine.platform.quota import sync_headroom
+        return sync_headroom(_graph.engine, org_id)
+    except Exception:                                    # noqa: BLE001
+        _log.warning("sync quota read failed for org=%s — sweeping without it", org_id)
+        return 1 << 30
+
+
 def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
     """Full auto-sync sweep across EVERY active connection (all orgs): L1 pull for all connections,
     THEN one L2/L3/L5 pass per org (not per-connection — an org with 3 sources shouldn't re-reason 3×).
@@ -520,7 +569,13 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
     # Per-org budget decisions are made ONCE per sweep, not per connection: an org with gmail +
     # gcal + drive would otherwise pay for three checks to reach the same answer.
     over_budget: dict[str, bool] = {}
+    # THE INGESTION METER, asked once per org per sweep for the same reason as the two above.
+    # It is a different question from `over_budget`: that one is "how much money today", this is
+    # "how much mail this period". A backfill can sit inside the dollar ceiling and still be a
+    # tenant on a 1,000-message free plan pulling a 40,000-message mailbox.
+    sync_headroom: dict[str, int] = {}
     l1_skipped = 0
+    l1_quota_full = 0
     for conn in conns_to_poll:                    # L1: pull each connection (one bad source ≠ others)
         # This background sweep is the largest LLM spender in the system (the S2 gate runs on
         # every unknown sender) and it was the one path the daily cap did not gate — the breaker
@@ -535,6 +590,16 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
         if over_budget[conn.org_id]:
             l1_skipped += 1
             continue
+        if conn.org_id not in sync_headroom:
+            sync_headroom[conn.org_id] = _sync_headroom(conn.org_id)
+        headroom = sync_headroom[conn.org_id]
+        if headroom <= 0:
+            l1_quota_full += 1
+            continue
+        # TRIMMED, not refused. Half a mailbox read is worth more to the customer than none, and
+        # the remainder is still there when they upgrade — so the page budget is cut to what the
+        # plan still allows instead of the whole connection being skipped.
+        pages = max(1, min(20, -(-headroom // max(1, limit))))
         _bind_gate_costs(rc, conn.org_id)
         try:
             run_sync(make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
@@ -544,7 +609,7 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
                      mailbox_owner=_mailbox_owner_for(conn.org_id),
                      sender_resolver=_sender_resolver_for(conn.org_id),
                      cursor_store=_cursors,
-                     document_job_store=_documents, source=conn.source_type, max_pages=20,
+                     document_job_store=_documents, source=conn.source_type, max_pages=pages,
                      run_ledger=_run_ledger,
                      coverage_fn=_coverage_fn_for(conn.org_id, connections=conns),
                      esqe=_esqe_stage_for(conn.org_id),
@@ -591,6 +656,10 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
             # connections it said were due, in the order it put them in.
             "l1_due": l1_due,
             "l1_skipped_over_budget": l1_skipped, "l1_skipped_paused": l1_paused,
+            # Connections skipped because the ORG's ingestion meter is full for this period.
+            # Distinct from over_budget on purpose: that one clears at midnight, this one needs
+            # a bigger plan, and support cannot tell them apart from one counter.
+            "l1_skipped_sync_quota": l1_quota_full,
             # Connections the PROVIDER refused this tick. Separated from `l1_err` because the
             # two need different responses: this one is the tenant's to fix.
             "l1_credentials_revoked": l1_revoked,
@@ -630,6 +699,20 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the heartbeat
             _log.exception("retention purge failed for %s", name)
             retention[name] = "error"
+    # BILLING, every tick. A trial or a plan whose `plan_expires_at` has passed is moved to
+    # `expired` and given its grace window. Nothing did this before, so a 15-day trial kept
+    # answering questions indefinitely, the dashboard's expired-plan banner rendered a state the
+    # backend could never produce, and `in_grace` was permanently false. It rides this heartbeat
+    # rather than a Celery beat because the broker is a quota-limited Upstash Redis, and it is a
+    # cheap guarded UPDATE — an org already expired is a zero-row write.
+    billing_tick = {}
+    if _graph is not None:
+        try:
+            from genios_engine.platform.billing import run_billing_tick
+            billing_tick = run_billing_tick(_graph.engine, now=now)
+        except Exception:                                    # noqa: BLE001 — never kill the heartbeat
+            _log.exception("billing tick failed")
+            billing_tick = {"error": True}
     if _graph is not None:
         try:
             from genios_engine.reason.store import ReasoningStore
@@ -843,6 +926,7 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             _log.warning("graph health below threshold for %d org(s): %s",
                          len(unhealthy), unhealthy)
     return {"sync": sync, "lifecycle": lifecycle, "retention": retention,
+            "billing": billing_tick,
             "parked_drain": parked_drain,
             "attachment_refetch": attachment_refetch,
             "recapture_drain": recapture_drain,

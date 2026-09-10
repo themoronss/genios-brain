@@ -149,9 +149,9 @@ def _persist_decision_envelope(*, org_id: str, module_id: str, question: str,
 _RPM_LIMIT = 20                        # billable intelligence queries / org / minute (burst guard)
 _MAX_QUESTION_CHARS = 2_000            # a real question; anything longer is not one
 _MAX_FACTS_BYTES = 20_000              # caller-supplied extra_facts, serialized
-_DAILY_QUERIES = {"trial": 200, "early": 1_000, "startup": 5_000,
-                  "growth": 20_000, "scale": 50_000}
-_DAILY_QUERIES_DEFAULT = 200
+# The per-day ceiling is DERIVED from the plan's own allowance (billing.daily_credit_ceiling),
+# not typed here. The table that used to live at this line said trial=200/day against a 15-day,
+# 10,000-credit trial — a ceiling that made 7,000 granted credits unreachable by anyone.
 
 
 def _enforce_input_limits(question: str, facts: dict | None) -> None:
@@ -170,26 +170,31 @@ def _enforce_input_limits(question: str, facts: dict | None) -> None:
                 "message": f"Attached facts are {size} bytes; the limit is {_MAX_FACTS_BYTES}."})
 
 
-def _daily_query_ceiling(org_id: str) -> None:
-    """Cap billable queries per org per day by plan. Counted from llm_costs, which is the same
-    ledger the invoice is built from, so the ceiling cannot drift from what we actually paid for."""
+def _daily_credit_ceiling(org_id: str) -> None:
+    """Cap CREDITS spent per org per day. Counted from `credit_ledger`, which is the same ledger
+    the balance and the invoice are built from, so the guard and the price cannot drift.
+
+    It used to count rows in `llm_costs` where `purpose='intelligence_query'` — which misses
+    analyze and draft entirely, and counts a call whose credit deduct failed. Two units, two
+    ledgers, one of them incomplete."""
+    from genios_engine.platform import billing as B
     try:
         with _graph.engine.connect() as c:
             row = c.execute(text(
                 "select o.subscription_tier tier, "
-                "(select count(*) from llm_costs lc where lc.org_id = o.id "
-                " and lc.purpose = 'intelligence_query' "
-                " and lc.created_at >= date_trunc('day', now())) used "
+                "(select coalesce(sum(-cl.amount),0) from credit_ledger cl "
+                " where cl.org_id = o.id and cl.kind = 'deduct' "
+                " and cl.occurred_at >= date_trunc('day', now())) used "
                 "from orgs o where o.id = :o"), {"o": org_id}).first()
     except Exception:                      # noqa: BLE001 — never block on a DB blip
         return
     if row is None:
         return
-    limit = _DAILY_QUERIES.get((row.tier or "").lower(), _DAILY_QUERIES_DEFAULT)
+    limit = B.daily_credit_ceiling(row.tier)
     if int(row.used or 0) >= limit:
         raise HTTPException(429, {
             "code": "DAILY_LIMIT_REACHED",
-            "message": f"This workspace has used its {limit} questions for today. "
+            "message": f"This workspace has used its {limit} credits for today. "
                        f"The limit resets at midnight UTC."})
 
 
@@ -252,17 +257,17 @@ def _enforce_query_budget(org_id: str) -> None:
         raise
     except Exception:                                       # noqa: BLE001 — cache blip never blocks
         pass
-    try:                                                    # credit balance gate — the pool must cover it
+    try:                    # plan boundary THEN balance — two different buttons for the customer
         from genios_engine.platform import billing as B
         with _graph.engine.connect() as c:
-            bal = B.balance(c, org_id)["balance"]
-        if bal < 1:
-            raise HTTPException(402, "out of credits — top up or upgrade to keep asking")
+            refusal = B.refusal_for(c, org_id)
+        if refusal is not None:
+            raise HTTPException(402, refusal)
     except HTTPException:
         raise
     except Exception:                                       # noqa: BLE001 — DB blip never blocks
         pass
-    _daily_query_ceiling(org_id)                            # per-org, per-day call ceiling
+    _daily_credit_ceiling(org_id)                           # per-org, per-day credit ceiling
     _platform_spend_ceiling()                               # platform-wide daily $ backstop
 
 
@@ -343,8 +348,10 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
         if res.ok:
             try:
                 from genios_engine.platform import billing as B
+                price = B.cost_of("intelligence_query")
                 with _graph.engine.begin() as c:
-                    B.deduct(c, org_id, 1, reason="intelligence_query", idem=f"q:{ckey}", bucket="query")
+                    B.deduct(c, org_id, price, reason="intelligence_query", idem=f"q:{ckey}",
+                             bucket="query")
             except Exception:  # noqa: BLE001 — never let billing break the answer
                 _log.warning("credit deduct failed (query) for %s", org_id)
 
@@ -1256,6 +1263,21 @@ def analyze_contact(contact: str, deep: bool = False, situation: str = "",
                                success=res.ok, error=getattr(res, "error", None))
         except Exception:      # noqa: BLE001
             pass
+        # THE CHARGE. This endpoint is the extension's main surface and ran free: it recorded the
+        # spend in `llm_costs` and never touched the credit ledger, so every analyze — including
+        # `deep`, which is Sonnet, the most expensive call the product makes — was pure loss.
+        # Priced off the same table as everything else, and idempotent on the cache key, so a
+        # retry of the same question on the same graph never charges twice (and a cache HIT never
+        # reaches this branch, so it stays free, exactly like `query`).
+        if res.ok:
+            try:
+                from genios_engine.platform import billing as B
+                price = B.cost_of("intelligence_analyze", deep=deep)
+                with _graph.engine.begin() as c:
+                    B.deduct(c, org_id, price, reason="intelligence_analyze",
+                             idem=f"a:{ckey}", bucket="analyze")
+            except Exception:  # noqa: BLE001 — never let billing break the answer
+                _log.warning("credit deduct failed (analyze) for %s", org_id)
     _require_stable_query_inputs(
         org_id=org_id, module_id="sales", graph_version=gv,
         authority_epoch=authority_epoch, config_snapshot_id=config_snapshot_id)
@@ -1312,8 +1334,9 @@ def draft_reply(contact: str, instruction: str = "", org_id: str = Depends(get_c
     try:                                                    # credit gate before the on-demand LLM
         from genios_engine.platform import billing as B
         with _graph.engine.connect() as c:
-            if B.balance(c, org_id)["balance"] < 1:
-                raise HTTPException(402, "out of credits — top up to draft replies")
+            refusal = B.refusal_for(c, org_id)
+        if refusal is not None:
+            raise HTTPException(402, refusal)
     except HTTPException:
         raise
     except Exception:                                       # noqa: BLE001 — DB blip never blocks
@@ -1339,7 +1362,8 @@ def draft_reply(contact: str, instruction: str = "", org_id: str = Depends(get_c
             from genios_engine.platform import billing as B
             idem = f"draft:{org_id}:{contact}:{datetime.now(timezone.utc):%Y%m%d%H%M}"
             with _graph.engine.begin() as c:
-                B.deduct(c, org_id, 1, reason="intelligence_draft", idem=idem, bucket="draft")
+                B.deduct(c, org_id, B.cost_of("intelligence_draft"), reason="intelligence_draft",
+                         idem=idem, bucket="draft")
         except Exception:  # noqa: BLE001
             _log.warning("credit deduct failed (draft) for %s", org_id)
     return {"draft": draft, "contact": node.display_name}

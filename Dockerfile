@@ -40,10 +40,18 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Requirements first, so a code change does not re-resolve the dependency tree. The LOCK file,
-# not `requirements.txt`: the running image must be the set that was actually tested.
-COPY requirements-lock.txt ./
-RUN pip install --no-cache-dir -r requirements-lock.txt
+# Requirements first, so a code change does not re-resolve the dependency tree.
+#
+# `requirements.txt`, not the old `requirements-lock.txt`. The lock was a `pip freeze` taken on
+# a developer laptop and it could never have built here: it carried the line
+#   -e /Users/<someone>/Desktop/geniosfull/genios-engine
+# — an editable install of a path that does not exist in any image — so this RUN would fail on
+# it. It had also drifted: no `python-multipart`, which is what parses the multipart body of
+# `POST /api/org/{org}/upload`, so an image built from it could not accept a file at all.
+# `requirements.txt` is fully pinned and is the file that is actually maintained; two
+# dependency files is how the drift happened, so there is now one.
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY genios_engine ./genios_engine
 COPY migrations ./migrations
