@@ -8,7 +8,16 @@ register it here")."""
 
 GENERAL_V1 = {
     "id": "general",
-    "version": "1.4.0",              # 1.4.0: push bands calibrated to live scores (see sales
+    "version": "1.5.0",              # 1.5.0: 1.4.0 was EDITED after it was published — the feed
+                                    #   inversion fix added 22 lines to this manifest and left the
+                                    #   version alone, so `pack_registry` held one general@1.4.0
+                                    #   and the code computed another. `register()` is immutable by
+                                    #   design and raised at import, which exits the container: the
+                                    #   deploy failed on "immutable pack version mismatch:
+                                    #   general@1.4.0" before the app ever bound a port. Same
+                                    #   correction 1.3.1 made for 1.3.0, for the same reason —
+                                    #   published bytes are a version, never an edit.
+                                    # 1.4.0: push bands calibrated to live scores (see sales
                                     #   1.11.0 — kept in lockstep, shared org-wide budget)              # 1.3.1: 1.3.0 was published with an over-damped urgency
                                     #   half-life (h=24 against meeting.end_at) that made the
                                     #   rule unfireable — peak S=23 against s_min 42. Published
