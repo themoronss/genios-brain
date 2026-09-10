@@ -321,7 +321,11 @@ def test_every_hold_reason_has_a_writer_for_the_key_it_reads():
     gate = inspect.getsource(situation_publisher._preflight)
     writers = inspect.getsource(situation_bso)
 
-    keys = {"importance_source", "evidence_verified_spans", "split_required",
+    # `split_required` IS DELIBERATELY NOT HERE. It used to gate a hold nothing could clear —
+    # `gather_members` reads a table that only ever grows and no route lets a human resolve the
+    # question — so the doubt moved onto the object as an UNKNOWABLE `MissingFact` instead. It is
+    # still written, and still read, just not by the gate; `_with_split_doubt` is the reader now.
+    keys = {"importance_source", "evidence_verified_spans",
             "requires_complete_coverage", "conflict_ids", "pattern_activated",
             "contradicted_by"}
     for key in sorted(keys):
@@ -329,3 +333,8 @@ def test_every_hold_reason_has_a_writer_for_the_key_it_reads():
         assert f'"{key}"' in writers, (
             f"the gate reads {key!r} and situation_bso never writes it — a hold reason nobody "
             f"can trigger is a gate that reports healthy forever")
+
+    publisher = inspect.getsource(situation_publisher)
+    assert '"split_required"' in publisher and '"split_required"' in writers, (
+        "split_required left the gate and must still be read somewhere — the doubt it carries "
+        "is the point, and dropping it would be the silent version of the permanent hold")

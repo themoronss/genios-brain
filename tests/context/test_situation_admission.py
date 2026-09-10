@@ -127,10 +127,28 @@ def test_the_condition_lifts_the_score_requirement_and_nothing_else():
     assert conflicted.outcome is PublicationOutcome.HOLD
     assert HoldReason.CONFLICT_OPEN.value in conflicted.reasons
 
+    # `split_required` NO LONGER HOLDS, and the change is deliberate rather than a regression.
+    #
+    # It fires when one anchor correlates more than two distinct external domains, and
+    # `situation_bso` promised "a reviewer (or, later, an L2 re-correlation pass) decides whether
+    # and how to split it". NEITHER EXISTS: `gather_members` reads a table that only ever grows,
+    # so nothing could lower the count, and no route lets a human resolve it. By this module's
+    # own docstring that is "a REJECT wearing HOLD's name" — applied silently, permanently, and
+    # on the pilot to two situations.
+    #
+    # The doubt is not discarded, it is moved to where a reader can see it.
     split = decide_publication(
         candidate(metadata={**base, "split_required": True}), l1_scoring_active=False)
-    assert split.outcome is PublicationOutcome.HOLD
-    assert HoldReason.IDENTITY_REVIEW_REQUIRED.value in split.reasons
+    assert split.outcome is PublicationOutcome.ADMIT
+    assert HoldReason.IDENTITY_REVIEW_REQUIRED.value not in split.reasons
+    assert split.situation is not None
+    doubt = [f for f in split.situation.missing_facts
+             if f.expected_fact == "situation.identity_is_one_relationship"]
+    assert len(doubt) == 1
+    # UNKNOWABLE, never GENUINELY_ABSENT. Nothing has been established about whether this should
+    # be split, and the one absence type that licenses a negative inference must not let a reader
+    # conclude that it should not be.
+    assert doubt[0].absence_type.value == "unknowable"
 
 
 def test_no_verified_span_is_held_not_fabricated():

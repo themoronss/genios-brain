@@ -35,7 +35,6 @@ from genios_engine.context.situation_bso import (
     absence_receipt_event_ids,
     backfill_absence_l1,
     gather_l1_signals_for_events,
-    outbound_event_ids,
 )
 
 ORG = "org_pilot"
@@ -122,11 +121,22 @@ class _Subject:
 
 # =============================================================================================
 # M2.C1.L-data.V0.U07/U08 — which messages did we send this person.
+#
+# MOVED ONTO THE SURVIVOR, not deleted. These six asserted real properties — the outbound
+# direction, tenancy on both tables, the receipt bound, and the marketing sender who can never
+# produce an absence — against `outbound_event_ids`, which was retired for being called by
+# nothing. `absence_receipt_event_ids` performs the same reads and picks the direction from the
+# situation TYPE rather than assuming outbound, which is why the retired one was wrong for
+# `first_response_overdue`. Every property below still holds; only the door changed.
 # =============================================================================================
+def _outbound(db, org, anchor):
+    """The retired helper's question, asked of the survivor: `awaiting_response` is the type
+    whose receipt IS the outbound leg."""
+    return absence_receipt_event_ids(db, org, anchor, "awaiting_response")
 def test_an_anchor_we_wrote_to_yields_its_outbound_events(db):
     _we_wrote(db, "n_investor", "evt_1")
 
-    assert outbound_event_ids(db, ORG, "n_investor") == ("evt_1",)
+    assert _outbound(db, ORG, "n_investor") == ("evt_1",)
 
 
 def test_an_anchor_that_only_ever_wrote_at_us_yields_nothing(db):
@@ -134,12 +144,12 @@ def test_an_anchor_that_only_ever_wrote_at_us_yields_nothing(db):
     produce an absence situation: nothing was ever awaited from them."""
     _they_wrote(db, "n_marketer", "evt_spam")
 
-    assert outbound_event_ids(db, ORG, "n_marketer") == ()
+    assert _outbound(db, ORG, "n_marketer") == ()
 
 
 def test_an_unknown_anchor_yields_nothing(db):
-    assert outbound_event_ids(db, ORG, "n_nobody") == ()
-    assert outbound_event_ids(db, ORG, "") == ()
+    assert _outbound(db, ORG, "n_nobody") == ()
+    assert _outbound(db, ORG, "") == ()
 
 
 def test_another_orgs_outbound_is_never_visible(db):
@@ -147,7 +157,7 @@ def test_another_orgs_outbound_is_never_visible(db):
     from one tenant into another's feed."""
     _we_wrote(db, "n_shared", "evt_other", org=OTHER)
 
-    assert outbound_event_ids(db, ORG, "n_shared") == ()
+    assert _outbound(db, ORG, "n_shared") == ()
 
 
 def test_the_receipt_count_is_bounded(db):
@@ -155,7 +165,7 @@ def test_the_receipt_count_is_bounded(db):
     for i in range(MAX_ABSENCE_RECEIPTS + 4):
         _we_wrote(db, "n_chatty", f"evt_{i:02d}")
 
-    assert len(outbound_event_ids(db, ORG, "n_chatty")) == MAX_ABSENCE_RECEIPTS
+    assert len(_outbound(db, ORG, "n_chatty")) == MAX_ABSENCE_RECEIPTS
 
 
 # =============================================================================================

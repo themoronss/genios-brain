@@ -737,21 +737,16 @@ _L1_BY_EVENT_SELECT = (
 MAX_ABSENCE_RECEIPTS = 5
 
 
-def outbound_event_ids(conn, org_id: str, anchor_node_id: str,
-                       limit: int = MAX_ABSENCE_RECEIPTS) -> tuple[str, ...]:
-    """The events in which we wrote TO `anchor_node_id`. Empty when we never have.
-
-    Empty is the honest answer and the important one: a counterparty we have never written to has
-    no absence to describe, because nothing was ever awaited. Every one of the pilot's marketing
-    senders is in that state.
-    """
-    if not anchor_node_id:
-        return ()
-    rows = conn.execute(text(_OUTBOUND_EVENTS_SQL),
-                        {"o": org_id, "n": anchor_node_id}).mappings().all()
-    return tuple(str(r["event_id"]) for r in rows if r["event_id"])[:limit]
-
-
+# `outbound_event_ids` STOOD HERE AND WAS CALLED BY NOTHING. Retired 2026-09-10.
+#
+# It answered "which events did we write to this anchor in", assuming the OUTBOUND direction.
+# `absence_receipt_event_ids` below supersedes it by reading the direction from the situation
+# TYPE instead — because the assumption was wrong for `first_response_overdue`, whose claim is
+# about a message THEY sent, and a receipt read in the wrong direction cites the wrong message.
+#
+# Built, tested six ways, and every one of those tests passed while no production path called it:
+# the branch's signature defect, one more instance, inside the module that documents it most.
+# Deleted rather than kept "in case" — that is what put it here.
 #: WHICH MESSAGE GROUNDS WHICH ABSENCE. Measured on the pilot, not assumed: of the 84 absence
 #: situations held there, `awaiting_response` anchors on an `outreach` node that carries only
 #: `outreach.*` facts, and `first_response_overdue` anchors on a `thread` node carrying
@@ -780,6 +775,19 @@ ABSENCE_RECEIPT_FIELDS: Mapping[str, tuple[str, ...]] = {
     "awaiting_response": ("thread.last_outbound",),
     "cohort_outreach_gap": ("thread.last_outbound",),
     "first_response_overdue": ("thread.last_inbound",),
+    # THE TWO GROUP READINGS, added late and missed here — the same "a new type and its receipt
+    # live in two files" gap this map exists to close, committed while closing it.
+    #
+    # Both claim a silence and both anchor on a SYNTHETIC node (`organization:<company>`,
+    # `campaign:<id>`), so the receipt comes through the `concerns` hop to the representative
+    # counterparty — exactly the one-hop walk `absence_receipt_event_ids` already performs for
+    # `cohort_outreach_gap`, whose anchor is synthetic for the same reason.
+    #
+    # OUTBOUND, because both say THEY have not answered US. The direction is the whole of what
+    # this map encodes — `first_response_overdue` reads the inbound leg because its claim is the
+    # opposite one — and getting it backwards is how a card cites the wrong message.
+    "organization_gone_quiet": ("thread.last_outbound",),
+    "campaign_awaiting_reply": ("thread.last_outbound",),
 }
 
 #: The same read as `_OUTBOUND_EVENTS_SQL`, with the field set as a parameter and `status` pinned
