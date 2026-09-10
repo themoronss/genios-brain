@@ -372,7 +372,7 @@ class CardStore:
               record_impressions: bool = True) -> list[dict]:
         """Dashboard read. admin sees all queues (incl. unrouted); a member sees only their own.
         Ranked by score desc — the morning's cards in priority order (§5.13 scenario 10)."""
-        q = ("select k.card_id, k.signal_id, k.assignee, k.urgency_band, k.headline, "
+        q = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, "
              "k.situation, " + AUTHORITATIVE_SCORE_SQL +
              " as score, k.state, k.render_mode, k.created_at, k.expires_at "
              "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
@@ -416,4 +416,37 @@ class CardStore:
                     "and ce.card_id=k.card_id and ce.kind='card.surfaced') "
                     "on conflict do nothing"),
                     {"o": org_id, "ids": [row["card_id"] for row in rows]})
+            # WHAT THIS PERSON IS WORKING ON, applied as ORDER and nothing else. A stable
+            # partition — this viewer's objective domain first, then the rest — each half in the
+            # utility order the SQL already produced. No score moves, nothing is removed, and two
+            # viewers still see identical facts. See migration 0130 for why it must be a
+            # partition and not a term.
+            rows = self._objective_order(c, org_id, assignee, rows)
             return rows
+
+    @staticmethod
+    def _objective_order(conn, org_id: str, assignee: str | None, rows: list[dict]) -> list[dict]:
+        """Stable partition of a per-viewer queue by the viewer's declared objective domain.
+
+        ONLY FOR A NAMED VIEWER. An admin reading the org queue and an org-level key have no
+        person to hold an objective; their order is untouched. FAILS TO THE EXISTING ORDER on any
+        read error — a preference table being unreadable must not reorder or lose a queue.
+        """
+        if not assignee or not rows:
+            return rows
+        try:
+            from datetime import datetime, timezone
+            domain = conn.execute(text(
+                "select o.domain from seat_objectives o "
+                "join org_seats s on s.org_id = o.org_id and lower(s.email) = o.seat_key "
+                "where o.org_id = :o and s.seat_id = :a and s.active "
+                "and (o.valid_until is null or o.valid_until > :now) limit 1"),
+                {"o": org_id, "a": assignee, "now": datetime.now(timezone.utc)}).scalar()
+        except Exception:      # noqa: BLE001 — a preference, never a reason to touch the queue
+            return rows
+        if not domain:
+            return rows
+        wanted = str(domain).strip().lower()
+        first = [r for r in rows if str(r.get("domain") or "").strip().lower() == wanted]
+        rest = [r for r in rows if str(r.get("domain") or "").strip().lower() != wanted]
+        return first + rest

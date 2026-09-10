@@ -131,7 +131,8 @@ def mark_resolved(org_id: str, situation_id: str, body: ResolveIn,
 
 
 @router.post("/api/org/{org_id}/situations/backfill")
-def run_backfill(org_id: str, limit: int | None = None, org: str = Depends(_org)) -> dict:
+def run_backfill(org_id: str, limit: int | None = None, rebuild: bool = False,
+                 org: str = Depends(_org)) -> dict:
     """Apply Layer 2 to history that was already in the graph before it existed.
 
     Aliases are claimed inside node creation and correlation runs inside the L2 drain, so
@@ -146,7 +147,11 @@ def run_backfill(org_id: str, limit: int | None = None, org: str = Depends(_org)
     large tenant can be backfilled in passes.
     """
     from genios_engine.context.backfill import backfill_layer2
-    return backfill_layer2(_store(), org, limit=limit)
+    # `rebuild` HAS EXISTED ON `backfill_layer2` AND THIS ROUTE NEVER PASSED IT. That is the
+    # re-derivation half of a profile correction: after the "us" set changes, observations
+    # already committed to a co-founder's node under the old identity are only re-derived by
+    # a rebuild, and the only caller of this function could not ask for one.
+    return backfill_layer2(_store(), org, limit=limit, rebuild=bool(rebuild))
 
 
 @router.get("/api/org/{org_id}/graph/health")

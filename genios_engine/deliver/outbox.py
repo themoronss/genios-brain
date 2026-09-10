@@ -807,12 +807,40 @@ def _drain_claimed(engine, claimed: list[dict], gate: PgDeliveryContext, now: da
                     {"o": r["org_id"], "card": r["card_id"], "signal": r["signal_id"],
                      "run": r["reasoning_run_id"], "decision": r["reasoning_decision_hash"],
                      "revision": r["authority_pack_revision"], "authority_time": now}).first()
-                if live is None:
+                # BUILT BEFORE THE ORG CORRECTED ITSELF? The re-proof above re-checks the
+                # DECISION's authority and nothing else; it never read `organization_resets`.
+                # So a card built while the co-founder was still "a prospect" sailed through
+                # after the founder seated him. A card built before the latest reset is
+                # cancelled here rather than sent — the next sweep rebuilds it under the
+                # corrected identity, and the cancel reason names why.
+                #
+                # READ ON THE SAME CONNECTION AND UNDER THE SAME LOCKS as the authority
+                # re-proof, so a correction landing between this read and the POST cannot
+                # interleave. Fails CLOSED-TO-SEND on an unreadable table: an outage of the
+                # reset log must not become a delivery outage, so a read error means "no reset
+                # known" — the pre-existing behaviour, not a narrower one.
+                stale_identity = False
+                if live is not None:
+                    try:
+                        latest_reset = authority_conn.execute(text(
+                            "select created_at from organization_resets where org_id=:o "
+                            "order by created_at desc limit 1"), {"o": r["org_id"]}).scalar()
+                        built_at = authority_conn.execute(text(
+                            "select created_at from cards where org_id=:o and card_id=:c"),
+                            {"o": r["org_id"], "c": r["card_id"]}).scalar()
+                        stale_identity = bool(latest_reset and built_at
+                                              and built_at < latest_reset)
+                    except Exception:      # noqa: BLE001 — see FAILS CLOSED-TO-SEND above
+                        stale_identity = False
+                if live is None or stale_identity:
                     res = None
                 else:
                     res = ch.send(payload, cfg)
             if res is None:
-                _cancel(engine, r, "decision authority revoked before delivery", out)
+                _cancel(engine, r,
+                        "org corrected its identity after this card was built"
+                        if stale_identity else "decision authority revoked before delivery",
+                        out)
                 continue
         else:
             try:

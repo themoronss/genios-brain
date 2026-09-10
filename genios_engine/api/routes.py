@@ -1226,6 +1226,84 @@ def tag_mission_critical(body: MissionCriticalEntity,
     return {"entities": _mission_critical_rows(ctx.org_id)}
 
 
+# ── L5.0-U2 · a person's current objective, and the only way it is ever written ──────────
+#
+# The per-PERSON twin of the mission-critical tag above, in the same shape for the same reason:
+# a human judgement, owner-attributed, read on the pass that decides what surfaces first. It
+# REORDERS a viewer's own queue and scores nothing — see migration 0130 for why that boundary is
+# the whole design. Owner-only, because what a colleague sees first is not a self-service field.
+class SeatObjective(BaseModel):
+    """One person's current focus, as the DOMAIN their queue should lead with."""
+
+    email: str
+    domain: str
+    note: str = ""
+    valid_until: str | None = None
+
+
+def _seat_objective_rows(org_id: str) -> list[dict]:
+    if _graph is None:
+        return []
+    from sqlalchemy import text
+    with _graph.engine.connect() as conn:
+        return [{"email": r.seat_key, "domain": r.domain, "owner": r.owner, "note": r.note,
+                 "added_at": r.added_at.isoformat(),
+                 "valid_until": r.valid_until.isoformat() if r.valid_until else None}
+                for r in conn.execute(text(
+                    "select seat_key, domain, owner, note, added_at, valid_until "
+                    "from seat_objectives where org_id = :o order by seat_key"), {"o": org_id})]
+
+
+@router.get("/qualification/objectives")
+def list_seat_objectives(org_id: str = Depends(get_current_org)) -> dict:
+    return {"objectives": _seat_objective_rows(org_id)}
+
+
+@router.put("/qualification/objectives")
+def set_seat_objective(body: SeatObjective, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """Declare what one person is working on. Owner-only, for the reason the tag route is."""
+    from datetime import datetime, timezone
+    from sqlalchemy import text
+    key = (body.email or "").strip().lower()
+    domain = (body.domain or "").strip().lower()
+    if not key or "@" not in key:
+        raise HTTPException(400, "email is required")
+    if not domain:
+        raise HTTPException(400, "domain is required")
+    until = None
+    if body.valid_until:
+        try:
+            until = datetime.fromisoformat(body.valid_until.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise HTTPException(400, "valid_until must be an ISO-8601 instant") from exc
+    if _graph is None:
+        raise HTTPException(503, "no database configured")
+    actor = ctx.actor_id or ctx.org_id
+    with _graph.engine.begin() as conn:
+        conn.execute(text(
+            "insert into seat_objectives (org_id, seat_key, domain, owner, note, added_at, "
+            "valid_until) values (:o, :k, :d, :w, :n, :at, :u) "
+            "on conflict (org_id, seat_key) do update set domain = excluded.domain, "
+            "owner = excluded.owner, note = excluded.note, added_at = excluded.added_at, "
+            "valid_until = excluded.valid_until"),
+            {"o": ctx.org_id, "k": key, "d": domain, "w": actor, "n": body.note,
+             "at": datetime.now(timezone.utc), "u": until})
+    return {"objectives": _seat_objective_rows(ctx.org_id)}
+
+
+@router.delete("/qualification/objectives/{email}")
+def clear_seat_objective(email: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """The OFF path, for the reason the tag's is: a preference that can only be added is a
+    queue that drifts for ever."""
+    from sqlalchemy import text
+    if _graph is None:
+        raise HTTPException(503, "no database configured")
+    with _graph.engine.begin() as conn:
+        conn.execute(text("delete from seat_objectives where org_id = :o and seat_key = :k"),
+                     {"o": ctx.org_id, "k": (email or "").strip().lower()})
+    return {"objectives": _seat_objective_rows(ctx.org_id)}
+
+
 @router.delete("/qualification/mission-critical/{name}")
 def untag_mission_critical(name: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
     """Remove a tag. The OFF path is a route for the same reason the ON path is: a judgement
@@ -3937,9 +4015,10 @@ def upsert_seat(body: Seat, ctx: AuthCtx = Depends(require_owner)) -> dict:
             "select subscription_tier from orgs where id=:o for share"),
             {"o": org_id}).scalar() or "trial").lower()
         seat_limit = {"trial": 2, "startup": 5, "growth": 15, "scale": 50}.get(tier, 2)
-        exists = c.execute(text(
-            "select 1 from org_seats where org_id=:o and seat_id=:s"),
-            {"o": org_id, "s": seat_id}).first() is not None
+        before = c.execute(text(
+            "select email, active from org_seats where org_id=:o and seat_id=:s"),
+            {"o": org_id, "s": seat_id}).first()
+        exists = before is not None
         active = int(c.execute(text(
             "select count(*) from org_seats where org_id=:o and active"),
             {"o": org_id}).scalar() or 0)
@@ -3949,7 +4028,38 @@ def upsert_seat(body: Seat, ctx: AuthCtx = Depends(require_owner)) -> dict:
                        "values (:o,:s,:e,:r,true) on conflict (org_id, seat_id) do update set "
                        "email=excluded.email, role=excluded.role, active=true"),
                   {"o": org_id, "s": seat_id, "e": body.email, "r": body.role})
-    return {"upserted": True, "seat_id": seat_id, "role": body.role}
+        # A SEAT CORRECTION IS A CORRECTION TO "WHO WE ARE", and nothing already committed moved.
+        #
+        # The "us" set (`context/runner._internal_emails`) is consulted only when an event
+        # ARRIVES. So when the founder seats a co-founder in month three, the co-founder's node
+        # keeps every counterparty observation it accumulated — the exact failure runner.py
+        # documents at 237 observations on the owner's own node — the situations anchored on him
+        # stay anchored, and the queued cards advising the founder about "the prospect" who is
+        # his own co-founder stay queued and WILL be delivered. Only mail arriving after the
+        # correction was classified correctly.
+        #
+        # ONLY A MATERIAL CHANGE COUNTS. A new seat, a changed address, or a reactivation each
+        # move the "us" set; an idempotent re-PUT of the same row moves nothing and must not
+        # stamp a reset — a double-click on a form is not a pivot.
+        #
+        # THE RECORD IS `organization_resets`, THE EXISTING ONE. `apply_organization_reset` is
+        # what the org-reset route already calls; it logs the instant and expires runtime memory
+        # LEASES predating it, which is correct here too — a memory formed under a wrong "us"
+        # set was formed about the wrong world. The outbox's send-time re-proof now reads the
+        # latest reset and cancels any card BUILT BEFORE it, so nothing queued under the old
+        # identity is delivered. Re-derivation of already-committed observations is
+        # `POST /situations/backfill?rebuild=true`, deliberately not run inline in a request.
+        changed = (not exists
+                   or (before.email or "").strip().lower() != (body.email or "").strip().lower()
+                   or not bool(before.active))
+        if changed:
+            from datetime import datetime, timezone
+            from genios_engine.feedback.reset import apply_organization_reset
+            apply_organization_reset(c, org_id=org_id, reason=f"seat_corrected:{seat_id}",
+                                     at=datetime.now(timezone.utc),
+                                     actor=ctx.actor_id or ctx.org_id)
+    return {"upserted": True, "seat_id": seat_id, "role": body.role,
+            "identity_corrected": bool(changed)}
 
 
 # ── L5 · Agent API (§5.16) · metered read-and-claim; execution stays client-side ────

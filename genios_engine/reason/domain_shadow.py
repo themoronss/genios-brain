@@ -658,6 +658,10 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
             activated_domains=live_domains,
         ) if any_live else None
         counts["l3_activated_domains"] = len(live_domains)
+        # THE VARIANT DECLARATION, read once per sweep per live domain — the same shape and
+        # source as `live_domains` itself. `()` for every domain that declared nothing.
+        from genios_engine.platform.l3_activation import declared_variants
+        variants_by_domain = {d: declared_variants(store.engine, org_id, d) for d in live_domains}
         for row in situations:
             counts["situations"] += 1
             # WHICH LANE THIS SITUATION IS ON. The global flag still forces live for a deployment
@@ -737,7 +741,11 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     brain_subject_keys=gather_brain_subject_keys(conn, org_id, row, members),
                     # Empty for all but the contradicted few, which is the behaviour this pass had
                     # before the correlator existed.
-                    contradicted_by=tuple(contradicted.get(str(row["situation_id"]), ())))
+                    contradicted_by=tuple(contradicted.get(str(row["situation_id"]), ())),
+                    # Which authored business-model overlay this situation's domain runs under.
+                    # Empty for every tenant that has declared nothing — the key is then absent
+                    # from the situation's metadata and nothing re-mints.
+                    variant_ids=variants_by_domain.get(str(row.get("domain") or ""), ()))
                 current_absences = tuple(
                     absence.fact
                     for absence in absences_by_situation.get(str(row["situation_id"]), ())

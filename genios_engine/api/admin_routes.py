@@ -999,6 +999,9 @@ class L3PilotActivation(BaseModel):
 
     domain: str
     notes: str | None = None
+    #: Authored business-model / offering variant ids (full corpus ids preferred; a bare alias
+    #: is accepted and reported as unresolved if ambiguous). Optional; absent means unchanged.
+    variant_ids: list[str] | None = None
 
 
 def _l3_domain(domain: str) -> str:
@@ -1077,7 +1080,7 @@ def activate_l3_pilot(target_org: str, body: L3PilotActivation,
             raise HTTPException(404, "account not found")
     from genios_engine.platform.l3_activation import EFFECTS, activate
     record = activate(engine, target_org, domain=domain, by=ctx.actor_id or ctx.org_id,
-                      notes=body.notes)
+                      notes=body.notes, variant_ids=body.variant_ids)
     from genios_engine.platform.audit import record as audit
     audit(ctx.org_id, "config_changed", actor_type="user", actor_id=ctx.actor_id or ctx.org_id,
           target_type="org", target_id=target_org,

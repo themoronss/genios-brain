@@ -392,6 +392,10 @@ _ORG_SCOPED_TABLES = [
     # leave a deleted customer's reporting lines and territory assignments in the database,
     # for exactly the reason the entry above gives about approvers.
     "seat_responsibilities",
+    # L5.0-U2 (migration 0130): what each of the tenant's people is working on. A judgement about
+    # named staff, so a deletion that skipped it would leave a deleted customer's focus list
+    # behind. Cascades from `orgs(id)`; this entry is what makes /reset erase it too.
+    "seat_objectives",
     "source_identity_map", "graph_nodes", "graph_versions", "baselines",
     "raw_payloads", "prepared_content", "document_jobs", "resource_uploads",
     "l1_extraction_results", "l2_processing_runs", "event_trace", "parked_events",

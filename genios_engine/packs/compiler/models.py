@@ -149,9 +149,14 @@ class ExpertSlice:
     missing_artifacts: tuple[str, ...]
     coverage_bp: int
     snapshot_id: str
+    #: Declared business-model / offering ids that resolved to nothing or to several documents.
+    #: Named in the package rather than raised — see knowledge_retriever._resolve_variants.
+    unresolved_variants: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
+
+
 class RuntimeBrainEntry:
     org_id: str
     brain: BrainKind
