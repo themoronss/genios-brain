@@ -58,9 +58,20 @@ COPY migrations ./migrations
 COPY scripts ./scripts
 COPY pyproject.toml ./
 
-# The engine reads its own version and nothing else from the tree; the corpus, the docs and the
-# test suite are deliberately not copied — an image that ships them is an image that ships the
-# scratch database URLs in `tests/conftest.py`.
+# THE AUTHORED CORPUS IS RUNTIME DATA, NOT DOCUMENTATION, and leaving it out was the quietest
+# failure in this file. `platform/corpus.corpus_root()` resolves to `<root>/Domain Expertise` and
+# `authored_domains()` opens with `if not root.is_dir(): return` — so in an image without this
+# directory it yields NOTHING, with no error and no log line. `packs/wiring.make_registry` then
+# registers only the four hand-written Python packs, every authored capability compiles to
+# nothing, and `admin` and `customer_support` — which carry no legacy rules BY DESIGN, existing
+# only to give the compiled Layer 3 brain a lane with authority — die completely. The tenant's
+# switches read LIVE and the product says nothing, which is the exact failure
+# `scripts/activate_tenant.py` warns about in its own docstring.
+#
+# 18 MB and 1,417 YAML files. The docs and the test suite stay out for the reason the previous
+# comment gave — an image that ships `tests/` ships the scratch database URLs in
+# `tests/conftest.py` — but that reason was never true of the corpus.
+COPY ["Domain Expertise", "./Domain Expertise"]
 
 EXPOSE 8080
 
