@@ -1314,7 +1314,7 @@ def tag_mission_critical(body: MissionCriticalEntity,
 #
 # The per-PERSON twin of the mission-critical tag above, in the same shape for the same reason:
 # a human judgement, owner-attributed, read on the pass that decides what surfaces first. It
-# REORDERS a viewer's own queue and scores nothing — see migration 0130 for why that boundary is
+# REORDERS a viewer's own queue and scores nothing — see migration 0133 for why that boundary is
 # the whole design. Owner-only, because what a colleague sees first is not a self-service field.
 class SeatObjective(BaseModel):
     """One person's current focus, as the DOMAIN their queue should lead with."""

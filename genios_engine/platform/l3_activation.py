@@ -161,7 +161,7 @@ class L3Activation:
     disabled_at: datetime | None = None
     disabled_by: str | None = None
     updated_at: datetime | None = None
-    #: The authored business-model / offering variants this domain runs under (0131). Empty
+    #: The authored business-model / offering variants this domain runs under (0134). Empty
     #: means declared nothing, which is every tenant today.
     variant_ids: tuple[str, ...] = ()
 

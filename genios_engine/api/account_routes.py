@@ -353,7 +353,7 @@ def cancel_invite(org_id: str, invite_id: str, org: str = Depends(_org)) -> dict
 # Full account deletion is guaranteed separately by org FKs in migration 0033.
 _ORG_SCOPED_TABLES = [
     "delivery_outbox", "agent_claims", "card_build_claims", "card_feedback_revisions",
-    # migration 0132: who else a card reached by declared responsibility — named staff
+    # migration 0135: who else a card reached by declared responsibility — named staff
     "card_feedback_verdicts", "card_events", "card_recipients", "cards", "signals",
     # Layer 4 deletion order is load-bearing: signals reference runs; runs reference context +
     # config; context references capability. Payloads are explicit as defense in depth even though
@@ -436,7 +436,7 @@ _ORG_SCOPED_TABLES = [
     # leave a deleted customer's reporting lines and territory assignments in the database,
     # for exactly the reason the entry above gives about approvers.
     "seat_responsibilities",
-    # L5.0-U2 (migration 0130): what each of the tenant's people is working on. A judgement about
+    # L5.0-U2 (migration 0133): what each of the tenant's people is working on. A judgement about
     # named staff, so a deletion that skipped it would leave a deleted customer's focus list
     # behind. Cascades from `orgs(id)`; this entry is what makes /reset erase it too.
     "seat_objectives",

@@ -7,7 +7,7 @@
 -- row, and the people it reaches are these.
 --
 -- Written beside the card by `deliver/store.insert_card` from `Assignment.co_recipients` —
--- the seats whose DECLARED responsibility (`seat_responsibilities`, 0129) covers a slice the
+-- the seats whose DECLARED responsibility (`seat_responsibilities`, 0131) covers a slice the
 -- situation names. Read by the queue (a covering seat sees the card, stamped with why), by the
 -- outbox (one delivery row per seat, never an interrupt) and by nothing that counts.
 --

@@ -423,7 +423,7 @@ class CardStore:
             # WHAT THIS PERSON IS WORKING ON, applied as ORDER and nothing else. A stable
             # partition — this viewer's objective domain first, then the rest — each half in the
             # utility order the SQL already produced. No score moves, nothing is removed, and two
-            # viewers still see identical facts. See migration 0130 for why it must be a
+            # viewers still see identical facts. See migration 0133 for why it must be a
             # partition and not a term.
             rows = self._your_part(c, org_id, assignee, rows)
             rows = self._objective_order(c, org_id, assignee, rows)
