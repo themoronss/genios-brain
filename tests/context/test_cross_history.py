@@ -222,3 +222,29 @@ def test_a_missing_enrichment_table_does_not_lose_the_chain():
 
     assert h.times_seen == 2
     assert h.prior_outcome == UNKNOWN_OUTCOME
+
+
+def test_the_live_sweep_hands_it_a_connection_and_not_the_engine():
+    """The one call that ships. Every assertion above passes a Connection, and the module can only
+    take one — it reads three statements and writes derived facts through the same handle. The
+    live caller in `context/runner.py` passed `store.engine` instead, and on SQLAlchemy 2.x an
+    Engine has no `.execute`, so the ninth correlator raised AttributeError on EVERY sweep. Its own
+    `except Exception` boundary caught it and logged, so nothing failed and nothing was ever
+    published: `derived.history.*` was absent from production while this file stayed green.
+
+    A test that only ever constructs its own Connection cannot see that, which is why this one
+    reads the call site instead of a return value."""
+    import pathlib
+    import re
+
+    source = (pathlib.Path(__file__).resolve().parents[2]
+              / "genios_engine" / "context" / "runner.py").read_text()
+    call = re.search(r"publish_histories\(([^,]+),", source)
+    assert call, "the live sweep no longer calls publish_histories — has the pass moved?"
+    handle = call.group(1).strip()
+    assert handle != "store.engine", (
+        "runner.py is passing the Engine again; publish_histories needs an open Connection "
+        "(`with store.engine.begin() as c`) or it raises AttributeError into a boundary that "
+        "swallows it")
+    assert "with store.engine.begin()" in source, (
+        "the history pass writes derived facts, so it must run inside a committed transaction")
