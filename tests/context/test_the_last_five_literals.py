@@ -190,3 +190,39 @@ def test_an_unreadable_file_leaves_the_shipped_pair(tmp_path):
     path.write_text("commitment_types: [unclosed\n")
 
     assert resource_kinds(path) == (_CONTRACT_TYPES, _SPEND_TYPES)
+
+
+# =============================================================================================
+# CTX-L1 — the one lane that WAS open, and the corpus refusing it.
+# =============================================================================================
+def test_every_pattern_emitted_type_is_one_an_author_may_bind_to():
+    """The audit claimed a situation type could not be authored at all; that was overstated —
+    `context/patterns/` is a real data lane, activation is a per-tenant operator switch, and
+    `situation_bso._situation_type` says an ACTIVATED pattern's type REPLACES the anchor-derived
+    one. Six types already ship that way.
+
+    The real gap was coordination. NONE of the six is in `domain_spec.py`, and
+    `substrate.l2_situation_types` was transcribed from that file alone — so an author binding
+    to `relationship_going_cold` got "is not a type Layer 2 emits" and was told to move it to
+    `pending_l2_situation_types`, a wish list for types nobody writes, while the type was live,
+    minted every sweep, and already routing. The corpus was refusing the one lane that worked.
+    """
+    import pathlib
+
+    import yaml
+
+    corpus = pathlib.Path(__file__).resolve().parents[2] / "Domain Expertise"
+    declared = set(yaml.safe_load(
+        (corpus / "_schema/vocabulary.yaml").read_text())["substrate"]["l2_situation_types"])
+
+    seeds = pathlib.Path(__file__).resolve().parents[2] / \
+        "genios_engine/context/patterns/seed"
+    emitted = set()
+    for path in sorted(seeds.glob("*.yaml")):
+        data = yaml.safe_load(path.read_text()) or {}
+        situation_type = str((data.get("emits") or {}).get("situation_type") or "").strip()
+        if situation_type:
+            emitted.add(situation_type)
+
+    assert emitted, "the pattern lane has no seeds — this test would pass vacuously"
+    assert emitted <= declared, sorted(emitted - declared)

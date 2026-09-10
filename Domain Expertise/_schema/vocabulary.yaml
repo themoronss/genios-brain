@@ -660,6 +660,25 @@ substrate:
     # retention needs a schedule the tenant has never stated — so `retention_and_archival` gets a
     # route and an empty hand, and both are named in `missing` on every row.
     - document_under_control    # admin, anchored on one file (`document`)
+    # ── MINTED BY AN ACTIVATED PATTERN (context/patterns/seed/*.yaml) ─────────
+    #
+    # NOT `domain_spec.py`, and that is why they were missing. `situation_bso._situation_type`
+    # states the precedence: *"an ACTIVATED pattern names it"* — a pattern's type REPLACES the
+    # anchor-derived one, and activation is a per-tenant operator switch rather than a deploy.
+    # Six types already ship this way and NONE of them is in `domain_spec.py`, so this list —
+    # transcribed from that file alone — did not know they existed.
+    #
+    # THE COST WAS A LIE IN THE VALIDATOR. An author binding a situation to
+    # `relationship_going_cold` got "is not a type Layer 2 emits" and was told to move it to
+    # `pending_l2_situation_types` — a wish list for types nobody writes — when the type is
+    # live, minted every sweep, and already routing. The corpus was refusing the one lane that
+    # was open.
+    - commitment_unresolved
+    - condition_now_satisfied
+    - founder_bottleneck
+    - meeting_preparation_gap
+    - relationship_going_cold
+    - vendor_renewal_decision
 # ─────────────────────────────────────────────────────────────────────────────
 # PLANNED SUBSTRATE — asked for by authored expertise, emitted by nothing yet.
 #
