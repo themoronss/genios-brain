@@ -840,11 +840,16 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         # module was passing a hardcoded zero.
         held["_merge_proposals"] = {
             str(r[0]): int(r[1] or 0) for r in c.execute(text(
+                # left_node_id / right_node_id — the columns the table actually has. This read
+                # shipped as from_node_id/to_node_id, which exist on no table here, so
+                # `refresh_state_situations` raised UndefinedColumn on EVERY sweep and the
+                # boundary in runner.py swallowed it: the entire outreach state-readings pass
+                # never ran once. `support_situations.py:1449` reads the same table correctly.
                 "select node_id, count(*) from ("
-                "  select from_node_id as node_id from merge_proposals "
+                "  select left_node_id as node_id from merge_proposals "
                 "  where org_id = :o and status = 'open' "
                 "  union all "
-                "  select to_node_id as node_id from merge_proposals "
+                "  select right_node_id as node_id from merge_proposals "
                 "  where org_id = :o and status = 'open') x group by node_id"),
                 {"o": org_id}).all()}
         # The campaigns, same route. `find_campaigns` requires an explicit window and has no
