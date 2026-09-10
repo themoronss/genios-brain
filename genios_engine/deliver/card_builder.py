@@ -318,7 +318,8 @@ with subject as (
      where o.org_id = :o and e.org_id = :o
        and e.valid_to is null and e.edge_type = 'concerns'
 )
-select o.kind, o.occurred_at, sr.evidence, se.actor ->> 'email' as author
+select o.kind, o.occurred_at, sr.evidence, se.actor ->> 'email' as author,
+       se.visibility_scope, se.visibility_principals
   from graph_observations o
   join graph_source_refs sr on sr.observation_id = o.observation_id
   left join source_events se on se.event_id = o.created_by_event_id
@@ -362,7 +363,30 @@ def load_evidence_quotes(store, org_id: str, node_id: str, limit: int = 8,
         if not quote:
             continue
         author = str(r.author or "").strip().lower() or None
+        # THE EVIDENCE'S OWN AUDIENCE, carried with the quote.
+        #
+        # `capture/visibility_rules.py:78` gives EVERY communication source
+        # `scope=PARTICIPANTS` with the real addresses on it, and `contracts/visibility.py`
+        # exists to answer "may this viewer see anything derived from this evidence". This
+        # query asked neither question: it lifted the verbatim sentence for anything reachable
+        # from the anchor and handed it to whoever the card was routed to.
+        #
+        # `deliver/audience.resolve_recipient` was written for exactly this and has NO
+        # production caller — its one caller is `outbox.shadow_resolve_v2`, which sends nothing
+        # and stubs the predicate to `lambda _seat: True` with the comment "Org-scope default
+        # until card rows carry the evidence ACL". This is the card row carrying it.
+        #
+        # A PRE-0067 ROW HAS NO SCOPE and reads as org-visible. That is deliberate: those events
+        # were captured before the column existed, the tenant has been seeing them all along,
+        # and retroactively hiding them would be a behaviour change dressed as a fix. New
+        # capture always writes a scope.
+        principals = tuple(str(x).strip().lower()
+                           for x in (getattr(r, "visibility_principals", None) or ())
+                           if str(x).strip())
         out.append({"kind": r.kind, "quote": quote[:300],
+                    "visibility_scope": (str(getattr(r, "visibility_scope", "") or "").strip()
+                                         .lower() or None),
+                    "visibility_principals": principals,
                     "name": str(ev.get("name") or "").strip() or None,
                     "author": author,
                     # Tri-state on purpose. False = we know we wrote it; None = the event that
@@ -371,6 +395,65 @@ def load_evidence_quotes(store, org_id: str, node_id: str, limit: int = 8,
                     "from_counterparty": (None if author is None else author not in mine),
                     "occurred_at": r.occurred_at.isoformat() if r.occurred_at else None})
     return out
+
+
+def _visible_quotes(quotes, seat_id, *, store, org_id: str) -> list[dict]:
+    """Only the quotes this card's recipient is allowed to have derived from.
+
+    THE LEAK THIS CLOSES. `capture/visibility_rules` marks every mail, chat, meeting and
+    calendar event `PARTICIPANTS` with the real addresses on it. `_QUOTES_SQL` lifted the
+    verbatim sentence with no filter, `enqueue_pending` wrote `seat = r.assignee`, and
+    `resolve_owner` rule 3 makes that `admins[0]` for every unowned card — which is currently
+    almost every card. So on a multi-seat tenant an admin who was never on the thread received,
+    in the card body, sentences quoted out of it.
+
+    ORG SCOPE STILL MEANS ORG. A source the tenant handed its own system deliberately — an
+    upload, a CRM row — is `ORG`, and every seat may see it. Only PARTICIPANTS narrows, and it
+    narrows to the addresses actually on the exchange.
+
+    AN UNROUTED CARD KEEPS ITS QUOTES. `seat_id` is None when the card is going to the admin
+    QUEUE rather than to a named person, and that queue is read by whoever runs the account.
+    Dropping every participants-scoped quote there would silently gut the admin view; the honest
+    boundary for a queue is the tenant, which `org_id` already enforces. What this stops is the
+    narrower and worse case: a card ADDRESSED to a named seat who was not a participant.
+
+    FAILS OPEN ON A LOOKUP ERROR, deliberately and narrowly: if the seat's address cannot be
+    read, the quotes are kept. A card that silently loses its evidence looks identical to a
+    situation with none, and this function must not be able to blank a card because a directory
+    query timed out. The tenant boundary is not what is failing open here — `org_id` is enforced
+    in the query itself.
+    """
+    rows = list(quotes or ())
+    if not rows or not seat_id:
+        return rows
+    try:
+        from sqlalchemy import text as _text
+
+        with store.engine.connect() as c:
+            email = c.execute(_text(
+                "select email from org_seats where org_id = :o and seat_id = :s"),
+                {"o": org_id, "s": seat_id}).scalar()
+    except Exception:      # noqa: BLE001 — see FAILS OPEN above
+        return rows
+    viewer = str(email or "").strip().lower() or None
+
+    kept: list[dict] = []
+    for quote in rows:
+        scope = quote.get("visibility_scope")
+        if scope != "participants":
+            kept.append(quote)                      # org, public, or pre-0067
+            continue
+        # NORMALISED AT THE COMPARISON, not only at the loader. `load_evidence_quotes` already
+        # lowercases and strips, and relying on that would make this check depend on every
+        # future producer of a quote dict remembering to. A comparison that fails silently
+        # because somebody upstream skipped a `.lower()` is a leak reopening with no test going
+        # red — and on this predicate the cost of being wrong is somebody reading a thread they
+        # were not on.
+        allowed = {str(x).strip().lower()
+                   for x in (quote.get("visibility_principals") or ()) if str(x).strip()}
+        if viewer and viewer in allowed:
+            kept.append(quote)
+    return kept
 
 
 def resolved_person_name(quotes: list[dict], fallback: str) -> str:
@@ -702,6 +785,11 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     # Attribution stays safe without the filter: `render._prompt` labels every quote with its
     # speaker and instructs the model never to present something the account holder wrote as
     # something the other side asked. The gate is what changes, not the honesty rule.
+    # WHOSE EVIDENCE THIS RECIPIENT MAY SEE. Filtered HERE and not in the query, because the
+    # quotes are read at `load_evidence_quotes` before `resolve_assignee` has run — the recipient
+    # is not known yet at the point the SQL executes, which is the structural reason this check
+    # never existed.
+    quotes = _visible_quotes(quotes, assignee, store=store, org_id=org_id)
     grounding = quotable(quotes)
     if not grounding and reason_code in _GROUNDED_BY_OUR_OWN_WORDS:
         grounding = [q for q in (quotes or ())
