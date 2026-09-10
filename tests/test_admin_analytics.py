@@ -281,16 +281,24 @@ def test_an_oversized_question_is_refused_before_any_spend():
     I._enforce_input_limits("What should I focus on this week?", {"deal": "acme"})   # allowed
 
 
-def test_every_plan_has_a_daily_call_ceiling_below_its_credit_pool():
+def test_every_plan_has_a_daily_credit_ceiling_below_its_credit_pool():
     """Credits are not a spend ceiling: a trial holds 10,000 of them, so a balance check alone
-    permitted 10,000 model calls. The daily ceiling has to be the tighter of the two."""
-    from genios_engine.api import intelligence_routes as I
-    from genios_engine.platform.billing import PLAN_CREDITS
+    permitted 10,000 model calls in an afternoon. The daily ceiling has to be the tighter of
+    the two.
 
-    assert I._DAILY_QUERIES["trial"] < PLAN_CREDITS["trial"]
-    for tier, limit in I._DAILY_QUERIES.items():
-        assert limit > 0, tier
-    assert I._DAILY_QUERIES_DEFAULT <= min(I._DAILY_QUERIES.values())
+    It is DERIVED from the plan now (`billing.daily_credit_ceiling`) rather than typed into
+    `intelligence_routes`, because the hand-written table said trial=200/day against a 15-day,
+    10,000-credit trial — a ceiling so tight that 7,000 granted credits were unreachable.
+    Both halves are asserted here: tighter than the pool, and loose enough to reach it."""
+    from genios_engine.platform.billing import PLANS, daily_credit_ceiling, plan_points
+
+    for tier, plan in PLANS.items():
+        ceiling = daily_credit_ceiling(tier)               # POINTS, like the allowance below
+        allowance = plan_points(tier)
+        assert ceiling > 0, tier
+        assert ceiling < allowance, f"{tier}: one day may not drain the whole period"
+        assert ceiling * plan.period_days >= allowance, (
+            f"{tier}: {ceiling * plan.period_days} reachable against {allowance} granted")
 
 
 def test_platform_wide_cap_is_configured_and_disableable(monkeypatch):

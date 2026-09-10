@@ -601,6 +601,23 @@ def _spent_today_minor(engine, org_id: str) -> int:
         return 0
 
 
+def _org_tier(engine, org_id: str) -> str | None:
+    """The org's plan tier, or None when it cannot be read. None falls to the trial row in
+    `plan_of`, which is the least generous ceiling — an unreadable plan must not buy a bigger
+    budget than a known one."""
+    try:
+        eng = engine if engine is not None else getattr(make_graph_store(), "engine", None)
+        if eng is None:
+            return None
+        from sqlalchemy import text as _text
+        with eng.connect() as c:
+            return c.execute(_text("select subscription_tier from orgs where id=:o"),
+                             {"o": org_id}).scalar()
+    except Exception:                      # noqa: BLE001 — never block ingestion on a DB blip
+        _log.warning("plan tier read failed for org=%s — using the trial ceiling", org_id)
+        return None
+
+
 def make_cost_governor(org_id: str, *, engine=None):
     """L1.4.8's cost governor for ONE org, or `None` when no ceiling is configured.
 
@@ -625,7 +642,15 @@ def make_cost_governor(org_id: str, *, engine=None):
     s = get_settings()
     cap_usd = float(getattr(s, "daily_llm_usd_cap", 0) or 0)
     if cap_usd <= 0:
-        return None
+        return None                       # documented global off-switch; a plan must not re-arm it
+    # THE PLAN ALSO BINDS. Ingestion spend is never charged to the customer in credits (the
+    # working rule puts user-facing credits on the intelligence surface only), so the ONLY thing
+    # standing between a trial account with a 200,000-message mailbox and an unbounded bill was
+    # this one global number — set at $25/day for a paying tenant and applied identically to a
+    # free 15-day trial, i.e. up to ~$375 of model spend to give the product away. The plan's own
+    # ceiling is taken as a MINIMUM with the global one, so tightening either tightens the org.
+    from genios_engine.platform.billing import plan_ingest_usd_cap
+    cap_usd = min(cap_usd, plan_ingest_usd_cap(_org_tier(engine, org_id)))
     from genios_engine.capture.semantic.batch import Budget, CostGovernor, Ledger
     daily_minor = int(cap_usd * _MINOR_PER_USD)
     t3_usd = float(getattr(s, "daily_t3_llm_usd_cap", 0) or 0)

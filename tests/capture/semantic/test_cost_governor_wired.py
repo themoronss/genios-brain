@@ -350,17 +350,28 @@ def test_a_decision_already_demoted_by_the_allowance_keeps_its_original_entitlem
 # ONE budget, not two — reconciliation with the deployed daily spend breaker
 # ═════════════════════════════════════════════════════════════════════════════════════════════
 
-def test_the_governors_ceiling_is_the_deployed_daily_usd_cap_in_cents():
+def test_the_governors_ceiling_is_the_deployed_cap_tightened_by_the_plan():
     """`docs/plans/L1_V2_BUILD.md` §6 row 7: the daily LLM spend circuit breaker must not
     regress. A governor with a ceiling of its own would answer a question the deployed check
     already answers, differently, and which answer applied would depend on which door the work
-    came through."""
+    came through.
+
+    It is still that number and no invented one — but the PLAN also binds now (`billing.PLANS`
+    `ingest_usd_day`). Ingestion spend is never charged to the customer in credits, so this
+    ceiling was the only thing between a free trial and an unbounded bill, and it applied the
+    paying tenant's $25/day to a 15-day trial. The effective ceiling is the tighter of the two,
+    so tightening either tightens the org. With no engine the tier cannot be read, and
+    `plan_of(None)` falls to the trial row — the least generous, by design."""
+    from genios_engine.platform.billing import plan_ingest_usd_cap
     from genios_engine.platform.config import get_settings
     from genios_engine.platform.wiring import make_cost_governor
 
     governor = make_cost_governor(ORG, engine=None)
     assert governor is not None
-    assert governor.budget.daily_minor == int(get_settings().daily_llm_usd_cap * 100)
+    expected = min(get_settings().daily_llm_usd_cap, plan_ingest_usd_cap(None))
+    assert governor.budget.daily_minor == int(expected * 100)
+    assert governor.budget.daily_minor < int(get_settings().daily_llm_usd_cap * 100), (
+        "an unreadable plan must not buy the full paying-tenant ceiling")
 
 
 def test_a_zero_cap_means_no_governor_because_that_is_what_it_means_in_routes(monkeypatch):
