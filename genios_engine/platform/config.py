@@ -125,7 +125,12 @@ class Settings(BaseSettings):
     l1_llm_gate: bool = True
     # OCR (Tesseract) fallback for scanned/image docs. Native text always works; OCR
     # needs the tesseract binary, so default off — turn on where the binary is present.
-    enable_ocr: bool = False
+    # Default ON since the deploy image gained both halves of the stack (apt: tesseract-ocr,
+    # tesseract-ocr-eng, poppler-utils; pip: pytesseract, Pillow, pdf2image). Flipping the
+    # default cannot break a host that lacks them: `make_ocr` asks `tesseract_available()`
+    # first and wires nothing when the answer is no, so "off" and "impossible" stay separate.
+    # Off by default is what left 767 of 776 attachments parked with readable pages.
+    enable_ocr: bool = True
     # Per-tenant OCR rollout (L1.3.4-U2 — "enable per-tenant, not globally"). Comma-separated
     # org ids. The allowlist turns OCR ON for an org while the fleet default stays off; the
     # denylist turns it OFF for an org while the fleet default is on, and wins over both.
