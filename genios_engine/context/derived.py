@@ -133,8 +133,16 @@ _UPSERT_FACT = (
     "provenance_refs) values "
     "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), :t, 'active', 100, 0.9, :now, :now, 'org', "
     "'deterministic_derived', :trace, 'graph-fact.v2', 'R100', cast(:provenance as jsonb)) "
+    # STATUS AND valid_to ARE RESET, and they were not. Every derived fact reuses a
+    # deterministic `fact_version_id`, so a re-write lands on the SAME row — and once
+    # `waiting.compute_waiting` began superseding the waiting facts when a counterparty replies,
+    # a conversation that went quiet a second time wrote its new day count into a row still
+    # marked `status='superseded'` with `valid_to` set. The value was correct and every reader
+    # filters on `status='active'`, so the fact was written and invisible: a live wait that no
+    # card could ever see. Retirement must be reversible by the same writer that performs it.
     "on conflict (fact_version_id) do update set value = excluded.value, "
-    "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from")
+    "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from, "
+    "status = 'active', valid_to = null")
 
 
 def _write_fact(c, org_id: str, node_id: str, field: str, value: str, value_type: str,

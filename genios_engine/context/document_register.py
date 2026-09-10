@@ -604,7 +604,24 @@ def _upsert(conn, *, org_id: str, corr: str, node_id: str, stype: str, domain: s
         "values (:sid, :o, :c, :n, :st, :d, 'active', :ov, :ev, :fr, 100, 100, :cov, "
         "  cast(:missing as jsonb), cast(:inputs as jsonb), :last, :last, :now) "
         "on conflict (org_id, correlation_id) do update set "
-        "  status = 'active', resolved_by = null, resolved_at = null, "
+        # A HUMAN CLOSE SURVIVES THE NEXT DRAIN, and it used to be destroyed by it.
+        #
+        # `POST /situations/{id}/resolve` sets `status='resolved'`, `resolved_by='human'`. This
+        # statement then ran within six hours (`config.py:107`) and reset all three columns, so
+        # `situations.decide_lifecycle`'s rule — "a human resolution sticks until new evidence" —
+        # could never see that a human had ever closed anything. The PROVENANCE was erased, not
+        # merely overridden, which is worse: nothing downstream could tell a re-derived row from
+        # one nobody had touched, and the user watched a card they had handled come straight back.
+        #
+        # The FACTS still refresh underneath it. Confidence, coverage, evidence and last_seen are
+        # this sweep's, because they are observations and observations do not care what somebody
+        # decided. Only the three columns that record the DECISION are preserved.
+        "  status = case when context_situations.resolved_by = 'human' "
+        "                then context_situations.status else 'active' end, "
+        "  resolved_by = case when context_situations.resolved_by = 'human' "
+        "                     then context_situations.resolved_by else null end, "
+        "  resolved_at = case when context_situations.resolved_by = 'human' "
+        "                     then context_situations.resolved_at else null end, "
         "  confidence_overall = excluded.confidence_overall, "
         "  confidence_evidence = excluded.confidence_evidence, "
         "  confidence_freshness = excluded.confidence_freshness, "

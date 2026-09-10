@@ -73,6 +73,31 @@ class Outcome(StrEnum):
 #: same way is the failure this whole vocabulary exists to make testable.
 INSTRUCTING: frozenset[Outcome] = frozenset({Outcome.EMIT_ACTION, Outcome.ESCALATE})
 
+#: Outcomes that justify INTERRUPTING a person, as opposed to waiting to be read.
+#:
+#: `INSTRUCTING` above is a different question — it asks whether the system is telling somebody
+#: what to do. `ASK_DECISION` is not instructing and it must still interrupt: a question only a
+#: person with authority can answer is not an abstention from advising, it IS the advice, and a
+#: question that waits in a queue is a question nobody answers.
+#:
+#: THE CASE THIS EXISTS FOR is the catalogue's DM-03, "no backup authority exists": *"Request one
+#: precise decision from the authorized manager."* Before this set, `deliver/pipeline` gated the
+#: push on `abstention.is_actionable`, which is False for `review` — so the one card whose entire
+#: purpose is to reach a named human never reached one.
+#:
+#: `EMIT_OBSERVATION` is deliberately absent, and that half is not a defect. An observation card
+#: says "here is something true, nobody needs to act" and 18 of one tenant's 24 surfaced cards
+#: were those, with 28 prescriptive ones queued behind them. Abstaining cards stay queued and are
+#: read when the user opens the app; the distinction is interruption, not visibility.
+INTERRUPTS: frozenset[Outcome] = frozenset({
+    Outcome.EMIT_ACTION, Outcome.ASK_DECISION, Outcome.ESCALATE})
+
+
+def interrupts(outcome: "Outcome | None") -> bool:
+    """May this outcome take somebody's attention now? Unknown never interrupts."""
+    return outcome in INTERRUPTS
+
+
 #: Outcomes that end the situation. Nothing further is expected for this instance.
 TERMINAL: frozenset[Outcome] = frozenset({Outcome.SUPPRESS, Outcome.CANCEL})
 

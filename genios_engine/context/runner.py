@@ -639,30 +639,47 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception("metric history prune failed for org=%s", org_id)
 
-    # Attention refresh — L2 is the SOLE writer of context_attention. Full-org refresh
-    # when anything changed (recency decays even for untouched nodes, and it is a few
-    # bulk queries, not per-node round-trips).
+    # Attention refresh — L2 is the SOLE writer of context_attention. Full-org refresh:
+    # recency decays even for untouched nodes, and it is a few bulk queries, not per-node
+    # round-trips.
+    #
+    # RUNS EVERY PASS, and it used to sit behind `if done or affected:` — which contradicted the
+    # sentence directly above it. Recency decaying for untouched nodes is precisely a CLOCK
+    # quantity, so gating the refresh on new mail arriving froze every attention band on the one
+    # kind of org whose quiet is the finding: nothing decayed, nothing re-ranked, and the bands a
+    # reader sees were whatever the last day with inbound mail left behind. Same argument, and
+    # the same fix, as the derived block above.
+    #
+    # THE HANDLER LOGS. It was a bare `except Exception: pass` — the only silent one in
+    # `process_pending` — so a refresh that failed every sweep for a month would have looked
+    # exactly like one that ran.
     attention_rows = 0
-    if done or affected:
-        try:
-            from genios_engine.context.attention import refresh_attention
-            attention_rows = refresh_attention(store, org_id, eval_time=sweep_at)
-        except Exception:      # noqa: BLE001 — attention is an ordering hint, never fatal
-            pass
+    try:
+        from genios_engine.context.attention import refresh_attention
+        attention_rows = refresh_attention(store, org_id, eval_time=sweep_at)
+    except Exception:      # noqa: BLE001 — attention is an ordering hint, never fatal
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("attention refresh failed for org=%s", org_id)
 
     # Situations are rebuilt AFTER attention, from correlations the drain just extended.
     # Every value is derived, so a failure here costs a refresh cycle, not data — the
     # next drain recomputes it. Never fatal: a situation view being briefly stale must
     # not stop events from landing.
+    #
+    # RUNS EVERY PASS, for the reason the derived block above already records and this one used
+    # to ignore. `decide_lifecycle` computes THREE clock-derived transitions —
+    # `confidence_freshness`, active→dormant at 45 days, resolved→archived at 180 — and dormancy
+    # is the ONLY mechanism that stops a stale situation compiling into a card. Gated on new
+    # mail, a six-month-dead situation on a quiet tenant stayed `active` and kept reaching Layer
+    # 3 forever, and a resolved one never left the working set. `detect_resolutions` below cannot
+    # cover the gap: it `continue`s on STATEMENT_NONE, which is every situation on a quiet org.
     situation_rows = 0
-    if done or affected:
-        try:
-            from genios_engine.context.situations import refresh_situations
-            situation_rows = refresh_situations(store, org_id, eval_time=sweep_at)
-        except Exception:      # noqa: BLE001 — derived view, rebuilt next drain
-            from genios_engine.platform.logging import get_logger
-            get_logger("genios.l2").exception(
-                "situation refresh failed for org=%s", org_id)
+    try:
+        from genios_engine.context.situations import refresh_situations
+        situation_rows = refresh_situations(store, org_id, eval_time=sweep_at)
+    except Exception:      # noqa: BLE001 — derived view, rebuilt next drain
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("situation refresh failed for org=%s", org_id)
 
     # L2.7.7-U1 · M-4 RESOLUTION DETECTION — the third way a situation can end.
     #

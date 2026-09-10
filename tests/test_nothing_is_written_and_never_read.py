@@ -60,6 +60,10 @@ MUST_BE_CONSUMED: dict[str, str] = {
     "waiting": "context/runner.py, via compute_waiting",
     # Contracts that only mean something when a producer or consumer names them.
     "abstention": "deliver/pipeline.py and card_builder.py",
+    # Added the moment it gained a consumer, and it was DEAD when this roster was written:
+    # eleven outcomes, forty-two tests, zero importers. `deliver/pipeline` now folds the push
+    # decision through `project`/`interrupts`, which is what gave ASK_DECISION a route.
+    "outcomes": "deliver/pipeline.py, via project() and interrupts()",
 }
 
 #: Retired entries, kept so a reader can see the module was considered and why it left. A module

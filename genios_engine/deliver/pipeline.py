@@ -16,11 +16,11 @@ from genios_engine.reason.authority import (
 )
 
 from genios_engine.contracts.abstention import downgrade_to_observation, is_actionable
+from genios_engine.contracts.outcomes import interrupts, project
 from genios_engine.deliver.render import state_not_command
 from .card_builder import BUILDER_VERSION, build_draft, load_evidence_quotes
 from .render import render_copy
 from .router import budget_full
-from genios_engine.contracts.abstention import is_actionable
 
 from .store import CardStore
 
@@ -414,8 +414,28 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             # 3. The band and budget checks, unchanged.
             reason_code = str(sig.get("reason_code") or "")
             floods = surfaced_by_reason.get(reason_code, 0) >= _MAX_SURFACED_PER_REASON
-            if not is_actionable(draft.get("level")):
+            # THE CANONICAL OUTCOME, folded here because here is where every input to it exists.
+            #
+            # `contracts/outcomes` was written to be "the one place that names what happened",
+            # and nothing in genios_engine/ imported it — eleven outcomes, forty-two tests, zero
+            # consumers. This is the seam that makes it true, and it changes one behaviour:
+            #
+            # ASK_DECISION NOW INTERRUPTS. The gate used to be `is_actionable(level)`, which is
+            # False for `review`, so a card whose whole purpose is to put one precise question in
+            # front of the person who can answer it waited in the queue exactly as long as a card
+            # saying nothing needed doing. That is the catalogue's DM-03 ("no backup authority
+            # exists — request one precise decision from the authorized manager") having no route
+            # at all.
+            #
+            # AND ONLY WHEN IT IS ADDRESSED. `draft["assignee"]` is required below for every push,
+            # so a review card with nobody to ask still waits — a question addressed to no one is
+            # not a decision request, it is the "a human must look" abstention the flood guard
+            # above exists to keep out of the surface.
+            outcome = project("abstention.Level", str(draft.get("level") or ""))
+            if not interrupts(outcome):
                 out["not_pushed_abstained"] += 1
+                out[f"outcome_{outcome.value if outcome else 'unmapped'}"] = \
+                    out.get(f"outcome_{outcome.value if outcome else 'unmapped'}", 0) + 1
             elif floods:
                 out["not_pushed_reason_saturated"] += 1
             elif (band(int(sig["score"]), bands_cfg) in ("high", "critical")
@@ -424,6 +444,11 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                         card_id, org_id, "surfaced", "card.surfaced", cause="push",
                         allowed_from=("queued",))):
                 out["pushed"] += 1
+                # Counted under its canonical name as well as the mechanical one, so an operator
+                # asking "how many decision requests did we surface" has an answer that is not
+                # inferred from a reason-code string.
+                key = f"outcome_{outcome.value}"
+                out[key] = out.get(key, 0) + 1
                 surfaced_by_reason[reason_code] = surfaced_by_reason.get(reason_code, 0) + 1
         finally:
             card_store.release_build(org_id, sig["signal_id"], claim_token)

@@ -120,6 +120,31 @@ def _reply_gaps(timeline: list[tuple[str, datetime]]) -> list[float]:
     return gaps
 
 
+#: THE FACTS THAT STOP BEING TRUE THE MOMENT THEY REPLY, and until now nothing ever said so.
+#:
+#: `_state` writes `thread.days_waiting` ONLY while the last message in the exchange is ours.
+#: When a reply lands it simply stops being written — and a fact that stops being written is not
+#: a fact that ended. The row stayed `status='active'`, `valid_to is null`, holding whatever
+#: number the last waiting sweep computed, so `read_awaiting_response` kept minting
+#: `awaiting_response` for an answered conversation at a FROZEN day count. Its own docstring
+#: claims the opposite — "it closes itself the moment they do" — and `_reconcile` could never
+#: fire, because the finding never stopped being produced.
+#:
+#: Superseded rather than deleted: the row is how a point-in-time read knows what we believed
+#: last week, and `valid_to` is what makes that legible.
+_RETIRE_WAITING = (
+    "update graph_facts set status='superseded', valid_to=:now "
+    "where org_id=:o and subject_node_id=:n and field in :fields "
+    "  and status='active' and valid_to is null"
+)
+
+#: Written only while waiting, so retired together the moment waiting ends. `thread.last_heard_days`
+#: and `party.reply_cadence_days` are NOT here: they stay true after a reply and are rewritten
+#: every sweep from the same timeline.
+WAITING_ONLY_FIELDS: tuple[str, ...] = (
+    "thread.days_waiting", "thread.follow_up_count", "thread.response_expected")
+
+
 def _state(timeline: list[tuple[str, datetime]], now: datetime) -> dict:
     """One counterparty's waiting state from their directed message timeline."""
     outs = [at for direction, at in timeline if direction == "out"]
@@ -164,13 +189,38 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
             direction = _DIRECTION_FIELD.get(str(field))
             if direction is None or at is None:
                 continue
+            # A DRIVER MAY HAND BACK A STRING. Postgres returns a datetime; SQLite does not, and
+            # this module could therefore only be exercised against production — the failure
+            # `situation_bso._L1_BY_EVENT_SELECT` and `correlation_conversation` both record
+            # ("a query whose correctness can only be demonstrated against production is a query
+            # nobody can hold to account"). Coerced here, exactly as `_rows_to_campaigns` does.
+            if isinstance(at, str):
+                try:
+                    at = datetime.fromisoformat(at.replace("Z", "+00:00"))
+                except ValueError:
+                    continue
             moment = at if at.tzinfo else at.replace(tzinfo=timezone.utc)
             per_node.setdefault(str(node_id), []).append((direction, moment))
 
         written = 0
         for node_id, timeline in per_node.items():
             state = _state(timeline, now)
-            if "thread.days_waiting" in state:
+            if "thread.days_waiting" not in state:
+                # THEY ANSWERED, or we never wrote to them. Either way the waiting facts are no
+                # longer true and must be retired rather than left standing — see
+                # `_RETIRE_WAITING`. Runs for every non-waiting node on every sweep and is a
+                # no-op after the first, because the second pass finds nothing active to close.
+                #
+                # IT DOES NOT `continue`. The first cut did, and that was wrong in the direction
+                # that matters: `thread.last_heard_days` is MORE true once they answer, and
+                # skipping the write loop deleted the very evidence that the wait had ended.
+                # Retire what stopped being true, then write what still is.
+                result = c.execute(
+                    text(_RETIRE_WAITING).bindparams(bindparam("fields", expanding=True)),
+                    {"o": org_id, "n": node_id, "now": now,
+                     "fields": list(WAITING_ONLY_FIELDS)})
+                written += int(result.rowcount or 0)
+            else:
                 # Written ONLY while waiting, and written as False rather than omitted when we
                 # never asked: "we are waiting and put no question to them" is a real and
                 # different situation from "we are waiting on an answer", and the two need
@@ -186,4 +236,4 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
     return written
 
 
-__all__ = ["compute_waiting"]
+__all__ = ["WAITING_ONLY_FIELDS", "compute_waiting"]
