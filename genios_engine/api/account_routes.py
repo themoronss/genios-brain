@@ -310,7 +310,8 @@ def cancel_invite(org_id: str, invite_id: str, org: str = Depends(_org)) -> dict
 # Full account deletion is guaranteed separately by org FKs in migration 0033.
 _ORG_SCOPED_TABLES = [
     "delivery_outbox", "agent_claims", "card_build_claims", "card_feedback_revisions",
-    "card_feedback_verdicts", "card_events", "cards", "signals",
+    # migration 0132: who else a card reached by declared responsibility — named staff
+    "card_feedback_verdicts", "card_events", "card_recipients", "cards", "signals",
     # Layer 4 deletion order is load-bearing: signals reference runs; runs reference context +
     # config; context references capability. Payloads are explicit as defense in depth even though
     # the context FK also cascades them.

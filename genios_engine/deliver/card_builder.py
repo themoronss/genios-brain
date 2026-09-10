@@ -8,7 +8,7 @@ from sqlalchemy import text
 from genios_engine.contracts.abstention import Level as _ABSTENTION
 from genios_engine.contracts.abstention import VALID_LEVELS as _ABSTENTION_LEVELS
 from .bands import band
-from .router import resolve_assignee
+from .router import resolve_assignment
 from .slots import _fval, compute_slots
 
 # E0 · Card Builder (§5.10). Compose the card.v1 draft deterministically from a signal + play +
@@ -204,6 +204,37 @@ def _require_level(signal: dict) -> str:
             f"signal {signal.get('signal_id')!r} carries level {level!r}; expected one of "
             f"{sorted(VALID_LEVELS)}. A card must not infer its own authority.")
     return level
+
+
+def _group_memberships(store, org_id: str, node_id: str) -> dict[str, str]:
+    """THE FIRM A PERSON BELONGS TO IS A SLICE OF THE BUSINESS TOO.
+
+    A responsibility is declared over `client = Peak XV`; the situation anchors on the partner,
+    and the fund is one `works_at` edge away — on the anchor's facts it is nowhere. Each
+    declared grouping (`context/groupings/*.yaml`, the same files the organisation reading
+    uses) contributes `{edge_type: group display name}`, which `scope_pairs` reads like any
+    attribute. Fails to `{}`: a graph that cannot be read leaves routing exactly as it was.
+    """
+    try:
+        from genios_engine.context.correlation_organization import load_groupings
+        edge_types = sorted({g.edge_type for g in load_groupings()})
+        if not edge_types:
+            return {}
+        with store.engine.connect() as c:
+            rows = c.execute(text(
+                "select e.edge_type, g.display_name from graph_edges e "
+                "join graph_nodes g on g.org_id=e.org_id and g.node_id=e.to_node_id "
+                "and g.valid_to is null "
+                "where e.org_id=:o and e.from_node_id=:n and e.valid_to is null "
+                "and e.edge_type = any(:types) order by e.edge_type, g.display_name"),
+                {"o": org_id, "n": node_id, "types": edge_types}).all()
+    except Exception:      # noqa: BLE001 — see the docstring
+        return {}
+    out: dict[str, str] = {}
+    for r in rows:
+        if r.display_name and r.edge_type not in out:
+            out[str(r.edge_type)] = str(r.display_name)
+    return out
 
 
 def load_node(store, org_id: str, node_id: str) -> tuple[str, str, dict, dict]:
@@ -657,7 +688,14 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
 
     scoring = effective.get("scoring", {})
     urgency_band = band(int(signal["score"]), scoring.get("bands"))
-    assignee, rule = resolve_assignee(store, org_id, facts, attrs)
+    assignment = resolve_assignment(
+        store, org_id, facts, {**(attrs or {}), **_group_memberships(store, org_id, node_id)})
+    assignee, rule = assignment.recipient, assignment.reason_code
+    # ONE CARD, EVERYONE WHO ANSWERS FOR IT. The row stays keyed on the signal; these ride
+    # beside it in `card_recipients` and each is told which slice made it theirs.
+    co_recipients = [{"seat_id": r.seat_id, "accountability": r.accountability,
+                      "scope_kind": r.scope_kind, "scope_key": r.scope_key,
+                      "source": r.source} for r in assignment.co_recipients]
     # The rule's own declared clock, not a hand-written lookup. Each pack rule states the field
     # its urgency is timed from; the renderer used a 6-entry map and printed "severald" for the
     # other 19.
@@ -827,6 +865,7 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         # broke — the user cannot tell "we do not know enough" from "something failed".
         "abstained_because": abstained,
         "urgency_band": urgency_band, "assignee": assignee, "resolved_rule": rule,
+        "co_recipients": co_recipients,
         "score": int(signal["score"]),
         "score_block": {"S": int(signal["score"]), **{k: score_inputs.get(k) for k in
                         ("U", "I", "R", "C")}, "inputs": score_inputs},

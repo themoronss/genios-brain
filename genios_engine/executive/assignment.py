@@ -33,6 +33,8 @@ from datetime import datetime, timezone
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
+from collections.abc import Iterable  # noqa: E402 — the protocol names it
+
 from genios_engine.contracts.execution import AudienceClass
 
 ASSIGNMENT_VERSION = "assign.v1"
@@ -50,6 +52,84 @@ OWNER_FIELDS: tuple[str, ...] = ("deal.owner", "relationship.owner")
 #: lookup, and a tenant whose pipeline predates the change has no `commitment.owner` on rows
 #: already in the graph. Neither is invented — both are read, and absent stays absent.
 ACTOR_FIELDS: tuple[str, ...] = ("commitment.owner", "commitment.actor")
+
+#: THE WORDS A BUSINESS USES FOR ITS SLICES, bridged to the fact paths that carry them.
+#:
+#: A tenant declares `client = Peak XV` in `seat_responsibilities`; the situation carries
+#: `organization.name = Peak XV`, or the person on it `works_at` a company node by that name.
+#: These are the shipped bridges between the two — a DEFAULT and not the vocabulary. A corpus
+#: `domain.yaml` adds its own under `responsibility_scopes:` (`ward: [patient.ward]`), and a
+#: tenant may always declare in the raw fact path (`scope_kind = 'organization.name'`), which
+#: needs no bridge at all. Nothing here can make a responsibility match that was not declared.
+_COUNTERPARTY_PATHS: tuple[str, ...] = (
+    "organization.name", "company.name", "deal.company", "outreach.counterparty",
+    "commitment.owed_to", "relationship.counterparty", "campaign.organization",
+    # the grouping edge a person hangs off — see `deliver/card_builder._group_memberships`
+    "works_at",
+)
+SCOPE_ALIASES: dict[str, tuple[str, ...]] = {
+    "client": _COUNTERPARTY_PATHS, "customer": _COUNTERPARTY_PATHS,
+    "account": _COUNTERPARTY_PATHS, "counterparty": _COUNTERPARTY_PATHS,
+    "organization": _COUNTERPARTY_PATHS, "organisation": _COUNTERPARTY_PATHS,
+    "company": _COUNTERPARTY_PATHS, "firm": _COUNTERPARTY_PATHS,
+    "deal": ("deal.id", "deal.name"),
+    "domain": ("company.domain", "deal.company_domain"),
+}
+#: The longest value that can still be a NAME. A quoted sentence is a fact too, and matching a
+#: responsibility against it would be matching a territory against prose.
+_SCOPE_VALUE_MAX = 120
+
+
+def scope_aliases() -> dict[str, tuple[str, ...]]:
+    """The shipped bridges plus whatever the authored corpora declare under
+    `responsibility_scopes:`. An authored word ADDS paths to a shipped one and removes none;
+    a corpus that will not read leaves the shipped words exactly as they are."""
+    merged = {k: tuple(v) for k, v in SCOPE_ALIASES.items()}
+    try:
+        from genios_engine.platform.corpus import authored_domains
+        for _domain_id, data in authored_domains():
+            declared = data.get("responsibility_scopes")
+            if not isinstance(declared, Mapping):
+                continue
+            for word, paths in declared.items():
+                if isinstance(paths, str):
+                    paths = [paths]
+                if not isinstance(paths, (list, tuple)):
+                    continue
+                key = str(word).strip().lower()
+                extra = tuple(str(p).strip() for p in paths if str(p).strip())
+                if key and extra:
+                    merged[key] = tuple(dict.fromkeys(merged.get(key, ()) + extra))
+    except Exception:      # noqa: BLE001 — see the docstring
+        pass
+    return merged
+
+
+def scope_pairs(facts: Mapping[str, Any] | None, attrs: Mapping[str, Any] | None, *,
+                aliases: Mapping[str, tuple[str, ...]] | None = None
+                ) -> tuple[tuple[str, str], ...]:
+    """Every `(scope_kind, scope_key)` this situation could be answered for.
+
+    The raw path is always a kind — `('organization.name', 'peak xv')` — so a tenant who
+    declares in the engine's own words needs no bridge; each alias word whose paths the
+    situation carries is a second kind for the same value. Lower-cased on both sides, as the
+    directory compares them, and sorted so two builds of one card ask one question.
+    """
+    values: dict[str, str] = {}
+    for path, entry in (facts or {}).items():
+        v = entry.get("value") if isinstance(entry, Mapping) else entry
+        if isinstance(v, str) and 0 < len(v.strip()) <= _SCOPE_VALUE_MAX:
+            values[str(path)] = v.strip().lower()
+    for key, v in (attrs or {}).items():
+        if isinstance(v, str) and 0 < len(v.strip()) <= _SCOPE_VALUE_MAX:
+            values.setdefault(str(key), v.strip().lower())
+    pairs = {(path.lower(), v) for path, v in values.items()}
+    for word, paths in (aliases if aliases is not None else scope_aliases()).items():
+        for path in paths:
+            v = values.get(path)
+            if v:
+                pairs.add((word, v))
+    return tuple(sorted(pairs))
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,6 +157,11 @@ class Assignment:
     #: the escalation ladder stays silent. Tracked but never nudged — still true, and now also
     #: visible.
     queue_seat: str | None = None
+    #: WHO ELSE ANSWERS FOR THIS, by declaration. One card is built for a situation — the row is
+    #: keyed on the signal and every reader assumes so — and the seats that declared a
+    #: responsibility over what it is about are told alongside the owner, each with the slice
+    #: that makes it theirs. Empty when the tenant declared nothing, which is day one.
+    co_recipients: tuple["Responsibility", ...] = ()
 
     @property
     def routed(self) -> bool:
@@ -185,6 +270,15 @@ class SeatDirectory(Protocol):
         the one that lets a card about the West find its regional manager rather than the
         first admin."""
 
+    def answerable_for(self, pairs: "Iterable[tuple[str, str]]",
+                       at: datetime | None = None) -> tuple["Responsibility", ...]:
+        """Every responsibility in force over ANY of these `(scope_kind, scope_key)` pairs.
+
+        The batch form of `seats_for_scope`, because a situation names its slices in several
+        vocabularies at once (`scope_pairs`) and one question per pair is one round-trip per
+        pair. Empty when nothing matches — which, on a tenant that declared nothing, is always.
+        """
+
     def admins(self) -> tuple[str, ...]:
         """Active admin seats, in a stable order.  The escalation floor."""
 
@@ -229,6 +323,18 @@ class StaticSeatDirectory:
             and (r.scope_kind.strip().lower(), r.scope_key.strip().lower()) == wanted
             and r.applies_at(moment)))
 
+    def answerable_for(self, pairs, at: datetime | None = None) -> tuple[Responsibility, ...]:
+        moment = at or datetime.now(timezone.utc)
+        wanted = {(str(k).strip().lower(), str(v).strip().lower()) for k, v in pairs}
+        return tuple(sorted(
+            (r for seat_id, row in self.seats.items()
+             if row.get("active", True)
+             for r in (row.get("responsibilities") or ())
+             if isinstance(r, Responsibility)
+             and (r.scope_kind.strip().lower(), r.scope_key.strip().lower()) in wanted
+             and r.applies_at(moment)),
+            key=lambda r: (r.seat_id, r.scope_kind, r.scope_key)))
+
     def seat_for_node(self, node_id: str | None) -> str | None:
         """The in-memory twin resolves through a `node_id` key on the seat row — the tests own
         their own graph, so there is nothing to join against."""
@@ -271,6 +377,41 @@ def _fact_value(facts: Mapping[str, Any] | None, field: str) -> Any:
     return entry
 
 
+#: Tighter first. A seat that both `owns` and is `informed` on one card is told it owns it.
+_ACCOUNTABILITY_RANK = {"owns": 0, "covers": 1, "reviews": 2, "informed": 3}
+
+
+def _answering(directory: SeatDirectory, facts, attrs) -> tuple[Responsibility, ...]:
+    """Who declared a responsibility over what this situation is about. `()` on a directory
+    that predates the question, on a situation that names no slice, and on any read error —
+    the three shapes of "the tenant said nothing", all of which must leave routing as it was."""
+    read = getattr(directory, "answerable_for", None)
+    if read is None:
+        return ()
+    pairs = scope_pairs(facts, attrs)
+    if not pairs:
+        return ()
+    try:
+        return tuple(read(pairs))
+    except Exception:      # noqa: BLE001 — a foreign directory that raises has said nothing
+        return ()
+
+
+def _others(answering: tuple[Responsibility, ...], seat: str | None
+            ) -> tuple[Responsibility, ...]:
+    """Everyone answering EXCEPT the recipient, one entry per seat, tightest accountability
+    kept, in seat order. The owner is never their own co-recipient."""
+    best: dict[str, Responsibility] = {}
+    for r in answering:
+        if r.seat_id == seat:
+            continue
+        held = best.get(r.seat_id)
+        if held is None or (_ACCOUNTABILITY_RANK.get(r.accountability, 9)
+                            < _ACCOUNTABILITY_RANK.get(held.accountability, 9)):
+            best[r.seat_id] = r
+    return tuple(best[s] for s in sorted(best))
+
+
 def resolve_owner(*, facts: Mapping[str, Any] | None, attrs: Mapping[str, Any] | None,
                   directory: SeatDirectory) -> Assignment:
     """The three ordered rules, and nothing else.
@@ -279,13 +420,19 @@ def resolve_owner(*, facts: Mapping[str, Any] | None, attrs: Mapping[str, Any] |
     busy".  Those would make the same commitment land on different people on different days,
     and an owner who cannot predict what reaches them stops trusting the queue entirely.
     """
+    # Who DECLARED they answer for what this is about — read once, attached to whichever rule
+    # wins. A declaration widens who is told; it changes who OWNS only at rule 2b, below the
+    # entity's own owner and the person who made the promise.
+    answering = _answering(directory, facts, attrs)
     for field in OWNER_FIELDS:
         seat = directory.active_seat(_fact_value(facts, field))
         if seat:
-            return Assignment(seat, AudienceClass.OWNER, "rule1_owner")
+            return Assignment(seat, AudienceClass.OWNER, "rule1_owner",
+                              co_recipients=_others(answering, seat))
     seat = directory.active_seat((attrs or {}).get("owner"))
     if seat:
-        return Assignment(seat, AudienceClass.OWNER, "rule1_owner")
+        return Assignment(seat, AudienceClass.OWNER, "rule1_owner",
+                          co_recipients=_others(answering, seat))
 
     # An owner recorded but off-seat (left the company, never onboarded) deliberately falls
     # through rather than being force-matched: pushing to a dead seat looks identical to
@@ -293,7 +440,22 @@ def resolve_owner(*, facts: Mapping[str, Any] | None, attrs: Mapping[str, Any] |
     for field in ACTOR_FIELDS:
         seat = directory.active_seat(_fact_value(facts, field))
         if seat:
-            return Assignment(seat, AudienceClass.OWNER, "rule2_actor")
+            return Assignment(seat, AudienceClass.OWNER, "rule2_actor",
+                              co_recipients=_others(answering, seat))
+
+    # Rule 2b — the seat that DECLARED it answers for this slice of the business. The regional
+    # manager for a card about the West, the account lead for a card about Acme. Only a
+    # responsibility that may NARROW (declared or discovered) can take a card off the admin's
+    # queue: an inferred one — "she probably handles the West's mail" — may be told, and may
+    # never be the reason the admin stops seeing it. Several declared owners resolve to the
+    # first by seat id, deterministically, and the rest are told alongside; a load-balanced
+    # choice would land the same situation on different people on different days.
+    declared = sorted({r.seat_id for r in answering
+                       if r.accountability == "owns" and r.narrows})
+    if declared:
+        seat = declared[0]
+        return Assignment(seat, AudienceClass.OWNER, "rule2b_responsibility",
+                          co_recipients=_others(answering, seat))
 
     # Rule 3 — the org's own admin. Every input above is structurally absent in production:
     # `deal.owner`/`relationship.owner` have no write_fact producer anywhere, `commitment.actor`
@@ -310,7 +472,8 @@ def resolve_owner(*, facts: Mapping[str, Any] | None, attrs: Mapping[str, Any] |
     admins = directory.admins()
     return Assignment(None, AudienceClass.ADMIN_QUEUE,
                       "rule3_unrouted" if not admins else "rule3_admin_queue",
-                      queue_seat=admins[0] if admins else None)
+                      queue_seat=admins[0] if admins else None,
+                      co_recipients=_others(answering, admins[0] if admins else None))
 
 
 def resolve_approver_seat(answer, *, directory: SeatDirectory) -> str | None:
@@ -433,6 +596,34 @@ class PgSeatDirectory:
         except Exception:      # noqa: BLE001 — same rule
             return ()
         return tuple(r.seat_id for r in rows)
+
+    def answerable_for(self, pairs, at: datetime | None = None) -> tuple[Responsibility, ...]:
+        """One query for every pair. Fails closed to `()` like its siblings: an unreadable table
+        is "declared nothing", never a narrower answer."""
+        from sqlalchemy import text
+        wanted = sorted({(str(k).strip().lower(), str(v).strip().lower()) for k, v in pairs
+                         if str(k).strip() and str(v).strip()})
+        if not wanted:
+            return ()
+        moment = at or datetime.now(timezone.utc)
+        clauses, params = [], {"o": self.org_id, "at": moment}
+        for i, (kind, key) in enumerate(wanted):
+            clauses.append(f"(lower(r.scope_kind)=:k{i} and lower(r.scope_key)=:v{i})")
+            params[f"k{i}"], params[f"v{i}"] = kind, key
+        try:
+            rows = self.conn.execute(text(
+                "select r.seat_id, r.scope_kind, r.scope_key, r.accountability, r.source, "
+                "r.valid_from, r.valid_until from seat_responsibilities r "
+                "join org_seats s on s.org_id=r.org_id and s.seat_id=r.seat_id and s.active "
+                "where r.org_id=:o and (" + " or ".join(clauses) + ") " + self._WINDOW +
+                "order by r.seat_id, r.scope_kind, r.scope_key, r.valid_from"),
+                params).mappings().all()
+        except Exception:      # noqa: BLE001 — same rule
+            return ()
+        return tuple(Responsibility(
+            seat_id=r["seat_id"], scope_kind=r["scope_kind"], scope_key=r["scope_key"],
+            accountability=r["accountability"], source=r["source"],
+            valid_from=r["valid_from"], valid_until=r["valid_until"]) for r in rows)
 
     def seat_for_node(self, node_id: str | None) -> str | None:
         """Node -> its canonical address -> an active seat. ONE statement.

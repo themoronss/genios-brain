@@ -227,6 +227,8 @@ class CardStore:
                     "select card_id from cards where signal_id=:s and org_id=:o"),
                     {"s": card["signal_id"], "o": card["org_id"]}).first()
                 return (winner.card_id if winner is not None else None), False, False
+            self._stamp_recipients(c, card["org_id"], inserted.card_id,
+                                   card.get("co_recipients") or (), owner=card.get("assignee"))
             detail = {"band": card["urgency_band"], "render_mode": copy["render_mode"],
                       "reject_code": copy.get("reject_code"),
                       # the offending token was computed and discarded; a 90% fallback rate is
@@ -396,7 +398,9 @@ class CardStore:
             # `k.assignee is null` matched nothing because L5 routes every card to a seat. The
             # desktop app read an empty queue for as long as it has existed. A caller with no
             # person to filter by must not be filtered to a person.
-            q += " and (k.assignee=:a or k.assignee is null)"
+            q += (" and (k.assignee=:a or k.assignee is null or exists ("
+                  "select 1 from card_recipients cr where cr.org_id=k.org_id "
+                  "and cr.card_id=k.card_id and cr.seat_id=:a))")
             params["a"] = assignee
         q += (" order by selected_rc.final_utility_bp desc, k.created_at asc, k.card_id "
               "for share of k,s,rr,ro,selected_rc,rcap,authority_ctx,authority_cfg,authority_pack")
@@ -421,8 +425,36 @@ class CardStore:
             # utility order the SQL already produced. No score moves, nothing is removed, and two
             # viewers still see identical facts. See migration 0130 for why it must be a
             # partition and not a term.
+            rows = self._your_part(c, org_id, assignee, rows)
             rows = self._objective_order(c, org_id, assignee, rows)
             return rows
+
+    @staticmethod
+    def _your_part(conn, org_id: str, assignee: str | None, rows: list[dict]) -> list[dict]:
+        """WHY THIS CARD IS ON THIS VIEWER'S QUEUE, when it is not theirs by ownership. A card a
+        seat reaches through a declared responsibility carries `your_part` — the slice, the
+        accountability, and who owns it — so "does this concern me" and "what stays with
+        someone else" are answered on the row. Owned cards and unnamed viewers get nothing
+        stamped. Fails to no stamps: an unreadable table hides no card and invents no reason."""
+        if not assignee or not rows:
+            return rows
+        try:
+            from sqlalchemy import bindparam
+            found = conn.execute(text(
+                "select card_id, accountability, scope_kind, scope_key, owner_seat "
+                "from card_recipients where org_id=:o and seat_id=:a and card_id in :ids"
+            ).bindparams(bindparam("ids", expanding=True)),
+                {"o": org_id, "a": assignee, "ids": [r["card_id"] for r in rows]}).mappings().all()
+        except Exception:      # noqa: BLE001 — see the docstring
+            return rows
+        parts = {f["card_id"]: {"accountability": f["accountability"],
+                                "scope_kind": f["scope_kind"], "scope_key": f["scope_key"],
+                                "owner_seat": f["owner_seat"]} for f in found}
+        for r in rows:
+            part = parts.get(r["card_id"])
+            if part is not None and r.get("assignee") != assignee:
+                r["your_part"] = part
+        return rows
 
     @staticmethod
     def _objective_order(conn, org_id: str, assignee: str | None, rows: list[dict]) -> list[dict]:
@@ -450,3 +482,31 @@ class CardStore:
         first = [r for r in rows if str(r.get("domain") or "").strip().lower() == wanted]
         rest = [r for r in rows if str(r.get("domain") or "").strip().lower() != wanted]
         return first + rest
+
+    @staticmethod
+    def _stamp_recipients(conn, org_id: str, card_id: str, recipients, *, owner: str | None) -> int:
+        """WHO ELSE ANSWERS FOR THIS CARD, rewritten with the card.
+
+        A refresh recomputes them — a responsibility declared since the card was built reaches
+        it on the next rebuild — so the previous set is replaced, not merged. The owner is never
+        written as their own co-recipient. Empty in, empty table: a tenant that declared nothing
+        gets exactly the rows it had, which is none.
+        """
+        conn.execute(text("delete from card_recipients where org_id=:o and card_id=:c"),
+                     {"o": org_id, "c": card_id})
+        written = 0
+        for r in recipients or ():
+            seat = str((r or {}).get("seat_id") or "").strip()
+            if not seat or seat == owner:
+                continue
+            res = conn.execute(text(
+                "insert into card_recipients (org_id, card_id, seat_id, accountability, "
+                "scope_kind, scope_key, source, owner_seat) "
+                "values (:o,:c,:s,:acc,:kind,:key,:src,:own) "
+                "on conflict (org_id, card_id, seat_id) do nothing"),
+                {"o": org_id, "c": card_id, "s": seat,
+                 "acc": str(r.get("accountability") or "informed"),
+                 "kind": str(r.get("scope_kind") or ""), "key": str(r.get("scope_key") or ""),
+                 "src": str(r.get("source") or "admin_declared"), "own": owner})
+            written += int(res.rowcount or 0)
+        return written

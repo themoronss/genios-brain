@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import text
 
-from genios_engine.executive.assignment import PgSeatDirectory, resolve_owner
+from genios_engine.executive.assignment import Assignment, PgSeatDirectory, resolve_owner
 
 # E3 · Delivery Router (§5.13) — now a THIN DELEGATION.
 #
@@ -37,10 +37,17 @@ def resolve_assignee(store, org_id: str, node_facts: dict,
     Kept as a function rather than replaced at every call site so the Layer 6 pipeline reads the
     same as it did before. The tuple shape is what card_builder and the tests already expect.
     """
-    with store.engine.connect() as c:
-        assignment = resolve_owner(facts=node_facts, attrs=node_attrs,
-                                   directory=PgSeatDirectory(conn=c, org_id=org_id))
+    assignment = resolve_assignment(store, org_id, node_facts, node_attrs)
     return assignment.recipient, assignment.reason_code
+
+
+def resolve_assignment(store, org_id: str, node_facts: dict, node_attrs: dict) -> Assignment:
+    """The whole answer — recipient, rule, and everyone else who declared they answer for
+    this. `resolve_assignee` keeps the two-tuple every older caller expects; the card builder
+    needs the co-recipients too, and the seat directory is opened once for both."""
+    with store.engine.connect() as c:
+        return resolve_owner(facts=node_facts, attrs=node_attrs,
+                             directory=PgSeatDirectory(conn=c, org_id=org_id))
 
 
 def budget_full(store, org_id: str, assignee: str | None, eval_time, budget_per_day: int) -> bool:

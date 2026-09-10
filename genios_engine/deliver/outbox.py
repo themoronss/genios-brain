@@ -353,6 +353,23 @@ PUSHABLE_CARDS_SQL = (
 # terminated each on sight. A default is the wrong shape for this argument: there is no channel
 # that is right when the caller has not looked, so the type system should make not-looking
 # impossible. Callers resolve it with `deliverable_channels` first.
+def _co_recipients(conn, org_id: str, card_id: str, *, owner: str | None) -> tuple[dict, ...]:
+    """The seats a card reaches by declared responsibility, with the owner named for each so
+    the message can say what stays with someone else. `()` on a tenant that declared nothing
+    and on any read error — the owner's own delivery never waits on this table."""
+    try:
+        rows = conn.execute(text(
+            "select cr.seat_id, cr.accountability, cr.scope_kind, cr.scope_key, "
+            "cr.owner_seat, s.email as owner_email from card_recipients cr "
+            "left join org_seats s on s.org_id=cr.org_id and s.seat_id=cr.owner_seat "
+            "where cr.org_id=:o and cr.card_id=:c and cr.seat_id <> coalesce(:own, '') "
+            "order by cr.seat_id"),
+            {"o": org_id, "c": card_id, "own": owner}).mappings().all()
+    except Exception:      # noqa: BLE001 — see the docstring
+        return ()
+    return tuple(dict(r) for r in rows)
+
+
 def enqueue_pending(engine, org_id: str, channel: str,
                     base_url: str = "") -> dict:
     """Queue un-notified HIGH/CRITICAL cards for this org's channel. Idempotent: the
@@ -428,6 +445,27 @@ def enqueue_pending(engine, org_id: str, channel: str,
                  "seat": r.assignee, "band": r.urgency_band, "cclass": channel_class,
                  "interrupt": interrupt})
             queued += res.rowcount
+            # EVERYONE ELSE WHO ANSWERS FOR IT — one row per seat, the index already keyed on
+            # the recipient for exactly this. Never an interrupt: being told about a card that
+            # is somebody else's to act on is not a reason to break anyone's quiet hours, so
+            # only the owner's row carries the interrupt the band earned. Each payload names
+            # the slice that made it theirs and who owns it.
+            for extra in _co_recipients(c, org_id, r.card_id, owner=r.assignee):
+                res = c.execute(text(
+                    "insert into delivery_outbox (id,org_id,card_id,channel,payload,signal_id,"
+                    "reasoning_run_id,reasoning_decision_hash,authority_pack_revision,"
+                    "authority_expires_at,recipient,band,channel_class,interrupt,delivery_id) "
+                    "values (:i,:o,:c,:ch,cast(:payload as jsonb),"
+                    ":signal,:run,:decision,:revision,:expires,:seat,:band,:cclass,false,:i) "
+                    "on conflict (org_id, card_id, channel, coalesce(recipient, '')) do nothing"),
+                    {"i": (extra_id := new_id("ob")), "o": org_id, "c": r.card_id, "ch": channel,
+                     "payload": json.dumps(format_card_message(
+                         dict(r._mapping), base_url=base_url, your_part=extra)),
+                     "signal": r.signal_id, "run": r.reasoning_run_id,
+                     "decision": r.reasoning_decision_hash,
+                     "revision": r.authority_pack_revision, "expires": r.authority_expires_at,
+                     "seat": extra["seat_id"], "band": r.urgency_band, "cclass": channel_class})
+                queued += res.rowcount
 
         # What the band filter above threw away. The owning defect is upstream (L4's ranking
         # formula never executes, so `I` is 5000 on every card and nothing reaches 70), but a
