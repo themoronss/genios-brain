@@ -385,7 +385,11 @@ def enqueue_pending(engine, org_id: str, channel: str,
         c.execute(text("select graph_version from graph_versions where org_id=:o for share"),
                   {"o": org_id})
         rows = c.execute(text(
+            # `k.level` and `k.abstained_because` are selected because the chat renderer needs
+            # them: without them an abstaining card arrived on Slack with its cause absent, which
+            # `contracts/abstention` names as indistinguishable from an opinion.
             "select k.card_id,k.signal_id,k.headline,k.situation,k.urgency_band,"
+            "k.level,k.abstained_because,"
             "k.assignee,k.score_block,authority_cfg.effective as effective_config," +
             AUTHORITATIVE_SCORE_SQL + " as score,s.reasoning_run_id,"
             "s.reasoning_decision_hash,s.authority_pack_revision,s.authority_expires_at " +
