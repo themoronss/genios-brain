@@ -75,6 +75,7 @@ STAGE = "s4_business_relevance"
 # in a log is a value nobody can grep for in a database.
 # ---------------------------------------------------------------------------------------------
 RULE_KNOWN_COUNTERPARTY = "known_counterparty"
+RULE_KNOWN_COUNTERPARTY_BULK = "known_counterparty_bulk"
 RULE_INTERNAL_KIND = "internal_kind"
 RULE_STRUCTURED_SOURCE = "structured_source"
 RULE_BULK_HEADERS = "bulk_headers"
@@ -92,6 +93,7 @@ RULE_COST_REFUSED = "cost_governor_refused"
 #: inlined so that the cascade is one reviewable list — see the module docstring on why the order
 #: is the design.
 RULE_ORDER: tuple[str, ...] = (
+    RULE_KNOWN_COUNTERPARTY_BULK,
     RULE_KNOWN_COUNTERPARTY,
     RULE_INTERNAL_KIND,
     RULE_STRUCTURED_SOURCE,
@@ -112,6 +114,21 @@ DECIDED_BY_BUDGET_GUARD = "budget_guard"
 _RULE_RELEVANCE_BP: dict[str, int] = {
     RULE_INTERNAL_KIND: 9500,
     RULE_KNOWN_COUNTERPARTY: 9000,
+    # N-12 · BULK MAIL FROM SOMEBODY WE KNOW. `gate/rules.py:228` names this — "bulk-from-known
+    # -> park" — and nothing implemented it, so a counterparty's campaign was whitelisted at S1
+    # by W-01 and then took the SECOND-HIGHEST rank in this table, with no rung anywhere to
+    # discount it. The only counterweight was the audience multiplier, which reads To+Cc: a BCC
+    # blast reports one recipient and takes no discount at all.
+    #
+    # PARKED, NOT DROPPED, and that word is the rule. A known counterparty's broadcast is still
+    # from a real relationship and routinely carries a real fact — an invoice, a price change, a
+    # deprecation notice. Dropping it is the over-match `gate/rules` warns about; letting it
+    # outrank a message a person actually wrote is the failure N-12 names.
+    #
+    # 4000 places it above the three fail-open paths (3000 — "nobody decided", and here somebody
+    # did: we know exactly who they are) and below LLM-5's 6000, because a model that READ the
+    # message and judged it business is better evidence about THIS message than a relationship is.
+    RULE_KNOWN_COUNTERPARTY_BULK: 4000,
     RULE_STRUCTURED_SOURCE: 8000,
     RULE_LLM_BUSINESS: 6000,
     # The three fail-open paths share `unknown` authority (3000, the same value L1.6.4's cascade
@@ -369,6 +386,12 @@ def _rule_verdict(candidate: RelevanceCandidate) -> tuple[bool, str] | None:
     """The five deterministic rules, in `RULE_ORDER`. `None` means AMBIGUOUS — the only input
     LLM-5 is ever given."""
     if candidate.sender_known:
+        # N-12, and the ORDER inside this branch is the whole of it. The bulk test has to run
+        # here — not at the rung below, which a known sender never reaches — because "is this a
+        # broadcast" and "do we know them" are different questions and the answer to the second
+        # was silently answering the first.
+        if _has_bulk_headers(candidate.headers):
+            return True, RULE_KNOWN_COUNTERPARTY_BULK
         return True, RULE_KNOWN_COUNTERPARTY
     if candidate.internal_kind:
         return True, RULE_INTERNAL_KIND

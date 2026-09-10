@@ -54,7 +54,14 @@ from sqlalchemy import text
 #: Where `correlation_timeline` files a condition it could not turn into a predicate. One row per
 #: SUBJECT NODE, whose value is `{"review": [ …conditions… ]}` — so a person with four unparsed
 #: conditions is one fact carrying four entries, not four facts.
-REVIEW_FIELD = "derived.timeline.condition_review"
+#: ONE SPELLING, IMPORTED FROM THE WRITER. This was the literal
+#: `"derived.timeline.condition_review"` while `correlation_timeline` builds it as
+#: `f"{FACT_PREFIX}.condition_review"` — two spellings of one field name, and the reader's copy
+#: would have kept selecting nothing the day the prefix moved. The codebase names that exact trap
+#: elsewhere: "two spellings of 'partial' would make this query quietly stop finding the rows this
+#: unit itself produced." Caught by `tests/test_nothing_is_written_and_never_read.py`, which found
+#: the field appearing in ONE module and asked how it could be both writer and reader.
+from genios_engine.context.correlation_timeline import FIELD_REVIEW as REVIEW_FIELD
 
 _REVIEW_ROWS = (
     "select f.subject_node_id as node_id, f.value as value "

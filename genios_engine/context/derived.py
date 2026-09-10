@@ -19,9 +19,10 @@ be traced back to the rows that produced it.
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
 from genios_engine.context.pipeline import _normalise_deal_status
 
@@ -143,6 +144,44 @@ _UPSERT_FACT = (
     "on conflict (fact_version_id) do update set value = excluded.value, "
     "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from, "
     "status = 'active', valid_to = null")
+
+
+#: A DERIVED FACT THAT STOPPED BEING TRUE, and until now there was no way to say so.
+#:
+#: `_write_fact` is an upsert on a deterministic `fact_version_id`, so a derived fact is kept
+#: current by being REWRITTEN. The failure mode is what happens when it should stop: nothing
+#: rewrites it, and a row that stops being written is not a row that ended — it stays
+#: `status='active'`, `valid_to is null`, holding whatever the last sweep computed. Every reader
+#: filters on `status='active'`, so the stale value is the live one.
+#:
+#: `waiting.py` grew its own copy of this statement when a counterparty replying stopped retiring
+#: `thread.days_waiting`. It was the second writer to need it and the first to notice; this is
+#: the one both now use, because two statements that must agree about what "no longer true"
+#: means are how they come to disagree.
+#:
+#: SUPERSEDED, NEVER DELETED. The row is how a point-in-time read knows what we believed last
+#: week, and `valid_to` is what makes that legible.
+_RETIRE_FACTS = (
+    "update graph_facts set status='superseded', valid_to=:now "
+    "where org_id=:o and subject_node_id=:n and field in :fields "
+    "  and status='active' and valid_to is null"
+)
+
+
+def retire_facts(c, org_id: str, node_id: str, fields: Sequence[str], now: datetime) -> int:
+    """Close the named derived facts on one node. Returns rows closed; a no-op after the first.
+
+    `in :fields` with an EXPANDING bindparam, not `= any(:fields)`: the array cast is
+    Postgres-only and would make every caller untestable on SQLite — the rule `waiting.py` and
+    `situation_bso._L1_BY_EVENT_SELECT` both already record.
+    """
+    fields = [str(f) for f in fields if f]
+    if not fields:
+        return 0
+    result = c.execute(
+        text(_RETIRE_FACTS).bindparams(bindparam("fields", expanding=True)),
+        {"o": org_id, "n": node_id, "now": now, "fields": sorted(set(fields))})
+    return int(result.rowcount or 0)
 
 
 def _write_fact(c, org_id: str, node_id: str, field: str, value: str, value_type: str,

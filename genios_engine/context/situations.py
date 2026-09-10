@@ -580,6 +580,82 @@ def _bulk(conn, sql: str, params: dict) -> list:
     return conn.execute(text(sql), params).fetchall()
 
 
+#: Situations whose correlation id no `context_correlations` row backs. Five of the six writers
+#: of `context_situations` mint one — the state readings, the period sweep, meeting touch and the
+#: document register all synthesise an id, and `situation_bso.py:1634` says so explicitly.
+#:
+#: THEY COULD NEVER AGE. `refresh_situations` below reads `context_correlations` and derives
+#: everything from it, so a row with no correlation never reaches `decide_lifecycle` at all —
+#: and `runner.py` asserts, correctly for the rows it CAN see, that "dormancy is the ONLY
+#: mechanism that stops a stale situation compiling into a card". For everything else there was
+#: no mechanism: a `first_response_overdue` from March, a period review from a closed window, a
+#: meeting touch nobody reconciled, all `active` forever and all served to Layer 3 on every sweep.
+#:
+#: `resolved_by is null` — a human's close and a statement's close are decisions, and this pass
+#: only applies the CLOCK. It never touches a row somebody decided about.
+_UNCORRELATED = (
+    "select s.situation_id, s.status, s.last_seen_at, s.resolved_at "
+    "from context_situations s "
+    "left join context_correlations c "
+    "  on c.org_id = s.org_id and c.correlation_id = s.correlation_id "
+    "where s.org_id = :o and c.correlation_id is null "
+    "  and s.resolved_by is null and s.status in ('active', 'resolved')"
+)
+
+_SET_STATUS = ("update context_situations set status = :st "
+               "where org_id = :o and situation_id = :sid and status = :was")
+
+
+def age_uncorrelated_situations(store, org_id: str, *,
+                                eval_time: datetime | None = None) -> int:
+    """Apply the CLOCK transitions to situations no correlation backs. Returns rows moved.
+
+    Exactly the two `decide_lifecycle` computes from time alone — active→dormant at
+    `DORMANT_AFTER_DAYS`, resolved→archived at `ARCHIVE_AFTER_DAYS` — and deliberately not the
+    others. Reopening, statement resolution and human closes are all DECISIONS about evidence
+    this pass cannot see; running them here from a row's columns alone would be a second, poorer
+    copy of the ledger reduction `lifecycle/resolution.py` performs properly.
+
+    Idempotent, and conditional on the status it read (`and status = :was`), so a concurrent
+    writer that moved the row in between wins rather than being silently overwritten.
+    """
+    now = eval_time or datetime.now(timezone.utc)
+    moved = 0
+    with store.engine.begin() as conn:
+        rows = conn.execute(text(_UNCORRELATED), {"o": org_id}).mappings().all()
+        for row in rows:
+            status = str(row["status"] or "")
+            if status == STATUS_ACTIVE:
+                seen = _as_utc(row["last_seen_at"])
+                if seen is None or (now - seen) <= timedelta(days=DORMANT_AFTER_DAYS):
+                    continue
+                target = STATUS_DORMANT
+            else:
+                closed = _as_utc(row["resolved_at"])
+                if closed is None or (now - closed) <= timedelta(days=ARCHIVE_AFTER_DAYS):
+                    continue
+                target = STATUS_ARCHIVED
+            moved += int(conn.execute(text(_SET_STATUS), {
+                "st": target, "o": org_id, "sid": row["situation_id"], "was": status,
+            }).rowcount or 0)
+    return moved
+
+
+def _as_utc(value) -> datetime | None:
+    """A driver may hand back a string; Postgres does not. Coerced so this pass is testable off
+    Postgres, the rule `situation_bso._L1_BY_EVENT_SELECT` records."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        try:
+            value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    if not isinstance(value, datetime):
+        return None
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
 def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None) -> int:
     """Rebuild every situation for one org. Returns the number written.
 

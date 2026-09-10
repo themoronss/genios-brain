@@ -145,7 +145,8 @@ _WAITING_ROWS = (
     "                'thread.response_expected', 'party.reply_cadence_days', "
     "                'relationship.nature', 'party.role', 'thread.ball_in_court', "
     "                'thread.objective', "
-    "                'commitment.due_at', 'commitment.action', 'thread.last_outbound')"
+    "                'commitment.due_at', 'commitment.action', 'commitment.status', "
+    "                'thread.last_outbound')"
 )
 
 #: A campaign of one is a thread, and the per-counterparty reading already covers it. Three is the
@@ -348,6 +349,25 @@ def read_overdue_commitments(rows: dict, now: datetime, employers: dict) -> list
     for node_id, held in rows.items():
         # Reserved keys carry the condition queue and the mailbox owner, not a node's facts.
         if node_id.startswith("_") or not isinstance(held, dict):
+            continue
+        # A PROMISE THAT IS NO LONGER OUTSTANDING IS NOT OVERDUE, and this reading used to have
+        # no way to know. `lifecycle/store.obligations_for` already filters on
+        # `commitment.status = 'open'` and its docstring says why — "a commitment whose status
+        # has moved off `open` is not outstanding" — but the filter was DECORATIVE, because the
+        # only writer is `pipeline.py:1258`, which writes 'open' and never anything else. So an
+        # overdue-commitment situation, once minted, was permanent: `_reconcile` can only close a
+        # finding the reading stops producing, and this one never stopped.
+        #
+        # The gate is here now, so the moment ANY writer moves the status the card closes by
+        # itself on the next sweep. `derived.retire_facts` is the mechanism that makes such a
+        # writer possible at all — before it, a derived fact could only be rewritten, never ended.
+        #
+        # WHAT STILL HAS NO AUTOMATIC WRITER, stated rather than papered over: nothing in this
+        # system observes "the promise was kept". Sending something afterwards is not sending THE
+        # thing, and claiming otherwise is the failure BS-04 names — received, complete, valid and
+        # accepted are four different facts. A human closing the card is the honest route today,
+        # and that route now works: a human resolution survives the drain.
+        if str(held.get("commitment.status") or "open").strip().lower() not in ("", "open"):
             continue
         due = _ts(held.get("commitment.due_at"))
         if due is None:

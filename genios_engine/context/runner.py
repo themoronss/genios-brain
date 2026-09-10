@@ -681,6 +681,22 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception("situation refresh failed for org=%s", org_id)
 
+    # THE OTHER FIVE SIXTHS OF THE TABLE. `refresh_situations` above derives everything from
+    # `context_correlations`, so a situation whose correlation id is SYNTHETIC — the state
+    # readings, the period sweep, meeting touch, the document register — never reached
+    # `decide_lifecycle` at all. The block above claims dormancy is the only thing that stops a
+    # stale situation compiling into a card; that was true only for the rows it could see, and
+    # everything else stayed `active` forever and was served to Layer 3 on every sweep.
+    #
+    # Clock transitions only, and never a row somebody decided about. Same never-fatal contract
+    # as the refresh it follows.
+    try:
+        from genios_engine.context.situations import age_uncorrelated_situations
+        situation_rows += age_uncorrelated_situations(store, org_id, eval_time=sweep_at)
+    except Exception:      # noqa: BLE001 — derived lifecycle, retried next drain
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("uncorrelated ageing failed for org=%s", org_id)
+
     # L2.7.7-U1 · M-4 RESOLUTION DETECTION — the third way a situation can end.
     #
     # PLACED HERE, immediately behind the situation refresh, because it re-derives the statuses

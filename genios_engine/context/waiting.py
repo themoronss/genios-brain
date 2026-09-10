@@ -27,7 +27,7 @@ from statistics import median
 
 from sqlalchemy import bindparam, text
 
-from genios_engine.context.derived import _write_fact
+from genios_engine.context.derived import _write_fact, retire_facts
 
 #: How far back the timeline is reconstructed.  A follow-up count is about the CURRENT exchange,
 #: and `situations.DORMANT_AFTER_DAYS` already declares that a conversation older than 45 days has
@@ -120,24 +120,11 @@ def _reply_gaps(timeline: list[tuple[str, datetime]]) -> list[float]:
     return gaps
 
 
-#: THE FACTS THAT STOP BEING TRUE THE MOMENT THEY REPLY, and until now nothing ever said so.
+#: THE FACTS THAT STOP BEING TRUE THE MOMENT THEY REPLY, retired through `derived.retire_facts`
+#: — the shared statement, because two copies of "no longer true" are how two writers come to
+#: disagree about it. This module was the first to need one and grew its own; `derived.py` now
+#: owns it and the commitment reading uses the same one.
 #:
-#: `_state` writes `thread.days_waiting` ONLY while the last message in the exchange is ours.
-#: When a reply lands it simply stops being written — and a fact that stops being written is not
-#: a fact that ended. The row stayed `status='active'`, `valid_to is null`, holding whatever
-#: number the last waiting sweep computed, so `read_awaiting_response` kept minting
-#: `awaiting_response` for an answered conversation at a FROZEN day count. Its own docstring
-#: claims the opposite — "it closes itself the moment they do" — and `_reconcile` could never
-#: fire, because the finding never stopped being produced.
-#:
-#: Superseded rather than deleted: the row is how a point-in-time read knows what we believed
-#: last week, and `valid_to` is what makes that legible.
-_RETIRE_WAITING = (
-    "update graph_facts set status='superseded', valid_to=:now "
-    "where org_id=:o and subject_node_id=:n and field in :fields "
-    "  and status='active' and valid_to is null"
-)
-
 #: Written only while waiting, so retired together the moment waiting ends. `thread.last_heard_days`
 #: and `party.reply_cadence_days` are NOT here: they stay true after a reply and are rewritten
 #: every sweep from the same timeline.
@@ -215,11 +202,7 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
                 # that matters: `thread.last_heard_days` is MORE true once they answer, and
                 # skipping the write loop deleted the very evidence that the wait had ended.
                 # Retire what stopped being true, then write what still is.
-                result = c.execute(
-                    text(_RETIRE_WAITING).bindparams(bindparam("fields", expanding=True)),
-                    {"o": org_id, "n": node_id, "now": now,
-                     "fields": list(WAITING_ONLY_FIELDS)})
-                written += int(result.rowcount or 0)
+                written += retire_facts(c, org_id, node_id, WAITING_ONLY_FIELDS, now)
             else:
                 # Written ONLY while waiting, and written as False rather than omitted when we
                 # never asked: "we are waiting and put no question to them" is a real and

@@ -38,9 +38,11 @@ speaker above the floor.
 from __future__ import annotations
 
 from collections.abc import Iterable
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from time import perf_counter
 from typing import Any
+
+from sqlalchemy import text
 
 from genios_engine.context.lifecycle import gate as gate_mod
 from genios_engine.context.lifecycle import store as store_mod
@@ -97,6 +99,35 @@ def _terminal_by_fact(deal_stage: Any) -> bool:
     return normalize_stage(deal_stage) in _TERMINAL_DEAL_STAGES
 
 
+_ATTEMPTS = (
+    "select subject_ref, count(*) as n from l2_model_runs "
+    "where org_id = :o and site = 'resolution' and called_at >= :since "
+    "group by subject_ref"
+)
+
+
+def _subject_ref(situation_id: str, event_id: str) -> str:
+    """The audit key for one (situation, message) call. ONE spelling, because the writer below
+    and the reader above must agree exactly — two f-strings is how a budget silently counts
+    nothing."""
+    return f"situation:{situation_id}:event:{event_id}"
+
+
+def _attempts_by_subject(conn, org_id: str, *, now: datetime) -> dict[str, int]:
+    """Model calls already spent per message, from the audit rows every call already writes.
+
+    Never fatal: a tenant whose audit table is unreadable gets the OLD behaviour — it tries
+    again — which is the safe direction for a bound whose only job is to stop paying twice.
+    """
+    try:
+        since = now - timedelta(days=store_mod.LOOKBACK_DAYS)
+        return {str(r[0]): int(r[1] or 0)
+                for r in conn.execute(text(_ATTEMPTS), {"o": org_id, "since": since}).all()}
+    except Exception:      # noqa: BLE001 — a budget hint, never a reason to skip the sweep
+        log.info("m4 resolution: could not read prior attempts for org=%s", org_id)
+        return {}
+
+
 def detect_resolutions(store, org_id: str, *, llm: Any | None = None,
                        eval_time: datetime | None = None,
                        internal_emails: Iterable[str] | None = None) -> DetectionSweep:
@@ -121,6 +152,9 @@ def detect_resolutions(store, org_id: str, *, llm: Any | None = None,
             conn, org_id, [m["event_id"] for m in messages])
         org_calls, per_situation_calls = store_mod.calls_today(conn, org_id, eval_time=now)
         stored_claims = store_mod.claims_for(conn, org_id, [s.situation_id for s in situations])
+        # HOW MANY TIMES WE HAVE ALREADY PAID FOR EACH MESSAGE. One statement, on the same
+        # connection as every other gather above, and empty on a tenant that has made no calls.
+        attempts = _attempts_by_subject(conn, org_id, now=now)
 
     by_situation = {s.situation_id: s for s in situations}
     pending: dict[str, list] = {sid: [] for sid in by_situation}
@@ -145,7 +179,16 @@ def detect_resolutions(store, org_id: str, *, llm: Any | None = None,
         decision = gate_mod.gate_decision(
             status=situation.status, resolved_by=situation.resolved_by,
             terminal_by_fact=_terminal_by_fact(situation.deal_stage),
-            has_new_signal=True, already_examined=False,
+            has_new_signal=True,
+            # THE REFUSAL THAT WAS UNREACHABLE. `False` was hardcoded here, so a message whose
+            # call fails or returns unparseable output — which stores no claim, on purpose:
+            # "storing a rejection would make one bad minute a permanent blind spot" — was
+            # re-read and re-called on EVERY sweep for the whole lookback, spending the two
+            # daily budgets on a message that had already failed twice. The attempts were
+            # recorded all along by `record_model_run`; nothing read them back.
+            already_examined=attempts.get(
+                _subject_ref(situation.situation_id, row["event_id"]), 0
+            ) >= gate_mod.MAX_ATTEMPTS_PER_MESSAGE,
             has_text=bool((row["text"] or "").strip()), speaker_role=role,
             calls_today_for_situation=per_situation_calls.get(situation.situation_id, 0),
             calls_today_for_org=org_calls)
@@ -177,7 +220,7 @@ def detect_resolutions(store, org_id: str, *, llm: Any | None = None,
         result = llm.call(prompt, max_tokens=MAX_OUTPUT_TOKENS)
         record_model_run(
             store.engine, org_id=org_id, site="resolution",
-            subject_ref=f"situation:{situation.situation_id}:event:{row['event_id']}",
+            subject_ref=_subject_ref(situation.situation_id, row["event_id"]),
             prompt_version=PROMPT_VERSION, prompt=prompt, result=result, called_at=now,
             max_tokens=MAX_OUTPUT_TOKENS,
             latency_ms=max(0, int((perf_counter() - started) * 1000)))

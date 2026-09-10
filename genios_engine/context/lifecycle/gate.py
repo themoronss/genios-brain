@@ -47,13 +47,30 @@ from genios_engine.context.situations import (
     STATUS_RESOLVED,
 )
 
-__all__ = ["GateDecision", "MAX_CALLS_PER_ORG_PER_DAY", "MAX_CALLS_PER_SITUATION_PER_DAY",
+__all__ = ["GateDecision", "MAX_ATTEMPTS_PER_MESSAGE", "MAX_CALLS_PER_ORG_PER_DAY",
+           "MAX_CALLS_PER_SITUATION_PER_DAY",
            "gate_decision"]
 
 #: Doc 11's two ceilings. Named constants because both are tuning knobs whose numbers appear in
 #: an operator's report, and a literal buried in a comparison is a number nobody can find.
 MAX_CALLS_PER_SITUATION_PER_DAY = 3
 MAX_CALLS_PER_ORG_PER_DAY = 200
+
+#: How many times ONE MESSAGE may be sent to the model without producing a claim.
+#:
+#: `already_examined` was a refusal nothing could reach — `resolution.py` passed `False` for it
+#: unconditionally — and the cost was concrete. A message whose call fails or comes back
+#: unparseable stores NO claim, deliberately: `resolution.py:184` argues that storing a rejection
+#: "would make one bad minute a permanent blind spot for that message", and it is right. But
+#: nothing bounded the other side, so the same message was re-read and re-called on every sweep
+#: for the full 30-day lookback, held back only by the two daily budgets above — which it then
+#: spent, on a message that had already failed twice.
+#:
+#: THREE, matching `MAX_CALLS_PER_SITUATION_PER_DAY`, and per MESSAGE rather than per day. One
+#: bad minute costs one attempt and the next sweep tries again; three failures is a message this
+#: model cannot read, and the honest response is to stop paying for it and let a newer message
+#: about the same situation have the budget.
+MAX_ATTEMPTS_PER_MESSAGE = 3
 
 # The refusal vocabulary. Stored in the sweep record, so a drain that made no calls can say which
 # of these it was.
