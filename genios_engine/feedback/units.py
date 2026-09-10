@@ -222,6 +222,97 @@ def unit_outcome_analysis(batch: LearningBatch, policy: LearningPolicy,
     return out
 
 
+# ---- unit 2b: Actor Outcome Analysis (per person, not per org) ------------------------------
+
+def unit_actor_outcome_analysis(batch: LearningBatch, policy: LearningPolicy,
+                                now: datetime) -> list[LearningObject]:
+    """Per PERSON: how their own work actually ended, addressed only to them.
+
+    THE SENTENCE THAT HAD NO ADDRESSEE. "Rohit, the way you wrote that was not working" cannot be
+    said by a system in which every rate is org-scoped. Harsh's plays close 80% of the time and
+    Sneha's 20%; `run_calibration` mutes or loosens the rule for BOTH on the pooled average, and
+    neither is ever told one thing about their own pattern. `execution_outcomes.assignee` has
+    existed since `0041_l5_execution.sql:241` and no unit had ever read it.
+
+    EVERYTHING DOWNSTREAM WAS ALREADY BUILT FOR THIS and only the number was missing:
+    `learning_objects.subject_principal`, the contract's cap to `Visibility(PRIVATE,
+    principals=(subject,))`, the `actor` address token — *"the user a preference belongs to, for
+    Adaptive leases that are per-person"* — and the tenant's own floors in `learning_policies`.
+
+    PRIVATE, AND THE CONTRACT ENFORCES IT. `LearningObject.__post_init__` refuses a
+    subject-scoped object that is not private and refuses one whose principals are anything but
+    that single subject. So a per-person rate cannot become a leaderboard by accident: it is
+    visible to its subject and to nobody else, including their manager. That is not a courtesy —
+    a rate one person can read about another is a performance judgment the evidence cannot
+    support, and `FX-36` forbids exactly that inference.
+
+    IT MEASURES ENDINGS, NOT PEOPLE, and the distinction is the whole of its honesty. It reuses
+    `label_class` and `counts_against_the_play` unchanged, so a play cancelled by the world or
+    killed by our own tooling is counted and NOT charged — the same rule
+    `unit_outcome_analysis` follows. A person whose outcomes are mostly mechanical failures has a
+    tooling problem, and a number that called that their failure would be a lie with a decimal
+    point on it.
+
+    AN UNASSIGNED OUTCOME IS SKIPPED, not bucketed under "unknown". `unit_outcome_analysis` can
+    honestly say `capability_id or "unknown"` because a capability-less outcome is still an
+    outcome about the machinery. A person-less outcome is not evidence about any person, and an
+    "unknown" bucket here would be a private learning object addressed to nobody — which the
+    contract would reject anyway, one layer too late to be a good error.
+    """
+    cohorts: dict[str, dict] = defaultdict(
+        lambda: {"n": 0, "succeeded": 0, "neutral": 0, "failed": 0, "mechanical": 0,
+                 "reminders": 0, "escalations": 0, "first": None, "last": None})
+    for o in batch.outcomes:
+        assignee = str(o.get("assignee") or "").strip()
+        if not assignee:
+            continue
+        c = cohorts[assignee]
+        c["n"] += 1
+        kind = label_class(o.get("label"))
+        if kind == "positive":
+            c["succeeded"] += 1
+        elif counts_against_the_play(o.get("label")):
+            c["failed"] += 1
+        elif kind == "mechanical":
+            c["mechanical"] += 1
+        else:
+            c["neutral"] += 1
+        c["reminders"] += int(o.get("reminders_sent") or 0)
+        c["escalations"] += int(o.get("escalations_fired") or 0)
+        at = o.get("closed_at")
+        if at:
+            c["first"] = min(c["first"], at) if c["first"] else at
+            c["last"] = max(c["last"], at) if c["last"] else at
+
+    out: list[LearningObject] = []
+    for assignee, c in cohorts.items():
+        graded = c["succeeded"] + c["failed"]
+        subject = _subject("actor", assignee)
+        out.append(LearningObject(
+            org_id=batch.org_id, unit="actor_outcome_analysis", target=LearningTarget.METRICS,
+            subject=subject,
+            proposed_value={"observations": c["n"], "succeeded": c["succeeded"],
+                            "neutral_unproven": c["neutral"], "failed": c["failed"],
+                            "mechanical_failures": c["mechanical"],
+                            "reminders": c["reminders"], "escalations": c["escalations"],
+                            "success_rate_bp": _bp(c["succeeded"], graded)},
+            evidence=LearningEvidence(
+                observations=c["n"], independent_refs=c["n"], distinct_days=1,
+                positive=c["succeeded"], negative=c["failed"],
+                confidence_bp=_bp(graded, c["n"]),
+                business_value_bp=_bp(c["succeeded"], c["n"])),
+            # THE SANITISED KEY IS THE PRINCIPAL, not the raw assignee. `_subject` may rewrite a
+            # character the identifier contract forbids, and the contract requires the object's
+            # principals to equal `subject_principal` exactly — passing the raw string here would
+            # raise on precisely the ids that needed sanitising, which is the worst time to fail.
+            subject_principal=_subject(assignee),
+            visibility=Visibility(scope=VisibilityScope.PRIVATE,
+                                  principals=(_subject(assignee),)),
+            first_seen_at=c["first"] or now,
+            last_seen_at=c["last"] or now, policy_key=policy.policy_key))
+    return out
+
+
 # ---- unit 3: Pattern Learning (enterprise events) -------------------------------------------
 
 def unit_pattern_learning(batch: LearningBatch, policy: LearningPolicy,
@@ -446,10 +537,14 @@ def validate_learning(obj: LearningObject, policy: LearningPolicy) -> tuple[bool
     return (True, "validated")
 
 
-#: The fixed canonical order the orchestrator runs. Ten analysis units; validation is applied after.
+#: The fixed canonical order the orchestrator runs. Eleven analysis units; validation is applied
+#: after. `actor_outcome_analysis` sits beside `outcome_analysis` because it asks the same
+#: question of the same rows with a different group-by — per person rather than per play — and
+#: running them apart would let the two drift on what an ending MEANS.
 ALL_ANALYSIS_UNITS: tuple[Callable[..., list[LearningObject]], ...] = (
     unit_feedback_learning,          # 1
     unit_outcome_analysis,           # 2
+    unit_actor_outcome_analysis,     # 2b — same rows, grouped by person, private to them
     unit_pattern_learning,           # 3
     unit_preference_learning,        # 4
     unit_temporary_memory,           # 5

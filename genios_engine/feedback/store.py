@@ -58,6 +58,14 @@ def _load_outcomes(conn, org_id: str, since: datetime) -> tuple[dict, ...]:
     rows = conn.execute(text(
         "select execution_id, capability_id, capability_version, play_id, label, terminal_state, "
         "reason_code, subject_ref, reminders_sent, escalations_fired, seconds_to_close, "
+        # `assignee` — WHOSE outcome this was. The column has existed since
+        # `0041_l5_execution.sql:241` and no unit has ever read it, so every learning object this
+        # layer produces is org-scoped: two people on one tenant with an 80% and a 20% close rate
+        # are averaged into one number that describes neither of them, and neither is ever told
+        # anything about their own pattern. `learning_objects.subject_principal`,
+        # `Visibility(PRIVATE, principals=...)` and the `actor` address token were all built for
+        # per-person learning; only the number was missing.
+        "assignee, "
         "progress_bp, closed_at from execution_outcomes "
         "where org_id = :o and closed_at >= :s order by closed_at desc limit 5000"),
         {"o": org_id, "s": since}).mappings().all()

@@ -155,5 +155,11 @@ def test_empty_batch_emits_nothing_from_every_unit():
 
 
 def test_there_are_ten_analysis_units_in_canonical_order():
-    assert len(ALL_ANALYSIS_UNITS) == 10
+    """ELEVEN now. `unit_actor_outcome_analysis` was added at index 2, beside the play-scoped
+    unit it shares its rows and its label rules with — the count moved because a unit exists,
+    not because the guard was loosened. The ORDER is the property this pins: the orchestrator
+    runs them in this sequence and a reordering changes which proposals reach validation first.
+    """
+    assert len(ALL_ANALYSIS_UNITS) == 11
     assert ALL_ANALYSIS_UNITS[1].__name__ == "unit_outcome_analysis"
+    assert ALL_ANALYSIS_UNITS[2].__name__ == "unit_actor_outcome_analysis"

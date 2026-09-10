@@ -1293,7 +1293,14 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
                                     else _EMITTED_PAYLOAD_TTL_DAYS))
     if kept and prepared is not None and prepared_store is not None:
         # the PII-masked, replayable form + offset map — retained longer than the raw payload
-        prepared_store.put(org_id=org_id, prepared=prepared)
+        # `direction` PASSED, NOT RE-DERIVED. `_envelope_direction` is the one place that decides
+        # inbound/outbound/internal, and it REFUSES with None when no rule can name it — a second
+        # answer here would eventually disagree with the one the extractor was given. It is the
+        # column that makes the form numbers mean anything: "our emails are getting longer" is a
+        # statement about what WE sent, and without direction it would average in everything the
+        # counterparty wrote back.
+        prepared_store.put(org_id=org_id, prepared=prepared,
+                           direction=_envelope_direction(event, mailbox_owner))
 
     # document provenance (native vs OCR + status) for any file-type event
     doc = raw.raw.get("document")
