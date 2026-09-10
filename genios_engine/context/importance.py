@@ -104,6 +104,54 @@ DEPENDENCY_PER_BLOCKED_BP = 200
 DEPENDENCY_MAX_BLOCKED = 5
 CONFLICT_BP = 700
 
+@dataclass(frozen=True, slots=True)
+class SituationWeights:
+    """BLG-18's modifier weights, as a record a caller may replace.
+
+    They were six module constants and `compose_situation_importance` accepted none of them, so
+    every tenant's situations were ranked by doc 07's verbatim numbers whatever their business
+    valued. A support desk cares far more that two tickets CONFLICT than that one is trending;
+    a fundraising tenant cares about the trend and has no conflicts to speak of. Neither is a
+    defect in the shipped table — they are businesses it was written without.
+
+    INTEGER BASIS POINTS, and the type is the gate. Every field is an `int` and the arithmetic
+    stays integral end to end; a float here would put a rounding difference between two replays
+    of the same situation, which is the property this whole layer is built to keep.
+
+    FROZEN so a caller that edited one field between two reads cannot give one situation two
+    rankings, and so the content hash below is stable.
+    """
+
+    trend_bp: int = TREND_BP
+    cohort_bp: int = COHORT_BP
+    anomaly_bp: int = ANOMALY_BP
+    dependency_per_blocked_bp: int = DEPENDENCY_PER_BLOCKED_BP
+    dependency_max_blocked: int = DEPENDENCY_MAX_BLOCKED
+    conflict_bp: int = CONFLICT_BP
+    corroboration_per_extra_source_bp: int = CORROBORATION_PER_EXTRA_SOURCE_BP
+    corroboration_cap_bp: int = CORROBORATION_CAP_BP
+
+    @property
+    def fingerprint(self) -> str:
+        """A short content hash, so a re-scoring under changed weights stays attributable.
+
+        `IMPORTANCE_VERSION` alone cannot distinguish "the formula changed" from "this tenant
+        weights conflicts higher", and a stored score whose inputs cannot be reconstructed is
+        not auditable. Same mechanism `spec_version()` uses.
+        """
+        import hashlib
+        from dataclasses import fields
+
+        # `fields()`, not `vars()` — a `slots=True` dataclass has no `__dict__`, and a
+        # fingerprint that raises is worse than no fingerprint at all.
+        body = ",".join(f"{f.name}={getattr(self, f.name)}"
+                        for f in sorted(fields(self), key=lambda f: f.name))
+        return hashlib.sha256(body.encode()).hexdigest()[:12]
+
+
+#: What every caller gets unless it says otherwise — doc 07's numbers, unchanged.
+SITUATION_WEIGHTS_V1 = SituationWeights()
+
 #: `signal_conflicts.resolution` for a disagreement nobody settled — modifier 3e's whole test. The
 #: other two members of that closed vocabulary HAVE an answer. Spelled rather than imported for the
 #: dependency reason the module docstring gives; `test_importance.py` pins it against the check
@@ -773,7 +821,7 @@ def _expressible_band(position: CohortInput) -> CohortBand:
                                      population_size=position.population_size)
 
 
-def _trend_term(inputs: ModifierInputs) -> ModifierTerm:
+def _trend_term(inputs: ModifierInputs, *, weights: SituationWeights = SITUATION_WEIGHTS_V1) -> ModifierTerm:
     """3a. +1000 once, however many metrics are declining — the strongest one is the receipt."""
     if not inputs.trends:
         return ModifierTerm(ModifierName.TREND, False, 0, ModifierReason.NO_INPUT)
@@ -792,7 +840,7 @@ def _trend_term(inputs: ModifierInputs) -> ModifierTerm:
              "trend_confidence_bp": best.trend_confidence_bp,
              "floor_bp": MIN_TREND_CONFIDENCE_BP, "fact_version_id": best.fact_version_id})
     top = qualifying[0]
-    return ModifierTerm(ModifierName.TREND, True, TREND_BP, ModifierReason.FIRED, {
+    return ModifierTerm(ModifierName.TREND, True, weights.trend_bp, ModifierReason.FIRED, {
         "metric": top.metric, "subject_node_id": top.subject_node_id,
         "trend_confidence_bp": top.trend_confidence_bp, "point_count": top.point_count,
         "floor_bp": MIN_TREND_CONFIDENCE_BP, "fact_version_id": top.fact_version_id,
@@ -800,7 +848,7 @@ def _trend_term(inputs: ModifierInputs) -> ModifierTerm:
         "qualifying_metrics": sorted({t.metric for t in qualifying})})
 
 
-def _cohort_term(inputs: ModifierInputs) -> ModifierTerm:
+def _cohort_term(inputs: ModifierInputs, *, weights: SituationWeights = SITUATION_WEIGHTS_V1) -> ModifierTerm:
     """3b. +1000 for sitting at the bad end of a real population — see `worst_band`."""
     if not inputs.cohort_positions:
         return ModifierTerm(ModifierName.COHORT_POSITION, False, 0, ModifierReason.NO_INPUT)
@@ -833,7 +881,7 @@ def _cohort_term(inputs: ModifierInputs) -> ModifierTerm:
         c.percentile_bp if polarity_of[c.metric] is MetricPolarity.LOWER_IS_WORSE
         else BP_MAX - c.percentile_bp, c.metric))
     band = _expressible_band(top)
-    return ModifierTerm(ModifierName.COHORT_POSITION, True, COHORT_BP, ModifierReason.FIRED, {
+    return ModifierTerm(ModifierName.COHORT_POSITION, True, weights.cohort_bp, ModifierReason.FIRED, {
         "metric": top.metric, "subject_node_id": top.subject_node_id, "cohort_id": top.cohort_id,
         "percentile_bp": top.percentile_bp, "band": band.value, "divisions": band.divisions,
         "population_size": top.population_size,
@@ -842,7 +890,7 @@ def _cohort_term(inputs: ModifierInputs) -> ModifierTerm:
         "fact_version_id": top.fact_version_id, "qualifying_count": len(qualifying)})
 
 
-def _anomaly_term(inputs: ModifierInputs) -> ModifierTerm:
+def _anomaly_term(inputs: ModifierInputs, *, weights: SituationWeights = SITUATION_WEIGHTS_V1) -> ModifierTerm:
     """3c. +800 when the detector flagged the subject against its OWN baseline."""
     if not inputs.anomalies:
         return ModifierTerm(ModifierName.ANOMALY, False, 0, ModifierReason.NO_INPUT)
@@ -852,14 +900,14 @@ def _anomaly_term(inputs: ModifierInputs) -> ModifierTerm:
         return ModifierTerm(ModifierName.ANOMALY, False, 0, ModifierReason.ANOMALY_NOT_FLAGGED,
                             {"metrics_seen": sorted({a.metric for a in inputs.anomalies})})
     top = flagged[0]
-    return ModifierTerm(ModifierName.ANOMALY, True, ANOMALY_BP, ModifierReason.FIRED, {
+    return ModifierTerm(ModifierName.ANOMALY, True, weights.anomaly_bp, ModifierReason.FIRED, {
         "metric": top.metric, "subject_node_id": top.subject_node_id,
         "z_like_bp": top.z_like_bp, "direction": top.direction,
         "periods_used": top.periods_used, "fact_version_id": top.fact_version_id,
         "flagged_count": len(flagged)})
 
 
-def _dependency_term(inputs: ModifierInputs) -> ModifierTerm:
+def _dependency_term(inputs: ModifierInputs, *, weights: SituationWeights = SITUATION_WEIGHTS_V1) -> ModifierTerm:
     """3d. +200 per blocked item, five items' worth at most. The cost is the blocked work.
 
     **N is the MAX across the situation's subject nodes, never the sum.** `derived.py` writes
@@ -877,19 +925,20 @@ def _dependency_term(inputs: ModifierInputs) -> ModifierTerm:
                             ModifierReason.DEPENDENCY_NOTHING_BLOCKED,
                             {"subject_node_ids": sorted(d.subject_node_id
                                                         for d in inputs.dependencies)})
-    counted = min(top.blocked_count, DEPENDENCY_MAX_BLOCKED)
-    return ModifierTerm(ModifierName.DEPENDENCY, True, DEPENDENCY_PER_BLOCKED_BP * counted,
+    counted = min(top.blocked_count, weights.dependency_max_blocked)
+    return ModifierTerm(ModifierName.DEPENDENCY, True,
+                        weights.dependency_per_blocked_bp * counted,
                         ModifierReason.FIRED, {
                             "subject_node_id": top.subject_node_id,
                             "blocked_count": top.blocked_count, "counted": counted,
-                            "cap": DEPENDENCY_MAX_BLOCKED,
-                            "per_blocked_bp": DEPENDENCY_PER_BLOCKED_BP,
+                            "cap": weights.dependency_max_blocked,
+                            "per_blocked_bp": weights.dependency_per_blocked_bp,
                             # A POINTER to the chains, never their contents: the chains fact names
                             # third parties and quotes their sentences and is participants-scoped.
                             "fact_version_id": top.fact_version_id})
 
 
-def _conflict_term(inputs: ModifierInputs) -> ModifierTerm:
+def _conflict_term(inputs: ModifierInputs, *, weights: SituationWeights = SITUATION_WEIGHTS_V1) -> ModifierTerm:
     """3e. +700 once — we may be about to say something false.
 
     "Material" is defined, with its rejected alternative, on `ConflictInput`.
@@ -901,7 +950,7 @@ def _conflict_term(inputs: ModifierInputs) -> ModifierTerm:
     if not material:
         return ModifierTerm(ModifierName.CONFLICT, False, 0, ModifierReason.CONFLICT_NONE_MATERIAL,
                             {"resolutions_seen": sorted({c.resolution for c in inputs.conflicts})})
-    return ModifierTerm(ModifierName.CONFLICT, True, CONFLICT_BP, ModifierReason.FIRED, {
+    return ModifierTerm(ModifierName.CONFLICT, True, weights.conflict_bp, ModifierReason.FIRED, {
         # Ids and field paths only. The claims themselves are two sources' verbatim values and
         # live on the `signal_conflicts` row, which is where a reader with the right audience goes.
         "conflict_ids": [c.conflict_id for c in material[:MAX_NAMED_CONFLICTS]],
@@ -934,7 +983,9 @@ def compose_situation_importance(*, base: ImportanceBase,
                                  signals: Sequence[ConstituentSignal],
                                  modifiers: ModifierInputs,
                                  eval_time: datetime,
-                                 l1_active: bool = True) -> ComposedImportance:
+                                 l1_active: bool = True,
+                                 weights: SituationWeights = SITUATION_WEIGHTS_V1,
+                                 ) -> ComposedImportance:
     """BLG-18 steps 2..6. Pure: no database, no clock, no model, integer basis points throughout.
 
     Step 1's `base` comes in already decided (`situation_bso.gather_l1_signals`). Steps 2..6 run in
@@ -951,8 +1002,8 @@ def compose_situation_importance(*, base: ImportanceBase,
     # the whole +1500.
     systems = tuple(sorted({s.source_system for s in signals if s.source_system}))
     distinct = len(systems)
-    corroboration = min(CORROBORATION_CAP_BP,
-                        max(0, distinct - 1) * CORROBORATION_PER_EXTRA_SOURCE_BP)
+    corroboration = min(weights.corroboration_cap_bp,
+                        max(0, distinct - 1) * weights.corroboration_per_extra_source_bp)
 
     # Doc 07 hard rule 7. Keep the base, add nothing, and say so on the record. Every one of the
     # six terms is still written — suppressed is a fact about the composition, and a record with
@@ -972,11 +1023,13 @@ def compose_situation_importance(*, base: ImportanceBase,
 
     # Step 3 — the six, in doc order, every one of them recorded whether or not it fired.
     terms = (
-        _trend_term(modifiers),
-        _cohort_term(modifiers),
-        _anomaly_term(modifiers),
-        _dependency_term(modifiers),
-        _conflict_term(modifiers),
+        _trend_term(modifiers, weights=weights),
+        _cohort_term(modifiers, weights=weights),
+        _anomaly_term(modifiers, weights=weights),
+        _dependency_term(modifiers, weights=weights),
+        _conflict_term(modifiers, weights=weights),
+        # `_staleness_term` takes no weight: its curve is a function of AGE, not of a number
+        # anybody chose, so there is nothing here for a tenant to state.
         _staleness_term(modifiers, eval_time=eval_time),
     )
     positive = sum(t.delta_bp for t in terms if t.delta_bp > 0)
@@ -1300,6 +1353,7 @@ def read_constituent_signals(
 
 __all__ = [
     "ANOMALY_BP", "ANOMALY_FACT_PREFIX", "BP_MAX", "BP_MIN", "COHORT_BP", "COHORT_FACT_PREFIX",
+    "SITUATION_WEIGHTS_V1", "SituationWeights",
     "CONFLICT_BP", "CONFLICT_TABLE", "CORROBORATION_CAP_BP", "CORROBORATION_PER_EXTRA_SOURCE_BP",
     "COVERAGE_PENALTY_DENOMINATOR", "COVERAGE_PENALTY_NUMERATOR", "COVERAGE_TABLE",
     "DEPENDENCY_BLOCKED_FIELD", "DEPENDENCY_MAX_BLOCKED", "DEPENDENCY_PER_BLOCKED_BP",

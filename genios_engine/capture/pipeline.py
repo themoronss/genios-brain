@@ -813,6 +813,19 @@ class EsqeStage:
     #: block scoring, and a day-one tenant whose signals all scored alike is the exact defect
     #: L1.6.7 exists to remove.
     org_baseline: OrgBaseline | None = None
+    #: ALG-17's five weights, INJECTED like the baseline beside them. `score_importance` has
+    #: taken a `weights=` argument since it was written and NOTHING EVER PASSED ONE, so every
+    #: tenant scored on doc 06's verbatim defaults whatever their business valued. A law firm
+    #: weights DEADLINE far above MONEY — a limitation period is not negotiable and a fee note
+    #: is; a payments company weights the other way. Neither is a defect in the shipped table;
+    #: they are businesses it was calibrated without.
+    #:
+    #: THE TOTAL CHECK IS NOT RELAXED. `ImportanceWeights` refuses a set that does not sum to
+    #: 10000, because `/ 10000` in the formula is only a weighted MEAN while it does — and that
+    #: is a gate on arithmetic, not a limit on expressiveness. It stays.
+    #:
+    #: `None` means the shipped weights, which is every tenant that has not said otherwise.
+    importance_weights: Any | None = None
 
 
 @dataclass(frozen=True)
@@ -1014,8 +1027,14 @@ def run_esqe_stage(event: SourceEvent, prepared: PreparedContent | None, raw: Ma
     # emitting signals with no intrinsic size — which is the defect, not a safe default.
     baseline = stage.org_baseline or OrgBaseline.cold_start(event.org_id,
                                                             computed_against=eval_time)
-    importance = tuple(score_importance(signal, baseline, eval_time=eval_time)
-                       for signal in normalized)
+    # THE TENANT'S WEIGHTS, THEN THE SHIPPED ONES. `score_importance` has always accepted
+    # `weights=`; the defect was that no caller ever supplied one, so the argument was a door
+    # nobody opened — the exact shape this branch has found eleven times.
+    importance = tuple(
+        score_importance(signal, baseline, eval_time=eval_time,
+                         **({"weights": stage.importance_weights}
+                            if stage.importance_weights is not None else {}))
+        for signal in normalized)
 
     return EsqeOutcome(relevance=decision, domains=domains, attribution=attribution,
                        detection=detection, classification=classification,
