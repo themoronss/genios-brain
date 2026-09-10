@@ -100,6 +100,18 @@ class SeatDirectory(Protocol):
     def active_seat(self, seat_ref: str | None) -> str | None:
         """Resolve a seat id *or* an email to an active seat id, or None."""
 
+    def seat_for_node(self, node_id: str | None) -> str | None:
+        """A GRAPH NODE id to an active seat, or None.
+
+        The fourth question, and the reason the other three were not enough.
+        `authority_rules.approver_node_id` is a graph node — deliberately, so the Founder
+        Bottleneck read is a group-by on a column rather than a string match on a name — and
+        nothing in the engine could turn one back into a person the delivery layer can reach.
+        So the tenant knew Arjun signs anything over ₹50L and could not tell him a decision was
+        waiting: authority was a real, dated, source-ranked record joined to nothing that
+        decides who receives a card.
+        """
+
     def manager_of(self, seat_id: str) -> str | None:
         """The seat one level up, or None when the org has published no reporting line."""
 
@@ -125,6 +137,16 @@ class StaticSeatDirectory:
             if not row.get("active", True):
                 continue
             if seat_id.lower() == needle or str(row.get("email", "")).lower() == needle:
+                return seat_id
+        return None
+
+    def seat_for_node(self, node_id: str | None) -> str | None:
+        """The in-memory twin resolves through a `node_id` key on the seat row — the tests own
+        their own graph, so there is nothing to join against."""
+        if not node_id:
+            return None
+        for seat_id, row in self.seats.items():
+            if row.get("active", True) and row.get("node_id") == node_id:
                 return seat_id
         return None
 
@@ -192,6 +214,31 @@ def resolve_owner(*, facts: Mapping[str, Any] | None, attrs: Mapping[str, Any] |
                       queue_seat=admins[0] if admins else None)
 
 
+def resolve_approver_seat(answer, *, directory: SeatDirectory) -> str | None:
+    """The seat that must sign, from an `AuthorityAnswer`, or None.
+
+    ONLY AN ENFORCEABLE ANSWER NAMES ANYBODY. `AuthorityView.resolve` returns three outcomes,
+    not two, and the distinction is load-bearing: `suggested` means only OBSERVED BEHAVIOUR
+    matched and a human must confirm before anybody signs, `no_authority_rule` means the org
+    holds no rule — which is NOT "anyone may approve". Routing a card to a merely suggested
+    approver would turn an unconfirmed observation into an instruction, which is the boundary
+    `runtime_brains._validate_axis` raises to protect one layer down.
+
+    None is a real answer and the caller must keep it. `requires_approval` stays TRUE when
+    nobody can be named — a card that says "this needs sign-off" and cannot say whose is less
+    useful than one that can, and far better than one that quietly drops the requirement.
+    """
+    # `enforced`, NOT `enforceable`. The property's own docstring says to read it and never
+    # `rule is not None`: *"the two agree today because `__post_init__` makes them, and this one
+    # says why."* Reading a name that does not exist would silently be False on every answer —
+    # a guard that never fires and never says so, which is this branch's most-found defect.
+    if answer is None or not getattr(answer, "enforced", False):
+        return None
+    # `approver_node_id` is ALREADY None on a SUGGESTED answer — *"a suggestion has a proposed
+    # approver and no approver"* — so this is belt and braces rather than the only lock.
+    return directory.seat_for_node(getattr(answer, "approver_node_id", None))
+
+
 def resolve_escalation_target(*, audience: AudienceClass, owner_seat: str | None,
                               directory: SeatDirectory) -> Assignment:
     """Who a given rung of the ladder actually reaches, today.
@@ -243,6 +290,28 @@ class PgSeatDirectory:
             "select seat_id from org_seats where org_id=:o and active "
             "and (seat_id=:s or lower(email)=lower(:s)) limit 1"),
             {"o": self.org_id, "s": str(seat_ref)}).first()
+        return row.seat_id if row else None
+
+    def seat_for_node(self, node_id: str | None) -> str | None:
+        """Node -> its canonical address -> an active seat. ONE statement.
+
+        `graph_nodes.canonical_key` holds the email for a person node — `context/pipeline.py`
+        creates them with `canonical_key=email` — which is exactly what `active_seat` already
+        matches on. So this is the join that was missing, not a new identity concept.
+
+        A node that is not one of our seats returns None, which is the honest answer and the
+        one the caller needs: an approver the org does not employ is not somebody a card can be
+        routed to, whatever the policy document says.
+        """
+        if not node_id:
+            return None
+        from sqlalchemy import text
+        row = self.conn.execute(text(
+            "select s.seat_id from graph_nodes n join org_seats s "
+            "on s.org_id = n.org_id and s.active "
+            "and lower(s.email) = lower(n.canonical_key) "
+            "where n.org_id = :o and n.node_id = :n and n.valid_to is null limit 1"),
+            {"o": self.org_id, "n": str(node_id)}).first()
         return row.seat_id if row else None
 
     def manager_of(self, seat_id: str) -> str | None:
