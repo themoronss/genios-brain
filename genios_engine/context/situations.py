@@ -494,10 +494,29 @@ STATEMENT_PARTIAL = "statement_partial"      # some are, some are not
 STATEMENT_NONE = "statement_none"            # the ledger supports nothing right now
 
 
+def _is_terminal(spec, node_facts: dict) -> bool:
+    """Has THIS domain's own ending been reached?
+
+    `deal.stage in {closedwon, closedlost}` is the right rule for a pipeline and says nothing
+    about a clinic's `case.status`, a firm's `matter.state` or an exporter's `shipment.state`.
+    A domain declares `terminal_when: (fact_path, {values})` and this asks that question
+    instead; the deal rule stays as the default so nothing changes for a domain that has not
+    said otherwise.
+
+    NORMALISED THE SAME WAY EITHER WAY, because a CRM writes "CLOSEDWON", "closed_won" and
+    "Closed Won" and a hospital system is no tidier.
+    """
+    declared = getattr(spec, "terminal_when", None)
+    path, values = declared if declared else ("deal.stage", _TERMINAL_DEAL_STAGES)
+    return normalize_stage(node_facts.get(path)) in {normalize_stage(v) for v in values}
+
+
 def decide_lifecycle(*, current_status: str | None, resolved_by: str | None,
                      last_seen_at: datetime | None, resolved_at: datetime | None,
                      terminal_by_fact: bool, now: datetime,
-                     stated_resolution: str | None = None) -> LifecycleDecision:
+                     stated_resolution: str | None = None,
+                     dormant_after_days: int | None = None,
+                     archive_after_days: int | None = None) -> LifecycleDecision:
     """What state this situation is in. Deterministic, and re-derived on every refresh.
 
     The three ways a situation ends behave differently on purpose:
@@ -560,13 +579,19 @@ def decide_lifecycle(*, current_status: str | None, resolved_by: str | None,
                 and resolved_at is not None and last_seen_at > resolved_at):
             return LifecycleDecision(STATUS_ACTIVE, None, reopened=True)
         if (current_status == STATUS_RESOLVED and resolved_at is not None
-                and (now - resolved_at) > timedelta(days=ARCHIVE_AFTER_DAYS)):
+                and (now - resolved_at) > timedelta(
+                days=archive_after_days or ARCHIVE_AFTER_DAYS)):
             return LifecycleDecision(STATUS_ARCHIVED, resolved_by)
         return LifecycleDecision(current_status, resolved_by)
 
     if last_seen_at is None:
         return LifecycleDecision(STATUS_ACTIVE, None)
-    gone_quiet = (now - last_seen_at) > timedelta(days=DORMANT_AFTER_DAYS)
+    # THE DOMAIN'S CLOCK, THEN THE ENGINE'S. One 45-day dormancy aged every situation in every
+    # domain: a support ticket is stale in three days and a fundraising conversation is
+    # perfectly alive at ninety, and the same number cannot be right for both. `None` means the
+    # engine default, which is every domain that has not said otherwise.
+    gone_quiet = (now - last_seen_at) > timedelta(
+        days=dormant_after_days or DORMANT_AFTER_DAYS)
     return LifecycleDecision(STATUS_DORMANT if gone_quiet else STATUS_ACTIVE, None)
 
 
@@ -594,7 +619,11 @@ def _bulk(conn, sql: str, params: dict) -> list:
 #: `resolved_by is null` — a human's close and a statement's close are decisions, and this pass
 #: only applies the CLOCK. It never touches a row somebody decided about.
 _UNCORRELATED = (
-    "select s.situation_id, s.status, s.last_seen_at, s.resolved_at "
+    # `s.domain` — WHOSE CLOCK. Without it this sweep applied one 45/180 to every situation in
+    # every domain while `decide_lifecycle` next door honoured the domain's own, so the two
+    # paths disagreed about when the same row went dormant depending on whether a correlation
+    # still backed it.
+    "select s.situation_id, s.status, s.last_seen_at, s.resolved_at, s.domain "
     "from context_situations s "
     "left join context_correlations c "
     "  on c.org_id = s.org_id and c.correlation_id = s.correlation_id "
@@ -625,14 +654,17 @@ def age_uncorrelated_situations(store, org_id: str, *,
         rows = conn.execute(text(_UNCORRELATED), {"o": org_id}).mappings().all()
         for row in rows:
             status = str(row["status"] or "")
+            spec = spec_for(str(row["domain"] or ""))
+            dormant_days = spec.dormant_after_days or DORMANT_AFTER_DAYS
+            archive_days = spec.archive_after_days or ARCHIVE_AFTER_DAYS
             if status == STATUS_ACTIVE:
                 seen = _as_utc(row["last_seen_at"])
-                if seen is None or (now - seen) <= timedelta(days=DORMANT_AFTER_DAYS):
+                if seen is None or (now - seen) <= timedelta(days=dormant_days):
                     continue
                 target = STATUS_DORMANT
             else:
                 closed = _as_utc(row["resolved_at"])
-                if closed is None or (now - closed) <= timedelta(days=ARCHIVE_AFTER_DAYS):
+                if closed is None or (now - closed) <= timedelta(days=archive_days):
                     continue
                 target = STATUS_ARCHIVED
             moved += int(conn.execute(text(_SET_STATUS), {
@@ -739,7 +771,11 @@ def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None)
 
             stype = situation_type(corr.anchor_type, corr.domain)
             node_facts = facts_by_node.get(corr.anchor_node_id, {})
-            expected = spec_for(corr.domain).fields_for(stype)
+            # BOUND ONCE. The expected fields and the lifecycle clocks are two questions for the
+            # same spec, and looking it up twice is how they come to disagree about which domain
+            # they are describing on the day `canonical_domain` gains a rule.
+            spec = spec_for(corr.domain)
+            expected = spec.fields_for(stype)
             present = set(node_facts) | fields_by_correlation.get(corr.correlation_id, set())
             confidence = score_situation(
                 event_count=int(corr.event_count),
@@ -763,9 +799,10 @@ def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None)
                 resolved_by=held.resolved_by if held else None,
                 last_seen_at=corr.last_event_at,
                 resolved_at=held.resolved_at if held else None,
-                terminal_by_fact=normalize_stage(
-                    node_facts.get("deal.stage")) in _TERMINAL_DEAL_STAGES,
-                now=now)
+                terminal_by_fact=_is_terminal(spec, node_facts),
+                now=now,
+                dormant_after_days=spec.dormant_after_days,
+                archive_after_days=spec.archive_after_days)
 
             situation_id = held.situation_id if held else new_id("sit")
             conn.execute(text(

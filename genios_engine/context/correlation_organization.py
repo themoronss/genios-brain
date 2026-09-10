@@ -65,6 +65,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 
 from sqlalchemy import text
 
@@ -73,6 +74,74 @@ from sqlalchemy import text
 #: the reader should do — chase one contact, or accept that the firm has gone quiet — and one
 #: person is already fully served by the per-counterparty situation.
 MIN_MEMBERS = 2
+
+#: Where an authored grouping lives. One file per grouping; see the README beside them.
+GROUPINGS_DIR = Path(__file__).resolve().parent / "groupings"
+
+
+class GroupingError(ValueError):
+    """A grouping file that cannot be used. Names the file, like `ExclusionError` next door."""
+
+
+@dataclass(frozen=True, slots=True)
+class Grouping:
+    """"For my business, these people are one party" — the edge that says so.
+
+    `works_at` / `person` / `company` was hardcoded, and it is one business's version of a true
+    statement. A hospital groups clinicians by DEPARTMENT, a school groups guardians by
+    HOUSEHOLD, a broker groups traders by DESK, a consultancy groups people by the ENGAGEMENT
+    they are staffed on rather than by who employs them. Every one of those is the same reading
+    — more than one person on the other side has gone quiet — over a different edge.
+    """
+
+    grouping_id: str
+    edge_type: str
+    member_node_type: str
+    group_node_type: str
+    min_members: int = MIN_MEMBERS
+    why: str = ""
+
+
+def load_groupings(directory: "Path | None" = None) -> tuple[Grouping, ...]:
+    """Every `*.yaml` in the directory, in filename order.
+
+    Sorted, so two machines load the same set and a diff of two reports is a diff of behaviour
+    rather than of `readdir` — the reason `load_exclusions` and `patterns.load_directory` sort.
+
+    STRICT, unlike the corpus reads elsewhere on this branch, and deliberately: an unreadable
+    `Domain Expertise/` is a deployment problem where the shipped default is still correct, but
+    a grouping file that will not parse is a statement somebody wrote about who counts as one
+    party, and silently ignoring it would group people the author said not to group.
+    """
+    import yaml
+
+    root = directory or GROUPINGS_DIR
+    if not root.is_dir():
+        return ()
+    out: list[Grouping] = []
+    for path in sorted(root.glob("*.yaml")):
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError) as exc:
+            raise GroupingError(f"{path.name} could not be read as YAML: {exc}") from exc
+        if not isinstance(data, Mapping):
+            raise GroupingError(f"{path.name} is not a grouping mapping")
+        missing = [k for k in ("grouping_id", "edge_type", "member_node_type",
+                               "group_node_type") if not str(data.get(k) or "").strip()]
+        if missing:
+            raise GroupingError(f"{path.name} is missing {', '.join(missing)}")
+        floor = int(data.get("min_members") or MIN_MEMBERS)
+        if floor < MIN_MEMBERS:
+            # A "group" of one is a duplicate of the per-member card with a firm's name on it.
+            raise GroupingError(
+                f"{path.name} sets min_members={floor}; the reading refuses below {MIN_MEMBERS}")
+        out.append(Grouping(
+            grouping_id=str(data["grouping_id"]).strip(),
+            edge_type=str(data["edge_type"]).strip(),
+            member_node_type=str(data["member_node_type"]).strip(),
+            group_node_type=str(data["group_node_type"]).strip(),
+            min_members=floor, why=str(data.get("why") or "").strip()))
+    return tuple(out)
 
 
 @dataclass(frozen=True, slots=True)
@@ -138,16 +207,18 @@ class OrgGroup:
 #: `works_at` is written by `context/pipeline.py` and already read by `outreach_situations`'s
 #: `_EMPLOYERS`; this reads the same edge and keeps the NODE ID as well as the display name,
 #: because a group has to be addressable and two firms can share a display name.
+#: BOUND PARAMETERS FOR THE THREE TYPES, not interpolation. They arrive from a YAML file a
+#: tenant can edit, and a node type spliced into SQL is a node type that can end a statement.
 _ORG_MEMBERS = (
     "select e.to_node_id as company_node, c.display_name as company, "
     "       e.from_node_id as person_node, "
     "       coalesce(p.display_name, p.canonical_key) as person "
     "from graph_edges e "
     "join graph_nodes c on c.org_id = e.org_id and c.node_id = e.to_node_id "
-    "     and c.node_type = 'company' and c.valid_to is null "
+    "     and c.node_type = :group_type and c.valid_to is null "
     "join graph_nodes p on p.org_id = e.org_id and p.node_id = e.from_node_id "
-    "     and p.node_type = 'person' and p.valid_to is null "
-    "where e.org_id = :o and e.edge_type = 'works_at' and e.valid_to is null "
+    "     and p.node_type = :member_type and p.valid_to is null "
+    "where e.org_id = :o and e.edge_type = :edge_type and e.valid_to is null "
     "order by c.display_name, person"
 )
 
@@ -183,7 +254,8 @@ def _plain(raw) -> str | None:
 
 
 def group_by_organization(member_rows: Sequence[Mapping],
-                          role_rows: Sequence[Mapping] = ()) -> tuple[OrgGroup, ...]:
+                          role_rows: Sequence[Mapping] = (),
+                          *, min_members: int = MIN_MEMBERS) -> tuple[OrgGroup, ...]:
     """Group people into their counterparty organisations. Pure, so the rule reads in one place."""
     roles_by_person: dict[str, dict[str, object]] = {}
     for row in role_rows:
@@ -204,11 +276,12 @@ def group_by_organization(member_rows: Sequence[Mapping],
 
     out = [OrgGroup(company_node_id=node, company=name,
                     members=tuple(sorted(members, key=lambda m: (m.name, m.node_id))))
-           for (node, name), members in buckets.items() if len(members) >= MIN_MEMBERS]
+           for (node, name), members in buckets.items() if len(members) >= min_members]
     return tuple(sorted(out, key=lambda g: (-g.size, g.company, g.company_node_id)))
 
 
-def find_organizations(conn, org_id: str) -> tuple[OrgGroup, ...]:
+def find_organizations(conn, org_id: str,
+                       groupings: "Sequence[Grouping] | None" = None) -> tuple[OrgGroup, ...]:
     """Every counterparty organisation with at least `MIN_MEMBERS` people, largest first.
 
     DELIBERATELY UNNARROWED, and an earlier cut of this function was wrong about that. It took
@@ -221,15 +294,31 @@ def find_organizations(conn, org_id: str) -> tuple[OrgGroup, ...]:
     Two statements for the whole tenant rather than one per group — the same bulk discipline every
     other pass in this layer keeps.
     """
-    members = conn.execute(text(_ORG_MEMBERS), {"o": org_id}).mappings().all()
+    # ONE ROLE READ FOR EVERY GROUPING. What a person IS to us does not depend on which edge
+    # grouped them, so reading it once per grouping would be the same statement N times.
     roles = conn.execute(text(_MEMBER_ROLES), {"o": org_id}).mappings().all()
-    return group_by_organization(members, roles)
+
+    out: list[OrgGroup] = []
+    for grouping in (groupings if groupings is not None else load_groupings()):
+        members = conn.execute(text(_ORG_MEMBERS), {
+            "o": org_id, "edge_type": grouping.edge_type,
+            "member_type": grouping.member_node_type,
+            "group_type": grouping.group_node_type}).mappings().all()
+        out.extend(group_by_organization(members, roles, min_members=grouping.min_members))
+    # LARGEST FIRST ACROSS ALL GROUPINGS, then by name, so a tenant with two groupings gets one
+    # ordered list rather than two concatenated ones — the caller reads a ranking, not a
+    # traversal order.
+    return tuple(sorted(out, key=lambda g: (-len(g.members), g.company, g.company_node_id)))
 
 
 __all__ = [
+    "GROUPINGS_DIR",
     "MIN_MEMBERS",
+    "Grouping",
+    "GroupingError",
     "OrgGroup",
     "OrgMember",
     "find_organizations",
     "group_by_organization",
+    "load_groupings",
 ]

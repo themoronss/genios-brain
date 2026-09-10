@@ -54,6 +54,31 @@ class DomainSpec:
     # yields a report that is always right and never useful.
     expected_fields: dict[str, dict[str, str]] = field(default_factory=dict)
 
+    # ── LIFECYCLE CLOCKS ──────────────────────────────────────────────────────────────────
+    #
+    # THE DOCSTRING SAYS "NO THRESHOLDS", AND A CLOCK IS NOT ONE. `situations.py` already draws
+    # this exact line for the one piece of domain vocabulary it kept: *"it is here because it is
+    # a LIFECYCLE rule (when does a situation stop being live) rather than a statement about what
+    # sales means."* How long a thing stays live is a fact ABOUT a domain; what to do about it is
+    # the decision, and that still belongs to Layer 4. Nothing here ranks, prioritises or acts.
+    #
+    # WHY IT HAD TO MOVE. One 45-day dormancy and one 180-day archive aged every situation in
+    # every domain. A support ticket is stale in three days and a fundraising conversation is
+    # perfectly alive at ninety; the same number cannot be right for both, and today it is
+    # wrong for whichever one it was not calibrated on. A tenant running both gets a support
+    # backlog that never goes quiet and investor relationships that die on the vine.
+    #
+    # None means "use the engine default", so nothing changes for a domain that says nothing —
+    # which is every domain the day this shipped.
+    correlation_window_days: int | None = None
+    dormant_after_days: int | None = None
+    archive_after_days: int | None = None
+    #: `(fact path, terminal values)`. `situations._TERMINAL_DEAL_STAGES` hardcodes
+    #: `deal.stage in {closedwon, closedlost}`, which is the right rule for a pipeline and says
+    #: nothing about a clinic's `case.status` or a firm's `matter.state`. Declared here, the
+    #: same lifecycle question can be asked of whatever fact a domain actually ends on.
+    terminal_when: tuple[str, frozenset[str]] | None = None
+
     def type_for(self, anchor_type: str) -> str:
         return self.situation_types.get(anchor_type) or f"{self.domain}_{anchor_type}"
 

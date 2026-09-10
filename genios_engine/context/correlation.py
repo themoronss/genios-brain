@@ -57,6 +57,8 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import text
 
+from pathlib import Path
+
 from genios_engine.context.domain_spec import canonical_domain, spec_for
 
 from genios_engine.platform.canonical import stable_id
@@ -82,14 +84,70 @@ DEFAULT_DOMAIN = "general"
 #
 # Read from the Layer 1 vocabulary rather than restated here, so adding an anchoring kind
 # is one edit in one file — importing L1 from L2 is the legal direction.
+#: Where an authored anchor tier lives. One file per node type; see the README beside them.
+ANCHORS_DIR = Path(__file__).resolve().parent / "anchors"
+
+#: The tiers this engine ships, as `{node_type: rank}`. Lower anchors first.
+#:
+#: THE COMMENT THAT USED TO SIT HERE IS THE ARGUMENT FOR MAKING THIS DATA: *"subscription /
+#: product_account are system-of-record business objects (like a deal) … Without them here,
+#: choose_anchors returns [] for every Stripe/client-DB structured event → it reaches NO
+#: situation, and admin/account situations report their fields missing forever — the 'built,
+#: green, does nothing' dead-end."* A business object this tuple has not heard of does not rank
+#: low; it anchors NOTHING, and every situation about it is invisible with no error anywhere.
+#: A clinic's `episode`, a firm's `matter`, an exporter's `shipment` — one line of YAML each,
+#: and a deploy each before.
+#:
+#: `subscription` AND `product_account` GET DISTINCT RANKS even though they are one tier
+#: conceptually. Giving them the same number and breaking the tie on name reversed them —
+#: `product_account` sorts first alphabetically — and an event carrying both would have
+#: anchored differently from the day this shipped. A tie-break rule is not a place to hide a
+#: behaviour change; the shipped order is stated as numbers.
+_SHIPPED_TIERS: dict[str, int] = {"deal": 10, "subscription": 30, "product_account": 31,
+                                  "company": 40, "person": 50}
+
+
+def _authored_tiers() -> dict[str, int]:
+    """`{node_type: rank}` from `anchors/*.yaml`, sorted so two machines agree.
+
+    Fails soft per file, like every other corpus read on this branch: one malformed tier must
+    not make the engine forget that a company can anchor a situation.
+    """
+    out: dict[str, int] = {}
+    try:
+        import yaml
+
+        if not ANCHORS_DIR.is_dir():
+            return out
+        for path in sorted(ANCHORS_DIR.glob("*.yaml")):
+            try:
+                data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+                node_type = str(data.get("node_type") or "").strip()
+                if node_type:
+                    out[node_type] = int(data.get("rank") or 100)
+            except Exception:      # noqa: BLE001 — one bad tier must not lose the others
+                continue
+    except Exception:      # noqa: BLE001 — a directory that cannot be read is a deploy problem
+        return {}
+    return out
+
+
 def _anchor_priority() -> tuple[str, ...]:
     from genios_engine.capture.internal_knowledge import ANCHORING_KINDS
-    # subscription / product_account are system-of-record business objects (like a deal): a billing
-    # or account situation is ABOUT them. Without them here, choose_anchors returns [] for every
-    # Stripe/client-DB structured event → it reaches NO situation, and admin/account situations report
-    # their fields (renewal date, plan) missing forever — the "built, green, does nothing" dead-end.
-    return ("deal", *sorted(ANCHORING_KINDS), "subscription", "product_account",
-            "company", "person")
+
+    ranked = dict(_SHIPPED_TIERS)
+    # Canon kinds that describe work in flight sit between a deal and a company: a named project
+    # is more specific than the company it belongs to. Ranked as a group because they arrive as
+    # a set, not as an ordered list.
+    for kind in ANCHORING_KINDS:
+        ranked.setdefault(str(kind), 20)
+    # AUTHORED TIERS MAY RESTATE A SHIPPED RANK BUT NOT DELETE ONE. A tenant that wants
+    # `company` to outrank `deal` has a real reason and may say so; a tenant that removes
+    # `person` would silently lose every situation about a human being, which is not a thing
+    # a YAML file should be able to do by omission.
+    ranked.update(_authored_tiers())
+    # Rank, then name, so two tiers at one rank order deterministically rather than by readdir.
+    return tuple(node for node, _rank in sorted(ranked.items(), key=lambda r: (r[1], r[0])))
 
 
 ANCHOR_PRIORITY: tuple[str, ...] = _anchor_priority()
@@ -302,7 +360,26 @@ def thread_correlations(conn, *, org_id: str, thread_id: str | None,
     return sorted(r.correlation_id for r in rows)
 
 
-def find_or_open(conn, *, org_id: str, anchor: Anchor, event_at: datetime | None) -> str:
+def window_for(domain: str) -> int:
+    """How long THIS domain's correlations stay open to new evidence.
+
+    45 days was every business's answer to "the situation went cold", and the production path
+    could not override it. A support ticket is a different age at 45 days from a fundraising
+    conversation — one is long dead and the other is normal — so a single number is wrong for
+    whichever domain it was not calibrated on.
+
+    Read from `DomainSpec`, which Layer 3 can already `register()` at import time, so a domain
+    states its own clock as data. `None` means the engine default, which is every domain today.
+    """
+    try:
+        declared = spec_for(canonical_domain(domain)).correlation_window_days
+    except Exception:      # noqa: BLE001 — an unknown domain is not a reason to lose the window
+        declared = None
+    return int(declared) if declared else CORRELATION_WINDOW_DAYS
+
+
+def find_or_open(conn, *, org_id: str, anchor: Anchor, event_at: datetime | None,
+                 window_days: int | None = None) -> str:
     """The live correlation for this anchor, opening a new generation when the last one
     has gone cold.
 
@@ -316,9 +393,12 @@ def find_or_open(conn, *, org_id: str, anchor: Anchor, event_at: datetime | None
         "order by generation desc limit 1"),
         {"o": org_id, "n": anchor.node_id, "d": anchor.domain}).first()
 
+    # THE CALLER'S NUMBER, THEN THE DOMAIN'S, THEN THE ENGINE'S. A caller that knows better —
+    # a backfill replaying a year of history, a test pinning a boundary — wins over both.
+    window = window_days if window_days is not None else window_for(anchor.domain)
     if latest is not None and joins_window(group_first=latest.first_event_at,
                                            group_last=latest.last_event_at,
-                                           event_at=event_at):
+                                           event_at=event_at, window_days=window):
         return latest.correlation_id
 
     generation = (latest.generation + 1) if latest is not None else 1
