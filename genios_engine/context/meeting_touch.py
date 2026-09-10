@@ -56,8 +56,13 @@ COVERAGE_CAP_PCT = 35
 #:
 #: There was no window at all. Every external meeting the calendar has ever held minted an
 #: `active` situation — one from three years ago included — and `domain_shadow` served every one
-#: of them to Layer 3 forever. Ninety days is the same horizon every other backward-looking read
-#: in this layer uses; a demo from last quarter is history, not a thing to follow through on.
+#: of them to Layer 3 forever.
+#:
+#: A DEFAULT, NOT A LAW, and `refresh_channel_touch_situations` takes it as an argument. Ninety
+#: days suits a founder's calendar; an enterprise whose sales cycle runs two quarters would lose
+#: every meeting that still matters. When a per-tenant source is needed,
+#: `capture/esqe/qualification.org_qualification_floors` is the proven shape — a table, a
+#: documented default, an owner, and an append-only change log.
 FOLLOW_THROUGH_DAYS = 90
 
 #: Stated on every row so a capability can see the shape of its own blindness rather than reading
@@ -139,7 +144,8 @@ def _freshness(start_at: datetime | None, now: datetime) -> int:
 
 
 def refresh_channel_touch_situations(store, org_id: str, *,
-                                     now: datetime | None = None) -> int:
+                                     now: datetime | None = None,
+                                     follow_through_days: int = FOLLOW_THROUGH_DAYS) -> int:
     """Open or refresh one `channel_touch` situation per external meeting. Returns rows written.
 
     Idempotent: the correlation id is derived from the meeting node, so a sweep that runs six
@@ -166,7 +172,7 @@ def refresh_channel_touch_situations(store, org_id: str, *,
                 continue
 
             start_at = _as_utc(r.start_at)
-            if start_at is not None and (now - start_at).days > FOLLOW_THROUGH_DAYS:
+            if start_at is not None and (now - start_at).days > follow_through_days:
                 # OUTSIDE THE WINDOW. Skipped before minting, and reconciled below if a row for
                 # it already exists — a three-year-old demo is not follow-through work.
                 continue

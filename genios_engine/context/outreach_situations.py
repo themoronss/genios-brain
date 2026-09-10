@@ -100,10 +100,14 @@ ANCHOR_ORGANIZATION = "organization"
 #: an objective-keyed cohort covering the same people rather than minting a second card about them.
 ANCHOR_CAMPAIGN = "campaign"
 
-#: How far back a campaign may have been sent and still be worth a card. Ninety days is the window
-#: every other backward-looking read in this layer uses, and a raise that opened six months ago is
-#: not a campaign anybody is still running.
-_CAMPAIGN_WINDOW_DAYS = 90
+#: How far back a campaign may have been sent and still be worth a card.
+#:
+#: A DEFAULT, NOT A LAW. `refresh_state_situations` takes it as an argument and `find_campaigns`
+#: has never had a default at all — its docstring says why: "a caller choosing the window is a
+#: caller who knows which window their answer is about." Ninety days is a founder's fundraise; a
+#: procurement cycle is longer and a support desk's is far shorter. When a per-tenant source is
+#: needed, `capture/esqe/qualification.org_qualification_floors` is the proven shape.
+CAMPAIGN_WINDOW_DAYS = 90
 
 #: How overdue a promise must be before it is a situation. Zero: a commitment is overdue the
 #: moment its own stated date passes, and that date came from the user's own words rather than
@@ -764,7 +768,8 @@ def _mailbox_owner(c, org_id: str) -> str | None:
     return next(iter(seats)) if len(seats) == 1 else None
 
 
-def _gather(store, org_id: str, *, now: datetime | None = None) -> tuple[dict, dict, dict]:
+def _gather(store, org_id: str, *, now: datetime | None = None,
+            campaign_window_days: int = CAMPAIGN_WINDOW_DAYS) -> tuple[dict, dict, dict]:
     """Everything the readings share, read once. `now` is THE SWEEP CLOCK, not the wall clock.
 
     It has a default only because two tests call this directly; every production caller passes
@@ -810,7 +815,7 @@ def _gather(store, org_id: str, *, now: datetime | None = None) -> tuple[dict, d
         from genios_engine.context.correlation_conversation import find_campaigns
         held["_campaigns"] = find_campaigns(
             c, org_id, since=(now or datetime.now(timezone.utc))
-            - timedelta(days=_CAMPAIGN_WINDOW_DAYS))
+            - timedelta(days=CAMPAIGN_WINDOW_DAYS))
         for row in c.execute(text(_COMMITMENT_OWNERS), {"o": org_id}):
             entry = held.get(str(row.commitment))
             if entry is None:
@@ -821,7 +826,8 @@ def _gather(store, org_id: str, *, now: datetime | None = None) -> tuple[dict, d
     return held, counts, employers
 
 
-def refresh_state_situations(store, org_id: str, *, now: datetime | None = None) -> int:
+def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
+                             campaign_window_days: int = CAMPAIGN_WINDOW_DAYS) -> int:
     """Open, refresh or close the state readings for this org. Returns rows written.
 
     Idempotent for the same reasons the support readings are: every fact overwrites its own
@@ -831,7 +837,8 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None)
     now = now or datetime.now(timezone.utc)
     if not state_domains():
         return 0
-    held, counts, employers = _gather(store, org_id, now=now)
+    held, counts, employers = _gather(store, org_id, now=now,
+                                      campaign_window_days=campaign_window_days)
     if not held:
         return 0
 

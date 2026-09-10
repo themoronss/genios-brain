@@ -273,3 +273,61 @@ def test_a_superseded_outbound_fact_does_not_join_a_campaign(db):
 
 def test_nothing_sent_yields_nothing(db):
     assert campaign_of(db) == ()
+
+
+# =============================================================================================
+# A DEFAULT IS NOT A LAW — a different business gets a different window.
+# =============================================================================================
+def test_a_send_that_runs_over_a_working_week_is_one_campaign_when_the_caller_says_so(db):
+    """THE RIGIDITY THIS CLOSES. `WINDOW_HOURS = 36` is a founder's morning. An enterprise whose
+    outreach goes out over a working week had that one campaign split into five runs, every one
+    of them under `MIN_RECIPIENTS`, and saw NOTHING — the threshold silently deciding that a
+    slower business has no campaigns rather than that it has slower ones."""
+    slow = [NOW + timedelta(days=d) for d in range(len(INVESTORS))]
+    for i, who in enumerate(INVESTORS):
+        node(db, f"n_{i}", who)
+        we_sent(db, to_node=f"n_{i}", event=f"evt_{i}", quote=PITCH, at=slow[i])
+
+    default = find_campaigns(db, ORG, since=SINCE)
+    weeklong = find_campaigns(db, ORG, since=SINCE, window_hours=24 * 10)
+
+    assert len(default) == 0                      # split below the floor, and therefore invisible
+    assert len(weeklong) == 1
+    assert weeklong[0].size == len(INVESTORS)
+
+
+def test_a_tighter_window_splits_what_the_default_would_join(db):
+    """Both directions, so the parameter is real rather than a wider default in disguise."""
+    send_the_raise(db)
+
+    assert len(find_campaigns(db, ORG, since=SINCE)) == 1
+    assert find_campaigns(db, ORG, since=SINCE, window_hours=0, min_recipients=1)
+
+
+def test_a_business_where_two_people_is_a_campaign_can_say_so(db):
+    """`MIN_RECIPIENTS = 3` is the floor at which "how is this OUTREACH going" stops being "what
+    about this person". For a firm with six customers it is the wrong number, and the caller —
+    not this module — is who knows that."""
+    send_the_raise(db, recipients=INVESTORS[:2])
+
+    assert find_campaigns(db, ORG, since=SINCE) == ()
+    assert len(find_campaigns(db, ORG, since=SINCE, min_recipients=2)) == 1
+
+
+def test_the_defaults_are_unchanged_for_a_caller_that_says_nothing():
+    """Every existing call site keeps its behaviour exactly. Making a value choosable must not
+    quietly change it for anyone who had not thought about it."""
+    import inspect
+
+    signature = inspect.signature(find_campaigns)
+
+    assert signature.parameters["window_hours"].default == WINDOW_HOURS == 36
+    assert signature.parameters["min_recipients"].default == MIN_RECIPIENTS == 3
+
+
+def test_the_window_still_has_no_default_where_it_never_had_one():
+    """`since` is required and stays required: an unbounded read on a founder's mailbox is the
+    query that makes a sweep unpredictable."""
+    import inspect
+
+    assert inspect.signature(find_campaigns).parameters["since"].default is inspect.Parameter.empty
