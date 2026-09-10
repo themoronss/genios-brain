@@ -40,7 +40,15 @@ ASSIGNMENT_VERSION = "assign.v1"
 #: is the narrower, more recently asserted claim; the generic node attribute is last because it
 #: is the least likely to have been maintained.
 OWNER_FIELDS: tuple[str, ...] = ("deal.owner", "relationship.owner")
-ACTOR_FIELD = "commitment.actor"
+#: WHO MADE THE PROMISE. `commitment.actor` until now — a name that appears NOWHERE in the
+#: corpus vocabulary and had no writer anywhere, so Rule 2 never fired. `commitment.owner` is
+#: the name `Domain Expertise/_schema/vocabulary.yaml` has tracked as a declared-but-unwritten
+#: ask, and `context/pipeline.py` now writes it beside the `owns` edge it was already writing.
+#:
+#: The old name is kept as a second candidate rather than deleted: it costs one dictionary
+#: lookup, and a tenant whose pipeline predates the change has no `commitment.owner` on rows
+#: already in the graph. Neither is invented — both are read, and absent stays absent.
+ACTOR_FIELDS: tuple[str, ...] = ("commitment.owner", "commitment.actor")
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,9 +169,10 @@ def resolve_owner(*, facts: Mapping[str, Any] | None, attrs: Mapping[str, Any] |
     # An owner recorded but off-seat (left the company, never onboarded) deliberately falls
     # through rather than being force-matched: pushing to a dead seat looks identical to
     # delivering successfully, which is the worst possible failure for a commitment.
-    seat = directory.active_seat(_fact_value(facts, ACTOR_FIELD))
-    if seat:
-        return Assignment(seat, AudienceClass.OWNER, "rule2_actor")
+    for field in ACTOR_FIELDS:
+        seat = directory.active_seat(_fact_value(facts, field))
+        if seat:
+            return Assignment(seat, AudienceClass.OWNER, "rule2_actor")
 
     # Rule 3 — the org's own admin. Every input above is structurally absent in production:
     # `deal.owner`/`relationship.owner` have no write_fact producer anywhere, `commitment.actor`

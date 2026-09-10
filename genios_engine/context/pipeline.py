@@ -604,6 +604,8 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
     with store.engine.begin() as conn:          # one transaction (B7)
         version = store.bump_version(conn, org_id)
         name_to_node: dict[str, str] = {}
+        #: node id -> the address that node was anchored on. See the write below.
+        node_email: dict[str, str] = {}
         nodes = 0
         edge_n = 0
         obs_n = 0
@@ -846,6 +848,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                     display_name=name or email, event_id=event_id)
                 nodes += 1
                 name_to_node[_norm(email)] = nid
+                # NODE ID -> EMAIL, kept explicitly rather than reversed out of `name_to_node`.
+                # That map holds NAMES as well as addresses (three lines down), so inverting it
+                # would hand `resolve_owner` a display name where it needs something
+                # `SeatDirectory.active_seat` can resolve — and `active_seat` takes a seat id or
+                # an EMAIL. A silently wrong lookup here routes a commitment to nobody.
+                node_email[nid] = email
                 if name:
                     name_to_node[_norm(str(name))] = nid
                     observe_person_name(conn, org_id=org_id, node_id=nid, name=str(name),
@@ -1255,9 +1263,33 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                     evidence={"derived": "commitment actor"}, source=source,
                                     authority_rank=2):
                     edge_n += 1
+                # WHO OWNS IT, AS A FACT AND NOT ONLY AS AN EDGE.
+                #
+                # The `owns` edge above already says this person made this promise, and
+                # `executive/assignment.resolve_owner` — the function that decides who a card
+                # reaches — CANNOT SEE EDGES. It takes `facts` and `attrs` and nothing else. So
+                # the ownership was in the graph and unreadable at the one point that needed
+                # it, and `assignment.py`'s own comment records the consequence: *"this returned
+                # `None` for every card ever built — all 43 carry `assignee = NULL`."* Every
+                # card fell through to the admin queue, which for a founder-only tenant looks
+                # fine and for a company with a regional manager means nothing is ever routed.
+                #
+                # `commitment.owner`, NOT `commitment.actor`. Two names for one thing: the
+                # engine looked for `commitment.actor`, which appears nowhere in the corpus
+                # vocabulary, while `substrate.planned_substrate` has tracked `commitment.owner`
+                # as a declared-but-unwritten ask. The declared name wins; the other never had
+                # a writer and now never needs one.
+                #
+                # THE VALUE IS THE ADDRESS, not the node id: `SeatDirectory.active_seat` resolves
+                # a seat id or an EMAIL, and handing it a node id would resolve to nobody —
+                # silently, which is how this gap survived in the first place.
+                owner_email = node_email.get(subj)
+                extra_facts = ((("commitment.owner", owner_email, "string"),)
+                               if owner_email else ())
                 for fld, val, vt in (("commitment.due_at", due.isoformat(), "timestamp"),
                                      ("commitment.text", cm_action, "string"),
-                                     ("commitment.status", "open", "enum")):
+                                     ("commitment.status", "open", "enum"),
+                                     *extra_facts):
                     store.write_fact(conn, org_id=org_id, subject_node_id=cnode,
                                      field=fld, value=val, value_type=vt,
                                      confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
