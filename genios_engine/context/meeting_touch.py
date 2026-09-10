@@ -87,7 +87,12 @@ _MEETINGS = (
     # meeting for its own counterparty and matched NOTHING: 62 meetings, 331 facts, every one
     # filtered out by a `having` on a fact that is never there. The link is the `attended` edge.
     "join graph_edges e "
-    "  on e.org_id = n.org_id and e.edge_type = 'attended' "
+    # `valid_to is null` — AN ATTENDANCE THAT WAS CLOSED IS NOT AN ATTENDANCE. `merge.py`
+    # dedupes and closes edges during an identity merge, and without this filter a closed edge
+    # kept contributing a counterparty to the channel-touch situation forever: the meeting
+    # reported an attendee the graph had already retired, and the situation's own counterparty
+    # list said so on the card. Every other edge read in this layer carries the same predicate.
+    "  on e.org_id = n.org_id and e.edge_type = 'attended' and e.valid_to is null "
     "  and (e.from_node_id = n.node_id or e.to_node_id = n.node_id) "
     "join graph_nodes att "
     "  on att.org_id = n.org_id and att.valid_to is null "

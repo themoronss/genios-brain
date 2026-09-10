@@ -701,10 +701,16 @@ def _record_semantic(trace: EventTrace, verdict: SemanticVerdict) -> None:
     # rate says the model cited text that is not in the message, this one says it made claims it
     # cited nothing at all for. A prompt edit can hold one flat while wrecking the other.
     diagnostics = outcome.diagnostics
+    # ALL SIX COUNTERS, and this rebuilt four. The two the branch added — a claim killed because
+    # its receipt was somebody else's quoted sentence, and one killed because its receipt was a
+    # bare timestamp or salutation — were computed by the binder and dropped here, so the two
+    # newest drop reasons were invisible on every request path.
     binder = BinderCounters(claims_in=diagnostics.claims_in,
                             carried_own_evidence=diagnostics.claims_bound,
                             synthesized=diagnostics.synthesized_spans,
-                            no_evidence=diagnostics.no_evidence_drops)
+                            no_evidence=diagnostics.no_evidence_drops,
+                            quoted_history=diagnostics.quoted_history_drops,
+                            unsubstantive=diagnostics.unsubstantive_drops)
     no_evidence_bp = no_evidence_rate_bp(binder)
     trace.record(SEMANTIC_STAGE, "pass", tier=verdict.tier, profile=verdict.profile_id,
                  cache_hit=outcome.cache_hit, model_calls=outcome.model_calls,

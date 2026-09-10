@@ -281,13 +281,37 @@ def find_contradictions(rows: Sequence[Mapping],
     """
     arbiters = arbiters or {}
     names = names or {}
+    # A SITUATION WITH MORE THAN ONE SUBJECT HAS NONE, and this is the fan-out that made that
+    # matter. `pipeline.py` writes one `person --corresponded_with--> thread` edge PER RECIPIENT,
+    # so a THREAD-anchored situation — every `first_response_overdue` row on the pilot — resolves
+    # to every participant on the thread, not to the one it is about.
+    #
+    # The harm is specific and it is the kind this module exists to prevent. A five-recipient
+    # thread carrying `first_response_overdue` attributes that claim to all five; if any one of
+    # them separately carries `awaiting_response`, a contradiction fires between two situations
+    # about DIFFERENT people, and the arbiter then settles it by reading a `ball_in_court` that
+    # belongs to only one of them. A contradiction attributed to the wrong person is worse than
+    # none: it suppresses a correct card to resolve a disagreement that never existed.
+    #
+    # DROPPED, NOT GUESSED. `_THREAD_COVERED_BY_PARTY` picks a single party for a different
+    # question and can, because it is choosing whom to ADDRESS. Here the question is whose turn
+    # it is, and picking one of five would be inventing the answer. On the pilot 41 thread
+    # anchors resolve to 22 people, so the ambiguous ones are a real slice — and they keep both
+    # of their cards, which is the status quo, rather than losing one to a coin toss.
+    subjects: dict[str, set[str]] = {}
+    for row in rows:
+        subjects.setdefault(str(row["situation_id"]), set()).add(str(row["person"]))
+
     held: dict[str, dict[str, str]] = {}
     for row in rows:
+        situation_id = str(row["situation_id"])
+        if len(subjects.get(situation_id, ())) > 1:
+            continue
         person = str(row["person"])
         key = f'{row["domain"]}:{row["situation_type"]}'
         # FIRST ONE WINS for a repeated key. Two `awaiting_response` situations on one person are
         # not a contradiction with themselves, and either can stand for the claim.
-        held.setdefault(person, {}).setdefault(key, str(row["situation_id"]))
+        held.setdefault(person, {}).setdefault(key, situation_id)
 
     out: list[Contradiction] = []
     for person, present in sorted(held.items()):

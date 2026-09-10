@@ -139,7 +139,13 @@ _WAITING_ROWS = (
     # any future reading that projects a fact onto its own anchor — and because a reading is
     # about real subjects by definition. `outreach` escaped only by accident: it happens to
     # project `outreach.*` rather than the `thread.*` names it reads.
-    "and n.node_type not in ('outreach', 'commitment', 'cohort') "
+    # `organization` and `campaign` were added by this branch and missed here. Harmless TODAY —
+    # `organization.*`/`campaign.*` are not in the field list below, so neither reading can read
+    # its own output back — and that is exactly the accident the comment above says `outreach`
+    # escaped by. The exclusion is on node TYPE precisely so a future field rename cannot spring
+    # the trap; leaving two anchors out of it leaves two doors open.
+    "and n.node_type not in ('outreach', 'commitment', 'cohort', 'condition', "
+    "                        'organization', 'campaign') "
     "where f.org_id = :o and f.valid_to is null and f.status = 'active' "
     "and f.field in ('thread.days_waiting', 'thread.follow_up_count', 'thread.last_heard_days', "
     "                'thread.response_expected', 'party.reply_cadence_days', "
@@ -829,6 +835,18 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         # the denominator counts everyone there, not only the ones who happen to be waiting.
         from genios_engine.context.correlation_organization import find_organizations
         held["_organizations"] = find_organizations(c, org_id)
+        # OPEN DUPLICATE PROPOSALS PER NODE, for the identity axis. Read here with every other
+        # bulk gather; `support_situations` reads the same table for the same purpose and this
+        # module was passing a hardcoded zero.
+        held["_merge_proposals"] = {
+            str(r[0]): int(r[1] or 0) for r in c.execute(text(
+                "select node_id, count(*) from ("
+                "  select from_node_id as node_id from merge_proposals "
+                "  where org_id = :o and status = 'open' "
+                "  union all "
+                "  select to_node_id as node_id from merge_proposals "
+                "  where org_id = :o and status = 'open') x group by node_id"),
+                {"o": org_id}).all()}
         # The campaigns, same route. `find_campaigns` requires an explicit window and has no
         # default: an unbounded read over a founder's whole mailbox is the query that makes a
         # sweep unpredictable.
@@ -859,8 +877,15 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
         return 0
     held, counts, employers = _gather(store, org_id, now=now,
                                       campaign_window_days=campaign_window_days)
-    if not held:
-        return 0
+    merge_open = held.get("_merge_proposals") or {}
+    # NO EARLY RETURN ON AN EMPTY SET. It used to `return 0` here, and an empty `held` is EXACTLY
+    # the state in which every finding of every reading should be closed — the last waiting fact
+    # retired on a quiet tenant, and every `awaiting_response` row stays `active` forever because
+    # the pass that would have reconciled them decided there was nothing to do. "Nothing is true
+    # any more" is not "nothing to do"; it is the whole of the work.
+    #
+    # The readings below all return `[]` on an empty `held`, so the loop costs one pass and the
+    # `_reconcile` at the bottom does what it was written for.
 
     written = 0
     with store.engine.begin() as c:
@@ -904,7 +929,15 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                                 event_count=int(getattr(stats, "events", 0) or 0),
                                 source_count=int(getattr(stats, "sources", 0) or 0)),
                             freshness=fresh if fresh_known else None,
-                            identity=identity_score(open_merge_proposals=0),
+                            # OPEN DUPLICATES COUNT AGAINST IDENTITY, and this was hardcoded
+                            # to zero — so all six readings dispatched from `READINGS` published
+                            # a PERFECT identity score no matter how many unresolved merge
+                            # proposals their anchor had, while `support_situations` and
+                            # `situations` both read the real number. Three writers of one
+                            # column, one of them asserting certainty it had not checked.
+                            identity=identity_score(
+                                open_merge_proposals=merge_open.get(
+                                    finding.concerns_node, 0)),
                             first_seen=getattr(stats, "first_at", None), last_seen=last_at)
                     written += 1
             for domain, live in minted.items():

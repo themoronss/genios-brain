@@ -522,6 +522,18 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     # INSUFFICIENT_CONTEXT. Never fatal: a derive failure costs one cycle of freshness, and the
     # next drain recomputes from the same graph.
     derived_rows = 0
+    # ONE BOUNDARY PER PASS, and there used to be ONE FOR ALL SEVEN.
+    #
+    # A failure in `compute_derived` — the first of them — skipped every pass behind it, and with
+    # them every `_reconcile` in the sweep, so nothing closed for as long as the failure lasted.
+    # `refresh_situations` and `detect_resolutions` still ran afterwards, so the sweep reported a
+    # clean run: no exception reached the caller and the counts it prints are of the passes that
+    # DID run. A tenant could lose its whole state-reading layer for a week and every log line
+    # would look ordinary.
+    #
+    # The outer boundary stays as a backstop; these are the ones that keep a single bad pass from
+    # taking the six behind it.
+    #
     # RUNS EVERY PASS, not only when the drain committed something.
     #
     # This block used to sit behind `if done or affected`, and that was wrong for the half of it
@@ -556,33 +568,58 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         # reasoning and not reasoning; it is the difference between the account's own
         # aggregate and whichever neighbour was written last, and between a row existing for
         # every non-reasoner reader and not. See `compute_account_view` for the measurement.
-        derived_rows += compute_account_view(store, org_id, now=sweep_at)
+        try:
+            derived_rows += compute_account_view(store, org_id, now=sweep_at)
+        except Exception:      # noqa: BLE001 — one derived pass must not skip the rest
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "account view pass failed for org=%s — later passes still run", org_id)
         # WAITING state — the only facts in this layer derived from what did NOT happen.
         # Runs behind the person and account passes because it reads the same thread state
         # they commit, and ahead of the situation refresh below so a situation's coverage can
         # see them. Everything above records an event; nothing records silence, which is the
         # shape of most of what a user actually wants told to them.
         from genios_engine.context.waiting import compute_waiting
-        derived_rows += compute_waiting(store, org_id, now=sweep_at)
+        try:
+            derived_rows += compute_waiting(store, org_id, now=sweep_at)
+        except Exception:      # noqa: BLE001 — one derived pass must not skip the rest
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "waiting pass failed for org=%s — later passes still run", org_id)
         # PERIOD aggregates and their situations, in the same pass and for the same reason:
         # they are computed from facts that now exist, they are cheap, and a period read that
         # is only refreshed by a separate schedule is a period read that is always stale.
         # Twenty-two authored capabilities are reachable only through these.
         from genios_engine.context.periodic import refresh_period_situations
-        derived_rows += refresh_period_situations(store, org_id, now=sweep_at)
+        try:
+            derived_rows += refresh_period_situations(store, org_id, now=sweep_at)
+        except Exception:      # noqa: BLE001 — one derived pass must not skip the rest
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "period pass failed for org=%s — later passes still run", org_id)
         # The seven correspondence-derived support readings, in the same pass and for the
         # same reason: a first-response clock, an aging item and a repeat contact are all
         # computed from the thread state and open loops THIS drain just committed, and a
         # reading refreshed only by a separate schedule is a reading that is always stale.
         # Seven authored situation types were unroutable until these existed.
         from genios_engine.context.support_situations import refresh_support_situations
-        derived_rows += refresh_support_situations(store, org_id, now=sweep_at)
+        try:
+            derived_rows += refresh_support_situations(store, org_id, now=sweep_at)
+        except Exception:      # noqa: BLE001 — one derived pass must not skip the rest
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "support pass failed for org=%s — later passes still run", org_id)
         # The one non-mail channel the graph actually holds. `demo` was unroutable not because
         # the corpus was thin but because a meeting with an outside party — 48 of them on the
         # design partner's org — reached no situation at all. Same pass, same reason: it reads
         # the calendar facts this drain just committed.
         from genios_engine.context.meeting_touch import refresh_channel_touch_situations
-        derived_rows += refresh_channel_touch_situations(store, org_id, now=sweep_at)
+        try:
+            derived_rows += refresh_channel_touch_situations(store, org_id, now=sweep_at)
+        except Exception:      # noqa: BLE001 — one derived pass must not skip the rest
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "meeting touch pass failed for org=%s — later passes still run", org_id)
         # THE STATE READINGS, last of the derived passes because they read what every pass
         # above just wrote — the waiting arithmetic in particular. These are the only
         # situations in the system named after what is HAPPENING rather than who it is
@@ -590,13 +627,23 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         # something to route on. Same self-correcting contract as the support readings: a
         # finding that stops being true is resolved by fact on the next sweep.
         from genios_engine.context.outreach_situations import refresh_state_situations
-        derived_rows += refresh_state_situations(store, org_id, now=sweep_at)
+        try:
+            derived_rows += refresh_state_situations(store, org_id, now=sweep_at)
+        except Exception:      # noqa: BLE001 — one derived pass must not skip the rest
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "state readings pass failed for org=%s — later passes still run", org_id)
         # The records reading, in the same pass and for the same reason: a document's control
         # gaps are computed from the file metadata THIS drain just projected, and the copy
         # clustering has to re-run whenever a file lands or a second copy of one appears. It
         # costs two queries and returns immediately on an org with no file store connected.
         from genios_engine.context.document_register import refresh_document_situations
-        derived_rows += refresh_document_situations(store, org_id, now=sweep_at)
+        try:
+            derived_rows += refresh_document_situations(store, org_id, now=sweep_at)
+        except Exception:      # noqa: BLE001 — one derived pass must not skip the rest
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception(
+                "documents pass failed for org=%s — later passes still run", org_id)
     except Exception:      # noqa: BLE001 — derived view, recomputed next drain
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception("derived fact refresh failed for org=%s", org_id)

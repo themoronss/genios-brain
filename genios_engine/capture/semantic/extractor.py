@@ -543,6 +543,14 @@ class ExtractionDiagnostics:
     claims_bound: int = 0
     synthesized_spans: int = 0
     no_evidence_drops: int = 0
+    #: A claim whose whole receipt was somebody ELSE'S quoted sentence, and one whose receipt was
+    #: a bare timestamp or salutation. The binder counts both at `evidence_binder.py:624` and
+    #: they were thrown away here — `ExtractionDiagnostics` had no field for them and
+    #: `pipeline.py` rebuilds `BinderCounters` from four of six. So the drops HAPPENED and
+    #: nothing on a request path could see why: a prompt that starts citing only quoted history,
+    #: or only bare fragments, was indistinguishable from one that simply produced fewer claims.
+    quoted_history_drops: int = 0
+    unsubstantive_drops: int = 0
     unalignable_spans: int = 0
     vocabulary_rejects: int = 0
     confidence_rejects: int = 0
@@ -786,6 +794,14 @@ class _Tally:
     claims_bound: int = 0
     synthesized_spans: int = 0
     no_evidence_drops: int = 0
+    #: A claim whose whole receipt was somebody ELSE'S quoted sentence, and one whose receipt was
+    #: a bare timestamp or salutation. The binder counts both at `evidence_binder.py:624` and
+    #: they were thrown away here — `ExtractionDiagnostics` had no field for them and
+    #: `pipeline.py` rebuilds `BinderCounters` from four of six. So the drops HAPPENED and
+    #: nothing on a request path could see why: a prompt that starts citing only quoted history,
+    #: or only bare fragments, was indistinguishable from one that simply produced fewer claims.
+    quoted_history_drops: int = 0
+    unsubstantive_drops: int = 0
     unalignable_spans: int = 0
     vocabulary_rejects: int = 0
     confidence_rejects: int = 0
@@ -802,6 +818,8 @@ class _Tally:
             claims_offered=self.claims_offered, answered_fields=self.answered_fields,
             claims_in=self.claims_in, claims_bound=self.claims_bound,
             synthesized_spans=self.synthesized_spans, no_evidence_drops=self.no_evidence_drops,
+            quoted_history_drops=self.quoted_history_drops,
+            unsubstantive_drops=self.unsubstantive_drops,
             unalignable_spans=self.unalignable_spans,
             vocabulary_rejects=self.vocabulary_rejects,
             confidence_rejects=self.confidence_rejects,
@@ -1389,6 +1407,8 @@ def parse_response(payload: Any, *, request: ExtractionRequest, call: AssembledC
     tally.claims_bound = outcome.counters.bound
     tally.synthesized_spans = outcome.counters.synthesized
     tally.no_evidence_drops = outcome.counters.no_evidence
+    tally.quoted_history_drops = outcome.counters.quoted_history
+    tally.unsubstantive_drops = outcome.counters.unsubstantive
 
     bound_by_index: dict[int, BoundClaim] = {}
     cursor = 0

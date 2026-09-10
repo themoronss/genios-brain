@@ -520,8 +520,10 @@ def refresh_document_situations(store, org_id: str, *, now: datetime | None = No
     if not domains:
         return 0
     reg = gather(store, org_id, now=now)
-    if not reg.artefacts:
-        return 0
+    # NO EARLY RETURN ON AN EMPTY REGISTER, for the reason `outreach_situations` records at the
+    # same seam: disconnect a file store and every `document_under_control` row stays `active`
+    # forever, because the pass that would have closed them saw no artefacts and concluded there
+    # was nothing to do. An empty input is the state in which everything should close.
     findings = read_register(reg)
     clusters = reg.clusters()
     written = 0
