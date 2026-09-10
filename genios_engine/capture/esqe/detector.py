@@ -47,6 +47,8 @@ days), no model, no database.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
@@ -348,7 +350,7 @@ def _detect_all(request: DetectionInput) -> list[DetectedSignal]:
         out.append(DetectedSignal(SignalType.APPROVAL_REQUESTED, "intent_approve"))
 
     # CONTRACT_RENEWAL — a renewal topic, OR money that recurs.
-    if topic_tokens & RENEWAL_TOKENS:
+    if topic_tokens & RENEWAL_MATCH:
         out.append(DetectedSignal(SignalType.CONTRACT_RENEWAL, "renewal_topic"))
     elif ex.amounts and (topic_tokens | money_tokens) & RECURRENCE_TOKENS:
         out.append(DetectedSignal(SignalType.CONTRACT_RENEWAL, "recurring_amount"))
@@ -375,7 +377,7 @@ def _detect_all(request: DetectionInput) -> list[DetectedSignal]:
     if ex.stance == "negative" and named:
         out.append(DetectedSignal(SignalType.RISK_FLAGGED, "negative_stance_named_party",
                                   _spans(named)))
-    elif topic_tokens & RISK_TOKENS:
+    elif topic_tokens & RISK_MATCH:
         out.append(DetectedSignal(SignalType.RISK_FLAGGED, "risk_topic"))
 
     # OPPORTUNITY_SIGNAL — a satisfied condition, OR a positive stance with a next step.
@@ -424,6 +426,68 @@ def _detect_all(request: DetectionInput) -> list[DetectedSignal]:
         out.append(DetectedSignal(SignalType.ANOMALY, "non_routine_structure"))
 
     return out
+
+
+#: Where authored token tables live. `shipped.yaml` is the transcription of the three literals
+#: above; any other file beside it adds to them. See the README in that directory.
+TOKENS_DIR = Path(__file__).resolve().parent.joinpath("tokens")
+
+
+def load_token_predicates(directory: "Path | None" = None) -> dict[str, frozenset[str]]:
+    """`{predicate_id: tokens}` from `tokens/*.yaml`, in filename order.
+
+    WHAT THIS FIXES. The three frozensets above decided whether a message raised a signal at
+    all, and they are English sales-and-legal words. A clinic writing *"three no-shows this week
+    and the ultrasound room is down for calibration"* matches none of them: `_detect_all`
+    returns `[]`, `classify_signals` returns None, `importance` is an empty tuple, and the trace
+    records `signal_type=None, signals=0`. The message was read, extracted, judged
+    business-relevant, and produced NO SIGNAL — silently, because no Python predicate knew the
+    customer's own vocabulary.
+
+    ONLY THE WORDS MOVE. The claim-shaped predicates — Commitment, ResolvedDate, Money, Conflict
+    — read typed contract objects and are genuinely universal: a promise is a promise in every
+    business. They stay in code and must not be authorable.
+
+    A ROW MAY NOT MINT A SIGNAL TYPE. `SignalType` is a REJECT boundary, the key of the
+    precedence order and of the type weight, and its own docstring states the governance for
+    adding one — a schema version bump plus corpus review. A row naming a type that does not
+    exist is skipped. This lane widens the WORDS that reach an existing kind.
+
+    FAILS SOFT per file: one unreadable table must not blind detection for every other tenant.
+    """
+    import yaml
+
+    root = directory or TOKENS_DIR
+    out: dict[str, set[str]] = {}
+    try:
+        if not root.is_dir():
+            return {}
+        known = {member.name for member in SignalType}
+        for path in sorted(root.glob("*.yaml")):
+            try:
+                data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+                for row in (data.get("predicates") or []):
+                    signal_type = str((row or {}).get("signal_type") or "").strip()
+                    predicate_id = str(row.get("predicate_id") or "").strip()
+                    if signal_type not in known or not predicate_id:
+                        continue
+                    tokens = {str(t).strip().lower() for t in (row.get("tokens") or [])
+                              if str(t).strip()}
+                    if tokens:
+                        out.setdefault(predicate_id, set()).update(tokens)
+            except Exception:      # noqa: BLE001 — one bad table must not blind the others
+                continue
+    except Exception:      # noqa: BLE001 — a directory that cannot be read is a deploy problem
+        return {}
+    return {key: frozenset(values) for key, values in out.items()}
+
+
+#: Read once at import: the files ship with the engine and cannot change under a running
+#: process. Each shipped literal stays as the fallback for a file that will not parse.
+_AUTHORED_TOKENS = load_token_predicates()
+
+RENEWAL_MATCH: frozenset[str] = _AUTHORED_TOKENS.get("renewal_topic") or RENEWAL_TOKENS
+RISK_MATCH: frozenset[str] = _AUTHORED_TOKENS.get("risk_topic") or RISK_TOKENS
 
 
 def detect_signals(request: DetectionInput) -> DetectionOutcome:

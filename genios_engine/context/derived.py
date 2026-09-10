@@ -18,6 +18,8 @@ be traced back to the rows that produced it.
 """
 from __future__ import annotations
 
+from genios_engine.context.vocabulary import kinds_where
+
 import json
 from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
@@ -49,7 +51,10 @@ _SENTIMENT_WEIGHTS: dict[str, float] = {
 
 #: Kinds that mean the relationship MOVED, as opposed to merely made noise. Momentum asks whether
 #: anything advanced recently, which is a different question from whether the tone was warm.
-_PROGRESS_KINDS = frozenset({
+#: DERIVED FROM THE ONE MEANING TABLE — see `waiting._ASK_KINDS` for why three files deciding
+#: what one observation kind means is the defect. The literal below is the fallback for an
+#: unreadable file, not a second authority.
+_PROGRESS_KINDS_FALLBACK = frozenset({
     "next_step_agreed", "demo_requested", "proposal_sent", "meeting_request", "followup_sent",
     # Momentum asks whether anything ADVANCED. On an admin or fundraising thread the things that
     # advance are an approval landing, an introduction being made, diligence opening and a
@@ -58,6 +63,8 @@ _PROGRESS_KINDS = frozenset({
     "approval_granted", "intro_made", "diligence_started", "document_sent",
     "investor_update_sent", "meeting_scheduled",
 })
+
+_PROGRESS_KINDS = kinds_where(is_progress=True) or _PROGRESS_KINDS_FALLBACK
 
 _RECENT_DAYS = 14          # "lately"
 _BASELINE_DAYS = 56        # four times the recent window → a stable denominator, not last week's noise

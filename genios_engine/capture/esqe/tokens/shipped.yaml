@@ -1,0 +1,14 @@
+# The three shipped token tables, transcribed from `detector.py` so the file and the literal
+# cannot drift. `test_the_customers_own_words_can_reach_a_signal.py` asserts they are equal.
+#
+# These rows are the DEFAULT, not a limit: an authored file beside this one adds to them.
+
+predicates:
+  - signal_type: CONTRACT_RENEWAL
+    predicate_id: renewal_topic
+    tokens: [renewal, renewals, renew, renewing]
+
+  - signal_type: RISK_FLAGGED
+    predicate_id: risk_topic
+    tokens: [risk, risks, risky, churn, outage, breach, incident, litigation, lawsuit,
+             penalty, termination, slippage, delay, delays, overdue, escalation, blocker]

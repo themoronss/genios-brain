@@ -1,0 +1,80 @@
+# WHAT AN OBSERVATION KIND MEANS — the four answers, in one place, per kind.
+#
+# THE SPLIT THIS CLOSES. A kind was authorable at the EXTRACTION end (`extract/vocab.py` unions
+# a tenant's own kinds into the prompt, so the model will happily emit `sample_collected`) and
+# hardcoded at the MEANING end. `vocabulary.py` decided its polarity, `waiting.py` decided
+# whether it was an ask, `derived.py` decided whether it was progress — three Python literals in
+# three files. So a new kind reached the graph and then scored ZERO everywhere: neutral
+# sentiment, not an ask, not progress. Not refused, not flagged — silently weightless.
+#
+# THE FOUR PROPERTIES, and what each one changes:
+#
+#   polarity   positive | negative | neutral. Feeds `derived.sentiment`, the observation
+#              balance. NEUTRAL IS A REAL ANSWER, not a default: an approval REQUEST is neither
+#              good nor bad news until it is answered, and calling it positive would make asking
+#              for something look like getting it.
+#   is_ask     WE PUT A QUESTION TO THEM. This is the difference between waiting for an answer
+#              and merely not having written lately — `waiting.py`'s `response_expected`. A card
+#              that treats ordinary silence as a failure to respond is inventing an obligation
+#              nobody took on.
+#   is_progress  the relationship MOVED. Feeds `derived.momentum`.
+#
+# A kind may be an ask and neutral at once, and most are: asking is a fact about the exchange,
+# not a verdict on it.
+#
+# ADDING ONE IS A ROW HERE. It is still a REVIEWED row — `CANONICAL_OBS_KINDS` gates what the
+# extractor may emit, and a free-text kind is the 268-distinct-values failure `extract/vocab.py`
+# already paid for. The point is that the row is one place instead of three.
+
+kinds:
+  - {kind: approval_blocked, polarity: negative}
+  - {kind: approval_granted, polarity: positive, is_progress: true}
+  - {kind: approval_requested, polarity: neutral, is_ask: true}
+  - {kind: budget_approved, polarity: positive}
+  - {kind: budget_freeze, polarity: negative}
+  - {kind: buying_intent, polarity: positive}
+  - {kind: champion_change, polarity: negative}
+  - {kind: champion_engaged, polarity: positive}
+  - {kind: churn_risk, polarity: negative}
+  - {kind: closed_lost_mention, polarity: negative}
+  - {kind: competitor, polarity: negative}
+  - {kind: contract_requested, polarity: positive, is_ask: true}
+  - {kind: deadline_stated, polarity: neutral}
+  - {kind: decision_deferred, polarity: negative}
+  - {kind: demo_requested, polarity: positive, is_ask: true, is_progress: true}
+  - {kind: diligence_started, polarity: positive, is_progress: true}
+  - {kind: discount_pressure, polarity: negative}
+  - {kind: document_sent, polarity: neutral, is_progress: true}
+  - {kind: followup_sent, polarity: neutral, is_progress: true}
+  - {kind: going_dark, polarity: negative}
+  - {kind: information_requested, polarity: neutral, is_ask: true}
+  - {kind: intro_made, polarity: positive, is_progress: true}
+  - {kind: intro_requested, polarity: neutral, is_ask: true}
+  - {kind: introduction, polarity: neutral}
+  - {kind: investor_update_sent, polarity: neutral, is_ask: true, is_progress: true}
+  - {kind: invoice_sent, polarity: neutral}
+  - {kind: legal_review, polarity: neutral}
+  - {kind: meeting_cancelled, polarity: neutral}
+  - {kind: meeting_request, polarity: neutral, is_ask: true, is_progress: true}
+  - {kind: meeting_scheduled, polarity: neutral, is_progress: true}
+  - {kind: negative_reply, polarity: negative}
+  - {kind: next_step_agreed, polarity: positive, is_ask: true, is_progress: true}
+  - {kind: objection, polarity: negative}
+  - {kind: objection_authority, polarity: negative}
+  - {kind: objection_integration, polarity: negative}
+  - {kind: objection_price, polarity: negative}
+  - {kind: objection_security, polarity: negative}
+  - {kind: objection_timing, polarity: negative}
+  - {kind: pass_received, polarity: negative}
+  - {kind: payment_confirmed, polarity: positive}
+  - {kind: payment_overdue, polarity: negative}
+  - {kind: positive_reply, polarity: positive}
+  - {kind: price_pushback, polarity: negative}
+  - {kind: pricing_discussed, polarity: positive}
+  - {kind: proposal_sent, polarity: neutral, is_ask: true, is_progress: true}
+  - {kind: question, polarity: neutral, is_ask: true}
+  - {kind: security_review_started, polarity: positive}
+  - {kind: stakeholder_added, polarity: positive}
+  - {kind: stakeholder_left, polarity: negative}
+  - {kind: timeline_slip, polarity: negative}
+  - {kind: verbal_yes, polarity: positive}

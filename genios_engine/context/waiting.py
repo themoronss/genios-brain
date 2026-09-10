@@ -22,6 +22,8 @@ committed, so the same graph yields the same numbers on every run.
 """
 from __future__ import annotations
 
+from genios_engine.context.vocabulary import kinds_where
+
 from datetime import datetime, timedelta, timezone
 from statistics import median
 
@@ -39,17 +41,24 @@ _WINDOW_DAYS = 180
 _DIRECTION_FIELD = {"thread.last_outbound": "out", "thread.last_inbound": "in"}
 
 #: Observation kinds that mean WE PUT A QUESTION TO THEM — the difference between waiting for an
-#: answer and merely not having written lately.  Without one of these, silence is not a failure to
+#: answer and merely not having written lately. Without one of these, silence is not a failure to
 #: respond, and a card that treats it as one is inventing an obligation nobody took on.
-_ASK_KINDS: frozenset[str] = frozenset({
+#:
+#: DERIVED FROM THE ONE MEANING TABLE, not a second literal. This was a frozenset here,
+#: `_PROGRESS_KINDS` was another in `derived.py`, and polarity was a third in `vocabulary.py` —
+#: three files deciding what one kind means. A kind added to the extractor's vocabulary and not
+#: to all three scored zero in whichever it was missing from, silently. `observations/kinds.yaml`
+#: answers all three per kind, in one row.
+#:
+#: THE SHIPPED SET IS THE FALLBACK, for the reason `load_meanings` records: a file that will not
+#: parse must not make every waiting row read "we just have not written lately".
+_ASK_KINDS_FALLBACK: frozenset[str] = frozenset({
     "question", "meeting_request", "proposal_sent", "demo_requested",
     "contract_requested", "next_step_agreed",
-    # The administrative and fundraising asks. Without these the whole set was sales-shaped, so
-    # on an admin inbox `response_expected` would have been False on every row — every waiting
-    # situation reading as "we just have not written lately" when in fact a signature, an
-    # introduction or a document had been asked for and never came back.
     "approval_requested", "information_requested", "intro_requested", "investor_update_sent",
 })
+
+_ASK_KINDS: frozenset[str] = kinds_where(is_ask=True) or _ASK_KINDS_FALLBACK
 
 _TIMELINE = (
     "select f.subject_node_id as node_id, f.field as field, se.occurred_at as at "
