@@ -672,7 +672,14 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     # contract-spend correlation that follows it.
     try:
         from genios_engine.context.correlation_history import publish_histories
-        derived_rows += publish_histories(store.engine, org_id, eval_time=sweep_at)
+        # A CONNECTION, not the Engine. `publish_histories` reads three statements and then writes
+        # derived facts through the same handle, so it needs one open transaction — and on
+        # SQLAlchemy 2.x an Engine has no `.execute`, so passing it raised AttributeError on every
+        # sweep. The boundary below caught it, so the ninth correlator was never once published in
+        # production while its tests stayed green: they call `read_histories(conn, ...)` with a
+        # real Connection, which is the handle the live path now hands it too.
+        with store.engine.begin() as history_conn:
+            derived_rows += publish_histories(history_conn, org_id, eval_time=sweep_at)
     except Exception:      # noqa: BLE001 — a derived correlation retries from graph state
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception(
