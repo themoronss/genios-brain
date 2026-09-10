@@ -496,8 +496,37 @@ class FakeDB:
                          # Layer 5's own routing decision, carried through to the outbox row so
                          # Layer 5.2's gate judges *when* using what Layer 5 actually decided.
                          "band": row["band"], "channel_class": row["channel_class"],
-                         "interrupt": row["interrupt"]})
+                         "interrupt": row["interrupt"],
+                         # THE SEAT THE LADDER RESOLVED, left-joined on the day this event
+                         # names. Null for a plain reminder, which has no escalation row and
+                         # correctly goes to the owner. The real query joins
+                         # `execution_escalations` on `(org_id, execution_id, day_offset)`;
+                         # this models the same join, because a fake that answers a shape the
+                         # database no longer returns is how a green suite covers a query
+                         # nobody runs.
+                         "target_seat": self._escalation_target(event, row)})
         return Result(rows[:p["l"]])
+
+    def _escalation_target(self, event, execution):
+        """`execution_escalations.target_seat` for the day this event names, or None."""
+        # TOLERANT, because the real join is. `detail` is jsonb written by several producers
+        # and one of them may write a string, a null or a word where a day was expected;
+        # Postgres's `->>` returns NULL for all three and the text comparison then matches
+        # nothing. A fake that raised where the database returns no row would fail a test the
+        # production path passes.
+        detail = event.get("detail")
+        if not isinstance(detail, dict):
+            return None
+        try:
+            day = int(detail.get("escalation_day"))
+        except (TypeError, ValueError):
+            return None
+        for rung in self.execution_escalations:
+            if (rung["org_id"] == execution["org_id"]
+                    and rung["execution_id"] == execution["execution_id"]
+                    and int(rung["day_offset"]) == day):
+                return rung.get("target_seat")
+        return None
 
     def _insert_outbox(self, sql, p) -> Result:
         if any(o["org_id"] == p["o"] and o["card_id"] == p["c"] and o["channel"] == p["ch"]
