@@ -9,6 +9,7 @@ The card link points back to the dashboard — Slack is the doorbell, not the ho
 from __future__ import annotations
 
 from genios_engine.contracts.abstention import is_actionable
+from genios_engine.deliver.executive_bridge import is_escalation
 from genios_engine.deliver.channels.base import ChannelResult
 
 _BAND_ICON = {"critical": "🔴", "high": "🟠", "standard": "🔵"}
@@ -80,7 +81,12 @@ def format_reminder_message(payload: dict, *, base_url: str = "") -> dict:
     # `escalation_action` for exactly this — and had ZERO consumers, so the rung that widens the
     # audience and interrupts reached a human looking like the first gentle nudge. The bridge
     # already frames the HEADLINE for the two rungs that escalate; this stops overwriting it.
-    escalating = str(payload.get("kind") or "") == "execution_escalation"
+    # ASKED, NOT RE-DECIDED. Three places answered "is this rung an escalation" — the bridge's
+    # `_ESCALATING_ACTIONS` lookup, its `is_escalation` predicate, and this string comparison —
+    # and the two live ones disagreed in FORM while the named predicate was the dead one. The
+    # bridge owns the ladder; this asks it.
+    escalating = is_escalation(payload.get("reason_code")) or \
+        str(payload.get("kind") or "") == "execution_escalation"
     lines = [f"{icon} *{head}*" if escalating else f"{icon} *Still open — {head}*"]
     situation = str(payload.get("situation") or "")
     if situation:

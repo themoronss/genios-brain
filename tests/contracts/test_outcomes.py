@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import pytest
 
+from genios_engine.context.situation_publisher import PublicationOutcome
 from genios_engine.contracts.abstention import Level
 from genios_engine.contracts.delivery import DeliveryLifecycle, DeliveryVerdict
 from genios_engine.contracts.execution import EscalationAction, ExecutionState
@@ -48,6 +49,12 @@ REAL = (
     ("execution.ExecutionState", ExecutionState),
     ("execution.EscalationAction", EscalationAction),
     ("reasoning.DecisionOutcome", DecisionOutcome),
+    # THE GATE THAT DECIDES WHETHER A SITUATION EXISTS AT ALL, and the projection had never been
+    # shown it. `PublicationOutcome` is the single biggest real producer of the canonical HOLD —
+    # 504 held against 28 admitted on the pilot — so `unreachable()` returned `()` and
+    # `UNEXPRESSED_BY` reported no gap for HOLD, and the map read clean about a layer it could
+    # not see. A vocabulary missing from the projection is invisible to every guard built on it.
+    ("context.PublicationOutcome", PublicationOutcome),
 )
 
 

@@ -11,7 +11,9 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 
-from genios_engine.executive.collect import label_class
+from genios_engine.contracts.abstention import ACTIONABLE
+
+from genios_engine.executive.collect import counts_against_the_play, label_class
 from datetime import datetime
 from typing import Callable
 
@@ -62,6 +64,16 @@ def _bp(numerator: int, denominator: int) -> int:
 
 # ---- units 1,4,5: explicit-input units — nothing to emit until their seams carry data -------
 
+#: The card levels whose dismissal is evidence ABOUT THE RULE. `abstention.Level` has six values;
+#: only these two put an instruction in front of a person, so only these two can be wrong about
+#: one. `review`, `observation`, `wait` and `suppress` are the system declining to instruct, and
+#: a human closing one of those has answered it.
+#:
+#: Read from the contract rather than spelled here, so a seventh level cannot arrive and be
+#: silently graded as a prescription.
+_PRESCRIBING_LEVELS: frozenset[str] = frozenset(ACTIONABLE)
+
+
 def unit_feedback_learning(batch: LearningBatch, policy: LearningPolicy,
                            now: datetime) -> list[LearningObject]:
     """Per rule: what humans actually said about its cards — the only direct quality signal.
@@ -79,19 +91,37 @@ def unit_feedback_learning(batch: LearningBatch, policy: LearningPolicy,
     calibration's job, behind its own governance.
     """
     cohorts: dict[str, dict] = defaultdict(
-        lambda: {"n": 0, "acted": 0, "wrong": 0, "bad_timing": 0,
+        lambda: {"n": 0, "acted": 0, "wrong": 0, "bad_timing": 0, "answered": 0,
                  "reasons": defaultdict(int), "first": None, "last": None})
     for v in batch.feedback:
         rule = str(v.get("rule_id") or "unknown")
         c = cohorts[rule]
         c["n"] += 1
         cause = str(v.get("cause") or "")
+        # WHAT KIND OF CARD WAS THIS, and until now the unit could not ask.
+        #
+        # A dismissal of an `ask_decision` card is not evidence the rule was wrong. That card
+        # exists BECAUSE only a person can answer it — the system said so — and a person closing
+        # it has answered the question, not rejected the judgment. Same for `observation`: "here
+        # is something true, nobody needs to act" cannot be right or wrong about an action it
+        # never recommended.
+        #
+        # Counted separately rather than dropped, because the count is real information: a rule
+        # whose questions are all dismissed unanswered is telling us something, just not about
+        # its accuracy. `answered` is that tally, and it stays out of `wrong`.
+        #
+        # ABSENT LEVEL IS NOT PRESCRIPTIVE. A verdict whose card has been pruned is ungradeable,
+        # and defaulting it to "instruction" is exactly how the old behaviour would come back.
+        level = str(v.get("card_level") or "").strip().lower()
+        graded = level in _PRESCRIBING_LEVELS
         if cause in ("run_play", "do_it_myself"):
             c["acted"] += 1
         elif cause == "wrong":
             reason = str(v.get("reason") or "unstated")
             c["reasons"][reason] += 1
-            if reason == "bad_timing":
+            if not graded:
+                c["answered"] += 1
+            elif reason == "bad_timing":
                 c["bad_timing"] += 1
             else:
                 c["wrong"] += 1
@@ -150,7 +180,12 @@ def unit_outcome_analysis(batch: LearningBatch, policy: LearningPolicy,
         kind = label_class(o.get("label"))
         if kind == "positive":
             c["succeeded"] += 1
-        elif kind == "negative":
+        # THE NAMED PREDICATE, not a repeated string comparison. `counts_against_the_play`
+        # was built, tested five ways and called by nothing — the branch's signature shape in
+        # miniature — while two sites asked the same question by spelling the label out. Two
+        # spellings of "this ending is evidence the recommendation was wrong" is how they come
+        # to disagree the day a sixth label is minted.
+        elif counts_against_the_play(o.get("label")):
             c["failed"] += 1
         elif kind == "mechanical":
             # Counted, never charged. A play whose tooling fails every time is a real defect and
@@ -271,7 +306,12 @@ def unit_recommendation_learning(batch: LearningBatch, policy: LearningPolicy,
         if kind == "positive":
             c["succeeded"] += 1
             c["graded"] += 1
-        elif kind == "negative":
+        # THE NAMED PREDICATE, not a repeated string comparison. `counts_against_the_play`
+        # was built, tested five ways and called by nothing — the branch's signature shape in
+        # miniature — while two sites asked the same question by spelling the label out. Two
+        # spellings of "this ending is evidence the recommendation was wrong" is how they come
+        # to disagree the day a sixth label is minted.
+        elif counts_against_the_play(o.get("label")):
             c["graded"] += 1
         else:
             c["excluded"] += 1

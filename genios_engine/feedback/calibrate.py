@@ -47,8 +47,20 @@ _PRECISION_SQL = text(
     "capability_version, rule_id, "
     "count(*) filter (where cause='run_play') as run_play, "
     "count(*) filter (where cause='do_it_myself') as diy, "
+    # PRESCRIBING CARDS ONLY IN THE PRECISION DENOMINATOR.
+    #
+    # `wrong:not_relevant` and `wrong:wrong_facts` are claims that the RECOMMENDATION was bad,
+    # and a card at `review` or `observation` never made one — the first says only a person can
+    # decide, the second says nothing needs doing. A human closing either has ANSWERED it, and
+    # counting that as a precision failure made answering the system's own question evidence the
+    # system was wrong.
+    #
+    # `card_level in ('prescriptive','predictive')` is `abstention.ACTIONABLE`, and a NULL level
+    # is excluded rather than assumed: a card whose level nobody recorded is ungradeable, and
+    # defaulting it to "instruction" is how the old behaviour comes back.
     "count(*) filter (where cause='wrong' and (detail->>'reason') "
-    "in ('not_relevant','wrong_facts')) as rel_wrong "
+    "in ('not_relevant','wrong_facts') "
+    "and card_level in ('prescriptive','predictive')) as rel_wrong "
     "from canonical_judgments where occurred_at >= :since "
     "and pack_id=:p and pack_version=:pv and authority_pack_revision=:pr "
     "group by pack_id, pack_version, authority_pack_revision, capability_id, "

@@ -112,6 +112,23 @@ MECHANICAL: frozenset[Outcome] = frozenset({Outcome.RETRY, Outcome.NO_AUTHORITY}
 #: qualified name so a reader can see at a glance which layer is being projected, and so two
 #: layers using the same word — `defer`, `cancelled`, `suppress` — cannot collide.
 PROJECTION: dict[str, dict[str, Outcome]] = {
+    # THE GATE THAT DECIDES WHETHER A SITUATION EXISTS AT ALL, and it was missing from this map.
+    #
+    # `context/situation_publisher.PublicationOutcome` is the single biggest real producer of the
+    # canonical HOLD — measured on the pilot: 504 held against 28 admitted. Because it was not
+    # projected, `unreachable()` returned `()` and `UNEXPRESSED_BY` reported no gap for HOLD, so
+    # the map read CLEAN about a layer it had never been shown. A vocabulary missing from the
+    # projection is invisible to every guard built on it, which is the quietest way for a
+    # coverage map to be wrong.
+    #
+    # HOLD is not a refusal. `decide_publication`'s own docstring draws the line: a hold
+    # "preserves recoverable incompleteness … and may be retried after the next graph sweep",
+    # while a REJECT is a contract failure that no sweep repairs.
+    "context.PublicationOutcome": {
+        "admit": Outcome.EMIT_ACTION,
+        "hold": Outcome.HOLD,
+        "reject": Outcome.SUPPRESS,
+    },
     "abstention.Level": {
         "prescriptive": Outcome.EMIT_ACTION,
         "predictive": Outcome.EMIT_ACTION,
@@ -307,14 +324,25 @@ def unreachable() -> tuple[Outcome, ...]:
 _compute_gaps()
 
 
+#: THE PUBLIC SURFACE NAMED THE DEAD HALF. It exported `INSTRUCTING`, `MECHANICAL`,
+#: `UNEXPRESSED_BY`, `expressible_by` and `unreachable` — none of which any engine module reads —
+#: and OMITTED `interrupts` and `INTERRUPTS`, the two names that are actually wired, plus
+#: `resolve`, `implied` and `disagreements`, which the drain now folds through. An `__all__` that
+#: advertises what nobody calls and hides what everybody does is a map of the wrong territory.
 __all__ = [
     "INSTRUCTING",
+    "INTERRUPTS",
     "MECHANICAL",
     "PROJECTION",
+    "RANK",
     "TERMINAL",
     "UNEXPRESSED_BY",
     "Outcome",
+    "disagreements",
     "expressible_by",
+    "implied",
+    "interrupts",
     "project",
+    "resolve",
     "unreachable",
 ]

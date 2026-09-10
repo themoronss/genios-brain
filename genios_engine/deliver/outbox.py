@@ -31,8 +31,9 @@ from __future__ import annotations
 import json
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
+from genios_engine.contracts.outcomes import resolve
 from genios_engine.contracts.delivery import DeliveryVerdict
 from genios_engine.contracts.execution import ChannelClass
 from genios_engine.platform.logging import get_logger
@@ -653,7 +654,23 @@ def drain(engine, *, eval_time: datetime | None = None, limit: int = 50) -> dict
 def _drain_claimed(engine, claimed: list[dict], gate: PgDeliveryContext, now: datetime,
                    out: dict) -> None:
     configs: dict[tuple[str, str], dict | None] = {}
+    # WHAT KIND OF CARD EACH ROW CARRIES, read once for the batch so the canonical fold below can
+    # tell an instruction from a question.
+    #
+    # A SECOND QUERY RATHER THAN A JOIN, deliberately. The claim above takes `for update skip
+    # locked` on `delivery_outbox`; joining `cards` into it would either take locks on cards too
+    # or make the outer side of an outer join unlockable. The lock semantics of the claim are the
+    # last thing in this file worth risking for a counter.
+    levels: dict[str, str] = {}
     with engine.connect() as c:
+        card_ids = sorted({str(r["card_id"]) for r in claimed if r.get("card_id")})
+        if card_ids:
+            try:
+                levels = {str(row[0]): str(row[1] or "") for row in c.execute(
+                    text("select card_id, level from cards where card_id in :ids").bindparams(
+                        bindparam("ids", expanding=True)), {"ids": card_ids}).all()}
+            except Exception:      # noqa: BLE001 — a counter's input, never a reason not to send
+                levels = {}
         for r in claimed:
             key = (r["org_id"], r["channel"])
             if key not in configs:
@@ -716,6 +733,26 @@ def _drain_claimed(engine, claimed: list[dict], gate: PgDeliveryContext, now: da
             _finish(engine, r, now, ok=False, detail=f"delivery gate unavailable: {exc}"[:300],
                     terminal=delay is None, out=out, delay_minutes=delay)
             continue
+        # THE FOLD, and this is the seam it belongs at.
+        #
+        # `contracts/outcomes.resolve` exists to answer "what happened to this situation" in ONE
+        # word, and nothing called it. The drain is the only place where every input to that
+        # answer is in hand at once — the card's abstention `level`, the gate's `DeliveryVerdict`
+        # and (below) the lifecycle it writes — and `outbox.py` imported `contracts/delivery` and
+        # not `contracts/outcomes`, so the question kept three separate answers in three modules.
+        #
+        # COUNTED, NOT ACTED ON. `resolve` does not change what the drain does; the branches
+        # below are unchanged and still decide. It states, once and by a documented precedence,
+        # what those branches together MEAN — which is what an operator asking "how many
+        # decision requests did we produce, and how many did we suppress" has to read.
+        canonical = resolve(**{
+            "abstention.Level": levels.get(str(r.get("card_id") or "")) or None,
+            "delivery.DeliveryVerdict": str(getattr(decision.verdict, "value", "")) or None,
+        })
+        if canonical is not None:
+            key = f"outcome_{canonical.value}"
+            out[key] = out.get(key, 0) + 1
+
         if decision.verdict is DeliveryVerdict.SUPPRESS:
             _suppress(engine, r, decision, context, out)
             continue
