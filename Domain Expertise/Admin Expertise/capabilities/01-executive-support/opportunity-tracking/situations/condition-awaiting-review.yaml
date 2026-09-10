@@ -31,7 +31,7 @@
 # `capability_resolver._admission_gap` exists to prevent.
 #
 # WHAT ACTUALLY HOLDS THIS CARD BACK, and it is NOT the status field. The first draft of this
-# header claimed `review_status: draft` kept the situation out of a live compile. That is FALSE
+# header claimed `review_status: unreviewed` kept the situation out of a live compile. That is FALSE
 # and worth recording rather than quietly deleting: `packs/compiler/authoring.py` reads no
 # `admission` block for a situation at all, and `capability_resolver._admission_reason` takes a
 # CAPABILITY. A situation's status gates nothing.
@@ -151,7 +151,7 @@ metadata:
   owner: Admin
   created_by: ai
   last_updated: '2026-09-09'
-  review_status: draft
+  review_status: unreviewed
   confidence: experimental
   notes: >
     EVERY PREDICATE HAS A LIVE WRITER, and that was checked against the tenant rather than assumed.
@@ -174,7 +174,7 @@ metadata:
 
     A SITUATION HAS NO ADMISSION GATE, and the first draft of this file said it did. Checked
     rather than assumed: `packs/compiler/authoring.py` reads no `admission` block for a situation,
-    and `capability_resolver._admission_reason` takes a CAPABILITY. `review_status: draft` here is
+    and `capability_resolver._admission_reason` takes a CAPABILITY. `review_status: unreviewed` here is
     a true statement about this file's review state and nothing more — it protects nothing, and a
     header claiming otherwise would have been a comment that lied about a safety property.
 

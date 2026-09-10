@@ -69,6 +69,18 @@ MUST_BE_CONSUMED: dict[str, str] = {
 #: Retired entries, kept so a reader can see the module was considered and why it left. A module
 #: deleted for being unconsumed belongs here, not silently absent.
 RETIRED: dict[str, str] = {
+    "packs/domain_wiring.make_domain_compiler":
+        "Deleted 2026-09-10. Described itself as the activation-aware composition root for a "
+        "tenant's publishing compiler and had zero callers. `reason/domain_shadow` — the only "
+        "pass that compiles for a tenant — cannot use it: it builds TWO compilers from one "
+        "catalog, and its live publisher opens a transaction PER SITUATION so one unroutable "
+        "row cannot abort the pass, where this built a single-connection publisher. A "
+        "composition root with no composition to root.",
+    "context/situation_bso.outbound_event_ids":
+        "Deleted 2026-09-10. Built, tested six ways, called by nothing. Superseded by "
+        "`absence_receipt_event_ids`, which reads the direction from the situation TYPE instead "
+        "of assuming outbound — the assumption that was wrong for `first_response_overdue`. Its "
+        "six tests moved onto the survivor rather than being deleted.",
     "correlation_organization.resolve_people":
         "Deleted 2026-09-10. Written, tested eight ways, called by nothing: `_gather` asks for "
         "every organisation and lets `read_organization_silence` narrow, which is the correct "

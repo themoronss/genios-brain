@@ -16,7 +16,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+# `jsonschema`/`referencing` are what `Domain Expertise/_tools/validate.py`'s STRUCTURE pass
+# needs. They were NOT declared, so the validator ran SEMANTICS only on a fresh checkout and
+# still finished with "0 error(s) — OK" — and three situation files on this branch carried a
+# `review_status` outside the schema's enum through every local run because of it. The tool now
+# refuses to report green on half a run, which makes the dependency real rather than optional.
+dev = ["pytest>=8.0", "jsonschema>=4.0", "referencing>=0.30"]
 # Real integrations (installed when wiring live Composio). Kept optional so dev/tests
 # run without them:  pip install -e ".[real]"
 real = ["composio>=0.7"]

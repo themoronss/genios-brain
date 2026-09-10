@@ -150,8 +150,27 @@ def main(strict: bool = False) -> int:
 
     validators = {}
     if jsonschema is None:
-        print("NOTICE  jsonschema not installed — STRUCTURE pass skipped.\n"
-              "        pip install jsonschema   to enable it.\n")
+        # A SKIP IS NOT A PASS, and this printed "NOTICE" and then went on to report
+        # "0 error(s) — OK". A run without `jsonschema` checked SEMANTICS only, and every
+        # structural rule — the enums, the required keys, the id patterns — went unchecked while
+        # the summary line said the corpus was fine.
+        #
+        # It cost exactly what that always costs. Three situation files on this branch carried
+        # `review_status: draft`, which is not in the schema's enum (`unreviewed`, `in_review`,
+        # `approved`), and every local run reported them green. The audit that found it was
+        # reading the schema, not running the tool.
+        #
+        # Now it FAILS. `--allow-partial` is there for an environment that genuinely cannot
+        # install it, and it changes the summary line too, so a partial run can never be quoted
+        # as a full one.
+        if "--allow-partial" not in sys.argv:
+            print("ERROR   jsonschema is not installed, so the STRUCTURE pass cannot run.\n"
+                  "        Every enum, required key and id pattern would go unchecked and this\n"
+                  "        tool would still print '0 error(s) — OK'. A skip is not a pass.\n"
+                  "        pip install jsonschema     to enable it\n"
+                  "        --allow-partial            to run SEMANTICS only, reported as partial")
+            return 2
+        print("NOTICE  jsonschema not installed — STRUCTURE pass skipped (--allow-partial).\n")
     else:
         validators = build_validators()
 
@@ -597,6 +616,10 @@ def main(strict: bool = False) -> int:
 
     failed = bool(ERRORS) or (strict and bool(WARNINGS))
     print(f"{len(ERRORS)} error(s), {len(WARNINGS)} warning(s) — {'FAIL' if failed else 'OK'}")
+    # THE SUMMARY LINE SAYS WHICH PASSES RAN. "0 error(s) — OK" from a run that checked half the
+    # rules is the claim this whole guard exists to stop being makeable.
+    if jsonschema is None:
+        print("        ^ SEMANTICS only — the STRUCTURE pass did not run.")
     return 1 if failed else 0
 
 

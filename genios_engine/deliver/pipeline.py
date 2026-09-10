@@ -306,12 +306,25 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             # `metadata['review_state']` is `accepted`, and a STAMPED capability's signal reaches
             # this gate as `prescriptive` and leaves it un-downgraded.
             #
-            # What still downgrades is a DRAFT: a measurement compile
-            # (`require_admission=False`) over content whose acceptance hash no longer matches its
-            # bytes carries `review_state='draft'`, `domain_shadow._persist_live` emits it at
-            # `observation`, and `is_actionable` refuses it above. The gate reads the LIVE
-            # admission state — the hash pin is recomputed on every compile, so an edit after
-            # review un-accepts the capability by itself — never a cached count.
+            # What still downgrades is a DRAFT, and there are now TWO ways to be one.
+            #
+            # (a) A measurement compile (`require_admission=False`) over content whose acceptance
+            #     hash no longer matches its bytes. The gate reads the LIVE admission state — the
+            #     hash pin is recomputed on every compile, so an edit after review un-accepts the
+            #     capability by itself — never a cached count.
+            #
+            # (b) A SITUATION whose own words nobody accepted. `capability_resolver.
+            #     situation_admission_reason` asks a situation the same three questions the
+            #     capability ceremony asks its bytes — stable identity, approved review, a named
+            #     reviewer — because a machine-written situation file whose owning capability was
+            #     approved used to ship a fully prescriptive card on somebody else's signature.
+            #     Measured when it was added: 24 of 62 authored situations, 15 reviewed by nobody.
+            #
+            #     THIS ONE FLAGS ON EVERY COMPILE, live or measurement, and that asymmetry with
+            #     (a) is deliberate: a situation's DETECTION is Layer 2's and is evidence-backed
+            #     whatever a reviewer thinks of its prose, so the finding still ships — it just
+            #     stops instructing. A fully live, fully hash-accepted compile of one of those
+            #     types is therefore still `draft`, and that is the intended reading, not a gap.
             # `tests/packs/compiler/test_stamped_vs_draft_abstention.py` drives both halves.
             sig = _apply_abstention(sig, effective)
             # LOADED BEFORE THE BUILD, and that ordering is the fix to a gate that could never

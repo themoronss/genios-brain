@@ -669,6 +669,25 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
             row_domain = l3_domain_for(row["domain"])
             live_row = bool(live or (row_domain is not None and row_domain in live_domains))
             counts["live_situations" if live_row else "shadow_situations"] += 1
+            if row_domain is None:
+                # UNACTIVATABLE, AND SILENT UNTIL NOW. A situation whose L2 domain no corpus
+                # claims compiles in measurement mode, publishes no package and emits no signal —
+                # on EVERY tenant configuration, including one with every corpus switched on.
+                # There was no count for it, so "shadow_situations" absorbed it alongside rows a
+                # tenant could switch on tomorrow, and the two are not the same fact.
+                #
+                # It is not a small set. `general:relationship` is the most-authored type in the
+                # corpus (15 situations across the three domains) and the largest on the pilot
+                # (55 rows); `fundraising:investor_relationship` and `investor_contact` are the
+                # other two. Everything they compile is measurement, forever.
+                #
+                # THE MAP IS NOT THE DEFECT. Pointing `general` at `admin` "to get some coverage"
+                # would put Admin doctrine on a general situation, which is worse than silence.
+                # The two honest routes are to author a `general` corpus, or to decide that
+                # activation should govern the corpus that SERVES a situation rather than the
+                # domain that produced it — a cutover decision, not a bug fix. This counts the
+                # cost so the decision can be made against a number.
+                counts["unactivatable_domain"] = counts.get("unactivatable_domain", 0) + 1
             compiler = compiler_live if (live_row and compiler_live is not None) \
                 else compiler_measure
             anchor = row["anchor_node_id"]

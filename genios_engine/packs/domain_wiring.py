@@ -25,21 +25,18 @@ def expert_catalog(authoring_root: str = "") -> ExpertBrainCatalog:
     return ExpertBrainCatalog(root)
 
 
-def make_domain_compiler(connection, *, authoring_root: str = "",
-                         activated_domains: frozenset[str] | None = None) -> DomainCompiler:
-    """A publishing compiler for one tenant.
+# `make_domain_compiler` STOOD HERE AND WAS CALLED BY NOTHING. Retired 2026-09-10.
+#
+# Its docstring described it as the composition root for "a publishing compiler for one tenant",
+# activation-aware. The only pass that compiles for a tenant is `reason/domain_shadow`, and it
+# cannot use this: it builds TWO compilers — measurement and live — from one catalog and one
+# runtime-brain reader, and its live publisher is `_TxnExpertisePublisher(store.engine)`, which
+# opens its own transaction PER SITUATION so that one unroutable row cannot abort the rest of the
+# pass. This built a `PostgresExpertisePublisher(connection)` on a single shared connection —
+# deliberately different transaction semantics, for a caller that never arrived.
+#
+# So it was a composition root with no composition to root: not stale, never wired. Deleted
+# rather than left as a second, drifting answer to "how is a compiler built for a tenant", which
+# is what two composition paths become. `expert_catalog` below survives and has real callers.
 
-    `activated_domains` is what `platform/l3_activation.activated_domains(engine, org)` returns,
-    and passing it is what stops a tenant compiling expertise from corpora it never switched on —
-    see `CapabilityResolver.activated_domains` for the pilot measurement that made it necessary.
-    `None` keeps the previous behaviour for callers with no tenant in hand.
-    """
-    return DomainCompiler(
-        catalog=expert_catalog(authoring_root),
-        runtime_brains=PostgresRuntimeBrains(connection),
-        publisher=PostgresExpertisePublisher(connection),
-        activated_domains=activated_domains,
-    )
-
-
-__all__ = ["expert_catalog", "make_domain_compiler"]
+__all__ = ["expert_catalog"]
