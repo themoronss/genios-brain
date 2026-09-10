@@ -59,6 +59,9 @@ import threading
 from dataclasses import dataclass, field, replace
 from typing import Any, Iterable, Mapping, Protocol, Sequence
 
+# THE ONE MACHINE-SENDER TABLE.  below delegates to it rather than carrying
+# a second regex — see that function for the eighteen addresses the two used to disagree about.
+from genios_engine.capture.gate.rules import is_automated_sender
 from genios_engine.capture.semantic.injection import fence
 
 #: This unit's trace stage. Distinct from the gate's own `relevance` record: the S1 gate decides
@@ -330,13 +333,31 @@ def _has_bulk_headers(headers: Mapping[str, str]) -> bool:
 def is_service_account(sender: str) -> bool:
     """True when this address is machinery rather than a person.
 
-    Public because L1.6.4's authority cascade asks the same question for its 1000-bp rung, and
-    two implementations of "is this a robot" would eventually disagree about one address and give
-    it a person's authority in one place and a machine's in the other.
+    THE TWO TABLES DID DISAGREE, and both docstrings said they could not. This one warned that
+    "two implementations of 'is this a robot' would eventually disagree about one address"; its
+    rival at `gate/rules.is_automated_sender` named the very address —
+    *"a second regex would drift into a second answer about `notify@stripe.com`, the gate
+    dropping it as a robot while the scorer weighs it as a counterparty."* Run side by side over
+    23 addresses they disagreed on EIGHTEEN, `notify@stripe.com` among them, in both directions.
+
+    THE DANGEROUS HALF IS CLOSED BY DELEGATION. Whatever the GATE calls a robot, this now calls a
+    robot too — the first clause below. That is the direction that mattered: the gate DROPS mail
+    under N-03, so an address it discards while the scorer treats it as a person is a
+    counterparty who silently ceased to exist.
+
+    THE OTHER HALF IS KEPT, DELIBERATELY, AND IS NOT DRIFT. This table also matches `postmaster`,
+    `mailer-daemon`, `robot`, `daemon`, `cron`, `jenkins` and `build`, which the gate does not.
+    Those are not added to the gate's table because the gate's job is to DELETE the message and
+    its own comment gives the reason to stay conservative: `support@`/`hello@` are a real small
+    business, and over-matching there costs a genuine sender everything. Scoring can afford to
+    know about more machinery than dropping does. The asymmetry is now one-way and stated, where
+    it used to be two-way and denied.
     """
     address = (sender or "").strip().lower()
     if "@" not in address:
         return False
+    if is_automated_sender(address):
+        return True
     local, _, domain = address.partition("@")
     local = local.split("+", 1)[0]
     if _SERVICE_LOCAL.match(local):
