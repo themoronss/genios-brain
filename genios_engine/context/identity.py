@@ -93,9 +93,25 @@ def record_alias(conn, *, org_id: str, node_id: str, alias_type: str, alias_key:
     """Claim one lookup key for one node.
 
     Returns None when the key is now (or already was) this node's. Returns the OTHER
-    node's id when the key is already taken — the caller has found a duplicate, and the
-    insert did nothing. Nothing is ever overwritten: the first claimant keeps the key,
-    so resolution stays stable while a proposal waits for a human.
+    node's id when the key is already taken by a LIVE node — the caller has found a duplicate,
+    and the insert did nothing. A live first claimant keeps the key, so resolution stays stable
+    while a proposal waits for a human.
+
+    A KEY HELD BY A NODE THAT NO LONGER EXISTS IS UNOWNED, and this is the correction.
+    `node_id` is minted per node (`new_id("node")`), the erasure list clears `graph_nodes` and
+    leaves `graph_aliases` standing, and this insert was `do nothing` — so a tenant whose graph
+    was ever rebuilt kept an alias table pointing at the FIRST graph that ever existed, for
+    ever. Measured on the pilot 2026-09-11: **309 of 364 aliases resolved to a node with no row
+    at any version** — 107 of 116 emails, 87 of 89 person names, 78 of 107 company names.
+    `resolve_company_mention("Antler")` returned a dead id, the caller's type check found no live
+    node, and the claim was dropped. That is why `party.role` holds one fact and
+    `company.industry` none: not an extractor that cannot read them, a subject that cannot
+    resolve.
+
+    Taking over a DEAD key is not overwriting a claimant — there is no claimant. The ambiguity
+    guard is untouched and is the whole point of the distinction: two LIVE nodes claiming one
+    name is a real collision and still refuses, because picking one silently moves every fact
+    written from that mention onto the wrong person.
     """
     if not alias_key:
         return None
@@ -108,7 +124,20 @@ def record_alias(conn, *, org_id: str, node_id: str, alias_type: str, alias_key:
     holder = conn.execute(text(
         "select node_id from graph_aliases where org_id=:o and alias_type=:t "
         "and alias_key=:k"), {"o": org_id, "t": alias_type, "k": alias_key}).scalar()
-    return None if holder == node_id else holder
+    if holder == node_id or holder is None:
+        return None
+    # Is the incumbent still a node at all? One indexed lookup, and only on the contended path.
+    alive = conn.execute(text(
+        "select 1 from graph_nodes where org_id=:o and node_id=:n and valid_to is null limit 1"),
+        {"o": org_id, "n": holder}).first()
+    if alive is not None:
+        return holder                     # a real duplicate: refuse, exactly as before
+    conn.execute(text(
+        "update graph_aliases set node_id=:n, origin=:orig, created_by_event_id=:ev "
+        "where org_id=:o and alias_type=:t and alias_key=:k and node_id=:dead"),
+        {"n": node_id, "orig": origin, "ev": event_id, "o": org_id, "t": alias_type,
+         "k": alias_key, "dead": holder})
+    return None
 
 
 def resolve_alias(conn, *, org_id: str, alias_type: str, alias_key: str) -> str | None:
