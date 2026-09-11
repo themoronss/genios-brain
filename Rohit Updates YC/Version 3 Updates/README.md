@@ -126,16 +126,95 @@ the test.
 
 ---
 
+## 4 · Intent on the extraction call too
+
+The junk gate reads a subject line in a batch, before anyone has decided a message is worth
+reading. The extractor already holds the whole message. Both calls run for every tenant today —
+1,342 and 1,413 on the pilot — and only one was being asked what kind of exchange this is.
+
+`MessageIntent.merged_with` folds the two: **field by field, and the richer reading wins only
+where it actually spoke.** An `unknown` or a `None` from the fuller read is an absence, not a
+correction — a silent extractor never erases what the gate found.
+
+Three things the codebase refused, and was right to:
+
+- **`intent` was already taken**, by something narrower — the SPEECH ACT of one message
+  (`inform | request | commit | decide | escalate`), which `esqe/detector` reads to fire
+  ESCALATION. So the field is `exchange_intent`.
+- **Schema rule S-1 refused a nullable field** — *"an empty list or an empty mapping is how
+  'nothing was found' is said here"*. The sentinel was unnecessary: an EMPTY `MessageIntent`
+  already merges as a no-op, so silence needs no `None` of its own.
+- **Schema rule S-2 refused a field its table had no rule for** — *"extend the validator with the
+  field rather than letting the newest field be the unchecked one"*. A single nested record was a
+  shape `_shape_of` did not know. It knows one now, kept separate from `MODEL_LIST` because a
+  list arriving as an object and an object arriving as a list are opposite mistakes.
+
+And no `evidence` field on the intent, on reflection. Every other claim carries spans because
+every other claim is about a PHRASE. Intent is one reading of the whole message, and *"the tone
+is warm"* has no quotable span — a field for it would invite a manufactured citation.
+
+---
+
+## Three things I claimed were defects and were not
+
+Recorded because each was measured, asserted, and then withdrawn on evidence. The pattern is the
+same every time: a number that looked alarming, and a downstream cost that did not exist.
+
+### `anomaly` never fires — **not a defect**
+I reported it had no detector. It has one; I grepped the lowercase string and missed
+`SignalType.ANOMALY`. It is a deliberate last resort — `if not out and (...)` — and never fires
+because the other thirteen predicates always catch something first. Working as designed.
+
+### `information_conflict` never fires — **not a defect, a doctrine question**
+43 conflicts exist on the pilot. All 43 are on `date.value`. The material list is four fields:
+`contract.value`, `contract.renewal_date`, `contract.notice_period`, `deal.amount`. So every one
+is filtered out.
+
+Whether a **deadline disagreement** is material is a business judgement, not Layer 1's to make in
+Python. Referred to Layer 2's situation lifecycle (L2.7.7), where a contested deadline is a
+statement about a situation's state.
+
+### `ambiguous_over_budget` — **not a defect**
+69 events passed the gate on budget exhaustion against 59 on merit, and I began turning the guard
+from a switch into a cap. Two tests pinned the existing behaviour. Checking before overriding
+them: **`relevance_bp` is written at `pipeline.py:1114` and read by nobody** — not Layer 2, 3 or
+4, not even `contracts/`. A rank-3000 event and a rank-6000 event are treated identically
+everywhere downstream, so the guard costs nothing. Reverted.
+
+The real finding underneath is the familiar one: a carefully ranked table — 8000 structured, 6000
+a model that read the message, 3000 nobody decided, 500 bulk headers, each with documented
+reasoning — **and no consumer.**
+
+---
+
 ## Still open in Layer 1
 
 | # | Item | State |
 |---|---|---|
-| 1 | `escalation` never fires | `prior_recipient_authority_rank` is defined at `detector.py:145`, read at `:413`, and **supplied by nobody**. The thread-parties half is wired |
-| 2 | `information_conflict` never fires | `conflicts` **is** passed; ALG-12 produces none for these events. Cause not yet found |
-| 3 | `anomaly` never fires | **No detector exists at all** |
-| 4 | `ambiguous_over_budget` | 69 events passed the gate because the budget ran out, against 59 on merit. A fail-open that is larger than the merit path |
-| 5 | 187 parked documents | OCR now ships in the image; the queue has never been drained |
-| 6 | Intent on the extraction call | The junk gate reads a snippet. The extraction call reads the full message and is where `motive`, `tone` and `formality` should be filled |
+| 1 | `escalation` authority half | `recipient_authority_rank` and `prior_recipient_authority_rank` are both defined, both read at `detector.py:413`, and **neither is ever supplied**. Needs the org chart, which has 1 seat and 0 responsibilities |
+| 2 | 197 parked events, **none ever attempted** | See below |
+| 3 | `relevance_bp` has no reader | A ranked table nothing consumes |
 
-Items 1–3 are the same shape as everything else found this week: **the detector exists and the
-input is never supplied.**
+### On the parked queue — the machinery is right and has never run
+
+197 parked, every one `status = pending` with `refetch_attempts = 0`.
+
+| Reason | Count | What it is |
+|---|---|---|
+| DOC-02 unsupported | 125 | **`text/calendar` and `application/ics` — calendar invites**, skipped before download by the connector on purpose, because the calendar lane already covers meetings |
+| DOC-06 ocr_unavailable | 41 | `image/png` and `image/jpeg`. OCR ships in the image now |
+| DOC-05 fetch_failed | 21 | `application/pdf` |
+| llm_junk_unconfident | 7 | Human review |
+| extraction_parse_failed | 3 | Retryable |
+
+I first reported this as "187 documents parked, drain them". That was wrong twice over. **125 of
+them are calendar invites, not documents** — and they are correctly skipped, by a decision the
+connector documents. Only 62 are genuinely waiting on a capability that now exists.
+
+And the drain is not missing. `drain_parked`, `refetch_parked_attachments` and `drain_recapture`
+are all built, all called from `run_maintenance_sweep`, and all on the heartbeat. Every one of
+the 187 document parks carries `object_type = email_attachment`, which is exactly what the
+refetch claims, and the claim query handles a NULL `next_attempt_at` correctly.
+
+So the rows are **eligible and untouched**. That is a deployment question — has the sweep run
+this code against them — and not one this repository can answer.
