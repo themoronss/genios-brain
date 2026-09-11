@@ -42,6 +42,22 @@
 # The backlog is the deliverable here, not an apology for one.
 # ─────────────────────────────────────────────────────────────────────────────
 
+# WHETHER A TENANT NOBODY HAS CONFIGURED HEARS FROM THIS CORPUS.
+#
+# `l3_activation` is per (tenant, domain) and its only writer was an admin route, so every new
+# tenant started with zero rows and the compiler skipped every corpus for them. The pilot looked
+# better than a fresh signup purely because a human had run an INSERT by hand.
+#
+# Declaring it here rather than in Python is the same rule the rest of this tree follows: a
+# corpus that is ready to speak to an unconfigured tenant says so itself, a corpus that says
+# nothing stays off, and turning one on is a file and a review rather than a deploy. It does not
+# override an operator: `provision_intelligence` skips any tenant that already holds a row for
+# this domain, live or stamped off.
+activation:
+  default_on: true
+  why: >
+    Ships with first_response_overdue, ticket_aging and queue_overloaded, which are the three situations any tenant with a shared inbox has on day one — and a tenant with no support mail simply produces none of them.
+
 identity:
   id: customer_support
   name: Customer Support

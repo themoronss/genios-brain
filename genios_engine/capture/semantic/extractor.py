@@ -166,8 +166,9 @@ from genios_engine.capture.validate.dates import resolve_date
 from genios_engine.capture.validate.schema import (
     ExtractionVocabulary, SchemaReport, ValidationStage, validate_extraction_schema)
 from genios_engine.contracts.evidence import EvidenceSpan
+from genios_engine.contracts.intent import MessageIntent
 from genios_engine.contracts.extraction import (
-    Commitment, DecisionState, Dependency, EntityMention, ExtractionResult,
+    BusinessFact, Commitment, DecisionState, Dependency, EntityMention, ExtractionResult,
     UnclassifiedObservation)
 from genios_engine.contracts.parked import ParkedEvent
 from genios_engine.contracts.prepared_content import PreparedContent
@@ -250,7 +251,7 @@ _DATE_DRAFT_CONFIDENCE_BP = 10_000
 #: order claims are bound in, which is the order `all_evidence` ends up in, which is what a
 #: content address over the result would hash.
 CLAIM_FIELDS = ("entity_mentions", "dates_mentioned", "commitments", "decision_states",
-                "dependencies", "unclassified_observations")
+                "dependencies", "business_facts", "unclassified_observations")
 
 #: Every lane a claim can arrive in: the six above, which carry receipts, plus `amounts`, whose
 #: receipt is its own `as_written`. Spelled as an extension of `CLAIM_FIELDS` rather than as a
@@ -762,7 +763,46 @@ def assemble_call(request: ExtractionRequest, *, nonce: str | None = None) -> As
             f"the {profile.chunk_strategy!r} strategy and assemble each chunk; nothing here "
             "truncates, because a truncated extraction looks complete and is not.")
 
-    envelope = f"{_envelope_block(request.envelope)}\n\n{offset_frame_block(len(content))}"
+    # Seven of nine business fields were empty on 2026-09-10. Use the existing model call,
+    # with this instruction in the cache-keyed envelope so old empty answers cannot be hits.
+    business = (
+        "BUSINESS FACTS (v1): extract the nine business_facts fields in the schema when supported. "
+        "Use self-introductions, signature, body and subject as evidence; domain or organiser "
+        "identity alone does not establish a business role. A send alone establishes neither "
+        "an investor role nor fundraising intent. Mark directly stated values observed; mark "
+        "interpretations judgement, especially inferred objectives. Every value needs a verbatim "
+        "receipt in prepared content. Omit unknown, empty or unsupported values. "
+        "Use the exact named person/company as subject; for thread.objective use subject 'thread' "
+        "for this message's thread. For campaign.objective name an existing named campaign; "
+        "never invent a campaign from a send. Do not invent offsets into the envelope: if a "
+        "signature or subject is only in metadata and not prepared content, omit the claim. "
+        "deal.value must use Money integer minor units, currency and literal as_written."
+    )
+    # WHY THIS EXTRACTOR IS ASKED AND THE JUNK GATE IS ASKED TOO. The gate sees a subject line
+    # and an opening paragraph, in a batch, before anyone has decided the message is worth
+    # reading — it can answer "what kind of exchange" coarsely and nothing more. This call has
+    # the whole message and can see the register, the motive and whether a person composed it.
+    # `MessageIntent.merged_with` folds the two, and the richer reading wins only where it
+    # actually answered. Neither call is new: both already run for every tenant.
+    intent = (
+        "EXCHANGE INTENT (v1): fill the `exchange_intent` object — why this message was "
+        "sent and how it was written. This is NOT the `intent` field, which is the speech act "
+        "of this one message; this is the kind of exchange it sits in. "
+        "written. category: automated (machinery, a digest, a notification, a receipt) | "
+        "promotional (somebody is selling to us and a PERSON is behind it) | transactional (a "
+        "record of something that happened — an invoice, an invite, a confirmation) | working "
+        "(the business actually being done) | relational (a person, about the relationship). "
+        "tone and formality describe the WORDS, not the sender: a short note from a busy person "
+        "is direct, not frustrated. motive is a short phrase saying what the sender wants, or "
+        "omit it — never restate the subject line. addressed_personally, human_authored and "
+        "asks_for_reply are true, false, or omitted when the message does not show it. "
+        "engagement is a JUDGEMENT (high/medium/low) about whether this exchange deserves the "
+        "reader's attention; omit it rather than guess. Use unknown and omission freely: an "
+        "absent answer only means we do not filter on it, and a wrong one deletes somebody's "
+        "mail. Do not return any score, probability or number anywhere in this object."
+    )
+    envelope = (f"{_envelope_block(request.envelope)}\n\n{offset_frame_block(len(content))}"
+                f"\n\n{business}\n\n{intent}")
     rendered = render_prompt(profile.profile_id, schema=generate_schema_block(),
                              vocab=vocabulary_block(), envelope=envelope, content=fenced.text)
     fenced.check_placement(rendered.text)
@@ -1091,8 +1131,32 @@ _NEEDLE_KEY = {
     COMMITMENT_DUE_FIELD: "as_written",
     "decision_states": "subject",
     "dependencies": "blocker",
+    # No synthetic needle: a nine-field business interpretation must bring an explicit span,
+    # not acquire a receipt merely because its label appears somewhere in the message.
+    "business_facts": "__no_synthesized_business_receipt__",
     "unclassified_observations": "description",
 }
+
+
+def _intent(raw: Any) -> MessageIntent:
+    """The payload's `exchange_intent`, or an EMPTY reading when the model did not answer.
+
+    EMPTY, NOT NULL. Schema rule S-1 refuses a null field on an extraction — "an empty list or
+    an empty mapping is how 'nothing was found' is said here" — and an empty `MessageIntent`
+    says it properly: every axis `unknown`, every boolean `None`. It also merges as a no-op, so
+    a silent extractor can never erase what the junk gate read.
+
+    A malformed object is discarded WHOLE rather than salvaged field by field. The contract's
+    validators (a placeholder motive, an out-of-set enum) are the line; anything failing them is
+    a model that did not follow the shape, and half-reading it is how a stray key becomes a
+    category.
+    """
+    if not isinstance(raw, Mapping) or not raw:
+        return MessageIntent()
+    try:
+        return MessageIntent.model_validate(dict(raw))
+    except Exception:      # noqa: BLE001 — a malformed intent never fails an extraction
+        return MessageIntent()
 
 
 def _draft(field: str, entry: Mapping[str, Any], request: ExtractionRequest,
@@ -1198,6 +1262,10 @@ def _build_claim(field: str, payload: Mapping[str, Any], evidence: Sequence[Evid
     strength of a guess.
     """
     try:
+        if field == "business_facts":
+            return BusinessFact(field=payload.get("field"), subject=payload.get("subject"),
+                                value=payload.get("value"), standing=payload.get("standing"),
+                                evidence=list(evidence), confidence_bp=confidence_bp)
         if field == "entity_mentions":
             kind = _closed(payload.get("entity_type"), ENTITY_TYPE, "entity_type", tally)
             surface = _verbatim_text(payload.get("surface_form"))
@@ -1466,6 +1534,8 @@ def parse_response(payload: Any, *, request: ExtractionRequest, call: AssembledC
         "commitments": claims["commitments"],
         "decision_states": claims["decision_states"],
         "dependencies": claims["dependencies"],
+        "business_facts": claims["business_facts"],
+        "exchange_intent": _intent(payload.get("exchange_intent")),
         "implied_actions": _string_list(payload.get("implied_actions")),
         "questions": _string_list(payload.get("questions")),
         "roles": _open_lane_entries(payload.get("roles"), tally),

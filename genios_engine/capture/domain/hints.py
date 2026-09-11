@@ -30,8 +30,51 @@ _KEYWORDS: dict[str, re.Pattern[str]] = {
     # admin threads too — so they can only classify a thread the more specific patterns declined.
     "sales": re.compile(r"\b(deal|pricing|proposal|contract|quote|demo|budget|renewal)\b", re.I),
     "support": re.compile(r"\b(issue|error|broken|ticket|down|outage|bug|not working)\b", re.I),
-    "admin": re.compile(r"\b(invoice|payment|overdue|gst|compliance|legal|tds|filing)\b", re.I),
+    # ADMIN IS THE COLLECTOR, DELIBERATELY AND TEMPORARILY. Measured 2026-09-11: of 889
+    # captured events, 815 matched NO domain at all — four narrow regexes covered 8% of a real
+    # mailbox, so 92% reached Layer 2 with nothing to select a corpus by, and the one corpus a
+    # tenant has activated never got to speak.
+    #
+    # Rather than invent five half-written domains, everything a business OPERATES on is filed
+    # under admin while it is the activated corpus: money, people, scheduling, procurement,
+    # legal, facilities, and the invitations and interviews that go with them. Fundraising,
+    # sales and support keep their own patterns and are tested FIRST (see `_SHIPPED_RANK`), so
+    # widening admin cannot steal a thread that names a term sheet or a deal.
+    #
+    # This is a staging decision, not a taxonomy. When a second corpus is activated its terms
+    # move out of this pattern and into its own file — which is a corpus edit, not a deploy.
+    "admin": re.compile(
+        r"\b("
+        # money in and out
+        r"invoice|invoices|payment|payments|paid|refund|receipt|billing|billed|subscription|"
+        r"overdue|outstanding|reimburse\w*|expense|expenses|payroll|salary|payout|"
+        r"gst|tds|tax|taxes|vat|purchase ?order|\bPO\b|quotation|vendor|supplier|procurement|"
+        # obligation and governance
+        r"compliance|complian\w*|legal|filing|filings|statutory|audit|auditor|policy|"
+        r"agreement|\bNDA\b|msa|sow|terms|clause|signature|sign-?off|approval|approve\w*|"
+        # people
+        r"hiring|hire|recruit\w*|candidate|applicant|resume|\bcv\b|interview|interviews|"
+        r"shortlist|offer letter|onboard\w*|offboard\w*|appraisal|leave|attendance|"
+        r"\bHR\b|human resources|employment|joining|notice period|"
+        # time and access
+        r"invite|invitation|invited|calendar|reschedul\w*|availability|slot|slots|agenda|"
+        r"meeting|meet|call|sync|standup|review|rsvp|"
+        r"access|credential|permission|licence|license|seat|account setup|"
+        # place and thing
+        r"office|facility|facilities|asset|assets|inventory|shipment|delivery|logistics"
+        r")\b", re.I),
 }
+
+#: WHERE A BUSINESS MESSAGE GOES WHEN NO PATTERN CLAIMS IT.
+#:
+#: A keyword table can only recognise language somebody thought to write down. A real mailbox is
+#: mostly ordinary sentences — "can you send that across", "are we still on for Thursday" — and
+#: those matched nothing at all, so 92% of events arrived with no domain.
+#:
+#: This is used ONLY for a message the caller has already established is business, and it is
+#: stamped `source="fallback"` so no reader can mistake it for evidence. `tag_domains` records
+#: it exactly like any other hint; what it must never do is look like a keyword match.
+FALLBACK_DOMAIN = "admin"
 
 
 #: WHAT AN AUTHORED CORPUS MAY ADD TO THE TWO TABLES ABOVE.
@@ -112,7 +155,16 @@ def _ordered_keywords() -> tuple[tuple[str, "re.Pattern[str]"], ...]:
     return tuple((name, pattern) for _rank, name, pattern in sorted(ranked, key=lambda r: (r[0], r[1])))
 
 
-def domain_hints(source: str, text: str | None) -> list[DomainHint]:
+def domain_hints(source: str, text: str | None,
+                 *, fallback: str | None = None) -> list[DomainHint]:
+    """Every domain this message could belong to, in rank order.
+
+    `fallback` is the domain to use when NOTHING else matched. It defaults to `None` — no
+    caller that has not thought about it gets a guess — and a caller passes it only for a
+    message it has already established is business. The resulting hint carries
+    `source="fallback"`, which is the whole safety property: a reader can tell a pattern that
+    fired from a pattern that did not.
+    """
     hints: list[DomainHint] = []
     _, authored_priors = _authored_hints()
     # THE AUTHORED PRIOR WINS, and this reverses what I wrote in the commit that added authored
@@ -137,4 +189,6 @@ def domain_hints(source: str, text: str | None) -> list[DomainHint]:
         for domain, pat in _ordered_keywords():
             if pat.search(text) and not any(h.domain == domain for h in hints):
                 hints.append(DomainHint(domain=domain, source="keyword"))
+    if not hints and fallback:
+        hints.append(DomainHint(domain=str(fallback), source="fallback"))
     return hints

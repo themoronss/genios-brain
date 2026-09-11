@@ -49,9 +49,15 @@ class ComposioCalendarConnector:
     source = "gcal"
 
     def __init__(self, *, api_key: str, user_id: str, calendar_id: str = "primary",
-                 backfill_days: int = DEFAULT_BACKFILL_DAYS) -> None:
+                 backfill_days: int = DEFAULT_BACKFILL_DAYS,
+                 internal_emails: frozenset[str] | None = None) -> None:
         self._x = ComposioExec(api_key=api_key, user_id=user_id)
         self._cal = calendar_id
+        # All 50 pilot events labelled their organiser staff, including outside investors.
+        # The factory injects the same tenant identity set as the context drain. None means
+        # the refinement was unavailable (preserve the old path); an empty set is a known read.
+        self._internal_emails = (None if internal_emails is None else
+                                frozenset(e.strip().lower() for e in internal_emails if e))
         # Per-connection first-sync depth (L1.2.4-U1), validated at construction.
         self.backfill_window = BackfillWindow(days=backfill_days)
 
@@ -110,9 +116,12 @@ class ComposioCalendarConnector:
             return None
         organizer = (ev.get("organizer") or {}).get("email")
         attendees = [a.get("email") for a in (ev.get("attendees") or []) if a.get("email")]
+        internal = getattr(self, "_internal_emails", None)
+        actor_type = ("internal_user" if internal is None or
+                      str(organizer or "").strip().lower() in internal else "external_contact")
         return RawObject(
             source="gcal", object_type="calendar_event", source_object_id=str(eid),
-            occurred_at=_parse_start(ev), actor_email=organizer, actor_type="internal_user",
+            occurred_at=_parse_start(ev), actor_email=organizer, actor_type=actor_type,
             # The cursor advances on `updated` (when Google last touched the event), NEVER on
             # the meeting start. Advancing on start pushed the gcal watermark to a future date
             # and froze the connector: 9 incremental runs, 1 object scanned, 0 new.

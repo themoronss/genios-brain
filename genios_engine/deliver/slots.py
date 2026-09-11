@@ -28,6 +28,14 @@ def _days_since(v, eval_time) -> int | None:
 
 
 def _money(v) -> str | None:
+    if isinstance(v, dict):
+        # Task 2 persists Money, not a scalar. Four currency/zero regressions otherwise
+        # rendered "no value set". ALG-10 owns normalization; cards show the source literal.
+        from genios_engine.contracts.units import Money
+        try:
+            return Money.model_validate(v).as_written
+        except (TypeError, ValueError):
+            return None
     try:
         n = float(v)
     except (TypeError, ValueError):
@@ -214,8 +222,11 @@ def compute_slots(reason_code: str, node_name: str, facts: dict, eval_time: date
     # original, and both should be able to say it.
     objective = _either(facts, "outreach.objective", "thread.objective",
                         "cohort.objective")
-    contacted = _int(_fval(facts, "cohort.contacted"))
-    awaiting = _int(_fval(facts, "cohort.awaiting"))
+    # Seven campaign recipients rendered as "several": these slots only read cohort.*.
+    # Select the card's own scope, never fall across groups when its count is missing.
+    group = "campaign" if reason_code == "campaign_awaiting_reply" else "cohort"
+    contacted = _int(_fval(facts, f"{group}.contacted"))
+    awaiting = _int(_fval(facts, f"{group}.awaiting"))
     never_chased = _int(_fval(facts, "cohort.never_chased"))
     past_normal = _int(_fval(facts, "cohort.awaiting_beyond_normal"))
     # THE GROUP READINGS' OWN FACTS. Each is read from the anchor the reading actually writes it

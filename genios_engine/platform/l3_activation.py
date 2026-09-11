@@ -128,7 +128,8 @@ EFFECTS = {
 
 #: Every column the record carries, in one place, so the reads below cannot select different shapes
 #: of the same row.
-_COLUMNS = "org_id, domain, enabled_at, enabled_by, notes, disabled_at, disabled_by, updated_at"
+_COLUMNS = ("org_id, domain, enabled_at, enabled_by, notes, disabled_at, disabled_by, "
+            "updated_at, variant_ids")
 
 #: What "activated" MEANS in SQL. One constant rather than five copies of the same `where` clause,
 #: so a read cannot forget that a stamped-off row is still a row.
@@ -160,6 +161,9 @@ class L3Activation:
     disabled_at: datetime | None = None
     disabled_by: str | None = None
     updated_at: datetime | None = None
+    #: The authored business-model / offering variants this domain runs under (0134). Empty
+    #: means declared nothing, which is every tenant today.
+    variant_ids: tuple[str, ...] = ()
 
     @property
     def live(self) -> bool:
@@ -183,7 +187,40 @@ def _record(row) -> L3Activation:
     return L3Activation(org_id=row.org_id, domain=row.domain, enabled_at=row.enabled_at,
                         enabled_by=row.enabled_by, notes=row.notes,
                         disabled_at=row.disabled_at, disabled_by=row.disabled_by,
-                        updated_at=row.updated_at)
+                        updated_at=row.updated_at,
+                        variant_ids=_variant_tuple(getattr(row, "variant_ids", None)))
+
+
+def _variant_tuple(raw) -> tuple[str, ...]:
+    """A jsonb list (or its JSON text, on a driver that hands it back as str) -> a sorted,
+    deduplicated tuple of non-empty ids. Anything unreadable is `()`, which is "declared
+    nothing" — never a partial list that would select some variants and silently drop others."""
+    try:
+        if isinstance(raw, str):
+            import json
+            raw = json.loads(raw)
+        ids = {str(x).strip() for x in (raw or ()) if str(x).strip()}
+        return tuple(sorted(ids))
+    except Exception:      # noqa: BLE001 — see above
+        return ()
+
+
+def declared_variants(engine, org_id: str, domain: str) -> tuple[str, ...]:
+    """The variant ids a LIVE activation declares for this (org, domain), or `()`.
+
+    Fails closed to `()` on any error, exactly as `activated_domains` does: an unreadable
+    declaration selects no overlay, which is the canonical corpus every tenant gets today.
+    """
+    from sqlalchemy import text
+    try:
+        with engine.connect() as conn:
+            row = conn.execute(text(
+                f"select variant_ids from {L3_ACTIVATION_TABLE} "
+                f"where org_id = :o and domain = :d and {_LIVE}"),
+                {"o": org_id, "d": domain}).first()
+        return _variant_tuple(row[0]) if row else ()
+    except Exception:      # noqa: BLE001
+        return ()
 
 
 # ── the compiler's reads: fail closed ────────────────────────────────────────────────────────
@@ -297,7 +334,8 @@ def list_l3_activations(engine, *, include_disabled: bool = False) -> tuple[L3Ac
 # ── the writers ──────────────────────────────────────────────────────────────────────────────
 
 def activate(engine, org_id: str, *, domain: str, by: str, notes: str | None = None,
-             at: datetime | None = None) -> L3Activation:
+             at: datetime | None = None,
+             variant_ids: tuple[str, ...] | list[str] | None = None) -> L3Activation:
     """Switch ONE domain on for ONE tenant. Idempotent on a LIVE row: the ORIGINAL enabling stands.
 
     Keeping the first `enabled_at` rather than refreshing it is the point of storing it: "since when
@@ -322,8 +360,9 @@ def activate(engine, org_id: str, *, domain: str, by: str, notes: str | None = N
     table = L3_ACTIVATION_TABLE
     with engine.begin() as conn:
         conn.execute(text(
-            f"insert into {table} (org_id, domain, enabled_at, enabled_by, notes, updated_at) "
-            "values (:o, :d, :at, :by, :notes, :at) "
+            f"insert into {table} (org_id, domain, enabled_at, enabled_by, notes, updated_at, "
+            "variant_ids) "
+            "values (:o, :d, :at, :by, :notes, :at, cast(:variants as jsonb)) "
             "on conflict (org_id, domain) do update set "
             # `case` on the STORED disabled_at: a live row keeps its first enabling, a revived one
             # takes the new instant. One statement rather than read-then-write, so two operators
@@ -335,8 +374,15 @@ def activate(engine, org_id: str, *, domain: str, by: str, notes: str | None = N
             # `coalesce(STORED, new)` on a live row, not the other way round — see the docstring.
             f"  notes = case when {table}.disabled_at is null "
             f"               then coalesce({table}.notes, excluded.notes) else excluded.notes end, "
+            # `variant_ids` follows the `notes` rule: on a live row a declaration FILLS IN an
+            # empty one and never overwrites a non-empty one. Changing which business model a
+            # tenant runs under is its own decision, not a side-effect of re-clicking activate.
+            f"  variant_ids = case when {table}.disabled_at is null "
+            f"       and jsonb_array_length({table}.variant_ids) > 0 "
+            f"       then {table}.variant_ids else excluded.variant_ids end, "
             "   disabled_at = null, disabled_by = null, updated_at = excluded.updated_at"),
-            {"o": org_id, "d": domain, "at": at, "by": by, "notes": notes})
+            {"o": org_id, "d": domain, "at": at, "by": by, "notes": notes,
+             "variants": __import__("json").dumps(list(_variant_tuple(variant_ids)))})
         row = conn.execute(text(
             f"select {_COLUMNS} from {table} where org_id = :o and domain = :d"),
             {"o": org_id, "d": domain}).first()

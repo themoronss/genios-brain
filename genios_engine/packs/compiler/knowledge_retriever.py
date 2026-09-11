@@ -22,6 +22,11 @@ class RetrievedKnowledge:
     variants: tuple[SourceDocument, ...]
     source_manifests: tuple[SourceDocument, ...]
     missing_artifacts: tuple[str, ...]
+    #: Variant ids the tenant declared that resolved to nothing or to several documents. Carried
+    #: out so the package can NAME them; never raised, because a tenant's typo used to land in
+    #: `domain_shadow`'s catch-all as `counts["error"]` on every situation — a silent tenant-wide
+    #: outage indistinguishable from a compiler bug.
+    unresolved_variants: tuple[str, ...] = ()
 
 
 def _values(raw) -> tuple[str, ...]:
@@ -69,16 +74,17 @@ class KnowledgeRetriever:
                     }
                     if request in aliases:
                         matches.append(document)
-            if len(matches) > 1:
-                raise AuthoringIntegrityError(
-                    f"business model/offering hint {request!r} is ambiguous; use the full id")
-            if not matches:
+            # AMBIGUOUS OR MISSING BOTH DEGRADE TO "NO OVERLAY", NAMED. These used to raise
+            # `AuthoringIntegrityError`, which `domain_shadow` does not catch by name — it landed
+            # in the catch-all as `counts["error"] += 1`, per situation, for every situation: a
+            # tenant's typo became a silent tenant-wide outage. The shipped Sales corpus already
+            # has two ambiguous bare aliases (`consulting`, `healthcare`), so this was reachable
+            # from an ordinary console entry.
+            if len(matches) > 1 or not matches:
                 missing.append(request)
             else:
                 resolved.append(matches[0])
-        if missing:
-            raise AuthoringIntegrityError(
-                f"requested business model/offering definitions are missing: {missing}")
+        self._unresolved = tuple(sorted(missing))
         return tuple(sorted(resolved, key=lambda item: item.id))
 
     def retrieve(self, plan: RoutePlan, situation: BusinessSituationObject) \
@@ -118,7 +124,8 @@ class KnowledgeRetriever:
         return RetrievedKnowledge(
             capabilities=tuple(sorted(capabilities, key=lambda item: item.id)),
             artifacts=tuple(sorted(artifacts, key=lambda item: item.id)),
-            variants=self._resolve_variants(plan, situation),
+            variants=(variants := self._resolve_variants(plan, situation)),
+            unresolved_variants=tuple(getattr(self, "_unresolved", ())),
             source_manifests=tuple(sorted(
                 manifests, key=lambda item: (item.id, item.kind))),
             missing_artifacts=tuple(sorted(missing)),

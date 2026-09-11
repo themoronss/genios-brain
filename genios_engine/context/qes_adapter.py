@@ -73,6 +73,17 @@ def adapt_qes_extraction(
     } for item in result.entity_mentions]
 
     facts: list[dict[str, Any]] = []
+    # The active QES route previously discarded all nine business nouns. Preserve their
+    # standing and actual ALG-08 receipts, never promote a model's unverified citation to R2.
+    for item in result.business_facts:
+        spans = [span for span in item.evidence if span.verified]
+        if not spans:
+            continue
+        facts.append({"subject": item.subject, "field": item.field,
+                      "value": item.value if isinstance(item.value, str) else item.value.model_dump(),
+                      "standing": item.standing, "business_fact": True,
+                      "evidence_text": spans[0].quote,
+                      "evidence_spans": [span.model_dump(mode="json") for span in spans]})
     for item in result.decision_states:
         quote = _span_quote(item.evidence)
         facts.append({"subject": item.subject, "field": "decision.status",

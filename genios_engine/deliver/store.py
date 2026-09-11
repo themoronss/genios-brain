@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
 from genios_engine.platform.db import get_engine
 from genios_engine.platform.ids import new_id
@@ -44,7 +44,7 @@ class CardStore:
     #: which cards may be rewritten. `is distinct from` rather than `<>` because the column is
     #: NULL on every card built before it existed, and those are exactly the stale ones.
     _STALE = ("k.builder_version is distinct from :builder "
-              "and k.state = any(:refreshable) and k.resolved_at is null")
+              "and k.state in :refreshable and k.resolved_at is null")
 
     def claim_build(self, org_id: str, signal_id: str, *, eval_time=None,
                     lease_minutes: int = 15, builder_version: str | None = None) -> str | None:
@@ -77,7 +77,7 @@ class CardStore:
                 "where card_build_claims.org_id=excluded.org_id "
                 "and card_build_claims.expires_at<=:now "
                 "and " + (blocked % "excluded.signal_id") + " "
-                "returning claim_token"),
+                "returning claim_token").bindparams(bindparam("refreshable", expanding=True)),
                 {"token": token, "now": now, "expires": now + timedelta(minutes=lease_minutes),
                  "signal": signal_id, "o": org_id,
                  "builder": builder_version,
@@ -189,8 +189,9 @@ class CardStore:
                 "confidence_vector=excluded.confidence_vector, surfaces=excluded.surfaces, "
                 "builder_version=excluded.builder_version "
                 "where cards.builder_version is distinct from excluded.builder_version "
-                "and cards.state = any(:refreshable) and cards.resolved_at is null "
-                "returning card_id, (xmax = 0) as inserted"),
+                "and cards.state in :refreshable and cards.resolved_at is null "
+                "returning card_id, (xmax = 0) as inserted").bindparams(
+                    bindparam("refreshable", expanding=True)),
                 {"id": card_id, "sig": card["signal_id"], "o": card["org_id"],
                  "asg": card["assignee"], "dom": card["domain"], "lvl": card["level"],
                  "band": card["urgency_band"], "head": copy["headline"], "sit": copy["situation"],
@@ -227,6 +228,8 @@ class CardStore:
                     "select card_id from cards where signal_id=:s and org_id=:o"),
                     {"s": card["signal_id"], "o": card["org_id"]}).first()
                 return (winner.card_id if winner is not None else None), False, False
+            self._stamp_recipients(c, card["org_id"], inserted.card_id,
+                                   card.get("co_recipients") or (), owner=card.get("assignee"))
             detail = {"band": card["urgency_band"], "render_mode": copy["render_mode"],
                       "reject_code": copy.get("reject_code"),
                       # the offending token was computed and discarded; a 90% fallback rate is
@@ -369,10 +372,25 @@ class CardStore:
 
     def queue(self, org_id: str, *, assignee: str | None = None, admin: bool = False,
               states=("queued", "surfaced", "snoozed", "claimed"),
-              record_impressions: bool = True) -> list[dict]:
+              record_impressions: bool = True, viewer: str | None = None) -> list[dict]:
         """Dashboard read. admin sees all queues (incl. unrouted); a member sees only their own.
-        Ranked by score desc — the morning's cards in priority order (§5.13 scenario 10)."""
-        q = ("select k.card_id, k.signal_id, k.assignee, k.urgency_band, k.headline, "
+        Ranked by score desc — the morning's cards in priority order (§5.13 scenario 10).
+
+        `viewer` IS WHO IS LOOKING, and it is a different question from `assignee`.
+
+        `assignee` and `admin` decide WHICH ROWS come back. `viewer` decides how they are
+        ORDERED and what is stamped on them, and the two had been folded into one — with the
+        consequence that every per-person feature was dead for the only person using the
+        product. A founder signs in with an owner JWT, `sees_org_queue` is true, so the route
+        passed `assignee=None`: correct for "show me everything", and it also meant their
+        declared objective never reordered anything and no card could tell them why it was
+        theirs. An org API key has no person behind it and resolves to no seat, so it keeps
+        exactly the org-wide read it has.
+
+        Defaults to `assignee` so every existing caller — the digest, the tests, the agent
+        lane — behaves exactly as it did.
+        """
+        q = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, "
              "k.situation, " + AUTHORITATIVE_SCORE_SQL +
              " as score, k.state, k.render_mode, k.created_at, k.expires_at "
              "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
@@ -396,7 +414,12 @@ class CardStore:
             # `k.assignee is null` matched nothing because L5 routes every card to a seat. The
             # desktop app read an empty queue for as long as it has existed. A caller with no
             # person to filter by must not be filtered to a person.
-            q += " and (k.assignee=:a or k.assignee is null)"
+            # A SEAT SEES ITS OWN, THE UNCLAIMED, AND WHAT IT ANSWERS FOR. The third arm is a
+            # LEFT-JOINLESS `exists` on purpose: on a tenant with no declarations the subquery
+            # matches nothing and the queue is byte-identical to what it was.
+            q += (" and (k.assignee=:a or k.assignee is null or exists ("
+                  "select 1 from card_recipients cr where cr.org_id=k.org_id "
+                  "and cr.card_id=k.card_id and cr.seat_id=:a))")
             params["a"] = assignee
         q += (" order by selected_rc.final_utility_bp desc, k.created_at asc, k.card_id "
               "for share of k,s,rr,ro,selected_rc,rcap,authority_ctx,authority_cfg,authority_pack")
@@ -416,6 +439,16 @@ class CardStore:
                     "and ce.card_id=k.card_id and ce.kind='card.surfaced') "
                     "on conflict do nothing"),
                     {"o": org_id, "ids": [row["card_id"] for row in rows]})
+            # WHAT THIS PERSON IS WORKING ON, applied as ORDER and nothing else. A stable
+            # partition — this viewer's objective domain first, then the rest — each half in the
+            # utility order the SQL already produced. No score moves, nothing is removed, and two
+            # viewers still see identical facts. See migration 0133 for why it must be a
+            # partition and not a term.
+            # WHO IS LOOKING, resolved once for both per-viewer passes. A seat id, an email or
+            # nothing — an org-level key resolves to nothing and keeps the org-wide read.
+            seat = self._viewer_seat(c, org_id, viewer if viewer is not None else assignee)
+            rows = self._your_part(c, org_id, seat, rows)
+            rows = self._objective_order(c, org_id, seat, rows)
             return rows
 
     #: What the History tab answers: every card somebody (or the world) already closed. `expired`
@@ -486,3 +519,111 @@ class CardStore:
                 "select id, kind, cause, actor_id, detail, occurred_at from card_events "
                 "where org_id = :o and card_id = :c order by occurred_at asc, id asc"),
                 {"o": org_id, "c": card_id}).mappings()]
+
+    @staticmethod
+    def _viewer_seat(conn, org_id: str, viewer: str | None) -> str | None:
+        """A credential's identity to an ACTIVE seat id, or None.
+
+        A dashboard JWT carries the person's EMAIL as `actor_id`; a seat-scoped credential
+        carries the seat id; an org key carries `org_primary_key`, which is nobody and must
+        resolve to nobody. Fails to None: an unreadable seat table means the queue is ordered
+        the way it always was, never that a card is hidden or mislabelled.
+        """
+        if not viewer:
+            return None
+        try:
+            row = conn.execute(text(
+                "select seat_id from org_seats where org_id=:o and active "
+                "and (seat_id=:v or lower(email)=lower(:v)) limit 1"),
+                {"o": org_id, "v": str(viewer)}).first()
+        except Exception:      # noqa: BLE001 — see the docstring
+            return None
+        return row.seat_id if row is not None else None
+
+    @staticmethod
+    def _your_part(conn, org_id: str, seat: str | None, rows: list[dict]) -> list[dict]:
+        """WHY THIS CARD IS ON THIS VIEWER'S QUEUE, when it is not theirs by ownership. A card a
+        seat reaches through a declared responsibility carries `your_part` — the slice, the
+        accountability, and who owns it — so "does this concern me" and "what stays with
+        someone else" are answered on the row. Owned cards and unnamed viewers get nothing
+        stamped. Fails to no stamps: an unreadable table hides no card and invents no reason."""
+        if not seat or not rows:
+            return rows
+        try:
+            from sqlalchemy import bindparam
+            found = conn.execute(text(
+                "select card_id, accountability, scope_kind, scope_key, owner_seat "
+                "from card_recipients where org_id=:o and seat_id=:a and card_id in :ids"
+            ).bindparams(bindparam("ids", expanding=True)),
+                {"o": org_id, "a": seat, "ids": [r["card_id"] for r in rows]}).mappings().all()
+        except Exception:      # noqa: BLE001 — see the docstring
+            return rows
+        parts = {f["card_id"]: {"accountability": f["accountability"],
+                                "scope_kind": f["scope_kind"], "scope_key": f["scope_key"],
+                                "owner_seat": f["owner_seat"]} for f in found}
+        for r in rows:
+            part = parts.get(r["card_id"])
+            if part is not None and r.get("assignee") != seat:
+                r["your_part"] = part
+        return rows
+
+    @staticmethod
+    def _objective_order(conn, org_id: str, seat: str | None, rows: list[dict]) -> list[dict]:
+        """Stable partition of a per-viewer queue by the viewer's declared objective domain.
+
+        ONLY FOR A NAMED VIEWER. An admin reading the org queue and an org-level key have no
+        person to hold an objective; their order is untouched. FAILS TO THE EXISTING ORDER on any
+        read error — a preference table being unreadable must not reorder or lose a queue.
+        """
+        if not seat or not rows:
+            return rows
+        try:
+            from datetime import datetime, timezone
+            domain = conn.execute(text(
+                "select o.domain from seat_objectives o "
+                "join org_seats s on s.org_id = o.org_id and lower(s.email) = o.seat_key "
+                "where o.org_id = :o and s.seat_id = :a and s.active "
+                "and (o.valid_until is null or o.valid_until > :now) limit 1"),
+                {"o": org_id, "a": seat, "now": datetime.now(timezone.utc)}).scalar()
+        except Exception:      # noqa: BLE001 — a preference, never a reason to touch the queue
+            return rows
+        if not domain:
+            return rows
+        wanted = str(domain).strip().lower()
+        first = [r for r in rows if str(r.get("domain") or "").strip().lower() == wanted]
+        rest = [r for r in rows if str(r.get("domain") or "").strip().lower() != wanted]
+        return first + rest
+
+    @staticmethod
+    def _stamp_recipients(conn, org_id: str, card_id: str, recipients, *, owner: str | None) -> int:
+        """WHO ELSE ANSWERS FOR THIS CARD, rewritten with the card.
+
+        A refresh recomputes them — a responsibility declared since the card was built reaches
+        it on the next rebuild — so the previous set is replaced, not merged. The owner is never
+        written as their own co-recipient. Empty in, empty table: a tenant that declared nothing
+        gets exactly the rows it had, which is none.
+        """
+        if not recipients:
+            # NOTHING TO SAY AND NOTHING TO CLEAR. The overwhelming majority of cards on every
+            # tenant, and the reason this must not open a statement: a hermetic card test builds
+            # its own three tables, and a DELETE against a table it never created would make
+            # every such test depend on a feature it does not use.
+            return 0
+        conn.execute(text("delete from card_recipients where org_id=:o and card_id=:c"),
+                     {"o": org_id, "c": card_id})
+        written = 0
+        for r in recipients:
+            seat = str((r or {}).get("seat_id") or "").strip()
+            if not seat or seat == owner:
+                continue
+            res = conn.execute(text(
+                "insert into card_recipients (org_id, card_id, seat_id, accountability, "
+                "scope_kind, scope_key, source, owner_seat) "
+                "values (:o,:c,:s,:acc,:kind,:key,:src,:own) "
+                "on conflict (org_id, card_id, seat_id) do nothing"),
+                {"o": org_id, "c": card_id, "s": seat,
+                 "acc": str(r.get("accountability") or "informed"),
+                 "kind": str(r.get("scope_kind") or ""), "key": str(r.get("scope_key") or ""),
+                 "src": str(r.get("source") or "admin_declared"), "own": owner})
+            written += int(res.rowcount or 0)
+        return written

@@ -214,6 +214,12 @@
         "fallback"
       ],
       "properties": {
+        "situation_cap": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 140,
+          "description": "Prose character budget for this card, excluding source-verified verbatim quotes. The measured 201-character card was cut to 111; a briefing now declares its budget while existing cards retain 140."
+        },
         "artifact_kind": {
           "type": "string",
           "description": "What the attached artifact IS \u2014 draft_reply, draft_intro, brief. Also names the card's action button. Defaults to a generic draft when absent."

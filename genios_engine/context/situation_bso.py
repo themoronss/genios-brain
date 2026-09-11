@@ -1375,6 +1375,7 @@ def build_business_situation(
     pattern: PatternFire | None = None,
     brain_subject_keys: tuple[str, ...] = (),
     contradicted_by: tuple[str, ...] = (),
+    variant_ids: tuple[str, ...] = (),
 ) -> BusinessSituationObject:
     """``members`` — real correlated counterparties from ``gather_members`` — is a separate,
     explicit parameter rather than a key smuggled onto ``situation``. Callers pass a raw DB row
@@ -1476,6 +1477,13 @@ def build_business_situation(
             # in it is not the package compiled without it — and it happens once per situation, not
             # per sweep, because the address is derived from the graph and not from a clock.
             "brain_subject_keys": list(brain_subject_keys),
+            # THE BUSINESS-MODEL DECLARATION — WRITTEN ONLY WHEN NON-EMPTY, AND THIS IS THE
+            # LOAD-BEARING LINE. `contracts/situation.content_key()` hashes the whole metadata
+            # dict (unlike the v1 class, which excludes `brain_subject_keys` from its address),
+            # so a key written as `[]` on every situation would re-mint `semantic_hash` ->
+            # `expertise_id` -> a fresh ~238 kB expertise package PER SITUATION: the 995 MB
+            # incident's mechanism. Absent means declared nothing and hashes as it always has.
+            **({"model_ids": list(variant_ids)} if variant_ids else {}),
             "coverage_bp": _bp(situation.get("coverage")),
             "importance_source": importance_source,
             # THE FALLBACK, DECLARED. Doc 07's acceptance row reads "importance_bp is not 5000

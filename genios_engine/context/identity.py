@@ -93,9 +93,25 @@ def record_alias(conn, *, org_id: str, node_id: str, alias_type: str, alias_key:
     """Claim one lookup key for one node.
 
     Returns None when the key is now (or already was) this node's. Returns the OTHER
-    node's id when the key is already taken — the caller has found a duplicate, and the
-    insert did nothing. Nothing is ever overwritten: the first claimant keeps the key,
-    so resolution stays stable while a proposal waits for a human.
+    node's id when the key is already taken by a LIVE node — the caller has found a duplicate,
+    and the insert did nothing. A live first claimant keeps the key, so resolution stays stable
+    while a proposal waits for a human.
+
+    A KEY HELD BY A NODE THAT NO LONGER EXISTS IS UNOWNED, and this is the correction.
+    `node_id` is minted per node (`new_id("node")`), the erasure list clears `graph_nodes` and
+    leaves `graph_aliases` standing, and this insert was `do nothing` — so a tenant whose graph
+    was ever rebuilt kept an alias table pointing at the FIRST graph that ever existed, for
+    ever. Measured on the pilot 2026-09-11: **309 of 364 aliases resolved to a node with no row
+    at any version** — 107 of 116 emails, 87 of 89 person names, 78 of 107 company names.
+    `resolve_company_mention("Antler")` returned a dead id, the caller's type check found no live
+    node, and the claim was dropped. That is why `party.role` holds one fact and
+    `company.industry` none: not an extractor that cannot read them, a subject that cannot
+    resolve.
+
+    Taking over a DEAD key is not overwriting a claimant — there is no claimant. The ambiguity
+    guard is untouched and is the whole point of the distinction: two LIVE nodes claiming one
+    name is a real collision and still refuses, because picking one silently moves every fact
+    written from that mention onto the wrong person.
     """
     if not alias_key:
         return None
@@ -108,7 +124,50 @@ def record_alias(conn, *, org_id: str, node_id: str, alias_type: str, alias_key:
     holder = conn.execute(text(
         "select node_id from graph_aliases where org_id=:o and alias_type=:t "
         "and alias_key=:k"), {"o": org_id, "t": alias_type, "k": alias_key}).scalar()
-    return None if holder == node_id else holder
+    if holder == node_id or holder is None:
+        return None
+    # Is the incumbent still a node at all? One indexed lookup, and only on the contended path.
+    alive = conn.execute(text(
+        "select 1 from graph_nodes where org_id=:o and node_id=:n and valid_to is null limit 1"),
+        {"o": org_id, "n": holder}).first()
+    if alive is not None:
+        return holder                     # a real duplicate: refuse, exactly as before
+    conn.execute(text(
+        "update graph_aliases set node_id=:n, origin=:orig, created_by_event_id=:ev "
+        "where org_id=:o and alias_type=:t and alias_key=:k and node_id=:dead"),
+        {"n": node_id, "orig": origin, "ev": event_id, "o": org_id, "t": alias_type,
+         "k": alias_key, "dead": holder})
+    return None
+
+
+def prune_dead_aliases(conn, *, org_id: str | None = None, limit: int = 5000) -> int:
+    """Delete every alias whose node no longer exists, and report how many.
+
+    WHY A SWEEP AND NOT ONLY THE TAKEOVER. `record_alias` now claims a key whose holder is
+    gone, which repairs a name the moment something mentions it again. That is lazy by nature:
+    a person or company never written about again keeps a dead key for ever, and until then
+    `resolve_alias` answers with an id whose node does not exist — so every caller performs the
+    live-node check and drops the claim. Measured on the pilot 2026-09-11, 309 of 364 aliases
+    were in that state.
+
+    DELETING IS THE CONSERVATIVE REPAIR, not repointing. A dead key resolves to nothing useful
+    already, so removing it loses no answer that was being given; and guessing WHICH live node
+    should inherit it would be exactly the silent re-attribution `resolve_person_name` refuses
+    ("a name shared by several anchored people resolves to NOBODY, not to the first claimant").
+    Removal leaves the key free, and the next real observation claims it with evidence.
+
+    Bounded per pass so a tenant with a large table cannot make one heartbeat tick long, and
+    idempotent: a second pass over a repaired org deletes nothing.
+    """
+    scope = "" if org_id is None else " and a.org_id = :org"
+    result = conn.execute(text(
+        "delete from graph_aliases where (org_id, alias_type, alias_key) in ("
+        "  select a.org_id, a.alias_type, a.alias_key from graph_aliases a"
+        "   where not exists (select 1 from graph_nodes n where n.org_id = a.org_id"
+        "                       and n.node_id = a.node_id and n.valid_to is null)"
+        f"  {scope} limit :limit)"),
+        {"org": org_id, "limit": int(limit)} if org_id is not None else {"limit": int(limit)})
+    return int(result.rowcount or 0)
 
 
 def resolve_alias(conn, *, org_id: str, alias_type: str, alias_key: str) -> str | None:

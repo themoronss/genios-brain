@@ -137,6 +137,12 @@ class ExpertiseBuilder:
         # metadata, which is `metadata['situation_hash']` above. The address of such a package
         # moved when the FIRE arrived, not when this receipt did; the receipt costs one re-mint on
         # the sweep it lands and nothing per sweep after it.
+        # Declared variants that resolved to nothing or to several documents — written ONLY
+        # when non-empty, on this block's own omit-when-empty rule, so a tenant that declared
+        # nothing mints exactly the package it always has.
+        unresolved = tuple(getattr(expert, "unresolved_variants", ()) or ())
+        if unresolved:
+            metadata["unresolved_variant_ids"] = list(unresolved)
         if plan.pattern_route_state is not None:
             metadata["pattern_route_state"] = plan.pattern_route_state
         if plan.pattern_route_id is not None:

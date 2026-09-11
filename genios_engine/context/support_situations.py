@@ -56,7 +56,9 @@ import statistics
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import text
+from sqlalchemy import JSON, bindparam, text
+
+from genios_engine.context.derived_provenance import load_event_receipts, write_fact_source_refs
 
 from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.context.periodic import WINDOW_DAYS
@@ -631,6 +633,18 @@ class Finding:
     first_seen_at: datetime | None
     identity_node: str | None = None
     concerns_node: str | None = None
+    event_ids: tuple[str, ...] = ()
+
+
+def _events_on_threads(desk: Desk, thread_ids) -> tuple[str, ...]:
+    """Receipts for the threads used by a reading, not every event on its representative person.
+
+    The pilot had 140 backlog facts without any source refs. Keep the actual snapshot's event
+    IDs before the reading reduces messages to counts, or persistence cannot recover its inputs.
+    """
+    threads = set(thread_ids)
+    return tuple(sorted({m.event_id for m in desk.messages
+                         if m.thread_id in threads and m.at <= desk.now}))
 
 
 # ── reading 1 · the first-response clock ─────────────────────────────────────────────────────
@@ -700,7 +714,8 @@ def read_first_response(desk: Desk) -> list[Finding]:
                     "clock": "calendar hours across the stated working window; holidays unknown"},
             missing=_MISSING_FIRST_RESPONSE, coverage_cap_pct=_CAP_FIRST_RESPONSE,
             event_count=len(msgs), source_count=1,
-            last_seen_at=msgs[-1].at, first_seen_at=opened_at, identity_node=node))
+            last_seen_at=msgs[-1].at, first_seen_at=opened_at, identity_node=node,
+            event_ids=_events_on_threads(desk, (thread_id,))))
     return out
 
 
@@ -790,7 +805,8 @@ def read_backlog_items(desk: Desk) -> list[Finding]:
             missing=_MISSING_AGING, coverage_cap_pct=_CAP_AGING,
             event_count=lp.ask_count, source_count=1,
             last_seen_at=last_in or lp.opened_at, first_seen_at=lp.opened_at,
-            identity_node=lp.subject_node_id))
+            identity_node=lp.subject_node_id,
+            event_ids=_events_on_threads(desk, (item.thread_id for item in desk.loops))))
     return out
 
 
@@ -899,7 +915,8 @@ def read_escalations(desk: Desk) -> list[Finding]:
             missing=_MISSING_ESCALATION, coverage_cap_pct=_CAP_ESCALATION,
             event_count=len([m for m in msgs if m.at >= raise_msg.at]), source_count=1,
             last_seen_at=msgs[-1].at, first_seen_at=raise_msg.at,
-            identity_node=requester, concerns_node=account if account != requester else None))
+            identity_node=requester, concerns_node=account if account != requester else None,
+            event_ids=_events_on_threads(desk, (thread_id,))))
     return out
 
 
@@ -1005,7 +1022,8 @@ def read_repeat_contacts(desk: Desk) -> list[Finding]:
             missing=_MISSING_REPEAT, coverage_cap_pct=_CAP_REPEAT,
             event_count=len(recent), source_count=1,
             last_seen_at=newest.at, first_seen_at=recent[0].at, identity_node=person,
-            concerns_node=account if account != person else None))
+            concerns_node=account if account != person else None,
+            event_ids=_events_on_threads(desk, (a.thread_id for a in recent))))
     return out
 
 
@@ -1074,7 +1092,8 @@ def read_knowledge_gaps(desk: Desk) -> list[Finding]:
             missing=_MISSING_KNOWLEDGE, coverage_cap_pct=_CAP_KNOWLEDGE,
             event_count=len(this_window), source_count=1,
             last_seen_at=max(a.at for a in this_window),
-            first_seen_at=min(a.at for a in asks)))
+            first_seen_at=min(a.at for a in asks),
+            event_ids=_events_on_threads(desk, (a.thread_id for a in asks))))
     return out
 
 
@@ -1175,7 +1194,9 @@ def read_mailbox_load(desk: Desk) -> list[Finding]:
                     **{f: v for f, v, _ in facts}},
             missing=_MISSING_MAILBOX, coverage_cap_pct=_CAP_MAILBOX,
             event_count=opened + closed, source_count=1,
-            last_seen_at=desk.now, first_seen_at=window_start))
+            last_seen_at=desk.now, first_seen_at=window_start,
+            event_ids=_events_on_threads(desk, (thread for thread, connection in
+                desk.thread_conn.items() if connection == connection_id))))
     return out
 
 
@@ -1289,7 +1310,10 @@ def read_workarounds(desk: Desk) -> list[Finding]:
                                            "defect cannot be joined"},
             missing=_MISSING_WORKAROUND, coverage_cap_pct=_CAP_WORKAROUND,
             event_count=1, source_count=1,
-            last_seen_at=quiet_since, first_seen_at=msg.at, identity_node=node))
+            last_seen_at=quiet_since, first_seen_at=msg.at, identity_node=node,
+            event_ids=_events_on_threads(desk, (m.thread_id for m in desk.messages
+                if node in {desk.person_node.get(address)
+                            for address in (m.sender, *m.recipients)}))))
     return out
 
 
@@ -1479,23 +1503,30 @@ def _coverage(domain: str, stype: str, present: set[str], cap: int) -> tuple[int
 
 
 def _write_fact(conn, *, org_id: str, node_id: str, field_name: str, value, value_type: str,
-                now: datetime, key: str) -> None:
+                now: datetime, key: str, event_receipts=None) -> None:
     conn.execute(text(
         "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, "
         "field, value, value_type, status, authority_rank, confidence, occurred_at, "
         "valid_from, visibility_scope, derivation_type, trace_id, schema_version, "
         "source_authority, provenance_refs) values "
-        "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), :vt, 'active', 100, 0.95, :now, :now, 'org', "
-        "'deterministic_derived', :trace, 'graph-fact.v2', 'R100', cast(:provenance as jsonb)) "
+        "(:vid, :fid, :o, :n, :f, :v, :vt, 'active', 100, 0.95, :now, :now, 'org', "
+        "'deterministic_derived', :trace, 'graph-fact.v2', 'R100', :provenance) "
         # Same reasoning as `periodic.py` and `derived.py`: a recompute overwrites its own version
         # id rather than appending a row per sweep, or the table grows by a row per finding per
         # field forever.
         "on conflict (fact_version_id) do update set value = excluded.value, "
-        "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from"),
+        "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from, "
+        "provenance_refs = case when :has_receipts then excluded.provenance_refs "
+        "else graph_facts.provenance_refs end").bindparams(
+            bindparam("v", type_=JSON), bindparam("provenance", type_=JSON)),
         {"vid": f"fv_desk_{key}", "fid": f"f_desk_{key}", "o": org_id, "n": node_id,
-         "f": field_name, "v": json.dumps(value, default=str), "vt": value_type, "now": now,
+         "f": field_name, "v": value, "vt": value_type, "now": now,
          "trace": f"l2:support:{now.isoformat()}",
-         "provenance": json.dumps([f"support-reading:{key}"])})
+         "has_receipts": event_receipts is not None,
+         "provenance": [f"support-reading:{key}", *(r.event_id for r in event_receipts or ())]})
+    if event_receipts is not None:
+        write_fact_source_refs(conn, org_id=org_id, fact_version_id=f"fv_desk_{key}",
+                               receipts=event_receipts)
 
 
 def refresh_support_situations(store, org_id: str, *, now: datetime | None = None,
@@ -1528,13 +1559,14 @@ def refresh_support_situations(store, org_id: str, *, now: datetime | None = Non
             findings = reader(desk)
             minted: dict[str, set[str]] = {d: set() for d in claiming}
             for f in findings:
+                receipts = load_event_receipts(c, org_id=org_id, event_ids=f.event_ids)
                 node_id = store.find_or_create_node(
                     c, org_id=org_id, node_type=anchor, canonical_key=f.canonical_key,
                     display_name=f.display_name, event_id=None)
                 for field_name, value, value_type in f.facts:
                     _write_fact(c, org_id=org_id, node_id=node_id, field_name=field_name,
                                 value=value, value_type=value_type, now=now,
-                                key=f"{org_id}_{node_id}_{field_name}")
+                                key=f"{org_id}_{node_id}_{field_name}", event_receipts=receipts)
                     written += 1
                 if f.concerns_node:
                     # One hop, so `build_context_slice`/`_neighborhood` pull the account's facts
@@ -1598,7 +1630,7 @@ def _upsert(conn, *, org_id: str, corr: str, node_id: str, stype: str, domain: s
         "  confidence_freshness, confidence_consistency, confidence_identity, coverage, missing, "
         "  inputs, first_seen_at, last_seen_at, computed_at) "
         "values (:sid, :o, :c, :n, :st, :d, 'active', :ov, :ev, :fr, 100, :id, :cov, "
-        "  cast(:missing as jsonb), cast(:inputs as jsonb), :first, :last, :now) "
+        "  :missing, :inputs, :first, :last, :now) "
         "on conflict (org_id, correlation_id) do update set "
         # A HUMAN CLOSE SURVIVES THE NEXT DRAIN, and it used to be destroyed by it.
         #
@@ -1624,11 +1656,12 @@ def _upsert(conn, *, org_id: str, corr: str, node_id: str, stype: str, domain: s
         "  confidence_identity = excluded.confidence_identity, "
         "  coverage = excluded.coverage, missing = excluded.missing, "
         "  inputs = excluded.inputs, last_seen_at = excluded.last_seen_at, "
-        "  situation_type = excluded.situation_type, computed_at = excluded.computed_at"),
+        "  situation_type = excluded.situation_type, computed_at = excluded.computed_at").bindparams(
+            bindparam("missing", type_=JSON), bindparam("inputs", type_=JSON)),
         {"sid": held or new_id("sit"), "o": org_id, "c": corr, "n": node_id, "st": stype,
          "d": domain, "ov": min(trust), "ev": evidence, "fr": freshness or 0, "id": identity,
-         "cov": coverage, "missing": json.dumps(missing), "now": now,
-         "inputs": json.dumps(inputs, default=str),
+         "cov": coverage, "missing": missing, "now": now,
+         "inputs": json.loads(json.dumps(inputs, default=str)),
          "first": first_seen or now, "last": last_seen or now})
 
 

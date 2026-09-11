@@ -20,6 +20,68 @@ vision: >
 #   uv run --no-sync pytest <file> -q
 # ─────────────────────────────────────────────────────────────────────────────────────────────
 
+three_problems_followup:
+  status: approved_in_progress
+  specs: [docs/plans/AGENT_PROMPT.md, docs/plans/THREE_PROBLEMS.md]
+  vision: >
+    Derived situations retain event-level receipts; a fixed-time campaign fixture reaches
+    evidence 65 and freshness 50 without changing scoring formulas or the 4500 floor.
+    Compiled-card rendering preserves grounded quotes and authored fallback copy. Business
+    nouns enter the graph with receipts, explicit statements outrank judgements, and absent
+    information remains missing. Fixture proof and live customer outcomes are separate.
+  historical_tree: >
+    M1-M4 and their baseline comments above are preserved historical work, not findings or
+    completion claims for this follow-up. New work uses permanent IDs M5-M7.
+  requested_order: [1E, 1F, 1A, 1B, 1C, 1D, Task3, Task2]
+  measurements: >
+    September 10 numbers are supplied measurements, not measurements taken during this build:
+    1001 observations on 30 people, 18 legacy cards, zero compiled cards. The campaign stores
+    7 contacted and 7 awaiting despite its 13-investor label. Never manufacture 6-of-13 copy
+    or claim live numbers moved from fixture tests.
+  protected:
+    - DEFAULT_CONFIDENCE_FLOOR_BP remains 4500
+    - freshness_score and evidence_score formulas remain unchanged
+    - analytic ramp remains unchanged; only its confidence-ceiling participation changes
+    - no LLM inside a reasoning unit
+    - cards_one_per_signal remains unchanged
+    - FEATURE_BUNDLE remains unchanged by this work
+  verification:
+    unit_command: uv run --no-sync pytest <path> -q -p no:randomly
+    full_suite_command: uv run --no-sync pytest -q -p no:randomly
+    constraints: >
+      New tests use fixed timestamps, local fixtures, SQLite and fake model responses; no live
+      database, network, wall-clock-dependent assertions or real LLM calls. Prove a failing
+      regression before implementation. Failed refinement reads preserve the original path.
+    supplied_baseline:
+      passed: 9899
+      failed: 24
+      failure_files:
+        tests/capture/esqe/test_qualification_routes.py: 12
+        tests/capture/connectors/test_new_route_wiring.py: 6
+        tests/capture/esqe/test_rejection_ledger.py: 4
+        tests/capture/test_g9_gate_probes.py: 1
+        tests/contracts/test_h0_gate.py: 1
+    reporting: >
+      Capture current baseline and final full-suite results, including skips and exact failure
+      identities. The supplied baseline is not a current run. A nonzero suite is not green even
+      when failures match the allowlist. Do not skip tests, weaken assertions or fix unrelated
+      code to manufacture green. No commit, push or deployment is requested here.
+  progress_record: >
+    Record each unit's defect, why, changed artifact, RED command/result, GREEN command/result,
+    fixture delta, limitations and remaining work. Give step-by-step user updates and a final
+    task-by-task report. A unit's artifact names its production seam; regression tests accompany
+    that unit and must fail for the intended reason before the production change.
+  live_handoff:
+    - >
+      Task 2D's actual drain of 767 parked attachments requires an operator/live run. Verify
+      the recovery path offline; report the live drain as NOT RUN.
+    - >
+      Bundle activation is reserved for the user after Task 1. Brief/critique activation and
+      automatic new-tenant activation in the broader spec are outside the narrower coding brief.
+    - >
+      Live evidence/card counts and the final customer sentence require remeasurement after
+      rollout. A 5000-bp ceiling alone does not prove all publication gates passed.
+
 milestones:
 
   # ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -295,3 +357,525 @@ milestones:
           — it was doing its job, and "the best candidates are being killed" was the wrong
           reading of a high utility score meeting a correct guard rail.
         layers: []
+
+  - id: M5
+    name: Task 1 — derived evidence reaches the compiled lane
+    ships: >
+      Source-linked derived facts and deduplicated situation evidence survive persistence.
+      The campaign replay reports actual axes and downstream publication outcomes, not only
+      arithmetic. Calendar and outbound observations reach the subjects established by events.
+    categories:
+      - id: M5.C1
+        name: 1E and 1F — remove the cohort veto and classify calendar organisers
+        layers:
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C1.L-logic.V0.U01
+                    verify: uv run --no-sync pytest tests/reason/test_confidence_rule11.py -q -p no:randomly
+                    what: >
+                      Exclude analytic from the trust ceiling, retain its receipt and ramp,
+                      and update both measured comment blocks. Regress small valid cohorts,
+                      sentinels and still-binding evidence/freshness axes.
+                    artifact: genios_engine/reason/reasoners/confidence.py
+                    depends_on: []
+                  - id: M5.C1.L-logic.V0.U02
+                    verify: uv run --no-sync pytest tests/capture/connectors/test_calendar_actor_identity.py -q -p no:randomly
+                    what: >
+                      Accept the tenant internal-email set at the calendar connector and classify
+                      organisers from it; regress external, internal, mixed-case and absent emails.
+                      Do not infer staff membership from an external organiser or import Layer 2.
+                    artifact: genios_engine/capture/connectors/calendar.py
+                    depends_on: []
+          - layer: integration
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C1.L-integration.V0.U01
+                    verify: uv run --no-sync pytest tests/capture/connectors/test_calendar_identity_wiring.py -q -p no:randomly
+                    what: >
+                      Inject the same seats/owner/connected-mailbox identity source used by
+                      context.runner._internal_emails through the connector factory. Exercise
+                      construction with SQLite/fakes; no network or Layer 1-to-Layer 2 import.
+                    artifact: genios_engine/platform/wiring.py
+                    depends_on: [M5.C1.L-logic.V0.U02]
+      - id: M5.C2
+        name: 1A — derived facts retain their contributing events
+        layers:
+          - layer: data
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C2.L-data.V0.U01
+                    verify: uv run --no-sync pytest tests/context/test_derived_provenance.py -q -p no:randomly
+                    what: >
+                      Provide an idempotent event-to-fact source-ref writer that preserves source
+                      and independence_group. Test two events, repeated sweeps, changed membership,
+                      tenant isolation and absent evidence without inventing event IDs.
+                    artifact: genios_engine/context/derived_provenance.py
+                    depends_on: []
+              - level: 1
+                units:
+                  - id: M5.C2.L-data.V1.U01
+                    retired: true
+                    retired_reason: Original verify includes real-Postgres skips; replace with complete SQLite unit proof.
+                    superseded_by: [M5.C2.L-data.V1.U04]
+                  - id: M5.C2.L-data.V1.U04
+                    verify: uv run --no-sync pytest tests/context/test_support_derived_provenance.py -q -p no:randomly
+                    what: >
+                      Thread the actual support reading's contributing events into _write_fact;
+                      persist graph_source_refs with the written fact_version_id in its transaction.
+                    artifact: genios_engine/context/support_situations.py
+                    depends_on: [M5.C2.L-data.V0.U01]
+                  - id: M5.C2.L-data.V1.U02
+                    verify: uv run --no-sync pytest tests/context/test_outreach_derived_provenance.py -q -p no:randomly
+                    what: >
+                      Preserve event membership through outreach/campaign/organisation findings
+                      into derived fact writes; synthetic labels and representative people are
+                      not substitutes for contributing event IDs.
+                    artifact: genios_engine/context/outreach_situations.py
+                    depends_on: [M5.C2.L-data.V0.U01]
+                  - id: M5.C2.L-data.V1.U03
+                    retired: true
+                    retired_reason: Original verify includes real-Postgres skips; replace with complete SQLite unit proof.
+                    superseded_by: [M5.C2.L-data.V1.U05]
+                  - id: M5.C2.L-data.V1.U05
+                    verify: uv run --no-sync pytest tests/context/test_document_derived_provenance.py -q -p no:randomly
+                    what: >
+                      Persist document-derived fact refs from the document events actually read,
+                      with stable IDs and real source independence groups across repeat refreshes.
+                    artifact: genios_engine/context/document_register.py
+                    depends_on: [M5.C2.L-data.V0.U01]
+      - id: M5.C3
+        name: 1B — evidence follows the subject and the complete group
+        layers:
+          - layer: data
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C3.L-data.V0.U01
+                    verify: uv run --no-sync pytest tests/context/test_situation_evidence_neighborhood.py -q -p no:randomly
+                    what: >
+                      Count anchor and one-hop person/company evidence in BOTH edge directions.
+                      Deduplicate events/sources, preserve event time, exclude other tenants and
+                      second-hop spillover. Six observations from one source score 65; none score 0.
+                    artifact: genios_engine/context/outreach_situations.py::_EVENT_COUNTS
+                    depends_on: []
+              - level: 1
+                units:
+                  - id: M5.C3.L-data.V1.U01
+                    verify: uv run --no-sync pytest tests/context/test_situation_group_evidence.py -q -p no:randomly
+                    what: >
+                      Union contributing group events through context_correlation_members.event_id,
+                      not node IDs. Resolve real correlation membership rather than assuming a
+                      synthetic campaign ID is a correlation ID. Deduplicate overlap with neighbours.
+                    artifact: genios_engine/context/outreach_situations.py::group evidence read
+                    depends_on: [M5.C2.L-data.V1.U02, M5.C3.L-data.V0.U01]
+          - layer: integration
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C3.L-integration.V0.U01
+                    verify: uv run --no-sync pytest tests/context/test_situation_evidence_refresh.py -q -p no:randomly
+                    what: >
+                      Wire the combined evidence into situation refresh at the failing stats read.
+                      Freshness uses contributing source timestamps, never the refresh timestamp.
+                      Fault-inject unavailable refinement reads and preserve baseline behaviour.
+                    artifact: genios_engine/context/outreach_situations.py::refresh_outreach_situations
+                    depends_on: [M5.C3.L-data.V1.U01]
+      - id: M5.C4
+        name: 1C and 1D — established subjects receive observations
+        layers:
+          - layer: data
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C4.L-data.V0.U01
+                    verify: uv run --no-sync pytest tests/context/test_event_presence_store.py -q -p no:randomly
+                    what: >
+                      Persist replay-safe event presence with real SQLite observation/source-ref SQL.
+                      Keep semantic observations untouched; JSON evidence must remain actual JSON.
+                    artifact: genios_engine/context/graph_store.py::write_event_presence
+                    depends_on: []
+                  - id: M5.C4.L-data.V0.U02
+                    verify: uv run --no-sync pytest tests/test_corroboration.py tests/context/test_event_presence_store.py -q -p no:randomly
+                    what: >
+                      Keep the existing corroboration invariant under typed JSON SQL binding.
+                      Assert the full evidence object rather than calling string methods on a
+                      pre-driver parameter; real SQLite proves serialized persistence separately.
+                    artifact: tests/test_corroboration.py
+                    depends_on: [M5.C4.L-data.V0.U01]
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C4.L-logic.V0.U01
+                    retired: true
+                    reason: The active structured writer is structured.commit_structured, not pipeline.py.
+                    superseded_by: [M5.C4.L-logic.V0.U03]
+                  - id: M5.C4.L-logic.V0.U03
+                    verify: uv run --no-sync pytest tests/context/test_calendar_node_observations.py -q -p no:randomly
+                    what: >
+                      The structured calendar persistence path writes an event-backed observation
+                      for each node it establishes. Verify meeting/person subjects, source refs,
+                      repeat-run idempotency and no invented semantic claim or provenance.
+                    artifact: genios_engine/context/structured.py::commit_structured
+                    depends_on: [M5.C1.L-integration.V0.U01, M5.C4.L-data.V0.U01]
+                  - id: M5.C4.L-logic.V0.U02
+                    verify: uv run --no-sync pytest tests/context/test_outbound_recipient_observations.py -q -p no:randomly
+                    what: >
+                      Outbound evidence reaches each established recipient across the four
+                      observation call paths. Preserve the actual speaker/commitment owner and
+                      shared independence group; copied observations must not inflate corroboration.
+                    artifact: genios_engine/context/pipeline.py::observation subject selection
+                    depends_on: [M5.C4.L-data.V0.U01]
+      - id: M5.C5
+        name: Task 1 proof — event receipts through persisted compiled card
+        layers:
+          - layer: integration
+            levels:
+              - level: 0
+                units:
+                  - id: M5.C5.L-integration.V0.U01
+                    retired: true
+                    reason: Split decision proof from final persisted-card assembly, which also requires render and noun changes.
+                    superseded_by: [M5.C5.L-integration.V0.U02, M5.C5.L-integration.V0.U03]
+                  - id: M5.C5.L-integration.V0.U02
+                    verify: uv run --no-sync pytest tests/context/test_campaign_evidence_to_decision.py -q -p no:randomly
+                    what: >
+                      Seven single-source events at a fixed 30-day boundary produce evidence 65,
+                      freshness 50, and a selected candidate at confidence 5000 through the real
+                      shipped corpus compiler and full deterministic reasoning roster.
+                    artifact: tests/context/test_campaign_evidence_to_decision.py
+                    depends_on: [M5.C1.L-logic.V0.U01, M5.C3.L-integration.V0.U01, M5.C4.L-logic.V0.U03, M5.C4.L-logic.V0.U02]
+                  - id: M5.C5.L-integration.V0.U03
+                    verify: uv run --no-sync pytest tests/context/test_campaign_evidence_to_card.py -q -p no:randomly
+                    what: >
+                      Replay seven single-source events at a fixed 30-day boundary through real
+                      situation persistence, compiler/reasoning and card persistence with only
+                      external services faked. Assert evidence 65, freshness 50 and trust ceiling
+                      5000, then inspect actual publish/card outcome at unchanged floor 4500.
+                      Report any different arithmetic or independent downstream gate; never tune it.
+                    artifact: tests/context/test_campaign_evidence_to_card.py
+                    depends_on:
+                      - M5.C1.L-logic.V0.U01
+                      - M5.C2.L-data.V1.U04
+                      - M5.C2.L-data.V1.U05
+                      - M5.C3.L-integration.V0.U01
+                      - M5.C4.L-logic.V0.U03
+                      - M5.C4.L-logic.V0.U02
+                      - M6.C4.L-integration.V0.U01
+                      - M7.C3.L-integration.V0.U01
+
+  - id: M6
+    name: Task 3 — the renderer preserves the supported sentence
+    ships: >
+      Default cards retain the 140-character prose cap. Authored campaign cards declare their
+      cap, verified quotes survive outside that budget, and rejected model copy uses authored
+      fallback. Placeholder source attribution is verified before any production remedy.
+    categories:
+      - id: M6.C1
+        name: 3A — card-specific prose budgets
+        layers:
+          - layer: contract
+            levels:
+              - level: 0
+                units:
+                  - id: M6.C1.L-contract.V0.U01
+                    verify: uv run --no-sync pytest tests/test_render_cap_schema.py tests/packs/test_admin_routing.py tests/packs/test_the_corpus_gate_tells_the_truth.py -q -p no:randomly
+                    what: >
+                      Full-suite crosscheck exposed the corpus schema rejecting situation_cap.
+                      Declare the optional positive integer field, retaining closed properties
+                      and rejecting zero, negative, boolean and nonnumeric values.
+                    artifact: Domain Expertise/_schema/situation.schema.json
+                    depends_on: []
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M6.C1.L-logic.V0.U01
+                    verify: uv run --no-sync pytest tests/test_render_card_caps.py -q -p no:randomly
+                    what: >
+                      Resolve a validated per-card YAML cap consistently for prompt, validation
+                      and fallback. Default to 140 for absent/invalid configuration; headline cap
+                      and existing invention guards remain intact.
+                    artifact: genios_engine/deliver/render.py::card prose budget
+                    depends_on: []
+          - layer: integration
+            levels:
+              - level: 0
+                units:
+                  - id: M6.C1.L-integration.V0.U01
+                    verify: uv run --no-sync pytest tests/test_render_campaign_cap.py -q -p no:randomly
+                    what: >
+                      Declare the campaign's prose budget in its authored YAML from measured
+                      fallback prose length, then prove the compiler passes it through to render.
+                      Do not raise the global cap or invent a threshold to hide rejected copy.
+                    artifact: Domain Expertise/Admin Expertise/capabilities/01-executive-support/inbox-and-correspondence/situations/campaign-awaiting-reply.yaml
+                    depends_on: [M6.C1.L-logic.V0.U01, M6.C1.L-contract.V0.U01]
+      - id: M6.C2
+        name: 3B and 3C — quotes and authored fallback survive
+        layers:
+          - layer: data
+            levels:
+              - level: 0
+                units:
+                  - id: M6.C2.L-data.V0.U01
+                    verify: uv run --no-sync pytest tests/test_render_verified_quote_loader.py -q -p no:randomly
+                    what: >
+                      Reverify quote bytes against retained same-tenant source text at delivery.
+                      Carry verification to the renderer and preserve complete verified quotes;
+                      unverified quotes retain compatibility without earning cap exemptions.
+                    artifact: genios_engine/deliver/card_builder.py::load_evidence_quotes
+                    depends_on: []
+                  - id: M6.C2.L-data.V0.U02
+                    verify: uv run --no-sync pytest tests/test_render_evidence_selection.py -q -p no:randomly
+                    what: >
+                      Review regression: recipient presence must not consume the quote limit;
+                      a campaign member ref is not proof that its event contains the representative
+                      quote. Select actual matching event text before limits and preserve speaker ACL.
+                    artifact: genios_engine/deliver/card_builder.py
+                    depends_on: [M6.C2.L-data.V0.U01]
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M6.C2.L-logic.V0.U01
+                    verify: uv run --no-sync pytest tests/test_render_quote_budget.py -q -p no:randomly
+                    what: >
+                      Exclude only source-verified verbatim quote spans from the prose budget and
+                      preserve their bytes through fitting and fallback. Arbitrary quotation marks
+                      must not bypass length or invention guards; regress punctuation/Unicode.
+                    artifact: genios_engine/deliver/render.py::quote-aware fitting
+                    depends_on: [M6.C1.L-logic.V0.U01, M6.C2.L-data.V0.U01]
+              - level: 1
+                units:
+                  - id: M6.C2.L-logic.V1.U01
+                    verify: uv run --no-sync pytest tests/test_render_compiled_copy.py -q -p no:randomly
+                    what: >
+                      Rejected model output re-templates with the compiled situation's authored
+                      fallback and truthful slots. Retain rejection provenance; regress full and
+                      partial rejection, absent authored copy and legacy compatibility.
+                    artifact: genios_engine/deliver/render.py::render_copy
+                    depends_on: [M6.C2.L-logic.V0.U01]
+      - id: M6.C3
+        name: 3D — identify the placeholder producer before changing it
+        unresolved: >
+          Exact Insert/SwerashiGeniOS reproducer is not in the supplied brief. Initial literal
+          search found no matching leaked template in production code. Do not treat a reject
+          string as proof of which producer is wrong; do not allowlist Insert or add a blanket
+          keyword filter. Once reproduced, add a separately claimed production-fix unit at the
+          identified source. Until then this clause is unresolved, not implemented.
+        layers:
+          - layer: integration
+            levels:
+              - level: 0
+                units:
+                  - id: M6.C3.L-integration.V0.U01
+                    verify: uv run --no-sync pytest tests/test_render_placeholder_origin.py -q -p no:randomly
+                    what: >
+                      Trace fixture source text through slots, authored template, prompt and model
+                      rejection to locate the placeholder-producing seam. This is reproduction
+                      evidence, not permission to weaken V-02 or claim a source fix without proof.
+                    artifact: tests/test_render_placeholder_origin.py
+                    verify_uncertainty: Exact historical failing render input was not supplied.
+                    depends_on: []
+      - id: M6.C4
+        name: Task 3 proof — authored campaign copy end to end
+        layers:
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M6.C4.L-logic.V0.U01
+                    verify: uv run --no-sync pytest tests/test_campaign_count_slots.py -q -p no:randomly
+                    what: >
+                      Campaign cards read campaign.contacted/awaiting, not cohort fields.
+                      Preserve cohort routing and missing sentinels without cross-subject bleed.
+                    artifact: genios_engine/deliver/slots.py::compute_slots
+                    depends_on: []
+          - layer: integration
+            levels:
+              - level: 0
+                units:
+                  - id: M6.C4.L-integration.V0.U01
+                    verify: uv run --no-sync pytest tests/test_campaign_render_end_to_end.py -q -p no:randomly
+                    what: >
+                      Render the campaign replay using actual stored counts, full source quote
+                      and authored prose budget. Assert no campaign situation trim, byte-exact
+                      quote, authored fallback after rejection and unchanged legacy defaults.
+                    artifact: tests/test_campaign_render_end_to_end.py
+                    depends_on:
+                      - M5.C5.L-integration.V0.U02
+                      - M6.C1.L-integration.V0.U01
+                      - M6.C2.L-logic.V1.U01
+                      - M6.C3.L-integration.V0.U01
+                      - M6.C4.L-logic.V0.U01
+
+      - id: M6.C5
+        name: Rebuild eligibility after the evidence and copy revision
+        layers:
+          - layer: integration
+            levels:
+              - level: 0
+                units:
+                  - id: M6.C5.L-integration.V0.U01
+                    verify: uv run --no-sync pytest tests/test_card_builder_revision.py -q -p no:randomly
+                    what: >
+                      Bump the composition revision for changed evidence and copy. Verify real
+                      SQLite build claims reclaim old untouched cards only, protect human states,
+                      enforce tenant scope and lease ownership, and reject the same revision.
+                      Use equivalent expanding IN binds for the existing state-list SQL.
+                    artifact: genios_engine/deliver/card_builder.py::BUILDER_VERSION
+                    depends_on: [M6.C4.L-integration.V0.U01, M6.C2.L-data.V0.U02]
+
+  - id: M7
+    name: Task 2 — business nouns are source-backed facts, not inferred certainty
+    ships: >
+      The active extraction-to-graph path stores all nine supported business fields with typed
+      values and verbatim receipts. Explicit purpose outranks judgement; absent/unknown values
+      remain missing. The attachment recovery path is tested offline, not claimed drained live.
+    categories:
+      - id: M7.C1
+        name: 2A — extend the active extraction contract, not an unused parallel lane
+        routing_check: >
+          The brief points at capture/esqe, but extraction also exists in capture/semantic and
+          context/extract. Confirm the active extract call and downstream consumer before editing;
+          if the artifact differs, redraw the affected unit explicitly instead of adding an
+          unconsumed schema. No extra LLM invocation or L4 inference is authorised.
+        layers:
+          - layer: contract
+            levels:
+              - level: 0
+                units:
+                  - id: M7.C1.L-contract.V0.U01
+                    verify: uv run --no-sync pytest tests/test_business_noun_contract.py -q -p no:randomly
+                    what: >
+                      Define typed party.role, relationship.nature, deal.stage, deal.value,
+                      person.title, company.industry, thread.objective, campaign.objective and
+                      organization.relationship with source span and observed/judgement standing.
+                    artifact: genios_engine/contracts/extraction.py
+                    depends_on: []
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M7.C1.L-logic.V0.U01
+                    verify: uv run --no-sync pytest tests/test_business_noun_prompt.py -q -p no:randomly
+                    what: >
+                      Ask for the nine fields within the existing extraction call, preserving
+                      signature/subject/envelope evidence and distinguishing stated purpose from
+                      judgement. Never infer a business role from timing or a send alone.
+                    artifact: genios_engine/capture/semantic/extractor.py::extraction prompt
+                    depends_on: [M7.C1.L-contract.V0.U01, M7.C1.L-logic.V0.U02]
+                  - id: M7.C1.L-logic.V0.U02
+                    verify: uv run --no-sync pytest tests/test_business_noun_schema.py -q -p no:randomly
+                    what: >
+                      New typed business fields exposed an unsupported Literal and text/Money
+                      union in the generated prompt schema. Render those exact alternatives
+                      from the contract; do not erase typing or hand-copy a schema.
+                    artifact: genios_engine/capture/semantic/schema_gen.py
+                    depends_on: [M7.C1.L-contract.V0.U01]
+              - level: 1
+                units:
+                  - id: M7.C1.L-logic.V1.U01
+                    verify: uv run --no-sync pytest tests/test_business_noun_validation.py -q -p no:randomly
+                    what: >
+                      Validate the nine fields' types and bind their verbatim receipts to actual
+                      input spans. Refuse unsupported values without losing unrelated valid output.
+                      Regress malformed, fabricated and missing spans using fake model responses.
+                    artifact: genios_engine/capture/semantic/extractor.py::extraction validation
+                    depends_on: [M7.C1.L-logic.V0.U01, M7.C1.L-logic.V1.U02]
+                  - id: M7.C1.L-logic.V1.U02
+                    verify: uv run --no-sync pytest tests/test_business_noun_span_policy.py -q -p no:randomly
+                    what: >
+                      ALG-08 must verify the new claim lane, drop wholly fabricated business
+                      receipts, and apply existing Money literal checks to nested deal.value.
+                    artifact: genios_engine/capture/validate/spans.py
+                    depends_on: [M7.C1.L-contract.V0.U01]
+      - id: M7.C2
+        name: 2B and 2C — authority and missingness stay honest
+        layers:
+          - layer: data
+            levels:
+              - level: 0
+                units:
+                  - id: M7.C2.L-data.V0.U01
+                    verify: uv run --no-sync pytest tests/context/test_business_noun_authority.py -q -p no:randomly
+                    what: >
+                      Persist typed business facts on the correct subject with source refs and
+                      judgement authority below explicit observation. Test both write orders so
+                      inferred purpose never supersedes a stated purpose; preserve existing ranks.
+                    artifact: genios_engine/context/pipeline.py::business fact persistence
+                    depends_on: [M7.C1.L-logic.V1.U01, M7.C2.L-data.V0.U02, M7.C2.L-data.V0.U03]
+                  - id: M7.C2.L-data.V0.U02
+                    verify: uv run --no-sync pytest tests/context/test_business_noun_qes_adapter.py -q -p no:randomly
+                    what: >
+                      Project typed, verified business facts through the active QES-to-L2
+                      adapter with subject, standing and exact spans. No extra model call.
+                    artifact: genios_engine/context/qes_adapter.py
+                    depends_on: [M7.C1.L-logic.V1.U01]
+                  - id: M7.C2.L-data.V0.U03
+                    verify: uv run --no-sync pytest tests/context/test_business_fact_store.py -q -p no:randomly
+                    what: >
+                      Real SQLite fact/ref/discrepancy storage needs typed JSON binds. Preserve
+                      existing replay guards; explicitly observed business facts outrank R1
+                      judgement even on same-value corroboration and reverse arrival order.
+                    artifact: genios_engine/context/graph_store.py
+                    depends_on: [M7.C2.L-data.V0.U02]
+          - layer: logic
+            levels:
+              - level: 0
+                units:
+                  - id: M7.C2.L-logic.V0.U01
+                    verify: uv run --no-sync pytest tests/context/test_business_noun_missing.py -q -p no:randomly
+                    what: >
+                      Unknown, empty and absent values across all nine fields produce no active
+                      fact and remain in the existing missing-field read. Test all nine and avoid
+                      marking a legitimately held explicit field missing after a weaker extraction.
+                    artifact: genios_engine/context/pipeline.py::business fact admission
+                    depends_on: [M7.C2.L-data.V0.U01]
+      - id: M7.C3
+        name: Task 2 proof and 2D attachment recovery handoff
+        layers:
+          - layer: integration
+            levels:
+              - level: 0
+                units:
+                  - id: M7.C3.L-integration.V0.U04
+                    verify: uv run --no-sync pytest tests/context/test_business_money_render.py -q -p no:randomly
+                    what: >
+                      Crosscheck found typed Money becomes no value set in the old scalar-only
+                      formatter. Render persisted Money using its exact source literal, with no
+                      currency conversion or minor-unit arithmetic; retain legacy numeric output.
+                    artifact: genios_engine/deliver/slots.py::_money
+                    depends_on: [M7.C2.L-data.V0.U01]
+                  - id: M7.C3.L-integration.V0.U01
+                    verify: uv run --no-sync pytest tests/context/test_business_nouns_end_to_end.py -q -p no:randomly
+                    what: >
+                      Run a signature/title and subject/purpose fixture through the active path
+                      with a fake model. Assert persisted party.role/thread.objective plus nonempty
+                      verbatim spans; an empty fixture writes neither and reports both missing.
+                      Report exact fixture deltas, not a live count claim or a memorised sentence.
+                    artifact: tests/context/test_business_nouns_end_to_end.py
+                    depends_on: [M7.C2.L-logic.V0.U01]
+                  - id: M7.C3.L-integration.V0.U02
+                    retired: true
+                    retired_reason: Fast-path junk attachment tests do not exercise parked attachment recovery; replaced by U03.
+                    verify: uv run --no-sync pytest tests/capture/connectors/test_fastpath_attachment_recovery.py -q -p no:randomly
+                    what: >
+                      Verify parked-attachment recovery with fake OCR, fixed source events and
+                      idempotent replay. Missing/failed OCR must not establish sent-the-deck.
+                      Document the existing operator entry point and before/after measurements;
+                      actual tenant drain and its numbers remain NOT RUN.
+                    artifact: tests/capture/connectors/test_fastpath_attachment_recovery.py
+                    depends_on: []
+                  - id: M7.C3.L-integration.V0.U03
+                    verify: uv run --no-sync pytest tests/capture/parked/test_business_attachment_recovery.py tests/capture/parked/test_refetch_drain.py tests/capture/parked/test_ocr_backlog_self_heals.py -q -p no:randomly
+                    what: >
+                      Real parked drain and document router, fake provider/OCR and fixed clock:
+                      successful text recovery is idempotent; missing/failed OCR never emits an
+                      empty attachment. Live drain of supplied 767 count remains operator-only.
+                    artifact: tests/capture/parked/test_business_attachment_recovery.py
+                    depends_on: []

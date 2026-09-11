@@ -410,6 +410,25 @@ def _run_l2(org_id: str) -> None:
     single org's failure is LOGGED (not a silent uvicorn traceback) and never touches another org."""
     if _graph is None:
         return
+    # EVERYTHING LAYER 3 NEEDS BEFORE IT CAN SAY ANYTHING, first, every time.
+    #
+    # Measured on production: a tenant that signed up and connected Gmail ninety minutes earlier
+    # held `tenant_packs` 0 and `l3_activation` 0. With no pack the compiled lane has nothing to
+    # bind; with no activation row `capability_resolver` skips every authored corpus for that
+    # tenant. So a brand-new customer could only ever receive the legacy pack lane, while the
+    # pilot tenant received the Admin corpus purely because a human had run an INSERT for it.
+    #
+    # HERE AND NOT AT SIGNUP, deliberately. Every tenant that already exists signed up before
+    # this call did; a signup-only hook would fix the next customer and leave the whole installed
+    # base on the legacy lane until somebody remembered a script. This is the one seam all four
+    # entry points share — first sync, sync-all, the durable job worker and the 6-hourly sweep —
+    # it is idempotent, and it is non-fatal, so a tenant it cannot provision today is reasoned
+    # about exactly as it was and provisioned on the next tick.
+    try:
+        from genios_engine.platform.intelligence_onboarding import provision_intelligence
+        provision_intelligence(_graph.engine, org_id)
+    except Exception:      # noqa: BLE001 — provisioning never blocks the pass it precedes
+        _log.exception("intelligence provisioning failed for org_id=%s", org_id)
     try:
         from genios_engine.context.runner import process_pending
         result = process_pending(org_id=org_id, store=_graph, llm=_llm,
@@ -734,6 +753,21 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the heartbeat
             _log.exception("retention purge failed for expertise_packages")
             retention["expertise_packages"] = "error"
+    # IDENTITY PRUNE: an alias whose node no longer exists answers with an id nothing can use,
+    # so every caller does the live-node check and drops the claim. `record_alias` repairs a key
+    # the moment something mentions it again, which never comes for a person nobody writes about
+    # twice. Measured on the pilot: 309 of 364 aliases were dead, and that is why `party.role`
+    # held one fact across the whole graph. Same heartbeat, same argument as the drains below —
+    # bounded, idempotent, and free on a tenant with nothing to clean.
+    alias_prune = None
+    if _graph is not None:
+        try:
+            from genios_engine.context.identity import prune_dead_aliases
+            with _graph.engine.begin() as c:
+                alias_prune = prune_dead_aliases(c)
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("alias prune failed")
+            alias_prune = {"error": True}
     # L1 PARKED DRAIN: a park is "look at this again", so something has to look. Riding the
     # existing heartbeat on purpose — a new Celery periodic task would spend the quota-limited
     # Upstash broker on a pass that is cheap and idempotent here.
@@ -1308,6 +1342,84 @@ def tag_mission_critical(body: MissionCriticalEntity,
             {"o": ctx.org_id, "k": key, "d": name, "w": actor, "n": body.note,
              "at": datetime.now(timezone.utc)})
     return {"entities": _mission_critical_rows(ctx.org_id)}
+
+
+# ── L5.0-U2 · a person's current objective, and the only way it is ever written ──────────
+#
+# The per-PERSON twin of the mission-critical tag above, in the same shape for the same reason:
+# a human judgement, owner-attributed, read on the pass that decides what surfaces first. It
+# REORDERS a viewer's own queue and scores nothing — see migration 0133 for why that boundary is
+# the whole design. Owner-only, because what a colleague sees first is not a self-service field.
+class SeatObjective(BaseModel):
+    """One person's current focus, as the DOMAIN their queue should lead with."""
+
+    email: str
+    domain: str
+    note: str = ""
+    valid_until: str | None = None
+
+
+def _seat_objective_rows(org_id: str) -> list[dict]:
+    if _graph is None:
+        return []
+    from sqlalchemy import text
+    with _graph.engine.connect() as conn:
+        return [{"email": r.seat_key, "domain": r.domain, "owner": r.owner, "note": r.note,
+                 "added_at": r.added_at.isoformat(),
+                 "valid_until": r.valid_until.isoformat() if r.valid_until else None}
+                for r in conn.execute(text(
+                    "select seat_key, domain, owner, note, added_at, valid_until "
+                    "from seat_objectives where org_id = :o order by seat_key"), {"o": org_id})]
+
+
+@router.get("/qualification/objectives")
+def list_seat_objectives(org_id: str = Depends(get_current_org)) -> dict:
+    return {"objectives": _seat_objective_rows(org_id)}
+
+
+@router.put("/qualification/objectives")
+def set_seat_objective(body: SeatObjective, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """Declare what one person is working on. Owner-only, for the reason the tag route is."""
+    from datetime import datetime, timezone
+    from sqlalchemy import text
+    key = (body.email or "").strip().lower()
+    domain = (body.domain or "").strip().lower()
+    if not key or "@" not in key:
+        raise HTTPException(400, "email is required")
+    if not domain:
+        raise HTTPException(400, "domain is required")
+    until = None
+    if body.valid_until:
+        try:
+            until = datetime.fromisoformat(body.valid_until.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise HTTPException(400, "valid_until must be an ISO-8601 instant") from exc
+    if _graph is None:
+        raise HTTPException(503, "no database configured")
+    actor = ctx.actor_id or ctx.org_id
+    with _graph.engine.begin() as conn:
+        conn.execute(text(
+            "insert into seat_objectives (org_id, seat_key, domain, owner, note, added_at, "
+            "valid_until) values (:o, :k, :d, :w, :n, :at, :u) "
+            "on conflict (org_id, seat_key) do update set domain = excluded.domain, "
+            "owner = excluded.owner, note = excluded.note, added_at = excluded.added_at, "
+            "valid_until = excluded.valid_until"),
+            {"o": ctx.org_id, "k": key, "d": domain, "w": actor, "n": body.note,
+             "at": datetime.now(timezone.utc), "u": until})
+    return {"objectives": _seat_objective_rows(ctx.org_id)}
+
+
+@router.delete("/qualification/objectives/{email}")
+def clear_seat_objective(email: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """The OFF path, for the reason the tag's is: a preference that can only be added is a
+    queue that drifts for ever."""
+    from sqlalchemy import text
+    if _graph is None:
+        raise HTTPException(503, "no database configured")
+    with _graph.engine.begin() as conn:
+        conn.execute(text("delete from seat_objectives where org_id = :o and seat_key = :k"),
+                     {"o": ctx.org_id, "k": (email or "").strip().lower()})
+    return {"objectives": _seat_objective_rows(ctx.org_id)}
 
 
 @router.delete("/qualification/mission-critical/{name}")
@@ -2078,6 +2190,54 @@ def _mirror_connection(org_id: str, source_type: str, *, status: str = "connecte
         _log.exception("connection mirror failed org=%s source=%s", org_id, source_type)
 
 
+def _adopt_completed_oauth(org_id: str, accounts: list[dict]) -> None:
+    """Mirror every ACTIVE Composio account into `connections`, and pull once if it never has.
+
+    ADDITIVE AND IDEMPOTENT. `_mirror_connection` upserts a deterministic id, so a poll every
+    three seconds writes the same row; the first pull is gated on the source having NO sync
+    cursor, which only a source that has genuinely never been read can satisfy, and
+    `sync_jobs.enqueue` refuses a second job anyway.
+
+    NEVER RAISES. This runs inside the status read the integrations page depends on; a tenant
+    whose adoption fails must still be told what Composio says about their connections.
+    """
+    active = sorted({a["source_type"] for a in accounts if a.get("status") == "ACTIVE"})
+    if not active or _connections is None:
+        return
+    try:
+        known = {c.source_type: c.status for c in _connections.list_active()
+                 if c.org_id == org_id}
+    except Exception:      # noqa: BLE001
+        _log.exception("connection index unreadable for org=%s", org_id)
+        return
+    fresh = [st for st in active if known.get(st) != "connected"]
+    for st in fresh:
+        _mirror_connection(org_id, st)
+    if not fresh or _graph is None:
+        return
+    # NEVER PULLED, not "not pulled recently". A source with a cursor has been read before and
+    # belongs to the ordinary sweep; a source with none has no history at all, and waiting six
+    # hours to give a customer their first card is the whole of the complaint this closes.
+    try:
+        from sqlalchemy import text
+        with _graph.engine.connect() as c:
+            seen = {r[0] for r in c.execute(text(
+                "select distinct source from sync_cursors where org_id=:o"), {"o": org_id})}
+        virgin = [st for st in active if st not in seen]
+        if not virgin:
+            return
+        from genios_engine.platform import sync_jobs as J
+        if J.enqueue(_graph.engine, org_id, virgin):
+            from genios_engine.platform.audit import record
+            record(org_id, "data_synced", actor_type="system", target_type="source",
+                   target_id=",".join(virgin),
+                   metadata={"audit_category": "data_extraction", "mode": "oauth_completed",
+                             "tools": virgin})
+            _log.info("first sync enqueued for org=%s sources=%s after OAuth", org_id, virgin)
+    except Exception:      # noqa: BLE001 — see the docstring
+        _log.exception("first-pull enqueue failed for org=%s", org_id)
+
+
 def _composio_connected(org_id: str) -> list[dict]:
     """The org's Composio accounts (the source of truth for what's connected). ACTIVE = usable."""
     from composio import Composio
@@ -2151,6 +2311,23 @@ def integrations_status(org_id: str = Depends(get_current_org)) -> dict:
     # come from the job/progress state — otherwise the Sync button never shows "Syncing…" while a job
     # is actually running. Read it ONCE for the org (all its tools sync together).
     job_running = _sync_active(org_id)
+    # THE FIRST SERVER-SIDE SIGHTING OF A COMPLETED OAUTH, and until now nothing acted on it.
+    #
+    # `tool_connect_redirect` deliberately writes no `connections` row ("a click is not a
+    # completed OAuth"), and the only writers of `status='connected'` were the two SYNC routes.
+    # So a tenant who authorised Gmail and never pressed "Sync now" had either no row or — if
+    # they had disconnected once first — a row still reading `disconnected`. `run_sync_sweep`
+    # iterates `list_active()`, which filters `status == 'connected'`, so that tenant was
+    # invisible to every future tick: not slow, not queued, permanently unreachable.
+    #
+    # Measured on production: org registered 14:46, Gmail authorised 14:47, calendar 14:48; at
+    # 15:00 its connection row read `disconnected` and it held zero source events.
+    #
+    # Composio is still the source of truth for STATUS — this only mirrors what it just said —
+    # and this route is where the dashboard learns it, because the OAuth callback returns the
+    # browser here and the page polls. `_first_pull` is guarded on having never pulled that
+    # source at all, so a poll every few seconds cannot re-trigger anything.
+    _adopt_completed_oauth(org_id, accounts)
     out: dict = {}
     for a in accounts:
         active = a["status"] == "ACTIVE"
@@ -3916,8 +4093,13 @@ def list_cards(assignee: str | None = None,
     _require_l5()
     admin = ctx.sees_org_queue                       # owner session OR an org-level API key
     effective_assignee = assignee if admin else (ctx.actor_id or ctx.agent_id)
+    # WHICH ROWS is `admin`; WHO IS LOOKING is this. A founder's JWT sees the org queue AND is
+    # a person with a seat, and folding the two meant their objective ordered nothing and no
+    # card could say why it was theirs. An org API key carries `org_primary_key`, which
+    # resolves to no seat, so it keeps the org-wide read unchanged.
     return {"cards": _card_store.queue(
-        ctx.org_id, assignee=effective_assignee, admin=admin)}
+        ctx.org_id, assignee=effective_assignee, admin=admin,
+        viewer=ctx.actor_id or ctx.agent_id)}
 
 
 #: Where a card button can be pressed. Anything else is ignored rather than refused, so an older
@@ -4081,9 +4263,10 @@ def upsert_seat(body: Seat, ctx: AuthCtx = Depends(require_owner)) -> dict:
             "select subscription_tier from orgs where id=:o for share"),
             {"o": org_id}).scalar() or "trial").lower()
         seat_limit = {"trial": 2, "startup": 5, "growth": 15, "scale": 50}.get(tier, 2)
-        exists = c.execute(text(
-            "select 1 from org_seats where org_id=:o and seat_id=:s"),
-            {"o": org_id, "s": seat_id}).first() is not None
+        before = c.execute(text(
+            "select email, active from org_seats where org_id=:o and seat_id=:s"),
+            {"o": org_id, "s": seat_id}).first()
+        exists = before is not None
         active = int(c.execute(text(
             "select count(*) from org_seats where org_id=:o and active"),
             {"o": org_id}).scalar() or 0)
@@ -4093,7 +4276,38 @@ def upsert_seat(body: Seat, ctx: AuthCtx = Depends(require_owner)) -> dict:
                        "values (:o,:s,:e,:r,true) on conflict (org_id, seat_id) do update set "
                        "email=excluded.email, role=excluded.role, active=true"),
                   {"o": org_id, "s": seat_id, "e": body.email, "r": body.role})
-    return {"upserted": True, "seat_id": seat_id, "role": body.role}
+        # A SEAT CORRECTION IS A CORRECTION TO "WHO WE ARE", and nothing already committed moved.
+        #
+        # The "us" set (`context/runner._internal_emails`) is consulted only when an event
+        # ARRIVES. So when the founder seats a co-founder in month three, the co-founder's node
+        # keeps every counterparty observation it accumulated — the exact failure runner.py
+        # documents at 237 observations on the owner's own node — the situations anchored on him
+        # stay anchored, and the queued cards advising the founder about "the prospect" who is
+        # his own co-founder stay queued and WILL be delivered. Only mail arriving after the
+        # correction was classified correctly.
+        #
+        # ONLY A MATERIAL CHANGE COUNTS. A new seat, a changed address, or a reactivation each
+        # move the "us" set; an idempotent re-PUT of the same row moves nothing and must not
+        # stamp a reset — a double-click on a form is not a pivot.
+        #
+        # THE RECORD IS `organization_resets`, THE EXISTING ONE. `apply_organization_reset` is
+        # what the org-reset route already calls; it logs the instant and expires runtime memory
+        # LEASES predating it, which is correct here too — a memory formed under a wrong "us"
+        # set was formed about the wrong world. The outbox's send-time re-proof now reads the
+        # latest reset and cancels any card BUILT BEFORE it, so nothing queued under the old
+        # identity is delivered. Re-derivation of already-committed observations is
+        # `POST /situations/backfill?rebuild=true`, deliberately not run inline in a request.
+        changed = (not exists
+                   or (before.email or "").strip().lower() != (body.email or "").strip().lower()
+                   or not bool(before.active))
+        if changed:
+            from datetime import datetime, timezone
+            from genios_engine.feedback.reset import apply_organization_reset
+            apply_organization_reset(c, org_id=org_id, reason=f"seat_corrected:{seat_id}",
+                                     at=datetime.now(timezone.utc),
+                                     actor=ctx.actor_id or ctx.org_id)
+    return {"upserted": True, "seat_id": seat_id, "role": body.role,
+            "identity_corrected": bool(changed)}
 
 
 # ── L5 · Agent API (§5.16) · metered read-and-claim; execution stays client-side ────

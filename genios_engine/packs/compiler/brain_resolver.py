@@ -65,6 +65,7 @@ class BrainResolver:
             missing_artifacts=knowledge.missing_artifacts,
             coverage_bp=min(objects.coverage_bp, coverage_bp),
             snapshot_id=expert_snapshot_id,
+            unresolved_variants=tuple(getattr(knowledge, "unresolved_variants", ()) or ()),
         )
         runtime = self.runtime_brains.snapshot(
             situation=situation,

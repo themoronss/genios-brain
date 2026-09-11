@@ -80,7 +80,7 @@ from typing import Any
 
 from genios_engine.capture.validate.money import parse_money
 from genios_engine.contracts.evidence import MAX_QUOTE_CHARS, EvidenceSpan
-from genios_engine.contracts.extraction import (Commitment, DecisionState, Dependency,
+from genios_engine.contracts.extraction import (BusinessFact, Commitment, DecisionState, Dependency,
                                                 EntityMention, ExtractionResult,
                                                 UnclassifiedObservation)
 from genios_engine.contracts.units import Money, ResolvedDate
@@ -568,6 +568,9 @@ class SpanCounters:
 #: produces a false chase and a wrong amount produces a wrong renewal, and neither failure is
 #: recoverable by the human reading the card, who has no way to know the number was invented.
 _POLICY: dict[type, bool] = {
+    # Nine business nouns feed role/purpose judgements. Zero grounded receipts means missing,
+    # never an invented investor label persisted as an observed fact (Task 2, 2026-09-10).
+    BusinessFact: True,
     Money: True,
     ResolvedDate: True,
     Commitment: False,
@@ -865,6 +868,19 @@ def apply_verdicts(result: ExtractionResult, source_text: str, *,
             rebuilt = _rebuild(rebuilt, due=resolve(rebuilt.due))
         commitments.append(rebuilt)
 
+    business_facts: list[BusinessFact] = []
+    for business in result.business_facts:
+        rebuilt = resolve(business)
+        if rebuilt is None:
+            continue
+        if isinstance(rebuilt.value, Money):
+            receipt_text = "\n".join(span.quote for span in rebuilt.evidence if span.verified)
+            if (not _money_is_grounded(rebuilt.value, _index_source(receipt_text))
+                    or _money_contradicts_its_literal(rebuilt.value, locale)):
+                dropped += 1
+                continue
+        business_facts.append(rebuilt)
+
     verified_result = ExtractionResult(**{
         **result.model_dump(),
         "entity_mentions": _kept(result.entity_mentions, resolve),
@@ -873,6 +889,7 @@ def apply_verdicts(result: ExtractionResult, source_text: str, *,
         "commitments": commitments,
         "decision_states": _kept(result.decision_states, resolve),
         "dependencies": _kept(result.dependencies, resolve),
+        "business_facts": business_facts,
         "unclassified_observations": _kept(result.unclassified_observations, resolve),
         "all_evidence": [graded[span][1] for span in result.all_evidence],
     })

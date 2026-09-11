@@ -15,7 +15,31 @@ from genios_engine.deliver.channels.base import ChannelResult
 _BAND_ICON = {"critical": "🔴", "high": "🟠", "standard": "🔵"}
 
 
-def format_card_message(card: dict, *, base_url: str = "") -> dict:
+#: How a declared accountability reads in a sentence. A declaration the engine does not know
+#: the word for is stated as the word itself rather than dropped.
+_ACCOUNTABILITY_VERB = {"owns": "also own", "covers": "cover", "reviews": "review",
+                        "informed": "are informed on"}
+
+
+def your_part_line(part: dict | None) -> str:
+    """One sentence for a co-recipient: why this reached them, and who it stays with. Empty
+    for the owner, so the owner's message is byte-identical to what it was."""
+    if not part:
+        return ""
+    verb = _ACCOUNTABILITY_VERB.get(str(part.get("accountability") or ""),
+                                    str(part.get("accountability") or "answer for"))
+    key = str(part.get("scope_key") or "").strip()
+    kind = str(part.get("scope_kind") or "").strip()
+    slice_ = f"{key}" + (f" ({kind})" if kind and kind.lower() != key.lower() else "")
+    line = f"You're on this because you {verb} {slice_}".strip()
+    owner = str(part.get("owner_email") or part.get("owner_seat") or "").strip()
+    if owner:
+        line += f" · owner: {owner}"
+    return line[:200]
+
+
+def format_card_message(card: dict, *, base_url: str = "",
+                        your_part: dict | None = None) -> dict:
     """Pure: a card row (headline/situation/urgency_band/score/card_id) → Slack payload.
     Headline+situation already passed V-01/V-02 at render time — nothing new is said.
 
@@ -39,6 +63,10 @@ def format_card_message(card: dict, *, base_url: str = "") -> dict:
     if because and not is_actionable(card.get("level")):
         # Italic and last-but-one: it is context for the sentence above, not a second headline.
         lines.append(f"_{because[:200]}_")
+    part = your_part_line(your_part)
+    if part:
+        # A co-recipient is told what is theirs and what is not, on the message itself.
+        lines.append(f"_{part}_")
     if link:
         lines.append(f"<{link}|Open the card →>")
     return {"text": f"{icon} {head}",                       # notification fallback text

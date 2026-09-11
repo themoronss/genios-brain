@@ -24,6 +24,17 @@
     "description": { "type": "string", "minLength": 20 },
     "question": { "type": "string", "minLength": 10 },
 
+    "activation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default_on", "why"],
+      "description": "Whether a tenant nobody has configured hears from this corpus. `l3_activation` is per (tenant, domain) and its only writer was an admin route, so every new tenant started with zero rows and the compiler skipped every corpus for them — a fresh signup got a strictly worse product than the pilot, because a human had run an INSERT for the pilot by hand. Declaring readiness here keeps the decision with the authors: a corpus that omits this block stays OFF, so a half-written domain in the tree cannot start talking to customers, and turning one on is a file and a review rather than a deploy. It never overrides an operator — provisioning skips any tenant that already holds a row for this domain, live or stamped off.",
+      "properties": {
+        "default_on": { "type": "boolean" },
+        "why": { "type": "string", "minLength": 20, "description": "The evidence that this corpus is ready to speak to an unconfigured tenant. A reviewer must be able to argue with it." }
+      }
+    },
+
     "subdomains": {
       "type": "array",
       "minItems": 1,

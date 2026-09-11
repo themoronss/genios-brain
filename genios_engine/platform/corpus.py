@@ -80,6 +80,34 @@ def authored_domain_ids() -> tuple[str, ...]:
     return tuple(sorted({domain_id for domain_id, _ in authored_domains()}))
 
 
+def default_on_domains() -> tuple[str, ...]:
+    """The authored domains a NEW tenant is switched on for, declared by the corpus itself.
+
+    THE DEFAULT USED TO BE "NOTHING", AND THAT IS WHY A NEW CUSTOMER GOT A WORSE PRODUCT THAN AN
+    OLD ONE. `l3_activation` is per (tenant, domain) and had exactly one writer — an admin route.
+    So every tenant that ever signed up started with zero rows: the domain compiler skipped every
+    authored corpus for them, and the only intelligence they could receive was the legacy pack
+    lane. The pilot tenant looked better than a brand-new one purely because a human had run an
+    INSERT for it by hand, and nothing in the product would ever have done that on its own.
+
+    DECLARED, NOT HARDCODED, and not "all of them" either. A corpus says
+    `activation: {default_on: true}` in its `domain.yaml` when its authors judge it ready to
+    speak to a tenant nobody has configured. A corpus that says nothing stays OFF — so adding a
+    half-written domain to the tree cannot silently start talking to customers, and turning one
+    on is a file and a review rather than a deploy.
+
+    A tenant an operator has already decided about is never touched by this; see
+    `platform/intelligence_onboarding.provision_intelligence`, which skips any domain the tenant
+    already holds a row for, live or stamped off.
+    """
+    out: list[str] = []
+    for domain_id, data in authored_domains():
+        block = data.get("activation")
+        if isinstance(block, dict) and block.get("default_on") is True:
+            out.append(domain_id)
+    return tuple(sorted(set(out)))
+
+
 @lru_cache(maxsize=1)
 def engine_domain_aliases() -> dict[str, str]:
     """The engine's own capture-name -> corpus-name table, read without importing upward.
@@ -119,4 +147,4 @@ def speaks_for(domain_id: str, shipped: object) -> bool:
 
 
 __all__ = ["authored_domain_ids", "authored_domains", "corpus_root",
-           "engine_domain_aliases", "speaks_for"]
+           "default_on_domains", "engine_domain_aliases", "speaks_for"]
