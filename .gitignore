@@ -23,3 +23,7 @@ genios-dashboard/
 
 # macOS Finder metadata. Swept into ebf372e4 by a `git add -A`; never part of the product.
 .DS_Store
+
+# DigitalOcean buildpack switches to uv (and ignores requirements.txt) when uv.lock is present;
+# pyproject.toml lists 9 of the 23 runtime deps, so a uv build ships without anthropic/composio.
+uv.lock
