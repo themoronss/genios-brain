@@ -753,6 +753,21 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the heartbeat
             _log.exception("retention purge failed for expertise_packages")
             retention["expertise_packages"] = "error"
+    # IDENTITY PRUNE: an alias whose node no longer exists answers with an id nothing can use,
+    # so every caller does the live-node check and drops the claim. `record_alias` repairs a key
+    # the moment something mentions it again, which never comes for a person nobody writes about
+    # twice. Measured on the pilot: 309 of 364 aliases were dead, and that is why `party.role`
+    # held one fact across the whole graph. Same heartbeat, same argument as the drains below —
+    # bounded, idempotent, and free on a tenant with nothing to clean.
+    alias_prune = None
+    if _graph is not None:
+        try:
+            from genios_engine.context.identity import prune_dead_aliases
+            with _graph.engine.begin() as c:
+                alias_prune = prune_dead_aliases(c)
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("alias prune failed")
+            alias_prune = {"error": True}
     # L1 PARKED DRAIN: a park is "look at this again", so something has to look. Riding the
     # existing heartbeat on purpose — a new Celery periodic task would spend the quota-limited
     # Upstash broker on a pass that is cheap and idempotent here.

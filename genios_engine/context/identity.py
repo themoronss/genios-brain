@@ -140,6 +140,36 @@ def record_alias(conn, *, org_id: str, node_id: str, alias_type: str, alias_key:
     return None
 
 
+def prune_dead_aliases(conn, *, org_id: str | None = None, limit: int = 5000) -> int:
+    """Delete every alias whose node no longer exists, and report how many.
+
+    WHY A SWEEP AND NOT ONLY THE TAKEOVER. `record_alias` now claims a key whose holder is
+    gone, which repairs a name the moment something mentions it again. That is lazy by nature:
+    a person or company never written about again keeps a dead key for ever, and until then
+    `resolve_alias` answers with an id whose node does not exist — so every caller performs the
+    live-node check and drops the claim. Measured on the pilot 2026-09-11, 309 of 364 aliases
+    were in that state.
+
+    DELETING IS THE CONSERVATIVE REPAIR, not repointing. A dead key resolves to nothing useful
+    already, so removing it loses no answer that was being given; and guessing WHICH live node
+    should inherit it would be exactly the silent re-attribution `resolve_person_name` refuses
+    ("a name shared by several anchored people resolves to NOBODY, not to the first claimant").
+    Removal leaves the key free, and the next real observation claims it with evidence.
+
+    Bounded per pass so a tenant with a large table cannot make one heartbeat tick long, and
+    idempotent: a second pass over a repaired org deletes nothing.
+    """
+    scope = "" if org_id is None else " and a.org_id = :org"
+    result = conn.execute(text(
+        "delete from graph_aliases where (org_id, alias_type, alias_key) in ("
+        "  select a.org_id, a.alias_type, a.alias_key from graph_aliases a"
+        "   where not exists (select 1 from graph_nodes n where n.org_id = a.org_id"
+        "                       and n.node_id = a.node_id and n.valid_to is null)"
+        f"  {scope} limit :limit)"),
+        {"org": org_id, "limit": int(limit)} if org_id is not None else {"limit": int(limit)})
+    return int(result.rowcount or 0)
+
+
 def resolve_alias(conn, *, org_id: str, alias_type: str, alias_key: str) -> str | None:
     """Look up a key. Exact match only — this is the whole matching algorithm.
 

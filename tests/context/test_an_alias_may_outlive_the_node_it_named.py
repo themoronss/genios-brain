@@ -142,6 +142,65 @@ def test_taking_over_a_dead_key_does_not_disturb_another(conn):
 
 
 # =============================================================================================
+# The sweep, because the takeover is lazy by nature.
+# =============================================================================================
+def test_the_sweep_removes_a_key_whose_node_is_gone(conn):
+    """`record_alias` repairs a key the moment something mentions it again — which never comes
+    for a person nobody writes about twice. 309 of 364 live aliases were in that state."""
+    from genios_engine.context.identity import prune_dead_aliases
+
+    live(conn, "node_live")
+    conn.execute(text("insert into graph_aliases values (:o,'company_name','dead',"
+                      "'node_gone','anchor',null)"), {"o": ORG})
+    conn.execute(text("insert into graph_aliases values (:o,'company_name','alive',"
+                      "'node_live','anchor',null)"), {"o": ORG})
+
+    assert prune_dead_aliases(conn) == 1
+    assert resolve_alias(conn, org_id=ORG, alias_type="company_name", alias_key="dead") is None
+    assert resolve_alias(conn, org_id=ORG, alias_type="company_name",
+                         alias_key="alive") == "node_live"
+
+
+def test_the_sweep_is_idempotent(conn):
+    """It rides the heartbeat, so it runs on every tick for every tenant and must be free on one
+    with nothing to clean."""
+    from genios_engine.context.identity import prune_dead_aliases
+
+    live(conn, "node_live")
+    conn.execute(text("insert into graph_aliases values (:o,'company_name','dead',"
+                      "'node_gone','anchor',null)"), {"o": ORG})
+
+    assert prune_dead_aliases(conn) == 1
+    assert prune_dead_aliases(conn) == 0
+
+
+def test_the_sweep_deletes_rather_than_guessing_a_new_owner(conn):
+    """Repointing would be exactly the silent re-attribution `resolve_person_name` refuses — "a
+    name shared by several anchored people resolves to NOBODY, not to the first claimant".
+    Removal leaves the key free, and the next real observation claims it with evidence."""
+    from genios_engine.context.identity import prune_dead_aliases
+
+    live(conn, "node_a", node_type="person")
+    live(conn, "node_b", node_type="person")
+    conn.execute(text("insert into graph_aliases values (:o,'person_name','john',"
+                      "'node_gone','anchor',null)"), {"o": ORG})
+
+    prune_dead_aliases(conn)
+
+    assert resolve_alias(conn, org_id=ORG, alias_type="person_name", alias_key="john") is None
+
+
+def test_the_sweep_rides_the_heartbeat():
+    import inspect
+
+    from genios_engine.api import routes
+
+    src = inspect.getsource(routes.run_maintenance_sweep)
+
+    assert "prune_dead_aliases" in src
+
+
+# =============================================================================================
 # And the state stops being created.
 # =============================================================================================
 def test_the_erasure_list_clears_aliases_with_the_graph_they_describe():

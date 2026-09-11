@@ -187,13 +187,44 @@ reasoning — **and no consumer.**
 
 ---
 
+## 5 · The alias table pointed at a graph that no longer existed
+
+**309 of 364 aliases resolved to a node with no row at any version.** 107 of 116 emails, 87 of 89
+person names, 78 of 107 company names, 37 of 52 domains.
+
+Three individually reasonable parts. `node_id` is minted per node. The erasure list cleared
+`graph_nodes` and left `graph_aliases` standing. And `record_alias` inserted
+`on conflict do nothing`, so a key already present was never revisited. Rebuild a tenant's graph
+once and the alias table freezes against the first graph that ever existed.
+
+**This is why `party.role` held one fact and `company.industry` none.** Not an extractor that
+could not read them — a subject that could not resolve. `resolve_company_mention("Antler")`
+returned a dead id, the caller's live-node check found nothing, and the claim was dropped. The
+business-noun lane had been writing into a table where every name pointed at nothing.
+
+Three changes:
+
+- **`record_alias` takes over a dead key.** A key held by a node that no longer exists is
+  UNOWNED — there is no claimant to overwrite. A key held by a LIVE node is a real duplicate and
+  still refuses, because picking one moves every fact written from that mention onto the wrong
+  person. The extra read happens only on the contended path.
+- **`prune_dead_aliases` on the heartbeat**, because the takeover is lazy by nature: a person
+  nobody writes about twice keeps a dead key for ever. It DELETES rather than repointing —
+  guessing which live node inherits a name is the silent re-attribution `resolve_person_name`
+  already refuses. Removal leaves the key free for the next real observation.
+- **`graph_aliases` joins the erasure list**, before `graph_nodes`, so the state stops being
+  created.
+
+---
+
 ## Still open in Layer 1
 
 | # | Item | State |
 |---|---|---|
-| 1 | `escalation` authority half | `recipient_authority_rank` and `prior_recipient_authority_rank` are both defined, both read at `detector.py:413`, and **neither is ever supplied**. Needs the org chart, which has 1 seat and 0 responsibilities |
-| 2 | 197 parked events, **none ever attempted** | See below |
-| 3 | `relevance_bp` has no reader | A ranked table nothing consumes |
+| 1 | `escalation` authority half | Both ranks are defined and read at `detector.py:413`, and **neither is ever supplied**. The producer must live where the org chart lives — Layer 5's `org_seats` / `seat_responsibilities` — and Layer 1 may not import it. Not buildable at this layer, and not fakeable: the tenant has **1 seat and 0 responsibilities** |
+| 2 | 197 parked events, **none ever attempted** | See below. Deployment, not code |
+| 3 | `relevance_bp` has no decision consumer | It IS recorded, on every event's trace row at `pipeline.py:1114`. A diagnostic that an operator can query is doing its job; inventing a gate for it would be adding a consumer to justify a number rather than the other way round. Left as a diagnostic, deliberately |
+| 4 | 23 route tests unverified here | They answer `503 no database configured` — `GENIOS_TEST_DATABASE_URL` is unset and no Postgres exists on this machine. Not evidence of a defect, and **not evidence of health**. They cover the qualification control surface, the drops ledger and connector route wiring, and someone with a scratch Postgres should run them |
 
 ### On the parked queue — the machinery is right and has never run
 
