@@ -417,3 +417,72 @@ class CardStore:
                     "on conflict do nothing"),
                     {"o": org_id, "ids": [row["card_id"] for row in rows]})
             return rows
+
+    #: What the History tab answers: every card somebody (or the world) already closed. `expired`
+    #: also covers a card still sitting in an open state past its deadline — the sweep may simply
+    #: not have run yet, and a card nobody can act on any more is history, not queue.
+    HISTORY_STATES = ("acted", "resolved", "expired")
+    OPEN_STATES = ("queued", "surfaced", "snoozed", "claimed", "delivered")
+
+    #: Event kinds that describe what HAPPENED to a card, as opposed to it being shown. The newest
+    #: one is the history row's "last action" line.
+    _OUTCOME_KINDS = ("human.card_action", "ui.requeued", "agent.result", "human.override",
+                      "success.detected", "window.lapsed", "card.dismissed")
+
+    def history(self, org_id: str, *, assignee: str | None = None, admin: bool = False,
+                states=HISTORY_STATES, since: datetime | None = None,
+                limit: int = 50, offset: int = 0, eval_time=None) -> list[dict]:
+        """Closed cards, newest first, each with the last thing that happened to it.
+
+        Same visibility rule as `queue` (a member sees their own + unassigned). Unlike `queue` it
+        does not require the Layer 4 authority to still be live: a decided card stays history even
+        after the signal behind it is revoked, because what the user did about it still happened.
+        """
+        now = eval_time or datetime.now(timezone.utc)
+        wanted = [s for s in states if s in self.HISTORY_STATES]
+        if not wanted:
+            return []
+        clauses = []
+        if "acted" in wanted:
+            clauses.append("k.state = 'acted'")
+        if "resolved" in wanted:
+            clauses.append("k.state = 'resolved'")
+        if "expired" in wanted:
+            clauses.append("k.state = 'expired' "
+                           "or (k.state = any(:open_states) and k.expires_at <= :now)")
+        q = ("select * from (select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, "
+             "k.headline, k.situation, k.score, "
+             "case when k.state = any(:open_states) and k.expires_at <= :now then 'expired' "
+             "else k.state end as state, "
+             "k.created_at, k.expires_at, k.resolved_at, "
+             "la.kind as last_event_kind, la.cause as last_action, la.actor_id as last_actor, "
+             "la.detail as last_detail, la.occurred_at as last_event_at, "
+             "coalesce(k.resolved_at, la.occurred_at, least(k.expires_at, :now)) as closed_at "
+             "from cards k "
+             "left join lateral (select ce.kind, ce.cause, ce.actor_id, ce.detail, ce.occurred_at "
+             "  from card_events ce where ce.org_id = k.org_id and ce.card_id = k.card_id "
+             "  and ce.kind = any(:outcome_kinds) "
+             "  order by ce.occurred_at desc, ce.id desc limit 1) la on true "
+             "where k.org_id = :o and 'app' = any(k.surfaces) "
+             "and (" + " or ".join(f"({c})" for c in clauses) + ")")
+        params = {"o": org_id, "now": now, "open_states": list(self.OPEN_STATES),
+                  "outcome_kinds": list(self._OUTCOME_KINDS),
+                  "limit": int(limit), "offset": int(offset)}
+        if not admin and assignee is not None:
+            q += " and (k.assignee = :a or k.assignee is null)"      # same rule as queue()
+            params["a"] = assignee
+        q += ") h"
+        if since is not None:
+            q += " where h.closed_at >= :since"
+            params["since"] = since
+        q += " order by h.closed_at desc, h.card_id limit :limit offset :offset"
+        with self._engine.connect() as c:
+            return [dict(r) for r in c.execute(text(q), params).mappings()]
+
+    def timeline(self, org_id: str, card_id: str) -> list[dict]:
+        """Every event on one card, oldest first. Tenant-scoped in SQL, not only by the caller."""
+        with self._engine.connect() as c:
+            return [dict(r) for r in c.execute(text(
+                "select id, kind, cause, actor_id, detail, occurred_at from card_events "
+                "where org_id = :o and card_id = :c order by occurred_at asc, id asc"),
+                {"o": org_id, "c": card_id}).mappings()]

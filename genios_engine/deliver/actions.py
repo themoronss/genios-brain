@@ -47,7 +47,7 @@ def snooze_until(option: str | None, eval_time: datetime, custom=None) -> dateti
 def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, action: str,
                   reason: str | None = None, snooze_option: str | None = None,
                   custom_until=None, eval_time: datetime | None = None,
-                  allow_any_assignee: bool = False) -> dict:
+                  allow_any_assignee: bool = False, surface: str | None = None) -> dict:
     """Land a button press. Returns the resulting card state. Orphan actions (no card) are a
     counted no-op (V-09), never an exception loop."""
     eval_time = eval_time or datetime.now(timezone.utc)
@@ -95,6 +95,10 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             snooze_at = min(snooze_until(snooze_option, eval_time, custom_until),
                             card["expires_at"])
             detail = {"until": snooze_at.isoformat()}
+        if surface:
+            # Where the button was pressed (web / desktop / extension). The state is shared, so a
+            # card done in the desktop app shows done on the web — this only says where it happened.
+            detail["surface"] = surface
 
         c.execute(text(
             "update cards set state=:state, snooze_until=:snooze "

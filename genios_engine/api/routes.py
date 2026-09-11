@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 
 from fastapi import (APIRouter, BackgroundTasks, Body, Depends, Header, HTTPException,
-                     Request)
+                     Query, Request)
 from pydantic import BaseModel
 
 from genios_engine.capture.acquire.scheduler import (ConnectionSchedule, schedules_for,
@@ -3920,6 +3920,64 @@ def list_cards(assignee: str | None = None,
         ctx.org_id, assignee=effective_assignee, admin=admin)}
 
 
+#: Where a card button can be pressed. Anything else is ignored rather than refused, so an older
+#: client that sends nothing (or something new) still acts.
+_CARD_SURFACES = frozenset({"web", "desktop", "extension", "mobile"})
+
+
+@router.get("/cards/history")
+def card_history(state: str = Query("all"), days: int = Query(30, ge=1, le=365),
+                 limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0, le=10_000),
+                 assignee: str | None = None,
+                 ctx: AuthCtx = Depends(require_scope("cards.read"))) -> dict:
+    """The History tab: closed cards (acted / resolved / expired), newest first, each with the
+    last thing that happened to it. Declared before `/cards/{card_id}` so "history" is never read
+    as a card id. Same visibility rule as the queue."""
+    _require_l5()
+    from datetime import datetime, timedelta, timezone
+
+    from genios_engine.deliver.store import CardStore
+    if state == "all":
+        states = CardStore.HISTORY_STATES
+    elif state in CardStore.HISTORY_STATES:
+        states = (state,)
+    else:
+        raise HTTPException(422, {"error": "unknown_state",
+                                  "allowed": ["all", *CardStore.HISTORY_STATES]})
+    admin = ctx.sees_org_queue
+    effective_assignee = assignee if admin else (ctx.actor_id or ctx.agent_id)
+    now = datetime.now(timezone.utc)
+    rows = _card_store.history(ctx.org_id, assignee=effective_assignee, admin=admin,
+                               states=states, since=now - timedelta(days=days),
+                               limit=limit + 1, offset=offset, eval_time=now)
+    return {"cards": rows[:limit], "has_more": len(rows) > limit}
+
+
+@router.get("/cards/{card_id}/timeline")
+def card_timeline(card_id: str, ctx: AuthCtx = Depends(require_scope("cards.read"))) -> dict:
+    """Everything that happened to one card, oldest first. Works for closed cards too, which
+    `/cards/{card_id}` (live cards only) deliberately refuses."""
+    _require_l5()
+    from datetime import datetime, timezone
+
+    from genios_engine.deliver.store import CardStore
+    card = _owns_card(card_id, ctx.org_id)
+    actor_id = ctx.actor_id or ctx.agent_id
+    if (not ctx.sees_org_queue and card.get("assignee") is not None
+            and card.get("assignee") not in {actor_id, ctx.agent_id}):
+        raise HTTPException(403, "card is assigned to a different seat")
+    state = card.get("state")
+    expires = card.get("expires_at")
+    if state in CardStore.OPEN_STATES and expires is not None \
+            and expires <= datetime.now(timezone.utc):
+        state = "expired"
+    summary = {k: card.get(k) for k in (
+        "card_id", "signal_id", "assignee", "domain", "urgency_band", "headline", "situation",
+        "score", "why", "created_at", "expires_at", "resolved_at", "snooze_until")}
+    summary["state"] = state
+    return {"card": summary, "events": _card_store.timeline(ctx.org_id, card_id)}
+
+
 @router.get("/cards/{card_id}")
 def get_card(card_id: str, ctx: AuthCtx = Depends(require_scope("cards.read"))) -> dict:
     """Full card.v1 — only if it belongs to the authenticated tenant."""
@@ -3944,6 +4002,7 @@ class CardAction(BaseModel):
     reason: str | None = None               # optional, for 'wrong'
     snooze_option: str | None = None        # 4h | tomorrow_09 | 3d | custom
     custom_until: str | None = None
+    surface: str | None = None              # web | desktop | extension | mobile — where it was pressed
 
 
 @router.post("/cards/{card_id}/action")
@@ -3959,7 +4018,8 @@ def card_action(card_id: str, body: CardAction,
                         card_id=card_id, actor=actor_id, action=body.action,
                         reason=body.reason, snooze_option=body.snooze_option,
                         custom_until=body.custom_until,
-                        allow_any_assignee=ctx.sees_org_queue)
+                        allow_any_assignee=ctx.sees_org_queue,
+                        surface=body.surface if body.surface in _CARD_SURFACES else None)
     if not out.get("ok"):
         status = 403 if out.get("error") == "assigned_to_different_seat" else 422
         raise HTTPException(status, out)
