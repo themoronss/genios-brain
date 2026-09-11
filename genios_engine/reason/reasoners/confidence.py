@@ -67,7 +67,7 @@ SITUATION_TRUST_WEAKEST_PREFIX = "situation_trust_weakest:"
 #: an import cycle.
 SITUATION_CONFIDENCE_PREFIX = "situation.confidence."
 
-#: The axis on that namespace this unit deliberately does NOT read, and the reason, because a
+#: The axes on that namespace this unit deliberately does NOT read, and the reason, because a
 #: later author will otherwise "complete" the set.
 #:
 #: `context/situations.py` keeps `coverage` OUT of Layer 2's own `overall` and says why:
@@ -78,11 +78,13 @@ SITUATION_CONFIDENCE_PREFIX = "situation.confidence."
 #: reverse Layer 2's decision one layer up, and it would double-count:
 #: `CoverageCompletenessPlugin` already answers exactly the completeness question, against THIS
 #: capability's declared fields rather than against Layer 2's domain expectations.
-_UNREAD_SITUATION_AXES = ("coverage",)
+#: `analytic` remains a receipt, not a veto: measured 10 September, every legal cohort of
+#: 5..77 peers maps to 1200..4400 bp against the unchanged 4500 floor; 78 peers are needed
+#: to clear it. That made supported small-tenant decisions impossible. Do not rescale the ramp.
+_UNREAD_SITUATION_AXES = ("coverage", "analytic")
 
-#: The axes that DO bind, in the order they are reported. Four of them are Layer 2's own trust
-#: minimum; `analytic` is the one this layer adds, and it is added on purpose — see
-#: :class:`SituationTrustPlugin`.
+#: The four factual trust axes still bind, in the order they are reported. Neither completeness
+#: nor cohort population is a substitute for the quality of the evidence actually observed.
 SITUATION_TRUST_AXES = tuple(axis for axis in CONFIDENCE_AXES
                              if axis not in _UNREAD_SITUATION_AXES)
 
@@ -323,15 +325,12 @@ class SituationTrustPlugin:
     comparative evidence is bad", which is exactly the confusion the sentinel was built to prevent.
     An unassessed axis is excluded from the minimum, never scored into it.
 
-    WHY `analytic` BINDS HERE THOUGH LAYER 2 KEEPS IT OUT OF ITS OWN `overall`. `situations.py`
-    excludes it and says why: *"A five-member cohort does not make the situation less true; it
-    makes the IMPORTANCE that leaned on it less certain."* That is right for Layer 2, whose
-    `overall` is a claim about the facts. It is precisely backwards for Layer 4, which RANKS BY
-    that importance — an importance composed off a five-member cohort is exactly a reason to trust
-    this decision less than one composed off two hundred. Layer 2 declined to fold it into a claim
-    about facts; this layer folds it into a claim about a decision, which is a different claim.
+    WHY `analytic` DOES NOT BIND. Measured 10 September: all legal cohorts of 5..77 peers
+    produce 1200..4400 bp against the 4500 floor; even perfectly supported decisions needed
+    78 peers to escape this deterministic veto. Population still travels as an analytic
+    receipt for the importance that used it. Its ramp and the decision floor do not change.
 
-    `coverage` does not bind: see `_UNREAD_SITUATION_AXES`.
+    Neither `coverage` nor `analytic` binds: see `_UNREAD_SITUATION_AXES`.
     """
 
     plugin_id = "situation_trust"

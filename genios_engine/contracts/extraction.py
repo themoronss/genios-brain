@@ -41,7 +41,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from decimal import Decimal
 from numbers import Real
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -395,6 +395,51 @@ class UnclassifiedObservation(BaseModel):
         return self
 
 
+BusinessField = Literal[
+    "party.role", "relationship.nature", "deal.stage", "deal.value", "person.title",
+    "company.industry", "thread.objective", "campaign.objective", "organization.relationship",
+]
+
+
+class BusinessFact(BaseModel):
+    """A business noun, with testimony distinct from interpretation.
+
+    Seven of the nine fields had zero live facts on 2026-09-10. A typed lane carries them
+    through the existing extraction, without another model call or upgrading guesses to R2.
+    """
+
+    field: BusinessField
+    subject: str
+    value: str | Money
+    standing: Literal["observed", "judgement"]
+    evidence: list[EvidenceSpan]
+    confidence_bp: int
+
+    @field_validator("subject")
+    @classmethod
+    def _subject(cls, value: str) -> str:
+        return require_text(value, "business subject")
+
+    @field_validator("confidence_bp", mode="before")
+    @classmethod
+    def _confidence(cls, value: Any) -> int:
+        return _claim_confidence(value)
+
+    @model_validator(mode="after")
+    def _typed_receipted_value(self) -> BusinessFact:
+        _require_receipt(self.evidence, "a business fact")
+        if self.field == "deal.value":
+            if not isinstance(self.value, Money) or not self.value.currency_known:
+                raise ValueError("deal.value requires Money with a known currency")
+        else:
+            if not isinstance(self.value, str):
+                raise ValueError("only deal.value accepts Money")
+            self.value = require_text(self.value, "business value")
+            if self.value.casefold() in {"unknown", "none", "null", "n/a", "not known"}:
+                raise ValueError("unknown business values remain missing")
+        return self
+
+
 class ExtractionResult(BaseModel):
     """C-09 · the complete S2 (L1.4) output for one message. INTERNAL TO L1.
 
@@ -447,6 +492,7 @@ class ExtractionResult(BaseModel):
     commitments: list[Commitment] = Field(default_factory=list)
     decision_states: list[DecisionState] = Field(default_factory=list)
     dependencies: list[Dependency] = Field(default_factory=list)
+    business_facts: list[BusinessFact] = Field(default_factory=list)
     #: What the message implies somebody should do, in the model's words. Not an instruction
     #: and not a task — Layer 4 decides whether anything is done.
     implied_actions: list[str] = Field(default_factory=list)
@@ -570,7 +616,8 @@ class ExtractionResult(BaseModel):
         seen: dict[EvidenceSpan, None] = {}
         claim_lists: tuple[list[Any], ...] = (
             self.entity_mentions, self.dates_mentioned, self.commitments,
-            self.decision_states, self.dependencies, self.unclassified_observations,
+            self.decision_states, self.dependencies, self.business_facts,
+            self.unclassified_observations,
         )
         for claims in claim_lists:
             for claim in claims:
@@ -595,5 +642,5 @@ class ExtractionResult(BaseModel):
 
 
 __all__ = ["FORBIDDEN_RESULT_FIELDS", "MAX_UNCLASSIFIED_PER_EXTRACTION", "Commitment",
-           "DecisionState", "Dependency", "EntityMention", "ExtractionResult",
+           "BusinessFact", "BusinessField", "DecisionState", "Dependency", "EntityMention", "ExtractionResult",
            "UnclassifiedObservation"]

@@ -840,21 +840,31 @@ def test_an_unassessed_axis_is_excluded_from_the_minimum_and_never_scored_as_zer
     assert with_sentinel == without_it == 6_000
 
 
-def test_the_analytic_axis_binds_here_though_layer_2_keeps_it_out_of_its_own_overall():
-    """L2 excludes `analytic` from `overall` because *"a five-member cohort does not make the
-    situation less true; it makes the IMPORTANCE that leaned on it less certain."* Layer 4 RANKS BY
-    that importance, so at this layer the thin cohort is exactly a reason to trust the decision
-    less. Two layers, two different claims, and both readings are right about their own claim.
+@pytest.mark.parametrize("peers", range(5, 79))
+def test_a_legal_small_cohort_is_a_receipt_not_a_veto_on_supported_evidence(peers):
+    """1E changes the contract, not the test's strength: legal cohorts of 5..77 map to
+    1200..4400 bp below the unchanged 4500 floor; 78 is the first clearing population.
+    Pin the actual ramp as well as confidence so neither threshold can be tuned to pass.
     """
-    five_member_cohort = _confidence_of(_situation_request(
-        {"evidence": 10_000, "freshness": 10_000, "consistency": 10_000, "identity": 10_000,
-         "analytic": 2_000}))
-    two_hundred_member_cohort = _confidence_of(_situation_request(
-        {"evidence": 10_000, "freshness": 10_000, "consistency": 10_000, "identity": 10_000,
-         "analytic": 9_000}))
+    from genios_engine.context.situations import _analytic_sub_score
 
-    assert five_member_cohort == 2_000
-    assert two_hundred_member_cohort == 6_250      # the blend, i.e. the ceiling did not bind
+    analytic_bp = _analytic_sub_score(peers, 200) * 100
+    assert analytic_bp == (10 + peers * 90 // 200) * 100
+    assert (analytic_bp >= DEFAULT_CONFIDENCE_FLOOR_BP) is (peers >= 78)
+    request = _situation_request(
+        {"evidence": 6_500, "freshness": 5_000, "consistency": 10_000,
+         "identity": 10_000, "analytic": analytic_bp})
+    assert _confidence_of(request) == 5_000
+    assert "situation.confidence.analytic" in request.context.facts
+    assert DEFAULT_CONFIDENCE_FLOOR_BP == 4_500
+
+
+@pytest.mark.parametrize("axis", ("evidence", "freshness", "consistency", "identity"))
+def test_excluding_the_cohort_receipt_does_not_remove_any_factual_trust_ceiling(axis):
+    axes = dict(evidence=6_500, freshness=5_000, consistency=10_000,
+                identity=10_000, analytic=1_200)
+    axes[axis] = 0
+    assert _confidence_of(_situation_request(axes)) == 0
 
 
 def test_the_coverage_axis_is_deliberately_not_read_here():

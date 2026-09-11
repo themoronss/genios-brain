@@ -106,6 +106,10 @@ signals_of_decay:
   - decision_deferred
 
 render:
+  # Measured with 7 contacted / 7 awaiting / 2026-08-11 / 30 days: 130 prose characters,
+  # including quote delimiters. The verified source quote has its own evidence budget.
+  # No global cap increase is needed; this authored card now declares its own allowance.
+  situation_cap: 140
   artifact_kind: brief
   render_hint: >
     This card is about a SEND. Do not write it as though it were about the person named on it —

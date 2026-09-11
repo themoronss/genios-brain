@@ -28,6 +28,7 @@ class StructuredResult:
     edges: int = 0
     graph_version: int | None = None
     correlations: int = 0
+    observations: int = 0
 
 
 def commit_structured(store: GraphStore, *, org_id: str, event_id: str, source: str,
@@ -93,6 +94,14 @@ def commit_structured(store: GraphStore, *, org_id: str, event_id: str, source: 
                 source=source, authority_rank=3)
             if wrote:
                 edge_n += 1
+        # Fifty calendar events established facts/nodes but zero observations on the pilot.
+        # Presence includes internal participants too; excluding them from correlation below
+        # must not erase their source receipt. An invite is not proof anybody attended.
+        observation_n = sum(store.write_event_presence(
+            conn, org_id=org_id, subject_node_id=subject, occurred_at=occurred_at,
+            event_id=event_id, source=source,
+            evidence={"presence": "structured_record", "source_object": source_object_id})
+            for subject in sorted({node, *related_nodes.values()}))
         # CORRELATION — structured events must reach the same situations as email, or the
         # headline case fails: Slack + email say one thing, the CRM deal and the calendar
         # invite say the rest, and only two of the four ever meet. This lane was silent
@@ -117,6 +126,6 @@ def commit_structured(store: GraphStore, *, org_id: str, event_id: str, source: 
 
         store.write_change(conn, org_id=org_id, graph_version=version, cause_event_id=event_id,
                            payload={"structured": True, "facts": fact_n, "edges": edge_n,
-                                    "correlations": len(correlations)})
+                                    "correlations": len(correlations), "observations": observation_n})
     return StructuredResult(event_id, "committed_structured", node, fact_n, edge_n, version,
-                            correlations=len(correlations))
+                            correlations=len(correlations), observations=observation_n)

@@ -230,6 +230,36 @@ def test_the_authored_copy_travels_from_the_situation_to_the_manifest():
     assert plan.render_situation_id == "sales.sit.x"
 
 
+def test_rejected_model_copy_uses_the_authored_sentences_not_the_generic_stage_slot():
+    authored = {"fallback": {"headline": "Review the send",
+        "situation": "7 people received the message and 7 have not answered."}}
+    out = render_copy(reason_code="campaign_awaiting_reply", template=authored,
+        facts={"campaign.contacted": {"value": 7}}, slots={"stage": "open"},
+        llm=_llm("Initech approved", "Initech invested 9000000.", ""))
+    assert out["headline"] == authored["fallback"]["headline"]
+    assert out["situation"] == authored["fallback"]["situation"]
+    assert out["situation"] != "open"
+    assert out["reject_code"] == "V-02"
+    assert set(json.loads(out["reject_detail"])) == {"headline", "situation"}
+
+
+def test_a_rejected_field_does_not_replace_its_valid_sibling_with_fallback():
+    out = render_copy(reason_code="campaign_awaiting_reply", template={"fallback": {
+        "headline": "Review the send", "situation": "The send awaits a reply."}},
+        facts={"campaign.contacted": {"value": 7}}, slots={},
+        llm=_llm("Review the 7 messages", "Initech invested 9000000.", ""))
+    assert out["headline"] == "Review the 7 messages"
+    assert out["situation"] == "The send awaits a reply."
+    assert set(json.loads(out["reject_detail"])) == {"situation"}
+
+
+def test_a_legacy_template_without_authored_copy_retains_its_existing_fallback():
+    out = render_copy(reason_code="legacy", template={}, facts={},
+        slots={"entity": "Acme", "stage": "open"}, llm=_llm("Initech", "Initech", ""))
+    assert out["headline"] == "Acme"
+    assert out["situation"] == "open"
+
+
 # ── 6 · a headline is clause-joined, not sentence-joined ───────────────────────
 #
 # Both cases below are from the design partner's live queue on 2026-08-27. Six of twenty-four

@@ -54,7 +54,9 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import text
+from sqlalchemy import JSON, bindparam, text
+
+from genios_engine.context.derived_provenance import load_event_receipts, write_fact_source_refs
 
 from genios_engine.context.documents import DOCUMENT_NODE_TYPE, cluster_key, document_nodes
 from genios_engine.context.domain_spec import domains_declaring, spec_for
@@ -229,6 +231,7 @@ class Artefact:
     attached_people: int            # distinct persons on an edge to this document
     owner_seen_at: datetime | None  # last time the named owner appeared anywhere in this tenant
     owner_is_us: bool               # the owner is a seat, the account owner or a connected mailbox
+    event_ids: tuple[str, ...] = ()
 
     def fact(self, name: str) -> str | None:
         return self.facts.get(name)
@@ -389,10 +392,10 @@ def gather(store, org_id: str, *, now: datetime) -> Register:
         # The event each file arrived on, for its extracted text and any canon tag the org typed.
         # Keyed on `source_object_id`, which IS the file id — the same identifier the node's
         # canonical key is built from, so the join cannot drift.
-        heads: dict[str, tuple[str, str | None]] = {}
+        heads: dict[str, tuple[str, str | None, str]] = {}
         if file_ids:
             for r in c.execute(text(
-                    "select se.source_object_id as fid, se.internal_kind, se.occurred_at, "
+                    "select se.source_object_id as fid, se.event_id, se.internal_kind, se.occurred_at, "
                     "       coalesce(substr(pc.clean_text, 1, :scan), '') as head "
                     "from source_events se "
                     "left join prepared_content pc "
@@ -403,7 +406,7 @@ def gather(store, org_id: str, *, now: datetime) -> Register:
                 # Ascending, so the LAST row wins: the newest revision of a file is the one whose
                 # text describes what it says today, and a policy that was rewritten should be
                 # read as what it is now rather than as its first draft.
-                heads[r.fid] = (r.head or "", r.internal_kind)
+                heads[r.fid] = (r.head or "", r.internal_kind, r.event_id)
 
         node_ids = [d["node_id"] for d in docs]
         attached: dict[str, set[str]] = {}
@@ -449,7 +452,7 @@ def gather(store, org_id: str, *, now: datetime) -> Register:
     artefacts = []
     for d in docs:
         fid = d["facts"].get("document.id") or ""
-        head, kind = heads.get(fid, ("", None))
+        head, kind, event_id = heads.get(fid, ("", None, ""))
         owner = (d["facts"].get("document.owner_email") or "").lower()
         artefacts.append(Artefact(
             node_id=d["node_id"],
@@ -457,7 +460,8 @@ def gather(store, org_id: str, *, now: datetime) -> Register:
             facts=d["facts"], head=head, internal_kind=kind,
             attached_people=len(attached.get(d["node_id"], ())),
             owner_seen_at=seen.get(owner),
-            owner_is_us=bool(owner) and owner in internal))
+            owner_is_us=bool(owner) and owner in internal,
+            event_ids=(event_id,) if event_id else ()))
     return Register(org_id=org_id, now=now, artefacts=tuple(artefacts))
 
 
@@ -481,24 +485,31 @@ def _internal_emails(conn, org_id: str) -> frozenset[str]:
 # ── write ────────────────────────────────────────────────────────────────────────────────────
 
 def _write_fact(conn, *, org_id: str, node_id: str, field_name: str, value, value_type: str,
-                now: datetime) -> None:
+                now: datetime, event_receipts=None) -> None:
+    version = f"fv_doc_{org_id}_{node_id}_{field_name}"
     conn.execute(text(
         "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, "
         "field, value, value_type, status, authority_rank, confidence, occurred_at, "
         "valid_from, visibility_scope, derivation_type, trace_id, schema_version, "
         "source_authority, provenance_refs) values "
-        "(:vid, :fid, :o, :n, :f, cast(:v as jsonb), :vt, 'active', 100, 0.95, :now, :now, 'org', "
-        "'deterministic_derived', :trace, 'graph-fact.v2', 'R100', cast(:provenance as jsonb)) "
+        "(:vid, :fid, :o, :n, :f, :v, :vt, 'active', 100, 0.95, :now, :now, 'org', "
+        "'deterministic_derived', :trace, 'graph-fact.v2', 'R100', :provenance) "
         # Same reasoning as `periodic.py` and `derived.py`: a recompute overwrites its own
         # deterministic version id rather than appending a row per sweep, or the table grows by two
         # rows per document forever and a reader picking "latest" is sifting duplicates.
         "on conflict (fact_version_id) do update set value = excluded.value, "
-        "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from"),
-        {"vid": f"fv_doc_{org_id}_{node_id}_{field_name}",
+        "occurred_at = excluded.occurred_at, valid_from = excluded.valid_from, "
+        "provenance_refs = case when :has_receipts then excluded.provenance_refs "
+        "else graph_facts.provenance_refs end").bindparams(
+            bindparam("v", type_=JSON), bindparam("provenance", type_=JSON)),
+        {"vid": version,
          "fid": f"f_doc_{org_id}_{node_id}_{field_name}", "o": org_id, "n": node_id,
-         "f": field_name, "v": json.dumps(value, default=str), "vt": value_type, "now": now,
+         "f": field_name, "v": value, "vt": value_type, "now": now,
          "trace": f"l2:document-register:{now.isoformat()}",
-         "provenance": json.dumps([f"document:{node_id}"])})
+         "has_receipts": event_receipts is not None,
+         "provenance": [f"document:{node_id}", *(r.event_id for r in event_receipts or ())]})
+    if event_receipts is not None:
+        write_fact_source_refs(conn, org_id=org_id, fact_version_id=version, receipts=event_receipts)
 
 
 def refresh_document_situations(store, org_id: str, *, now: datetime | None = None) -> int:
@@ -534,13 +545,17 @@ def refresh_document_situations(store, org_id: str, *, now: datetime | None = No
         # reader asking "what else is this" from a card about a different file needs it there.
         for key, members in clusters.items():
             copies = live_copies(members, now)
+            # The copy count compared every current revision, not just the card's own file.
+            # Derived document facts previously carried zero event refs for this comparison.
+            receipts = load_event_receipts(c, org_id=org_id,
+                event_ids=tuple(event for member in members for event in member.event_ids))
             for m in members:
                 _write_fact(c, org_id=org_id, node_id=m.node_id,
                             field_name="derived.document_cluster_key", value=key,
-                            value_type="string", now=now)
+                            value_type="string", now=now, event_receipts=receipts)
                 _write_fact(c, org_id=org_id, node_id=m.node_id,
                             field_name="derived.document_live_copies", value=copies,
-                            value_type="number", now=now)
+                            value_type="number", now=now, event_receipts=receipts)
                 written += 2
 
         minted: dict[str, set[str]] = {d: set() for d in domains}

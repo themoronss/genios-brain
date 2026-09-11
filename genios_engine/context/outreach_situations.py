@@ -28,9 +28,11 @@ it, and a situation is a claim about which facts, together, are worth a decision
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
+from genios_engine.context.derived_provenance import load_event_receipts
 from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.context.situations import (
     evidence_score,
@@ -229,7 +231,7 @@ _THREAD_COVERED_BY_PARTY = (
     "where e.org_id = :o and e.edge_type = 'corresponded_with' and e.valid_to is null"
 )
 
-_EVENT_COUNTS = (
+_DIRECT_EVENT_COUNTS = (
     "select o.subject_node_id as node_id, count(*) as events, "
     "       count(distinct r.source) as sources, min(o.occurred_at) as first_at, "
     "       max(o.occurred_at) as last_at "
@@ -238,6 +240,42 @@ _EVENT_COUNTS = (
     "where o.org_id = :o and o.status = 'active' and o.subject_node_id is not null "
     "group by o.subject_node_id"
 )
+
+# All 1001 measured observations lived on people; person -> thread alone accounts for
+# 64 live edges. Both directions are therefore necessary. UNION deduplicates event IDs
+# across observation copies and derived facts; six Gmail events still score 65, not 100.
+_EVENT_COUNTS = """
+with neighbors as (
+    select node_id as anchor, node_id as subject from graph_nodes
+    where org_id=:o and valid_to is null
+    union
+    select e.from_node_id, n.node_id from graph_edges e
+    join graph_nodes n on n.org_id=e.org_id and n.node_id=e.to_node_id
+    where e.org_id=:o and e.valid_to is null and n.valid_to is null
+      and n.node_type in ('person','company')
+    union
+    select e.to_node_id, n.node_id from graph_edges e
+    join graph_nodes n on n.org_id=e.org_id and n.node_id=e.from_node_id
+    where e.org_id=:o and e.valid_to is null and n.valid_to is null
+      and n.node_type in ('person','company')
+), origins as (
+    select o.subject_node_id as subject, r.event_id from graph_observations o
+    join graph_source_refs r on r.org_id=o.org_id and r.observation_id=o.observation_id
+    where o.org_id=:o and o.status='active'
+    union
+    select f.subject_node_id, r.event_id from graph_facts f
+    join graph_source_refs r on r.org_id=f.org_id and r.fact_version_id=f.fact_version_id
+    where f.org_id=:o and f.status='active' and f.valid_to is null
+), events as (
+    select distinct n.anchor, e.event_id, e.source, e.occurred_at
+    from neighbors n join origins r on r.subject=n.subject
+    join source_events e on e.org_id=:o and e.event_id=r.event_id
+    where e.occurred_at <= :now
+)
+select anchor as node_id, count(distinct event_id) as events,
+       count(distinct source) as sources, min(occurred_at) as first_at,
+       max(occurred_at) as last_at from events group by anchor
+"""
 
 
 def _num(value):
@@ -265,11 +303,118 @@ class _Finding:
     that module's `_upsert`, so a second, subtly different shape would be a trap."""
 
     __slots__ = ("anchor", "canonical_key", "display_name", "facts", "concerns_node",
-                 "correlation_id", "missing", "inputs")
+                 "correlation_id", "missing", "inputs", "event_ids", "evidence_nodes")
 
     def __init__(self, **kw):
         for name in self.__slots__:
             setattr(self, name, kw.get(name))
+
+
+def _group_receipts(conn, *, org_id: str, finding: _Finding, now: datetime):
+    """The seven campaign messages are the scope, not its two representative people.
+
+    Computed campaign IDs have no correlation row. Explicit complete membership wins;
+    genuine correlation IDs use context_correlation_members.event_id. Do not discover
+    unrelated groups by joining through one shared message and silently enlarge the scope.
+    """
+    ids = finding.event_ids
+    if ids is None:
+        correlations = (finding.inputs or {}).get("correlation_ids") or ()
+        if isinstance(correlations, str):
+            correlations = (correlations,)
+        correlations = sorted({c for c in (*correlations, finding.correlation_id)
+                               if isinstance(c, str) and c})
+        try:
+            with conn.begin_nested():
+                ids = conn.execute(text(
+                    "select distinct event_id from context_correlation_members "
+                    "where org_id=:org and correlation_id in :correlations"
+                ).bindparams(bindparam("correlations", expanding=True)),
+                    {"org": org_id, "correlations": correlations}).scalars().all()
+        except Exception:  # noqa: BLE001 — try independently available graph membership
+            ids = []
+        members = finding.evidence_nodes or ()
+        if not ids and len(members) > 1:
+            try:
+                with conn.begin_nested():
+                    ids = conn.execute(text(
+                        "select r.event_id from graph_observations ob join graph_source_refs r "
+                        "on r.org_id=ob.org_id and r.observation_id=ob.observation_id "
+                        "where ob.org_id=:org and ob.status='active' and ob.subject_node_id in :members "
+                        "union select r.event_id from graph_facts f join graph_source_refs r "
+                        "on r.org_id=f.org_id and r.fact_version_id=f.fact_version_id "
+                        "where f.org_id=:org and f.status='active' and f.valid_to is null "
+                        "and f.subject_node_id in :members"
+                    ).bindparams(bindparam("members", expanding=True)),
+                        {"org": org_id, "members": sorted(set(members))}).scalars().all()
+            except Exception:  # noqa: BLE001 — failed enrichment keeps baseline behaviour
+                return None
+            # A known empty member set is evidence=0, not permission to borrow another scope.
+            return _visible_receipts(load_event_receipts(conn, org_id=org_id, event_ids=ids), now)
+        if not ids:
+            return None
+    receipts = load_event_receipts(conn, org_id=org_id, event_ids=ids)
+    return _visible_receipts(receipts, now)
+
+
+def _visible_receipts(receipts, now):
+    return None if receipts is None else tuple(
+        r for r in receipts if r.occurred_at is None or r.occurred_at <= now)
+
+
+def _event_counts(conn, *, org_id: str, now: datetime, node_id: str | None = None):
+    statement = _EVENT_COUNTS + (" having anchor=:node" if node_id is not None else "")
+    try:
+        with conn.begin_nested():
+            rows = conn.execute(text(statement), {"o": org_id, "now": now, "node": node_id}).all()
+        return {str(r.node_id): SimpleNamespace(events=r.events, sources=r.sources,
+                first_at=_ts(r.first_at), last_at=_ts(r.last_at)) for r in rows}
+    except Exception:  # noqa: BLE001 — caller retains the original observation-only read
+        return None
+
+
+def _refined_stats(conn, *, org_id: str, node_id: str, finding: _Finding,
+                   now: datetime, fallback, group_receipts):
+    if group_receipts is not None:
+        times = [r.occurred_at for r in group_receipts if r.occurred_at is not None]
+        return SimpleNamespace(events=len({r.event_id for r in group_receipts}),
+            sources=len({r.source for r in group_receipts if r.source}),
+            first_at=min(times, default=None), last_at=max(times, default=None))
+    # Query the actual newly established anchor. Reading its representative's neighbourhood
+    # would accidentally turn a one-hop allowance into two hops, borrowing unrelated history.
+    counts = _event_counts(conn, org_id=org_id, now=now, node_id=node_id)
+    if counts is None:
+        return fallback
+    return counts.get(node_id, SimpleNamespace(events=0, sources=0, first_at=None, last_at=None))
+
+
+def _finding_receipts(conn, *, org_id: str, finding: _Finding):
+    """Keep the evidence scope, not just the person selected as the display representative.
+
+    Campaign inputs previews stop at 20 events, while the measured member groups reach 40.
+    The full event list travels separately. Other readings inherit the source refs of the
+    actual facts they read; a synthetic state:<org> edge is never a source event.
+    """
+    events = finding.event_ids
+    if events is None:
+        events = (finding.inputs or {}).get("events")
+    if events is None:
+        nodes = tuple(finding.evidence_nodes or (finding.concerns_node,))
+        nodes = tuple(node for node in nodes if node)
+        if not nodes:
+            return ()
+        try:
+            with conn.begin_nested():
+                events = conn.execute(text(
+                    "select distinct r.event_id from graph_facts f join graph_source_refs r "
+                    "on r.org_id=f.org_id and r.fact_version_id=f.fact_version_id "
+                    "where f.org_id=:org and f.subject_node_id in :nodes "
+                    "and f.status='active' and f.valid_to is null"
+                ).bindparams(bindparam("nodes", expanding=True)),
+                    {"org": org_id, "nodes": nodes}).scalars().all()
+        except Exception:  # noqa: BLE001 — preserve the original writer on unavailable refinement
+            return None
+    return load_event_receipts(conn, org_id=org_id, event_ids=events)
 
 
 def read_awaiting_response(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
@@ -545,6 +690,7 @@ def read_outreach_cohorts(rows: dict, now: datetime, employers: dict) -> list[_F
                                   key=lambda pair: -(_num(pair[1].get("thread.days_waiting"))
                                                      or 0.0))[0][0]),
             correlation_id=f"cohort:{objective}",
+            evidence_nodes=tuple(node_id for node_id, _held in members),
             missing=[],
             inputs={"reading": ANCHOR_COHORT, "objective": objective,
                     # WHO THIS COVERS, so a second group-shaped reading can yield to it instead of
@@ -635,6 +781,8 @@ def read_campaign_silence(rows: dict, now: datetime, employers: dict) -> list[_F
             facts=facts,
             concerns_node=waiting[0][0],
             correlation_id=f"campaign:{campaign.campaign_id}",
+            event_ids=campaign.event_ids,
+            evidence_nodes=campaign.recipients,
             missing=missing,
             inputs={"reading": ANCHOR_CAMPAIGN,
                     "campaign_id": campaign.campaign_id,
@@ -713,6 +861,7 @@ def read_organization_silence(rows: dict, now: datetime, employers: dict) -> lis
             # how many this is really about.
             concerns_node=longest[0],
             correlation_id=f"organization:{group.company_node_id}",
+            evidence_nodes=tuple(member.node_id for member in group.members),
             missing=missing,
             inputs={"reading": ANCHOR_ORGANIZATION,
                     "organization": group.company,
@@ -810,7 +959,8 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
             entry = held.setdefault(str(row.node_id), {})
             entry[str(row.field)] = row.value
             entry["_name"] = row.name
-        counts = {str(r.node_id): r for r in c.execute(text(_EVENT_COUNTS), {"o": org_id})}
+        # Keep the exact previous snapshot for fail-open refinement failures below.
+        counts = {str(r.node_id): r for r in c.execute(text(_DIRECT_EVENT_COUNTS), {"o": org_id})}
         # person -> employing company NAME. Read here rather than per finding: the cohort reading
         # needs it for every member at once, and one bulk read is the same discipline every other
         # pass in this layer keeps.
@@ -895,6 +1045,9 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                 continue
             minted: dict[str, set[str]] = {d: set() for d in claiming}
             for finding in reader(held, now, employers):
+                group_receipts = _group_receipts(c, org_id=org_id, finding=finding, now=now)
+                receipts = (group_receipts if group_receipts is not None else
+                            _finding_receipts(c, org_id=org_id, finding=finding))
                 node_id = store.find_or_create_node(
                     c, org_id=org_id, node_type=anchor,
                     canonical_key=finding.canonical_key,
@@ -902,7 +1055,7 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                 for field_name, value, value_type in finding.facts:
                     _write_fact(c, org_id=org_id, node_id=node_id, field_name=field_name,
                                 value=value, value_type=value_type, now=now,
-                                key=f"{org_id}_{node_id}_{field_name}")
+                                key=f"{org_id}_{node_id}_{field_name}", event_receipts=receipts)
                     written += 1
                 # One hop to the person, so the context slice and the neighbourhood walk pull
                 # their facts in through the path they already take.
@@ -912,7 +1065,8 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                                  event_id=f"state:{org_id}",
                                  evidence={"derived": "l2 state reading"}, source="engine",
                                  authority_rank=2)
-                stats = counts.get(finding.concerns_node)
+                stats = _refined_stats(c, org_id=org_id, node_id=node_id, finding=finding,
+                    now=now, fallback=counts.get(finding.concerns_node), group_receipts=group_receipts)
                 present = {name for name, _, _ in finding.facts}
                 for domain in claiming:
                     stype = spec_for(domain).type_for(anchor)

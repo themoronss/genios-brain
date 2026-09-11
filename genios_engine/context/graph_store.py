@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any
+from typing import Any, get_args
 
-from sqlalchemy import text
+from sqlalchemy import JSON, bindparam, text
 
 from genios_engine.context.identity import register_node_identity
+from genios_engine.contracts.extraction import BusinessField
 from genios_engine.platform.db import get_engine
 from genios_engine.platform.ids import new_id
 
@@ -360,17 +362,28 @@ class GraphStore:
             "select fact_version_id, value, authority_rank, occurred_at from graph_facts "
             "where org_id=:o and subject_node_id=:s and field=:f "
             "and valid_to is null and status='active' "
-            "limit 1"), {"o": org_id, "s": subject_node_id, "f": field}).first()
+            "limit 1").columns(value=JSON), {"o": org_id, "s": subject_node_id, "f": field}).first()
         new_val = json.dumps(value, default=str)
         held_val = None
         if held is not None:
-            held_val = held.value if isinstance(held.value, str) else json.dumps(held.value, default=str)
+            # JSON column decoding is explicit for SQLite and native under psycopg. A PG
+            # string value is already decoded, not JSON text to pass into json.loads again.
+            held_val = json.dumps(held.value, default=str)
 
         action = fact_write_action(
             held_value_json=held_val, held_rank=held.authority_rank if held else None,
             held_occurred_at=held.occurred_at if held else None,
             new_value_json=new_val, new_rank=authority_rank,
             new_occurred_at=occurred_at, replay=replay)
+
+        # Task 2: a stated purpose outranks a judgement in BOTH arrival orders. Two SQLite
+        # regressions exposed older observations being filed as history and same-value R2
+        # confirmation leaving R1 active. Restrict this promotion to the nine business fields,
+        # an explicitly observed receipt, and a held R1 guess. Replay and R2+ history stay intact.
+        if (held is not None and not replay and field in get_args(BusinessField)
+                and (evidence or {}).get("standing") == "observed"
+                and held.authority_rank == 1 and authority_rank >= 2):
+            action = "supersede"
 
         if action == "noop":
             # CORROBORATION — the cross-intelligence write. A second source asserting the
@@ -417,14 +430,15 @@ class GraphStore:
             "created_by_event_id, derivation_type, trace_id, schema_version, source_authority, "
             "provenance_refs"
             + (", valid_to" if status == "historical" else "") + ") "
-            "values (:fv, :fid, :o, :s, :f, cast(:val as jsonb), :vt, :st, :ar, :c, :rel, :oc, :ev, "
-            "'source_event', :ev, 'graph-fact.v2', :authority, cast(:provenance as jsonb)"
-            + (", now()" if status == "historical" else "") + ")"),
+            "values (:fv, :fid, :o, :s, :f, :val, :vt, :st, :ar, :c, :rel, :oc, :ev, "
+            "'source_event', :ev, 'graph-fact.v2', :authority, :provenance"
+            + (", now()" if status == "historical" else "") + ")").bindparams(
+                bindparam("val", type_=JSON), bindparam("provenance", type_=JSON)),
             {"fv": fv, "fid": new_id("fact"), "o": org_id, "s": subject_node_id, "f": field,
-             "val": new_val, "vt": value_type, "st": status, "ar": authority_rank,
+             "val": json.loads(new_val), "vt": value_type, "st": status, "ar": authority_rank,
              "c": confidence, "rel": relevance, "oc": occurred_at, "ev": event_id,
              "authority": f"R{authority_rank}",
-             "provenance": json.dumps([f"event:{event_id}"])})
+             "provenance": [f"event:{event_id}"]})
         self._write_ref(conn, org_id=org_id, fact_version_id=fv, event_id=event_id,
                         source=source, evidence=evidence)
         return fv
@@ -437,15 +451,18 @@ class GraphStore:
         open row already exists for this field, refresh it to the latest disagreement
         instead of stacking a duplicate."""
         payload = {"o": org_id, "s": subject_node_id, "f": field,
-                   "h": json.dumps(held, default=str), "c": json.dumps(challenger, default=str)}
+                   "h": json.loads(json.dumps(held, default=str)),
+                   "c": json.loads(json.dumps(challenger, default=str))}
         updated = conn.execute(text(
-            "update discrepancies set held=cast(:h as jsonb), challenger=cast(:c as jsonb) "
-            "where org_id=:o and subject_node_id=:s and field=:f and status='open'"),
+            "update discrepancies set held=:h, challenger=:c "
+            "where org_id=:o and subject_node_id=:s and field=:f and status='open'").bindparams(
+                bindparam("h", type_=JSON), bindparam("c", type_=JSON)),
             payload).rowcount
         if not updated:
             conn.execute(text(
                 "insert into discrepancies (id, org_id, subject_node_id, field, held, challenger) "
-                "values (:id, :o, :s, :f, cast(:h as jsonb), cast(:c as jsonb))"),
+                "values (:id, :o, :s, :f, :h, :c)").bindparams(
+                    bindparam("h", type_=JSON), bindparam("c", type_=JSON)),
                 {"id": new_id("disc"), **payload})
 
     def resolve_discrepancies(self, conn, *, org_id, subject_node_id, field) -> int:
@@ -472,6 +489,29 @@ class GraphStore:
         self._write_ref(conn, org_id=org_id, observation_id=obs_id, event_id=event_id,
                         source=source, evidence=evidence)
         return obs_id
+
+    def write_event_presence(self, conn, *, org_id: str, subject_node_id: str,
+                             occurred_at: datetime | None, event_id: str,
+                             evidence: dict, source: str | None) -> bool:
+        """One event establishes a subject; it does not make that subject the speaker.
+
+        The pilot's 50 calendar events produced zero observations, and 30 non-replying
+        people also had none. A stable org/event/subject ID makes replay and concurrent
+        retries no-ops; this does not deduplicate or rewrite existing semantic observations.
+        """
+        digest = hashlib.sha256(json.dumps([org_id, event_id, subject_node_id]).encode()).hexdigest()[:32]
+        obs_id = f"obs_presence_{digest}"
+        inserted = conn.execute(text(
+            "insert into graph_observations (observation_id,org_id,subject_node_id,kind,"
+            "occurred_at,confidence,created_by_event_id) "
+            "values (:id,:org,:subject,'event_presence',:at,1.0,:event) "
+            "on conflict (observation_id) do nothing"),
+            {"id": obs_id, "org": org_id, "subject": subject_node_id,
+             "at": occurred_at, "event": event_id}).rowcount
+        if inserted:
+            self._write_ref(conn, org_id=org_id, observation_id=obs_id, event_id=event_id,
+                            source=source, evidence=evidence)
+        return bool(inserted)
 
     # ── relationships (B7 edges) ──────────────────────────────────────────────
     def write_edge(self, conn, *, org_id: str, edge_type: str, from_node_id: str,
@@ -531,12 +571,12 @@ class GraphStore:
             "insert into graph_source_refs (source_ref_id, org_id, fact_version_id, "
             "edge_version_id, observation_id, event_id, source, evidence, extractor_version, "
             "source_object_id) "
-            "values (:id, :o, :fv, :ev2, :obs, :e, :src, cast(:ex as jsonb), :xv, "
+            "values (:id, :o, :fv, :ev2, :obs, :e, :src, :ex, :xv, "
             "  (select se.source_object_id from source_events se "
-            "   where se.event_id = :e and se.org_id = :o))"),
+            "   where se.event_id = :e and se.org_id = :o))").bindparams(bindparam("ex", type_=JSON)),
             {"id": new_id("ref"), "o": org_id, "fv": fact_version_id, "ev2": edge_version_id,
              "obs": observation_id, "e": event_id, "src": source,
-             "ex": json.dumps(evidence, default=str), "xv": "b3-haiku-1"})
+             "ex": json.loads(json.dumps(evidence, default=str)), "xv": "b3-haiku-1"})
 
     def write_change(self, conn, *, org_id: str, graph_version: int,
                      cause_event_id: str, payload: dict) -> None:

@@ -455,6 +455,49 @@ def _resolve_subject(name, name_to_node: dict, fallback: str | None) -> str | No
     return fallback
 
 
+def _business_claim(candidate: dict, content: str):
+    """Validate the QES business seam again; unsupported nouns remain missing, not guesses."""
+    from genios_engine.contracts.extraction import BusinessFact
+    try:
+        claim = BusinessFact(field=candidate.get("field"), subject=candidate.get("subject"),
+            value=candidate.get("value"), standing=candidate.get("standing"),
+            evidence=candidate.get("evidence_spans") or [], confidence_bp=10000)
+    except (TypeError, ValueError):
+        return None
+    spans = [s for s in claim.evidence if s.verified and s.quote in content]
+    return claim.model_copy(update={"evidence": spans}) if spans else None
+
+
+def _business_subject(conn, *, org_id: str, name: str, field: str) -> str | None:
+    """Exact existing typed subject only. The old sender fallback misfiled all nine nouns."""
+    from sqlalchemy import bindparam
+    types = (("company",) if field == "company.industry" else
+             ("campaign",) if field == "campaign.objective" else
+             ("organization", "company") if field == "organization.relationship" else
+             ("deal", "company", "person") if field.startswith("deal.") else ("person",))
+    try:
+        with conn.begin_nested():
+            rows = conn.execute(text(
+                "select node_id from graph_nodes where org_id=:o and valid_to is null "
+                "and node_type in :types and (lower(canonical_key)=:name or lower(display_name)=:name) "
+                "limit 2").bindparams(bindparam("types", expanding=True)),
+                {"o": org_id, "types": types, "name": name.strip().lower()}).fetchall()
+            if rows:
+                return rows[0][0] if len(rows) == 1 else None
+            # Existing alias resolution preserves observed names and refuses ambiguous ones.
+            hit = (resolve_person_name(conn, org_id=org_id, name=name) if types == ("person",)
+                   else resolve_company_mention(conn, org_id=org_id, name=name)
+                   if "company" in types else None)
+            if hit:
+                row = conn.execute(text("select node_type from graph_nodes where org_id=:o "
+                    "and node_id=:n and valid_to is null"), {"o": org_id,"n":hit}).first()
+                return hit if row and row[0] in types else None
+    except Exception:
+        # Identity enrichment is a refinement. Failed/ambiguous reads never guess the sender.
+        return None
+    return None
+
+
 #: Words that mean a deal is FINISHED, and which way it went. Everything else is live.
 #:
 #: `deal.status` is declared as an extraction field and its VALUES were never constrained
@@ -754,6 +797,16 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                     continue
                 rnode = _person(rn_email)
                 nodes += 1
+                # Thirty of sixty people in the pilot had no observations: the people who
+                # never replied. To/Cc establishes the recipient even when none of the four
+                # content-observation paths fire. Do not copy the sender's question/promise
+                # onto them: retain one event-presence receipt with the actual speaker named.
+                if not is_inbound:
+                    obs_n += int(store.write_event_presence(
+                        conn, org_id=org_id, subject_node_id=rnode,
+                        occurred_at=occurred_at, event_id=event_id, source=source,
+                        evidence={"presence": "outbound_recipient",
+                                  "speaker_node_id": sender_node, "recipient": rn_email}))
                 _works_at(rn_email, rnode)
                 if sender_node:
                     # canonicalise pair direction (lexically smaller email = from) → ONE edge per
@@ -795,12 +848,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                     if (_objective := objective_of(ex)) is not None:
                         store.write_fact(conn, org_id=org_id, subject_node_id=rnode,
                                          field="thread.objective", value=_objective,
-                                         value_type="enum", confidence=FACT_CONF_BY_RANK[2],
+                                         value_type="enum", confidence=FACT_CONF_BY_RANK[1],
                                          relevance=ex.relevance, occurred_at=occurred_at,
                                          event_id=event_id,
                                          evidence={"text": (ex.objective or {}).get(
-                                             "evidence_text")},
-                                         source=source, authority_rank=2)
+                                             "evidence_text"), "standing": "judgement"},
+                                         source=source, authority_rank=1)
                     store.write_fact(conn, org_id=org_id, subject_node_id=rnode,
                                      field="thread.ball_in_court", value="them", value_type="enum",
                                      confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
@@ -994,6 +1047,56 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             return node
 
         for f in facts:
+            from typing import get_args
+            from genios_engine.contracts.extraction import BusinessField
+            if f.get("field") in get_args(BusinessField):
+                val = f.get("value")
+                # The active typed lane refuses unknown; legacy/cache candidates must not
+                # bypass the same missingness rule (27 SQLite regressions, 2026-09-11).
+                if (val is None or val == "" or
+                        isinstance(val, str) and val.strip().casefold() in
+                        {"", "unknown", "none", "null", "n/a", "not known"}):
+                    continue
+            if f.get("business_fact") is True:
+                claim = _business_claim(f, content)
+                if claim is None:
+                    continue
+                if claim.field == "thread.objective":
+                    if claim.subject not in {"thread", thread_id, f"thread:{thread_id}"}:
+                        continue
+                    subj = _thread_node(store, conn, org_id=org_id, thread_id=thread_id,
+                                        event_id=event_id, counterparty=None)
+                    if subj:
+                        touched[subj] = "thread"
+                else:
+                    subj = _business_subject(conn, org_id=org_id, name=claim.subject, field=claim.field)
+                if not subj:
+                    continue
+                if claim.field.startswith("deal."):
+                    row = conn.execute(text("select node_type from graph_nodes where org_id=:o "
+                        "and node_id=:n and valid_to is null"), {"o":org_id,"n":subj}).first()
+                    if not row:
+                        continue
+                    touched[subj] = row[0]
+                    if row[0] != "deal":
+                        # A named account/person must have its own company, never an arbitrary CC.
+                        if row[0] != "company" and subj not in employer:
+                            continue
+                        subj = _deal_for(subj)
+                if not subj:
+                    continue
+                rank = claim_rank if claim.standing == "observed" else 1
+                value = claim.value if isinstance(claim.value, str) else claim.value.model_dump()
+                if store.write_fact(conn, org_id=org_id, subject_node_id=subj,
+                        field=claim.field, value=value,
+                        value_type="money" if claim.field == "deal.value" else "string",
+                        confidence=FACT_CONF_BY_RANK[rank], relevance=ex.relevance,
+                        occurred_at=occurred_at, event_id=event_id, source=source,
+                        authority_rank=rank,
+                        evidence={"text": claim.evidence[0].quote, "standing": claim.standing,
+                                  "spans": [s.model_dump(mode="json") for s in claim.evidence]}):
+                    fact_n += 1
+                continue
             subj = _resolve_subject(f.get("subject"), name_to_node, content_subject)
             if subj is None:
                 continue
@@ -1174,10 +1277,10 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             store.write_fact(
                 conn, org_id=org_id, subject_node_id=rnode,
                 field="party.role", value=role, value_type="enum",
-                confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
+                confidence=FACT_CONF_BY_RANK[1], relevance=ex.relevance,
                 occurred_at=occurred_at, event_id=event_id,
-                evidence={"text": (r or {}).get("evidence_text")},
-                source=source, authority_rank=2)
+                evidence={"text": (r or {}).get("evidence_text"), "standing": "judgement"},
+                source=source, authority_rank=1)
             store.write_fact(
                 conn, org_id=org_id, subject_node_id=rnode,
                 field="party.role_basis", value="inferred_from_qes", value_type="enum",
@@ -1216,10 +1319,10 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             store.write_fact(
                 conn, org_id=org_id, subject_node_id=rnode,
                 field="relationship.nature", value=nature, value_type="enum",
-                confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
+                confidence=FACT_CONF_BY_RANK[1], relevance=ex.relevance,
                 occurred_at=occurred_at, event_id=event_id,
-                evidence={"text": (rel or {}).get("evidence_text")},
-                source=source, authority_rank=2)
+                evidence={"text": (rel or {}).get("evidence_text"), "standing": "judgement"},
+                source=source, authority_rank=1)
             direction = str((rel or {}).get("direction") or "").strip().lower()
             if direction in _RELATIONSHIP_DIRECTIONS:
                 store.write_fact(

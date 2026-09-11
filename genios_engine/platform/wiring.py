@@ -92,7 +92,20 @@ def make_connector_for(connection, relevance=None) -> SourceConnector:
                                       relevance=relevance, backfill_days=window.days)
     if st in ("gcal", "calendar", "google_calendar"):
         from genios_engine.capture.connectors.calendar import ComposioCalendarConnector
-        return ComposioCalendarConnector(api_key=key, user_id=uid, backfill_days=window.days)
+        # 50/50 pilot organisers were labelled internal, including outside investors. Inject
+        # the drain's seats/owner/mailbox set here; a Layer 1 connector must not import Layer 2.
+        # This is a refinement: a missing database/read keeps ingestion's previous behaviour.
+        internal = None
+        try:
+            from genios_engine.context.runner import _internal_emails
+            graph = make_graph_store()
+            if graph is not None:
+                internal = _internal_emails(graph, connection.org_id)
+        except Exception:  # noqa: BLE001 — failed enrichment must not block calendar sync
+            _log.warning("Calendar identity read unavailable (org=%s); retaining legacy actor classification",
+                         connection.org_id)
+        return ComposioCalendarConnector(api_key=key, user_id=uid, backfill_days=window.days,
+                                         internal_emails=internal)
     if st == "notion":
         from genios_engine.capture.connectors.notion import ComposioNotionConnector
         return ComposioNotionConnector(api_key=key, user_id=uid)

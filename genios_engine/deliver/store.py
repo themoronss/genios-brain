@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
 from genios_engine.platform.db import get_engine
 from genios_engine.platform.ids import new_id
@@ -44,7 +44,7 @@ class CardStore:
     #: which cards may be rewritten. `is distinct from` rather than `<>` because the column is
     #: NULL on every card built before it existed, and those are exactly the stale ones.
     _STALE = ("k.builder_version is distinct from :builder "
-              "and k.state = any(:refreshable) and k.resolved_at is null")
+              "and k.state in :refreshable and k.resolved_at is null")
 
     def claim_build(self, org_id: str, signal_id: str, *, eval_time=None,
                     lease_minutes: int = 15, builder_version: str | None = None) -> str | None:
@@ -77,7 +77,7 @@ class CardStore:
                 "where card_build_claims.org_id=excluded.org_id "
                 "and card_build_claims.expires_at<=:now "
                 "and " + (blocked % "excluded.signal_id") + " "
-                "returning claim_token"),
+                "returning claim_token").bindparams(bindparam("refreshable", expanding=True)),
                 {"token": token, "now": now, "expires": now + timedelta(minutes=lease_minutes),
                  "signal": signal_id, "o": org_id,
                  "builder": builder_version,
@@ -189,8 +189,9 @@ class CardStore:
                 "confidence_vector=excluded.confidence_vector, surfaces=excluded.surfaces, "
                 "builder_version=excluded.builder_version "
                 "where cards.builder_version is distinct from excluded.builder_version "
-                "and cards.state = any(:refreshable) and cards.resolved_at is null "
-                "returning card_id, (xmax = 0) as inserted"),
+                "and cards.state in :refreshable and cards.resolved_at is null "
+                "returning card_id, (xmax = 0) as inserted").bindparams(
+                    bindparam("refreshable", expanding=True)),
                 {"id": card_id, "sig": card["signal_id"], "o": card["org_id"],
                  "asg": card["assignee"], "dom": card["domain"], "lvl": card["level"],
                  "band": card["urgency_band"], "head": copy["headline"], "sit": copy["situation"],

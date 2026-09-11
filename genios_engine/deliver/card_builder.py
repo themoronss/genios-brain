@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
+from types import SimpleNamespace
 
 from genios_engine.contracts.abstention import Level as _ABSTENTION
 from genios_engine.contracts.abstention import VALID_LEVELS as _ABSTENTION_LEVELS
@@ -27,7 +28,9 @@ from .slots import _fval, compute_slots
 #:
 #: The value is a NAME, not a hash of this file: a comment edit must not invalidate every card in
 #: production, and deciding that a change is user-visible is a judgment the author makes.
-BUILDER_VERSION = "card-builder.v4-names-the-thing"
+# Seven stored campaign recipients now render as 7/7 and keep their verified quote outside
+# the prose budget. v4 cards otherwise block a build claim and retain the old copy forever.
+BUILDER_VERSION = "card-builder.v5-evidence-backed-copy"
 
 EXPIRY_DAYS = 3650      # effectively "never" — a card only leaves the queue via user action
                         # (do_it_myself/snooze/dismiss) or a genuine decision_expires_at deadline,
@@ -349,17 +352,73 @@ with subject as (
      where o.org_id = :o and e.org_id = :o
        and e.valid_to is null and e.edge_type = 'concerns'
 )
-select o.kind, o.occurred_at, sr.evidence, se.actor ->> 'email' as author,
+select o.kind, o.occurred_at, sr.evidence, sr.event_id, se.actor ->> 'email' as author,
        se.visibility_scope, se.visibility_principals
   from graph_observations o
-  join graph_source_refs sr on sr.observation_id = o.observation_id
-  left join source_events se on se.event_id = o.created_by_event_id
+  join graph_source_refs sr on sr.observation_id = o.observation_id and sr.org_id=o.org_id
+  left join source_events se on se.event_id = sr.event_id and se.org_id=sr.org_id
  where o.org_id = :o and o.status = 'active'
    and o.kind not like 'email_noise%'
+   and o.kind != 'event_presence'
    and o.observation_id in (select observation_id from reachable)
  order by o.occurred_at desc nulls last
  limit :lim
 """
+
+
+def _quote_source_texts(conn, org_id: str, event_ids) -> dict[str, str]:
+    """Reverify retained bytes; unavailable retention never removes the old quote path."""
+    try:
+        with conn.begin_nested():
+            rows = conn.execute(text(
+                "select event_id,clean_text from prepared_content "
+                "where org_id=:org and event_id in :events"
+            ).bindparams(bindparam("events", expanding=True)),
+                {"org": org_id, "events": sorted(set(event_ids))}).all()
+        return {str(r.event_id): str(r.clean_text or "") for r in rows}
+    except Exception:  # noqa: BLE001 — optional verification cannot erase existing evidence
+        return {}
+
+
+def _campaign_quote_rows(conn, org_id: str, node_id: str, limit: int):
+    """A campaign's 12 measured facts had zero refs; now read their newly retained origins.
+
+    Presence observations deliberately do not copy the sender's words. The campaign's exact
+    authored quote therefore comes from its own fact, with the event ref supplying speaker/ACL.
+    """
+    try:
+        with conn.begin_nested():
+            # All member events support campaign counts, but only the event that actually
+            # contains this quote supplies its speaker/ACL. Match BEFORE LIMIT: ten newer
+            # nonmatching members otherwise hide the one genuine source (SQLite regression).
+            literal = ("json_extract(f.value, '$')" if conn.dialect.name == "sqlite"
+                       else "(f.value #>> '{}')")
+            rows = conn.execute(text(
+                "select f.value as quote, r.event_id, se.occurred_at, "
+                "se.actor ->> 'email' as author, se.visibility_scope, se.visibility_principals "
+                "from graph_facts f join graph_source_refs r "
+                "on r.org_id=f.org_id and r.fact_version_id=f.fact_version_id "
+                "join source_events se on se.org_id=r.org_id and se.event_id=r.event_id "
+                "join prepared_content pc on pc.org_id=r.org_id and pc.event_id=r.event_id "
+                "where f.org_id=:org and f.subject_node_id=:node and f.field='campaign.quote' "
+                "and f.status='active' and f.valid_to is null "
+                f"and length({literal})>0 and replace(pc.clean_text,{literal},'')!=pc.clean_text "
+                "order by se.occurred_at desc, r.event_id limit :lim"),
+                {"org": org_id, "node": node_id, "lim": limit}).mappings().all()
+        out = []
+        for row in rows:
+            quote = row["quote"]
+            if isinstance(quote, str):
+                try:
+                    quote = json.loads(quote)
+                except ValueError:
+                    pass
+            if isinstance(quote, str) and quote.strip():
+                out.append(SimpleNamespace(kind="campaign_message", evidence={"text": quote},
+                    **{k: v for k, v in row.items() if k != "quote"}))
+        return out
+    except Exception:  # noqa: BLE001 — derived receipts supplement, never replace, legacy quotes
+        return []
 
 
 def load_evidence_quotes(store, org_id: str, node_id: str, limit: int = 8,
@@ -385,14 +444,25 @@ def load_evidence_quotes(store, org_id: str, node_id: str, limit: int = 8,
         with store.engine.connect() as c:
             rows = c.execute(text(_QUOTES_SQL),
                              {"o": org_id, "n": node_id, "lim": limit}).fetchall()
+            rows = (_campaign_quote_rows(c, org_id, node_id, limit) + list(rows))[:limit]
+            source_texts = _quote_source_texts(c, org_id,
+                [r.event_id for r in rows if getattr(r, "event_id", None)])
     except Exception:      # noqa: BLE001 — richer context is an enrichment, never a hard failure
         return []
     out: list[dict] = []
     for r in rows:
-        ev = r.evidence if isinstance(r.evidence, dict) else {}
-        quote = str(ev.get("text") or "").strip()
-        if not quote:
+        ev = r.evidence
+        if isinstance(ev, str):
+            try:
+                ev = json.loads(ev)
+            except ValueError:
+                ev = {}
+        ev = ev if isinstance(ev, dict) else {}
+        quote = str(ev.get("text") or "")
+        if not quote.strip():
             continue
+        event_id = getattr(r, "event_id", None)
+        verified = bool(event_id and quote in source_texts.get(event_id, ""))
         author = str(r.author or "").strip().lower() or None
         # THE EVIDENCE'S OWN AUDIENCE, carried with the quote.
         #
@@ -411,10 +481,19 @@ def load_evidence_quotes(store, org_id: str, node_id: str, limit: int = 8,
         # were captured before the column existed, the tenant has been seeing them all along,
         # and retroactively hiding them would be a behaviour change dressed as a fix. New
         # capture always writes a scope.
+        raw_principals = getattr(r, "visibility_principals", None) or ()
+        if isinstance(raw_principals, str):
+            try:
+                raw_principals = json.loads(raw_principals)
+            except ValueError:
+                raw_principals = ()
         principals = tuple(str(x).strip().lower()
-                           for x in (getattr(r, "visibility_principals", None) or ())
+                           for x in raw_principals
                            if str(x).strip())
-        out.append({"kind": r.kind, "quote": quote[:300],
+        # The old loader cut every quote at 300 bytes before the renderer could protect it.
+        # Full source-verified text earns the evidence allowance; legacy unknowns keep the cap.
+        out.append({"kind": r.kind, "quote": quote if verified else quote.strip()[:300],
+                    "event_id": event_id, "source_verified": verified,
                     "visibility_scope": (str(getattr(r, "visibility_scope", "") or "").strip()
                                          .lower() or None),
                     "visibility_principals": principals,
@@ -424,7 +503,8 @@ def load_evidence_quotes(store, org_id: str, node_id: str, limit: int = 8,
                     # minted it is gone, so nobody can say whose words these are, and a card must
                     # not claim them as the counterparty's on a guess.
                     "from_counterparty": (None if author is None else author not in mine),
-                    "occurred_at": r.occurred_at.isoformat() if r.occurred_at else None})
+                    "occurred_at": (r.occurred_at.isoformat() if hasattr(r.occurred_at, "isoformat")
+                                    else str(r.occurred_at) if r.occurred_at else None)})
     return out
 
 

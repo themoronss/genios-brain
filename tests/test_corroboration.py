@@ -39,7 +39,7 @@ def _store():
     return s
 
 
-def _held(value='"open"', rank=2):
+def _held(value="open", rank=2):
     return SimpleNamespace(fact_version_id="fv_1", value=value,
                            authority_rank=rank, occurred_at=T)
 
@@ -59,7 +59,9 @@ def test_same_value_from_second_source_writes_corroborating_ref():
                    if s.startswith("insert into graph_source_refs")]
     assert len(ref_inserts) == 1                 # ...but the confirmation is RECORDED
     assert ref_inserts[0][1]["fv"] == "fv_1"     # attached to the held (current) version
-    assert '"corroborates": true' in ref_inserts[0][1]["ex"].lower()
+    # JSON is now a typed SQLAlchemy bind: this fake sees the object before the driver
+    # serializes it. Keep the entire evidence assertion, not only a substring flag.
+    assert ref_inserts[0][1]["ex"] == {"text": "x", "corroborates": True}
 
 
 def test_re_sync_of_same_event_does_not_inflate():

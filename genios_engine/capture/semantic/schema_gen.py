@@ -66,7 +66,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 from functools import lru_cache
-from typing import Any, Union, get_args, get_origin
+from typing import Any, Literal, Union, get_args, get_origin
 
 from pydantic import BaseModel
 
@@ -223,6 +223,14 @@ def _render(name: str, annotation: Any, stack: tuple[type, ...]) -> Any:
 
     annotation, nullable = _strip_optional(annotation)
 
+    # Seven business fields had no writer (2026-09-10). This discriminated text/Money value
+    # must stay typed in the prompt; generic ambiguous unions remain refused below.
+    from genios_engine.contracts.extraction import BusinessFact
+    from genios_engine.contracts.units import Money
+    if stack[-1] is BusinessFact and name == "value" and annotation == str | Money:
+        money = json.dumps(_render_model(Money, stack), ensure_ascii=False)
+        return f"<string except for deal.value; for deal.value use this Money object: {money}>"
+
     if isinstance(annotation, type) and issubclass(annotation, BaseModel):
         return _render_model(annotation, stack)
 
@@ -273,6 +281,9 @@ def _describe_scalar(name: str, annotation: Any, nullable: bool) -> str:
     thing to keep in sync.
     """
     suffix = " or null" if nullable else ""
+
+    if get_origin(annotation) is Literal and all(isinstance(v, str) for v in get_args(annotation)):
+        return f"<one of: {' | '.join(get_args(annotation))}{suffix}>"
 
     if name in FIELD_TO_SET:
         if annotation is not str:

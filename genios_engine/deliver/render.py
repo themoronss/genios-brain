@@ -17,6 +17,16 @@ HEADLINE_CAP = 60
 SITUATION_CAP = 140
 
 
+def situation_cap(template: dict) -> int:
+    """The authored briefing owns its prose budget; existing nudges keep 140.
+
+    A measured 201-character situation was reduced to 111, losing its evidence. This
+    validates configuration, not output: no model response can enlarge its own allowance.
+    """
+    value = template.get("situation_cap")
+    return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else SITUATION_CAP
+
+
 def _digit_runs(s: str) -> set[str]:
     return set(re.findall(r"\d+", s))
 
@@ -430,10 +440,84 @@ def state_not_command(headline: str, level: str | None) -> str:
     return prefix + _cap(body, room)
 
 
-def _fallback(template: dict, slots: dict) -> dict:
+def _verified_quotes(quotes) -> tuple[str, ...]:
+    return tuple(sorted({q["quote"] for q in quotes or ()
+        if q.get("source_verified") is True and q.get("event_id")
+        and isinstance(q.get("quote"), str) and q["quote"].strip()}, key=lambda q: (-len(q), q)))
+
+
+def _mask_quotes(value: str, quotes):
+    """Protect verified bytes (including newlines) from sentence/whitespace fitting.
+
+    Quotes previously spent the 140-character prose budget and were then removed first.
+    Source verification is supplied by the loader, never inferred from quotation marks.
+    """
+    masked, tokens = value, {}
+    for quote in _verified_quotes(quotes):
+        for block in (f'"{quote}"', f'“{quote}”', quote):
+            if block not in masked:
+                continue
+            token = chr(0xE000 + len(tokens))
+            while token in value or token in tokens:
+                token = chr(ord(token) + 1)
+            tokens[token] = (block, len(block) - len(quote))
+            masked = masked.replace(block, token)
+    return masked, tokens
+
+
+def _restore_quotes(value, tokens):
+    for token, (block, _) in tokens.items():
+        value = value.replace(token, block)
+    return value
+
+
+def _prose_length(value, quotes):
+    masked, tokens = _mask_quotes(value, quotes)
+    return len(masked) + sum(masked.count(token) * (cost - 1)
+                             for token, (_, cost) in tokens.items())
+
+
+def _fit_situation(value, cap, quotes):
+    if _prose_length(value, quotes) <= cap:
+        return value
+    masked, tokens = _mask_quotes(value, quotes)
+    cost = sum(masked.count(token) * (weight - 1) for token, (_, weight) in tokens.items())
+    fitted = _fit(masked, max(0, cap - cost))
+    # Removing an evidence block is not a prose repair. Use the authored fallback instead.
+    if fitted is None or any(fitted.count(token) != masked.count(token) for token in tokens):
+        return None
+    return _restore_quotes(fitted, tokens)
+
+
+def _cap_situation(value, cap, quotes):
+    fitted = _fit_situation(value, cap, quotes)
+    if fitted is not None:
+        return fitted
+    masked, tokens = _mask_quotes(value, quotes)
+    if not tokens:
+        return _cap(value, cap)
+    # An oversized authored fallback still keeps its evidence blocks. Reserve their
+    # delimiters and joins, then shorten only prose; no source bytes are rewritten.
+    blocks = [tokens[ch] for ch in masked if ch in tokens]
+    prose = "".join(ch for ch in masked if ch not in tokens).strip()
+    room = max(0, cap - sum(cost for _, cost in blocks) - len(blocks))
+    leading = _cap(prose, room) if room else ""
+    return " ".join(part for part in (leading, *(block for block, _ in blocks)) if part)
+
+
+def _fallback(template: dict, slots: dict, quotes=None) -> dict:
     fb = template.get("fallback", {})
     head = _cap(_interpolate(fb.get("headline", "{entity}"), slots), HEADLINE_CAP)
-    sit = _cap(_interpolate(fb.get("situation", "{stage}"), slots), SITUATION_CAP)
+    # Interpolation normalises prose whitespace. Protect source slots before that step,
+    # otherwise a verified newline/indent is lost before quote-aware fitting even runs.
+    protected, restorations = dict(slots), {}
+    for key, val in slots.items():
+        if isinstance(val, str) and val in _verified_quotes(quotes):
+            token = f"\ue100{key}\ue101"
+            protected[key] = token
+            restorations[token] = (val, 0)
+    sentence = _restore_quotes(_interpolate(fb.get("situation", "{stage}"), protected), restorations)
+    sit = _cap_situation(sentence, situation_cap(template), quotes)
     # Cutting every unsubstantiated clause can empty the line. A card still has to name its
     # subject, so the entity carries it alone rather than the card shipping blank.
     head = head or _cap(str(slots.get("entity") or ""), HEADLINE_CAP)
@@ -551,6 +635,7 @@ def _speaker(q: dict) -> str:
 def _prompt(reason_code: str, template: dict, facts: dict, slots: dict,
             quotes: list[dict] | None = None) -> str:
     kind = template.get("artifact_kind", "draft")
+    prose_cap = situation_cap(template)
     # WHAT WAS ACTUALLY SAID. The prompt used to be five typed key/value pairs and a rule id, and
     # the model was asked to write a thread-specific reply from that — so the copy had no content
     # because there was no content in the prompt. These quotes come from graph_source_refs, one
@@ -629,8 +714,9 @@ def _prompt(reason_code: str, template: dict, facts: dict, slots: dict,
         "Return STRICT JSON only:\n"
         f'{{"headline": "HARD LIMIT {HEADLINE_CAP} characters — aim for {HEADLINE_CAP - 12}. '
         + headline_rule + '",\n'
-        f' "situation": "HARD LIMIT {SITUATION_CAP} characters — aim for {SITUATION_CAP - 25}. '
-        'The facts that decide this, nothing else. Count the characters before answering",\n'
+        f' "situation": "HARD LIMIT {prose_cap} characters — aim for {max(1, prose_cap - 25)}. '
+        'The facts that decide this, nothing else. Source-verified verbatim quotes do not count '
+        'against this prose limit; preserve their bytes. Count the prose before answering",\n'
         f' "artifact": "the {kind} — the actual draft text, ready to use"}}'
     )
 
@@ -643,7 +729,7 @@ def render_copy(*, reason_code: str, template: dict, facts: dict, slots: dict,
     """Try the model; fall back to raw slots on any validator rejection. Returns copy dict with
     headline/situation/artifact + render_mode ('llm'|'raw_slot') + reject_code (V-01/V-02|None)."""
     if llm is None:
-        return _fallback(template, slots)
+        return _fallback(template, slots, quotes)
 
     prompt = _prompt(reason_code, template, facts, slots, quotes)
     res = llm.call(prompt, max_tokens=600)
@@ -657,13 +743,13 @@ def render_copy(*, reason_code: str, template: dict, facts: dict, slots: dict,
         except Exception:       # noqa: BLE001 — cost logging never blocks delivery
             pass
     if not res.ok or not isinstance(res.parsed, dict):
-        return _fallback(template, slots)
+        return _fallback(template, slots, quotes)
 
     head = str(res.parsed.get("headline", "")).strip()
     sit = str(res.parsed.get("situation", "")).strip()
     art = str(res.parsed.get("artifact", "")).strip()
     if not head or not sit:
-        return _fallback(template, slots)
+        return _fallback(template, slots, quotes)
 
     # PER-FIELD, not whole-output. Both validators used to discard everything the model produced
     # the moment any one field failed: 39 of 43 live renders were rejected (27 V-02, 12 V-01) and
@@ -675,7 +761,7 @@ def render_copy(*, reason_code: str, template: dict, facts: dict, slots: dict,
     # artifact is by far the longest chunk and by far the likeliest to name something ungrounded,
     # so an invented surname in a draft body was routinely destroying a perfectly grounded
     # headline and situation alongside it.
-    fb = _fallback(template, slots)
+    fb = _fallback(template, slots, quotes)
     corpus_text, corpus_nums = _corpus(facts, slots, identities, quotes)
     rejects: dict[str, str] = {}
     notes: dict[str, str] = {}
@@ -686,11 +772,11 @@ def render_copy(*, reason_code: str, template: dict, facts: dict, slots: dict,
     # fits, and only swap the field for its template when none does. Ten of the eighteen
     # compiled cards were over by 2–18 characters and every one of them lost a specific,
     # grounded sentence in exchange for the template's bare `{stage}` slot, the word "open".
-    for name, cap in (("headline", HEADLINE_CAP), ("situation", SITUATION_CAP)):
+    for name, cap in (("headline", HEADLINE_CAP), ("situation", situation_cap(template))):
         value = head if name == "headline" else sit
-        if len(value) <= cap:
+        if (len(value) if name == "headline" else _prose_length(value, quotes)) <= cap:
             continue
-        repaired = _fit(value, cap)
+        repaired = _fit(value, cap) if name == "headline" else _fit_situation(value, cap, quotes)
         if repaired is None:
             rejects[name] = f"V-01:len={len(value)}"
             notes[name] = rejects[name]
