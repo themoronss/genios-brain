@@ -10,6 +10,7 @@ from genios_engine.capture.connectors.base import RawObject
 from genios_engine.capture.documents.native import extract_native_text
 from genios_engine.capture.documents.pages import from_record as page_map_from_record
 from genios_engine.capture.domain.hints import FALLBACK_DOMAIN, domain_hints
+from genios_engine.contracts.intent import MessageIntent
 # S4 (L1.6) — ESQE. Imported by their PUBLIC names only, on the same terms as `capture/semantic/*`
 # below: the pipeline consumes the package, it never reaches inside it.
 from genios_engine.capture.esqe.classifier import SignalClassification, classify_signals
@@ -852,6 +853,13 @@ class EsqeOutcome:
     relevance: RelevanceDecision
     domains: DomainTagging
     attribution: SourceAttribution
+    #: THE ONE ANSWER TO "what kind of exchange is this", folded from the two readers that can
+    #: produce one. The junk gate answers coarsely on a snippet before we have decided the
+    #: message is worth extracting; the extractor answers with the whole message in hand. Both
+    #: already run for every tenant, and carrying two intents would make every downstream reader
+    #: choose. `UNREAD` when neither spoke — a rule that matched a header read an envelope, not
+    #: a message.
+    intent: MessageIntent = field(default_factory=MessageIntent)
     detection: DetectionOutcome | None = None
     classification: SignalClassification | None = None
     #: L1.6.2's canonical records — one per kept detected signal, in the detector's precedence
@@ -1025,8 +1033,9 @@ def run_esqe_stage(event: SourceEvent, prepared: PreparedContent | None, raw: Ma
                                  mailbox_owner=mailbox_owner, org_domains=stage.org_domains)
 
     if not decision.relevant or extraction is None:
+        # No extraction was read, so only the gate can have said anything.
         return EsqeOutcome(relevance=decision, domains=domains, attribution=attribution,
-                           thread=thread)
+                           thread=thread, intent=decision.intent)
 
     detection = detect_signals(DetectionInput(
         extraction=extraction, eval_time=eval_time,
@@ -1035,6 +1044,9 @@ def run_esqe_stage(event: SourceEvent, prepared: PreparedContent | None, raw: Ma
         # the same as "the thread had no participants", and RELATIONSHIP_CHANGE must not fire
         # on everyone because we captured one message in isolation.
         thread_parties=thread.parties))
+    # The richer reading refines the cheap one, field by field, and only where it actually
+    # answered — see `MessageIntent.merged_with`. A silent extractor never erases the gate.
+    folded = decision.intent.merged_with(getattr(extraction, "exchange_intent", None))
     classification = classify_signals(detection.types)
     normalized = _normalize_detected(detection.signals, extraction, event, attribution, thread)
     # L1.6.7 (ALG-17) — the score Layer 4's utility formula has never had. Runs with NO wiring
@@ -1054,7 +1066,8 @@ def run_esqe_stage(event: SourceEvent, prepared: PreparedContent | None, raw: Ma
 
     return EsqeOutcome(relevance=decision, domains=domains, attribution=attribution,
                        detection=detection, classification=classification,
-                       normalized=normalized, thread=thread, importance=importance)
+                       normalized=normalized, thread=thread, importance=importance,
+                       intent=folded)
 
 
 def page_relevance_candidate(raw, *, sender_known: bool) -> RelevanceCandidate:

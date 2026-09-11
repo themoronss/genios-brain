@@ -230,6 +230,12 @@ class _Shape(Enum):
     TEXT = "text"
     COUNT = "count"
     TEXT_LIST = "text_list"
+    #: ONE nested record, not a list of them. `exchange_intent` is the first: a message has
+    #: exactly one reading of what kind of exchange it is, where it has many commitments and
+    #: many dates. Kept separate from `MODEL_LIST` rather than folded into it because the
+    #: shapes fail differently — a list arriving as an object and an object arriving as a list
+    #: are opposite mistakes and a reader deserves to be told which one happened.
+    MODEL = "model"
     MODEL_LIST = "model_list"
     MAPPING_LIST = "mapping_list"
     BP_MAPPING = "bp_mapping"
@@ -389,6 +395,8 @@ def _shape_of(annotation: Any) -> tuple[_Shape, Any]:
         return (_Shape.TEXT, None)
     if annotation is int:
         return (_Shape.COUNT, None)
+    if isinstance(annotation, type) and issubclass(annotation, BaseModel):
+        return (_Shape.MODEL, annotation)
     origin = get_origin(annotation)
     if origin is list:
         args = get_args(annotation)
@@ -654,6 +662,16 @@ def _check_fields(result: ExtractionResult, vocabulary: ExtractionVocabulary,
                         rule=SchemaRule.S2, field=f"{name}[{index}]",
                         detail=f"expected non-empty text, got {_echo(entry)} — a blank entry "
                                "renders as a blank line and counts in every tally above"))
+
+        elif shape is _Shape.MODEL:
+            # Pydantic has already coerced a conforming mapping into the model by the time this
+            # runs, so anything still un-coerced is a shape the contract refused — reported
+            # here rather than swallowed, because S-2's whole job is to say WHICH field broke.
+            if not isinstance(value, element):
+                out.append(SchemaViolation(
+                    rule=SchemaRule.S2, field=name,
+                    detail=f"expected a {element.__name__} object, got "
+                           f"{type(value).__name__}"))
 
         elif shape is _Shape.MODEL_LIST:
             if not _is_sequence(value):

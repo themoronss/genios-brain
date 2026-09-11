@@ -38,9 +38,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator
-
-from genios_engine.contracts.evidence import EvidenceSpan
+from pydantic import BaseModel, field_validator
 
 #: The longest a free-text motive may be. It is a phrase a reader scans, not a summary.
 MAX_MOTIVE_CHARS = 160
@@ -144,10 +142,13 @@ class MessageIntent(BaseModel):
     #: inference must not act with an observation's authority is the same rule here.
     engagement: Band = Band.UNKNOWN
 
-    #: The spans the OBSERVED half rests on. Empty is legal — a message may be classified from
-    #: its shape (headers, a templated body) with nothing worth quoting — but a `motive` without
-    #: one is refused below, because a stated purpose is a claim about words and must show them.
-    evidence: list[EvidenceSpan] = Field(default_factory=list)
+    # NO `evidence` FIELD, DELIBERATELY. Every other claim in `contracts/extraction` carries
+    # spans because every other claim is about a PHRASE — a commitment, an amount, a date — and
+    # a reader must be able to see the words. Intent is not that shape: it is one reading of the
+    # WHOLE message, and "the tone is warm" or "a person composed this" have no quotable span to
+    # point at. A field for them would invite a model to manufacture a citation for something
+    # that is not a quotation, which is worse than having none. The message is the evidence, and
+    # `ExtractionResult.message_id` already says which message.
 
     @field_validator("motive")
     @classmethod
@@ -197,6 +198,36 @@ class MessageIntent(BaseModel):
         return (self.category is IntentCategory.AUTOMATED
                 and self.asks_for_reply is False
                 and self.human_authored is not True)
+
+
+    def merged_with(self, richer: "MessageIntent | None") -> "MessageIntent":
+        """This reading, refined by one taken with MORE of the message in front of it.
+
+        TWO READERS, ONE ANSWER. The junk gate sees a subject line and an opening paragraph and
+        answers cheaply in a batch; the extractor has already read the whole message and can see
+        the motive, the register and whether a person composed it. Neither is redundant — the
+        gate has to answer before we have decided the message is worth extracting — but the
+        product must not carry two intents and make every downstream reader pick.
+
+        FIELD BY FIELD, AND THE RICHER READING WINS ONLY WHERE IT ACTUALLY SAID SOMETHING. A
+        `None` or an `unknown` from the fuller read is an absence, not a correction: it means
+        that reader did not answer, and overwriting a real answer with it would make reading MORE
+        of the message lose information. Evidence is unioned, because both spans are real.
+        """
+        if richer is None:
+            return self
+        def pick(mine, theirs, absent):
+            return theirs if theirs is not absent and theirs is not None else mine
+        return MessageIntent(
+            category=pick(self.category, richer.category, IntentCategory.UNKNOWN),
+            tone=pick(self.tone, richer.tone, Tone.UNKNOWN),
+            formality=pick(self.formality, richer.formality, Formality.UNKNOWN),
+            motive=richer.motive if richer.motive is not None else self.motive,
+            addressed_personally=pick(self.addressed_personally,
+                                      richer.addressed_personally, None),
+            human_authored=pick(self.human_authored, richer.human_authored, None),
+            asks_for_reply=pick(self.asks_for_reply, richer.asks_for_reply, None),
+            engagement=pick(self.engagement, richer.engagement, Band.UNKNOWN))
 
 
 #: What an absent reading looks like. Importable so a caller never has to spell the empty record

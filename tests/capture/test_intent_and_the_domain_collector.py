@@ -292,6 +292,77 @@ def test_a_judgement_is_banded_not_scored():
     assert MessageIntent().engagement is Band.UNKNOWN
 
 
+# =============================================================================================
+# Two readers, one answer.
+# =============================================================================================
+def test_the_richer_reading_wins_only_where_it_actually_answered():
+    """The junk gate sees a subject line in a batch; the extractor has the whole message. Both
+    already run. Carrying two intents would make every downstream reader choose."""
+    gate = MessageIntent(category=IntentCategory.PROMOTIONAL, human_authored=True)
+    richer = MessageIntent(category=IntentCategory.WORKING, tone=Tone.URGENT,
+                           motive="wants pricing")
+
+    folded = gate.merged_with(richer)
+
+    assert folded.category is IntentCategory.WORKING, "the fuller read corrects the snippet"
+    assert folded.tone is Tone.URGENT
+    assert folded.motive == "wants pricing"
+    assert folded.human_authored is True, "and keeps what only the gate answered"
+
+
+def test_a_silent_extractor_never_erases_what_the_gate_read():
+    """An empty reading is an ABSENCE, not a correction. Reading more of a message must never
+    lose information."""
+    gate = MessageIntent(category=IntentCategory.AUTOMATED, asks_for_reply=False)
+
+    folded = gate.merged_with(MessageIntent())
+
+    assert folded.category is IntentCategory.AUTOMATED
+    assert folded.asks_for_reply is False
+    assert folded.is_noise is True
+
+
+def test_no_second_reading_at_all_leaves_the_first_untouched():
+    gate = MessageIntent(category=IntentCategory.RELATIONAL)
+
+    assert gate.merged_with(None).category is IntentCategory.RELATIONAL
+
+
+def test_the_extraction_field_is_never_nullable():
+    """Schema rule S-1 refuses a null field on an extraction — "an empty list or an empty
+    mapping is how 'nothing was found' is said here" — and an empty `MessageIntent` says
+    exactly that while merging as a no-op, so silence needs no sentinel of its own."""
+    from genios_engine.contracts.extraction import ExtractionResult
+
+    field = ExtractionResult.model_fields["exchange_intent"]
+
+    assert field.annotation is MessageIntent
+    assert field.default_factory is MessageIntent
+
+
+def test_it_is_not_called_intent_because_that_name_is_taken():
+    """`ExtractionResult.intent` is the SPEECH ACT of one message (inform | request | commit |
+    decide | escalate) and `esqe/detector` reads it to fire ESCALATION. "I am escalating this"
+    is a speech act; "this is a vendor pitch" is the kind of exchange it sits in. One message
+    has both."""
+    from genios_engine.contracts.extraction import ExtractionResult
+
+    assert ExtractionResult.model_fields["intent"].annotation is str
+    assert "exchange_intent" in ExtractionResult.model_fields
+
+
+def test_the_validator_was_extended_rather_than_bypassed():
+    """S-2 refuses a field its rule table has no rule for — "extend the validator with the field
+    rather than letting the newest field be the unchecked one". A single nested record was a
+    shape it did not know, so it learned one."""
+    from genios_engine.capture.validate.schema import _Shape, _shape_of
+
+    shape, element = _shape_of(MessageIntent)
+
+    assert shape is _Shape.MODEL
+    assert element is MessageIntent
+
+
 def test_the_observed_half_and_the_judged_half_are_separate_fields():
     intent = MessageIntent(category=IntentCategory.WORKING, tone=Tone.URGENT,
                            engagement=Band.HIGH)

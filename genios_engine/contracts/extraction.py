@@ -46,6 +46,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from genios_engine.contracts.evidence import EvidenceSpan
+from genios_engine.contracts.intent import MessageIntent
 from genios_engine.contracts.units import Money, ResolvedDate
 from genios_engine.contracts.validators import (require_bool, require_bp, require_non_negative,
                                                 require_text)
@@ -493,6 +494,22 @@ class ExtractionResult(BaseModel):
     decision_states: list[DecisionState] = Field(default_factory=list)
     dependencies: list[Dependency] = Field(default_factory=list)
     business_facts: list[BusinessFact] = Field(default_factory=list)
+    #: WHAT KIND OF EXCHANGE THIS IS, read with the whole message in hand rather than the
+    #: subject line the junk gate saw. `None` when the model did not answer — which is not the
+    #: same as "unknown", and `MessageIntent.merged_with` relies on the difference to avoid
+    #: overwriting the gate's real answer with this reader's silence.
+    #:
+    #: NOT `intent`, which is taken and means something narrower: the SPEECH ACT of this one
+    #: message (`inform | request | commit | decide | escalate`), which `esqe/detector` reads to
+    #: fire ESCALATION. "I am escalating this" is a speech act; "this is a vendor pitch" is the
+    #: kind of exchange it sits in. One message has both and the two must not share a name.
+    #:
+    #: NEVER NULLABLE. Schema rule S-1 refuses a null field on an extraction and says why: an
+    #: empty collection is how "nothing was found" is said here. An EMPTY `MessageIntent` says
+    #: exactly that — every axis `unknown`, every boolean `None` — and it merges as a no-op,
+    #: because `merged_with` only takes a field the other reading actually answered. So silence
+    #: needs no sentinel of its own.
+    exchange_intent: MessageIntent = Field(default_factory=MessageIntent)
     #: What the message implies somebody should do, in the model's words. Not an instruction
     #: and not a task — Layer 4 decides whether anything is done.
     implied_actions: list[str] = Field(default_factory=list)
@@ -642,5 +659,6 @@ class ExtractionResult(BaseModel):
 
 
 __all__ = ["FORBIDDEN_RESULT_FIELDS", "MAX_UNCLASSIFIED_PER_EXTRACTION", "Commitment",
+           "MessageIntent",
            "BusinessFact", "BusinessField", "DecisionState", "Dependency", "EntityMention", "ExtractionResult",
            "UnclassifiedObservation"]
