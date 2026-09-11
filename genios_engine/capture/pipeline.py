@@ -9,7 +9,7 @@ from typing import Any, Mapping, Sequence
 from genios_engine.capture.connectors.base import RawObject
 from genios_engine.capture.documents.native import extract_native_text
 from genios_engine.capture.documents.pages import from_record as page_map_from_record
-from genios_engine.capture.domain.hints import domain_hints
+from genios_engine.capture.domain.hints import FALLBACK_DOMAIN, domain_hints
 # S4 (L1.6) — ESQE. Imported by their PUBLIC names only, on the same terms as `capture/semantic/*`
 # below: the pipeline consumes the package, it never reaches inside it.
 from genios_engine.capture.esqe.classifier import SignalClassification, classify_signals
@@ -751,7 +751,18 @@ def coverage_verdict(hints: Sequence[Any], coverage_fn) -> bool | None:
     if not hints or coverage_fn is None:
         return None
     try:
-        first = hints[0]
+        # A FALLBACK IS NOT A CLASSIFICATION. The collector added in `domain_hints` files an
+        # otherwise-unrecognised business message under a domain so Layer 2 has a corpus to
+        # select — but nothing READ that message and concluded anything, and consulting
+        # coverage on it would turn "we could not tell" into a verdict about the tenant's
+        # sources. That is precisely the collapse this function's `None` exists to prevent, and
+        # a wiring test named it before it happened. Evidence-backed hints only.
+        classified = [h for h in hints
+                      if (h.get("source") if isinstance(h, dict)
+                          else getattr(h, "source", None)) != "fallback"]
+        if not classified:
+            return None
+        first = classified[0]
         domain = (first.get("domain") if isinstance(first, dict)
                   else getattr(first, "domain", None))
         if not domain:
@@ -994,6 +1005,11 @@ def run_esqe_stage(event: SourceEvent, prepared: PreparedContent | None, raw: Ma
     decision = (stage.relevance_page.decide(candidate) if stage.relevance_page is not None
                 else assess_relevance([candidate], llm=stage.relevance_llm).decisions[0])
 
+    # NO FALLBACK HERE, deliberately. This tagging is ESQE-internal and feeds the coverage
+    # verdict; the hints that PERSIST and travel to Layer 2 are computed once, below, at the
+    # gate seam. Offering a collector on both paths would make the two disagree about the same
+    # event — the gate reporting no domain while coverage was consulted about `admin` — which is
+    # two answers to one question, and a test correctly caught it.
     domains = tag_domains(event.source, text, coverage_fn=coverage_fn)
     # Derived for every event, before the relevance short-circuit: whose turn it is stays true
     # about a message we decided not to act on, and an operator asking "why was this not
@@ -1281,7 +1297,18 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
     lane: str | None = None
     if kept:
         text = prepared.clean_text if prepared else None
-        hints = domain_hints(event.source, text)
+        # THE COLLECTOR, on the hints that actually travel. Measured 2026-09-11: 815 of 889
+        # captured events carried NO domain — four keyword tables recognised 8% of a real
+        # mailbox — so Layer 2 had nothing to select a corpus by and the one activated corpus
+        # never spoke. A keyword table only knows language somebody wrote down; most mail is
+        # ordinary sentences.
+        #
+        # EMITTED ONLY. A parked event is awaiting human review and a dropped one was refused;
+        # filing either under a domain would be a decision about something we have not accepted.
+        # The hint carries `source="fallback"`, so no reader can mistake it for a pattern match.
+        emitted = gate.action not in ("drop", "park")
+        hints = domain_hints(event.source, text,
+                             fallback=FALLBACK_DOMAIN if emitted else None)
         links = _linkage_hints(event)
     if gate.action not in ("drop", "park"):
         lane = triage_lane(ctx, prepared)

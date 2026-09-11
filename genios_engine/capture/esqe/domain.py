@@ -135,7 +135,8 @@ def _coverage_for(domain: str, coverage_fn: Callable[[str], Any] | None) -> tupl
 
 
 def tag_domains(source: str, text: str | None, *,
-                coverage_fn: Callable[[str], Any] | None = None) -> DomainTagging:
+                coverage_fn: Callable[[str], Any] | None = None,
+                fallback: str | None = None) -> DomainTagging:
     """L1.6.6-U1 · tag a signal with every business domain it belongs to.
 
     `coverage_fn` maps a domain name to `capture/coverage/model.compute_coverage`'s dict, or is
@@ -143,7 +144,7 @@ def tag_domains(source: str, text: str | None, *,
     complete: coverage decides whether a card is raised and whether the degraded flag is set, and
     it decides nothing else. There is no argument to this function that removes a tag.
     """
-    hints = tuple(domain_hints(source, text))
+    hints = tuple(domain_hints(source, text, fallback=fallback))
 
     covered: list[str] = []
     uncovered: list[str] = []

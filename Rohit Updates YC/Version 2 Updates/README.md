@@ -1,6 +1,6 @@
 # Version 2 Updates
 
-**Status:** active
+**Status:** superseded by `../Version 3 Updates/` (the plans stand; the repair is recorded there)
 **Started:** 2026-09-03
 **Predecessor:** `../Version 1 Updates/` (frozen, read-only reference)
 

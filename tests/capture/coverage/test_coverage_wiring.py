@@ -135,12 +135,27 @@ def test_an_unhinted_event_keeps_a_null_verdict_on_purpose():
         asked.append(domain)
         return {"coverage_ready": True}
 
-    res = ingest_manual(org_id="org_cov", source="internal", object_type="policy",
-                        source_object_id="pol_1", body="Refunds are issued within 14 days.",
-                        subject="Refund policy", internal_kind="policy",
+    # THE FIXTURE MOVED, THE PROPERTY DID NOT. "Refund policy" used to match no pattern and so
+    # demonstrated the unhinted state by accident. Admin was widened on 2026-09-11 to absorb
+    # business operations — 815 of 889 live events were matching nothing at all — and a refund
+    # policy is now correctly classified, which is the improvement rather than a regression.
+    # An event with no business vocabulary in it at all still reaches the `None` verdict, and
+    # that is what this test exists to hold. `ingest_manual` deliberately passes no fallback
+    # domain either: the collector in `capture/pipeline` is offered only to a message the
+    # relevance gate has already judged to be business.
+    res = ingest_manual(org_id="org_cov", source="internal", object_type="note",
+                        source_object_id="pol_1",
+                        body="The kitchen tap on the second floor drips after midnight.",
+                        subject="Note to self", internal_kind="policy",
                         repo=InMemorySourceEventRepository(), coverage_fn=_spy)
     assert res.gated is not None
-    assert res.gated.domain_hints == []
+    # The COLLECTOR marks it, and that is not a classification. Admin was widened on
+    # 2026-09-11 and an unrecognised business message is now filed under it so Layer 2 has a
+    # corpus to select — but the hint carries `source="fallback"`, nothing read this message and
+    # concluded anything, and `coverage_verdict` therefore ignores it. The property this test
+    # holds is unchanged and is asserted below: a fallback must not become a verdict about the
+    # tenant's sources.
+    assert [(h.domain, h.source) for h in res.gated.domain_hints] == [("admin", "fallback")]
     assert res.gated.coverage_ready is None
     assert asked == [], "coverage was consulted for a domain nobody classified this event into"
 
