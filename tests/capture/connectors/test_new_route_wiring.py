@@ -78,7 +78,7 @@ def test_a_tenant_can_change_how_far_back_their_first_sync_reaches(client, store
     persisted = store.get(CONN)
     assert persisted.config[BACKFILL_DAYS_KEY] == 90
     assert backfill_window_for(persisted).days == 90, (
-        "the connector factory would still build a 540-day window — the write did not reach "
+        "the connector factory would still build the default window — the write did not reach "
         "the read")
 
 

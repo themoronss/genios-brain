@@ -7,7 +7,7 @@ year-over-year comparison — the window decided, silently and globally, that L1
 enough to be worth reasoning over.
 
 WHAT IS ASSERTED HERE
-  * the default for a NEW connection is 540 days, not 60;
+  * the default for a NEW connection is 60 days (two months);
   * a connection configured for 540 days produces a query covering 540 days, in both provider
     dialects (Gmail's `newer_than:`, Calendar's `timeMin`);
   * `platform.wiring.make_connector_for` actually threads the setting — the number is useless
@@ -81,7 +81,7 @@ def _calendar(days: int | None = None) -> tuple[ComposioCalendarConnector, _Reco
 # ── the window itself ────────────────────────────────────────────────────────────────────────
 
 @pytest.mark.parametrize("days, query, why", [
-    (DEFAULT_BACKFILL_DAYS, "newer_than:540d", "the new default is 18 months"),
+    (DEFAULT_BACKFILL_DAYS, "newer_than:60d", "the default is two months"),
     (LEGACY_BACKFILL_DAYS, "newer_than:60d", "an existing connection keeps what it had"),
     (1, "newer_than:1d", "the floor is a real day, not zero"),
     (MAX_BACKFILL_DAYS, "newer_than:3650d", "the ceiling is ten years"),
@@ -110,7 +110,7 @@ def test_window_refuses_a_value_it_cannot_honour(days, why):
 # ── resolving it from the connection ─────────────────────────────────────────────────────────
 
 @pytest.mark.parametrize("config, expected, why", [
-    ({}, DEFAULT_BACKFILL_DAYS, "a NEW connection defaults to 540, not 60"),
+    ({}, DEFAULT_BACKFILL_DAYS, "a NEW connection defaults to two months"),
     ({BACKFILL_DAYS_KEY: 60}, 60, "an existing row stamped by migration 0082 keeps 60"),
     ({BACKFILL_DAYS_KEY: 900}, 900, "an admin can raise it deliberately"),
     ({BACKFILL_DAYS_KEY: "900"}, 900, "a settings form submits numbers as text"),
@@ -142,10 +142,10 @@ def test_with_backfill_days_returns_a_copy_and_validates():
 
 # ── the connectors actually use it ───────────────────────────────────────────────────────────
 
-def test_gmail_initial_snapshot_defaults_to_540_days():
+def test_gmail_initial_snapshot_defaults_to_two_months():
     connector, rec = _gmail()
     connector.initial_snapshot(limit=5)
-    assert rec.last_args["query"] == "newer_than:540d"
+    assert rec.last_args["query"] == "newer_than:60d"
 
 
 def test_gmail_backfill_does_not_emit_a_60d_query_when_configured_wider():

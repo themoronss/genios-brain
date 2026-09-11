@@ -10,8 +10,10 @@ were unanswerable by construction.
 
 WHY A SETTING RATHER THAN A BIGGER CONSTANT. A ten-year mailbox and a three-month-old startup do
 not want the same first sync, and the cost of the choice is one-time (the extraction cache means a
-document is extracted once, ever) but not zero. So the default is wide (`DEFAULT_BACKFILL_DAYS`,
-18 months) and an admin can raise or lower it per connection.
+document is extracted once, ever) but not zero. So the default stays at two months
+(`DEFAULT_BACKFILL_DAYS`) and an admin raises or lowers it per connection. It was 540 for a
+while; a first Sync then walked 18 months of mail before Layer 2 ran at all — hours with an empty
+graph — which is not what a user pressing Sync asked for.
 
 WHERE IT LIVES. In `Connection.config` — the `capture_scope` jsonb that already holds every
 source-specific setting — so this needs no contract change and no new column. Migration
@@ -31,8 +33,8 @@ from genios_engine.contracts.connection import Connection
 #: The key inside `Connection.config` (connections.capture_scope jsonb).
 BACKFILL_DAYS_KEY = "backfill_days"
 
-#: 18 months. Wide enough for a full deal cycle plus the prior year to compare it against.
-DEFAULT_BACKFILL_DAYS = 540
+#: Two months — what a first Sync pulls unless the connection says otherwise.
+DEFAULT_BACKFILL_DAYS = 60
 
 #: What every connection used to get, and what connections created before this change keep
 #: until an admin raises them (migration 0082 stamps it explicitly).

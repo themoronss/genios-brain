@@ -2444,7 +2444,8 @@ def _backfill_full(org_id: str, source_type: str, limit: int = 25,
     normal 2-month business history and this inbox's recent real mail — and LOG (never silently) if
     more history remains, which an owner can pull with the manual /connections/{id}/backfill."""
     from genios_engine.contracts.connection import Connection
-    conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=source_type, config={})
+    conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=source_type,
+                      config=_saved_connection_config(org_id, source_type))
     connector = make_connector_for(conn)
     event_cap = _SOURCE_EVENT_CAP.get(source_type)     # e.g. calendar → 150 events max
     cursor: str | None = None
@@ -2539,13 +2540,30 @@ def _pending_count(org_id: str) -> int:
             {"o": org_id}).scalar() or 0)
 
 
+def _saved_connection_config(org_id: str, source_type: str) -> dict:
+    """The stored connection's settings (`capture_scope`), so a backfill honours the window saved
+    on it. The backfills below used to build their connection with `config={}`, which silently
+    discarded the per-connection `backfill_days` and always used the module default. `{}` when
+    nothing is stored or the store is unreadable — the default window is then the answer."""
+    try:
+        conn = _connections.get(f"con_{org_id}_{source_type}")
+        if conn is None:
+            conn = next((c for c in _connections.list_active(source_type)
+                         if c.org_id == org_id), None)
+        return dict(conn.config or {}) if conn is not None else {}
+    except Exception:      # noqa: BLE001 — a settings read must never block a sync
+        _log.exception("could not read saved connection config org=%s src=%s", org_id, source_type)
+        return {}
+
+
 def _backfill_one_source(org_id: str, source_type: str, limit: int = 25,
                          max_rounds: int = _BACKFILL_MAX_ROUNDS, on_round=None) -> tuple[int, int, bool]:
     """Window-bounded backfill of ONE source (no interleaved L2 — L2 runs as its own phase after).
-    Pages backward through the 2-month window; `on_round(count)` fires each round so the progress
-    bar can move live. Returns (scanned, emitted, capped-at-ceiling)."""
+    Pages backward through the connection's window (`backfill_days`, default 60); `on_round(count)`
+    fires each round so the progress bar can move live. Returns (scanned, emitted, capped)."""
     from genios_engine.contracts.connection import Connection
-    conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=source_type, config={})
+    conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=source_type,
+                      config=_saved_connection_config(org_id, source_type))
     rel = make_relevance_classifier(org_id)    # ONE classifier for the whole backfill: the connector
     connector = make_connector_for(conn, relevance=rel)   # gates on snippet + fetches only keepers;
     event_cap = _SOURCE_EVENT_CAP.get(source_type)        # the pipeline reuses its primed verdicts.

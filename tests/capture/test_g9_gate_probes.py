@@ -300,7 +300,7 @@ def _connection(days: int | None) -> Connection:
 
 
 @pytest.mark.parametrize("days,expected,why", [
-    (None, DEFAULT_BACKFILL_DAYS, "an unset connection gets the wide default, not the old 60"),
+    (None, DEFAULT_BACKFILL_DAYS, "an unset connection gets the module default"),
     (60, 60, "a connection stamped with the legacy value keeps it until an admin raises it"),
     (900, 900, "an admin's own number is honoured, not clamped to a module constant"),
 ])
