@@ -417,13 +417,23 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     any_live = bool(live or live_domains)
     # Local imports: the shadow pass depends on the runner's context loaders, and the runner
     # imports this module behind the flag — a module-level import would be a cycle.
+    from copy import deepcopy
+
     from genios_engine.reason.runner import (
-        _graph_version, _load_context, _neighbor_index, _neighborhood,
+        _bulk_load_facts, _bulk_load_obs, _graph_version, _load_context, _neighbor_index,
+        _neighborhood,
     )
 
     catalog = expert_catalog()
     graph_version = _graph_version(store, org_id)
     adj, _node_types, obs_idx, fact_idx = _neighbor_index(store, org_id)
+    # Every anchor's facts and observations in TWO org-wide reads instead of two per situation
+    # (up to 400 round trips per sweep). The bulk loaders use the per-node load's filters and
+    # ordering (`runner._load_context` relies on the same equivalence), so each context is the
+    # one the per-node read built. Copied per situation below: the bulk dicts are shared, and one
+    # situation's context must never be able to see another's edits.
+    facts_by_node = _bulk_load_facts(store, org_id)
+    obs_by_node = _bulk_load_obs(store, org_id)
     counts: Counter = Counter()
     # `registry` is injectable for the same reason `run()` takes one: `make_registry()` resolves
     # its URL from global settings, so a caller holding a DIFFERENT store (a test on a scratch
@@ -699,7 +709,10 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 counts["no_anchor"] += 1
                 continue
             try:
-                node_ctx = _load_context(store, org_id, anchor, row["anchor_type"])
+                node_ctx = _load_context(store, org_id, anchor, row["anchor_type"],
+                                         facts_by_node=facts_by_node, obs_by_node=obs_by_node)
+                node_ctx = replace(node_ctx, facts=deepcopy(node_ctx.facts),
+                                   obs=[dict(o) for o in node_ctx.obs])
                 neighbor = _neighborhood(anchor, adj, obs_idx, fact_idx)
                 # Attach the neighbourhood to the context the CAPABILITY reasons over, not just to
                 # the slice the compiler reads. Every situation here anchors on a `company`, and a

@@ -2650,6 +2650,7 @@ def _process_and_reason_tracked(org_id: str, heartbeat=None) -> None:
 
     from genios_engine.platform.stage_timer import stage
     with stage("l2.drain", org_id) as st:
+        settled = False
         while True:                            # drain in chunks → live progress, still bounded/idempotent
             out = process_pending(org_id=org_id, store=_graph, llm=_llm,
                                   registry=_registry,
@@ -2660,8 +2661,16 @@ def _process_and_reason_tracked(org_id: str, heartbeat=None) -> None:
             P.set_phase(eng, org_id, "processing",
                         done=min(processed, total or processed), detail=f"{processed} processed")
             hb()                               # liveness beat per L2 chunk
-            if n == 0:
+            if settled or n == 0:
                 break
+            # A short chunk means the backlog is drained, and ONE more call follows it. That call
+            # is not waste: the org-wide passes run on every call, and this is the one that sees
+            # the drain's own writes (measured: `period.active_situations` 60 → 59 once a situation
+            # the drain closed stops counting). It used to be "loop until a call drains zero",
+            # which never ended while an event sat `held` — held events are pulled again on every
+            # call. `<`, not `==`: a chunk can overshoot 500 by up to one batch.
+            if n < 500:
+                settled = True
         st["processed"] = processed
     P.set_phase(eng, org_id, "processing", state="done",
                 total=total or processed, done=total or processed)

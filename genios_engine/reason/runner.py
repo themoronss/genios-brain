@@ -921,10 +921,12 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                     # (the legacy path's line 607 value). Do not open without Steps 1-4 evidence.
                     mode=ExecutionMode.SHADOW,
                 )
-                if _graph_version(store, org_id) != graph_version:
-                    graph_drifted = True
-                    out["graph_changed_retry"] += 1
-                    break
+                # No graph re-read here or after each rule below: reasoning runs on `ctx`, which
+                # was read before this node's check above, and `graph_versions` only ever goes
+                # up — so any drift a per-rule read could see, the per-node check on the next
+                # node and the final check before publication see too, and a drifted sweep still
+                # returns `retry_required` before any signal or lifecycle write. (Was one query
+                # per rule per node: 1,693 per sweep on the pilot.)
                 persisted_native = persist_execution(
                     store=reasoning_store,
                     execution=native_execution,
@@ -1007,13 +1009,6 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                 indeterminate.add((rule.id, nd.node_id))
                 out["reasoning_input_invalid"] += 1
                 continue
-            if _graph_version(store, org_id) != graph_version:
-                graph_drifted = True
-                indeterminate.add((rule.id, nd.node_id))
-                _suppress(store, org_id, rule.id, nd.node_id, "graph_changed_retry", eval_time,
-                          {"captured_graph_version": graph_version})
-                out["graph_changed_retry"] += 1
-                break
             # P2 + P2b: only pay for the full ~9-row audit bundle (its own transaction) when something
             # downstream actually reads it. The bundle's run_id is just the in-memory trace run id, so:
             #   - matched          → the emission path reads audit_bundle["output"] → MUST persist

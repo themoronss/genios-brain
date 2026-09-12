@@ -149,13 +149,15 @@ def chain(label: str) -> list[dict]:
         provision_intelligence(graph.engine, ORG)
     recs.append(r)
     with stage("l2.drain", ORG) as r:
-        done = 0
-        while True:
+        done, settled = 0, False
+        while True:                          # same stop rule as the server's drain loop
             n = int(process_pending(org_id=ORG, store=graph, llm=llm, registry=registry,
                                     crypto_key=s.crypto_key, max_total=500).get("processed", 0))
             done += n
-            if n == 0:
+            if settled or n == 0:
                 break
+            if n < 500:
+                settled = True
         r["processed"] = done
     recs.append(r)
     with stage("l4.run_all", ORG) as r:
