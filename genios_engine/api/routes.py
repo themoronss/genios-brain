@@ -410,6 +410,7 @@ def _run_l2(org_id: str) -> None:
     single org's failure is LOGGED (not a silent uvicorn traceback) and never touches another org."""
     if _graph is None:
         return
+    from genios_engine.platform.stage_timer import stage
     # EVERYTHING LAYER 3 NEEDS BEFORE IT CAN SAY ANYTHING, first, every time.
     #
     # Measured on production: a tenant that signed up and connected Gmail ninety minutes earlier
@@ -431,16 +432,20 @@ def _run_l2(org_id: str) -> None:
         _log.exception("intelligence provisioning failed for org_id=%s", org_id)
     try:
         from genios_engine.context.runner import process_pending
-        result = process_pending(org_id=org_id, store=_graph, llm=_llm,
-                                 registry=_registry,
-                                 crypto_key=get_settings().crypto_key)
+        with stage("l2.process_pending", org_id) as st:
+            result = process_pending(org_id=org_id, store=_graph, llm=_llm,
+                                     registry=_registry,
+                                     crypto_key=get_settings().crypto_key)
+            st["processed"] = result.get("processed", 0) if isinstance(result, dict) else 0
         _charge_ingestion(org_id, result)
         from genios_engine.reason.runner import run_all as run_l3    # L3 after the graph updates
-        run_l3(org_id=org_id, store=_graph, registry=_registry)
+        with stage("l4.run_all", org_id):
+            run_l3(org_id=org_id, store=_graph, registry=_registry)
         if _card_store is not None:                              # L5: new gated signals → cards
             from genios_engine.deliver.pipeline import build_cards_for_org
-            build_cards_for_org(graph=_graph, card_store=_card_store, org_id=org_id,
-                                llm=_llm, registry=_registry)
+            with stage("deliver.build_cards", org_id):
+                build_cards_for_org(graph=_graph, card_store=_card_store, org_id=org_id,
+                                    llm=_llm, registry=_registry)
     except Exception:
         _log.exception("L2/L3/L5 background pass failed for org_id=%s", org_id)
 
@@ -2643,18 +2648,21 @@ def _process_and_reason_tracked(org_id: str, heartbeat=None) -> None:
                     detail=f"{seen} processed")
         hb()
 
-    while True:                                # drain in chunks → live progress, still bounded/idempotent
-        out = process_pending(org_id=org_id, store=_graph, llm=_llm,
-                              registry=_registry,
-                              crypto_key=get_settings().crypto_key, max_total=500,
-                              on_progress=_live)
-        n = int(out.get("processed", 0))
-        processed += n
-        P.set_phase(eng, org_id, "processing",
-                    done=min(processed, total or processed), detail=f"{processed} processed")
-        hb()                                   # liveness beat per L2 chunk
-        if n == 0:
-            break
+    from genios_engine.platform.stage_timer import stage
+    with stage("l2.drain", org_id) as st:
+        while True:                            # drain in chunks → live progress, still bounded/idempotent
+            out = process_pending(org_id=org_id, store=_graph, llm=_llm,
+                                  registry=_registry,
+                                  crypto_key=get_settings().crypto_key, max_total=500,
+                                  on_progress=_live)
+            n = int(out.get("processed", 0))
+            processed += n
+            P.set_phase(eng, org_id, "processing",
+                        done=min(processed, total or processed), detail=f"{processed} processed")
+            hb()                               # liveness beat per L2 chunk
+            if n == 0:
+                break
+        st["processed"] = processed
     P.set_phase(eng, org_id, "processing", state="done",
                 total=total or processed, done=total or processed)
 
@@ -2664,11 +2672,13 @@ def _process_and_reason_tracked(org_id: str, heartbeat=None) -> None:
     P.set_phase(eng, org_id, "intelligence", state="running", detail="Analyzing your relationships…")
     try:
         from genios_engine.reason.runner import run_all as run_l3
-        run_l3(org_id=org_id, store=_graph, registry=_registry)
+        with stage("l4.run_all", org_id):
+            run_l3(org_id=org_id, store=_graph, registry=_registry)
         if _card_store is not None:
             from genios_engine.deliver.pipeline import build_cards_for_org
-            build_cards_for_org(graph=_graph, card_store=_card_store, org_id=org_id,
-                                llm=_llm, registry=_registry)
+            with stage("deliver.build_cards", org_id):
+                build_cards_for_org(graph=_graph, card_store=_card_store, org_id=org_id,
+                                    llm=_llm, registry=_registry)
         P.set_phase(eng, org_id, "intelligence", state="done", detail="Ready")
     except Exception:      # noqa: BLE001
         _log.exception("intelligence phase failed org=%s", org_id)
