@@ -27,3 +27,6 @@ genios-dashboard/
 # DigitalOcean buildpack switches to uv (and ignores requirements.txt) when uv.lock is present;
 # pyproject.toml lists 9 of the 23 runtime deps, so a uv build ships without anthropic/composio.
 uv.lock
+
+# Claude Code agent worktrees
+.claude/

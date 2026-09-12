@@ -37,7 +37,10 @@ class Settings(BaseSettings):
     jwt_secret: str = "genios-dev-secret-change-in-prod"   # dashboard-session JWT signing
     # Seat sessions (platform/sessions.py): a short-lived access JWT, renewed through a rotating
     # refresh token that can be revoked (logout, deactivation, reuse of a rotated token).
-    access_token_ttl_seconds: int = 900                     # 15 min access JWT
+    # 7 days, the lifetime every client was built against. The dashboard, the desktop app and the
+    # extension do not call /auth/refresh yet, so a 15-minute token would sign every user out
+    # mid-session on deploy. Lower it (to 900) once all three refresh.
+    access_token_ttl_seconds: int = 604800
     refresh_token_ttl_seconds: int = 30 * 24 * 3600         # absolute session lifetime
     invite_ttl_seconds: int = 7 * 24 * 3600                 # team invite link validity
     internal_token: str = ""                     # cron/internal endpoints (sweep, ingest-all)
