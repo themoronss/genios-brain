@@ -20,7 +20,15 @@ from genios_engine.platform.db import get_engine
 
 KEEP = {"orgs", "org_seats", "connections", "tenant_packs", "org_channels",
         "llm_costs", "credit_ledger", "subscriptions", "payments", "config_snapshots",
-        "orgs_archive", "users", "api_keys", "agent_registry", "learning_policies"}
+        "orgs_archive", "users", "api_keys", "agent_registry", "learning_policies",
+        # tool connection state: workspace_accounts holds enc_credentials, so wiping it
+        # disconnects the tool; preferences/mappings are the tenant's per-tool settings
+        "workspace_accounts", "integration_preferences", "source_mappings",
+        # switches, not data: dropping them leaves the tenant dark after the resync
+        "l1_semantic_activation", "l2_v2_activation", "l3_activation", "l4_activation",
+        "pattern_activation",
+        # human-declared seat config
+        "seat_objectives", "seat_responsibilities"}
 
 
 def main() -> int:
