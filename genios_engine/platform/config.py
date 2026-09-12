@@ -121,6 +121,13 @@ class Settings(BaseSettings):
     sync_cadences: str = ""
     sync_initial_delay_seconds: int = 45         # wait after startup before the first sweep
     sync_batch_limit: int = 25                   # records pulled per connection per sweep
+    # WARM LANE (platform/warm_lane.py) — a pushed email or an upload reaches graph, reasoning and
+    # cards in ~2 minutes instead of waiting for the next sweep tick. In-process threads over a
+    # Postgres queue, no broker. `warm_lane_workers` is the GLOBAL number of chains the lane may
+    # run at once across every instance (slot leases), not a per-process count: the session
+    # pooler's 15-client cap is shared, and one chain already fans out over the L2 thread pool.
+    warm_lane_enabled: bool = True
+    warm_lane_workers: int = 1
 
     # tenant / options
     org_id: str = "org_trial"

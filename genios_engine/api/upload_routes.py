@@ -1,6 +1,7 @@
 """Resource uploads (dashboard → Resources → Uploads). A file becomes a data source: stored to disk,
 parsed to text, chunked, and each chunk injected as a source_events row (source='upload') so the SAME
-L2 extraction path a connector sync uses (`process_pending`) pulls entities + facts into the graph.
+chain a connector sync runs (L2 `process_pending` → reasoning → cards, via the warm lane in
+`platform/warm_lane.py`) pulls entities + facts into the graph and reasons over them.
 No user credits are charged (upload isn't /v1/intelligence/query); the LLM extraction cost lands in
 llm_costs like any sync. These endpoints lived only in the old genios-brain; ported to the engine's
 raw-SQL + `_org` conventions.
@@ -174,20 +175,40 @@ def _emit_chunk(org_id: str, file_id: str, idx: int, subject: str, body: str,
         semantic=semantic, esqe=esqe)
 
 
-def _ingest(org_id: str, file_id: str, prefix: str, truncated: int = 0) -> None:
-    """Background: drain L2 extraction for the org (same entry point as a sync), then reconcile this
-    file's real fact/entity counts + flip status to 'indexed'. Best-effort, per-org isolated.
-    Two dedup shapes are matched: the one-door key 'upload:document_chunk:{file}:…' and the
-    legacy pre-door key 'upload:{file}:…'."""
+_WARM_WAIT_S = 1800.0     # how long the count reconciliation waits for the warm lane's run
+
+
+def _run_chain_for_upload(org_id: str, file_id: str, event_ids: tuple[str, ...]) -> None:
+    """The FULL chain for the file's events — L2, reasoning, cards — not L2 alone (G-26: this door
+    called `process_pending` and nothing else, so an uploaded contract reached the graph and
+    never a card). The upload request already queued the events on the warm lane; with a worker
+    running in this process we wait for it, otherwise the chain runs here, under the same org
+    lease every other caller takes."""
+    if not event_ids:
+        return                         # nothing new landed (a re-land of chunks already known)
+    from genios_engine.platform import warm_lane
+    if warm_lane.worker_alive():
+        if not warm_lane.wait_until_done(_graph.engine, org_id, event_ids, timeout_s=_WARM_WAIT_S):
+            _log.warning("upload org=%s file=%s: warm lane still running after %ss — counting "
+                         "what has landed so far", org_id, file_id, int(_WARM_WAIT_S))
+        return
+    from genios_engine.api.routes import _run_l2       # lazy: keeps this module off routes' import
+    outcome = _run_l2(org_id)
+    if outcome is not None and outcome.status == "busy":
+        # Deferred behind a run that started before these events: wait for the one that follows.
+        warm_lane.wait_until_done(_graph.engine, org_id, event_ids, timeout_s=_WARM_WAIT_S)
+
+
+def _ingest(org_id: str, file_id: str, prefix: str, truncated: int = 0,
+            event_ids: tuple[str, ...] | list[str] = ()) -> None:
+    """Background: run the chain for the file's events (graph + reasoning + cards, via the warm
+    lane), then reconcile this file's real fact/entity counts + flip status to 'indexed'.
+    Best-effort, per-org isolated. Two dedup shapes are matched: the one-door key
+    'upload:document_chunk:{file}:…' and the legacy pre-door key 'upload:{file}:…'."""
     like_new = f"upload:document_chunk:{file_id}:%"
     like_old = f"{prefix}:%"
     try:
-        if _llm is not None:
-            from genios_engine.context.runner import process_pending
-            from genios_engine.packs.wiring import make_registry
-            process_pending(org_id=org_id, store=_graph, llm=_llm,
-                            registry=make_registry(),
-                            crypto_key=get_settings().crypto_key)
+        _run_chain_for_upload(org_id, file_id, tuple(event_ids))
     except Exception:
         _log.exception("upload L2 extraction failed org=%s file=%s", org_id, file_id)
     try:
@@ -354,8 +375,15 @@ async def upload_resource(org_id: str, background_tasks: BackgroundTasks,
         finalize_l1(ManualSweep(org_id=org, results=tuple(results), emitted=len(results),
                                 scanned=len(chunks)),
                     org_id=org, stores=_l1_stores())
+    # WARM LANE: queue what this file emitted, after the finalizer published it. The worker runs
+    # the whole chain — graph, reasoning, cards — for these and anything else the org has queued.
+    emitted_ids = [r.event.event_id for r in results
+                   if r.outcome == "emitted" and getattr(r, "event", None) is not None]
+    if emitted_ids and _graph is not None:
+        from genios_engine.platform import warm_lane
+        warm_lane.enqueue(_graph.engine, org, emitted_ids, source="upload")
     if chunks:
-        background_tasks.add_task(_ingest, org, file_id, prefix, truncated)
+        background_tasks.add_task(_ingest, org, file_id, prefix, truncated, tuple(emitted_ids))
         # N-3 · ORG-BRAIN DISCOVERY (L3.2-U1 step 1) — the SECOND canon door. A file tagged with
         # a rule-bearing kind (policy, sop, pricing, org_structure) is the company's own written
         # rules arriving; doc 02's trigger is "on canon ingest" and this is it. A sweep rather

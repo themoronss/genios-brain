@@ -405,11 +405,28 @@ def _charge_ingestion(org_id: str, result) -> None:
         _log.warning("ingestion charge failed for org=%s (%d messages)", org_id, read)
 
 
-def _run_l2(org_id: str) -> None:
+def _run_l2(org_id: str, *, lease_wait_s: float | None = None, defer: bool = True):
     """Background L2 + L3 + L5 pass for one org. In-process (no Celery/Upstash). Wrapped so a
-    single org's failure is LOGGED (not a silent uvicorn traceback) and never touches another org."""
+    single org's failure is LOGGED (not a silent uvicorn traceback) and never touches another org.
+
+    SINGLE-FLIGHT (G-25). Every caller — the sweep tick, a backfill, sync-all, the warm lane —
+    runs the chain under the org's `org_run_leases` row, so two `process_pending` runs for one org
+    can no longer pull the same events at once. A caller that finds the org busy waits up to
+    `lease_wait_s` (default `warm_lane.CHAIN_WAIT_SECONDS`), then, with `defer`, queues an org
+    trigger the warm lane runs once the holder finishes: events that landed after the holder
+    started are never lost. Returns the `warm_lane.RunOutcome`; the older callers ignore it."""
     if _graph is None:
-        return
+        return None
+    from genios_engine.platform import warm_lane
+    return warm_lane.run_exclusive(
+        _graph.engine, org_id, lambda: _run_l2_chain(org_id), caller="run_l2",
+        wait_s=warm_lane.CHAIN_WAIT_SECONDS if lease_wait_s is None else lease_wait_s,
+        defer=defer)
+
+
+def _run_l2_chain(org_id: str) -> bool:
+    """THE chain, unguarded: provision → L2 → L4 → cards. Call `_run_l2`, which holds the org
+    lease around it. False when the pass failed (logged here), True otherwise."""
     from genios_engine.platform.stage_timer import stage
     # EVERYTHING LAYER 3 NEEDS BEFORE IT CAN SAY ANYTHING, first, every time.
     #
@@ -448,6 +465,8 @@ def _run_l2(org_id: str) -> None:
                                     llm=_llm, registry=_registry)
     except Exception:
         _log.exception("L2/L3/L5 background pass failed for org_id=%s", org_id)
+        return False
+    return True
 
 
 def _mailbox_owner_for(org_id: str) -> str | None:
@@ -2622,10 +2641,28 @@ def _backfill_one_source(org_id: str, source_type: str, limit: int = 25,
 
 def _process_and_reason_tracked(org_id: str, heartbeat=None) -> None:
     """L2 (chunked, so progress moves) → graph → L3/L5, each surfaced as a plain-language phase.
-    L3 runs ONCE at the very end (not mid-backfill) so the graph is stable when signals emit."""
+    L3 runs ONCE at the very end (not mid-backfill) so the graph is stable when signals emit.
+
+    Single-flight with every other chain caller (`_run_l2`, the warm lane): the org lease is held
+    for the whole pass. A Sync job that finds the org busy waits — heart-beating its job, so it is
+    not taken for dead — up to `warm_lane.SYNC_JOB_WAIT_SECONDS`, then defers to the warm lane,
+    which runs the org as soon as the holder is done. Exceptions still reach the job worker."""
+    from genios_engine.platform import progress as P
+    from genios_engine.platform import warm_lane
+    hb = heartbeat if callable(heartbeat) else (lambda *a, **k: None)
+    outcome = warm_lane.run_exclusive(
+        _graph.engine, org_id, lambda: _process_and_reason_unlocked(org_id, hb),
+        caller="sync_job", wait_s=warm_lane.SYNC_JOB_WAIT_SECONDS, on_wait=hb)
+    if outcome.status == "busy":
+        P.set_phase(_graph.engine, org_id, "intelligence", state="done",
+                    detail="Finishing in the background")
+
+
+def _process_and_reason_unlocked(org_id: str, hb) -> bool:
+    """The Sync job's pass, unguarded — call `_process_and_reason_tracked`. False when the
+    intelligence phase failed (logged and shown as an error phase)."""
     from genios_engine.context.runner import process_pending
     from genios_engine.platform import progress as P
-    hb = heartbeat if callable(heartbeat) else (lambda *a, **k: None)
     eng = _graph.engine
     # The Sync job never provisioned: `_run_l2` does, but this path is what a user's Sync runs, so a
     # brand-new tenant got its packs promoted and its ready domains switched on only at the next
@@ -2692,6 +2729,8 @@ def _process_and_reason_tracked(org_id: str, heartbeat=None) -> None:
     except Exception:      # noqa: BLE001
         _log.exception("intelligence phase failed org=%s", org_id)
         P.set_phase(eng, org_id, "intelligence", state="error")
+        return False
+    return True
 
 
 import os as _os
@@ -3052,6 +3091,15 @@ async def composio_webhook(request: Request,
                                 emitted=sum(1 for r in outcome.results if r.outcome == "emitted"),
                                 scanned=len(raw_objs)),
                     org_id=conn.org_id, stores=_l1_stores())
+        # WARM LANE: the events are published and L2-pullable now; queue them so graph,
+        # reasoning and cards follow within minutes instead of at the next sweep tick. After the
+        # finalizer, never before it — a run that started earlier could not see what it wrote.
+        emitted = [r.event.event_id for r in outcome.results
+                   if r.outcome == "emitted" and getattr(r, "event", None) is not None]
+        if emitted and _graph is not None:
+            from genios_engine.platform import warm_lane
+            warm_lane.enqueue(_graph.engine, conn.org_id, emitted,
+                              source=f"webhook:{conn.source_type}")
     primary = outcome.primary
     if primary is None:                                  # every object poisoned → quarantined, not lost
         return {"ingested": False, "reason": "capture failed", "source": conn.source_type,
