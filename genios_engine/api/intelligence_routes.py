@@ -14,7 +14,9 @@ from pydantic import BaseModel
 from sqlalchemy import text
 
 from genios_engine.deliver.actions import WRONG_REASONS
-from genios_engine.platform.auth import AuthCtx, get_current_org, require_scope
+from genios_engine.deliver.seat_access import SEAT_REACH_SQL, may_touch_card
+from genios_engine.platform.auth import (AuthCtx, get_current_org, require_scope,
+                                         require_workspace_user)
 from genios_engine.platform.cache import get_cache
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.canonical import stable_id
@@ -530,7 +532,12 @@ def list_insights(limit: int = 50, state: str = "open",
         params = {"o": org_id, "states": list(states),
                   "l": max(1, min(int(limit), 100))}
         seat_filter = ""
-        if ctx.scopes is not None:
+        if ctx.is_member:
+            # A MEMBER seat reads its seat's reach only (deliver/seat_access.py) — never the admin
+            # queue's unassigned cards.
+            params["seat"] = ctx.seat_id
+            seat_filter = " and " + SEAT_REACH_SQL + " "
+        elif ctx.scopes is not None:
             params["assignee"] = ctx.actor_id or ctx.agent_id
             seat_filter = " and k.assignee=:assignee "
         if state == "resolved":
@@ -925,8 +932,7 @@ def intelligence_feedback(
                  "authority_time": as_of}).first()
             if card is None:
                 raise HTTPException(409, "insight is expired, claimed, revoked, or unauthorized")
-            if (ctx.scopes is not None and card.assignee is not None
-                    and card.assignee not in {actor_id, ctx.agent_id}):
+            if not may_touch_card(c, ctx, body.insight_id, card.assignee):
                 raise HTTPException(403, "insight is assigned to a different seat")
 
             cause = _FB_CAUSE[body.action]
@@ -1077,8 +1083,7 @@ def dismiss_insight(insight_id: str,
             {"card": insight_id, "o": org_id, "authority_time": as_of}).first()
         if card is None:
             raise HTTPException(409, "insight is no longer actionable")
-        if (ctx.scopes is not None and card.assignee is not None
-                and card.assignee not in {actor_id, ctx.agent_id}):
+        if not may_touch_card(c, ctx, insight_id, card.assignee):
             raise HTTPException(403, "insight is assigned to a different seat")
         c.execute(text(
             "update cards set state='expired' where card_id=:card and org_id=:o"),
@@ -1111,8 +1116,7 @@ def insight_outcome(insight_id: str, body: OutcomeBody,
             {"card": insight_id, "o": org_id}).first()
         if card is None:
             raise HTTPException(404, "insight not found")
-        if (ctx.scopes is not None and card.assignee is not None
-                and card.assignee not in {actor_id, ctx.agent_id}):
+        if not may_touch_card(c, ctx, insight_id, card.assignee):
             raise HTTPException(403, "insight is assigned to a different seat")
         event_id = stable_id("cev", {"org_id": org_id, "card_id": insight_id,
                                      "kind": "outcome", "outcome": outcome})
@@ -1147,9 +1151,10 @@ def handoff_insight(insight_id: str, body: HandoffBody | None = None,
 
 
 @router.get("/v1/morning-brief")
-def morning_brief_v1(org_id: str = Depends(get_current_org)) -> dict:
+def morning_brief_v1(ctx: AuthCtx = Depends(require_workspace_user)) -> dict:
+    """The org's brief for the owner/admins; a member's own seat's brief for a member."""
     from genios_engine.api import workspace_routes as W
-    return W.morning_brief(org_id, org=org_id)
+    return W.build_morning_brief(ctx.org_id, seat_id=ctx.seat_id if ctx.is_member else None)
 
 
 @router.get("/v1/tasks")

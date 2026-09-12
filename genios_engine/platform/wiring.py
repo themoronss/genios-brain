@@ -87,8 +87,13 @@ def make_connector_for(connection, relevance=None) -> SourceConnector:
     if st == "gmail":
         from genios_engine.capture.connectors.composio import ComposioGmailConnector
         ocr = make_ocr(connection.org_id)       # per-tenant; None → native-text only
+        # `composio_gmail_account` pins ONE shared connected account. A seat connection is by
+        # definition not that account — it is a member's own mailbox under its own Composio user
+        # (`{org}:{seat}`) — so it always resolves by user id; pinning it would read the shared
+        # inbox under the member's name.
+        shared = None if getattr(connection, "seat_id", None) else (s.composio_gmail_account or None)
         return ComposioGmailConnector(api_key=key, user_id=uid,
-                                      connected_account_id=s.composio_gmail_account or None, ocr=ocr,
+                                      connected_account_id=shared, ocr=ocr,
                                       relevance=relevance, backfill_days=window.days)
     if st in ("gcal", "calendar", "google_calendar"):
         from genios_engine.capture.connectors.calendar import ComposioCalendarConnector

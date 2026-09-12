@@ -25,7 +25,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
-from genios_engine.platform.auth import get_current_org
+from genios_engine.platform.auth import AuthCtx, get_current_org, require_workspace_user
 from genios_engine.reason.authority import (AUTHORITATIVE_SCORE_SQL,
                                             AUTHORITATIVE_SIGNAL_JOINS,
                                             AUTHORITATIVE_SIGNAL_PREDICATE)
@@ -234,8 +234,20 @@ def update_task(org_id: str, task_id: str, req: TaskUpdate, org: str = Depends(_
     return {"ok": True}
 
 
+def _brief_ctx(org_id: str, ctx: AuthCtx = Depends(require_workspace_user)) -> AuthCtx:
+    if org_id != ctx.org_id:
+        raise HTTPException(403, "org mismatch")
+    return ctx
+
+
 @router.get("/api/org/{org_id}/morning-brief")
-def morning_brief(org_id: str, org: str = Depends(_org)) -> dict:
+def morning_brief(org_id: str, ctx: AuthCtx = Depends(_brief_ctx)) -> dict:
+    """The daily brief for whoever is signed in: the org's for the owner and admins, the seat's own
+    for a member (`build_morning_brief`)."""
+    return build_morning_brief(ctx.org_id, seat_id=ctx.seat_id if ctx.is_member else None)
+
+
+def build_morning_brief(org: str, *, seat_id: str | None = None) -> dict:
     """The manager's daily brief, read from the decisions that already exist.
 
     This endpoint used to `return {"headline": None, "considered": 0, "priorities": []}` — a
@@ -256,8 +268,14 @@ def morning_brief(org_id: str, org: str = Depends(_org)) -> dict:
     """
     g = _store()
     now = datetime.now(timezone.utc)
+    # A MEMBER's brief is their seat's reach — the cards routed to them — and none of the org's
+    # to-do list (`user_tasks` belongs to the workspace, not to a seat).
+    seat_clause, seat_params = "", {}
+    if seat_id:
+        from genios_engine.deliver.seat_access import SEAT_REACH_SQL
+        seat_clause, seat_params = " and " + SEAT_REACH_SQL, {"seat": seat_id}
     with g.engine.connect() as c:
-        overdue = c.execute(text(
+        overdue = [] if seat_id else c.execute(text(
             "select id, text from user_tasks where org_id=:o and status='open' "
             "and due_at is not null and due_at < now() order by due_at asc limit 5"),
             {"o": org}).fetchall()
@@ -271,9 +289,9 @@ def morning_brief(org_id: str, org: str = Depends(_org)) -> dict:
             "left join graph_nodes n on n.node_id=s.subject_node_id and n.org_id=k.org_id "
             "and n.valid_to is null "
             "where k.org_id=:o and k.state in ('queued','surfaced') and s.status='open' "
-            "and k.expires_at > :now and " + AUTHORITATIVE_SIGNAL_PREDICATE + " "
+            "and k.expires_at > :now and " + AUTHORITATIVE_SIGNAL_PREDICATE + seat_clause + " "
             "order by selected_rc.final_utility_bp desc, k.created_at desc, k.card_id"),
-            {"o": org, "authority_time": now, "now": now}).fetchall()
+            {"o": org, "authority_time": now, "now": now, **seat_params}).fetchall()
 
     nags = [{"id": r.id, "nag": f"{r.text} — still open"} for r in overdue]
     priorities = [{

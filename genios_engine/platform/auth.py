@@ -7,6 +7,7 @@ import json
 import secrets
 import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from fastapi import Depends, Header, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -45,14 +46,16 @@ def jwt_encode(payload: dict, secret: str) -> str:
     return f"{head}.{body}.{sig}"
 
 
-def jwt_decode(token: str, secret: str) -> dict | None:
+def jwt_decode(token: str, secret: str, *, verify_exp: bool = True) -> dict | None:
+    """Verified claims, or None. `verify_exp=False` is for LOGOUT only: ending a session with an
+    access token that has just expired is safe (it can only take access away)."""
     try:
         head, body, sig = token.split(".")
         expected = _b64u(hmac.new(secret.encode(), f"{head}.{body}".encode(), hashlib.sha256).digest())
         if not hmac.compare_digest(sig, expected):
             return None
         payload = json.loads(_b64u_dec(body))
-        if payload.get("exp") and time.time() > float(payload["exp"]):
+        if verify_exp and payload.get("exp") and time.time() > float(payload["exp"]):
             return None
         return payload
     except Exception:
@@ -88,17 +91,56 @@ def new_api_key() -> tuple[str, str, str]:
     return raw, hash_key(raw), raw[:12]
 
 
+# ── seat roles ─────────────────────────────────────────────────────────────────────────
+#: The org's owner — the person whose address is `orgs.email`. Their seat row carries `admin`.
+ROLE_OWNER = "owner"
+#: A tenant admin: full org scope, manages the team. NOT GeniOS staff (that is `require_admin`).
+ROLE_ADMIN = "admin"
+#: A member: reads and acts on the cards routed to their own seat, and nothing org-wide.
+ROLE_MEMBER = "member"
+SEAT_ROLES = (ROLE_ADMIN, ROLE_MEMBER)            # what an org_seats / invite row may hold
+
+#: A member session's grant. Every other route resolves the tenant through `get_current_org`,
+#: which refuses any credential carrying a scope list — so a member is deny-by-default everywhere
+#: except routes that name one of these (and filter to the seat) or that explicitly accept
+#: `require_seat` / `require_workspace_user`.
+MEMBER_SCOPES = frozenset({"cards.read", "cards.act", "insights.read", "feedback.write"})
+
+
+def seat_role(seat_email: str | None, role: str | None, org_email: str | None) -> str:
+    """A seat's effective role. The owner is identified by ADDRESS (`orgs.email`), not by the seat
+    row's role, so a founder's seat that an admin demoted is still the owner's."""
+    if seat_email and org_email and seat_email.strip().lower() == org_email.strip().lower():
+        return ROLE_OWNER
+    return ROLE_ADMIN if (role or "").strip().lower() == ROLE_ADMIN else ROLE_MEMBER
+
+
 @dataclass
 class AuthCtx:
     org_id: str
     agent_id: str | None = None
     actor_id: str | None = None
-    scopes: list[str] | None = None      # None = full owner scope (dashboard JWT / legacy key)
+    scopes: list[str] | None = None      # None = full org scope (owner/admin session / legacy key)
     plan_status: str = "active"
     source: str = "legacy"               # jwt | api_key | legacy
+    # Seat identity — JWT sessions only; an API key is issued to an org, not to a person.
+    seat_id: str | None = None
+    role: str | None = None              # owner | admin | member; None = an API key
+    email: str | None = None
+    session_id: str | None = None        # None for a pre-session (legacy) JWT
 
     def has_scope(self, scope: str) -> bool:
         return self.scopes is None or scope in self.scopes
+
+    @property
+    def is_member(self) -> bool:
+        """A member seat: every card read is filtered to what is routed to `seat_id`."""
+        return self.role == ROLE_MEMBER
+
+    @property
+    def is_org_admin(self) -> bool:
+        """A tenant admin in the TENANT's sense — owner, admin seat, or an owner-level org key."""
+        return self.scopes is None and self.role in (None, ROLE_OWNER, ROLE_ADMIN)
 
     @property
     def sees_org_queue(self) -> bool:
@@ -156,22 +198,67 @@ def check_kill_switch() -> None:
 
 
 # ── the resolver ───────────────────────────────────────────────────────────────────────
+_TOKEN_REVOKED = {"code": "TOKEN_REVOKED", "message": "Session no longer valid."}
+
+
+def _session_ctx(payload: dict) -> AuthCtx:
+    """A verified JWT → the seat it speaks for. ONE query either way — the same round trip the old
+    `select 1 from orgs` existence check already paid.
+
+    * A token with a `sid` (every token minted since 0137) must name a live, unrevoked session
+      whose seat is still ACTIVE. The role is read from the seat row, not trusted from the claim,
+      so a demotion or a deactivation takes effect on the next request.
+    * A token without one predates seats. It was only ever issued to the owner, so it resolves to
+      the owner's seat — every existing dashboard session keeps working until it expires.
+    """
+    from genios_engine.platform.seats import OWNER_SEAT_ID
+    org_id = str(payload["org_id"])
+    sid = payload.get("sid")
+    if not sid:
+        if payload.get("seat_id"):          # a seat claim without a session is not one we minted
+            raise HTTPException(401, _TOKEN_REVOKED)
+        with _engine().connect() as c:
+            row = c.execute(text(
+                "select o.id, (select s.seat_id from org_seats s where s.org_id = o.id "
+                "and lower(s.email) = lower(o.email) and s.active "
+                "order by (s.seat_id = :owner) desc, s.seat_id limit 1) as seat_id "
+                "from orgs o where o.id = :o"), {"o": org_id, "owner": OWNER_SEAT_ID}).first()
+        if row is None:
+            raise HTTPException(401, _TOKEN_REVOKED)
+        email = payload.get("email")
+        return AuthCtx(org_id=org_id, actor_id=str(email or "org_owner"), scopes=None,
+                       source="jwt", seat_id=row.seat_id or OWNER_SEAT_ID, role=ROLE_OWNER,
+                       email=email)
+    with _engine().connect() as c:
+        row = c.execute(text(
+            "select a.seat_id, a.revoked_at, a.expires_at, s.email, s.role, s.active, "
+            "o.email as org_email from auth_sessions a join orgs o on o.id = a.org_id "
+            "left join org_seats s on s.org_id = a.org_id and s.seat_id = a.seat_id "
+            "where a.session_id = :sid and a.org_id = :o"),
+            {"sid": str(sid), "o": org_id}).first()
+    if (row is None or row.revoked_at is not None
+            or row.expires_at <= datetime.now(timezone.utc) or not row.active
+            or row.seat_id != payload.get("seat_id")):
+        raise HTTPException(401, _TOKEN_REVOKED)
+    role = seat_role(row.email, row.role, row.org_email)
+    email = row.email or payload.get("email")
+    return AuthCtx(org_id=org_id, actor_id=str(email or row.seat_id),
+                   scopes=None if role != ROLE_MEMBER else sorted(MEMBER_SCOPES),
+                   source="jwt", seat_id=row.seat_id, role=role, email=email,
+                   session_id=str(sid))
+
+
 def verify_bearer(token: str) -> AuthCtx:
     check_kill_switch()
     s = get_settings()
 
-    # Path 1 — JWT dashboard session (stateless, full owner scope)
+    # Path 1 — JWT session (seat-bound; checked against its session row on every request)
     if token.count(".") == 2 and not token.startswith("gn_"):
         payload = jwt_decode(token, s.jwt_secret)
-        if not payload or not payload.get("org_id"):
+        if (not payload or not payload.get("org_id")
+                or payload.get("typ") not in (None, "access")):
             raise HTTPException(401, {"code": "SESSION_EXPIRED", "message": "Please log in again."})
-        org_id = str(payload["org_id"])
-        with _engine().connect() as c:
-            ok = c.execute(text("select 1 from orgs where id=:o"), {"o": org_id}).first()
-        if ok is None:
-            raise HTTPException(401, {"code": "TOKEN_REVOKED", "message": "Session no longer valid."})
-        return AuthCtx(org_id=org_id, actor_id=str(payload.get("email") or "org_owner"),
-                       scopes=None, source="jwt")
+        return _session_ctx(payload)
 
     # Path 2 — gn_live_ API key
     if not token.startswith("gn_live_"):
@@ -291,9 +378,47 @@ def require_scope(scope: str):
 
 
 def require_owner(ctx: AuthCtx = Depends(get_auth_ctx)) -> AuthCtx:
-    """Owner-only mutation boundary. Scoped keys cannot mint or revoke their way to more power."""
+    """Owner-LEVEL mutation boundary: the owner, a tenant-admin seat, or an owner-level org key.
+    Scoped keys and member seats cannot mint or revoke their way to more power."""
     if ctx.scopes is not None:
         raise HTTPException(403, "owner credential required")
+    check_org_kill(ctx.org_id)
+    return ctx
+
+
+def require_account_owner(ctx: AuthCtx = Depends(get_auth_ctx)) -> AuthCtx:
+    """The account's OWNER only — what no teammate may do on the owner's behalf: erase or delete
+    the workspace, rotate the org's primary key, edit the owner's own profile. A tenant admin is
+    refused; an owner-level org key (no seat) keeps the reach it always had."""
+    if ctx.scopes is not None or ctx.role not in (None, ROLE_OWNER):
+        raise HTTPException(403, "workspace owner required")
+    check_org_kill(ctx.org_id)
+    return ctx
+
+
+def require_org_admin(ctx: AuthCtx = Depends(get_auth_ctx)) -> AuthCtx:
+    """Tenant admin: the owner or an `admin` seat (or an owner-level org key). Manages the team —
+    invites, roles, deactivation. Distinct from `require_admin`, which is GeniOS STAFF."""
+    if not ctx.is_org_admin:
+        raise HTTPException(403, "workspace admin required")
+    check_org_kill(ctx.org_id)
+    return ctx
+
+
+def require_seat(ctx: AuthCtx = Depends(get_auth_ctx)) -> AuthCtx:
+    """A signed-in seat of any role. API keys have no seat and are refused."""
+    if not ctx.seat_id:
+        raise HTTPException(403, "a signed-in seat is required")
+    check_org_kill(ctx.org_id)
+    return ctx
+
+
+def require_workspace_user(ctx: AuthCtx = Depends(get_auth_ctx)) -> AuthCtx:
+    """Anyone who works here: an owner-level credential or any signed-in seat. Scoped API keys are
+    refused exactly as `get_current_org` refuses them. A route behind this MUST scope what a member
+    sees — that is the whole reason it is not behind `get_current_org`."""
+    if ctx.scopes is not None and not ctx.seat_id:
+        raise HTTPException(403, "explicit scoped endpoint required for this credential")
     check_org_kill(ctx.org_id)
     return ctx
 
@@ -323,6 +448,10 @@ def require_admin(ctx: AuthCtx = Depends(get_auth_ctx)) -> AuthCtx:
     allowed = superadmin_emails()
     if allowed and (ctx.actor_id or "").strip().lower() in allowed:
         return ctx
+    if ctx.role not in (None, ROLE_OWNER):
+        # The `is_internal` fallback below vouches for an internal TENANT, which used to mean its
+        # owner — the only person who could sign in. A teammate seat of that tenant is not staff.
+        raise HTTPException(403, "admin access required")
     try:
         with _engine().connect() as c:
             row = c.execute(text("select is_internal from orgs where id=:o"),

@@ -91,6 +91,56 @@ def ensure_pull_surface(conn, org_id: str) -> bool:
         {"o": org_id, "ch": PULL_SURFACE}).rowcount > 0
 
 
+class SeatLimitReached(Exception):
+    """Adding one more seat would exceed the plan's allowance."""
+
+    def __init__(self, tier: str, limit: int, used: int) -> None:
+        self.tier, self.limit, self.used = tier, limit, used
+        super().__init__(f"seat limit reached for the {tier} plan ({limit} seats)")
+
+
+def seats_in_use(conn, org_id: str, *, excluding_email: str | None = None) -> int:
+    """Seats this org is consuming: every ACTIVE seat plus every invite still waiting to be
+    accepted (an unexpired, unaccepted invite for an address that holds no active seat).
+
+    A pending invite counts because accepting it must never be the step that fails — the admin who
+    sent it was told there was room. `excluding_email` leaves one address's own pending invite out,
+    so re-sending or accepting an invite is not counted against itself.
+    """
+    active = int(conn.execute(text(
+        "select count(*) from org_seats where org_id=:o and active"), {"o": org_id}).scalar() or 0)
+    pending = int(conn.execute(text(
+        "select count(*) from org_invites i where i.org_id=:o and i.accepted_at is null "
+        "and (i.expires_at is null or i.expires_at > now()) "
+        "and lower(i.email) <> lower(coalesce(cast(:x as text), '')) "
+        "and not exists (select 1 from org_seats s where s.org_id=i.org_id and s.active "
+        "and lower(s.email)=lower(i.email))"),
+        {"o": org_id, "x": excluding_email}).scalar() or 0)
+    return active + pending
+
+
+def assert_seat_capacity(conn, org_id: str, *, adding_email: str | None = None) -> dict:
+    """THE seat limit — one rule for inviting, accepting and seeding a seat.
+
+    Three writers used to answer this three ways: `/seats` against a hardcoded
+    `{"trial": 2, "startup": 5, ...}` that disagreed with billing, invites against
+    `billing.plan_seat_limit` while counting members that nothing ever wrote. The plan's own
+    `seats` is now the only number, and `seats_in_use` the only count.
+
+    Locks the org row for the rest of the caller's transaction, so two concurrent additions cannot
+    both see the last free seat. Raises `SeatLimitReached`.
+    """
+    from genios_engine.platform.billing import plan_seat_limit
+    tier = str(conn.execute(text("select subscription_tier from orgs where id=:o for update"),
+                            {"o": org_id}).scalar() or "trial").lower()
+    ensure_owner_seat(conn, org_id)          # the owner occupies a seat whether or not it was seeded
+    limit = plan_seat_limit(tier)
+    used = seats_in_use(conn, org_id, excluding_email=adding_email)
+    if used + 1 > limit:
+        raise SeatLimitReached(tier, limit, used)
+    return {"tier": tier, "limit": limit, "used": used}
+
+
 def provision_org(conn, org_id: str) -> dict:
     """Everything an org must have before any layer can route for it."""
     return {"seat": ensure_owner_seat(conn, org_id),

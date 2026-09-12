@@ -41,6 +41,11 @@ class RawObject:
     #: contract, not new work: it makes the participant set survive past the payload TTL.
     recipients: tuple[str, ...] = ()
     raw: dict[str, Any] = field(default_factory=dict)
+    #: An audience the DOOR already knows, which no per-source rule could derive. Set only by a
+    #: deliberate-intake door that was told who the object is for — a seat's PERSONAL upload is
+    #: `private` to that seat, where the `upload` rule would say `org`. None (every connector) =
+    #: derive it from the source's rule, exactly as before.
+    visibility: Any = None
 
     @property
     def watermark_at(self) -> datetime:

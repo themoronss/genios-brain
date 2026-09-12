@@ -5,7 +5,7 @@ from typing import Protocol
 
 from sqlalchemy import text
 
-from genios_engine.contracts.connection import Connection
+from genios_engine.contracts.connection import WORKSPACE, Connection
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.crypto import decrypt, encrypt
 from genios_engine.platform.db import get_engine
@@ -75,32 +75,36 @@ _UPSERT = text(
     """
     insert into connections
       (connection_id, org_id, provider, source_type, composio_user_id, capture_scope,
-       status, created_at)
+       status, created_at, seat_id, ownership_type)
     values
       (:connection_id, :org_id, :provider, :source_type, :composio_user_id,
-       cast(:config as jsonb), :status, :created_at)
+       cast(:config as jsonb), :status, :created_at, :seat_id, :ownership_type)
     on conflict (connection_id) do update set
       composio_user_id = excluded.composio_user_id,
-      capture_scope = excluded.capture_scope, status = excluded.status
+      capture_scope = excluded.capture_scope, status = excluded.status,
+      seat_id = excluded.seat_id, ownership_type = excluded.ownership_type
     """
 )
 _COLS = ("connection_id, org_id, provider, source_type, composio_user_id, "
-         "capture_scope, status, created_at")
+         "capture_scope, status, created_at, seat_id, ownership_type")
 
 
 def _to_conn(row) -> Connection:
     cfg = row.capture_scope
     if isinstance(cfg, str):
         cfg = json.loads(cfg) if cfg else {}
+    seat_id = getattr(row, "seat_id", None)
     return Connection(connection_id=row.connection_id, org_id=row.org_id,
                       provider=row.provider, source_type=row.source_type,
                       composio_user_id=row.composio_user_id, config=_open_config(cfg or {}),
-                      status=row.status, created_at=row.created_at)
+                      status=row.status, created_at=row.created_at, seat_id=seat_id or None,
+                      ownership_type=getattr(row, "ownership_type", None) or WORKSPACE)
 
 
 class PostgresConnectionStore:
     """Per-org connections in Supabase — the multi-tenant identity table. 30 startups
-    = 30 rows; each carries its own composio_user_id (never in .env)."""
+    = 30 rows; each carries its own composio_user_id (never in .env). A seat connection
+    (0138) additionally names the seat that owns it."""
 
     def __init__(self, database_url: str) -> None:
         self._engine = get_engine(database_url)
@@ -111,7 +115,8 @@ class PostgresConnectionStore:
                 "connection_id": c.connection_id, "org_id": c.org_id, "provider": c.provider,
                 "source_type": c.source_type, "composio_user_id": c.composio_user_id,
                 "config": json.dumps(_seal_config(c.config), default=str), "status": c.status,
-                "created_at": c.created_at,
+                "created_at": c.created_at, "seat_id": c.seat_id,
+                "ownership_type": c.ownership_type,
             })
 
     def list_active(self, source_type: str | None = None) -> list[Connection]:

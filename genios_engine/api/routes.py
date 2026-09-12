@@ -50,6 +50,9 @@ from genios_engine.platform.wiring import (make_agent_event_store,
 # execution, invisible to every import check and to any test that did not walk that exact line.
 from sqlalchemy import text
 
+from genios_engine.contracts.connection import composio_user_id_for
+from genios_engine.platform.auth import check_org_kill, verify_bearer
+
 from genios_engine.reason import actionability as _decisive
 
 router = APIRouter()
@@ -453,6 +456,25 @@ def _mailbox_owner_for(org_id: str) -> str | None:
         return None
 
 
+def _mailbox_owner_for_connection(connection) -> str | None:
+    """The mailbox owner for ONE connection. A workspace connection is the org's mailbox — the
+    signup address, exactly `_mailbox_owner_for`. A SEAT connection (0138) is that member's own
+    mailbox, so its owner is the seat's address: a message in a member's inbox is visible to its
+    participants and to THAT member — never to the founder merely because they own the org."""
+    seat_id = getattr(connection, "seat_id", None)
+    if not seat_id:
+        return _mailbox_owner_for(connection.org_id)
+    if _graph is None:
+        return None
+    try:
+        with _graph.engine.connect() as c:
+            return c.execute(text(
+                "select lower(email) from org_seats where org_id=:o and seat_id=:s "
+                "and email is not null"), {"o": connection.org_id, "s": seat_id}).scalar()
+    except Exception:      # noqa: BLE001 — visibility enrichment never blocks a sync
+        return None
+
+
 def _sync_connection(connection, mode: str, limit: int) -> None:
     """ONE connection's full pass (L1 sync + L2) — background, per-org independent. A sync failure
     is LOGGED with org/connection context (was a bare `except: pass` — the exact 'stuck tenant' an
@@ -463,7 +485,7 @@ def _sync_connection(connection, mode: str, limit: int) -> None:
                  parked_store=_parked, relevance=make_relevance_classifier(connection.org_id),
                  trace_repo=_trace_repo, payload_store=_payload_store,
                  prepared_store=_prepared_store,
-                 mailbox_owner=_mailbox_owner_for(connection.org_id),
+                 mailbox_owner=_mailbox_owner_for_connection(connection),
                  sender_resolver=_sender_resolver_for(connection.org_id),
                  cursor_store=_cursors,
                  document_job_store=_documents, source=connection.source_type, max_pages=20,
@@ -615,7 +637,7 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
                      repo=_repo, mode=mode, limit=limit, parked_store=_parked, relevance=rc,
                      trace_repo=_trace_repo, payload_store=_payload_store,
                      prepared_store=_prepared_store,
-                     mailbox_owner=_mailbox_owner_for(conn.org_id),
+                     mailbox_owner=_mailbox_owner_for_connection(conn),
                      sender_resolver=_sender_resolver_for(conn.org_id),
                      cursor_store=_cursors,
                      document_job_store=_documents, source=conn.source_type, max_pages=pages,
@@ -997,7 +1019,7 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
                                limit=limit, parked_store=_parked, relevance=rc,
                                trace_repo=_trace_repo, payload_store=_payload_store,
                                prepared_store=_prepared_store,
-                               mailbox_owner=_mailbox_owner_for(conn.org_id),
+                               mailbox_owner=_mailbox_owner_for_connection(conn),
                                sender_resolver=_sender_resolver_for(conn.org_id),
                                cursor_store=_cursors, document_job_store=_documents,
                                source=conn.source_type, max_pages=20,
@@ -1122,7 +1144,7 @@ def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
                 # drain's rows carry a participants set missing the account that owns the
                 # mailbox, so a message's ACL depended on which door it came through — and this
                 # is the door that lands a tenant's whole history.
-                mailbox_owner=_mailbox_owner_for(conn.org_id),
+                mailbox_owner=_mailbox_owner_for_connection(conn),
                 coverage_fn=_coverage_fn_for(conn.org_id),
                 esqe=_esqe_stage_for(conn.org_id),
                 semantic=_semantic_lane_for(conn.org_id),
@@ -2045,17 +2067,42 @@ def waitlist_entries(org_id: str = Depends(get_current_org)) -> dict:
 
 
 # ── self-serve connect (frontend initiates Composio OAuth) ───────────────────────
+#: WHOSE account a connect / status / disconnect call is about (migration 0138).
+_CONNECT_SCOPES = ("workspace", "seat")
+
+
+def _connect_principal(ctx: AuthCtx, scope: str | None) -> tuple[str, str | None]:
+    """(org_id, seat_id | None) for a connect / status / disconnect call.
+
+    `workspace` — the default, and every call that existed before seats — is the org's own
+    sources: it needs an owner-level credential, exactly what `get_current_org` always required.
+    `seat` is the caller's OWN account (a member's mailbox) and needs only a signed-in seat. The
+    seat always comes from the credential, never from the request."""
+    scope = (scope or "workspace").strip().lower()
+    if scope not in _CONNECT_SCOPES:
+        raise HTTPException(422, "scope must be 'workspace' or 'seat'")
+    if scope == "workspace":
+        return get_current_org(ctx), None
+    if not ctx.seat_id:
+        raise HTTPException(403, "a personal connection needs a signed-in seat")
+    check_org_kill(ctx.org_id)
+    return ctx.org_id, ctx.seat_id
+
+
 class InitiateConnect(BaseModel):
     source_type: str
     auth_config_id: str                 # from Composio, per toolkit
-    user_id: str                        # the org's Composio entity/label
+    user_id: str = ""                   # the org's Composio label (workspace scope; default org_id)
     callback_url: str | None = None
+    scope: str = "workspace"            # workspace (the org's) | seat (the caller's own account)
 
 
 @router.post("/connect/initiate")
-def connect_initiate(body: InitiateConnect, org_id: str = Depends(get_current_org)) -> dict:
+def connect_initiate(body: InitiateConnect, ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
     """Authenticated tenant starts OAuth for a tool → Composio redirect URL. After authorizing,
-    add a /connections row with the same user_id."""
+    add a /connections row with the same user_id. `scope=seat` connects the CALLER's own account
+    under its own Composio user (`{org}:{seat}`); the body's `user_id` is ignored for it."""
+    org_id, seat_id = _connect_principal(ctx, body.scope)
     from genios_engine.platform.wiring import IMPLEMENTED_SOURCE_TYPES
     if body.source_type not in IMPLEMENTED_SOURCE_TYPES:
         raise HTTPException(400, f"'{body.source_type}' is not available yet — no connector is "
@@ -2066,12 +2113,13 @@ def connect_initiate(body: InitiateConnect, org_id: str = Depends(get_current_or
         raise HTTPException(400, "Composio not configured")
     from composio import Composio
     c = Composio(api_key=s.composio_api_key)
-    req = c.connected_accounts.initiate(body.user_id, body.auth_config_id,
+    user_id = composio_user_id_for(org_id, seat_id) if seat_id else (body.user_id or org_id)
+    req = c.connected_accounts.initiate(user_id, body.auth_config_id,
                                         callback_url=body.callback_url)
     redirect = (getattr(req, "redirect_url", None) or getattr(req, "redirect_uri", None)
                 or getattr(req, "redirectUrl", None))
     return {"redirect_url": redirect, "request_id": getattr(req, "id", None),
-            "source_type": body.source_type}
+            "source_type": body.source_type, "scope": "seat" if seat_id else "workspace"}
 
 
 # frontend tool name → Composio toolkit slug (Composio slugs are lowercase)
@@ -2096,14 +2144,8 @@ def _find_auth_config(comp, slug: str) -> str | None:
     return None
 
 
-@router.get("/auth/{tool}/connect")
-def tool_connect_redirect(tool: str, org_id: str, callback: str | None = None):
-    """Full-page OAuth start for a tool (the integrations 'Connect' button navigates here). It's a
-    top-level browser navigation so the JWT can't be sent — org_id comes as a query param and only
-    STARTS an OAuth flow (no tenant data exposed). Finds the toolkit's Composio auth config, mints a
-    Connect Link (connected_accounts.link), mirrors a connection row so /sync works after auth, and
-    302-redirects the browser to the provider's consent page."""
-    from fastapi.responses import RedirectResponse
+def _composio_link(tool: str, user_id: str, callback: str | None) -> str:
+    """Mint a Composio Connect Link for `tool` under ONE Composio user → the consent-page URL."""
     s = get_settings()
     if not s.use_real_composio:
         raise HTTPException(400, "Composio not configured — set GENIOS_COMPOSIO_API_KEY in the engine .env")
@@ -2126,21 +2168,68 @@ def tool_connect_redirect(tool: str, org_id: str, callback: str | None = None):
     try:
         # callback_url → after the user authorizes, Composio sends them BACK to the dashboard
         # (instead of leaving them on the 'you can close this window' page).
-        req = (comp.connected_accounts.link(org_id, auth_config_id, callback_url=callback)
-               if callback else comp.connected_accounts.link(org_id, auth_config_id))
+        req = (comp.connected_accounts.link(user_id, auth_config_id, callback_url=callback)
+               if callback else comp.connected_accounts.link(user_id, auth_config_id))
     except Exception as e:      # noqa: BLE001 — surface a readable message, not a 500
         raise HTTPException(502, f"Composio link failed for {slug}: {str(e)[:250]}")
     redirect = (getattr(req, "redirect_url", None) or getattr(req, "redirect_uri", None)
                 or getattr(req, "redirectUrl", None))
     if not redirect:
         raise HTTPException(502, f"Composio returned no redirect URL for {slug}")
+    return redirect
+
+
+def _connect_started(org_id: str, tool: str, seat_id: str | None) -> None:
     # NOTE: we do NOT mirror a local connection row here — a click ≠ a completed OAuth. The tool
     # is "connected" only once Composio reports an ACTIVE account (see _composio_connected below),
     # which is the single source of truth for status + sync.
     from genios_engine.platform.audit import record
     record(org_id, "source_connect_started", actor_type="user", target_type="source",
-           target_id=_norm_source(tool), metadata={"audit_category": "update", "tool": tool})
+           target_id=_norm_source(tool),
+           metadata={"audit_category": "update", "tool": tool,
+                     "scope": "seat" if seat_id else "workspace", "seat_id": seat_id})
+
+
+@router.get("/auth/{tool}/connect")
+def tool_connect_redirect(tool: str, org_id: str, callback: str | None = None,
+                          scope: str = "workspace", token: str | None = None):
+    """Full-page OAuth start for a tool (the integrations 'Connect' button navigates here). It's a
+    top-level browser navigation so the JWT can't be sent as a header — for the WORKSPACE (default)
+    org_id comes as a query param and only STARTS an OAuth flow (no tenant data exposed). Finds the
+    toolkit's Composio auth config, mints a Connect Link (connected_accounts.link) and
+    302-redirects the browser to the provider's consent page.
+
+    `scope=seat` connects the CALLER's own account under its own Composio user (`{org}:{seat}`).
+    That one must prove who the caller is, so it carries the caller's short-lived access token in
+    `token`; clients that can send a header should use `POST /integrations/{tool}/connect`."""
+    from fastapi.responses import RedirectResponse
+    seat_id = None
+    if (scope or "workspace").strip().lower() != "workspace":
+        if not token:
+            raise HTTPException(401, "a personal connection needs the caller's access token")
+        seat_org, seat_id = _connect_principal(verify_bearer(token), scope)
+        if seat_org != org_id:
+            raise HTTPException(403, "org mismatch")
+    redirect = _composio_link(tool, composio_user_id_for(org_id, seat_id), callback)
+    _connect_started(org_id, tool, seat_id)
     return RedirectResponse(redirect, status_code=302)
+
+
+class ConnectLink(BaseModel):
+    scope: str = "workspace"            # workspace (the org's) | seat (the caller's own account)
+    callback: str | None = None
+
+
+@router.post("/integrations/{tool}/connect")
+def tool_connect_link(tool: str, body: ConnectLink,
+                      ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
+    """The authenticated JSON twin of `GET /auth/{tool}/connect`: returns the consent URL to open
+    instead of redirecting, so no token ever rides in a URL. What the desktop app uses."""
+    org_id, seat_id = _connect_principal(ctx, body.scope)
+    redirect = _composio_link(tool, composio_user_id_for(org_id, seat_id), body.callback)
+    _connect_started(org_id, tool, seat_id)
+    return {"redirect_url": redirect, "tool": _norm_source(tool),
+            "scope": "seat" if seat_id else "workspace"}
 
 
 # Composio toolkit slug → our source_type (reverse of _TOOLKIT_SLUGS). Keys must match the ids the
@@ -2157,7 +2246,8 @@ def _norm_source(tool: str) -> str:
     return _SLUG_TO_SOURCE.get(slug, tool.lower())
 
 
-def _mirror_connection(org_id: str, source_type: str, *, status: str = "connected") -> None:
+def _mirror_connection(org_id: str, source_type: str, *, status: str = "connected",
+                       seat_id: str | None = None) -> None:
     """Upsert a `connections` row once Composio confirms a source is really ACTIVE.
 
     This is the ONLY thing that lets the 6-hourly scheduler (run_sync_sweep → list_active()) ever
@@ -2172,15 +2262,19 @@ def _mirror_connection(org_id: str, source_type: str, *, status: str = "connecte
     if _connections is None:
         return
     from genios_engine.contracts.connection import Connection
+    # A SEAT connection (0138) gets its own deterministic id and its own Composio user, so a
+    # member's Gmail and the workspace Gmail are two rows the sweep syncs separately.
+    cid = f"con_{org_id}_{seat_id}_{source_type}" if seat_id else f"con_{org_id}_{source_type}"
     try:
-        _connections.add(Connection(connection_id=f"con_{org_id}_{source_type}", org_id=org_id,
-                                    source_type=source_type, composio_user_id=org_id,
-                                    status=status))
+        _connections.add(Connection(connection_id=cid, org_id=org_id, source_type=source_type,
+                                    composio_user_id=composio_user_id_for(org_id, seat_id),
+                                    status=status, seat_id=seat_id))
     except Exception:      # noqa: BLE001 — mirroring must never block the sync itself
         _log.exception("connection mirror failed org=%s source=%s", org_id, source_type)
 
 
-def _adopt_completed_oauth(org_id: str, accounts: list[dict]) -> None:
+def _adopt_completed_oauth(org_id: str, accounts: list[dict], *,
+                           seat_id: str | None = None) -> None:
     """Mirror every ACTIVE Composio account into `connections`, and pull once if it never has.
 
     ADDITIVE AND IDEMPOTENT. `_mirror_connection` upserts a deterministic id, so a poll every
@@ -2195,15 +2289,20 @@ def _adopt_completed_oauth(org_id: str, accounts: list[dict]) -> None:
     if not active or _connections is None:
         return
     try:
+        # Only THIS owner's connections: a member's Gmail must not make the workspace Gmail look
+        # already adopted, nor the other way round.
         known = {c.source_type: c.status for c in _connections.list_active()
-                 if c.org_id == org_id}
+                 if c.org_id == org_id and (getattr(c, "seat_id", None) or None) == seat_id}
     except Exception:      # noqa: BLE001
         _log.exception("connection index unreadable for org=%s", org_id)
         return
     fresh = [st for st in active if known.get(st) != "connected"]
     for st in fresh:
-        _mirror_connection(org_id, st)
+        _mirror_connection(org_id, st, seat_id=seat_id)
     if not fresh or _graph is None:
+        return
+    if seat_id:
+        _first_pull_seat(org_id, seat_id, fresh)
         return
     # NEVER PULLED, not "not pulled recently". A source with a cursor has been read before and
     # belongs to the ordinary sweep; a source with none has no history at all, and waiting six
@@ -2228,10 +2327,46 @@ def _adopt_completed_oauth(org_id: str, accounts: list[dict]) -> None:
         _log.exception("first-pull enqueue failed for org=%s", org_id)
 
 
-def _composio_connected(org_id: str) -> list[dict]:
-    """The org's Composio accounts (the source of truth for what's connected). ACTIVE = usable."""
+_seat_first_pulls: set[str] = set()
+_seat_first_pull_lock = threading.Lock()
+
+
+def _first_pull_seat(org_id: str, seat_id: str, sources: list[str]) -> None:
+    """A member's first OAuth → their first pull, now, in the background.
+
+    The org-level job queue (`sync_jobs`) syncs the WORKSPACE connection of a source, so it cannot
+    run this; the per-connection sweep would reach it on its next tick, which is exactly the wait
+    the workspace adoption above exists to remove. Once per connection per process, and only for a
+    connection with no cursor yet — `run_sync` is dedup-safe and the cursor it writes makes every
+    later poll skip this."""
+    for st in sources:
+        cid = f"con_{org_id}_{seat_id}_{st}"
+        with _seat_first_pull_lock:
+            if cid in _seat_first_pulls:
+                continue
+            _seat_first_pulls.add(cid)
+        try:
+            with _graph.engine.connect() as c:
+                pulled = c.execute(text(
+                    "select 1 from sync_cursors where org_id=:o and connection_id=:c limit 1"),
+                    {"o": org_id, "c": cid}).first()
+            conn = _connections.get(cid)
+        except Exception:      # noqa: BLE001 — see `_adopt_completed_oauth`: never raises
+            _log.exception("seat first-pull check failed org=%s conn=%s", org_id, cid)
+            continue
+        if pulled is not None or conn is None:
+            continue
+        threading.Thread(target=_sync_connection, args=(conn, "incremental", 25),
+                         name=f"seat-first-pull-{cid}", daemon=True).start()
+        _log.info("first sync started for seat connection org=%s conn=%s", org_id, cid)
+
+
+def _composio_connected(org_id: str, user_id: str | None = None) -> list[dict]:
+    """The Composio accounts under ONE Composio user (the source of truth for what's connected):
+    the org's own by default (workspace), or a seat's `{org}:{seat}`. ACTIVE = usable."""
     from composio import Composio
-    acs = Composio(api_key=get_settings().composio_api_key).connected_accounts.list(user_ids=[org_id])
+    acs = Composio(api_key=get_settings().composio_api_key).connected_accounts.list(
+        user_ids=[user_id or org_id])
     items = getattr(acs, "items", None) or getattr(acs, "data", None) or []
     out = []
     for a in items:
@@ -2246,21 +2381,26 @@ def _composio_connected(org_id: str) -> list[dict]:
 
 def _org_tool_connection(org_id: str, tool: str):
     return next((c for c in _connections.list_active()
-                 if c.org_id == org_id and c.source_type == tool), None)
+                 if c.org_id == org_id and c.source_type == tool
+                 and not getattr(c, "seat_id", None)), None)       # the WORKSPACE connection
 
 
 @router.post("/integrations/{tool}/disconnect")
-def integration_disconnect(tool: str, wipe_data: bool = False,
-                           org_id: str = Depends(get_current_org)) -> dict:
-    """Disconnect a tool for the authed tenant — deletes the Composio account(s) for that toolkit.
+def integration_disconnect(tool: str, wipe_data: bool = False, scope: str = "workspace",
+                           ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
+    """Disconnect a tool — deletes the Composio account(s) for that toolkit under ONE Composio
+    user: the org's (scope=workspace, the default) or the caller's own (scope=seat).
     wipe_data=false → keep the captured graph data; wipe_data=true → also delete source_events +
-    raw payloads for that source."""
+    raw payloads, but only what THAT owner's connections captured: a workspace wipe never deletes
+    a member's mailbox, and a member's wipe never touches the org's."""
+    org_id, seat_id = _connect_principal(ctx, scope)
+    source = _norm_source(tool)
     removed = 0
     if get_settings().use_real_composio:
         from composio import Composio
         comp = Composio(api_key=get_settings().composio_api_key)
-        for a in _composio_connected(org_id):
-            if a["source_type"] == _norm_source(tool) and a.get("id"):
+        for a in _composio_connected(org_id, composio_user_id_for(org_id, seat_id)):
+            if a["source_type"] == source and a.get("id"):
                 try:
                     comp.connected_accounts.delete(a["id"]); removed += 1
                 except Exception:      # noqa: BLE001
@@ -2270,30 +2410,40 @@ def integration_disconnect(tool: str, wipe_data: bool = False,
         from sqlalchemy import text
         from genios_engine.platform.db import get_engine
         eng = get_engine(get_settings().database_url)
+        mine = (" and connection_id in (select connection_id from connections "
+                "where org_id=:o and seat_id=:seat)" if seat_id else
+                " and connection_id not in (select connection_id from connections "
+                "where org_id=:o and seat_id is not null)")
+        params = {"o": org_id, "s": source, **({"seat": seat_id} if seat_id else {})}
         with eng.begin() as c:
             wiped = c.execute(text("delete from raw_payloads where org_id=:o and event_id in "
-                                   "(select event_id from source_events where org_id=:o and source=:s)"),
-                              {"o": org_id, "s": _norm_source(tool)}).rowcount
-            c.execute(text("delete from source_events where org_id=:o and source=:s"),
-                      {"o": org_id, "s": _norm_source(tool)})
-    _mirror_connection(org_id, _norm_source(tool), status="disconnected")
+                                   "(select event_id from source_events where org_id=:o and source=:s"
+                                   + mine + ")"), params).rowcount
+            c.execute(text("delete from source_events where org_id=:o and source=:s" + mine),
+                      params)
+    _mirror_connection(org_id, source, status="disconnected", seat_id=seat_id)
     from genios_engine.platform.audit import record
     record(org_id, "source_disconnected", actor_type="user", target_type="source",
-           target_id=_norm_source(tool),
+           target_id=source,
            metadata={"audit_category": "update", "tool": tool, "wipe_data": wipe_data,
-                     "accounts_removed": removed, "events_wiped": wiped})
+                     "accounts_removed": removed, "events_wiped": wiped,
+                     "scope": "seat" if seat_id else "workspace", "seat_id": seat_id})
     return {"disconnected": True, "tool": tool, "accounts_removed": removed,
-            "data_wiped": bool(wipe_data), "payloads_wiped": wiped}
+            "data_wiped": bool(wipe_data), "payloads_wiped": wiped,
+            "scope": "seat" if seat_id else "workspace"}
 
 
 @router.get("/integrations/status")
-def integrations_status(org_id: str = Depends(get_current_org)) -> dict:
+def integrations_status(scope: str = "workspace",
+                        ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
     """Per-tool connection status from Composio's ACTUAL accounts (source of truth). ACTIVE = usable;
-    EXPIRED/INITIATED = needs (re)connect. This is what the integrations page reads."""
+    EXPIRED/INITIATED = needs (re)connect. This is what the integrations page reads.
+    `scope=seat` answers for the CALLER's own accounts (a member's mailbox), counts included."""
+    org_id, seat_id = _connect_principal(ctx, scope)
     if not get_settings().use_real_composio:
         return {}
     try:
-        accounts = _composio_connected(org_id)
+        accounts = _composio_connected(org_id, composio_user_id_for(org_id, seat_id))
     except Exception as e:      # noqa: BLE001
         _log.warning("composio status failed for %s: %s", org_id, e)
         return {}
@@ -2317,7 +2467,7 @@ def integrations_status(org_id: str = Depends(get_current_org)) -> dict:
     # and this route is where the dashboard learns it, because the OAuth callback returns the
     # browser here and the page polls. `_first_pull` is guarded on having never pulled that
     # source at all, so a poll every few seconds cannot re-trigger anything.
-    _adopt_completed_oauth(org_id, accounts)
+    _adopt_completed_oauth(org_id, accounts, seat_id=seat_id)
     out: dict = {}
     for a in accounts:
         active = a["status"] == "ACTIVE"
@@ -2339,23 +2489,28 @@ def integrations_status(org_id: str = Depends(get_current_org)) -> dict:
     if out and _graph is not None:
         try:
             from sqlalchemy import text
+            # A seat's status counts only what ITS OWN connections pulled; the workspace view keeps
+            # the org-wide counts it always showed.
+            own = (" and se.connection_id in (select connection_id from connections "
+                   "where org_id=:o and seat_id=:seat)") if seat_id else ""
+            p = {"o": org_id, **({"seat": seat_id} if seat_id else {})}
             with _graph.engine.connect() as c:
                 ev = {r.source: r for r in c.execute(text(
-                    "select source, count(*) pulled, max(captured_at) last from source_events "
-                    "where org_id=:o group by source"), {"o": org_id})}
+                    "select se.source, count(*) pulled, max(se.captured_at) last "
+                    "from source_events se where se.org_id=:o" + own + " group by se.source"), p)}
                 ent = {r.source: r.n for r in c.execute(text(
                     "select se.source, count(*) n from graph_nodes gn "
                     "join source_events se on se.event_id=gn.created_by_event_id and se.org_id=gn.org_id "
-                    "where gn.org_id=:o and gn.valid_to is null group by se.source"), {"o": org_id})}
+                    "where gn.org_id=:o and gn.valid_to is null" + own + " group by se.source"), p)}
                 fac = {r.source: r.n for r in c.execute(text(
                     "select se.source, count(*) n from graph_facts gf "
                     "join source_events se on se.event_id=gf.created_by_event_id and se.org_id=gf.org_id "
-                    "where gf.org_id=:o and gf.valid_to is null and gf.status='active' group by se.source"),
-                    {"o": org_id})}
+                    "where gf.org_id=:o and gf.valid_to is null and gf.status='active'" + own
+                    + " group by se.source"), p)}
                 llm = {r.source: r.n for r in c.execute(text(
                     "select se.source, count(*) n from llm_costs lc "
                     "join source_events se on se.event_id=lc.event_id and se.org_id=lc.org_id "
-                    "where lc.org_id=:o group by se.source"), {"o": org_id})}
+                    "where lc.org_id=:o" + own + " group by se.source"), p)}
             from datetime import datetime, timezone
             now = datetime.now(timezone.utc)
             for st, entry in out.items():
@@ -3040,7 +3195,7 @@ async def composio_webhook(request: Request,
             prepared_store=_prepared_store, document_job_store=_documents,
             parked_store=_parked, relevance=make_relevance_classifier(conn.org_id),
             sender_resolver=_sender_resolver_for(conn.org_id),
-            mailbox_owner=_mailbox_owner_for(conn.org_id),
+            mailbox_owner=_mailbox_owner_for_connection(conn),
             coverage_fn=_coverage_fn_for(conn.org_id),
             esqe=_esqe_stage_for(conn.org_id),
             # No floor_store / drop_ledger here: the floor runs in `finalize_l1` below, exactly
@@ -4242,6 +4397,11 @@ def list_cards(assignee: str | None = None,
     """Dashboard queue read. org from credential; admin (all queues) only for an owner session
     (JWT / full-scope key), never a caller-supplied flag."""
     _require_l5()
+    if ctx.is_member:
+        # A MEMBER seat reads its seat's reach only — strict, so the admin queue's unassigned
+        # cards stay the admin's (deliver/seat_access.py). The `assignee` filter is ignored.
+        return {"cards": _card_store.queue(ctx.org_id, assignee=ctx.seat_id, admin=False,
+                                           viewer=ctx.seat_id, strict_seat=True)}
     admin = ctx.sees_org_queue                       # owner session OR an org-level API key
     effective_assignee = assignee if admin else (ctx.actor_id or ctx.agent_id)
     # WHICH ROWS is `admin`; WHO IS LOOKING is this. A founder's JWT sees the org queue AND is
@@ -4251,6 +4411,41 @@ def list_cards(assignee: str | None = None,
     return {"cards": _card_store.queue(
         ctx.org_id, assignee=effective_assignee, admin=admin,
         viewer=ctx.actor_id or ctx.agent_id)}
+
+
+def _queue_scope(ctx: AuthCtx, assignee: str | None) -> tuple[bool, str | None, bool]:
+    """(admin, effective assignee, strict) for every queue-shaped read.
+
+    Owner / tenant-admin sessions and org-level keys read the org queue (and may filter it by
+    `assignee`). A MEMBER seat reads its seat's reach only — strict, so the admin queue's
+    unassigned cards stay the admin's. Any other scoped credential keeps its existing lane."""
+    if ctx.is_member:
+        return False, ctx.seat_id, True
+    admin = ctx.sees_org_queue                       # owner session OR an org-level API key
+    return admin, (assignee if admin else (ctx.actor_id or ctx.agent_id)), False
+
+
+def _card_visible(ctx: AuthCtx, card: dict) -> bool:
+    """May this credential read this (already tenant-checked) card?"""
+    if ctx.sees_org_queue:
+        return True
+    if ctx.is_member:
+        from genios_engine.deliver.seat_access import card_reaches_seat
+        if card.get("assignee") == ctx.seat_id:
+            return True
+        with _card_store.engine.connect() as c:
+            return card_reaches_seat(c, ctx.org_id, card.get("card_id"), ctx.seat_id)
+    actor_id = ctx.actor_id or ctx.agent_id
+    return card.get("assignee") is None or card.get("assignee") in {actor_id, ctx.agent_id}
+
+
+def _member_reaches(ctx: AuthCtx, card_id: str) -> bool:
+    """For a MEMBER seat: is this card routed to it? Checked before any action, because the action
+    path's own rule lets anyone act on an UNASSIGNED card — which, for a member, is the admin's
+    queue."""
+    from genios_engine.deliver.seat_access import card_reaches_seat
+    with _card_store.engine.connect() as c:
+        return card_reaches_seat(c, ctx.org_id, card_id, ctx.seat_id)
 
 
 #: Where a card button can be pressed. Anything else is ignored rather than refused, so an older
@@ -4277,12 +4472,12 @@ def card_history(state: str = Query("all"), days: int = Query(30, ge=1, le=365),
     else:
         raise HTTPException(422, {"error": "unknown_state",
                                   "allowed": ["all", *CardStore.HISTORY_STATES]})
-    admin = ctx.sees_org_queue
-    effective_assignee = assignee if admin else (ctx.actor_id or ctx.agent_id)
+    admin, effective_assignee, strict = _queue_scope(ctx, assignee)
     now = datetime.now(timezone.utc)
     rows = _card_store.history(ctx.org_id, assignee=effective_assignee, admin=admin,
                                states=states, since=now - timedelta(days=days),
-                               limit=limit + 1, offset=offset, eval_time=now)
+                               limit=limit + 1, offset=offset, eval_time=now,
+                               **({"strict_seat": True} if strict else {}))
     return {"cards": rows[:limit], "has_more": len(rows) > limit}
 
 
@@ -4295,9 +4490,7 @@ def card_timeline(card_id: str, ctx: AuthCtx = Depends(require_scope("cards.read
 
     from genios_engine.deliver.store import CardStore
     card = _owns_card(card_id, ctx.org_id)
-    actor_id = ctx.actor_id or ctx.agent_id
-    if (not ctx.sees_org_queue and card.get("assignee") is not None
-            and card.get("assignee") not in {actor_id, ctx.agent_id}):
+    if not _card_visible(ctx, card):
         raise HTTPException(403, "card is assigned to a different seat")
     state = card.get("state")
     expires = card.get("expires_at")
@@ -4316,9 +4509,7 @@ def get_card(card_id: str, ctx: AuthCtx = Depends(require_scope("cards.read"))) 
     """Full card.v1 — only if it belongs to the authenticated tenant."""
     _require_l5()
     card = _owns_authoritative_card(card_id, ctx.org_id)
-    actor_id = ctx.actor_id or ctx.agent_id
-    if (not ctx.sees_org_queue and card.get("assignee") is not None
-            and card.get("assignee") not in {actor_id, ctx.agent_id}):
+    if not (ctx.sees_org_queue or _card_visible(ctx, card)):
         raise HTTPException(403, "card is assigned to a different seat")
     # Enrich the detail with the Update-1 decision context: captured profile + relationship signals,
     # the clarity gate (actionable vs context_incomplete), and the card.v2 decision projection
@@ -4346,12 +4537,15 @@ def card_action(card_id: str, body: CardAction,
     _require_l5()
     org_id = ctx.org_id
     actor_id = ctx.actor_id or ctx.agent_id or "authenticated_principal"
+    if ctx.is_member and not _member_reaches(ctx, card_id):
+        raise HTTPException(403, {"ok": False, "error": "assigned_to_different_seat"})
     from genios_engine.deliver.actions import ingest_action
     out = ingest_action(card_store=_card_store, graph=_graph, org_id=org_id,
                         card_id=card_id, actor=actor_id, action=body.action,
                         reason=body.reason, snooze_option=body.snooze_option,
                         custom_until=body.custom_until,
-                        allow_any_assignee=ctx.sees_org_queue,
+                        # a member's reach was proved above; the actor stays their address
+                        allow_any_assignee=ctx.sees_org_queue or ctx.is_member,
                         surface=body.surface if body.surface in _CARD_SURFACES else None)
     if not out.get("ok"):
         status = 403 if out.get("error") == "assigned_to_different_seat" else 422
@@ -4371,9 +4565,11 @@ def context_match(body: ContextMatch,
     belong to the authed tenant. Law 5: the server never learns what the user looked at."""
     _require_l5()
     actor_id = ctx.actor_id or ctx.agent_id or "authenticated_principal"
+    if ctx.is_member and not _member_reaches(ctx, body.card_id):
+        raise HTTPException(403, {"ok": False, "error": "assigned_to_different_seat"})
     result = _card_store.surface_context_match(
         ctx.org_id, body.card_id, body.matched_tag, actor_id=actor_id,
-        allow_any_assignee=ctx.sees_org_queue)
+        allow_any_assignee=ctx.sees_org_queue or ctx.is_member)
     if not result.get("ok"):
         status = 403 if result.get("error") == "assigned_to_different_seat" else 422
         raise HTTPException(status, result)
@@ -4386,6 +4582,9 @@ def digest(assignee: str | None = None,
     """The 08:30 morning summary (§5.15), scoped to the authenticated tenant."""
     _require_l5()
     from genios_engine.deliver.digest import build_digest
+    if ctx.is_member:                    # a member's digest summarises their seat's reach only
+        return build_digest(_card_store, ctx.org_id, assignee=ctx.seat_id, admin=False,
+                            strict_seat=True)
     admin = ctx.sees_org_queue           # same rule as /cards — the digest IS the queue, summarised
     effective_assignee = assignee if admin else (ctx.actor_id or ctx.agent_id)
     return build_digest(
@@ -4409,20 +4608,21 @@ def upsert_seat(body: Seat, ctx: AuthCtx = Depends(require_owner)) -> dict:
     if not seat_id or len(seat_id) > 128:
         raise HTTPException(422, "seat_id must be between 1 and 128 characters")
     from sqlalchemy import text
+
+    from genios_engine.platform.seats import SeatLimitReached, assert_seat_capacity
     with _card_store.engine.begin() as c:
-        tier = str(c.execute(text(
-            "select subscription_tier from orgs where id=:o for share"),
-            {"o": org_id}).scalar() or "trial").lower()
-        seat_limit = {"trial": 2, "startup": 5, "growth": 15, "scale": 50}.get(tier, 2)
         before = c.execute(text(
             "select email, active from org_seats where org_id=:o and seat_id=:s"),
             {"o": org_id, "s": seat_id}).first()
         exists = before is not None
-        active = int(c.execute(text(
-            "select count(*) from org_seats where org_id=:o and active"),
-            {"o": org_id}).scalar() or 0)
-        if not exists and active >= seat_limit:
-            raise HTTPException(409, f"seat limit reached for the {tier} plan ({seat_limit})")
+        # ONE seat limit — the billing plan's, counted by `seats_in_use` (active seats + pending
+        # invites), the same rule inviting and accepting enforce. A REACTIVATION takes a seat too:
+        # checking only brand-new seat ids let deactivate-then-reactivate walk past the plan.
+        if not exists or not bool(before.active):
+            try:
+                assert_seat_capacity(c, org_id, adding_email=body.email)
+            except SeatLimitReached as exc:
+                raise HTTPException(409, str(exc)) from exc
         c.execute(text("insert into org_seats (org_id, seat_id, email, role, active) "
                        "values (:o,:s,:e,:r,true) on conflict (org_id, seat_id) do update set "
                        "email=excluded.email, role=excluded.role, active=true"),
