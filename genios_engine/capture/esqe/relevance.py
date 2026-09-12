@@ -538,8 +538,10 @@ def _parse_verdicts(response: Any, count: int) -> dict[int, tuple[bool, str | No
     return out
 
 
-def _judge_batch(batch: Sequence[RelevanceCandidate], llm: LLMClient) -> list[RelevanceDecision]:
-    """One prompt for up to `MAX_BATCH` ambiguous items."""
+def _judge_batch(batch: Sequence[RelevanceCandidate], llm: LLMClient,
+                 on_response: Any = None) -> list[RelevanceDecision]:
+    """One prompt for up to `MAX_BATCH` ambiguous items. `on_response` sees the raw response
+    (for cost accounting) before it is parsed."""
     prompt = _PROMPT_HEAD + "\n".join(
         _item_block(i, candidate) for i, candidate in enumerate(batch, start=1))
     try:
@@ -549,6 +551,8 @@ def _judge_batch(batch: Sequence[RelevanceCandidate], llm: LLMClient) -> list[Re
         # never on breakage.
         return [_decide(c.event_id, True, RULE_LLM_UNAVAILABLE, DECIDED_BY_LLM,
                         f"LLM-5 transport failure: {exc}") for c in batch]
+    if on_response is not None:
+        on_response(response)
 
     verdicts = _parse_verdicts(response, len(batch))
     decisions: list[RelevanceDecision] = []
@@ -664,6 +668,9 @@ def assess_relevance(candidates: Iterable[RelevanceCandidate], *,
 _GOVERNOR_PROFILE = "email"
 _GOVERNOR_TIER = "T1"
 
+#: `llm_costs.purpose` for every LLM-5 call the page makes.
+COST_PURPOSE = "l1_relevance"
+
 
 @dataclass(frozen=True)
 class PageStats:
@@ -697,9 +704,14 @@ class RelevancePage:
     """
 
     def __init__(self, *, llm: LLMClient | None = None, governor: Any | None = None,
-                 max_batch: int = MAX_BATCH) -> None:
+                 max_batch: int = MAX_BATCH, cost_sink: Any | None = None,
+                 org_id: str | None = None) -> None:
         self._llm = llm
         self._governor = governor
+        #: `GraphStore.record_cost`-shaped. Without it the page still works; its spend is then
+        #: missing from `llm_costs`, and so from the daily ceiling the governor opens from.
+        self._cost_sink = cost_sink
+        self._org_id = org_id
         self._max_batch = max(1, int(max_batch))
         self._verdicts: dict[str, RelevanceDecision] = {}
         self._lock = threading.Lock()
@@ -778,7 +790,7 @@ class RelevancePage:
             batch = pending[start:start + self._max_batch]
             if not self._admit(batch):
                 break
-            judged = _judge_batch(batch, self._llm)
+            judged = _judge_batch(batch, self._llm, self._record)
             with self._lock:
                 for candidate, decision in zip(batch, judged):
                     self._verdicts[candidate.key] = decision
@@ -820,12 +832,29 @@ class RelevancePage:
         if not self._admit([candidate]):
             return _decide(candidate.event_id, True, RULE_COST_REFUSED, DECIDED_BY_BUDGET_GUARD,
                            self._alert)
-        decision = _judge_batch([candidate], llm)[0]
+        decision = _judge_batch([candidate], llm, self._record)[0]
         with self._lock:
             self._verdicts[candidate.key] = decision
         return decision
 
     # -- money ---------------------------------------------------------------------------
+    def _record(self, response: Any) -> None:
+        """One LLM-5 call into `llm_costs`. Never raises: accounting must not drop a message."""
+        sink, org_id = self._cost_sink, self._org_id
+        if sink is None or not org_id:
+            return
+        try:
+            sink(org_id=org_id,
+                 model=str(getattr(response, "model", "")
+                           or getattr(self._llm, "model", "") or "unknown"),
+                 purpose=COST_PURPOSE,
+                 input_tokens=int(getattr(response, "input_tokens", 0) or 0),
+                 output_tokens=int(getattr(response, "output_tokens", 0) or 0),
+                 success=bool(getattr(response, "ok", False)),
+                 error=getattr(response, "error", None))
+        except Exception:      # noqa: BLE001
+            pass
+
     def _admit(self, batch: Sequence[RelevanceCandidate]) -> bool:
         """Ask L1.4.8's governor whether this prompt may be sent. No governor = no ceiling
         configured, which is exactly what `make_cost_governor` returning None means.

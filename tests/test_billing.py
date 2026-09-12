@@ -171,7 +171,9 @@ def test_a_trial_inside_grace_can_still_spend_what_it_has(monkeypatch):
     from genios_engine.platform import billing as B
     BR, _ = _setup(monkeypatch)
     org = "bill_grace"
-    _org_with(BR, org, tier="trial", status="expired", expires_days=-1, grace_days=5, credits=50)
+    # One credit (100 points): enough for the cheapest billable unit, a query. Grace must not
+    # refuse a balance that can still pay for something.
+    _org_with(BR, org, tier="trial", status="expired", expires_days=-1, grace_days=5, credits=100)
     with BR._graph.engine.connect() as c:
         assert B.refusal_for(c, org) is None
 
@@ -219,18 +221,18 @@ def test_the_ledger_route_tells_the_customer_where_the_credits_went(monkeypatch)
         c.execute(text("update orgs set credit_period_start=now() - interval '1 day' where id=:o"),
                   {"o": org})
         B.deduct(c, org, B.cost_of("intelligence_query"), reason="q", idem="L1", bucket="query")
-        B.deduct(c, org, B.cost_of("intelligence_analyze", deep=True), reason="a", idem="L2",
-                 bucket="analyze")
-        B.deduct(c, org, B.cost_of("intelligence_draft"), reason="d", idem="L3", bucket="draft")
-        B.charge_units(c, org, "message_read", 1_240, idem="L4", bucket="ingest")
+        # Rows filed before only the query endpoint was billed. They stay on the ledger and
+        # must still render in the customer's rollup.
+        B.deduct(c, org, 200, reason="intelligence_analyze", idem="L2", bucket="analyze")
+        B.deduct(c, org, 150, reason="intelligence_draft", idem="L3", bucket="draft")
+        B.deduct(c, org, 24_800, reason="message_read", idem="L4", bucket="ingest", units=1_240)
 
     out = BR.ledger(org, org=org)
     assert out["spent_by_bucket"] == {"query": 1.0, "analyze": 2.0, "draft": 1.5, "ingest": 248.0}
     assert out["spent_total"] == 252.5
     assert len(out["entries"]) == 4
-    assert out["action_prices"]["intelligence_analyze_deep"] == 2.0
-    assert out["action_prices"]["message_read"] == 0.2
-    # the row a customer can check: 1,240 messages, 248 credits
+    # the published price list names the one billable action and nothing else
+    assert out["action_prices"] == {"intelligence_query": 1.0}
     ingest = [e for e in out["entries"] if e["bucket"] == "ingest"][0]
     assert (ingest["units"], ingest["amount"]) == (1_240, -248.0)
 

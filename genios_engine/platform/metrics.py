@@ -28,13 +28,18 @@ from genios_engine.platform.billing import PLAN_PRICES, normalize_plan
 INR_PER_USD = 83.0
 
 # ── LLM pricing (USD per token, by model family) ────────────────────────────────────────
-# Keyed by substring so a dated model id (claude-sonnet-5-2026…) still prices correctly. Unknown
-# models fall back to the CHEAPEST family, which under-reports rather than inflating spend — an
-# analytics number should never flatter us by accident.
+# Anthropic first-party list prices (input, output) per MTok. Keyed by substring so a dated model
+# id (claude-sonnet-5-2026…) still prices correctly, and matched IN ORDER — the more specific key
+# must come first, because `sonnet-5` and Sonnet 4.6 are priced differently. The Python lookup and
+# the generated SQL CASE both walk this order. Unknown models fall back to the CHEAPEST family,
+# which under-reports rather than inflating spend — an analytics number should never flatter us.
 LLM_PRICE: dict[str, tuple[float, float]] = {
-    "opus":   (15.0e-6, 75.0e-6),
-    "sonnet": (3.0e-6,  15.0e-6),
-    "haiku":  (0.80e-6, 4.0e-6),
+    "fable":    (10.0e-6, 50.0e-6),       # Fable 5 / 5.1
+    "mythos":   (10.0e-6, 50.0e-6),       # Mythos 5 / 5.1
+    "opus":     (5.0e-6,  25.0e-6),       # Opus 5, 4.8, 4.7, 4.6
+    "sonnet-5": (2.0e-6,  10.0e-6),       # Sonnet 5
+    "sonnet":   (3.0e-6,  15.0e-6),       # Sonnet 4.6
+    "haiku":    (1.0e-6,  5.0e-6),        # Haiku 4.5
 }
 _FALLBACK = "haiku"
 

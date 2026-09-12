@@ -1138,6 +1138,9 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                                "open_loops": open_loops_by_subject.get(nd.node_id, 0),
                                "reasoning_run_id": reasoning_run_id})
                     out["no_new_evidence"] += 1
+                    # Still true, only not re-said: it keeps its open signal through lifecycle
+                    # retirement below, which resolves any (rule, subject) missing from `fired`.
+                    fired.add((rule.id, nd.node_id))
                     continue
 
             selected = reasoned.execution.selected_candidate

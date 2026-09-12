@@ -125,41 +125,26 @@ def to_credits(points: int) -> float:
     return round(int(points) / POINTS_PER_CREDIT, 2)
 
 
-#: Credits charged per billable action. One credit is priced at roughly what one Haiku-class
-#: synthesis costs us at list (~1,400 in / ~70 out => ~$0.0015, about Rs 0.12), so the table
-#: tracks spend instead of guessing. `deep` analysis runs on Sonnet 5 at $3/$15 per Mtok against
-#: Haiku's $0.80/$4.00 — ~3.7x per token on the same prompt shape — so it is 4 credits, not 1.
-#: A draft is output-heavy (500-token ceiling against the query's 700 on a much smaller prompt)
-#: and is a deliverable rather than an explanation, so it is 2.
+#: THE UNIT TABLE, in POINTS (100 = 1 credit). User-facing credits are charged on ONE surface:
+#: `POST /v1/intelligence/query`. One credit is priced at roughly what one Haiku 4.5 synthesis
+#: costs us at list ($1/$5 per MTok; ~1,400 in / ~70 out => ~$0.0018, about Rs 0.15).
 #:
-#: Nothing in the SYNC path appears here, deliberately — see the note on `sync_messages`.
-#: THE UNIT TABLE, in POINTS (100 = 1 credit). One rule decides every row: the customer pays for
-#: WORK THAT PRODUCED SOMETHING FOR THEM, and for nothing else.
-#:
-#: So an email the junk gate threw away is FREE — we did work, they got nothing, and charging for
-#: spam would mean a noisy mailbox costs more than a clean one for no benefit. A cached answer is
-#: free because no work was redone. A message already captured is free because it is only ever
-#: read once. What IS charged is what entered their graph or came back on their screen.
-#:
-#: Nothing costs more than 2 credits. The ladder is deliberately shallow: a customer should be
-#: able to hold it in their head, and a single click that costs five of something is a click
-#: people stop making.
+#: Everything else the engine does is included in the plan: ingestion is metered by
+#: `sync_messages` and bounded in dollars by `ingest_usd_day`, and the extension's analyze and
+#: draft are bounded by the query guard's rate and daily ceilings, not billed.
 COSTS: dict[str, int] = {
-    # ingestion — charged per UNIT of what was actually read, not per email that arrived
-    "message_read":               20,     # 0.2 — one message extracted into the context graph
-    "document_page":              30,     # 0.3 — one attachment page read (OCR + extraction)
-    # intelligence — charged per thing the user asked for
     "intelligence_query":        100,     # 1
-    "intelligence_analyze":      100,     # 1
-    "intelligence_analyze_deep": 200,     # 2   — the bigger model
-    "intelligence_draft":        150,     # 1.5 — a deliverable, not an explanation
 }
 
 #: Named so the free cases are a decision on the record rather than an absence. Every one of
 #: these does real work inside the engine and none of it is billable.
 FREE_UNITS = (
+    "message_read",                       # ingestion is included in the plan, never credits
+    "document_page",                      # an attachment page read (OCR + extraction), likewise
     "message_dropped_as_junk",            # the gate filtered it — they got nothing
     "message_already_captured",           # dedup; a message is read once, ever
+    "intelligence_analyze",               # extension analyze, standard or deep — free
+    "intelligence_draft",                 # extension draft reply — free
     "cached_answer",                      # nothing was recomputed
     "feedback",                           # telling us we were wrong must never cost money
 )
@@ -431,20 +416,6 @@ def deduct(conn, org_id: str, cost: int, *, reason: str, idem: str, bucket: str 
     except Exception:      # noqa: BLE001 — billing is committed; telemetry is best-effort
         pass
     return True
-
-
-def charge_units(conn, org_id: str, action: str, units: int, *, idem: str,
-                 bucket: str, deep: bool = False) -> bool:
-    """Charge `units` of one billable action, priced from the unit table. The ONE way ingestion
-    is billed: a sweep that read 1,240 messages files ONE ledger row for 248 credits carrying
-    `units: 1240`, not 1,240 rows and 1,240 writes on the ingestion path.
-
-    A zero-unit or free action is a no-op that still returns True — "nothing to charge" and
-    "could not charge" must never look the same to the caller."""
-    points = cost_of(action, deep=deep, units=units)
-    if points <= 0:
-        return True
-    return deduct(conn, org_id, points, reason=action, idem=idem, bucket=bucket, units=units)
 
 
 def razorpay_signature(order_id: str, payment_id: str, secret: str) -> str:

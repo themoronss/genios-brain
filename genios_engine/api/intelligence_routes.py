@@ -174,9 +174,9 @@ def _daily_credit_ceiling(org_id: str) -> None:
     """Cap CREDITS spent per org per day. Counted from `credit_ledger`, which is the same ledger
     the balance and the invoice are built from, so the guard and the price cannot drift.
 
-    It used to count rows in `llm_costs` where `purpose='intelligence_query'` — which misses
-    analyze and draft entirely, and counts a call whose credit deduct failed. Two units, two
-    ledgers, one of them incomplete."""
+    Only `/v1/intelligence/query` deducts, so this is that endpoint's spend. Analyze runs
+    behind the same guard: it is free, but it cannot keep running once the day's query
+    ceiling is spent."""
     from genios_engine.platform import billing as B
     try:
         with _graph.engine.connect() as c:
@@ -1263,21 +1263,9 @@ def analyze_contact(contact: str, deep: bool = False, situation: str = "",
                                success=res.ok, error=getattr(res, "error", None))
         except Exception:      # noqa: BLE001
             pass
-        # THE CHARGE. This endpoint is the extension's main surface and ran free: it recorded the
-        # spend in `llm_costs` and never touched the credit ledger, so every analyze — including
-        # `deep`, which is Sonnet, the most expensive call the product makes — was pure loss.
-        # Priced off the same table as everything else, and idempotent on the cache key, so a
-        # retry of the same question on the same graph never charges twice (and a cache HIT never
-        # reaches this branch, so it stays free, exactly like `query`).
-        if res.ok:
-            try:
-                from genios_engine.platform import billing as B
-                price = B.cost_of("intelligence_analyze", deep=deep)
-                with _graph.engine.begin() as c:
-                    B.deduct(c, org_id, price, reason="intelligence_analyze",
-                             idem=f"a:{ckey}", bucket="analyze")
-            except Exception:  # noqa: BLE001 — never let billing break the answer
-                _log.warning("credit deduct failed (analyze) for %s", org_id)
+        # NOT CHARGED. Credits are charged only on `POST /v1/intelligence/query`. The spend is
+        # still recorded in `llm_costs`, and `_enforce_query_budget` above still applies the
+        # RPM, plan, daily and platform ceilings before the model runs.
     _require_stable_query_inputs(
         org_id=org_id, module_id="sales", graph_version=gv,
         authority_epoch=authority_epoch, config_snapshot_id=config_snapshot_id)
@@ -1331,7 +1319,7 @@ def draft_reply(contact: str, instruction: str = "", org_id: str = Depends(get_c
         raise HTTPException(404, "contact not found in context")
     if _llm is None:
         raise HTTPException(503, "LLM not configured")
-    try:                                                    # credit gate before the on-demand LLM
+    try:                                                    # plan gate before the on-demand LLM
         from genios_engine.platform import billing as B
         with _graph.engine.connect() as c:
             refusal = B.refusal_for(c, org_id)
@@ -1357,15 +1345,7 @@ def draft_reply(contact: str, instruction: str = "", org_id: str = Depends(get_c
     draft = (res.parsed or {}).get("draft") if res.ok else None
     if not draft:
         raise HTTPException(502, "draft generation failed")
-    if res.ok:                                              # charge 1 credit for the draft LLM call
-        try:
-            from genios_engine.platform import billing as B
-            idem = f"draft:{org_id}:{contact}:{datetime.now(timezone.utc):%Y%m%d%H%M}"
-            with _graph.engine.begin() as c:
-                B.deduct(c, org_id, B.cost_of("intelligence_draft"), reason="intelligence_draft",
-                         idem=idem, bucket="draft")
-        except Exception:  # noqa: BLE001
-            _log.warning("credit deduct failed (draft) for %s", org_id)
+    # Not charged: credits are charged only on `POST /v1/intelligence/query`.
     return {"draft": draft, "contact": node.display_name}
 
 

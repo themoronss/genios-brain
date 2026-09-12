@@ -248,8 +248,10 @@ _EDGE_COLS = ("edge_version_id, edge_type, from_node_id, to_node_id, confidence,
 
 
 class GraphStore:
-    def __init__(self, database_url: str) -> None:
-        self._engine = get_engine(database_url)
+    def __init__(self, database_url: str | None = None, *, engine=None) -> None:
+        if engine is None and database_url is None:
+            raise ValueError("GraphStore needs a database_url or an engine")
+        self._engine = engine if engine is not None else get_engine(database_url)
 
     @property
     def engine(self):

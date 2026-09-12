@@ -355,6 +355,33 @@ class SemanticLane:
     #: what makes the plan's "under 5% of events reach the model" a measured number instead of a
     #: per-event call rate nobody counted.
     relevance_page: Any | None = None
+    #: A `GraphStore.record_cost`-shaped callable, or None. S2's extraction calls are written to
+    #: `llm_costs` through it — the ledger the cost governor opens each day from, so spend it
+    #: never sees is spend the daily ceiling cannot bind.
+    cost_sink: Any | None = None
+
+
+#: `llm_costs.purpose` for S2's extraction calls (S4's relevance page files `l1_relevance`).
+L1_EXTRACT_COST_PURPOSE = "l1_extract"
+
+
+def _record_extraction_cost(lane: SemanticLane, event: SourceEvent, outcome: Any) -> None:
+    """S2's spend into `llm_costs`. A cache hit made no call and files nothing. Never raises:
+    accounting must not be able to stop a message being captured."""
+    if lane.cost_sink is None or outcome.cache_hit or not outcome.model_calls:
+        return
+    try:
+        lane.cost_sink(org_id=event.org_id,
+                       model=str(getattr(lane.llm, "model", "") or "unknown"),
+                       purpose=L1_EXTRACT_COST_PURPOSE,
+                       input_tokens=int(outcome.input_tokens or 0),
+                       output_tokens=int(outcome.output_tokens or 0),
+                       success=bool(outcome.ok),
+                       error=(None if outcome.ok
+                              else getattr(outcome.parked, "reason_code", None)),
+                       subject_ref=f"event:{event.event_id}")
+    except Exception:      # noqa: BLE001
+        pass
 
 
 @dataclass(frozen=True)
@@ -606,6 +633,7 @@ def run_semantic_lane(event: SourceEvent, prepared: PreparedContent | None,
         eval_time=lane.eval_time, timezone=lane.timezone, locale=lane.locale,
         page_map=page_map, section=section)
     outcome = extract(request, llm=lane.llm, store=lane.cache, open_lane=lane.open_lane)
+    _record_extraction_cost(lane, event, outcome)
     outcome, counters = _grade_spans(outcome, prepared.clean_text, locale=lane.locale,
                                      prepared=prepared, page_map=page_map, section=section)
     return SemanticVerdict(outcome=outcome, spans=counters,

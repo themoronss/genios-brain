@@ -55,7 +55,8 @@ def _play(play_id: str, *, impact=6_000, success=6_000, effort=2_000, risk=1_000
                           success_probability_bp=success, effort_bp=effort, risk_bp=risk)
 
 
-def _request(*, plays=None, root="deal_1", org="org_1") -> ReasoningRequest:
+def _request(*, plays=None, root="deal_1", org="org_1",
+             mode=ExecutionMode.LIVE) -> ReasoningRequest:
     capability = CapabilityManifest(
         capability_id="sales.deal_cooling", version="1.0.0", domain="sales",
         root_entity_type="deal", goal=Goal("restore_momentum", "Restore healthy deal momentum"),
@@ -66,7 +67,7 @@ def _request(*, plays=None, root="deal_1", org="org_1") -> ReasoningRequest:
                               selector_version="selector.v1", facts={"deal.status": "open"})
     return ReasoningRequest(org_id=org, capability=capability, context=context,
                             evaluation_time=NOW, trigger_kind="email.received",
-                            config_snapshot_id="cfg_1")
+                            config_snapshot_id="cfg_1", mode=mode)
 
 
 def _results(confidence=8_000, checks=()):
@@ -117,7 +118,7 @@ def _by_play(synthesis):
 # ---------------------------------------------------------------------------------------------
 
 def test_switch_off_leaves_the_formula_untouched(monkeypatch):
-    monkeypatch.setattr(llm_dm, "enabled_for", lambda _org: False)
+    monkeypatch.setattr(llm_dm, "enabled_for", lambda _org, _mode=None: False)
     fake = FakeLLM()
     monkeypatch.setattr(llm_dm, "client", lambda: fake)
 
@@ -131,7 +132,7 @@ def test_switch_off_leaves_the_formula_untouched(monkeypatch):
 
 def test_switch_on_routes_the_decision_to_the_model(monkeypatch):
     fake = FakeLLM(_answer({"restore_momentum": 6_100}))
-    monkeypatch.setattr(llm_dm, "enabled_for", lambda _org: True)
+    monkeypatch.setattr(llm_dm, "enabled_for", lambda _org, _mode=None: True)
     monkeypatch.setattr(llm_dm, "client", lambda: fake)
 
     synthesis = DecisionMaker().decide(_request(), _results(), terminal=None, uncertainty=(),
@@ -144,7 +145,7 @@ def test_switch_on_routes_the_decision_to_the_model(monkeypatch):
 
 def test_terminal_runs_never_reach_the_model(monkeypatch):
     fake = FakeLLM()
-    monkeypatch.setattr(llm_dm, "enabled_for", lambda _org: True)
+    monkeypatch.setattr(llm_dm, "enabled_for", lambda _org, _mode=None: True)
     monkeypatch.setattr(llm_dm, "client", lambda: fake)
 
     synthesis = DecisionMaker().decide(_request(), _results(), terminal=DecisionOutcome.NO_ACTION,
@@ -161,12 +162,53 @@ def test_the_org_allow_list_scopes_the_switch(monkeypatch):
     assert not llm_dm.enabled_for("org_c")
 
     monkeypatch.setattr(llm_dm, "_settings", lambda: SimpleNamespace(
-        l4_llm_decision_maker=True, l4_llm_decision_maker_orgs=""))
-    assert llm_dm.enabled_for("org_c")
-
-    monkeypatch.setattr(llm_dm, "_settings", lambda: SimpleNamespace(
         l4_llm_decision_maker=False, l4_llm_decision_maker_orgs="org_a"))
     assert not llm_dm.enabled_for("org_a")
+
+
+def test_an_empty_allow_list_enables_no_org(monkeypatch):
+    """Fails CLOSED. The switch on with an empty list used to mean every org — one env var away
+    from putting every tenant's decisions on a paid model call."""
+    monkeypatch.setattr(llm_dm, "_settings", lambda: SimpleNamespace(
+        l4_llm_decision_maker=True, l4_llm_decision_maker_orgs=""))
+    assert not llm_dm.enabled_for("org_c")
+
+
+def test_a_star_enables_every_org(monkeypatch):
+    monkeypatch.setattr(llm_dm, "_settings", lambda: SimpleNamespace(
+        l4_llm_decision_maker=True, l4_llm_decision_maker_orgs="*"))
+    assert llm_dm.enabled_for("org_c") and llm_dm.enabled_for("any_org")
+
+
+def test_a_non_live_run_buys_no_model_call_unless_shadow_is_paid(monkeypatch):
+    """Shadow, simulation and replay runs cannot deliver: they are measurement, and measurement
+    must not spend on the model unless `l4_llm_shadow_paid` says so."""
+    monkeypatch.setattr(llm_dm, "_settings", lambda: SimpleNamespace(
+        l4_llm_decision_maker=True, l4_llm_decision_maker_orgs="org_a",
+        l4_llm_shadow_paid=False))
+    assert llm_dm.enabled_for("org_a", ExecutionMode.LIVE)
+    for mode in (ExecutionMode.SHADOW, ExecutionMode.SIMULATION, ExecutionMode.REPLAY):
+        assert not llm_dm.enabled_for("org_a", mode), mode
+    assert not llm_dm.enabled_for_request(_request(org="org_a", mode=ExecutionMode.SHADOW))
+    assert llm_dm.enabled_for_request(_request(org="org_a"))
+
+    monkeypatch.setattr(llm_dm, "_settings", lambda: SimpleNamespace(
+        l4_llm_decision_maker=True, l4_llm_decision_maker_orgs="org_a",
+        l4_llm_shadow_paid=True))
+    assert llm_dm.enabled_for("org_a", ExecutionMode.SHADOW)
+
+
+def test_a_shadow_decision_never_reaches_the_model(monkeypatch):
+    """The call site, not just the predicate: a SHADOW request goes to the formula."""
+    monkeypatch.setattr(llm_dm, "_settings", lambda: SimpleNamespace(
+        l4_llm_decision_maker=True, l4_llm_decision_maker_orgs="org_1"))
+    called = []
+    monkeypatch.setattr(llm_dm, "decide_with_llm", lambda *a, **k: called.append(1))
+
+    DecisionMaker().decide(_request(mode=ExecutionMode.SHADOW), _results(),
+                           terminal=None, uncertainty=(), degraded=False)
+
+    assert called == []
 
 
 # ---------------------------------------------------------------------------------------------
@@ -487,7 +529,7 @@ def pg_org(pg_engine, request):
 def test_an_llm_decision_persists_verifies_and_replays_on_real_postgres(
         pg_engine, pg_org, monkeypatch):
     fake = ScoringLLM(confidence=4_000)          # under the formula's 4,500 floor
-    monkeypatch.setattr(llm_dm, "enabled_for", lambda _org: True)
+    monkeypatch.setattr(llm_dm, "enabled_for", lambda _org, _mode=None: True)
     monkeypatch.setattr(llm_dm, "client", lambda: fake)
     orchestrator = ReasoningOrchestrator(default_registry())
 

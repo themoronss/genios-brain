@@ -241,7 +241,7 @@ class ReasoningOrchestrator:
             # snapshot the decision was made on. The one-hop law makes the second pass return here
             # unchanged, so this cannot loop.
             from genios_engine.reason import llm_decision_maker as llm_dm
-            if llm_dm.enabled_for(getattr(request, "org_id", "")):
+            if llm_dm.enabled_for_request(request):
                 from genios_engine.reason.llm_interpretation import interpret_request
                 interpreted = interpret_request(request, llm_dm.client())
                 if interpreted is not request:

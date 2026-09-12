@@ -199,7 +199,7 @@ def test_the_orchestrator_reads_before_deciding_and_decides_on_the_reading(monke
     number = _item_number(items, "thread.last_note")
     fake = FakeLLM([{"item": number, "ambiguous": True,
                      "classification": "EVALUATING_ALTERNATIVES", "confidence_bp": 6_000}])
-    monkeypatch.setattr(llm_dm, "enabled_for", lambda _org: True)
+    monkeypatch.setattr(llm_dm, "enabled_for", lambda _org, _mode=None: True)
     monkeypatch.setattr(llm_dm, "client", lambda: fake)
 
     execution = ReasoningOrchestrator(default_registry()).execute(request)
@@ -213,7 +213,7 @@ def test_the_orchestrator_reads_before_deciding_and_decides_on_the_reading(monke
 
 def test_switch_off_means_r1_is_never_called(monkeypatch):
     fake = FakeLLM([])
-    monkeypatch.setattr(llm_dm, "enabled_for", lambda _org: False)
+    monkeypatch.setattr(llm_dm, "enabled_for", lambda _org, _mode=None: False)
     monkeypatch.setattr(llm_dm, "client", lambda: fake)
 
     ReasoningOrchestrator(default_registry()).execute(_deal_request())

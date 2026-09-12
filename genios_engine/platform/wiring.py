@@ -631,7 +631,37 @@ def _org_tier(engine, org_id: str) -> str | None:
         return None
 
 
-def make_cost_governor(org_id: str, *, engine=None):
+def tier_prices_for_model(model: str) -> dict:
+    """L1.4.8's price table for a lane that calls ONE model at every tier — the deployed lane.
+
+    `batch.DEFAULT_TIER_PRICES` prices T2/T3 at Sonnet/Opus rates for a router that switches
+    model per tier. The lane does not: `make_semantic_lane` hands every tier the same client, so
+    pricing a T3 Haiku call at Opus rates over-states it 5x and refuses or demotes work the day's
+    budget could afford. Cents per MTok from `metrics.LLM_PRICE`, rounded UP, like every cost the
+    governor sees.
+    """
+    from genios_engine.capture.semantic.batch import TIERS, TierPrice
+    from genios_engine.platform.metrics import llm_price
+
+    def cents_per_mtok(usd_per_token: float) -> int:
+        return math.ceil(round(usd_per_token * 100_000_000, 6))
+
+    price_in, price_out = llm_price(model)
+    return {tier: TierPrice(tier, cents_per_mtok(price_in), cents_per_mtok(price_out),
+                            str(model or "unknown"))
+            for tier in TIERS}
+
+
+def _llm_cost_sink(engine):
+    """`record_cost` bound to `engine`, or None without one — the `llm_costs` writer the capture
+    lane files its model calls through."""
+    if engine is None:
+        return None
+    from genios_engine.context.graph_store import GraphStore
+    return GraphStore(engine=engine).record_cost
+
+
+def make_cost_governor(org_id: str, *, engine=None, prices: dict | None = None):
     """L1.4.8's cost governor for ONE org, or `None` when no ceiling is configured.
 
     The three numbers all come from controls that already exist, so this adds an enforcement
@@ -673,7 +703,8 @@ def make_cost_governor(org_id: str, *, engine=None):
     return CostGovernor(
         Budget(daily_minor=daily_minor, t3_daily_minor=t3_minor,
                daily_call_cap=max(0, call_cap), breaker_bp=_BREAKER_BP),
-        Ledger(spent_minor=spent, t3_spent_minor=0, calls=0))
+        Ledger(spent_minor=spent, t3_spent_minor=0, calls=0),
+        prices=prices)
 
 
 def make_structured_lane(org_id: str, *, engine=_UNSET):
@@ -741,8 +772,11 @@ def make_semantic_lane(org_id: str, *, now: datetime | None = None, engine=_UNSE
     # ONE governor object, shared by S2's extractor and S4's relevance page. Two would be two
     # ledgers for one day's money — the exact "second budget nobody reconciles" this factory's
     # own comment below warns about.
-    governor = make_cost_governor(org_id, engine=engine)
+    governor = make_cost_governor(org_id, engine=engine,
+                                  prices=tier_prices_for_model(getattr(llm, "model", "")))
+    cost_sink = _llm_cost_sink(engine)
     return SemanticLane(llm=llm, eval_time=now or datetime.now(timezone.utc),
+                        cost_sink=cost_sink,
                         cache=make_extraction_cache(),
                         # D6a: without this the guard runs with no store and the discovery lane
                         # never receives a row — a failure that raises nothing and shows up only
@@ -756,7 +790,8 @@ def make_semantic_lane(org_id: str, *, now: datetime | None = None, engine=_UNSE
                         # event instead of being bought per event. It shares the governor above,
                         # and it is the reason "the model sees under 5%" is a rate this process
                         # can actually report (`RelevancePage.stats.llm_share_bp`).
-                        relevance_page=RelevancePage(llm=llm, governor=governor),
+                        relevance_page=RelevancePage(llm=llm, governor=governor,
+                                                     cost_sink=cost_sink, org_id=org_id),
                         timezone=_org_timezone(engine, org_id))
 
 

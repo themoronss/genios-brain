@@ -34,8 +34,7 @@ demotion nobody can count is a quality regression that presents as a mystery.
 million tokens; the breaker threshold is basis points of the daily budget. Rounding on cost is
 always UP (`_ceil_div`), because a governor that under-estimates by a rounding error on each of
 forty thousand calls has authorised a spend nobody approved. `platform/metrics.py` prices
-history in floats against a stale table (`opus` at $15/MTok); it is deliberately not imported —
-see `DEFAULT_TIER_PRICES`.
+history in floats; it is deliberately not imported — see `DEFAULT_TIER_PRICES`.
 
 PURITY. No clock, no DB, no model, no float. "Today" is not read here: `Ledger` is what the day
 has cost so far and the caller reads it from `llm_costs`, exactly as `_llm_over_daily_cap`
@@ -124,16 +123,16 @@ class TierPrice:
             raise ValueError(f"{self.tier}: a negative rate would make a call earn money")
 
 
-#: US cents per million tokens, at list. `priced_against` records WHICH model each tier was
-#: priced from and is documentation, not a routing decision — L1.4.10 owns the tier-to-snapshot
-#: mapping, and `govern` takes a `prices` argument so that when the router lands it can supply
-#: the table for the snapshots it actually calls.
+#: US cents per million tokens, at list, for a router that calls a different model per tier.
+#: `priced_against` records WHICH model each tier was priced from and is documentation, not a
+#: routing decision. The deployed lane calls ONE client for every tier, so
+#: `platform/wiring.make_semantic_lane` hands `govern` the table for that client's model
+#: instead (`tier_prices_for_model`) — pricing a Haiku call at Opus rates would refuse and
+#: demote work the budget could in fact afford.
 #:
-#: NOT read from `platform/metrics.LLM_PRICE`: that table is float USD per token, is keyed by
-#: family substring, and still carries $15/$75 for opus. It prices HISTORY, where a stale rate
-#: mis-reports a past bill; this prices a call about to be made, where a stale rate authorises
-#: a spend. Two different jobs, and merging them would make the analytics table load-bearing
-#: for the breaker.
+#: Integer cents here, float USD per token in `platform/metrics.LLM_PRICE`: that table prices
+#: HISTORY, where a stale rate mis-reports a past bill; this prices a call about to be made,
+#: where a stale rate authorises a spend.
 DEFAULT_TIER_PRICES: dict[str, TierPrice] = {
     "T1": TierPrice("T1", 100, 500, "claude-haiku-4-5"),
     "T2": TierPrice("T2", 200, 1000, "claude-sonnet-5"),

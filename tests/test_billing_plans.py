@@ -149,11 +149,12 @@ def test_a_trial_ingests_far_below_a_paying_tenant():
     assert B.plan_ingest_usd_cap("trial") < B.plan_ingest_usd_cap("startup")
 
 
-def test_deep_analysis_costs_more_than_shallow():
-    """Sonnet 5 is ~3.7x Haiku 4.5 per token on the same prompt shape. A flat 1 credit for both
-    is how `deep=true` became the product's most expensive call and its cheapest."""
-    assert B.cost_of("intelligence_analyze", deep=True) > B.cost_of("intelligence_analyze")
-    assert B.cost_of("intelligence_draft") >= B.cost_of("intelligence_query")
+def test_only_the_query_endpoint_is_billed():
+    """User-facing credits are charged on `POST /v1/intelligence/query` and nowhere else."""
+    assert set(B.COSTS) == {"intelligence_query"}
+    assert B.cost_of("intelligence_analyze") == 0
+    assert B.cost_of("intelligence_analyze", deep=True) == 0
+    assert B.cost_of("intelligence_draft") == 0
 
 
 def test_an_unpriced_action_is_cheap_never_free():
@@ -188,11 +189,10 @@ def test_junk_duplicates_and_cache_hits_cost_nothing():
         assert B.cost_of(unit, units=10_000) == 0
 
 
-def test_reading_a_message_costs_a_fraction_of_asking_a_question():
-    """Ingestion is included in the shape of the product, not a second question budget."""
-    assert B.cost_of("message_read") < B.cost_of("intelligence_query")
-    assert B.cost_of("message_read") == B.to_points(0.2)
-    assert B.cost_of("document_page") == B.to_points(0.3)
+def test_reading_a_message_is_free():
+    """Ingestion is included in the plan and metered by `sync_messages`, never by credits."""
+    assert B.cost_of("message_read") == 0
+    assert B.cost_of("document_page") == 0
 
 
 def test_nothing_costs_more_than_two_credits():
@@ -202,19 +202,17 @@ def test_nothing_costs_more_than_two_credits():
 
 
 def test_units_multiply():
-    assert B.cost_of("message_read", units=2_500) == 2_500 * B.cost_of("message_read")
-    assert B.to_credits(B.cost_of("message_read", units=2_500)) == 500.0
+    assert B.cost_of("intelligence_query", units=3) == 3 * B.cost_of("intelligence_query")
+    assert B.to_credits(B.cost_of("intelligence_query", units=3)) == 3.0
 
 
 def test_zero_units_is_free_not_a_minimum_charge():
-    assert B.cost_of("message_read", units=0) == 0
+    assert B.cost_of("intelligence_query", units=0) == 0
 
 
-def test_a_realistic_first_sync_leaves_the_free_plan_room_to_think():
-    """5,000 messages arrive, ~2,500 are junk. The junk is free; the 2,500 read cost 500 credits
-    of a 3,000-credit plan, leaving 2,500 for questions."""
+def test_a_realistic_first_sync_leaves_the_whole_plan_for_questions():
+    """5,000 messages arrive, ~2,500 are junk. Reading costs no credits either way, so every
+    credit the plan grants is still there for questions."""
     read = B.cost_of("message_read", units=2_500)
     junk = B.cost_of("message_dropped_as_junk", units=2_500)
-    spent = B.to_credits(read + junk)
-    assert spent == 500.0
-    assert B.PLANS["trial"].credits - spent >= 2_000
+    assert B.to_credits(read + junk) == 0.0

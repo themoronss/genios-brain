@@ -51,7 +51,7 @@ CARDS = "org_shadow_cards"
 
 HAIKU = "claude-haiku-4-5"
 #: `platform/metrics.LLM_PRICE`, as the whole nano-dollars the script prices with.
-HAIKU_IN, HAIKU_OUT = 800, 4_000
+HAIKU_IN, HAIKU_OUT = 1_000, 5_000
 
 
 # ── seeding ──────────────────────────────────────────────────────────────────────────────────
@@ -497,10 +497,11 @@ def test_every_number_in_the_money_path_is_an_integer(clean):
 
 
 @pytest.mark.parametrize("model,tin,tout,expected", [
-    (HAIKU, 1000, 100, 1000 * 800 + 100 * 4000),
-    ("claude-sonnet-4-5-20260101", 10, 10, 10 * 3000 + 10 * 15000),
-    ("claude-opus-4-1", 1, 1, 15000 + 75000),
-    ("some-model-nobody-priced", 100, 0, 100 * 800),      # falls back to the CHEAPEST family
+    (HAIKU, 1000, 100, 1000 * 1000 + 100 * 5000),
+    ("claude-sonnet-4-6", 10, 10, 10 * 3000 + 10 * 15000),
+    ("claude-sonnet-5-20260101", 10, 10, 10 * 2000 + 10 * 10000),
+    ("claude-opus-5", 1, 1, 5000 + 25000),
+    ("some-model-nobody-priced", 100, 0, 100 * 1000),     # falls back to the CHEAPEST family
     ("", 0, 0, 0),
 ])
 def test_nanodollar_pricing_matches_the_products_own_table(model, tin, tout, expected):

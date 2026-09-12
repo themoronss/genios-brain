@@ -371,40 +371,6 @@ def _notify_sync_failure(*, org_id: str, source: str, error: str) -> None:
         pass
 
 
-#: The L2 outcomes that mean a message ENTERED THE GRAPH. Only these are billable: the customer
-#: pays for what they got, and `parked_low_relevance` (the junk gate's verdict), `skipped_no_llm`
-#: and `no_op` gave them nothing however much work we did.
-_BILLABLE_L2_OUTCOMES = ("committed", "committed_structured", "committed_structural",
-                         "committed_facts", "committed_observation")
-
-
-def _charge_ingestion(org_id: str, result) -> None:
-    """Bill one sweep's reading, as ONE row.
-
-    Per-message deduction would put a database write on the ingestion path of every email, and
-    would file 1,240 ledger lines a customer has to scroll. One row carrying `units: 1240` says
-    the same thing, costs one write, and is the line they can actually check.
-
-    Idempotent on the sweep's own instant, so a retried sweep never charges the same reading
-    twice. Never raises: billing must not be able to break a sync.
-    """
-    if _graph is None or not isinstance(result, dict):
-        return
-    outcomes = result.get("outcomes") or {}
-    read = sum(int(outcomes.get(k, 0) or 0) for k in _BILLABLE_L2_OUTCOMES)
-    if read <= 0:
-        return
-    try:
-        from datetime import datetime as _dt, timezone as _tz
-        from genios_engine.platform import billing as B
-        stamp = _dt.now(_tz.utc).strftime("%Y%m%d%H%M%S")
-        with _graph.engine.begin() as c:
-            B.charge_units(c, org_id, "message_read", read,
-                           idem=f"read:{org_id}:{stamp}", bucket="ingest")
-    except Exception:                                        # noqa: BLE001
-        _log.warning("ingestion charge failed for org=%s (%d messages)", org_id, read)
-
-
 def _run_l2(org_id: str) -> None:
     """Background L2 + L3 + L5 pass for one org. In-process (no Celery/Upstash). Wrapped so a
     single org's failure is LOGGED (not a silent uvicorn traceback) and never touches another org."""
@@ -437,7 +403,7 @@ def _run_l2(org_id: str) -> None:
                                      registry=_registry,
                                      crypto_key=get_settings().crypto_key)
             st["processed"] = result.get("processed", 0) if isinstance(result, dict) else 0
-        _charge_ingestion(org_id, result)
+        # Ingestion is never charged in credits; it is metered by the plan's sync allowance.
         from genios_engine.reason.runner import run_all as run_l3    # L3 after the graph updates
         with stage("l4.run_all", org_id):
             run_l3(org_id=org_id, store=_graph, registry=_registry)

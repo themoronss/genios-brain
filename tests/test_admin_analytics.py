@@ -92,8 +92,23 @@ def test_unknown_model_prices_at_the_cheapest_family_not_zero():
 
 
 def test_dated_model_ids_still_price_by_family():
-    assert M.llm_price("claude-sonnet-5-20260101") == M.LLM_PRICE["sonnet"]
+    assert M.llm_price("claude-sonnet-5-20260101") == M.LLM_PRICE["sonnet-5"]
     assert M.llm_price("claude-haiku-4-5-20251001") == M.LLM_PRICE["haiku"]
+
+
+@pytest.mark.parametrize("model,per_mtok", [
+    ("claude-haiku-4-5-20251001", (1.0, 5.0)),
+    ("claude-sonnet-5", (2.0, 10.0)),
+    ("claude-sonnet-4-6", (3.0, 15.0)),
+    ("claude-opus-5", (5.0, 25.0)),
+    ("claude-opus-4-8", (5.0, 25.0)),
+    ("claude-fable-5-1", (10.0, 50.0)),
+])
+def test_models_price_at_the_current_list_rate(model, per_mtok):
+    """Anthropic list prices per MTok. Haiku 4.5 is $1/$5 (was mis-priced at $0.80/$4), and
+    Sonnet 5 is cheaper than Sonnet 4.6, so the more specific key must match first."""
+    price_in, price_out = M.llm_price(model)
+    assert (round(price_in * 1e6, 6), round(price_out * 1e6, 6)) == per_mtok
 
 
 def test_mrr_counts_only_paying_active_accounts():

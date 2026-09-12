@@ -1121,7 +1121,7 @@ class DecisionMaker:
             # confidence, the weighted formula, the floor, the rule-conflict abstention — is handed
             # to one model call. Off by default; nothing below this block is changed by it.
             from genios_engine.reason import llm_decision_maker as llm_dm
-            if llm_dm.enabled_for(getattr(request, "org_id", "")):
+            if llm_dm.enabled_for_request(request):
                 return llm_dm.decide_with_llm(request, results, uncertainty=uncertainty,
                                               degraded=degraded, llm=llm_dm.client())
         uncertainty = list(uncertainty)
