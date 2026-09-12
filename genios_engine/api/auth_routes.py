@@ -1,21 +1,22 @@
 from __future__ import annotations
 
-import time
-
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from sqlalchemy import text
 
 from genios_engine.contracts.events import (AGENT_ACTIONS, AGENT_API_SCOPES,
                                             HUMAN_API_SCOPES, INTELLIGENCE_API_SCOPES)
-from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org, hash_key,
-                                         hash_password, invalidate_key_cache, jwt_encode,
-                                         new_api_key, require_owner, verify_password)
+from genios_engine.platform.auth import (ROLE_OWNER, AuthCtx, get_auth_ctx, hash_password,
+                                         invalidate_key_cache, jwt_decode, new_api_key,
+                                         require_owner, security, seat_role, verify_password)
 from genios_engine.platform.cache import get_cache
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.crypto import decrypt, encrypt
 from genios_engine.platform.db import get_engine
 from genios_engine.platform.ids import new_id
+from genios_engine.platform.sessions import (ACCOUNT_SUSPENDED, open_session, revoke_by_refresh,
+                                             revoke_session, rotate_session)
 
 
 def _enc_key(raw: str) -> bytes | None:
@@ -32,9 +33,12 @@ def _enc_key(raw: str) -> bytes | None:
 # Auth routes — register/login (dashboard) + scoped API-key minting (agents/integrations). This
 # is the parity port of genios-brain/app/api/routes/auth.py, engine-native. org_id is issued
 # here and thereafter always derived from the credential (never trusted from a request body).
+#
+# Every sign-in (register, login, invite accept, refresh) now opens or rotates a SEAT SESSION
+# (platform/sessions.py): a short-lived access JWT under `token` / `access_token` plus a rotating
+# `refresh_token`. The response keeps every field it had; the session fields are additions.
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-JWT_TTL_SECONDS = 7 * 24 * 3600
 GRANTABLE = AGENT_ACTIONS | AGENT_API_SCOPES | HUMAN_API_SCOPES | INTELLIGENCE_API_SCOPES
 
 
@@ -50,11 +54,13 @@ class Register(BaseModel):
     email: str
     password: str
     company: str | None = None      # workspace/company name from signup — was silently dropped before
+    device_id: str | None = None    # the desktop app names its install; the dashboard sends nothing
 
 
 @router.post("/register")
 def register(body: Register) -> dict:
-    """Create a tenant + its first full-scope gn_live_ key + a dashboard JWT. Raw key shown ONCE."""
+    """Create a tenant + its first full-scope gn_live_ key + the owner's seat session. Raw key
+    shown ONCE."""
     org_id = new_id("org")
     raw, key_hash, prefix = new_api_key()
     with _engine().begin() as c:
@@ -84,8 +90,9 @@ def register(body: Register) -> dict:
         # `run_distribution` does not enumerate the org at all, so no digest, reminder or push
         # ever leaves the building. None of those layers can tell "this tenant has none" apart
         # from "this tenant has no people", so all of them fail quietly.
-        from genios_engine.platform.seats import provision_org
-        provision_org(c, org_id)
+        from genios_engine.platform.seats import OWNER_SEAT_ID, provision_org
+        provisioned = provision_org(c, org_id)
+        seat_id = (provisioned.get("seat") or {}).get("seat_id") or OWNER_SEAT_ID
         c.execute(text("insert into credit_ledger (org_id,kind,amount,balance_after,reason,bucket,"
                        "idempotency_key) values (:o,'reset',:cr,:cr,'trial:signup','credits',:idem)"),
                   {"o": org_id, "cr": plan_points("trial"), "idem": f"trial:{org_id}"})
@@ -93,8 +100,8 @@ def register(body: Register) -> dict:
                        "values (:id,:o,:kh,:ke,:pfx,'primary',:sc)"),
                   {"id": new_id("key"), "o": org_id, "kh": key_hash, "ke": _enc_key(raw),
                    "pfx": prefix, "sc": sorted(GRANTABLE)})
-    token = jwt_encode({"org_id": org_id, "email": body.email, "exp": time.time() + JWT_TTL_SECONDS},
-                       get_settings().jwt_secret)
+        tokens = open_session(c, org_id=org_id, seat_id=seat_id, email=body.email,
+                              role=ROLE_OWNER, device_id=body.device_id)
     # Signup is the first point of the growth funnel; login already audits, signup did not, so the
     # admin console had no server-side record of *when* an account entered (orgs.created_at alone
     # can't be joined against the activity timeline). Never fatal — record() swallows its errors.
@@ -106,13 +113,18 @@ def register(body: Register) -> dict:
     from genios_engine.platform import analytics
     analytics.capture_with_person(_engine(), org_id, "user_signed_up",
                                   {"company": (body.company or "").strip()[:120] or None})
-    return {"org_id": org_id, "token": token, "name": body.name, "email": body.email,
-            "api_key": raw, "key_prefix": prefix, "note": "store api_key now — shown only once"}
+    return {"org_id": org_id, "name": body.name, "email": body.email,
+            "api_key": raw, "key_prefix": prefix, "note": "store api_key now — shown only once",
+            **tokens.as_response()}
 
 
 class Login(BaseModel):
     email: str
     password: str
+    #: Which workspace, when this address + password opens more than one (an owner who was also
+    #: invited to a colleague's workspace). Omit it and a single match signs straight in.
+    org_id: str | None = None
+    device_id: str | None = None
 
 
 _LOGIN_ATTEMPTS = 10                     # per email, per window
@@ -133,29 +145,103 @@ def _login_throttle(email: str) -> None:
                                   "message": "Too many sign-in attempts. Try again in a few minutes."})
 
 
+def _workspace_name(row) -> str:
+    return (getattr(row, "company", None) or getattr(row, "org_name", None)
+            or getattr(row, "name", None) or "")
+
+
 @router.post("/login")
 def login(body: Login) -> dict:
+    """Owner OR member sign-in, one form.
+
+    The owner's password lives on `orgs` (as it always has); a member's on their `org_members`
+    row, hashed with the same pbkdf2 scheme. The same address can hold both — owner of one
+    workspace, invited to another — so every row the password actually OPENS is a candidate, and
+    only a verified candidate is ever named back (409 `ORG_SELECTION_REQUIRED` lists them; the
+    client re-sends with `org_id`). An address that verifies nowhere learns nothing.
+    """
     _login_throttle(body.email)
     with _engine().connect() as c:
-        row = c.execute(text("select id, name, pass_hash, plan_status, subscription_tier "
-                             "from orgs where lower(email)=lower(:e)"), {"e": body.email}).first()
-    if row is None or not verify_password(body.password, row.pass_hash):
+        owners = c.execute(text(
+            "select id, name, company, pass_hash, plan_status, subscription_tier "
+            "from orgs where lower(email)=lower(:e)"), {"e": body.email}).all()
+        members = c.execute(text(
+            "select m.org_id as id, m.name, m.pass_hash, m.seat_id, o.name as org_name, "
+            "o.company, o.plan_status, o.subscription_tier "
+            "from org_members m join orgs o on o.id = m.org_id "
+            "join org_seats s on s.org_id = m.org_id and s.seat_id = m.seat_id "
+            "where lower(m.email)=lower(:e) and m.status='active' and s.active "
+            "and m.pass_hash is not null"), {"e": body.email}).all()
+    matches = [("owner", r) for r in owners if verify_password(body.password, r.pass_hash)]
+    matches += [("member", r) for r in members if verify_password(body.password, r.pass_hash)]
+    if body.org_id:
+        matches = [m for m in matches if m[1].id == body.org_id]
+    if not matches:
         from genios_engine.platform.audit import record as _rec
-        if row is not None:              # only auditable against a real tenant
-            _rec(row.id, "login_failed", actor_type="user", actor_id=body.email)
+        known = (owners or members)
+        if known:                        # only auditable against a real tenant
+            _rec(known[0].id, "login_failed", actor_type="user", actor_id=body.email)
         raise HTTPException(401, "invalid email or password")
+    if len(matches) > 1:
+        raise HTTPException(409, {"code": "ORG_SELECTION_REQUIRED",
+                                  "message": "This sign-in opens more than one workspace.",
+                                  "orgs": [{"org_id": r.id, "name": _workspace_name(r)}
+                                           for _, r in matches]})
+    kind, row = matches[0]
     if row.plan_status == "suspended":
         raise HTTPException(403, {"error": "ACCOUNT_SUSPENDED"})
-    token = jwt_encode({"org_id": row.id, "email": body.email, "exp": time.time() + JWT_TTL_SECONDS},
-                       get_settings().jwt_secret)
+    with _engine().begin() as c:
+        if kind == "owner":
+            from genios_engine.platform.seats import OWNER_SEAT_ID, ensure_owner_seat
+            seat_id = ensure_owner_seat(c, row.id).get("seat_id") or OWNER_SEAT_ID
+            role, name = ROLE_OWNER, row.name
+        else:
+            seat = c.execute(text(
+                "select s.email, s.role, o.email as org_email from org_seats s "
+                "join orgs o on o.id = s.org_id where s.org_id=:o and s.seat_id=:s"),
+                {"o": row.id, "s": row.seat_id}).first()
+            seat_id = row.seat_id
+            role = seat_role(seat.email if seat else body.email, seat.role if seat else None,
+                             seat.org_email if seat else None)
+            name = row.name or body.email
+        tokens = open_session(c, org_id=row.id, seat_id=seat_id, email=body.email, role=role,
+                              device_id=body.device_id)
     from genios_engine.platform.audit import record
     record(row.id, "user_logged_in", actor_type="user", actor_id=body.email)
     # Login carries the person properties too: it is the most frequent moment we can cheaply
     # refresh an account's plan / paying / internal flags in PostHog.
     from genios_engine.platform import analytics
     analytics.capture_with_person(_engine(), row.id, "user_logged_in")
-    return {"org_id": row.id, "token": token, "name": row.name, "email": body.email,
-            "plan": row.subscription_tier}
+    return {"org_id": row.id, "name": name, "email": body.email,
+            "plan": row.subscription_tier, "org_name": _workspace_name(row),
+            **tokens.as_response()}
+
+
+class Refresh(BaseModel):
+    refresh_token: str
+    device_id: str | None = None
+
+
+_REFRESH_MESSAGES = {
+    "REFRESH_REUSED": "This session was used from somewhere else and has been signed out.",
+    "SEAT_INACTIVE": "Your access to this workspace has been removed.",
+    ACCOUNT_SUSPENDED: "This workspace is suspended.",
+}
+
+
+@router.post("/refresh")
+def refresh(body: Refresh) -> dict:
+    """Rotate a refresh token: a fresh access token AND a fresh refresh token; the presented one
+    is dead from this moment. Presenting a token that was already rotated revokes the session."""
+    with _engine().begin() as c:
+        out = rotate_session(c, body.refresh_token, device_id=body.device_id)
+    # The transaction above has COMMITTED before any error is raised: a reuse must stay revoked.
+    if out.error:
+        raise HTTPException(403 if out.error == ACCOUNT_SUSPENDED else 401,
+                            {"code": out.error,
+                             "message": _REFRESH_MESSAGES.get(out.error, "Please log in again.")})
+    t = out.tokens
+    return {"org_id": t.org_id, "email": t.email, **t.as_response()}
 
 
 class MintKey(BaseModel):
@@ -236,11 +322,33 @@ def revoke_key(key_id: str, ctx: AuthCtx = Depends(require_owner)) -> dict:
 @router.get("/me")
 def whoami(ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
     return {"org_id": ctx.org_id, "agent_id": ctx.agent_id, "scopes": ctx.scopes,
-            "plan_status": ctx.plan_status, "source": ctx.source}
+            "plan_status": ctx.plan_status, "source": ctx.source,
+            "seat_id": ctx.seat_id, "role": ctx.role, "email": ctx.email,
+            "session_id": ctx.session_id}
+
+
+class Logout(BaseModel):
+    refresh_token: str | None = None
 
 
 @router.post("/logout")
-def logout() -> dict:
-    """JWT sessions are stateless — logout is client-side (drop the token). This exists so the
-    dashboard's logout call gets a clean 200 instead of a 404."""
-    return {"ok": True}
+def logout(body: Logout | None = None,
+           creds: HTTPAuthorizationCredentials | None = Depends(security)) -> dict:
+    """Revoke the caller's session — by its access token, its refresh token, or both. Always 200:
+    a client signing out must never be stuck on an error. A pre-session token (no `sid`) cannot be
+    revoked server-side and reports `revoked: false`; dropping it client-side ends it, as before."""
+    s = get_settings()
+    if not s.database_url:
+        return {"ok": True, "revoked": False}
+    revoked = False
+    with _engine().begin() as c:
+        token = creds.credentials if creds is not None else ""
+        if token and token.count(".") == 2 and not token.startswith("gn_"):
+            payload = jwt_decode(token, s.jwt_secret, verify_exp=False)
+            if payload and payload.get("sid"):
+                revoked = revoke_session(c, str(payload["sid"]),
+                                         org_id=str(payload.get("org_id") or ""),
+                                         reason="logout") or revoked
+        if body is not None and body.refresh_token:
+            revoked = revoke_by_refresh(c, body.refresh_token, reason="logout") or revoked
+    return {"ok": True, "revoked": revoked}

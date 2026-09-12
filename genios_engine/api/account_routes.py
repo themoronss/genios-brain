@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -16,9 +16,15 @@ from pydantic import BaseModel
 from sqlalchemy import text
 
 from genios_engine.platform import billing as B
-from genios_engine.platform.auth import get_current_org, hash_key, hash_password, verify_password
+from genios_engine.platform.auth import (ROLE_OWNER, SEAT_ROLES, AuthCtx, get_current_org,
+                                         hash_key, hash_password, require_account_owner,
+                                         require_org_admin, require_workspace_user,
+                                         verify_password)
+from genios_engine.platform.config import get_settings
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.logging import get_logger
+from genios_engine.platform.seats import SeatLimitReached, assert_seat_capacity, seats_in_use
+from genios_engine.platform.sessions import open_session, revoke_seat_sessions
 from genios_engine.platform.wiring import make_graph_store
 
 router = APIRouter()
@@ -36,6 +42,28 @@ def _org(org_id: str, org: str = Depends(get_current_org)) -> str:
     if org_id != org:
         raise HTTPException(403, "org mismatch")
     return org
+
+
+def _owner_org(org_id: str, ctx: AuthCtx = Depends(require_account_owner)) -> str:
+    """The account OWNER only (erase / delete / rotate the primary key / the owner's profile)."""
+    if org_id != ctx.org_id:
+        raise HTTPException(403, "org mismatch")
+    return ctx.org_id
+
+
+def _admin_org(org_id: str, ctx: AuthCtx = Depends(require_org_admin)) -> AuthCtx:
+    """A tenant admin (owner or admin seat) — team management."""
+    if org_id != ctx.org_id:
+        raise HTTPException(403, "org mismatch")
+    return ctx
+
+
+def _workspace_org(org_id: str, ctx: AuthCtx = Depends(require_workspace_user)) -> AuthCtx:
+    """Anyone who works here, including a member seat — routes that act on the caller's OWN
+    identity (their password), never on the org's."""
+    if org_id != ctx.org_id:
+        raise HTTPException(403, "org mismatch")
+    return ctx
 
 
 def _org_row(c, org_id: str):
@@ -72,7 +100,7 @@ class ProfileUpdate(BaseModel):
 
 
 @router.patch("/api/org/{org_id}/profile")
-def update_profile(org_id: str, body: ProfileUpdate, org: str = Depends(_org)) -> dict:
+def update_profile(org_id: str, body: ProfileUpdate, org: str = Depends(_owner_org)) -> dict:
     fields, params = [], {"o": org}
     # full_name is the person's name → orgs.name (what the sidebar/greeting reads).
     col_map = {"full_name": "name", "company": "company", "role": "role"}
@@ -95,21 +123,40 @@ class PasswordChange(BaseModel):
 
 
 @router.post("/api/org/{org_id}/password/change")
-def change_password(org_id: str, body: PasswordChange, org: str = Depends(_org)) -> dict:
+def change_password(org_id: str, body: PasswordChange,
+                    ctx: AuthCtx = Depends(_workspace_org)) -> dict:
+    """Change YOUR password. The owner's lives on `orgs` (as always); a teammate's on their own
+    `org_members` row — this route used to be reachable only by the owner and wrote `orgs`
+    unconditionally, which with seat logins would have let an admin reset the owner's password.
+    Every OTHER session of the seat is revoked: a password change is how a person evicts a device
+    they no longer trust."""
+    org = ctx.org_id
     if len(body.new_password or "") < 8:
         raise HTTPException(400, "new password must be at least 8 characters")
     with _graph.engine.begin() as c:
-        r = _org_row(c, org)
-        if not r.pass_hash or not verify_password(body.current_password, r.pass_hash):
-            raise HTTPException(403, "current password is incorrect")
-        c.execute(text("update orgs set pass_hash=:h where id=:o"),
-                  {"h": hash_password(body.new_password), "o": org})
-    return {"updated": True}
+        if ctx.role in (None, ROLE_OWNER):
+            r = _org_row(c, org)
+            if not r.pass_hash or not verify_password(body.current_password, r.pass_hash):
+                raise HTTPException(403, "current password is incorrect")
+            c.execute(text("update orgs set pass_hash=:h where id=:o"),
+                      {"h": hash_password(body.new_password), "o": org})
+        else:
+            m = c.execute(text(
+                "select id, pass_hash from org_members where org_id=:o and seat_id=:s "
+                "and status='active' for update"), {"o": org, "s": ctx.seat_id}).first()
+            if m is None or not verify_password(body.current_password, m.pass_hash):
+                raise HTTPException(403, "current password is incorrect")
+            c.execute(text("update org_members set pass_hash=:h, updated_at=now() where id=:i"),
+                      {"h": hash_password(body.new_password), "i": m.id})
+        revoked = (revoke_seat_sessions(c, org_id=org, seat_id=ctx.seat_id,
+                                        reason="password_changed", except_session=ctx.session_id)
+                   if ctx.seat_id else 0)
+    return {"updated": True, "other_sessions_revoked": revoked}
 
 
 # ── API key rotation ─────────────────────────────────────────────────────────
 @router.post("/api/org/{org_id}/apikey/regenerate")
-def regenerate_api_key(org_id: str, org: str = Depends(_org)) -> dict:
+def regenerate_api_key(org_id: str, org: str = Depends(_owner_org)) -> dict:
     raw = "gn_live_" + secrets.token_urlsafe(24)
     kh, prefix = hash_key(raw), raw[:12]
     with _graph.engine.begin() as c:
@@ -275,30 +322,49 @@ def set_integration_config(org_id: str, tool: str, body: dict, org: str = Depend
 
 
 # ── team members / invites ───────────────────────────────────────────────────
+# ONE IDENTITY (migration 0137). A teammate is an `org_members` row (their login) AND an
+# `org_seats` row (their routing identity) sharing one `seat_id` — written together when an invite
+# is accepted, deactivated together, never one without the other. The owner is still synthesised
+# from `orgs`; their seat is `seat_owner`.
+_INVITE_PREFIX = "ginv_"
+
+
+def _iso(ts) -> str | None:
+    return ts.isoformat() if ts else None
+
+
 @router.get("/api/org/{org_id}/members")
-def list_members(org_id: str, org: str = Depends(_org)) -> dict:
+def list_members(org_id: str, ctx: AuthCtx = Depends(_admin_org)) -> dict:
+    org = ctx.org_id
+    now = datetime.now(timezone.utc)
     with _graph.engine.connect() as c:
         r = _org_row(c, org)
         owner_name = " ".join(x for x in (r.first_name, r.last_name) if x) or r.name or "Owner"
-        members = [{"id": "owner", "email": r.email or "", "name": owner_name, "role": "owner",
-                    "invited_at": r.created_at.isoformat() if r.created_at else None,
-                    "accepted_at": r.created_at.isoformat() if r.created_at else None,
+        owner_seat = c.execute(text(
+            "select seat_id from org_seats where org_id=:o and lower(email)=lower(:e) "
+            "order by active desc limit 1"), {"o": org, "e": r.email or ""}).scalar()
+        members = [{"id": "owner", "email": r.email or "", "name": owner_name, "role": ROLE_OWNER,
+                    "seat_id": owner_seat,
+                    "invited_at": _iso(r.created_at), "accepted_at": _iso(r.created_at),
                     "status": "active"}]
-        for m in c.execute(text("select id, email, name, role, invited_at, accepted_at, status "
-                                "from org_members where org_id=:o order by invited_at"), {"o": org}):
+        for m in c.execute(text(
+                "select id, email, name, role, invited_at, accepted_at, status, seat_id, "
+                "deactivated_at from org_members where org_id=:o order by invited_at"),
+                {"o": org}):
             members.append({"id": m.id, "email": m.email, "name": m.name or m.email,
-                            "role": m.role, "status": m.status,
-                            "invited_at": m.invited_at.isoformat() if m.invited_at else None,
-                            "accepted_at": m.accepted_at.isoformat() if m.accepted_at else None})
+                            "role": m.role, "status": m.status, "seat_id": m.seat_id,
+                            "invited_at": _iso(m.invited_at), "accepted_at": _iso(m.accepted_at),
+                            "deactivated_at": _iso(m.deactivated_at)})
         invites = [{"id": i.id, "email": i.email, "role": i.role,
-                    "created_at": i.created_at.isoformat() if i.created_at else None,
-                    "expires_at": i.expires_at.isoformat() if i.expires_at else None}
-                   for i in c.execute(text("select id, email, role, created_at, expires_at "
-                                           "from org_invites where org_id=:o order by created_at"),
-                                      {"o": org})]
+                    "created_at": _iso(i.created_at), "expires_at": _iso(i.expires_at),
+                    "expired": bool(i.expires_at is not None and i.expires_at <= now)}
+                   for i in c.execute(text(
+                       "select id, email, role, created_at, expires_at from org_invites "
+                       "where org_id=:o and accepted_at is null order by created_at"), {"o": org})]
+        used = seats_in_use(c, org)
         tier = (r.subscription_tier or "trial").lower()
     return {"members": members, "pending_invites": invites, "count": len(members),
-            "seat_limit": B.plan_seat_limit(tier), "plan": tier}
+            "seat_limit": B.plan_seat_limit(tier), "seats_used": used, "plan": tier}
 
 
 class InviteBody(BaseModel):
@@ -307,41 +373,237 @@ class InviteBody(BaseModel):
 
 
 @router.post("/api/org/{org_id}/members/invite")
-def invite_member(org_id: str, body: InviteBody, org: str = Depends(_org)) -> dict:
+def invite_member(org_id: str, body: InviteBody, ctx: AuthCtx = Depends(_admin_org)) -> dict:
+    """Invite a teammate. Returns the invite token ONCE (only its hash is stored); the accept page
+    is `/invite/{token}` on the dashboard. Re-inviting an address mints a fresh token and restarts
+    the expiry — the previous link stops working."""
+    org = ctx.org_id
     email = (body.email or "").strip().lower()
     if "@" not in email:
         raise HTTPException(400, "a valid email is required")
+    if body.role not in SEAT_ROLES:
+        raise HTTPException(422, "role must be admin or member")
+    raw = _INVITE_PREFIX + secrets.token_urlsafe(32)
+    now = datetime.now(timezone.utc)
+    expires = now + timedelta(seconds=int(get_settings().invite_ttl_seconds))
     with _graph.engine.begin() as c:
         r = _org_row(c, org)
-        tier = (r.subscription_tier or "trial").lower()
-        seats = B.plan_seat_limit(tier)
-        taken = 1 + (c.execute(text("select count(*) from org_members where org_id=:o"),
-                               {"o": org}).scalar() or 0) \
-                  + (c.execute(text("select count(*) from org_invites where org_id=:o"),
-                               {"o": org}).scalar() or 0)
-        if taken >= seats:
-            raise HTTPException(409, f"seat limit reached for the {tier} plan ({seats} seats)")
-        c.execute(text("insert into org_invites (id, org_id, email, role) values (:i,:o,:e,:r) "
-                       "on conflict (org_id, email) do update set role=:r, created_at=now()"),
-                  {"i": new_id("inv"), "o": org, "e": email, "r": body.role})
-    return {"invited": True, "email": email, "role": body.role}
+        if (r.email or "").strip().lower() == email:
+            raise HTTPException(409, {"code": "ALREADY_MEMBER",
+                                      "message": "That address is the workspace owner."})
+        seated = c.execute(text(
+            "select 1 from org_seats where org_id=:o and lower(email)=:e and active"),
+            {"o": org, "e": email}).first()
+        if seated is not None:
+            raise HTTPException(409, {"code": "ALREADY_MEMBER",
+                                      "message": "That address already has a seat here."})
+        try:
+            assert_seat_capacity(c, org, adding_email=email)
+        except SeatLimitReached as exc:
+            raise HTTPException(409, str(exc)) from exc
+        invite_id = c.execute(text(
+            "insert into org_invites (id, org_id, email, role, token_hash, invited_by, created_at, "
+            "expires_at, accepted_at, accepted_seat_id) "
+            "values (:i,:o,:e,:r,:h,:by,:now,:exp,null,null) "
+            "on conflict (org_id, email) do update set role=excluded.role, "
+            "token_hash=excluded.token_hash, invited_by=excluded.invited_by, "
+            "created_at=excluded.created_at, expires_at=excluded.expires_at, "
+            "accepted_at=null, accepted_seat_id=null returning id"),
+            {"i": new_id("inv"), "o": org, "e": email, "r": body.role, "h": hash_key(raw),
+             "by": ctx.email or ctx.actor_id, "now": now, "exp": expires}).scalar()
+    from genios_engine.platform.audit import record
+    record(org, "member_invited", actor_type="user", actor_id=ctx.email or ctx.actor_id,
+           target_type="invite", target_id=invite_id, metadata={"role": body.role})
+    base = (get_settings().dashboard_url or "").rstrip("/")
+    return {"invited": True, "email": email, "role": body.role, "invite_id": invite_id,
+            "invite_token": raw, "invite_url": f"{base}/invite/{raw}" if base else None,
+            "expires_at": expires.isoformat()}
 
 
-@router.delete("/api/org/{org_id}/members/{member_id}")
-def remove_member(org_id: str, member_id: str, org: str = Depends(_org)) -> dict:
+def _invite_by_token(c, token: str, *, lock: bool = False):
+    if not token or not token.startswith(_INVITE_PREFIX):
+        return None
+    return c.execute(text(
+        "select i.id, i.org_id, i.email, i.role, i.created_at, i.expires_at, i.accepted_at, "
+        "o.name, o.company, o.email as org_email, o.plan_status, o.subscription_tier "
+        "from org_invites i join orgs o on o.id = i.org_id where i.token_hash=:h"
+        + (" for update of i" if lock else "")), {"h": hash_key(token)}).first()
+
+
+@router.get("/invites/{token}")
+def get_invite(token: str) -> dict:
+    """PUBLIC — what the accept page shows before anyone signs in. The token is the credential; an
+    unknown one is a plain 404 (no hint whether an org or address exists)."""
+    with _graph.engine.connect() as c:
+        inv = _invite_by_token(c, token)
+    if inv is None:
+        raise HTTPException(404, {"code": "INVITE_NOT_FOUND", "message": "This invite link is not valid."})
+    now = datetime.now(timezone.utc)
+    return {"org_name": inv.company or inv.name or "", "email": inv.email, "role": inv.role,
+            "expires_at": _iso(inv.expires_at),
+            "expired": bool(inv.expires_at is None or inv.expires_at <= now),
+            "accepted": inv.accepted_at is not None}
+
+
+class AcceptInvite(BaseModel):
+    email: str                      # must be the invited address
+    name: str
+    password: str
+    device_id: str | None = None
+
+
+@router.post("/invites/{token}/accept")
+def accept_invite(token: str, body: AcceptInvite) -> dict:
+    """PUBLIC — accept an invite: creates the member's login AND seat (one seat_id), consumes the
+    invite, and signs them in. Single use; expired links are refused; the address must match."""
+    name = (body.name or "").strip()[:120]
+    if not name:
+        raise HTTPException(422, "name is required")
+    if len(body.password or "") < 8:
+        raise HTTPException(400, "password must be at least 8 characters")
+    now = datetime.now(timezone.utc)
+    with _graph.engine.begin() as c:
+        inv = _invite_by_token(c, token, lock=True)
+        if inv is None:
+            raise HTTPException(404, {"code": "INVITE_NOT_FOUND",
+                                      "message": "This invite link is not valid."})
+        if inv.accepted_at is not None:
+            raise HTTPException(409, {"code": "INVITE_USED",
+                                      "message": "This invite has already been used."})
+        if inv.expires_at is None or inv.expires_at <= now:
+            raise HTTPException(410, {"code": "INVITE_EXPIRED",
+                                      "message": "This invite has expired. Ask for a new one."})
+        email = inv.email.strip().lower()
+        if (body.email or "").strip().lower() != email:
+            raise HTTPException(403, {"code": "EMAIL_MISMATCH",
+                                      "message": "This invite was sent to a different address."})
+        if (inv.plan_status or "") == "suspended":
+            raise HTTPException(403, {"error": "ACCOUNT_SUSPENDED"})
+        if (inv.org_email or "").strip().lower() == email:
+            raise HTTPException(409, {"code": "ALREADY_MEMBER",
+                                      "message": "That address is the workspace owner."})
+        seat = c.execute(text(
+            "select seat_id, active from org_seats where org_id=:o and lower(email)=:e "
+            "order by active desc limit 1"), {"o": inv.org_id, "e": email}).first()
+        if seat is not None and seat.active:
+            raise HTTPException(409, {"code": "ALREADY_MEMBER",
+                                      "message": "That address already has a seat here."})
+        try:
+            assert_seat_capacity(c, inv.org_id, adding_email=email)
+        except SeatLimitReached as exc:
+            raise HTTPException(409, {"code": "SEAT_LIMIT", "message": str(exc)}) from exc
+        role = inv.role if inv.role in SEAT_ROLES else "member"
+        # A returning teammate gets their OLD seat back: every card, responsibility and escalation
+        # that named it keeps pointing at the same person.
+        seat_id = seat.seat_id if seat is not None else new_id("seat")
+        c.execute(text(
+            "insert into org_seats (org_id, seat_id, email, role, active) values (:o,:s,:e,:r,true) "
+            "on conflict (org_id, seat_id) do update set email=excluded.email, "
+            "role=excluded.role, active=true"),
+            {"o": inv.org_id, "s": seat_id, "e": email, "r": role})
+        member_id = c.execute(text(
+            "insert into org_members (id, org_id, email, name, role, status, invited_at, "
+            "accepted_at, seat_id, pass_hash, deactivated_at, updated_at) "
+            "values (:i,:o,:e,:n,:r,'active',:inv,:now,:s,:ph,null,:now) "
+            "on conflict (org_id, email) do update set name=excluded.name, role=excluded.role, "
+            "status='active', accepted_at=excluded.accepted_at, seat_id=excluded.seat_id, "
+            "pass_hash=excluded.pass_hash, deactivated_at=null, updated_at=excluded.updated_at "
+            "returning id"),
+            {"i": new_id("mem"), "o": inv.org_id, "e": email, "n": name, "r": role,
+             "inv": inv.created_at or now, "now": now, "s": seat_id,
+             "ph": hash_password(body.password)}).scalar()
+        c.execute(text("update org_invites set accepted_at=:now, accepted_seat_id=:s where id=:i"),
+                  {"now": now, "s": seat_id, "i": inv.id})
+        # A NEW PERSON IS A CHANGE TO "WHO WE ARE" — the same material change `POST /seats`
+        # stamps for a seat it creates (see `api/routes.upsert_seat`): cards built while this
+        # address was still an outside counterparty must not be delivered as if it were one.
+        from genios_engine.feedback.reset import apply_organization_reset
+        apply_organization_reset(c, org_id=inv.org_id, reason=f"seat_joined:{seat_id}", at=now,
+                                 actor=email)
+        tokens = open_session(c, org_id=inv.org_id, seat_id=seat_id, email=email, role=role,
+                              device_id=body.device_id)
+    from genios_engine.platform.audit import record
+    record(inv.org_id, "member_joined", actor_type="user", actor_id=email, target_type="seat",
+           target_id=seat_id, metadata={"role": role})
+    return {"org_id": inv.org_id, "org_name": inv.company or inv.name or "", "name": name,
+            "email": email, "member_id": member_id, "plan": inv.subscription_tier,
+            **tokens.as_response()}
+
+
+class MemberUpdate(BaseModel):
+    role: str
+
+
+@router.patch("/api/org/{org_id}/members/{member_id}")
+def update_member(org_id: str, member_id: str, body: MemberUpdate,
+                  ctx: AuthCtx = Depends(_admin_org)) -> dict:
+    """Change a teammate's role (admin | member). Takes effect on their next request — sessions
+    read the role from the seat, not from the token."""
+    if member_id == "owner":
+        raise HTTPException(400, "the owner's role cannot be changed")
+    if body.role not in SEAT_ROLES:
+        raise HTTPException(422, "role must be admin or member")
+    org = ctx.org_id
+    with _graph.engine.begin() as c:
+        m = c.execute(text("select id, seat_id from org_members where id=:i and org_id=:o "
+                           "for update"), {"i": member_id, "o": org}).first()
+        if m is None:
+            raise HTTPException(404, "member not found")
+        c.execute(text("update org_members set role=:r, updated_at=now() where id=:i"),
+                  {"r": body.role, "i": m.id})
+        if m.seat_id:
+            c.execute(text("update org_seats set role=:r where org_id=:o and seat_id=:s"),
+                      {"r": body.role, "o": org, "s": m.seat_id})
+    from genios_engine.platform.audit import record
+    record(org, "member_role_changed", actor_type="user", actor_id=ctx.email or ctx.actor_id,
+           target_type="seat", target_id=m.seat_id, metadata={"role": body.role})
+    return {"updated": True, "member_id": m.id, "seat_id": m.seat_id, "role": body.role}
+
+
+def _deactivate_member(org: str, member_id: str, ctx: AuthCtx) -> dict:
     if member_id == "owner":
         raise HTTPException(400, "the owner cannot be removed")
     with _graph.engine.begin() as c:
-        c.execute(text("delete from org_members where id=:i and org_id=:o"),
-                  {"i": member_id, "o": org})
-    return {"removed": True}
+        m = c.execute(text("select id, seat_id from org_members where id=:i and org_id=:o "
+                           "for update"), {"i": member_id, "o": org}).first()
+        if m is None:
+            raise HTTPException(404, "member not found")
+        if m.seat_id and m.seat_id == ctx.seat_id:
+            raise HTTPException(400, "you cannot deactivate your own seat")
+        c.execute(text("update org_members set status='deactivated', deactivated_at=now(), "
+                       "updated_at=now() where id=:i"), {"i": m.id})
+        revoked = 0
+        if m.seat_id:
+            # The seat goes inactive (routing stops sending them anything, and `verify_bearer`
+            # refuses their access token on the next request) and every session ends now.
+            c.execute(text("update org_seats set active=false where org_id=:o and seat_id=:s"),
+                      {"o": org, "s": m.seat_id})
+            revoked = revoke_seat_sessions(c, org_id=org, seat_id=m.seat_id,
+                                           reason="seat_deactivated")
+    from genios_engine.platform.audit import record
+    record(org, "member_deactivated", actor_type="user", actor_id=ctx.email or ctx.actor_id,
+           target_type="seat", target_id=m.seat_id, metadata={"sessions_revoked": revoked})
+    return {"deactivated": True, "member_id": m.id, "seat_id": m.seat_id,
+            "sessions_revoked": revoked}
+
+
+@router.post("/api/org/{org_id}/members/{member_id}/deactivate")
+def deactivate_member(org_id: str, member_id: str, ctx: AuthCtx = Depends(_admin_org)) -> dict:
+    return _deactivate_member(ctx.org_id, member_id, ctx)
+
+
+@router.delete("/api/org/{org_id}/members/{member_id}")
+def remove_member(org_id: str, member_id: str, ctx: AuthCtx = Depends(_admin_org)) -> dict:
+    """Removing a teammate DEACTIVATES them — the seat id stays, because cards, escalations and
+    responsibilities already name it and a hard delete would orphan that history."""
+    return {"removed": True, **_deactivate_member(ctx.org_id, member_id, ctx)}
 
 
 @router.delete("/api/org/{org_id}/invites/{invite_id}")
-def cancel_invite(org_id: str, invite_id: str, org: str = Depends(_org)) -> dict:
+def cancel_invite(org_id: str, invite_id: str, ctx: AuthCtx = Depends(_admin_org)) -> dict:
     with _graph.engine.begin() as c:
-        c.execute(text("delete from org_invites where id=:i and org_id=:o"),
-                  {"i": invite_id, "o": org})
+        c.execute(text("delete from org_invites where id=:i and org_id=:o and accepted_at is null"),
+                  {"i": invite_id, "o": ctx.org_id})
     return {"cancelled": True}
 
 
@@ -607,7 +869,7 @@ def _wipe(c, org: str) -> dict:
 
 
 @router.post("/api/org/{org_id}/reset")
-def reset_graph(org_id: str, org: str = Depends(_org)) -> dict:
+def reset_graph(org_id: str, org: str = Depends(_owner_org)) -> dict:
     """Wipe this org's learned graph + signals + cards (keeps the account, connections, tasks).
     User-initiated from Settings with an explicit confirm."""
     with _graph.engine.begin() as c:
@@ -632,7 +894,7 @@ def reset_graph(org_id: str, org: str = Depends(_org)) -> dict:
 
 
 @router.delete("/api/org/{org_id}/account")
-def delete_account(org_id: str, org: str = Depends(_org)) -> dict:
+def delete_account(org_id: str, org: str = Depends(_owner_org)) -> dict:
     """Full account deletion — wipe all org data, then remove the org (cascades api_keys). Irreversible."""
     with _graph.engine.begin() as c:
         held = c.execute(text("select id from orgs where id=:o for update"), {"o": org}).first()

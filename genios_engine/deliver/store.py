@@ -372,7 +372,8 @@ class CardStore:
 
     def queue(self, org_id: str, *, assignee: str | None = None, admin: bool = False,
               states=("queued", "surfaced", "snoozed", "claimed"),
-              record_impressions: bool = True, viewer: str | None = None) -> list[dict]:
+              record_impressions: bool = True, viewer: str | None = None,
+              strict_seat: bool = False) -> list[dict]:
         """Dashboard read. admin sees all queues (incl. unrouted); a member sees only their own.
         Ranked by score desc — the morning's cards in priority order (§5.13 scenario 10).
 
@@ -403,7 +404,14 @@ class CardStore:
              "and k.expires_at > :authority_time and " + AUTHORITATIVE_SIGNAL_PREDICATE)
         params = {"o": org_id, "states": list(states),
                   "authority_time": datetime.now(timezone.utc)}
-        if not admin and assignee is not None:
+        if not admin and assignee is not None and strict_seat:
+            # A MEMBER SEAT sees what is routed to it and nothing else (deliver/seat_access.py):
+            # its assignment and its declared responsibilities. An unassigned card sits in the
+            # ADMIN queue by routing's own rule, so it is not a member's to read.
+            from genios_engine.deliver.seat_access import SEAT_REACH_SQL
+            q += " and " + SEAT_REACH_SQL
+            params["seat"] = assignee
+        elif not admin and assignee is not None:
             # A seat- or agent-bound credential sees loops routed to IT plus the org's UNCLAIMED
             # loops (assignee null) — an unassigned open loop belongs to whoever picks it up.
             #
@@ -464,7 +472,8 @@ class CardStore:
 
     def history(self, org_id: str, *, assignee: str | None = None, admin: bool = False,
                 states=HISTORY_STATES, since: datetime | None = None,
-                limit: int = 50, offset: int = 0, eval_time=None) -> list[dict]:
+                limit: int = 50, offset: int = 0, eval_time=None,
+                strict_seat: bool = False) -> list[dict]:
         """Closed cards, newest first, each with the last thing that happened to it.
 
         Same visibility rule as `queue` (a member sees their own + unassigned). Unlike `queue` it
@@ -501,7 +510,11 @@ class CardStore:
         params = {"o": org_id, "now": now, "open_states": list(self.OPEN_STATES),
                   "outcome_kinds": list(self._OUTCOME_KINDS),
                   "limit": int(limit), "offset": int(offset)}
-        if not admin and assignee is not None:
+        if not admin and assignee is not None and strict_seat:
+            from genios_engine.deliver.seat_access import SEAT_REACH_SQL
+            q += " and " + SEAT_REACH_SQL                             # a member: same rule as queue()
+            params["seat"] = assignee
+        elif not admin and assignee is not None:
             q += " and (k.assignee = :a or k.assignee is null)"      # same rule as queue()
             params["a"] = assignee
         q += ") h"

@@ -57,7 +57,13 @@ def parse_push(payload: Mapping[str, Any]) -> ComposioPush:
 
 
 def pick_connection(connections: Iterable, push: ComposioPush):
-    """The active connection this push belongs to, or None."""
+    """The active connection this push belongs to, or None.
+
+    Both kinds of connection resolve by the same exact match. A workspace connection's Composio
+    user id is the org id; a SEAT connection's is `{org_id}:{seat_id}` (migration 0138,
+    `contracts.connection.composio_user_id_for`), so a push for one member's Gmail can never land
+    on the org's connection or on another member's — the ids are distinct strings, compared whole.
+    """
     mine = [c for c in connections if c.composio_user_id == push.user_id]
     if push.source_type is not None:
         mine = [c for c in mine if c.source_type == push.source_type]

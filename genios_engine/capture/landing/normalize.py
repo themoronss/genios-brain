@@ -52,8 +52,9 @@ def to_source_event(
         payload_ref=payload_ref,
         # The source's own ACL, stamped once at the only seam that still knows it. By Layer 2
         # the email is a fact and the recipient list is gone.
-        visibility=derive_visibility(
+        # A door-declared audience (a personal upload) wins; otherwise the source's own rule.
+        visibility=(getattr(raw, "visibility", None) or derive_visibility(
             source=raw.source, actor_email=raw.actor_email,
             recipients=raw.recipients, internal_kind=kind,
-            mailbox_owner=mailbox_owner),
+            mailbox_owner=mailbox_owner)),
     )

@@ -27,7 +27,7 @@ def ingest_manual(*, org_id: str, source: str, object_type: str, source_object_i
                   content_version: str | None = None,
                   repo, payload_store=None, prepared_store=None, trace_repo=None,
                   coverage_fn=None, semantic=None, esqe=None,
-                  connection_id: str = "manual") -> CaptureResult:
+                  connection_id: str = "manual", visibility=None) -> CaptureResult:
     """One deliberately-provided object → the full L1 pipeline. Idempotent via the
     same dedup ledger as everything else (same object id → duplicate, not a re-land).
 
@@ -47,6 +47,9 @@ def ingest_manual(*, org_id: str, source: str, object_type: str, source_object_i
         actor_type=actor_type, actor_email=actor_email,
         internal_kind=internal_kind, content_version=content_version,
         raw={"body": body or "", "subject": subject or "", **(raw_extra or {})},
+        # A door that knows the audience (a seat's personal upload → private to that seat) says
+        # so; None keeps the source rule's answer.
+        visibility=visibility,
     )
     return capture_event(raw, org_id=org_id, connection_id=connection_id, repo=repo,
                          payload_store=payload_store, prepared_store=prepared_store,

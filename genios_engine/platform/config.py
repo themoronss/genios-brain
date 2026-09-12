@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     # empty REDIS_URL → NullCache no-op (Redis is a prod accelerator, not a hard dep).
     redis_url: str = ""                          # rediss://… (Upstash) or redis://localhost
     jwt_secret: str = "genios-dev-secret-change-in-prod"   # dashboard-session JWT signing
+    # Seat sessions (platform/sessions.py): a short-lived access JWT, renewed through a rotating
+    # refresh token that can be revoked (logout, deactivation, reuse of a rotated token).
+    access_token_ttl_seconds: int = 900                     # 15 min access JWT
+    refresh_token_ttl_seconds: int = 30 * 24 * 3600         # absolute session lifetime
+    invite_ttl_seconds: int = 7 * 24 * 3600                 # team invite link validity
     internal_token: str = ""                     # cron/internal endpoints (sweep, ingest-all)
     # GeniOS staff logins allowed into the cross-org admin console, comma-separated emails.
     # Deliberately env-only: superadmin is a property of US, not of a tenant row, so granting it

@@ -25,7 +25,8 @@ from genios_engine.capture.esqe.finalize import L1Stores, ManualSweep, finalize_
 from genios_engine.capture.documents.native import extract_text_best_effort
 from genios_engine.capture.internal_knowledge import (authority_rank_for, is_canon,
                                                       normalize_kind)
-from genios_engine.platform.auth import get_current_org
+from genios_engine.contracts.visibility import PRIVATE, Visibility
+from genios_engine.platform.auth import AuthCtx, get_current_org, require_workspace_user
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.logging import get_logger
 from genios_engine.platform.wiring import (make_conflict_store, make_coverage_fn,
@@ -63,6 +64,41 @@ def _org(org_id: str, org: str = Depends(get_current_org)) -> str:
     if org_id != org:
         raise HTTPException(403, "org mismatch")
     return org
+
+
+#: company  = org-visible knowledge — every upload that existed before seats, and the canon path
+#:            for SOP / policy tags.
+#: personal = private to the uploading seat: listed to nobody else, and every event it produces
+#:            carries `private` visibility naming only that seat's address.
+UPLOAD_SCOPES = ("company", "personal")
+
+
+def _upload_ctx(org_id: str, ctx: AuthCtx = Depends(require_workspace_user)) -> AuthCtx:
+    """Anyone who works here — owner, admin or member seat. What each may SEE and CHANGE is decided
+    per file (`_may_change`, the list filter), never by this dependency."""
+    if org_id != ctx.org_id:
+        raise HTTPException(403, "org mismatch")
+    return ctx
+
+
+def _upload_org(org_id: str, ctx: AuthCtx = Depends(_upload_ctx)) -> str:
+    return ctx.org_id
+
+
+def _is_company(r) -> bool:
+    return (getattr(r, "scope", None) or "company") == "company"
+
+
+def _may_change(ctx: AuthCtx, owner) -> None:
+    """Who may delete or retag a file. A PERSONAL file: only the seat that uploaded it — anyone
+    else is told it does not exist, because a personal file is not theirs to know about. A COMPANY
+    file: an admin / the owner, or the seat that uploaded it."""
+    seat = getattr(owner, "seat_id", None)
+    if not _is_company(owner) and seat != ctx.seat_id:
+        raise HTTPException(404, {"error": "not_found", "message": "upload not found"})
+    if _is_company(owner) and ctx.is_member and seat != ctx.seat_id:
+        raise HTTPException(403, {"error": "admin_required",
+                                  "message": "only an admin or the uploader can change a company file"})
 
 
 def _ext(name: str) -> str:
@@ -128,7 +164,8 @@ def _l1_stores() -> L1Stores:
 
 def _emit_chunk(org_id: str, file_id: str, idx: int, subject: str, body: str,
                 uploader_email: str, internal_kind: str | None = None,
-                coverage_fn=None, semantic=None, esqe=None, locator: dict | None = None):
+                coverage_fn=None, semantic=None, esqe=None, locator: dict | None = None,
+                visibility: Visibility | None = None):
     """One upload chunk → THE ONE DOOR (capture_event via intake): deduped, traced,
     W-05-whitelisted, payload + prepared text persisted — identical to a connector sync.
     (Was a hand-rolled SQL insert that skipped the gate, the trace and the seam.)
@@ -171,7 +208,9 @@ def _emit_chunk(org_id: str, file_id: str, idx: int, subject: str, body: str,
         # S2 and S4, threaded from the caller for the same reason `coverage_fn` is: they are
         # facts about the TENANT (an activation row, an importance baseline), computed once per
         # file, and a 30-chunk PDF must not buy either of them thirty times.
-        semantic=semantic, esqe=esqe)
+        semantic=semantic, esqe=esqe,
+        # None = the `upload` rule's org scope; a personal file passes its private audience.
+        visibility=visibility)
 
 
 def _ingest(org_id: str, file_id: str, prefix: str, truncated: int = 0) -> None:
@@ -236,16 +275,33 @@ def _row(r) -> dict:
         # underneath all landed at rank 2 — the UI claimed an authority the graph did not
         # honour, on a 0–1 scale nothing else in the API uses. Now it is the real rank,
         # matching /entity and the fact read models (2 observed · 4 company canon).
-        "authority": authority_rank_for(r.tag),
-        "internal_kind": normalize_kind(r.tag),
-        "is_canon": is_canon(r.tag),
+        "authority": authority_rank_for(r.tag if _is_company(r) else None),
+        "internal_kind": normalize_kind(r.tag) if _is_company(r) else None,
+        "is_canon": is_canon(r.tag) and _is_company(r),
+        "scope": getattr(r, "scope", None) or "company",
     }
 
 
 @router.post("/api/org/{org_id}/upload")
 async def upload_resource(org_id: str, background_tasks: BackgroundTasks,
                           file: UploadFile = File(...), tag: str | None = Form(None),
-                          org: str = Depends(_org)) -> dict:
+                          scope: str = Form("company"),
+                          ctx: AuthCtx = Depends(_upload_ctx)) -> dict:
+    """`scope` = company (default — org-visible, today's behaviour, canon for SOP/policy tags) or
+    personal (private to the uploading seat)."""
+    org = ctx.org_id
+    scope = (scope or "company").strip().lower()
+    if scope not in UPLOAD_SCOPES:
+        raise HTTPException(422, {"error": "invalid_scope",
+                                  "message": "scope must be company or personal"})
+    if scope == "personal" and not (ctx.seat_id and ctx.email):
+        raise HTTPException(403, {"error": "seat_required",
+                                  "message": "a personal upload needs a signed-in seat"})
+    if scope == "company" and ctx.is_member and normalize_kind(tag):
+        # Company canon outranks every observed source (authority rank 4). Declaring it is an
+        # admin's act, not any teammate's.
+        raise HTTPException(403, {"error": "admin_required",
+                                  "message": "only an admin can add company policy or SOP documents"})
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     data = await file.read()
@@ -258,7 +314,11 @@ async def upload_resource(org_id: str, background_tasks: BackgroundTasks,
     # Content-addressed id → re-uploading the SAME file is idempotent: identical bytes → same file_id
     # → same chunk dedup keys → no duplicate events (MD Part 3.4). Org-scoped so two tenants uploading
     # the same file never collide.
-    content_hash = hashlib.sha256(org.encode() + b":" + data).hexdigest()
+    # A PERSONAL file's id is keyed on the seat too: two teammates uploading the same bytes each get
+    # a private copy, and neither learns from a "duplicate" answer that the other has it. A company
+    # file keeps the id it always had.
+    salt = org.encode() + (b":personal:" + ctx.seat_id.encode() if scope == "personal" else b"")
+    content_hash = hashlib.sha256(salt + b":" + data).hexdigest()
     file_id = "upl_" + content_hash[:24]
     prefix = f"upload:{file_id}"
 
@@ -292,20 +352,24 @@ async def upload_resource(org_id: str, background_tasks: BackgroundTasks,
     except Exception:                                           # noqa: BLE001 — disk record is a nicety
         _log.warning("upload disk write failed for %s", file_id)
 
-    with _graph.engine.connect() as c:
-        uploader = c.execute(text("select email from orgs where id=:o"), {"o": org}).scalar()
-    uploader = uploader or f"owner@{org}"
+    if ctx.seat_id and ctx.email:
+        uploader = ctx.email                     # the signed-in person — owner or teammate
+    else:
+        with _graph.engine.connect() as c:
+            uploader = c.execute(text("select email from orgs where id=:o"), {"o": org}).scalar()
+        uploader = uploader or f"owner@{org}"
 
     try:
         with _graph.engine.begin() as c:
             c.execute(text(
                 "insert into resource_uploads (file_id, org_id, file_name, file_type, "
                 "file_size_bytes, storage_path, tag, status, source_item_prefix, chunks, error, "
-                "uploaded_by) values (:fid,:o,:fn,:ft,:sz,:sp,:tag,:st,:pref,:ch,:err,:by) "
+                "uploaded_by, scope, seat_id) "
+                "values (:fid,:o,:fn,:ft,:sz,:sp,:tag,:st,:pref,:ch,:err,:by,:scope,:seat) "
                 "on conflict do nothing"),                # race safety; the pre-check handles the common case
                 {"fid": file_id, "o": org, "fn": name, "ft": _ext(name), "sz": len(data),
                  "sp": storage_path, "tag": tag, "st": status, "pref": prefix, "ch": len(chunks),
-                 "err": err, "by": uploader})
+                 "err": err, "by": uploader, "scope": scope, "seat": ctx.seat_id})
     except Exception:
         # In particular, an account deletion may revoke the org while this upload waits on its FK
         # lock. Never leave the bytes orphaned when the metadata insert cannot commit.
@@ -316,7 +380,12 @@ async def upload_resource(org_id: str, background_tasks: BackgroundTasks,
                 _log.exception("failed to clean upload after metadata insert failure: %s", file_id)
         raise
 
-    kind = normalize_kind(tag)          # a canon tag promotes the whole file to rank 4
+    # A canon tag promotes the whole file to rank 4 — for a COMPANY file only. A personal copy of a
+    # policy is one person's file, not the company's policy.
+    kind = normalize_kind(tag) if scope == "company" else None
+    visibility = (Visibility(scope=PRIVATE, principals=[uploader.strip().lower()],
+                             derived_from=f"upload:personal:{ctx.seat_id}")
+                  if scope == "personal" else None)
     # ONE declaration for the whole file, not one per chunk: the inputs are a connections read
     # and a count(distinct source_object_id), and they are facts about the TENANT's sources, not
     # about a paragraph of a PDF.
@@ -340,7 +409,7 @@ async def upload_resource(org_id: str, background_tasks: BackgroundTasks,
             if (chunk_pages or ch.section_title) else None
         res = _emit_chunk(org, file_id, i, name, ch.text, uploader, internal_kind=kind,
                           coverage_fn=coverage_fn, semantic=semantic, esqe=esqe,
-                          locator=locator)
+                          locator=locator, visibility=visibility)
         if res is not None:
             results.append(res)
     if results:
@@ -363,27 +432,35 @@ async def upload_resource(org_id: str, background_tasks: BackgroundTasks,
         # idempotent on the document version, so an already-read chunk costs one indexed read.
         # Queued AFTER `_ingest` so L2's drain has run first and an approver named in the policy
         # has a node to resolve to.
-        from genios_engine.feedback.org_rule_ingest import sweep_org_rule_discovery
-        background_tasks.add_task(sweep_org_rule_discovery, org)
+        if scope == "company":                 # a personal file is nobody's company rules
+            from genios_engine.feedback.org_rule_ingest import sweep_org_rule_discovery
+            background_tasks.add_task(sweep_org_rule_discovery, org)
 
     from genios_engine.platform.audit import record
     record(org, "data_accessed", actor_type="user", actor_id=uploader, target_type="upload",
            target_id=file_id, metadata={"file_name": name, "bytes": len(data), "chunks": len(chunks)})
-    return {"file_id": file_id, "status": status, "chunks": len(chunks)}
+    return {"file_id": file_id, "status": status, "chunks": len(chunks), "scope": scope}
 
 
 @router.get("/api/org/{org_id}/uploads")
-def list_uploads(org_id: str, org: str = Depends(_org)) -> dict:
+def list_uploads(org_id: str, ctx: AuthCtx = Depends(_upload_ctx)) -> dict:
+    """Company files to everyone who works here; a PERSONAL file only to the seat that uploaded it
+    — not to an admin, not to the owner."""
     with _graph.engine.connect() as c:
         rows = c.execute(text(
             "select file_id, file_name, file_type, file_size_bytes, uploaded_at, tag, status, "
-            "facts_count, entities_count, error from resource_uploads where org_id=:o "
-            "order by uploaded_at desc"), {"o": org}).fetchall()
+            "facts_count, entities_count, error, scope, seat_id from resource_uploads "
+            "where org_id=:o and (scope='company' or seat_id=cast(:seat as text)) "
+            "order by uploaded_at desc"), {"o": ctx.org_id, "seat": ctx.seat_id}).fetchall()
     return {"uploads": [_row(r) for r in rows]}
 
 
 @router.delete("/api/org/{org_id}/uploads/{file_id}")
-def delete_upload(org_id: str, file_id: str, org: str = Depends(_org)) -> dict:
+def delete_upload(org_id: str, file_id: str, org: str = Depends(_upload_org),
+                  ctx: AuthCtx = Depends(_upload_ctx)) -> dict:
+    # Called directly (tests, internal callers) there is no request credential: it acts with the
+    # reach of an owner-level one, which is what the function always did.
+    ctx = ctx if isinstance(ctx, AuthCtx) else AuthCtx(org_id=org)
     like_old = f"upload:{file_id}:%"                      # pre-door key shape
     like_new = f"upload:document_chunk:{file_id}:%"       # one-door key shape
     with _graph.engine.begin() as c:
@@ -391,6 +468,9 @@ def delete_upload(org_id: str, file_id: str, org: str = Depends(_org)) -> dict:
                         {"o": org, "f": file_id}).first()
         if rec is None:
             raise HTTPException(404, {"error": "not_found", "message": "upload not found"})
+        _may_change(ctx, c.execute(text(
+            "select scope, seat_id from resource_uploads where org_id=:o and file_id=:f"),
+            {"o": org, "f": file_id}).first())
         evids = [r.event_id for r in c.execute(text(
             "select event_id from source_events where org_id=:o "
             "and (dedup_key like :p or dedup_key like :p2)"),
@@ -431,10 +511,19 @@ class TagUpdate(BaseModel):
 
 
 @router.patch("/api/org/{org_id}/uploads/{file_id}/tag")
-def retag_upload(org_id: str, file_id: str, body: TagUpdate, org: str = Depends(_org)) -> dict:
+def retag_upload(org_id: str, file_id: str, body: TagUpdate,
+                 ctx: AuthCtx = Depends(_upload_ctx)) -> dict:
+    org = ctx.org_id
     with _graph.engine.begin() as c:
-        res = c.execute(text("update resource_uploads set tag=:t where org_id=:o and file_id=:f"),
-                        {"t": body.tag, "o": org, "f": file_id})
-    if res.rowcount == 0:
-        raise HTTPException(404, {"error": "not_found", "message": "upload not found"})
+        owner = c.execute(text(
+            "select scope, seat_id from resource_uploads where org_id=:o and file_id=:f for update"),
+            {"o": org, "f": file_id}).first()
+        if owner is None:
+            raise HTTPException(404, {"error": "not_found", "message": "upload not found"})
+        _may_change(ctx, owner)
+        if _is_company(owner) and ctx.is_member and normalize_kind(body.tag):
+            raise HTTPException(403, {"error": "admin_required",
+                                      "message": "only an admin can make a file company policy or SOP"})
+        c.execute(text("update resource_uploads set tag=:t where org_id=:o and file_id=:f"),
+                  {"t": body.tag, "o": org, "f": file_id})
     return {"retagged": True}
