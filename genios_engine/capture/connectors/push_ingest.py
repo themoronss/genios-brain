@@ -147,6 +147,9 @@ def ingest_pushed_objects(objects: tuple[RawObject, ...], *, org_id: str, connec
     `email_message` AND an `email_attachment`, and the document is usually the half carrying the
     contract. The webhook route landed `objects[0]` and dropped the rest.
     """
+    # The same message arriving by push after a poll (or twice by push) carries new attachmentIds.
+    from genios_engine.capture.landing.reread import drop_reread_attachments
+    objects, _reread = drop_reread_attachments(objects, org_id=org_id, repo=wiring.repo)
     prime_relevance_page(objects, wiring.semantic, wiring.sender_resolver)
     results: list[CaptureResult] = []
     quarantined: list[str] = []

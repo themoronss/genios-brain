@@ -459,7 +459,7 @@ def _effective_packs(store: GraphStore, org_id: str, registry) -> dict | None:
 
 def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
                     crypto_key: str, max_total: int = 5000, registry=None,
-                    eval_time=None) -> dict:
+                    eval_time=None, on_progress=None) -> dict:
     """Drain, derive, and sample. `eval_time` is the sweep's ONE instant.
 
     The clock is read here, at the process boundary, and nowhere below it. Every measured pass
@@ -512,6 +512,11 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             elif outcome in _DONE_OUTCOMES:
                 _record_done(store, org_id, row.event_id)
         done += len(rows)
+        if on_progress is not None:
+            try:
+                on_progress(done)              # a live count for the sync progress bar
+            except Exception:      # noqa: BLE001 — a report must never stop the drain
+                pass
 
     for node_id in affected:                          # B9 rebuild affected read models
         build_entity_360(store, org_id=org_id, node_id=node_id)

@@ -110,22 +110,61 @@ def make_registry(database_url: str = "") -> PackRegistry:
     return reg
 
 
+def _semver(version) -> tuple[int, ...] | None:
+    try:
+        return tuple(int(part) for part in str(version).split("."))
+    except ValueError:
+        return None
+
+
+def should_promote(current_version, state, pins, target_version) -> bool:
+    """Whether a tenant on `current_version` moves up to `target_version` on its own.
+
+    Only upward, and never over a decision someone made: a `disabled` pack stays disabled, and a
+    tenant whose `pins` contain "version" keeps the version it has. An unparseable version is left
+    alone rather than guessed at.
+    """
+    if state == "disabled":
+        return False
+    if isinstance(pins, str):
+        import json
+        pins = json.loads(pins or "[]")
+    if "version" in (pins or []):
+        return False
+    current, target = _semver(current_version), _semver(target_version)
+    return current is not None and target is not None and target > current
+
+
 def ensure_default(registry: PackRegistry, org_id: str,
                    pack_id: str = DEFAULT_PACK_ID,
                    version: str = DEFAULT_PACK_VERSION) -> None:
-    """Apply the default pack to an org that has NONE — only if absent, so an admin who
-    disabled/overrode a pack is never silently re-enabled by a background L3 run."""
+    """Apply the pack to an org that has NONE, and move an org on an OLDER version up to this one.
+
+    Promotion used to be a manual script (`scripts/promote_packs.py`), so every existing tenant ran
+    the old rule set until someone remembered: general 1.5.0 shipped on 10 Sep and the design
+    partner was still on 1.4.0 a day later. `should_promote` keeps it to upgrades only and respects
+    a disabled pack or a "version" pin. `apply_to_tenant` bumps the pack revision, which makes
+    existing signals non-authoritative; every caller (run_all, the L2 pass, card building) reasons
+    after this in the same pass, which re-authorises them. Admin overrides (lvl2) survive the move;
+    calibration offsets (lvl3) reset on a version change, as `apply_to_tenant` has always done."""
     with registry._engine.connect() as c:
-        exists = c.execute(text("select 1 from tenant_packs where org_id=:o and pack_id=:p"),
-                           {"o": org_id, "p": pack_id}).first()
-    if exists is None:
+        row = c.execute(text("select version, state, pins from tenant_packs "
+                             "where org_id=:o and pack_id=:p"),
+                        {"o": org_id, "p": pack_id}).first()
+    if row is None:
         registry.apply_to_tenant(org_id, pack_id, version, state="active")
+        return
+    if should_promote(row.version, row.state, row.pins, version):
+        registry.apply_to_tenant(org_id, pack_id, version, state=row.state)
+        import logging
+        logging.getLogger(__name__).info("pack promoted org=%s pack=%s %s -> %s",
+                                         org_id, pack_id, row.version, version)
 
 
 def ensure_defaults(registry: PackRegistry, org_id: str) -> None:
-    """Apply every default pack (sales + general) to an org that doesn't have it yet — only if
-    absent, same non-clobbering rule as ensure_default. Orgs already on an older pinned version
-    keep it until explicitly promoted (zero-deploy lifecycle); this only backfills what's missing."""
+    """Apply every default pack to an org that doesn't have it, and move an org on an older version
+    of one up to the current version — the rules of `ensure_default` (upgrade only; a disabled pack
+    or a "version" pin is left alone)."""
     for pack_id, version in DEFAULT_PACKS:
         ensure_default(registry, org_id, pack_id, version)
     # AND THE AUTHORED CORPORA, on the same non-clobbering terms. An empty lane is inert for a

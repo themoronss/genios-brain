@@ -574,12 +574,19 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                                             esqe=esqe, sync_mode=sync_mode)
                 return raw, res, err
 
+            # A re-read message brings its attachments back under NEW Gmail attachmentIds, which
+            # the dedup key cannot see. Drop them here, before the parallel capture below can land
+            # them a second time (`capture/landing/reread.py`); they count as duplicates.
+            from genios_engine.capture.landing.reread import drop_reread_attachments
+            objects, reread = drop_reread_attachments(batch.objects, org_id=org_id, repo=repo)
+            summary.duplicate += reread
+
             # BATCH the S2 relevance gate for the whole page in a few LLM calls (prime the classifier's
             # cache) BEFORE per-event capture — turns ~25 gate calls/page into ~2. Best-effort: if the
             # classifier doesn't support priming or a batch fails, capture just calls it per-email.
-            if batch.objects and relevance is not None and hasattr(relevance, "prime"):
+            if objects and relevance is not None and hasattr(relevance, "prime"):
                 try:
-                    relevance.prime(batch.objects)
+                    relevance.prime(objects)
                 except Exception:      # noqa: BLE001 — never let batching break the sync
                     pass
 
@@ -598,14 +605,14 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
             #
             # Best-effort inside `prime_relevance_page` itself: a page that could not be primed
             # costs the door its batching, never its mail.
-            if batch.objects:
-                prime_relevance_page(batch.objects, semantic, sender_resolver)
+            if objects:
+                prime_relevance_page(objects, semantic, sender_resolver)
 
             # capture the whole page CONCURRENTLY — DB round-trips overlap. Each email is independent,
             # so this changes nothing about WHAT is captured, only how fast.
-            if batch.objects:
+            if objects:
                 with ThreadPoolExecutor(max_workers=_CAPTURE_WORKERS) as ex:
-                    captured = list(ex.map(_cap, batch.objects))
+                    captured = list(ex.map(_cap, objects))
             else:
                 captured = []
 

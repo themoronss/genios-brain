@@ -2557,17 +2557,23 @@ def _saved_connection_config(org_id: str, source_type: str) -> dict:
 
 
 def _backfill_one_source(org_id: str, source_type: str, limit: int = 25,
-                         max_rounds: int = _BACKFILL_MAX_ROUNDS, on_round=None) -> tuple[int, int, bool]:
+                         max_rounds: int = _BACKFILL_MAX_ROUNDS, on_round=None,
+                         start_cursor: str | None = None,
+                         on_cursor=None) -> tuple[int, int, bool]:
     """Window-bounded backfill of ONE source (no interleaved L2 — L2 runs as its own phase after).
     Pages backward through the connection's window (`backfill_days`, default 60); `on_round(count)`
-    fires each round so the progress bar can move live. Returns (scanned, emitted, capped)."""
+    fires each round so the progress bar can move live. Returns (scanned, emitted, capped).
+
+    `start_cursor` resumes from a page a previous attempt already reached, and `on_cursor(cursor,
+    rounds)` fires after each round has been captured so the caller can checkpoint it — a crash
+    after that point resumes at the NEXT page, never re-reading the one just landed."""
     from genios_engine.contracts.connection import Connection
     conn = Connection(org_id=org_id, composio_user_id=org_id, source_type=source_type,
                       config=_saved_connection_config(org_id, source_type))
     rel = make_relevance_classifier(org_id)    # ONE classifier for the whole backfill: the connector
     connector = make_connector_for(conn, relevance=rel)   # gates on snippet + fetches only keepers;
     event_cap = _SOURCE_EVENT_CAP.get(source_type)        # the pipeline reuses its primed verdicts.
-    cursor: str | None = None
+    cursor: str | None = start_cursor
     scanned = emitted = 0
     coverage_fn = _coverage_fn_for(org_id)          # once per backfill, not once per round
     esqe = _esqe_stage_for(org_id)                  # L1.6.7-U2's baseline, likewise
@@ -2588,6 +2594,11 @@ def _backfill_one_source(org_id: str, source_type: str, limit: int = 25,
         scanned += summary.scanned
         emitted += summary.emitted
         cursor = summary.next_cursor
+        if on_cursor is not None:
+            try:
+                on_cursor(cursor, _rnd + 1)
+            except Exception:      # noqa: BLE001 — a checkpoint that failed to save costs a resume
+                _log.exception("backfill checkpoint failed org=%s src=%s", org_id, source_type)
         if on_round is not None:
             try:
                 on_round(_source_count(org_id, source_type))
@@ -2611,14 +2622,32 @@ def _process_and_reason_tracked(org_id: str, heartbeat=None) -> None:
     from genios_engine.platform import progress as P
     hb = heartbeat if callable(heartbeat) else (lambda *a, **k: None)
     eng = _graph.engine
+    # The Sync job never provisioned: `_run_l2` does, but this path is what a user's Sync runs, so a
+    # brand-new tenant got its packs promoted and its ready domains switched on only at the next
+    # 6-hourly sweep. Idempotent and never fatal, same as in `_run_l2`.
+    try:
+        from genios_engine.platform.intelligence_onboarding import provision_intelligence
+        provision_intelligence(eng, org_id)
+    except Exception:      # noqa: BLE001 — provisioning never blocks the pass it precedes
+        _log.exception("intelligence provisioning failed for org_id=%s", org_id)
     total = _pending_count(org_id)
     P.set_phase(eng, org_id, "processing", state="running", total=total, done=0,
                 detail="Reading your messages…")
     processed = 0
+
+    def _live(in_this_chunk: int) -> None:
+        # Per L2 batch, not per 500-event chunk: an inbox under 500 pending is ONE chunk, and the
+        # bar sat at 0 until the whole of L2 was done, then jumped.
+        seen = processed + in_this_chunk
+        P.set_phase(eng, org_id, "processing", done=min(seen, total or seen),
+                    detail=f"{seen} processed")
+        hb()
+
     while True:                                # drain in chunks → live progress, still bounded/idempotent
         out = process_pending(org_id=org_id, store=_graph, llm=_llm,
                               registry=_registry,
-                              crypto_key=get_settings().crypto_key, max_total=500)
+                              crypto_key=get_settings().crypto_key, max_total=500,
+                              on_progress=_live)
         n = int(out.get("processed", 0))
         processed += n
         P.set_phase(eng, org_id, "processing",
@@ -2702,18 +2731,30 @@ def _sync_active(org_id: str) -> bool:
         return False
 
 
-def _onboarding_sync_bg(org_id: str, sources: list[str], limit: int = 25, heartbeat=None) -> None:
-    """THE single Sync action: for every connected tool, pull the full 2-month window, then process
-    → graph → intelligence. Runs inside the durable worker; `heartbeat(checkpoint=None)` is called
-    as it works so a crash leaves a stale beat and the job is re-claimed + resumed (idempotent —
-    dedup + l2_processing_runs make a re-run safe). Re-raises on an unrecoverable failure so the
-    worker can mark the job for retry."""
+def _onboarding_sync_bg(org_id: str, sources: list[str], limit: int = 25, heartbeat=None,
+                        checkpoint: dict | None = None, save_checkpoint=None) -> None:
+    """THE single Sync action: for every connected tool, pull the connection's window (60 days by
+    default), then process → graph → intelligence. Runs inside the durable worker, heart-beating as
+    it works so a crash leaves a stale beat and the job is re-claimed, and saving `checkpoint` (via
+    `save_checkpoint`) after every captured page so the re-claimed job resumes where it stopped
+    instead of re-reading the window. Re-raises on an unrecoverable failure so the worker can mark
+    the job for retry."""
     from genios_engine.platform import progress as P
     eng = _graph.engine if _graph is not None else None
     hb = heartbeat if callable(heartbeat) else (lambda *a, **k: None)
+    # THE CHECKPOINT. `sync_jobs` could always store one and nothing ever wrote it, so a deploy or a
+    # crash mid-backfill re-read the whole window from the newest page: on 11 Sep a restart two
+    # hours into a sync had to be steered past by hand. Each source records "done", or the page
+    # cursor it has captured through; a resumed job skips the first and continues the second.
+    cp = checkpoint if isinstance(checkpoint, dict) else {}
+    done_by_source = cp.setdefault("sources", {})
+    cp.setdefault("v", 1)
+    resumed = bool(done_by_source)
+    save = save_checkpoint if callable(save_checkpoint) else (lambda _cp: None)
     # Bill circuit-breaker (pre-flight only): refuse to START a new sync if this org has already made
-    # a runaway number of LLM calls today. Never interrupts a run already in progress.
-    if _llm_over_daily_cap(org_id):
+    # a runaway number of LLM calls today. Never interrupts a run already in progress — and a
+    # resumed job IS one: refusing it here would mark it complete with half a window, for good.
+    if not resumed and _llm_over_daily_cap(org_id):
         _log.warning("sync skipped: org=%s hit the daily LLM cap (%s) — cost circuit breaker",
                      org_id, _LLM_DAILY_CAP)
         if eng is not None:
@@ -2729,11 +2770,18 @@ def _onboarding_sync_bg(org_id: str, sources: list[str], limit: int = 25, heartb
              + [s for s in sources if s not in ("gmail", "gcal")])
     try:
         if eng is not None:
-            P.start(eng, org_id, order)
+            P.start(eng, org_id, order, resume=resumed)
             P.set_phase(eng, org_id, "connecting", state="done")     # OAuth already completed
         for st in order:
             phase = "emails" if st == "gmail" else "calendar" if st == "gcal" else "processing"
             tracked = phase in ("emails", "calendar")
+            mark = done_by_source.setdefault(st, {})
+            if mark.get("state") == "done":
+                if eng is not None and tracked:
+                    cnt = _source_count(org_id, st)
+                    P.set_phase(eng, org_id, phase, state="done", done=cnt, total=cnt,
+                                detail=f"{cnt} synced")
+                continue
             if eng is not None and tracked:
                 P.set_phase(eng, org_id, phase, state="running", detail="Fetching…")
 
@@ -2741,13 +2789,44 @@ def _onboarding_sync_bg(org_id: str, sources: list[str], limit: int = 25, heartb
                 if eng is not None and _tracked:
                     P.set_phase(eng, org_id, p, done=cnt, detail=f"{cnt} synced")
                 hb()                                    # liveness beat every backfill round
+
+            rounds_before = int(mark.get("rounds") or 0)
+
+            def _saved(cursor, rounds, _mark=mark, _base=rounds_before):
+                _mark.update(state="running", cursor=cursor, rounds=_base + rounds)
+                save(cp)
+
+            start = mark.get("cursor")
+            budget = max(1, _BACKFILL_MAX_ROUNDS - rounds_before)
             try:
-                _backfill_one_source(org_id, st, limit, on_round=_round)
+                try:
+                    _backfill_one_source(org_id, st, limit, max_rounds=budget, on_round=_round,
+                                         start_cursor=start, on_cursor=_saved)
+                except Exception:      # noqa: BLE001 — see below
+                    if not start:
+                        raise
+                    # A saved page token the provider no longer honours. Start this source again
+                    # from the newest page, once: dedup (attachments included, via
+                    # capture/landing/reread) makes the re-read land nothing twice.
+                    _log.warning("resume cursor rejected org=%s src=%s; restarting the source",
+                                 org_id, st, exc_info=True)
+                    mark.update(cursor=None, rounds=0)
+                    save(cp)
+
+                    def _saved_fresh(cursor, rounds, _mark=mark):
+                        _mark.update(state="running", cursor=cursor, rounds=rounds)
+                        save(cp)
+
+                    _backfill_one_source(org_id, st, limit, on_round=_round,
+                                         on_cursor=_saved_fresh)
             except Exception:      # noqa: BLE001 — one source failing never stops the rest
                 _log.exception("onboarding backfill failed org=%s src=%s", org_id, st)
                 if eng is not None and tracked:
                     P.set_phase(eng, org_id, phase, state="error")
             else:
+                mark.clear()
+                mark["state"] = "done"
+                save(cp)
                 if eng is not None and tracked:
                     cnt = _source_count(org_id, st)
                     P.set_phase(eng, org_id, phase, state="done", done=cnt, total=cnt,
@@ -2790,7 +2869,9 @@ def run_one_sync_job(worker_id: str) -> bool:
     ticker = threading.Thread(target=_beat, daemon=True, name=f"job-beat-{jid}")
     ticker.start()
     try:
-        _onboarding_sync_bg(org, sources, heartbeat=lambda *a, **k: J.heartbeat(eng, jid))
+        _onboarding_sync_bg(org, sources, heartbeat=lambda *a, **k: J.heartbeat(eng, jid),
+                            checkpoint=job.get("checkpoint") or {},
+                            save_checkpoint=lambda cp: J.heartbeat(eng, jid, checkpoint=cp))
         J.complete(eng, jid)
     except Exception:      # noqa: BLE001 — orchestrator re-raises on failure → mark for resume/retry
         _log.exception("sync job failed org=%s job=%s", org, jid)

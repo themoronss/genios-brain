@@ -325,8 +325,9 @@ def test_widening_the_backfill_window_lands_history_without_duplicating_it(live_
         assert [k for _id, k in narrow] == ["gmail:email_message:msg_age_40",
                                             "gmail:email_message:msg_age_5"]
 
-        # 2. widened to 540 — the three older threads land, the two already-seen do NOT re-land
-        assert _sync(connector_with(DEFAULT_BACKFILL_DAYS), repo, org, connection_id) == 3
+        # 2. widened to 540 — the three older threads land, the two already-seen do NOT re-land.
+        #    An explicit 540: the default is two months again, so it is no longer a widening.
+        assert _sync(connector_with(540), repo, org, connection_id) == 3
         wide = rows()
         assert len(wide) == 5, "the 700-day message is outside even the wide window"
         assert len({k for _id, k in wide}) == 5, "one row per object — no duplicates"
@@ -334,7 +335,7 @@ def test_widening_the_backfill_window_lands_history_without_duplicating_it(live_
             "the original rows kept their event_ids: widening added history, it did not re-ingest"
 
         # 3. running the wide backfill again lands nothing at all
-        assert _sync(connector_with(DEFAULT_BACKFILL_DAYS), repo, org, connection_id) == 0
+        assert _sync(connector_with(540), repo, org, connection_id) == 0
         assert rows() == wide
 
         # 4. the queries actually sent — the window is not decorative

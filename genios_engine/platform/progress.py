@@ -51,23 +51,41 @@ def _overall(phases: list[dict]) -> int:
     return int(round(100 * got / tw))
 
 
-def start(engine, org_id: str, sources: list[str]) -> None:
-    """Begin a fresh sync run: build the phase list for the connected sources, reset to running."""
+def start(engine, org_id: str, sources: list[str], *, resume: bool = False) -> None:
+    """Begin a sync run: build the phase list for the connected sources, set it running.
+
+    `resume=True` is the same job picked up again after a restart. Phases the earlier attempt
+    finished stay done, with their counts, and the bar starts from that real progress. Without it a
+    resumed sync flashed back to "Syncing your emails 0%" for work that was already in the ledger.
+    """
     srcs = set(sources or [])
     phases = [
         {"key": p["key"], "label": p["label"], "weight": p["weight"],
          "state": "pending", "done": 0, "total": None, "detail": None}
         for p in _PHASES if p["src"] is None or p["src"] in srcs
     ]
+    if resume:
+        with engine.connect() as c:
+            row = c.execute(text("select phases from onboarding_progress where org_id=:o"),
+                            {"o": org_id}).first()
+        prev = [] if row is None else (
+            row.phases if isinstance(row.phases, list) else json.loads(row.phases or "[]"))
+        finished = {p.get("key"): p for p in prev if p.get("state") == "done"}
+        for ph in phases:
+            old = finished.get(ph["key"])
+            if old is not None:
+                ph.update(state="done", done=old.get("done") or 0, total=old.get("total"),
+                          detail=old.get("detail"))
+    current = next((ph["key"] for ph in phases if ph["state"] != "done"), None)
     now = _now()
     with engine.begin() as c:
         c.execute(text(
             "insert into onboarding_progress (org_id, state, current_phase, overall_percent, "
             "phases, started_at, updated_at) "
-            "values (:o,'running',:cp,0,cast(:ph as jsonb),:ts,:ts) "
+            "values (:o,'running',:cp,:pct,cast(:ph as jsonb),:ts,:ts) "
             "on conflict (org_id) do update set state='running', current_phase=:cp, "
-            "overall_percent=0, phases=cast(:ph as jsonb), started_at=:ts, updated_at=:ts"),
-            {"o": org_id, "cp": phases[0]["key"] if phases else None,
+            "overall_percent=:pct, phases=cast(:ph as jsonb), started_at=:ts, updated_at=:ts"),
+            {"o": org_id, "cp": current, "pct": _overall(phases),
              "ph": json.dumps(phases), "ts": now})
 
 
