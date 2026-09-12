@@ -528,6 +528,12 @@ class ExtractionResult(BaseModel):
     relationships: list[dict[str, Any]] = Field(default_factory=list)
     #: Proposed times, places and attendees, as written. Same terms again.
     scheduling_proposals: list[dict[str, Any]] = Field(default_factory=list)
+    #: Absence / reduced capacity someone STATED — leave, out of office, sick, travel, busy —
+    #: with the start/end words quoted verbatim. Same untyped-lane terms as the three above; its
+    #: key names are closed by `capture/semantic/vocabulary.UNTYPED_LANE_KEYS`, and Layer 2
+    #: (`context/extract/availability.py`) resolves the quoted words into dates against the
+    #: message date. The model never does date arithmetic.
+    availability: list[dict[str, Any]] = Field(default_factory=list)
 
     # --- the discovery lane ---
     #: C-08. Capped at MAX_UNCLASSIFIED_PER_EXTRACTION by prompt instruction, not by this
@@ -593,7 +599,8 @@ class ExtractionResult(BaseModel):
     def _text_lists(cls, value: Any) -> list[str]:
         return _required_strings(value, "list entry")
 
-    @field_validator("roles", "relationships", "scheduling_proposals", mode="before")
+    @field_validator("roles", "relationships", "scheduling_proposals", "availability",
+                     mode="before")
     @classmethod
     def _open_lanes(cls, value: Any) -> list[dict[str, Any]]:
         return _open_lane_dicts(value, "open lane")

@@ -98,6 +98,10 @@ class QualificationReason(str, Enum):
     AT_OR_ABOVE_FLOOR = "at_or_above_floor"
     CONFLICT_OVERRIDE = "conflict_override"
     INTERNAL_KIND_OVERRIDE = "internal_kind_override"
+    #: An AVAILABILITY_CHANGE below the floor. Its importance is deliberately the lowest in
+    #: ALG-17 (it is context, not work), and the floor would otherwise drop the only route by
+    #: which "who is away" reaches Layer 2's `person.availability`.
+    AVAILABILITY_OVERRIDE = "availability_override"
     UNSCORED = "unscored"
     BELOW_FLOOR = "below_floor"
 
@@ -349,6 +353,9 @@ def _decide(candidate: ScoredSignal, floor_bp: int) -> tuple[bool, Qualification
         return True, QualificationReason.CONFLICT_OVERRIDE
     if candidate.signal.internal_kind:
         return True, QualificationReason.INTERNAL_KIND_OVERRIDE
+    if str(getattr(candidate.signal.signal_type, "value", candidate.signal.signal_type)) \
+            == "availability_change":
+        return True, QualificationReason.AVAILABILITY_OVERRIDE
     return False, QualificationReason.BELOW_FLOOR
 
 

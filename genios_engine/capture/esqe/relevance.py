@@ -81,6 +81,10 @@ RULE_INTERNAL_KIND = "internal_kind"
 RULE_STRUCTURED_SOURCE = "structured_source"
 RULE_BULK_HEADERS = "bulk_headers"
 RULE_SERVICE_ACCOUNT_NO_CLAIMS = "service_account_no_claims"
+#: N-05 · an out-of-office / leave / auto-reply from a real sender. A vacation responder carries
+#: `Auto-Submitted: auto-replied`, which the bulk rule below reads as a broadcast — and that one
+#: automated message is the only place "who is away, until when, who covers" is ever written.
+RULE_AVAILABILITY_NOTICE = "availability_notice"
 RULE_LLM_BUSINESS = "llm5_business"
 RULE_LLM_NOT_BUSINESS = "llm5_not_business"
 RULE_LLM_UNAVAILABLE = "llm5_unavailable"
@@ -98,6 +102,7 @@ RULE_ORDER: tuple[str, ...] = (
     RULE_KNOWN_COUNTERPARTY,
     RULE_INTERNAL_KIND,
     RULE_STRUCTURED_SOURCE,
+    RULE_AVAILABILITY_NOTICE,
     RULE_BULK_HEADERS,
     RULE_SERVICE_ACCOUNT_NO_CLAIMS,
 )
@@ -130,6 +135,9 @@ _RULE_RELEVANCE_BP: dict[str, int] = {
     # did: we know exactly who they are) and below LLM-5's 6000, because a model that READ the
     # message and judged it business is better evidence about THIS message than a relationship is.
     RULE_KNOWN_COUNTERPARTY_BULK: 4000,
+    # Relevant for ONE thing — the availability window it states — and low for everything else,
+    # so it ranks with a known sender's broadcast, below any message a person wrote to us.
+    RULE_AVAILABILITY_NOTICE: 3500,
     RULE_STRUCTURED_SOURCE: 8000,
     RULE_LLM_BUSINESS: 6000,
     # The three fail-open paths share `unknown` authority (3000, the same value L1.6.4's cascade
@@ -266,6 +274,9 @@ class RelevanceCandidate:
     subject: str = ""
     #: A short prose excerpt. Truncated before it reaches a prompt and fenced when it gets there.
     snippet: str = ""
+    #: The gate's N-05 marker was set (out-of-office / leave / auto-reply). Computed by the
+    #: caller from `gate.rules.availability_marker`, the one definition both layers share.
+    availability_notice: bool = False
 
     @property
     def key(self) -> str:
@@ -406,6 +417,8 @@ def _rule_verdict(candidate: RelevanceCandidate) -> tuple[bool, str] | None:
         return True, RULE_INTERNAL_KIND
     if candidate.is_structured:
         return True, RULE_STRUCTURED_SOURCE
+    if candidate.availability_notice and not is_service_account(candidate.sender):
+        return True, RULE_AVAILABILITY_NOTICE
     if _has_bulk_headers(candidate.headers):
         return False, RULE_BULK_HEADERS
     if is_service_account(candidate.sender) and candidate.typed_claim_count == 0:

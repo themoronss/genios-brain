@@ -892,6 +892,9 @@ GRAPH_FACT_WRITERS = {
     "context/periodic.py": "current value, overwrite (tenant window aggregate)",
     "context/document_register.py": "current value, overwrite (per document)",
     "context/support_situations.py": "current value, overwrite (per finding)",
+    "context/availability.py": "observed-fact writer, appends a version and supersedes — "
+                               "graph_store's write_fact decision keyed on the window start "
+                               "(person.availability holds one active row per window)",
     # NOT a blessing. `analytic/trend.py:537` still carries its own copy of the upsert ending
     # `valid_from = excluded.valid_from` — the same clause the X3/X4/X7 review removed from
     # `comparator`, `anomaly`, `correlation_dependency` and `correlation_timeline` by routing them

@@ -12,8 +12,11 @@ from sqlalchemy import text
 # would have raised NameError and zeroed the whole L2 processing phase.
 from genios_engine.context.open_loops import close_loops_for_reply, record_ask
 from genios_engine.contracts.open_loop import is_ask, open_loop_id
+from genios_engine.capture.gate.rules import AUTO_REPLY
 from genios_engine.capture.internal_knowledge import authority_rank_for
 from genios_engine.capture.structured.apply import _PERSONAL_DOMAINS
+from genios_engine.context.availability import write_availability_window
+from genios_engine.context.extract.availability import validate_availability_claims
 from genios_engine.context.extract.envelope import Envelope
 from genios_engine.context.extract.extractor import Extraction, extract
 from genios_engine.context.graph_store import GraphStore
@@ -94,13 +97,22 @@ FACT_CONF_BY_RANK = {4: 1.00, 3: 0.90, 2: 0.85, 1: 0.40}
 # b3-2: enriched observations with the canonical SIGNAL KINDS vocab
 # b3-3: envelope (direction/from/to/we_are) + typed roles + scheduling_proposals split out of
 #       commitments + pack-supplied field and observation vocabulary
-PROMPT_VERSION = "b3-4"
+# b3-5: + `availability` claims (who is away, from/to as quoted words, coverage)
+PROMPT_VERSION = "b3-5"
 
 #: Bumped whenever the SHAPE the pipeline reads out of an extraction changes, even if the prompt
 #: text does not. Both belong in the cache key: the cache stores a parsed result, so a reader
 #: that now looks for `roles` would otherwise be served a cached payload that never had them —
 #: silently, and for exactly the messages that already matter most.
-EXTRACTION_SCHEMA_VERSION = "3"
+#: 4: + `availability`.
+EXTRACTION_SCHEMA_VERSION = "4"
+
+#: An availability notice (N-05 — out-of-office, leave, auto-reply) is low-importance for
+#: everything EXCEPT the window it carries: its other facts/observations are capped at this
+#: relevance (stored and rankable, never deleted), while the availability window itself ranks
+#: at least AVAILABILITY_RELEVANCE_FLOOR — it is the reason the message was kept.
+AVAILABILITY_NOTICE_RELEVANCE_CAP = 0.2
+AVAILABILITY_RELEVANCE_FLOOR = 0.6
 
 
 def _vocab_fingerprint(effective: dict | None) -> str:
@@ -427,6 +439,7 @@ def _from_cache(d: dict) -> Extraction:
         roles=d.get("roles", []),
         relationships=d.get("relationships", []),
         scheduling_proposals=d.get("scheduling_proposals", []),
+        availability=d.get("availability", []),
         ok=True)
 
 
@@ -436,6 +449,7 @@ def _to_cache(ex: Extraction) -> dict:
             "commitments": ex.commitments, "questions": ex.questions,
             "roles": ex.roles, "relationships": ex.relationships,
             "scheduling_proposals": ex.scheduling_proposals,
+            "availability": ex.availability,
             "observations": ex.observations}
 
 
@@ -447,6 +461,16 @@ def _claim_evidence(fact: dict, internal_kind: str | None) -> dict:
     if internal_kind:
         evidence["internal_kind"] = internal_kind
     return evidence
+
+
+def _names_sender(name: str, sender_email: str | None) -> bool:
+    """Does a bare name refer to the sender? "Anisha Sharma is out of office" from
+    anisha.sharma@acme.io — every name token must appear among the address's local-part tokens.
+    Deterministic and conservative: "Anisha" alone matches anisha@…, never priya@…."""
+    local = (sender_email or "").split("@", 1)[0]
+    parts = {p for p in re.split(r"[._+-]+", local.lower()) if p}
+    tokens = [t for t in re.split(r"\s+", _norm(name)) if t]
+    return bool(tokens) and bool(parts) and all(t in parts for t in tokens)
 
 
 def _resolve_subject(name, name_to_node: dict, fallback: str | None) -> str | None:
@@ -571,7 +595,8 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                   domain_hints: list | None = None,
                   canon_meta: dict | None = None,
                   effective: dict | None = None,
-                  qualified_extraction: Extraction | None = None) -> L2Result:
+                  qualified_extraction: Extraction | None = None,
+                  availability_marker: str | None = None) -> L2Result:
     # replay cache — identical content+prompt → reuse, no re-call, deterministic. The key is
     # ORG-SCOPED (org_id in the hash) so tenant A's cached extraction can never be served to
     # tenant B on byte-identical content (e.g. the same newsletter) — the cross-tenant leak fix.
@@ -626,6 +651,17 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
     #   • relevance is NOT a floor anymore — low-relevance facts land with low confidence, present
     #     and queryable, never deleted.
     is_noise = ex.noise_type in _NOISE_TYPES
+
+    # N-05 — an availability notice. Everything in it but the window it carries is scored low
+    # (kept, rankable — never dropped). An AUTO-REPLY is additionally not correspondence: a
+    # responder answering is not the counterparty answering, so it moves no thread state, opens no
+    # question or ask, mints no commitment, and anchors no network edge or situation — the same
+    # treatment a newsletter gets, which is what it is apart from its availability line.
+    auto_reply = availability_marker == AUTO_REPLY
+    message_relevance = ex.relevance
+    if availability_marker:
+        ex.relevance = min(ex.relevance, AVAILABILITY_NOTICE_RELEVANCE_CAP)
+    is_noise = is_noise or auto_reply
 
     # AUTHORITY comes from L1, which is the layer that knows PROVENANCE. Company canon
     # (a written policy, an upload tagged `pricing`) enters at rank 4 — above a system of
@@ -1146,8 +1182,8 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         for o in obs:
             kind = norm_obs_kind(o.get("kind"))
             key = (kind, str(o.get("evidence_text") or ""))
-            if key in seen_obs:
-                continue
+            if key in seen_obs or (auto_reply and is_ask(kind)):
+                continue                  # a responder asks nothing — no open loop from it
             seen_obs.add(key)
             obs_conf = ex.relevance if o.get("_grounded", True) else ex.relevance * _GROUNDING_PENALTY
             obs_evidence = {"text": o.get("evidence_text")}
@@ -1172,7 +1208,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # INTENT, finally committed: the LLM already extracts open questions — the pipeline
         # parsed and DROPPED them for months. A question directed at us is the strongest
         # "they expect an answer" signal the twin can hold.
-        for q in keep_grounded(content, ex.questions):
+        for q in ([] if auto_reply else keep_grounded(content, ex.questions)):
             key = ("question", str(q.get("evidence_text") or ""))
             if key in seen_obs or content_subject is None:
                 continue
@@ -1201,10 +1237,13 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         if sender_node:
             store.write_observation(
                 conn, org_id=org_id, subject_node_id=sender_node,
-                kind=("email_noise:" + ex.noise_type) if is_noise else "email_relevance",
+                kind=(("email_noise:" + ("auto_reply" if auto_reply else ex.noise_type))
+                      if is_noise else "email_relevance"),
                 confidence=ex.relevance, occurred_at=occurred_at, event_id=event_id,
                 evidence={"relevance": ex.relevance, "noise_type": ex.noise_type,
-                          "domains": ex.domains}, source=source)
+                          "domains": ex.domains,
+                          **({"availability_marker": availability_marker}
+                             if availability_marker else {})}, source=source)
             obs_n += 1
 
         # thread state (direction-derived, deterministic) → feeds L3's unanswered_email.
@@ -1333,6 +1372,45 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                     evidence={"text": (rel or {}).get("evidence_text")},
                     source=source, authority_rank=2)
 
+        # AVAILABILITY → `person.availability`, one fact per window on the person node. Claims are
+        # validated strictly (grounded quote, closed kind, dates resolved deterministically against
+        # the message date — a malformed claim is dropped, a date is never invented). The person
+        # must resolve to a node we can anchor: the author, an email, or a name already known.
+        # A machine sender is never "away".
+        def _availability_subject(person: str | None) -> str | None:
+            if person is None:
+                node = sender_node
+            elif "@" in person:
+                node = name_to_node.get(_norm(person)) or (
+                    _person(person) if _norm_email(person) else None)
+            else:
+                node = name_to_node.get(_norm(person)) or resolve_person_name(
+                    conn, org_id=org_id, name=person)
+                if node is None and sender_node and _names_sender(person, sender_norm):
+                    node = sender_node
+            return node if node and touched.get(node, "person") == "person" else None
+
+        if occurred_at is not None:
+            avail_relevance = max(message_relevance, AVAILABILITY_RELEVANCE_FLOOR)
+            for claim in validate_availability_claims(ex.availability, content=content,
+                                                      base=occurred_at):
+                pnode = _availability_subject(claim.person)
+                if pnode is None:
+                    continue
+                evidence = {"text": claim.evidence, "derived": "availability claim",
+                            "from_stated": claim.from_stated, "to_stated": claim.to_stated}
+                if availability_marker:
+                    evidence["availability_marker"] = availability_marker
+                if internal_kind:
+                    evidence["internal_kind"] = internal_kind
+                if write_availability_window(
+                        store, conn, org_id=org_id, person_node_id=pnode, value=claim.value(),
+                        occurred_at=occurred_at, event_id=event_id, source=source,
+                        authority_rank=claim_rank, confidence=FACT_CONF_BY_RANK[claim_rank],
+                        relevance=avail_relevance, evidence=evidence,
+                        from_stated=claim.from_stated):
+                    fact_n += 1
+
         # commitments → FIRST-CLASS nodes. A commitment is the highest-value extracted
         # object in the system, and it used to be one colliding fact field on the person:
         # facts key on (subject, field), so the SECOND promise silently superseded the
@@ -1342,7 +1420,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # DUAL-WRITE strangler: the legacy person-level commitment.due_at keeps being
         # written (latest wins, as before) so general_v1's commitment_overdue rule keeps
         # firing unchanged; commitment-scoped rules migrate to the nodes later.
-        for cm in keep_grounded(content, ex.commitments):
+        for cm in ([] if auto_reply else keep_grounded(content, ex.commitments)):
             if not _is_a_promise(cm):
                 continue          # a question or an availability window, not an obligation
             subj = _resolve_subject(cm.get("actor"), name_to_node, sender_node)

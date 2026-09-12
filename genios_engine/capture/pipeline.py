@@ -25,6 +25,7 @@ from genios_engine.capture.esqe.relevance import (MAX_ITEM_CHARS, RelevanceCandi
 from genios_engine.capture.esqe.source_analyzer import SourceAttribution, analyze_source
 from genios_engine.capture.gate.context import GateContext, GateResult
 from genios_engine.capture.gate.gate import run_gate
+from genios_engine.capture.gate.rules import availability_marker
 from genios_engine.capture.gate.relevance import RelevanceClassifier
 from genios_engine.capture.documents.store import DocumentJobStore
 from genios_engine.capture.landing.normalize import to_source_event
@@ -1032,6 +1033,7 @@ def run_esqe_stage(event: SourceEvent, prepared: PreparedContent | None, raw: Ma
         typed_claim_count=_typed_claim_count(extraction),
         subject=str(raw.get("subject") or ""),
         snippet=text or "",
+        availability_notice=availability_marker(raw) is not None,
     )
     # D6 · one call per PAGE, not one per ambiguous event. `RelevancePage.decide` runs the same
     # five-rule cascade first and reaches its cache only for the remainder no rule could decide,
@@ -1208,6 +1210,7 @@ def _build_gated_event(event: SourceEvent, prepared: PreparedContent | None,
         # not as fields that die inside the payload blob.
         recipients=tuple(getattr(event, "recipients", ()) or ()),
         visibility=event.visibility,
+        availability_marker=gate.availability,
         versions={
             "preprocessor": prepared.preprocessor_version if prepared else None,
             "gate_rules": "gate-1",
@@ -1352,7 +1355,9 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
                              fallback=FALLBACK_DOMAIN if emitted else None)
         links = _linkage_hints(event)
     if gate.action not in ("drop", "park"):
-        lane = triage_lane(ctx, prepared)
+        # An availability notice (N-05) is drained AFTER real mail: its one useful claim is
+        # rarely urgent, and an auto-reply storm must never preempt a customer's message.
+        lane = "P3" if gate.availability else triage_lane(ctx, prepared)
         trace.record("triage", "pass", lane=lane)
 
     # KEPT content: stash the raw body (encrypted, short TTL) for EMITTED and PARKED events.

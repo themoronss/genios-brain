@@ -39,6 +39,9 @@ class Extraction:
     #: opposite messages. Every `awaiting_response` situation declared this missing on every row
     #: until it had a writer, which is the difference between a follow-up and a reminder.
     objective: dict = field(default_factory=dict)
+    # Absence / reduced capacity someone STATED (leave, OOO, sick, travel, busy, partial). Raw
+    # candidates — context/extract/availability.py validates them and resolves their dates.
+    availability: list = field(default_factory=list)
     input_tokens: int = 0
     output_tokens: int = 0
     ok: bool = True
@@ -102,5 +105,6 @@ def extract(llm: LLMClient, *, source: str, content: str,
         relationships=_lst(p, "relationships"),
         scheduling_proposals=_lst(p, "scheduling_proposals"),
         objective=p.get("objective") if isinstance(p.get("objective"), dict) else {},
+        availability=_lst(p, "availability"),
         input_tokens=res.input_tokens, output_tokens=res.output_tokens,
         ok=True, raw=res.raw)

@@ -73,7 +73,9 @@ _EXTRACTABLE_ATTACHMENT_MIMES = {
 # connector never built this dict, so those three rules were dead and bulk mail slipped L1 to L2,
 # wasting an LLM call before being classified as noise. List-Id/List-Post/Feedback-ID = strong ESP markers.
 _NOISE_HEADERS = ("Auto-Submitted", "Precedence", "List-Unsubscribe",
-                  "List-Id", "List-Post", "Feedback-ID")
+                  "List-Id", "List-Post", "Feedback-ID",
+                  # vacation-responder markers → the N-05 availability marker (not a drop)
+                  "X-Autoreply", "X-Autorespond")
 
 # L1.2.4-U1 — the first-connect backfill window is NO LONGER a constant here. It was
 # `_BACKFILL_WINDOW = "newer_than:60d"`, which handed every tenant the same two months of history
@@ -344,7 +346,7 @@ class ComposioGmailConnector:
         # confident DROP is full-fetched, so recall (and L2's full body) is preserved.
         rel = self._relevance
         if rel is not None and hasattr(rel, "prime") and hasattr(rel, "verdict_for"):
-            from genios_engine.capture.gate.rules import light_junk
+            from genios_engine.capture.gate.rules import availability_marker, light_junk
             light: list[tuple[dict, list[RawObject]]] = [(m, self._to_objects(m, fetch_full=False))
                                                          for m in messages]
             # DETERMINISTIC PRE-FILTER — the cheap rules run BEFORE the LLM, not after. Gmail's own
@@ -369,7 +371,10 @@ class ComposioGmailConnector:
                     if light_junk(objs[0].raw.get("labelIds"), objs[0].actor_email,
                                   bool(objs[0].raw.get("has_attachment"))):
                         det_junk.add(id(m))
-            all_light = [o for m, objs in light if id(m) not in det_junk for o in objs]
+            # An availability notice (N-05) skips the LLM junk gate at the pipeline, so it must not
+            # spend a prime call here either — nor be left as a body-less snippet by one.
+            all_light = [o for m, objs in light if id(m) not in det_junk for o in objs
+                         if not availability_marker(o.raw)]
             try:
                 rel.prime(all_light)                          # LLM only on what the rules couldn't settle
             except Exception:      # noqa: BLE001 — gate failure → treat all as keepers (full-fetch)
@@ -387,7 +392,7 @@ class ComposioGmailConnector:
             #
             # Same threshold, same constant, so the two surfaces cannot drift apart again.
             def _skip_body(m, objs) -> bool:
-                if not objs:
+                if not objs or availability_marker(objs[0].raw):
                     return False
                 # L1.3.8-U2 — the same override, against the LLM's confident drop. This is the
                 # case the spec names: "a junk-classified email with a real contract attached

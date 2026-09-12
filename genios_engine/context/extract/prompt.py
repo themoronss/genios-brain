@@ -76,6 +76,16 @@ Return EXACTLY this shape:
     {{"proposer": "name or 'us'", "text": "the proposed time or availability",
       "evidence_text": "exact substring"}}
   ],
+  "availability": [               // ABSENCE or reduced capacity someone STATES — leave, out of
+                                  // office, sick, travel, busy. NOT offers of meeting times (those
+                                  // are scheduling_proposals). See AVAILABILITY below.
+    {{"person": "email or name of who is away, or \\"sender\\" when it is the author",
+      "kind": "<one of: leave | ooo | sick | travel | busy | partial>",
+      "from": "the EXACT words stating the start, e.g. \\"from 15th\\", \\"kal se\\", or null",
+      "to": "the EXACT words stating the end, e.g. \\"22nd\\", \\"back on Monday\\", \\"3 din\\", or null",
+      "coverage_person": "who covers meanwhile, as written, or null",
+      "evidence_text": "exact substring"}}
+  ],
   "questions": [
     {{"text": "the question", "directed_at": "us", "evidence_text": "exact substring"}}
   ],
@@ -127,6 +137,13 @@ OBJECTIVE — what WE are trying to achieve in this thread, judged from the ask,
   genuinely does not say —
   and prefer it: a follow-up written on a guessed objective is worse than one that admits it does
   not know why we wrote.
+
+AVAILABILITY — who cannot act, and when: an out-of-office auto-reply, "I'm on leave 15-22",
+"kal se 3 din chutti", "travelling next week, Priya will cover", "sick today".
+  - from / to are the message's OWN WORDS, copied verbatim. Never compute, convert or guess a
+    date. A start that is not written is null; an end that is not written is null.
+  - An auto-reply or "I am away" is about its author: person = "sender".
+  - Availability is never a fact_candidate and never a commitment.
 
 DIRECTION — read it from the envelope, never guess it from tone.
 - On an OUTBOUND message the sender is US. Anything we offer, promise or send is OURS, and an

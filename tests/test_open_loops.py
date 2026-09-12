@@ -223,8 +223,8 @@ def test_a_new_extraction_shape_cannot_serve_a_cached_old_one():
     `relationships` must not be handed a payload that never had them."""
     from genios_engine.context.pipeline import EXTRACTION_SCHEMA_VERSION, PROMPT_VERSION
 
-    assert PROMPT_VERSION == "b3-4"
-    assert EXTRACTION_SCHEMA_VERSION == "3"
+    assert PROMPT_VERSION == "b3-5"            # b3-5: + availability claims
+    assert EXTRACTION_SCHEMA_VERSION == "4"
 
 
 # ── concurrency must follow the pooler, not a comment ───────────────────────────

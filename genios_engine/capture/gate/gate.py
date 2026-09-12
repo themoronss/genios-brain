@@ -5,7 +5,7 @@ from genios_engine.contracts.trace import EventTrace
 
 from .context import GateContext, GateResult
 from .relevance import DROP_BELOW_RELEVANCE, RelevanceClassifier
-from .rules import content_integrity_rule, noise_rule, whitelist
+from .rules import availability_marker, content_integrity_rule, noise_rule, whitelist
 
 
 def run_gate(ctx: GateContext, trace: EventTrace,
@@ -99,6 +99,17 @@ def run_gate(ctx: GateContext, trace: EventTrace,
             trace.record("S1", action, reason_code=code)
             return GateResult(action=action, reason_code=code)
         trace.record("S1", "pass")
+
+    # S1c — AVAILABILITY NOTICE (N-05). An out-of-office / leave / auto-reply message used to be
+    # dropped on its subject; it is now routed to extraction, marked, WITHOUT the S2 junk gate —
+    # a vacation responder is exactly what that gate is built to call "automated, drop", and it is
+    # the one automated message whose content (who is away, until when, who covers) is the point.
+    marker = availability_marker(ctx.raw)
+    if marker:
+        trace.record("S2", "pass", reason_code="N-05", route="needs_extraction",
+                     availability=marker)
+        return GateResult(action="route", route="needs_extraction", whitelist_code=wl,
+                          availability=marker)
 
     # S2 — relevance classifier. The LLM junk-gate is the ONE filter allowed to DROP on
     # judgment (keeps noise out of the graph); the deterministic classifier only parks.

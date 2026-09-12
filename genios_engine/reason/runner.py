@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
+from genios_engine.context.availability import load_org_windows, owner_availability_facts
 from genios_engine.context.graph_store import GraphStore
 from genios_engine.contracts.reasoning import DecisionOutcome, ExecutionMode
 from genios_engine.packs.capabilities import BUILTIN_CAPABILITIES
@@ -826,6 +827,12 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
     obs_by_node = _bulk_load_obs(store, org_id)
     metrics_by_node = _bulk_load_metrics(store, org_id)
     situations_by_node = _bulk_load_situations(store, org_id)
+    # Who is away — every person.availability window in ONE org-wide read, so the reasoners'
+    # `owner.availability` / `owner.status` / `owner.availability_bp` resolve from the owner's
+    # leave/OOO windows instead of reading fields nothing ever wrote.
+    with store.engine.connect() as _avc:
+        windows_by_key = load_org_windows(_avc, org_id=org_id)
+    eval_day = eval_time.date() if isinstance(eval_time, datetime) else eval_time
     # The cooldown index, once. Asking per rule per subject was 25 x 110 = 2,750 round trips.
     _max_cd = max([int(getattr(r, "cooldown_hours", 0) or 0) for r in all_rules] + [24])
     recent_index = _bulk_recent_signals(store, org_id, eval_time,
@@ -855,6 +862,11 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         ctx.baselines = baselines
         ctx.facts.update(derived)                          # derived.momentum / derived.engagement
         ctx.facts.update(sentiment_facts(ctx.obs, eval_time))  # derived.sentiment (90d window)
+        # owner.* from the owner's availability windows — only fills what is ABSENT, so a
+        # CRM/human-set owner status always wins over a derived one.
+        for _path, _fact in owner_availability_facts(ctx.facts, windows_by_key,
+                                                     on=eval_day).items():
+            ctx.facts.setdefault(_path, _fact)
         ctx.situation = situations_by_node.get(nd.node_id)
         if ctx.situation:
             # The situation as FACTS, not only as an attached dict. `ctx.situation` made L2's

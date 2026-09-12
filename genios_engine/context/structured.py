@@ -3,8 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from genios_engine.context.availability import retire_source_windows, write_availability_window
 from genios_engine.context.correlation import correlate_event
 from genios_engine.context.graph_store import GraphStore
+from genios_engine.platform.identity import norm_email
 
 # B1 — Structured lane. Structured events (calendar / CRM / client-DB) already carry typed
 # fields (L1 mapped them via the registry). We write them straight to the graph — NO LLM,
@@ -37,7 +39,8 @@ def commit_structured(store: GraphStore, *, org_id: str, event_id: str, source: 
                       display_name: str | None = None,
                       relations: list[dict] | None = None,
                       internal_emails: frozenset[str] | None = None,
-                      domain_hints: list | None = None) -> StructuredResult:
+                      domain_hints: list | None = None,
+                      availability: dict | None = None) -> StructuredResult:
     with store.engine.begin() as conn:
         version = store.bump_version(conn, org_id)
         node = store.find_or_create_node(
@@ -102,6 +105,14 @@ def commit_structured(store: GraphStore, *, org_id: str, event_id: str, source: 
             event_id=event_id, source=source,
             evidence={"presence": "structured_record", "source_object": source_object_id})
             for subject in sorted({node, *related_nodes.values()}))
+        # AVAILABILITY — an outOfOffice / all-day leave block is its owner's window, written on
+        # the PERSON (rank 3: the calendar is the record of its owner's time). A moved block
+        # retires the window it used to assert; a cancelled one retires it outright.
+        if availability:
+            fact_n += _commit_availability(store, conn, org_id=org_id, event_id=event_id,
+                                           source=source, source_object_id=source_object_id,
+                                           availability=availability, occurred_at=occurred_at)
+
         # CORRELATION — structured events must reach the same situations as email, or the
         # headline case fails: Slack + email say one thing, the CRM deal and the calendar
         # invite say the rest, and only two of the four ever meet. This lane was silent
@@ -129,3 +140,38 @@ def commit_structured(store: GraphStore, *, org_id: str, event_id: str, source: 
                                     "correlations": len(correlations), "observations": observation_n})
     return StructuredResult(event_id, "committed_structured", node, fact_n, edge_n, version,
                             correlations=len(correlations), observations=observation_n)
+
+
+def _commit_availability(store: GraphStore, conn, *, org_id: str, event_id: str, source: str,
+                         source_object_id: str, availability: dict,
+                         occurred_at: datetime | None) -> int:
+    """Write (or retire) the availability window a calendar block asserts. Returns facts written."""
+    person = norm_email(availability.get("person"))
+    if not person:
+        return 0
+    if availability.get("cancelled"):
+        retire_source_windows(conn, org_id=org_id, source=source,
+                              source_object_id=source_object_id)
+        return 0
+    node = store.find_or_create_node(conn, org_id=org_id, node_type="person",
+                                     canonical_key=person, display_name=person,
+                                     event_id=event_id)
+    value = {"kind": availability["kind"], "from": availability["from"],
+             "to": availability.get("to"), "cover": None}
+    # The assertion time is when the owner last CHANGED the block (gcal `updated`), not when the
+    # block starts: moving a leave earlier must still read as the newer statement.
+    asserted = availability.get("updated") or occurred_at
+    if isinstance(asserted, str):
+        try:
+            asserted = datetime.fromisoformat(asserted.replace("Z", "+00:00"))
+        except ValueError:
+            asserted = occurred_at
+    wrote = write_availability_window(
+        store, conn, org_id=org_id, person_node_id=node, value=value, occurred_at=asserted,
+        event_id=event_id, source=source, authority_rank=3, confidence=1.0,
+        evidence={"source_object": source_object_id, "derived": "calendar availability block",
+                  "title": availability.get("title")},
+        from_stated=True)
+    retire_source_windows(conn, org_id=org_id, source=source, source_object_id=source_object_id,
+                          keep_from=availability["from"])
+    return 1 if wrote else 0

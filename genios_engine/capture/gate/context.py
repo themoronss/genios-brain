@@ -32,3 +32,4 @@ class GateResult:
     reason_code: str | None = None
     route: str | None = None             # needs_extraction | structured
     whitelist_code: str | None = None
+    availability: str | None = None      # N-05 marker: auto_reply | leave_notice | None

@@ -73,5 +73,10 @@ class GatedEvent(BaseModel):
     #: None only for pre-visibility rows; a freshly gated event always carries one — the gate
     #: parks `visibility_unknown` rather than publishing without it.
     visibility: Visibility | None = None
+    #: N-05 — an out-of-office / leave / auto-reply message, routed instead of dropped.
+    #: `auto_reply` (a responder wrote it: never a real answer, never reply-needed state) or
+    #: `leave_notice` (a human announcing an absence). L2 scores everything in it low except the
+    #: availability window it carries. None for ordinary mail.
+    availability_marker: str | None = None
     versions: dict[str, Any] = Field(default_factory=dict)
     schema_version: int = 2                  # v2: + internal_kind (additive only)
