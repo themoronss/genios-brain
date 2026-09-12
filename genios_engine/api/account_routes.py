@@ -563,6 +563,7 @@ _ORG_SCOPED_TABLES = [
     "sync_cursors", "l1_sync_runs", "source_events",
     "agent_events", "human_events",
     "onboarding_progress", "sync_jobs",          # sync progress + durable job queue (org-scoped)
+    "l2_work_queue", "org_run_leases",            # migration 0136: warm-lane triggers + chain lease
     "integration_preferences",                    # per-tool source settings (Sources modal)
 ]
 
