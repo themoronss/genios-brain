@@ -983,7 +983,12 @@ class ReasoningStore:
                 raise ReasoningStoreError(
                     "candidate checks differ from immutable reasoner result effects")
 
-            if prepared_output["outcome_kind"] in {"decision", "blocked"}:
+            from genios_engine.reason.llm_decision_maker import is_llm_decided
+            # A decision the model made (test mode) cannot be re-derived from the formula by
+            # definition, so only THIS projection is skipped for it. Every other check above and
+            # below — DAG coverage, eliminations, read-only, policy passes — still binds.
+            if (prepared_output["outcome_kind"] in {"decision", "blocked"}
+                    and not is_llm_decided(prepared_candidates)):
                 # Recompute the deterministic candidate/rank projection from the immutable
                 # manifest, context and reasoner effects.  Child rows cannot independently assert
                 # a 10,000 utility winner when the reasoners produced a gate miss, elimination or

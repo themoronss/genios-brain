@@ -1116,6 +1116,14 @@ class DecisionMaker:
         recommendation as though it were a strong one is how an intelligence layer loses the trust
         it cannot re-earn.
         """
+        if terminal is None:
+            # TEST MODE (`GENIOS_L4_LLM_DECISION_MAKER`): the judgement below — Rule 11
+            # confidence, the weighted formula, the floor, the rule-conflict abstention — is handed
+            # to one model call. Off by default; nothing below this block is changed by it.
+            from genios_engine.reason import llm_decision_maker as llm_dm
+            if llm_dm.enabled_for(getattr(request, "org_id", "")):
+                return llm_dm.decide_with_llm(request, results, uncertainty=uncertainty,
+                                              degraded=degraded, llm=llm_dm.client())
         uncertainty = list(uncertainty)
         weld = request.capability.metadata.get(WELD_KEY) or {}
         ranking_v2 = ranking_model_is_v2(request)

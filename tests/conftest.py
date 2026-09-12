@@ -53,6 +53,10 @@ os.environ.setdefault("GENIOS_CRYPTO_KEY", _TEST_FERNET_KEY)
 # pydantic-settings reads the environment at construction. A test that genuinely wants a model
 # sets the key itself and carries the `llm` marker.
 os.environ["GENIOS_ANTHROPIC_API_KEY"] = ""
+# Same reason: a developer .env that switches the LLM Decision Maker on for a local run must not
+# turn every formula test in the suite into an LLM decision (with no key, a DEFER). Tests that
+# exercise that mode switch it on themselves.
+os.environ["GENIOS_L4_LLM_DECISION_MAKER"] = "false"
 
 if os.environ.get("GENIOS_TEST_DATABASE_URL"):
     os.environ["GENIOS_DATABASE_URL"] = os.environ["GENIOS_TEST_DATABASE_URL"]

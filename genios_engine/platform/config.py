@@ -70,6 +70,14 @@ class Settings(BaseSettings):
     # decision"; this is that row as a control rather than a report, with headroom for a long
     # situation. A single consult estimated above it is refused before it runs.
     l4_bundle_max_usd_per_decision: float = 0.05
+    # TEST MODE — Layer 4's Decision Maker as one model call per decision instead of the
+    # deterministic formula (`reason/llm_decision_maker.py`). Off by default. `_orgs` is a
+    # comma-separated allow-list; empty with the switch on means every org. `_model` empty = the
+    # engine's `anthropic_model`. The cap bounds calls per org per UTC day per process; 0 = none.
+    l4_llm_decision_maker: bool = False
+    l4_llm_decision_maker_orgs: str = ""
+    l4_llm_decision_model: str = ""
+    l4_llm_decision_max_calls_per_org_day: int = 400
     # OUR OWN domains — the product's transactional mail, not anybody's counterparty.
     #
     # A customer's inbox contains our onboarding, invite and billing mail. Without this the
