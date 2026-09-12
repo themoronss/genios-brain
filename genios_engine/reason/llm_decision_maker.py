@@ -43,13 +43,38 @@ from genios_engine.contracts.reasoning import (
     DecisionOutcome,
     ReasonerResult,
     ReasoningDecision,
+    ResultStatus,
 )
 from genios_engine.platform.canonical import semantic_hash
 
 _log = logging.getLogger(__name__)
 
 #: Bumped whenever the prompt or the answer schema changes; it is inside the cache key.
-PROMPT_VERSION = "l4-llm-decision.v1"
+#: v2: the subject and its messages lead the prompt; units give conclusions, not scores.
+#: v3: past-dated scheduling threads are closed. v4: the formula's own reading is the baseline.
+#: v5: R-1's job folded in — the hedge vocabulary, the stance classes, and unresolved conflicts.
+PROMPT_VERSION = "l4-llm-decision.v5"
+
+#: R-1 (`reason/interpretation.py`) in the decision maker's own words. R-1 gates a model call on a
+#: CLOSED hedge list and asks for one of six stances; its reading reaches no unit at all, so in this
+#: mode the decision maker does that reading itself, from the same list and the same six meanings,
+#: on the whole message rather than one sentence — no extra call.
+def _stance_rules() -> list[str]:
+    from genios_engine.reason.interpretation import CLASSIFICATION_MEANINGS, HEDGE_MARKERS
+    stances = "; ".join(f"{name.lower().replace('_', ' ')} = {meaning}"
+                        for name, meaning in CLASSIFICATION_MEANINGS.items())
+    return [
+        "- A hedge is not a commitment. Words like " + ", ".join(f"'{m}'" for m in HEDGE_MARKERS)
+        + " mean the writer has NOT committed.",
+        f"- Read each message's stance as one of: {stances}.",
+        "- Only 'commitment made' or 'decision made' is something to hold anyone to. Never raise "
+        "confidence on a hedge or on speculation.",
+    ]
+
+#: Units whose ELIMINATE is a scoring judgement, not safety. In this mode the model makes that
+#: judgement, so these are shown as advice and do not remove a play. Policy, consent and
+#: unsafe-claim eliminations still bind.
+ADVISORY_EVALUATORS = frozenset({"legacy.score_gate"})
 
 #: The score component every LLM-built candidate carries. `reason/store.py` reads it.
 LLM_UTILITY_COMPONENT = "llm_utility"
@@ -190,7 +215,8 @@ def _take_budget(org_id: str) -> bool:
 
 
 def _record_cost(*, org_id: str, model: str, subject_ref: str, input_tokens: int,
-                 output_tokens: int, success: bool, error: str | None) -> None:
+                 output_tokens: int, success: bool, error: str | None,
+                 purpose: str = COST_PURPOSE) -> None:
     """Into `llm_costs`, like every other call in the engine. Never fails the decision."""
     global _cost_store
     try:
@@ -199,7 +225,7 @@ def _record_cost(*, org_id: str, model: str, subject_ref: str, input_tokens: int
             _cost_store = make_graph_store() or False
         if not _cost_store:
             return
-        _cost_store.record_cost(org_id=org_id, model=model, purpose=COST_PURPOSE,
+        _cost_store.record_cost(org_id=org_id, model=model, purpose=purpose,
                                 input_tokens=int(input_tokens or 0),
                                 output_tokens=int(output_tokens or 0),
                                 success=success, error=error, subject_ref=subject_ref)
@@ -237,29 +263,24 @@ def _facts_block(facts: Mapping[str, Any], cap: int) -> list[str]:
 
 
 def _units_block(results: Sequence[ReasonerResult]) -> list[str]:
+    """What the analysis units CONCLUDED — their reason codes, never their internal scores.
+
+    v1 printed every unit's raw basis-point metrics, and the model deferred on them: it read
+    `evidence_sufficiency_bp: 0` and `ungrounded_claim_count: 2` (internal bookkeeping about how a
+    score was composed) as "the evidence is thin", while the actual email was not in the prompt at
+    all. Units that concluded nothing, or could not run for lack of an optional input, are left
+    out rather than listed as gaps.
+    """
     lines = []
     for result in results:
-        status = result.status.value
-        head = f"- {result.reasoner_id} [{status}]"
-        if result.matched is not None:
-            head += f" matched={str(result.matched).lower()}"
-        parts = [head]
-        metrics = {k: v for k, v in result.metrics.items()
-                   if isinstance(v, (int, float, str, bool)) and not isinstance(v, bool)}
-        if metrics:
-            parts.append("metrics " + _short(dict(list(sorted(metrics.items()))[:14]), 400))
-        if result.findings:
-            parts.append("findings " + _short([
-                {"kind": item.kind, **({"value_bp": item.value_bp}
-                                       if item.value_bp is not None else {}),
-                 **({"reasons": list(item.reason_codes)} if item.reason_codes else {})}
-                for item in result.findings[:8]], 400))
-        if result.reason_codes:
-            parts.append("reasons " + _short(list(result.reason_codes)[:8], 200))
-        if result.missing_fields:
-            parts.append("missing " + _short(list(result.missing_fields)[:8], 200))
-        lines.append("; ".join(parts))
-    return lines or ["- (no units ran)"]
+        if result.status != ResultStatus.COMPLETED:
+            continue
+        codes = sorted({code for code in result.reason_codes}
+                       | {code for f in result.findings for code in f.reason_codes})
+        if not codes:
+            continue
+        lines.append(f"- {result.reasoner_id}: {', '.join(codes[:8])}")
+    return lines or ["- (nothing notable)"]
 
 
 def _plays_block(proposals: Sequence[Any]) -> list[str]:
@@ -267,20 +288,180 @@ def _plays_block(proposals: Sequence[Any]) -> list[str]:
     for item in proposals:
         play = item.play
         eliminated = item.disposition == CandidateDisposition.ELIMINATED
-        why = sorted({check.reason_code for check in item.checks
-                      if check.outcome == CheckOutcome.ELIMINATE})
-        lines.append(
-            f"- play_id={play.play_id} | {play.label} | steps: {_short(list(play.steps), 300)}"
-            f" | authored impact={play.impact_bp} success={play.success_probability_bp}"
-            f" effort={play.effort_bp} risk={play.risk_bp} (basis points, 0-10000)"
-            + (f" | ELIMINATED by a hard policy check ({', '.join(why)}) — you may not choose it"
-               if eliminated else ""))
+        binding = sorted({check.reason_code for check in item.checks
+                          if check.outcome == CheckOutcome.ELIMINATE
+                          and check.evaluator_id not in ADVISORY_EVALUATORS})
+        advisory = [check for check in item.checks if check.outcome == CheckOutcome.ELIMINATE
+                    and check.evaluator_id in ADVISORY_EVALUATORS]
+        note = ""
+        if eliminated:
+            note = (f" | BLOCKED by a safety/policy check ({', '.join(binding)}) — "
+                    "you may not choose it")
+        elif advisory:
+            detail = dict(advisory[0].detail or {})
+            note = (" | note: a legacy scoring rule rated this below its threshold "
+                    f"(score {detail.get('score')} < {detail.get('score_min')}); that rule is "
+                    "advice, not a veto — judge it yourself")
+        components = ", ".join(f"{name} {item.components[name]}" for name in
+                               ("importance", "impact", "urgency", "success", "effort", "risk")
+                               if name in item.components)
+        lines.append(f"- play_id={play.play_id} | {play.label} | "
+                     f"steps: {_short(list(play.steps), 300)} | formula utility "
+                     f"{item.utility_bp} ({components}){note}")
     return lines
+
+
+_DEFAULT_BANDS = {"high": 70, "critical": 85}      # deliver/bands.band's own default
+
+
+def _bands(request: Any) -> dict[str, int]:
+    """The pack's urgency-band cuts on the 0-100 card score, as the card builder applies them."""
+    for spec in request.capability.reasoners:
+        if spec.reasoner_id == "legacy.rule":
+            cuts = ((spec.config.get("scoring") or {}).get("bands") or {})
+            if cuts:
+                return {"high": int(cuts.get("high", 70)), "critical": int(cuts.get("critical", 85))}
+    return dict(_DEFAULT_BANDS)
+
+
+def _formula_block(request: Any, results: Sequence[ReasonerResult]) -> list[str]:
+    """How the deterministic engine scored this — the baseline the model calibrates against.
+
+    v1-v3 gave the model no scale, and it answered ~8500 for nearly everything: the card score is
+    utility/100, the general pack cuts CRITICAL at 60, so every card read critical and the queue
+    lost its order. The formula's reading is shown as data, not as an answer to copy.
+    """
+    from genios_engine.reason import decision_maker as dm
+
+    lines: list[str] = []
+    done = {r.reasoner_id: r for r in results if r.status == ResultStatus.COMPLETED}
+    rule = done.get("legacy.rule")
+    if rule is not None and "legacy_score" in rule.metrics:
+        m = rule.metrics
+        lines.append(
+            f"- the rule's score S = {m.get('legacy_score')}/100, from "
+            "S = Confidence x (0.45 Urgency + 0.35 Impact + 0.20 Recency): "
+            f"Urgency {int(m.get('urgency_bp', 0)) // 100}, Impact {int(m.get('impact_bp', 0)) // 100}, "
+            f"Recency {int(m.get('recency_bp', 0)) // 100}, "
+            f"Confidence {int(m.get('confidence_bp', 0)) // 100}% (extraction 50%, freshness 30%, "
+            "corroboration 20%)")
+    gate = done.get("legacy.score_gate")
+    if gate is not None:
+        g = gate.metrics
+        lines.append(f"- the rule's own bar: S >= {g.get('score_min')} and Confidence >= "
+                     f"{int(g.get('confidence_min_bp', 0)) // 100}%")
+    floor_bp, _source = dm.resolve_confidence_floor(request)
+    lines.append(f"- the formula only recommends acting when confidence >= {floor_bp}")
+    bands = _bands(request)
+    lines.append(f"- a card's score is utility/100 and orders the founder's queue: >= "
+                 f"{bands['critical'] * 100} shows as CRITICAL, >= {bands['high'] * 100} as HIGH, "
+                 "below that STANDARD")
+    return lines
+
+
+# ── What a human would look at: the subject, and what the mailbox actually says ───────────────
+
+#: Fact prefixes that describe the business; the `derived.*` series are engine bookkeeping.
+_BUSINESS_PREFIXES = ("party.", "thread.", "commitment.", "person.", "company.", "deal.",
+                      "meeting.", "campaign.", "contact.", "account.", "relationship.",
+                      "invoice.", "contract.", "task.")
+_L1_KEYS = ("intent", "stance", "topics", "questions", "commitments", "roles",
+            "implied_actions", "scheduling_proposals", "decision_states", "amounts")
+_MAX_EVENTS = 4
+_LOAD_ENGINE: Any = None
+
+
+def _engine():
+    global _LOAD_ENGINE
+    if _LOAD_ENGINE is None:
+        try:
+            from genios_engine.platform.wiring import make_graph_store
+            store = make_graph_store()
+            _LOAD_ENGINE = store.engine if store is not None else False
+        except Exception:      # noqa: BLE001
+            _LOAD_ENGINE = False
+    return _LOAD_ENGINE or None
+
+
+def _l1_summary(output: Mapping[str, Any]) -> str:
+    """One extracted message, as the handful of things a reader needs — quotes kept verbatim."""
+    parts = []
+    exchange = output.get("exchange_intent")
+    if isinstance(exchange, Mapping) and exchange.get("category"):
+        parts.append(f"kind={exchange.get('category')}")
+    for key in _L1_KEYS:
+        value = output.get(key)
+        if not value:
+            continue
+        if key == "commitments":
+            value = [{"who": c.get("actor"), "promised": c.get("action"), "due": c.get("due"),
+                      "quote": ((c.get("evidence") or [{}])[0] or {}).get("quote")}
+                     for c in value[:3] if isinstance(c, Mapping)]
+        elif key == "roles":
+            value = [f"{r.get('party')}: {r.get('role')}" for r in value[:4]
+                     if isinstance(r, Mapping)]
+        elif isinstance(value, list):
+            value = value[:4]
+        parts.append(f"{key}={_short(value, 260)}")
+    return "; ".join(parts)
+
+
+def business_context(request: Any) -> list[str]:
+    """The subject and its latest messages, read-only from the graph. Empty when unavailable.
+
+    The decision is only as good as what the model is shown, and the reasoning snapshot carries
+    the two or three fields a RULE needed — for an unanswered email, "ball in court" and a date.
+    The name, the role and what the person actually wrote are all in the graph already (the card
+    builder shows them); this is that, for the decision. Never raises: no database means the
+    prompt simply goes without it.
+    """
+    engine = _engine()
+    node_id = str(request.context.root_entity_id)
+    org_id = str(request.org_id)
+    if engine is None:
+        return []
+    try:
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            node = conn.execute(text(
+                "select node_type, display_name from graph_nodes where org_id=:o and node_id=:n "
+                "and valid_to is null order by version desc limit 1"),
+                {"o": org_id, "n": node_id}).first()
+            facts = conn.execute(text(
+                "select field, value from graph_facts where org_id=:o and subject_node_id=:n "
+                "and valid_to is null and status='active' order by field"),
+                {"o": org_id, "n": node_id}).fetchall()
+            events = conn.execute(text(
+                "select se.occurred_at, se.actor, se.object_type, e.output "
+                "from source_events se join l1_extraction_results e "
+                "on e.org_id=se.org_id and e.event_id=se.event_id "
+                "where se.org_id=:o and se.event_id in (select distinct created_by_event_id "
+                "from graph_facts where org_id=:o and subject_node_id=:n "
+                "and created_by_event_id is not null) "
+                "order by se.occurred_at desc limit :k"),
+                {"o": org_id, "n": node_id, "k": _MAX_EVENTS}).fetchall()
+    except Exception:      # noqa: BLE001 — context is an aid to the decision, never a reason to lose it
+        _log.exception("could not load business context for %s", node_id)
+        return []
+    lines: list[str] = []
+    if node is not None:
+        lines.append(f"- this is a {node.node_type}: {node.display_name or '(unnamed)'}")
+    for row in facts:
+        if str(row.field).startswith(_BUSINESS_PREFIXES):
+            lines.append(f"- {row.field}: {_short(row.value, 200)}")
+    for row in events:
+        actor = row.actor if isinstance(row.actor, Mapping) else {}
+        who = actor.get("name") or actor.get("email") or actor.get("id") or "unknown sender"
+        when = row.occurred_at.date().isoformat() if row.occurred_at else "?"
+        summary = _l1_summary(row.output if isinstance(row.output, Mapping) else {})
+        if summary:
+            lines.append(f"- message {when} from {who}: {summary}")
+    return lines[:40]
 
 
 def build_prompt(request: Any, results: Sequence[ReasonerResult], proposals: Sequence[Any],
                  uncertainty: Sequence[str], degraded: bool, importance_bp: int | None,
-                 feedback: str | None = None) -> str:
+                 feedback: str | None = None, business: Sequence[str] = ()) -> str:
     capability = request.capability
     context = request.context
     metadata = capability.metadata
@@ -295,48 +476,91 @@ def build_prompt(request: Any, results: Sequence[ReasonerResult], proposals: Seq
                     if item.disposition == CandidateDisposition.ELIGIBLE]
 
     sections = [
-        "You are the decision maker of GeniOS, an intelligence layer that tells a business owner "
-        "what to do next. Other units have already analysed ONE situation. You decide.",
+        "You are the chief of staff of a busy founder. GeniOS has flagged ONE situation from "
+        "their inbox and calendar. Decide whether it belongs in front of them today, and what "
+        "they should do about it.",
         "",
-        "Decide two things:",
-        "1. outcome — \"decision\" if the business should act on this now and the evidence is "
-        "strong enough to put it in front of a busy person; \"defer\" if it is too thin, too "
-        "stale, already handled, not worth their attention, or a human must supply something "
-        "first.",
-        "2. For EVERY eligible play, a utility score 0-10000: how good that move is for this "
-        "situation right now. The highest-scoring play is the one recommended.",
-        "Also give confidence_bp 0-10000: how sure you are this is right, given the evidence.",
+        "Decide:",
+        "1. outcome — \"decision\" if a good chief of staff would put this in front of the founder "
+        "now; \"defer\" if it is noise (automated or promotional mail), already handled, has "
+        "nothing for us to do, or you genuinely cannot tell what it is about.",
+        "2. For EVERY eligible play, a utility 0-10000 on the SAME scale as the engine's formula "
+        "(shown below). START from the formula's utility for that play and move it only for a "
+        "reason the formula cannot see — who the person is, what they actually asked, whether it "
+        "was already handled. Keep most moves within about 2000; if you move more, say why in the "
+        "rationale. The utility becomes the card's rank in today's queue, so do not give "
+        "everything the same high number: CRITICAL is for what truly needs the founder today. "
+        "The Wait play should win when acting now adds little.",
+        "3. confidence_bp 0-10000: how strong the evidence is. Start from the rule's own "
+        "confidence; raise it only when the messages clearly confirm the situation, lower it when "
+        "they are unclear or contradict it.",
         "",
-        "Rules: judge only from what is written below. Do not invent facts, people, dates or "
-        "amounts. Low confidence and thin evidence mean defer.",
+        "How to judge:",
+        "- What stays owed: a direct question or request a real person sent us, or a promise WE "
+        "made. Time does not close these — being weeks old makes them MORE urgent, not less, "
+        "unless the facts show they were answered, done or called off.",
+        "- What time DOES close: a meeting invitation, confirmation or reschedule is about one "
+        "specific date. If that date has passed and nothing after it shows something still owed "
+        "(a question, a request, a promise), the thread is over — defer. Do not treat an "
+        "unanswered calendar invite for a past date as an obligation.",
+        "- A due time of 18:29:59 UTC is an 'end of day' placeholder, not a scheduled meeting.",
+        *_stance_rules(),
+        "- Where the record disagrees with itself (listed below), say which reading you trust and "
+        "why; if you cannot tell, lower confidence rather than picking one silently.",
+        "- Judge the business situation from the facts and messages below. Do not invent facts, "
+        "people, dates or amounts.",
+        "- Fields that are simply not recorded are not a reason to defer when the situation is "
+        "already clear without them.",
         "",
-        f"SITUATION: {situation}",
-        f"capability: {capability.capability_id}@{capability.version} (domain {capability.domain})",
-        f"goal: {_short(capability.goal.statement, 300)}",
-        f"subject: {context.root_entity_type} {context.root_entity_id}",
-        f"evaluated at: {request.evaluation_time.isoformat()}",
+        f"SITUATION: {situation.replace('_', ' ')} — {_short(capability.goal.statement, 300)}",
+        f"evaluated at: {request.evaluation_time.date().isoformat()}",
         f"if nobody acts: {_short(capability.do_nothing_consequence, 300)}",
     ]
     if importance_bp is not None:
         sections.append(f"situation importance measured upstream: {importance_bp} / 10000")
-    sections += ["", "FACTS ABOUT THE SUBJECT:", *_facts_block(context.facts, 60)]
+    if business:
+        sections += ["", "WHO AND WHAT (from the graph and the mailbox, latest first):",
+                     *business]
+    # R-1's second trigger: a disagreement Layer 1 recorded and nobody settled. Shown on its own so
+    # the model weighs both readings instead of meeting them as two unremarkable facts.
+    disagreements = [f"- {name[len('situation.conflict.'):]}: {_short(context.facts[name], 240)}"
+                     for name in sorted(context.facts) if name.startswith("situation.conflict.")]
+    if disagreements:
+        sections += ["", "WHERE THE RECORD DISAGREES:", *disagreements]
+    # R-1's readings (`reason/llm_interpretation.py`), on their own so they read as what they are:
+    # a model's reading of the wording, which the contract forbids from raising confidence.
+    readings = []
+    for name in sorted(context.facts):
+        if not name.startswith("interpretation."):
+            continue
+        record = context.facts[name]
+        value = record.get("value") if isinstance(record, Mapping) else None
+        if isinstance(value, Mapping):
+            readings.append(f"- {name[len('interpretation.'):]}: "
+                            f"{str(value.get('classification', '')).lower().replace('_', ' ')} "
+                            f"(confidence {value.get('confidence_bp')}) — "
+                            f"\"{_short(value.get('span'), 200)}\"")
+    if readings:
+        sections += ["", "R1 — HOW THE WORDING READS (a reading, not a fact; it cannot raise "
+                         "confidence):", *readings]
+    rule_facts = {name: record for name, record in context.facts.items()
+                  if not name.startswith(("interpretation.", "situation.conflict."))}
+    sections += ["", "FACTS THE RULE USED:", *_facts_block(rule_facts, 40)]
     if context.neighbor_facts:
         sections += ["", "FACTS ABOUT RELATED PEOPLE / THREADS:",
-                     *_facts_block(context.neighbor_facts, 30)]
-    if context.observations:
-        sections += ["", "RECENT OBSERVATIONS:",
-                     *[f"- {_short(item, 300)}" for item in context.observations[:15]]]
-    sections += ["", "WHAT THE ANALYSIS UNITS FOUND:", *_units_block(results)]
+                     *_facts_block(context.neighbor_facts, 25)]
+    sections += ["", "WHAT THE ANALYSIS FOUND:", *_units_block(results)]
+    sections += ["", "HOW THE ENGINE'S FORMULA SCORED THIS (your baseline, not your answer):",
+                 *_formula_block(request, results)]
     if citations:
         sections += ["", "AUTHORED EXPERT RULES THAT APPLY:", *[f"- {c}" for c in citations]]
     if conflicts:
         sections += ["", "AUTHORED RULES THAT CONTRADICT EACH OTHER HERE:",
                      *[f"- {c}" for c in conflicts]]
-    gaps = sorted(set(context.missing_fields) | set(uncertainty))
-    if gaps or degraded:
-        sections += ["", "KNOWN GAPS:", *[f"- {_short(g, 160)}" for g in gaps[:20]]]
-        if degraded:
-            sections.append("- an optional analysis unit failed, so the picture is incomplete")
+    required_missing = sorted(set(context.missing_fields) & set(capability.required_fields))
+    if required_missing:
+        sections += ["", "REQUIRED INFORMATION THAT IS MISSING:",
+                     *[f"- {g}" for g in required_missing]]
     sections += ["", "PLAYS YOU CAN RECOMMEND:", *_plays_block(proposals), "",
                  "Answer with ONLY this JSON object, no prose around it:",
                  json.dumps({
@@ -398,6 +622,31 @@ def parse_answer(parsed: Mapping[str, Any], eligible_ids: Sequence[str]) -> dict
 # THE DECISION
 # =================================================================================================
 
+def _debug_dump(request: Any, attempt: int, prompt: str, res: Any, tag: str = "dm") -> None:
+    """With `GENIOS_L4_LLM_DECISION_DEBUG_DIR` set, write each prompt and answer to a file.
+
+    For local debugging only: a DEFER's reason is in the answer, and whether the prompt misled
+    the model is only visible next to the prompt it answered. Never fails the decision.
+    """
+    import os
+    folder = os.environ.get("GENIOS_L4_LLM_DECISION_DEBUG_DIR", "").strip()
+    if not folder:
+        return
+    try:
+        os.makedirs(folder, exist_ok=True)
+        name = (f"{tag}__{request.capability.capability_id}__{request.context.root_entity_id}"
+                f"__{attempt}.json").replace("/", "_")
+        with open(os.path.join(folder, name), "w", encoding="utf-8") as handle:
+            json.dump({"capability": request.capability.capability_id,
+                       "subject": request.context.root_entity_id, "attempt": attempt,
+                       "prompt": prompt, "raw": getattr(res, "raw", ""),
+                       "parsed": getattr(res, "parsed", None), "ok": getattr(res, "ok", None),
+                       "error": getattr(res, "error", None)},
+                      handle, ensure_ascii=False, indent=1, default=str)
+    except Exception:      # noqa: BLE001
+        _log.exception("could not write the L4 LLM decision debug dump")
+
+
 def _cache_key(request: Any, results: Sequence[ReasonerResult], uncertainty: Sequence[str],
                degraded: bool, model: str) -> str:
     """What the decision is ABOUT — never how the run was invoked.
@@ -426,7 +675,9 @@ def _consult(request: Any, results: Sequence[ReasonerResult], proposals: Sequenc
     eligible_ids = [item.play.play_id for item in proposals
                     if item.disposition == CandidateDisposition.ELIGIBLE]
     model = str(getattr(llm, "model", "") or "unknown")
-    key = _cache_key(request, results, uncertainty, degraded, model)
+    business = business_context(request)
+    key = semantic_hash({"base": _cache_key(request, results, uncertainty, degraded, model),
+                         "business": list(business)})
     with _lock:
         hit = _cache.get(key)
         if hit is not None:
@@ -439,15 +690,16 @@ def _consult(request: Any, results: Sequence[ReasonerResult], proposals: Sequenc
                    f"{request.context.root_entity_id}")
     feedback: str | None = None
     last_reason = "no_answer"
-    for _attempt in range(2):
+    for attempt in range(2):
         prompt = build_prompt(request, results, proposals, uncertainty, degraded,
-                              importance_bp, feedback)
+                              importance_bp, feedback, business=business)
         try:
             res = llm.call(prompt, max_tokens=_MAX_TOKENS)
         except Exception as exc:      # noqa: BLE001 — a transport failure is a DEFER
             _record_cost(org_id=request.org_id, model=model, subject_ref=subject_ref,
                          input_tokens=0, output_tokens=0, success=False, error=str(exc)[:300])
             return None, "call_failed"
+        _debug_dump(request, attempt, prompt, res)
         _record_cost(org_id=request.org_id, model=model, subject_ref=subject_ref,
                      input_tokens=getattr(res, "input_tokens", 0),
                      output_tokens=getattr(res, "output_tokens", 0),
@@ -496,7 +748,13 @@ def decide_with_llm(request: Any, results: Sequence[ReasonerResult], *,
     checks = [item for result in results for item in result.checks]
     proposals = dm.synthesize_candidates(request, adjustments, urgency_bp, priority_override,
                                          importance_bp)
-    proposals = dm.evaluate_candidates(proposals, checks)
+    # Only safety/policy eliminations bind. A scoring-threshold rule (`legacy.score_gate`) is a
+    # judgement the model now makes, so it is shown as advice — and every check still travels on
+    # its candidate, because the store verifies checks against the units' own outputs.
+    binding = [item for item in checks if item.evaluator_id not in ADVISORY_EVALUATORS]
+    proposals = [replace(item, checks=dm.ordered_checks(
+                     [c for c in checks if c.play_id == item.play.play_id]))
+                 for item in dm.evaluate_candidates(proposals, binding)]
     eligible = [item for item in proposals if item.disposition == CandidateDisposition.ELIGIBLE]
 
     answer, failure = (None, "no_eligible_play") if not eligible else _consult(

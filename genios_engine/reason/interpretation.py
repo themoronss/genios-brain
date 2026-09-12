@@ -146,7 +146,10 @@ UNRESOLVED_CONFLICT = "unresolved_surface_both"
 
 AMBIGUITY_HEDGED = "hedged_statement"
 AMBIGUITY_CONFLICT = "unresolved_conflict"
-AMBIGUITY_KINDS = (AMBIGUITY_HEDGED, AMBIGUITY_CONFLICT)
+#: TEST MODE (`reason/llm_interpretation.py`): the model itself judged the wording ambiguous, in
+#: place of the closed hedge list. The reading enters through the same `augment` as every other.
+AMBIGUITY_LLM = "llm_judged_ambiguous"
+AMBIGUITY_KINDS = (AMBIGUITY_HEDGED, AMBIGUITY_CONFLICT, AMBIGUITY_LLM)
 
 
 # =================================================================================================

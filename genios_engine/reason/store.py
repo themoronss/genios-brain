@@ -1379,7 +1379,16 @@ class ReasoningStore:
             if outcome not in {"pass", "warn", "eliminate", "adjust"}:
                 raise ValueError("invalid candidate-check outcome")
             if outcome == "eliminate":
-                eliminated.add(candidate_id)
+                # TEST MODE: on a candidate the LLM Decision Maker built, a scoring-threshold
+                # elimination is advice the model was shown, not a removal. Safety and policy
+                # eliminations, and every formula-built candidate, keep the strict pairing.
+                from genios_engine.reason.llm_decision_maker import (
+                    ADVISORY_EVALUATORS, LLM_UTILITY_COMPONENT)
+                advisory = (str(value.get("evaluator_id") or "") in ADVISORY_EVALUATORS
+                            and LLM_UTILITY_COMPONENT in (
+                                candidate_by_id[candidate_id].get("score_components") or {}))
+                if not advisory:
+                    eliminated.add(candidate_id)
             detail = _mapping(value.get("detail") or {}, "candidate-check detail")
             material = {
                 # IDs are persistence handles and may differ in a replay run.  The

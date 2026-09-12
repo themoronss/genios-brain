@@ -224,7 +224,81 @@ def test_an_eliminated_play_cannot_win_and_is_not_offered():
     assert by_play["blocked"].disposition == CandidateDisposition.ELIMINATED
     assert by_play["blocked"].rank_position is None
     assert by_play["allowed"].rank_position == 1
-    assert "ELIMINATED by a hard policy check (tenant_policy_block)" in fake.prompts[0]
+    assert "BLOCKED by a safety/policy check (tenant_policy_block)" in fake.prompts[0]
+
+
+def test_a_scoring_gate_is_advice_the_model_may_overrule():
+    # `legacy.score_gate` eliminating is a threshold judgement, not safety: in this mode the
+    # model sees it and may still act. The check still travels on the candidate for the store.
+    gate = CandidateCheck(play_id="restore_momentum", stage="precondition",
+                          outcome=CheckOutcome.ELIMINATE, reason_code="legacy_score_gate_failed",
+                          evaluator_id="legacy.score_gate", evaluator_version="1.0.0",
+                          detail={"score": 38, "score_min": 42})
+    fake = FakeLLM(_answer({"restore_momentum": 6_000}))
+
+    synthesis = _decide(_request(), _results(checks=(gate,)), fake)
+    winner = _by_play(synthesis)["restore_momentum"]
+
+    assert synthesis.decision.outcome == DecisionOutcome.DECISION
+    assert winner.disposition == CandidateDisposition.ELIGIBLE and winner.rank_position == 1
+    assert [c.reason_code for c in winner.checks] == ["legacy_score_gate_failed"]
+    assert "advice, not a veto" in fake.prompts[0] and "score 38 < 42" in fake.prompts[0]
+
+
+def test_the_formula_reading_is_the_baseline_the_model_calibrates_against():
+    # v1-v3 gave no scale and every answer landed near 8500 -> every card CRITICAL. The prompt now
+    # carries the formula's own utility per play, the confidence floor and the band cuts.
+    plays = (_play("reply", impact=7_500, success=3_000), _play("wait", impact=2_000))
+    fake = FakeLLM(_answer({"reply": 5_000, "wait": 3_000}))
+
+    _decide(_request(plays=plays), _results(), fake)
+
+    prompt = fake.prompts[0]
+    assert "HOW THE ENGINE'S FORMULA SCORED THIS" in prompt
+    assert "formula utility" in prompt and "impact 7500" in prompt
+    assert "only recommends acting when confidence >= 4500" in prompt
+    assert "CRITICAL" in prompt and "START from the formula's utility" in prompt
+
+
+def test_r1s_hedge_reading_and_conflicts_are_in_the_decision_prompt():
+    # R-1's job, folded in: its closed hedge list (Hinglish included), its six stances, and an
+    # unresolved Layer 1 conflict shown as a disagreement to weigh rather than a plain fact.
+    request = _request()
+    context = request.context
+    facts = {**dict(context.facts), "situation.conflict.date.value": {
+        "field": "date.value", "resolution": "unresolved_surface_both",
+        "values": ["2026-08-14", "2027-08-14"]}}
+    request = ReasoningRequest(
+        org_id=request.org_id, capability=request.capability,
+        context=ContextSnapshot(org_id=context.org_id, graph_version=context.graph_version,
+                                root_entity_id=context.root_entity_id,
+                                root_entity_type=context.root_entity_type,
+                                evaluation_time=context.evaluation_time,
+                                selector_version=context.selector_version, facts=facts),
+        evaluation_time=request.evaluation_time, trigger_kind=request.trigger_kind,
+        config_snapshot_id=request.config_snapshot_id)
+    fake = FakeLLM(_answer({"restore_momentum": 5_000}))
+
+    _decide(request, _results(), fake)
+
+    prompt = fake.prompts[0]
+    assert "A hedge is not a commitment" in prompt and "'shayad'" in prompt
+    assert "commitment made = the writer commits to a specific action" in prompt
+    assert "WHERE THE RECORD DISAGREES" in prompt and "2027-08-14" in prompt
+
+
+def test_the_subject_and_its_messages_lead_the_prompt(monkeypatch):
+    monkeypatch.setattr(llm_dm, "business_context", lambda _req: [
+        "- this is a person: Maria Exconde",
+        "- message 2026-08-11 from Maria Exconde: questions=['What are you building?']"])
+    fake = FakeLLM(_answer({"restore_momentum": 6_000}))
+
+    _decide(_request(), _results(), fake)
+
+    prompt = fake.prompts[0]
+    assert "WHO AND WHAT" in prompt and "Maria Exconde" in prompt
+    assert prompt.index("WHO AND WHAT") < prompt.index("PLAYS YOU CAN RECOMMEND")
+    assert "confidence_bp\": 8000" not in prompt       # units give conclusions, not scores
 
 
 def test_every_play_eliminated_is_blocked_without_a_call():

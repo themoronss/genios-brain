@@ -234,6 +234,19 @@ class ReasoningOrchestrator:
         uncertainty.extend(optional_degradations)
         uncertainty.extend(field for result in results for field in result.missing_fields)
 
+        if terminal is None:
+            # TEST MODE (`GENIOS_L4_LLM_DECISION_MAKER`): R-1 read by a model, only for a run that
+            # is about to reach the decision maker. It adds `interpretation.*` facts, so the run is
+            # executed once more on the augmented request — every stored hash then describes the
+            # snapshot the decision was made on. The one-hop law makes the second pass return here
+            # unchanged, so this cannot loop.
+            from genios_engine.reason import llm_decision_maker as llm_dm
+            if llm_dm.enabled_for(getattr(request, "org_id", "")):
+                from genios_engine.reason.llm_interpretation import interpret_request
+                interpreted = interpret_request(request, llm_dm.client())
+                if interpreted is not request:
+                    return self.execute(interpreted)
+
         synthesis = self._decision_maker.decide(
             request, results,
             terminal=terminal,
