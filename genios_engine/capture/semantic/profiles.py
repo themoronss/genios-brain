@@ -528,11 +528,14 @@ def _profile(profile_id: str, role: str, emphasis: tuple[str, ...], tier: str,
 PROFILES: Mapping[str, ExtractionProfile] = MappingProxyType({
     "email": _profile(
         "email", _EMAIL_ROLE,
-        ("commitments", "decision_states", "dependencies", "dates_mentioned"),
+        # `availability`: an out-of-office reply or a leave note is mail, and "who is away,
+        # until when, who covers" is the one thing it says.
+        ("commitments", "decision_states", "dependencies", "dates_mentioned", "availability"),
         "T2", 24_000, SENTENCE),
     "chat": _profile(
         "chat", _CHAT_ROLE,
-        ("stance", "questions", "scheduling_proposals"),
+        # "kal se 3 din chutti" is a Slack line far more often than an email.
+        ("stance", "questions", "scheduling_proposals", "availability"),
         "T1", 4_000, NONE),
     "transcript": _profile(
         "transcript", _TRANSCRIPT_ROLE,

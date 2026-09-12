@@ -30,7 +30,10 @@ from datetime import datetime, timezone
 
 from sqlalchemy import text
 
+from genios_engine.context.availability import WINDOWED_FIELDS
 from genios_engine.platform.ids import new_id
+
+_WINDOWED_SQL = ", ".join(f"'{f}'" for f in sorted(WINDOWED_FIELDS))
 
 # Every table that names a node. Missing one leaves rows pointing at a closed node —
 # invisible in the UI, still returned by any query that joins on node_id.
@@ -219,7 +222,10 @@ def _resolve_duplicate_facts(conn, org_id: str, survivor_id: str) -> int:
     rows = conn.execute(text(
         "select fact_version_id from ("
         "  select fact_version_id, row_number() over ("
-        "    partition by field"
+        # One active row per window on a windowed field (person.availability): two windows
+        # with different starts are not duplicates, the same window from both nodes is.
+        "    partition by field, case when field in (" + _WINDOWED_SQL + ") "
+        "      then value->>'from' else '' end"
         "    order by authority_rank desc, occurred_at desc nulls last, created_at desc"
         "  ) as rank_in_field"
         "  from graph_facts"

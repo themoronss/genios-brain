@@ -359,6 +359,9 @@ EXPIRY_WINDOW_DAYS: Mapping[str, int] = MappingProxyType({
     SignalType.DEADLINE_STATED.value: 30,
     SignalType.CONTRACT_RENEWAL.value: 30,
     SignalType.DECISION_PENDING.value: 90,
+    # A leave window is short-lived; the durable record is the `person.availability` fact in
+    # Layer 2, which carries its own from/to. The signal only has to live long enough to drain.
+    SignalType.AVAILABILITY_CHANGE.value: 30,
 })
 #: Doc 06's "others -> 180d". A named constant rather than a literal in a `.get()`, because it is
 #: the window most signals actually get and it must be greppable.

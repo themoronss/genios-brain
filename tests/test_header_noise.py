@@ -43,8 +43,23 @@ def test_list_unsubscribe_now_drops_at_l1():
     assert _outcome(_email({"List-Unsubscribe": "<mailto:u@x.com>"})) == "dropped"
 
 
-def test_auto_submitted_drops_at_l1():
-    assert _outcome(_email({"Auto-Submitted": "auto-replied"})) == "dropped"
+def test_auto_submitted_machine_ack_drops_at_l1():
+    assert _outcome(_email({"Auto-Submitted": "auto-generated"})) == "dropped"
+
+
+def test_vacation_responder_is_kept_as_an_availability_notice():
+    # DESIGN CHANGE (N-05): `Auto-Submitted: auto-replied` is what a vacation responder sends. It
+    # used to drop with every other machine ack; it now reaches L2 marked, because "who is away,
+    # until when" is the one thing it says and team intelligence needs it.
+    res = capture_event(_email({"Auto-Submitted": "auto-replied"}), org_id="o",
+                        connection_id="c", repo=InMemorySourceEventRepository())
+    assert res.outcome == "emitted"
+    assert res.gated.availability_marker == "auto_reply"
+
+
+def test_connector_surfaces_responder_headers():
+    raw = _email({"X-Autoreply": "yes"})
+    assert raw.raw["headers"].get("X-Autoreply") == "yes"
 
 
 def test_precedence_bulk_drops_at_l1():

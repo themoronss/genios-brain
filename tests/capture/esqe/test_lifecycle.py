@@ -398,10 +398,12 @@ def test_a_record_may_not_supersede_itself():
         (SignalType.INFORMATION_CONFLICT, 180),
         (SignalType.ESCALATION, 180),
         (SignalType.ANOMALY, 180),
+        # Not doc 06: member fifteen. Short, because the durable record is the L2 fact.
+        (SignalType.AVAILABILITY_CHANGE, 30),
     ],
 )
 def test_doc_06s_expiry_window_for_every_signal_type(signal_type, window):
-    """All fourteen, because "others -> 180d" is only checkable by naming the others."""
+    """All fifteen, because "others -> 180d" is only checkable by naming the others."""
     assert L.expiry_window_days(signal_type) == window
     plan = L.plan_expiry(signal_type, occurred_at=NOW)
     assert plan.expires_at == NOW + timedelta(days=window)

@@ -117,7 +117,8 @@ _SETS: Mapping[str, frozenset[str]] = MappingProxyType({
 #: `contracts/extraction.py::_open_lane_dicts` calls them "the three untyped lanes" verbatim.
 #: The order is declaration order on the contract, which is what `UNTYPED_LANE_KEYS` below is
 #: keyed by and what the guard iterates.
-UNTYPED_LANES: tuple[str, ...] = ("roles", "relationships", "scheduling_proposals")
+UNTYPED_LANES: tuple[str, ...] = ("roles", "relationships", "scheduling_proposals",
+                                  "availability")
 
 #: Lane -> the keys an entry in that lane may carry. **This is a closed vocabulary of FIELD
 #: NAMES, and it is the missing half of this module.**
@@ -156,6 +157,12 @@ UNTYPED_LANE_KEYS: Mapping[str, frozenset[str]] = MappingProxyType({
     "roles": frozenset({"party", "role", "evidence_text"}),
     "relationships": frozenset({"party", "nature", "direction", "evidence_text"}),
     "scheduling_proposals": frozenset({"proposer", "text", "evidence_text"}),
+    # Read off its consumer like the three above: `context/extract/availability.py` reads
+    # person / kind / from / to / coverage_person / evidence_text and nothing else. `from` and
+    # `to` are the message's OWN WORDS ("from 15th", "kal se", "back on Monday") — Layer 2 turns
+    # them into dates against the message date, so no model ever does the arithmetic.
+    "availability": frozenset({"person", "kind", "from", "to", "coverage_person",
+                               "evidence_text"}),
 })
 
 #: Contract field/attribute name -> set name. `state` on `DecisionState` and `entity_type` on
@@ -178,7 +185,9 @@ FIELD_TO_SET: Mapping[str, str] = MappingProxyType({
 #: "2" — `UNTYPED_LANE_KEYS` closed the three lanes that had no key vocabulary at all. That is
 #: the same class of change as a promotion (what the prompt asks for moved), so the constant
 #: moves with it and the fingerprint moves underneath both.
-VOCABULARY_VERSION = "2"
+#:
+#: "3" — the `availability` lane (who is away, from/to as quoted words, coverage).
+VOCABULARY_VERSION = "3"
 
 #: Length of the hex digest `vocabulary_fingerprint()` returns. Twelve hex characters is 48 bits
 #: — collision-free for a set of words a human curates, and short enough that the composite cache
@@ -263,7 +272,7 @@ def vocabulary_block() -> str:
         for name, members in sorted(_SETS.items())
     ]
     lines.append(
-        "CLOSED OBJECT KEYS — these three lists hold objects, and an object may carry these "
+        "CLOSED OBJECT KEYS — these lists hold objects, and an object may carry these "
         "keys and no others. Omit a key you have nothing for; never add one."
     )
     lines += [

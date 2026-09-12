@@ -29,7 +29,8 @@ DOC_ORDER = [
     "information_conflict", "escalation", "approval_requested", "contract_renewal",
     "commitment_due", "decision_pending", "financial_obligation", "deadline_stated",
     "risk_flagged", "commitment_made", "decision_made", "opportunity_signal",
-    "relationship_change", "anomaly",
+    # `availability_change` is not in doc 06 — member fifteen, placed last among the real types.
+    "relationship_change", "availability_change", "anomaly",
 ]
 
 
@@ -38,9 +39,9 @@ def test_the_precedence_order_is_doc_06s_order():
 
 
 def test_the_precedence_order_is_total_over_the_taxonomy():
-    """Every one of the 14 members has a position, and no member has two."""
+    """Every one of the 15 members has a position, and no member has two."""
     assert set(PRECEDENCE) == set(SignalType)
-    assert len(PRECEDENCE) == len(set(PRECEDENCE)) == len(SignalType) == 14
+    assert len(PRECEDENCE) == len(set(PRECEDENCE)) == len(SignalType) == 15
 
 
 def test_nothing_detected_is_not_classified_as_anything():

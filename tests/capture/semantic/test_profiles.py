@@ -46,9 +46,12 @@ GATE = "G3"
 #: doc's words, the emphasis-existence test below fails and this row explains why.
 SPEC_TABLE = (
     # profile_id, emphasis, tier, max_input_chars, chunk_strategy, doc_said
-    ("email", ("commitments", "decision_states", "dependencies", "dates_mentioned"),
+    # `availability` added to email + chat (not in doc 04's table): an out-of-office reply and a
+    # "kal se 3 din chutti" line are where who-is-away is written, and the lane is on the contract.
+    ("email", ("commitments", "decision_states", "dependencies", "dates_mentioned",
+               "availability"),
      "T2", 24_000, SENTENCE, {"dates_mentioned": "dates"}),
-    ("chat", ("stance", "questions", "scheduling_proposals"),
+    ("chat", ("stance", "questions", "scheduling_proposals", "availability"),
      "T1", 4_000, NONE, {}),
     ("transcript", ("commitments", "decision_states", "roles", "dependencies"),
      "T3", 40_000, SECTION, {}),

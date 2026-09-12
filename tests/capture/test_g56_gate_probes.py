@@ -427,7 +427,8 @@ def test_g6_every_type_the_detector_can_emit_is_a_member_of_the_closed_fourteen(
     """Driven over every predicate the table has, not only the worked example's three: a
     detector that returned a bare string would still satisfy a `set(...) ==` check written
     against types it happened to produce."""
-    assert len(SignalType) == 14, "the taxonomy is closed at fourteen; doc 08 owns it"
+    assert len(SignalType) == 15, ("the taxonomy is closed at fifteen: doc 08's fourteen plus "
+                                   "availability_change (migration 0139)")
     emitted: set = set()
     for conflicts in ((), ):
         for extraction in (_worked_extraction(), _minimal_for_anomaly()):

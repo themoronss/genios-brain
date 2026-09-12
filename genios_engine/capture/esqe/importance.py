@@ -244,6 +244,11 @@ SIGNAL_TYPE_WEIGHT_BP: Mapping[SignalType, int] = MappingProxyType({
     SignalType.DECISION_MADE: 4000,
     SignalType.RELATIONSHIP_CHANGE: 3500,
     SignalType.ANOMALY: 3000,
+    # Tied for the lowest weight: an availability window is context for other work, never itself
+    # work. Not below 3000 — the table's 6000 bp span is the "small nudge" doc 06 allows
+    # (test_the_signal_type_nudge_cannot_outvote_the_other_four_terms), and a new member may not
+    # widen it. It publishes through the ladder's AVAILABILITY_OVERRIDE, not through score.
+    SignalType.AVAILABILITY_CHANGE: 3000,
 })
 
 #: Import-time totality, on the same terms as `classifier.PRECEDENCE`. A fifteenth member with

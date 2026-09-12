@@ -399,6 +399,13 @@ def _detect_all(request: DetectionInput) -> list[DetectedSignal]:
     elif ex.roles:
         out.append(DetectedSignal(SignalType.RELATIONSHIP_CHANGE, "role_asserted"))
 
+    # AVAILABILITY_CHANGE — somebody states a window in which they cannot act (the `availability`
+    # lane: leave / OOO / sick / travel / busy, start and end as quoted words). Like `roles`, the
+    # lane is `list[dict]` by contract and carries no EvidenceSpan of its own, so the detection
+    # carries no receipt; Layer 2 re-grounds every claim against the message before writing it.
+    if ex.availability:
+        out.append(DetectedSignal(SignalType.AVAILABILITY_CHANGE, "availability_stated"))
+
     # INFORMATION_CONFLICT — ALG-12 found a disagreement on a field that matters.
     material = _material_conflicts(request.conflicts)
     if material:

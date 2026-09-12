@@ -56,6 +56,10 @@ PRECEDENCE: tuple[SignalType, ...] = (
     SignalType.DECISION_MADE,
     SignalType.OPPORTUNITY_SIGNAL,
     SignalType.RELATIONSHIP_CHANGE,
+    # Not in doc 06 (member fifteen). Last among the real types: an absence window never outranks
+    # a business signal in the same message. ANOMALY cannot co-fire with it (it fires only when
+    # nothing else did), so its position below is unchanged in effect.
+    SignalType.AVAILABILITY_CHANGE,
     SignalType.ANOMALY,
 )
 

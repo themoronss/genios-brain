@@ -145,6 +145,8 @@ def adapt_qes_extraction(
         roles=[dict(value) for value in result.roles],
         relationships=[dict(value) for value in result.relationships],
         scheduling_proposals=[dict(value) for value in result.scheduling_proposals],
+        # Raw quoted-word claims; `process_event` validates them and resolves their dates.
+        availability=[dict(value) for value in result.availability],
         objective={},
         input_tokens=0,
         output_tokens=0,

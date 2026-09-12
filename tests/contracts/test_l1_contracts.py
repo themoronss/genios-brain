@@ -81,6 +81,8 @@ DOC_SIGNAL_TYPES: frozenset[str] = frozenset({
     "commitment_made", "commitment_due", "deadline_stated", "decision_pending", "decision_made",
     "approval_requested", "contract_renewal", "financial_obligation", "risk_flagged",
     "opportunity_signal", "relationship_change", "information_conflict", "escalation", "anomaly",
+    # Member fifteen, added deliberately with migration 0139 (see SignalType.AVAILABILITY_CHANGE).
+    "availability_change",
 })
 
 #: The three inputs that must never be accepted by a `*_bp` field, with the reason each is its
@@ -790,7 +792,7 @@ def test_c11_has_exactly_the_documented_member_set():
     the nearest neighbour.
     """
     assert {member.value for member in SignalType} == DOC_SIGNAL_TYPES
-    assert len(SignalType) == 14
+    assert len(SignalType) == 15
     assert all(isinstance(member.value, str) for member in SignalType)
     assert SignalType("information_conflict") is SignalType.INFORMATION_CONFLICT
 

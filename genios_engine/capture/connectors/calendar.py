@@ -119,6 +119,11 @@ class ComposioCalendarConnector:
         internal = getattr(self, "_internal_emails", None)
         actor_type = ("internal_user" if internal is None or
                       str(organizer or "").strip().lower() in internal else "external_contact")
+        # Whose calendar this is. Google flags the connected account's own entry with `self`;
+        # an availability block (outOfOffice / all-day "Leave") belongs to that person.
+        owner = next((p.get("email") for p in [ev.get("organizer") or {}, ev.get("creator") or {},
+                                                *(ev.get("attendees") or [])]
+                      if isinstance(p, dict) and p.get("self") and p.get("email")), None)
         return RawObject(
             source="gcal", object_type="calendar_event", source_object_id=str(eid),
             occurred_at=_parse_start(ev), actor_email=organizer, actor_type=actor_type,
@@ -143,6 +148,12 @@ class ComposioCalendarConnector:
                 # agenda/notes + where — real relevant info that was being dropped (only summary was kept)
                 "description": ev.get("description"),
                 "location": ev.get("location"),
+                # availability lane: eventType ("outOfOffice" / "default" / …), whose calendar,
+                # and when Google last changed it (the assertion time of the window it carries)
+                "eventType": ev.get("eventType"),
+                "organizer": organizer,
+                "calendar_owner": owner,
+                "updated": ev.get("updated"),
             },
         )
 

@@ -194,6 +194,8 @@ ANCHOR_FAMILIES: Mapping[SignalType, tuple[type, ...]] = MappingProxyType({
     SignalType.INFORMATION_CONFLICT: (Money, ResolvedDate, DecisionState, Commitment),
     SignalType.ESCALATION: (DecisionState, Dependency, Commitment),
     SignalType.ANOMALY: (UnclassifiedObservation, DecisionState, Commitment, Money),
+    # About a PERSON, like RELATIONSHIP_CHANGE; the window itself lives in the untyped lane.
+    SignalType.AVAILABILITY_CHANGE: (EntityMention,),
 })
 
 #: SignalType -> which date this type carries. TOTAL over the 14 members.
@@ -215,6 +217,9 @@ DATE_POLICY: Mapping[SignalType, DatePolicy] = MappingProxyType({
     SignalType.INFORMATION_CONFLICT: DatePolicy.STATED,
     SignalType.ESCALATION: DatePolicy.STATED,
     SignalType.ANOMALY: DatePolicy.STATED,
+    # The window's dates are resolved in Layer 2 from the quoted words; borrowing some other
+    # stated date here would give an absence a deadline.
+    SignalType.AVAILABILITY_CHANGE: DatePolicy.NONE,
 })
 
 #: SignalType -> where money may come from. TOTAL over the 14 members.
@@ -233,6 +238,7 @@ AMOUNT_POLICY: Mapping[SignalType, AmountPolicy] = MappingProxyType({
     SignalType.RELATIONSHIP_CHANGE: AmountPolicy.CLAIMS_ONLY,
     SignalType.ESCALATION: AmountPolicy.CLAIMS_ONLY,
     SignalType.ANOMALY: AmountPolicy.CLAIMS_ONLY,
+    SignalType.AVAILABILITY_CHANGE: AmountPolicy.CLAIMS_ONLY,
 })
 
 #: Certainties a date may be carried on when it was not itself the anchor. A `RELATIVE` or

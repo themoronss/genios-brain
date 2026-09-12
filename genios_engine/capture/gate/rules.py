@@ -14,7 +14,42 @@ from .context import GateContext
 # here anymore (a receipt, an invoice, an "action required" notice all come from noreply@);
 # they fall through to the S2 LLM gate, which keeps the relevant ones and drops true junk.
 _DEAD_SENDER = re.compile(r"(mailer-daemon|bounces?@|postmaster@)", re.I)
-_OOO = re.compile(r"\b(out of office|ooo|on leave|automatic reply|chutti)\b", re.I)
+# N-05 — out-of-office / leave / auto-reply. NO LONGER A DROP. A leave email is exactly what team
+# intelligence needs ("Anisha is on leave 15–22 and her audit docs are due on the 19th"), so it is
+# MARKED instead: it continues to extraction, where everything but its availability is scored low,
+# and an auto-reply additionally never counts as the counterparty answering (no reply-needed state).
+_OOO = re.compile(r"\b(out of (the )?office|ooo|on leave|annual leave|sick leave|automatic reply|"
+                  r"auto[- ]?reply|autoreply|chutti)\b", re.I)
+# A subject that IS a machine reply ("Automatic reply: Re: pricing" — Outlook's prefix), as opposed
+# to a human writing "On leave 15–22" to the team.
+_AUTO_REPLY_SUBJECT = re.compile(r"^\s*(automatic reply|auto(matic)?[- ]?(reply|response)|"
+                                 r"autoreply|out of (the )?office|ooo)\b", re.I)
+
+#: Availability markers carried from the gate to L2.
+AUTO_REPLY = "auto_reply"        # a responder wrote this — never a real answer
+LEAVE_NOTICE = "leave_notice"    # a human announcing an absence
+
+
+def availability_marker(raw: dict | None) -> str | None:
+    """auto_reply · leave_notice · None, from the SUBJECT and the responder HEADERS only.
+
+    Deterministic and shared: the gate uses it to route instead of drop, L2 recomputes it from the
+    same stored payload (capture may not be imported upward, and a value re-derived from the
+    payload cannot drift from a copy). Body prose never marks a message — a normal email that
+    mentions "out of office" in passing is ordinary mail.
+    """
+    raw = raw or {}
+    subject = str(raw.get("subject") or "")
+    hdrs = raw.get("headers") or {}
+    auto_sub = header(hdrs, "Auto-Submitted").strip().lower()
+    if (auto_sub.startswith("auto-replied") or header(hdrs, "X-Autoreply")
+            or header(hdrs, "X-Autorespond")):
+        return AUTO_REPLY                        # Gmail's vacation responder keeps the subject
+    if _OOO.search(subject):
+        if _AUTO_REPLY_SUBJECT.search(subject) or auto_sub not in ("", "no"):
+            return AUTO_REPLY
+        return LEAVE_NOTICE
+    return None
 
 # Machine/bulk senders that never expect a human reply. Deliberately CONSERVATIVE for a hard drop:
 # only clearly-automated local-parts (no-reply / notify / newsletter / digest / mailer / bounce /
@@ -202,18 +237,21 @@ def noise_rule(ctx: GateContext) -> tuple[str, str] | None:
     if "CATEGORY_SOCIAL" in labels:
         return ("N-07", "drop")                  # social-network notifications
 
-    if header(hdrs, "Auto-Submitted", "no") not in ("no", ""):
-        return ("N-01", "drop")                  # machine acknowledgement
-    if _OOO.search(subject):
-        return ("N-05", "drop")                  # out-of-office — SUBJECT only. Body no longer drops:
-                                                 # a normal email that merely mentions "out of office"
-                                                 # in prose is real mail, not an auto-reply.
     # N-02/03/04 are bulk / no-reply SIGNALS, not certainties: a vendor invoice or receipt routinely
     # comes from noreply@ or carries a List-Unsubscribe header. If the message carries a real
     # attachment (an invoice/contract PDF), do NOT hard-drop it on these signals — let relevance/L2
     # decide. High-confidence noise (SPAM/TRASH, Gmail PROMOTIONS/SOCIAL) above still drops regardless.
     att = bool(ctx.raw.get("has_attachment"))
-    if not att and (_DEAD_SENDER.search(email) or _automated_sender(email)):
+    machine = bool(_DEAD_SENDER.search(email) or _automated_sender(email))
+    # N-05 — an availability notice from a real sender passes every traffic-shape rule below: a
+    # vacation responder carries Auto-Submitted (N-01) and often Precedence: bulk (N-04), which
+    # would otherwise drop the one message that says who is away. A machine sender still drops —
+    # a helpdesk "Automatic reply: ticket received" is nobody's leave.
+    if availability_marker(ctx.raw) and not (machine and not att):
+        return None
+    if header(hdrs, "Auto-Submitted", "no") not in ("no", ""):
+        return ("N-01", "drop")                  # machine acknowledgement
+    if not att and machine:
         return ("N-03", "drop")                  # dead mail (bounce/mailer-daemon) OR a clearly
                                                  # automated/bulk sender (no-reply/notify/newsletter/
                                                  # digest/mailer) with no attachment — no human reply

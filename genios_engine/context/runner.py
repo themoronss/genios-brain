@@ -9,7 +9,9 @@ from sqlalchemy import text
 
 from genios_engine.capture.documents.native import extract_native_text
 from genios_engine.capture.preprocess.preprocess import preprocess
-from genios_engine.capture.structured.apply import apply_mapping, apply_relations
+from genios_engine.capture.gate.rules import availability_marker
+from genios_engine.capture.structured.apply import (apply_mapping, apply_relations,
+                                                    calendar_availability)
 from genios_engine.capture.structured.registry import get_mapping
 from genios_engine.context.graph_store import GraphStore
 from genios_engine.context.llm.client import LLMClient
@@ -111,7 +113,11 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
                                 node_type=mapping.node_type, occurred_at=row.occurred_at,
                                 display_name=display_name, relations=relations,
                                 internal_emails=internal_emails,
-                                domain_hints=getattr(row, "domain_hints", None))
+                                domain_hints=getattr(row, "domain_hints", None),
+                                # an outOfOffice event / all-day "Leave" block → its owner's
+                                # availability window (no LLM; the calendar is the record)
+                                availability=(calendar_availability(raw)
+                                              if mapping.node_type == "meeting" else None))
         store.cache_set(processing_key=f"struct:{row.event_id}", org_id=org_id,
                         event_id=row.event_id, output={"structured": True},
                         input_tokens=0, output_tokens=0, model="structured")
@@ -144,6 +150,9 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
                         thread_id=getattr(row, "parent_object_id", None),
                         domain_hints=getattr(row, "domain_hints", None),
                         canon_meta=raw,
+                        # N-05: re-derived from the stored payload with the gate's own function,
+                        # so L1 and L2 cannot disagree about what an auto-reply is.
+                        availability_marker=availability_marker(raw),
                         # The tenant's own pack vocabulary. Without it the extractor runs one
                         # hardcoded B2B-SaaS ontology for everyone, and a rule reading
                         # `deal.status` is dead because the model was never told the name.

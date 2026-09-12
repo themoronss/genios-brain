@@ -1541,6 +1541,7 @@ def parse_response(payload: Any, *, request: ExtractionRequest, call: AssembledC
         "roles": _open_lane_entries(payload.get("roles"), tally),
         "relationships": _open_lane_entries(payload.get("relationships"), tally),
         "scheduling_proposals": _open_lane_entries(payload.get("scheduling_proposals"), tally),
+        "availability": _open_lane_entries(payload.get("availability"), tally),
         "unclassified_observations": claims["unclassified_observations"],
         "field_confidence": _field_confidence(payload.get("field_confidence"), tally),
         "model_snapshot": model_snapshot,

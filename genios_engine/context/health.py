@@ -47,6 +47,10 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
+from genios_engine.context.availability import WINDOWED_FIELDS
+
+_WINDOWED_SQL = ", ".join(f"'{f}'" for f in sorted(WINDOWED_FIELDS))
+
 LIFECYCLE_ACTIVE = "active"
 LIFECYCLE_DORMANT = "dormant"
 LIFECYCLE_ARCHIVED = "archived"
@@ -124,10 +128,14 @@ _INTEGRITY_CHECKS: tuple[tuple[str, str, str], ...] = (
         "duplicate_active_fact",
         "two active values for one (entity, field) — readers take the first row, so "
         "which value is 'true' becomes whichever the planner returns",
+        # A windowed field (person.availability) holds one active row PER WINDOW by design, so
+        # its rows are distinct when their window starts differ.
         "select coalesce(sum(extra), 0) from ("
         "  select count(*) - 1 as extra from graph_facts "
         "  where org_id = :o and valid_to is null and status = 'active' "
-        "  group by subject_node_id, field having count(*) > 1) dupes",
+        "  group by subject_node_id, field, "
+        "  case when field in (" + _WINDOWED_SQL + ") then value->>'from' else '' end "
+        "  having count(*) > 1) dupes",
     ),
     (
         "fact_without_evidence",

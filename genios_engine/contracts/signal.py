@@ -118,7 +118,8 @@ CONFIDENCE_COMPONENTS: frozenset[str] = frozenset({"evidence", "expertise", "fre
 
 
 class SignalType(str, Enum):
-    """C-11 · the closed 14-member taxonomy of what kind of thing a signal is.
+    """C-11 · the closed 15-member taxonomy of what kind of thing a signal is (14 from doc 08,
+    plus `AVAILABILITY_CHANGE`, added with migration 0139 and a deliberate edit of every pin).
 
     v1 had no signal taxonomy at all — an event was routed, hinted and stored, and every
     consumer above pattern-matched the prose again to work out whether it was looking at a
@@ -127,7 +128,7 @@ class SignalType(str, Enum):
 
     A `str` enum so the wire form, the `qualified_signals.signal_type` column and the code all
     read as the same literal word, while the set stays closed. Closed means closed: a value
-    outside these 14 is a V-2 REJECT, never a coercion to a near neighbour, because the nearest
+    outside these 15 is a V-2 REJECT, never a coercion to a near neighbour, because the nearest
     neighbour of an unrecognised kind is exactly where a novel pattern would be silently
     absorbed and never noticed. Something genuinely new goes to the OPEN LANE
     (`UnclassifiedObservation`, C-08), which is stored, read by no rule, and reviewed weekly —
@@ -181,6 +182,15 @@ class SignalType(str, Enum):
     #: unusual sender, an unusual cadence. NOT the open lane: an anomaly is a recognised kind
     #: with no recognised cause, while an open-lane observation has no recognised kind at all.
     ANOMALY = "anomaly"
+    #: Somebody cannot act for a STATED window: an explicit leave / out-of-office / auto-reply
+    #: window in the message (the extraction's `availability` lane) or a calendar OOO block.
+    #: It exists so Layer 2 writes `person.availability` facts — it is NOT a reply-needed or deal
+    #: signal and produces no card until team-intelligence capabilities read it. Last among the
+    #: real types in ALG-16 and lowest in ALG-17, so it never outranks a business signal.
+    #: Member fifteen, added deliberately: not `RELATIONSHIP_CHANGE`, because a temporary
+    #: absence is not a departure or a handover, and folding it in would feed that type's
+    #: readers a stream of vacation responders.
+    AVAILABILITY_CHANGE = "availability_change"
 
 
 class QualifiedEnterpriseSignal(BaseModel):
