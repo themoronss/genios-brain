@@ -181,6 +181,25 @@ def test_an_old_unmet_ask_opens_an_aging_item_with_no_promise_required():
     assert "backlog.age_days" in facts and "backlog.days_since_customer" in facts
 
 
+def test_each_backlog_item_carries_only_its_own_threads_messages_as_receipts():
+    """The receipts were read off EVERY loop's thread, so each item cited every other item's
+    messages as the evidence for itself."""
+    t1 = (_msg("t1", _ago(32), "a@big.co"), _msg("t1", _ago(31), US, internal=True),
+          _msg("t1", _ago(30), "a@big.co"))
+    t2 = (_msg("t2", _ago(42), "b@other.co"), _msg("t2", _ago(41), US, internal=True),
+          _msg("t2", _ago(40), "b@other.co"))
+    ball = {"thread.ball_in_court": "us"}
+    desk = _desk(messages=t1 + t2,
+                 loops=(_loop("l1", "t1", days_open=30), _loop("l2", "t2", days_open=40)),
+                 thread_node={"t1": "n_t1", "t2": "n_t2"},
+                 thread_facts={"n_t1": {**ball, "thread.last_inbound": _ago(30).isoformat()},
+                               "n_t2": {**ball, "thread.last_inbound": _ago(40).isoformat()}})
+    found = {f.inputs["loop_id"]: f for f in read_backlog_items(desk)}
+    assert set(found) == {"l1", "l2"}
+    assert set(found["l1"].event_ids) == {m.event_id for m in t1}
+    assert set(found["l2"].event_ids) == {m.event_id for m in t2}
+
+
 def test_a_self_opened_outbound_ask_never_becomes_backlog():
     """`ASK_KINDS` includes `proposal_sent`, and `pipeline.py` files an outbound ask against OUR
     OWN node while `close_loops_for_reply` closes on the recipient — so a self-opened loop never

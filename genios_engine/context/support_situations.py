@@ -806,7 +806,9 @@ def read_backlog_items(desk: Desk) -> list[Finding]:
             event_count=lp.ask_count, source_count=1,
             last_seen_at=last_in or lp.opened_at, first_seen_at=lp.opened_at,
             identity_node=lp.subject_node_id,
-            event_ids=_events_on_threads(desk, (item.thread_id for item in desk.loops))))
+            # This item's own thread. Was every loop's thread in the desk, so each backlog
+            # finding carried every other finding's messages as its receipts.
+            event_ids=_events_on_threads(desk, (lp.thread_id,))))
     return out
 
 
@@ -1575,7 +1577,7 @@ def refresh_support_situations(store, org_id: str, *, now: datetime | None = Non
                                      from_node_id=node_id, to_node_id=f.concerns_node,
                                      confidence=0.9, occurred_at=now, event_id=f"desk:{org_id}",
                                      evidence={"derived": "support reading"}, source="engine",
-                                     authority_rank=2)
+                                     authority_rank=2, count_interaction=False)
                 present = {name for name, _, _ in f.facts}
                 for domain in claiming:
                     stype = spec_for(domain).type_for(anchor)

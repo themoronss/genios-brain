@@ -22,7 +22,7 @@ from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org,
                                           require_internal, require_owner, require_scope)
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.logging import get_logger
-from genios_engine.capture.esqe.finalize import L1Stores, finalize_l1
+from genios_engine.capture.esqe.finalize import L1Stores, ManualSweep, finalize_l1
 from genios_engine.platform.wiring import (make_agent_event_store,
                                            make_agent_registry_store, make_card_store,
                                            make_conflict_store,
@@ -2965,16 +2965,23 @@ def integrations_sync_all(background_tasks: BackgroundTasks, limit: int = 25,
 @router.post("/webhooks/composio")
 async def composio_webhook(request: Request,
                            x_composio_signature: str | None = Header(None),
-                           webhook_signature: str | None = Header(None)) -> dict:
+                           webhook_signature: str | None = Header(None),
+                           webhook_id: str | None = Header(None),
+                           webhook_timestamp: str | None = Header(None)) -> dict:
     """A Composio trigger delivers a new object → run it through L1 in real time. HMAC-verified:
     an unsigned/forged payload can no longer inject fabricated 'emails' into a tenant's graph."""
     import json as _json
-    from genios_engine.platform.auth import verify_webhook_hmac
+    from genios_engine.platform.auth import verify_standard_webhook, verify_webhook_hmac
     raw = await request.body()
     secret = get_settings().composio_webhook_secret
     if secret:
-        sig = x_composio_signature or webhook_signature
-        if not verify_webhook_hmac(raw, sig, secret):
+        if webhook_id:
+            # Composio's current deliveries: Standard Webhooks (id + timestamp + base64 HMAC).
+            ok = verify_standard_webhook(raw, webhook_id=webhook_id, timestamp=webhook_timestamp,
+                                         signature=webhook_signature, secret=secret)
+        else:
+            ok = verify_webhook_hmac(raw, x_composio_signature or webhook_signature, secret)
+        if not ok:
             raise HTTPException(401, "invalid webhook signature")
     elif get_settings().env != "dev":
         raise HTTPException(403, "webhook secret not configured")   # fail-closed outside dev
@@ -2984,10 +2991,15 @@ async def composio_webhook(request: Request,
         raise HTTPException(422, "invalid JSON body")
     if not isinstance(payload, dict):
         raise HTTPException(422, "webhook body must be a JSON object")
-    data = payload.get("data") or payload.get("payload") or payload
-    user_id = (payload.get("user_id") or (data.get("user_id") if isinstance(data, dict) else None)
-               or payload.get("connected_account_id"))
-    conn = next((c for c in _connections.list_active() if c.composio_user_id == user_id), None)
+    from genios_engine.capture.connectors.composio_push import parse_push, pick_connection
+    push = parse_push(payload)
+    if push.skip_reason:
+        # Acknowledged, not ingested: an event such as an expired connection is not a failed
+        # delivery, and a non-2xx would make Composio retry it.
+        _log.info("webhook: %s", push.skip_reason)
+        return {"ingested": False, "reason": push.skip_reason}
+    data = push.data
+    conn = pick_connection(_connections.list_active(), push)
     if conn is None:
         raise HTTPException(404, "no active connection for this user_id")
     from genios_engine.capture.connectors.dispatch import can_dispatch, webhook_to_raw_objects
@@ -3026,13 +3038,20 @@ async def composio_webhook(request: Request,
             mailbox_owner=_mailbox_owner_for(conn.org_id),
             coverage_fn=_coverage_fn_for(conn.org_id),
             esqe=_esqe_stage_for(conn.org_id),
-            # L1.6.8 · the push door files its refusals the way the sweep door does. Without
-            # these two a tenant served by a webhook-driven source had NO answer to "why did I
-            # never see this?", while the same tenant's polled sources had one — and the floor
-            # that discards ~92% of traffic ran on one door and not the other.
-            floor_store=_floor_store, drop_ledger=_drop_ledger,
+            # No floor_store / drop_ledger here: the floor runs in `finalize_l1` below, exactly
+            # once, as on the sweep door. Filing it in the push wiring too filed every refusal
+            # twice.
             semantic=_semantic_lane_for(conn.org_id),
             structured=_structured_lane_for(conn.org_id)))
+    if outcome.results:
+        # L1.6.10 · THE SAME FINALIZER THE SWEEP AND UPLOAD DOORS USE: conflicts → floor →
+        # lifecycle → publish. Without it a pushed event was captured and scored but never
+        # published to `qualified_signals` — the only thing L2 reads — so it never reached the
+        # graph, and a later poll of the same message was deduped away.
+        finalize_l1(ManualSweep(org_id=conn.org_id, results=outcome.results,
+                                emitted=sum(1 for r in outcome.results if r.outcome == "emitted"),
+                                scanned=len(raw_objs)),
+                    org_id=conn.org_id, stores=_l1_stores())
     primary = outcome.primary
     if primary is None:                                  # every object poisoned → quarantined, not lost
         return {"ingested": False, "reason": "capture failed", "source": conn.source_type,

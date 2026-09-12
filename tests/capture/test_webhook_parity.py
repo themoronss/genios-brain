@@ -519,6 +519,25 @@ def test_both_doors_consult_the_relevance_gate_for_every_object(parity_env):
     assert asked_by[hook_org] == asked_by[poll_org] == ["msg_parity_1", "msg_parity_1::att_p1"]
 
 
+@pytest.mark.pg
+def test_the_webhook_door_publishes_through_the_same_finalizer_as_the_sweep(parity_env, monkeypatch):
+    """Without `finalize_l1` a pushed event was captured and scored but never published to
+    `qualified_signals`, the only thing L2 reads — so it never reached the graph."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    R, engine, poll_org, hook_org, hook_conn, gate = parity_env
+    seen = []
+    monkeypatch.setattr(R, "finalize_l1",
+                        lambda summary, *, org_id, stores: seen.append((org_id, summary)))
+    app = FastAPI()
+    app.include_router(R.router)
+    body = {"user_id": hook_conn.composio_user_id, "data": {"message": ATTACHED}}
+    assert TestClient(app).post("/webhooks/composio", json=body).status_code == 200
+    assert [org for org, _ in seen] == [hook_org]
+    assert len(seen[0][1].results) == 2          # the message and its attachment
+
+
 # ── the wiring itself, so the two doors cannot drift apart again ─────────────────────────────
 
 def _kwargs_capture_event_is_given(module, run) -> set[str]:

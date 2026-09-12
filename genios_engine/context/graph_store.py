@@ -517,10 +517,15 @@ class GraphStore:
     def write_edge(self, conn, *, org_id: str, edge_type: str, from_node_id: str,
                    to_node_id: str, confidence: float, occurred_at: datetime | None,
                    event_id: str, evidence: dict, source: str | None,
-                   authority_rank: int = 2) -> str | None:
+                   authority_rank: int = 2, count_interaction: bool = True) -> str | None:
         """Idempotent relationship edge (e.g. person→attended→meeting, person→works_at→company).
         No self-loops, and an identical active edge (same type+from+to) is a no-op — so re-syncing
-        never duplicates edges. Returns the new edge_version_id, or None on skip/no-op."""
+        never duplicates edges. Returns the new edge_version_id, or None on skip/no-op.
+
+        `count_interaction=False` is for DERIVED edges a reading re-asserts on every sweep (the
+        support and outreach `concerns` links): re-asserting one is not contact, so it advances
+        `last_seen_at` without bumping `interaction_count` — otherwise the count measures how
+        many sweeps ran, not how often two parties interacted."""
         if not from_node_id or not to_node_id or from_node_id == to_node_id:
             return None
         held = conn.execute(text(
@@ -534,11 +539,12 @@ class GraphStore:
             # substrate relationship_stage / attention read). Still returns None:
             # no new edge VERSION was created.
             conn.execute(text(
-                "update graph_edges set interaction_count = coalesce(interaction_count,1) + 1, "
+                "update graph_edges set interaction_count = coalesce(interaction_count,1) + :bump, "
                 "last_seen_at = greatest(coalesce(last_seen_at, valid_from, now()), "
                 "coalesce(cast(:oc as timestamptz), now())) "
                 "where edge_version_id=:ev"),
-                {"ev": held.edge_version_id, "oc": occurred_at})
+                {"ev": held.edge_version_id, "oc": occurred_at,
+                 "bump": 1 if count_interaction else 0})
             return None
         edge_version_id = new_id("edgev")
         conn.execute(text(

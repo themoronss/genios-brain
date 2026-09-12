@@ -1069,7 +1069,7 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                                  confidence=0.9, occurred_at=now,
                                  event_id=f"state:{org_id}",
                                  evidence={"derived": "l2 state reading"}, source="engine",
-                                 authority_rank=2)
+                                 authority_rank=2, count_interaction=False)
                 stats = _refined_stats(c, org_id=org_id, node_id=node_id, finding=finding,
                     now=now, fallback=counts.get(finding.concerns_node), group_receipts=group_receipts)
                 present = {name for name, _, _ in finding.facts}

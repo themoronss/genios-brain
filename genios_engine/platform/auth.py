@@ -352,3 +352,31 @@ def verify_webhook_hmac(raw_body: bytes, signature: str | None, secret: str) -> 
     expected = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
     sig = signature.split("=", 1)[-1].split(",", 1)[-1].strip()
     return hmac.compare_digest(sig, expected)
+
+
+def verify_standard_webhook(raw_body: bytes, *, webhook_id: str | None, timestamp: str | None,
+                            signature: str | None, secret: str, tolerance_s: int = 300,
+                            now: float | None = None) -> bool:
+    """Standard Webhooks — the scheme Composio's current (V3) deliveries are signed with.
+
+    Signed content is `{webhook-id}.{webhook-timestamp}.{raw body}`, HMAC-SHA256 keyed with the
+    secret as UTF-8, base64-encoded; the `webhook-signature` header carries one or more
+    space-separated `v1,<sig>` (the SDK's `_verify_webhook_signature` computes exactly this).
+    `verify_webhook_hmac` above checks a hex digest of the body alone, so every real Composio
+    delivery failed it. A timestamp outside ±`tolerance_s` is refused: that is what stops a
+    captured delivery from being replayed later with its valid signature.
+    """
+    import base64
+    import time
+    if not (webhook_id and timestamp and signature and secret):
+        return False
+    try:
+        sent_at = int(timestamp)
+    except (TypeError, ValueError):
+        return False
+    if abs(int(time.time() if now is None else now) - sent_at) > tolerance_s:
+        return False
+    to_sign = f"{webhook_id}.{timestamp}.".encode() + raw_body
+    expected = base64.b64encode(hmac.new(secret.encode(), to_sign, hashlib.sha256).digest()).decode()
+    return any(hmac.compare_digest(part[3:], expected)
+               for part in signature.split() if part.startswith("v1,"))
