@@ -389,6 +389,11 @@ class DeviceStore:
                 {"now": now, "o": org_id, "d": device_id})
             c.execute(text("delete from presence_leases where org_id = :o and device_id = :d"),
                       {"o": org_id, "d": device_id})
+            if n:
+                _announce_revoked(c, org_id=org_id, device_ids=[device_id])
+        if n:
+            from genios_engine.platform import realtime
+            realtime.wake()
         return n > 0
 
     def session_row(self, org_id: str, session_id: str) -> dict | None:
@@ -410,10 +415,23 @@ class DeviceStore:
 def revoke_seat_devices(conn, *, org_id: str, seat_id: str, revoked_by: str | None) -> int:
     """Seat removal, in the caller's transaction: every device of the seat is revoked (its
     sessions are ended by `sessions.revoke_seat_sessions` in the same transaction)."""
-    return conn.execute(text(
+    ids = [r.device_id for r in conn.execute(text(
         "update devices set revoked_at = now(), revoked_by = :by "
-        "where org_id = :o and seat_id = :s and revoked_at is null"),
-        {"by": revoked_by, "o": org_id, "s": seat_id}).rowcount or 0
+        "where org_id = :o and seat_id = :s and revoked_at is null returning device_id"),
+        {"by": revoked_by, "o": org_id, "s": seat_id})]
+    if ids:
+        _announce_revoked(conn, org_id=org_id, device_ids=ids)
+    return len(ids)
+
+
+def _announce_revoked(conn, *, org_id: str, device_ids: list[str]) -> None:
+    """`device.revoked` on the realtime outbox (P3 §2.5), in the revoking transaction, so an open
+    stream tells the app to wipe its local store at once rather than at its next heartbeat."""
+    from genios_engine.platform import realtime
+    for r in conn.execute(text("select device_id, seat_id from devices where org_id = :o "
+                               "and device_id = any(:ids)"), {"o": org_id, "ids": device_ids}):
+        realtime.publish(conn, org_id=org_id, seat_id=r.seat_id, kind="device.revoked",
+                         payload={"device_id": r.device_id})
 
 
 def stores():

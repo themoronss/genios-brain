@@ -18,6 +18,7 @@ from genios_engine.api.device_routes import require_session_seat
 from genios_engine.contracts.device import CapturePause, CapturePolicyUpdate, SeatCaptureUpdate
 from genios_engine.platform import capture_policy as P
 from genios_engine.platform import devices as D
+from genios_engine.platform import realtime
 from genios_engine.platform.auth import AuthCtx
 
 router = APIRouter(tags=["capture"])
@@ -57,6 +58,7 @@ def put_policy(body: CapturePolicyUpdate, ctx: AuthCtx = Depends(require_session
                      apps_key="allowed_apps", domains_key="blocked_domains")
     _, cstore = D.stores()
     cstore.save_org_policy(ctx.org_id, changes, updated_by=ctx.seat_id)
+    realtime.wake()
     doc = _document(cstore, ctx)
     from genios_engine.platform.audit import record
     record(ctx.org_id, "capture_policy_changed", actor_type="user",
@@ -64,7 +66,8 @@ def put_policy(body: CapturePolicyUpdate, ctx: AuthCtx = Depends(require_session
            target_id=ctx.org_id,
            metadata={"fields": sorted(changes), "enabled": doc["org"]["enabled"],
                      "allowed_apps": doc["org"]["allowed_apps"],
-                     "retention_days": doc["org"]["retention_days"]})
+                     "retention_days": doc["org"]["retention_days"],
+                     "moments_display": doc["org"]["moments_display"]})
     return doc
 
 
@@ -75,6 +78,7 @@ def put_settings(body: SeatCaptureUpdate, ctx: AuthCtx = Depends(require_session
     _, cstore = D.stores()
     before = _document(cstore, ctx)["seat"]["enabled"] if "enabled" in changes else None
     cstore.save_seat_settings(ctx.org_id, ctx.seat_id, changes)
+    realtime.wake()
     doc = _document(cstore, ctx)
     if before is not None and before != doc["seat"]["enabled"]:
         from genios_engine.platform.audit import record
@@ -98,4 +102,5 @@ def pause(body: CapturePause, ctx: AuthCtx = Depends(require_session_seat)) -> d
                                   "message": "send {minutes} or {until}"})
     _, cstore = D.stores()
     cstore.save_seat_settings(ctx.org_id, ctx.seat_id, {"paused_until": until})
+    realtime.wake()
     return _document(cstore, ctx)

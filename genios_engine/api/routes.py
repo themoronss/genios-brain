@@ -802,6 +802,16 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the heartbeat
             _log.exception("retention purge failed for screen_session_deltas")
             retention["screen_capture"] = "error"
+        # P3 hot lane: realtime events after 7 days; expired moment cache rows; moments on their
+        # org's capture retention clock. Same heartbeat, no Celery beat.
+        try:
+            from genios_engine.platform.realtime import purge_expired as purge_realtime
+            from genios_engine.reason.moments.store import purge_expired as purge_moments
+            retention["realtime_events"] = purge_realtime(_graph.engine, now=now)
+            retention["moments"] = purge_moments(_graph.engine, now=now)
+        except Exception:                                    # noqa: BLE001 — never kill the heartbeat
+            _log.exception("retention purge failed for moments / realtime_events")
+            retention["moments"] = "error"
         # expertise_packages, and this one is not theoretical: it reached 995 MB — 67% of the whole
         # database — and took the project over its disk quota into read-only, which stops every
         # write the product makes. Content-addressing (see contracts/domain_expertise.py) stops the

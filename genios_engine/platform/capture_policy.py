@@ -37,6 +37,7 @@ from urllib.parse import urlsplit
 
 from sqlalchemy import text
 
+from genios_engine.platform import realtime
 from genios_engine.platform.config import get_settings
 
 #: The DEDICATED readers. Since D2 was revised (2026-09-13, plan §3.7) every app is read:
@@ -212,6 +213,11 @@ class OrgPolicy:
     generic_web_allowed: bool = True              # D2 revised: every app is read (plan §3.7)
     draft_assist_allowed: bool = False
     retention_days: int = DEFAULT_RETENTION_DAYS
+    # P3 hot lane (migration 0149). Shadow first: moments are computed and logged, not shown,
+    # until an admin turns this on. Caps count SHOWN non-reminder moments per seat.
+    moments_display: bool = False
+    moments_max_per_hour: int = 6
+    moments_max_per_day: int = 30
 
 
 @dataclass(frozen=True)
@@ -253,6 +259,8 @@ def effective_policy(org: OrgPolicy, seat: SeatSettings, *, now: datetime) -> di
         "generic_web": bool(org.generic_web_allowed and seat.generic_web),
         "draft_assist": bool(org.draft_assist_allowed and seat.draft_assist),
         "paused_until": _iso(paused),
+        # The device reads this to know, without a round trip, whether its local moments show.
+        "moments_display": bool(org.moments_display),
     }
 
 
@@ -291,7 +299,10 @@ def policy_document(org: OrgPolicy, seat: SeatSettings, *, now: datetime) -> dic
                 "blocked_domains": list(org.blocked_domains),
                 "generic_web_allowed": org.generic_web_allowed,
                 "draft_assist_allowed": org.draft_assist_allowed,
-                "retention_days": org.retention_days},
+                "retention_days": org.retention_days,
+                "moments_display": org.moments_display,
+                "moments_max_per_hour": org.moments_max_per_hour,
+                "moments_max_per_day": org.moments_max_per_day},
         "seat": {"enabled": seat.enabled, "draft_assist": seat.draft_assist,
                  "generic_web": seat.generic_web, "paused_until": _iso(_aware(seat.paused_until)),
                  "blocked_apps": list(seat.blocked_apps),
@@ -360,7 +371,12 @@ def _org_from_row(r) -> OrgPolicy:
                      blocked_domains=tuple(r.get("p_blocked_domains") or ()),
                      generic_web_allowed=bool(r.get("generic_web_allowed")),
                      draft_assist_allowed=bool(r.get("draft_assist_allowed")),
-                     retention_days=int(r.get("retention_days") or DEFAULT_RETENTION_DAYS))
+                     retention_days=int(r.get("retention_days") or DEFAULT_RETENTION_DAYS),
+                     moments_display=bool(r.get("moments_display") or False),
+                     moments_max_per_hour=int(r["moments_max_per_hour"]
+                                              if r.get("moments_max_per_hour") is not None else 6),
+                     moments_max_per_day=int(r["moments_max_per_day"]
+                                             if r.get("moments_max_per_day") is not None else 30))
 
 
 def _seat_from_row(r) -> SeatSettings:
@@ -377,6 +393,7 @@ def _seat_from_row(r) -> SeatSettings:
 _LOAD = text(
     "select p.enabled as p_enabled, p.allowed_apps, p.blocked_domains as p_blocked_domains, "
     "p.generic_web_allowed, p.draft_assist_allowed, p.retention_days, "
+    "p.moments_display, p.moments_max_per_hour, p.moments_max_per_day, "
     "s.enabled as s_enabled, s.draft_assist, s.generic_web, s.paused_until, s.blocked_apps, "
     "s.blocked_domains as s_blocked_domains, "
     "l.focus_app, l.bundle_id, l.dnd, l.idle, l.app_version, l.policy_version, "
@@ -412,7 +429,8 @@ class CaptureStore:
 
     def save_org_policy(self, org_id: str, changes: dict, *, updated_by: str | None) -> None:
         cols = ("enabled", "allowed_apps", "blocked_domains", "generic_web_allowed",
-                "draft_assist_allowed", "retention_days")
+                "draft_assist_allowed", "retention_days", "moments_display",
+                "moments_max_per_hour", "moments_max_per_day")
         params = {"o": org_id, "by": updated_by}
         for col in cols:
             v = changes.get(col)
@@ -420,14 +438,22 @@ class CaptureStore:
         with self.engine.begin() as c:
             c.execute(text(
                 "insert into capture_policies (org_id, enabled, allowed_apps, blocked_domains, "
-                "generic_web_allowed, draft_assist_allowed, retention_days, updated_by, updated_at) "
+                "generic_web_allowed, draft_assist_allowed, retention_days, moments_display, "
+                "moments_max_per_hour, moments_max_per_day, updated_by, updated_at) "
                 "values (:o, coalesce(:enabled, false), "
                 "coalesce(cast(:allowed_apps as jsonb), '[\"gmail\", \"whatsapp\", \"linkedin\", "
                 "\"slack\", \"outlook\", \"gcal\"]'::jsonb), "
                 "coalesce(cast(:blocked_domains as jsonb), '[]'::jsonb), "
                 "coalesce(:generic_web_allowed, true), coalesce(:draft_assist_allowed, false), "
-                "coalesce(:retention_days, 90), :by, now()) "
+                "coalesce(:retention_days, 90), coalesce(:moments_display, false), "
+                "coalesce(:moments_max_per_hour, 6), coalesce(:moments_max_per_day, 30), "
+                ":by, now()) "
                 "on conflict (org_id) do update set "
+                "moments_display = coalesce(:moments_display, capture_policies.moments_display), "
+                "moments_max_per_hour = coalesce(:moments_max_per_hour, "
+                "capture_policies.moments_max_per_hour), "
+                "moments_max_per_day = coalesce(:moments_max_per_day, "
+                "capture_policies.moments_max_per_day), "
                 "enabled = coalesce(:enabled, capture_policies.enabled), "
                 "allowed_apps = coalesce(cast(:allowed_apps as jsonb), capture_policies.allowed_apps), "
                 "blocked_domains = coalesce(cast(:blocked_domains as jsonb), "
@@ -438,6 +464,9 @@ class CaptureStore:
                 "capture_policies.draft_assist_allowed), "
                 "retention_days = coalesce(:retention_days, capture_policies.retention_days), "
                 "updated_by = :by, updated_at = now()"), params)
+            # Every device of the org re-reads its policy (P3 §2.5), in this transaction.
+            realtime.publish(c, org_id=org_id, seat_id=None, kind="policy.updated",
+                             payload={"scope": "org"})
 
     def save_seat_settings(self, org_id: str, seat_id: str, changes: dict) -> None:
         """`changes` may carry `paused_until` (with key present → set, even to NULL)."""
@@ -465,6 +494,8 @@ class CaptureStore:
                 "seat_capture_settings.blocked_apps), "
                 "blocked_domains = coalesce(cast(:blocked_domains as jsonb), "
                 "seat_capture_settings.blocked_domains), updated_at = now()"), params)
+            realtime.publish(c, org_id=org_id, seat_id=seat_id, kind="policy.updated",
+                             payload={"scope": "seat"})
 
     def insert_deltas(self, rows: list[dict], *, org_id: str, device_id: str,
                       now: datetime) -> set[tuple[str, int]]:

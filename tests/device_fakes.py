@@ -168,7 +168,8 @@ class MemoryCaptureStore:
                         "p_blocked_domains": p["blocked_domains"],
                         "generic_web_allowed": p["generic_web_allowed"],
                         "draft_assist_allowed": p["draft_assist_allowed"],
-                        "retention_days": p["retention_days"]})
+                        "retention_days": p["retention_days"],
+                        "moments_display": p.get("moments_display", False)})
         if s:
             row.update({"s_enabled": s["enabled"], "draft_assist": s["draft_assist"],
                         "generic_web": s["generic_web"], "paused_until": s["paused_until"],

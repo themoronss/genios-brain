@@ -625,6 +625,9 @@ def cancel_invite(org_id: str, invite_id: str, ctx: AuthCtx = Depends(_admin_org
 # unrecoverable UI state (the upload API has no re-index-existing-file operation).
 # Full account deletion is guaranteed separately by org FKs in migration 0033.
 _ORG_SCOPED_TABLES = [
+    # migrations 0147-0149 (P3 hot lane): moments name the tenant's counterparties; feedback
+    # before moments (FK). The slice versions go too, so every device re-pulls in full.
+    "moment_feedback", "moment_cache", "moments", "realtime_events", "seat_slice_versions",
     # migration 0142: what capture devices uploaded (held, encrypted) and who is at their desk.
     # Captured content, not configuration — devices, capture policy and seat opt-ins survive.
     "screen_session_deltas", "presence_leases",

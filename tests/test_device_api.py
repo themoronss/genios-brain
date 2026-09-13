@@ -663,7 +663,10 @@ def test_the_default_policy_is_off_and_carries_the_sensitive_defaults(client, wo
                           "allowed_apps": ["gmail", "whatsapp", "linkedin", "slack", "outlook",
                                            "gcal"],
                           "blocked_domains": [], "generic_web_allowed": True,
-                          "draft_assist_allowed": False, "retention_days": 90}
+                          "draft_assist_allowed": False, "retention_days": 90,
+                          # P3 (pinned 2026-09-13): shadow mode by default; per-seat caps
+                          "moments_display": False, "moments_max_per_hour": 6,
+                          "moments_max_per_day": 30}
     assert doc["seat"] == {"enabled": False, "draft_assist": False, "generic_web": True,
                            "paused_until": None, "blocked_apps": [], "blocked_domains": []}
     assert doc["effective"]["generic_web"] is True

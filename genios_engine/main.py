@@ -38,6 +38,8 @@ from genios_engine.api.correlation_routes import router as correlation_router
 from genios_engine.api.pattern_routes import router as pattern_router
 from genios_engine.api.situation_routes import router as situation_router
 from genios_engine.api.lifecycle_routes import router as lifecycle_router
+from genios_engine.api.moment_routes import router as moment_router
+from genios_engine.api.stream_routes import router as stream_router
 from genios_engine.api.upload_routes import router as upload_router
 from genios_engine.api.usermodel_routes import router as usermodel_router
 from genios_engine.api.workspace_routes import router as workspace_router
@@ -81,6 +83,9 @@ async def lifespan(app: FastAPI):
         start_warm_lane()            # pushed mail / uploads → graph + reasoning + cards in minutes
         start_screen_promoter()      # held screen deltas → screen_session events → warm lane
     yield
+    # The realtime poller starts lazily with the first SSE client (P3 §2.5); stop it if it did.
+    from genios_engine.platform.realtime import stop_realtime
+    stop_realtime()
     stop_screen_promoter()
     stop_warm_lane()
     stop_sync_worker()
@@ -168,6 +173,8 @@ app.include_router(pattern_router)    # L2.6 pattern registry — shadow evaluat
 app.include_router(l4_seam_router)     # L4 Z6 seams OUT: the critique endpoint + the book-level brief
 app.include_router(device_router)      # P1 screen capture: device sign-in (RFC 8628), uploads, presence
 app.include_router(capture_router)     # P1 screen capture: org policy + seat opt-in + pause
+app.include_router(moment_router)      # P3 hot lane: slice, moments (evaluate/device), feedback, history
+app.include_router(stream_router)      # P3 realtime: SSE /v1/stream over the realtime_events outbox
 
 
 @app.get("/")

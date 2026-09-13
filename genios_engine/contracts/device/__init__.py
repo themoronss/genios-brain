@@ -48,6 +48,10 @@ class CapturePolicyUpdate(BaseModel):
     generic_web_allowed: bool | None = None
     draft_assist_allowed: bool | None = None
     retention_days: int | None = Field(default=None, ge=1, le=3650)
+    # P3 (pinned 2026-09-13): "Show popups". Off = shadow mode — moments logged, not shown.
+    moments_display: bool | None = None
+    moments_max_per_hour: int | None = Field(default=None, ge=0, le=60)
+    moments_max_per_day: int | None = Field(default=None, ge=0, le=500)
 
 
 class SeatCaptureUpdate(BaseModel):

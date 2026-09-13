@@ -263,6 +263,11 @@ class GraphStore:
             "insert into graph_versions (org_id, graph_version) values (:o, 1) "
             "on conflict (org_id) do update set graph_version = graph_versions.graph_version + 1, "
             "updated_at = now()"), {"o": org_id})
+        # P3 hot lane: every graph write takes this step, so the seats holding a live device get
+        # a new slice version + a `slice.delta` event in the SAME transaction (one statement,
+        # PostgreSQL only). See reason/moments/slice.py for why this is the hook.
+        from genios_engine.platform.realtime import bump_slice_versions
+        bump_slice_versions(conn, org_id)
         return conn.execute(text("select graph_version from graph_versions where org_id=:o"),
                             {"o": org_id}).scalar()
 
