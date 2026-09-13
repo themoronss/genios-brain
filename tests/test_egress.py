@@ -101,3 +101,24 @@ def test_registration_uses_the_guard():
         with pytest.raises(HTTPException) as e:
             _clean_webhook_url(url)
         assert e.value.status_code == 422 and e.value.detail["code"] == code
+
+
+def test_unset_or_unknown_genios_env_is_production(monkeypatch):
+    """Safe by default: Settings.env defaults to "dev", but egress treats an UNSET GENIOS_ENV (and
+    any unknown value) as production; only explicit dev / development / test allow localhost."""
+    from genios_engine.platform import egress
+    from genios_engine.platform.config import Settings
+    monkeypatch.delenv("GENIOS_ENV", raising=False)
+    unset = Settings(_env_file=None)
+    assert unset.env == "dev" and "env" not in unset.model_fields_set
+    monkeypatch.setattr(egress, "get_settings", lambda: unset)
+    for url in ("http://localhost:8080/hook", "http://127.0.0.1:9000/"):
+        with pytest.raises(EgressRefused) as e:
+            check_url(url)
+        assert e.value.code == "loopback_address"
+    for value, allowed in (("dev", True), ("development", True), ("test", True),
+                           ("staging", False), ("prod", False), ("", False)):
+        monkeypatch.setenv("GENIOS_ENV", value)
+        s = Settings(_env_file=None)
+        monkeypatch.setattr(egress, "get_settings", lambda s=s: s)
+        assert egress.is_dev() is allowed, value
