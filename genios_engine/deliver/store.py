@@ -339,6 +339,19 @@ class CardStore:
                 "and k.state in ('queued','surfaced','snoozed','claimed','delivered') "
                 "and k.expires_at > :authority_time and " + AUTHORITATIVE_SIGNAL_PREDICATE),
                 {"id": card_id, "o": org_id, "authority_time": now}).mappings().first()
+            if r is None:
+                # A P4 situation card has no L4 run by construction (SITUATION_CARD_SQL); it is
+                # live while its own signal is open, in an open state and unexpired.
+                r = c.execute(text(
+                    "select k.*, s.candidate_steps, s.rejected_candidates, "
+                    "s.uncertainty as decision_uncertainty "
+                    "from cards k join signals s on s.signal_id=k.signal_id "
+                    "and s.org_id=k.org_id where k.card_id=:id and k.org_id=:o "
+                    "and s.status='open' "
+                    "and k.state in ('queued','surfaced','snoozed','claimed','delivered') "
+                    "and k.expires_at > :authority_time and " + SITUATION_CARD_SQL),
+                    {"id": card_id, "o": org_id, "authority_time": now,
+                     "situation_builder": SITUATION_CARD_BUILDER}).mappings().first()
         return dict(r) if r else None
 
     def get_by_signal(self, signal_id: str) -> dict | None:

@@ -98,14 +98,14 @@ def _voltex(client) -> dict:
             "uid": uid}
 
 
-def _fact(c, org, subj, field, value, *, scope="org", who=None):
+def _fact(c, org, subj, field, value, *, scope="org", who=None, event=None):
     fid = uuid.uuid4().hex[:12]
     c.execute(text(
         "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, field, value, "
-        "visibility_scope, visibility_principals) values (:v, :f, :o, :s, :field, "
-        "cast(:val as jsonb), :scope, cast(:who as text[]))"),
+        "visibility_scope, visibility_principals, created_by_event_id) values (:v, :f, :o, :s, "
+        ":field, cast(:val as jsonb), :scope, cast(:who as text[]), :ev)"),
         {"v": "fv_" + fid, "f": "f_" + fid, "o": org, "s": subj, "field": field,
-         "val": json.dumps(value), "scope": scope, "who": who})
+         "val": json.dumps(value), "scope": scope, "who": who, "ev": event})
 
 
 def _away(ws, who, start_days, end_days, *, kind="leave", scope="org"):
@@ -156,6 +156,14 @@ def _post_pass(ws) -> dict:
     return run_post_passes(_engine(), None, ws["org"], now=NOW)
 
 
+def _team_pass(ws) -> int:
+    """The team pass's count. Other registered passes (group B's verify) may report too — every
+    value must be an int, and only `team` is this suite's business."""
+    out = _post_pass(ws)
+    assert all(isinstance(v, int) for v in out.values()), out
+    return out["team"]
+
+
 def _rows(sql: str, **params) -> list:
     with _engine().connect() as c:
         return c.execute(text(sql), params).mappings().all()
@@ -174,7 +182,7 @@ def test_away_owner_deadline_one_card_one_moment_cover_and_rerun(client):
     _covers(ws, "shalini", "anisha")
     emru = ws["seats"]["emru"]
 
-    assert _post_pass(ws) == {"team": 1}
+    assert _team_pass(ws) == 1
     cards = _team_cards(ws, "team.deadline_at_risk")
     assert len(cards) == 1
     card = cards[0]
@@ -206,20 +214,21 @@ def test_away_owner_deadline_one_card_one_moment_cover_and_rerun(client):
     assert SECRET not in blob
 
     # RERUN: nothing new.
-    assert _post_pass(ws) == {"team": 0}
+    assert _team_pass(ws) == 0
     assert len(_team_cards(ws, "team.deadline_at_risk")) == 1
     assert len(_rows("select 1 from moments where org_id=:o", o=ws["org"])) == 1
 
     # Shalini goes away too → the SAME card now says there is no cover; one new moment.
     _away(ws, "shalini", 3, 6)
-    assert _post_pass(ws) == {"team": 1}
+    assert _team_pass(ws) == 1
     cards = _team_cards(ws, "team.deadline_at_risk")
     assert len(cards) == 1 and cards[0]["card_id"] == card["card_id"]
     assert "No cover available: Shalini Iyer is also away." in cards[0]["situation"] or \
         "No cover" in cards[0]["situation"], cards[0]["situation"]
-    ms = _rows("select * from moments where org_id=:o order by created_at", o=ws["org"])
-    assert len(ms) == 2 and "No cover available: Shalini Iyer is also away." in ms[-1]["body"]
-    assert not any(a["id"] == "assign_cover" for a in ms[-1]["actions"])
+    ms = _rows("select * from moments where org_id=:o", o=ws["org"])   # same NOW: no order
+    latest = [m for m in ms if "No cover available: Shalini Iyer is also away." in m["body"]]
+    assert len(ms) == 2 and len(latest) == 1, [m["body"] for m in ms]
+    assert not any(a["id"] == "assign_cover" for a in latest[0]["actions"])
     assert SECRET not in json.dumps([dict(r) for r in ms], default=str)
 
 
@@ -297,12 +306,11 @@ def test_readiness_counts_from_fake_linear_board_and_three_seats_away(client):
     listed = client.get("/v1/team/milestones", headers=H(ws["token"]))
     assert listed.status_code == 200 and listed.json() == [item]
 
-    out = _post_pass(ws)
-    assert out == {"team": 2}, out                      # the deadline card + the readiness card
+    assert _team_pass(ws) == 2                          # the deadline card + the readiness card
     ready = _team_cards(ws, "team.readiness")
     assert len(ready) == 1 and ready[0]["assignee"] == ws["seats"]["emru"]
     assert "3 away" in ready[0]["headline"] and "2 pending" in ready[0]["headline"]
-    assert _post_pass(ws) == {"team": 0}
+    assert _team_pass(ws) == 0
 
 
 # ── 5 · the situation card is in its recipient's normal queue, and only theirs ────────────────
@@ -311,7 +319,7 @@ def test_team_card_in_recipients_queue_only_and_authority_not_weakened(client):
     ws = _voltex(client)
     _away(ws, "anisha", 2, 9)
     _commitment(ws, due_days=5)
-    assert _post_pass(ws) == {"team": 1}
+    assert _team_pass(ws) == 1
     card = _team_cards(ws, "team.deadline_at_risk")[0]
     emru, anisha = ws["seats"]["emru"], ws["seats"]["anisha"]
     # A look-alike NOT written by emit_situation (no L4 run, other builder) must stay hidden.
@@ -334,6 +342,86 @@ def test_team_card_in_recipients_queue_only_and_authority_not_weakened(client):
                              record_impressions=False)
         assert card["card_id"] not in [r["card_id"] for r in theirs]
     # `GET /cards` (api/routes.list_cards) is a thin wrapper over exactly these queue() calls.
+
+
+# ── 6 · the local-gate flow: a teammate's screen mail "I will send YOU …" ─────────────────────
+def test_screen_mail_promise_to_the_reader_reaches_him_with_project_cover(client):
+    """Reproduces the local prod-copy gate: Emru's device read Anisha's mail "I will send you the
+    ISO audit documents by 18 Sep". L2 wrote the commitment with an `owns` edge from Anisha and NO
+    owed_to / owner fact; Emru has no person node; Anisha owns and Shalini covers
+    ('project', 'iso audit')."""
+    from genios_engine.context.graph_store import GraphStore
+    from genios_engine.deliver.actions import ingest_action
+    from genios_engine.deliver.store import CardStore
+    ws = _voltex(client)
+    org, emru = ws["org"], ws["seats"]["emru"]
+    ev, cm = f"evt_scr_{ws['uid']}", f"node_cmt_{ws['uid']}"
+    with _engine().begin() as c:
+        c.execute(text("delete from graph_nodes where org_id=:o and node_id=:n"),
+                  {"o": org, "n": ws["nodes"]["emru"]})
+        c.execute(text(
+            "insert into source_events (event_id, org_id, connection_id, source, object_type, "
+            "source_object_id, dedup_key, actor, occurred_at, recipients, visibility_scope, "
+            "visibility_principals) values (:e, :o, :conn, 'screen_session', "
+            "'screen_email_thread', :e, :e, cast(:actor as jsonb), :at, cast(:r as text[]), "
+            "'private', cast(:r as text[]))"),
+            {"e": ev, "o": org, "conn": f"screen:{emru}", "at": NOW,
+             "actor": json.dumps({"name": "Anisha", "email": ws["mails"]["anisha"]}),
+             "r": [ws["mails"]["emru"]]})
+        c.execute(text("insert into graph_nodes (node_id, version, org_id, node_type, "
+                       "canonical_key, display_name) values (:n, 1, :o, 'commitment', :k, :d)"),
+                  {"n": cm, "o": org, "k": f"commitment:{cm}", "d": "send ISO audit documents"})
+        c.execute(text("insert into graph_edges (edge_version_id, edge_id, org_id, edge_type, "
+                       "from_node_id, to_node_id) values (:v, :e, :o, 'owns', :f, :t)"),
+                  {"v": "ev_" + cm, "e": "e_" + cm, "o": org, "f": ws["nodes"]["anisha"],
+                   "t": cm})
+        for field, value in (("commitment.text", "send ISO audit documents"),
+                             ("commitment.status", "open"),
+                             ("commitment.due_at", (NOW + timedelta(days=5)).isoformat())):
+            _fact(c, org, cm, field, value, event=ev)
+        for seat, acc in (("anisha", "owns"), ("shalini", "covers")):
+            c.execute(text(
+                "insert into seat_responsibilities (org_id, seat_id, scope_kind, scope_key, "
+                "accountability, source, valid_from) values (:o, :s, 'project', 'iso audit', "
+                ":a, 'admin_declared', :f)"),
+                {"o": org, "s": ws["seats"][seat], "a": acc, "f": NOW - timedelta(days=30)})
+    _away(ws, "anisha", 2, 9)
+
+    assert _team_pass(ws) == 1
+    cards = _team_cards(ws, "team.deadline_at_risk")
+    assert len(cards) == 1 and cards[0]["assignee"] == emru, cards
+    card = cards[0]
+    assert "owes you" in card["situation"] and "Shalini Iyer" in card["situation"], card
+
+    # detail + act work on the situation card (same recipient rules as every card)
+    store = CardStore(URL)
+    assert store.get_authoritative_card(card["card_id"], org)["card_id"] == card["card_id"]
+    wrong = ingest_action(card_store=None, graph=GraphStore(URL), org_id=org,
+                          card_id=card["card_id"], actor=ws["seats"]["anisha"], action="snooze",
+                          snooze_option="4h")
+    assert wrong == {"ok": False, "error": "assigned_to_different_seat"}
+    out = ingest_action(card_store=None, graph=GraphStore(URL), org_id=org,
+                        card_id=card["card_id"], actor=emru, action="snooze", snooze_option="4h")
+    assert out.get("ok") is not False, out
+    assert _rows("select state from cards where card_id=:c", c=card["card_id"])[0]["state"] \
+        == "snoozed"
+
+    # Shalini away too → no cover; readiness scoped to the project still counts EVERY seat away
+    _away(ws, "shalini", 3, 8)
+    _away(ws, "ravi", 3, 8)
+    assert _team_pass(ws) == 1
+    bodies = [r["body"] for r in _rows("select body from moments where org_id=:o", o=org)]
+    assert any("No cover available: Shalini Iyer is also away." in b for b in bodies), bodies
+    # the snoozed card was answered, so a NEW card carries the change and the snoozed one is
+    # resolved as superseded — never two live cards for one situation
+    states = sorted(r["state"] for r in _team_cards(ws, "team.deadline_at_risk"))
+    assert states == ["queued", "resolved"], states
+    res = client.post("/v1/team/milestones", headers=H(ws["token"]), json={
+        "title": "ISO audit", "due_at": (NOW + timedelta(days=6)).isoformat(),
+        "owner_seat_id": emru, "scope_kind": "project", "scope_key": "iso audit",
+        "task_filter": None})
+    assert res.status_code == 200, res.text
+    assert res.json()["away"] == 3 and res.json()["pending"] == 1, res.json()
 
 
 # ── 4 · the away view ─────────────────────────────────────────────────────────────────────────

@@ -131,6 +131,34 @@ def emit_situation(engine, card_store, org_id: str, *, kind: str, key: str, seat
     return card_id, moment_id
 
 
+def close_stale(engine, org_id: str, *, kind: str, prefixes: tuple[str, ...],
+                keep_keys: set[str], now: datetime | None = None) -> int:
+    """Situations of `kind` whose key starts with one of `prefixes` and that the pass did NOT
+    produce this run no longer hold (the owner is back, the promise was kept, the recipient
+    changed): state → closed, and their card — if nobody has decided anything about it yet —
+    resolved with a `situation_cleared` event. Returns situations closed."""
+    now = now or datetime.now(timezone.utc)
+    closed = 0
+    with engine.begin() as c:
+        rows = c.execute(text(
+            "select key, card_id from team_situations where org_id = :o and kind = :k "
+            "and state = 'open' for update"), {"o": org_id, "k": kind}).all()
+        for r in rows:
+            if r.key in keep_keys or not r.key.startswith(prefixes):
+                continue
+            c.execute(text("update team_situations set state = 'closed', last_at = :now "
+                           "where org_id = :o and kind = :k and key = :key"),
+                      {"o": org_id, "k": kind, "key": r.key, "now": now})
+            closed += 1
+            if r.card_id and c.execute(text(
+                    "update cards set state = 'resolved', resolved_at = :now where card_id = :c "
+                    "and org_id = :o and state in ('built', 'queued', 'surfaced', 'snoozed') "
+                    "returning 1"), {"c": r.card_id, "o": org_id, "now": now}).first():
+                _log_card_event(c, r.card_id, org_id, "card.resolved", "situation_cleared",
+                                {"situation_key": r.key})
+    return closed
+
+
 def _log_card_event(c, card_id: str, org_id: str, kind: str, cause: str, detail: dict) -> None:
     c.execute(text(
         "insert into card_events (id, card_id, org_id, kind, cause, actor_id, detail) "
@@ -166,6 +194,14 @@ def _write_card(c, *, org_id, kind, key, seat_id, subjects, headline, body, acti
             _log_card_event(c, held_card_id, org_id, "card.rebuilt", capability,
                             {"digest": digest, "builder_version": BUILDER_VERSION})
             return held_card_id
+        # The user SNOOZED the previous card: its words stay as answered, but it must not wake
+        # later beside the new generation saying something no longer true — resolve it.
+        if c.execute(text(
+                "update cards set state = 'resolved', resolved_at = :now where card_id = :id "
+                "and org_id = :o and state = 'snoozed' returning 1"),
+                {"id": held_card_id, "o": org_id, "now": now}).first():
+            _log_card_event(c, held_card_id, org_id, "card.resolved", "superseded",
+                            {"digest": digest})
     # First emission, or the user already decided the previous card: a new generation.
     signal_id = "sig_team_" + _h(org_id, kind, key, digest)[:28]
     c.execute(text(

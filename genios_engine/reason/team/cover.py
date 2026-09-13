@@ -14,7 +14,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from genios_engine.context.correlation_people import (CommitmentLink, answering_for,
-                                                      same_beneficiary, scope_pairs_for)
+                                                      owned_scopes, same_beneficiary,
+                                                      scope_pairs_for)
 from genios_engine.reason.team.common import TeamContext
 from genios_engine.reason.team.emit import clip
 
@@ -59,7 +60,17 @@ def propose_cover(conn, ctx: TeamContext, link: CommitmentLink, *, away_seats: s
         if rank < held[0]:
             held[0], held[1], held[2] = rank, basis, phrase
 
-    for r in answering_for(conn, ctx.org_id, scope_pairs_for(link), ctx.now):
+    # The owner's own slices: "Shalini covers the ISO audit" is declared on the project Anisha
+    # owns, not on the promise. The slices the promise names win ("send ISO audit documents"
+    # names `iso audit`); with none named, every slice the owner owns is a candidate scope.
+    pairs = list(scope_pairs_for(link))
+    if link.owner is not None and link.owner.seat_id:
+        owned = owned_scopes(conn, ctx.org_id, link.owner.seat_id, ctx.now)
+        said = " ".join(str(v) for v in (link.text, *link.facts.values())
+                        if isinstance(v, str)).casefold()
+        named = [r for r in owned if r.scope_key.strip().casefold() in said]
+        pairs += [(r.scope_kind, r.scope_key) for r in (named or owned)]
+    for r in answering_for(conn, ctx.org_id, pairs, ctx.now):
         rank = _RANK.get(r.accountability)
         if rank is None:
             continue
