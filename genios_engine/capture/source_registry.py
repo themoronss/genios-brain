@@ -181,7 +181,10 @@ SOURCES: tuple[SourceDescriptor, ...] = (
     SourceDescriptor("github", "operational"),
     SourceDescriptor("gitlab", "operational"),
     SourceDescriptor("jira", "operational"),
-    SourceDescriptor("linear", "operational"),
+    # P4: issues → `task` nodes (linear.issue.v1) for milestone readiness. An issue's state moves,
+    # so `updatedAt` folds into the dedup key. Composio slugs UNVERIFIED (connectors/linear.py).
+    SourceDescriptor("linear", "operational", capability="task_tracker", buildable=True,
+                     object_types=("issue",), immutable=False, version_field="updatedAt"),
 
     # ── GeniOS's own outputs re-entering as evidence ─────────────────────────────
     SourceDescriptor("genios", "intelligence"),

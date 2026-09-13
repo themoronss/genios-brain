@@ -45,7 +45,7 @@ IMPLEMENTED_SOURCE_TYPES: frozenset[str] = BUILDABLE_SOURCES
 DIRECT_SOURCE_TYPES: frozenset[str] = frozenset({"postgres", "database", "mysql"})
 COMPOSIO_SOURCE_TYPES: frozenset[str] = frozenset({
     "gmail", "gcal", "calendar", "google_calendar", "notion",
-    "gdrive", "drive", "google_drive", "hubspot",
+    "gdrive", "drive", "google_drive", "hubspot", "linear",
 })
 
 
@@ -121,6 +121,9 @@ def make_connector_for(connection, relevance=None) -> SourceConnector:
     if st == "hubspot":
         from genios_engine.capture.connectors.hubspot import ComposioHubspotConnector
         return ComposioHubspotConnector(api_key=key, user_id=uid)
+    if st == "linear":
+        from genios_engine.capture.connectors.linear import ComposioLinearConnector
+        return ComposioLinearConnector(api_key=key, user_id=uid)
     raise ValueError(f"no connector wired for source_type={st!r}")
 
 

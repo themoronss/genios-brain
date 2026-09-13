@@ -44,13 +44,14 @@ _PARSER_IMPORTS: dict[str, tuple[str, str]] = {
     "hubspot": ("genios_engine.capture.connectors.hubspot", "ComposioHubspotConnector"),
     "notion": ("genios_engine.capture.connectors.notion", "ComposioNotionConnector"),
     "gdrive": ("genios_engine.capture.connectors.drive", "ComposioDriveConnector"),
+    "linear": ("genios_engine.capture.connectors.linear", "ComposioLinearConnector"),
 }
 
 #: Sources whose trigger payload is SELF-CONTAINED — mappable with no tenant credentials, so a
 #: caller that supplies no `connector_factory` still gets rows. The rest (a Notion page body, a
 #: Drive file's bytes, a HubSpot id-only property-change push) must FETCH, and without a factory
 #: the honest answer is nothing at all, never a hollow fabricated object.
-_CREDENTIAL_FREE: frozenset[str] = frozenset({"gmail", "gcal", "hubspot"})
+_CREDENTIAL_FREE: frozenset[str] = frozenset({"gmail", "gcal", "hubspot", "linear"})
 
 
 def _parser_class(source: str) -> type | None:
