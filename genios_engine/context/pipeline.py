@@ -557,7 +557,34 @@ def _normalise_deal_status(value):
     raw = str(value or "").strip()
     if not raw:
         return None, None
-    return _DEAL_TERMINAL.get(raw.lower(), "open"), raw
+    low = raw.lower()
+    exact = _DEAL_TERMINAL.get(low)
+    if exact is not None:
+        return exact, raw
+    # A stated outcome written as a phrase, not a single word — "we have decided to go with
+    # another vendor", "not proceeding this quarter", "PO signed". Found by the P2 gate: a
+    # LinkedIn decline landed as deal.stage "…proceeding with another vendor" and, read through
+    # the exact-word table above, collapsed to `open`. LOST is checked first because a decline
+    # usually contains "proceed" too.
+    if any(m in low for m in _DEAL_LOST_PHRASES):
+        return "lost", raw
+    if any(m in low for m in _DEAL_WON_PHRASES):
+        return "won", raw
+    return "open", raw
+
+
+#: Phrase markers of a STATED outcome (substring, lower-cased). Conservative on purpose: a stage
+#: that only sounds negative ("delayed", "on hold", "reviewing") stays `open`.
+_DEAL_LOST_PHRASES = (
+    "another vendor", "other vendor", "different vendor", "another provider", "competitor",
+    "not proceed", "not be proceeding", "won't proceed", "will not proceed", "not moving forward",
+    "not going ahead", "no longer interested", "decided against", "declined", "rejected",
+    "cancelled", "canceled", "closed lost", "deal lost", "passed on",
+)
+_DEAL_WON_PHRASES = (
+    "closed won", "deal won", "contract signed", "agreement signed", "po signed", "po issued",
+    "purchase order issued", "signed the", "go ahead with you", "moving forward with you",
+)
 
 
 def _normalise_meeting_status(value):
@@ -1161,6 +1188,21 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 if raw.lower() != status and store.write_fact(
                         conn, org_id=org_id, subject_node_id=subj, field="deal.stage",
                         value=raw, value_type="string",
+                        confidence=FACT_CONF_BY_RANK[claim_rank], relevance=fact_rel,
+                        occurred_at=occurred_at, event_id=event_id,
+                        evidence=_claim_evidence(f, internal_kind), source=source,
+                        authority_rank=claim_rank):
+                    fact_n += 1
+            if field == "deal.stage":
+                # The mirror of the branch above. A model that writes a STATED OUTCOME as the
+                # stage ("proceeding with another vendor", "contract signed") has told us the
+                # status too; rules gate on `deal.status`, so leaving it unwritten keeps a declined
+                # deal reading `open` (found by the P2 gate). Only a terminal outcome is written —
+                # an ordinary stage ("negotiation") says nothing new about the status.
+                status, _raw = _normalise_deal_status(value)
+                if status in ("won", "lost") and store.write_fact(
+                        conn, org_id=org_id, subject_node_id=subj, field="deal.status",
+                        value=status, value_type="string",
                         confidence=FACT_CONF_BY_RANK[claim_rank], relevance=fact_rel,
                         occurred_at=occurred_at, event_id=event_id,
                         evidence=_claim_evidence(f, internal_kind), source=source,
