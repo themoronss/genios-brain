@@ -39,6 +39,7 @@ from genios_engine.api.pattern_routes import router as pattern_router
 from genios_engine.api.situation_routes import router as situation_router
 from genios_engine.api.lifecycle_routes import router as lifecycle_router
 from genios_engine.api.moment_routes import router as moment_router
+from genios_engine.api.team_routes import router as team_router
 from genios_engine.api.stream_routes import router as stream_router
 from genios_engine.api.upload_routes import router as upload_router
 from genios_engine.api.usermodel_routes import router as usermodel_router
@@ -166,6 +167,7 @@ app.include_router(home_router)
 app.include_router(mapping_router)
 app.include_router(billing_router)
 app.include_router(admin_router)     # cross-org admin console (is_internal-gated)
+app.include_router(team_router)      # P4 team API: /v1/team/away, /v1/team/milestones
 app.include_router(cohort_router)    # L2.4.4 cohorts + M-9 authoring (on demand only)
 app.include_router(quality_router)   # L2.5.5 typed absence + L-5 coverage epochs, read-only
 app.include_router(correlation_router)  # L2.4.7 declared metric pairs, read on demand
