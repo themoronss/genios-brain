@@ -92,7 +92,9 @@ BP_FULL = 10000
 #: floor only the router enforces is a floor the budget walks straight through. A document that
 #: cannot be afforded at T2 is REFUSED, not demoted to T1: an unread contract is a gap somebody
 #: notices, and a contract read badly is a wrong renewal date nobody notices until it renews.
-TIER_FLOORS = {"email": "T1", "chat": "T1", "crm_note": "T1", "document": "T2", "transcript": "T2"}
+TIER_FLOORS = {"email": "T1", "chat": "T1", "crm_note": "T1", "document": "T2", "transcript": "T2",
+               # P2 screen profiles: bounded parts, T1 by design (plan §4).
+               "screen_session": "T1", "screen_generic": "T1"}
 
 #: The default floor for a profile id this table does not name. `get_profile` degrades an
 #: unknown id to `email`, so this is reached only if the registry grows a profile and this table

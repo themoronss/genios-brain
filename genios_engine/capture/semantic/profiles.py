@@ -68,7 +68,14 @@ log = logging.getLogger(__name__)
 #: cross-doc gap flagged in `capture/structured/mapper.STRUCTURED_PROFILE`, and it is
 #: deliberately not papered over here: this tuple is the set of profiles that have a PROMPT,
 #: and a lane with no prompt has no business owning an entry in a prompt registry.
-PROFILE_IDS = ("email", "chat", "transcript", "document", "crm_note")
+#:
+#: P2 (screen sessions, `docs/plans/SCREEN_INTEL_P2_BUILD.md` §4) adds two: `screen_session`
+#: (a chat conversation read off the seat's screen, delta-only) and `screen_generic` (any other
+#: app, read as blocks). Neither is a chat or a document in disguise — what the screen shows is
+#: new messages PLUS the context around them, and only a prompt that knows that split can keep
+#: the context from being extracted a second time.
+PROFILE_IDS = ("email", "chat", "transcript", "document", "crm_note", "screen_session",
+               "screen_generic")
 
 #: The model tiers L1.4.10 routes between. Held as a tuple, not an enum, because the router
 #: owns the mapping from tier to model snapshot and this module only records a starting point:
@@ -506,6 +513,42 @@ _CRM_NOTE_ROLE = (
 )
 
 
+#: The literal header the screen renderer (`capture/screen/render.py`, plan §3.1) writes above
+#: the messages or blocks that were ALREADY on screen before this delta. Named once so the two
+#: screen prompts quote the exact string the renderer emits.
+SCREEN_CONTEXT_HEADER = "context — do not extract"
+
+_SCREEN_CONTEXT_RULE = (
+    f"Everything under the header \"{SCREEN_CONTEXT_HEADER}\", and every line that begins with "
+    "\"> \", is CONTEXT ONLY: it was already on screen before this capture and has been read "
+    "before. Use it to understand what the new lines refer to, but NEVER extract a claim from "
+    "it and never quote it — a fact that appears only there is not a new fact. Quote only the "
+    "new lines above that header."
+)
+
+_SCREEN_SESSION_ROLE = (
+    "You extract structured facts from a SCREEN CONVERSATION — the NEW messages of one chat or "
+    "mail thread (WhatsApp, LinkedIn, Slack, Gmail, Outlook), read off the user's own screen.\n"
+    "Each new message is one line \"Name: text\". The envelope's direction says whose messages "
+    "these are: outbound means every line was written by the user (the seat), so \"I\" and "
+    "\"we\" are the seat; inbound means the counterparty wrote them. Extract only what the new "
+    "lines support; a reaction is a stance, not an approval, and a hedge stays a hedge.\n"
+    + _SCREEN_CONTEXT_RULE
+)
+
+_SCREEN_GENERIC_ROLE = (
+    "You extract structured facts from a SCREEN CAPTURE of a work app — a CRM record, a "
+    "dashboard, a ticket, a document page — read off the user's own screen as blocks.\n"
+    "The blocks use four shapes: a line on its own is a Heading for what follows; "
+    "\"Label: Value\" is one field of a form or record, so the label names the value; a line "
+    "\"| a | b |\" is one table row, and the first row of a table is its header; \"Name: text\" "
+    "under a heading is a message or comment by that person. A label is not a fact on its own "
+    "— extract a value only together with what its label and heading say it is, and never "
+    "round, convert or infer a currency.\n"
+    + _SCREEN_CONTEXT_RULE
+)
+
+
 def _profile(profile_id: str, role: str, emphasis: tuple[str, ...], tier: str,
              max_input_chars: int, chunk_strategy: str) -> ExtractionProfile:
     return ExtractionProfile(profile_id=profile_id,
@@ -549,6 +592,19 @@ PROFILES: Mapping[str, ExtractionProfile] = MappingProxyType({
         "crm_note", _CRM_NOTE_ROLE,
         ("decision_states", "stance", "entity_mentions"),
         "T1", 4_000, NONE),
+    # P2. The renderer splits a chat delta into parts above 40 messages / 6k chars, so 8k fits
+    # one part plus its context block and the fence; NONE because a part is already bounded.
+    "screen_session": _profile(
+        "screen_session", _SCREEN_SESSION_ROLE,
+        ("commitments", "availability", "business_facts", "scheduling_proposals", "questions"),
+        "T1", 8_000, NONE),
+    # Generic parts split at 12k chars of blocks (§3.1); the profile holds 16k so a full part
+    # plus its `context_blocks` section and the 58-character fence still fits one call — at
+    # exactly 12k the extractor would refuse every full part (`extractor.py` fence check).
+    "screen_generic": _profile(
+        "screen_generic", _SCREEN_GENERIC_ROLE,
+        ("entity_mentions", "business_facts", "commitments", "dates_mentioned", "amounts"),
+        "T1", 16_000, NONE),
 })
 
 #: What `get_profile` falls back to. Email, because it is the only profile whose content type is

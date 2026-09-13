@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import hashlib
+import importlib
 import json
 import threading
 from dataclasses import dataclass, field, replace as _dc_replace
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Mapping, Sequence
 
 from genios_engine.capture.connectors.base import RawObject
@@ -41,7 +43,8 @@ from genios_engine.capture.semantic.extractor import (STAGE as SEMANTIC_STAGE, E
 from genios_engine.capture.semantic.model_router import (NO_T3_BUDGET, T3Budget, TierDecision,
                                                          TierRequest, decide_tier,
                                                          demote_for_cost, record)
-from genios_engine.capture.semantic.router import routing_input_for, select_profile
+from genios_engine.capture.semantic.router import (EMAIL_OBJECT_TYPES, routing_input_for,
+                                                   select_profile)
 from genios_engine.capture.source_registry import DELIBERATE_SOURCES, family_of
 from genios_engine.capture.structural.threads import (BallInCourt, ThreadMessage,
                                                       reconstruct_thread)
@@ -360,6 +363,10 @@ class SemanticLane:
     #: `llm_costs` through it — the ledger the cost governor opens each day from, so spend it
     #: never sees is spend the daily ceiling cannot bind.
     cost_sink: Any | None = None
+    #: P2 §3.3 · a SQLAlchemy engine for the same-message check, or None to switch it off. With
+    #: it, a Gmail/Outlook message whose fingerprint the seat's screen claimed first is not
+    #: extracted again (`skipped="seen_on_screen"`) and gets one `same_message:` source ref.
+    fingerprint_engine: Any | None = None
 
 
 #: `llm_costs.purpose` for S2's extraction calls (S4's relevance page files `l1_relevance`).
@@ -497,6 +504,13 @@ def _envelope_direction(event: SourceEvent, mailbox_owner: str | None) -> str | 
         return "internal"
     owner = (mailbox_owner or "").strip().lower()
     sender = (event.actor.email or "").strip().lower()
+    # A SCREEN SESSION KNOWS ITS SPLIT (plan §3.1). The renderer emits the seat's own lines as
+    # a separate object whose sender is the seat email, so anything else on a screen object —
+    # a counterparty email, an `li:` handle, or no identity at all (a WhatsApp contact shown
+    # by name only) — is the other side speaking: inbound. Refusing it here would skip every
+    # incoming screen message as `direction_unknown`.
+    if event.source == _SCREEN_SOURCE and owner:
+        return "outbound" if sender == owner else "inbound"
     if not owner or not sender:
         return None
     return "outbound" if sender == owner else "inbound"
@@ -573,6 +587,89 @@ def _thread_context(event: SourceEvent, raw: Mapping[str, Any],
                          thread_depth=depth, ball_in_court=ball.value)
 
 
+#: The source the P2 screen promoter lands its objects under (plan §3.1).
+_SCREEN_SOURCE = "screen_session"
+
+#: Mail sources whose messages the seat may ALSO have read on screen (plan §3.3, §7.4).
+_SCREEN_TWIN_SOURCES = frozenset({"gmail", "outlook"})
+
+#: `SemanticVerdict.skipped` for a mail message whose fingerprint the screen claimed first.
+SEEN_ON_SCREEN = "seen_on_screen"
+
+#: Group C's module (plan §3.3), imported lazily: this lane must run before it exists and
+#: must keep running if it fails to import.
+_FINGERPRINT_MODULE = "genios_engine.capture.screen.fingerprint"
+
+#: One ref per duplicate MESSAGE (plan §3.4), pointing at the canonical event. Idempotent on
+#: its id, so a replay of the same event never adds a second row.
+_SAME_MESSAGE_REF_SQL = (
+    "insert into graph_source_refs (source_ref_id, org_id, event_id, source, source_object_id, "
+    "evidence, independence_group) "
+    "values (:id, :org, :canonical, :source, :soid, cast(:evidence as jsonb), :grp) "
+    "on conflict (source_ref_id) do nothing")
+
+
+def _fp_body(body: Mapping[str, Any]) -> str:
+    """The message text a fingerprint is taken over: the body as the reader SEES it — HTML
+    stripped the same way capture strips it, subject excluded (a screen line has no subject).
+    Unmasked on purpose: the screen side fingerprints what was on screen, and `clean_text`'s PII
+    masking would make the two copies of one message hash differently."""
+    source_text = body.get("body") or body.get("snippet") or ""
+    if not isinstance(source_text, str):
+        return ""
+    return extract_native_text(mime="text/html", data=source_text) or source_text
+
+
+def _seen_on_screen(event: SourceEvent, body: Mapping[str, Any],
+                    lane: SemanticLane) -> str | None:
+    """The canonical event id when this Gmail/Outlook message was claimed by another copy
+    first, else None. Claims this copy either way, so a LATER screen sighting finds it.
+
+    Fingerprints cover minute -1/0/+1 (§3.3: screen and connector timestamps skew). Never
+    raises and never blocks capture: no engine, no sender, no body, C's module missing or any
+    database error all mean "not seen", and the message is extracted as it always was.
+    """
+    engine = lane.fingerprint_engine
+    if engine is None or event.source not in _SCREEN_TWIN_SOURCES:
+        return None
+    if not any(token in EMAIL_OBJECT_TYPES for token in routing_input_for(event).object_tokens):
+        return None
+    sender = (event.actor.email or "").strip().lower()
+    text_body = _fp_body(body)
+    if not sender or not text_body.strip():
+        return None
+    try:
+        fingerprint = importlib.import_module(_FINGERPRINT_MODULE)
+    except ImportError:
+        return None
+    try:
+        from sqlalchemy import text as _sql
+        fps = list(dict.fromkeys(
+            fingerprint.message_fp(sender, event.occurred_at + timedelta(minutes=shift),
+                                   text_body)
+            for shift in (0, -1, 1)))
+        with engine.begin() as conn:
+            claimed = fingerprint.claim(conn, event.org_id, fps, event.source, event.event_id)
+            hit = next(((fp, claimed[fp]) for fp in fps
+                        if claimed.get(fp) and claimed[fp] != event.event_id), None)
+            if hit is None:
+                return None
+            fp, canonical = hit
+            ref_id = "sref_sm_" + hashlib.sha256(
+                f"{event.org_id}|{fp}|{event.event_id}".encode()).hexdigest()[:24]
+            conn.execute(_sql(_SAME_MESSAGE_REF_SQL), {
+                "id": ref_id, "org": event.org_id, "canonical": canonical,
+                "source": event.source, "soid": event.source_object_id,
+                "evidence": json.dumps({"reason": SEEN_ON_SCREEN,
+                                        "duplicate_event_id": event.event_id, "fp": fp}),
+                "grp": f"same_message:{fp}"})
+        return canonical
+    except Exception:  # noqa: BLE001 — a dedupe miss costs one extraction; a raise costs a sweep
+        _log.warning("same-message check failed for event=%s; extracting as usual",
+                     event.event_id, exc_info=True)
+        return None
+
+
 def run_semantic_lane(event: SourceEvent, prepared: PreparedContent | None,
                       raw: RawObject, *, lane: SemanticLane, is_structured: bool,
                       mailbox_owner: str | None) -> SemanticVerdict:
@@ -592,6 +689,10 @@ def run_semantic_lane(event: SourceEvent, prepared: PreparedContent | None,
         return SemanticVerdict(skipped="direction_unknown")
 
     body = raw.raw or {}
+    # P2 §3.3 · before any spend: a mail message the seat's screen already delivered is one
+    # message, extracted once. The screen copy stays canonical; this one is linked, not read.
+    if _seen_on_screen(event, body, lane) is not None:
+        return SemanticVerdict(skipped=SEEN_ON_SCREEN)
     choice = select_profile(routing_input_for(
         event, mime=str(body.get("mime") or ""), filename=str(body.get("filename") or "")))
     position, depth = _thread_place(body)

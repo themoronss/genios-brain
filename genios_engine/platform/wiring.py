@@ -797,6 +797,9 @@ def make_semantic_lane(org_id: str, *, now: datetime | None = None, engine=_UNSE
                         # can actually report (`RelevancePage.stats.llm_share_bp`).
                         relevance_page=RelevancePage(llm=llm, governor=governor,
                                                      cost_sink=cost_sink, org_id=org_id),
+                        # P2 §3.3: a mail message already read off the seat's screen is not
+                        # extracted twice. None (no database) switches the check off.
+                        fingerprint_engine=engine,
                         timezone=_org_timezone(engine, org_id))
 
 

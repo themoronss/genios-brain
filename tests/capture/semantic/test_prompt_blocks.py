@@ -50,6 +50,8 @@ ROLE_SUBJECT = {
     "transcript": "MEETING TRANSCRIPT",
     "document": "DOCUMENT",
     "crm_note": "CRM NOTE",
+    "screen_session": "SCREEN CONVERSATION",
+    "screen_generic": "SCREEN CAPTURE",
 }
 
 #: The words the group law forbids the model to act on. They may appear once, inside the ROLE
@@ -125,7 +127,33 @@ def test_the_role_block_names_its_content_type_and_its_emphasis(profile_id):
 
 def test_the_role_blocks_are_not_five_copies_of_one_paragraph():
     roles = {profile_id: _blocks(profile_id)["ROLE"] for profile_id in PROFILE_IDS}
-    assert len(set(roles.values())) == 5
+    assert len(set(roles.values())) == 7
+
+
+SCREEN_PROFILES = ("screen_session", "screen_generic")
+
+
+@pytest.mark.parametrize("profile_id", SCREEN_PROFILES)
+def test_screen_roles_keep_context_out_of_extraction(profile_id):
+    """P2 §3.1: the renderer puts already-seen messages under this header as `> ` lines. A
+    screen prompt that did not say so would extract the context again on every delta."""
+    role = _blocks(profile_id)["ROLE"]
+    assert mod.SCREEN_CONTEXT_HEADER == "context — do not extract"
+    assert f'"{mod.SCREEN_CONTEXT_HEADER}"' in role
+    assert '"> "' in role
+    assert "CONTEXT ONLY" in role and "NEVER extract a claim from it" in role
+
+
+def test_screen_generic_role_explains_the_block_grammar():
+    """§3.1's four block shapes, each named, so a label is read with its value."""
+    role = _blocks("screen_generic")["ROLE"]
+    for shape in ("Heading", '"Label: Value"', '"| a | b |"', '"Name: text"'):
+        assert shape in role, shape
+
+
+def test_screen_session_role_states_whose_lines_are_whose():
+    role = _blocks("screen_session")["ROLE"]
+    assert '"Name: text"' in role and "outbound" in role and "inbound" in role
 
 
 @pytest.mark.parametrize("profile_id", PROFILE_IDS)

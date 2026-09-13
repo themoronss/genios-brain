@@ -57,7 +57,15 @@ SPEC_TABLE = (
                      "field_name": "hs_note_body"}, "r5-hubspot_note"),
     (5, "crm_note", {"source": "salesforce", "object_type": "task",
                      "field_name": "Description"}, "r5-salesforce_note"),
-    (6, "email", {"source": "stripe", "object_type": "subscription"}, "r6-fallback"),
+    # P2 screen objects (SCREEN_INTEL_P2_BUILD.md §3.1/§4): mail read off the screen is still
+    # an email; a chat app's thread and a generic screen get their own screen profiles.
+    (1, "email", {"source": "screen_session", "object_type": "screen_email_thread"},
+     "r1-screen_email_thread"),
+    (6, "screen_session", {"source": "screen_session", "object_type": "screen_chat_thread"},
+     "r6-screen_chat_thread"),
+    (7, "screen_generic", {"source": "screen_session", "object_type": "screen_doc"},
+     "r7-screen_doc"),
+    (8, "email", {"source": "stripe", "object_type": "subscription"}, "r8-fallback"),
 )
 
 ROWS = [pytest.param(number, profile, kwargs, id=name)
