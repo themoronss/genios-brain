@@ -86,6 +86,29 @@ SENSITIVE_BUNDLE_IDS: tuple[str, ...] = (
     "ai.genios.*",
 )
 
+#: Windows: the bundle id is the lower-cased executable name. Mirrors the desktop's
+#: `capture/sensitive_windows.json` so the server refuses what the device gate refuses.
+SENSITIVE_WINDOWS_EXES: tuple[str, ...] = (
+    # terminals
+    "cmd.exe", "powershell.exe", "powershell_ise.exe", "pwsh.exe", "windowsterminal.exe", "wt.exe",
+    "openconsole.exe", "conhost.exe", "wsl.exe", "wslhost.exe", "bash.exe", "mintty.exe",
+    "alacritty.exe", "wezterm-gui.exe", "putty.exe", "kitty.exe", "mobaxterm.exe", "termius.exe",
+    "hyper.exe", "tabby.exe", "warp.exe", "cmder.exe", "conemu.exe", "conemu64.exe",
+    # IDEs / editors
+    "code.exe", "code - insiders.exe", "cursor.exe", "windsurf.exe", "zed.exe", "sublime_text.exe",
+    "devenv.exe", "idea.exe", "idea64.exe", "pycharm64.exe", "webstorm64.exe", "goland64.exe",
+    "clion64.exe", "rider64.exe", "phpstorm64.exe", "rubymine64.exe", "datagrip64.exe",
+    "dataspell64.exe", "rustrover64.exe", "fleet.exe", "studio64.exe", "eclipse.exe",
+    # password managers / authenticators
+    "1password.exe", "bitwarden.exe", "keepass.exe", "keepassxc.exe", "lastpass.exe",
+    "dashlane.exe", "keeper*.exe", "enpass.exe", "roboform.exe", "nordpass.exe",
+    "proton pass.exe", "authy desktop.exe", "yubico authenticator.exe",
+    # Windows sign-in / UAC / lock
+    "credentialuibroker.exe", "consent.exe", "lockapp.exe", "logonui.exe", "credwiz.exe",
+    # GeniOS itself
+    "genios.exe",
+)
+
 # Settings-derived: the GeniOS product's own hosts are sensitive too (the dashboard shows other
 # people's cards). Read from the deployment, so a white-labelled domain is covered.
 def _own_domains() -> tuple[str, ...]:
@@ -159,6 +182,11 @@ def bundle_blocked(bundle_id: str | None) -> bool:
     if not bundle_id:
         return False
     b = bundle_id.strip()
+    if b.lower().endswith(".exe"):
+        # Windows sends the executable name as its bundle id; Windows is case-insensitive.
+        e = b.lower()
+        return any(bool(_glob(p).match(e)) if "*" in p else e == p
+                   for p in SENSITIVE_WINDOWS_EXES)
     return any(bool(_glob(p).match(b)) if "*" in p else b == p for p in SENSITIVE_BUNDLE_IDS)
 
 
@@ -612,7 +640,8 @@ def shred_seat_capture(conn, *, org_id: str, seat_id: str) -> int:
 
 __all__ = ["APP_IDS", "CaptureStore", "DEFAULT_ALLOWED_APPS", "GENERIC_ALIASES", "GENERIC_APP",
            "OrgPolicy",
-           "SENSITIVE_BUNDLE_IDS", "SENSITIVE_DOMAINS", "SeatSettings", "app_version_supported",
+           "SENSITIVE_BUNDLE_IDS", "SENSITIVE_DOMAINS", "SENSITIVE_WINDOWS_EXES", "SeatSettings",
+           "app_version_supported",
            "bundle_blocked", "check_session", "effective_policy", "is_blocked",
            "min_supported_app_version", "normalize_apps", "normalize_patterns",
            "policy_document", "policy_version", "screen_connection_id", "shred_seat_capture",
