@@ -48,7 +48,8 @@ def test_queue_situation_door_matches_what_emit_writes():
 
 
 def test_registered_passes_are_team_then_verify():
-    assert [n for n, _ in postpass.PASSES] == ["team", "verify"]
+    # P5 group B appends the meetings pass (prep precompute + follow-ups) after verify.
+    assert [n for n, _ in postpass.PASSES] == ["team", "verify", "meetings"]
     assert postpass._present("genios_engine.reason.team.passes")
 
 
