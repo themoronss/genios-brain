@@ -24,8 +24,13 @@ MIGRATIONS = ROOT / "migrations"
 #
 # The negative lookahead rejects `trim(both '"' from value::text)` — SQL's `trim` uses
 # `from` inside a function call, and a real table is never immediately cast.
+# After `from` / `join` a name followed by `(` is a FUNCTION, never a table:
+# `extract(epoch from clock_timestamp())`, `from unnest(...)`, `from generate_series(...)`.
+# (After `into` a `(` is the column list, so that keyword keeps the plain rule.)
 _TABLE_REF = re.compile(
-    r"\b(?:from|join|into|update)\s+([a-z_][a-z0-9_]{2,})\b(?!\s*::)", re.I)
+    r"\b(?:(?:from|join)\s+(?=[a-z_][a-z0-9_]{2,}\b(?!\s*(?:::|\()))"
+    r"|(?:into|update)\s+(?=[a-z_][a-z0-9_]{2,}\b(?!\s*::)))"
+    r"([a-z_][a-z0-9_]{2,})\b", re.I)
 _SQL_MARKERS = ("select ", "insert into ", "update ", "delete from ")
 
 # Words that follow a table keyword without being a table. `set` comes from

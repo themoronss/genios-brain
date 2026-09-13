@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import secrets
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -58,7 +59,9 @@ def one_run(i: int, *, llm, now: datetime) -> dict:
         envelope=EventEnvelope(direction="inbound", sender="", recipients=(), thread_position=1,
                                thread_depth=1, subject=SUBJECT),
         eval_time=now)
-    outcome = extract(request, llm=llm, store=None, open_lane=None, nonce=f"{event_id}")
+    # The prompt fence needs 16 lowercase hex characters (capture/semantic/injection.fence);
+    # a fresh one per run also keeps every run an uncached, independent call.
+    outcome = extract(request, llm=llm, store=None, open_lane=None, nonce=secrets.token_hex(8))
     if outcome.result is None:
         return {"run": i, "fired": False, "parked": getattr(outcome.parked, "reason", "parked"),
                 "decisions": [], "deal_facts": []}
