@@ -105,14 +105,8 @@ def _settings():
     return get_settings()
 
 
-def enabled_for(org_id: str, mode: Any = None) -> bool:
-    """Is the LLM decision maker on for this org, in this execution mode? FAILS CLOSED.
-
-    The allow-list must name the org, or be `*` for every org — an empty list enables nobody.
-    A run that cannot deliver (any mode but LIVE: shadow, simulation, replay) is measurement, and
-    measurement does not buy a model call unless `l4_llm_shadow_paid` says it may. `mode=None`
-    is treated as LIVE, for callers that have no request.
-    """
+def enabled_for(org_id: str) -> bool:
+    """Is the LLM decision maker on for this org? Off unless the switch says otherwise."""
     try:
         settings = _settings()
     except Exception:      # noqa: BLE001 — no settings means no switch, means the formula
@@ -122,15 +116,7 @@ def enabled_for(org_id: str, mode: Any = None) -> bool:
     allowed = {item.strip() for item in
                str(getattr(settings, "l4_llm_decision_maker_orgs", "") or "").split(",")
                if item.strip()}
-    if "*" not in allowed and str(org_id) not in allowed:
-        return False
-    live = mode is None or str(getattr(mode, "value", mode)) == "live"
-    return live or bool(getattr(settings, "l4_llm_shadow_paid", False))
-
-
-def enabled_for_request(request: Any) -> bool:
-    """`enabled_for` for one reasoning request: its org and its execution mode."""
-    return enabled_for(getattr(request, "org_id", ""), getattr(request, "mode", None))
+    return not allowed or str(org_id) in allowed
 
 
 _clients: dict[tuple[str, str], Any] = {}
@@ -860,5 +846,4 @@ def _reset_for_tests() -> None:
 
 __all__ = ["COST_PURPOSE", "LLM_DEFERRED_REASON", "LLM_UNAVAILABLE_REASON",
            "LLM_UTILITY_COMPONENT", "PROMPT_VERSION", "build_prompt", "client",
-           "decide_with_llm", "enabled_for", "enabled_for_request", "is_llm_decided",
-           "parse_answer"]
+           "decide_with_llm", "enabled_for", "is_llm_decided", "parse_answer"]
