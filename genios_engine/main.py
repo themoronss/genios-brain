@@ -46,7 +46,18 @@ from genios_engine.api.upload_routes import router as upload_router
 from genios_engine.api.transcript_routes import router as transcript_router
 from genios_engine.api.usermodel_routes import router as usermodel_router
 from genios_engine.api.workspace_routes import router as workspace_router
+from genios_engine.mcp.server import router as mcp_router
 from genios_engine.platform.config import get_settings
+
+# P6 group A's human delegation routes. Registered here (main.py is group B's) and guarded so the
+# app boots on a tree where A has not merged yet: only the module itself being ABSENT is tolerated —
+# an import error INSIDE it is a real bug and still fails the boot.
+try:
+    from genios_engine.api.delegation_routes import router as delegation_router
+except ModuleNotFoundError as _exc:
+    if _exc.name != "genios_engine.api.delegation_routes":
+        raise
+    delegation_router = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -181,6 +192,9 @@ app.include_router(capture_router)     # P1 screen capture: org policy + seat op
 app.include_router(moment_router)      # P3 hot lane: slice, moments (evaluate/device), feedback, history
 app.include_router(discrepancy_router)  # P4 verify: seat-filtered discrepancies + resolve
 app.include_router(stream_router)      # P3 realtime: SSE /v1/stream over the realtime_events outbox
+app.include_router(mcp_router)         # P6 MCP: stateless Streamable-HTTP JSON-RPC at POST /mcp
+if delegation_router is not None:
+    app.include_router(delegation_router)  # P6 act: /v1/delegations* (proposal / approve / result)
 
 
 @app.get("/")
