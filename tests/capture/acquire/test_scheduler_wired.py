@@ -283,7 +283,11 @@ def test_the_shipped_policy_is_what_the_sweep_uses_and_the_old_setting_is_its_fa
     assert policy.interval_for("gmail") == 900
     assert policy.interval_for("notion") == 12 * 3600
     assert policy.default_seconds == int(get_settings().sync_interval_hours * 3600)
-    assert sweep_tick_seconds() == int(get_settings().sync_interval_hours * 3600)
+    # The tick is the shorter of the heavy tick and the light due-source tick.
+    s = get_settings()
+    light = int(s.due_sync_interval_minutes * 60)
+    heavy = int(s.sync_interval_hours * 3600)
+    assert sweep_tick_seconds() == (min(heavy, light) if light > 0 else heavy)
 
 
 def test_an_operator_cadence_string_overlays_the_shipped_table(monkeypatch):

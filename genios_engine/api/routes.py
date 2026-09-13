@@ -593,9 +593,12 @@ def _sync_headroom(org_id: str) -> int:
         return 1 << 30
 
 
-def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
+def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
+                   chain_only_on_new_data: bool = False) -> dict:
     """Full auto-sync sweep across EVERY active connection (all orgs): L1 pull for all connections,
     THEN one L2/L3/L5 pass per org (not per-connection — an org with 3 sources shouldn't re-reason 3×).
+    `chain_only_on_new_data` (the scheduler's light due-source tick) skips that pass for an org
+    whose sources landed nothing new this sweep — the chain costs ~11k statements at zero events.
     Synchronous, per-connection error-isolated, in-process (no Celery/Upstash). Reused by the background
     scheduler (platform/scheduler.py) — the same work /ingest/all does, callable without a request.
     Idempotent at the data layer (source_events dedup), so a re-run (or a second instance) never
@@ -658,6 +661,7 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
     sync_headroom: dict[str, int] = {}
     l1_skipped = 0
     l1_quota_full = 0
+    new_events: dict[str, int] = {}               # org -> events landed this sweep
     for conn in conns_to_poll:                    # L1: pull each connection (one bad source ≠ others)
         # This background sweep is the largest LLM spender in the system (the S2 gate runs on
         # every unknown sender) and it was the one path the daily cap did not gate — the breaker
@@ -684,7 +688,8 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
         pages = max(1, min(20, -(-headroom // max(1, limit))))
         _bind_gate_costs(rc, conn.org_id)
         try:
-            run_sync(make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
+            summary = run_sync(
+                     make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
                      repo=_repo, mode=mode, limit=limit, parked_store=_parked, relevance=rc,
                      trace_repo=_trace_repo, payload_store=_payload_store,
                      prepared_store=_prepared_store,
@@ -704,6 +709,8 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
                          if conn.connection_id in schedule_by_id else None),
                      structured=_structured_lane_for(conn.org_id))
             l1_ok += 1
+            new_events[conn.org_id] = (new_events.get(conn.org_id, 0)
+                                       + int(getattr(summary, "emitted", 0) or 0))
         except Exception as e:
             l1_err += 1
             _log.exception("auto-sync L1 failed org=%s conn=%s", conn.org_id, conn.connection_id)
@@ -713,7 +720,14 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
             # `False` — the provider refusing the credential — marks the connection, so a probe
             # that could not run leaves a working connection alone.
             reason = "sync_error"
-            if _connection_still_valid(make_connector_for(conn)) is False:
+            # The factory itself may be what failed (an unknown source, a connector that cannot
+            # be built). Re-calling it bare here raised out of this handler and ended the WHOLE
+            # sweep for every org — one bad source must never stop the others.
+            try:
+                probe = make_connector_for(conn)
+            except Exception:                     # noqa: BLE001 — no probe means "unknown"
+                probe = None
+            if probe is not None and _connection_still_valid(probe) is False:
                 l1_revoked += 1
                 reason = "credentials_revoked"
                 _connections.set_status(conn.connection_id, "disconnected")
@@ -726,11 +740,13 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
             _notify_sync_failure(org_id=conn.org_id, source=conn.source_type,
                                  error=f"{reason}: {e}")
     orgs = {c.org_id for c in conns if not paused.get(c.org_id)}
+    no_new = ({o for o in orgs if not new_events.get(o)} if chain_only_on_new_data else set())
+    orgs -= no_new
     for org in orgs:                              # L2/L3/L5: once per org, after all its sources pulled
         _run_l2(org)
     _log.info("auto-sync sweep complete: %d/%d connection(s) pulled, %d due this tick, %d "
-              "skipped on budget, %d skipped as paused, %d org(s) reasoned",
-              l1_ok, len(conns), l1_due, l1_skipped, l1_paused, len(orgs))
+              "skipped on budget, %d skipped as paused, %d org(s) reasoned, %d skipped (nothing new)",
+              l1_ok, len(conns), l1_due, l1_skipped, l1_paused, len(orgs), len(no_new))
     return {"connections": len(conns), "l1_ok": l1_ok, "l1_err": l1_err,
             # Reported rather than silent: "why did this connection not sync" is the question
             # L1.2.6 is always asked, and a sweep that left no number behind could not answer
@@ -745,7 +761,7 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None) -> dict:
             # Connections the PROVIDER refused this tick. Separated from `l1_err` because the
             # two need different responses: this one is the tenant's to fix.
             "l1_credentials_revoked": l1_revoked,
-            "orgs": len(orgs)}
+            "orgs": len(orgs), "orgs_skipped_no_new_data": len(no_new)}
 
 
 # Retained as a compatibility diagnostic only. Calibration authority is the durable

@@ -104,12 +104,19 @@ def sweep_tick_seconds() -> int:
     connection whose turn falls a few minutes after a tick would otherwise wait a whole further
     tick, which is how a jittered 6-hour source becomes a 12-hour source. `tick_grace_seconds`
     closes that, and it needs this number to do it.
+
+    With the light due-source tick on, the sweep asks every `due_sync_interval_minutes`, so that
+    shorter period is the tick — grace sized for six hours would pull a 15-minute source early.
     """
     settings = get_settings()
     if not getattr(settings, "scheduler_enabled", True):
         return 0
     hours = float(getattr(settings, "sync_interval_hours", 0) or 0)
-    return int(hours * 3600) if hours > 0 else 0
+    heavy = int(hours * 3600) if hours > 0 else 0
+    if heavy <= 0:
+        return 0
+    light = int(float(getattr(settings, "due_sync_interval_minutes", 0) or 0) * 60)
+    return min(heavy, light) if light > 0 else heavy
 
 
 def _configured_override_seconds(org_id: str, connection_id: str) -> int | None:

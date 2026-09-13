@@ -127,6 +127,12 @@ class Settings(BaseSettings):
     scheduler_enabled: bool = True
     sync_interval_hours: float = 6.0             # how often the sweep TICKS (0 = off), and the
                                                  # fallback cadence for a source nobody has tuned
+    # LIGHT DUE-SOURCE TICK. The heavy tick above was the only moment the cadence table was ever
+    # consulted, so gmail's 15-minute cadence was really a 6-hour one. Every
+    # `due_sync_interval_minutes` the same scheduler thread runs a light pass instead: it polls
+    # only the connections whose turn has come and reasons only for an org that received new
+    # events. Lifecycle, retention, billing and L6 stay on the heavy tick. 0 = off (heavy only).
+    due_sync_interval_minutes: float = 15.0
     # Per-source poll cadences, overlaid on the shipped table (L1.2.6-U1). One global interval
     # polled a mailbox and a quarterly-edited Notion page at the same rate — wrong in both
     # directions at once — so cadence is a property of the SOURCE and is configuration rather
