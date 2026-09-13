@@ -51,6 +51,7 @@ def _event(object_type: str, *, source: str = "screen_session",
 
 SCREEN_TYPES = (
     ("screen_chat_thread", "screen_session", Authority.CHAT_ASIDE),
+    ("screen_chat_sent", "screen_session", Authority.EMAIL_PROSE),      # own outgoing = rank 2
     ("screen_email_thread", "email", Authority.EMAIL_PROSE),
     ("screen_doc", "screen_generic", Authority.CHAT_ASIDE),
 )

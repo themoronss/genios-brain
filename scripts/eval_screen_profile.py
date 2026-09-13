@@ -133,7 +133,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--model-b", required=True, help="the candidate")
     ap.add_argument("--limit", type=int, default=20)
     ap.add_argument("--object-type", default=None,
-                    choices=("screen_chat_thread", "screen_email_thread", "screen_doc"))
+                    choices=("screen_chat_thread", "screen_chat_sent", "screen_email_thread",
+                             "screen_doc"))
     ap.add_argument("--parity-bp", type=int, default=9000,
                     help="share of A's claims B must also make (basis points)")
     ap.add_argument("--json", action="store_true", help="print one JSON document instead")

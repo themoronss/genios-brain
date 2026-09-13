@@ -67,7 +67,7 @@ EMAIL_OBJECT_TYPES: frozenset[str] = frozenset({
 #: A dedicated chat app's thread read off the seat's screen (whatsapp, linkedin, slack — P2).
 #: NOT the `chat` profile: a screen delta carries new messages AND the context already on
 #: screen, and only the `screen_session` prompt knows to leave the context unextracted.
-SCREEN_CHAT_OBJECT_TYPES: frozenset[str] = frozenset({"screen_chat_thread"})
+SCREEN_CHAT_OBJECT_TYPES: frozenset[str] = frozenset({"screen_chat_thread", "screen_chat_sent"})
 
 #: Any other app read off the screen as blocks (P2 generic reader) -> `screen_generic`.
 SCREEN_DOC_OBJECT_TYPES: frozenset[str] = frozenset({"screen_doc"})

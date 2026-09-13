@@ -26,9 +26,13 @@ from genios_engine.platform.identity import norm_email, person_name_key
 
 SOURCE = "screen_session"
 CHAT_THREAD = "screen_chat_thread"
+#: The seat's OWN outgoing chat lines. A separate object type because authority is table-driven
+#: on (source, object_type): what the seat itself wrote ("I'll send it Friday") weighs as prose
+#: (rank 2, plan §7.6), what others wrote in the same chat stays a chat aside (rank 1).
+CHAT_SENT = "screen_chat_sent"
 EMAIL_THREAD = "screen_email_thread"
 DOC = "screen_doc"
-OBJECT_TYPES: tuple[str, ...] = (CHAT_THREAD, EMAIL_THREAD, DOC)
+OBJECT_TYPES: tuple[str, ...] = (CHAT_THREAD, CHAT_SENT, EMAIL_THREAD, DOC)
 
 CHAT_APPS = frozenset({"whatsapp", "linkedin", "slack"})
 EMAIL_APPS = frozenset({"gmail", "outlook"})
@@ -339,7 +343,10 @@ def render_session(session: Mapping, *, seat_email: str, watermark: int,
                     "table": sum(1 for b in part_items
                                  if str(b.get("role")).lower() == "table")}
             rendered.append(Rendered(
-                raw=RawObject(source=SOURCE, object_type=otype, source_object_id=oid,
+                raw=RawObject(source=SOURCE,
+                              object_type=CHAT_SENT if (direction == OUT and otype == CHAT_THREAD)
+                              else otype,
+                              source_object_id=oid,
                               occurred_at=occurred, actor_email=actor_email,
                               actor_name=actor_name, actor_type=actor_type,
                               parent_object_id=thread_key or None,
@@ -349,7 +356,7 @@ def render_session(session: Mapping, *, seat_email: str, watermark: int,
     return rendered
 
 
-__all__ = ["CHAT_THREAD", "CONTEXT_HEADER", "DOC", "EMAIL_THREAD", "MAX_CHARS", "People",
+__all__ = ["CHAT_SENT", "CHAT_THREAD", "CONTEXT_HEADER", "DOC", "EMAIL_THREAD", "MAX_CHARS", "People",
            "MAX_CHARS_GENERIC", "MAX_MESSAGES_PER_PART", "OBJECT_TYPES", "Rendered", "SOURCE",
            "block_lines", "is_outgoing", "linkedin_handle", "norm_linkedin_url",
            "object_type_for", "render_session"]

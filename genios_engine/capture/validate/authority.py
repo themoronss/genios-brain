@@ -162,6 +162,11 @@ SOURCE_OBJECT_AUTHORITY: Mapping[tuple[str, str], Authority] = MappingProxyType(
     # reading of a screen, not the system of record, and ALG-12 must never let it outrank the
     # typed field it was read from.
     ("screen_session", "screen_chat_thread"): Authority.CHAT_ASIDE,
+    # The seat's OWN outgoing chat lines (render splits them into their own object) are a
+    # statement of the seat's own intent — "I'll send it Friday" — and weigh like prose the seat
+    # wrote in mail (plan §7.6: own outgoing = rank 2). Found by the P2 E2E: at CHAT_ASIDE the
+    # seat's own dated commitment scored 2,323 bp against the 2,500 floor and never qualified.
+    ("screen_session", "screen_chat_sent"): Authority.EMAIL_PROSE,
     ("screen_session", "screen_email_thread"): Authority.EMAIL_PROSE,
     ("screen_session", "screen_doc"): Authority.CHAT_ASIDE,
 })

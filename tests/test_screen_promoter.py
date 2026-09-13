@@ -52,7 +52,8 @@ def test_screen_session_is_registered_mutable_and_never_offered():
     d = descriptor_of("screen_session")
     assert d is not None and d.family == "communication" and not d.buildable
     assert d.capability is None and d.version_field == "message_watermark"
-    assert set(d.object_types) == {"screen_chat_thread", "screen_email_thread", "screen_doc"}
+    assert set(d.object_types) == {"screen_chat_thread", "screen_chat_sent",
+                                   "screen_email_thread", "screen_doc"}
     assert is_mutable("screen_session")
     assert offer_of("screen_session") is None
     assert "screen_session" not in {o.source for o in catalog()}

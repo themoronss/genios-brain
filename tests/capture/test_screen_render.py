@@ -31,7 +31,8 @@ def test_out_and_in_become_two_objects_with_their_own_actors():
                             seat_email=SEAT, watermark=9, received_at=RECEIVED)
     assert [o.direction for o in objs] == ["out", "in"]
     out, inc = objs[0].raw, objs[1].raw
-    assert out.source == "screen_session" and out.object_type == "screen_chat_thread"
+    assert out.source == "screen_session" and out.object_type == "screen_chat_sent"
+    assert inc.object_type == "screen_chat_thread"          # what OTHERS wrote stays a chat aside
     assert out.source_object_id == "li:conv:abc#9#out"
     assert inc.source_object_id == "li:conv:abc#9#in"
     assert out.content_version == "9" and out.raw["message_watermark"] == 9

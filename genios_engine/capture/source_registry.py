@@ -109,7 +109,8 @@ SOURCES: tuple[SourceDescriptor, ...] = (
     # catalog: it arrives through `/v1/sessions` and the screen promoter. A thread grows, so each
     # delta is a new version keyed by the device's message watermark.
     SourceDescriptor("screen_session", "communication",
-                     object_types=("screen_chat_thread", "screen_email_thread", "screen_doc"),
+                     object_types=("screen_chat_thread", "screen_chat_sent",
+                                   "screen_email_thread", "screen_doc"),
                      immutable=False, version_field="message_watermark"),
     # A meeting is rescheduled, cancelled and re-titled; `updated` is what makes the new
     # version land instead of being deduped away as "already seen".
