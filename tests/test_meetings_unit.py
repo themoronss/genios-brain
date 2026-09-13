@@ -107,17 +107,18 @@ def test_contract_field_and_post_pass_registration():
     assert postpass._present("genios_engine.reason.meetings.passes")
 
 
-def test_transcript_row_columns_or_document():
-    cols = MS.transcript_of({"transcript_id": "t1", "principals": ["A@x.test", "b@x.test"],
-                             "meeting": {"meeting_node_id": "m1", "title": "Sync"},
-                             "updated_at": NOW.replace(tzinfo=None)})
-    assert cols.meeting_node_id == "m1" and cols.title == "Sync"
-    assert cols.principals == ("a@x.test", "b@x.test") and cols.updated_at == NOW
-    doc = MS.transcript_of({"id": 7, "transcript": '{"transcript_id": "t2", "principals": '
-                                                   '["c@x.test"], "meeting": '
-                                                   '{"meeting_node_id": null}}'})
-    assert doc.transcript_id == "t2" and doc.principals == ("c@x.test",)
-    assert doc.meeting_node_id is None
+def test_transcript_row_reads_the_0155_columns():
+    row = MS.transcript_of({"transcript_id": "t1", "principals": ["A@x.test", "b@x.test"],
+                            "meeting_node_id": None, "title": None,
+                            "meeting": {"meeting_node_id": "m1", "title": "Sync"},
+                            "event_ids": ["ev2", "ev1", "ev2"],
+                            "updated_at": NOW.replace(tzinfo=None)})
+    assert row.meeting_node_id == "m1" and row.title == "Sync"
+    assert row.principals == ("a@x.test", "b@x.test") and row.updated_at == NOW
+    assert row.event_ids == ("ev2", "ev1")
+    unlinked = MS.transcript_of({"transcript_id": "t2", "principals": ["c@x.test"],
+                                 "meeting": {}, "event_ids": []})
+    assert unlinked.meeting_node_id is None and unlinked.event_ids == ()
     assert MS.transcript_of({"status": "extracted"}) is None
 
 
@@ -125,32 +126,41 @@ def _items() -> MS.Items:
     A, B = "a@x.test", "b@x.test"
     org, priv_b = (None, None), ("private", [B])
     return MS.Items(
-        nodes={"c1": ("commitment", [org]), "c2": ("commitment", [org]),
-               "c3": ("commitment", [priv_b]), "d1": ("decision", [org]),
-               "c4": ("commitment", [org])},
+        nodes={"c1": [org], "c2": [org], "c3": [priv_b], "c4": [org]},
         facts=[("c1", "commitment.text", "send the ISO pack", "org", None),
                ("c1", "commitment.due_at", "2026-09-20T00:00:00Z", "org", None),
                ("c2", "commitment.text", "confirm the audit date", "org", None),
                ("c3", "commitment.text", "SECRET scope", "private", [B]),
                ("c4", "commitment.text", "private words", "private", [B]),
-               ("c4", "commitment.text", "book the auditor", "org", None),
-               ("d1", "decision.text", "go with Vendor X", "org", None)],
+               ("c4", "commitment.text", "book the auditor", "org", None)],
         owners=[("c1", "pa", "Aarav Mehta", {A}, None, None),
                 ("c2", "pp", "Priya Shah", {"priya@acme.test"}, None, None),
-                ("c3", "pp", "Priya Shah", {"priya@acme.test"}, "private", [B])])
+                ("c3", "pp", "Priya Shah", {"priya@acme.test"}, "private", [B])],
+        # decision.status facts: (state, evidence quote, scope, principals)
+        decisions=[("made", "We will go with Vendor X", "private", [A, B]),
+                   ("pending", "SECRET pricing", "private", [B]),
+                   ("abandoned", "drop the pilot", "org", None),
+                   ("made", "We will go with Vendor X", "org", None)])
 
 
 def test_followup_body_per_seat_visibility():
     a = MS.compose_followup(_items(), viewer="a@x.test", title="ISO audit", meeting_node_id="m")
     assert a["headline"] == "Follow-ups from ISO audit — 1 for you"
     assert a["body"] == ("You: send the ISO pack (due 20 Sep) · Priya: confirm the audit date · "
-                         "No owner: book the auditor · Decided: go with Vendor X")
+                         "No owner: book the auditor · Decided: We will go with Vendor X")
     assert "SECRET" not in a["body"] and "private words" not in a["body"]
+    assert "drop the pilot" not in a["body"]
     assert "c3" not in a["subjects"] and a["subjects"][0] == "m"
     b = MS.compose_followup(_items(), viewer="b@x.test", title="ISO audit", meeting_node_id="m")
     assert "Aarav: send the ISO pack" in b["body"] and "SECRET scope" in b["body"]
     assert "private words" in b["body"] and b["headline"] == "Follow-ups from ISO audit"
-    only_private = MS.Items(nodes={"c3": ("commitment", [("private", ["b@x.test"])])},
-                            facts=[], owners=[])
+    assert b["body"].endswith("Decided: We will go with Vendor X · Open decision: SECRET pricing")
+    only_private = MS.Items(nodes={"c3": [("private", ["b@x.test"])]}, facts=[], owners=[],
+                            decisions=[("made", "SECRET", "private", ["b@x.test"])])
     assert MS.compose_followup(only_private, viewer="a@x.test", title=None,
                                meeting_node_id=None) is None
+    # an unlinked transcript with only a decision still gets a follow-up
+    only_decision = MS.Items(nodes={}, facts=[], owners=[],
+                             decisions=[("made", "ship Monday", "org", None)])
+    assert MS.compose_followup(only_decision, viewer="a@x.test", title=None,
+                               meeting_node_id=None)["body"] == "Decided: ship Monday"
