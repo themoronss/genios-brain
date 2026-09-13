@@ -1162,10 +1162,17 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                   "spans": [s.model_dump(mode="json") for s in claim.evidence]}):
                     fact_n += 1
                 continue
+            field = str(f.get("field") or "note")
             subj = _resolve_subject(f.get("subject"), name_to_node, content_subject)
+            if subj is None and field.startswith("deal."):
+                # A model names a deal's subject loosely — "Rohit's proposal with Acme Logistics"
+                # — where no node carries that name. The deal still has an owner: `_deal_for`'s
+                # own fallback, the ONE external account in this event (never a guess between
+                # two). Found by the P2 gate: the same LinkedIn decline was written on one run
+                # (subject "Acme Logistics") and silently dropped on the next.
+                subj = _deal_for(None)
             if subj is None:
                 continue
-            field = str(f.get("field") or "note")
             value = f.get("value")
             # A `deal.*` fact belongs to the deal, not to whoever happened to mention it.
             if field.startswith("deal."):
