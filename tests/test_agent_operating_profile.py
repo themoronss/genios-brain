@@ -39,3 +39,20 @@ def test_load_profile_handles_dict_str_and_none():
     assert _load_profile({"role": "SDR"}) == {"role": "SDR"}
     assert _load_profile('{"role": "SDR"}') == {"role": "SDR"}
     assert _load_profile("not json") is None
+
+
+def test_p6_plays_grant_the_plays_and_actions_result():
+    import pytest
+    from fastapi import HTTPException
+
+    from genios_engine.api.agent_mgmt_routes import _plays_from_scope
+    plays = ["email.reschedule", "task.reassign", "email.follow_up_draft"]
+    acts = _actions_for_handoff({"handoff_mode": "notify"}, plays)
+    assert set(plays) <= set(acts) and "actions.result" in acts
+    assert "actions.result" not in _actions_for_handoff(None, [])
+    assert _plays_from_scope({"allowed_actions": plays}) == sorted(plays)
+    assert _plays_from_scope({"segments": None}) is None
+    for bad in (["email.send_now"], "email.reschedule", [1]):
+        with pytest.raises(HTTPException) as e:
+            _plays_from_scope({"allowed_actions": bad})
+        assert e.value.status_code == 422

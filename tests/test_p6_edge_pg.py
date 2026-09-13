@@ -220,3 +220,37 @@ def test_5_propose_action_and_seat_session(client, ws, monkeypatch):
     got = call(client, ws["owner_token"], "get_context", {"entity": ws["node"]})["result"]
     assert got["structuredContent"]["found"] and SECRET not in json.dumps(got)
     assert call(client, ws["owner_token"], "list_cards")["result"]["isError"] is False
+
+
+def test_6_agent_with_plays_is_selectable_and_may_post_results(client, ws):
+    """The P6 gate's registration: scope.allowed_actions → agent_registry.allowed_actions (what
+    executive/plays.select_agent reads) and the key gets actions.result (+ mcp.read, seat-bound)."""
+    from genios_engine.platform.auth import verify_bearer
+    plays = ["email.reschedule", "task.reassign", "email.follow_up_draft"]
+    aid = f"gate_{ws['uid']}"
+    bad = client.post("/v1/agents", json={"agent_id": aid, "scope": {"allowed_actions": ["x.y"]}},
+                      headers=H(ws["owner_token"]))
+    assert bad.status_code == 422 and bad.json()["detail"]["error"] == "unknown_play"
+    r = client.post("/v1/agents", json={"agent_id": aid, "name": "Gate",
+                                        "scope": {"allowed_actions": plays},
+                                        "webhook_url": "https://93.184.215.14/genios/action",
+                                        "seat_id": ws["seats"]["alice"]}, headers=H(ws["owner_token"]))
+    assert r.status_code == 200, r.text
+    ctx = verify_bearer(r.json()["key"])
+    assert ctx.has_scope("actions.result") and ctx.has_scope("mcp.read")
+    select = ("select agent_id from agent_registry where org_id = :o and status = 'active' "
+              "and :p = any(allowed_actions) and coalesce(webhook_url, '') <> ''")  # plays.py:198
+    with _engine().connect() as c:
+        for p in plays:
+            assert aid in {x.agent_id for x in c.execute(text(select), {"o": ws["org"], "p": p})}
+    u = client.patch(f"/v1/agents/{aid}/scope", json={"scope": {"allowed_actions": ["task.reassign"]}},
+                     headers=H(ws["owner_token"]))
+    assert u.status_code == 200 and "email.reschedule" not in u.json()["allowed_actions"]
+    with _engine().connect() as c:
+        assert not list(c.execute(text(select), {"o": ws["org"], "p": "email.reschedule"}))
+        scopes = c.execute(text("select scopes from api_keys where org_id=:o and agent_id=:a "
+                                "and is_active"), {"o": ws["org"], "a": aid}).scalar()
+    assert "task.reassign" in scopes and "actions.result" in scopes and "mcp.read" in scopes
+    none = client.patch(f"/v1/agents/{aid}/scope", json={"scope": {"allowed_actions": []}},
+                        headers=H(ws["owner_token"]))
+    assert "actions.result" not in none.json()["allowed_actions"]
