@@ -26,6 +26,8 @@ _log = get_logger("genios.team.postpass")
 PASSES: tuple[tuple[str, str], ...] = (
     ("team", "genios_engine.reason.team.passes"),
     ("verify", "genios_engine.reason.verify.passes"),
+    # P5 group B: prep precompute (device seats, next 3 h) + P-16 post-meeting follow-ups.
+    ("meetings", "genios_engine.reason.meetings.passes"),
 )
 
 

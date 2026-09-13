@@ -133,9 +133,15 @@ def evaluate(body: EvaluateRequest, request: Request):
     s = body.surface
     # A moment is about what is on screen: nothing is evaluated while capture is off or paused,
     # nor on a surface the privacy gate blocks (banking, SSO, password managers …).
-    if not eff["capture_on"] or P.is_blocked(s.url_domain, s.bundle_id, eff):
+    if not eff["capture_on"]:
         return Response(status_code=_NO_CONTENT)
     engine = cstore.engine
+    # P5 P-15: the desktop's meeting timer. Prep reads the calendar graph, never the screen, so the
+    # surface privacy gate does not apply to it (capture off/paused still answers 204).
+    if body.features.meeting_node_id:
+        return _meeting_prep(body, p, engine, now, started)
+    if P.is_blocked(s.url_domain, s.bundle_id, eff):
+        return Response(status_code=_NO_CONTENT)
     # P4 §3.4 draft review: only when the org allows it AND the seat turned it on. Otherwise the
     # draft is ignored (never stored either way) and the request is an ordinary evaluate.
     if body.draft_text and body.draft_text.strip() and eff.get("draft_assist"):
@@ -178,6 +184,33 @@ def evaluate(body: EvaluateRequest, request: Request):
     _log.info("moment evaluated org=%s seat=%s cap=%s display=%s reason=%s ms=%.0f", p.org_id,
               p.seat_id, R.CAPABILITY_ID, out["display"], out["reason"],
               (time.perf_counter() - started) * 1000)
+    return out
+
+
+def _meeting_prep(body: EvaluateRequest, p: Principal, engine, now: datetime, started: float):
+    """P-15 (P5 §3): `moment.meeting_prep` for a meeting the seat attends — the precomputed prep
+    (re-timed) or one built now; 204 unless the seat attends a live meeting with something to say.
+    Deterministic, no LLM, never credit-charged."""
+    from genios_engine.reason.meetings import prep as MP
+    moment_id = M.server_moment_id(p.seat_id, body.moment_request_id)
+    with engine.connect() as c:
+        prior = _stored(c, moment_id=moment_id, org_id=p.org_id, seat_id=p.seat_id)
+        if prior is not None:
+            return prior
+        res = MP.lookup(c, org_id=p.org_id, seat_id=p.seat_id, email=p.email,
+                        meeting_node_id=body.features.meeting_node_id or "", now=now)
+    if res is None:
+        return Response(status_code=_NO_CONTENT)
+    if res.duplicate:
+        return {**res.content, "display": False, "reason": G.DUPLICATE}
+    try:
+        out = M.persist(engine, org_id=p.org_id, seat_id=p.seat_id, device_id=p.device_id,
+                        origin="server", moment={"moment_id": moment_id, **res.content},
+                        subject_ids=res.subject_ids, now=now, key=res.key)
+    except M.MomentConflict:
+        return _err(409, "MOMENT_ID_CONFLICT", "That moment id belongs to another seat.")
+    _log.info("meeting prep org=%s seat=%s display=%s reason=%s ms=%.0f", p.org_id, p.seat_id,
+              out["display"], out["reason"], (time.perf_counter() - started) * 1000)
     return out
 
 

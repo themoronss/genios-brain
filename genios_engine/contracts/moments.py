@@ -45,6 +45,8 @@ class Features(BaseModel):
     intents: list[str] = Field(default_factory=list, max_length=20)
     dates: list[DatePhrase] = Field(default_factory=list, max_length=20)
     entities: list[str] = Field(default_factory=list, max_length=50)
+    #: P5 §3 (P-15): the meeting the desktop's timer fired for → `moment.meeting_prep`.
+    meeting_node_id: str | None = Field(default=None, max_length=200)
 
 
 class EvaluateRequest(BaseModel):
