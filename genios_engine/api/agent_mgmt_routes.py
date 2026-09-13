@@ -20,6 +20,7 @@ from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, hash_key, invali
                                          require_owner)
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.crypto import decrypt, encrypt
+from genios_engine.platform.egress import EgressRefused, check_url
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.wiring import make_graph_store
 
@@ -29,6 +30,9 @@ _graph = make_graph_store()
 _DEFAULT_SCOPE = {"connectors": None, "segments": None, "fact_types": None,
                   "exclude_tags": [], "max_age_days": 365, "min_confidence": 0.0}
 _DEFAULT_ACTIONS = ["read_context"]      # a dashboard-minted agent reads the brain; L5 claim is opt-in
+#: P6 §3.6 — the MCP read grant. Given when the agent is bound to a seat (it reads AS that seat);
+#: kept on unbind (the key then answers SEAT_REQUIRED) and across operating-profile edits.
+MCP_SCOPE = "mcp.read"
 
 
 def _scope(v) -> dict:
@@ -54,6 +58,8 @@ def _summary(c, r, org_id: str) -> dict:
         "scope_version": int(r.scope_version or 1), "calls_24h": calls, "blocked_24h": blocked,
         "created_at": r.created_at.isoformat() if r.created_at else None,
         "is_default": bool(r.is_default), "connectors": [],
+        # P6: the seat this agent reads AS over MCP (None = unbound → SEAT_REQUIRED).
+        "seat_id": getattr(r, "seat_id", None),
         # Proactive push: the URL is shown; the signing secret is write-only (returned once on set).
         "webhook_url": getattr(r, "webhook_url", None),
         "webhook_configured": bool(getattr(r, "webhook_secret", None)),
@@ -70,7 +76,7 @@ def list_agents(ctx: AuthCtx = Depends(require_owner)) -> dict:
     with _graph.engine.connect() as c:
         rows = c.execute(text(
             "select agent_id, name, description, status, scope, scope_version, is_default, "
-            "webhook_url, webhook_secret, created_at from agent_registry "
+            "webhook_url, webhook_secret, seat_id, created_at from agent_registry "
             "where org_id=:o and coalesce(status,'active')<>'archived' "
             "order by created_at desc nulls last"), {"o": org_id}).fetchall()
         agents = [_summary(c, r, org_id) for r in rows]
@@ -124,6 +130,7 @@ class CreateAgent(BaseModel):
     operating_profile: dict | None = None            # framework/role/handoff_mode/response_style/…
     operating_profile_version: int = 0
     operating_profile_updated_at: str | None = None
+    seat_id: str | None = None          # optional: bind to a seat at create time (grants mcp.read)
 
 
 # The L5 action grants an agent needs, derived from its handoff mode — so a claim-capable agent can
@@ -174,13 +181,28 @@ def _mint_webhook_secret() -> str:
 
 
 def _clean_webhook_url(url: str | None) -> str | None:
+    """The egress guard at registration (P6 §3.7): https only (http://localhost only in dev), and
+    the host must resolve to public addresses — never private, loopback, link-local, CGNAT or the
+    metadata service. The same check runs again before every send."""
     url = (url or "").strip()
     if not url:
         return None
-    if not (url.startswith("https://") or url.startswith("http://")):
-        raise HTTPException(422, {"error": "invalid_webhook_url",
-                                  "message": "webhook_url must start with https:// (http:// allowed for localhost)"})
+    try:
+        check_url(url)
+    except EgressRefused as e:
+        raise HTTPException(422, {"error": "invalid_webhook_url", "code": e.code,
+                                  "message": e.message})
     return url
+
+
+def _active_seat(c, org_id: str, seat_id: str) -> bool:
+    return c.execute(text("select 1 from org_seats where org_id=:o and seat_id=:s and active"),
+                     {"o": org_id, "s": seat_id}).first() is not None
+
+
+def _unknown_seat() -> HTTPException:
+    return HTTPException(422, {"error": "unknown_seat",
+                               "message": "seat_id is not an active seat of this workspace."})
 
 
 @router.post("/v1/agents")
@@ -195,25 +217,30 @@ def create_agent(body: CreateAgent, ctx: AuthCtx = Depends(require_owner)) -> di
     webhook_secret = _mint_webhook_secret() if webhook_url else None
     profile = body.operating_profile
     actions = _actions_for_handoff(profile)          # claim-capable when handoff is draft/execute
+    seat_id = (body.seat_id or "").strip() or None
+    if seat_id:
+        actions = [*actions, MCP_SCOPE]
     key_enc = _encrypt_key(raw)                       # re-viewable copy (owner can reveal later)
     now = datetime.now(timezone.utc)
     with _graph.engine.begin() as c:
+        if seat_id and not _active_seat(c, org_id, seat_id):
+            raise _unknown_seat()
         # race-safe: rely on the unique(org_id, agent_id) index (migration 0017) — ON CONFLICT DO
         # NOTHING + RETURNING means a concurrent create can't slip past a TOCTOU SELECT check.
         row = c.execute(text(
             "insert into agent_registry (id, org_id, agent_id, key_hash, key_enc, allowed_actions, name, "
             "description, status, scope, scope_version, key_prefix, webhook_url, webhook_secret, "
             "operating_profile, operating_profile_version, operating_profile_updated_at, "
-            "created_at, scope_updated_at) "
+            "created_at, scope_updated_at, seat_id) "
             "values (:id,:o,:a,:kh,:ke,:acts,:nm,:desc,'active',cast(:sc as jsonb),1,:kp,:wu,:ws,"
-            "cast(:op as jsonb),:opv,:opu,:ts,:ts) "
+            "cast(:op as jsonb),:opv,:opu,:ts,:ts,:seat) "
             "on conflict (org_id, agent_id) do nothing returning agent_id"),
             {"id": new_id("agt"), "o": org_id, "a": aid, "kh": key_hash, "ke": key_enc, "acts": actions,
              "nm": body.name, "desc": body.description, "sc": json.dumps(scope), "kp": prefix,
              "wu": webhook_url, "ws": webhook_secret,
              "op": json.dumps(profile) if profile else None,
              "opv": body.operating_profile_version or (1 if profile else 0),
-             "opu": now if profile else None, "ts": now}).first()
+             "opu": now if profile else None, "ts": now, "seat": seat_id}).first()
         if row is None:
             raise HTTPException(409, {"error": "agent_exists", "message": f"agent '{aid}' already exists"})
         # ALSO register the key in api_keys so it authenticates get_current_org (/v1/*) — a key only
@@ -227,7 +254,7 @@ def create_agent(body: CreateAgent, ctx: AuthCtx = Depends(require_owner)) -> di
     record(org_id, "permission_changed", actor_type="user", target_type="agent", target_id=aid,
            metadata={"event": "agent_created", "webhook": bool(webhook_url)})
     out = {"agent_id": aid, "key": raw, "key_prefix": prefix, "scope": scope,
-           "operating_profile": profile,
+           "operating_profile": profile, "seat_id": seat_id,
            "warning": "Copy this key now — it is shown only once and cannot be recovered."}
     if webhook_url:
         out["webhook_url"] = webhook_url
@@ -239,7 +266,7 @@ def _get_agent(c, org_id: str, aid: str):
     r = c.execute(text(
         "select agent_id, name, description, status, scope, scope_version, scope_updated_at, "
         "is_default, key_prefix, created_at, key_last_used_at, webhook_url, webhook_secret, "
-        "operating_profile, operating_profile_version, operating_profile_updated_at "
+        "operating_profile, operating_profile_version, operating_profile_updated_at, seat_id "
         "from agent_registry where org_id=:o and agent_id=:a"), {"o": org_id, "a": aid}).first()
     if r is None:
         raise HTTPException(404, {"error": "not_found", "message": "agent not found"})
@@ -292,6 +319,10 @@ def edit_operating_profile(aid: str, body: ProfileUpdate,
     actions = _actions_for_handoff(profile)
     with _graph.engine.begin() as c:
         _get_agent(c, org_id, aid)
+        current = c.execute(text("select allowed_actions from agent_registry "
+                                 "where org_id=:o and agent_id=:a"), {"o": org_id, "a": aid}).scalar()
+        if MCP_SCOPE in (current or []) and MCP_SCOPE not in actions:
+            actions = [*actions, MCP_SCOPE]          # the MCP grant is the seat binding's, not handoff's
         row = c.execute(text(
             "update agent_registry set operating_profile=cast(:op as jsonb), "
             "operating_profile_version=coalesce(operating_profile_version,0)+1, "
@@ -312,6 +343,47 @@ def edit_operating_profile(aid: str, body: ProfileUpdate,
                 row.operating_profile_updated_at.isoformat()
                 if row.operating_profile_updated_at else None),
             "allowed_actions": actions}
+
+
+class SeatBinding(BaseModel):
+    seat_id: str | None = None          # null/empty → unbind (the key then answers SEAT_REQUIRED)
+
+
+@router.patch("/v1/agents/{aid}/seat")
+def bind_seat(aid: str, body: SeatBinding, ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """Bind an agent key to a seat (P6 §3.6): over MCP the agent reads AS that seat — its private
+    facts, its moments, its cards — and nothing else. Binding grants `mcp.read` to the agent and
+    its active keys; unbinding keeps the grant, so the key answers SEAT_REQUIRED instead of
+    silently reading as nobody. Owner / tenant-admin only."""
+    org_id = ctx.org_id
+    seat_id = (body.seat_id or "").strip() or None
+    with _graph.engine.begin() as c:
+        _get_agent(c, org_id, aid)
+        if seat_id and not _active_seat(c, org_id, seat_id):
+            raise _unknown_seat()
+        actions = list(c.execute(text("select allowed_actions from agent_registry "
+                                      "where org_id=:o and agent_id=:a"),
+                                 {"o": org_id, "a": aid}).scalar() or [])
+        if seat_id and MCP_SCOPE not in actions:
+            actions.append(MCP_SCOPE)
+        c.execute(text("update agent_registry set seat_id=:s, allowed_actions=:acts "
+                       "where org_id=:o and agent_id=:a"),
+                  {"s": seat_id, "acts": actions, "o": org_id, "a": aid})
+        hashes = [r.key_hash for r in c.execute(text(
+            "select key_hash from api_keys where org_id=:o and agent_id=:a and is_active"),
+            {"o": org_id, "a": aid})]
+        if seat_id:
+            c.execute(text(
+                "update api_keys set scopes = array_append(coalesce(scopes, cast('{}' as text[])), "
+                "cast(:m as text)) where org_id=:o and agent_id=:a and is_active "
+                "and not (cast(:m as text) = any(coalesce(scopes, cast('{}' as text[]))))"),
+                {"m": MCP_SCOPE, "o": org_id, "a": aid})
+    for h in hashes:
+        invalidate_key_cache(h)                 # the new grant takes effect on the next request
+    from genios_engine.platform.audit import record
+    record(org_id, "permission_changed", actor_type="user", target_type="agent", target_id=aid,
+           metadata={"event": "seat_bound" if seat_id else "seat_unbound", "seat_id": seat_id})
+    return {"agent_id": aid, "seat_id": seat_id, "allowed_actions": actions}
 
 
 class WebhookUpdate(BaseModel):
