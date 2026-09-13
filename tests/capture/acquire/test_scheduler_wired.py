@@ -312,7 +312,10 @@ def test_jitter_never_makes_a_source_poll_less_often_than_its_cadence():
     rate: the turn lands past the tick, the tick says "not due", and the source is polled every
     other tick forever. The grace is the offset's own width, so the connection is pulled into
     the current tick and never into an earlier cadence."""
-    tick = 6 * 3600
+    # The tick EQUALS gdrive's shipped cadence — read from the policy, not retyped (P5 moved it
+    # from 6 h to 1 h, and a retyped 6 h left no connection late at the tick).
+    from genios_engine.capture.acquire.cadence import DEFAULT_CADENCE_POLICY
+    tick = DEFAULT_CADENCE_POLICY.interval_for("gdrive")
     late = [cid for cid in (f"con_{i}" for i in range(60))
             if plan_poll(ConnectionSchedule(ORG, cid, "gdrive",
                                             last_success_at=NOW - timedelta(seconds=tick)),

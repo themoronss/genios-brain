@@ -126,7 +126,10 @@ SOURCES: tuple[SourceDescriptor, ...] = (
                      object_types=("page",),
                      immutable=False, version_field="last_edited_time"),
     SourceDescriptor("gdrive", "knowledge", capability="document_store", buildable=True,
-                     aliases=("drive", "google_drive"), object_types=("file",),
+                     # P5: a Meet transcript Doc is emitted as `gmeet_transcript` and lands as
+                     # PRIVATE `meeting_transcript` parts (capture/transcripts), never as a file.
+                     aliases=("drive", "google_drive"),
+                     object_types=("file", "gmeet_transcript", "meeting_transcript"),
                      immutable=False, version_field="modifiedTime"),
     # Two tiles the dashboard has always rendered as clickable while both connect endpoints
     # refuse them — the exact lie L1.1-U2 is about. Described here so the catalog can say
@@ -141,7 +144,7 @@ SOURCES: tuple[SourceDescriptor, ...] = (
                      immutable=False, version_field="modifiedTime"),
     SourceDescriptor("confluence", "knowledge"),
     SourceDescriptor("upload", "knowledge", deliberate=True,
-                     object_types=("document_chunk",)),
+                     object_types=("document_chunk", "meeting_transcript")),
 
     # ── enterprise systems ───────────────────────────────────────────────────────
     # THE case this flag exists for. A deal's whole value is its stage, and stage changes —

@@ -124,6 +124,9 @@ class ComposioCalendarConnector:
         owner = next((p.get("email") for p in [ev.get("organizer") or {}, ev.get("creator") or {},
                                                 *(ev.get("attendees") or [])]
                       if isinstance(p, dict) and p.get("self") and p.get("email")), None)
+        attachments = [{"fileId": a.get("fileId"), "title": a.get("title"),
+                        "mimeType": a.get("mimeType"), "fileUrl": a.get("fileUrl")}
+                       for a in (ev.get("attachments") or []) if isinstance(a, dict)]
         return RawObject(
             source="gcal", object_type="calendar_event", source_object_id=str(eid),
             occurred_at=_parse_start(ev), actor_email=organizer, actor_type=actor_type,
@@ -154,6 +157,13 @@ class ComposioCalendarConnector:
                 "organizer": organizer,
                 "calendar_owner": owner,
                 "updated": ev.get("updated"),
+                # P5 · the files attached to the event (Meet attaches its transcript Doc) and the
+                # Meet conference id — how a Drive transcript finds its meeting. UNVERIFIED that
+                # Composio's EVENTS_LIST passes `attachments` / `conferenceData` through.
+                "conferenceId": (ev.get("conferenceData") or {}).get("conferenceId"),
+                "attachments": attachments,
+                "attachment_file_ids": ",".join(a["fileId"] for a in attachments
+                                                if a.get("fileId")) or None,
             },
         )
 

@@ -487,11 +487,21 @@ _CHAT_ROLE = (
 
 _TRANSCRIPT_ROLE = (
     "You extract structured facts from a MEETING TRANSCRIPT.\n"
+    "Every line is \"Speaker: text\". The ACTOR of a commitment, decision or claim is the speaker "
+    "label before the colon on the line that states it, written exactly as that label appears; "
+    "\"I\", \"me\" and \"we\" on a line mean THAT line's speaker. A line that commits someone "
+    "else by name (\"Priya will send it\") has that named person as actor. Whoever recorded or "
+    "uploaded the meeting is never an actor unless they are the speaker of the line. A line "
+    "labelled \"unknown\" has no known speaker: use \"unknown\" as its actor.\n"
     "Transcribed speech is disfluent, interrupted and misheard. Attribute every claim to the "
     "speaker who said it, not to the meeting. Thinking aloud is not a decision: extract a "
     "decision only where the speakers settle it, and where they do not, extract the state as "
-    "pending with what it is waiting on. Quote the words as transcribed, including the "
-    "disfluency — the quote must match the text, not the sentence you would have written."
+    "pending with what it is waiting on. A promise with no date is still a commitment. Quote the "
+    "words as transcribed, including the disfluency — the quote must match the text, not the "
+    "sentence you would have written.\n"
+    "Everything under the header \"context — do not extract\", and every line that begins with "
+    "\"> \", is the END OF THE PREVIOUS PART of this same meeting: use it to understand what the "
+    "new lines refer to, but NEVER extract a claim from it and never quote it."
 )
 
 _DOCUMENT_ROLE = (

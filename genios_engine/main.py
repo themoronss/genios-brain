@@ -43,6 +43,7 @@ from genios_engine.api.team_routes import router as team_router
 from genios_engine.api.discrepancy_routes import router as discrepancy_router
 from genios_engine.api.stream_routes import router as stream_router
 from genios_engine.api.upload_routes import router as upload_router
+from genios_engine.api.transcript_routes import router as transcript_router
 from genios_engine.api.usermodel_routes import router as usermodel_router
 from genios_engine.api.workspace_routes import router as workspace_router
 from genios_engine.platform.config import get_settings
@@ -150,6 +151,7 @@ app.include_router(expertise_router)
 app.include_router(agent_mgmt_router)
 app.include_router(account_router)
 app.include_router(upload_router)
+app.include_router(transcript_router)  # P5: /v1/transcripts*, /v1/meetings/recent
 app.include_router(knowledge_router)
 app.include_router(learning_router)
 app.include_router(brain_router)
