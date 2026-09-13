@@ -522,21 +522,30 @@ def _visible_quotes(quotes, seat_id, *, store, org_id: str) -> list[dict]:
     upload, a CRM row — is `ORG`, and every seat may see it. Only PARTICIPANTS narrows, and it
     narrows to the addresses actually on the exchange.
 
-    AN UNROUTED CARD KEEPS ITS QUOTES. `seat_id` is None when the card is going to the admin
-    QUEUE rather than to a named person, and that queue is read by whoever runs the account.
-    Dropping every participants-scoped quote there would silently gut the admin view; the honest
-    boundary for a queue is the tenant, which `org_id` already enforces. What this stops is the
-    narrower and worse case: a card ADDRESSED to a named seat who was not a participant.
+    PRIVATE NARROWS EXACTLY LIKE PARTICIPANTS. A `private` source — a seat's screen session, a
+    personal upload — names one owner in its principals. It used to fall through the
+    `!= "participants"` test and reach ANY seat, so seat 2 could be quoted what seat 1's screen
+    showed, or a sentence from seat 1's personal file (SCREEN_INTEL_P2 §1.1).
+
+    AN UNROUTED CARD KEEPS ITS PARTICIPANTS QUOTES, AND LOSES ITS PRIVATE ONES. `seat_id` is None
+    when the card is going to the admin QUEUE rather than to a named person, and that queue is
+    read by whoever runs the account. Dropping every participants-scoped quote there would
+    silently gut the admin view; the honest boundary for a queue of work mail is the tenant, which
+    `org_id` already enforces. A private source is different in kind: it was never the org's to
+    read — the admin is not its owner — so with no named viewer there is nobody it may reach.
 
     FAILS OPEN ON A LOOKUP ERROR, deliberately and narrowly: if the seat's address cannot be
-    read, the quotes are kept. A card that silently loses its evidence looks identical to a
-    situation with none, and this function must not be able to blank a card because a directory
-    query timed out. The tenant boundary is not what is failing open here — `org_id` is enforced
-    in the query itself.
+    read, the org and participants quotes are kept. A card that silently loses its evidence looks
+    identical to a situation with none, and this function must not be able to blank a card because
+    a directory query timed out. The tenant boundary is not what is failing open here — `org_id`
+    is enforced in the query itself. PRIVATE QUOTES FAIL CLOSED on the same error: failing open
+    there is the exact leak this function exists to stop.
     """
     rows = list(quotes or ())
-    if not rows or not seat_id:
+    if not rows:
         return rows
+    if not seat_id:
+        return [q for q in rows if q.get("visibility_scope") != "private"]
     try:
         from sqlalchemy import text as _text
 
@@ -545,13 +554,13 @@ def _visible_quotes(quotes, seat_id, *, store, org_id: str) -> list[dict]:
                 "select email from org_seats where org_id = :o and seat_id = :s"),
                 {"o": org_id, "s": seat_id}).scalar()
     except Exception:      # noqa: BLE001 — see FAILS OPEN above
-        return rows
+        return [q for q in rows if q.get("visibility_scope") != "private"]
     viewer = str(email or "").strip().lower() or None
 
     kept: list[dict] = []
     for quote in rows:
         scope = quote.get("visibility_scope")
-        if scope != "participants":
+        if scope not in ("participants", "private"):
             kept.append(quote)                      # org, public, or pre-0067
             continue
         # NORMALISED AT THE COMPARISON, not only at the loader. `load_evidence_quotes` already
@@ -946,6 +955,9 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         "abstained_because": abstained,
         "urgency_band": urgency_band, "assignee": assignee, "resolved_rule": rule,
         "co_recipients": co_recipients,
+        # The quotes THIS recipient may see — what E1's renderer must be handed, never the
+        # loader's unfiltered list (deliver/pipeline.py). Internal, like `_facts` / `_slots`.
+        "_quotes": quotes,
         "score": int(signal["score"]),
         "score_block": {"S": int(signal["score"]), **{k: score_inputs.get(k) for k in
                         ("U", "I", "R", "C")}, "inputs": score_inputs},

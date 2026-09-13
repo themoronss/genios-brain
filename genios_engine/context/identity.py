@@ -34,13 +34,18 @@ from __future__ import annotations
 
 from sqlalchemy import text
 
-from genios_engine.platform.identity import (company_slug, domain_root, norm_email,
-                                             person_name_key)
+from genios_engine.platform.identity import (LINKEDIN_PREFIX, company_slug, domain_root,
+                                             norm_email, norm_linkedin_url, person_name_key)
 from genios_engine.platform.ids import new_id
 
 # Alias kinds, strongest first. The order matters for lookup: an email identifies one
 # human, a company name identifies a company only as well as the name is unique.
 ALIAS_EMAIL = "email"
+# A LinkedIn profile url identifies one human exactly as an email does (SCREEN_INTEL_P2 §3.2).
+# The key is the NORMALISED url (`norm_linkedin_url`), without the `li:` prefix the node's
+# canonical key carries — the alias type already names the namespace. `graph_aliases.alias_type`
+# has no CHECK (migrations/0036:18), so this needs no migration.
+ALIAS_LINKEDIN = "linkedin_url"
 ALIAS_DOMAIN = "domain"
 ALIAS_COMPANY_NAME = "company_name"
 ALIAS_PERSON_NAME = "person_name"
@@ -52,7 +57,7 @@ ALIAS_CANON = "canon"
 
 # Aliases that PROVE identity on their own. A collision on these is a real duplicate and
 # still only ever produces a proposal — but a high-signal one worth a human's attention.
-_STRONG = frozenset({ALIAS_EMAIL, ALIAS_DOMAIN})
+_STRONG = frozenset({ALIAS_EMAIL, ALIAS_DOMAIN, ALIAS_LINKEDIN})
 
 
 def alias_keys_for_node(*, node_type: str, canonical_key: str | None,
@@ -71,6 +76,12 @@ def alias_keys_for_node(*, node_type: str, canonical_key: str | None,
         return keys
 
     if node_type == "person":
+        if str(canonical_key).strip().lower().startswith(LINKEDIN_PREFIX):
+            # A person seen only on screen, keyed on their profile: `li:https://…/in/<slug>`.
+            profile = norm_linkedin_url(canonical_key)
+            if profile:
+                keys.append((ALIAS_LINKEDIN, profile, "anchor"))
+            return keys
         email = norm_email(canonical_key)
         if email:
             keys.append((ALIAS_EMAIL, email, "anchor"))

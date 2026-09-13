@@ -353,7 +353,11 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                 # not inventing them, but the grounding corpus was built from the SUBJECT's facts
                 # alone, so "Best, Rohit" was rejected as a hallucinated person on the founder's
                 # own outgoing mail — and the whole card shipped as an empty stub because of it.
-                identities=identities, quotes=quotes,
+                # THE RECIPIENT'S quotes, not the loader's. `build_draft` narrows them to what the
+                # assignee may see (`_visible_quotes`); handing the renderer the unfiltered list
+                # let the LLM write a private or other-thread sentence into the card body that the
+                # evidence block itself had just withheld.
+                identities=identities, quotes=draft.get("_quotes", quotes),
                 subject_ref=f"signal:{sig['signal_id']}")
             # THE HEADLINE MUST NOT OUTRANK THE CARD. E0 decides the level and withdraws the
             # authority to instruct; E1 writes the sentence and, until this line, had no reference

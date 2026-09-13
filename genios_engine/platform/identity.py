@@ -42,6 +42,57 @@ def norm_email(email: str | None) -> str | None:
     return f"{local}@{dom}" if local and dom else None
 
 
+#: The handle prefix a person known only by a LinkedIn profile carries as `actor_email` and as
+#: their node's canonical key (SCREEN_INTEL_P2_BUILD §3.2). An email can never start with it.
+LINKEDIN_PREFIX = "li:"
+
+_LINKEDIN_PROFILE = re.compile(
+    r"^(?:https?://)?(?:[a-z0-9-]+\.)*linkedin\.com/in/([^/?#\s]+)", re.IGNORECASE)
+
+
+def norm_linkedin_url(url: str | None) -> str | None:
+    """A LinkedIn PROFILE url → `https://www.linkedin.com/in/<slug>`, lower-cased. None otherwise.
+
+    One person, many spellings: `http://in.linkedin.com/in/Priya-S/`, `linkedin.com/in/priya-s`,
+    `https://www.linkedin.com/in/priya-s?trk=…#about` and `…/in/priya-s/details/experience` are
+    one profile. Scheme, subdomain (country / mobile), query, fragment, trailing slash and any
+    sub-page are dropped; the slug is kept as written (lower-cased). An already-prefixed handle
+    (`li:https://…`) is accepted, so normalising twice is a no-op.
+
+    Only `/in/` profiles: a `/company/` page or a post is not a person and returns None.
+    Derivation, never comparison — the result is matched by string equality like every key here.
+    """
+    raw = str(url or "").strip()
+    if raw.lower().startswith(LINKEDIN_PREFIX):
+        raw = raw[len(LINKEDIN_PREFIX):].strip()
+    match = _LINKEDIN_PROFILE.match(raw)
+    if not match:
+        return None
+    slug = match.group(1).strip().lower()
+    return f"https://www.linkedin.com/in/{slug}" if slug else None
+
+
+def linkedin_handle(url: str | None) -> str | None:
+    """`li:` + the normalised profile url — the identity a LinkedIn-only person is keyed on."""
+    norm = norm_linkedin_url(url)
+    return f"{LINKEDIN_PREFIX}{norm}" if norm else None
+
+
+def person_key(value: str | None) -> str | None:
+    """The canonical key for a person arriving as `actor_email`: an email, or an `li:` handle.
+
+    Emails go through `norm_email`; an `li:` handle through `linkedin_handle`, so two spellings of
+    one profile URL mint ONE node. Anything else is returned trimmed and lower-cased, which is what
+    the context pipeline did for every non-email key before this existed.
+    """
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    if raw.lower().startswith(LINKEDIN_PREFIX):
+        return linkedin_handle(raw) or raw.lower()
+    return norm_email(raw) or raw.lower()
+
+
 def company_slug(name: str | None) -> str | None:
     """Company NAME → a comparison key. 'Acme, Inc.' / 'ACME' / 'Acme  Inc' → 'acme'.
 

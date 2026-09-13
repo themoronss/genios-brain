@@ -64,6 +64,14 @@ def derive_visibility(*, source: str, actor_email: str | None,
     Anything else — a family the registry does not know — returns None. Unknown provenance gets
     parked, never published under a guessed audience.
     """
+    # SCREEN SESSIONS HAVE NO RULE, ON PURPOSE (SCREEN_INTEL_P2 §3.1, G-11). What a seat's screen
+    # showed is private to that seat, and only the promoter DOOR knows the seat: it stamps
+    # `Visibility(PRIVATE, [seat_email], "device:screen_session:seat")` on every object it
+    # renders. A screen event that reaches the gate WITHOUT that stamp came through some other
+    # path, and must park as `visibility_unknown` — never inherit the `communication` family's
+    # participants rule, which would widen it to everyone on the thread the screen displayed.
+    if (source or "").strip().lower() == "screen_session":
+        return None
     family = family_of(source)
     if internal_kind:
         return Visibility(scope=ORG, derived_from=f"internal_kind:{internal_kind}")

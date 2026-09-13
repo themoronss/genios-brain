@@ -200,6 +200,8 @@ def _company_domain(email: str | None) -> str | None:
 # the structured lane (calendar attendees, CRM contacts) and this pipeline must mint
 # byte-identical person keys or the same human splits into strangers per tool.
 from genios_engine.platform.identity import norm_email as _norm_email  # noqa: E402
+# A screen-only counterparty arrives as `li:<profile url>`; two spellings of one url are one person.
+from genios_engine.platform.identity import person_key as _person_key  # noqa: E402
 
 
 # F2 — obs-kind normalizer. The LLM emits free-form observation kinds; sales rules read exact
@@ -696,7 +698,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         internal_nodes: set[str] = set()
 
         def _person(email: str) -> str:
-            key = _norm_email(email) or email.strip().lower()
+            key = _person_key(email) or email.strip().lower()
             # A machine sender (noreply@/notify./mailer-daemon) is NOT a person — file it as a
             # `service` node so its content still attaches, but it never enters the person graph.
             # Our own product mail is a `service`, never a person: it can still carry content
