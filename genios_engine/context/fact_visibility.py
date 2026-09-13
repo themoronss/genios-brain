@@ -3,17 +3,19 @@
 A fact inherits the audience of its evidence only where that evidence is PRIVATE (a seat's screen
 session, a personal upload — `source_events.visibility_scope='private'`). Work facts cross seats
 anyway: a deal's status or a commitment's due date is the org's business however it was learned.
-Everything else learned privately — stance, relationship, sentiment, roles, thread state — is
-written `graph_facts.visibility_scope='private'` with the source's principals (the seat email),
-and the readers below filter on it:
+Everything else learned privately — stance, relationship, sentiment, roles, thread state — is a
+SEAT OVERLAY: its own active `graph_facts` version, `visibility_scope='private'` + the source's
+principals, beside (never superseding) the org version (`GraphStore.write_fact`).
 
-    card facts        deliver/card_builder.filter_card_facts   — every recipient must be a principal
-    query retrieval   reason/intelligence._retrieve            — the asking seat
-    entity 360        context/read_models                      — stored model org-only; viewer merge
-    situation slice   reason/domain_shadow                     — situation private to the principals
-    decision prompt   reason/llm_decision_maker.business_context — the same situation rule
+Only the OWNER's own surfaces read an overlay:
+    query retrieval   reason/intelligence._retrieve   — the asking seat's overlay wins its field
+    entity 360        context/read_models             — stored model org-only; viewer merge
+Every org-level reader excludes it: rules / signals (reason/runner loaders, which also feed the
+situation slice), cards (deliver/card_builder.load_node) and the decision prompt
+(reason/llm_decision_maker.business_context).
 
-A later non-private source for the same fact WIDENS it to org (`GraphStore.write_fact`).
+A later org source supersedes the org version normally and retires the overlays; one saying the
+same as an overlay widens it to org.
 PostgreSQL only: the SQLite test schemas carry neither visibility column, and nothing private is
 ever written there.
 """

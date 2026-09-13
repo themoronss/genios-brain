@@ -140,7 +140,8 @@ def _retrieve(store, org_id: str, question: str, evaluation_time: datetime | Non
                     "and (visibility_scope is distinct from 'private' "
                     "     or cast(:viewer as text) = any(coalesce(visibility_principals, "
                     "                                             cast('{}' as text[])))) "
-                    "order by occurred_at desc nulls last "
+                    # The asking seat's own overlay first, so it wins its field over the org value.
+                    "order by (visibility_scope = 'private') desc, occurred_at desc nulls last "
                     ", field asc, fact_version_id asc limit 12"),
                     {"o": org_id, "n": nid,
                      "viewer": (str(viewer_email or "").strip().lower() or None)}).fetchall()

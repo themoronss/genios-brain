@@ -247,9 +247,14 @@ def load_node(store, org_id: str, node_id: str) -> tuple[str, str, dict, dict]:
                             "where org_id=:o and node_id=:n and valid_to is null limit 1"),
                        {"o": org_id, "n": node_id}).first()
         facts: dict = {}
+        # A card is an ORG-LEVEL surface: it never carries a seat's private fact (§3.4) — those
+        # inform only their owner's query and entity 360. Work facts are org-scoped anyway.
+        org_only = (" and visibility_scope is distinct from 'private'"
+                    if c.dialect.name == "postgresql" else "")
         for r in c.execute(text(
                 "select field, value, confidence, authority_rank from graph_facts "
-                "where org_id=:o and subject_node_id=:n and valid_to is null and status='active'"),
+                "where org_id=:o and subject_node_id=:n and valid_to is null and status='active'"
+                + org_only),
                 {"o": org_id, "n": node_id}):
             v = r.value
             if isinstance(v, str):
@@ -506,45 +511,6 @@ def load_evidence_quotes(store, org_id: str, node_id: str, limit: int = 8,
                     "occurred_at": (r.occurred_at.isoformat() if hasattr(r.occurred_at, "isoformat")
                                     else str(r.occurred_at) if r.occurred_at else None)})
     return out
-
-
-def filter_card_facts(store, org_id: str, node_id: str, facts: dict, assignee: str | None,
-                      co_recipients=()) -> dict:
-    """The node's facts minus the PRIVATE ones some recipient of this card may not read (§3.4).
-
-    A private fact (learned only from a seat's screen or personal upload, outside the work
-    families) stays on the card only when EVERY seat the card reaches — owner and co-recipients —
-    is one of its principals; an unrouted card (no owner) carries none. One query for the node's
-    private fields; the org-seat read only when there are any. Fails CLOSED: if the audience
-    cannot be read, every non-work field is dropped rather than risk one.
-    """
-    from genios_engine.context.fact_visibility import drop_unreadable, is_work_fact
-    try:
-        with store.engine.connect() as c:
-            if c.dialect.name != "postgresql":
-                return facts
-            private = {r.field: frozenset(str(p).strip().lower()
-                                          for p in (r.visibility_principals or ()))
-                       for r in c.execute(text(
-                           "select field, visibility_principals from graph_facts "
-                           "where org_id=:o and subject_node_id=:n and visibility_scope='private' "
-                           "and valid_to is null and status='active'"),
-                           {"o": org_id, "n": node_id})}
-            if not private:
-                return facts
-            seats = [s for s in [assignee, *[(r or {}).get("seat_id") for r in co_recipients or ()]]
-                     if s]
-            found = {r.seat_id: r.email for r in c.execute(text(
-                "select seat_id, email from org_seats where org_id=:o and seat_id in :s")
-                .bindparams(bindparam("s", expanding=True)), {"o": org_id, "s": seats or [""]})}
-    except Exception:      # noqa: BLE001 — see FAILS CLOSED above
-        return {f: v for f, v in facts.items() if is_work_fact(f)}
-    if not assignee:
-        return drop_unreadable(facts, private, ())
-    audience = [str(found.get(s) or "").strip().lower() for s in seats]
-    if not all(audience):
-        return drop_unreadable(facts, private, ())
-    return drop_unreadable(facts, private, audience)
 
 
 def _visible_quotes(quotes, seat_id, *, store, org_id: str, co_seats=()) -> list[dict]:
@@ -834,8 +800,6 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     # upsert on `cards_one_per_signal` and every count in the product reads rows — so the people
     # it reaches ride BESIDE it in `card_recipients`, each told which slice made it theirs.
     co_recipients = list(co_recipients_for(store, org_id, facts, scoped_attrs, owner=assignee))
-    # Every reader of this card now known → drop the private facts one of them may not read.
-    facts = filter_card_facts(store, org_id, node_id, facts, assignee, co_recipients)
     # The rule's own declared clock, not a hand-written lookup. Each pack rule states the field
     # its urgency is timed from; the renderer used a 6-entry map and printed "severald" for the
     # other 19.

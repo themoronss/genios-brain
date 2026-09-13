@@ -69,6 +69,16 @@ def _rules_need_neighbors(rules) -> bool:
 # config, and every emitted signal is stamped with the config_snapshot_id it was scored under.
 
 
+def _org_visible_clause(conn, alias: str) -> str:
+    """ORG-LEVEL RULE AND SIGNAL EVALUATION NEVER READS A SEAT'S PRIVATE FACT (§3.4). A stance
+    learned from seat 1's screen may inform seat 1's own query and entity 360 — never a team rule,
+    a signal, a situation slice or a card. Work facts are org-scoped and unaffected. PostgreSQL
+    only: the SQLite test schemas carry no visibility column and hold no private fact."""
+    if getattr(getattr(conn, "dialect", None), "name", "") != "postgresql":
+        return ""
+    return f"and {alias}visibility_scope is distinct from 'private' "
+
+
 def _load_context(store, org_id, node_id, node_type, *,
                   facts_by_node=None, obs_by_node=None) -> NodeContext:
     # Bulk path: when the caller pre-loaded the whole org's facts/obs in a few org-wide queries
@@ -82,6 +92,7 @@ def _load_context(store, org_id, node_id, node_type, *,
                            obs=(obs_by_node or {}).get(node_id, []))
     with store.engine.connect() as c:
         facts = {}
+        org_only = _org_visible_clause(c, "f.")
         for r in c.execute(text(
                 "select f.field, f.value, f.confidence, f.authority_rank, f.occurred_at, "
                 "f.fact_version_id, "
@@ -96,7 +107,7 @@ def _load_context(store, org_id, node_id, node_type, *,
                 "   where fv.fact_id=f.fact_id) as src_count "
                 "from graph_facts f "
                 "where f.org_id=:o and f.subject_node_id=:n and f.valid_to is null "
-                "and f.status='active' "
+                "and f.status='active' " + org_only +
                 "order by f.field, f.authority_rank desc nulls last, "
                 "f.confidence desc nulls last, "
                 "f.occurred_at desc nulls last, f.fact_version_id desc"),
@@ -133,6 +144,7 @@ def _bulk_load_facts(store, org_id) -> dict:
     Replaces N per-node round-trips with one (the pooler is networked; round-trips dominate)."""
     out: dict = {}
     with store.engine.connect() as c:
+        org_only = _org_visible_clause(c, "f.")
         for r in c.execute(text(
                 "select f.subject_node_id, f.field, f.value, f.confidence, f.authority_rank, "
                 "f.occurred_at, f.fact_version_id, "
@@ -146,7 +158,7 @@ def _bulk_load_facts(store, org_id) -> dict:
                 "   join graph_facts fv on fv.fact_version_id=sr.fact_version_id and fv.org_id=f.org_id "
                 "   where fv.fact_id=f.fact_id) as src_count "
                 "from graph_facts f "
-                "where f.org_id=:o and f.valid_to is null and f.status='active' "
+                "where f.org_id=:o and f.valid_to is null and f.status='active' " + org_only +
                 "order by f.subject_node_id, f.field, f.authority_rank desc nulls last, "
                 "f.confidence desc nulls last, "
                 "f.occurred_at desc nulls last, f.fact_version_id desc"),
@@ -345,6 +357,7 @@ def _neighbor_index(store, org_id):
                                 "select subject_node_id nid, field, value, occurred_at, "
                                 "authority_rank, confidence from graph_facts "
                                 "where org_id=:o and valid_to is null and status='active' "
+                                + _org_visible_clause(c, "") +
                                 "order by subject_node_id, field, authority_rank desc nulls last, "
                                 "confidence desc nulls last, occurred_at desc nulls last, "
                                 "fact_version_id desc"),
