@@ -471,3 +471,25 @@ def test_every_app_is_read_by_default_and_each_reader_can_be_switched_off(client
     gen = client.post("/v1/sessions", headers=H(tok), json={"schema_version": 1, "sessions": [
         _generic(key="doc:erp:2")]}).json()
     assert gen["rejected"] == [{"session_key": "doc:erp:2", "reason": "generic_disabled"}]
+
+
+def test_context_blocks_round_trip_through_the_encrypted_payload(client):
+    from genios_engine.platform.crypto import decrypt
+    owner = _register(client)
+    org = owner["org_id"]
+    client.put("/v1/capture/policy", json={"enabled": True}, headers=H(owner["token"]))
+    client.put("/v1/capture/settings", json={"enabled": True}, headers=H(owner["token"]))
+    dev = _sign_in(client, owner)
+    ctx = [{"fp": f"sha256:ctx{i}", "role": "text", "text": f"unchanged {i}"} for i in range(10)]
+    res = client.post("/v1/sessions", headers=H(dev["access_token"]), json={
+        "schema_version": 1, "sessions": [
+            _generic(context_blocks=ctx),
+            _generic(key="doc:erp:too-many", context_blocks=ctx + ctx[:1])]}).json()
+    assert res["accepted"] == ["doc:erp:1"]
+    assert res["rejected"] == [{"session_key": "doc:erp:too-many", "reason": "invalid_session"}]
+    with _engine().connect() as c:
+        row = c.execute(text("select payload_enc, message_count from screen_session_deltas "
+                             "where org_id=:o"), {"o": org}).first()
+    assert row.message_count == 3
+    sealed = json.loads(decrypt(bytes(row.payload_enc), get_settings().crypto_key))
+    assert sealed["context_blocks"] == ctx

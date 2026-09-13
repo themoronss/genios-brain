@@ -974,6 +974,38 @@ def test_the_generic_session_shape_and_caps(client, world, session, ok):
                                     "reason": "invalid_session"}]
 
 
+@pytest.mark.parametrize("session,ok", [
+    (_generic(context_blocks=_blocks(10)), True),                       # ≤ 10 context blocks
+    (_generic(context_blocks=_blocks(11)), False),
+    (_generic(blocks=[], context_blocks=_blocks(3)), False),            # blocks[] still required
+    (_generic(blocks=_blocks(495), context_blocks=_blocks(5)), True),   # shares the 500 cap
+    (_generic(blocks=_blocks(496), context_blocks=_blocks(5)), False),
+    (_generic(context_blocks=[{"text": "no role"}]), False),            # same block validation
+    (_generic(context_blocks=[{"role": "table", "rows": [["x"]] * 201}]), False),
+    (_session(context_blocks=_blocks(1)), False),                       # generic sessions only
+])
+def test_context_blocks_are_validated_capped_and_generic_only(client, world, session, ok):
+    _on(world)
+    dev = _sign_in(client, world)
+    res = _upload(client, dev["access_token"], [session]).json()
+    if ok:
+        assert res["accepted"] == [session["session_key"]], res
+    else:
+        assert res["rejected"] == [{"session_key": session["session_key"],
+                                    "reason": "invalid_session"}]
+
+
+def test_context_blocks_are_sealed_with_the_session_but_not_counted(client, world):
+    _on(world)
+    dev = _sign_in(client, world)
+    ctx = [{"fp": "sha256:ctx", "role": "kv", "label": "Owner", "value": "Priya"}]
+    assert _upload(client, dev["access_token"], [_generic(context_blocks=ctx)]).json()["accepted"]
+    (row,) = world.deltas.values()
+    assert row["message_count"] == 4                  # new/changed blocks only
+    sealed = json.loads(decrypt(row["payload_enc"], get_settings().crypto_key))
+    assert sealed["context_blocks"] == ctx
+
+
 def test_the_generic_gate_on_its_own():
     org, seat = P.OrgPolicy(enabled=True), P.SeatSettings(enabled=True)
     for app in ("generic", "web", "GENERIC"):

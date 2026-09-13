@@ -72,6 +72,7 @@ GENERIC_APP = "generic"
 GENERIC_ALIASES = frozenset({"generic", "web"})
 MAX_BLOCKS = 500
 MAX_TABLE_ROWS = 200
+MAX_CONTEXT_BLOCKS = 10
 
 
 class ScreenBlock(BaseModel):
@@ -104,6 +105,10 @@ class ScreenSession(BaseModel):
     context_messages: list[dict] = Field(default_factory=list, max_length=2000)
     messages: list[dict] = Field(default_factory=list, max_length=2000)
     blocks: list[ScreenBlock] = Field(default_factory=list, max_length=MAX_BLOCKS)
+    #: Generic only (§3.7): up to 10 UNCHANGED blocks around the new ones, same shape, so the
+    #: server can read a changed block in place. Counted with `blocks` toward MAX_BLOCKS.
+    context_blocks: list[ScreenBlock] = Field(default_factory=list,
+                                              max_length=MAX_CONTEXT_BLOCKS)
     message_watermark: int = Field(ge=0)
     captured_at: datetime | None = None
     url: str | None = Field(default=None, max_length=4096)
@@ -119,7 +124,9 @@ class ScreenSession(BaseModel):
                 raise ValueError("a generic session must name its bundle_id")
             if not self.blocks or self.messages:
                 raise ValueError("a generic session carries blocks[] and no messages[]")
-        elif not self.messages or self.blocks:
+            if len(self.blocks) + len(self.context_blocks) > MAX_BLOCKS:
+                raise ValueError(f"blocks + context_blocks exceed {MAX_BLOCKS}")
+        elif not self.messages or self.blocks or self.context_blocks:
             raise ValueError("a dedicated-reader session carries messages[] and no blocks[]")
         return self
 

@@ -337,7 +337,12 @@ def _ingest(ctx: D.DeviceCtx, envelope: SessionUpload, cstore, key: str) -> dict
             outcome.append(("duplicate", s.session_key, None))
             continue
         seen.add(pair)
-        payload = json.dumps(s.model_dump(mode="json"), separators=(",", ":"))
+        doc = s.model_dump(mode="json")
+        # A block is sealed exactly as the device sent it: a kv block does not gain the null
+        # `header` / `rows` a table block declares.
+        for k in ("blocks", "context_blocks"):
+            doc[k] = [b.model_dump(mode="json", exclude_unset=True) for b in getattr(s, k)]
+        payload = json.dumps(doc, separators=(",", ":"))
         rows.append({"session_key": s.session_key, "message_watermark": s.message_watermark,
                      "seat_id": ctx.seat_id, "app": s.app.strip().lower(),
                      "thread_key": s.thread_key, "payload_enc": encrypt(payload, key),
