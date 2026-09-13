@@ -374,21 +374,23 @@ def test_feedback_action_is_a_closed_enum(monkeypatch):
     assert engine.connection.statements == []
 
 
-# ── the extension's analyze and draft are not billed ─────────────────────────────────────────
+# ── the extension's main endpoint is not free ────────────────────────────────────────────────
 #
-# Credits are charged only on `POST /v1/intelligence/query`. Analyze and draft still record their
-# spend in `llm_costs`, and analyze still runs behind the query guard; neither touches the ledger.
+# `analyze` recorded its spend in `llm_costs` and never touched the credit ledger. It is the
+# surface the Chrome extension calls on every contact, and `deep=true` routes it to Sonnet — the
+# most expensive call the product makes. Every one of them was pure loss.
 
-def _analyze_with_llm(monkeypatch, charges, *, ok=True, costs=None, guarded=None):
+def _charging_graph():
+    return SimpleNamespace(engine=_CacheMissEngine(), record_cost=lambda **_kwargs: None)
+
+
+def _analyze_with_llm(monkeypatch, charges, *, ok=True):
     from genios_engine.platform import billing
 
-    costs = [] if costs is None else costs
-    guarded = [] if guarded is None else guarded
-    monkeypatch.setattr(routes, "_graph", SimpleNamespace(
-        engine=_CacheMissEngine(), record_cost=lambda **kwargs: costs.append(kwargs)))
+    monkeypatch.setattr(routes, "_graph", _charging_graph())
     monkeypatch.setattr(routes, "_registry", None)
     monkeypatch.setattr(routes, "current_graph_version", lambda *_args: 9)
-    monkeypatch.setattr(routes, "_enforce_query_budget", guarded.append)
+    monkeypatch.setattr(routes, "_enforce_query_budget", lambda _org_id: None)
     monkeypatch.setattr(routes, "_resolve_contact_facts", lambda *_args: (None, {}))
     monkeypatch.setattr(routes, "_persist_decision_envelope", lambda **_kwargs: None)
     monkeypatch.setattr(routes, "run_query", lambda **_kwargs: (
@@ -398,55 +400,62 @@ def _analyze_with_llm(monkeypatch, charges, *, ok=True, costs=None, guarded=None
                         lambda _conn, org, cost, **kw: charges.append((org, cost, kw)) or True)
 
 
-def test_a_fresh_analyze_charges_nothing_and_still_records_its_spend(monkeypatch):
-    charges, costs = [], []
-    _analyze_with_llm(monkeypatch, charges, costs=costs)
+def test_a_fresh_analyze_charges_the_published_price(monkeypatch):
+    from genios_engine.platform import billing
+
+    charges = []
+    _analyze_with_llm(monkeypatch, charges)
 
     routes.analyze_contact("Ada", org_id="org_1")
 
-    assert charges == [], "analyze deducted credits; only the query endpoint may"
-    assert [c["purpose"] for c in costs] == ["intelligence_analyze"]
-    assert (costs[0]["input_tokens"], costs[0]["output_tokens"]) == (1200, 70)
+    assert len(charges) == 1, "analyze ran the model and charged nothing"
+    org, cost, kwargs = charges[0]
+    assert org == "org_1"
+    assert cost == billing.cost_of("intelligence_analyze")
+    assert kwargs["bucket"] == "analyze"
 
 
-def test_deep_analysis_charges_nothing(monkeypatch):
+def test_deep_analysis_costs_more_than_shallow_at_the_endpoint(monkeypatch):
+    from genios_engine.platform import billing
+
     charges = []
     _analyze_with_llm(monkeypatch, charges)
     monkeypatch.setattr(routes, "_deep_llm", lambda: None)   # falls back to the standard client
 
     routes.analyze_contact("Ada", deep=True, org_id="org_1")
 
-    assert charges == []
+    assert charges[0][1] == billing.cost_of("intelligence_analyze", deep=True)
+    assert charges[0][1] > billing.cost_of("intelligence_analyze")
 
 
-def test_analyze_still_runs_behind_the_query_guard(monkeypatch):
-    """Free is not unbounded: RPM, plan, daily and platform ceilings still apply before the
-    model runs."""
-    guarded = []
-    _analyze_with_llm(monkeypatch, [], guarded=guarded)
+def test_a_failed_generation_is_not_charged(monkeypatch):
+    charges = []
+    _analyze_with_llm(monkeypatch, charges, ok=False)
 
     routes.analyze_contact("Ada", org_id="org_1")
 
-    assert guarded == ["org_1"]
+    assert charges == [], "the customer paid for a call that produced nothing"
 
 
-def test_a_draft_charges_nothing_and_still_records_its_spend(monkeypatch):
-    from genios_engine.platform import billing
+def test_the_charge_is_keyed_on_the_cache_key_so_a_retry_is_free(monkeypatch):
+    """Same question, same graph, same config → same key → the ledger's unique idempotency
+    index absorbs the second charge. (A cache HIT never reaches the charge at all.)"""
+    charges = []
+    _analyze_with_llm(monkeypatch, charges)
 
-    charges, costs = [], []
-    monkeypatch.setattr(routes, "_graph", SimpleNamespace(
-        engine=_CacheMissEngine(), record_cost=lambda **kwargs: costs.append(kwargs)))
-    monkeypatch.setattr(routes, "_resolve_contact_facts", lambda *_args: (
-        SimpleNamespace(node_id="n1", display_name="Ada"), {"role": "buyer"}))
-    monkeypatch.setattr(routes, "_llm", SimpleNamespace(call=lambda *_a, **_k: SimpleNamespace(
-        ok=True, parsed={"draft": "Hi Ada, following up."}, model="claude-haiku-4-5",
-        input_tokens=300, output_tokens=60, error=None)))
-    monkeypatch.setattr(billing, "refusal_for", lambda *_args: None)
-    monkeypatch.setattr(billing, "deduct",
-                        lambda _conn, org, cost, **kw: charges.append((org, cost, kw)) or True)
+    routes.analyze_contact("Ada", org_id="org_1")
+    routes.analyze_contact("Ada", org_id="org_1")
 
-    out = routes.draft_reply("Ada", org_id="org_1")
+    assert charges[0][2]["idem"] == charges[1][2]["idem"]
+    assert charges[0][2]["idem"].startswith("a:")
 
-    assert out == {"draft": "Hi Ada, following up.", "contact": "Ada"}
-    assert charges == [], "draft deducted credits; only the query endpoint may"
-    assert [c["purpose"] for c in costs] == ["intelligence_draft"]
+
+def test_analyze_and_query_do_not_share_an_idempotency_key(monkeypatch):
+    """Both key off the same cache key. Without distinct prefixes, asking a question and then
+    analysing the same contact would silently make one of the two free."""
+    charges = []
+    _analyze_with_llm(monkeypatch, charges)
+
+    routes.analyze_contact("Ada", org_id="org_1")
+
+    assert not charges[0][2]["idem"].startswith("q:")
