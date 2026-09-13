@@ -55,6 +55,20 @@ def _work_bundle(bundle_id: str | None) -> bool:
     return bool(b) and any(b.startswith(w) for w in WORK_BUNDLES)
 
 
+#: Personal messengers. A chat here with nobody this org knows is most likely family or friends:
+#: it is parked (kept, recoverable) with no model call. A known contact (alias hit) still goes
+#: through the ordinary gate, so work chats on WhatsApp are unaffected.
+PERSONAL_CHAT_APPS = frozenset({"whatsapp"})
+
+
+def personal_chat_verdict(raw: dict) -> RelevanceVerdict | None:
+    """Park a personal-messenger chat with no known contact; None when it is not one."""
+    if (str(raw.get("app") or "").strip().lower() in PERSONAL_CHAT_APPS
+            and int(raw.get("alias_hits") or 0) == 0):
+        return RelevanceVerdict(False, 0.30, disposition="park", reason="personal_chat")
+    return None
+
+
 def rule_verdict(raw: dict) -> RelevanceVerdict | None:
     """The deterministic half, for a `screen_doc`: a keep verdict or None (undecided)."""
     if int(raw.get("alias_hits") or 0) > 0:
@@ -94,9 +108,13 @@ class ScreenDocRelevance:
                 return RelevanceVerdict(False, 0.40, disposition="park",
                                         reason="no_work_signal")
             return self._ask(ctx, prepared)
+        personal = personal_chat_verdict(raw)
+        if personal is not None:
+            return personal
         if self.fallback is None:
             return RelevanceVerdict(True, 0.60, disposition="keep", reason="screen_thread")
         return self._ask(ctx, prepared)
 
 
-__all__ = ["ScreenDocRelevance", "WORK_BUNDLES", "WORK_HOSTS", "rule_verdict"]
+__all__ = ["PERSONAL_CHAT_APPS", "ScreenDocRelevance", "WORK_BUNDLES", "WORK_HOSTS",
+           "personal_chat_verdict", "rule_verdict"]
