@@ -553,10 +553,11 @@ def delegate_reschedule(conn, *, org_id: str, att: Attendance, now: datetime) ->
     deterministic starting points the person edits before approving; nothing is sent here."""
     from zoneinfo import ZoneInfo
 
-    from genios_engine.executive import plays as PL
+    from genios_engine.contracts import plays as PL
+    from genios_engine.platform.agent_plays import select_agent
     if att.start_at is None:
         return None
-    agent = PL.select_agent(conn, org_id, PL.PLAY_RESCHEDULE)
+    agent = select_agent(conn, org_id, PL.PLAY_RESCHEDULE)
     if agent is None:
         return None
     key = conn.execute(text(
