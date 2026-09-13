@@ -12,7 +12,6 @@ import json
 import os
 import threading
 import uuid
-from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi import FastAPI
