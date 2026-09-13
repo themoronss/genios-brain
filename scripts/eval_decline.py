@@ -30,13 +30,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 #: counterparty's new line after the context section (plan §3.1 render shape).
 SUBJECT = "LinkedIn · Priya Sharma (Acme Logistics)"
 DECLINE = (
-    "context — do not extract\n"
-    "> You: Hi Priya, sharing the revised proposal for the Acme Logistics rollout. Happy to walk "
-    "through it this week.\n\n"
     "Priya Sharma: Hi Rohit, thank you for the proposal and the time your team put into the demo. "
     "After discussing it internally we have decided to go with another vendor for this rollout, "
     "so we won't be proceeding with GeniOS at this stage. Really appreciate your patience and "
-    "hope we can stay in touch.")
+    "hope we can stay in touch.\n\n"
+    "context — do not extract\n"
+    "You: Hi Priya, sharing the revised proposal for the Acme Logistics rollout. Happy to walk "
+    "through it this week.")
 
 
 def one_run(i: int, *, llm, now: datetime) -> dict:
@@ -44,7 +44,8 @@ def one_run(i: int, *, llm, now: datetime) -> dict:
     from genios_engine.capture.semantic.extractor import EventEnvelope, ExtractionRequest, extract
     from genios_engine.capture.semantic.profiles import get_profile
     from genios_engine.capture.semantic.router import RoutingInput, select_profile
-    from genios_engine.context.pipeline import _decision_decline, _normalise_deal_status
+    from genios_engine.context.pipeline import (_counterparty_decline, _decision_decline,
+                                                _normalise_deal_status)
     from genios_engine.context.qes_adapter import adapt_qes_extraction
     from genios_engine.context.runner import graded_extraction
 
@@ -73,8 +74,14 @@ def one_run(i: int, *, llm, now: datetime) -> dict:
     deal_facts = [{"field": f.get("field"), "value": f.get("value"),
                    "as_status": _normalise_deal_status(f.get("value"))[0]}
                   for f in facts if str(f.get("field") or "").startswith("deal.")]
-    return {"run": i, "fired": _decision_decline(facts) is not None, "parked": None,
-            "decisions": decisions, "deal_facts": deal_facts}
+    # The rule exactly as Layer 2 applies it: the decision.* fact, else the counterparty's own
+    # new lines + L1's intent/stance (context/pipeline.py).
+    by_decision = _decision_decline(facts) is not None
+    by_words = _counterparty_decline(prepared.clean_text, intent=qualified.intent,
+                                     stance=qualified.stance) is not None
+    return {"run": i, "fired": by_decision or by_words, "by_decision": by_decision,
+            "by_words": by_words, "intent": qualified.intent, "stance": qualified.stance,
+            "parked": None, "decisions": decisions, "deal_facts": deal_facts}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -105,6 +112,9 @@ def main(argv: list[str] | None = None) -> int:
         for r in runs:
             print(f"run {r['run']}: {'FIRED' if r['fired'] else 'missed'}"
                   + (f" (parked: {r['parked']})" if r["parked"] else "")
+                  + (f" · decision={r.get('by_decision')} words={r.get('by_words')}"
+                     f" intent={r.get('intent')} stance={r.get('stance')}"
+                     if not r["parked"] else "")
                   + f" · decisions={len(r['decisions'])} deal_facts={r['deal_facts']}")
         print(f"\n{model}: rule fired {fired}/{args.runs} — {'PASS' if ok else 'FAIL'} "
               f"(need {args.pass_runs})")

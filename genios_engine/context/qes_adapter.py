@@ -148,6 +148,8 @@ def adapt_qes_extraction(
         # Raw quoted-word claims; `process_event` validates them and resolves their dates.
         availability=[dict(value) for value in result.availability],
         objective={},
+        # L1's own reading of the message, carried as data (the decline rule reads it).
+        intent=result.intent, stance=result.stance,
         input_tokens=0,
         output_tokens=0,
         ok=True,

@@ -42,6 +42,11 @@ class Extraction:
     # Absence / reduced capacity someone STATED (leave, OOO, sick, travel, busy, partial). Raw
     # candidates — context/extract/availability.py validates them and resolves their dates.
     availability: list = field(default_factory=list)
+    #: The message's intent (doc 04's closed set: … reject …) and stance (positive | neutral |
+    #: cautious | negative | mixed), as Layer 1 read them. Optional: the legacy lane and cached
+    #: rows may not carry them. Read by the counterparty-decline rule (context/pipeline.py).
+    intent: str | None = None
+    stance: str | None = None
     input_tokens: int = 0
     output_tokens: int = 0
     ok: bool = True
@@ -106,5 +111,7 @@ def extract(llm: LLMClient, *, source: str, content: str,
         scheduling_proposals=_lst(p, "scheduling_proposals"),
         objective=p.get("objective") if isinstance(p.get("objective"), dict) else {},
         availability=_lst(p, "availability"),
+        intent=str(p["intent"]) if isinstance(p.get("intent"), str) else None,
+        stance=str(p["stance"]) if isinstance(p.get("stance"), str) else None,
         input_tokens=res.input_tokens, output_tokens=res.output_tokens,
         ok=True, raw=res.raw)

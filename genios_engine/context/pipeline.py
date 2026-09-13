@@ -608,6 +608,56 @@ def _decision_decline(facts) -> str | None:
     return None
 
 
+#: L1 intents / stance that say "this message turns something down".
+_REJECT_INTENTS = frozenset({"reject", "decline"})
+_NEGATIVE_STANCES = frozenset({"negative"})
+#: Words that say the counterparty is choosing US — they veto a lost reading of the same message
+#: ("we decided against the other vendor and will go with you").
+_AFFIRM_PHRASES = _DEAL_WON_PHRASES + (
+    "go with you", "going with you", "proceed with you", "proceeding with you",
+    "work with you", "working with you", "chosen you", "chose you", "selected you",
+    "pick you", "picked you")
+#: A negator just before a lost phrase ("we have NOT declined", "not going with another vendor").
+_NEGATED_BEFORE = re.compile(r"(?:\bnot|n't|\bnever|\bno|\bwithout)\b[\w\s,']{0,24}$")
+#: Quoted reply history in a message body.
+_REPLY_HISTORY = re.compile(r"^\s*On .{0,200}wrote:\s*$", re.M)
+
+
+def _own_new_lines(content: str | None) -> str:
+    """What THIS message's author newly wrote: the screen object's text before its
+    `context — do not extract` section (capture/screen/render puts context after the new lines),
+    without `>`-quoted lines or an email's quoted reply history."""
+    from genios_engine.capture.screen.render import CONTEXT_HEADER
+    text_ = str(content or "").split(CONTEXT_HEADER, 1)[0]
+    m = _REPLY_HISTORY.search(text_)
+    if m:
+        text_ = text_[:m.start()]
+    return "\n".join(ln for ln in text_.splitlines() if not ln.lstrip().startswith(">"))
+
+
+def _counterparty_decline(content: str | None, *, intent: str | None,
+                          stance: str | None) -> str | None:
+    """The sentence in which the author's own new lines state a lost outcome, when L1 read the
+    message as a rejection (intent reject/decline) or as negative — else None. A negated phrase
+    or any words choosing us veto it."""
+    if (str(intent or "").strip().lower() not in _REJECT_INTENTS
+            and str(stance or "").strip().lower() not in _NEGATIVE_STANCES):
+        return None
+    own = _own_new_lines(content)
+    low = own.lower()
+    if not low.strip() or any(p in low for p in _AFFIRM_PHRASES):
+        return None
+    for phrase in _DEAL_LOST_PHRASES:
+        start = low.find(phrase)
+        while start != -1:
+            if not _NEGATED_BEFORE.search(low[max(0, start - 40):start]):
+                s = max(own.rfind(".", 0, start), own.rfind("\n", 0, start)) + 1
+                e = [i for i in (own.find(".", start), own.find("\n", start)) if i != -1]
+                return own[s:(min(e) + 1 if e else len(own))].strip()[:300]
+            start = low.find(phrase, start + 1)
+    return None
+
+
 def _write_decline(conn, store, *, org_id: str, event_id: str, source: str, sender: str | None,
                    internal_set, is_inbound: bool, touched: dict, internal_nodes: set, rank: int,
                    occurred_at, relevance, quote: str) -> bool:
@@ -1303,7 +1353,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # line, never an internal sender), on an event with exactly one external account that has
         # exactly one open deal → `deal.status=lost` at this event's claim rank. A higher held rank
         # (a CRM) raises a discrepancy through `write_fact`, never an overwrite.
-        if (decline := _decision_decline(facts)) is not None and not is_noise:
+        # Two readings, either suffices: the decision.* fact (when the model filed one), else the
+        # counterparty's OWN new lines + L1's intent/stance (the eval showed the model's choice of
+        # FIELD is unreliable run to run; the words and the stance are not).
+        decline = _decision_decline(facts) or _counterparty_decline(
+            content, intent=getattr(ex, "intent", None), stance=getattr(ex, "stance", None))
+        if decline is not None and not is_noise:
             fact_n += int(_write_decline(
                 conn, store, org_id=org_id, event_id=event_id, source=source,
                 sender=sender_norm, internal_set=internal_set, is_inbound=is_inbound,

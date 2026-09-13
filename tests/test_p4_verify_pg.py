@@ -163,6 +163,32 @@ def test_counterparty_decline_marks_the_deal_lost_and_the_seats_own_words_do_not
     assert _discrepancies(org) == []
 
 
+def _words_only(store, team, eid, *, sender, recipients=(), inbound=True):
+    """No decision.* fact at all — only the author's words and L1's negative reading (the eval's
+    5/10 runs)."""
+    from genios_engine.context.pipeline import process_event
+    canned = {"relevance": 0.8, "noise_type": "none", "domains": [], "entity_mentions": [],
+              "roles": [], "commitments": [], "scheduling_proposals": [], "questions": [],
+              "observations": [], "fact_candidates": [], "intent": "inform", "stance": "negative"}
+    return process_event(org_id=team["org"], event_id=eid, source="gmail",
+                         content=BODY + f" [{eid}]", sender_email=sender,
+                         recipient_emails=list(recipients), occurred_at=NOW,
+                         llm=_FakeLLM(canned), store=store, is_inbound=inbound,
+                         internal_emails=team["internal"])
+
+
+def test_counterparty_words_decline_without_a_decision_fact(client, store):
+    team = _team(client)
+    org, seat_mail = team["org"], team["owner"]["email"].lower()
+    _comp, deal = _seed_deal(store, org, rank=2)
+    _words_only(store, team, f"evt_out_{uuid.uuid4().hex[:8]}", sender=seat_mail,
+                recipients=["priya@acme.io"], inbound=False)          # the seat's own line
+    assert _status(org, deal) == "open"
+    _words_only(store, team, f"evt_in_{uuid.uuid4().hex[:8]}", sender="priya@acme.io",
+                recipients=[seat_mail])
+    assert _status(org, deal) == "lost"
+
+
 # ── 2 ───────────────────────────────────────────────────────────────────────────────────────────
 def test_higher_rank_status_raises_a_discrepancy_for_the_owner_and_keep_blocks_it(client, store):
     from genios_engine.reason.verify import passes
