@@ -533,6 +533,11 @@ _SCREEN_SESSION_ROLE = (
     "these are: outbound means every line was written by the user (the seat), so \"I\" and "
     "\"we\" are the seat; inbound means the counterparty wrote them. Extract only what the new "
     "lines support; a reaction is a stance, not an approval, and a hedge stays a hedge.\n"
+    "When a line states where a deal or engagement with an organisation stands — they accept, "
+    "sign, go ahead, pause, cancel, decline, or choose another vendor — record it as the business "
+    "fact `deal.status` (open | won | lost) with the organisation as its subject, plus `deal.stage` "
+    "in their own words. Declining or choosing another vendor is `lost`; signing or confirming "
+    "is `won`. Only for a stated outcome, never for a guess.\n"
     + _SCREEN_CONTEXT_RULE
 )
 

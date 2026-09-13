@@ -208,7 +208,7 @@ def test_explanation_renderer_accepts_concise_grounded_non_prescriptive_prose():
 def test_query_identity_covers_user_supplied_facts(monkeypatch):
     signal = _signal(rule_id="cooling_deal", reason_code="cooling_deal", score=82,
                      play="restore_momentum")
-    monkeypatch.setattr(intelligence, "_retrieve", lambda *_args: ([signal], [], None))
+    monkeypatch.setattr(intelligence, "_retrieve", lambda *_args, **_kw: ([signal], [], None))
 
     first, _ = intelligence.run_query(
         org_id="org_1", module_id="sales", question="What now?",
@@ -225,7 +225,7 @@ def test_query_identity_covers_user_supplied_facts(monkeypatch):
 def test_query_rejects_renderer_protocol_expansion_and_uses_deterministic_fallback(monkeypatch):
     signal = _signal(rule_id="cooling_deal", reason_code="cooling_deal", score=82,
                      play="restore_momentum")
-    monkeypatch.setattr(intelligence, "_retrieve", lambda *_args: ([signal], [], None))
+    monkeypatch.setattr(intelligence, "_retrieve", lambda *_args, **_kw: ([signal], [], None))
     llm = SimpleNamespace(call=lambda *_args, **_kwargs: SimpleNamespace(
         ok=True,
         parsed={"explanation": "You should email the CFO now.", "action": "wire_money"},
@@ -241,7 +241,7 @@ def test_query_rejects_renderer_protocol_expansion_and_uses_deterministic_fallba
 
 
 def test_no_grounding_never_returns_an_actionable_recommendation(monkeypatch):
-    monkeypatch.setattr(intelligence, "_retrieve", lambda *_args: ([], [], None))
+    monkeypatch.setattr(intelligence, "_retrieve", lambda *_args, **_kw: ([], [], None))
 
     env, result = intelligence.run_query(
         org_id="org_1", module_id="sales", question="What now?", extra_facts={},
