@@ -489,6 +489,9 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     # See the block comment above `MAX_PASSES` for why the pass is the sweep.
     state_hash_before = _convergence_state_hash(store, org_id)
     out: Counter = Counter()
+    # The same outcomes, per SOURCE. Read off the pulled row (no extra statement) so a caller
+    # that treats sources differently — the ingestion charge excludes screen capture — can.
+    by_source: dict[str, Counter] = {}
     affected: set[str] = set()
     seen: set[str] = set()                            # attempted THIS call → no intra-call re-pull
     done = 0
@@ -511,6 +514,7 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         for row, (outcome, node, err) in zip(rows, results):
             seen.add(row.event_id)
             out[outcome] += 1
+            by_source.setdefault(str(getattr(row, "source", "") or ""), Counter())[outcome] += 1
             if node:
                 affected.add(node)
             if outcome in ("error", "extract_failed"):
@@ -1267,7 +1271,9 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         get_logger("genios.l2").exception("convergence bookkeeping failed for org=%s", org_id)
         convergence = {"checked": False}
 
-    return {"processed": done, "outcomes": dict(out), "read_models_built": len(affected),
+    return {"processed": done, "outcomes": dict(out),
+            "outcomes_by_source": {s: dict(c) for s, c in by_source.items()},
+            "read_models_built": len(affected),
             "attention_rows": attention_rows, "situation_rows": situation_rows,
             # L2.7.7's ledger: how many situations were examined, how many model calls that cost,
             # what closed, what reopened, and what is waiting for a human. Carried out of the
