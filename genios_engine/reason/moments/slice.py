@@ -237,6 +237,7 @@ def _build(c, *, org_id: str, seat_id: str, email: str | None, viewer: str | Non
     direct_edge_at: dict[str, datetime] = {}
     meetings: set[str] = set()
     my_commitments: set[str] = set()
+    my_since: dict[str, datetime] = {}
     attendees: dict[str, set[str]] = {}
     for r in rows:
         nodes[r.node_id] = (r.node_type, r.display_name)
@@ -255,6 +256,10 @@ def _build(c, *, org_id: str, seat_id: str, email: str | None, viewer: str | Non
                 meetings.add(r.node_id)
             elif r.node_type == "commitment" and r.edge_type == "owns":
                 my_commitments.add(r.node_id)
+                # When the seat's ownership was first recorded — the undated nudge's clock.
+                va = aware(r.valid_from)
+                if va is not None and (r.node_id not in my_since or va < my_since[r.node_id]):
+                    my_since[r.node_id] = va
         elif r.node_type == "person":
             people.add(r.node_id)
             if nodes.get(r.via, ("",))[0] == "meeting":
@@ -340,7 +345,9 @@ def _build(c, *, org_id: str, seat_id: str, email: str | None, viewer: str | Non
             owed = text_of(f.get("commitment.owed_to"))
             item = {"node_id": cid, "text": text_of(f.get("commitment.text")) or nodes[cid][1],
                     "due_at": iso(parse_ts(f.get("commitment.due_at"))), "owner": "seat",
-                    "beneficiary": name_to_person.get(person_name_key(owed)) if owed else None}
+                    "beneficiary": name_to_person.get(person_name_key(owed)) if owed else None,
+                    # The device nudges an UNDATED one 3 working days after this, once.
+                    "since": iso(my_since.get(cid))}
         else:
             item = {"node_id": cid, "text": text_of(f.get("commitment.text")) or nodes[cid][1],
                     "due_at": iso(parse_ts(f.get("commitment.due_at"))),

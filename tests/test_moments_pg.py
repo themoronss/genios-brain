@@ -242,7 +242,8 @@ def test_slice_is_seat_visible_versioned_and_announced(client):
     assert a["companies"][0]["deal_stage"] == "negotiation"
     assert a["commitments"] == [{"node_id": n["cmt"], "text": "send the revised proposal",
                                  "due_at": a["commitments"][0]["due_at"], "owner": "seat",
-                                 "beneficiary": n["priya"]}]
+                                 "beneficiary": n["priya"], "since": a["commitments"][0]["since"]}]
+    assert a["commitments"][0]["since"], "the seat's commitment carries when it was recorded"
     assert a["meetings"][0]["attendees"] == [n["priya"]] and len(a["busy"]) == 1
     ravi = next(p for p in a["people"] if p["node_id"] == n["ravi"])   # screen-only counterparty
     assert (NOW - datetime.fromisoformat(ravi["last_touch_at"].replace("Z", "+00:00"))).days == 2
