@@ -79,16 +79,41 @@ def test_a_rejection_is_terminal(conn):
 
 
 def test_a_result_lands_exactly_once(conn):
+    """P6 §3.4: first result recorded; the same final status again is a no-op repeat; a
+    different final status is a conflict — the first word stands."""
     d = _proposed(conn)
     approve(conn, org_id="o", delegation_id=d, actor="harsh", at=NOW)
     claim_dispatch(conn, org_id="o", delegation_id=d, at=NOW + timedelta(minutes=1))
-    assert record_result(conn, org_id="o", delegation_id=d, ok=False,
-                         detail={"error": "timeout"}, at=NOW + timedelta(minutes=5))
-    assert not record_result(conn, org_id="o", delegation_id=d, ok=True,
-                             detail={}, at=NOW + timedelta(minutes=6))
+    assert record_result(conn, org_id="o", delegation_id=d, agent_id="a1", ok=False,
+                         detail={"error": "timeout"}, at=NOW + timedelta(minutes=5)) == "recorded"
+    assert record_result(conn, org_id="o", delegation_id=d, agent_id="a1", ok=False,
+                         detail={}, at=NOW + timedelta(minutes=6)) == "repeat"
+    assert record_result(conn, org_id="o", delegation_id=d, agent_id="a1", ok=True,
+                         detail={}, at=NOW + timedelta(minutes=6)) == "conflict"
     state = conn.execute(text("select state from agent_delegations where delegation_id=:d"),
                          {"d": d}).scalar()
     assert state == "failed"
+
+
+def test_only_the_dispatched_agent_may_report(conn):
+    """Another agent — or no agent at all — learns nothing: not_found, and nothing written."""
+    d = _proposed(conn)
+    approve(conn, org_id="o", delegation_id=d, actor="harsh", at=NOW)
+    claim_dispatch(conn, org_id="o", delegation_id=d, at=NOW + timedelta(minutes=1))
+    for intruder in ("a2", None, ""):
+        assert record_result(conn, org_id="o", delegation_id=d, agent_id=intruder, ok=True,
+                             detail={}, at=NOW) == "not_found"
+    assert record_result(conn, org_id="o", delegation_id="dlg_nope", agent_id="a1", ok=True,
+                         detail={}, at=NOW) == "not_found"
+    state = conn.execute(text("select state from agent_delegations where delegation_id=:d"),
+                         {"d": d}).scalar()
+    assert state == "dispatched"
+
+
+def test_a_result_before_dispatch_is_refused(conn):
+    d = _proposed(conn)
+    assert record_result(conn, org_id="o", delegation_id=d, agent_id="a1", ok=True,
+                         detail={}, at=NOW) == "not_dispatched"
 
 
 def test_the_broadcast_shim_stays_fail_closed():

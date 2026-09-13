@@ -51,9 +51,76 @@ def _recipient(conn, ctx: TeamContext, link: CommitmentLink) -> str | None:
     return None
 
 
+#: Node key prefixes of tracker connectors whose task an agent can reassign (`source:object_id`,
+#: context/structured.py). An extracted commitment (`commitment:<sha>`) has no provider task.
+_TRACKERS = frozenset({"linear", "jira", "asana", "github", "clickup", "trello"})
+_MAIL = {"gmail": "gmail", "outlook": "outlook"}
+
+
+def _task_ref(conn, org_id: str, node_id: str) -> dict | None:
+    key = conn.execute(text(
+        "select canonical_key from graph_nodes where org_id = :o and node_id = :n "
+        "and valid_to is null"), {"o": org_id, "n": node_id}).scalar()
+    source, _, obj = str(key or "").partition(":")
+    return {"provider": source, "id": obj} if source in _TRACKERS and obj else None
+
+
+def _open_thread(conn, org_id: str, person_node_id: str | None) -> dict | None:
+    """The person's newest open request thread from an org-visible mail event."""
+    if not person_node_id:
+        return None
+    r = conn.execute(text(
+        "select ol.thread_id, se.source from open_loops ol join source_events se "
+        "on se.org_id = ol.org_id and se.event_id = ol.opened_by_event "
+        "where ol.org_id = :o and ol.subject_node_id = :n and ol.status = 'open' "
+        "and ol.thread_id is not null and se.visibility_scope is distinct from 'private' "
+        "order by ol.last_seen_at desc limit 1"), {"o": org_id, "n": person_node_id}).first()
+    provider = _MAIL.get(str(r.source or "").lower()) if r is not None else None
+    return {"provider": provider, "thread_id": r.thread_id} if provider else None
+
+
+def _delegate_actions(conn, ctx: TeamContext, link: CommitmentLink, cover, window,
+                      agents: dict[str, str]) -> list[dict]:
+    """P6 §3.5 on a deadline-at-risk situation: `task.reassign` to the proposed cover when the
+    commitment IS a tracker task, and `email.follow_up_draft` (never sent) to an external
+    beneficiary on their open mail thread — each only when an active agent runs that play."""
+    from genios_engine.executive import plays as PL
+    out: list[dict] = []
+    owner = link.owner
+    what = clip(link.text, 120)
+    if cover.proposed and owner is not None and owner.email and PL.PLAY_REASSIGN in agents:
+        ref = _task_ref(conn, ctx.org_id, link.node_id)
+        to_email = conn.execute(text(
+            "select email from org_seats where org_id = :o and seat_id = :s and active"),
+            {"o": ctx.org_id, "s": cover.seat_id}).scalar() if ref else None
+        action = PL.delegate_action(PL.PLAY_REASSIGN, {
+            "task_ref": ref, "from_seat_email": owner.email, "to_seat_email": to_email,
+            "note": f"{owner.label} is away {span(window)}; “{what}” is due {day(link.due)}."},
+            agents[PL.PLAY_REASSIGN]) if ref and to_email else None
+        if action:
+            out.append(action)
+    b = link.beneficiary
+    if (PL.PLAY_FOLLOW_UP in agents and b is not None and not b.seat_id and b.email
+            and owner is not None):
+        thread = _open_thread(conn, ctx.org_id, b.node_id)
+        first = (b.name or b.label).split()[0]
+        plan = (f"{cover.name} is picking it up and will have it to you by {day(link.due)}."
+                if cover.proposed else "We'll confirm the date with you shortly.")
+        action = PL.delegate_action(PL.PLAY_FOLLOW_UP, {
+            "thread_ref": thread, "to": [b.email], "subject": f"Re: {clip(link.text, 80)}",
+            "body_draft": (f"Hi {first}, a quick update on “{what}”: {owner.label} is out "
+                           f"{span(window)}. {plan}"),
+            "send": False}, agents[PL.PLAY_FOLLOW_UP]) if thread else None
+        if action:
+            out.append(action)
+    return out
+
+
 def deadline_situations(conn, ctx: TeamContext) -> list[Situation]:
+    from genios_engine.executive.plays import agents_by_play
     out: list[Situation] = []
     horizon = ctx.today + timedelta(days=DEADLINE_HORIZON_DAYS)
+    agents = agents_by_play(conn, ctx.org_id)       # one statement; {} → no delegate actions
     for link in ctx.links:
         if not link.open or link.due is None or link.owner is None:
             continue
@@ -85,6 +152,8 @@ def deadline_situations(conn, ctx: TeamContext) -> list[Situation]:
         actions = ([{"id": "assign_cover", "label": f"Ask {cover.name}",
                      "payload": {"seat_id": cover.seat_id, "commitment_node_id": link.node_id}}]
                    if cover.proposed else [])
+        if agents:
+            actions += _delegate_actions(conn, ctx, link, cover, window, agents)
         out.append(Situation(
             key=f"deadline_at_risk:{link.node_id}:{recipient}", seat_id=recipient,
             capability_id=CAPABILITY,

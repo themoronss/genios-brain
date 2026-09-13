@@ -68,3 +68,9 @@ INTELLIGENCE_API_SCOPES = {"intelligence.critique"}
 HUMAN_API_SCOPES = {
     "insights.read", "cards.read", "feedback.write", "cards.act", "actions.handoff",
 }
+
+# P6 Act grants (SCREEN_INTEL_P6_BUILD §3.4, §3.6) — a FOURTH family, for the client's own agent:
+# `actions.result` posts the outcome of a delegation it was dispatched, `actions.propose` creates a
+# `proposed` delegation (never an approval), `mcp.read` reads the seat-filtered MCP tools. Its own
+# family so no key already issued silently widens into the act path.
+ACT_API_SCOPES = {"actions.result", "actions.propose", "mcp.read"}

@@ -1184,24 +1184,43 @@ def insight_outcome(insight_id: str, body: OutcomeBody,
 
 
 class HandoffBody(BaseModel):
-    draft: str | None = None          # optional reviewed draft/action text to execute
-    instruction: str | None = None    # or a free-form "what to do"
+    play: str | None = None           # a typed play (executive/plays.py) …
+    params: dict | None = None        # … and its strict params
+    agent_id: str | None = None
+    supersedes: str | None = None
+    draft: str | None = None          # legacy free-form fields: accepted, never executed
+    instruction: str | None = None
 
 
-@router.post("/v1/insights/{insight_id}/handoff")
+@router.post("/v1/insights/{insight_id}/handoff", status_code=202)
 def handoff_insight(insight_id: str, body: HandoffBody | None = None,
-                    ctx: AuthCtx = Depends(require_scope("actions.handoff"))) -> dict:
-    """Fail-closed boundary for external execution.
+                    ctx: AuthCtx = Depends(require_scope("actions.handoff"))):
+    """A handoff is a PROPOSAL, never a send (SCREEN_INTEL_P6_BUILD §3.3): 202 with a `proposed`
+    delegation for this card. Nothing reaches an agent until the card's seat or an org admin
+    approves it (`POST /v1/delegations/{id}/approve`), and then exactly once through the outbox.
+    Free-form `draft`/`instruction` text is never executed — a typed play is required."""
+    from fastapi.responses import JSONResponse
 
-    The former implementation broadcast caller-authored instructions to every webhook and could
-    duplicate irreversible work on retry. Handoff stays disabled until a single-agent claim,
-    approval artifact and transactional outbox/idempotency protocol are implemented.
-    """
-    del insight_id, body, ctx
-    raise HTTPException(
-        501,
-        "executor handoff is disabled until the idempotent single-executor approval protocol is available",
-    )
+    from genios_engine.executive import delegation as DLG
+    from genios_engine.platform import realtime
+    if body is None or not body.play or body.params is None:
+        raise HTTPException(422, {"code": "PLAY_REQUIRED",
+                                  "message": "A handoff names a typed play and its params."})
+    with _graph.engine.begin() as c:
+        subject = DLG.load_subject(c, ctx.org_id, card_id=insight_id)
+        if subject is None:
+            raise HTTPException(404, "insight not found")
+        if not may_touch_card(c, ctx, insight_id, subject.seat_id):
+            raise HTTPException(403, "insight is assigned to a different seat")
+        try:
+            out = DLG.propose_action(c, org_id=ctx.org_id, subject=subject, play=body.play,
+                                     params=body.params, agent_id=body.agent_id,
+                                     supersedes=body.supersedes,
+                                     now=datetime.now(timezone.utc))
+        except DLG.DelegationError as e:
+            raise HTTPException(e.status, e.body()) from None
+    realtime.wake()
+    return JSONResponse(status_code=202, content=out)
 
 
 @router.get("/v1/morning-brief")

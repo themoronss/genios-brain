@@ -16,8 +16,9 @@ from genios_engine.capture.connectors.push_ingest import (PushIngestWiring,
 from genios_engine.capture.landing.repository import InMemorySourceEventRepository
 from genios_engine.capture.pipeline import capture_event
 from genios_engine.contracts.connection import Connection
-from genios_engine.contracts.events import (AGENT_ACTIONS, AGENT_API_SCOPES, HUMAN_API_SCOPES,
-                                            INTELLIGENCE_API_SCOPES, AgentEvent, HumanEvent)
+from genios_engine.contracts.events import (ACT_API_SCOPES, AGENT_ACTIONS, AGENT_API_SCOPES,
+                                            HUMAN_API_SCOPES, INTELLIGENCE_API_SCOPES, AgentEvent,
+                                            HumanEvent)
 from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org,
                                           require_internal, require_owner, require_scope)
 from genios_engine.platform.config import get_settings
@@ -3956,7 +3957,8 @@ def register_agent(body: RegisterAgent, ctx: AuthCtx = Depends(require_owner)) -
     # L4 Z6's evaluation family travels here too: a tenant that wants its agent to consult
     # the critique seam mints the key through this route, and a grant this set does not name
     # is refused rather than written as a scope nothing will ever read.
-    allowed = AGENT_ACTIONS | AGENT_API_SCOPES | HUMAN_API_SCOPES | INTELLIGENCE_API_SCOPES
+    allowed = (AGENT_ACTIONS | AGENT_API_SCOPES | HUMAN_API_SCOPES | INTELLIGENCE_API_SCOPES
+               | ACT_API_SCOPES)
     bad = [a for a in body.allowed_actions if a not in allowed]
     if bad:
         raise HTTPException(422, f"unknown actions/scopes: {bad}")
