@@ -361,32 +361,55 @@ class GraphStore:
         occurred_at than the held row, or any conflicting write under replay=True) lands as
         status='historical' — preserved with provenance, never the active value."""
         # WHO MAY READ THIS FACT (SCREEN_INTEL_P2 §3.4). Outside the work families a fact whose
-        # evidence is PRIVATE (a seat's screen, a personal upload) is written private to that
-        # source's principals; a later non-private source widens it to org. The event's audience
-        # rides on the held-fact read (one statement, no extra round trip). PostgreSQL only — the
-        # SQLite test schemas carry no visibility columns and never hold a private event.
+        # evidence is PRIVATE (a seat's screen, a personal upload) is a SEAT OVERLAY: its own
+        # active version, `visibility_scope='private'` + the source's principals, BESIDE the org
+        # version — never superseding it, so other seats keep the org value and the owner reads
+        # their own. Org-level readers (rules, signals, cards, slices) exclude overlays; only the
+        # owner's query and entity 360 read them. A later org source supersedes the org version
+        # normally and retires the overlays; one saying the same as an overlay widens it to org.
+        # The event's audience and every live version ride on ONE statement. PostgreSQL only —
+        # the SQLite test schemas carry no visibility columns and never hold a private event.
         from genios_engine.context.fact_visibility import is_work_fact
         dialect = getattr(getattr(conn, "dialect", None), "name", "")    # test doubles have none
         audience_check = dialect == "postgresql" and not is_work_fact(field)
-        new_private = held_private = False
+        new_private = False
         new_principals: list[str] = []
+        overlays: list = []
         if audience_check:
-            probe = conn.execute(text(
-                "select h.fact_version_id, h.value, h.authority_rank, h.occurred_at, "
-                "h.visibility_scope, se.visibility_scope as ev_scope, "
-                "se.visibility_principals as ev_principals "
-                "from (select 1) one left join lateral ("
-                "  select fact_version_id, value, authority_rank, occurred_at, visibility_scope "
-                "  from graph_facts where org_id=:o and subject_node_id=:s and field=:f "
-                "  and valid_to is null and status='active' limit 1) h on true "
-                "left join source_events se on se.org_id=:o and se.event_id=:e"
+            rows = conn.execute(text(
+                "select f.fact_version_id, f.value, f.authority_rank, f.occurred_at, "
+                "f.visibility_scope, f.visibility_principals, "
+                "se.visibility_scope as ev_scope, se.visibility_principals as ev_principals "
+                "from (select 1) one "
+                "left join source_events se on se.org_id=:o and se.event_id=:e "
+                "left join graph_facts f on f.org_id=:o and f.subject_node_id=:s "
+                "and f.field=:f and f.valid_to is null and f.status='active' "
+                "order by f.occurred_at desc nulls last, f.fact_version_id desc"
             ).columns(value=JSON), {"o": org_id, "s": subject_node_id, "f": field,
-                                    "e": event_id}).first()
-            held = probe if probe.fact_version_id is not None else None
-            held_private = held is not None and probe.visibility_scope == "private"
-            new_private = probe.ev_scope == "private"
-            new_principals = sorted({str(p).strip().lower() for p in (probe.ev_principals or ())
+                                    "e": event_id}).fetchall()
+            new_private = rows[0].ev_scope == "private"
+            new_principals = sorted({str(p).strip().lower() for p in (rows[0].ev_principals or ())
                                      if str(p or "").strip()})
+            live = [r for r in rows if r.fact_version_id is not None]
+            org_rows = [r for r in live if r.visibility_scope != "private"]
+            overlays = [r for r in live if r.visibility_scope == "private"]
+            same = json.dumps(value, default=str)
+            if new_private:
+                mine = set(new_principals)
+                own = next((r for r in overlays
+                            if mine & {str(p).strip().lower()
+                                       for p in (r.visibility_principals or ())}), None)
+                if own is not None:
+                    held = own                      # this seat's own overlay: the private lane
+                elif org_rows and json.dumps(org_rows[0].value, default=str) == same:
+                    held = org_rows[0]              # corroborates the org value; no overlay
+                else:
+                    held = None                     # a NEW overlay; the org version is untouched
+            else:
+                held = org_rows[0] if org_rows else None
+                if held is None:                    # an org source saying what an overlay says
+                    held = next((r for r in overlays
+                                 if json.dumps(r.value, default=str) == same), None)
         else:
             held = conn.execute(text(
                 "select fact_version_id, value, authority_rank, occurred_at from graph_facts "
@@ -415,6 +438,13 @@ class GraphStore:
                 and (evidence or {}).get("standing") == "observed"
                 and held.authority_rank == 1 and authority_rank >= 2):
             action = "supersede"
+
+        held_private = held is not None and getattr(held, "visibility_scope", None) == "private"
+        lane_private = audience_check and new_private
+        if lane_private and action == "discrepancy":
+            # A seat's private claim never opens an org-visible discrepancy; it is kept as that
+            # seat's history instead.
+            action = "historical"
 
         if action == "noop":
             # CORROBORATION — the cross-intelligence write. A second source asserting the
@@ -452,9 +482,11 @@ class GraphStore:
                               "where fact_version_id=:fv"), {"fv": held.fact_version_id})
             # The field has been authoritatively re-decided → any open discrepancy recorded
             # against the OLD value is settled. This is what lets `consistency` recover
-            # instead of falling forever.
-            self.resolve_discrepancies(conn, org_id=org_id, subject_node_id=subject_node_id,
-                                       field=field)
+            # instead of falling forever. (Not for a seat superseding its own private overlay:
+            # the org's field has not been re-decided.)
+            if not held_private:
+                self.resolve_discrepancies(conn, org_id=org_id, subject_node_id=subject_node_id,
+                                           field=field)
 
         status = "historical" if action == "historical" else "active"
         fv = new_id("factv")
@@ -473,10 +505,18 @@ class GraphStore:
              "c": confidence, "rel": relevance, "oc": occurred_at, "ev": event_id,
              "authority": f"R{authority_rank}",
              "provenance": [f"event:{event_id}"]})
-        if audience_check and new_private:
+        if lane_private:
             conn.execute(text(
                 "update graph_facts set visibility_scope='private', visibility_principals=:p "
                 "where fact_version_id=:fv"), {"p": new_principals, "fv": fv})
+        elif audience_check and overlays and status == "active":
+            # A new ORG value for the field supersedes normally — and the seats' private overlays
+            # of the older state with it.
+            conn.execute(text(
+                "update graph_facts set valid_to=now(), status='superseded' "
+                "where org_id=:o and subject_node_id=:s and field=:f and valid_to is null "
+                "and status='active' and visibility_scope='private'"),
+                {"o": org_id, "s": subject_node_id, "f": field})
         self._write_ref(conn, org_id=org_id, fact_version_id=fv, event_id=event_id,
                         source=source, evidence=evidence)
         return fv

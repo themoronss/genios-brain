@@ -293,6 +293,30 @@ def _stamp_activation(org_id: str) -> None:
         return False
 
 
+def _viewer_answer_key(base_ckey: str, viewer: str) -> str:
+    return hashlib.sha256(f"{base_ckey}|viewer|{viewer}".encode()).hexdigest()
+
+
+def _answer_key(org_id: str, base_ckey: str, viewer: str | None) -> str:
+    """The decisions-cache key this asker may be SERVED from: the org key, or — for a seat that
+    holds private facts — that seat's own."""
+    if viewer and _viewer_has_private_facts(org_id, viewer):
+        return _viewer_answer_key(base_ckey, viewer)
+    return base_ckey
+
+
+def _org_level_hit(org_id: str, base_ckey: str) -> bool:
+    """Would the ORG-LEVEL cache key have been a hit before per-seat answers existed? True when an
+    answer to this exact question is stored under the org key or under any seat's key for it."""
+    with _graph.engine.connect() as c:
+        seats = [str(r.email).strip().lower() for r in c.execute(text(
+            "select email from org_seats where org_id=:o and email is not null"), {"o": org_id})]
+        keys = [base_ckey, *(_viewer_answer_key(base_ckey, e) for e in seats if e)]
+        return c.execute(text(
+            "select 1 from decisions where org_id=:o and cache_key = any(:k) limit 1"),
+            {"o": org_id, "k": keys}).first() is not None
+
+
 def _viewer_has_private_facts(org_id: str, viewer: str) -> bool:
     """Does this seat hold ANY live private fact in the org? Fails toward True (a split cache
     entry costs a miss; a shared one could serve another seat's private grounding)."""
@@ -327,13 +351,12 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org),
     if _registry is not None:
         _effective, config_snapshot_id = _registry.effective(org_id, module_id)
     authority_epoch = _authority_epoch(org_id, evaluation_time)
-    ckey = _cache_key(org_id, module_id, question, gv, body.facts or {}, config_snapshot_id,
-                      authority_epoch=authority_epoch)
-    # A seat that holds private facts gets its OWN cache entry: an envelope explained from seat 1's
-    # private facts must never be served to seat 2 as a cache hit. Every other query keeps the
-    # shared key (and the shared free cache hit) exactly as before.
-    if viewer and _viewer_has_private_facts(org_id, viewer):
-        ckey = hashlib.sha256(f"{ckey}|viewer|{viewer}".encode()).hexdigest()
+    base_ckey = _cache_key(org_id, module_id, question, gv, body.facts or {}, config_snapshot_id,
+                           authority_epoch=authority_epoch)
+    # WHICH STORED ANSWER this seat may be served (correctness): a seat holding private facts
+    # gets its own entry, so an envelope grounded on seat 1's private facts is never a hit for
+    # seat 2. WHAT IS CHARGED is decided separately, on `base_ckey`, exactly as before.
+    ckey = _answer_key(org_id, base_ckey, viewer)
 
     # decision cache — same question, unchanged graph → return the stored Envelope, no LLM.
     with _graph.engine.connect() as c:
@@ -354,8 +377,14 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org),
             analytics.capture_with_person(_graph.engine, org_id, "org_activated")
         return env
 
-    _enforce_query_budget(org_id)          # L7: RPM + monthly credit guard before any LLM spend
-    _refuse_if_unbillable(org_id)          # ...and the guard that budget check cannot make
+    # BILLING IS UNCHANGED BY PER-SEAT ANSWERS. Before them, this question would have been a free
+    # cache hit iff an answer was stored under the org-level key; that is still the test — across
+    # every seat's entry for the same question. A would-have-been hit is recomputed for this seat
+    # but stays free (no budget gate, no charge), exactly as the hit was.
+    free = _org_level_hit(org_id, base_ckey)
+    if not free:
+        _enforce_query_budget(org_id)      # L7: RPM + monthly credit guard before any LLM spend
+        _refuse_if_unbillable(org_id)      # ...and the guard that budget check cannot make
     env, res = run_query(org_id=org_id, module_id=module_id, question=question,
                          extra_facts=body.facts or {}, store=_graph, llm=_llm,
                          registry=_registry, graph_version=gv, eval_time=evaluation_time,
@@ -371,12 +400,13 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org),
             _log.warning("intelligence cost log failed for %s", org_id)
         # charge 1 credit for the LLM synthesis (idempotent on the cache key → a retry never
         # double-charges; a cache hit never reaches here so it stays free).
-        if res.ok:
+        if res.ok and not free:
             try:
                 from genios_engine.platform import billing as B
                 price = B.cost_of("intelligence_query")
                 with _graph.engine.begin() as c:
-                    B.deduct(c, org_id, price, reason="intelligence_query", idem=f"q:{ckey}",
+                    B.deduct(c, org_id, price, reason="intelligence_query",
+                             idem=f"q:{base_ckey}",
                              bucket="query")
             except Exception:  # noqa: BLE001 — never let billing break the answer
                 _log.warning("credit deduct failed (query) for %s", org_id)
