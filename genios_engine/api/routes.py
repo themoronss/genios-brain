@@ -3775,22 +3775,23 @@ def context_overview(org_id: str = Depends(get_current_org)) -> dict:
 
 
 @router.get("/context/discrepancies")
-def context_discrepancies(limit: int = 50, org_id: str = Depends(get_current_org)) -> dict:
+def context_discrepancies(limit: int = 50, org_id: str = Depends(get_current_org),
+                          ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
     """Open conflicts: a lower-authority source disagreed with the held value (e.g. an
     email says unpaid, Stripe says paid). The detector always wrote these; this is the
-    first surface that reads them. The flag is product — 'which one is true?' is a card."""
+    first surface that reads them. The flag is product — 'which one is true?' is a card.
+
+    SEAT-FILTERED (P4 §3.3): a discrepancy with a side learned from a seat's PRIVATE evidence
+    is listed only to a seat that may read it — the same filter as `GET /v1/discrepancies`. An
+    API key (no seat) sees only discrepancies with no private side."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
-    from sqlalchemy import text
+    from genios_engine.reason.verify import store as _verify
     limit = max(1, min(int(limit), 200))
+    viewer = (ctx.email or "").strip().lower() or None if (
+        isinstance(ctx, AuthCtx) and ctx.seat_id) else None
     with _graph.engine.connect() as c:
-        rows = c.execute(text(
-            "select d.id, d.subject_node_id, d.field, d.held, d.challenger, d.created_at, "
-            "n.display_name from discrepancies d "
-            "left join graph_nodes n on n.node_id=d.subject_node_id and n.org_id=d.org_id "
-            "and n.valid_to is null "
-            "where d.org_id=:o and d.status='open' order by d.created_at desc limit :l"),
-            {"o": org_id, "l": limit}).fetchall()
+        rows = _verify.list_for_viewer(c, org_id=org_id, viewer=viewer, limit=limit)
     import json as _json
 
     def _j(v):
