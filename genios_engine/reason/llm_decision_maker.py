@@ -406,6 +406,23 @@ def _l1_summary(output: Mapping[str, Any]) -> str:
     return "; ".join(parts)
 
 
+def _decision_audience(conn, org_id: str, node_id: str) -> frozenset[str] | None:
+    """Whose OWN decision this is: the principals every live situation on the node is private
+    to, or None when any of them is wider (then no private fact or message may be shown)."""
+    from sqlalchemy import text
+
+    from genios_engine.context.fact_visibility import situation_audience
+    from genios_engine.context.situation_bso import gather_visibility
+    rows = conn.execute(text(
+        "select correlation_id from context_situations where org_id=:o and anchor_node_id=:n "
+        "and status in ('active','partial')"), {"o": org_id, "n": node_id}).fetchall()
+    audiences = [situation_audience(gather_visibility(conn, org_id, r.correlation_id))
+                 for r in rows]
+    if not audiences or any(a is None for a in audiences):
+        return None
+    return frozenset.intersection(*audiences) or None
+
+
 def business_context(request: Any) -> list[str]:
     """The subject and its latest messages, read-only from the graph. Empty when unavailable.
 
@@ -427,12 +444,18 @@ def business_context(request: Any) -> list[str]:
                 "select node_type, display_name from graph_nodes where org_id=:o and node_id=:n "
                 "and valid_to is null order by version desc limit 1"),
                 {"o": org_id, "n": node_id}).first()
+            # PRIVATE FACTS AND MESSAGES (§3.4) reach this prompt only when the decision is for the
+            # principals' OWN situation — a paraphrase in another seat's card is still a leak.
+            pg = conn.dialect.name == "postgresql"
+            audience = _decision_audience(conn, org_id, node_id) if pg else None
+            vis = ", visibility_scope, visibility_principals" if pg else ""
+            se_vis = ", se.visibility_scope, se.visibility_principals" if pg else ""
             facts = conn.execute(text(
-                "select field, value from graph_facts where org_id=:o and subject_node_id=:n "
+                f"select field, value{vis} from graph_facts where org_id=:o and subject_node_id=:n "
                 "and valid_to is null and status='active' order by field"),
                 {"o": org_id, "n": node_id}).fetchall()
             events = conn.execute(text(
-                "select se.occurred_at, se.actor, se.object_type, e.output "
+                f"select se.occurred_at, se.actor, se.object_type, e.output{se_vis} "
                 "from source_events se join l1_extraction_results e "
                 "on e.org_id=se.org_id and e.event_id=se.event_id "
                 "where se.org_id=:o and se.event_id in (select distinct created_by_event_id "
@@ -443,6 +466,14 @@ def business_context(request: Any) -> list[str]:
     except Exception:      # noqa: BLE001 — context is an aid to the decision, never a reason to lose it
         _log.exception("could not load business context for %s", node_id)
         return []
+    from genios_engine.context.fact_visibility import audience_may_read
+
+    def _readable(row) -> bool:
+        return audience_may_read(getattr(row, "visibility_scope", None),
+                                 getattr(row, "visibility_principals", None), audience or ())
+
+    facts = [row for row in facts if _readable(row)]
+    events = [row for row in events if _readable(row)]
     lines: list[str] = []
     if node is not None:
         lines.append(f"- this is a {node.node_type}: {node.display_name or '(unnamed)'}")

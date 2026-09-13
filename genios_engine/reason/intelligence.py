@@ -80,10 +80,14 @@ def _neighborhood(c, org_id: str, node_id: str) -> set:
     return {node_id} | {r.nid for r in rows}
 
 
-def _retrieve(store, org_id: str, question: str, evaluation_time: datetime | None = None):
+def _retrieve(store, org_id: str, question: str, evaluation_time: datetime | None = None,
+              viewer_email: str | None = None):
     """Grounding = the fired signals + facts for the NEIGHBOURHOOD of the entity the question is
     about (multi-hop over graph_edges), not the org-wide top-12. General questions (no entity match)
-    fall back to org-wide top signals. Returns (signals, facts, focus_name)."""
+    fall back to org-wide top signals. Returns (signals, facts, focus_name).
+
+    PRIVATE FACTS (§3.4) ground only a question asked by one of their principals (`viewer_email`,
+    the asking seat); an API-key query has no viewer and reads none."""
     ql = normalize_question(question)
     as_of = authority_time(evaluation_time)
     first_word = ql.split()[0] if ql.split() else ""
@@ -132,9 +136,14 @@ def _retrieve(store, org_id: str, question: str, evaluation_time: datetime | Non
                     continue
                 fr = c.execute(text(
                     "select field, value from graph_facts where org_id=:o and subject_node_id=:n "
-                    "and valid_to is null and status='active' order by occurred_at desc nulls last "
+                    "and valid_to is null and status='active' "
+                    "and (visibility_scope is distinct from 'private' "
+                    "     or cast(:viewer as text) = any(coalesce(visibility_principals, "
+                    "                                             cast('{}' as text[])))) "
+                    "order by occurred_at desc nulls last "
                     ", field asc, fact_version_id asc limit 12"),
-                    {"o": org_id, "n": nid}).fetchall()
+                    {"o": org_id, "n": nid,
+                     "viewer": (str(viewer_email or "").strip().lower() or None)}).fetchall()
                 # qualitative signals extracted from comms (objection / competitor / budget_approved /
                 # pricing_discussed / buying_intent…) — already produced by B3, never used in reasoning.
                 obs = [r.kind for r in c.execute(text(
@@ -330,7 +339,8 @@ def _validated_explanation(raw: object, *, fixed: dict, signals, facts: list,
 
 def run_query(*, org_id: str, module_id: str, question: str, extra_facts: dict,
               store, llm, registry, graph_version: int,
-              eval_time: datetime | None = None, triggered_by: str = "query"):
+              eval_time: datetime | None = None, triggered_by: str = "query",
+              viewer_email: str | None = None):
     """Returns (envelope, llm_result_or_None). llm_result is returned so the caller can record cost."""
     module_id = module_id or "sales"
     eval_time = eval_time or datetime.now(timezone.utc)
@@ -338,7 +348,8 @@ def run_query(*, org_id: str, module_id: str, question: str, extra_facts: dict,
                                 default=str, allow_nan=False)
     extra_hash = hashlib.sha256(extra_semantic.encode("utf-8")).hexdigest()
     decision_key = f"{module_id}:{normalize_question(question)}:{extra_hash}"
-    signals, facts, focus = _retrieve(store, org_id, question, eval_time)
+    signals, facts, focus = _retrieve(store, org_id, question, eval_time,
+                                      viewer_email=viewer_email)
     ground = _grounding_strength(signals, facts)
 
     # No grounding at all → honest low-confidence, and we DON'T spend an LLM call.

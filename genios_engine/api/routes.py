@@ -3384,7 +3384,8 @@ def context_signals(status: str = "open", org_id: str = Depends(get_current_org)
 
 @router.get("/context/read-models/{model_type}/{entity_id}")
 def context_read_model(model_type: str, entity_id: str,
-                       org_id: str = Depends(get_current_org)) -> dict:
+                       org_id: str = Depends(get_current_org),
+                       ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     from sqlalchemy import text
@@ -3394,8 +3395,17 @@ def context_read_model(model_type: str, entity_id: str,
                       {"o": org_id, "mt": model_type, "e": entity_id}).first()
     if r is None:
         raise HTTPException(404, "read model not found")
+    payload = r.payload
+    # The stored 360 is org-shared and carries no private fact (§3.4); a signed-in seat gets its
+    # OWN private facts merged here, per request, and nobody else's.
+    viewer = ctx.email if isinstance(ctx, AuthCtx) and ctx.seat_id else None
+    if viewer and isinstance(payload, dict):
+        from genios_engine.context.read_models import private_facts_for
+        mine = private_facts_for(_graph, org_id=org_id, node_id=entity_id, viewer_email=viewer)
+        if mine:
+            payload = {**payload, "facts": {**(payload.get("facts") or {}), **mine}}
     return {"model_type": model_type, "entity_id": entity_id,
-            "graph_version": r.graph_version, "payload": r.payload}
+            "graph_version": r.graph_version, "payload": payload}
 
 
 # ── L2 graph views (for the dashboard graph/context pages) ─────────────────────────

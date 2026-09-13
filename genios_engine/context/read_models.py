@@ -18,9 +18,14 @@ def build_entity_360(store: GraphStore, *, org_id: str, node_id: str) -> dict | 
             {"o": org_id, "n": node_id}).first()
         if node is None:
             return None
+        # The stored 360 is ONE row per entity, served to every seat — so it carries no private
+        # fact (§3.4). A seat's own private facts are merged per request (`private_facts_for`).
+        private_clause = (" and visibility_scope is distinct from 'private'"
+                          if c.dialect.name == "postgresql" else "")
         facts = c.execute(text(
             "select field, value, confidence, authority_rank, occurred_at from graph_facts "
-            "where org_id=:o and subject_node_id=:n and valid_to is null and status='active'"),
+            "where org_id=:o and subject_node_id=:n and valid_to is null and status='active'"
+            + private_clause),
             {"o": org_id, "n": node_id}).fetchall()
         obs = c.execute(text(
             "select kind, occurred_at, confidence from graph_observations "
@@ -50,3 +55,21 @@ def build_entity_360(store: GraphStore, *, org_id: str, node_id: str) -> dict | 
             {"o": org_id, "mt": model_type, "e": node_id,
              "p": json.dumps(payload, default=str), "v": gv})
     return {"model_type": model_type, **payload}
+
+
+def private_facts_for(store, *, org_id: str, node_id: str, viewer_email: str | None) -> dict:
+    """The entity's PRIVATE facts this viewer is a principal of, shaped like the 360's `facts`.
+    Empty for no viewer (an API key) and off PostgreSQL."""
+    viewer = str(viewer_email or "").strip().lower()
+    if not viewer:
+        return {}
+    with store.engine.connect() as c:
+        if c.dialect.name != "postgresql":
+            return {}
+        rows = c.execute(text(
+            "select field, value, confidence, authority_rank from graph_facts "
+            "where org_id=:o and subject_node_id=:n and valid_to is null and status='active' "
+            "and visibility_scope='private' and :v = any(visibility_principals)"),
+            {"o": org_id, "n": node_id, "v": viewer}).fetchall()
+    return {f.field: {"value": f.value, "confidence": float(f.confidence),
+                      "authority": f.authority_rank} for f in rows}

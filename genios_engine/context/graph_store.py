@@ -360,11 +360,40 @@ class GraphStore:
         or None on no-op / discrepancy (held value kept). An out-of-order write (older
         occurred_at than the held row, or any conflicting write under replay=True) lands as
         status='historical' — preserved with provenance, never the active value."""
-        held = conn.execute(text(
-            "select fact_version_id, value, authority_rank, occurred_at from graph_facts "
-            "where org_id=:o and subject_node_id=:s and field=:f "
-            "and valid_to is null and status='active' "
-            "limit 1").columns(value=JSON), {"o": org_id, "s": subject_node_id, "f": field}).first()
+        # WHO MAY READ THIS FACT (SCREEN_INTEL_P2 §3.4). Outside the work families a fact whose
+        # evidence is PRIVATE (a seat's screen, a personal upload) is written private to that
+        # source's principals; a later non-private source widens it to org. The event's audience
+        # rides on the held-fact read (one statement, no extra round trip). PostgreSQL only — the
+        # SQLite test schemas carry no visibility columns and never hold a private event.
+        from genios_engine.context.fact_visibility import is_work_fact
+        dialect = getattr(getattr(conn, "dialect", None), "name", "")    # test doubles have none
+        audience_check = dialect == "postgresql" and not is_work_fact(field)
+        new_private = held_private = False
+        new_principals: list[str] = []
+        if audience_check:
+            probe = conn.execute(text(
+                "select h.fact_version_id, h.value, h.authority_rank, h.occurred_at, "
+                "h.visibility_scope, se.visibility_scope as ev_scope, "
+                "se.visibility_principals as ev_principals "
+                "from (select 1) one left join lateral ("
+                "  select fact_version_id, value, authority_rank, occurred_at, visibility_scope "
+                "  from graph_facts where org_id=:o and subject_node_id=:s and field=:f "
+                "  and valid_to is null and status='active' limit 1) h on true "
+                "left join source_events se on se.org_id=:o and se.event_id=:e"
+            ).columns(value=JSON), {"o": org_id, "s": subject_node_id, "f": field,
+                                    "e": event_id}).first()
+            held = probe if probe.fact_version_id is not None else None
+            held_private = held is not None and probe.visibility_scope == "private"
+            new_private = probe.ev_scope == "private"
+            new_principals = sorted({str(p).strip().lower() for p in (probe.ev_principals or ())
+                                     if str(p or "").strip()})
+        else:
+            held = conn.execute(text(
+                "select fact_version_id, value, authority_rank, occurred_at from graph_facts "
+                "where org_id=:o and subject_node_id=:s and field=:f "
+                "and valid_to is null and status='active' "
+                "limit 1").columns(value=JSON),
+                {"o": org_id, "s": subject_node_id, "f": field}).first()
         new_val = json.dumps(value, default=str)
         held_val = None
         if held is not None:
@@ -404,6 +433,9 @@ class GraphStore:
                 self._write_ref(conn, org_id=org_id, fact_version_id=held.fact_version_id,
                                 event_id=event_id, source=source,
                                 evidence={**(evidence or {}), "corroborates": True})
+                if held_private:
+                    self._merge_private_audience(conn, held.fact_version_id,
+                                                 private=new_private, principals=new_principals)
             return None
         if action == "discrepancy":
             # held keeps its OWN value (the system-of-record), challenger carries the new one.
@@ -441,9 +473,30 @@ class GraphStore:
              "c": confidence, "rel": relevance, "oc": occurred_at, "ev": event_id,
              "authority": f"R{authority_rank}",
              "provenance": [f"event:{event_id}"]})
+        if audience_check and new_private:
+            conn.execute(text(
+                "update graph_facts set visibility_scope='private', visibility_principals=:p "
+                "where fact_version_id=:fv"), {"p": new_principals, "fv": fv})
         self._write_ref(conn, org_id=org_id, fact_version_id=fv, event_id=event_id,
                         source=source, evidence=evidence)
         return fv
+
+    def _merge_private_audience(self, conn, fact_version_id: str, *, private: bool,
+                                principals: list[str]) -> None:
+        """A private fact corroborated by another source: a NON-private one widens it to org (the
+        org now holds the same knowledge through a channel it may read); another private one adds
+        that source's principals (two seats saw it, both may read it)."""
+        if not private:
+            conn.execute(text(
+                "update graph_facts set visibility_scope='org', visibility_principals=null "
+                "where fact_version_id=:fv and visibility_scope='private'"),
+                {"fv": fact_version_id})
+            return
+        conn.execute(text(
+            "update graph_facts set visibility_principals = (select array_agg(distinct x order "
+            "by x) from unnest(coalesce(visibility_principals, cast('{}' as text[])) || "
+            "cast(:p as text[])) as x) where fact_version_id=:fv and visibility_scope='private'"),
+            {"p": principals, "fv": fact_version_id})
 
     def write_discrepancy(self, conn, *, org_id, subject_node_id, field, held, challenger) -> None:
         """One OPEN discrepancy per (subject, field). A field is either contested or not, and

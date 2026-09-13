@@ -15,7 +15,7 @@ from sqlalchemy import text
 
 from genios_engine.deliver.actions import WRONG_REASONS
 from genios_engine.deliver.seat_access import SEAT_REACH_SQL, may_touch_card
-from genios_engine.platform.auth import (AuthCtx, get_current_org, require_scope,
+from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org, require_scope,
                                          require_workspace_user)
 from genios_engine.platform.cache import get_cache
 from genios_engine.platform.config import get_settings
@@ -293,10 +293,28 @@ def _stamp_activation(org_id: str) -> None:
         return False
 
 
+def _viewer_has_private_facts(org_id: str, viewer: str) -> bool:
+    """Does this seat hold ANY live private fact in the org? Fails toward True (a split cache
+    entry costs a miss; a shared one could serve another seat's private grounding)."""
+    try:
+        with _graph.engine.connect() as c:
+            return c.execute(text(
+                "select 1 from graph_facts where org_id=:o and visibility_scope='private' "
+                "and valid_to is null and :v = any(visibility_principals) limit 1"),
+                {"o": org_id, "v": viewer}).first() is not None
+    except Exception:      # noqa: BLE001
+        return True
+
+
 @router.post("/v1/intelligence/query")
-def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) -> dict:
+def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org),
+                       ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
+    # THE ASKING SEAT (JWT sessions only; an API key names no person). Private facts (§3.4)
+    # ground only their principals' questions.
+    viewer = ((str(ctx.email or "").strip().lower() or None)
+              if isinstance(ctx, AuthCtx) and ctx.seat_id else None)
     question = str((body.query or {}).get("question") or "").strip()
     if not question:
         raise HTTPException(422, "query.question is required")
@@ -311,6 +329,11 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
     authority_epoch = _authority_epoch(org_id, evaluation_time)
     ckey = _cache_key(org_id, module_id, question, gv, body.facts or {}, config_snapshot_id,
                       authority_epoch=authority_epoch)
+    # A seat that holds private facts gets its OWN cache entry: an envelope explained from seat 1's
+    # private facts must never be served to seat 2 as a cache hit. Every other query keeps the
+    # shared key (and the shared free cache hit) exactly as before.
+    if viewer and _viewer_has_private_facts(org_id, viewer):
+        ckey = hashlib.sha256(f"{ckey}|viewer|{viewer}".encode()).hexdigest()
 
     # decision cache — same question, unchanged graph → return the stored Envelope, no LLM.
     with _graph.engine.connect() as c:
@@ -335,7 +358,8 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org)) 
     _refuse_if_unbillable(org_id)          # ...and the guard that budget check cannot make
     env, res = run_query(org_id=org_id, module_id=module_id, question=question,
                          extra_facts=body.facts or {}, store=_graph, llm=_llm,
-                         registry=_registry, graph_version=gv, eval_time=evaluation_time)
+                         registry=_registry, graph_version=gv, eval_time=evaluation_time,
+                         viewer_email=viewer)
 
     # record LLM spend (only the final-synthesis call, if it ran)
     if res is not None:
