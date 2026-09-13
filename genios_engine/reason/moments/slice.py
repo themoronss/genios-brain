@@ -63,13 +63,34 @@ _VERSION = text(
     "select version, created from ins union all "
     "select version, false from seat_slice_versions where org_id = :o and seat_id = :s limit 1")
 
+# "Touched by the seat" has TWO roots. (1) Edges of the seat's own person node. (2) The seat's OWN
+# events — its screen sessions (`screen:<seat_id>`) and its own mailbox connections — and every
+# node those events wrote an observation, fact or edge about (`graph_source_refs`, indexed by
+# event). A screen thread links the counterparty to a THREAD, never to the seat's node, so without
+# root (2) a person known only from the seat's screen was missing from its slice. Root (2) is
+# per-seat by construction: another seat's events never seed this slice.
 _GRAPH = text(
     "with me as (select node_id from graph_aliases where org_id = :o and alias_type = 'email' "
     " and alias_key = :email), "
+    "ev as (select se.event_id from source_events se where se.org_id = :o "
+    " and se.captured_at > :cut and (se.connection_id = :screen or se.connection_id in "
+    " (select c.connection_id from connections c where c.org_id = :o and c.seat_id = :s))), "
+    "refs as (select r.observation_id, r.fact_version_id, r.edge_version_id "
+    " from graph_source_refs r join ev on r.org_id = :o and r.event_id = ev.event_id), "
+    "own as (select distinct x.nid from ("
+    " select o.subject_node_id as nid from refs join graph_observations o "
+    " on o.observation_id = refs.observation_id "
+    " union all select f.subject_node_id from refs join graph_facts f "
+    " on f.fact_version_id = refs.fact_version_id "
+    " union all select e.from_node_id from refs join graph_edges e "
+    " on e.edge_version_id = refs.edge_version_id "
+    " union all select e.to_node_id from refs join graph_edges e "
+    " on e.edge_version_id = refs.edge_version_id) x where x.nid is not null), "
     "l1 as (select e.to_node_id as nid, e.edge_type, e.valid_from from graph_edges e "
     " join me on e.from_node_id = me.node_id where e.org_id = :o and e.valid_to is null "
     " union all select e.from_node_id, e.edge_type, e.valid_from from graph_edges e "
-    " join me on e.to_node_id = me.node_id where e.org_id = :o and e.valid_to is null), "
+    " join me on e.to_node_id = me.node_id where e.org_id = :o and e.valid_to is null "
+    " union all select own.nid, 'own_event', cast(null as timestamptz) from own), "
     "hubs as (select distinct l1.nid from l1 join graph_nodes n on n.org_id = :o "
     " and n.node_id = l1.nid and n.valid_to is null and n.node_type = any(:hubs)), "
     "l2 as (select e.to_node_id as nid, h.nid as via, e.edge_type, e.valid_from from graph_edges e "
@@ -154,7 +175,10 @@ def _build(c, *, org_id: str, seat_id: str, email: str | None, viewer: str | Non
              "removed": []}
     if not email:
         return empty
-    rows = c.execute(_GRAPH, {"o": org_id, "email": email, "hubs": list(HUB_TYPES)}).fetchall()
+    from genios_engine.platform.capture_policy import screen_connection_id
+    rows = c.execute(_GRAPH, {"o": org_id, "email": email, "hubs": list(HUB_TYPES),
+                              "s": seat_id, "screen": screen_connection_id(seat_id),
+                              "cut": now - timedelta(days=TOUCH_DAYS)}).fetchall()
     changed: dict[str, datetime] = {}
 
     def touch(nid: str, at) -> None:
@@ -171,6 +195,9 @@ def _build(c, *, org_id: str, seat_id: str, email: str | None, viewer: str | Non
     for r in rows:
         nodes[r.node_id] = (r.node_type, r.display_name)
         touch(r.node_id, r.valid_from)
+    # Second pass: a hub's type must be known before its members are classified, whatever order
+    # the `union all` returned the rows in (attendees used to vanish when a meeting came later).
+    for r in rows:
         if r.via is None:
             if r.node_type == "person":
                 people.add(r.node_id)

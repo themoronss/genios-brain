@@ -73,13 +73,16 @@ def persist(engine, *, org_id: str, seat_id: str, device_id: str | None, origin:
                 raise MomentConflict(moment["moment_id"])
             return {**_public(moment), "display": bool(prior.display),
                     "reason": prior.suppressed_reason}
-        if key:
-            hit = cached(c, key, now)
-            if hit is not None:
-                return {**_public(hit), "display": False, "reason": G.DUPLICATE}
+        # DEDUPE COUNTS ONLY WHAT WAS SHOWN. A suppressed twin (shadow, DND, capped) never blocks
+        # the first real display; it only stops the same suppressed moment being logged again.
+        hit = cached(c, key, now) if key else None
+        if hit is not None and hit.get("displayed"):
+            return {**_public(hit), "display": False, "reason": G.DUPLICATE}
         state = G.load_state(c, org_id=org_id, seat_id=seat_id, device_id=device_id, now=now)
         display, reason = G.decide(state, kind=moment["kind"], priority=moment["priority"],
                                    now=now)
+        if hit is not None and not display:
+            return {**_public(hit), "display": False, "reason": reason}
         c.execute(text(
             "insert into moments (moment_id, org_id, seat_id, device_id, origin, kind, priority, "
             "capability_id, capability_version, subject_node_ids, headline, body, actions, "
@@ -104,7 +107,8 @@ def persist(engine, *, org_id: str, seat_id: str, device_id: str | None, origin:
                 "insert into moment_cache (key, org_id, seat_id, moment, expires_at) "
                 "values (:k, :o, :s, cast(:m as jsonb), :exp) on conflict (key) do update set "
                 "moment = excluded.moment, expires_at = excluded.expires_at"),
-                {"k": key, "o": org_id, "s": seat_id, "m": json.dumps(_public(moment)),
+                {"k": key, "o": org_id, "s": seat_id,
+                 "m": json.dumps({**_public(moment), "displayed": display}),
                  "exp": now + timedelta(seconds=ttl)})
     if shown:
         realtime.wake()
@@ -124,6 +128,9 @@ def record_feedback(engine, *, org_id: str, seat_id: str, actor: str | None, mom
             {"m": moment_id, "o": org_id, "s": seat_id}).first()
         if m is None:
             return None
+        last = c.execute(text(
+            "select action from moment_feedback where moment_id = :m and action <> 'shown' "
+            "order by at desc, created_at desc limit 1"), {"m": moment_id}).scalar()
         new = c.execute(text(
             "insert into moment_feedback (org_id, moment_id, seat_id, capability_id, action, "
             "reason, at) values (:o, :m, :s, :cap, :a, :r, :at) "
@@ -145,11 +152,14 @@ def record_feedback(engine, *, org_id: str, seat_id: str, actor: str | None, mom
                  "actor": actor or seat_id, "ref": ref,
                  "vis": json.dumps({"scope": "private", "principals": [actor or seat_id]}),
                  "p": json.dumps(payload)})
-            if action != "shown":
-                realtime.publish(c, org_id=org_id, seat_id=seat_id, kind="moment.updated",
-                                 payload={"moment_id": moment_id, "feedback": action,
-                                          "at": iso(at)})
-    if new and action != "shown":
+        # `moment.updated` only when the moment's state really changes: never for `shown` (the
+        # device that showed it already knows) nor for a repeat of the latest action.
+        changed = new and action != "shown" and action != last
+        if changed:
+            realtime.publish(c, org_id=org_id, seat_id=seat_id, kind="moment.updated",
+                             payload={"moment_id": moment_id, "feedback": action,
+                                      "at": iso(at)})
+    if changed:
         realtime.wake()
     return {"moment_id": moment_id, "action": action, "recorded": new}
 

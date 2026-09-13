@@ -127,13 +127,15 @@ def _seed(ws: dict) -> dict:
     org = ws["org"]
     o_mail, m_mail = ws["owner"]["email"].lower(), ws["member"]["email"].lower()
     n = {k: f"node_{k}_{uuid.uuid4().hex[:8]}" for k in
-         ("me1", "me2", "priya", "acme", "deal", "cmt", "mtg")}
+         ("me1", "me2", "priya", "acme", "deal", "cmt", "mtg", "ravi")}
     nodes = [(n["me1"], "person", o_mail, "Founder"), (n["me2"], "person", m_mail, "Member"),
              (n["priya"], "person", "priya@acme.test", "Priya Shah"),
              (n["acme"], "company", "acme.test", "Acme Logistics"),
              (n["deal"], "deal", f"hubspot:{n['deal']}", "Acme expansion"),
              (n["cmt"], "commitment", f"cmt:{n['cmt']}", "send the revised proposal"),
-             (n["mtg"], "meeting", f"gcal:{n['mtg']}", "Acme review")]
+             (n["mtg"], "meeting", f"gcal:{n['mtg']}", "Acme review"),
+             # known ONLY from seat 1's own screen session: no edge to any seat's node
+             (n["ravi"], "person", "ravi@ravico.test", "Ravi Kumar")]
     aliases = [("email", o_mail, n["me1"]), ("email", m_mail, n["me2"]),
                ("email", "priya@acme.test", n["priya"]), ("person_name", "priya shah", n["priya"]),
                ("domain", "acme.test", n["acme"])]
@@ -187,6 +189,22 @@ def _seed(ws: dict) -> dict:
                 "occurred_at, created_by_event_id) values (:i, :o, :s, 'event_presence', :at, :e)"),
                 {"i": "obs_" + ev, "o": org, "s": n["priya"], "at": NOW - timedelta(days=days),
                  "e": ev})
+        ev_scr = f"evt_scr_{uuid.uuid4().hex[:8]}"
+        c.execute(text(
+            "insert into source_events (event_id, org_id, connection_id, source, object_type, "
+            "source_object_id, dedup_key, actor, occurred_at, visibility_scope, "
+            "visibility_principals) values (:e, :o, :conn, 'screen_session', 'message', :e, :e, "
+            "'{}'::jsonb, :at, 'private', cast(:who as text[]))"),
+            {"e": ev_scr, "o": org, "conn": f"screen:{ws['owner']['seat_id']}",
+             "at": NOW - timedelta(days=2), "who": [o_mail]})
+        c.execute(text(
+            "insert into graph_observations (observation_id, org_id, subject_node_id, kind, "
+            "occurred_at, created_by_event_id) values (:i, :o, :s, 'mention:person', :at, :e)"),
+            {"i": "obs_" + ev_scr, "o": org, "s": n["ravi"], "at": NOW - timedelta(days=2),
+             "e": ev_scr})
+        c.execute(text("insert into graph_source_refs (source_ref_id, org_id, observation_id, "
+                       "event_id) values (:r, :o, :i, :e)"),
+                  {"r": "ref_" + ev_scr, "o": org, "i": "obs_" + ev_scr, "e": ev_scr})
     return n
 
 
@@ -223,6 +241,8 @@ def test_slice_is_seat_visible_versioned_and_announced(client):
                                  "due_at": a["commitments"][0]["due_at"], "owner": "seat",
                                  "beneficiary": n["priya"]}]
     assert a["meetings"][0]["attendees"] == [n["priya"]] and len(a["busy"]) == 1
+    ravi = next(p for p in a["people"] if p["node_id"] == n["ravi"])   # screen-only counterparty
+    assert (NOW - datetime.fromisoformat(ravi["last_touch_at"].replace("Z", "+00:00"))).days == 2
 
     two = client.get("/v1/seats/me/slice", headers=H(ws["member_dev"]["access_token"]))
     b = two.json()
@@ -232,6 +252,7 @@ def test_slice_is_seat_visible_versioned_and_announced(client):
     # seat 1's private screen touch (1 d ago) is not seat 2's; the org touch (3 d ago) is
     assert (NOW - datetime.fromisoformat(priya2["last_touch_at"].replace("Z", "+00:00"))).days == 3
     assert b["commitments"] == [] and b["meetings"] == []
+    assert n["ravi"] not in {p["node_id"] for p in b["people"]}        # seat 1's screen stays theirs
 
     # a seat JWT is not a device: the slice is device-only
     assert client.get("/v1/seats/me/slice", headers=H(ws["owner"]["token"])).status_code == 403
@@ -280,6 +301,8 @@ def test_counterparty_recall_in_shadow_then_shown(client):
     assert "Secret" not in res.text and "Deal: negotiation" in m["body"]
     assert (m["display"], m["reason"]) == (False, "shadow")                # shadow is the default
     assert _evaluate(client, ws["member_dev"], rid="req-1").json() == m    # retry = same answer
+    again = _evaluate(client, ws["member_dev"]).json()          # re-seen in shadow: logged once
+    assert (again["display"], again["reason"]) == (False, "shadow")
     assert _count("select count(*) from moments where org_id=:o", o=ws["org"]) == 1
 
     doc = _enable_display(client, ws)
@@ -289,12 +312,11 @@ def test_counterparty_recall_in_shadow_then_shown(client):
     assert _count("select count(*) from realtime_events where org_id=:o and kind='policy.updated' "
                   "and seat_id is null", o=ws["org"]) >= 1
 
-    dup = _evaluate(client, ws["member_dev"]).json()                        # same subject, in TTL
-    assert (dup["display"], dup["reason"]) == (False, "duplicate")
-    with _engine().begin() as c:
-        c.execute(text("delete from moment_cache where org_id=:o"), {"o": ws["org"]})
+    # the shadow-mode twin (same subject, inside its TTL) must NOT block the first real display
     shown = _evaluate(client, ws["member_dev"]).json()
     assert (shown["display"], shown["reason"]) == (True, None)
+    dup = _evaluate(client, ws["member_dev"]).json()                        # now it IS a duplicate
+    assert (dup["display"], dup["reason"]) == (False, "duplicate")
     assert _count("select count(*) from realtime_events where org_id=:o and seat_id=:s "
                   "and kind='moment.new'", o=ws["org"], s=ws["member"]["seat_id"]) == 1
 
@@ -364,6 +386,18 @@ def test_rate_limits_dnd_feedback_and_history(client):
                   "and payload->>'moment_id' = :m", o=ws["org"], m=first) == 2
     assert _count("select count(*) from realtime_events where org_id=:o and kind='moment.updated'",
                   o=ws["org"]) == 2
+    for action in ("shown", "dismissed"):                  # no state change → nothing pushed
+        client.post(f"/v1/moments/{first}/feedback", json={"action": action},
+                    headers=H(dev["access_token"]))
+    assert _count("select count(*) from realtime_events where org_id=:o and kind='moment.updated'",
+                  o=ws["org"]) == 2
+    # exactly one moment.new per DISPLAYED moment; suppressed ones are never pushed
+    displayed = _count("select count(*) from moments where org_id=:o and display", o=ws["org"])
+    assert displayed == 8                                  # 6 advice + reminder + critical
+    assert _count("select count(*) from realtime_events where org_id=:o and kind='moment.new'",
+                  o=ws["org"]) == displayed
+    assert _count("select count(distinct payload->>'moment_id') from realtime_events "
+                  "where org_id=:o and kind='moment.new'", o=ws["org"]) == displayed
 
     # history — §2.6 pinned shape, own moments only, cursor, kind filter
     page = client.get("/v1/moments?limit=5", headers=H(ws["owner"]["token"])).json()

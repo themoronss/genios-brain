@@ -155,8 +155,8 @@ def evaluate(body: EvaluateRequest, request: Request):
             key = M.cache_key(seat_id=p.seat_id, capability_id=R.CAPABILITY_ID,
                               subject_ids=[subj.node_id], trigger=trig, subject_version=version)
             hit = M.cached(c, key, now)
-            if hit is not None:
-                return {**hit, "display": False, "reason": G.DUPLICATE}
+            if hit is not None and hit.get("displayed"):      # only a SHOWN twin is a duplicate
+                return {**M._public(hit), "display": False, "reason": G.DUPLICATE}
             content = R.compose(R.read(c, org_id=p.org_id, subject=subj, me=me, viewer=viewer,
                                        seat_emails=seat_emails, now=now), now=now)
             if content is not None:
