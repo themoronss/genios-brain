@@ -53,8 +53,9 @@ SPEC_TABLE = (
      "T2", 24_000, SENTENCE, {"dates_mentioned": "dates"}),
     ("chat", ("stance", "questions", "scheduling_proposals", "availability"),
      "T1", 4_000, NONE, {}),
+    # P5 (SCREEN_INTEL_P5 §2.5): bounded turn-split parts → T1 / 16k / NONE, eval-gated.
     ("transcript", ("commitments", "decision_states", "roles", "dependencies"),
-     "T3", 40_000, SECTION, {}),
+     "T1", 16_000, NONE, {}),
     ("document", ("amounts", "dates_mentioned", "entity_mentions", "commitments"),
      "T3", 40_000, SECTION, {"dates_mentioned": "dates", "commitments": "obligations"}),
     ("crm_note", ("decision_states", "stance", "entity_mentions"),

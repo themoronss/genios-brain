@@ -131,11 +131,18 @@ def test_every_profile_carries_its_demotion_floor_onto_the_call(profile_id):
     assert {call.floor_tier for call in plan.calls} == {TIER_FLOORS[profile_id]}
 
 
-@pytest.mark.parametrize("profile_id", ["document", "transcript"])
+@pytest.mark.parametrize("profile_id", ["document"])
 def test_doc_04s_override_is_a_floor_the_budget_cannot_walk_through(profile_id):
     """*"OVERRIDE: profile in {document, transcript} always >= T2."* Stated for the router; a
-    floor only the router enforced would be a floor the cost governor demoted straight past."""
+    floor only the router enforced would be a floor the cost governor demoted straight past.
+    P5 (SCREEN_INTEL_P5 §2.5) lowers `transcript` to T1 — see the test below."""
     assert TIER_FLOORS[profile_id] == "T2"
+
+
+def test_p5_transcript_floor_is_t1_behind_the_owner_eval():
+    """P5: transcripts arrive as bounded, turn-split parts; T1 is gated on
+    scripts/eval_transcript_owners.py ≥ 9/10 (revert with the profile row if it fails)."""
+    assert TIER_FLOORS["transcript"] == "T1"
 
 
 def test_token_estimates_include_the_prompt_and_are_bounded():

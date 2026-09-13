@@ -595,10 +595,15 @@ PROFILES: Mapping[str, ExtractionProfile] = MappingProxyType({
         # "kal se 3 din chutti" is a Slack line far more often than an email.
         ("stance", "questions", "scheduling_proposals", "availability"),
         "T1", 4_000, NONE),
+    # P5 (plan §2.5). Transcripts arrive as turn-bounded parts of ≤ 12k chars plus a ≤ 1.5k
+    # context tail (capture/transcripts/ingest.build_parts), so 16k fits one part and the fence in
+    # one call and NONE is right — the part is already bounded. T1 (Haiku) is GATED on
+    # scripts/eval_transcript_owners.py scoring owner attribution ≥ 9/10; if the gate fails this
+    # row and batch.TIER_FLOORS["transcript"] revert together to T3 / 40k / SECTION and a T2 floor.
     "transcript": _profile(
         "transcript", _TRANSCRIPT_ROLE,
         ("commitments", "decision_states", "roles", "dependencies"),
-        "T3", 40_000, SECTION),
+        "T1", 16_000, NONE),
     "document": _profile(
         "document", _DOCUMENT_ROLE,
         ("amounts", "dates_mentioned", "entity_mentions", "commitments"),
