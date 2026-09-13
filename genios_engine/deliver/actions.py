@@ -80,6 +80,18 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             {"card": card_id, "o": org_id,
              "authority_time": eval_time}).mappings().first()
         if card is None:
+            # A P4 team/verify situation card (deliver/store.SITUATION_CARD_SQL): no L4 run by
+            # construction, so it is proved by its own open signal instead. Nothing else passes.
+            from genios_engine.deliver.store import SITUATION_CARD_BUILDER, SITUATION_CARD_SQL
+            card = c.execute(text(
+                "select k.card_id, k.signal_id, k.org_id, k.assignee, k.state, k.expires_at "
+                "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
+                "where k.card_id=:card and k.org_id=:o and s.status='open' "
+                "and k.expires_at > :authority_time and " + SITUATION_CARD_SQL +
+                " for update of k, s"),
+                {"card": card_id, "o": org_id, "authority_time": eval_time,
+                 "situation_builder": SITUATION_CARD_BUILDER}).mappings().first()
+        if card is None:
             return {"ok": False, "error": "stale_or_unauthorized_card", "code": "V-09"}
         if (not allow_any_assignee and card["assignee"] is not None
                 and card["assignee"] != actor):

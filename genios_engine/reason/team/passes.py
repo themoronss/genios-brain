@@ -11,9 +11,11 @@ from datetime import datetime
 from genios_engine.platform.logging import get_logger
 from genios_engine.reason.team import away, readiness
 from genios_engine.reason.team.common import TeamContext
-from genios_engine.reason.team.emit import emit_situation
+from genios_engine.reason.team.emit import close_stale, emit_situation
 
 _log = get_logger("genios.team.passes")
+#: The team situations THIS pass owns (and may close). Verify situations are group B's.
+_OWNED_PREFIXES = ("deadline_at_risk:", "readiness:")
 
 
 def run(engine, card_store, org_id: str, *, now: datetime) -> int:
@@ -33,6 +35,11 @@ def run(engine, card_store, org_id: str, *, now: datetime) -> int:
                 emitted += 1
         except Exception:      # noqa: BLE001 — one situation never blocks the rest
             _log.exception("team situation %s failed for org_id=%s", s.key, org_id)
+    try:
+        close_stale(engine, org_id, kind="team", prefixes=_OWNED_PREFIXES,
+                    keep_keys={s.key for s in situations}, now=now)
+    except Exception:          # noqa: BLE001 — a stale card is a nuisance, never a failed pass
+        _log.exception("closing stale team situations failed for org_id=%s", org_id)
     return emitted
 
 

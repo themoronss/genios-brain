@@ -110,7 +110,8 @@ class PeopleDirectory:
     is its address — `context/pipeline.py`; `org_seats.email` — the seat). Pure once built."""
 
     def __init__(self, persons: Iterable[tuple[str, str | None, str | None]],
-                 aliases: Iterable[tuple[str, str]], seats: Iterable[tuple[str, str | None]]):
+                 aliases: Iterable[tuple[str, str]], seats: Iterable[tuple]):
+        """`seats` rows are `(seat_id, email)` or `(seat_id, email, member name)`."""
         self._node: dict[str, tuple[str | None, str | None]] = {}
         self._by_email: dict[str, str] = {}
         self._by_name: dict[str, set[str]] = {}
@@ -127,9 +128,14 @@ class PeopleDirectory:
                 self._by_name.setdefault(alias.strip().casefold(), set()).add(node_id)
         self._seat_email: dict[str, str | None] = {}
         self._seat_by_email: dict[str, str] = {}
-        for seat_id, email in seats:
+        self._seat_name: dict[str, str] = {}
+        for row in seats:
+            seat_id, email = row[0], row[1]
+            name = row[2] if len(row) > 2 else None
             e = email.strip().lower() if isinstance(email, str) and email.strip() else None
             self._seat_email[seat_id] = e
+            if isinstance(name, str) and name.strip():
+                self._seat_name[seat_id] = name.strip()
             if e:
                 self._seat_by_email.setdefault(e, seat_id)
 
@@ -141,19 +147,25 @@ class PeopleDirectory:
         if not node_id or node_id not in self._node:
             return None
         email, name = self._node[node_id]
-        return Person(node_id, email, name, self._seat_by_email.get(email) if email else None)
+        seat = self._seat_by_email.get(email) if email else None
+        return Person(node_id, email, name or self._seat_name.get(seat or ""), seat)
 
     def for_seat(self, seat_id: str | None) -> Person | None:
+        """A seat may have no person node at all (a teammate the graph only knows as "us" —
+        e.g. the reader of a screen mail); its member name still labels it."""
         if not seat_id or seat_id not in self._seat_email:
             return None
         email = self._seat_email[seat_id]
         node = self._by_email.get(email) if email else None
-        return Person(node, email, self._node[node][1] if node else None, seat_id)
+        name = (self._node[node][1] if node else None) or self._seat_name.get(seat_id)
+        return Person(node, email, name, seat_id)
 
     def for_email(self, email: str) -> Person:
         e = email.strip().lower()
         node = self._by_email.get(e)
-        return Person(node, e, self._node[node][1] if node else None, self._seat_by_email.get(e))
+        seat = self._seat_by_email.get(e)
+        name = (self._node[node][1] if node else None) or self._seat_name.get(seat or "")
+        return Person(node, e, name, seat)
 
     def resolve(self, ref: Any) -> Person | None:
         """A seat id, an email or a name → a Person, or None when it does not resolve to exactly
@@ -193,7 +205,10 @@ def load_directory(conn, org_id: str) -> PeopleDirectory:
         "select alias_key, node_id from graph_aliases where org_id = :o "
         "and alias_type = 'person_name'"), {"o": org_id}).all()
     seats = conn.execute(text(
-        "select seat_id, email from org_seats where org_id = :o and active"), {"o": org_id}).all()
+        "select s.seat_id, s.email, (select m.name from org_members m where m.org_id = s.org_id "
+        "and m.seat_id = s.seat_id and m.name is not null order by m.updated_at desc nulls last "
+        "limit 1) as name from org_seats s where s.org_id = :o and s.active"),
+        {"o": org_id}).all()
     return PeopleDirectory([tuple(r) for r in persons], [tuple(r) for r in aliases],
                            [tuple(r) for r in seats])
 
@@ -220,18 +235,75 @@ def commitment_links(conn, org_id: str, directory: PeopleDirectory | None = None
         "and edge_type = 'owns' and valid_to is null and to_node_id = any(:ids) "
         "order by edge_version_id"), {"o": org_id, "ids": sorted(facts)})}
     out: list[CommitmentLink] = []
+    need_addressee: list[str] = []
     for node_id in sorted(facts):
         f = facts[node_id]
         owner = directory.resolve(f.get("commitment.owner")) or directory.for_node(
             owners.get(node_id))
         owed = _text(f.get("commitment.owed_to"))
+        beneficiary = directory.resolve(owed)
+        if beneficiary is None and owed is None and owner is not None and owner.email:
+            need_addressee.append(node_id)
         out.append(CommitmentLink(
             node_id=node_id,
             text=_text(f.get("commitment.text")) or _text(names.get(node_id)) or "commitment",
             due=_as_date(f.get("commitment.due_at")),
             status=(_text(f.get("commitment.status")) or "open").lower(),
-            owner=owner, beneficiary=directory.resolve(owed), owed_to=owed, facts=dict(f)))
+            owner=owner, beneficiary=beneficiary, owed_to=owed, facts=dict(f)))
+    if need_addressee:
+        found = _addressees(conn, org_id, need_addressee, directory,
+                            {l.node_id: l.owner for l in out})
+        out = [CommitmentLink(l.node_id, l.text, l.due, l.status, l.owner, found[l.node_id],
+                              l.owed_to, l.facts) if l.node_id in found else l for l in out]
     return out
+
+
+def _addressees(conn, org_id: str, node_ids: list[str], directory: "PeopleDirectory",
+                owners: Mapping[str, Person | None]) -> dict[str, Person]:
+    """"I will send YOU the documents": a promise with no `owed_to` is owed to the person it was
+    SAID to. Read off the message that created the commitment, and only when unambiguous:
+
+      * the promiser SENT it (the event's actor is the commitment's owner);
+      * after removing the owner it has exactly ONE recipient, and that recipient is a seat;
+      * that seat may see the message (a private screen/mailbox event lists it as a principal) —
+        so a private mail never tells anybody else who it was addressed to.
+    """
+    rows = conn.execute(text(
+        "select distinct on (f.subject_node_id) f.subject_node_id, "
+        "lower(e.actor->>'email') as actor_email, e.recipients, e.visibility_scope, "
+        "e.visibility_principals from graph_facts f join source_events e "
+        "on e.org_id = f.org_id and e.event_id = f.created_by_event_id "
+        "where f.org_id = :o and f.subject_node_id = any(:ids) and f.field = 'commitment.text' "
+        "order by f.subject_node_id, f.created_at"), {"o": org_id, "ids": node_ids}).all()
+    out: dict[str, Person] = {}
+    for r in rows:
+        owner = owners.get(r.subject_node_id)
+        if owner is None or not owner.email or r.actor_email != owner.email:
+            continue
+        rcpts = {str(x).strip().lower() for x in (r.recipients or ()) if str(x or "").strip()}
+        rcpts.discard(owner.email)
+        if len(rcpts) != 1:
+            continue
+        person = directory.for_email(next(iter(rcpts)))
+        if not person.seat_id:
+            continue
+        if r.visibility_scope == "private" and person.email not in {
+                str(p).strip().lower() for p in (r.visibility_principals or ())}:
+            continue
+        out[r.subject_node_id] = person
+    return out
+
+
+def owned_scopes(conn, org_id: str, seat_id: str, at: datetime) -> tuple[Answering, ...]:
+    """The slices one seat `owns` at `at` (the other half of "Shalini covers what Anisha owns")."""
+    rows = conn.execute(text(
+        "select seat_id, scope_kind, scope_key, accountability, source "
+        "from seat_responsibilities r where r.org_id = :o and r.seat_id = :s "
+        "and r.accountability = 'owns' and r.valid_from <= :at "
+        "and (r.valid_until is null or r.valid_until > :at) order by scope_kind, scope_key"),
+        {"o": org_id, "s": seat_id, "at": at}).all()
+    return tuple(Answering(r.seat_id, r.scope_kind, r.scope_key, r.accountability, r.source)
+                 for r in rows)
 
 
 def same_beneficiary(a: CommitmentLink, b: CommitmentLink) -> bool:

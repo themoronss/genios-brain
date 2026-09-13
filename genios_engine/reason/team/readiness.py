@@ -6,8 +6,8 @@ A milestone (`team_milestones`, 0151) is measured on read and in the team pass:
     done / pending  the owner's commitments due in the `COMMITMENT_LOOKBACK_DAYS` before the date
                     (owned by or owed to the owner seat; with a scope: owned by the scope's seats)
                     + tracker `task` nodes matching `task_filter.query` (Linear, `linear.issue.v1`)
-    away            team seats with an absence window between today and the due date — the whole
-                    org, or the seats answering for `scope_kind`/`scope_key`
+    away            every active seat with an absence window between today and the due date
+                    (a scope narrows the work counted, not who is counted away)
 
 The report goes to the milestone owner once the date is within `READINESS_HORIZON_DAYS`, and again
 only when a count or the set of away seats changes (the digest).
@@ -131,8 +131,10 @@ def counts(conn, org_id: str, m: Milestone, *, now: datetime,
         team = seats
     away: list[tuple] = []
     if m.due >= today:
+        # CAPACITY IS THE WHOLE TEAM: anyone away before the date is a person the audit cannot
+        # lean on. A scope narrows which WORK counts (below), never who is counted as away.
         windows = org_visible_windows(conn, org_id, today, m.due)
-        for seat in sorted(team):
+        for seat in sorted(seats):
             person = directory.for_seat(seat)
             hit = sorted((w for w in directory.windows_of(person, windows)
                           if w.overlaps(today, m.due)), key=lambda w: w.start)
