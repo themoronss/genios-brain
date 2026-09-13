@@ -305,6 +305,37 @@ def test_readiness_counts_from_fake_linear_board_and_three_seats_away(client):
     assert _post_pass(ws) == {"team": 0}
 
 
+# ── 5 · the situation card is in its recipient's normal queue, and only theirs ────────────────
+def test_team_card_in_recipients_queue_only_and_authority_not_weakened(client):
+    from genios_engine.deliver.store import CardStore
+    ws = _voltex(client)
+    _away(ws, "anisha", 2, 9)
+    _commitment(ws, due_days=5)
+    assert _post_pass(ws) == {"team": 1}
+    card = _team_cards(ws, "team.deadline_at_risk")[0]
+    emru, anisha = ws["seats"]["emru"], ws["seats"]["anisha"]
+    # A look-alike NOT written by emit_situation (no L4 run, other builder) must stay hidden.
+    with _engine().begin() as c:
+        c.execute(text("insert into signals (signal_id, org_id, rule_id, subject_node_id, score, "
+                       "reason_code, eval_time, capability_id) values (:s, :o, 'team.fake', 'n', "
+                       "99, 'team', now(), 'team.fake')"), {"s": f"sig_fake_{ws['uid']}",
+                                                             "o": ws["org"]})
+        c.execute(text("insert into cards (card_id, signal_id, org_id, assignee, level, "
+                       "urgency_band, headline, situation, score, state, expires_at, "
+                       "builder_version) values (:k, :s, :o, :a, 'observation', 'high', 'fake', "
+                       "'fake', 99, 'queued', now() + interval '1 day', 'other.v1')"),
+                  {"k": f"card_fake_{ws['uid']}", "s": f"sig_fake_{ws['uid']}", "o": ws["org"],
+                   "a": emru})
+    store = CardStore(URL)
+    for strict in (True, False):
+        mine = store.queue(ws["org"], assignee=emru, strict_seat=strict, record_impressions=False)
+        assert [r["card_id"] for r in mine] == [card["card_id"]], (strict, mine)
+        theirs = store.queue(ws["org"], assignee=anisha, strict_seat=strict,
+                             record_impressions=False)
+        assert card["card_id"] not in [r["card_id"] for r in theirs]
+    # `GET /cards` (api/routes.list_cards) is a thin wrapper over exactly these queue() calls.
+
+
 # ── 4 · the away view ─────────────────────────────────────────────────────────────────────────
 def test_team_away_is_who_and_when_only(client):
     ws = _voltex(client)

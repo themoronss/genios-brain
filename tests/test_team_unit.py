@@ -41,6 +41,12 @@ def test_post_passes_skip_missing_log_failures_and_keep_going(monkeypatch, caplo
     assert "post-pass boom failed" in caplog.text
 
 
+def test_queue_situation_door_matches_what_emit_writes():
+    from genios_engine.deliver.store import SITUATION_CARD_BUILDER
+    from genios_engine.reason.team.emit import BUILDER_VERSION
+    assert SITUATION_CARD_BUILDER == BUILDER_VERSION
+
+
 def test_registered_passes_are_team_then_verify():
     assert [n for n, _ in postpass.PASSES] == ["team", "verify"]
     assert postpass._present("genios_engine.reason.team.passes")
